@@ -20,8 +20,8 @@ use super::types::{
     ConnectionHealth, ConnectionMetricsSnapshot, ConnectionState, DisconnectReason,
     PeerConnectionInfo,
 };
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 /// RAII guard that removes a peer_id from the `connecting` set when dropped,
 /// keeping `connect_to_peer` cancellation-safe.
@@ -436,8 +436,9 @@ impl ConnectionManager {
         // Authenticate the responder: nonce shape, peer_id↔public-key binding,
         // and a signature over a transcript that includes OUR nonce (so this
         // proof cannot be a recording of an earlier session).
-        protocol::validate_nonce(&server_nonce, "responder")
-            .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e))?;
+        protocol::validate_nonce(&server_nonce, "responder").inspect_err(|e| {
+            Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e)
+        })?;
         protocol::verify_handshake_proof(
             &remote_peer_id,
             &remote_public_key_b64,
@@ -1025,14 +1026,15 @@ impl ConnectionManager {
         let peer_ids: Vec<String> = self.connections.read().await.keys().cloned().collect();
 
         // Collect ping results without holding the write lock
-        let results: Vec<(String, Result<u64, personas_core::error::AppError>)> = stream::iter(peer_ids)
-            .map(|peer_id| async move {
-                let result = self.ping_peer_latency(&peer_id).await;
-                (peer_id, result)
-            })
-            .buffer_unordered(8)
-            .collect()
-            .await;
+        let results: Vec<(String, Result<u64, personas_core::error::AppError>)> =
+            stream::iter(peer_ids)
+                .map(|peer_id| async move {
+                    let result = self.ping_peer_latency(&peer_id).await;
+                    (peer_id, result)
+                })
+                .buffer_unordered(8)
+                .collect()
+                .await;
 
         // Apply all successful updates in a single write-lock acquisition
         let mut failed_peers = Vec::new();

@@ -45,7 +45,9 @@ pub fn upsert(
         params![persona_id, cron_expr],
     )?;
     get(pool, persona_id)?.ok_or_else(|| {
-        AppError::Internal(format!("upsert succeeded but row not found for `{persona_id}`"))
+        AppError::Internal(format!(
+            "upsert succeeded but row not found for `{persona_id}`"
+        ))
     })
 }
 
@@ -58,10 +60,7 @@ pub fn delete(pool: &DbPool, persona_id: &str) -> Result<bool, AppError> {
     Ok(n > 0)
 }
 
-pub fn get(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<Option<PersonaCurationSchedule>, AppError> {
+pub fn get(pool: &DbPool, persona_id: &str) -> Result<Option<PersonaCurationSchedule>, AppError> {
     let conn = pool.get()?;
     let row = conn
         .query_row(

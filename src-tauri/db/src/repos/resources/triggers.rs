@@ -1,13 +1,13 @@
 use rusqlite::{params, OptionalExtension};
 
+use crate::chain;
 use crate::models::{CreateTriggerInput, PersonaTrigger, TriggerConfig, UpdateTriggerInput};
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
-use crate::chain;
-use personas_core::{crypto, scheduler};
 use personas_core::error::AppError;
 use personas_core::validation::contract::check as validate_check;
 use personas_core::validation::trigger as tv;
+use personas_core::{crypto, scheduler};
 
 pub fn normalize_trigger_type(raw: &str) -> &str {
     tv::normalize_trigger_type(raw)
@@ -238,28 +238,30 @@ pub fn set_unattended_mode(
     id: &str,
     mode: &str,
 ) -> Result<PersonaTrigger, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::set_unattended_mode", {
-        if !crate::models::UNATTENDED_MODES.contains(&mode) {
-            return Err(AppError::Validation(format!(
-                "Invalid unattended_mode '{mode}' (expected one of: auto, dry_run, approval)"
-            )));
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::set_unattended_mode",
+        {
+            if !crate::models::UNATTENDED_MODES.contains(&mode) {
+                return Err(AppError::Validation(format!(
+                    "Invalid unattended_mode '{mode}' (expected one of: auto, dry_run, approval)"
+                )));
+            }
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_triggers SET unattended_mode = ?1, updated_at = ?2 WHERE id = ?3",
+                params![mode, now, id],
+            )?;
+            // get_by_id surfaces a NotFound if the id didn't exist (UPDATE affects 0 rows).
+            get_by_id(pool, id)
         }
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE persona_triggers SET unattended_mode = ?1, updated_at = ?2 WHERE id = ?3",
-            params![mode, now, id],
-        )?;
-        // get_by_id surfaces a NotFound if the id didn't exist (UPDATE affects 0 rows).
-        get_by_id(pool, id)
-    })
+    )
 }
 
 // -- Pending trigger fires (the `approval` unattended-mode hold, UAT P5) ------
 
-fn row_to_pending_fire(
-    row: &rusqlite::Row,
-) -> rusqlite::Result<crate::models::PendingTriggerFire> {
+fn row_to_pending_fire(row: &rusqlite::Row) -> rusqlite::Result<crate::models::PendingTriggerFire> {
     Ok(crate::models::PendingTriggerFire {
         id: row.get("id")?,
         trigger_id: row.get("trigger_id")?,
@@ -290,7 +292,15 @@ pub fn insert_pending_fire(
             "INSERT INTO pending_trigger_fires
              (id, trigger_id, persona_id, event_type, payload, use_case_id, status, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7)",
-            params![id, trigger_id, persona_id, event_type, payload, use_case_id, now],
+            params![
+                id,
+                trigger_id,
+                persona_id,
+                event_type,
+                payload,
+                use_case_id,
+                now
+            ],
         )?;
         conn.query_row(
             "SELECT * FROM pending_trigger_fires WHERE id = ?1",
@@ -311,7 +321,8 @@ pub fn list_pending_fires(
             "SELECT * FROM pending_trigger_fires WHERE status = 'pending' ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map([], row_to_pending_fire)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -557,7 +568,8 @@ fn record_invalid_timezone_issue(
     // showing "Paused/Unscheduled". Done before the dedup gate below so the
     // reason is always current even when the healing issue is already open.
     let detail = format!("timezone `{timezone}` for cron `{cron_expr}` ({error})");
-    if let Err(e) = set_schedule_status_reason(pool, trigger_id, "invalid_timezone", Some(&detail)) {
+    if let Err(e) = set_schedule_status_reason(pool, trigger_id, "invalid_timezone", Some(&detail))
+    {
         tracing::warn!(
             trigger_id,
             persona_id,
@@ -2057,7 +2069,8 @@ pub fn list_missed_runs(pool: &DbPool) -> Result<Vec<ScheduleMissedRuns>, AppErr
                 status_reason_detail: row.get(5)?,
             })
         })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -2248,7 +2261,9 @@ mod tests {
             ),
             (
                 personas_core::models::TriggerKind::Composite,
-                Some(r#"{"conditions":[{"event_type":"a"},{"event_type":"b"}],"operator":"AND","window_seconds":300}"#),
+                Some(
+                    r#"{"conditions":[{"event_type":"a"},{"event_type":"b"}],"operator":"AND","window_seconds":300}"#,
+                ),
             ),
         ];
         assert_eq!(
@@ -2314,7 +2329,10 @@ mod tests {
             msg.contains(personas_core::validation::trigger::UNSCHEDULABLE_PREFIX),
             "refusal did not use the registry-matchable prefix: {msg}"
         );
-        assert!(msg.contains("local"), "refusal did not name the value: {msg}");
+        assert!(
+            msg.contains("local"),
+            "refusal did not name the value: {msg}"
+        );
 
         // A schedule with no timing at all.
         assert!(attempt("schedule", Some("{}")).is_err());
@@ -3664,15 +3682,8 @@ mod tests {
             },
         )
         .unwrap();
-        let fire = insert_pending_fire(
-            &pool,
-            &trigger.id,
-            &persona.id,
-            "manual.fire",
-            None,
-            None,
-        )
-        .unwrap();
+        let fire = insert_pending_fire(&pool, &trigger.id, &persona.id, "manual.fire", None, None)
+            .unwrap();
 
         // Simulate two overlapping resolutions of the SAME pending fire, both
         // approving — e.g. a double-click or an IPC retry after a timeout.
@@ -3693,7 +3704,10 @@ mod tests {
 
         // The row is not left dangling as `pending` and cannot be won a third time.
         let (_, third_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
-        assert!(!third_won, "an already-resolved fire must never win the CAS again");
+        assert!(
+            !third_won,
+            "an already-resolved fire must never win the CAS again"
+        );
     }
 
     /// Regression pin for the manual-backfill double-publish race

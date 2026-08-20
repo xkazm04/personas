@@ -214,7 +214,9 @@ pub fn get_version_ratings(
                 let ta: Option<f64> = row.get("ta_avg")?;
                 let oq: Option<f64> = row.get("oq_avg")?;
                 let pc: Option<f64> = row.get("pc_avg")?;
-                let provider = row.get::<_, Option<String>>("provider")?.unwrap_or_default();
+                let provider = row
+                    .get::<_, Option<String>>("provider")?
+                    .unwrap_or_default();
                 let (composite_score, partial_coverage) = composite_and_coverage(ta, oq, pc);
                 // Ollama's per-call cost is hardcoded 0.0 in the runner — a zero
                 // here is "unknown", not "free". Flag it so the value verdict skips it.
@@ -302,7 +304,9 @@ pub fn get_version_economics(
                 Ok(LabVersionEconomics {
                     version_id: row.get("version_id")?,
                     model_id: row.get("model_id")?,
-                    provider: row.get::<_, Option<String>>("provider")?.unwrap_or_default(),
+                    provider: row
+                        .get::<_, Option<String>>("provider")?
+                        .unwrap_or_default(),
                     attempted,
                     resolved,
                     resolve_rate: (attempted > 0).then(|| resolved as f64 / attempted as f64),
@@ -429,7 +433,11 @@ mod status_vocabulary_tests {
         seed_arena_result(&pool, "passed", Some(80), Some(90));
         seed_arena_result(&pool, "failed", Some(10), Some(20));
         let eco = get_version_economics(&pool, "p1").expect("query ok");
-        assert_eq!(eco.len(), 1, "arena attempts must reach the economics panel");
+        assert_eq!(
+            eco.len(),
+            1,
+            "arena attempts must reach the economics panel"
+        );
         assert_eq!(eco[0].attempted, 2);
         assert_eq!(eco[0].resolved, 1, "only 'passed' resolves");
     }

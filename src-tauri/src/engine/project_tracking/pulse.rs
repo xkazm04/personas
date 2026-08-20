@@ -31,10 +31,7 @@ pub struct PulseRow {
 /// Read today's pulse for one project. Returns None when no pulse has
 /// been written for the (project, today) pair yet (the consolidator's
 /// "first tick of the day" path).
-pub fn load_today(
-    pool: &UserDbPool,
-    project_id: &str,
-) -> Result<Option<PulseRow>, AppError> {
+pub fn load_today(pool: &UserDbPool, project_id: &str) -> Result<Option<PulseRow>, AppError> {
     let day = today_iso();
     load_for_day(pool, project_id, &day)
 }

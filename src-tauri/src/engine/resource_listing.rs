@@ -354,9 +354,16 @@ async fn fetch_all_pages(
                 if let Some(pp) = per_page {
                     query.push((per_page_param.clone(), pp.to_string()));
                 }
-                let body =
-                    fetch_one(&client, spec, values, None, Some(&query), None, allow_private)
-                        .await?;
+                let body = fetch_one(
+                    &client,
+                    spec,
+                    values,
+                    None,
+                    Some(&query),
+                    None,
+                    allow_private,
+                )
+                .await?;
                 let items = extract_items(&body, &spec.response_mapping.items_path);
                 let empty = items.is_empty();
                 all.extend(items);
@@ -376,9 +383,16 @@ async fn fetch_all_pages(
                     .as_ref()
                     .map(|c| vec![(cursor_param.clone(), c.clone())])
                     .unwrap_or_default();
-                let body =
-                    fetch_one(&client, spec, values, None, Some(&query), None, allow_private)
-                        .await?;
+                let body = fetch_one(
+                    &client,
+                    spec,
+                    values,
+                    None,
+                    Some(&query),
+                    None,
+                    allow_private,
+                )
+                .await?;
                 all.extend(extract_items(&body, &spec.response_mapping.items_path));
                 cursor =
                     jsonpath_get(&body, cursor_path).and_then(|v| v.as_str().map(String::from));
@@ -401,9 +415,15 @@ async fn fetch_one(
     _page: Option<u32>,
     allow_private: bool,
 ) -> Result<serde_json::Value, AppError> {
-    let (body, _link) =
-        fetch_one_with_headers_inner(client, spec, values, override_url, extra_query, allow_private)
-            .await?;
+    let (body, _link) = fetch_one_with_headers_inner(
+        client,
+        spec,
+        values,
+        override_url,
+        extra_query,
+        allow_private,
+    )
+    .await?;
     Ok(body)
 }
 

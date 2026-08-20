@@ -139,7 +139,7 @@ pub async fn system_health_check(
                 status: fe_status,
                 detail: Some(fe_detail),
                 installable: false,
-            remediation: None,
+                remediation: None,
             }],
         });
     }
@@ -437,7 +437,7 @@ fn build_local_section(
                 status: HealthCheckStatus::Ok,
                 detail: Some(format!("{version} ({command_name})")),
                 installable: false,
-            remediation: None,
+                remediation: None,
             });
         } else if detected_in_path {
             local_items.push(HealthCheckItem {
@@ -466,7 +466,7 @@ fn build_local_section(
                     "Not installed (optional)".into()
                 }),
                 installable: true,
-            remediation: None,
+                remediation: None,
             });
         }
     }
@@ -521,7 +521,7 @@ fn build_local_section(
             "Not connected -- click Connect to enable Personas tools in Claude Desktop".into()
         }),
         installable: false,
-            remediation: None,
+        remediation: None,
     });
 
     local_items.push(HealthCheckItem {
@@ -538,7 +538,7 @@ fn build_local_section(
             "Not started yet".into()
         }),
         installable: false,
-            remediation: None,
+        remediation: None,
     });
 
     HealthCheckSection {
@@ -749,7 +749,7 @@ fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
         status: global_status,
         detail: Some(global_detail),
         installable: false,
-            remediation: None,
+        remediation: None,
     });
 
     HealthCheckSection {
@@ -815,7 +815,7 @@ fn build_subscriptions_section(state: &AppState) -> HealthCheckSection {
                 status,
                 detail: Some(detail),
                 installable: false,
-            remediation: None,
+                remediation: None,
             });
         }
     }
@@ -884,7 +884,7 @@ mod tests {
                 status: HealthCheckStatus::Ok,
                 detail: None,
                 installable: false,
-            remediation: None,
+                remediation: None,
             }],
         };
         let json = serde_json::to_string(&section).unwrap();
@@ -904,7 +904,7 @@ mod tests {
                         status: HealthCheckStatus::Ok,
                         detail: None,
                         installable: false,
-            remediation: None,
+                        remediation: None,
                     },
                     HealthCheckItem {
                         id: "b".into(),
@@ -912,7 +912,7 @@ mod tests {
                         status: HealthCheckStatus::Error,
                         detail: Some("fail".into()),
                         installable: true,
-            remediation: None,
+                        remediation: None,
                     },
                 ],
             }],

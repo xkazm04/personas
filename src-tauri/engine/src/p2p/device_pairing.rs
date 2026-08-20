@@ -192,7 +192,9 @@ impl DevicePairing {
     pub async fn request(&self, peer_id: &str) -> Result<DevicePairingRequest, AppError> {
         let local = crate::identity::get_or_create_identity(&self.pool)?;
         if peer_id == local.peer_id {
-            return Err(AppError::Validation("Cannot pair a device with itself".into()));
+            return Err(AppError::Validation(
+                "Cannot pair a device with itself".into(),
+            ));
         }
         let public_key_b64 = self.proven_key(peer_id).await?;
         let device_group_id = owned_devices_repo::ensure_device_group_id(&self.pool)?;
@@ -246,7 +248,9 @@ impl DevicePairing {
                 })??;
             match reply {
                 Message::PairPending => Ok(()),
-                Message::PairResponse { accepted: false, .. } => Err(AppError::Validation(
+                Message::PairResponse {
+                    accepted: false, ..
+                } => Err(AppError::Validation(
                     "Peer declined the pairing request".into(),
                 )),
                 other => Err(AppError::Internal(format!(

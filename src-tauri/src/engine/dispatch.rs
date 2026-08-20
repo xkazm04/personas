@@ -735,7 +735,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 ctx.logger
                     .log("[SIM] raise_incident skipped (simulation run)");
             } else {
-                let kind = kind.clone().unwrap_or_else(|| "persona_blocker".to_string());
+                let kind = kind
+                    .clone()
+                    .unwrap_or_else(|| "persona_blocker".to_string());
                 match crate::db::repos::execution::audit_incidents::promote(
                     ctx.pool,
                     crate::db::models::CreateAuditIncidentInput {
@@ -774,7 +776,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     "[INCIDENT] resolve_incident ignored — id prefix too short ({id})"
                 ));
             } else if ctx.is_simulation {
-                ctx.logger.log("[SIM] resolve_incident skipped (simulation run)");
+                ctx.logger
+                    .log("[SIM] resolve_incident skipped (simulation run)");
             } else {
                 let matches: Vec<String> = ctx
                     .pool
@@ -829,14 +832,20 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
         }
-        ProtocolMessage::KpiMeasurement { kpi_id, value, evidence } => {
+        ProtocolMessage::KpiMeasurement {
+            kpi_id,
+            value,
+            evidence,
+        } => {
             // A persona measured a KPI mid-run (connector recipes, ad-hoc
             // checks). Recorded with source='evaluator' semantics but
             // attributed to the execution via the evidence envelope.
             if kpi_id.trim().is_empty() {
-                ctx.logger.log("[KPI] kpi_measurement dropped — empty kpi_id");
+                ctx.logger
+                    .log("[KPI] kpi_measurement dropped — empty kpi_id");
             } else if ctx.is_simulation {
-                ctx.logger.log("[SIM] kpi_measurement skipped (simulation run)");
+                ctx.logger
+                    .log("[SIM] kpi_measurement skipped (simulation run)");
             } else {
                 let evidence_json = serde_json::json!({
                     "from_execution": ctx.execution_id,

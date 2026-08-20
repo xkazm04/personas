@@ -47,7 +47,11 @@ pub fn companion_list_pending_approvals(
                 continue;
             }
         };
-        let action = v.get("action").and_then(|x| x.as_str()).unwrap_or("").trim();
+        let action = v
+            .get("action")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .trim();
         if action.is_empty() {
             tracing::warn!(approval_id = %id, "skipping approval with no action (would render a blank actionable card)");
             continue;
@@ -299,7 +303,13 @@ pub(crate) fn load_pending(
             "SELECT status, payload, created_at >= datetime('now', ?2)
              FROM companion_approval WHERE id = ?1",
             params![approval_id, APPROVAL_FRESHNESS_WINDOW],
-            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)? != 0)),
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, i64>(2)? != 0,
+                ))
+            },
         )
         .optional()?;
     let (status, payload, fresh) =
@@ -399,14 +409,21 @@ pub fn recover_interrupted_approvals(user_db: &crate::db::UserDbPool) -> Result<
 /// Persist an action outcome as a system-role episode so future turns'
 /// system prompt sees what happened. Best-effort — failures here just
 /// mean the conversation transcript doesn't carry the action record.
-pub(crate) async fn log_action_episode(state: &State<'_, Arc<AppState>>, action: &str, content: &str) {
+pub(crate) async fn log_action_episode(
+    state: &State<'_, Arc<AppState>>,
+    action: &str,
+    content: &str,
+) {
     // Fleet actions (fleet_send_input / _broadcast / _kill / _intervene / …) are
     // operational keystrokes into a CLI the user is already watching on the grid —
     // their "approved & executed / failed" result is noise in the companion chat,
     // not a conversational turn. Trace for debugging; do NOT persist as a visible
     // episode. (User report: the Athena chat was overflowing with these.)
     if action.starts_with("fleet_") {
-        tracing::debug!(action, "fleet action result not persisted to companion chat");
+        tracing::debug!(
+            action,
+            "fleet action result not persisted to companion chat"
+        );
         return;
     }
     let pool = &state.user_db;
@@ -438,4 +455,3 @@ pub(crate) async fn log_action_episode(state: &State<'_, Arc<AppState>>, action:
         tracing::warn!(error = %e, "companion: failed to log action episode");
     }
 }
-

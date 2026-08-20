@@ -101,7 +101,10 @@ pub fn parse_plan(text: &str) -> Result<DraftPlan, AppError> {
 /// Normalize a path for containment comparison: forward slashes, trimmed,
 /// lowercased (SQLite-registered roots on Windows are case-insensitive).
 fn norm_path(p: &str) -> String {
-    p.trim().replace('\\', "/").trim_end_matches('/').to_ascii_lowercase()
+    p.trim()
+        .replace('\\', "/")
+        .trim_end_matches('/')
+        .to_ascii_lowercase()
 }
 
 fn truncate_chars(s: &str, max: usize) -> String {
@@ -118,11 +121,7 @@ fn truncate_chars(s: &str, max: usize) -> String {
 /// `max_sessions`, caps text sizes, and de-duplicates repos (one session per
 /// repo per night in v1). Pure — the refusals happen here, before any card
 /// or dispatch exists.
-pub fn bound_plan(
-    draft: DraftPlan,
-    allowed: &[AllowedProject],
-    max_sessions: usize,
-) -> DraftPlan {
+pub fn bound_plan(draft: DraftPlan, allowed: &[AllowedProject], max_sessions: usize) -> DraftPlan {
     let max_sessions = max_sessions.clamp(1, super::MAX_SESSIONS_CEILING);
     let roots: Vec<(String, String)> = allowed
         .iter()
@@ -267,7 +266,10 @@ mod tests {
             items: vec![
                 item("C:/Users/x/dolla/personas", "   "),
                 item("C:/Users/x/dolla/pumper", "one"),
-                item("C:/USERS/X/DOLLA/PUMPER", "duplicate repo, case-insensitive"),
+                item(
+                    "C:/USERS/X/DOLLA/PUMPER",
+                    "duplicate repo, case-insensitive",
+                ),
             ],
         };
         let out = bound_plan(draft, &allowed(), 4);
@@ -279,7 +281,10 @@ mod tests {
     fn bound_normalizes_backslash_roots() {
         let draft = DraftPlan {
             summary: "s".into(),
-            items: vec![item("C:\\Users\\x\\dolla\\pumper\\crates", "backslashes ok")],
+            items: vec![item(
+                "C:\\Users\\x\\dolla\\pumper\\crates",
+                "backslashes ok",
+            )],
         };
         let out = bound_plan(draft, &allowed(), 4);
         assert_eq!(out.items.len(), 1);

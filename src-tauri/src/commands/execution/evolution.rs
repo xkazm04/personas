@@ -297,9 +297,8 @@ pub fn evolution_resolve_promotion_proposal(
 
     if approve {
         let winner: crate::engine::genome::PersonaGenome =
-            serde_json::from_str(&proposal.winner_genome_json).map_err(|e| {
-                AppError::Internal(format!("Failed to parse winner genome: {e}"))
-            })?;
+            serde_json::from_str(&proposal.winner_genome_json)
+                .map_err(|e| AppError::Internal(format!("Failed to parse winner genome: {e}")))?;
         if proposal.new_prompt.trim().is_empty() {
             return Err(AppError::Validation(
                 "Cannot promote: the winner's prompt reassembles to an empty system prompt".into(),

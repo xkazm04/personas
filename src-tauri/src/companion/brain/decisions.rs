@@ -60,7 +60,12 @@ pub fn save_batch(
     for d in decisions {
         let id = format!(
             "dec_{}",
-            Uuid::new_v4().simple().to_string().chars().take(10).collect::<String>()
+            Uuid::new_v4()
+                .simple()
+                .to_string()
+                .chars()
+                .take(10)
+                .collect::<String>()
         );
         let result = conn.execute(
             "INSERT INTO companion_design_decision

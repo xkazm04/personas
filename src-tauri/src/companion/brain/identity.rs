@@ -226,7 +226,10 @@ fn find_bullet(lines: &[String], start: usize, end: usize, anchor: &str) -> Opti
 /// would.
 pub fn validate_against(lines: &[String], diff: &IdentityDiff) -> Result<(), AppError> {
     let (hidx, end) = section_range(lines, &diff.section).ok_or_else(|| {
-        AppError::Validation(format!("identity: section `{}` does not exist", diff.section))
+        AppError::Validation(format!(
+            "identity: section `{}` does not exist",
+            diff.section
+        ))
     })?;
     if matches!(diff.op, DiffOp::ReplaceBullet | DiffOp::RemoveBullet) {
         let anchor = diff.anchor_text.as_deref().unwrap_or("");
@@ -244,7 +247,10 @@ pub fn validate_against(lines: &[String], diff: &IdentityDiff) -> Result<(), App
 /// anchor must exist); on any failure the lines are left untouched.
 pub fn apply_to(lines: &mut Vec<String>, diff: &IdentityDiff) -> Result<(), AppError> {
     let (hidx, end) = section_range(lines, &diff.section).ok_or_else(|| {
-        AppError::Validation(format!("identity: section `{}` does not exist", diff.section))
+        AppError::Validation(format!(
+            "identity: section `{}` does not exist",
+            diff.section
+        ))
     })?;
     match diff.op {
         DiffOp::AppendBullet => {
@@ -381,8 +387,12 @@ mod tests {
 
     #[test]
     fn parse_requires_fields_per_op() {
-        assert!(IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"append"})).is_err());
-        assert!(IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"remove"})).is_err());
+        assert!(
+            IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"append"})).is_err()
+        );
+        assert!(
+            IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"remove"})).is_err()
+        );
         assert!(IdentityDiff::from_json(
             &serde_json::json!({"section":"x","op":"append","new_text":"y","rationale":"z"})
         )

@@ -382,8 +382,10 @@ pub async fn pack_by_budget_task_aware(
             return pack_by_budget(candidates, char_budget, now);
         }
     };
-    let (kept, dropped_far) =
-        personas_core::retrieval::filter_by_distance_floor(&hits, personas_core::retrieval::MAX_VECTOR_DISTANCE);
+    let (kept, dropped_far) = personas_core::retrieval::filter_by_distance_floor(
+        &hits,
+        personas_core::retrieval::MAX_VECTOR_DISTANCE,
+    );
     let relevance: HashMap<String, f64> = kept
         .iter()
         .map(|(id, d)| {
@@ -501,7 +503,10 @@ mod tests {
     fn fresh_memory_scores_near_importance() {
         let m = mem("a", "learned", 4, 0, 0);
         let s = decay_score(&m, Utc::now());
-        assert!((s - 4.0).abs() < 0.05, "fresh score should ≈ importance, got {s}");
+        assert!(
+            (s - 4.0).abs() < 0.05,
+            "fresh score should ≈ importance, got {s}"
+        );
     }
 
     #[test]
@@ -522,7 +527,10 @@ mod tests {
     fn one_half_life_halves_the_score() {
         let m = mem("a", "learned", 4, 60, 0); // learned half-life = 60d
         let s = decay_score(&m, Utc::now());
-        assert!((s - 2.0).abs() < 0.1, "expected ~2.0 after one half-life, got {s}");
+        assert!(
+            (s - 2.0).abs() < 0.1,
+            "expected ~2.0 after one half-life, got {s}"
+        );
     }
 
     #[test]
@@ -552,7 +560,11 @@ mod tests {
         let budget = entry_chars(&fresh_important) + entry_chars(&mid) + 10;
         let packed = pack_by_budget(vec![stale_low, mid, fresh_important], budget, now);
         let ids: Vec<&str> = packed.selected.iter().map(|m| m.id.as_str()).collect();
-        assert_eq!(ids, vec!["a", "c"], "highest decayed value should win the budget");
+        assert_eq!(
+            ids,
+            vec!["a", "c"],
+            "highest decayed value should win the budget"
+        );
         assert_eq!(packed.omitted, 1);
     }
 
@@ -592,7 +604,10 @@ mod tests {
         let text = task_context_from_input(Some(&input));
         assert!(text.contains("Invoice #123 overdue"));
         assert!(text.contains("second reminder"));
-        assert!(!text.contains("hidden"), "runner-internal _keys must be skipped");
+        assert!(
+            !text.contains("hidden"),
+            "runner-internal _keys must be skipped"
+        );
         assert!(!text.contains("42"), "non-string scalars carry no signal");
         assert_eq!(task_context_from_input(None), "");
         // Cap: stays within 2000 bytes on a char boundary.
@@ -690,9 +705,8 @@ mod tests {
             &HashMap::new(),
             DEFAULT_RELEVANCE_WEIGHT,
         );
-        let ids = |p: &PackedRecall| -> Vec<String> {
-            p.selected.iter().map(|m| m.id.clone()).collect()
-        };
+        let ids =
+            |p: &PackedRecall| -> Vec<String> { p.selected.iter().map(|m| m.id.clone()).collect() };
         // With no similarity signal the relevance pack is the value-only pack.
         assert_eq!(ids(&value_only), ids(&blended));
         assert_eq!(value_only.omitted, blended.omitted);

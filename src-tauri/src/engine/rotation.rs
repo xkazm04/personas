@@ -80,7 +80,6 @@ fn is_credential_rotating(credential_id: &str) -> bool {
 // Windowed anomaly scoring constants
 // ---------------------------------------------------------------------------
 
-
 /// Default failure-rate threshold for permanent errors (disables policy).
 const DEFAULT_PERMANENT_FAILURE_THRESHOLD: f64 = 0.8;
 
@@ -108,7 +107,6 @@ const DEVELOPMENT_TOLERANCE: f64 = 0.50;
 pub use personas_core::healthcheck_ledger::{
     append_healthcheck_entry, ErrorClass, HEALTHCHECK_RING_BUFFER_SIZE,
 };
-
 
 // ---------------------------------------------------------------------------
 // Healthcheck ring buffer entry
@@ -331,7 +329,6 @@ fn score_to_ledger(score: &AnomalyScore) -> crate::db::models::LedgerAnomalyScor
         data_stale: score.data_stale,
     }
 }
-
 
 /// Result of parsing healthcheck entries from credential metadata.
 /// Distinguishes between "no entries recorded" and "metadata is corrupted".

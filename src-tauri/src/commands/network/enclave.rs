@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::engine::enclave::{self, EnclavePolicy, EnclaveSealResult, EnclaveVerifyResult};
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth_sync};
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 use personas_macros::requires;
 
@@ -17,7 +17,6 @@ pub fn seal_enclave(
     policy: EnclavePolicy,
     save_path: String,
 ) -> Result<EnclaveSealResult, AppError> {
-
     let (bytes, result) = enclave::seal(&state.db, &persona_id, policy)?;
 
     std::fs::write(&save_path, &bytes).map_err(AppError::Io)?;

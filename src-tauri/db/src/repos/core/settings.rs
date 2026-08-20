@@ -450,7 +450,12 @@ mod tests {
             "2026-07-13T00:00:00Z",
         )
         .unwrap();
-        set(&pool, "cloud_sync_cursor:executions", "2026-07-13T00:00:00Z").unwrap();
+        set(
+            &pool,
+            "cloud_sync_cursor:executions",
+            "2026-07-13T00:00:00Z",
+        )
+        .unwrap();
         let rows = settings_audit_log::list(&pool, 100, None).unwrap();
         assert!(
             rows.is_empty(),

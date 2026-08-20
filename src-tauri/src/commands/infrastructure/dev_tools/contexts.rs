@@ -1,10 +1,12 @@
-use std::sync::Arc;
-use tauri::State;
-use crate::db::models::{ContextHealthSnapshot, DevContext, DevContextGroup, DevContextGroupRelationship};
+use crate::db::models::{
+    ContextHealthSnapshot, DevContext, DevContextGroup, DevContextGroupRelationship,
+};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use std::sync::Arc;
+use tauri::State;
 
 // ============================================================================
 // Context Groups
@@ -297,4 +299,3 @@ pub fn dev_tools_save_health_snapshot(
     };
     repo::insert_health_snapshot(&state.db, &snap)
 }
-

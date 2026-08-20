@@ -108,11 +108,7 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
     let entries_json = serde_json::to_string(input.entries)
         .map_err(|e| AppError::Internal(format!("serialize proposal entries: {e}")))?;
     let reviewed_count = input.entries.len() as i32;
-    let proposed_changes = input
-        .entries
-        .iter()
-        .filter(|e| e.action != "keep")
-        .count() as i32;
+    let proposed_changes = input.entries.iter().filter(|e| e.action != "keep").count() as i32;
 
     let conn = pool.get()?;
     conn.execute(

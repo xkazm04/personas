@@ -72,7 +72,8 @@ fn register_cancel_token(operation_id: &str) -> (u64, CancellationToken) {
 /// a finished run from deleting a newer same-id run's still-live token.
 fn deregister_cancel_token(operation_id: &str, handle: u64) {
     let mut map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
-    if let std::collections::hash_map::Entry::Occupied(entry) = map.entry(operation_id.to_string()) {
+    if let std::collections::hash_map::Entry::Occupied(entry) = map.entry(operation_id.to_string())
+    {
         if entry.get().0 == handle {
             entry.remove();
         }

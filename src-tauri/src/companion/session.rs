@@ -379,7 +379,11 @@ const REMOTE_DEVICE_SOURCE_SUFFIX: &str = " (paired device)";
 #[cfg_attr(not(feature = "p2p"), allow(dead_code))]
 pub fn remote_device_source(display_name: &str) -> String {
     let name = display_name.trim();
-    let name = if name.is_empty() { "A paired device" } else { name };
+    let name = if name.is_empty() {
+        "A paired device"
+    } else {
+        name
+    };
     format!("{name}{REMOTE_DEVICE_SOURCE_SUFFIX}")
 }
 
@@ -529,7 +533,8 @@ pub(crate) fn classify_failure(e: &AppError) -> &'static str {
         "stale_resume"
     } else if m.contains("spawn claude")        // run_cli
         || m.contains("failed to spawn")        // athena_reaction::cli_text_inner
-        || m.contains("cli not found")          // ditto, when the binary is absent
+        || m.contains("cli not found")
+    // ditto, when the binary is absent
     {
         // Matched on several phrasings deliberately: the two modules word the
         // same failure differently, and a taxonomy that silently degrades one
@@ -537,7 +542,8 @@ pub(crate) fn classify_failure(e: &AppError) -> &'static str {
         // hiding the most actionable cause.
         "spawn_failed"
     } else if m.contains("exited with status")   // run_cli
-        || m.contains("exited")                  // brain::oneshot: "claude {leg} exited {code}: {stderr}"
+        || m.contains("exited")
+    // brain::oneshot: "claude {leg} exited {code}: {stderr}"
     {
         // Third phrasing of the same failure, third module. `brain::oneshot`
         // says "claude consolidation exited 1: …" — which matches NONE of the
@@ -614,8 +620,7 @@ impl FailedTurnCtx {
 
     /// The turn recorded its own row; this one must not add another.
     fn disarm(&self) {
-        self.armed
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.armed.store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Best-effort failure row. `usage` is whatever the CLI managed to report
@@ -767,7 +772,8 @@ async fn send_turn_inner(
             match turn_lock.try_lock() {
                 Ok(g) => g,
                 Err(_) => {
-                    let queued = FLEET_TURN_QUEUE_DEPTH.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    let queued =
+                        FLEET_TURN_QUEUE_DEPTH.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                     if queued >= MAX_QUEUED_FLEET_TURNS {
                         FLEET_TURN_QUEUE_DEPTH.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
                         tracing::warn!(
@@ -778,7 +784,11 @@ async fn send_turn_inner(
                             "fleet turn queue full; wake skipped".into(),
                         ));
                     }
-                    if let TurnOrigin::Proactive { trigger_ref: Some(sid), .. } = &origin {
+                    if let TurnOrigin::Proactive {
+                        trigger_ref: Some(sid),
+                        ..
+                    } = &origin
+                    {
                         crate::commands::fleet::debug_log::athena(
                             sid,
                             "queued",
@@ -849,10 +859,9 @@ async fn send_turn_inner(
             EpisodeRole::System,
             format!("[autonomous continuation #{chain_index}]"),
         ),
-        TurnOrigin::Proactive { trigger_kind, .. } => (
-            EpisodeRole::System,
-            format!("[proactive: {trigger_kind}]"),
-        ),
+        TurnOrigin::Proactive { trigger_kind, .. } => {
+            (EpisodeRole::System, format!("[proactive: {trigger_kind}]"))
+        }
         TurnOrigin::External { source } => (EpisodeRole::System, format!("[{source}]")),
     };
     let user_ep_id = if suppress_chat {
@@ -871,12 +880,7 @@ async fn send_turn_inner(
                     )
                     .await?
                 }
-                None => episodic::append_episode(
-                    &user_db,
-                    &session_id,
-                    open_role,
-                    &open_content,
-                )?,
+                None => episodic::append_episode(&user_db, &session_id, open_role, &open_content)?,
             }
         }
         #[cfg(not(feature = "ml"))]
@@ -1065,39 +1069,38 @@ async fn send_turn_inner(
     // persist them as approval rows, and strip them from the displayed
     // text. The episode stores the cleaned text — what the user sees in
     // the chat — so future turns' transcript is clean too.
-    let mut dispatched =
-        match crate::companion::dispatcher::dispatch_with_sys(
-            &user_db,
-            Some(&sys_db),
-            &session_id,
-            &assistant_text,
-        ) {
-            Ok(d) => d,
-            Err(e) => {
-                tracing::warn!(error = %e, "companion dispatcher failed; using raw text");
-                crate::companion::dispatcher::Dispatched {
-                    cleaned_text: assistant_text.clone(),
-                    approvals: Vec::new(),
-                    navigations: Vec::new(),
-                    lab_opens: Vec::new(),
-                    dashboards: Vec::new(),
-                    cockpits: Vec::new(),
-                    explain_cockpits: Vec::new(),
-                    canvas_panels: Vec::new(),
-                    canvas_controls: Vec::new(),
-                    chat_cards: Vec::new(),
-                    guide_walkthroughs: Vec::new(),
-                    point_ats: Vec::new(),
-                    composed_walkthroughs: Vec::new(),
-                    composed_tours: Vec::new(),
-                    quick_replies: Vec::new(),
-                    tts_text: None,
-                    requests_continuation: false,
-                    warnings: vec![format!("dispatcher error: {e}")],
-                    progress_beats: Vec::new(),
-                }
+    let mut dispatched = match crate::companion::dispatcher::dispatch_with_sys(
+        &user_db,
+        Some(&sys_db),
+        &session_id,
+        &assistant_text,
+    ) {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!(error = %e, "companion dispatcher failed; using raw text");
+            crate::companion::dispatcher::Dispatched {
+                cleaned_text: assistant_text.clone(),
+                approvals: Vec::new(),
+                navigations: Vec::new(),
+                lab_opens: Vec::new(),
+                dashboards: Vec::new(),
+                cockpits: Vec::new(),
+                explain_cockpits: Vec::new(),
+                canvas_panels: Vec::new(),
+                canvas_controls: Vec::new(),
+                chat_cards: Vec::new(),
+                guide_walkthroughs: Vec::new(),
+                point_ats: Vec::new(),
+                composed_walkthroughs: Vec::new(),
+                composed_tours: Vec::new(),
+                quick_replies: Vec::new(),
+                tts_text: None,
+                requests_continuation: false,
+                warnings: vec![format!("dispatcher error: {e}")],
+                progress_beats: Vec::new(),
             }
-        };
+        }
+    };
 
     // NOTE: conversational `PROGRESS:` beats and non-final prose segments are
     // no longer flushed here in an end-of-turn loop. `run_cli` persists each one
@@ -1227,7 +1230,11 @@ async fn send_turn_inner(
             .filter_map(|a| {
                 serde_json::from_str::<serde_json::Value>(&a.params_json)
                     .ok()
-                    .and_then(|v| v.get("session_id").and_then(|x| x.as_str()).map(String::from))
+                    .and_then(|v| {
+                        v.get("session_id")
+                            .and_then(|x| x.as_str())
+                            .map(String::from)
+                    })
             })
             .collect();
         crate::commands::companion::fleet_bridge::finish_assessment_turn(
@@ -1290,10 +1297,8 @@ async fn send_turn_inner(
     // disappear.
     if autonomous_mode && !dispatched.approvals.is_empty() {
         for approval in &dispatched.approvals {
-            match crate::commands::companion::approvals::auto_resolve_if_allowed(
-                app, approval,
-            )
-            .await
+            match crate::commands::companion::approvals::auto_resolve_if_allowed(app, approval)
+                .await
             {
                 Ok(true) => tracing::info!(
                     approval_id = %approval.id,
@@ -1416,10 +1421,26 @@ async fn send_turn_inner(
         let persist = serde_json::from_str::<serde_json::Value>(spec_json)
             .map_err(|e| e.to_string())
             .and_then(|spec| {
-                let topic = spec.get("topic").and_then(|v| v.as_str()).unwrap_or("walkthrough").to_string();
-                let title = spec.get("title").and_then(|v| v.as_str()).unwrap_or("Walkthrough").to_string();
-                let description = spec.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let steps = spec.get("steps").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+                let topic = spec
+                    .get("topic")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("walkthrough")
+                    .to_string();
+                let title = spec
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Walkthrough")
+                    .to_string();
+                let description = spec
+                    .get("description")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let steps = spec
+                    .get("steps")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
                 crate::companion::tours::save_tour(&user_db, &topic, &title, &description, &steps)
                     .map_err(|e| e.to_string())
             });
@@ -1821,7 +1842,11 @@ fn companion_effort_override() -> Option<String> {
 /// each entry is one "she talked here" beat of prose. `full_text` is the
 /// concatenation (what the dispatcher parses for ops/beats — unchanged);
 /// `segments` lets send_turn surface non-final steps as interim messages.
-type CliRunOutput = (String, Vec<String>, Option<crate::companion::turn_ledger::CliUsage>);
+type CliRunOutput = (
+    String,
+    Vec<String>,
+    Option<crate::companion::turn_ledger::CliUsage>,
+);
 
 /// Strip machine-grammar lines from one assistant-message segment so it can be
 /// shown as an interim message. Mirrors the frontend `stripModelDirectives`
@@ -1913,8 +1938,7 @@ fn persist_stream_progress(
 /// The full web-build doctrine, embedded so a build session carries the whole
 /// playbook (P3). Cost is real (~12KB/turn); a later pass can switch to
 /// retrieval, but full injection keeps fidelity to the doctrine for now.
-const WEB_BUILD_DOCTRINE: &str =
-    include_str!("../../../docs/concepts/web-build-best-practices.md");
+const WEB_BUILD_DOCTRINE: &str = include_str!("../../../docs/concepts/web-build-best-practices.md");
 
 /// Static planning + rules block appended after the doctrine. Kept as a raw
 /// string so the `BUILD_PLAN:` JSON example needs no brace-escaping.
@@ -2195,9 +2219,11 @@ async fn run_cli(
         };
         argv.push("--effort".into());
         argv.push(effort.into());
-    } else if let Some(effort) = companion_effort_override()
-        .or_else(|| crate::companion::model_routing::MAIN.effort.map(String::from))
-    {
+    } else if let Some(effort) = companion_effort_override().or_else(|| {
+        crate::companion::model_routing::MAIN
+            .effort
+            .map(String::from)
+    }) {
         // Chat turns run on the P4 routing tier's effort (Opus@low — bench:
         // identical accuracy to the default, 16% lower p50 latency);
         // PERSONAS_ATHENA_EFFORT pins a different level for a measured run.
@@ -2527,7 +2553,10 @@ async fn run_cli(
             "CLI turn exited non-zero"
         );
         let trimmed = if stderr_text.len() > 600 {
-            format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr_text, 600))
+            format!(
+                "{}…",
+                crate::utils::text::truncate_on_char_boundary(&stderr_text, 600)
+            )
         } else {
             stderr_text.clone()
         };
@@ -2610,10 +2639,7 @@ pub fn clear_claude_session_id(pool: &UserDbPool, session_id: &str) -> Result<()
 ///     markdown dir isn't partitioned by conversation, so a scoped wipe
 ///     leaves disk untouched (SQL is what the UI binds to).
 ///   - Identity, constitution, doctrine, semantic facts: untouched.
-pub fn wipe_transcript(
-    pool: &UserDbPool,
-    conversation_id: Option<&str>,
-) -> Result<(), AppError> {
+pub fn wipe_transcript(pool: &UserDbPool, conversation_id: Option<&str>) -> Result<(), AppError> {
     let conn = pool.get()?;
 
     // Collect episode IDs first; we need them for the FTS + vec0 deletes
@@ -2624,7 +2650,10 @@ pub fn wipe_transcript(
                 "SELECT id FROM companion_node WHERE kind = 'episode' AND session_id = ?1",
                 vec![cid as &dyn rusqlite::ToSql],
             ),
-            None => ("SELECT id FROM companion_node WHERE kind = 'episode'", vec![]),
+            None => (
+                "SELECT id FROM companion_node WHERE kind = 'episode'",
+                vec![],
+            ),
         };
         match conn.prepare(sql) {
             Ok(mut stmt) => stmt
@@ -2875,7 +2904,10 @@ mod tests {
                 "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code",
                 "spawn_failed",
             ),
-            ("Failed to spawn Claude CLI: permission denied", "spawn_failed"),
+            (
+                "Failed to spawn Claude CLI: permission denied",
+                "spawn_failed",
+            ),
             ("Missing stdout pipe", "cli_io"),
             // Everything else: the `?` exits — DB writes, prompt assembly,
             // embedding. Rare, but equally invisible before.
@@ -2903,14 +2935,23 @@ mod tests {
     #[test]
     fn classifies_the_oneshot_leg_failure_exits() {
         let cases: &[(&str, &str)] = &[
-            ("spawn claude (consolidation): program not found", "spawn_failed"),
+            (
+                "spawn claude (consolidation): program not found",
+                "spawn_failed",
+            ),
             ("write stdin (reflection): pipe closed", "cli_io"),
             ("claude stdout missing (briefing)", "cli_io"),
             ("claude stderr missing (tours)", "cli_io"),
             ("read stdout (night_planner): broken pipe", "cli_io"),
-            ("await claude (night_unattended): no child process", "cli_io"),
+            (
+                "await claude (night_unattended): no child process",
+                "cli_io",
+            ),
             ("recall_synthesis timed out after 180s", "timeout"),
-            ("claude consolidation exited 1: model overloaded", "cli_nonzero_exit"),
+            (
+                "claude consolidation exited 1: model overloaded",
+                "cli_nonzero_exit",
+            ),
             // Exit code unavailable (killed by signal) — the "?" branch.
             ("claude briefing exited ?: ", "cli_nonzero_exit"),
         ];
@@ -2994,4 +3035,3 @@ fn emit_error(app: &AppHandle, session_id: &str, turn_id: &str, msg: &str) {
         },
     );
 }
-

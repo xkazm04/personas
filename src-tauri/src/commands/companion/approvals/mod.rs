@@ -132,7 +132,6 @@ impl ExecuteResult {
     }
 }
 
-
 // ── module family (split 2026-07-24; every file names its `approval_` role) ─
 // Glob re-exports keep the public path surface identical to the former
 // single-file module: `commands::companion::approvals::<item>` still resolves

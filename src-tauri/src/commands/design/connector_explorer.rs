@@ -8,9 +8,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::connector_explorer::{
-    explore_url, ConnectorManifestDraft, ExplorerOptions,
-};
+use crate::engine::connector_explorer::{explore_url, ConnectorManifestDraft, ExplorerOptions};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;

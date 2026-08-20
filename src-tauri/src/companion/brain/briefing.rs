@@ -250,14 +250,22 @@ pub fn sanitize_briefing_spec(raw: &str, delta: &SessionDelta) -> Result<String,
         .cloned()
         .unwrap_or_default();
 
-    let persona_ids: Vec<&str> = delta.failed_personas.iter().map(|p| p.id.as_str()).collect();
+    let persona_ids: Vec<&str> = delta
+        .failed_personas
+        .iter()
+        .map(|p| p.id.as_str())
+        .collect();
     let pausable_ids: Vec<&str> = delta
         .failed_personas
         .iter()
         .filter(|p| p.enabled)
         .map(|p| p.id.as_str())
         .collect();
-    let approval_ids: Vec<&str> = delta.pending_approvals.iter().map(|a| a.id.as_str()).collect();
+    let approval_ids: Vec<&str> = delta
+        .pending_approvals
+        .iter()
+        .map(|a| a.id.as_str())
+        .collect();
 
     let mut kept: Vec<serde_json::Value> = Vec::new();
     for (i, w) in widgets_in.into_iter().enumerate() {
@@ -275,7 +283,10 @@ pub fn sanitize_briefing_spec(raw: &str, delta: &SessionDelta) -> Result<String,
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
             .unwrap_or_else(|| format!("brief-{i}"));
-        let title_w = w.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let title_w = w
+            .get("title")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let span = w
             .get("span")
             .and_then(|v| v.as_u64())

@@ -175,11 +175,7 @@ fn fail_all_pending(reason: &str) {
 }
 
 /// Send one command frame to the extension and await its response.
-pub async fn send_command(
-    method: &str,
-    params: Value,
-    timeout: Duration,
-) -> Result<Value, String> {
+pub async fn send_command(method: &str, params: Value, timeout: Duration) -> Result<Value, String> {
     let tx = {
         let guard = shared().sender.read().unwrap_or_else(|p| p.into_inner());
         guard

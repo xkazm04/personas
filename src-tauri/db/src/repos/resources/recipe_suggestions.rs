@@ -6,9 +6,7 @@
 
 use rusqlite::params;
 
-use crate::models::{
-    RecipeSuggestionEvent, RecipeSuggestionEventType, RecipeSuggestionStats,
-};
+use crate::models::{RecipeSuggestionEvent, RecipeSuggestionEventType, RecipeSuggestionStats};
 use crate::DbPool;
 use personas_core::error::AppError;
 

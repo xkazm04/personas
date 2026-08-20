@@ -117,7 +117,10 @@ fn resolve_wiki_dir(
     // no override is supplied, so legitimate/default usage is unaffected.
     let base = default_wiki_dir(app, twin_id)?;
 
-    let rel = match override_dir.map(|s| s.trim().to_string()).filter(|s| !s.is_empty()) {
+    let rel = match override_dir
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+    {
         // Empty/unset override → the default base verbatim (legacy behavior).
         None => return Ok(base),
         Some(rel) => rel,
@@ -267,9 +270,9 @@ pub fn twin_get_active_profile(
                     .and_then(|m| m.get("twin"))
                     .filter(|s| !s.is_empty())
                 {
-                    if let Ok(cred) = crate::db::repos::resources::credentials::get_by_id(
-                        &state.db, cred_id,
-                    ) {
+                    if let Ok(cred) =
+                        crate::db::repos::resources::credentials::get_by_id(&state.db, cred_id)
+                    {
                         if let Ok(fields) =
                             crate::db::repos::resources::credentials::get_decrypted_fields(
                                 &state.db, &cred,
@@ -278,9 +281,7 @@ pub fn twin_get_active_profile(
                             if let Some(twin_pid) =
                                 fields.get("twin_profile_id").filter(|s| !s.is_empty())
                             {
-                                if let Ok(profile) =
-                                    repo::get_profile_by_id(&state.db, twin_pid)
-                                {
+                                if let Ok(profile) = repo::get_profile_by_id(&state.db, twin_pid) {
                                     return Ok(Some(profile));
                                 }
                             }
@@ -764,20 +765,21 @@ fn format_kb_grounding_with_map(
 ) -> Option<String> {
     // Clamp the corpus map to half the budget on a char boundary so it orients
     // without crowding out evidence.
-    let map_clamped: Option<String> = corpus_map
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|m| {
-            let cap = TWIN_KB_CHAR_BUDGET / 2;
-            if m.len() <= cap {
-                return m.to_string();
-            }
-            let mut end = cap;
-            while end > 0 && !m.is_char_boundary(end) {
-                end -= 1;
-            }
-            format!("{}…", &m[..end])
-        });
+    let map_clamped: Option<String> =
+        corpus_map
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|m| {
+                let cap = TWIN_KB_CHAR_BUDGET / 2;
+                if m.len() <= cap {
+                    return m.to_string();
+                }
+                let mut end = cap;
+                while end > 0 && !m.is_char_boundary(end) {
+                    end -= 1;
+                }
+                format!("{}…", &m[..end])
+            });
 
     // The map's bytes are already spent against the budget the chunks share.
     let mut used = map_clamped.as_ref().map(String::len).unwrap_or(0);
@@ -897,9 +899,10 @@ async fn twin_kb_block(state: &AppState, profile: &TwinProfile, query: &str) -> 
     else {
         return String::new();
     };
-    let (Some(embedder), Some(vector_store)) =
-        (state.embedding_manager.as_ref(), state.vector_store.as_ref())
-    else {
+    let (Some(embedder), Some(vector_store)) = (
+        state.embedding_manager.as_ref(),
+        state.vector_store.as_ref(),
+    ) else {
         return String::new();
     };
     retrieve_bound_kb_context(embedder, vector_store, &state.user_db, kb_id, query)
@@ -930,14 +933,21 @@ pub async fn twin_simulate_answer(
 
     let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
     let tone = repo::get_tone_optional(&state.db, &twin_id, "generic")?;
-    let facts =
-        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+    let facts = repo::top_distilled_facts_for_recall(
+        &state.db,
+        &twin_id,
+        None,
+        SIMULATE_ANSWER_FACTS_LIMIT,
+    )?;
 
     // D3: ground the answer in the twin's bound knowledge base (empty string —
     // byte-identical prior prompt — when unbound, ml-off, or a clean miss).
     let kb_block = twin_kb_block(&state, &profile, question).await;
 
-    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let effective = merge_directions(
+        profile.training_directives.as_deref(),
+        directions.as_deref(),
+    );
     let prompt_text = build_answer_prompt(
         &profile,
         tone.as_ref(),
@@ -1014,10 +1024,18 @@ pub async fn twin_draft_reply(
     };
 
     // Recall shelves: contact-scoped facts (+ self-facts) and recent thread.
-    let facts =
-        repo::top_distilled_facts_for_recall(&state.db, &twin_id, filter_ref, SIMULATE_ANSWER_FACTS_LIMIT)?;
-    let recent =
-        repo::list_communications_by_contact(&state.db, &twin_id, filter_ref, DRAFT_REPLY_COMMS_LIMIT)?;
+    let facts = repo::top_distilled_facts_for_recall(
+        &state.db,
+        &twin_id,
+        filter_ref,
+        SIMULATE_ANSWER_FACTS_LIMIT,
+    )?;
+    let recent = repo::list_communications_by_contact(
+        &state.db,
+        &twin_id,
+        filter_ref,
+        DRAFT_REPLY_COMMS_LIMIT,
+    )?;
 
     let inbound = inbound_message
         .as_deref()
@@ -1037,7 +1055,10 @@ pub async fn twin_draft_reply(
         .unwrap_or("");
     let kb_block = twin_kb_block(&state, &profile, kb_query).await;
 
-    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let effective = merge_directions(
+        profile.training_directives.as_deref(),
+        directions.as_deref(),
+    );
     let prompt_text = build_reply_prompt(
         &profile,
         tone.as_ref(),
@@ -1091,7 +1112,12 @@ fn build_reply_prompt(
                 "\n\nVoice for the {channel} channel — write the way they speak:\n{}",
                 t.voice_directives.trim()
             );
-            if let Some(len) = t.length_hint.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            if let Some(len) = t
+                .length_hint
+                .as_ref()
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+            {
                 s.push_str(&format!("\nPreferred reply length: {len}"));
             }
             s
@@ -1181,8 +1207,16 @@ fn build_answer_prompt(
 
     let tone_block = match tone {
         Some(t) if !t.voice_directives.trim().is_empty() => {
-            let mut s = format!("\n\nVoice — write the way they speak:\n{}", t.voice_directives.trim());
-            if let Some(len) = t.length_hint.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            let mut s = format!(
+                "\n\nVoice — write the way they speak:\n{}",
+                t.voice_directives.trim()
+            );
+            if let Some(len) = t
+                .length_hint
+                .as_ref()
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+            {
                 s.push_str(&format!("\nPreferred reply length: {len}"));
             }
             s
@@ -1331,7 +1365,13 @@ fn emit_studio_progress(app: &AppHandle, batch_id: &str, phase: &str, completed:
     );
 }
 
-fn emit_studio_complete(app: &AppHandle, batch_id: &str, status: &str, phase: &str, item_count: u32) {
+fn emit_studio_complete(
+    app: &AppHandle,
+    batch_id: &str,
+    status: &str,
+    phase: &str,
+    item_count: u32,
+) {
     let _ = app.emit(
         event_name::TWIN_STUDIO_COMPLETE,
         TwinStudioCompletePayload {
@@ -1427,8 +1467,12 @@ pub async fn twin_studio_generate_questions(
     require_auth(&state).await?;
 
     let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
-    let facts =
-        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+    let facts = repo::top_distilled_facts_for_recall(
+        &state.db,
+        &twin_id,
+        None,
+        SIMULATE_ANSWER_FACTS_LIMIT,
+    )?;
     let count = count.unwrap_or(8).clamp(1, STUDIO_QUESTION_MAX);
 
     let batch_id = uuid::Uuid::new_v4().to_string();
@@ -1446,7 +1490,10 @@ pub async fn twin_studio_generate_questions(
     TWIN_STUDIO_JOBS.set_status(&app, &batch_id, "running", None);
     emit_studio_progress(&app, &batch_id, "questions", 0, count);
 
-    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let effective = merge_directions(
+        profile.training_directives.as_deref(),
+        directions.as_deref(),
+    );
     let prompt_text = build_questions_prompt(&profile, &facts, &topic, effective.as_deref(), count);
     let app_handle = app.clone();
     let batch_for_task = batch_id.clone();
@@ -1481,12 +1528,19 @@ pub async fn twin_studio_generate_questions(
                 crate::notifications::send(
                     &app_handle,
                     "Training questions ready",
-                    &format!("{twin_name}: {n} questions drafted — review them in the Training Studio."),
+                    &format!(
+                        "{twin_name}: {n} questions drafted — review them in the Training Studio."
+                    ),
                 );
             }
             Err(e) => {
                 let msg = format!("{e}");
-                TWIN_STUDIO_JOBS.set_status(&app_handle, &batch_for_task, "failed", Some(msg.clone()));
+                TWIN_STUDIO_JOBS.set_status(
+                    &app_handle,
+                    &batch_for_task,
+                    "failed",
+                    Some(msg.clone()),
+                );
                 emit_studio_complete(&app_handle, &batch_for_task, "failed", "questions", 0);
                 if !msg.contains("Cancelled") {
                     crate::notifications::send(
@@ -1526,8 +1580,12 @@ pub async fn twin_studio_generate_answers(
 
     let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
     let tone = repo::get_tone_optional(&state.db, &twin_id, "generic")?;
-    let facts =
-        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+    let facts = repo::top_distilled_facts_for_recall(
+        &state.db,
+        &twin_id,
+        None,
+        SIMULATE_ANSWER_FACTS_LIMIT,
+    )?;
 
     let batch_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
@@ -1547,7 +1605,10 @@ pub async fn twin_studio_generate_answers(
     let app_handle = app.clone();
     let batch_for_task = batch_id.clone();
     let twin_name = profile.name.clone();
-    let directions_owned = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let directions_owned = merge_directions(
+        profile.training_directives.as_deref(),
+        directions.as_deref(),
+    );
     // The Studio batch runs in a detached task, so we hold an owned handle to the
     // AppState rather than the borrowed Tauri `State`; this is what lets each
     // answer retrieve from the twin's bound KB via the shared `twin_kb_block`.
@@ -1623,19 +1684,21 @@ pub fn twin_studio_get_batch(
     batch_id: String,
 ) -> Result<Option<TwinStudioBatch>, AppError> {
     require_auth_sync(&state)?;
-    Ok(TWIN_STUDIO_JOBS.get_snapshot_with(&batch_id, |id, job| TwinStudioBatch {
-        batch_id: id.to_string(),
-        status: if job.status.is_empty() {
-            "idle".into()
-        } else {
-            job.status.clone()
-        },
-        phase: job.extra.phase.clone(),
-        completed: job.extra.completed,
-        total: job.extra.total,
-        items: job.extra.items.clone(),
-        error: job.error.clone(),
-    }))
+    Ok(
+        TWIN_STUDIO_JOBS.get_snapshot_with(&batch_id, |id, job| TwinStudioBatch {
+            batch_id: id.to_string(),
+            status: if job.status.is_empty() {
+                "idle".into()
+            } else {
+                job.status.clone()
+            },
+            phase: job.extra.phase.clone(),
+            completed: job.extra.completed,
+            total: job.extra.total,
+            items: job.extra.items.clone(),
+            error: job.error.clone(),
+        }),
+    )
 }
 
 /// Cancel a running Studio batch.
@@ -1820,7 +1883,7 @@ pub async fn twin_ingest_url(
         Some("url_ingest"),
         &content,
         Some(&title_text),
-        3, // medium importance
+        3,    // medium importance
         None, // URL ingest doesn't originate from a single communication
     )
 }
@@ -1851,9 +1914,7 @@ pub async fn twin_compile_wiki(
     let dir_path = resolve_wiki_dir(&app, &twin_id, output_dir)?;
     std::fs::create_dir_all(&dir_path)
         .map_err(|e| AppError::Internal(format!("Failed to create output dir: {e}")))?;
-    let output_dir = dir_path
-        .to_string_lossy()
-        .to_string();
+    let output_dir = dir_path.to_string_lossy().to_string();
 
     let identity_block = format!(
         "Twin: {name}\nRole: {role}\nBio: {bio}\nLanguages: {langs}\n",
@@ -2062,7 +2123,7 @@ pub async fn twin_audit_wiki(
         Some("audit"),
         report.trim(),
         Some(&title_text),
-        4, // high importance — audits should surface clearly
+        4,    // high importance — audits should surface clearly
         None, // wiki audit synthesises from many files, not one communication
     )
 }
@@ -2214,10 +2275,7 @@ pub async fn twin_update_contact(
     notes: Option<String>,
 ) -> Result<TwinContact, AppError> {
     require_auth(&state).await?;
-    let alias_trim = alias
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
+    let alias_trim = alias.as_deref().map(str::trim).filter(|s| !s.is_empty());
     let notes_trim = notes.as_deref().map(str::trim).filter(|s| !s.is_empty());
     repo::update_contact(&state.db, &id, alias_trim, notes_trim)
 }
@@ -2414,8 +2472,7 @@ pub async fn twin_ingest_doctrine_docs(
     let twin = repo::get_profile_by_id(&state.db, &twin_id)?;
     let kb_id = twin.knowledge_base_id.clone().ok_or_else(|| {
         AppError::Validation(
-            "Twin has no bound knowledge base. Bind one in the Knowledge tab first."
-                .into(),
+            "Twin has no bound knowledge base. Bind one in the Knowledge tab first.".into(),
         )
     })?;
 
@@ -2523,7 +2580,9 @@ mod kb_grounding_tests {
     #[test]
     fn grounding_returns_none_when_nothing_usable() {
         assert!(format_kb_grounding(&[]).is_none());
-        assert!(format_kb_grounding(&[("".into(), None), ("   ".into(), Some("x".into()))]).is_none());
+        assert!(
+            format_kb_grounding(&[("".into(), None), ("   ".into(), Some("x".into()))]).is_none()
+        );
     }
 
     #[test]
@@ -2550,7 +2609,8 @@ mod kb_grounding_tests {
         )])
         .unwrap();
 
-        let answer = build_answer_prompt(&profile, None, &[], "What do you build?", None, &kb_block);
+        let answer =
+            build_answer_prompt(&profile, None, &[], "What do you build?", None, &kb_block);
         assert!(
             answer.contains("Kazimi ships Rust desktop apps"),
             "bound-KB fact must reach the simulate-answer prompt"
@@ -2584,25 +2644,30 @@ mod kb_grounding_tests {
         .unwrap();
         let map_at = block.find("Handbook").expect("corpus map present");
         let passage_at = block.find("A grounded passage").expect("passage present");
-        assert!(map_at < passage_at, "corpus map is prepended before passages");
-        assert!(block.contains("at a glance"), "map carries its orienting header");
+        assert!(
+            map_at < passage_at,
+            "corpus map is prepended before passages"
+        );
+        assert!(
+            block.contains("at a glance"),
+            "map carries its orienting header"
+        );
 
         // Map alone (no chunks) still yields a block — a bound KB with nothing
         // near the query is filtered upstream, but the formatter must not panic
         // or drop a lone map.
-        let map_only =
-            format_kb_grounding_with_map(&[], Some("# KB\n\nsome shape")).unwrap();
+        let map_only = format_kb_grounding_with_map(&[], Some("# KB\n\nsome shape")).unwrap();
         assert!(map_only.contains("some shape"));
 
         // Oversized map is clamped to <= half the budget (plus the ellipsis),
         // so evidence chunks always keep room.
         let huge = "m".repeat(TWIN_KB_CHAR_BUDGET);
-        let clamped = format_kb_grounding_with_map(
-            &[("FIRST evidence".into(), None)],
-            Some(&huge),
-        )
-        .unwrap();
-        assert!(clamped.contains("FIRST evidence"), "closest chunk still admitted");
+        let clamped =
+            format_kb_grounding_with_map(&[("FIRST evidence".into(), None)], Some(&huge)).unwrap();
+        assert!(
+            clamped.contains("FIRST evidence"),
+            "closest chunk still admitted"
+        );
     }
 
     #[test]
@@ -2638,7 +2703,10 @@ mod kb_grounding_tests {
             prompt.contains("cargo tauri:build:stable"),
             "seeded KB fact must reach the studio batch answer prompt (CLI boundary)"
         );
-        assert!(prompt.contains("release.md"), "provenance reaches the prompt");
+        assert!(
+            prompt.contains("release.md"),
+            "provenance reaches the prompt"
+        );
 
         // Provenance flag the batch records on the resulting item.
         let kb_grounded = !kb_block.is_empty();

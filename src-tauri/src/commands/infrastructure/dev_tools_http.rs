@@ -48,11 +48,15 @@ use crate::commands::infrastructure::context_generation::{
     launch_context_scan, list_scans_json, scan_status_json,
 };
 use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
-use crate::commands::infrastructure::kpi_scan::{kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan};
+use crate::commands::infrastructure::kpi_scan::{
+    kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan,
+};
 use crate::commands::infrastructure::kpi_sim::{
     ingest_kpi_sim, prepare_kpi_sim, KpiSimIngestSummary, KpiSimPrepared,
 };
-use crate::commands::infrastructure::use_case_scan::{launch_use_case_scan, use_case_scan_status_json};
+use crate::commands::infrastructure::use_case_scan::{
+    launch_use_case_scan, use_case_scan_status_json,
+};
 use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseCase};
 use crate::db::repos::dev_tools as repo;
 use crate::db::repos::dev_workspaces as ws_repo;
@@ -119,7 +123,6 @@ fn db(s: &DevToolsHttp) -> DbPool {
 fn err(e: AppError) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
 }
-
 
 // ============================================================================
 // Pattern fabric — the CLI consult layer (pattern-fabric F2)
@@ -238,7 +241,11 @@ async fn patterns_consult(
         .intent
         .clone()
         .filter(|i| !i.trim().is_empty())
-        .ok_or_else(|| err(AppError::Validation("Pass intent=<what you are about to do>".into())))?;
+        .ok_or_else(|| {
+            err(AppError::Validation(
+                "Pass intent=<what you are about to do>".into(),
+            ))
+        })?;
 
     let playbooks = ws_repo::list_playbooks(&pool, &ws).map_err(err)?;
     let members = ws_repo::list_playbook_patterns(&pool, &ws).map_err(err)?;
@@ -331,8 +338,7 @@ async fn patterns_consult(
         .iter()
         .filter_map(|m| m.get("slug").and_then(Value::as_str).map(str::to_string))
         .collect();
-    if let Err(e) =
-        ws_repo::insert_consult_log(&pool, &ws, project_id.as_deref(), &intent, &served)
+    if let Err(e) = ws_repo::insert_consult_log(&pool, &ws, project_id.as_deref(), &intent, &served)
     {
         tracing::warn!(error = %e, "patterns/consult: telemetry write failed");
     }
@@ -421,8 +427,8 @@ async fn patterns_propose(
         layer: None,
         evidence: Vec::new(),
     };
-    let summary = ws_repo::ingest_candidates(&pool, &ws, &[candidate], "cli-consult", None)
-        .map_err(err)?;
+    let summary =
+        ws_repo::ingest_candidates(&pool, &ws, &[candidate], "cli-consult", None).map_err(err)?;
     // Resolve the created row (skipped = dedup/validation refusal, surfaced).
     let created = if summary.inserted > 0 {
         let conn = pool.get().map_err(|e| err(AppError::from(e)))?;
@@ -440,8 +446,14 @@ async fn patterns_propose(
         // parent), matching the harvest door and the modal's edge labels —
         // the child renders "extends <parent>", the parent "extended by".
         // (F2 had this reversed; fixed in F4 before any real data existed.)
-        ws_repo::set_pattern_edge(&pool, new_id, parent, "extends", Some("proposed via consult"))
-            .map_err(err)?;
+        ws_repo::set_pattern_edge(
+            &pool,
+            new_id,
+            parent,
+            "extends",
+            Some("proposed via consult"),
+        )
+        .map_err(err)?;
     }
     Ok(Json(serde_json::json!({
         "inserted": summary.inserted,
@@ -451,7 +463,9 @@ async fn patterns_propose(
     })))
 }
 
-async fn list_projects(State(s): State<DevToolsHttp>) -> Result<Json<Vec<DevProject>>, (StatusCode, String)> {
+async fn list_projects(
+    State(s): State<DevToolsHttp>,
+) -> Result<Json<Vec<DevProject>>, (StatusCode, String)> {
     let projects = repo::list_projects(&db(&s), None).map_err(err)?;
     Ok(Json(projects))
 }
@@ -506,7 +520,15 @@ async fn scan_codebase(
     let pool = db(&s);
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
     let root = b.root_path.as_deref().unwrap_or("");
-    let res = launch_context_scan(s.app.clone(), &pool, &project, root, b.delta_mode.unwrap_or(false), b.subtree.as_deref()).map_err(err)?;
+    let res = launch_context_scan(
+        s.app.clone(),
+        &pool,
+        &project,
+        root,
+        b.delta_mode.unwrap_or(false),
+        b.subtree.as_deref(),
+    )
+    .map_err(err)?;
     Ok(Json(res))
 }
 
@@ -552,11 +574,15 @@ async fn scan_kpis(
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let pool = db(&s);
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
-    let res = launch_kpi_scan(s.app.clone(), &pool, &project, b.context_id.as_deref()).map_err(err)?;
+    let res =
+        launch_kpi_scan(s.app.clone(), &pool, &project, b.context_id.as_deref()).map_err(err)?;
     Ok(Json(res))
 }
 
-async fn kpi_scan_status(State(_s): State<DevToolsHttp>, Path(scan_id): Path<String>) -> Json<Value> {
+async fn kpi_scan_status(
+    State(_s): State<DevToolsHttp>,
+    Path(scan_id): Path<String>,
+) -> Json<Value> {
     Json(kpi_scan_status_json(&scan_id))
 }
 
@@ -824,7 +850,10 @@ async fn repair_cross_refs_route(
     )
     .map_err(err)?;
     let mut out = serde_json::to_value(&plan).map_err(|e| {
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("serialize repair plan: {e}"))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("serialize repair plan: {e}"),
+        )
     })?;
     if b.apply && plan.contexts_written > 0 {
         // Repair, then export — the same discipline the consolidate route
@@ -867,8 +896,10 @@ async fn merge_context_groups(
     require_project(&s, &b.project_id)?;
 
     let groups = repo::list_context_groups(&pool, &b.project_id).map_err(err)?;
-    let by_name: std::collections::HashMap<&str, &str> =
-        groups.iter().map(|g| (g.name.as_str(), g.id.as_str())).collect();
+    let by_name: std::collections::HashMap<&str, &str> = groups
+        .iter()
+        .map(|g| (g.name.as_str(), g.id.as_str()))
+        .collect();
 
     let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
     let (mut moved, mut deleted) = (0usize, 0usize);
@@ -884,7 +915,10 @@ async fn merge_context_groups(
         if from_id == into_id {
             continue;
         }
-        for c in contexts.iter().filter(|c| c.group_id.as_deref() == Some(*from_id)) {
+        for c in contexts
+            .iter()
+            .filter(|c| c.group_id.as_deref() == Some(*from_id))
+        {
             if repo::move_context_to_group(&pool, &c.id, Some(into_id)).is_ok() {
                 moved += 1;
             }
@@ -939,7 +973,11 @@ async fn prune_nonsource_contexts(
         if paths.is_empty() {
             continue;
         }
-        let kept: Vec<String> = paths.iter().filter(|p| is_mappable_path(p)).cloned().collect();
+        let kept: Vec<String> = paths
+            .iter()
+            .filter(|p| is_mappable_path(p))
+            .cloned()
+            .collect();
         if kept.len() == paths.len() {
             continue;
         }
@@ -951,8 +989,19 @@ async fn prune_nonsource_contexts(
         } else {
             let json = serde_json::to_string(&kept).unwrap_or_else(|_| "[]".into());
             if repo::update_context(
-                &pool, &c.id, None, None, Some(&json),
-                None, None, None, None, None, None, None, None,
+                &pool,
+                &c.id,
+                None,
+                None,
+                Some(&json),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
             )
             .is_ok()
             {
@@ -1106,7 +1155,8 @@ async fn dedupe_context_groups(
 
     let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
     let mut keeper: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    let mut merged_away: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut merged_away: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     for g in &groups {
         match keeper.get(&g.name) {
             None => {
@@ -1120,7 +1170,9 @@ async fn dedupe_context_groups(
 
     let mut contexts_moved = 0usize;
     for c in contexts {
-        let Some(gid) = c.group_id.as_deref() else { continue };
+        let Some(gid) = c.group_id.as_deref() else {
+            continue;
+        };
         if let Some(keep_id) = merged_away.get(gid) {
             if repo::move_context_to_group(&pool, &c.id, Some(keep_id)).is_ok() {
                 contexts_moved += 1;
@@ -1217,7 +1269,9 @@ async fn kpi_sim_prepare(
     State(s): State<DevToolsHttp>,
     Json(b): Json<KpiSimBody>,
 ) -> Result<Json<KpiSimPrepared>, (StatusCode, String)> {
-    prepare_kpi_sim(&db(&s), &b.project_id).map(Json).map_err(err)
+    prepare_kpi_sim(&db(&s), &b.project_id)
+        .map(Json)
+        .map_err(err)
 }
 
 /// Ingest a finished simulation run. Same validation and idempotency as the IPC
@@ -1340,7 +1394,11 @@ async fn kpi_update(
     State(s): State<DevToolsHttp>,
     Json(b): Json<KpiUpdateBody>,
 ) -> Result<Json<DevKpi>, (StatusCode, String)> {
-    fn check(field: &str, value: Option<&String>, allowed: &[&str]) -> Result<(), (StatusCode, String)> {
+    fn check(
+        field: &str,
+        value: Option<&String>,
+        allowed: &[&str],
+    ) -> Result<(), (StatusCode, String)> {
         match value {
             Some(v) if !allowed.contains(&v.as_str()) => Err((
                 StatusCode::BAD_REQUEST,
@@ -1349,15 +1407,27 @@ async fn kpi_update(
             _ => Ok(()),
         }
     }
-    check("category", b.category.as_ref(), &["technical", "traffic", "value", "quality"])?;
+    check(
+        "category",
+        b.category.as_ref(),
+        &["technical", "traffic", "value", "quality"],
+    )?;
     check(
         "measure_kind",
         b.measure_kind.as_ref(),
         &["codebase", "connector", "manual", "derived"],
     )?;
     check("direction", b.direction.as_ref(), &["up", "down"])?;
-    check("cadence", b.cadence.as_ref(), &["manual", "daily", "weekly"])?;
-    check("tier", b.tier.as_ref(), &["north_star", "primary", "supporting"])?;
+    check(
+        "cadence",
+        b.cadence.as_ref(),
+        &["manual", "daily", "weekly"],
+    )?;
+    check(
+        "tier",
+        b.tier.as_ref(),
+        &["north_star", "primary", "supporting"],
+    )?;
 
     // Reject a no-op explicitly. Silently returning the unchanged row would read
     // as "your correction was saved" to a caller that mistyped a field name.
@@ -1430,8 +1500,8 @@ async fn kpi_rebind(
     Json(b): Json<KpiRebindBody>,
 ) -> Result<Json<DevKpi>, (StatusCode, String)> {
     let pool = db(&s);
-    let kpi = repo::get_kpi(&pool, &b.kpi_id)
-        .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
+    let kpi =
+        repo::get_kpi(&pool, &b.kpi_id).map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
     let ctx = repo::get_context_by_id(&pool, &b.context_id)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
     if ctx.project_id != kpi.project_id {

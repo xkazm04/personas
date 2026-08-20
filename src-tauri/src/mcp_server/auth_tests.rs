@@ -58,9 +58,13 @@ fn audit_count(pool: &McpDbPool) -> i64 {
 #[test]
 fn initialize_succeeds_without_token() {
     let pool = test_pool();
-    let req = json!({ "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {} }).to_string();
+    let req =
+        json!({ "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {} }).to_string();
     let resp = handle_jsonrpc(&req, &pool, None).expect("response");
-    assert!(resp.get("result").is_some(), "initialize must succeed without a token: {resp}");
+    assert!(
+        resp.get("result").is_some(),
+        "initialize must succeed without a token: {resp}"
+    );
     assert!(resp.get("error").is_none());
 }
 
@@ -72,7 +76,10 @@ fn tool_call_without_token_is_rejected() {
     assert_eq!(err["code"], json!(-32001));
     let msg = err["message"].as_str().unwrap();
     assert!(msg.contains("Authentication required"), "msg: {msg}");
-    assert!(msg.contains("install"), "error must name the fix (re-run install): {msg}");
+    assert!(
+        msg.contains("install"),
+        "error must name the fix (re-run install): {msg}"
+    );
     // Unregistered/absent token → nothing to audit per-key.
     assert_eq!(audit_count(&pool), 0);
 }
@@ -88,7 +95,10 @@ fn tool_call_with_unregistered_token_is_rejected() {
     .expect("response");
     let err = resp.get("error").expect("expected a JSON-RPC error");
     assert_eq!(err["code"], json!(-32001));
-    assert!(err["message"].as_str().unwrap().contains("Invalid or expired"));
+    assert!(err["message"]
+        .as_str()
+        .unwrap()
+        .contains("Invalid or expired"));
 }
 
 #[test]
@@ -106,7 +116,10 @@ fn tool_call_with_underscoped_token_is_rejected_and_audited() {
     .expect("response");
     let err = out.get("error").expect("expected a JSON-RPC error");
     assert_eq!(err["code"], json!(-32001));
-    assert!(err["message"].as_str().unwrap().contains(MCP_REQUIRED_SCOPE));
+    assert!(err["message"]
+        .as_str()
+        .unwrap()
+        .contains(MCP_REQUIRED_SCOPE));
 
     // A 403 scope-denial is audited against the resolved key.
     assert_eq!(audit_count(&pool), 1);
@@ -142,7 +155,10 @@ fn tool_call_with_valid_scoped_token_passes_gate_and_audits_success() {
     .expect("response");
 
     // The gate passed → a `result` (the tool ran), NOT the -32001 auth error.
-    assert!(out.get("error").is_none(), "auth gate should not reject a scoped token: {out}");
+    assert!(
+        out.get("error").is_none(),
+        "auth gate should not reject a scoped token: {out}"
+    );
     assert!(out.get("result").is_some(), "expected a tool result: {out}");
 
     // Success is audited as a 200 against the key.

@@ -604,8 +604,9 @@ mod tests {
         let (_, attacker_pk, attacker_key) = identity();
         let nonce = generate_nonce();
         let t = hello_transcript(&victim_peer_id, &nonce);
-        let err = verify_handshake_proof(&victim_peer_id, &attacker_pk, &t, &sign(&attacker_key, &t))
-            .expect_err("peer_id/public-key mismatch must be refused");
+        let err =
+            verify_handshake_proof(&victim_peer_id, &attacker_pk, &t, &sign(&attacker_key, &t))
+                .expect_err("peer_id/public-key mismatch must be refused");
         assert!(
             err.to_string().contains("does not match"),
             "unexpected reason: {err}"
@@ -658,7 +659,10 @@ mod tests {
         // Initiator computes (self, remote); responder computes (remote, self).
         let initiator = pairing_fingerprint(&a, &b, &session);
         let responder = pairing_fingerprint(&b, &a, &session);
-        assert_eq!(initiator, responder, "fingerprint must be order-independent");
+        assert_eq!(
+            initiator, responder,
+            "fingerprint must be order-independent"
+        );
         assert_eq!(initiator.len(), 7, "format is NNN-NNN");
         assert_eq!(&initiator[3..4], "-");
         assert!(initiator

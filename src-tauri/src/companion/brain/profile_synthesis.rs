@@ -79,10 +79,9 @@ async fn try_run(user_db: &UserDbPool, sys_db: &DbPool, app: &AppHandle) -> Resu
         return Ok(());
     }
 
-    let identity = std::fs::read_to_string(
-        crate::companion::disk::brain_root()?.join("identity.md"),
-    )
-    .unwrap_or_default();
+    let identity =
+        std::fs::read_to_string(crate::companion::disk::brain_root()?.join("identity.md"))
+            .unwrap_or_default();
     let prompt = build_prompt(&digest, &identity);
 
     let (blob, _turn_id) =
@@ -99,7 +98,10 @@ async fn try_run(user_db: &UserDbPool, sys_db: &DbPool, app: &AppHandle) -> Resu
         &diffs,
         "From a weekly look at how you've actually been working with me — please review.",
     )?;
-    tracing::info!(diffs = diffs.len(), "profile_synthesis: proposed identity diffs for review");
+    tracing::info!(
+        diffs = diffs.len(),
+        "profile_synthesis: proposed identity diffs for review"
+    );
     Ok(())
 }
 
@@ -140,7 +142,11 @@ fn gather_digest(pool: &UserDbPool) -> Result<String, AppError> {
         )?;
         let rows = stmt
             .query_map([], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?))
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, i64>(1)?,
+                    r.get::<_, i64>(2)?,
+                ))
             })?
             .collect::<Result<Vec<_>, _>>()?;
         if !rows.is_empty() {
@@ -317,7 +323,8 @@ fn parse_diffs(blob: &str) -> Vec<serde_json::Value> {
             continue;
         };
         if let Some(close) = match_braces(&blob[open..]) {
-            if let Ok(env) = serde_json::from_str::<SynthesisEnvelope>(&blob[open..open + close + 1])
+            if let Ok(env) =
+                serde_json::from_str::<SynthesisEnvelope>(&blob[open..open + close + 1])
             {
                 found = env.profile_synthesis.diffs;
             }
@@ -362,7 +369,12 @@ fn insert_identity_approval(
 }
 
 fn short_id() -> String {
-    uuid::Uuid::new_v4().simple().to_string().chars().take(12).collect()
+    uuid::Uuid::new_v4()
+        .simple()
+        .to_string()
+        .chars()
+        .take(12)
+        .collect()
 }
 
 #[cfg(test)]
@@ -443,7 +455,9 @@ mod tests {
     #[test]
     fn inserts_pending_approval() {
         let p = pool();
-        let diffs = vec![serde_json::json!({"section":"About Michal / What helps","op":"append","new_text":"x","rationale":"y"})];
+        let diffs = vec![
+            serde_json::json!({"section":"About Michal / What helps","op":"append","new_text":"x","rationale":"y"}),
+        ];
         let created = insert_identity_approval(&p, &diffs, "test").unwrap();
         assert_eq!(created.action, "update_identity");
         let (status, action): (String, String) = p

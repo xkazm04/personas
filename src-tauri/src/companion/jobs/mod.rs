@@ -238,7 +238,9 @@ pub fn enqueue_task(
     let id = format!("job_{}", short_uuid());
     let now = Utc::now().to_rfc3339();
     let params_str = params.to_string();
-    let title = short_title.map(|s| s.to_string()).unwrap_or_else(|| default_title(kind));
+    let title = short_title
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| default_title(kind));
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_background_job

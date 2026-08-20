@@ -17,8 +17,8 @@ use crate::validation::open_log_file_safely;
 // Both log-reading commands below mask on READ. The historical files predate
 // the sink fix in engine/src/logger.rs and still contain plaintext credentials;
 // `[STDOUT]` lines are precisely where they landed.
-use personas_core::utils::sanitization::sanitize_secrets;
 use crate::AppState;
+use personas_core::utils::sanitization::sanitize_secrets;
 use personas_macros::requires;
 
 /// Verify that the execution belongs to the expected persona.
@@ -70,8 +70,8 @@ pub fn list_all_executions(
     persona_id: Option<String>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     require_auth_sync(&state)?;
-    let cutoff = (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS))
-        .to_rfc3339();
+    let cutoff =
+        (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS)).to_rfc3339();
     repo::get_all_global(
         &state.db,
         limit,
@@ -221,9 +221,9 @@ pub(crate) async fn execute_persona_inner(
     // (fail-safe: never run blind because the DB was momentarily unavailable).
     if !is_simulation {
         let live_missing = match state.db.get() {
-            Ok(conn) => crate::commands::design::connector_readiness::persona_live_blockers(
-                &conn, &persona,
-            ),
+            Ok(conn) => {
+                crate::commands::design::connector_readiness::persona_live_blockers(&conn, &persona)
+            }
             Err(_) if persona.setup_status == "needs_credentials" => vec![
                 crate::commands::design::connector_readiness::Readiness::NeedsSetup {
                     connector: String::new(),
@@ -319,10 +319,9 @@ pub(crate) async fn execute_persona_inner(
         if let Some(tf) = use_case.get("time_filter").cloned() {
             merged.entry("_time_filter".to_string()).or_insert(tf);
         }
-        input_data = Some(
-            serde_json::to_string(&merged)
-                .map_err(|e| AppError::Internal(format!("Failed to serialize merged input_data: {e}")))?,
-        );
+        input_data = Some(serde_json::to_string(&merged).map_err(|e| {
+            AppError::Internal(format!("Failed to serialize merged input_data: {e}"))
+        })?);
 
         // Apply model_override (if any) by mutating the persona's model_profile
         // for this execution. Engine reads persona.model_profile at spawn time.

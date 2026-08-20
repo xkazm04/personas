@@ -15,8 +15,8 @@ use rusqlite::{params, OptionalExtension, Row};
 use crate::models::{
     DevProject, DevWorkspace, PlaybookConsultCount, PracticeContextRollup, UnmatchedIntent,
     WorkspaceConsultStats, WorkspaceHarvestCoverage, WorkspaceImportItem, WorkspaceKnowledge,
-    WorkspaceKnowledgeEvidence,
-    WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern, WorkspacePracticeAdoption,
+    WorkspaceKnowledgeEvidence, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
+    WorkspacePracticeAdoption,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -277,7 +277,8 @@ pub fn list_workspaces(pool: &DbPool) -> Result<Vec<DevWorkspace>, AppError> {
         let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT * FROM dev_workspaces ORDER BY name COLLATE NOCASE")?;
         let rows = stmt.query_map([], row_to_workspace)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -304,7 +305,9 @@ pub fn create_workspace(
     adopt_default_skills: bool,
 ) -> Result<DevWorkspace, AppError> {
     if name.trim().is_empty() {
-        return Err(AppError::Validation("Workspace name cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Workspace name cannot be empty".into(),
+        ));
     }
     timed_query!("dev_workspaces", "dev_workspaces::create_workspace", {
         let id = uuid::Uuid::new_v4().to_string();
@@ -328,7 +331,9 @@ pub fn update_workspace(
 ) -> Result<DevWorkspace, AppError> {
     if let Some(n) = name {
         if n.trim().is_empty() {
-            return Err(AppError::Validation("Workspace name cannot be empty".into()));
+            return Err(AppError::Validation(
+                "Workspace name cannot be empty".into(),
+            ));
         }
     }
     timed_query!("dev_workspaces", "dev_workspaces::update_workspace", {
@@ -418,7 +423,9 @@ pub fn delete_workspace(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// Arc-1 heuristic — richer RepoEvidence matching arrives with the harvest
 /// engine.
 pub fn applicability_matches(applicability: Option<&str>, tech_stack: Option<&str>) -> bool {
-    let Some(raw) = applicability else { return true };
+    let Some(raw) = applicability else {
+        return true;
+    };
     let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
         return true;
     };
@@ -573,33 +580,39 @@ pub fn list_knowledge(
                  ORDER BY updated_at DESC",
             )?;
             let rows = stmt.query_map(params![workspace_id, status], row_to_knowledge)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM workspace_knowledge WHERE workspace_id = ?1
                  ORDER BY updated_at DESC",
             )?;
             let rows = stmt.query_map(params![workspace_id], row_to_knowledge)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
 
 pub fn get_knowledge_by_id(pool: &DbPool, id: &str) -> Result<WorkspaceKnowledge, AppError> {
-    timed_query!("workspace_knowledge", "dev_workspaces::get_knowledge_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM workspace_knowledge WHERE id = ?1",
-            params![id],
-            row_to_knowledge,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Workspace knowledge {id}"))
-            }
-            other => AppError::Database(other),
-        })
-    })
+    timed_query!(
+        "workspace_knowledge",
+        "dev_workspaces::get_knowledge_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM workspace_knowledge WHERE id = ?1",
+                params![id],
+                row_to_knowledge,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Workspace knowledge {id}"))
+                }
+                other => AppError::Database(other),
+            })
+        }
+    )
 }
 
 /// Create a human-authored practice. Lands as `proposed` (the author is
@@ -896,9 +909,8 @@ pub fn decide_knowledge_cas(
             }
 
             let members: Vec<(String, Option<String>)> = {
-                let mut stmt = tx.prepare(
-                    "SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1",
-                )?;
+                let mut stmt =
+                    tx.prepare("SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1")?;
                 let rows = stmt
                     .query_map(params![item.workspace_id], |r| Ok((r.get(0)?, r.get(1)?)))?
                     .collect::<Result<Vec<_>, _>>()?;
@@ -977,60 +989,64 @@ pub struct BulkDecision {
 /// item in that topic with no governor points at it. No doctrine, no linking —
 /// an invented parent is worse than a flat list.
 pub fn roll_up_topic_doctrine(pool: &DbPool, workspace_id: &str) -> Result<u32, AppError> {
-    timed_query!("workspace_knowledge", "dev_workspaces::roll_up_topic_doctrine", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let mut conn = pool.get()?;
-        let tx = conn.transaction()?;
-        let rows: Vec<(String, String, Option<String>, i64, Option<String>)> = {
-            let mut stmt = tx.prepare(
-                "SELECT id, topic, abstraction, COALESCE(evidence_count, 0), governing_id
+    timed_query!(
+        "workspace_knowledge",
+        "dev_workspaces::roll_up_topic_doctrine",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut conn = pool.get()?;
+            let tx = conn.transaction()?;
+            let rows: Vec<(String, String, Option<String>, i64, Option<String>)> = {
+                let mut stmt = tx.prepare(
+                    "SELECT id, topic, abstraction, COALESCE(evidence_count, 0), governing_id
                  FROM workspace_knowledge
                  WHERE workspace_id = ?1 AND status NOT IN ('rejected', 'deprecated')",
-            )?;
-            let r = stmt
-                .query_map(params![workspace_id], |r| {
-                    Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
-                })?
-                .collect::<Result<Vec<_>, _>>()?;
-            r
-        };
-
-        let mut doctrine: HashMap<String, (String, i64)> = HashMap::new();
-        for (id, topic, abstraction, evidence, _) in &rows {
-            if abstraction.as_deref() != Some("macro") {
-                continue;
-            }
-            doctrine
-                .entry(topic.clone())
-                .and_modify(|best| {
-                    // Ties break on id so the choice is stable across runs.
-                    if *evidence > best.1 || (*evidence == best.1 && *id < best.0) {
-                        *best = (id.clone(), *evidence);
-                    }
-                })
-                .or_insert((id.clone(), *evidence));
-        }
-
-        let mut linked = 0u32;
-        for (id, topic, _, _, governing) in &rows {
-            if governing.is_some() {
-                continue;
-            }
-            let Some((doc_id, _)) = doctrine.get(topic) else {
-                continue;
+                )?;
+                let r = stmt
+                    .query_map(params![workspace_id], |r| {
+                        Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?;
+                r
             };
-            if doc_id == id {
-                continue; // the doctrine does not govern itself
+
+            let mut doctrine: HashMap<String, (String, i64)> = HashMap::new();
+            for (id, topic, abstraction, evidence, _) in &rows {
+                if abstraction.as_deref() != Some("macro") {
+                    continue;
+                }
+                doctrine
+                    .entry(topic.clone())
+                    .and_modify(|best| {
+                        // Ties break on id so the choice is stable across runs.
+                        if *evidence > best.1 || (*evidence == best.1 && *id < best.0) {
+                            *best = (id.clone(), *evidence);
+                        }
+                    })
+                    .or_insert((id.clone(), *evidence));
             }
-            tx.execute(
+
+            let mut linked = 0u32;
+            for (id, topic, _, _, governing) in &rows {
+                if governing.is_some() {
+                    continue;
+                }
+                let Some((doc_id, _)) = doctrine.get(topic) else {
+                    continue;
+                };
+                if doc_id == id {
+                    continue; // the doctrine does not govern itself
+                }
+                tx.execute(
                 "UPDATE workspace_knowledge SET governing_id = ?1, updated_at = ?2 WHERE id = ?3",
                 params![doc_id, now, id],
             )?;
-            linked += 1;
+                linked += 1;
+            }
+            tx.commit()?;
+            Ok(linked)
         }
-        tx.commit()?;
-        Ok(linked)
-    })
+    )
 }
 
 pub fn delete_knowledge(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -1242,17 +1258,22 @@ pub fn list_adoption(
     pool: &DbPool,
     workspace_id: &str,
 ) -> Result<Vec<WorkspacePracticeAdoption>, AppError> {
-    timed_query!("workspace_practice_adoption", "dev_workspaces::list_adoption", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT a.* FROM workspace_practice_adoption a
+    timed_query!(
+        "workspace_practice_adoption",
+        "dev_workspaces::list_adoption",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT a.* FROM workspace_practice_adoption a
              JOIN workspace_knowledge k ON k.id = a.practice_id
              WHERE k.workspace_id = ?1
              ORDER BY a.updated_at DESC",
-        )?;
-        let rows = stmt.query_map(params![workspace_id], row_to_adoption)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![workspace_id], row_to_adoption)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn set_adoption(
@@ -1265,11 +1286,14 @@ pub fn set_adoption(
 ) -> Result<WorkspacePracticeAdoption, AppError> {
     validate_one_of(state, &ADOPTION_STATES, "state")?;
     get_knowledge_by_id(pool, practice_id)?;
-    timed_query!("workspace_practice_adoption", "dev_workspaces::set_adoption", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO workspace_practice_adoption
+    timed_query!(
+        "workspace_practice_adoption",
+        "dev_workspaces::set_adoption",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO workspace_practice_adoption
                  (practice_id, project_id, state, note, fleet_key, last_verified_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, CASE WHEN ?3 = 'adopted' THEN ?6 ELSE NULL END, ?6)
              ON CONFLICT(practice_id, project_id) DO UPDATE SET
@@ -1280,15 +1304,16 @@ pub fn set_adoption(
                                          THEN excluded.updated_at
                                          ELSE last_verified_at END,
                  updated_at = excluded.updated_at",
-            params![practice_id, project_id, state, note, fleet_key, now],
-        )?;
-        conn.query_row(
+                params![practice_id, project_id, state, note, fleet_key, now],
+            )?;
+            conn.query_row(
             "SELECT * FROM workspace_practice_adoption WHERE practice_id = ?1 AND project_id = ?2",
             params![practice_id, project_id],
             row_to_adoption,
         )
         .map_err(AppError::Database)
-    })
+        }
+    )
 }
 
 // ============================================================================
@@ -1415,7 +1440,8 @@ pub fn to_process_projects(pool: &DbPool, practice_id: &str) -> Result<Vec<Strin
          WHERE practice_id = ?1 AND state = 'to_process'",
     )?;
     let rows = stmt.query_map(params![practice_id], |r| r.get::<_, String>(0))?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Materialize every `to_process` cell of one practice. The single entry point
@@ -1477,7 +1503,9 @@ pub fn backfill_practice_ideas(pool: &DbPool) -> Result<u32, AppError> {
     for (practice_id, project_ids) in by_practice {
         match get_knowledge_by_id(pool, &practice_id) {
             Ok(practice) => created += materialize_practice_ideas(pool, &practice, &project_ids)?,
-            Err(e) => tracing::warn!(practice_id = %practice_id, error = %e, "backfill: practice unreadable"),
+            Err(e) => {
+                tracing::warn!(practice_id = %practice_id, error = %e, "backfill: practice unreadable")
+            }
         }
     }
     Ok(created)
@@ -1529,7 +1557,14 @@ pub fn sync_practice_adoption(pool: &DbPool, idea: &crate::models::DevIdea) {
         .filter(|r| !r.trim().is_empty())
         .map(|r| format!("backlog rejected: {r}"))
         .unwrap_or_else(|| "backlog rejected".to_string());
-    if let Err(e) = set_adoption(pool, &practice_id, project_id, "diverged", Some(&note), None) {
+    if let Err(e) = set_adoption(
+        pool,
+        &practice_id,
+        project_id,
+        "diverged",
+        Some(&note),
+        None,
+    ) {
         tracing::warn!(
             idea_id = %idea.id,
             practice_id = %practice_id,
@@ -1583,7 +1618,11 @@ enum DedupVerdict {
 /// Fresh; a key on any live row is Present; a key only on rejected rows is
 /// RecentlyRejected while the newest rejection is within the window, else
 /// Fresh again (the block has expired).
-fn dedup_verdict(conn: &rusqlite::Connection, workspace_id: &str, dedup_key: &str) -> Result<DedupVerdict, AppError> {
+fn dedup_verdict(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+    dedup_key: &str,
+) -> Result<DedupVerdict, AppError> {
     // Any live row with this key blocks immediately.
     let live: i64 = conn.query_row(
         "SELECT COUNT(*) FROM workspace_knowledge
@@ -1626,58 +1665,78 @@ pub fn ingest_candidates(
     get_workspace_by_id(pool, workspace_id)?;
     let mut summary = IngestSummary::default();
 
-    timed_query!("workspace_knowledge", "dev_workspaces::ingest_candidates", {
-        let mut conn = pool.get()?;
-        let tx = conn.transaction()?;
-        let now = chrono::Utc::now().to_rfc3339();
-        let provenance = match model_ref {
-            Some(m) => format!("{{\"actor_kind\":\"{actor_kind}\",\"model_ref\":\"{m}\"}}"),
-            None => format!("{{\"actor_kind\":\"{actor_kind}\"}}"),
-        };
-        // Keys accepted earlier in THIS batch — so two candidates carrying the
-        // same key in one run don't both insert.
-        let mut seen_in_batch: std::collections::HashSet<String> = std::collections::HashSet::new();
+    timed_query!(
+        "workspace_knowledge",
+        "dev_workspaces::ingest_candidates",
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction()?;
+            let now = chrono::Utc::now().to_rfc3339();
+            let provenance = match model_ref {
+                Some(m) => format!("{{\"actor_kind\":\"{actor_kind}\",\"model_ref\":\"{m}\"}}"),
+                None => format!("{{\"actor_kind\":\"{actor_kind}\"}}"),
+            };
+            // Keys accepted earlier in THIS batch — so two candidates carrying the
+            // same key in one run don't both insert.
+            let mut seen_in_batch: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
 
-        for (i, c) in candidates.iter().enumerate() {
-            if summary.inserted as usize >= MAX_INGEST_PER_RUN {
-                summary.skipped.push(format!("#{i}: run cap reached ({MAX_INGEST_PER_RUN})"));
-                continue;
-            }
-            if !KNOWLEDGE_KINDS.contains(&c.kind.as_str()) {
-                summary.skipped.push(format!("#{i} '{}': invalid kind '{}'", c.title, c.kind));
-                continue;
-            }
-            if c.title.trim().is_empty() || c.statement.trim().is_empty() {
-                summary.skipped.push(format!("#{i}: empty title or statement"));
-                continue;
-            }
-            if let Some(json) = c.applicability.as_deref() {
-                if serde_json::from_str::<serde_json::Value>(json).is_err() {
-                    summary.skipped.push(format!("#{i} '{}': applicability is not valid JSON", c.title));
+            for (i, c) in candidates.iter().enumerate() {
+                if summary.inserted as usize >= MAX_INGEST_PER_RUN {
+                    summary
+                        .skipped
+                        .push(format!("#{i}: run cap reached ({MAX_INGEST_PER_RUN})"));
                     continue;
                 }
-            }
-            if let Some(key) = c.dedup_key.as_deref() {
-                if seen_in_batch.contains(key) {
-                    summary.skipped.push(format!("#{i} '{}': duplicate key within this run", c.title));
+                if !KNOWLEDGE_KINDS.contains(&c.kind.as_str()) {
+                    summary
+                        .skipped
+                        .push(format!("#{i} '{}': invalid kind '{}'", c.title, c.kind));
                     continue;
                 }
-                match dedup_verdict(&tx, workspace_id, key)? {
-                    DedupVerdict::Present => {
-                        summary.skipped.push(format!("#{i} '{}': already in the library", c.title));
-                        continue;
-                    }
-                    DedupVerdict::RecentlyRejected => {
-                        summary.skipped.push(format!("#{i} '{}': rejected within {REJECTED_DEDUP_WINDOW_DAYS}d", c.title));
-                        continue;
-                    }
-                    DedupVerdict::Fresh => {}
+                if c.title.trim().is_empty() || c.statement.trim().is_empty() {
+                    summary
+                        .skipped
+                        .push(format!("#{i}: empty title or statement"));
+                    continue;
                 }
-                seen_in_batch.insert(key.to_string());
-            }
+                if let Some(json) = c.applicability.as_deref() {
+                    if serde_json::from_str::<serde_json::Value>(json).is_err() {
+                        summary.skipped.push(format!(
+                            "#{i} '{}': applicability is not valid JSON",
+                            c.title
+                        ));
+                        continue;
+                    }
+                }
+                if let Some(key) = c.dedup_key.as_deref() {
+                    if seen_in_batch.contains(key) {
+                        summary
+                            .skipped
+                            .push(format!("#{i} '{}': duplicate key within this run", c.title));
+                        continue;
+                    }
+                    match dedup_verdict(&tx, workspace_id, key)? {
+                        DedupVerdict::Present => {
+                            summary
+                                .skipped
+                                .push(format!("#{i} '{}': already in the library", c.title));
+                            continue;
+                        }
+                        DedupVerdict::RecentlyRejected => {
+                            summary.skipped.push(format!(
+                                "#{i} '{}': rejected within {REJECTED_DEDUP_WINDOW_DAYS}d",
+                                c.title
+                            ));
+                            continue;
+                        }
+                        DedupVerdict::Fresh => {}
+                    }
+                    seen_in_batch.insert(key.to_string());
+                }
 
-            let id = uuid::Uuid::new_v4().to_string();
-            tx.execute(
+                let id = uuid::Uuid::new_v4().to_string();
+                tx.execute(
                 "INSERT INTO workspace_knowledge
                      (id, workspace_id, kind, title, statement, detail_md, topic,
                       abstraction, ftype, durability, governing_id, evidence_count,
@@ -1731,61 +1790,62 @@ pub fn ingest_candidates(
                         .filter(|l| ["principle", "manifestation"].contains(l)),
                 ],
             )?;
-            summary.inserted += 1;
+                summary.inserted += 1;
 
-            // Pattern-fabric v2: structured proof rows. Stamped with the
-            // run's own project (app-owned, same trust posture as
-            // origin_project_id) and source='harvest'.
-            for ev in &c.evidence {
-                if ev.refs.is_empty() && ev.quote.is_none() {
-                    continue;
-                }
-                tx.execute(
-                    "INSERT INTO workspace_knowledge_evidence
+                // Pattern-fabric v2: structured proof rows. Stamped with the
+                // run's own project (app-owned, same trust posture as
+                // origin_project_id) and source='harvest'.
+                for ev in &c.evidence {
+                    if ev.refs.is_empty() && ev.quote.is_none() {
+                        continue;
+                    }
+                    tx.execute(
+                        "INSERT INTO workspace_knowledge_evidence
                          (id, knowledge_id, project_id, refs, quote, source, recorded_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, 'harvest', ?6)",
-                    params![
-                        uuid::Uuid::new_v4().to_string(),
-                        id,
-                        c.origin_project_id,
-                        serde_json::to_string(&ev.refs).unwrap_or_else(|_| "[]".into()),
-                        ev.quote,
-                        now,
-                    ],
-                )?;
-            }
+                        params![
+                            uuid::Uuid::new_v4().to_string(),
+                            id,
+                            c.origin_project_id,
+                            serde_json::to_string(&ev.refs).unwrap_or_else(|_| "[]".into()),
+                            ev.quote,
+                            now,
+                        ],
+                    )?;
+                }
 
-            // F4 contribution loop: an `extends` reference becomes a typed
-            // edge child->parent. A dangling target never blocks the item —
-            // the practice is real even when its lineage claim is stale — but
-            // the skipped edge is REPORTED, never silently dropped.
-            if let Some(parent) = c.extends.as_deref() {
-                let parent_ok: bool = tx
-                    .query_row(
-                        "SELECT 1 FROM workspace_knowledge WHERE id = ?1 AND workspace_id = ?2",
-                        params![parent, workspace_id],
-                        |_| Ok(true),
-                    )
-                    .unwrap_or(false);
-                if parent_ok && parent != id {
-                    tx.execute(
-                        "INSERT OR IGNORE INTO workspace_pattern_edges
+                // F4 contribution loop: an `extends` reference becomes a typed
+                // edge child->parent. A dangling target never blocks the item —
+                // the practice is real even when its lineage claim is stale — but
+                // the skipped edge is REPORTED, never silently dropped.
+                if let Some(parent) = c.extends.as_deref() {
+                    let parent_ok: bool = tx
+                        .query_row(
+                            "SELECT 1 FROM workspace_knowledge WHERE id = ?1 AND workspace_id = ?2",
+                            params![parent, workspace_id],
+                            |_| Ok(true),
+                        )
+                        .unwrap_or(false);
+                    if parent_ok && parent != id {
+                        tx.execute(
+                            "INSERT OR IGNORE INTO workspace_pattern_edges
                              (from_id, to_id, rel, note, created_at)
                          VALUES (?1, ?2, 'extends', 'proposed via harvest', ?3)",
-                        params![id, parent, now],
-                    )?;
-                } else {
-                    summary.skipped.push(format!(
+                            params![id, parent, now],
+                        )?;
+                    } else {
+                        summary.skipped.push(format!(
                         "#{i} '{}': extends target {parent} not found — item kept, edge skipped",
                         c.title
                     ));
+                    }
                 }
             }
-        }
 
-        tx.commit()?;
-        Ok(summary)
-    })
+            tx.commit()?;
+            Ok(summary)
+        }
+    )
 }
 
 // ── pattern-fabric v2: evidence + structure ─────────────────────────────
@@ -1808,15 +1868,19 @@ pub fn list_knowledge_evidence(
     pool: &DbPool,
     knowledge_id: &str,
 ) -> Result<Vec<WorkspaceKnowledgeEvidence>, AppError> {
-    timed_query!("dev_workspaces", "dev_workspaces::list_knowledge_evidence", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM workspace_knowledge_evidence
+    timed_query!(
+        "dev_workspaces",
+        "dev_workspaces::list_knowledge_evidence",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM workspace_knowledge_evidence
              WHERE knowledge_id = ?1 ORDER BY recorded_at DESC",
-        )?;
-        let rows = stmt.query_map(params![knowledge_id], row_to_evidence)?;
-        Ok(rows.collect::<Result<Vec<_>, _>>()?)
-    })
+            )?;
+            let rows = stmt.query_map(params![knowledge_id], row_to_evidence)?;
+            Ok(rows.collect::<Result<Vec<_>, _>>()?)
+        }
+    )
 }
 
 /// Add one evidence row. `source` is closed at the door ('harvest' | 'verify'
@@ -1974,10 +2038,12 @@ mod extends_loop_tests {
         let pool = pool();
         let ws = create_workspace(&pool, "WS", None, None, false).unwrap();
         // Parent enters the library first.
-        let s1 = ingest_candidates(&pool, &ws.id, &[candidate("Parent", None)], "test", None).unwrap();
+        let s1 =
+            ingest_candidates(&pool, &ws.id, &[candidate("Parent", None)], "test", None).unwrap();
         assert_eq!(s1.inserted, 1);
         let parent_id: String = pool
-            .get().unwrap()
+            .get()
+            .unwrap()
             .query_row(
                 "SELECT id FROM workspace_knowledge WHERE title = 'Parent'",
                 [],
@@ -1989,14 +2055,19 @@ mod extends_loop_tests {
         let s2 = ingest_candidates(
             &pool,
             &ws.id,
-            &[candidate("Child", Some(&parent_id)), candidate("Ghost child", Some("nope"))],
+            &[
+                candidate("Child", Some(&parent_id)),
+                candidate("Ghost child", Some("nope")),
+            ],
             "test",
             None,
         )
         .unwrap();
         assert_eq!(s2.inserted, 2, "a dangling extends never blocks the item");
         assert!(
-            s2.skipped.iter().any(|m| m.contains("extends target nope not found")),
+            s2.skipped
+                .iter()
+                .any(|m| m.contains("extends target nope not found")),
             "the skipped edge is reported: {:?}",
             s2.skipped
         );
@@ -2013,19 +2084,39 @@ mod extends_loop_tests {
         let pool = pool();
         let ws = create_workspace(&pool, "WS", None, None, false).unwrap();
         ingest_candidates(&pool, &ws.id, &[candidate("Parent", None)], "test", None).unwrap();
-        let parent_id: String = pool.get().unwrap()
-            .query_row("SELECT id FROM workspace_knowledge WHERE title = 'Parent'", [], |r| r.get(0))
+        let parent_id: String = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT id FROM workspace_knowledge WHERE title = 'Parent'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         // Give the parent a real home.
-        pool.get().unwrap()
+        pool.get()
+            .unwrap()
             .execute(
                 "UPDATE workspace_knowledge SET topic = 'data/migrations/tables' WHERE id = ?1",
                 params![parent_id],
             )
             .unwrap();
-        ingest_candidates(&pool, &ws.id, &[candidate("Child", Some(&parent_id))], "test", None).unwrap();
-        let child_id: String = pool.get().unwrap()
-            .query_row("SELECT id FROM workspace_knowledge WHERE title = 'Child'", [], |r| r.get(0))
+        ingest_candidates(
+            &pool,
+            &ws.id,
+            &[candidate("Child", Some(&parent_id))],
+            "test",
+            None,
+        )
+        .unwrap();
+        let child_id: String = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT id FROM workspace_knowledge WHERE title = 'Child'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         // Child landed with a quarantined topic (no topic given -> unsorted/*).
         let adopted = decide_knowledge(&pool, &child_id, "adopt", None).unwrap();
@@ -2043,24 +2134,33 @@ mod extends_loop_tests {
 
 /// Full member projects of a workspace (name-sorted). Used by harvest prepare
 /// to compose the sibling roster.
-pub fn list_workspace_projects(pool: &DbPool, workspace_id: &str) -> Result<Vec<DevProject>, AppError> {
+pub fn list_workspace_projects(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Vec<DevProject>, AppError> {
     timed_query!("dev_projects", "dev_workspaces::list_workspace_projects", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM dev_projects WHERE workspace_id = ?1 ORDER BY name COLLATE NOCASE",
         )?;
-        let rows = stmt.query_map(params![workspace_id], crate::repos::dev_tools::row_to_project)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let rows = stmt.query_map(
+            params![workspace_id],
+            crate::repos::dev_tools::row_to_project,
+        )?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
 /// Workspace member projects (id + tech_stack), the "siblings" a miner
 /// compares across. Empty when the workspace has no members.
-fn workspace_members(pool: &DbPool, workspace_id: &str) -> Result<Vec<(String, Option<String>)>, AppError> {
+fn workspace_members(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Vec<(String, Option<String>)>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1")?;
     let rows = stmt
         .query_map(params![workspace_id], |r| Ok((r.get(0)?, r.get(1)?)))?
         .collect::<Result<Vec<_>, _>>()?;
@@ -2081,7 +2181,10 @@ struct MinedFinding {
 /// proposes it as a shared `pitfall`. Identity = `(origin, dedup_key)` for
 /// project-agnostic keys, falling back to `(origin, normalized-title)` so
 /// repo-local keys (sentry ids, context-scoped scans) still cluster.
-pub fn mine_shared_findings(pool: &DbPool, workspace_id: &str) -> Result<Vec<KnowledgeCandidate>, AppError> {
+pub fn mine_shared_findings(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Vec<KnowledgeCandidate>, AppError> {
     let members = workspace_members(pool, workspace_id)?;
     if members.len() < 2 {
         return Ok(Vec::new());
@@ -2104,8 +2207,10 @@ pub fn mine_shared_findings(pool: &DbPool, workspace_id: &str) -> Result<Vec<Kno
            AND status IN ('pending','accepted')"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let params_vec: Vec<&dyn rusqlite::types::ToSql> =
-        member_ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+    let params_vec: Vec<&dyn rusqlite::types::ToSql> = member_ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
     let findings: Vec<MinedFinding> = stmt
         .query_map(params_vec.as_slice(), |r| {
             Ok(MinedFinding {
@@ -2124,7 +2229,8 @@ pub fn mine_shared_findings(pool: &DbPool, workspace_id: &str) -> Result<Vec<Kno
 /// keep buckets spanning ≥2 distinct projects, emit one candidate each.
 fn cluster_shared_findings(findings: &[MinedFinding]) -> Vec<KnowledgeCandidate> {
     // identity key → (representative title, origin, set of project ids)
-    let mut buckets: HashMap<String, (String, String, std::collections::BTreeSet<String>)> = HashMap::new();
+    let mut buckets: HashMap<String, (String, String, std::collections::BTreeSet<String>)> =
+        HashMap::new();
     for f in findings {
         // Second gate for the same echo the SQL above already blocks. The
         // clustering core is pure and independently callable, so the guard
@@ -2141,9 +2247,13 @@ fn cluster_shared_findings(findings: &[MinedFinding]) -> Vec<KnowledgeCandidate>
                 crate::repos::dev_tools::normalize_idea_title(&f.title)
             ),
         };
-        let entry = buckets
-            .entry(identity)
-            .or_insert_with(|| (f.title.clone(), f.origin.clone(), std::collections::BTreeSet::new()));
+        let entry = buckets.entry(identity).or_insert_with(|| {
+            (
+                f.title.clone(),
+                f.origin.clone(),
+                std::collections::BTreeSet::new(),
+            )
+        });
         entry.2.insert(f.project_id.clone());
     }
 
@@ -2231,7 +2341,10 @@ struct MinedSkillUse {
 /// sibling is proposed as a `howto` adoption candidate.
 pub const MIN_SKILL_INVOKES_30D: i64 = 3;
 
-pub fn mine_shared_skills(pool: &DbPool, workspace_id: &str) -> Result<Vec<KnowledgeCandidate>, AppError> {
+pub fn mine_shared_skills(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Vec<KnowledgeCandidate>, AppError> {
     let members = workspace_members(pool, workspace_id)?;
     if members.len() < 2 {
         return Ok(Vec::new());
@@ -2246,8 +2359,10 @@ pub fn mine_shared_skills(pool: &DbPool, workspace_id: &str) -> Result<Vec<Knowl
         "SELECT name, project_id FROM skill_registry
          WHERE scope = 'project' AND missing_since IS NULL AND project_id IN ({placeholders})"
     );
-    let params_vec: Vec<&dyn rusqlite::types::ToSql> =
-        member_ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+    let params_vec: Vec<&dyn rusqlite::types::ToSql> = member_ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
     let mut present: HashMap<String, std::collections::BTreeSet<String>> = HashMap::new();
     {
         let mut stmt = conn.prepare(&present_sql)?;
@@ -2271,12 +2386,19 @@ pub fn mine_shared_skills(pool: &DbPool, workspace_id: &str) -> Result<Vec<Knowl
     {
         let mut stmt = conn.prepare(&usage_sql)?;
         let rows = stmt.query_map(params_vec.as_slice(), |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?, r.get::<_, i64>(2)?))
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, Option<String>>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
         })?;
         for row in rows {
             let (name, pid, count) = row?;
             if let Some(pid) = pid {
-                usage.entry(name).or_default().push(MinedSkillUse { project_id: pid, invokes_30d: count });
+                usage.entry(name).or_default().push(MinedSkillUse {
+                    project_id: pid,
+                    invokes_30d: count,
+                });
             }
         }
     }
@@ -2296,7 +2418,10 @@ fn cluster_skill_adoption(
     names.sort();
     for name in names {
         let uses = &usage[name];
-        let heavy = uses.iter().filter(|u| u.invokes_30d >= MIN_SKILL_INVOKES_30D).count();
+        let heavy = uses
+            .iter()
+            .filter(|u| u.invokes_30d >= MIN_SKILL_INVOKES_30D)
+            .count();
         if heavy == 0 {
             continue;
         }
@@ -2375,74 +2500,78 @@ pub fn envelope_context_state(
 /// practices that have left `adopted`. Idempotent; NEVER touches a verified
 /// cell — `adopted`/`violating` verdicts belong to the verify lane alone.
 pub fn seed_practice_context_cells(pool: &DbPool, workspace_id: &str) -> Result<u32, AppError> {
-    timed_query!("dev_workspaces", "dev_workspaces::seed_practice_context_cells", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let mut conn = pool.get()?;
-        let tx = conn.transaction()?;
+    timed_query!(
+        "dev_workspaces",
+        "dev_workspaces::seed_practice_context_cells",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut conn = pool.get()?;
+            let tx = conn.transaction()?;
 
-        // Cells for practices no longer adopted are noise in every denominator.
-        tx.execute(
-            "DELETE FROM workspace_practice_context_state
+            // Cells for practices no longer adopted are noise in every denominator.
+            tx.execute(
+                "DELETE FROM workspace_practice_context_state
              WHERE practice_id IN (
                  SELECT id FROM workspace_knowledge
                  WHERE workspace_id = ?1 AND status != 'adopted'
              )",
-            params![workspace_id],
-        )?;
-
-        let practices: Vec<(String, Option<String>, Option<String>)> = {
-            let mut stmt = tx.prepare(
-                "SELECT id, applicability, topic FROM workspace_knowledge
-                 WHERE workspace_id = ?1 AND status = 'adopted'",
+                params![workspace_id],
             )?;
-            let rows = stmt
-                .query_map(params![workspace_id], |r| {
-                    Ok((r.get(0)?, r.get(1)?, r.get(2)?))
-                })?
-                .collect::<Result<Vec<_>, _>>()?;
-            rows
-        };
 
-        // (context, project, name, tech_stack, category) for every member repo.
-        let contexts: Vec<(String, String, String, Option<String>, Option<String>)> = {
-            let mut stmt = tx.prepare(
-                "SELECT c.id, c.project_id, c.name, c.tech_stack, c.category
+            let practices: Vec<(String, Option<String>, Option<String>)> = {
+                let mut stmt = tx.prepare(
+                    "SELECT id, applicability, topic FROM workspace_knowledge
+                 WHERE workspace_id = ?1 AND status = 'adopted'",
+                )?;
+                let rows = stmt
+                    .query_map(params![workspace_id], |r| {
+                        Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?;
+                rows
+            };
+
+            // (context, project, name, tech_stack, category) for every member repo.
+            let contexts: Vec<(String, String, String, Option<String>, Option<String>)> = {
+                let mut stmt = tx.prepare(
+                    "SELECT c.id, c.project_id, c.name, c.tech_stack, c.category
                  FROM dev_contexts c
                  JOIN dev_projects p ON p.id = c.project_id
                  WHERE p.workspace_id = ?1",
-            )?;
-            let rows = stmt
-                .query_map(params![workspace_id], |r| {
-                    Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
-                })?
-                .collect::<Result<Vec<_>, _>>()?;
-            rows
-        };
+                )?;
+                let rows = stmt
+                    .query_map(params![workspace_id], |r| {
+                        Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?;
+                rows
+            };
 
-        let mut inserted = 0u32;
-        {
-            let mut stmt = tx.prepare(
-                "INSERT OR IGNORE INTO workspace_practice_context_state
+            let mut inserted = 0u32;
+            {
+                let mut stmt = tx.prepare(
+                    "INSERT OR IGNORE INTO workspace_practice_context_state
                      (practice_id, project_id, context_id, context_name, state, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            )?;
-            for (pid, applicability, topic) in &practices {
-                for (cid, project_id, name, stack, category) in &contexts {
-                    let state = envelope_context_state(
-                        applicability.as_deref(),
-                        topic.as_deref(),
-                        stack.as_deref(),
-                        category.as_deref(),
-                    );
-                    inserted +=
-                        stmt.execute(params![pid, project_id, cid, name, state, now])? as u32;
+                )?;
+                for (pid, applicability, topic) in &practices {
+                    for (cid, project_id, name, stack, category) in &contexts {
+                        let state = envelope_context_state(
+                            applicability.as_deref(),
+                            topic.as_deref(),
+                            stack.as_deref(),
+                            category.as_deref(),
+                        );
+                        inserted +=
+                            stmt.execute(params![pid, project_id, cid, name, state, now])? as u32;
+                    }
                 }
             }
-        }
 
-        tx.commit()?;
-        Ok(inserted)
-    })
+            tx.commit()?;
+            Ok(inserted)
+        }
+    )
 }
 
 /// Per-practice adherence rollup — the one number the graph's rings show.
@@ -2453,10 +2582,13 @@ pub fn practice_context_rollup(
     workspace_id: &str,
     project_id: Option<&str>,
 ) -> Result<Vec<PracticeContextRollup>, AppError> {
-    timed_query!("dev_workspaces", "dev_workspaces::practice_context_rollup", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT s.practice_id,
+    timed_query!(
+        "dev_workspaces",
+        "dev_workspaces::practice_context_rollup",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT s.practice_id,
                     SUM(CASE WHEN s.state = 'adopted'    THEN 1 ELSE 0 END),
                     SUM(CASE WHEN s.state = 'violating'  THEN 1 ELSE 0 END),
                     SUM(CASE WHEN s.state = 'unverified' THEN 1 ELSE 0 END)
@@ -2466,23 +2598,24 @@ pub fn practice_context_rollup(
                AND (?2 IS NULL OR s.project_id = ?2)
                AND s.state != 'na'
              GROUP BY s.practice_id",
-        )?;
-        let rows = stmt
-            .query_map(params![workspace_id, project_id], |r| {
-                let adopted: i32 = r.get(1)?;
-                let violating: i32 = r.get(2)?;
-                let unverified: i32 = r.get(3)?;
-                Ok(PracticeContextRollup {
-                    practice_id: r.get(0)?,
-                    adopted,
-                    violating,
-                    unverified,
-                    applicable: adopted + violating + unverified,
-                })
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
-    })
+            )?;
+            let rows = stmt
+                .query_map(params![workspace_id, project_id], |r| {
+                    let adopted: i32 = r.get(1)?;
+                    let violating: i32 = r.get(2)?;
+                    let unverified: i32 = r.get(3)?;
+                    Ok(PracticeContextRollup {
+                        practice_id: r.get(0)?,
+                        adopted,
+                        violating,
+                        unverified,
+                        applicable: adopted + violating + unverified,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        }
+    )
 }
 
 /// What one verify ingest actually attributed (docs/concepts/pattern-context-trace.md W2).
@@ -2512,7 +2645,10 @@ pub fn normalize_repo_path(raw: &str) -> String {
     let mut s = raw.trim();
     // Strip wrapping punctuation the model reliably adds around paths.
     s = s.trim_matches(|c: char| {
-        matches!(c, '`' | '"' | '\'' | '(' | ')' | '[' | ']' | ',' | ';' | '*')
+        matches!(
+            c,
+            '`' | '"' | '\'' | '(' | ')' | '[' | ']' | ',' | ';' | '*'
+        )
     });
     let mut s = s.replace('\\', "/");
     // `path:120` / `path:120:8` — drop trailing numeric coordinates only.
@@ -2545,7 +2681,10 @@ pub fn extract_file_citations(text: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for raw in text.split_whitespace() {
         let token = raw.trim_matches(|c: char| {
-            matches!(c, '`' | '"' | '\'' | '(' | ')' | '[' | ']' | ',' | ';' | '*')
+            matches!(
+                c,
+                '`' | '"' | '\'' | '(' | ')' | '[' | ']' | ',' | ';' | '*'
+            )
         });
         if token.is_empty() || !(token.contains('/') || token.contains('\\')) {
             continue;
@@ -2554,14 +2693,12 @@ pub fn extract_file_citations(text: &str) -> Vec<String> {
         let Some(last) = normalized.rsplit('/').next() else {
             continue;
         };
-        let looks_like_file = last
-            .rsplit_once('.')
-            .is_some_and(|(stem, ext)| {
-                !stem.is_empty()
-                    && !ext.is_empty()
-                    && ext.len() <= 5
-                    && ext.chars().all(|c| c.is_ascii_alphanumeric())
-            });
+        let looks_like_file = last.rsplit_once('.').is_some_and(|(stem, ext)| {
+            !stem.is_empty()
+                && !ext.is_empty()
+                && ext.len() <= 5
+                && ext.chars().all(|c| c.is_ascii_alphanumeric())
+        });
         if !looks_like_file {
             continue;
         }
@@ -2712,51 +2849,54 @@ pub fn apply_verified_context_evidence(
     applied_files: &[String],
     absent_files: &[String],
 ) -> Result<AttributionSummary, AppError> {
-    timed_query!("dev_workspaces", "dev_workspaces::apply_verified_context_evidence", {
-        let mut conn = pool.get()?;
-
-        // The practice must belong to the workspace being verified — a stray id
-        // would write cells nobody can ever see (or roll up).
-        let owned: bool = conn
-            .query_row(
-                "SELECT 1 FROM workspace_knowledge WHERE id = ?1 AND workspace_id = ?2",
-                params![practice_id, workspace_id],
-                |r| r.get::<_, i64>(0),
-            )
-            .optional()?
-            .is_some();
-        if !owned {
-            return Err(AppError::Validation(format!(
-                "Practice {practice_id} is not in workspace {workspace_id}"
-            )));
-        }
-
-        let contexts: Vec<(String, String, Vec<String>)> = {
-            let mut stmt = conn.prepare(
-                "SELECT id, name, file_paths FROM dev_contexts WHERE project_id = ?1",
-            )?;
-            let rows = stmt
-                .query_map(params![project_id], |r| {
-                    let paths_json: String = r.get(2)?;
-                    let paths: Vec<String> =
-                        serde_json::from_str(&paths_json).unwrap_or_default();
-                    Ok((r.get(0)?, r.get(1)?, paths))
-                })?
-                .collect::<Result<Vec<_>, _>>()?;
-            rows
-        };
-
-        let (resolved, unattributed) =
-            attribute_files_to_contexts(&contexts, applied_files, absent_files);
-
-        let now = chrono::Utc::now().to_rfc3339();
-        let mut adopted_cells = 0i32;
-        let mut violating_cells = 0i32;
+    timed_query!(
+        "dev_workspaces",
+        "dev_workspaces::apply_verified_context_evidence",
         {
-            let tx = conn.transaction()?;
+            let mut conn = pool.get()?;
+
+            // The practice must belong to the workspace being verified — a stray id
+            // would write cells nobody can ever see (or roll up).
+            let owned: bool = conn
+                .query_row(
+                    "SELECT 1 FROM workspace_knowledge WHERE id = ?1 AND workspace_id = ?2",
+                    params![practice_id, workspace_id],
+                    |r| r.get::<_, i64>(0),
+                )
+                .optional()?
+                .is_some();
+            if !owned {
+                return Err(AppError::Validation(format!(
+                    "Practice {practice_id} is not in workspace {workspace_id}"
+                )));
+            }
+
+            let contexts: Vec<(String, String, Vec<String>)> = {
+                let mut stmt = conn.prepare(
+                    "SELECT id, name, file_paths FROM dev_contexts WHERE project_id = ?1",
+                )?;
+                let rows = stmt
+                    .query_map(params![project_id], |r| {
+                        let paths_json: String = r.get(2)?;
+                        let paths: Vec<String> =
+                            serde_json::from_str(&paths_json).unwrap_or_default();
+                        Ok((r.get(0)?, r.get(1)?, paths))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?;
+                rows
+            };
+
+            let (resolved, unattributed) =
+                attribute_files_to_contexts(&contexts, applied_files, absent_files);
+
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut adopted_cells = 0i32;
+            let mut violating_cells = 0i32;
             {
-                let mut stmt = tx.prepare(
-                    "INSERT INTO workspace_practice_context_state
+                let tx = conn.transaction()?;
+                {
+                    let mut stmt = tx.prepare(
+                        "INSERT INTO workspace_practice_context_state
                          (practice_id, project_id, context_id, context_name,
                           state, evidence, verified_at, updated_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)
@@ -2767,34 +2907,36 @@ pub fn apply_verified_context_evidence(
                          evidence     = excluded.evidence,
                          verified_at  = excluded.verified_at,
                          updated_at   = excluded.updated_at",
-                )?;
-                for a in &resolved {
-                    let evidence = serde_json::to_string(&a.evidence).unwrap_or_else(|_| "[]".into());
-                    stmt.execute(params![
-                        practice_id,
-                        project_id,
-                        a.context_id,
-                        a.context_name,
-                        a.state,
-                        evidence,
-                        now,
-                    ])?;
-                    if a.state == "violating" {
-                        violating_cells += 1;
-                    } else {
-                        adopted_cells += 1;
+                    )?;
+                    for a in &resolved {
+                        let evidence =
+                            serde_json::to_string(&a.evidence).unwrap_or_else(|_| "[]".into());
+                        stmt.execute(params![
+                            practice_id,
+                            project_id,
+                            a.context_id,
+                            a.context_name,
+                            a.state,
+                            evidence,
+                            now,
+                        ])?;
+                        if a.state == "violating" {
+                            violating_cells += 1;
+                        } else {
+                            adopted_cells += 1;
+                        }
                     }
                 }
+                tx.commit()?;
             }
-            tx.commit()?;
-        }
 
-        Ok(AttributionSummary {
-            adopted_cells,
-            violating_cells,
-            unattributed,
-        })
-    })
+            Ok(AttributionSummary {
+                adopted_cells,
+                violating_cells,
+                unattributed,
+            })
+        }
+    )
 }
 
 // ============================================================================
@@ -2850,7 +2992,9 @@ pub fn set_pattern_edge(
     note: Option<&str>,
 ) -> Result<WorkspacePatternEdge, AppError> {
     if from_id == to_id {
-        return Err(AppError::Validation("A pattern cannot relate to itself".into()));
+        return Err(AppError::Validation(
+            "A pattern cannot relate to itself".into(),
+        ));
     }
     if !PATTERN_EDGE_RELS.contains(&rel) {
         return Err(AppError::Validation(format!(
@@ -2922,7 +3066,10 @@ fn playbook_slug(raw: &str) -> Result<String, AppError> {
     Ok(slug)
 }
 
-pub fn list_playbooks(pool: &DbPool, workspace_id: &str) -> Result<Vec<WorkspacePlaybook>, AppError> {
+pub fn list_playbooks(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Vec<WorkspacePlaybook>, AppError> {
     timed_query!("dev_workspaces", "dev_workspaces::list_playbooks", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -2942,28 +3089,32 @@ pub fn list_playbook_patterns(
     pool: &DbPool,
     workspace_id: &str,
 ) -> Result<Vec<WorkspacePlaybookPattern>, AppError> {
-    timed_query!("dev_workspaces", "dev_workspaces::list_playbook_patterns", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT m.playbook_id, m.practice_id, m.phase, m.ordinal, m.note
+    timed_query!(
+        "dev_workspaces",
+        "dev_workspaces::list_playbook_patterns",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT m.playbook_id, m.practice_id, m.phase, m.ordinal, m.note
              FROM workspace_playbook_patterns m
              JOIN workspace_playbooks p ON p.id = m.playbook_id
              WHERE p.workspace_id = ?1
              ORDER BY m.playbook_id, m.phase, m.ordinal",
-        )?;
-        let rows = stmt
-            .query_map(params![workspace_id], |r| {
-                Ok(WorkspacePlaybookPattern {
-                    playbook_id: r.get(0)?,
-                    practice_id: r.get(1)?,
-                    phase: r.get(2)?,
-                    ordinal: r.get(3)?,
-                    note: r.get(4)?,
-                })
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
-    })
+            )?;
+            let rows = stmt
+                .query_map(params![workspace_id], |r| {
+                    Ok(WorkspacePlaybookPattern {
+                        playbook_id: r.get(0)?,
+                        practice_id: r.get(1)?,
+                        phase: r.get(2)?,
+                        ordinal: r.get(3)?,
+                        note: r.get(4)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        }
+    )
 }
 
 pub fn create_playbook(
@@ -2976,13 +3127,17 @@ pub fn create_playbook(
 ) -> Result<WorkspacePlaybook, AppError> {
     let slug = playbook_slug(slug)?;
     if title.trim().is_empty() {
-        return Err(AppError::Validation("Playbook title cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Playbook title cannot be empty".into(),
+        ));
     }
     // Triggers must be a JSON array of strings — the consult matcher's input.
     let parsed: Vec<String> = serde_json::from_str(triggers_json)
         .map_err(|e| AppError::Validation(format!("triggers must be a JSON string array: {e}")))?;
     if parsed.is_empty() {
-        return Err(AppError::Validation("A playbook needs at least one trigger phrase".into()));
+        return Err(AppError::Validation(
+            "A playbook needs at least one trigger phrase".into(),
+        ));
     }
     get_workspace_by_id(pool, workspace_id)?;
     timed_query!("dev_workspaces", "dev_workspaces::create_playbook", {
@@ -2993,7 +3148,15 @@ pub fn create_playbook(
             "INSERT INTO workspace_playbooks
                  (id, workspace_id, slug, title, triggers, summary, status, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'draft', ?7, ?7)",
-            params![id, workspace_id, slug, title.trim(), triggers_json, summary.trim(), now],
+            params![
+                id,
+                workspace_id,
+                slug,
+                title.trim(),
+                triggers_json,
+                summary.trim(),
+                now
+            ],
         )
         .map_err(|e| match e {
             rusqlite::Error::SqliteFailure(f, _)
@@ -3018,18 +3181,22 @@ pub fn update_playbook_status(
             PLAYBOOK_STATUSES.join(", ")
         )));
     }
-    timed_query!("dev_workspaces", "dev_workspaces::update_playbook_status", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        let n = conn.execute(
-            "UPDATE workspace_playbooks SET status = ?1, updated_at = ?2 WHERE id = ?3",
-            params![status, now, id],
-        )?;
-        if n == 0 {
-            return Err(AppError::NotFound(format!("Playbook {id}")));
+    timed_query!(
+        "dev_workspaces",
+        "dev_workspaces::update_playbook_status",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            let n = conn.execute(
+                "UPDATE workspace_playbooks SET status = ?1, updated_at = ?2 WHERE id = ?3",
+                params![status, now, id],
+            )?;
+            if n == 0 {
+                return Err(AppError::NotFound(format!("Playbook {id}")));
+            }
+            get_playbook_by_id(pool, id)
         }
-        get_playbook_by_id(pool, id)
-    })
+    )
 }
 
 pub fn delete_playbook(pool: &DbPool, id: &str) -> Result<(), AppError> {
@@ -3071,7 +3238,13 @@ pub fn set_playbook_patterns(
                  VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
             for m in members {
-                stmt.execute(params![playbook_id, m.practice_id, m.phase, m.ordinal, m.note])?;
+                stmt.execute(params![
+                    playbook_id,
+                    m.practice_id,
+                    m.phase,
+                    m.ordinal,
+                    m.note
+                ])?;
             }
         }
         let now = chrono::Utc::now().to_rfc3339();
@@ -3231,8 +3404,14 @@ mod playbook_tests {
             )
             .unwrap();
 
-        insert_consult_log(&pool, "ws1", Some("p1"), "add a db table", &["add-db-table".into()])
-            .unwrap();
+        insert_consult_log(
+            &pool,
+            "ws1",
+            Some("p1"),
+            "add a db table",
+            &["add-db-table".into()],
+        )
+        .unwrap();
         insert_consult_log(
             &pool,
             "ws1",
@@ -3397,11 +3576,8 @@ mod context_trace_tests {
     #[test]
     fn absolute_citations_still_find_their_context_by_suffix() {
         let contexts = vec![ctx("c1", "One", &["src/a.rs"])];
-        let (resolved, unattributed) = attribute_files_to_contexts(
-            &contexts,
-            &["C:/Users/dev/repo/src/a.rs:9".into()],
-            &[],
-        );
+        let (resolved, unattributed) =
+            attribute_files_to_contexts(&contexts, &["C:/Users/dev/repo/src/a.rs:9".into()], &[]);
         assert!(unattributed.is_empty(), "absolute path should resolve");
         assert_eq!(resolved.len(), 1);
         assert_eq!(resolved[0].state, "adopted");
@@ -3516,8 +3692,9 @@ mod context_trace_tests {
         // a verdict out is W3 decay's job, not silence's.
         assert_eq!(cell_state(&pool, "c2").as_deref(), Some("violating"));
 
-        let s3 = apply_verified_context_evidence(&pool, "ws1", "p1", "k1", &["src/c.rs".into()], &[])
-            .unwrap();
+        let s3 =
+            apply_verified_context_evidence(&pool, "ws1", "p1", "k1", &["src/c.rs".into()], &[])
+                .unwrap();
         assert_eq!(s3.adopted_cells, 1);
         assert_eq!(cell_state(&pool, "c2").as_deref(), Some("adopted"));
         assert_eq!(
@@ -3530,10 +3707,15 @@ mod context_trace_tests {
     #[test]
     fn verify_ingest_refuses_a_practice_from_another_workspace() {
         let pool = seeded_pool();
-        assert!(
-            apply_verified_context_evidence(&pool, "ws-other", "p1", "k1", &["src/a.rs".into()], &[])
-                .is_err()
-        );
+        assert!(apply_verified_context_evidence(
+            &pool,
+            "ws-other",
+            "p1",
+            "k1",
+            &["src/a.rs".into()],
+            &[]
+        )
+        .is_err());
     }
 
     #[test]
@@ -3553,10 +3735,19 @@ mod tests {
     fn abstraction_closes_the_zoom_axis() {
         // Exact hits and casing/whitespace noise.
         for canonical in KNOWLEDGE_ABSTRACTIONS {
-            assert_eq!(normalize_abstraction(Some(canonical)).as_deref(), Some(canonical));
+            assert_eq!(
+                normalize_abstraction(Some(canonical)).as_deref(),
+                Some(canonical)
+            );
         }
-        assert_eq!(normalize_abstraction(Some("Macro")).as_deref(), Some("macro"));
-        assert_eq!(normalize_abstraction(Some("  meso  ")).as_deref(), Some("meso"));
+        assert_eq!(
+            normalize_abstraction(Some("Macro")).as_deref(),
+            Some("macro")
+        );
+        assert_eq!(
+            normalize_abstraction(Some("  meso  ")).as_deref(),
+            Some("meso")
+        );
         // The real drift the divergence caller only half-guarded against: an
         // unrecognized value must NOT survive into the closed column, since the
         // roll-up gate does an exact `Some("macro")` check and the TS binding
@@ -3614,7 +3805,11 @@ mod tests {
         }
         // Applicability is still the one thing decidable without reading code.
         assert_eq!(
-            initial_adoption_state("pitfall", Some("{\"frameworks\":[\"react\"]}"), Some("Rust, Axum")),
+            initial_adoption_state(
+                "pitfall",
+                Some("{\"frameworks\":[\"react\"]}"),
+                Some("Rust, Axum")
+            ),
             "na"
         );
     }
@@ -3622,11 +3817,20 @@ mod tests {
     #[test]
     fn verdict_meaning_depends_on_the_prior_state() {
         // Drift: canon this repo had applied stopped holding.
-        assert_eq!(adoption_state_after_verdict("adopted", false, true), "diverged");
+        assert_eq!(
+            adoption_state_after_verdict("adopted", false, true),
+            "diverged"
+        );
         // Work owed: never applied here, and the code does not comply.
-        assert_eq!(adoption_state_after_verdict("proposed", false, true), "to_process");
+        assert_eq!(
+            adoption_state_after_verdict("proposed", false, true),
+            "to_process"
+        );
         // Still owed after a previous pass said so.
-        assert_eq!(adoption_state_after_verdict("to_process", false, true), "to_process");
+        assert_eq!(
+            adoption_state_after_verdict("to_process", false, true),
+            "to_process"
+        );
         // Compliance is compliance, however the cell got here — a repo that
         // already follows the practice must not sit at `proposed` forever.
         for prior in ["proposed", "to_process", "adopted", "diverged"] {
@@ -3655,10 +3859,14 @@ mod tests {
     fn project_agnostic_key_classification() {
         assert!(is_project_agnostic_key("standards:no-unwrap"));
         assert!(is_project_agnostic_key("kpi_sim:finding:k1:slug"));
-        assert!(is_project_agnostic_key("scan:security:all:sql-injection-risk"));
+        assert!(is_project_agnostic_key(
+            "scan:security:all:sql-injection-risk"
+        ));
         // Repo-local keys must NOT be treated as globally equal.
         assert!(!is_project_agnostic_key("sentry:AB12CD"));
-        assert!(!is_project_agnostic_key("scan:security:ctx-uuid-123:sql-injection"));
+        assert!(!is_project_agnostic_key(
+            "scan:security:ctx-uuid-123:sql-injection"
+        ));
     }
 
     fn finding(project: &str, origin: &str, dedup: Option<&str>, title: &str) -> MinedFinding {
@@ -3673,21 +3881,44 @@ mod tests {
     #[test]
     fn shared_findings_cluster_across_two_projects_by_agnostic_key() {
         let findings = vec![
-            finding("p1", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap"),
-            finding("p2", "standards_finding", Some("standards:no-unwrap"), "Avoid .unwrap()"),
+            finding(
+                "p1",
+                "standards_finding",
+                Some("standards:no-unwrap"),
+                "Avoid unwrap",
+            ),
+            finding(
+                "p2",
+                "standards_finding",
+                Some("standards:no-unwrap"),
+                "Avoid .unwrap()",
+            ),
         ];
         let out = cluster_shared_findings(&findings);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].kind, "pitfall");
-        assert_eq!(out[0].dedup_key.as_deref(), Some("miner:findings:standards_finding|standards:no-unwrap"));
+        assert_eq!(
+            out[0].dedup_key.as_deref(),
+            Some("miner:findings:standards_finding|standards:no-unwrap")
+        );
         assert_eq!(out[0].topic.as_deref(), Some("process/enforcement"));
     }
 
     #[test]
     fn single_project_finding_is_not_shared() {
         let findings = vec![
-            finding("p1", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap"),
-            finding("p1", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap again"),
+            finding(
+                "p1",
+                "standards_finding",
+                Some("standards:no-unwrap"),
+                "Avoid unwrap",
+            ),
+            finding(
+                "p1",
+                "standards_finding",
+                Some("standards:no-unwrap"),
+                "Avoid unwrap again",
+            ),
         ];
         assert!(cluster_shared_findings(&findings).is_empty());
     }
@@ -3696,11 +3927,25 @@ mod tests {
     fn repo_local_keys_cluster_on_normalized_title() {
         // Different sentry ids per repo, but the same normalized title → shared.
         let findings = vec![
-            finding("p1", "sentry_spike", Some("sentry:AA11"), "Null pointer in checkout flow"),
-            finding("p2", "sentry_spike", Some("sentry:BB22"), "Null pointer in checkout flow!"),
+            finding(
+                "p1",
+                "sentry_spike",
+                Some("sentry:AA11"),
+                "Null pointer in checkout flow",
+            ),
+            finding(
+                "p2",
+                "sentry_spike",
+                Some("sentry:BB22"),
+                "Null pointer in checkout flow!",
+            ),
         ];
         let out = cluster_shared_findings(&findings);
-        assert_eq!(out.len(), 1, "repo-local keys should fall back to title matching");
+        assert_eq!(
+            out.len(),
+            1,
+            "repo-local keys should fall back to title matching"
+        );
         assert_eq!(out[0].topic.as_deref(), Some("observability/diagnostics"));
     }
 
@@ -3730,12 +3975,18 @@ mod tests {
         let mut usage: HashMap<String, Vec<MinedSkillUse>> = HashMap::new();
         usage.insert(
             "kpi-sim".into(),
-            vec![MinedSkillUse { project_id: "p1".into(), invokes_30d: 9 }],
+            vec![MinedSkillUse {
+                project_id: "p1".into(),
+                invokes_30d: 9,
+            }],
         );
         let out = cluster_skill_adoption(&mem, &present, &usage);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].kind, "howto");
-        assert_eq!(out[0].dedup_key.as_deref(), Some("miner:skill-adopt:kpi-sim"));
+        assert_eq!(
+            out[0].dedup_key.as_deref(),
+            Some("miner:skill-adopt:kpi-sim")
+        );
     }
 
     #[test]
@@ -3744,7 +3995,13 @@ mod tests {
         let mut present: HashMap<String, std::collections::BTreeSet<String>> = HashMap::new();
         present.insert("shared".into(), members(&["p1", "p2"]));
         let mut usage: HashMap<String, Vec<MinedSkillUse>> = HashMap::new();
-        usage.insert("shared".into(), vec![MinedSkillUse { project_id: "p1".into(), invokes_30d: 20 }]);
+        usage.insert(
+            "shared".into(),
+            vec![MinedSkillUse {
+                project_id: "p1".into(),
+                invokes_30d: 20,
+            }],
+        );
         assert!(cluster_skill_adoption(&mem, &present, &usage).is_empty());
     }
 
@@ -3754,7 +4011,13 @@ mod tests {
         let present: HashMap<String, std::collections::BTreeSet<String>> = HashMap::new();
         let mut usage: HashMap<String, Vec<MinedSkillUse>> = HashMap::new();
         // below MIN_SKILL_INVOKES_30D
-        usage.insert("rare".into(), vec![MinedSkillUse { project_id: "p1".into(), invokes_30d: 1 }]);
+        usage.insert(
+            "rare".into(),
+            vec![MinedSkillUse {
+                project_id: "p1".into(),
+                invokes_30d: 1,
+            }],
+        );
         assert!(cluster_skill_adoption(&mem, &present, &usage).is_empty());
     }
 
@@ -3775,9 +4038,24 @@ mod tests {
     fn workspace_practice_findings_never_cluster_into_a_candidate() {
         let key = practice_dedup_key("prac-1");
         let echo = vec![
-            finding("p1", PRACTICE_ORIGIN, Some(key.as_str()), "Adopt workspace practice: Use design tokens"),
-            finding("p2", PRACTICE_ORIGIN, Some(key.as_str()), "Adopt workspace practice: Use design tokens"),
-            finding("p3", PRACTICE_ORIGIN, Some(key.as_str()), "Adopt workspace practice: Use design tokens"),
+            finding(
+                "p1",
+                PRACTICE_ORIGIN,
+                Some(key.as_str()),
+                "Adopt workspace practice: Use design tokens",
+            ),
+            finding(
+                "p2",
+                PRACTICE_ORIGIN,
+                Some(key.as_str()),
+                "Adopt workspace practice: Use design tokens",
+            ),
+            finding(
+                "p3",
+                PRACTICE_ORIGIN,
+                Some(key.as_str()),
+                "Adopt workspace practice: Use design tokens",
+            ),
         ];
         assert!(
             cluster_shared_findings(&echo).is_empty(),
@@ -3787,8 +4065,18 @@ mod tests {
         // Control: the identical shape from a real sensor DOES cluster, proving
         // the guard is origin-specific and not just a broken clusterer.
         let real = vec![
-            finding("p1", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap"),
-            finding("p2", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap"),
+            finding(
+                "p1",
+                "standards_finding",
+                Some("standards:no-unwrap"),
+                "Avoid unwrap",
+            ),
+            finding(
+                "p2",
+                "standards_finding",
+                Some("standards:no-unwrap"),
+                "Avoid unwrap",
+            ),
         ];
         assert_eq!(cluster_shared_findings(&real).len(), 1);
 
@@ -3797,7 +4085,11 @@ mod tests {
         mixed.extend(real);
         let out = cluster_shared_findings(&mixed);
         assert_eq!(out.len(), 1);
-        assert!(!out[0].dedup_key.as_deref().unwrap().contains(PRACTICE_ORIGIN));
+        assert!(!out[0]
+            .dedup_key
+            .as_deref()
+            .unwrap()
+            .contains(PRACTICE_ORIGIN));
     }
 
     #[test]
@@ -3822,7 +4114,10 @@ mod tests {
         // Missing / malformed / empty evidence degrades to None, never a panic.
         assert!(practice_id_from_evidence(Some(PRACTICE_ORIGIN), None).is_none());
         assert!(practice_id_from_evidence(Some(PRACTICE_ORIGIN), Some("not json")).is_none());
-        assert!(practice_id_from_evidence(Some(PRACTICE_ORIGIN), Some(r#"{"practice_id":""}"#)).is_none());
+        assert!(
+            practice_id_from_evidence(Some(PRACTICE_ORIGIN), Some(r#"{"practice_id":""}"#))
+                .is_none()
+        );
     }
 
     #[test]
@@ -3887,7 +4182,10 @@ mod tests {
             .prepare("SELECT * FROM dev_ideas WHERE dedup_key = ?1 ORDER BY project_id")
             .unwrap();
         let rows = stmt
-            .query_map(params![practice_dedup_key(practice_id)], crate::repos::dev_tools::row_to_idea)
+            .query_map(
+                params![practice_dedup_key(practice_id)],
+                crate::repos::dev_tools::row_to_idea,
+            )
             .unwrap();
         rows.collect::<Result<Vec<_>, _>>().unwrap()
     }
@@ -3924,12 +4222,20 @@ mod tests {
         let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
         adopt_and_find_gaps(&pool, &practice, &projects);
 
-        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 2);
+        assert_eq!(
+            materialize_pending_for_practice(&pool, &practice).unwrap(),
+            2
+        );
         let ideas = practice_ideas(&pool, &practice);
         assert_eq!(ideas.len(), 2);
-        assert!(ideas.iter().all(|i| i.origin.as_deref() == Some(PRACTICE_ORIGIN)));
+        assert!(ideas
+            .iter()
+            .all(|i| i.origin.as_deref() == Some(PRACTICE_ORIGIN)));
         assert!(ideas.iter().all(|i| i.status == "pending"));
-        assert_eq!(ideas[0].title, "Adopt workspace practice: Use design tokens");
+        assert_eq!(
+            ideas[0].title,
+            "Adopt workspace practice: Use design tokens"
+        );
         // Statement AND detail reach the description — this text seeds the task prompt.
         let desc = ideas[0].description.clone().unwrap();
         assert!(desc.contains("semantic tokens"));
@@ -3943,7 +4249,10 @@ mod tests {
 
         // IDEMPOTENCY: re-adopting (or a second backfill) inserts nothing new.
         decide_knowledge(&pool, &practice, "adopt", None).unwrap();
-        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
+        assert_eq!(
+            materialize_pending_for_practice(&pool, &practice).unwrap(),
+            0
+        );
         assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
         assert_eq!(practice_ideas(&pool, &practice).len(), 2);
 
@@ -3981,7 +4290,10 @@ mod tests {
         let (_ws, practice, projects) = seeded(&pool, 2, "fact");
         adopt_and_find_gaps(&pool, &practice, &projects);
         assert_eq!(cell(&pool, &practice, &projects[0]), "to_process");
-        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
+        assert_eq!(
+            materialize_pending_for_practice(&pool, &practice).unwrap(),
+            0
+        );
         assert!(practice_ideas(&pool, &practice).is_empty());
         assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
     }
@@ -4018,7 +4330,16 @@ mod tests {
             .find(|i| i.project_id.as_deref() == Some(projects[0].as_str()))
             .unwrap();
         crate::repos::dev_tools::update_idea(
-            &pool, &accepted.id, None, None, Some("accepted"), None, None, None, None, None,
+            &pool,
+            &accepted.id,
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap();
 
@@ -4029,7 +4350,10 @@ mod tests {
 
         // The archived row keeps the dedup key, so re-adoption cannot stack a
         // second copy (documented trade-off, plan §Open questions).
-        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
+        assert_eq!(
+            materialize_pending_for_practice(&pool, &practice).unwrap(),
+            0
+        );
     }
 
     #[test]
@@ -4127,8 +4451,8 @@ mod tests {
         // Surface B was still rendering it as `proposed` and adopts. Before the
         // swap this silently flipped the row to `adopted` AND fanned an adoption
         // cell into every member repo.
-        let err = decide_knowledge_cas(&pool, &practice, "adopt", None, Some("proposed"))
-            .unwrap_err();
+        let err =
+            decide_knowledge_cas(&pool, &practice, "adopt", None, Some("proposed")).unwrap_err();
         assert!(
             err.to_string().contains("already decided"),
             "expected a concurrency conflict, got: {err}"

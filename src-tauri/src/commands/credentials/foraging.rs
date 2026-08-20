@@ -824,8 +824,9 @@ impl ForageSourceResolver for EnvResolver {
                 if env_key.is_empty() || !is_safe_path_component(env_key) {
                     continue;
                 }
-                let Some(&(_, _, field_key)) =
-                    ENV_PATTERNS.iter().find(|&&(k, s, _)| k == env_key && s == *svc)
+                let Some(&(_, _, field_key)) = ENV_PATTERNS
+                    .iter()
+                    .find(|&&(k, s, _)| k == env_key && s == *svc)
                 else {
                     continue;
                 };

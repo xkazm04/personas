@@ -1,8 +1,8 @@
 use rusqlite::params;
 use ts_rs::TS;
 
-use crate::DbPool;
 use crate::byom::ProviderAuditEntry;
+use crate::DbPool;
 use personas_core::error::AppError;
 
 /// Insert a provider audit log entry (append-only).

@@ -108,7 +108,11 @@ static MEDIA_EXPORT_JOBS: BackgroundJobManager<MediaExportExtra> = BackgroundJob
 static FFMPEG_PATH_CACHE: std::sync::Mutex<Option<Option<PathBuf>>> = std::sync::Mutex::new(None);
 
 async fn find_ffmpeg_path() -> Option<PathBuf> {
-    if let Some(cached) = FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned").clone() {
+    if let Some(cached) = FFMPEG_PATH_CACHE
+        .lock()
+        .expect("ffmpeg cache poisoned")
+        .clone()
+    {
         return cached;
     }
     let discovered = discover_ffmpeg_path().await;
@@ -151,8 +155,7 @@ async fn discover_ffmpeg_path() -> Option<PathBuf> {
         //    Walk any package whose name contains "ffmpeg" and look for the
         //    binary at depth 1 or 2.
         if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
-            let packages_dir =
-                PathBuf::from(&localappdata).join(r"Microsoft\WinGet\Packages");
+            let packages_dir = PathBuf::from(&localappdata).join(r"Microsoft\WinGet\Packages");
             if let Ok(mut entries) = tokio::fs::read_dir(&packages_dir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
                     let pkg_path = entry.path();
@@ -567,7 +570,6 @@ pub async fn artist_export_composition(
     composition_json: String,
     output_path: String,
 ) -> Result<serde_json::Value, AppError> {
-
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -595,40 +597,44 @@ pub async fn artist_export_composition(
 
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => {
-                Err(AppError::Internal("Export cancelled".into()))
-            }
-            res = run_ffmpeg_export(
-                &app_handle,
-                &job_id_clone,
-                &ffmpeg,
-                &plan,
-                &output_path,
-            ) => res
-        };
-
-        match result {
-            Ok(()) => {
-                MEDIA_EXPORT_JOBS.set_status(&app_handle, &job_id_clone, "completed", None);
-                let _ = app_handle.emit(
-                    event_name::MEDIA_EXPORT_COMPLETE,
-                    json!({ "job_id": job_id_clone, "output_path": output_path }),
-                );
-            }
-            Err(e) => {
-                let msg = format!("{e}");
-                MEDIA_EXPORT_JOBS.set_status(
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => {
+                    Err(AppError::Internal("Export cancelled".into()))
+                }
+                res = run_ffmpeg_export(
                     &app_handle,
                     &job_id_clone,
-                    "failed",
-                    Some(msg.clone()),
-                );
-                MEDIA_EXPORT_JOBS.emit_line(&app_handle, &job_id_clone, format!("[Error] {msg}"));
-            }
-        }
+                    &ffmpeg,
+                    &plan,
+                    &output_path,
+                ) => res
+            };
 
-        let _ = MEDIA_EXPORT_JOBS.remove(&job_id_clone);
+            match result {
+                Ok(()) => {
+                    MEDIA_EXPORT_JOBS.set_status(&app_handle, &job_id_clone, "completed", None);
+                    let _ = app_handle.emit(
+                        event_name::MEDIA_EXPORT_COMPLETE,
+                        json!({ "job_id": job_id_clone, "output_path": output_path }),
+                    );
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    MEDIA_EXPORT_JOBS.set_status(
+                        &app_handle,
+                        &job_id_clone,
+                        "failed",
+                        Some(msg.clone()),
+                    );
+                    MEDIA_EXPORT_JOBS.emit_line(
+                        &app_handle,
+                        &job_id_clone,
+                        format!("[Error] {msg}"),
+                    );
+                }
+            }
+
+            let _ = MEDIA_EXPORT_JOBS.remove(&job_id_clone);
         })
         .catch_unwind()
         .await;
@@ -636,8 +642,17 @@ pub async fn artist_export_composition(
         if let Err(panic) = work {
             let msg = extract_panic_message(panic);
             tracing::error!(job_id = %job_id_for_panic, panic = %msg, "media export task panicked — marking job as failed");
-            MEDIA_EXPORT_JOBS.set_status(&app_handle_for_panic, &job_id_for_panic, "failed", Some(msg.clone()));
-            MEDIA_EXPORT_JOBS.emit_line(&app_handle_for_panic, &job_id_for_panic, format!("[Error] {msg}"));
+            MEDIA_EXPORT_JOBS.set_status(
+                &app_handle_for_panic,
+                &job_id_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            MEDIA_EXPORT_JOBS.emit_line(
+                &app_handle_for_panic,
+                &job_id_for_panic,
+                format!("[Error] {msg}"),
+            );
             let _ = MEDIA_EXPORT_JOBS.remove(&job_id_for_panic);
         }
     });
@@ -1732,7 +1747,10 @@ mod tests {
         };
         let e = overlay_pos_expr("main_h", "overlay_h", 0.5, 0.15, Some(&enter), 1.0);
         // References the timeline clock, the clamp window, and the base+offset.
-        assert!(e.contains("clip((t-1.000)/0.400"), "has progress window: {e}");
+        assert!(
+            e.contains("clip((t-1.000)/0.400"),
+            "has progress window: {e}"
+        );
         assert!(e.contains("pow(1-"), "easeOut uses a power curve: {e}");
         assert!(e.contains("0.5000"), "carries the base fraction: {e}");
         assert!(e.contains("0.1500"), "carries the offset: {e}");

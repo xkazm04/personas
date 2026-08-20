@@ -22,7 +22,6 @@ use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
-
 use super::registry::{now_ms, registry};
 use super::types::{state_to_token, FleetSessionState};
 
@@ -54,10 +53,7 @@ async fn receive_hook(
         .get("session_id")
         .and_then(|v| v.as_str())
         .map(str::to_string);
-    let cwd = body
-        .get("cwd")
-        .and_then(|v| v.as_str())
-        .map(str::to_string);
+    let cwd = body.get("cwd").and_then(|v| v.as_str()).map(str::to_string);
     // Notification hooks carry a human message describing what Claude wants
     // (e.g. "Claude needs your permission to use Bash"). Surface it so the
     // "Needs you" banner + desktop alert can say what each session needs.
@@ -85,10 +81,7 @@ async fn receive_hook(
         // apply_hook so the FleetSessionState machine + FE event
         // emission stay in one place.
         if event_kind == "pretooluse" || event_kind == "posttooluse" {
-            let tool_name = body
-                .get("tool_name")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let tool_name = body.get("tool_name").and_then(|v| v.as_str()).unwrap_or("");
             let empty = serde_json::Value::Null;
             let tool_input = body.get("tool_input").unwrap_or(&empty);
             let tool_result = body.get("tool_result");
@@ -100,14 +93,13 @@ async fn receive_hook(
                     tool_name,
                     event_kind == "posttooluse",
                 );
-                crate::companion::orchestration::operative_memory::memory()
-                    .record_tool_event(
-                        sid,
-                        tool_name,
-                        tool_input,
-                        event_kind == "posttooluse",
-                        tool_result,
-                    );
+                crate::companion::orchestration::operative_memory::memory().record_tool_event(
+                    sid,
+                    tool_name,
+                    tool_input,
+                    event_kind == "posttooluse",
+                    tool_result,
+                );
             }
             // A running tool is proof the session is working, not waiting on the
             // user. Correct a stale `AwaitingInput`/`Idle`/`Stale` immediately
@@ -124,7 +116,13 @@ async fn receive_hook(
                 );
             }
         } else {
-            apply_hook(sid, &event_kind, claude_session_id.clone(), message.as_deref(), &app);
+            apply_hook(
+                sid,
+                &event_kind,
+                claude_session_id.clone(),
+                message.as_deref(),
+                &app,
+            );
         }
     } else {
         tracing::debug!(
@@ -160,11 +158,11 @@ async fn receive_hook(
 ///    — the one this unbound SessionStart most likely belongs to.
 /// 3. If every cwd-matching session is already bound (or none exist),
 ///    return `None` and the hook is logged + dropped.
-fn resolve_session_id(
-    claude_session_id: &Option<String>,
-    cwd: &Option<String>,
-) -> Option<String> {
-    let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+fn resolve_session_id(claude_session_id: &Option<String>, cwd: &Option<String>) -> Option<String> {
+    let map = registry()
+        .sessions
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     if let Some(csid) = claude_session_id {
         for sess in map.values() {
@@ -180,12 +178,16 @@ fn resolve_session_id(
         // (the bootstrap-window candidate).
         let mut best_unbound: Option<&super::registry::FleetSessionInner> = None;
         for sess in map.values() {
-            if matches!(sess.state, FleetSessionState::Exited) { continue; }
-            if sess.cwd != cwd_path { continue; }
-            if sess.claude_session_id.is_some() { continue; }
-            if best_unbound.is_none()
-                || sess.created_at_ms > best_unbound.unwrap().created_at_ms
-            {
+            if matches!(sess.state, FleetSessionState::Exited) {
+                continue;
+            }
+            if sess.cwd != cwd_path {
+                continue;
+            }
+            if sess.claude_session_id.is_some() {
+                continue;
+            }
+            if best_unbound.is_none() || sess.created_at_ms > best_unbound.unwrap().created_at_ms {
                 best_unbound = Some(sess);
             }
         }
@@ -198,10 +200,13 @@ fn resolve_session_id(
         // update (better than dropping the hook entirely).
         let mut best_bound: Option<&super::registry::FleetSessionInner> = None;
         for sess in map.values() {
-            if matches!(sess.state, FleetSessionState::Exited) { continue; }
-            if sess.cwd != cwd_path { continue; }
-            if best_bound.is_none()
-                || sess.last_activity_ms > best_bound.unwrap().last_activity_ms
+            if matches!(sess.state, FleetSessionState::Exited) {
+                continue;
+            }
+            if sess.cwd != cwd_path {
+                continue;
+            }
+            if best_bound.is_none() || sess.last_activity_ms > best_bound.unwrap().last_activity_ms
             {
                 best_bound = Some(sess);
             }
@@ -222,7 +227,10 @@ fn apply_hook(
     message: Option<&str>,
     app: &AppHandle,
 ) {
-    let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+    let mut map = registry()
+        .sessions
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let Some(session) = map.get_mut(session_id) else {
         return;
     };
@@ -262,10 +270,7 @@ fn apply_hook(
             FleetSessionState::Idle,
             "Stop hook — turn finished".to_string(),
         ),
-        "pretooluse" => (
-            FleetSessionState::Running,
-            "PreToolUse hook".to_string(),
-        ),
+        "pretooluse" => (FleetSessionState::Running, "PreToolUse hook".to_string()),
         "userpromptsubmit" => (
             FleetSessionState::Running,
             "UserPromptSubmit hook".to_string(),

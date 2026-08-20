@@ -78,7 +78,10 @@ pub fn install_mcp_config(target: &str) {
     // builder emits the `"type"` discriminator these clients actually read.
     let server_config = personas_core::mcp_config::McpServer::stdio(
         binary_path,
-        ["--db-path".to_string(), db_path.to_string_lossy().into_owned()],
+        [
+            "--db-path".to_string(),
+            db_path.to_string_lossy().into_owned(),
+        ],
     )
     .with_env("PERSONAS_MCP_TOKEN", token)
     .to_json();

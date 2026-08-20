@@ -3,13 +3,12 @@ use std::collections::{HashMap, HashSet};
 use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
-    AttentionItem, AttentionQueue, AttentionThresholds, UndispatchedIdea,
-    DevCompetition, DevCompetitionSlot, DevContext,
-    DevContextFingerprint, DevContextGroup,
-    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiBinding, DevKpiMeasurement, DevIdea,
-    DevMilestone, DevMilestoneItem,
-    DevProject, DevProjectWallSummary, DevScan, DevStandard, DevTask, DevUseCase, GoalProgressSuggestion, PortfolioProjectSummary,
-    PortfolioSummary, TriageRule,
+    AttentionItem, AttentionQueue, AttentionThresholds, DevCompetition, DevCompetitionSlot,
+    DevContext, DevContextFingerprint, DevContextGroup, DevContextGroupRelationship, DevGoal,
+    DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea, DevKpi, DevKpiBinding,
+    DevKpiMeasurement, DevMilestone, DevMilestoneItem, DevProject, DevProjectWallSummary, DevScan,
+    DevStandard, DevTask, DevUseCase, GoalProgressSuggestion, PortfolioProjectSummary,
+    PortfolioSummary, TriageRule, UndispatchedIdea,
 };
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
@@ -585,8 +584,12 @@ pub fn create_standard(
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)",
             params![id, project_id, scan_id, rule_key, category, title, status, severity, evidence, recommendation, now],
         )?;
-        conn.query_row("SELECT * FROM dev_standards WHERE id = ?1", params![id], row_to_standard)
-            .map_err(Into::into)
+        conn.query_row(
+            "SELECT * FROM dev_standards WHERE id = ?1",
+            params![id],
+            row_to_standard,
+        )
+        .map_err(Into::into)
     })
 }
 
@@ -594,28 +597,37 @@ pub fn list_standards_by_project(
     pool: &DbPool,
     project_id: &str,
 ) -> Result<Vec<DevStandard>, AppError> {
-    timed_query!("dev_standards", "dev_standards::list_standards_by_project", {
-        let conn = pool.get()?;
-        let mut stmt = conn
-            .prepare("SELECT * FROM dev_standards WHERE project_id = ?1 ORDER BY category, rule_key")?;
-        let rows = stmt.query_map(params![project_id], row_to_standard)?;
-        let mut out = Vec::new();
-        for r in rows {
-            out.push(r?);
+    timed_query!(
+        "dev_standards",
+        "dev_standards::list_standards_by_project",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM dev_standards WHERE project_id = ?1 ORDER BY category, rule_key",
+            )?;
+            let rows = stmt.query_map(params![project_id], row_to_standard)?;
+            let mut out = Vec::new();
+            for r in rows {
+                out.push(r?);
+            }
+            Ok(out)
         }
-        Ok(out)
-    })
+    )
 }
 
 pub fn clear_standards_for_project(pool: &DbPool, project_id: &str) -> Result<usize, AppError> {
-    timed_query!("dev_standards", "dev_standards::clear_standards_for_project", {
-        let conn = pool.get()?;
-        let n = conn.execute(
-            "DELETE FROM dev_standards WHERE project_id = ?1",
-            params![project_id],
-        )?;
-        Ok(n)
-    })
+    timed_query!(
+        "dev_standards",
+        "dev_standards::clear_standards_for_project",
+        {
+            let conn = pool.get()?;
+            let n = conn.execute(
+                "DELETE FROM dev_standards WHERE project_id = ?1",
+                params![project_id],
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 // ============================================================================
@@ -945,8 +957,8 @@ fn row_to_goal_item(row: &Row) -> rusqlite::Result<DevGoalItem> {
 pub fn list_goal_items(pool: &DbPool, goal_id: &str) -> Result<Vec<DevGoalItem>, AppError> {
     timed_query!("dev_goal_items", "dev_goal_items::list", {
         let conn = pool.get()?;
-        let mut stmt = conn
-            .prepare("SELECT * FROM dev_goal_items WHERE goal_id = ?1 ORDER BY order_index")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM dev_goal_items WHERE goal_id = ?1 ORDER BY order_index")?;
         let rows = stmt.query_map(params![goal_id], row_to_goal_item)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1092,8 +1104,7 @@ pub fn set_goal_verification(
 ) -> Result<DevGoalItem, AppError> {
     timed_query!("dev_goal_items", "dev_goal_items::set_verification", {
         let conn = pool.get()?;
-        let config = serde_json::json!({ "scenario": scenario.trim(), "url": url })
-            .to_string();
+        let config = serde_json::json!({ "scenario": scenario.trim(), "url": url }).to_string();
         let now = chrono::Utc::now().to_rfc3339();
         // Replace any existing gate so config edits don't pile up duplicates.
         conn.execute(
@@ -1166,8 +1177,8 @@ pub fn complete_goal_verification(pool: &DbPool, goal_id: &str) -> Result<i32, A
 pub fn list_child_goals(pool: &DbPool, parent_goal_id: &str) -> Result<Vec<DevGoal>, AppError> {
     timed_query!("dev_goals", "dev_goals::list_child_goals", {
         let conn = pool.get()?;
-        let mut stmt = conn
-            .prepare("SELECT * FROM dev_goals WHERE parent_goal_id = ?1 ORDER BY order_index")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM dev_goals WHERE parent_goal_id = ?1 ORDER BY order_index")?;
         let rows = stmt.query_map(params![parent_goal_id], row_to_goal)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1193,7 +1204,9 @@ pub fn normalize_goal_status(raw: &str) -> &'static str {
         // Agent/team completed the work; it sits in the human-acceptance queue
         // until the user accepts (→ done) or rejects (→ in-progress). Distinct
         // from `done` (accepted) and from `blocked`/`awaiting_review`.
-        "awaiting_acceptance" | "awaiting-acceptance" | "pending_acceptance" => "awaiting_acceptance",
+        "awaiting_acceptance" | "awaiting-acceptance" | "pending_acceptance" => {
+            "awaiting_acceptance"
+        }
         "done" | "completed" | "complete" | "skipped" => "done",
         _ => "open",
     }
@@ -1201,8 +1214,13 @@ pub fn normalize_goal_status(raw: &str) -> &'static str {
 
 /// The canonical `dev_goals.status` set — the values the column's CHECK
 /// constraint admits, and the ones `goalStatus.ts` declares as `GoalStatus`.
-pub const CANONICAL_GOAL_STATUSES: [&str; 5] =
-    ["open", "in-progress", "awaiting_acceptance", "blocked", "done"];
+pub const CANONICAL_GOAL_STATUSES: [&str; 5] = [
+    "open",
+    "in-progress",
+    "awaiting_acceptance",
+    "blocked",
+    "done",
+];
 
 /// STRICT counterpart to [`normalize_goal_status`]: the same alias table with
 /// the catch-all removed, so an unrecognised value comes back as `None` instead
@@ -1240,8 +1258,7 @@ pub fn goal_status_is_ongoing(status: &str) -> bool {
 pub fn list_all_goals(pool: &DbPool) -> Result<Vec<DevGoal>, AppError> {
     timed_query!("dev_goals", "dev_goals::list_all_goals", {
         let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare("SELECT * FROM dev_goals ORDER BY project_id, order_index")?;
+        let mut stmt = conn.prepare("SELECT * FROM dev_goals ORDER BY project_id, order_index")?;
         let rows = stmt.query_map([], row_to_goal)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1256,7 +1273,11 @@ fn goal_summary(description: Option<String>) -> Option<String> {
     let head = d.split("\n---").next().unwrap_or(&d);
     let head = head.split("\n\n").next().unwrap_or(head);
     let s: String = head.trim().chars().take(200).collect();
-    if s.is_empty() { None } else { Some(s) }
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
+    }
 }
 
 /// Enriched list of goals in `awaiting_acceptance` (the human-acceptance queue),
@@ -1298,7 +1319,8 @@ pub fn list_pending_acceptance(
                 kpi_direction: r.get(14)?,
             })
         })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -1350,9 +1372,8 @@ pub struct PendingCounts {
 pub fn pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
     timed_query!("pending_counts", "pending_counts::all", {
         let conn = pool.get()?;
-        let one = |sql: &str| -> Result<u32, AppError> {
-            Ok(conn.query_row(sql, [], |r| r.get(0))?)
-        };
+        let one =
+            |sql: &str| -> Result<u32, AppError> { Ok(conn.query_row(sql, [], |r| r.get(0))?) };
 
         let goal_acceptance =
             one("SELECT COUNT(*) FROM dev_goals WHERE status = 'awaiting_acceptance'")?;
@@ -1406,14 +1427,41 @@ pub fn resolve_goal_acceptance(
     }
     if accept {
         let updated = update_goal(
-            pool, goal_id, None, None, Some("done"), None, None, None, None, None, None,
+            pool,
+            goal_id,
+            None,
+            None,
+            Some("done"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )?;
-        let _ = create_goal_signal(pool, goal_id, "goal_accepted", None, None, Some("Accepted by the user."));
+        let _ = create_goal_signal(
+            pool,
+            goal_id,
+            "goal_accepted",
+            None,
+            None,
+            Some("Accepted by the user."),
+        );
         Ok(updated)
     } else {
         // Reject → back to the team; clear the completion stamp.
         let updated = update_goal(
-            pool, goal_id, None, None, Some("in-progress"), None, None, None, None, Some(None), None,
+            pool,
+            goal_id,
+            None,
+            None,
+            Some("in-progress"),
+            None,
+            None,
+            None,
+            None,
+            Some(None),
+            None,
         )?;
         let msg = comment
             .map(|c| format!("Sent back: {c}"))
@@ -1521,7 +1569,9 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
     }
 
     for g in &goals {
-        let Some(a) = acc.get_mut(&g.project_id) else { continue };
+        let Some(a) = acc.get_mut(&g.project_id) else {
+            continue;
+        };
         a.total += 1;
         a.progress_sum += g.progress as i64;
         match normalize_goal_status(&g.status) {
@@ -1977,7 +2027,11 @@ pub fn attention_queue(
                 );
                 continue;
             };
-            let cutoff = if running { running_cutoff } else { queued_cutoff };
+            let cutoff = if running {
+                running_cutoff
+            } else {
+                queued_cutoff
+            };
             if last_seen >= cutoff {
                 continue;
             }
@@ -2125,9 +2179,7 @@ pub fn attention_queue(
                     k.cadence
                 )
             } else {
-                format!(
-                    "active {days}d, never measured — no goal can be derived from it yet"
-                )
+                format!("active {days}d, never measured — no goal can be derived from it yet")
             };
             items.push(AttentionItem {
                 kind: kind.into(),
@@ -2235,7 +2287,9 @@ fn undispatched_ideas_rows(
         })
     };
     let rows = match project_id {
-        Some(pid) => stmt.query_map(params![pid], map)?.collect::<Result<Vec<_>, _>>(),
+        Some(pid) => stmt
+            .query_map(params![pid], map)?
+            .collect::<Result<Vec<_>, _>>(),
         None => stmt.query_map([], map)?.collect::<Result<Vec<_>, _>>(),
     };
     rows.map_err(AppError::Database)
@@ -2366,8 +2420,7 @@ pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32,
         .iter()
         .filter(|g| goal_status_is_complete(&g.status) || g.progress >= 100)
         .count();
-    let assignments =
-        crate::repos::orchestration::team_assignments::list_for_goal(pool, goal_id)?;
+    let assignments = crate::repos::orchestration::team_assignments::list_for_goal(pool, goal_id)?;
     let mut steps_total = 0usize;
     let mut steps_done = 0usize;
     for a in &assignments {
@@ -2439,15 +2492,15 @@ pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32,
     update_goal(
         pool,
         goal_id,
-        None,                  // title
-        None,                  // description
-        new_status,            // status
-        Some(new_progress),    // progress
-        None,                  // target_date
-        None,                  // context_id
-        started_at,            // started_at
-        completed_at,          // completed_at
-        None,                  // kpi_id (unchanged)
+        None,               // title
+        None,               // description
+        new_status,         // status
+        Some(new_progress), // progress
+        None,               // target_date
+        None,               // context_id
+        started_at,         // started_at
+        completed_at,       // completed_at
+        None,               // kpi_id (unchanged)
     )?;
 
     Ok(new_progress)
@@ -2469,7 +2522,17 @@ pub fn mark_goal_in_progress(pool: &DbPool, goal_id: &str) -> Result<(), AppErro
         None
     };
     update_goal(
-        pool, goal_id, None, None, Some("in-progress"), None, None, None, started_at, None, None,
+        pool,
+        goal_id,
+        None,
+        None,
+        Some("in-progress"),
+        None,
+        None,
+        None,
+        started_at,
+        None,
+        None,
     )?;
     Ok(())
 }
@@ -2518,7 +2581,20 @@ mod apply_progress_tests {
         let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
         let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
         // Hand-set 80%, no items/steps → resolver would suggest fallback(current)=80; never below.
-        update_goal(&pool, &goal.id, None, None, None, Some(80), None, None, None, None, None).unwrap();
+        update_goal(
+            &pool,
+            &goal.id,
+            None,
+            None,
+            None,
+            Some(80),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         let p = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
         assert_eq!(p, 80);
     }
@@ -2535,33 +2611,63 @@ mod apply_progress_tests {
         // SET: outer Some, inner Some(value). 9 leading Nones = params through pr_credential_id;
         // the final three are test_env_url / test_env_branch / main_branch.
         let p = update_project(
-            &pool, &p.id,
-            None, None, None, None, None, None, None, None, None,
+            &pool,
+            &p.id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
             Some(Some("https://staging.example.test")),
             Some(Some("staging")),
             Some(Some("main")),
-            None, None, None,
+            None,
+            None,
+            None,
         )
         .unwrap();
-        assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
+        assert_eq!(
+            p.test_env_url.as_deref(),
+            Some("https://staging.example.test")
+        );
         assert_eq!(p.test_env_branch.as_deref(), Some("staging"));
         assert_eq!(p.main_branch.as_deref(), Some("main"));
 
         // LEAVE UNCHANGED: outer None → value persists.
         let p = update_project(
-            &pool, &p.id,
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            &pool, &p.id, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None, None,
         )
         .unwrap();
-        assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
+        assert_eq!(
+            p.test_env_url.as_deref(),
+            Some("https://staging.example.test")
+        );
         assert_eq!(p.main_branch.as_deref(), Some("main"));
 
         // CLEAR: outer Some, inner None → back to NULL.
         let p = update_project(
-            &pool, &p.id,
-            None, None, None, None, None, None, None, None, None,
-            Some(None), Some(None), Some(None),
-            None, None, None,
+            &pool,
+            &p.id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(None),
+            Some(None),
+            Some(None),
+            None,
+            None,
+            None,
         )
         .unwrap();
         assert_eq!(p.test_env_url, None);
@@ -2924,8 +3030,8 @@ pub fn clear_project_context_map(
                 params![project_id],
             );
             let _ = rel_rows; // ok if table is empty
-            // Delete only groups that no longer own any (surviving/pinned)
-            // context, so a pinned context keeps its group.
+                              // Delete only groups that no longer own any (surviving/pinned)
+                              // context, so a pinned context keeps its group.
             let grp_rows = conn.execute(
                 "DELETE FROM dev_context_groups WHERE project_id = ?1 \
                  AND id NOT IN (\
@@ -2957,11 +3063,7 @@ pub fn clear_project_context_map(
 
 /// Set (or clear) the canonical-pin flag on a single context. A pinned context
 /// survives a full rescan's DELETE-and-recreate. Returns the updated row.
-pub fn set_context_pinned(
-    pool: &DbPool,
-    id: &str,
-    pinned: bool,
-) -> Result<DevContext, AppError> {
+pub fn set_context_pinned(pool: &DbPool, id: &str, pinned: bool) -> Result<DevContext, AppError> {
     timed_query!("dev_contexts", "dev_contexts::set_context_pinned", {
         let conn = pool.get()?;
         let n = conn.execute(
@@ -3771,8 +3873,7 @@ fn triage_counts(
     } else {
         format!(" WHERE {}", clauses.join(" AND "))
     };
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        params.iter().map(|p| p.as_ref()).collect();
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
 
     let group = |expr: &str| -> Result<HashMap<String, u32>, AppError> {
         let sql = format!(
@@ -3828,9 +3929,9 @@ pub fn triage_ideas(
         params.push(Box::new(status.to_string()));
 
         if let Some(raw) = cursor.filter(|c| !c.is_empty()) {
-            let (created_at, id) = raw.split_once('|').ok_or_else(|| {
-                AppError::Validation(format!("Malformed triage cursor: {raw}"))
-            })?;
+            let (created_at, id) = raw
+                .split_once('|')
+                .ok_or_else(|| AppError::Validation(format!("Malformed triage cursor: {raw}")))?;
             clauses.push("(created_at < ? OR (created_at = ? AND id < ?))".to_string());
             params.push(Box::new(created_at.to_string()));
             params.push(Box::new(created_at.to_string()));
@@ -3999,7 +4100,9 @@ pub fn create_idea_deduped(
         return Err(AppError::Validation("Title cannot be empty".into()));
     }
     if dedup_key.trim().is_empty() {
-        return Err(AppError::Validation("Idea dedup_key cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Idea dedup_key cannot be empty".into(),
+        ));
     }
 
     {
@@ -4176,10 +4279,14 @@ pub fn create_finding(
         return Err(AppError::Validation("Title cannot be empty".into()));
     }
     if !crate::models::FINDING_ORIGINS.contains(&origin) {
-        return Err(AppError::Validation(format!("Unknown finding origin: {origin}")));
+        return Err(AppError::Validation(format!(
+            "Unknown finding origin: {origin}"
+        )));
     }
     if dedup_key.trim().is_empty() {
-        return Err(AppError::Validation("Finding dedup_key cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Finding dedup_key cannot be empty".into(),
+        ));
     }
 
     timed_query!("dev_ideas", "dev_ideas::create_finding", {
@@ -4238,7 +4345,11 @@ pub fn create_finding(
         let idea = get_idea_by_id(pool, &id)?;
         // A sensor raised something — tell the bus. `signal.raised` is what the
         // dispatch ops (Task Runner vs Fleet) will route off.
-        publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_RAISED);
+        publish_signal_event(
+            pool,
+            &idea,
+            personas_core::events::event_name::SIGNAL_RAISED,
+        );
         Ok(Some(idea))
     })
 }
@@ -4317,7 +4428,11 @@ pub fn set_finding_verify_state(
         // an unjudged finding. Arming is silent; only real verdicts speak.
         if verify_state != "pending" {
             if let Ok(idea) = get_idea_by_id(pool, id) {
-                publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_VERIFIED);
+                publish_signal_event(
+                    pool,
+                    &idea,
+                    personas_core::events::event_name::SIGNAL_VERIFIED,
+                );
             }
         }
         Ok(())
@@ -6312,7 +6427,13 @@ mod goal_status_tests {
 
     #[test]
     fn normalize_buckets_match_the_frontend_model() {
-        for raw in ["in-progress", "in_progress", "running", "active", "matching"] {
+        for raw in [
+            "in-progress",
+            "in_progress",
+            "running",
+            "active",
+            "matching",
+        ] {
             assert_eq!(normalize_goal_status(raw), "in-progress", "{raw}");
         }
         for raw in ["blocked", "review", "awaiting_review"] {
@@ -6342,9 +6463,25 @@ mod goal_status_tests {
     #[test]
     fn the_strict_mapper_agrees_with_the_runtime_normalizer_and_only_drops_the_fallback() {
         for raw in [
-            "in-progress", "in_progress", "running", "active", "matching", "blocked", "review",
-            "awaiting_review", "awaiting_acceptance", "awaiting-acceptance", "pending_acceptance",
-            "done", "completed", "complete", "skipped", "open", "pending", "todo", "queued",
+            "in-progress",
+            "in_progress",
+            "running",
+            "active",
+            "matching",
+            "blocked",
+            "review",
+            "awaiting_review",
+            "awaiting_acceptance",
+            "awaiting-acceptance",
+            "pending_acceptance",
+            "done",
+            "completed",
+            "complete",
+            "skipped",
+            "open",
+            "pending",
+            "todo",
+            "queued",
             "  In_Progress ",
         ] {
             assert_eq!(
@@ -6371,9 +6508,21 @@ mod goal_status_tests {
             super::create_project(&pool, "P", "/tmp/goal-door", None, None, None, None, None)
                 .unwrap();
 
-        let g = super::create_goal(&pool, &project.id, "G", None, None, Some("running"), None, None)
-            .unwrap();
-        assert_eq!(g.status, "in-progress", "a legacy alias is folded, not rejected");
+        let g = super::create_goal(
+            &pool,
+            &project.id,
+            "G",
+            None,
+            None,
+            Some("running"),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            g.status, "in-progress",
+            "a legacy alias is folded, not rejected"
+        );
 
         let updated = super::update_goal(
             &pool,
@@ -6430,7 +6579,13 @@ mod goal_status_tests {
     fn the_canonical_set_is_closed_under_normalization() {
         assert_eq!(
             super::CANONICAL_GOAL_STATUSES,
-            ["open", "in-progress", "awaiting_acceptance", "blocked", "done"],
+            [
+                "open",
+                "in-progress",
+                "awaiting_acceptance",
+                "blocked",
+                "done"
+            ],
             "keep in sync with GoalStatus in src/features/teams/sub_goals/goalStatus.ts",
         );
         for s in super::CANONICAL_GOAL_STATUSES {
@@ -6466,7 +6621,10 @@ mod goal_status_tests {
         let rfc = parse_stamp("2026-05-01T12:00:00+00:00").expect("rfc3339");
         let sqlite = parse_stamp("2026-05-01 12:00:00").expect("sqlite datetime('now')");
         assert_eq!(rfc, sqlite, "the SQLite default shape must parse as UTC");
-        assert!(parse_stamp("2026-05-01 12:00:00.123").is_some(), "fractional seconds");
+        assert!(
+            parse_stamp("2026-05-01 12:00:00.123").is_some(),
+            "fractional seconds"
+        );
         assert!(parse_stamp("2026-05-01").is_some(), "date-only");
         assert!(parse_stamp("whenever").is_none());
 
@@ -6475,7 +6633,10 @@ mod goal_status_tests {
         let plus_two = parse_stamp("2026-05-01T14:00:00+02:00").expect("offset");
         let utc_13 = parse_stamp("2026-05-01T13:00:00Z").expect("utc");
         assert!(plus_two < utc_13);
-        assert!("2026-05-01T14:00:00+02:00" > "2026-05-01T13:00:00Z", "…yet the strings sort the other way");
+        assert!(
+            "2026-05-01T14:00:00+02:00" > "2026-05-01T13:00:00Z",
+            "…yet the strings sort the other way"
+        );
     }
 
     /// A date-only deadline means the END of that day. Compared as raw strings,
@@ -6573,11 +6734,28 @@ mod uat_gate_tests {
     #[test]
     fn open_uat_gate_caps_progress_below_done() {
         let pool = test_pool();
-        let project =
-            create_project(&pool, "Web App", "/tmp/webapp", None, None, Some("react"), None, None)
-                .unwrap();
-        let goal =
-            create_goal(&pool, &project.id, "Ship feature", None, None, None, None, None).unwrap();
+        let project = create_project(
+            &pool,
+            "Web App",
+            "/tmp/webapp",
+            None,
+            None,
+            Some("react"),
+            None,
+            None,
+        )
+        .unwrap();
+        let goal = create_goal(
+            &pool,
+            &project.id,
+            "Ship feature",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         // One ordinary to-do, marked done.
         let todo = create_goal_item(&pool, &goal.id, "Build the feature").unwrap();
         update_goal_item(&pool, &todo.id, None, Some(true)).unwrap();
@@ -6586,9 +6764,16 @@ mod uat_gate_tests {
 
         // All ordinary to-dos done, but the open gate must cap below 100 / not done.
         let progress = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
-        assert!(progress < 100, "open UAT gate must keep progress < 100, got {progress}");
+        assert!(
+            progress < 100,
+            "open UAT gate must keep progress < 100, got {progress}"
+        );
         let g = get_goal_by_id(&pool, &goal.id).unwrap();
-        assert_ne!(normalize_goal_status(&g.status), "done", "goal must NOT be done while UAT open");
+        assert_ne!(
+            normalize_goal_status(&g.status),
+            "done",
+            "goal must NOT be done while UAT open"
+        );
 
         // Eligibility: every non-verify to-do is complete → UAT may run.
         assert!(goal_todos_all_complete(&pool, &goal.id).unwrap());
@@ -6607,10 +6792,19 @@ mod uat_gate_tests {
     #[test]
     fn uat_ineligible_while_todos_open() {
         let pool = test_pool();
-        let project =
-            create_project(&pool, "Web2", "/tmp/web2", None, None, Some("nodejs"), None, None)
-                .unwrap();
-        let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
+        let project = create_project(
+            &pool,
+            "Web2",
+            "/tmp/web2",
+            None,
+            None,
+            Some("nodejs"),
+            None,
+            None,
+        )
+        .unwrap();
+        let goal =
+            create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
         create_goal_item(&pool, &goal.id, "Unfinished work").unwrap(); // left open
         set_goal_verification(&pool, &goal.id, "test it", None).unwrap();
         assert!(
@@ -6622,19 +6816,35 @@ mod uat_gate_tests {
     #[test]
     fn reopen_gate_when_passed() {
         let pool = test_pool();
-        let project =
-            create_project(&pool, "Web4", "/tmp/web4", None, None, Some("react"), None, None)
-                .unwrap();
-        let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
+        let project = create_project(
+            &pool,
+            "Web4",
+            "/tmp/web4",
+            None,
+            None,
+            Some("react"),
+            None,
+            None,
+        )
+        .unwrap();
+        let goal =
+            create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
         set_goal_verification(&pool, &goal.id, "test it", None).unwrap();
         // Pass the gate → goal reaches the human-acceptance queue.
         complete_goal_verification(&pool, &goal.id).unwrap();
-        assert_eq!(normalize_goal_status(&get_goal_by_id(&pool, &goal.id).unwrap().status), "awaiting_acceptance");
+        assert_eq!(
+            normalize_goal_status(&get_goal_by_id(&pool, &goal.id).unwrap().status),
+            "awaiting_acceptance"
+        );
         // Re-open: new work invalidates the pass.
         let reopened = reopen_verification_if_passed(&pool, &goal.id).unwrap();
         assert!(reopened);
         let g = get_goal_by_id(&pool, &goal.id).unwrap();
-        assert_ne!(normalize_goal_status(&g.status), "done", "re-opening drops the goal out of done");
+        assert_ne!(
+            normalize_goal_status(&g.status),
+            "done",
+            "re-opening drops the goal out of done"
+        );
         assert!(g.progress < 100);
         // Idempotent: re-opening an already-open gate is a no-op.
         assert!(!reopen_verification_if_passed(&pool, &goal.id).unwrap());
@@ -6643,19 +6853,42 @@ mod uat_gate_tests {
     #[test]
     fn set_verification_replaces_not_duplicates() {
         let pool = test_pool();
-        let project =
-            create_project(&pool, "Web3", "/tmp/web3", None, None, Some("react"), None, None)
-                .unwrap();
-        let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
+        let project = create_project(
+            &pool,
+            "Web3",
+            "/tmp/web3",
+            None,
+            None,
+            Some("react"),
+            None,
+            None,
+        )
+        .unwrap();
+        let goal =
+            create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
         set_goal_verification(&pool, &goal.id, "scenario one", None).unwrap();
-        set_goal_verification(&pool, &goal.id, "scenario two", Some("http://localhost:8765")).unwrap();
+        set_goal_verification(
+            &pool,
+            &goal.id,
+            "scenario two",
+            Some("http://localhost:8765"),
+        )
+        .unwrap();
         let items = list_goal_items(&pool, &goal.id).unwrap();
         let gates: Vec<_> = items
             .iter()
             .filter(|i| i.verify_kind.as_deref() == Some("browser_test"))
             .collect();
-        assert_eq!(gates.len(), 1, "re-setting replaces the gate, never duplicates");
-        assert!(gates[0].verify_config.as_deref().unwrap().contains("scenario two"));
+        assert_eq!(
+            gates.len(),
+            1,
+            "re-setting replaces the gate, never duplicates"
+        );
+        assert!(gates[0]
+            .verify_config
+            .as_deref()
+            .unwrap()
+            .contains("scenario two"));
     }
 }
 
@@ -6723,9 +6956,7 @@ pub fn list_kpis(
 ) -> Result<Vec<DevKpi>, AppError> {
     timed_query!("dev_kpis", "dev_kpis::list_kpis", {
         let conn = pool.get()?;
-        let mut sql = String::from(
-            "SELECT * FROM dev_kpis WHERE project_id = ?1",
-        );
+        let mut sql = String::from("SELECT * FROM dev_kpis WHERE project_id = ?1");
         if status.is_some() {
             sql.push_str(" AND status = ?2");
         }
@@ -6740,15 +6971,20 @@ pub fn list_kpis(
             Some(st) => stmt.query_map(params![project_id, st], row_to_kpi)?,
             None => stmt.query_map(params![project_id], row_to_kpi)?,
         };
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
 pub fn get_kpi(pool: &DbPool, id: &str) -> Result<DevKpi, AppError> {
     timed_query!("dev_kpis", "dev_kpis::get_kpi", {
         let conn = pool.get()?;
-        conn.query_row("SELECT * FROM dev_kpis WHERE id = ?1", params![id], row_to_kpi)
-            .map_err(|_| AppError::NotFound(format!("KPI {id} not found")))
+        conn.query_row(
+            "SELECT * FROM dev_kpis WHERE id = ?1",
+            params![id],
+            row_to_kpi,
+        )
+        .map_err(|_| AppError::NotFound(format!("KPI {id} not found")))
     })
 }
 
@@ -6789,11 +7025,27 @@ pub fn create_kpi(
                 created_by, rationale, needed_connector, metric_type, context_id, use_case_id)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21)",
             params![
-                id, project_id, context_group_id, name.trim(), description,
-                category, measure_kind, measure_config, unit, direction,
-                baseline_value, target_value, target_date, cadence,
-                status.unwrap_or("proposed"), created_by, rationale, needed_connector,
-                metric_type, context_id, use_case_id
+                id,
+                project_id,
+                context_group_id,
+                name.trim(),
+                description,
+                category,
+                measure_kind,
+                measure_config,
+                unit,
+                direction,
+                baseline_value,
+                target_value,
+                target_date,
+                cadence,
+                status.unwrap_or("proposed"),
+                created_by,
+                rationale,
+                needed_connector,
+                metric_type,
+                context_id,
+                use_case_id
             ],
         )?;
         drop(conn);
@@ -6831,28 +7083,112 @@ pub fn update_kpi(
         // Build SET clause field-by-field (small N; clarity over cleverness).
         let mut sets: Vec<String> = vec!["updated_at = datetime('now')".into()];
         let mut vals: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        let push = |sets: &mut Vec<String>, col: &str, v: Box<dyn rusqlite::types::ToSql>, vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
+        let push = |sets: &mut Vec<String>,
+                    col: &str,
+                    v: Box<dyn rusqlite::types::ToSql>,
+                    vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
             vals.push(v);
             sets.push(format!("{col} = ?{}", vals.len()));
         };
-        if let Some(v) = name { push(&mut sets, "name", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = description { push(&mut sets, "description", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = context_group_id { push(&mut sets, "context_group_id", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = context_id { push(&mut sets, "context_id", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = use_case_id { push(&mut sets, "use_case_id", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = category { push(&mut sets, "category", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = measure_kind { push(&mut sets, "measure_kind", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = measure_config { push(&mut sets, "measure_config", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = unit { push(&mut sets, "unit", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = direction { push(&mut sets, "direction", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = baseline_value { push(&mut sets, "baseline_value", Box::new(v), &mut vals); }
-        if let Some(v) = target_value { push(&mut sets, "target_value", Box::new(v), &mut vals); }
-        if let Some(v) = target_date { push(&mut sets, "target_date", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = cadence { push(&mut sets, "cadence", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = status { push(&mut sets, "status", Box::new(v.to_string()), &mut vals); }
-        if let Some(v) = needed_connector { push(&mut sets, "needed_connector", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = metric_type { push(&mut sets, "metric_type", Box::new(v.map(str::to_string)), &mut vals); }
-        if let Some(v) = tier { push(&mut sets, "tier", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = name {
+            push(&mut sets, "name", Box::new(v.to_string()), &mut vals);
+        }
+        if let Some(v) = description {
+            push(
+                &mut sets,
+                "description",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = context_group_id {
+            push(
+                &mut sets,
+                "context_group_id",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = context_id {
+            push(
+                &mut sets,
+                "context_id",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = use_case_id {
+            push(
+                &mut sets,
+                "use_case_id",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = category {
+            push(&mut sets, "category", Box::new(v.to_string()), &mut vals);
+        }
+        if let Some(v) = measure_kind {
+            push(
+                &mut sets,
+                "measure_kind",
+                Box::new(v.to_string()),
+                &mut vals,
+            );
+        }
+        if let Some(v) = measure_config {
+            push(
+                &mut sets,
+                "measure_config",
+                Box::new(v.to_string()),
+                &mut vals,
+            );
+        }
+        if let Some(v) = unit {
+            push(&mut sets, "unit", Box::new(v.to_string()), &mut vals);
+        }
+        if let Some(v) = direction {
+            push(&mut sets, "direction", Box::new(v.to_string()), &mut vals);
+        }
+        if let Some(v) = baseline_value {
+            push(&mut sets, "baseline_value", Box::new(v), &mut vals);
+        }
+        if let Some(v) = target_value {
+            push(&mut sets, "target_value", Box::new(v), &mut vals);
+        }
+        if let Some(v) = target_date {
+            push(
+                &mut sets,
+                "target_date",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = cadence {
+            push(&mut sets, "cadence", Box::new(v.to_string()), &mut vals);
+        }
+        if let Some(v) = status {
+            push(&mut sets, "status", Box::new(v.to_string()), &mut vals);
+        }
+        if let Some(v) = needed_connector {
+            push(
+                &mut sets,
+                "needed_connector",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = metric_type {
+            push(
+                &mut sets,
+                "metric_type",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
+        }
+        if let Some(v) = tier {
+            push(&mut sets, "tier", Box::new(v.to_string()), &mut vals);
+        }
         let sql = format!(
             "UPDATE dev_kpis SET {} WHERE id = ?{}",
             sets.join(", "),
@@ -6925,7 +7261,8 @@ pub fn list_all_kpis(pool: &DbPool) -> Result<Vec<DevKpi>, AppError> {
                 created_at DESC",
         )?;
         let rows = stmt.query_map([], row_to_kpi)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -6940,11 +7277,14 @@ pub fn list_kpi_measurements_bulk(
     if kpi_ids.is_empty() {
         return Ok(Vec::new());
     }
-    timed_query!("dev_kpi_measurements", "dev_kpis::list_kpi_measurements_bulk", {
-        let conn = pool.get()?;
-        let ph = kpi_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let sql = format!(
-            "SELECT * FROM (
+    timed_query!(
+        "dev_kpi_measurements",
+        "dev_kpis::list_kpi_measurements_bulk",
+        {
+            let conn = pool.get()?;
+            let ph = kpi_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let sql = format!(
+                "SELECT * FROM (
                  SELECT m.*, ROW_NUMBER() OVER (
                      PARTITION BY kpi_id ORDER BY datetime(measured_at) DESC
                  ) AS rn
@@ -6952,14 +7292,19 @@ pub fn list_kpi_measurements_bulk(
                  WHERE kpi_id IN ({ph})
              ) WHERE rn <= ?
              ORDER BY datetime(measured_at) ASC"
-        );
-        let mut stmt = conn.prepare(&sql)?;
-        let mut params: Vec<&dyn rusqlite::types::ToSql> =
-            kpi_ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
-        params.push(&per_kpi);
-        let rows = stmt.query_map(rusqlite::params_from_iter(params), row_to_kpi_measurement)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            );
+            let mut stmt = conn.prepare(&sql)?;
+            let mut params: Vec<&dyn rusqlite::types::ToSql> = kpi_ids
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
+            params.push(&per_kpi);
+            let rows =
+                stmt.query_map(rusqlite::params_from_iter(params), row_to_kpi_measurement)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Newest-first measurement history (bounded).
@@ -6974,8 +7319,12 @@ pub fn list_kpi_measurements(
             "SELECT * FROM dev_kpi_measurements WHERE kpi_id = ?1
              ORDER BY datetime(measured_at) DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![kpi_id, limit.unwrap_or(100)], row_to_kpi_measurement)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let rows = stmt.query_map(
+            params![kpi_id, limit.unwrap_or(100)],
+            row_to_kpi_measurement,
+        )?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -6989,30 +7338,34 @@ pub fn record_kpi_measurement(
     evidence: Option<&str>,
     note: Option<&str>,
 ) -> Result<DevKpiMeasurement, AppError> {
-    timed_query!("dev_kpi_measurements", "dev_kpis::record_kpi_measurement", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, evidence, note)
+    timed_query!(
+        "dev_kpi_measurements",
+        "dev_kpis::record_kpi_measurement",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, evidence, note)
              VALUES (?1,?2,?3,?4,?5,?6)",
-            params![id, kpi_id, value, source, evidence, note],
-        )?;
-        let n = conn.execute(
-            "UPDATE dev_kpis SET current_value = ?1, last_measured_at = datetime('now'),
+                params![id, kpi_id, value, source, evidence, note],
+            )?;
+            let n = conn.execute(
+                "UPDATE dev_kpis SET current_value = ?1, last_measured_at = datetime('now'),
                  updated_at = datetime('now')
              WHERE id = ?2",
-            params![value, kpi_id],
-        )?;
-        if n == 0 {
-            return Err(AppError::NotFound(format!("KPI {kpi_id} not found")));
+                params![value, kpi_id],
+            )?;
+            if n == 0 {
+                return Err(AppError::NotFound(format!("KPI {kpi_id} not found")));
+            }
+            conn.query_row(
+                "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
+                params![id],
+                row_to_kpi_measurement,
+            )
+            .map_err(AppError::Database)
         }
-        conn.query_row(
-            "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
-            params![id],
-            row_to_kpi_measurement,
-        )
-        .map_err(AppError::Database)
-    })
+    )
 }
 
 /// Record a SIMULATED measurement (docs/plans/kpi-simulation-skill.md).
@@ -7033,21 +7386,25 @@ pub fn record_kpi_simulation_measurement(
             "Simulation env must be 'local' or 'test', got '{env}' — simulated values never claim production"
         )));
     }
-    timed_query!("dev_kpi_measurements", "dev_kpis::record_kpi_simulation_measurement", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence, note)
+    timed_query!(
+        "dev_kpi_measurements",
+        "dev_kpis::record_kpi_simulation_measurement",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence, note)
              VALUES (?1,?2,?3,'simulation',?4,?5,?6)",
-            params![id, kpi_id, value, env, evidence, note],
-        )?;
-        conn.query_row(
-            "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
-            params![id],
-            row_to_kpi_measurement,
-        )
-        .map_err(AppError::Database)
-    })
+                params![id, kpi_id, value, env, evidence, note],
+            )?;
+            conn.query_row(
+                "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
+                params![id],
+                row_to_kpi_measurement,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Record an AI-COMPOSED measurement — the reading a Factory "measurement
@@ -7144,7 +7501,8 @@ pub fn list_kpi_bindings(pool: &DbPool, kpi_id: &str) -> Result<Vec<DevKpiBindin
             "SELECT * FROM dev_kpi_bindings WHERE kpi_id = ?1 ORDER BY datetime(created_at) DESC",
         )?;
         let rows = stmt.query_map(params![kpi_id], row_to_kpi_binding)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -7185,7 +7543,14 @@ pub fn activate_kpi_binding(
             "INSERT INTO dev_kpi_bindings (id, kpi_id, credential_id, service_type, procedure,
                 composed_by, status, verified_at)
              VALUES (?1,?2,?3,?4,?5,?6,'active',datetime('now'))",
-            params![id, kpi_id, credential_id, service_type, procedure, composed_by],
+            params![
+                id,
+                kpi_id,
+                credential_id,
+                service_type,
+                procedure,
+                composed_by
+            ],
         )?;
         conn.execute(
             "UPDATE dev_kpis SET measure_kind = 'connector', needed_connector = NULL,
@@ -7202,7 +7567,11 @@ pub fn activate_kpi_binding(
     })
 }
 
-pub fn set_kpi_binding_status(pool: &DbPool, binding_id: &str, status: &str) -> Result<(), AppError> {
+pub fn set_kpi_binding_status(
+    pool: &DbPool,
+    binding_id: &str,
+    status: &str,
+) -> Result<(), AppError> {
     timed_query!("dev_kpi_bindings", "dev_kpis::set_kpi_binding_status", {
         let conn = pool.get()?;
         conn.execute(
@@ -7400,8 +7769,14 @@ pub fn create_use_case(
             "Use case name must contain at least one alphanumeric character".into(),
         ));
     }
-    let kind = if USE_CASE_KINDS.contains(&kind) { kind } else { "capability" };
-    let status = status.filter(|s| USE_CASE_STATUSES.contains(s)).unwrap_or("active");
+    let kind = if USE_CASE_KINDS.contains(&kind) {
+        kind
+    } else {
+        "capability"
+    };
+    let status = status
+        .filter(|s| USE_CASE_STATUSES.contains(s))
+        .unwrap_or("active");
     timed_query!("dev_use_cases", "dev_use_cases::create_use_case", {
         let id = uuid::Uuid::new_v4().to_string();
         let conn = pool.get()?;
@@ -7410,8 +7785,16 @@ pub fn create_use_case(
                 primary_context_id, status, created_by, rationale)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
             params![
-                id, project_id, name, slug, description, kind,
-                primary_context_id, status, created_by, rationale
+                id,
+                project_id,
+                name,
+                slug,
+                description,
+                kind,
+                primary_context_id,
+                status,
+                created_by,
+                rationale
             ],
         )
         .map_err(|e| match e {
@@ -7464,13 +7847,23 @@ pub fn update_use_case(
             push(&mut sets, "slug", Box::new(slugify_use_case(v)), &mut vals);
         }
         if let Some(v) = description {
-            push(&mut sets, "description", Box::new(v.map(str::to_string)), &mut vals);
+            push(
+                &mut sets,
+                "description",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
         }
         if let Some(v) = kind.filter(|k| USE_CASE_KINDS.contains(k)) {
             push(&mut sets, "kind", Box::new(v.to_string()), &mut vals);
         }
         if let Some(v) = primary_context_id {
-            push(&mut sets, "primary_context_id", Box::new(v.map(str::to_string)), &mut vals);
+            push(
+                &mut sets,
+                "primary_context_id",
+                Box::new(v.map(str::to_string)),
+                &mut vals,
+            );
         }
         if let Some(v) = status.filter(|s| USE_CASE_STATUSES.contains(s)) {
             push(&mut sets, "status", Box::new(v.to_string()), &mut vals);
@@ -7484,7 +7877,10 @@ pub fn update_use_case(
             vals.len() + 1
         );
         vals.push(Box::new(id.to_string()));
-        let n = conn.execute(&sql, rusqlite::params_from_iter(vals.iter().map(|b| b.as_ref())))?;
+        let n = conn.execute(
+            &sql,
+            rusqlite::params_from_iter(vals.iter().map(|b| b.as_ref())),
+        )?;
         if n == 0 {
             return Err(AppError::NotFound(format!("Use case {id} not found")));
         }
@@ -7598,7 +7994,10 @@ pub fn reconcile_context_links(
             let mut stmt =
                 conn.prepare("SELECT id, name FROM dev_contexts WHERE project_id = ?1")?;
             let rows = stmt.query_map(params![project_id], |r| {
-                Ok((r.get::<_, String>(1)?.to_lowercase(), r.get::<_, String>(0)?))
+                Ok((
+                    r.get::<_, String>(1)?.to_lowercase(),
+                    r.get::<_, String>(0)?,
+                ))
             })?;
             rows.collect::<Result<HashMap<_, _>, _>>()?
         };
@@ -7684,12 +8083,19 @@ pub fn backfill_use_cases_from_business_features(
     // business_feature label → contexts carrying it (insertion-ordered).
     let mut buckets: Vec<(String, Vec<DevContext>)> = Vec::new();
     for ctx in contexts {
-        let Some(label) = ctx.business_feature.as_deref().map(str::trim).filter(|s| !s.is_empty())
+        let Some(label) = ctx
+            .business_feature
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
         else {
             continue;
         };
         let label = label.to_string();
-        match buckets.iter_mut().find(|(l, _)| l.eq_ignore_ascii_case(&label)) {
+        match buckets
+            .iter_mut()
+            .find(|(l, _)| l.eq_ignore_ascii_case(&label))
+        {
             Some((_, list)) => list.push(ctx),
             None => buckets.push((label, vec![ctx])),
         }
@@ -7713,7 +8119,10 @@ pub fn backfill_use_cases_from_business_features(
                 .map(|v| v.len())
                 .unwrap_or(0)
         };
-        let primary = ctxs.iter().max_by_key(|c| file_count(c)).map(|c| c.id.clone());
+        let primary = ctxs
+            .iter()
+            .max_by_key(|c| file_count(c))
+            .map(|c| c.id.clone());
         let ids: Vec<String> = ctxs.iter().map(|c| c.id.clone()).collect();
         let rationale = format!(
             "Promoted from the business_feature label on {} context{}.",
@@ -7799,11 +8208,15 @@ pub fn create_milestone(
     target_date: Option<&str>,
 ) -> Result<DevMilestone, AppError> {
     if name.trim().is_empty() {
-        return Err(AppError::Validation("Milestone name cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Milestone name cannot be empty".into(),
+        ));
     }
     let status = status.unwrap_or("planned");
     if !["planned", "active", "shipped"].contains(&status) {
-        return Err(AppError::Validation(format!("Invalid milestone status `{status}`")));
+        return Err(AppError::Validation(format!(
+            "Invalid milestone status `{status}`"
+        )));
     }
     // A milestone cannot be BORN shipped. `update_milestone` already refuses
     // the planned → shipped jump, but creation was only checking enum
@@ -7878,7 +8291,9 @@ pub fn update_milestone(
         let conn = pool.get()?;
         if let Some(name) = name {
             if name.trim().is_empty() {
-                return Err(AppError::Validation("Milestone name cannot be empty".into()));
+                return Err(AppError::Validation(
+                    "Milestone name cannot be empty".into(),
+                ));
             }
             conn.execute(
                 "UPDATE dev_milestones SET name = ?2, updated_at = ?3 WHERE id = ?1",
@@ -7893,7 +8308,9 @@ pub fn update_milestone(
         }
         if let Some(status) = status {
             if !["planned", "active", "shipped"].contains(&status) {
-                return Err(AppError::Validation(format!("Invalid milestone status `{status}`")));
+                return Err(AppError::Validation(format!(
+                    "Invalid milestone status `{status}`"
+                )));
             }
             // A milestone must be CUT before it can ship. The exit-criteria
             // check lives client-side (a `disabled` attribute), which means
@@ -8088,10 +8505,14 @@ pub fn set_milestone_item(
     rating: Option<Option<i32>>,
 ) -> Result<DevMilestoneItem, AppError> {
     if !["use_case", "goal"].contains(&item_kind) {
-        return Err(AppError::Validation(format!("Invalid milestone item kind `{item_kind}`")));
+        return Err(AppError::Validation(format!(
+            "Invalid milestone item kind `{item_kind}`"
+        )));
     }
     if !["core", "later", "never"].contains(&bucket) {
-        return Err(AppError::Validation(format!("Invalid milestone bucket `{bucket}`")));
+        return Err(AppError::Validation(format!(
+            "Invalid milestone bucket `{bucket}`"
+        )));
     }
     // Guard in the repo as well as the column CHECK: the CHECK protects the
     // file, this returns a message the caller can show.
@@ -8184,7 +8605,15 @@ mod milestone_tests {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp", None, None, None, None, None).unwrap();
 
-        let m = create_milestone(&pool, &project.id, "v1 — First Ship", Some("Core value"), None, Some("2026-08-15")).unwrap();
+        let m = create_milestone(
+            &pool,
+            &project.id,
+            "v1 — First Ship",
+            Some("Core value"),
+            None,
+            Some("2026-08-15"),
+        )
+        .unwrap();
         assert_eq!(m.status, "planned");
         assert!(m.cut_at.is_none());
 
@@ -8221,8 +8650,13 @@ mod milestone_tests {
         assert!(create_milestone(&pool, &project.id, "  ", None, None, None).is_err());
         assert!(create_milestone(&pool, &project.id, "M", None, Some("bogus"), None).is_err());
         let m = create_milestone(&pool, &project.id, "M", None, None, None).unwrap();
-        assert!(set_milestone_item(&pool, &m.id, "context", "c-1", "core", None, None).is_err(), "contexts are never members");
-        assert!(set_milestone_item(&pool, &m.id, "use_case", "u-1", "someday", None, None).is_err());
+        assert!(
+            set_milestone_item(&pool, &m.id, "context", "c-1", "core", None, None).is_err(),
+            "contexts are never members"
+        );
+        assert!(
+            set_milestone_item(&pool, &m.id, "use_case", "u-1", "someday", None, None).is_err()
+        );
     }
 
     /// The batched wall read must answer EVERY requested project — including
@@ -8236,13 +8670,37 @@ mod milestone_tests {
         let b = create_project(&pool, "B", "/tmp/wb", None, None, None, None, None).unwrap();
 
         create_context(
-            &pool, &a.id, "ctx-1", None, None, Some(r#"["a.ts"]"#), None, None, None, None, None,
-            None, None, None,
+            &pool,
+            &a.id,
+            "ctx-1",
+            None,
+            None,
+            Some(r#"["a.ts"]"#),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap();
         create_context(
-            &pool, &a.id, "ctx-2", None, None, Some(r#"["b.ts"]"#), None, None, None, None, None,
-            None, None, None,
+            &pool,
+            &a.id,
+            "ctx-2",
+            None,
+            None,
+            Some(r#"["b.ts"]"#),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap();
         create_milestone(&pool, &a.id, "v1", None, Some("active"), None).unwrap();
@@ -8250,8 +8708,27 @@ mod milestone_tests {
 
         let mk_kpi = |name: &str, status: &str| {
             create_kpi(
-                &pool, &a.id, name, None, None, "quality", "manual", "{}", "%", "up", Some(0.0),
-                Some(100.0), None, "weekly", Some(status), "user", None, None, None, None, None,
+                &pool,
+                &a.id,
+                name,
+                None,
+                None,
+                "quality",
+                "manual",
+                "{}",
+                "%",
+                "up",
+                Some(0.0),
+                Some(100.0),
+                None,
+                "weekly",
+                Some(status),
+                "user",
+                None,
+                None,
+                None,
+                None,
+                None,
             )
             .unwrap()
         };
@@ -8259,11 +8736,9 @@ mod milestone_tests {
         mk_kpi("shelved", "paused");
 
         // b has nothing; "ghost" was never registered at all.
-        let rows = project_wall_summaries(
-            &pool,
-            &[b.id.clone(), a.id.clone(), "ghost".to_string()],
-        )
-        .unwrap();
+        let rows =
+            project_wall_summaries(&pool, &[b.id.clone(), a.id.clone(), "ghost".to_string()])
+                .unwrap();
 
         assert_eq!(rows.len(), 3, "every requested id gets a row");
         assert_eq!(rows[0].project_id, b.id, "order mirrors the request");
@@ -8281,9 +8756,15 @@ mod milestone_tests {
             rows[1].milestones.iter().map(|m| &m.id).collect::<Vec<_>>(),
             listed.iter().map(|m| &m.id).collect::<Vec<_>>(),
         );
-        assert!(rows[1].milestones[0].cut_at.is_some(), "cut_at survives the batch read");
+        assert!(
+            rows[1].milestones[0].cut_at.is_some(),
+            "cut_at survives the batch read"
+        );
 
-        assert_eq!(rows[2].project_id, "ghost", "an unknown id is empty, not an error");
+        assert_eq!(
+            rows[2].project_id, "ghost",
+            "an unknown id is empty, not an error"
+        );
         assert_eq!(rows[2].contexts_count, 0);
 
         assert!(project_wall_summaries(&pool, &[]).unwrap().is_empty());
@@ -8298,13 +8779,21 @@ mod milestone_tests {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp3", None, None, None, None, None).unwrap();
 
-        let m = create_milestone(&pool, &project.id, "Onboard to Personas", None, Some("active"), None)
-            .unwrap();
+        let m = create_milestone(
+            &pool,
+            &project.id,
+            "Onboard to Personas",
+            None,
+            Some("active"),
+            None,
+        )
+        .unwrap();
         assert_eq!(m.status, "active");
         assert!(m.cut_at.is_some(), "a milestone born active must be cut");
 
         // …and the creep flag therefore fires on anything joined afterwards.
-        let item = set_milestone_item(&pool, &m.id, "use_case", "uc-late", "core", None, None).unwrap();
+        let item =
+            set_milestone_item(&pool, &m.id, "use_case", "uc-late", "core", None, None).unwrap();
         assert!(item.added_after_cut, "items added after the cut are creep");
 
         // A milestone born 'planned' is still uncut.
@@ -8357,7 +8846,9 @@ mod milestone_tests {
         );
         // Rejected means nothing was written, not a half-created row.
         assert!(
-            list_milestones_by_project(&pool, &project.id).unwrap().is_empty(),
+            list_milestones_by_project(&pool, &project.id)
+                .unwrap()
+                .is_empty(),
             "a refused creation must leave no row"
         );
 
@@ -8381,11 +8872,19 @@ mod milestone_tests {
 
         // Born before the cut, with both annotations.
         let a = set_milestone_item(
-            &pool, &m.id, "use_case", "uc-a", "core",
-            Some(Some("The one flow that proves the product")), Some(Some(5)),
+            &pool,
+            &m.id,
+            "use_case",
+            "uc-a",
+            "core",
+            Some(Some("The one flow that proves the product")),
+            Some(Some(5)),
         )
         .unwrap();
-        assert_eq!(a.description.as_deref(), Some("The one flow that proves the product"));
+        assert_eq!(
+            a.description.as_deref(),
+            Some("The one flow that proves the product")
+        );
         assert_eq!(a.rating, Some(5));
         assert!(!a.added_after_cut);
 
@@ -8394,19 +8893,39 @@ mod milestone_tests {
         update_milestone(&pool, &m.id, None, None, Some("active"), None, None).unwrap();
         let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later", None, None).unwrap();
         assert_eq!(a.bucket, "later");
-        assert_eq!(a.description.as_deref(), Some("The one flow that proves the product"));
+        assert_eq!(
+            a.description.as_deref(),
+            Some("The one flow that proves the product")
+        );
         assert_eq!(a.rating, Some(5), "an omitted field is left unchanged");
-        assert!(!a.added_after_cut, "annotating never rewrites the creep flag");
+        assert!(
+            !a.added_after_cut,
+            "annotating never rewrites the creep flag"
+        );
 
         // Patch only the rating; the description stays.
-        let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later", None, Some(Some(2)))
-            .unwrap();
+        let a = set_milestone_item(
+            &pool,
+            &m.id,
+            "use_case",
+            "uc-a",
+            "later",
+            None,
+            Some(Some(2)),
+        )
+        .unwrap();
         assert_eq!(a.rating, Some(2));
         assert!(a.description.is_some());
 
         // Explicit null CLEARS — and unrated is not rated-1.
         let a = set_milestone_item(
-            &pool, &m.id, "use_case", "uc-a", "later", Some(None), Some(None),
+            &pool,
+            &m.id,
+            "use_case",
+            "uc-a",
+            "later",
+            Some(None),
+            Some(None),
         )
         .unwrap();
         assert!(a.description.is_none());
@@ -8415,7 +8934,13 @@ mod milestone_tests {
 
         // A member created after the cut is still creep, annotations or not.
         let b = set_milestone_item(
-            &pool, &m.id, "use_case", "uc-b", "core", Some(Some("late idea")), Some(Some(3)),
+            &pool,
+            &m.id,
+            "use_case",
+            "uc-b",
+            "core",
+            Some(Some("late idea")),
+            Some(Some(3)),
         )
         .unwrap();
         assert!(b.added_after_cut);
@@ -8438,8 +8963,15 @@ mod milestone_tests {
         let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
 
         for bad in [0, 6, -1, 99] {
-            let err =
-                set_milestone_item(&pool, &m.id, "use_case", "uc-a", "core", None, Some(Some(bad)));
+            let err = set_milestone_item(
+                &pool,
+                &m.id,
+                "use_case",
+                "uc-a",
+                "core",
+                None,
+                Some(Some(bad)),
+            );
             assert!(
                 matches!(err, Err(AppError::Validation(_))),
                 "rating {bad} must be rejected, got {err:?}"
@@ -8450,9 +8982,16 @@ mod milestone_tests {
 
         // Bounds are inclusive.
         for good in 1..=5 {
-            let it =
-                set_milestone_item(&pool, &m.id, "use_case", "uc-a", "core", None, Some(Some(good)))
-                    .unwrap();
+            let it = set_milestone_item(
+                &pool,
+                &m.id,
+                "use_case",
+                "uc-a",
+                "core",
+                None,
+                Some(Some(good)),
+            )
+            .unwrap();
             assert_eq!(it.rating, Some(good));
         }
 
@@ -8481,17 +9020,38 @@ mod use_case_tests {
 
     fn ctx(pool: &DbPool, project_id: &str, name: &str, files: &str) -> DevContext {
         create_context(
-            pool, project_id, name, None, None, Some(files), None, None, None, None, None, None,
-            None, None,
+            pool,
+            project_id,
+            name,
+            None,
+            None,
+            Some(files),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap()
     }
 
     #[test]
     fn slugify_normalizes_casing_separators_and_punctuation() {
-        assert_eq!(slugify_use_case("Checkout Conversion"), "checkout-conversion");
-        assert_eq!(slugify_use_case("checkout_conversion"), "checkout-conversion");
-        assert_eq!(slugify_use_case("  Checkout — Conversion!  "), "checkout-conversion");
+        assert_eq!(
+            slugify_use_case("Checkout Conversion"),
+            "checkout-conversion"
+        );
+        assert_eq!(
+            slugify_use_case("checkout_conversion"),
+            "checkout-conversion"
+        );
+        assert_eq!(
+            slugify_use_case("  Checkout — Conversion!  "),
+            "checkout-conversion"
+        );
         assert_eq!(slugify_use_case("LLM Overview v2"), "llm-overview-v2");
         assert_eq!(slugify_use_case("!!!"), "");
     }
@@ -8516,7 +9076,11 @@ mod use_case_tests {
             None,
             "user_flow",
             Some(&checkout_ui.id),
-            &[checkout_ui.id.clone(), checkout_api.id.clone(), doomed.id.clone()],
+            &[
+                checkout_ui.id.clone(),
+                checkout_api.id.clone(),
+                doomed.id.clone(),
+            ],
             Some("active"),
             "user",
             None,
@@ -8525,9 +9089,27 @@ mod use_case_tests {
         assert_eq!(uc.context_ids.len(), 3);
 
         let kpi = create_kpi(
-            &pool, &project.id, "p95 latency", None, None, "technical", "codebase", "{}", "ms",
-            "down", None, None, None, "weekly", Some("active"), "user", None, None, None,
-            Some(&checkout_api.id), None,
+            &pool,
+            &project.id,
+            "p95 latency",
+            None,
+            None,
+            "technical",
+            "codebase",
+            "{}",
+            "ms",
+            "down",
+            None,
+            None,
+            None,
+            "weekly",
+            Some("active"),
+            "user",
+            None,
+            None,
+            None,
+            Some(&checkout_api.id),
+            None,
         )
         .unwrap();
         assert_eq!(kpi.context_id.as_deref(), Some(checkout_api.id.as_str()));
@@ -8556,7 +9138,10 @@ mod use_case_tests {
         assert_eq!(healed.context_ids.len(), 2);
         assert!(healed.context_ids.contains(&new_ui.id));
         assert!(healed.context_ids.contains(&new_api.id));
-        assert_eq!(healed.primary_context_id.as_deref(), Some(new_ui.id.as_str()));
+        assert_eq!(
+            healed.primary_context_id.as_deref(),
+            Some(new_ui.id.as_str())
+        );
 
         let healed_kpi = get_kpi(&pool, &kpi.id).unwrap();
         assert_eq!(healed_kpi.context_id.as_deref(), Some(new_api.id.as_str()));
@@ -8574,33 +9159,79 @@ mod use_case_tests {
 
         // Two contexts share a business feature; the bigger one becomes primary.
         create_context(
-            &pool, &project.id, "checkout-ui", None, None, Some(r#"["a.tsx"]"#), None, None, None,
-            None, None, None, None, Some("Checkout"),
+            &pool,
+            &project.id,
+            "checkout-ui",
+            None,
+            None,
+            Some(r#"["a.tsx"]"#),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("Checkout"),
         )
         .unwrap();
         let big = create_context(
-            &pool, &project.id, "checkout-api", None, None, Some(r#"["b.rs","c.rs"]"#), None, None,
-            None, None, None, None, None, Some("Checkout"),
+            &pool,
+            &project.id,
+            "checkout-api",
+            None,
+            None,
+            Some(r#"["b.rs","c.rs"]"#),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("Checkout"),
         )
         .unwrap();
         // A label on exactly ONE context is that context's title, not a slice.
         // On a real 263-context map, 179 of 184 labels looked like this.
         create_context(
-            &pool, &project.id, "billing", None, None, Some(r#"["d.rs"]"#), None, None, None, None,
-            None, None, None, Some("Billing"),
+            &pool,
+            &project.id,
+            "billing",
+            None,
+            None,
+            Some(r#"["d.rs"]"#),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("Billing"),
         )
         .unwrap();
         // No business_feature → contributes no use case.
         ctx(&pool, &project.id, "unlabelled", r#"["e.rs"]"#);
 
         let created = backfill_use_cases_from_business_features(&pool, &project.id).unwrap();
-        assert_eq!(created.len(), 1, "only the label spanning >= 2 contexts is promoted");
+        assert_eq!(
+            created.len(),
+            1,
+            "only the label spanning >= 2 contexts is promoted"
+        );
 
         let checkout = &created[0];
         assert_eq!(checkout.slug, "checkout");
         assert_eq!(checkout.context_ids.len(), 2);
-        assert_eq!(checkout.primary_context_id.as_deref(), Some(big.id.as_str()));
-        assert_eq!(checkout.status, "proposed", "backfill lands in the triage queue");
+        assert_eq!(
+            checkout.primary_context_id.as_deref(),
+            Some(big.id.as_str())
+        );
+        assert_eq!(
+            checkout.status, "proposed",
+            "backfill lands in the triage queue"
+        );
         assert_eq!(checkout.created_by, "backfill");
 
         // Re-running adds nothing.
@@ -8617,13 +9248,28 @@ mod use_case_tests {
         let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
         for (name, label) in [("agent-editor", "Agent Editor"), ("vault", "Vault")] {
             create_context(
-                &pool, &project.id, name, None, None, Some(r#"["a.rs"]"#), None, None, None, None,
-                None, None, None, Some(label),
+                &pool,
+                &project.id,
+                name,
+                None,
+                None,
+                Some(r#"["a.rs"]"#),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(label),
             )
             .unwrap();
         }
         let created = backfill_use_cases_from_business_features(&pool, &project.id).unwrap();
-        assert!(created.is_empty(), "1:1 labels are context titles, not use cases");
+        assert!(
+            created.is_empty(),
+            "1:1 labels are context titles, not use cases"
+        );
     }
 }
 
@@ -8650,18 +9296,48 @@ mod pending_counts_tests {
     #[test]
     fn counts_only_rows_that_still_owe_a_human_a_decision() {
         let pool = crate::init_test_db().unwrap();
-        let project =
-            create_project(&pool, "P", "/tmp/pc", None, None, None, None, None).unwrap();
+        let project = create_project(&pool, "P", "/tmp/pc", None, None, None, None, None).unwrap();
 
         // Two awaiting acceptance, one already settled.
-        create_goal(&pool, &project.id, "A", None, None, Some("awaiting_acceptance"), None, None)
-            .unwrap();
-        create_goal(&pool, &project.id, "B", None, None, Some("awaiting_acceptance"), None, None)
-            .unwrap();
-        create_goal(&pool, &project.id, "C", None, None, Some("done"), None, None).unwrap();
+        create_goal(
+            &pool,
+            &project.id,
+            "A",
+            None,
+            None,
+            Some("awaiting_acceptance"),
+            None,
+            None,
+        )
+        .unwrap();
+        create_goal(
+            &pool,
+            &project.id,
+            "B",
+            None,
+            None,
+            Some("awaiting_acceptance"),
+            None,
+            None,
+        )
+        .unwrap();
+        create_goal(
+            &pool,
+            &project.id,
+            "C",
+            None,
+            None,
+            Some("done"),
+            None,
+            None,
+        )
+        .unwrap();
 
         let counts = pending_counts(&pool).unwrap();
-        assert_eq!(counts.goal_acceptance, 2, "a done goal is not awaiting anyone");
+        assert_eq!(
+            counts.goal_acceptance, 2,
+            "a done goal is not awaiting anyone"
+        );
         assert_eq!(
             counts.total,
             counts.goal_acceptance
@@ -8776,7 +9452,9 @@ mod attention_queue_tests {
         }
 
         assert!(
-            list_undispatched_ideas(&pool, None, None).unwrap().is_empty(),
+            list_undispatched_ideas(&pool, None, None)
+                .unwrap()
+                .is_empty(),
             "undispatched means ACCEPTED-and-unbuilt; a rejected or archived idea owes nobody work",
         );
         let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
@@ -8854,7 +9532,11 @@ mod attention_queue_tests {
             flagged[0].progress.is_none(),
             "an idea has no progress — 0 would read as 'started, got nowhere'",
         );
-        assert!(flagged[0].detail.contains("no task"), "{}", flagged[0].detail);
+        assert!(
+            flagged[0].detail.contains("no task"),
+            "{}",
+            flagged[0].detail
+        );
         for quiet in [&fresh.id, &recent.id] {
             assert!(
                 !q.items.iter().any(|i| &i.entity_id == quiet),
@@ -8891,8 +9573,28 @@ mod attention_queue_tests {
         let pool = crate::init_test_db().unwrap();
         let p = create_project(&pool, "P", "/tmp/stuck", None, None, None, None, None).unwrap();
 
-        let chatty = create_task(&pool, Some(&p.id), "chatty", None, None, None, Some("running"), None).unwrap();
-        let quiet = create_task(&pool, Some(&p.id), "quiet", None, None, None, Some("running"), None).unwrap();
+        let chatty = create_task(
+            &pool,
+            Some(&p.id),
+            "chatty",
+            None,
+            None,
+            None,
+            Some("running"),
+            None,
+        )
+        .unwrap();
+        let quiet = create_task(
+            &pool,
+            Some(&p.id),
+            "quiet",
+            None,
+            None,
+            None,
+            Some("running"),
+            None,
+        )
+        .unwrap();
         // Both started 3 days ago; only `quiet` has stopped reporting.
         set(
             &pool,
@@ -8928,11 +9630,40 @@ mod attention_queue_tests {
         let pool = crate::init_test_db().unwrap();
         let p = create_project(&pool, "P", "/tmp/queued", None, None, None, None, None).unwrap();
 
-        let waiting = create_task(&pool, Some(&p.id), "waiting", None, None, None, Some("queued"), None).unwrap();
-        let just_queued =
-            create_task(&pool, Some(&p.id), "just queued", None, None, None, Some("queued"), None).unwrap();
+        let waiting = create_task(
+            &pool,
+            Some(&p.id),
+            "waiting",
+            None,
+            None,
+            None,
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        let just_queued = create_task(
+            &pool,
+            Some(&p.id),
+            "just queued",
+            None,
+            None,
+            None,
+            Some("queued"),
+            None,
+        )
+        .unwrap();
         for status in ["completed", "failed", "cancelled"] {
-            let t = create_task(&pool, Some(&p.id), status, None, None, None, Some(status), None).unwrap();
+            let t = create_task(
+                &pool,
+                Some(&p.id),
+                status,
+                None,
+                None,
+                None,
+                Some(status),
+                None,
+            )
+            .unwrap();
             set(
                 &pool,
                 "UPDATE dev_tasks SET created_at = ?1, updated_at = ?1, started_at = ?1, completed_at = ?1 WHERE id = ?2",
@@ -8975,13 +9706,32 @@ mod attention_queue_tests {
                 .to_string()
         };
 
-        let late = create_goal(&pool, &p.id, "late", None, None, None, Some(&day(3)), None).unwrap();
-        let due_today =
-            create_goal(&pool, &p.id, "due today", None, None, None, Some(&day(0)), None).unwrap();
+        let late =
+            create_goal(&pool, &p.id, "late", None, None, None, Some(&day(3)), None).unwrap();
+        let due_today = create_goal(
+            &pool,
+            &p.id,
+            "due today",
+            None,
+            None,
+            None,
+            Some(&day(0)),
+            None,
+        )
+        .unwrap();
         let quiet = create_goal(&pool, &p.id, "quiet", None, None, None, None, None).unwrap();
         let fresh = create_goal(&pool, &p.id, "fresh", None, None, None, None, None).unwrap();
-        let finished =
-            create_goal(&pool, &p.id, "finished", None, None, Some("done"), None, None).unwrap();
+        let finished = create_goal(
+            &pool,
+            &p.id,
+            "finished",
+            None,
+            None,
+            Some("done"),
+            None,
+            None,
+        )
+        .unwrap();
         set(
             &pool,
             "UPDATE dev_goals SET updated_at = ?1 WHERE id IN (?2, ?3)",
@@ -8999,7 +9749,9 @@ mod attention_queue_tests {
             "a goal row still carries goal_id, not only the generic entity_id",
         );
         assert!(
-            !q.items.iter().any(|i| i.kind == "overdue" && i.entity_id == due_today.id),
+            !q.items
+                .iter()
+                .any(|i| i.kind == "overdue" && i.entity_id == due_today.id),
             "a goal due TODAY is not overdue — the raw-string compare said it was",
         );
 
@@ -9028,7 +9780,10 @@ mod attention_queue_tests {
         let pool = crate::init_test_db().unwrap();
         let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
         assert!(q.items.is_empty());
-        assert_eq!(q.undispatched_ideas + q.stuck_tasks + q.stale_queued_tasks, 0);
+        assert_eq!(
+            q.undispatched_ideas + q.stuck_tasks + q.stale_queued_tasks,
+            0
+        );
         assert_eq!(q.thresholds.task_running_hours, 4);
     }
 
@@ -9044,8 +9799,27 @@ mod attention_queue_tests {
         status: &str,
     ) -> crate::models::DevKpi {
         create_kpi(
-            pool, project, name, None, None, "technical", "codebase", "{}", "%", "up", None, None,
-            None, cadence, Some(status), "user", None, None, None, None, None,
+            pool,
+            project,
+            name,
+            None,
+            None,
+            "technical",
+            "codebase",
+            "{}",
+            "%",
+            "up",
+            None,
+            None,
+            None,
+            cadence,
+            Some(status),
+            "user",
+            None,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap()
     }
@@ -9061,8 +9835,17 @@ mod attention_queue_tests {
     #[test]
     fn a_kpi_that_went_dark_is_reported_and_says_derivation_has_stopped() {
         let pool = crate::init_test_db().unwrap();
-        let p = create_project(&pool, "P", "/tmp/kpi-dark", None, None, None, None, Some("team-1"))
-            .unwrap();
+        let p = create_project(
+            &pool,
+            "P",
+            "/tmp/kpi-dark",
+            None,
+            None,
+            None,
+            None,
+            Some("team-1"),
+        )
+        .unwrap();
 
         // Weekly window is 14d: 3d ago is fresh, 30d ago is dark.
         let fresh = kpi(&pool, &p.id, "fresh weekly", "weekly", "active");
@@ -9072,7 +9855,11 @@ mod attention_queue_tests {
 
         let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
         let reported = kinds(&q, "kpi_gone_dark");
-        assert_eq!(reported.len(), 1, "only the KPI past its own window is reported");
+        assert_eq!(
+            reported.len(),
+            1,
+            "only the KPI past its own window is reported"
+        );
         assert_eq!(reported[0].entity_id, dark.id);
         assert_eq!(reported[0].entity_kind, "kpi");
         assert_eq!(reported[0].rank, 7);
@@ -9096,9 +9883,17 @@ mod attention_queue_tests {
     #[test]
     fn the_staleness_window_follows_the_kpis_own_cadence() {
         let pool = crate::init_test_db().unwrap();
-        let p =
-            create_project(&pool, "P", "/tmp/kpi-cadence", None, None, None, None, Some("team-1"))
-                .unwrap();
+        let p = create_project(
+            &pool,
+            "P",
+            "/tmp/kpi-cadence",
+            None,
+            None,
+            None,
+            None,
+            Some("team-1"),
+        )
+        .unwrap();
 
         // 5 days without a reading: past a DAILY KPI's 2-day window, well
         // inside a WEEKLY one's 14-day window. One global cutoff cannot say
@@ -9119,9 +9914,17 @@ mod attention_queue_tests {
     #[test]
     fn never_measured_is_a_different_signal_from_gone_dark() {
         let pool = crate::init_test_db().unwrap();
-        let p =
-            create_project(&pool, "P", "/tmp/kpi-never", None, None, None, None, Some("team-1"))
-                .unwrap();
+        let p = create_project(
+            &pool,
+            "P",
+            "/tmp/kpi-never",
+            None,
+            None,
+            None,
+            None,
+            Some("team-1"),
+        )
+        .unwrap();
 
         let never = kpi(&pool, &p.id, "never wired up", "weekly", "active");
         set(
@@ -9152,12 +9955,28 @@ mod attention_queue_tests {
     #[test]
     fn kpis_that_are_silent_on_purpose_or_unowned_stay_out_of_the_queue() {
         let pool = crate::init_test_db().unwrap();
-        let owned =
-            create_project(&pool, "Owned", "/tmp/kpi-owned", None, None, None, None, Some("team-1"))
-                .unwrap();
-        let teamless =
-            create_project(&pool, "Teamless", "/tmp/kpi-teamless", None, None, None, None, None)
-                .unwrap();
+        let owned = create_project(
+            &pool,
+            "Owned",
+            "/tmp/kpi-owned",
+            None,
+            None,
+            None,
+            None,
+            Some("team-1"),
+        )
+        .unwrap();
+        let teamless = create_project(
+            &pool,
+            "Teamless",
+            "/tmp/kpi-teamless",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
 
         for status in ["paused", "archived", "proposed"] {
             let k = kpi(&pool, &owned.id, status, "weekly", status);
@@ -9185,7 +10004,10 @@ mod attention_queue_tests {
         let p = create_project(&pool, "P", "/tmp/stamp", None, None, None, None, None).unwrap();
 
         let created = create_task(&pool, Some(&p.id), "t", None, None, None, None, None).unwrap();
-        let first = created.updated_at.clone().expect("create_task must stamp updated_at");
+        let first = created
+            .updated_at
+            .clone()
+            .expect("create_task must stamp updated_at");
         assert_eq!(first, created.created_at);
 
         // Backdate, then mutate: the write must move the stamp forward.
@@ -9208,7 +10030,10 @@ mod attention_queue_tests {
             None,
         )
         .unwrap();
-        let after = ran.updated_at.clone().expect("update_task must stamp updated_at");
+        let after = ran
+            .updated_at
+            .clone()
+            .expect("update_task must stamp updated_at");
         assert!(
             parse_stamp(&after).unwrap() > parse_stamp(&ago(1, 0)).unwrap(),
             "a status write must refresh the heartbeat (got {after})",
@@ -9221,7 +10046,17 @@ mod attention_queue_tests {
             &[&ago(5, 0), &created.id],
         );
         let noop = update_task(
-            &pool, &created.id, None, None, None, None, None, None, None, None, None,
+            &pool,
+            &created.id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap();
         assert_eq!(
@@ -9232,7 +10067,10 @@ mod attention_queue_tests {
 
         // A retry is a new row and starts its own clock.
         let retried = retry_task(&pool, &created.id).unwrap();
-        assert!(retried.updated_at.is_some(), "retry_task must stamp updated_at");
+        assert!(
+            retried.updated_at.is_some(),
+            "retry_task must stamp updated_at"
+        );
     }
 
     #[test]
@@ -9243,7 +10081,17 @@ mod attention_queue_tests {
         // read as either "never touched" or "touched now".
         let pool = crate::init_test_db().unwrap();
         let p = create_project(&pool, "P", "/tmp/backfill", None, None, None, None, None).unwrap();
-        let t = create_task(&pool, Some(&p.id), "legacy", None, None, None, Some("running"), None).unwrap();
+        let t = create_task(
+            &pool,
+            Some(&p.id),
+            "legacy",
+            None,
+            None,
+            None,
+            Some("running"),
+            None,
+        )
+        .unwrap();
         set(
             &pool,
             "UPDATE dev_tasks SET updated_at = NULL, started_at = ?1, created_at = ?1 WHERE id = ?2",
@@ -9256,7 +10104,11 @@ mod attention_queue_tests {
         // …and the queue still judges it, falling back to started_at.
         let q = attention_queue(&pool, AttentionThresholds::default()).unwrap();
         let stuck = kinds(&q, "stuck_task");
-        assert_eq!(stuck.len(), 1, "a NULL updated_at must not hide a stuck task");
+        assert_eq!(
+            stuck.len(),
+            1,
+            "a NULL updated_at must not hide a stuck task"
+        );
         assert!(stuck[0].age_hours.unwrap() >= 47);
 
         let conn = pool.get().unwrap();

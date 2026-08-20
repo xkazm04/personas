@@ -37,7 +37,12 @@ pub struct VerificationResult {
 
 impl VerificationResult {
     fn failure(output_tail: String) -> Self {
-        Self { passed: false, exit_code: None, output_tail, timed_out: false }
+        Self {
+            passed: false,
+            exit_code: None,
+            output_tail,
+            timed_out: false,
+        }
     }
 }
 
@@ -58,7 +63,11 @@ pub async fn run_verification(dir: &Path, command: &str, timeout: Duration) -> V
 
     let mut child = match cmd.spawn() {
         Ok(c) => c,
-        Err(e) => return VerificationResult::failure(format!("failed to spawn verification command: {e}")),
+        Err(e) => {
+            return VerificationResult::failure(format!(
+                "failed to spawn verification command: {e}"
+            ))
+        }
     };
 
     // Drain stdout+stderr CONCURRENTLY with the wait so a chatty command can't
@@ -170,14 +179,22 @@ mod tests {
         let dir = std::env::temp_dir();
         let r = run_verification(&dir, "echo verification_marker", Duration::from_secs(10)).await;
         assert!(r.passed);
-        assert!(r.output_tail.contains("verification_marker"), "tail missing output: {:?}", r.output_tail);
+        assert!(
+            r.output_tail.contains("verification_marker"),
+            "tail missing output: {:?}",
+            r.output_tail
+        );
     }
 
     #[tokio::test]
     async fn times_out() {
         let dir = std::env::temp_dir();
         // `sleep 5` on unix; `ping` delay on windows.
-        let cmd = if cfg!(target_os = "windows") { "ping -n 6 127.0.0.1" } else { "sleep 5" };
+        let cmd = if cfg!(target_os = "windows") {
+            "ping -n 6 127.0.0.1"
+        } else {
+            "sleep 5"
+        };
         let r = run_verification(&dir, cmd, Duration::from_millis(300)).await;
         assert!(r.timed_out);
         assert!(!r.passed);

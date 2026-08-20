@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use tauri::State;
 use crate::db::models::{GitOperationResult, TestRunResult};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use std::sync::Arc;
+use tauri::State;
 
 // ============================================================================
 // Direction 3: Agent-Driven Implementation Pipeline
@@ -351,4 +351,3 @@ pub async fn dev_tools_commit_changes(
         files_changed,
     })
 }
-

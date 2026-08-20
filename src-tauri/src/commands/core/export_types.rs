@@ -58,10 +58,18 @@ pub fn validate_persona_import_fields(
     crate::validation::require_max_len("persona name", name, MAX_NAME_LEN)?;
     crate::validation::require_max_len("system_prompt", system_prompt, MAX_SYSTEM_PROMPT_LEN)?;
     require_opt("description", description, MAX_DESCRIPTION_LEN)?;
-    require_opt("structured_prompt", structured_prompt, MAX_STRUCTURED_PROMPT_LEN)?;
+    require_opt(
+        "structured_prompt",
+        structured_prompt,
+        MAX_STRUCTURED_PROMPT_LEN,
+    )?;
     require_opt("icon", icon, MAX_SHORT_FIELD_LEN)?;
     require_opt("color", color, MAX_SHORT_FIELD_LEN)?;
-    require_opt("notification_channels", notification_channels, MAX_SHORT_FIELD_LEN)?;
+    require_opt(
+        "notification_channels",
+        notification_channels,
+        MAX_SHORT_FIELD_LEN,
+    )?;
     require_opt("model_profile", model_profile, MAX_SHORT_FIELD_LEN)?;
     require_opt("design_context", design_context, MAX_DESIGN_CONTEXT_LEN)?;
     Ok(())

@@ -283,10 +283,7 @@ async fn handle_pair_request(
     let name = body.name.unwrap_or_else(|| origin.clone());
     match register(&origin, body.scopes, &body.nonce, &name) {
         Ok(view) => {
-            let _ = app.emit(
-                crate::event_registry::event_name::PAIRING_REQUESTED,
-                &view,
-            );
+            let _ = app.emit(crate::event_registry::event_name::PAIRING_REQUESTED, &view);
             (
                 StatusCode::ACCEPTED,
                 Json(serde_json::json!({ "status": "pending" })),
@@ -312,11 +309,9 @@ async fn handle_pair_claim(headers: HeaderMap, Query(q): Query<ClaimQuery>) -> i
         .unwrap_or("")
         .to_string();
     match claim(&q.nonce, &origin) {
-        ClaimResult::Token(token) => (
-            StatusCode::OK,
-            Json(serde_json::json!({ "token": token })),
-        )
-            .into_response(),
+        ClaimResult::Token(token) => {
+            (StatusCode::OK, Json(serde_json::json!({ "token": token }))).into_response()
+        }
         ClaimResult::Pending => (
             StatusCode::ACCEPTED,
             Json(serde_json::json!({ "status": "pending" })),
@@ -365,9 +360,18 @@ mod tests {
     #[test]
     fn approve_then_claim_is_single_use_and_origin_checked() {
         let n = nonce("claim");
-        register("https://c.example", vec!["personas:read".into()], &n, "Cloud").unwrap();
+        register(
+            "https://c.example",
+            vec!["personas:read".into()],
+            &n,
+            "Cloud",
+        )
+        .unwrap();
         // Pending → claim returns Pending.
-        assert!(matches!(claim(&n, "https://c.example"), ClaimResult::Pending));
+        assert!(matches!(
+            claim(&n, "https://c.example"),
+            ClaimResult::Pending
+        ));
 
         set_approved(&n, "pk_deadbeef".into()).unwrap();
         // Wrong origin → mismatch (no token leaked).
@@ -389,7 +393,10 @@ mod tests {
         let n = nonce("reject");
         register("https://r.example", vec![], &n, "R").unwrap();
         set_rejected(&n);
-        assert!(matches!(claim(&n, "https://r.example"), ClaimResult::Rejected));
+        assert!(matches!(
+            claim(&n, "https://r.example"),
+            ClaimResult::Rejected
+        ));
     }
 
     #[test]

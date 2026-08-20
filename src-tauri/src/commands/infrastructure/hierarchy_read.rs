@@ -757,7 +757,9 @@ fn relative_links(body: &str) -> Vec<String> {
             i += 1;
             continue;
         }
-        let Some(close) = body[i..].find(']') else { break };
+        let Some(close) = body[i..].find(']') else {
+            break;
+        };
         let after = i + close + 1;
         if after >= bytes.len() || bytes[after] != b'(' {
             i += 1;
@@ -818,11 +820,7 @@ struct CorpusMapFile {
 }
 
 /// Read a file, converting an I/O failure into a warning rather than an error.
-fn read_tolerant(
-    path: &Path,
-    rel: &str,
-    warnings: &mut Vec<HierarchyWarning>,
-) -> Option<String> {
+fn read_tolerant(path: &Path, rel: &str, warnings: &mut Vec<HierarchyWarning>) -> Option<String> {
     match std::fs::read_to_string(path) {
         Ok(s) => Some(s),
         Err(e) => {
@@ -890,7 +888,11 @@ fn parse_laws(raw: &str) -> Vec<HierarchyLaw> {
                         .map(|(_, t)| t.trim())
                         .unwrap_or("")
                         .trim();
-                    let title = if title.is_empty() { id.clone() } else { title.to_string() };
+                    let title = if title.is_empty() {
+                        id.clone()
+                    } else {
+                        title.to_string()
+                    };
                     pending = Some((id, title));
                 }
             }
@@ -954,7 +956,9 @@ fn discover_corpus(root: &Path) -> Option<CorpusLayout> {
         .ok()?
         .flatten()
         .filter(|e| e.path().is_dir())
-        .filter(|e| e.path().join("_laws.md").is_file() || e.path().join("categories.json").is_file())
+        .filter(|e| {
+            e.path().join("_laws.md").is_file() || e.path().join("categories.json").is_file()
+        })
         .filter_map(|e| e.file_name().into_string().ok())
         .collect();
     bundles.sort();
@@ -1235,11 +1239,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                 laws: t_fm.list("laws"),
                 shared_with: t_fm.list("shared_with"),
             });
-            link_sources.push((
-                slug.clone(),
-                dir.join("techniques"),
-                strip_code(t_body),
-            ));
+            link_sources.push((slug.clone(), dir.join("techniques"), strip_code(t_body)));
         }
 
         // Applications.
@@ -1295,7 +1295,10 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
     for (from, base, body) in &link_sources {
         for target in relative_links(body) {
             let resolved = normalise(&base.join(&target));
-            let Ok(rel) = resolved.strip_prefix(&canonical_paths).or_else(|_| resolved.strip_prefix(&paths_dir)) else {
+            let Ok(rel) = resolved
+                .strip_prefix(&canonical_paths)
+                .or_else(|_| resolved.strip_prefix(&paths_dir))
+            else {
                 continue;
             };
             let mut comps = rel.components();
@@ -1866,11 +1869,9 @@ pub async fn dev_tools_hierarchy_doc(
     let root = match resolve_root(&state, &project_id, root_override.as_deref())? {
         RootResolution::Ok(p) => p,
         RootResolution::Absent(source) => {
-            return Err(AppError::NotFound(
-                source
-                    .reason
-                    .unwrap_or_else(|| "The project has no readable repository path.".to_string()),
-            ))
+            return Err(AppError::NotFound(source.reason.unwrap_or_else(|| {
+                "The project has no readable repository path.".to_string()
+            })))
         }
     };
 
@@ -2005,7 +2006,6 @@ mod tests {
     /// tolerances drift, the assertions below fail here rather than in the UI.
     #[test]
     fn frontmatter_matches_committed_table_subject() {
-
         let (fm, body) = parse_frontmatter(TABLE_MD).expect("table.md must open with frontmatter");
 
         assert_eq!(fm.scalar("layer"), Some("golden-path"));
@@ -2143,11 +2143,18 @@ mod tests {
     #[test]
     fn hierarchy_reads_a_registry_bundle_layout() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let bundle = dir.path().join(BUNDLE_LANE_REL).join("software-engineering");
+        let bundle = dir
+            .path()
+            .join(BUNDLE_LANE_REL)
+            .join("software-engineering");
         std::fs::create_dir_all(bundle.join("table").join("techniques")).unwrap();
-        std::fs::write(bundle.join("_laws.md"), "## one-authority-per-vocabulary
+        std::fs::write(
+            bundle.join("_laws.md"),
+            "## one-authority-per-vocabulary
 One.
-").unwrap();
+",
+        )
+        .unwrap();
         std::fs::write(
             bundle.join("categories.json"),
             r#"{"categories":[{"id":"ui","title":"UI","order":1}],"subjects":{"table":"ui"}}"#,
@@ -2209,18 +2216,27 @@ Sort it.
         for domain in ["media-craft", "software-engineering"] {
             let b = dir.path().join(BUNDLE_LANE_REL).join(domain);
             std::fs::create_dir_all(&b).unwrap();
-            std::fs::write(b.join("_laws.md"), "## l
+            std::fs::write(
+                b.join("_laws.md"),
+                "## l
 L.
-").unwrap();
+",
+            )
+            .unwrap();
         }
         let layout = discover_corpus(dir.path()).expect("a bundle lane resolves");
         assert_eq!(layout.rel, "knowledge/media-craft", "first alphabetically");
         let note = layout.note.expect("an ambiguous choice must be reported");
-        assert!(note.contains("media-craft") && note.contains("software-engineering"), "{note}");
+        assert!(
+            note.contains("media-craft") && note.contains("software-engineering"),
+            "{note}"
+        );
 
         let g = build_graph(dir.path()).expect("reads");
         assert!(
-            g.warnings.iter().any(|w| w.message.contains("2 bundles are present")),
+            g.warnings
+                .iter()
+                .any(|w| w.message.contains("2 bundles are present")),
             "the choice must reach the UI as a warning: {:#?}",
             g.warnings
         );
@@ -2263,8 +2279,9 @@ L.
 
     #[test]
     fn hierarchy_parses_block_lists() {
-        let (fm, body) = parse_frontmatter("---\nlayer: golden-path\nitems:\n  - a\n  - b\n---\n# T\n")
-            .expect("block list");
+        let (fm, body) =
+            parse_frontmatter("---\nlayer: golden-path\nitems:\n  - a\n  - b\n---\n# T\n")
+                .expect("block list");
         assert_eq!(fm.list("items"), vec!["a", "b"]);
         assert_eq!(fm.scalar("layer"), Some("golden-path"));
         assert_eq!(body, "# T\n");
@@ -2283,9 +2300,15 @@ L.
     #[test]
     fn hierarchy_strips_trailing_comments_only_after_whitespace() {
         assert_eq!(strip_trailing_comment("value   # note"), "value");
-        assert_eq!(strip_trailing_comment("  - path/x.ts  # why"), "  - path/x.ts");
+        assert_eq!(
+            strip_trailing_comment("  - path/x.ts  # why"),
+            "  - path/x.ts"
+        );
         // No whitespace before `#` — a fragment, not a comment.
-        assert_eq!(strip_trailing_comment("docs/a.md#anchor"), "docs/a.md#anchor");
+        assert_eq!(
+            strip_trailing_comment("docs/a.md#anchor"),
+            "docs/a.md#anchor"
+        );
         assert_eq!(strip_trailing_comment("#leading"), "#leading");
         assert_eq!(strip_trailing_comment("plain"), "plain");
     }
@@ -2305,10 +2328,7 @@ L.
         )
         .expect("fm");
         let declared = fm.list("techniques");
-        let split: Vec<_> = declared
-            .iter()
-            .map(|t| t.split_once('@'))
-            .collect();
+        let split: Vec<_> = declared.iter().map(|t| t.split_once('@')).collect();
         assert_eq!(split[0], Some(("pagination", "table")));
         assert_eq!(split[1], None, "a local technique carries no @owner");
     }
@@ -2431,15 +2451,18 @@ L.
             .map(|w| format!("{}|{}", w.path, w.message))
             .collect();
         assert!(
-            msgs.iter().any(|m| m.contains("half-forged") && m.contains("no half-forged.md")),
+            msgs.iter()
+                .any(|m| m.contains("half-forged") && m.contains("no half-forged.md")),
             "missing golden path must warn: {msgs:?}"
         );
         assert!(
-            msgs.iter().any(|m| m.contains("bare/bare.md") && m.contains("missing frontmatter")),
+            msgs.iter()
+                .any(|m| m.contains("bare/bare.md") && m.contains("missing frontmatter")),
             "malformed frontmatter must warn: {msgs:?}"
         );
         assert!(
-            msgs.iter().any(|m| m.contains("partial") && m.contains("missing-one")),
+            msgs.iter()
+                .any(|m| m.contains("partial") && m.contains("missing-one")),
             "a declared-but-absent technique must warn: {msgs:?}"
         );
 
@@ -2562,7 +2585,11 @@ L.
         let ids: BTreeSet<&str> = g.categories.iter().map(|c| c.id.as_str()).collect();
         for s in &g.subjects {
             if let Some(c) = &s.category {
-                assert!(ids.contains(c.as_str()), "{} → unknown category {c}", s.slug);
+                assert!(
+                    ids.contains(c.as_str()),
+                    "{} → unknown category {c}",
+                    s.slug
+                );
             }
         }
     }
@@ -2570,7 +2597,12 @@ L.
     #[test]
     fn hierarchy_doc_reads_a_valid_document() {
         let dir = fixture_repo();
-        let doc = read_doc(dir.path(), DOC_ROOT_REL, "docs/concepts/paths/table/table.md").unwrap();
+        let doc = read_doc(
+            dir.path(),
+            DOC_ROOT_REL,
+            "docs/concepts/paths/table/table.md",
+        )
+        .unwrap();
         assert!(doc.exists);
         assert!(doc.markdown.starts_with("\n# Table"), "{:?}", doc.markdown);
         assert!(
@@ -2602,7 +2634,12 @@ L.
     #[test]
     fn hierarchy_doc_missing_file_is_not_an_error() {
         let dir = fixture_repo();
-        let doc = read_doc(dir.path(), DOC_ROOT_REL, "docs/concepts/paths/table/never-written.md").unwrap();
+        let doc = read_doc(
+            dir.path(),
+            DOC_ROOT_REL,
+            "docs/concepts/paths/table/never-written.md",
+        )
+        .unwrap();
         assert!(!doc.exists);
         assert!(doc.markdown.is_empty());
     }
@@ -2752,7 +2789,10 @@ L.
             "only {} subjects — the artifact join is probably broken, not the census",
             sc.subjects.len()
         );
-        assert!(sc.total_sites > 0, "a census with zero sites everywhere is not credible");
+        assert!(
+            sc.total_sites > 0,
+            "a census with zero sites everywhere is not credible"
+        );
         assert!(sc.rule_count > 0);
         assert!(sc.generated_at.is_some());
         for s in &sc.subjects {
@@ -2764,7 +2804,12 @@ L.
                 s.applicable_contexts
             );
             for c in &s.contexts {
-                assert!(c.sites > 0, "{}: context {} listed with zero sites", s.slug, c.name);
+                assert!(
+                    c.sites > 0,
+                    "{}: context {} listed with zero sites",
+                    s.slug,
+                    c.name
+                );
                 assert!(c.top_rules.len() <= TOP_RULES_MAX);
                 assert!(c.rule_count as usize >= c.top_rules.len());
             }

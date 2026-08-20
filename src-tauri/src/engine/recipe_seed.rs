@@ -59,8 +59,7 @@ use crate::db::DbPool;
 use crate::error::AppError;
 
 /// JSON seeds bundle. Compile-time embedded; ~1.3 MB.
-const SEEDS_JSON: &str =
-    include_str!("../../../scripts/templates/_recipe_seeds.json");
+const SEEDS_JSON: &str = include_str!("../../../scripts/templates/_recipe_seeds.json");
 
 /// Minimum schema version this code understands. Rev when a breaking
 /// change to the seed shape lands so `seed_recipes` fails fast instead
@@ -173,11 +172,9 @@ enum InsertOutcome {
 }
 
 fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError> {
-    if let Some(existing) = recipe_repo::find_by_source(
-        pool,
-        &seed.source_template_id,
-        &seed.source_use_case_id,
-    )? {
+    if let Some(existing) =
+        recipe_repo::find_by_source(pool, &seed.source_template_id, &seed.source_use_case_id)?
+    {
         // One-time upgrade repair: bundles before 2026-06 seeded the
         // technical `uc_*` id as the display name, a NULL category, and
         // never set is_builtin (CreateRecipeInput has no such field).
@@ -186,8 +183,8 @@ fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError
         // renamed rows are never touched); NULL-category rows get the
         // seed's category; un-flagged rows get is_builtin = 1 — this row
         // IS in the shipped bundle, that's how we found it.
-        let stale_name = existing.name == seed.source_use_case_id
-            && seed.name != seed.source_use_case_id;
+        let stale_name =
+            existing.name == seed.source_use_case_id && seed.name != seed.source_use_case_id;
         let missing_category = existing.category.is_none() && seed.category.is_some();
         let missing_builtin = !existing.is_builtin;
         if stale_name || missing_category {
@@ -196,7 +193,11 @@ fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError
                 source_use_case_name: stale_name
                     .then(|| seed.source_use_case_name.clone())
                     .flatten(),
-                category: if missing_category { seed.category.clone() } else { None },
+                category: if missing_category {
+                    seed.category.clone()
+                } else {
+                    None
+                },
                 ..Default::default()
             };
             recipe_repo::update(pool, &existing.id, update)?;
@@ -297,8 +298,9 @@ fn refresh_model_tier(
         obj.insert("model_rationale".to_string(), seed_rationale.clone());
     }
 
-    let merged = serde_json::to_string(&cur)
-        .map_err(|e| AppError::Internal(format!("recipe model-tier merge serialize failed: {e}")))?;
+    let merged = serde_json::to_string(&cur).map_err(|e| {
+        AppError::Internal(format!("recipe model-tier merge serialize failed: {e}"))
+    })?;
     recipe_repo::update(
         pool,
         &existing.id,
@@ -335,8 +337,8 @@ mod tests {
 
     #[test]
     fn embedded_bundle_parses_and_has_expected_shape() {
-        let bundle: SeedBundle = serde_json::from_str(SEEDS_JSON)
-            .expect("embedded seed bundle must parse");
+        let bundle: SeedBundle =
+            serde_json::from_str(SEEDS_JSON).expect("embedded seed bundle must parse");
         assert_eq!(bundle.version, EXPECTED_SEED_VERSION);
         assert!(
             !bundle.recipes.is_empty(),
@@ -405,8 +407,8 @@ mod tests {
             bundle.recipes.iter().map(|r| (r.id.as_str(), r)).collect();
         let hand_minted: HashSet<&str> = HAND_MINTED_RECIPE_IDS.iter().copied().collect();
 
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../scripts/templates");
+        let root =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../scripts/templates");
         let mut checked_templates = 0usize;
         let mut checked_refs = 0usize;
 
@@ -417,7 +419,10 @@ mod tests {
             if !dir_path.is_dir() || dir_name.starts_with('_') {
                 continue;
             }
-            for file in std::fs::read_dir(&dir_path).expect("category dir readable").flatten() {
+            for file in std::fs::read_dir(&dir_path)
+                .expect("category dir readable")
+                .flatten()
+            {
                 let name = file.file_name().to_string_lossy().to_string();
                 if !name.ends_with(".json") {
                     continue;
@@ -428,10 +433,8 @@ mod tests {
                     continue;
                 }
                 let raw = std::fs::read_to_string(file.path()).expect("template readable");
-                let doc: serde_json::Value =
-                    serde_json::from_str(&raw).unwrap_or_else(|e| {
-                        panic!("template {name} must parse as JSON: {e}")
-                    });
+                let doc: serde_json::Value = serde_json::from_str(&raw)
+                    .unwrap_or_else(|e| panic!("template {name} must parse as JSON: {e}"));
                 let template_id = doc["id"].as_str().unwrap_or_default().to_string();
                 assert!(!template_id.is_empty(), "{name}: template id missing");
                 checked_templates += 1;
@@ -443,8 +446,7 @@ mod tests {
                     .unwrap_or_default();
                 let mut embedded_ids: Vec<String> = Vec::new();
                 for uc in &use_cases {
-                    let Some(ref_id) = uc.pointer("/recipe_ref/id").and_then(|v| v.as_str())
-                    else {
+                    let Some(ref_id) = uc.pointer("/recipe_ref/id").and_then(|v| v.as_str()) else {
                         continue; // inline UC (pre-v3) — out of scope here
                     };
                     checked_refs += 1;
@@ -456,8 +458,8 @@ mod tests {
                         "{template_id}: ref {ref_id} provenance names a different template ({}) — not re-derivable",
                         row.source_template_id
                     );
-                    let embedded: serde_json::Value =
-                        serde_json::from_str(&row.prompt_template).unwrap_or_else(|e| {
+                    let embedded: serde_json::Value = serde_json::from_str(&row.prompt_template)
+                        .unwrap_or_else(|e| {
                             panic!("{template_id}: ref {ref_id} prompt_template unparseable: {e}")
                         });
                     let emb_id = embedded["id"].as_str().unwrap_or_default().to_string();
@@ -494,9 +496,7 @@ mod tests {
                             bound.push(s.to_string());
                         }
                         if let Some(arr) = q["use_case_ids"].as_array() {
-                            bound.extend(
-                                arr.iter().filter_map(|v| v.as_str().map(String::from)),
-                            );
+                            bound.extend(arr.iter().filter_map(|v| v.as_str().map(String::from)));
                         }
                         for b in bound.into_iter().filter(|b| !b.is_empty()) {
                             // Only enforce when the template composes via
@@ -513,8 +513,14 @@ mod tests {
             }
         }
 
-        assert!(checked_templates >= 100, "expected the full corpus, saw {checked_templates}");
-        assert!(checked_refs >= 250, "expected recipe_ref coverage, saw {checked_refs}");
+        assert!(
+            checked_templates >= 100,
+            "expected the full corpus, saw {checked_templates}"
+        );
+        assert!(
+            checked_refs >= 250,
+            "expected recipe_ref coverage, saw {checked_refs}"
+        );
     }
 
     #[test]
@@ -551,7 +557,10 @@ mod tests {
 
         // Fresh seeding must flag rows builtin.
         let fresh = recipe_repo::get_by_id(&pool, &target.id).expect("row exists");
-        assert!(fresh.is_builtin, "seeded rows are flagged builtin on create");
+        assert!(
+            fresh.is_builtin,
+            "seeded rows are flagged builtin on create"
+        );
 
         {
             let conn = pool.get().unwrap();
@@ -571,8 +580,14 @@ mod tests {
 
         let healed = recipe_repo::get_by_id(&pool, &target.id).expect("row exists");
         assert_eq!(healed.name, target.name, "display name healed from seed");
-        assert_eq!(healed.category, target.category, "category healed from seed");
-        assert!(healed.is_builtin, "builtin flag healed alongside name/category");
+        assert_eq!(
+            healed.category, target.category,
+            "category healed from seed"
+        );
+        assert!(
+            healed.is_builtin,
+            "builtin flag healed alongside name/category"
+        );
 
         // A user rename must never be overwritten by the repair.
         {
@@ -598,11 +613,20 @@ mod tests {
         let pool = test_pool();
         seed_recipes_from_bundle(&pool).expect("seed ok");
         let bundle: SeedBundle = serde_json::from_str(SEEDS_JSON).unwrap();
-        let first = bundle.recipes.first().expect("bundle has at least one recipe");
+        let first = bundle
+            .recipes
+            .first()
+            .expect("bundle has at least one recipe");
         let row = recipe_repo::get_by_id(&pool, &first.id)
             .expect("seeded recipe must be queryable by id");
-        assert_eq!(row.source_template_id.as_deref(), Some(first.source_template_id.as_str()));
-        assert_eq!(row.source_use_case_id.as_deref(), Some(first.source_use_case_id.as_str()));
+        assert_eq!(
+            row.source_template_id.as_deref(),
+            Some(first.source_template_id.as_str())
+        );
+        assert_eq!(
+            row.source_use_case_id.as_deref(),
+            Some(first.source_use_case_id.as_str())
+        );
         let _: serde_json::Value = serde_json::from_str(&row.prompt_template)
             .expect("prompt_template must round-trip as JSON");
     }
@@ -628,8 +652,7 @@ mod tests {
         // rationale) — simulating an install seeded before tiers shipped.
         {
             let row = recipe_repo::get_by_id(&pool, &target.id).unwrap();
-            let mut inner: serde_json::Value =
-                serde_json::from_str(&row.prompt_template).unwrap();
+            let mut inner: serde_json::Value = serde_json::from_str(&row.prompt_template).unwrap();
             let obj = inner.as_object_mut().unwrap();
             obj.insert("model_override".into(), serde_json::Value::Null);
             obj.remove("model_rationale");
@@ -658,7 +681,10 @@ mod tests {
             "model_override refreshed from the bundle tier",
         );
         assert!(
-            inner.get("model_rationale").map(|v| v.is_string()).unwrap_or(false),
+            inner
+                .get("model_rationale")
+                .map(|v| v.is_string())
+                .unwrap_or(false),
             "rationale restored alongside the tier",
         );
         // Non-tier content survives the field-merge.

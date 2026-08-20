@@ -232,9 +232,14 @@ mod tests {
     #[test]
     fn a_proposed_tag_is_inert_until_activated() {
         let pool = crate::db::init_test_user_db().unwrap();
-        let id = propose(&pool, "risk", "A known hazard and its blast radius.", "cyc_123")
-            .unwrap()
-            .expect("a brand-new tag is proposed");
+        let id = propose(
+            &pool,
+            "risk",
+            "A known hazard and its blast radius.",
+            "cyc_123",
+        )
+        .unwrap()
+        .expect("a brand-new tag is proposed");
 
         let stored = get(&pool, "risk").unwrap().expect("row exists");
         assert_eq!(stored.id, id);

@@ -539,8 +539,10 @@ pub fn extract_display_text(line: &str) -> Option<String> {
                 .filter(|item| item.get("type").and_then(|t| t.as_str()) == Some("text"))
                 .filter_map(|item| item.get("text").and_then(|t| t.as_str()))
                 .collect::<Vec<_>>()
-                .join("
-");
+                .join(
+                    "
+",
+                );
             if !text.is_empty() {
                 return Some(text);
             }
@@ -634,11 +636,14 @@ mod display_text_tests {
         );
         assert!(extract_display_text(r#"{"type":"system","subtype":"other"}"#).is_none());
         // A tool-only assistant message yields nothing rather than an empty line.
-        assert!(
-            extract_display_text(r#"{"message":{"content":[{"type":"tool_use","name":"Read"}]}}"#)
-                .is_none()
-        );
+        assert!(extract_display_text(
+            r#"{"message":{"content":[{"type":"tool_use","name":"Read"}]}}"#
+        )
+        .is_none());
         // Plain text passes through.
-        assert_eq!(extract_display_text("raw line").as_deref(), Some("raw line"));
+        assert_eq!(
+            extract_display_text("raw line").as_deref(),
+            Some("raw line")
+        );
     }
 }

@@ -55,7 +55,10 @@ pub fn set_cursor(pool: &DbPool, cursor_name: &str, value: &str) -> Result<(), A
 /// surface to show "never synced" rather than the epoch/90d-ago placeholder.
 pub fn peek_cursor(pool: &DbPool, cursor_name: &str) -> Option<String> {
     let key = format!("{}{}", settings_keys::CLOUD_SYNC_CURSOR_PREFIX, cursor_name);
-    settings::get(pool, &key).ok().flatten().filter(|v| !v.is_empty())
+    settings::get(pool, &key)
+        .ok()
+        .flatten()
+        .filter(|v| !v.is_empty())
 }
 
 /// Record the last successful sync time (RFC3339), surfaced in the status command.
@@ -85,7 +88,11 @@ pub fn add_total_rows(pool: &DbPool, delta: u64) -> Result<(), AppError> {
         return Ok(());
     }
     let next = get_total_rows(pool).saturating_add(delta);
-    settings::set(pool, settings_keys::CLOUD_SYNC_TOTAL_ROWS, &next.to_string())
+    settings::set(
+        pool,
+        settings_keys::CLOUD_SYNC_TOTAL_ROWS,
+        &next.to_string(),
+    )
 }
 
 /// Read the persisted device id without minting one. Returns `None` before the

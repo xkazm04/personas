@@ -7,8 +7,8 @@ use crate::models::{
     UpdateRotationPolicyInput,
 };
 use crate::DbPool;
-use personas_core::lifecycle::RotationEntryStatus;
 use personas_core::error::AppError;
+use personas_core::lifecycle::RotationEntryStatus;
 
 // ============================================================================
 // Row Mappers

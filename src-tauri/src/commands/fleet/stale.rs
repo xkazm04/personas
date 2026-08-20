@@ -15,7 +15,6 @@ use std::time::Duration;
 
 use tauri::AppHandle;
 
-
 use super::registry::{now_ms, registry};
 use super::screen_activity::{ScreenActivity, ScreenDelta};
 use super::transcript_read::transcript_size;
@@ -178,8 +177,14 @@ const STALLED_TUNE_RANGE: (u64, u64) = (30, 3600);
 
 /// Update the user-tuned staleness / frozen cutoffs (seconds; clamped).
 pub fn set_state_cutoffs(stale_secs: u64, stalled_secs: u64) {
-    STALE_OVERRIDE_SECS.store(stale_secs.clamp(STALE_TUNE_RANGE.0, STALE_TUNE_RANGE.1), Ordering::Relaxed);
-    STALLED_OVERRIDE_SECS.store(stalled_secs.clamp(STALLED_TUNE_RANGE.0, STALLED_TUNE_RANGE.1), Ordering::Relaxed);
+    STALE_OVERRIDE_SECS.store(
+        stale_secs.clamp(STALE_TUNE_RANGE.0, STALE_TUNE_RANGE.1),
+        Ordering::Relaxed,
+    );
+    STALLED_OVERRIDE_SECS.store(
+        stalled_secs.clamp(STALLED_TUNE_RANGE.0, STALLED_TUNE_RANGE.1),
+        Ordering::Relaxed,
+    );
 }
 
 /// Effective cutoff in seconds: env test knob > user-tuned override > default.
@@ -295,7 +300,11 @@ fn is_frozen_mid_run(
 /// - the sample is older than the window of the rule asking. Renders are a
 ///   byproduct of other work, so a session nobody looked at recently carries a
 ///   measurement that says nothing about NOW.
-fn usable_activity(delta: Option<ScreenDelta>, now: i64, max_age_ms: i64) -> Option<ScreenActivity> {
+fn usable_activity(
+    delta: Option<ScreenDelta>,
+    now: i64,
+    max_age_ms: i64,
+) -> Option<ScreenActivity> {
     let d = delta?;
     if !d.classifiable() || d.at_ms <= 0 || now - d.at_ms > max_age_ms {
         return None;
@@ -392,17 +401,34 @@ fn tick_once(app: &AppHandle) {
     // 30s cadence and the AppHandle are already here.
     crate::commands::infrastructure::workspace_harvest::sweep_pending_harvest_ingests(app);
     let now = now_ms();
-    let stale_secs = effective_secs("PERSONAS_FLEET_STALE_SECS", &STALE_OVERRIDE_SECS, STALE_AFTER_SECS);
+    let stale_secs = effective_secs(
+        "PERSONAS_FLEET_STALE_SECS",
+        &STALE_OVERRIDE_SECS,
+        STALE_AFTER_SECS,
+    );
     let cutoff_ms = stale_secs * 1000;
-    let never_attached_ms = env_secs("PERSONAS_FLEET_NEVER_ATTACHED_SECS", NEVER_ATTACHED_SECS) * 1000;
-    let stalled_secs = effective_secs("PERSONAS_FLEET_STALLED_SECS", &STALLED_OVERRIDE_SECS, STALLED_AFTER_SECS);
+    let never_attached_ms =
+        env_secs("PERSONAS_FLEET_NEVER_ATTACHED_SECS", NEVER_ATTACHED_SECS) * 1000;
+    let stalled_secs = effective_secs(
+        "PERSONAS_FLEET_STALLED_SECS",
+        &STALLED_OVERRIDE_SECS,
+        STALLED_AFTER_SECS,
+    );
     let stalled_ms = stalled_secs * 1000;
 
     // Pass A — snapshot the sessions worth checking (no IO under the lock).
     let snaps: Vec<(String, Option<String>)> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values()
-            .filter(|s| !matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated))
+            .filter(|s| {
+                !matches!(
+                    s.state,
+                    FleetSessionState::Exited | FleetSessionState::Hibernated
+                )
+            })
             .map(|s| (s.id.clone(), s.claude_session_id.clone()))
             .collect()
     };
@@ -423,7 +449,9 @@ fn tick_once(app: &AppHandle) {
         let mut g = growth_map().lock().unwrap_or_else(|e| e.into_inner());
         for (id, csid) in &snaps {
             let Some(csid) = csid else { continue };
-            let Some(size) = transcript_size(csid) else { continue };
+            let Some(size) = transcript_size(csid) else {
+                continue;
+            };
             sizes.insert(id.clone(), size);
             let entry = g.entry(id.clone()).or_insert((size, now));
             if size > entry.0 {
@@ -446,10 +474,18 @@ fn tick_once(app: &AppHandle) {
         // silence clock before baseline before registry) so the AwaitingInput
         // revive check is atomic with the state mutation.
         let mut silent = silent_since_map().lock().unwrap_or_else(|e| e.into_inner());
-        let mut base = awaiting_baseline().lock().unwrap_or_else(|e| e.into_inner());
-        let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut base = awaiting_baseline()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let mut map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         for session in map.values_mut() {
-            if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            if matches!(
+                session.state,
+                FleetSessionState::Exited | FleetSessionState::Hibernated
+            ) {
                 base.remove(&session.id);
                 continue;
             }
@@ -498,8 +534,13 @@ fn tick_once(app: &AppHandle) {
                 .informative_screen_delta();
             let screen_stale = usable_activity(delta, now, cutoff_ms);
             let screen_stall = usable_activity(delta, now, stalled_ms);
-            let silent_since =
-                track_silence(silent.get(&session.id).copied(), session.state, grew, screen_stall, now);
+            let silent_since = track_silence(
+                silent.get(&session.id).copied(),
+                session.state,
+                grew,
+                screen_stall,
+                now,
+            );
             match silent_since {
                 Some(since) => {
                     silent.insert(session.id.clone(), since);
@@ -568,7 +609,13 @@ fn tick_once(app: &AppHandle) {
             // Frozen-process fast path (before the generous flat-log cutoff):
             // total PTY silence while Running means hung, not thinking — flag
             // it at STALLED_AFTER_SECS with a verdict the operator can act on.
-            if is_frozen_mid_run(session.state, session.last_pty_output_ms, idle_since, now, stalled_ms) {
+            if is_frozen_mid_run(
+                session.state,
+                session.last_pty_output_ms,
+                idle_since,
+                now,
+                stalled_ms,
+            ) {
                 session.state = FleetSessionState::Stale;
                 session.state_reason = Some(if stalled_secs >= 60 {
                     format!(
@@ -590,7 +637,14 @@ fn tick_once(app: &AppHandle) {
             // not moved for the whole stall window and nothing was logged.
             // That is the "alive-looking but stuck" case byte-presence can
             // never see.
-            if is_frozen_by_screen(session.state, screen_stall, silent_since, idle_since, now, stalled_ms) {
+            if is_frozen_by_screen(
+                session.state,
+                screen_stall,
+                silent_since,
+                idle_since,
+                now,
+                stalled_ms,
+            ) {
                 session.state = FleetSessionState::Stale;
                 session.state_reason = Some(if stalled_secs >= 60 {
                     format!(
@@ -650,7 +704,13 @@ fn tick_once(app: &AppHandle) {
 
     // Emit state changes outside the lock.
     for sid in revived {
-        super::pty::emit_session_state(app, &sid, None, "running", Some("Transcript growing".into()));
+        super::pty::emit_session_state(
+            app,
+            &sid,
+            None,
+            "running",
+            Some("Transcript growing".into()),
+        );
     }
     for sid in newly_stale {
         super::pty::emit_session_state(app, &sid, None, "stale", Some("No log growth".into()));
@@ -661,15 +721,25 @@ fn tick_once(app: &AppHandle) {
     // `PERSONAS_FLEET_DEBUG` so production stays quiet.
     if std::env::var("PERSONAS_FLEET_DEBUG").is_ok() {
         let g = growth_map().lock().unwrap_or_else(|e| e.into_inner());
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let mut lines: Vec<String> = Vec::new();
         for s in map.values() {
-            if matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            if matches!(
+                s.state,
+                FleetSessionState::Exited | FleetSessionState::Hibernated
+            ) {
                 continue;
             }
             let grew_at = g.get(&s.id).map(|&(_, t)| (now - t) / 1000).unwrap_or(-1);
             let size = g.get(&s.id).map(|&(sz, _)| sz).unwrap_or(0);
-            let out_ago = if s.last_pty_output_ms > 0 { (now - s.last_pty_output_ms) / 1000 } else { -1 };
+            let out_ago = if s.last_pty_output_ms > 0 {
+                (now - s.last_pty_output_ms) / 1000
+            } else {
+                -1
+            };
             // Screen movement since the previous render. `outAgo` only says
             // bytes arrived — a spinner produces bytes forever — so this is the
             // column that separates "working" from "animating while stuck".
@@ -730,7 +800,10 @@ fn tick_once(app: &AppHandle) {
 fn auto_forget_pass(app: &AppHandle) {
     // Pass A — snapshot candidate ids under the lock; no IO while it is held.
     let candidates: Vec<String> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
                 matches!(
@@ -805,10 +878,16 @@ pub fn parse_limit_reset(screen: &str, now_ms: i64) -> Option<i64> {
     let lower = screen.to_lowercase();
     // Anchor on the word that introduces the time so we never pick up an
     // unrelated clock elsewhere on the screen (a log timestamp, a diff line).
-    let anchor = ["resets ", "reset at ", "resets at ", "will reset ", "resume at "]
-        .iter()
-        .filter_map(|kw| lower.find(kw).map(|i| i + kw.len()))
-        .min()?;
+    let anchor = [
+        "resets ",
+        "reset at ",
+        "resets at ",
+        "will reset ",
+        "resume at ",
+    ]
+    .iter()
+    .filter_map(|kw| lower.find(kw).map(|i| i + kw.len()))
+    .min()?;
     let tail: String = lower[anchor..].chars().take(24).collect();
     let (hour, minute) = parse_clock(&tail)?;
 
@@ -975,7 +1054,10 @@ fn classify_pass(app: &AppHandle, grew_ids: &HashSet<String>) {
     // Candidates: parked states only. A Running session is not parked, and a
     // Finished/Exited one has nothing left to decide.
     let candidates: Vec<(String, Option<String>)> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
                 matches!(
@@ -1063,12 +1145,17 @@ fn classify_pass(app: &AppHandle, grew_ids: &HashSet<String>) {
 
 fn limit_retry_pass(app: &AppHandle, now: i64) {
     let candidates: Vec<(String, bool)> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
                 matches!(
                     s.state,
-                    FleetSessionState::AwaitingInput | FleetSessionState::Stale | FleetSessionState::Idle
+                    FleetSessionState::AwaitingInput
+                        | FleetSessionState::Stale
+                        | FleetSessionState::Idle
                 )
             })
             .map(|s| (s.id.clone(), s.dozing || s.child_pid.is_none()))
@@ -1083,7 +1170,9 @@ fn limit_retry_pass(app: &AppHandle, now: i64) {
         m.retain(|id, _| ids.contains(id));
     }
     for (sid, asleep) in candidates {
-        let Some((_, lines)) = registry().render_screen_for(&sid) else { continue };
+        let Some((_, lines)) = registry().render_screen_for(&sid) else {
+            continue;
+        };
         let screen = lines.join("\n");
         if !screen_shows_limit_error(&screen) {
             let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
@@ -1118,7 +1207,11 @@ fn limit_retry_pass(app: &AppHandle, now: i64) {
                 );
             }
         }
-        let interval = if asleep { LIMIT_RETRY_DOZED_INTERVAL_MS } else { LIMIT_RETRY_INTERVAL_MS };
+        let interval = if asleep {
+            LIMIT_RETRY_DOZED_INTERVAL_MS
+        } else {
+            LIMIT_RETRY_INTERVAL_MS
+        };
         // Known ETA → hold fire until reset + grace, then spend exactly ONE
         // attempt. Unknown ETA (or that attempt already spent, meaning the
         // stated time did not hold) → today's blind cadence, unchanged.
@@ -1149,7 +1242,11 @@ fn limit_retry_pass(app: &AppHandle, now: i64) {
                 "limit screen — mechanical retry {}/{} ({})",
                 count + 1,
                 LIMIT_RETRY_MAX,
-                if asleep { "wake + `continue`" } else { "typing `continue`" }
+                if asleep {
+                    "wake + `continue`"
+                } else {
+                    "typing `continue`"
+                }
             ),
         );
         if asleep {
@@ -1160,7 +1257,14 @@ fn limit_retry_pass(app: &AppHandle, now: i64) {
             let app = app.clone();
             let old = sid.clone();
             tauri::async_runtime::spawn(async move {
-                match crate::commands::fleet::commands::fleet_wake_session(app, old.clone(), None, None).await {
+                match crate::commands::fleet::commands::fleet_wake_session(
+                    app,
+                    old.clone(),
+                    None,
+                    None,
+                )
+                .await
+                {
                     Ok(new_id) => {
                         tokio::time::sleep(std::time::Duration::from_secs(25)).await;
                         let _ = registry().write_text_line(&new_id, "continue");
@@ -1212,7 +1316,10 @@ fn doze_pass(app: &AppHandle, now: i64, stale_cutoff_ms: i64) {
 
     // Snapshot candidates without holding the lock across the kills.
     let candidates: Vec<String> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
                 if s.dozing || s.child_pid.is_none() {
@@ -1269,7 +1376,10 @@ fn auto_hibernate_pass(app: &AppHandle) {
     // Collect candidates under the lock, then hibernate outside it (hibernate
     // re-locks the registry).
     let candidates: Vec<String> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
                 matches!(s.state, FleetSessionState::Idle | FleetSessionState::Stale)
@@ -1297,7 +1407,10 @@ fn auto_hibernate_pass(app: &AppHandle) {
                 &sid,
                 None,
                 "hibernated",
-                Some(format!("Auto-hibernated after {} min idle", after_secs / 60)),
+                Some(format!(
+                    "Auto-hibernated after {} min idle",
+                    after_secs / 60
+                )),
             );
         }
     }
@@ -1326,7 +1439,16 @@ fn live_slot_evictions(snaps: &[SlotSnap], cap: u64) -> Vec<String> {
     if cap == 0 {
         return Vec::new();
     }
-    let live = snaps.iter().filter(|s| s.has_pid && !matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated)).count() as u64;
+    let live = snaps
+        .iter()
+        .filter(|s| {
+            s.has_pid
+                && !matches!(
+                    s.state,
+                    FleetSessionState::Exited | FleetSessionState::Hibernated
+                )
+        })
+        .count() as u64;
     if live <= cap {
         return Vec::new();
     }
@@ -1340,12 +1462,19 @@ fn live_slot_evictions(snaps: &[SlotSnap], cap: u64) -> Vec<String> {
         })
         .collect();
     candidates.sort_by_key(|s| s.last_activity_ms);
-    candidates.into_iter().take(overflow).map(|s| s.id.clone()).collect()
+    candidates
+        .into_iter()
+        .take(overflow)
+        .map(|s| s.id.clone())
+        .collect()
 }
 
 /// Snapshot the registry into the pure policy's shape.
 fn slot_snapshot() -> Vec<SlotSnap> {
-    let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+    let map = registry()
+        .sessions
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     map.values()
         .map(|s| SlotSnap {
             id: s.id.clone(),
@@ -1468,25 +1597,46 @@ mod tests {
     #[test]
     fn growth_revives_stale_and_idle_to_running() {
         use FleetSessionState::*;
-        assert_eq!(staleness_transition(Stale, true, OLD, NOW, CUTOFF), Some(Running));
-        assert_eq!(staleness_transition(Idle, true, OLD, NOW, CUTOFF), Some(Running));
+        assert_eq!(
+            staleness_transition(Stale, true, OLD, NOW, CUTOFF),
+            Some(Running)
+        );
+        assert_eq!(
+            staleness_transition(Idle, true, OLD, NOW, CUTOFF),
+            Some(Running)
+        );
         // Growth while already Running / AwaitingInput → no state change.
         assert_eq!(staleness_transition(Running, true, OLD, NOW, CUTOFF), None);
-        assert_eq!(staleness_transition(AwaitingInput, true, OLD, NOW, CUTOFF), None);
+        assert_eq!(
+            staleness_transition(AwaitingInput, true, OLD, NOW, CUTOFF),
+            None
+        );
     }
 
     #[test]
     fn flat_logs_past_cutoff_go_stale() {
         use FleetSessionState::*;
-        assert_eq!(staleness_transition(Running, false, OLD, NOW, CUTOFF), Some(Stale));
-        assert_eq!(staleness_transition(Idle, false, OLD, NOW, CUTOFF), Some(Stale));
-        assert_eq!(staleness_transition(Spawning, false, OLD, NOW, CUTOFF), Some(Stale));
+        assert_eq!(
+            staleness_transition(Running, false, OLD, NOW, CUTOFF),
+            Some(Stale)
+        );
+        assert_eq!(
+            staleness_transition(Idle, false, OLD, NOW, CUTOFF),
+            Some(Stale)
+        );
+        assert_eq!(
+            staleness_transition(Spawning, false, OLD, NOW, CUTOFF),
+            Some(Stale)
+        );
     }
 
     #[test]
     fn flat_but_recent_stays_put() {
         use FleetSessionState::*;
-        assert_eq!(staleness_transition(Running, false, FRESH, NOW, CUTOFF), None);
+        assert_eq!(
+            staleness_transition(Running, false, FRESH, NOW, CUTOFF),
+            None
+        );
         assert_eq!(staleness_transition(Idle, false, FRESH, NOW, CUTOFF), None);
     }
 
@@ -1504,7 +1654,10 @@ mod tests {
         use FleetSessionState::*;
         assert_eq!(staleness_transition(Stale, false, OLD, NOW, CUTOFF), None);
         assert_eq!(staleness_transition(Exited, false, OLD, NOW, CUTOFF), None);
-        assert_eq!(staleness_transition(Hibernated, false, OLD, NOW, CUTOFF), None);
+        assert_eq!(
+            staleness_transition(Hibernated, false, OLD, NOW, CUTOFF),
+            None
+        );
     }
 
     const STALL_MS: i64 = STALLED_AFTER_SECS * 1000;
@@ -1524,7 +1677,13 @@ mod tests {
         // Status line still redrawing → alive (even with flat logs).
         assert!(!is_frozen_mid_run(Running, EMITTING, SILENT, NOW, STALL_MS));
         // Recent growth/hook → working quietly (transcript flushed late).
-        assert!(!is_frozen_mid_run(Running, SILENT, NOW - 10_000, NOW, STALL_MS));
+        assert!(!is_frozen_mid_run(
+            Running,
+            SILENT,
+            NOW - 10_000,
+            NOW,
+            STALL_MS
+        ));
     }
 
     #[test]
@@ -1534,7 +1693,13 @@ mod tests {
         assert!(!is_frozen_mid_run(Running, 0, SILENT, NOW, STALL_MS));
         // Non-Running states are governed by the other rules.
         assert!(!is_frozen_mid_run(Idle, SILENT, SILENT, NOW, STALL_MS));
-        assert!(!is_frozen_mid_run(AwaitingInput, SILENT, SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_mid_run(
+            AwaitingInput,
+            SILENT,
+            SILENT,
+            NOW,
+            STALL_MS
+        ));
         assert!(!is_frozen_mid_run(Spawning, SILENT, SILENT, NOW, STALL_MS));
         assert!(!is_frozen_mid_run(Stale, SILENT, SILENT, NOW, STALL_MS));
     }
@@ -1543,7 +1708,11 @@ mod tests {
 
     /// A delta measured `age_ms` before NOW.
     fn screen(changed: usize, total: usize, age_ms: i64) -> Option<ScreenDelta> {
-        Some(ScreenDelta { changed_lines: changed, total_lines: total, at_ms: NOW - age_ms })
+        Some(ScreenDelta {
+            changed_lines: changed,
+            total_lines: total,
+            at_ms: NOW - age_ms,
+        })
     }
 
     #[test]
@@ -1553,7 +1722,14 @@ mod tests {
         // exactly as they did before.
         assert_eq!(usable_activity(None, NOW, CUTOFF), None);
         assert!(!screen_vetoes_stale(None));
-        assert!(!is_frozen_by_screen(FleetSessionState::Running, None, Some(0), OLD, NOW, STALL_MS));
+        assert!(!is_frozen_by_screen(
+            FleetSessionState::Running,
+            None,
+            Some(0),
+            OLD,
+            NOW,
+            STALL_MS
+        ));
         // And the transition itself is untouched.
         assert_eq!(
             staleness_transition(FleetSessionState::Running, false, OLD, NOW, CUTOFF),
@@ -1567,11 +1743,23 @@ mod tests {
         assert_eq!(usable_activity(screen(1, 4, 0), NOW, CUTOFF), None);
         assert_eq!(usable_activity(screen(0, 3, 0), NOW, CUTOFF), None);
         // Older than the window asking → says nothing about now.
-        assert_eq!(usable_activity(screen(9, 24, CUTOFF + 1), NOW, CUTOFF), None);
+        assert_eq!(
+            usable_activity(screen(9, 24, CUTOFF + 1), NOW, CUTOFF),
+            None
+        );
         // Fresh + classifiable → a real verdict.
-        assert_eq!(usable_activity(screen(9, 24, 1_000), NOW, CUTOFF), Some(ScreenActivity::Working));
-        assert_eq!(usable_activity(screen(0, 24, 1_000), NOW, CUTOFF), Some(ScreenActivity::Silent));
-        assert_eq!(usable_activity(screen(1, 24, 1_000), NOW, CUTOFF), Some(ScreenActivity::Cosmetic));
+        assert_eq!(
+            usable_activity(screen(9, 24, 1_000), NOW, CUTOFF),
+            Some(ScreenActivity::Working)
+        );
+        assert_eq!(
+            usable_activity(screen(0, 24, 1_000), NOW, CUTOFF),
+            Some(ScreenActivity::Silent)
+        );
+        assert_eq!(
+            usable_activity(screen(1, 24, 1_000), NOW, CUTOFF),
+            Some(ScreenActivity::Cosmetic)
+        );
     }
 
     #[test]
@@ -1582,12 +1770,28 @@ mod tests {
             Some(FleetSessionState::Stale),
         );
         // ...but content is visibly moving, so the tick suppresses it.
-        assert!(screen_vetoes_stale(usable_activity(screen(9, 24, 1_000), NOW, CUTOFF)));
+        assert!(screen_vetoes_stale(usable_activity(
+            screen(9, 24, 1_000),
+            NOW,
+            CUTOFF
+        )));
         // A spinner is not content, and neither is a frozen grid.
-        assert!(!screen_vetoes_stale(usable_activity(screen(1, 24, 1_000), NOW, CUTOFF)));
-        assert!(!screen_vetoes_stale(usable_activity(screen(0, 24, 1_000), NOW, CUTOFF)));
+        assert!(!screen_vetoes_stale(usable_activity(
+            screen(1, 24, 1_000),
+            NOW,
+            CUTOFF
+        )));
+        assert!(!screen_vetoes_stale(usable_activity(
+            screen(0, 24, 1_000),
+            NOW,
+            CUTOFF
+        )));
         // A tiny screen must never become a "never stale" hole.
-        assert!(!screen_vetoes_stale(usable_activity(screen(1, 3, 1_000), NOW, CUTOFF)));
+        assert!(!screen_vetoes_stale(usable_activity(
+            screen(1, 3, 1_000),
+            NOW,
+            CUTOFF
+        )));
     }
 
     #[test]
@@ -1596,17 +1800,29 @@ mod tests {
         let silent = Some(ScreenActivity::Silent);
         // Starts at the first silent observation, then holds that instant.
         assert_eq!(track_silence(None, Running, false, silent, NOW), Some(NOW));
-        assert_eq!(track_silence(Some(OLD), Running, false, silent, NOW), Some(OLD));
+        assert_eq!(
+            track_silence(Some(OLD), Running, false, silent, NOW),
+            Some(OLD)
+        );
         // Any evidence of life clears it.
         assert_eq!(track_silence(Some(OLD), Running, true, silent, NOW), None);
         assert_eq!(
-            track_silence(Some(OLD), Running, false, Some(ScreenActivity::Cosmetic), NOW),
+            track_silence(
+                Some(OLD),
+                Running,
+                false,
+                Some(ScreenActivity::Cosmetic),
+                NOW
+            ),
             None,
         );
         assert_eq!(track_silence(Some(OLD), Running, false, None, NOW), None);
         // A parked session shows a static screen by definition — never let
         // that accumulate and fire when it flips back to Running.
-        assert_eq!(track_silence(Some(OLD), AwaitingInput, false, silent, NOW), None);
+        assert_eq!(
+            track_silence(Some(OLD), AwaitingInput, false, silent, NOW),
+            None
+        );
         assert_eq!(track_silence(Some(OLD), Idle, false, silent, NOW), None);
     }
 
@@ -1615,10 +1831,17 @@ mod tests {
         use FleetSessionState::*;
         let silent = Some(ScreenActivity::Silent);
         let since = NOW - STALL_MS; // silent for the whole stall window
-        // Bytes are still arriving (the PTY rule stays quiet), nothing logged,
-        // grid frozen throughout → stuck.
+                                    // Bytes are still arriving (the PTY rule stays quiet), nothing logged,
+                                    // grid frozen throughout → stuck.
         assert!(!is_frozen_mid_run(Running, EMITTING, SILENT, NOW, STALL_MS));
-        assert!(is_frozen_by_screen(Running, silent, Some(since), SILENT, NOW, STALL_MS));
+        assert!(is_frozen_by_screen(
+            Running,
+            silent,
+            Some(since),
+            SILENT,
+            NOW,
+            STALL_MS
+        ));
     }
 
     #[test]
@@ -1627,16 +1850,50 @@ mod tests {
         let silent = Some(ScreenActivity::Silent);
         let since = NOW - STALL_MS;
         // One tick of silence is not sustained silence.
-        assert!(!is_frozen_by_screen(Running, silent, Some(NOW), SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_by_screen(
+            Running,
+            silent,
+            Some(NOW),
+            SILENT,
+            NOW,
+            STALL_MS
+        ));
         // No clock at all (evidence was lost this tick).
-        assert!(!is_frozen_by_screen(Running, silent, None, SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_by_screen(
+            Running, silent, None, SILENT, NOW, STALL_MS
+        ));
         // Recent growth or a hook → working quietly, never flagged.
-        assert!(!is_frozen_by_screen(Running, silent, Some(since), NOW - 10_000, NOW, STALL_MS));
+        assert!(!is_frozen_by_screen(
+            Running,
+            silent,
+            Some(since),
+            NOW - 10_000,
+            NOW,
+            STALL_MS
+        ));
         // The screen is moving.
-        assert!(!is_frozen_by_screen(Running, Some(ScreenActivity::Cosmetic), Some(since), SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_by_screen(
+            Running,
+            Some(ScreenActivity::Cosmetic),
+            Some(since),
+            SILENT,
+            NOW,
+            STALL_MS
+        ));
         // Only Running sessions; the rest are governed by the other rules.
-        for state in [Idle, AwaitingInput, Spawning, Stale, Finished, Exited, Hibernated] {
-            assert!(!is_frozen_by_screen(state, silent, Some(since), SILENT, NOW, STALL_MS), "{state:?}");
+        for state in [
+            Idle,
+            AwaitingInput,
+            Spawning,
+            Stale,
+            Finished,
+            Exited,
+            Hibernated,
+        ] {
+            assert!(
+                !is_frozen_by_screen(state, silent, Some(since), SILENT, NOW, STALL_MS),
+                "{state:?}"
+            );
         }
     }
 
@@ -1645,7 +1902,12 @@ mod tests {
     #[test]
     fn never_attached_flags_silent_unbound_spawn() {
         // Spawning, no cc id, idle past threshold → never attached.
-        assert!(is_never_attached(FleetSessionState::Spawning, false, ATTACH_MS, ATTACH_MS));
+        assert!(is_never_attached(
+            FleetSessionState::Spawning,
+            false,
+            ATTACH_MS,
+            ATTACH_MS
+        ));
     }
 
     #[test]
@@ -1660,21 +1922,39 @@ mod tests {
         assert!(!is_never_attached(Idle, false, ATTACH_MS, ATTACH_MS));
     }
 
-    fn snap(id: &str, state: FleetSessionState, has_cc_id: bool, has_pid: bool, last_activity_ms: i64) -> SlotSnap {
-        SlotSnap { id: id.into(), state, has_cc_id, has_pid, last_activity_ms }
+    fn snap(
+        id: &str,
+        state: FleetSessionState,
+        has_cc_id: bool,
+        has_pid: bool,
+        last_activity_ms: i64,
+    ) -> SlotSnap {
+        SlotSnap {
+            id: id.into(),
+            state,
+            has_cc_id,
+            has_pid,
+            last_activity_ms,
+        }
     }
 
     #[test]
     fn live_slots_zero_cap_is_off() {
         use FleetSessionState::*;
-        let snaps = vec![snap("a", Idle, true, true, 1), snap("b", Idle, true, true, 2)];
+        let snaps = vec![
+            snap("a", Idle, true, true, 1),
+            snap("b", Idle, true, true, 2),
+        ];
         assert!(live_slot_evictions(&snaps, 0).is_empty());
     }
 
     #[test]
     fn live_slots_under_cap_evicts_nothing() {
         use FleetSessionState::*;
-        let snaps = vec![snap("a", Running, true, true, 1), snap("b", Idle, true, true, 2)];
+        let snaps = vec![
+            snap("a", Running, true, true, 1),
+            snap("b", Idle, true, true, 2),
+        ];
         assert!(live_slot_evictions(&snaps, 2).is_empty());
         assert!(live_slot_evictions(&snaps, 5).is_empty());
     }
@@ -1689,9 +1969,15 @@ mod tests {
             snap("fresh-idle", Idle, true, true, 100),
         ];
         // 4 live, cap 2 → evict 2, oldest-activity first.
-        assert_eq!(live_slot_evictions(&snaps, 2), vec!["older-stale".to_string(), "old-idle".to_string()]);
+        assert_eq!(
+            live_slot_evictions(&snaps, 2),
+            vec!["older-stale".to_string(), "old-idle".to_string()]
+        );
         // cap 3 → evict only the single oldest candidate.
-        assert_eq!(live_slot_evictions(&snaps, 3), vec!["older-stale".to_string()]);
+        assert_eq!(
+            live_slot_evictions(&snaps, 3),
+            vec!["older-stale".to_string()]
+        );
     }
 
     #[test]

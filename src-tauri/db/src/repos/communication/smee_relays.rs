@@ -210,7 +210,16 @@ pub fn list_active_urls(pool: &DbPool) -> Result<Vec<(String, String)>, AppError
 /// when edited.
 pub fn list_active_configs(
     pool: &DbPool,
-) -> Result<Vec<(String, String, Option<String>, Option<String>, Option<String>)>, AppError> {
+) -> Result<
+    Vec<(
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    )>,
+    AppError,
+> {
     timed_query!("smee_relays", "smee_relays::list_active_configs", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(

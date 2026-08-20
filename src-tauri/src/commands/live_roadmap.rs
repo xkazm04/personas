@@ -339,10 +339,7 @@ fn validate(r: &LiveRoadmap) -> Result<(), String> {
         match en.items.get(&item.id) {
             Some(content) if !content.title.trim().is_empty() => {}
             Some(_) => {
-                return Err(format!(
-                    "i18n.en.items[{:?}] has an empty title",
-                    item.id
-                ));
+                return Err(format!("i18n.en.items[{:?}] has an empty title", item.id));
             }
             None => {
                 return Err(format!(

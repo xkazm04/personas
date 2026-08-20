@@ -714,9 +714,7 @@ mod tests {
     fn validate_required_inputs_present_ignores_invalid_token_shapes() {
         // `{{ name }}` and `{{user.name}}` aren't valid placeholders, so they don't
         // trigger missing-key errors.
-        assert!(
-            validate_required_inputs_present("{{ name }} {{user.name}}", &data(&[])).is_ok()
-        );
+        assert!(validate_required_inputs_present("{{ name }} {{user.name}}", &data(&[])).is_ok());
     }
 
     #[test]

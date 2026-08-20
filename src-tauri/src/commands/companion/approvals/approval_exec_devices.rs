@@ -104,15 +104,11 @@ pub(crate) fn resolve_remote_target(
     }
 
     if requested.is_empty() || requested.eq_ignore_ascii_case("home") {
-        return devices
-            .into_iter()
-            .find(|d| d.is_home)
-            .ok_or_else(|| {
-                AppError::Validation(
-                    "No device is marked as home yet. Open Settings > Devices and set one."
-                        .into(),
-                )
-            });
+        return devices.into_iter().find(|d| d.is_home).ok_or_else(|| {
+            AppError::Validation(
+                "No device is marked as home yet. Open Settings > Devices and set one.".into(),
+            )
+        });
     }
 
     if let Some(exact) = devices.iter().find(|d| d.peer_id == requested) {
@@ -256,9 +252,7 @@ async fn send_instruction(
             "\"{name}\" declined that. {}",
             job.refusal_reason.unwrap_or_default()
         ),
-        _ => format!(
-            "Sent to \"{name}\". It's running there now, and I'll tell you what it says."
-        ),
+        _ => format!("Sent to \"{name}\". It's running there now, and I'll tell you what it says."),
     }))
 }
 

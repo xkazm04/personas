@@ -197,7 +197,10 @@ pub async fn invoke_tool_direct(
             );
             return Ok(early_failure(
                 ToolErrorKind::RateLimited,
-                format!("Tool '{}' rate limited. Retry after {retry_after}s.", tool.name),
+                format!(
+                    "Tool '{}' rate limited. Retry after {retry_after}s.",
+                    tool.name
+                ),
                 true,
             ));
         }
@@ -495,10 +498,7 @@ fn validate_script_path_against(
 
 /// Validate a script tool's `script_path` against the real allowed roots
 /// ([`allowed_script_roots`]). Returns the canonical path to spawn on success.
-fn validate_script_path(
-    script_path: &str,
-    tool_name: &str,
-) -> Result<std::path::PathBuf, String> {
+fn validate_script_path(script_path: &str, tool_name: &str) -> Result<std::path::PathBuf, String> {
     validate_script_path_against(script_path, tool_name, &allowed_script_roots())
 }
 
@@ -712,7 +712,6 @@ fn api_outcome_from_http(
         None => Ok((body.to_string(), "api".to_string())),
     }
 }
-
 
 /// Substitute `$VAR` and `${VAR}` placeholders in a single token with values
 /// from the environment map and input JSON. Returns the resolved string.
@@ -1108,7 +1107,10 @@ pub async fn execute_test_curl(
             let (body, http_code) = extract_http_code_from_output(&stdout);
 
             let preview = if body.len() > 300 {
-                format!("{}...", crate::utils::text::truncate_on_char_boundary(&body, 300))
+                format!(
+                    "{}...",
+                    crate::utils::text::truncate_on_char_boundary(&body, 300)
+                )
             } else {
                 body.to_string()
             };
@@ -1317,7 +1319,9 @@ mod script_path_validation_tests {
 
     /// Create a `tools/` root inside a fresh temp dir and drop a valid script
     /// into it. Returns `(tempdir, root, script_path)`.
-    fn tools_root_with_script(file: &str) -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+    fn tools_root_with_script(
+        file: &str,
+    ) -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path().join("tools");
         fs::create_dir_all(&root).unwrap();
@@ -1346,8 +1350,7 @@ mod script_path_validation_tests {
         let roots = vec![root.clone()];
         // `<root>/../evil.ts` textually escapes before we ever hit the FS.
         let attack = root.join("..").join("evil.ts");
-        let err = validate_script_path_against(&attack.to_string_lossy(), "t", &roots)
-            .unwrap_err();
+        let err = validate_script_path_against(&attack.to_string_lossy(), "t", &roots).unwrap_err();
         assert!(err.contains("traversal"), "{err}");
     }
 
@@ -1359,8 +1362,7 @@ mod script_path_validation_tests {
         fs::write(&evil, "export {};\n").unwrap();
         let (_dir, root, _script) = tools_root_with_script("ok.ts");
         let roots = vec![root];
-        let err =
-            validate_script_path_against(&evil.to_string_lossy(), "t", &roots).unwrap_err();
+        let err = validate_script_path_against(&evil.to_string_lossy(), "t", &roots).unwrap_err();
         assert!(err.contains("outside the allowed"), "{err}");
     }
 
@@ -1369,9 +1371,12 @@ mod script_path_validation_tests {
         let (_dir, root, _script) = tools_root_with_script("ok.ts");
         let roots = vec![root.clone()];
         let missing = root.join("does_not_exist.ts");
-        let err = validate_script_path_against(&missing.to_string_lossy(), "t", &roots)
-            .unwrap_err();
-        assert!(err.contains("does not exist"), "distinct not-found message: {err}");
+        let err =
+            validate_script_path_against(&missing.to_string_lossy(), "t", &roots).unwrap_err();
+        assert!(
+            err.contains("does not exist"),
+            "distinct not-found message: {err}"
+        );
     }
 
     #[test]
@@ -1382,8 +1387,7 @@ mod script_path_validation_tests {
         let sh = root.join("evil.sh");
         fs::write(&sh, "#!/bin/sh\nrm -rf /\n").unwrap();
         let roots = vec![root];
-        let err = validate_script_path_against(&sh.to_string_lossy(), "t", &roots)
-            .unwrap_err();
+        let err = validate_script_path_against(&sh.to_string_lossy(), "t", &roots).unwrap_err();
         assert!(err.contains("must be a script file"), "{err}");
     }
 
@@ -1405,9 +1409,11 @@ mod script_path_validation_tests {
             return; // platform refused symlink — nothing to assert
         }
         let roots = vec![root];
-        let err = validate_script_path_against(&link.to_string_lossy(), "t", &roots)
-            .unwrap_err();
-        assert!(err.contains("outside the allowed"), "symlink escape not blocked: {err}");
+        let err = validate_script_path_against(&link.to_string_lossy(), "t", &roots).unwrap_err();
+        assert!(
+            err.contains("outside the allowed"),
+            "symlink escape not blocked: {err}"
+        );
     }
 }
 

@@ -77,7 +77,9 @@ pub(crate) fn parse_lessons_entries(content: &str) -> Vec<LessonEntry> {
             current = Some(parse_entry_header(header));
             continue;
         }
-        let Some(entry) = current.as_mut() else { continue };
+        let Some(entry) = current.as_mut() else {
+            continue;
+        };
         if t.starts_with("### ") {
             if t.to_ascii_lowercase().contains("redesign") {
                 entry.is_redesign = true;
@@ -86,7 +88,9 @@ pub(crate) fn parse_lessons_entries(content: &str) -> Vec<LessonEntry> {
         }
         if let Some(bullet) = t.strip_prefix("- ") {
             if entry.bullets.len() < MAX_BULLETS_PER_ENTRY && !bullet.trim().is_empty() {
-                entry.bullets.push(bullet.trim().chars().take(MAX_BULLET_CHARS).collect());
+                entry
+                    .bullets
+                    .push(bullet.trim().chars().take(MAX_BULLET_CHARS).collect());
             }
         }
     }
@@ -104,16 +108,19 @@ pub(crate) fn parse_lessons_entries(content: &str) -> Vec<LessonEntry> {
 
 /// Split `<version> — <date> — <project>` on em-dash or ` - ` separators.
 fn parse_entry_header(header: &str) -> LessonEntry {
-    let normalized = header.replace('\u{2014}', "\u{1F}").replace(" - ", "\u{1F}");
+    let normalized = header
+        .replace('\u{2014}', "\u{1F}")
+        .replace(" - ", "\u{1F}");
     let segs: Vec<&str> = normalized.split('\u{1F}').map(str::trim).collect();
 
     let looks_version =
         |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit() || c == '.');
     let looks_date = |s: &str| {
-        s.len() == 10 && s.bytes().enumerate().all(|(i, b)| match i {
-            4 | 7 => b == b'-',
-            _ => b.is_ascii_digit(),
-        })
+        s.len() == 10
+            && s.bytes().enumerate().all(|(i, b)| match i {
+                4 | 7 => b == b'-',
+                _ => b.is_ascii_digit(),
+            })
     };
 
     let mut entry = LessonEntry {
@@ -171,7 +178,9 @@ fn rows_from_dir(
     project: Option<(&str, &str)>,
     out: &mut Vec<SkillLessonRow>,
 ) {
-    let Ok(read_dir) = std::fs::read_dir(skills_dir) else { return };
+    let Ok(read_dir) = std::fs::read_dir(skills_dir) else {
+        return;
+    };
     for entry in read_dir.flatten() {
         let dir = entry.path();
         if !dir.is_dir() {
@@ -181,8 +190,12 @@ fn rows_from_dir(
         if only_skill.is_some_and(|s| s != name) {
             continue;
         }
-        let Some(lessons) = lessons_path(&dir) else { continue };
-        let Ok(content) = std::fs::read_to_string(&lessons) else { continue };
+        let Some(lessons) = lessons_path(&dir) else {
+            continue;
+        };
+        let Ok(content) = std::fs::read_to_string(&lessons) else {
+            continue;
+        };
         for e in parse_lessons_entries(&content) {
             if out.len() >= MAX_ROWS_PER_LIST {
                 return;
@@ -231,7 +244,13 @@ pub fn skill_lessons_list(
     };
     for (pid, pname, root) in &projects {
         let dir = PathBuf::from(root).join(".claude").join("skills");
-        rows_from_dir(&dir, skill_name.as_deref(), "project", Some((pid, pname)), &mut out);
+        rows_from_dir(
+            &dir,
+            skill_name.as_deref(),
+            "project",
+            Some((pid, pname)),
+            &mut out,
+        );
     }
 
     Ok(out)
@@ -242,7 +261,10 @@ pub fn skill_lessons_list(
 /// on disk and emits one `observed` candidate per lessons entry. Dedup rides
 /// the ladder's key gate: the key hashes the entry content, so re-runs are
 /// idempotent and an edited entry re-proposes.
-pub fn mine_skill_lessons(pool: &DbPool, workspace_id: &str) -> Result<Vec<KnowledgeCandidate>, AppError> {
+pub fn mine_skill_lessons(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Vec<KnowledgeCandidate>, AppError> {
     let conn = pool.get()?;
     let members: Vec<(String, String, String)> = {
         let mut stmt =
@@ -326,7 +348,10 @@ mod tests {
         assert_eq!(entries[0].project.as_deref(), Some("personas"));
         assert_eq!(entries[0].bullets.len(), 1);
         assert!(!entries[0].is_redesign);
-        assert!(entries[1].is_redesign, "### Redesign proposal flags the entry");
+        assert!(
+            entries[1].is_redesign,
+            "### Redesign proposal flags the entry"
+        );
     }
 
     #[test]

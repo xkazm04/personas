@@ -135,8 +135,8 @@ pub fn build_vault_summary(vault_path: &Path) -> Result<(Vec<NoteSummary>, i64),
         on_error: ErrorPolicy::Abort,
         skip_hidden_files: false,
     };
-    let mut notes: Vec<std::path::PathBuf> = walk_markdown_files(vault_path, &walk_opts)
-        .map_err(|e| {
+    let mut notes: Vec<std::path::PathBuf> =
+        walk_markdown_files(vault_path, &walk_opts).map_err(|e| {
             AppError::Internal(format!(
                 "read_dir failed while walking {}: {e}",
                 vault_path.display()

@@ -145,13 +145,7 @@ pub async fn call_claude_text(
             Ok(run.text)
         }
         Err(e) => {
-            turn_ledger::record_failed_leg(
-                pool,
-                turn_ledger::ORIGIN_MAINTENANCE,
-                leg,
-                model,
-                &e,
-            );
+            turn_ledger::record_failed_leg(pool, turn_ledger::ORIGIN_MAINTENANCE, leg, model, &e);
             Err(e)
         }
     }

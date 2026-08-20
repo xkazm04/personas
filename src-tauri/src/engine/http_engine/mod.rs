@@ -54,7 +54,11 @@ pub async fn run_http_execution(
     start_time: Instant,
 ) -> ExecutionResult {
     let provider = model_profile.provider.as_deref().unwrap_or("qwen");
-    let model = model_profile.model.as_deref().unwrap_or(DEFAULT_MODEL).to_string();
+    let model = model_profile
+        .model
+        .as_deref()
+        .unwrap_or(DEFAULT_MODEL)
+        .to_string();
 
     let api_key = match secrets::resolve_api_key(model_profile) {
         Some(k) => k,
@@ -83,12 +87,28 @@ pub async fn run_http_execution(
 
     if tools_enabled {
         tools::run_tool_loop(
-            emitter, execution_id, provider, &model, &base_url, &api_key, prompt_text, cancelled, start_time,
+            emitter,
+            execution_id,
+            provider,
+            &model,
+            &base_url,
+            &api_key,
+            prompt_text,
+            cancelled,
+            start_time,
         )
         .await
     } else {
         openai::run_streaming(
-            emitter, execution_id, provider, &model, &base_url, &api_key, prompt_text, cancelled, start_time,
+            emitter,
+            execution_id,
+            provider,
+            &model,
+            &base_url,
+            &api_key,
+            prompt_text,
+            cancelled,
+            start_time,
         )
         .await
     }
@@ -132,8 +152,15 @@ mod tests {
             Instant::now(),
         )
         .await;
-        assert!(result.success, "expected success, got error: {:?}", result.error);
-        assert!(!result.output.unwrap_or_default().trim().is_empty(), "expected non-empty output");
+        assert!(
+            result.success,
+            "expected success, got error: {:?}",
+            result.error
+        );
+        assert!(
+            !result.output.unwrap_or_default().trim().is_empty(),
+            "expected non-empty output"
+        );
     }
 
     /// Live tool-calling loop: the model must call the built-in `get_current_time`.
@@ -153,8 +180,15 @@ mod tests {
             Instant::now(),
         )
         .await;
-        assert!(result.success, "expected success, got error: {:?}", result.error);
-        assert!(!result.output.unwrap_or_default().trim().is_empty(), "expected non-empty output");
+        assert!(
+            result.success,
+            "expected success, got error: {:?}",
+            result.error
+        );
+        assert!(
+            !result.output.unwrap_or_default().trim().is_empty(),
+            "expected non-empty output"
+        );
     }
 
     /// Capturing emitter so the MCP test can assert which tool actually fired.
@@ -163,7 +197,9 @@ mod tests {
     }
     impl CapturingEmitter {
         fn new() -> Self {
-            Self { events: std::sync::Mutex::new(Vec::new()) }
+            Self {
+                events: std::sync::Mutex::new(Vec::new()),
+            }
         }
         fn output_lines(&self) -> Vec<String> {
             self.events
@@ -176,7 +212,10 @@ mod tests {
     }
     impl ExecutionEventEmitter for CapturingEmitter {
         fn emit_json(&self, event: &str, payload: serde_json::Value) {
-            self.events.lock().unwrap().push((event.to_string(), payload));
+            self.events
+                .lock()
+                .unwrap()
+                .push((event.to_string(), payload));
         }
     }
 
@@ -199,8 +238,16 @@ mod tests {
         )
         .await;
         let lines = cap.output_lines();
-        eprintln!("[live_qwen_mcp_tool] success={} output:\n{}", result.success, lines.join("\n"));
-        assert!(result.success, "expected success, got error: {:?}", result.error);
+        eprintln!(
+            "[live_qwen_mcp_tool] success={} output:\n{}",
+            result.success,
+            lines.join("\n")
+        );
+        assert!(
+            result.success,
+            "expected success, got error: {:?}",
+            result.error
+        );
         assert!(
             lines.iter().any(|l| l.contains("personas_health")),
             "expected a personas_health tool call to fire; got lines: {lines:?}"

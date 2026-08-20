@@ -266,7 +266,10 @@ pub fn recover_orphans(pool: &DbPool) -> Result<usize, AppError> {
         params![now],
     )?;
     if n > 0 {
-        tracing::info!(orphans = n, "persona-jobs worker: recovered orphaned running jobs");
+        tracing::info!(
+            orphans = n,
+            "persona-jobs worker: recovered orphaned running jobs"
+        );
     }
     Ok(n)
 }
@@ -424,9 +427,7 @@ async fn memory_reflection_run(
     let persona_id = params
         .get("persona_id")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            AppError::Validation("memory_reflection_run requires persona_id".into())
-        })?;
+        .ok_or_else(|| AppError::Validation("memory_reflection_run requires persona_id".into()))?;
     let instructions = params.get("instructions").and_then(|v| v.as_str());
     if let Some(s) = instructions {
         if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
@@ -481,9 +482,7 @@ async fn memory_curation_run(
     pool: &DbPool,
     params: &serde_json::Value,
 ) -> Result<String, AppError> {
-    use crate::commands::core::memories::{
-        run_memory_review_pipeline, MemoryReviewPipelineOpts,
-    };
+    use crate::commands::core::memories::{run_memory_review_pipeline, MemoryReviewPipelineOpts};
     use crate::db::repos::core::memory_review_proposal::{
         self as proposal_repo, CreateProposalInput,
     };
@@ -523,7 +522,11 @@ async fn memory_curation_run(
         None => return Ok("No memories to review (empty pool).".to_string()),
     };
 
-    let proposed_changes = pipeline.entries.iter().filter(|e| e.action != "keep").count();
+    let proposed_changes = pipeline
+        .entries
+        .iter()
+        .filter(|e| e.action != "keep")
+        .count();
     let summary = format!(
         "Reviewed {n} memories; proposed {p} change(s) for review.",
         n = pipeline.reviews_count,

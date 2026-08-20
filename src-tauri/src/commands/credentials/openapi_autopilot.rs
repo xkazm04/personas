@@ -706,7 +706,6 @@ pub fn openapi_generate_connector(
     custom_name: Option<String>,
     custom_color: Option<String>,
 ) -> Result<GeneratedConnectorResult, AppError> {
-
     let connector_label = custom_name.unwrap_or_else(|| parsed.title.clone());
     let connector_name = to_snake_case(&connector_label);
     let color = custom_color.unwrap_or_else(|| "#3B82F6".to_string());

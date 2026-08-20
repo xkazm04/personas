@@ -53,11 +53,7 @@ pub fn validate_language(lang: &str) -> Result<&str, AppError> {
     if trimmed.is_empty() {
         return Err(AppError::Validation("companion_stt: empty language".into()));
     }
-    if trimmed.len() > 8
-        || !trimmed
-            .chars()
-            .all(|c| c.is_ascii_alphabetic() || c == '-')
-    {
+    if trimmed.len() > 8 || !trimmed.chars().all(|c| c.is_ascii_alphabetic() || c == '-') {
         return Err(AppError::Validation(
             "companion_stt: language has unexpected characters".into(),
         ));
@@ -103,7 +99,9 @@ pub fn validate_wav_format(bytes: &[u8]) -> Result<(), AppError> {
         let body_start = pos + 8;
         let body_end = body_start.saturating_add(chunk_size);
         if body_end > bytes.len() {
-            return Err(err("audio has a truncated chunk (size larger than payload)"));
+            return Err(err(
+                "audio has a truncated chunk (size larger than payload)",
+            ));
         }
         if chunk_id == b"fmt " {
             if chunk_size < 16 {

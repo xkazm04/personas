@@ -353,7 +353,11 @@ pub async fn smart_search_templates(
         }
         cache.insert(
             cache_key,
-            (std::time::Instant::now(), raw.ranked_ids.clone(), raw.rationale.clone()),
+            (
+                std::time::Instant::now(),
+                raw.ranked_ids.clone(),
+                raw.rationale.clone(),
+            ),
         );
     }
 

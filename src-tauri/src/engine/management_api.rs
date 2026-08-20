@@ -226,7 +226,10 @@ pub fn load_paired_origins(pool: &DbPool) {
             if let Ok(mut set) = paired_origins().write() {
                 set.clear();
                 set.extend(origins);
-                tracing::info!(count = set.len(), "loaded paired origins into CORS allowlist");
+                tracing::info!(
+                    count = set.len(),
+                    "loaded paired origins into CORS allowlist"
+                );
             }
         }
         Err(e) => tracing::warn!(error = %e, "failed to load paired origins (starting empty)"),
@@ -728,7 +731,9 @@ async fn proxy_request(
         Err(AppError::NotFound(_)) => {
             return err_json(StatusCode::NOT_FOUND, "Credential not found").into_response()
         }
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
     };
 
     // Exact grant check: caller-key scopes ∩ this credential. Default-deny.
@@ -1514,8 +1519,11 @@ async fn set_auto_optimize(
         Ok(j) => j,
         Err(e) => {
             tracing::error!(persona_id = %persona_id, error = %e, "failed to serialize auto-optimize config");
-            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to serialize config: {e}"))
-                .into_response();
+            return err_json(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &format!("Failed to serialize config: {e}"),
+            )
+            .into_response();
         }
     };
     match settings::set(&state.pool, &key, &json) {
@@ -1558,8 +1566,11 @@ async fn set_health_watch(
         Ok(j) => j,
         Err(e) => {
             tracing::error!(persona_id = %persona_id, error = %e, "failed to serialize health-watch config");
-            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to serialize config: {e}"))
-                .into_response();
+            return err_json(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &format!("Failed to serialize config: {e}"),
+            )
+            .into_response();
         }
     };
     match settings::set(&state.pool, &key, &json) {
@@ -2431,8 +2442,7 @@ mod tests {
     /// `get_or_create_system_api_key`'s INSERT writes.
     fn test_pool() -> DbPool {
         use std::time::Duration;
-        let tmp =
-            std::env::temp_dir().join(format!("mgmt_api_test_{}.db", uuid::Uuid::new_v4()));
+        let tmp = std::env::temp_dir().join(format!("mgmt_api_test_{}.db", uuid::Uuid::new_v4()));
         let manager = r2d2_sqlite::SqliteConnectionManager::file(&tmp);
         let pool = r2d2::Pool::builder()
             .max_size(2)
@@ -2465,7 +2475,12 @@ mod tests {
         assert!(authorize(&Method::GET, "/api/executions/abc", &[]).is_ok());
         // A mutating /api/* route (e.g. version tag) needs broad execute.
         assert!(authorize(&Method::POST, "/api/versions/v1/tag", &[]).is_err());
-        assert!(authorize(&Method::POST, "/api/versions/v1/tag", &scopes(&["personas:execute"])).is_ok());
+        assert!(authorize(
+            &Method::POST,
+            "/api/versions/v1/tag",
+            &scopes(&["personas:execute"])
+        )
+        .is_ok());
     }
 
     #[test]
@@ -2475,35 +2490,80 @@ mod tests {
         assert!(authorize(&Method::POST, "/api/build", &scopes(&["personas:build"])).is_ok());
         // Status GETs are gated too.
         assert!(authorize(&Method::GET, "/api/build/sess-1", &[]).is_err());
-        assert!(authorize(&Method::GET, "/api/build/sess-1", &scopes(&["personas:build"])).is_ok());
+        assert!(authorize(
+            &Method::GET,
+            "/api/build/sess-1",
+            &scopes(&["personas:build"])
+        )
+        .is_ok());
     }
 
     #[test]
     fn authorize_execute_broad_or_per_persona() {
         // Broad execute works for any persona.
-        assert!(authorize(&Method::POST, "/api/execute/p1", &scopes(&["personas:execute"])).is_ok());
+        assert!(authorize(
+            &Method::POST,
+            "/api/execute/p1",
+            &scopes(&["personas:execute"])
+        )
+        .is_ok());
         // Per-persona grant works only for the matching persona.
-        assert!(authorize(&Method::POST, "/api/execute/p1", &scopes(&["personas:execute:persona:p1"])).is_ok());
-        assert!(authorize(&Method::POST, "/api/execute/p2", &scopes(&["personas:execute:persona:p1"])).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/execute/p1",
+            &scopes(&["personas:execute:persona:p1"])
+        )
+        .is_ok());
+        assert!(authorize(
+            &Method::POST,
+            "/api/execute/p2",
+            &scopes(&["personas:execute:persona:p1"])
+        )
+        .is_err());
         // Read scope alone cannot execute.
-        assert!(authorize(&Method::POST, "/api/execute/p1", &scopes(&["personas:read"])).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/execute/p1",
+            &scopes(&["personas:read"])
+        )
+        .is_err());
     }
 
     #[test]
     fn authorize_proxy_requires_proxy_not_execute() {
         // execute scope no longer authorizes the credential proxy (lockdown).
-        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["personas:execute"])).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/proxy/cred-1",
+            &scopes(&["personas:execute"])
+        )
+        .is_err());
         // Broad proxy works.
         assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["proxy"])).is_ok());
         // Per-credential grant works only for the matching credential.
-        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["proxy:credential:cred-1"])).is_ok());
-        assert!(authorize(&Method::POST, "/api/proxy/cred-2", &scopes(&["proxy:credential:cred-1"])).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/proxy/cred-1",
+            &scopes(&["proxy:credential:cred-1"])
+        )
+        .is_ok());
+        assert!(authorize(
+            &Method::POST,
+            "/api/proxy/cred-2",
+            &scopes(&["proxy:credential:cred-1"])
+        )
+        .is_err());
     }
 
     #[test]
     fn authorize_broker_mint_requires_broad_proxy() {
         // Minting is a trust operation: broad `proxy` only.
-        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &scopes(&["proxy"])).is_ok());
+        assert!(authorize(
+            &Method::POST,
+            "/api/broker/mint/cred-1",
+            &scopes(&["proxy"])
+        )
+        .is_ok());
         // A derived handle's own scopes must NOT be able to mint further handles.
         assert!(authorize(
             &Method::POST,
@@ -2511,7 +2571,12 @@ mod tests {
             &scopes(&["proxy:credential:cred-1", "cred:github:use"])
         )
         .is_err());
-        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &scopes(&["personas:execute"])).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/broker/mint/cred-1",
+            &scopes(&["personas:execute"])
+        )
+        .is_err());
         assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &[]).is_err());
     }
 
@@ -2520,16 +2585,29 @@ mod tests {
         // A per-connector grant passes the coarse middleware gate; the exact
         // connector match is enforced in the handler via credential_broker
         // (default-deny once the credential row is known).
-        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["cred:github:use"])).is_ok());
+        assert!(authorize(
+            &Method::POST,
+            "/api/proxy/cred-1",
+            &scopes(&["cred:github:use"])
+        )
+        .is_ok());
         // Malformed / non-use cred scopes do NOT pass the gate.
-        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["cred:github:read"])).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/proxy/cred-1",
+            &scopes(&["cred:github:read"])
+        )
+        .is_err());
         assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["cred::use"])).is_err());
     }
 
     #[test]
     fn audit_persona_id_extracts_from_named_routes() {
         assert_eq!(audit_persona_id("/api/execute/p1").as_deref(), Some("p1"));
-        assert_eq!(audit_persona_id("/a2a/persona-xyz").as_deref(), Some("persona-xyz"));
+        assert_eq!(
+            audit_persona_id("/a2a/persona-xyz").as_deref(),
+            Some("persona-xyz")
+        );
         assert_eq!(audit_persona_id("/agent-card/p2").as_deref(), Some("p2"));
         assert_eq!(audit_persona_id("/api/personas/p3").as_deref(), Some("p3"));
         // Routes that don't name a persona.
@@ -2566,7 +2644,8 @@ mod tests {
             ]
         })
         .to_string();
-        let persona = Persona { lifecycle: "active".to_string(),
+        let persona = Persona {
+            lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "default".into(),
             name: "Email Buddy".into(),
@@ -2617,7 +2696,8 @@ mod tests {
     #[test]
     fn agent_card_falls_back_to_default_skill_when_no_use_cases() {
         let now = chrono::Utc::now().to_rfc3339();
-        let persona = Persona { lifecycle: "active".to_string(),
+        let persona = Persona {
+            lifecycle: "active".to_string(),
             id: "p-2".into(),
             project_id: "default".into(),
             name: "Helper".into(),

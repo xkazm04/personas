@@ -392,12 +392,20 @@ fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str, success: b
             }
         }
     } else {
-        let note = match task.error.as_deref().map(str::trim).filter(|e| !e.is_empty()) {
+        let note = match task
+            .error
+            .as_deref()
+            .map(str::trim)
+            .filter(|e| !e.is_empty())
+        {
             Some(err) => format!("task:{task_id} failed: {err}"),
             None => format!("task:{task_id} failed"),
         };
         crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
-            pool, &idea, "to_process", &note,
+            pool,
+            &idea,
+            "to_process",
+            &note,
         );
     }
 }
@@ -584,38 +592,38 @@ pub async fn dev_tools_execute_task(
 
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
-        for w in &context_warnings {
-            TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Warning] {w}"));
-        }
-
-        let result = tokio::select! {
-            _ = token_for_task.cancelled() => {
-                Err(AppError::Internal("Task execution cancelled by user".into()))
+            for w in &context_warnings {
+                TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Warning] {w}"));
             }
-            res = run_task_execution(
-                &app_handle,
-                &task_id_for_spawn,
-                &pool,
-                &root_path,
-                prompt_text,
-                worktree_name,
-                &exec_model,
-            ) => res
-        };
 
-        finalize_task(
-            &app_handle,
-            &pool,
-            &task_id_for_spawn,
-            result,
-            &context_warnings,
-            goal_id.as_deref(),
-            FinalizeOpts {
-                notify_project: Some(&project_name),
-                goal_success_message: "Task completed successfully",
-                outcome_quotes_line_count: true,
-            },
-        );
+            let result = tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(AppError::Internal("Task execution cancelled by user".into()))
+                }
+                res = run_task_execution(
+                    &app_handle,
+                    &task_id_for_spawn,
+                    &pool,
+                    &root_path,
+                    prompt_text,
+                    worktree_name,
+                    &exec_model,
+                ) => res
+            };
+
+            finalize_task(
+                &app_handle,
+                &pool,
+                &task_id_for_spawn,
+                result,
+                &context_warnings,
+                goal_id.as_deref(),
+                FinalizeOpts {
+                    notify_project: Some(&project_name),
+                    goal_success_message: "Task completed successfully",
+                    outcome_quotes_line_count: true,
+                },
+            );
         })
         .catch_unwind()
         .await;
@@ -641,8 +649,17 @@ pub async fn dev_tools_execute_task(
                 None,
                 Some(Some(&completed_now)),
             );
-            TASK_EXEC_JOBS.set_status(&app_handle_for_panic, &task_id_for_panic, "failed", Some(msg.clone()));
-            TASK_EXEC_JOBS.emit_line(&app_handle_for_panic, &task_id_for_panic, format!("[Error] {msg}"));
+            TASK_EXEC_JOBS.set_status(
+                &app_handle_for_panic,
+                &task_id_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            TASK_EXEC_JOBS.emit_line(
+                &app_handle_for_panic,
+                &task_id_for_panic,
+                format!("[Error] {msg}"),
+            );
         }
     });
 
@@ -673,123 +690,123 @@ pub async fn dev_tools_start_batch(
 
         tokio::spawn(async move {
             let work = AssertUnwindSafe(async move {
-            let _permit = sem.acquire().await;
+                let _permit = sem.acquire().await;
 
-            // Read task to get project info
-            let task = match repo::get_task_by_id(&pool, &tid) {
-                Ok(t) => t,
-                Err(e) => {
-                    TASK_EXEC_JOBS.emit_line(
-                        &app_handle,
-                        &tid,
-                        format!("[Error] Failed to read task: {e}"),
-                    );
-                    return;
-                }
-            };
+                // Read task to get project info
+                let task = match repo::get_task_by_id(&pool, &tid) {
+                    Ok(t) => t,
+                    Err(e) => {
+                        TASK_EXEC_JOBS.emit_line(
+                            &app_handle,
+                            &tid,
+                            format!("[Error] Failed to read task: {e}"),
+                        );
+                        return;
+                    }
+                };
 
-            let project_id = match task.project_id.as_deref() {
-                Some(pid) => pid.to_string(),
-                None => {
-                    TASK_EXEC_JOBS.emit_line(
-                        &app_handle,
-                        &tid,
-                        "[Error] Task has no project_id".to_string(),
-                    );
-                    return;
-                }
-            };
+                let project_id = match task.project_id.as_deref() {
+                    Some(pid) => pid.to_string(),
+                    None => {
+                        TASK_EXEC_JOBS.emit_line(
+                            &app_handle,
+                            &tid,
+                            "[Error] Task has no project_id".to_string(),
+                        );
+                        return;
+                    }
+                };
 
-            let project = match repo::get_project_by_id(&pool, &project_id) {
-                Ok(p) => p,
-                Err(e) => {
-                    TASK_EXEC_JOBS.emit_line(
-                        &app_handle,
-                        &tid,
-                        format!("[Error] Failed to read project: {e}"),
-                    );
-                    return;
-                }
-            };
+                let project = match repo::get_project_by_id(&pool, &project_id) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        TASK_EXEC_JOBS.emit_line(
+                            &app_handle,
+                            &tid,
+                            format!("[Error] Failed to read project: {e}"),
+                        );
+                        return;
+                    }
+                };
 
-            let ctx = gather_task_context(
-                &pool,
-                task.source_idea_id.as_deref(),
-                task.goal_id.as_deref(),
-                &project_id,
-            );
-            let context_warnings = ctx.warnings;
-
-            let prompt_text = build_task_prompt(
-                &task.title,
-                task.description.as_deref(),
-                ctx.idea,
-                ctx.goal,
-                ctx.codebase,
-                ctx.memories,
-                &task.depth,
-            );
-
-            // Mark task as running
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = repo::update_task(
-                &pool,
-                &tid,
-                None,
-                None,
-                Some("running"),
-                None,
-                Some(0),
-                None,
-                None,
-                Some(Some(&now)),
-                None,
-            );
-
-            let cancel_token = CancellationToken::new();
-            if TASK_EXEC_JOBS
-                .insert_running(tid.clone(), cancel_token.clone(), TaskExecExtra)
-                .is_err()
-            {
-                return;
-            }
-            TASK_EXEC_JOBS.set_status(&app_handle, &tid, "running", None);
-
-            for w in &context_warnings {
-                TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Warning] {w}"));
-            }
-
-            let batch_worktree_name = extract_worktree_name(task.session_id.as_deref());
-            let result = tokio::select! {
-                _ = cancel_token.cancelled() => {
-                    Err(AppError::Internal("Task execution cancelled by user".into()))
-                }
-                res = run_task_execution(
-                    &app_handle,
-                    &tid,
+                let ctx = gather_task_context(
                     &pool,
-                    &project.root_path,
-                    prompt_text,
-                    batch_worktree_name,
-                    DEFAULT_DEV_TASK_MODEL,
-                ) => res
-            };
+                    task.source_idea_id.as_deref(),
+                    task.goal_id.as_deref(),
+                    &project_id,
+                );
+                let context_warnings = ctx.warnings;
 
-            let goal_id = task.goal_id.clone();
+                let prompt_text = build_task_prompt(
+                    &task.title,
+                    task.description.as_deref(),
+                    ctx.idea,
+                    ctx.goal,
+                    ctx.codebase,
+                    ctx.memories,
+                    &task.depth,
+                );
 
-            finalize_task(
-                &app_handle,
-                &pool,
-                &tid,
-                result,
-                &context_warnings,
-                goal_id.as_deref(),
-                FinalizeOpts {
-                    notify_project: None,
-                    goal_success_message: "Task completed successfully",
-                    outcome_quotes_line_count: false,
-                },
-            );
+                // Mark task as running
+                let now = chrono::Utc::now().to_rfc3339();
+                let _ = repo::update_task(
+                    &pool,
+                    &tid,
+                    None,
+                    None,
+                    Some("running"),
+                    None,
+                    Some(0),
+                    None,
+                    None,
+                    Some(Some(&now)),
+                    None,
+                );
+
+                let cancel_token = CancellationToken::new();
+                if TASK_EXEC_JOBS
+                    .insert_running(tid.clone(), cancel_token.clone(), TaskExecExtra)
+                    .is_err()
+                {
+                    return;
+                }
+                TASK_EXEC_JOBS.set_status(&app_handle, &tid, "running", None);
+
+                for w in &context_warnings {
+                    TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Warning] {w}"));
+                }
+
+                let batch_worktree_name = extract_worktree_name(task.session_id.as_deref());
+                let result = tokio::select! {
+                    _ = cancel_token.cancelled() => {
+                        Err(AppError::Internal("Task execution cancelled by user".into()))
+                    }
+                    res = run_task_execution(
+                        &app_handle,
+                        &tid,
+                        &pool,
+                        &project.root_path,
+                        prompt_text,
+                        batch_worktree_name,
+                        DEFAULT_DEV_TASK_MODEL,
+                    ) => res
+                };
+
+                let goal_id = task.goal_id.clone();
+
+                finalize_task(
+                    &app_handle,
+                    &pool,
+                    &tid,
+                    result,
+                    &context_warnings,
+                    goal_id.as_deref(),
+                    FinalizeOpts {
+                        notify_project: None,
+                        goal_success_message: "Task completed successfully",
+                        outcome_quotes_line_count: false,
+                    },
+                );
             })
             .catch_unwind()
             .await;
@@ -815,8 +832,17 @@ pub async fn dev_tools_start_batch(
                     None,
                     Some(Some(&completed_now)),
                 );
-                TASK_EXEC_JOBS.set_status(&app_handle_for_panic, &tid_for_panic, "failed", Some(msg.clone()));
-                TASK_EXEC_JOBS.emit_line(&app_handle_for_panic, &tid_for_panic, format!("[Error] {msg}"));
+                TASK_EXEC_JOBS.set_status(
+                    &app_handle_for_panic,
+                    &tid_for_panic,
+                    "failed",
+                    Some(msg.clone()),
+                );
+                TASK_EXEC_JOBS.emit_line(
+                    &app_handle_for_panic,
+                    &tid_for_panic,
+                    format!("[Error] {msg}"),
+                );
             }
         });
     }
@@ -943,8 +969,9 @@ async fn run_task_execution(
     // (e.g. the improved `--worktree` collision message in 2.1.136) survive
     // long enough to be surfaced if the process exits non-zero. Capped at
     // 200 lines to bound memory on verbose error output.
-    let stderr_buf: Arc<std::sync::Mutex<std::collections::VecDeque<String>>> =
-        Arc::new(std::sync::Mutex::new(std::collections::VecDeque::with_capacity(200)));
+    let stderr_buf: Arc<std::sync::Mutex<std::collections::VecDeque<String>>> = Arc::new(
+        std::sync::Mutex::new(std::collections::VecDeque::with_capacity(200)),
+    );
     if let Some(stderr) = child.stderr.take() {
         let stderr_buf = Arc::clone(&stderr_buf);
         tokio::spawn(async move {
@@ -1625,7 +1652,12 @@ pub async fn dev_tools_start_auto_run(
                 panic = %msg,
                 "dev-tools auto-run task panicked — marking run as failed"
             );
-            AUTO_RUN_JOBS.set_status(&app_handle_for_panic, &run_id_for_panic, "failed", Some(msg));
+            AUTO_RUN_JOBS.set_status(
+                &app_handle_for_panic,
+                &run_id_for_panic,
+                "failed",
+                Some(msg),
+            );
             // Never leave the durable row `running` — a stuck row is what makes
             // the rehydrated banner claim a wave is still in flight.
             if let Err(e) = repo::set_auto_run_status(&pool_for_panic, &run_id_for_panic, "failed")

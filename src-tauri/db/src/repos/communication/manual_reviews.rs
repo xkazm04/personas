@@ -27,7 +27,9 @@ fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaManualReview> {
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         use_case_id: row.get::<_, Option<String>>("use_case_id").unwrap_or(None),
-        assignment_id: row.get::<_, Option<String>>("assignment_id").unwrap_or(None),
+        assignment_id: row
+            .get::<_, Option<String>>("assignment_id")
+            .unwrap_or(None),
         step_id: row.get::<_, Option<String>>("step_id").unwrap_or(None),
     })
 }
@@ -311,7 +313,14 @@ pub fn update_status(
                  resolved_at = COALESCE(?3, resolved_at),
                  updated_at = ?4
              WHERE id = ?5 AND status = ?6",
-            params![status.as_str(), reviewer_notes, resolved_at, now, id, expected],
+            params![
+                status.as_str(),
+                reviewer_notes,
+                resolved_at,
+                now,
+                id,
+                expected
+            ],
         )?;
 
         if rows == 0 {
@@ -702,8 +711,9 @@ pub fn counts(pool: &DbPool, persona_id: Option<&str>) -> Result<ManualReviewCou
                 "SELECT status, COUNT(*) FROM persona_manual_reviews
                  WHERE persona_id = ?1 GROUP BY status",
             )?;
-            let rows =
-                stmt.query_map(params![pid], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+            let rows = stmt.query_map(params![pid], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+            })?;
             for row in rows {
                 let (status, n) = row?;
                 apply(&status, n);
@@ -711,8 +721,7 @@ pub fn counts(pool: &DbPool, persona_id: Option<&str>) -> Result<ManualReviewCou
         } else {
             let mut stmt = conn
                 .prepare("SELECT status, COUNT(*) FROM persona_manual_reviews GROUP BY status")?;
-            let rows =
-                stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+            let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
             for row in rows {
                 let (status, n) = row?;
                 apply(&status, n);
@@ -1045,7 +1054,10 @@ mod tests {
         let id = create_director_review(&pool, &persona_id, &execution_id);
 
         let learned = update_status(&pool, &id, ManualReviewStatus::Approved, None).unwrap();
-        assert!(learned.is_some(), "approval must surface a learned-memory ref");
+        assert!(
+            learned.is_some(),
+            "approval must surface a learned-memory ref"
+        );
 
         let mems = memories::get_by_persona(&pool, &persona_id, None).unwrap();
         assert_eq!(mems.len(), 1, "exactly one director coaching memory");
@@ -1072,7 +1084,10 @@ mod tests {
         let id = create_director_review(&pool, &persona_id, &execution_id);
 
         let learned = update_status(&pool, &id, ManualReviewStatus::Rejected, None).unwrap();
-        assert!(learned.is_none(), "rejected director coaching writes nothing");
+        assert!(
+            learned.is_none(),
+            "rejected director coaching writes nothing"
+        );
 
         let mems = memories::get_by_persona(&pool, &persona_id, None).unwrap();
         assert!(

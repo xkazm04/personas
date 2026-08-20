@@ -11,11 +11,11 @@
 //! description, last_scan_at, last_scan_summary)`. Anything heavier
 //! (per-project metadata, multi-repo orchestration) lands later.
 
+use crate::db::UserDbPool;
+use crate::error::AppError;
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use crate::db::UserDbPool;
-use crate::error::AppError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -174,4 +174,3 @@ pub fn seed_default_project(pool: &UserDbPool) -> Result<(), AppError> {
     )?;
     Ok(())
 }
-

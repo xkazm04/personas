@@ -119,10 +119,7 @@ fn migrate_export_bundle(mut value: serde_json::Value) -> Result<PersonaExportBu
 /// that: bumping `CURRENT_SCHEMA_VERSION` without shipping the matching migrator
 /// makes it fail in CI, rather than making every v1 bundle fail import for real
 /// users. If you add a version, add its arm here AND a real migrator function.
-fn migrate_one_step(
-    version: u64,
-    value: serde_json::Value,
-) -> Result<serde_json::Value, AppError> {
+fn migrate_one_step(version: u64, value: serde_json::Value) -> Result<serde_json::Value, AppError> {
     match version {
         1 => migrate_export_bundle_v1_to_v2(value),
         _ => Err(AppError::Validation(format!(
@@ -515,8 +512,6 @@ pub(crate) fn import_persona_from_value(
                 importance: Some(m.importance),
                 tags: m.tags.clone(),
                 use_case_id: None,
-            
-            
             })
             .collect();
         let expected = memory_inputs.len();

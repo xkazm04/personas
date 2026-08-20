@@ -277,14 +277,14 @@ pub fn pattern_miner_tick(pool: &DbPool) {
             return;
         }
     };
-    let executions = match suggestion_repo::mining_manual_executions(pool, &since, EXECUTION_SCAN_CAP)
-    {
-        Ok(v) => v,
-        Err(e) => {
-            tracing::warn!("pattern_miner: execution query failed: {e} — skipping tick");
-            return;
-        }
-    };
+    let executions =
+        match suggestion_repo::mining_manual_executions(pool, &since, EXECUTION_SCAN_CAP) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!("pattern_miner: execution query failed: {e} — skipping tick");
+                return;
+            }
+        };
 
     let candidates = mine_co_occurrences(
         &events,
@@ -524,7 +524,10 @@ mod tests {
         // Identical shape WITHOUT the exclusions fires — proving the empties
         // above come from the tag, not from the data shape.
         let (events, execs) = habit(5, "deploy_completed", "p1");
-        assert_eq!(mine_co_occurrences(&events, &execs, 600, 5, &mined).len(), 1);
+        assert_eq!(
+            mine_co_occurrences(&events, &execs, 600, 5, &mined).len(),
+            1
+        );
     }
 
     #[test]

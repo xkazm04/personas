@@ -203,7 +203,14 @@ fn now_ms() -> i64 {
 }
 
 fn fresh_op_id() -> String {
-    format!("op_{}", uuid::Uuid::new_v4().simple().to_string().get(..8).unwrap_or("xxxxxxxx"))
+    format!(
+        "op_{}",
+        uuid::Uuid::new_v4()
+            .simple()
+            .to_string()
+            .get(..8)
+            .unwrap_or("xxxxxxxx")
+    )
 }
 
 impl OperativeMemory {
@@ -307,7 +314,9 @@ impl OperativeMemory {
     ) {
         let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
         let op_id = self.ensure_op_for_session(&mut ops, fleet_session_id, project_label, cwd);
-        let op = ops.get_mut(&op_id).expect("ensure_op_for_session just inserted");
+        let op = ops
+            .get_mut(&op_id)
+            .expect("ensure_op_for_session just inserted");
 
         // Upsert SessionRef.
         if let Some(s) = op
@@ -584,7 +593,9 @@ impl OperativeMemory {
         // 3. No op for this session yet — create an ad-hoc op carrying
         //    the MCP intent directly (skip the "user spawn in X" placeholder).
         let id = self.ensure_op_for_session(&mut ops, fleet_session_id, project_label, cwd);
-        let op = ops.get_mut(&id).expect("ensure_op_for_session just inserted");
+        let op = ops
+            .get_mut(&id)
+            .expect("ensure_op_for_session just inserted");
         op.user_intent = intent.to_string();
         set_session_intent(op, fleet_session_id, intent, role);
         id
@@ -643,7 +654,12 @@ impl OperativeMemory {
     /// registered. Bounded to `MAX_CHECKPOINTS_PER_SESSION` per session,
     /// same as the materialized log, so a session that never registers
     /// can't grow this unbounded.
-    fn stash_pending_checkpoint(&self, fleet_session_id: &str, progress: &str, blockers: Option<&str>) {
+    fn stash_pending_checkpoint(
+        &self,
+        fleet_session_id: &str,
+        progress: &str,
+        blockers: Option<&str>,
+    ) {
         let mut pending = self
             .pending_checkpoints
             .write()
@@ -724,7 +740,10 @@ impl OperativeMemory {
             .iter()
             .filter(|s| {
                 s.recent_failure.is_some()
-                    || s.summary.as_deref().map(|t| t.contains("non-zero")).unwrap_or(false)
+                    || s.summary
+                        .as_deref()
+                        .map(|t| t.contains("non-zero"))
+                        .unwrap_or(false)
             })
             .count();
 
@@ -758,7 +777,10 @@ impl OperativeMemory {
             let trailer = if let Some(summary) = &s.summary {
                 format!(" · {}", truncate_one_line(summary, 160))
             } else if let Some(cp) = s.checkpoints.last() {
-                format!(" · last checkpoint: {}", truncate_one_line(&cp.progress, 160))
+                format!(
+                    " · last checkpoint: {}",
+                    truncate_one_line(&cp.progress, 160)
+                )
             } else {
                 String::new()
             };
@@ -785,7 +807,11 @@ impl OperativeMemory {
             } else {
                 String::new()
             };
-            lines.push(format!("Files touched across all sessions: {}{}", preview.join(", "), more));
+            lines.push(format!(
+                "Files touched across all sessions: {}{}",
+                preview.join(", "),
+                more
+            ));
         }
 
         let summary = lines.join("\n");
@@ -934,9 +960,15 @@ impl OperativeMemory {
                 status = op.status.label(),
             ));
             if let Some(ended) = op.ended_at_ms {
-                s.push_str(&format!(", finished {} ago", format_duration(now_ms() - ended)));
+                s.push_str(&format!(
+                    ", finished {} ago",
+                    format_duration(now_ms() - ended)
+                ));
             } else {
-                s.push_str(&format!(", started {} ago", format_duration(now_ms() - op.started_at_ms)));
+                s.push_str(&format!(
+                    ", started {} ago",
+                    format_duration(now_ms() - op.started_at_ms)
+                ));
             }
             s.push_str(")\n");
 
@@ -984,10 +1016,16 @@ impl OperativeMemory {
                     s.push_str(&format!("    files: {}{}\n", files.join(", "), more));
                 }
                 if let Some(failure) = &sess.recent_failure {
-                    s.push_str(&format!("    ⚠ recent failure: {}\n", truncate_one_line(failure, 160)));
+                    s.push_str(&format!(
+                        "    ⚠ recent failure: {}\n",
+                        truncate_one_line(failure, 160)
+                    ));
                 }
                 if let Some(summary) = &sess.summary {
-                    s.push_str(&format!("    summary: {}\n", truncate_one_line(summary, 220)));
+                    s.push_str(&format!(
+                        "    summary: {}\n",
+                        truncate_one_line(summary, 220)
+                    ));
                 }
             }
             if op.sessions.len() > DIGEST_MAX_SESSIONS_PER_OP {
@@ -1015,7 +1053,10 @@ files line is what they've touched so far this run.\n",
         let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
         let cutoff = now_ms() - STALE_OP_TTL_MS;
         ops.retain(|_, op| {
-            let terminal = matches!(op.status, OperationStatus::Completed | OperationStatus::Failed);
+            let terminal = matches!(
+                op.status,
+                OperationStatus::Completed | OperationStatus::Failed
+            );
             let too_old = op.ended_at_ms.map(|t| t < cutoff).unwrap_or(false);
             !(terminal && too_old)
         });
@@ -1037,7 +1078,8 @@ fn ensure_session_ref(op: &mut Operation, fleet_session_id: &str, cwd: &str) {
     {
         return;
     }
-    op.sessions.push(SessionRef::new(fleet_session_id, cwd, now_ms()));
+    op.sessions
+        .push(SessionRef::new(fleet_session_id, cwd, now_ms()));
 }
 
 fn set_session_intent(
@@ -1079,11 +1121,17 @@ fn format_tool_summary(tool_name: &str, tool_input: &serde_json::Value) -> Strin
             format!("{tool_name} {}", short_path(path))
         }
         "Grep" => {
-            let pattern = tool_input.get("pattern").and_then(|v| v.as_str()).unwrap_or("?");
+            let pattern = tool_input
+                .get("pattern")
+                .and_then(|v| v.as_str())
+                .unwrap_or("?");
             format!("Grep \"{}\"", truncate(pattern.to_string(), 40))
         }
         "Glob" => {
-            let pattern = tool_input.get("pattern").and_then(|v| v.as_str()).unwrap_or("?");
+            let pattern = tool_input
+                .get("pattern")
+                .and_then(|v| v.as_str())
+                .unwrap_or("?");
             format!("Glob {pattern}")
         }
         other => other.to_string(),
@@ -1105,7 +1153,15 @@ fn extract_stderr_tail(result: &serde_json::Value) -> Option<String> {
     if stderr.is_empty() {
         return None;
     }
-    let tail: String = stderr.lines().rev().take(5).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(" / ");
+    let tail: String = stderr
+        .lines()
+        .rev()
+        .take(5)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>()
+        .join(" / ");
     Some(tail)
 }
 
@@ -1211,7 +1267,11 @@ mod tests {
     #[test]
     fn repeated_state_changes_dont_duplicate_sessions() {
         let _g = lock_and_reset();
-        for st in [FleetSessionState::Spawning, FleetSessionState::Running, FleetSessionState::Idle] {
+        for st in [
+            FleetSessionState::Spawning,
+            FleetSessionState::Running,
+            FleetSessionState::Idle,
+        ] {
             memory().record_session_event("fs-2", None, "personas", "/tmp/p", st);
         }
         let ops = memory().operations.read().unwrap();
@@ -1224,8 +1284,20 @@ mod tests {
     #[test]
     fn exited_session_marks_operation_completed() {
         let _g = lock_and_reset();
-        memory().record_session_event("fs-3", None, "personas", "/tmp/p", FleetSessionState::Spawning);
-        memory().record_session_event("fs-3", None, "personas", "/tmp/p", FleetSessionState::Exited);
+        memory().record_session_event(
+            "fs-3",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Spawning,
+        );
+        memory().record_session_event(
+            "fs-3",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Exited,
+        );
         let ops = memory().operations.read().unwrap();
         let op = ops.values().next().unwrap();
         assert!(matches!(op.status, OperationStatus::Completed));
@@ -1235,7 +1307,13 @@ mod tests {
     #[test]
     fn tool_event_sets_current_tool_and_files_touched() {
         let _g = lock_and_reset();
-        memory().record_session_event("fs-4", None, "personas", "/tmp/p", FleetSessionState::Running);
+        memory().record_session_event(
+            "fs-4",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
+        );
         memory().record_tool_event(
             "fs-4",
             "Edit",
@@ -1253,14 +1331,14 @@ mod tests {
     #[test]
     fn post_tool_failure_records_tail() {
         let _g = lock_and_reset();
-        memory().record_session_event("fs-5", None, "personas", "/tmp/p", FleetSessionState::Running);
-        memory().record_tool_event(
+        memory().record_session_event(
             "fs-5",
-            "Bash",
-            &json!({"command": "npm test"}),
-            false,
             None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
         );
+        memory().record_tool_event("fs-5", "Bash", &json!({"command": "npm test"}), false, None);
         memory().record_tool_event(
             "fs-5",
             "Bash",
@@ -1319,9 +1397,27 @@ mod tests {
     #[test]
     fn synthesize_summary_includes_files_and_duration_and_failure() {
         let _g = lock_and_reset();
-        memory().record_session_event("fs-6", None, "personas", "/tmp/p", FleetSessionState::Running);
-        memory().record_tool_event("fs-6", "Edit", &json!({"file_path": "src/a.rs"}), false, None);
-        memory().record_tool_event("fs-6", "Edit", &json!({"file_path": "src/a.rs"}), true, Some(&json!({})));
+        memory().record_session_event(
+            "fs-6",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
+        );
+        memory().record_tool_event(
+            "fs-6",
+            "Edit",
+            &json!({"file_path": "src/a.rs"}),
+            false,
+            None,
+        );
+        memory().record_tool_event(
+            "fs-6",
+            "Edit",
+            &json!({"file_path": "src/a.rs"}),
+            true,
+            Some(&json!({})),
+        );
         memory().record_tool_event("fs-6", "Bash", &json!({"command": "npm test"}), false, None);
         memory().record_tool_event(
             "fs-6",
@@ -1347,8 +1443,20 @@ mod tests {
     #[test]
     fn digest_for_prompt_includes_op_and_session() {
         let _g = lock_and_reset();
-        memory().record_session_event("fs-7", Some("cc-7"), "personas", "/tmp/p", FleetSessionState::Running);
-        memory().record_tool_event("fs-7", "Edit", &json!({"file_path": "src/foo.rs"}), false, None);
+        memory().record_session_event(
+            "fs-7",
+            Some("cc-7"),
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
+        );
+        memory().record_tool_event(
+            "fs-7",
+            "Edit",
+            &json!({"file_path": "src/foo.rs"}),
+            false,
+            None,
+        );
         let d = memory().digest_for_prompt();
         assert!(d.contains("Active orchestration"));
         assert!(d.contains("user spawn in personas"));
@@ -1403,7 +1511,11 @@ mod tests {
         // The dispatcher's parent intent wins over the child session's
         // self-description — the user-facing operation label stays stable.
         assert_eq!(op.user_intent, "PARENT INTENT");
-        let s = op.sessions.iter().find(|s| s.fleet_session_id == "fs-d").unwrap();
+        let s = op
+            .sessions
+            .iter()
+            .find(|s| s.fleet_session_id == "fs-d")
+            .unwrap();
         // SessionRef still carries the child intent for digest rendering.
         assert_eq!(s.intent.as_deref(), Some("writer's own description"));
     }
@@ -1435,8 +1547,22 @@ mod tests {
         let op_id = memory().begin_dispatched_operation("ship tests".to_string());
         memory().attach_session_to_operation(&op_id, "fs-a", "writer", "/tmp/p");
         memory().attach_session_to_operation(&op_id, "fs-b", "runner", "/tmp/p");
-        memory().record_intent("fs-a", "draft the tests", Some("writer"), Some(&op_id), "personas", "/tmp/p");
-        memory().record_intent("fs-b", "run the tests", Some("runner"), Some(&op_id), "personas", "/tmp/p");
+        memory().record_intent(
+            "fs-a",
+            "draft the tests",
+            Some("writer"),
+            Some(&op_id),
+            "personas",
+            "/tmp/p",
+        );
+        memory().record_intent(
+            "fs-b",
+            "run the tests",
+            Some("runner"),
+            Some(&op_id),
+            "personas",
+            "/tmp/p",
+        );
 
         // One session writes a file, then exits clean.
         memory().record_tool_event(
@@ -1446,7 +1572,13 @@ mod tests {
             false,
             None,
         );
-        memory().record_session_event("fs-a", None, "personas", "/tmp/p", FleetSessionState::Exited);
+        memory().record_session_event(
+            "fs-a",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Exited,
+        );
         let _ = memory().synthesize_session_summary("fs-a", Some(0));
 
         // Both still need to exit before the op completes — confirm
@@ -1467,7 +1599,13 @@ mod tests {
             true,
             Some(&json!({ "exit_code": 1, "stderr": "expected 2, got 1" })),
         );
-        memory().record_session_event("fs-b", None, "personas", "/tmp/p", FleetSessionState::Exited);
+        memory().record_session_event(
+            "fs-b",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Exited,
+        );
         let _ = memory().synthesize_session_summary("fs-b", Some(1));
 
         // Reconciler call — synthesizing fills completion_summary AND
@@ -1491,7 +1629,9 @@ mod tests {
     #[test]
     fn synthesize_operation_summary_unknown_op_returns_none() {
         let _g = lock_and_reset();
-        assert!(memory().synthesize_operation_summary("op_nonsense").is_none());
+        assert!(memory()
+            .synthesize_operation_summary("op_nonsense")
+            .is_none());
     }
 
     // ── D9 — intervention bookkeeping ─────────────────────────────────

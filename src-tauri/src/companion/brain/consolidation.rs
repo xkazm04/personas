@@ -23,18 +23,16 @@ use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
-use crate::companion::brain::oneshot::{
-    self, call_claude_text, extract_json_span, preview,
-};
+use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
 use crate::companion::brain::util;
 use crate::companion::brain::{episodic, semantic};
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
-use std::sync::Arc;
-#[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
+#[cfg(feature = "ml")]
+use std::sync::Arc;
 
 /// Episodes to feed into the consolidation prompt. More = better
 /// recall, but the prompt grows quadratically with context. 80 is a
@@ -610,7 +608,10 @@ pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
 
     match decay_unused_facts(pool) {
         Ok(n) if n > 0 => {
-            tracing::info!(decayed = n, "companion: lifecycle sweep decayed unused facts")
+            tracing::info!(
+                decayed = n,
+                "companion: lifecycle sweep decayed unused facts"
+            )
         }
         Ok(_) => {}
         Err(e) => tracing::warn!(error = %e, "companion: fact decay failed (continuing)"),

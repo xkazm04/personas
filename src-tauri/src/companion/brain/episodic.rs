@@ -674,9 +674,18 @@ mod tests {
     #[test]
     fn markers_are_safe_to_interpolate_into_like() {
         for m in MACHINE_EPISODE_MARKERS {
-            assert!(!m.contains('\''), "marker {m:?} would break the SQL literal");
-            assert!(!m.contains('%'), "marker {m:?} would act as a LIKE wildcard");
-            assert!(!m.contains('_'), "marker {m:?} would act as a LIKE wildcard");
+            assert!(
+                !m.contains('\''),
+                "marker {m:?} would break the SQL literal"
+            );
+            assert!(
+                !m.contains('%'),
+                "marker {m:?} would act as a LIKE wildcard"
+            );
+            assert!(
+                !m.contains('_'),
+                "marker {m:?} would act as a LIKE wildcard"
+            );
             assert!(!m.is_empty());
         }
     }
@@ -715,8 +724,22 @@ mod tests {
             let ts = format!("2026-08-01T{:02}:{:02}:00Z", i / 60, i % 60);
             let id = format!("e{i:03}");
             match i % 10 {
-                0 => insert_body(&conn, &id, "default", &ts, "user", "What should I ship next?"),
-                1 => insert_body(&conn, &id, "default", &ts, "assistant", "Here is what I'd pick."),
+                0 => insert_body(
+                    &conn,
+                    &id,
+                    "default",
+                    &ts,
+                    "user",
+                    "What should I ship next?",
+                ),
+                1 => insert_body(
+                    &conn,
+                    &id,
+                    "default",
+                    &ts,
+                    "assistant",
+                    "Here is what I'd pick.",
+                ),
                 _ => insert_body(
                     &conn,
                     &id,
@@ -731,14 +754,10 @@ mod tests {
         let unfiltered = query_recent_rows(&conn, "default", 20).unwrap();
         let filtered = query_recent_conversation_rows(&conn, "default", 20).unwrap();
 
-        let user_count = |rows: &[EpisodeRow]| {
-            rows.iter()
-                .filter(|r| r.1.ends_with("_user.md"))
-                .count()
-        };
-        let machine_count = |rows: &[EpisodeRow]| {
-            rows.iter().filter(|r| is_machine_episode(&r.2)).count()
-        };
+        let user_count =
+            |rows: &[EpisodeRow]| rows.iter().filter(|r| r.1.ends_with("_user.md")).count();
+        let machine_count =
+            |rows: &[EpisodeRow]| rows.iter().filter(|r| is_machine_episode(&r.2)).count();
 
         // Baseline: the defect, reproduced.
         assert_eq!(unfiltered.len(), 20);
@@ -781,8 +800,22 @@ mod tests {
     #[test]
     fn conversation_window_keeps_session_scoping() {
         let conn = test_conn();
-        insert_body(&conn, "a1", "default", "2026-08-01T00:00:01Z", "user", "mine");
-        insert_body(&conn, "b1", "other", "2026-08-01T00:00:02Z", "user", "theirs");
+        insert_body(
+            &conn,
+            "a1",
+            "default",
+            "2026-08-01T00:00:01Z",
+            "user",
+            "mine",
+        );
+        insert_body(
+            &conn,
+            "b1",
+            "other",
+            "2026-08-01T00:00:02Z",
+            "user",
+            "theirs",
+        );
 
         let rows = query_recent_conversation_rows(&conn, "default", 20).unwrap();
         assert_eq!(ids(&rows), vec!["a1"]);

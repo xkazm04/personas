@@ -221,10 +221,11 @@ pub async fn dev_tools_refresh_context_fingerprints(
 
     // Contexts come from the DB, never from context-map.json — a delta rescan
     // may be rewriting that file right now.
-    let contexts: Vec<(String, String)> = repo::list_contexts_by_project(&state.db, &project_id, None)?
-        .into_iter()
-        .map(|c| (c.id, c.file_paths))
-        .collect();
+    let contexts: Vec<(String, String)> =
+        repo::list_contexts_by_project(&state.db, &project_id, None)?
+            .into_iter()
+            .map(|c| (c.id, c.file_paths))
+            .collect();
     let cached_hashes = repo::get_file_hashes(&state.db, &project_id).unwrap_or_default();
     let existing = repo::get_context_fingerprint_hashes(&state.db, &project_id).unwrap_or_default();
 
@@ -314,7 +315,10 @@ mod tests {
 
     #[test]
     fn content_hash_is_membership_sensitive() {
-        let a = vec![("a.rs".to_string(), "1".to_string()), ("b.rs".to_string(), "2".to_string())];
+        let a = vec![
+            ("a.rs".to_string(), "1".to_string()),
+            ("b.rs".to_string(), "2".to_string()),
+        ];
         let mut more = a.clone();
         more.push(("c.rs".to_string(), "3".to_string()));
         assert_ne!(content_hash(&a), content_hash(&more));
@@ -325,7 +329,10 @@ mod tests {
     /// separately keeps that division of labour honest.
     #[test]
     fn order_insensitivity_comes_from_sorting_not_from_the_hash() {
-        let a = vec![("a.rs".to_string(), "1".to_string()), ("b.rs".to_string(), "2".to_string())];
+        let a = vec![
+            ("a.rs".to_string(), "1".to_string()),
+            ("b.rs".to_string(), "2".to_string()),
+        ];
         let mut reversed = a.clone();
         reversed.reverse();
         assert_ne!(content_hash(&a), content_hash(&reversed));

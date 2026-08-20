@@ -25,9 +25,7 @@ use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::session::{base_cli_invocation, DEFAULT_SESSION_ID};
 use crate::db::UserDbPool;
 use crate::engine::project_tracking::events::EventPayload;
-use crate::engine::project_tracking::pulse::{
-    self, PulseRow, PulseUpdate,
-};
+use crate::engine::project_tracking::pulse::{self, PulseRow, PulseUpdate};
 use crate::engine::project_tracking::subscription::Subscription;
 use crate::error::AppError;
 
@@ -149,8 +147,7 @@ pub async fn run_for_project(
     let tokens_in = (prompt.len() / 4) as i64;
     let tokens_out = (envelope.narrative.len()
         + envelope.directions.iter().map(|s| s.len()).sum::<usize>()
-        + envelope.tensions.iter().map(|s| s.len()).sum::<usize>())
-        as i64
+        + envelope.tensions.iter().map(|s| s.len()).sum::<usize>()) as i64
         / 4;
 
     pulse::upsert_today(
@@ -202,12 +199,9 @@ pub async fn run_for_project(
         runs = runs,
         directions_summary = directions_summary,
     );
-    if let Err(e) = episodic::append_episode(
-        pool,
-        DEFAULT_SESSION_ID,
-        EpisodeRole::System,
-        &episode_body,
-    ) {
+    if let Err(e) =
+        episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, &episode_body)
+    {
         warn!(
             project_id = %sub.project_id,
             error = %e,
@@ -270,7 +264,10 @@ fn build_prompt(
     s.push_str(&format!("### Commits ({n_commits})\n"));
     for ev in &snapshot.commits {
         if let EventPayload::Commit {
-            hash, author, subject, ..
+            hash,
+            author,
+            subject,
+            ..
         } = ev
         {
             let short = &hash[..hash.len().min(7)];
@@ -284,7 +281,9 @@ fn build_prompt(
     s.push_str(&format!("\n### Runs ({n_runs})\n"));
     for ev in &snapshot.runs {
         match ev {
-            EventPayload::RunStarted { slug, timestamp, .. } => {
+            EventPayload::RunStarted {
+                slug, timestamp, ..
+            } => {
                 s.push_str(&format!("- STARTED at {timestamp}: {slug}\n"));
             }
             EventPayload::RunCompleted {
@@ -310,10 +309,7 @@ fn build_prompt(
     if n_notes > 0 {
         s.push_str(&format!("\n### Notes ({n_notes})\n"));
         for ev in &snapshot.notes {
-            if let EventPayload::Note {
-                title, summary, ..
-            } = ev
-            {
+            if let EventPayload::Note { title, summary, .. } = ev {
                 let title_str = title.as_deref().unwrap_or("(untitled)");
                 let summary_str = summary.as_deref().unwrap_or("");
                 s.push_str(&format!("- {title_str}: {summary_str}\n"));
@@ -412,14 +408,12 @@ async fn call_sonnet_oneshot(prompt: &str) -> Result<PulseEnvelope, AppError> {
         Ok::<(), AppError>(())
     };
 
-    timeout(CONSOLIDATOR_TIMEOUT, collect)
-        .await
-        .map_err(|_| {
-            AppError::Internal(format!(
-                "project-tracking consolidator timed out after {:?}",
-                CONSOLIDATOR_TIMEOUT
-            ))
-        })??;
+    timeout(CONSOLIDATOR_TIMEOUT, collect).await.map_err(|_| {
+        AppError::Internal(format!(
+            "project-tracking consolidator timed out after {:?}",
+            CONSOLIDATOR_TIMEOUT
+        ))
+    })??;
 
     let _ = stderr_handle.await;
     let status = child
@@ -471,11 +465,12 @@ fn parse_envelope(text: &str) -> Result<PulseEnvelope, AppError> {
         .rfind('}')
         .ok_or_else(|| AppError::Internal("pulse reply missing closing brace".into()))?;
     if end <= start {
-        return Err(AppError::Internal("pulse reply has no valid JSON span".into()));
+        return Err(AppError::Internal(
+            "pulse reply has no valid JSON span".into(),
+        ));
     }
-    serde_json::from_str(&raw[start..=end]).map_err(|e| {
-        AppError::Internal(format!("pulse reply not valid JSON: {e}"))
-    })
+    serde_json::from_str(&raw[start..=end])
+        .map_err(|e| AppError::Internal(format!("pulse reply not valid JSON: {e}")))
 }
 
 fn strip_code_fence(s: &str) -> Option<&str> {

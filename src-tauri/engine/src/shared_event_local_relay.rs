@@ -15,10 +15,10 @@
 
 use tauri::AppHandle;
 
+use crate::event_registry::emit_event_bus;
 use personas_db::models::CreatePersonaEventInput;
 use personas_db::repos::communication::{events as event_repo, shared_events as repo};
 use personas_db::DbPool;
-use crate::event_registry::emit_event_bus;
 
 /// Max firings delivered per subscription per tick — bounds a large catch-up
 /// (e.g. an upgrade that skipped several releases) so one tick can't flood the
@@ -45,8 +45,12 @@ pub async fn shared_event_local_relay_tick(pool: &DbPool, app: &AppHandle) {
             .and_then(|c| c.parse::<i64>().ok())
             .unwrap_or(0);
 
-        let firings = match repo::list_firings_after(pool, &sub.slug, after_seq, MAX_PER_SUB_PER_TICK)
-        {
+        let firings = match repo::list_firings_after(
+            pool,
+            &sub.slug,
+            after_seq,
+            MAX_PER_SUB_PER_TICK,
+        ) {
             Ok(f) => f,
             Err(e) => {
                 tracing::warn!(sub_slug = %sub.slug, "SharedEventLocalRelay: list firings failed: {e}");

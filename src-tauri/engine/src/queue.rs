@@ -969,7 +969,10 @@ mod tests {
         // A past deadline means the cooldown has lapsed.
         tracker.set_quota_cooldown(Utc::now() - chrono::Duration::minutes(1));
         // set never shortens, so the 10-min future deadline still stands.
-        assert!(!tracker.quota_available(), "set never shortens an active cooldown");
+        assert!(
+            !tracker.quota_available(),
+            "set never shortens an active cooldown"
+        );
     }
 
     // -- Resource-aware admission ---------------------------------------------
@@ -1011,7 +1014,11 @@ mod tests {
         let far = Utc::now() + chrono::Duration::minutes(30);
         tracker.set_quota_cooldown(far);
         tracker.set_quota_cooldown(Utc::now() + chrono::Duration::minutes(5));
-        assert_eq!(tracker.quota_cooldown_until(), Some(far), "keeps the later deadline");
+        assert_eq!(
+            tracker.quota_cooldown_until(),
+            Some(far),
+            "keeps the later deadline"
+        );
     }
 
     #[test]
@@ -1026,7 +1033,10 @@ mod tests {
         assert_eq!(tracker.total_running(), 0, "nothing runs during cooldown");
         assert_eq!(tracker.total_queued(), 1, "work waits in the queue");
         // drains are also held during cooldown
-        assert!(tracker.drain_next_global().is_none(), "no promotion during cooldown");
+        assert!(
+            tracker.drain_next_global().is_none(),
+            "no promotion during cooldown"
+        );
     }
 
     #[test]

@@ -263,7 +263,10 @@ fn aging_archives_only_stale_untouched_pending_ideas() {
     .unwrap();
 
     let archived = archive_stale_ideas(&pool, Some(&pid), 30).unwrap();
-    assert_eq!(archived, 1, "only the stale, pending, task-less idea ages out");
+    assert_eq!(
+        archived, 1,
+        "only the stale, pending, task-less idea ages out"
+    );
 
     assert_eq!(get_idea_by_id(&pool, &stale.id).unwrap().status, "archived");
     assert_eq!(get_idea_by_id(&pool, &fresh.id).unwrap().status, "pending");
@@ -372,5 +375,8 @@ fn scan_sweep_origin_accepted_and_escalation_key_is_the_cooldown() {
         None,
     )
     .unwrap();
-    assert!(second.is_none(), "duplicate escalation must not re-dispatch");
+    assert!(
+        second.is_none(),
+        "duplicate escalation must not re-dispatch"
+    );
 }

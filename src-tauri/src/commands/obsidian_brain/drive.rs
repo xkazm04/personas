@@ -51,7 +51,9 @@ fn safe_drive_filename(name: &str) -> Result<&str, String> {
     // Reject Windows drive letters (`C:foo.txt`) and stream-name suffixes
     // (`foo.txt:stream`) which on NTFS write to alternate data streams.
     if trimmed.contains(':') {
-        return Err(format!("filename contains ':' (Windows drive/stream): {trimmed:?}"));
+        return Err(format!(
+            "filename contains ':' (Windows drive/stream): {trimmed:?}"
+        ));
     }
     let p = Path::new(trimmed);
     if p.is_absolute() {

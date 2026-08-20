@@ -118,7 +118,12 @@ pub async fn start_schema_proposal(
                 panic = %msg,
                 "schema proposal task panicked — marking job as failed"
             );
-            SCHEMA_PROPOSAL_JOBS.set_status(&app_for_panic, &proposal_id_for_panic, "failed", Some(msg));
+            SCHEMA_PROPOSAL_JOBS.set_status(
+                &app_for_panic,
+                &proposal_id_for_panic,
+                "failed",
+                Some(msg),
+            );
         }
     });
 
@@ -131,7 +136,6 @@ pub async fn get_schema_proposal_snapshot(
     state: State<'_, Arc<AppState>>,
     proposal_id: String,
 ) -> Result<serde_json::Value, AppError> {
-
     let snapshot = SCHEMA_PROPOSAL_JOBS.get_task_snapshot(&proposal_id, |extra| {
         SchemaProposalSnapshotExtras {
             proposed_sql: extra.proposed_sql.clone(),
@@ -169,7 +173,6 @@ pub async fn validate_db_schema(
     credential_id: String,
     expected_tables: Vec<String>,
 ) -> Result<serde_json::Value, AppError> {
-
     let tables_result =
         db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await?;
 

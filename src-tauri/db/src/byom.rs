@@ -170,8 +170,7 @@ impl TaskComplexity {
 
         if prompt_chars <= SIMPLE_PROMPT_CHARS_MAX && tool_count == 0 {
             Self::Simple
-        } else if prompt_chars >= CRITICAL_PROMPT_CHARS_MIN
-            || tool_count >= CRITICAL_TOOL_COUNT_MIN
+        } else if prompt_chars >= CRITICAL_PROMPT_CHARS_MIN || tool_count >= CRITICAL_TOOL_COUNT_MIN
         {
             Self::Critical
         } else {
@@ -298,7 +297,10 @@ impl ByomPolicy {
             )));
         }
         let json = serde_json::to_string(self).map_err(|e| {
-            personas_core::error::AppError::Internal(format!("Failed to serialize BYOM policy: {}", e))
+            personas_core::error::AppError::Internal(format!(
+                "Failed to serialize BYOM policy: {}",
+                e
+            ))
         })?;
         crate::repos::core::settings::set(pool, BYOM_POLICY_KEY, &json)
     }

@@ -356,15 +356,27 @@ fn normalize_team_role(role: &str) -> String {
     if ["orchestrator", "worker", "reviewer", "router"].contains(&r.as_str()) {
         return r;
     }
-    let mapped = if r.contains("orchestr") || r.contains("lead") || r.contains("coordinat")
-        || r.contains("manager") || r.contains("director") || r.contains("plann")
+    let mapped = if r.contains("orchestr")
+        || r.contains("lead")
+        || r.contains("coordinat")
+        || r.contains("manager")
+        || r.contains("director")
+        || r.contains("plann")
     {
         "orchestrator"
-    } else if r.contains("review") || r.contains("qa") || r.contains("quality")
-        || r.contains("edit") || r.contains("critic") || r.contains("approv") || r.contains("audit")
+    } else if r.contains("review")
+        || r.contains("qa")
+        || r.contains("quality")
+        || r.contains("edit")
+        || r.contains("critic")
+        || r.contains("approv")
+        || r.contains("audit")
     {
         "reviewer"
-    } else if r.contains("rout") || r.contains("dispatch") || r.contains("triage") || r.contains("classif")
+    } else if r.contains("rout")
+        || r.contains("dispatch")
+        || r.contains("triage")
+        || r.contains("classif")
     {
         "router"
     } else {
@@ -501,204 +513,207 @@ async fn run_crew_synthesis(
     let mut created_personas: Vec<String> = Vec::new();
     let mut created_team: Option<String> = None;
     let assembled = (|| -> Result<TeamSynthesisResult, AppError> {
-    // 6. Create personas via instant_adopt logic (inline, not calling tauri command)
-    let mut persona_ids: Vec<String> = Vec::new();
-    for (tmpl, _role) in &valid_templates {
-        let design_json = tmpl.design_result.as_deref().unwrap_or("{}");
-        let design: serde_json::Value = match serde_json::from_str(design_json) {
-            Ok(v) => v,
-            Err(e) => {
-                tracing::error!(
-                    template_id = %tmpl.test_case_name,
-                    error = %e,
-                    "unparseable design_result while synthesizing team — falling back to generic persona prompt"
-                );
-                serde_json::Value::Null
-            }
-        };
+        // 6. Create personas via instant_adopt logic (inline, not calling tauri command)
+        let mut persona_ids: Vec<String> = Vec::new();
+        for (tmpl, _role) in &valid_templates {
+            let design_json = tmpl.design_result.as_deref().unwrap_or("{}");
+            let design: serde_json::Value = match serde_json::from_str(design_json) {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::error!(
+                        template_id = %tmpl.test_case_name,
+                        error = %e,
+                        "unparseable design_result while synthesizing team — falling back to generic persona prompt"
+                    );
+                    serde_json::Value::Null
+                }
+            };
 
-        let full_prompt = design
-            .get("full_prompt_markdown")
-            .and_then(|v| v.as_str())
-            .unwrap_or("You are a helpful AI assistant.")
-            .to_string();
+            let full_prompt = design
+                .get("full_prompt_markdown")
+                .and_then(|v| v.as_str())
+                .unwrap_or("You are a helpful AI assistant.")
+                .to_string();
 
-        let summary = design
-            .get("summary")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-            .or_else(|| Some(format!("Adopted from template: {}", tmpl.test_case_name)));
+            let summary = design
+                .get("summary")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .or_else(|| Some(format!("Adopted from template: {}", tmpl.test_case_name)));
 
-        let structured_prompt = design.get("structured_prompt").map(|v| {
-            let mut sp = v.clone();
-            if let Some(sections) = sp.get_mut("customSections").and_then(|v| v.as_array_mut()) {
-                for section in sections.iter_mut() {
-                    if section
-                        .get("title")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .is_empty()
-                    {
-                        let heading = section
-                            .get("label")
-                            .cloned()
-                            .or_else(|| section.get("name").cloned())
-                            .or_else(|| section.get("key").cloned());
-                        if let Some(heading_val) = heading {
-                            if let Some(obj) = section.as_object_mut() {
-                                obj.insert("title".into(), heading_val);
+            let structured_prompt = design.get("structured_prompt").map(|v| {
+                let mut sp = v.clone();
+                if let Some(sections) = sp.get_mut("customSections").and_then(|v| v.as_array_mut())
+                {
+                    for section in sections.iter_mut() {
+                        if section
+                            .get("title")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .is_empty()
+                        {
+                            let heading = section
+                                .get("label")
+                                .cloned()
+                                .or_else(|| section.get("name").cloned())
+                                .or_else(|| section.get("key").cloned());
+                            if let Some(heading_val) = heading {
+                                if let Some(obj) = section.as_object_mut() {
+                                    obj.insert("title".into(), heading_val);
+                                }
                             }
                         }
                     }
                 }
+                sp.to_string()
+            });
+
+            let persona_meta = design.get("persona_meta");
+            let icon = persona_meta
+                .and_then(|m| m.get("icon"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let color = persona_meta
+                .and_then(|m| m.get("color"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let model_profile = persona_meta
+                .and_then(|m| m.get("model_profile"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let persona_name = persona_meta
+                .and_then(|m| m.get("name"))
+                .and_then(|v| v.as_str())
+                .filter(|n| !n.trim().is_empty())
+                .map(|s| s.to_string())
+                .unwrap_or(tmpl.test_case_name.clone());
+
+            // Build proper DesignContextData-format design_context instead of raw design_result
+            let design_context_str =
+                build_design_context_from_result(&design, &tmpl.test_case_name);
+
+            let persona = persona_repo::create(
+                &state.db,
+                CreatePersonaInput {
+                    name: persona_name,
+                    system_prompt: full_prompt,
+                    // Crew Foundry personas are project-scoped; the classic path
+                    // keeps them global (unchanged behavior).
+                    project_id: project_id.map(String::from),
+                    description: summary,
+                    structured_prompt,
+                    icon,
+                    color,
+                    enabled: Some(true),
+                    max_concurrent: None,
+                    timeout_ms: None,
+                    model_profile,
+                    max_budget_usd: None,
+                    max_turns: None,
+                    design_context: Some(design_context_str),
+                    notification_channels: None,
+                    lifecycle: None,
+                },
+            )?;
+
+            // Track adoption count (with audit log)
+            if let Err(e) = review_repo::increment_adoption_count(
+                &state.db,
+                &tmpl.test_case_name,
+                Some(&persona.id),
+            ) {
+                tracing::warn!(template = %tmpl.test_case_name, error = %e, "Failed to increment adoption count");
             }
-            sp.to_string()
-        });
 
-        let persona_meta = design.get("persona_meta");
-        let icon = persona_meta
-            .and_then(|m| m.get("icon"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let color = persona_meta
-            .and_then(|m| m.get("color"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let model_profile = persona_meta
-            .and_then(|m| m.get("model_profile"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let persona_name = persona_meta
-            .and_then(|m| m.get("name"))
-            .and_then(|v| v.as_str())
-            .filter(|n| !n.trim().is_empty())
-            .map(|s| s.to_string())
-            .unwrap_or(tmpl.test_case_name.clone());
+            created_personas.push(persona.id.clone());
+            persona_ids.push(persona.id);
+        }
 
-        // Build proper DesignContextData-format design_context instead of raw design_result
-        let design_context_str = build_design_context_from_result(&design, &tmpl.test_case_name);
-
-        let persona = persona_repo::create(
+        // 7. Create team
+        let team = team_repo::create(
             &state.db,
-            CreatePersonaInput {
-                name: persona_name,
-                system_prompt: full_prompt,
-                // Crew Foundry personas are project-scoped; the classic path
-                // keeps them global (unchanged behavior).
+            CreateTeamInput {
+                name: team_name.to_string(),
                 project_id: project_id.map(String::from),
-                description: summary,
-                structured_prompt,
-                icon,
-                color,
+                parent_team_id: None,
+                description: Some(response.team_description.clone()),
+                canvas_data: None,
+                team_config: team_config.clone(),
+                icon: None,
+                color: None,
                 enabled: Some(true),
-                max_concurrent: None,
-                timeout_ms: None,
-                model_profile,
-                max_budget_usd: None,
-                max_turns: None,
-                design_context: Some(design_context_str),
-                notification_channels: None,
-                lifecycle: None,
             },
         )?;
+        created_team = Some(team.id.clone());
 
-        // Track adoption count (with audit log)
-        if let Err(e) = review_repo::increment_adoption_count(
-            &state.db,
-            &tmpl.test_case_name,
-            Some(&persona.id),
-        ) {
-            tracing::warn!(template = %tmpl.test_case_name, error = %e, "Failed to increment adoption count");
-        }
+        // 8. Add members with DAG layout positions
+        let edge_pairs: Vec<(usize, usize)> = response
+            .connections
+            .iter()
+            .filter(|c| {
+                c.source_index < persona_ids.len()
+                    && c.target_index < persona_ids.len()
+                    && c.source_index != c.target_index
+            })
+            .map(|c| (c.source_index, c.target_index))
+            .collect();
 
-        created_personas.push(persona.id.clone());
-        persona_ids.push(persona.id);
-    }
+        let positions =
+            compute_dag_layout(persona_ids.len(), &edge_pairs, 180.0, 70.0, 60.0, 100.0);
 
-    // 7. Create team
-    let team = team_repo::create(
-        &state.db,
-        CreateTeamInput {
-            name: team_name.to_string(),
-            project_id: project_id.map(String::from),
-            parent_team_id: None,
-            description: Some(response.team_description.clone()),
-            canvas_data: None,
-            team_config: team_config.clone(),
-            icon: None,
-            color: None,
-            enabled: Some(true),
-        },
-    )?;
-    created_team = Some(team.id.clone());
-
-    // 8. Add members with DAG layout positions
-    let edge_pairs: Vec<(usize, usize)> = response
-        .connections
-        .iter()
-        .filter(|c| {
-            c.source_index < persona_ids.len()
-                && c.target_index < persona_ids.len()
-                && c.source_index != c.target_index
-        })
-        .map(|c| (c.source_index, c.target_index))
-        .collect();
-
-    let positions = compute_dag_layout(persona_ids.len(), &edge_pairs, 180.0, 70.0, 60.0, 100.0);
-
-    let mut member_ids: Vec<String> = Vec::new();
-    for (i, persona_id) in persona_ids.iter().enumerate() {
-        // Clamp the LLM's role to the persona_team_members CHECK enum so a
-        // descriptive role never aborts add_member mid-synthesis (UAT L2 finding).
-        let role = valid_templates.get(i).map(|(_, r)| normalize_team_role(r));
-        let (px, py) = positions.get(i).copied().unwrap_or((0.0, 0.0));
-        let member = team_repo::add_member(
-            &state.db,
-            &team.id,
-            persona_id,
-            role,
-            Some(px),
-            Some(py),
-            None,
-        )?;
-        member_ids.push(member.id);
-    }
-
-    // 9. Create connections
-    for conn in &response.connections {
-        if conn.source_index < member_ids.len()
-            && conn.target_index < member_ids.len()
-            && conn.source_index != conn.target_index
-        {
-            let _ = team_repo::create_connection(
+        let mut member_ids: Vec<String> = Vec::new();
+        for (i, persona_id) in persona_ids.iter().enumerate() {
+            // Clamp the LLM's role to the persona_team_members CHECK enum so a
+            // descriptive role never aborts add_member mid-synthesis (UAT L2 finding).
+            let role = valid_templates.get(i).map(|(_, r)| normalize_team_role(r));
+            let (px, py) = positions.get(i).copied().unwrap_or((0.0, 0.0));
+            let member = team_repo::add_member(
                 &state.db,
                 &team.id,
-                &member_ids[conn.source_index],
-                &member_ids[conn.target_index],
-                Some("sequential".into()),
+                persona_id,
+                role,
+                Some(px),
+                Some(py),
                 None,
-                None,
-            );
+            )?;
+            member_ids.push(member.id);
         }
-    }
 
-    // 10. Wire intra-team handoff from the connection graph (chain + listener
-    //     triggers per non-feedback edge) so members actually fire each other.
-    //     Mirrors the preset-adoption path (team_preset_adopter.rs:536); without
-    //     it a synthesized team has roles + edges but no handoff plumbing and
-    //     silently stalls after the entry member (UAT L1 F-TEAM-HANDOFF-SYNTH).
-    //     Best-effort: a wiring failure must not fail an otherwise-successful
-    //     synthesis.
-    if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
-        tracing::warn!(team_id = %team.id, error = %e, "synthesize_team: handoff wiring failed (continuing)");
-    }
+        // 9. Create connections
+        for conn in &response.connections {
+            if conn.source_index < member_ids.len()
+                && conn.target_index < member_ids.len()
+                && conn.source_index != conn.target_index
+            {
+                let _ = team_repo::create_connection(
+                    &state.db,
+                    &team.id,
+                    &member_ids[conn.source_index],
+                    &member_ids[conn.target_index],
+                    Some("sequential".into()),
+                    None,
+                    None,
+                );
+            }
+        }
 
-    Ok(TeamSynthesisResult {
-        team_id: team.id,
-        team_name: team_name.to_string(),
-        member_count: persona_ids.len(),
-        description: response.team_description.clone(),
-    })
+        // 10. Wire intra-team handoff from the connection graph (chain + listener
+        //     triggers per non-feedback edge) so members actually fire each other.
+        //     Mirrors the preset-adoption path (team_preset_adopter.rs:536); without
+        //     it a synthesized team has roles + edges but no handoff plumbing and
+        //     silently stalls after the entry member (UAT L1 F-TEAM-HANDOFF-SYNTH).
+        //     Best-effort: a wiring failure must not fail an otherwise-successful
+        //     synthesis.
+        if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
+            tracing::warn!(team_id = %team.id, error = %e, "synthesize_team: handoff wiring failed (continuing)");
+        }
+
+        Ok(TeamSynthesisResult {
+            team_id: team.id,
+            team_name: team_name.to_string(),
+            member_count: persona_ids.len(),
+            description: response.team_description.clone(),
+        })
     })();
 
     match assembled {
@@ -743,7 +758,8 @@ pub async fn get_project_pulse_snapshots(
 ) -> Result<Vec<ProjectPulseSnapshot>, AppError> {
     require_auth(&state).await?;
     let limit = limit.unwrap_or(3).clamp(1, 14);
-    let rows = crate::engine::project_tracking::pulse::list_recent(&state.user_db, &project_id, limit)?;
+    let rows =
+        crate::engine::project_tracking::pulse::list_recent(&state.user_db, &project_id, limit)?;
     Ok(rows
         .into_iter()
         .map(|r| ProjectPulseSnapshot {
@@ -904,7 +920,11 @@ pub async fn get_crew_fitness(
              GROUP BY s.assigned_persona_id",
         )?;
         let rows = stmt.query_map([&team_id], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?))
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
         })?;
         for row in rows.flatten() {
             stats.insert(row.0, (row.1, row.2));
@@ -997,7 +1017,9 @@ mod tests {
     #[test]
     fn crew_prompt_caps_directives_and_survives_empty_input() {
         // > 8 directives are dropped; each directive is char-capped.
-        let many: Vec<String> = (0..12).map(|i| format!("focus-{i} {}", "x".repeat(400))).collect();
+        let many: Vec<String> = (0..12)
+            .map(|i| format!("focus-{i} {}", "x".repeat(400)))
+            .collect();
         let prompt = build_crew_synthesis_prompt("brief", &many, &[]);
         assert!(prompt.contains("focus-7"));
         assert!(!prompt.contains("focus-8"));

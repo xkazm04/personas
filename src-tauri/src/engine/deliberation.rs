@@ -620,8 +620,7 @@ fn build_moderator_context(
         .and_then(|j| serde_json::from_str::<Vec<String>>(j).ok())
     {
         Some(ids)
-            if !ids.is_empty()
-                && full_roster.iter().any(|m| ids.iter().any(|x| x == &m.id)) =>
+            if !ids.is_empty() && full_roster.iter().any(|m| ids.iter().any(|x| x == &m.id)) =>
         {
             let set: std::collections::HashSet<String> = ids.into_iter().collect();
             full_roster
@@ -716,8 +715,12 @@ pub async fn advance_one_deliberation(
         let _ = deliberation_repo::add_agenda_item(pool, &delib.id, item, Some("moderator"));
     }
     for res in &decision.agenda_resolve {
-        let _ =
-            deliberation_repo::resolve_agenda_item(pool, &res.id, "resolved", Some(res.resolution.as_str()));
+        let _ = deliberation_repo::resolve_agenda_item(
+            pool,
+            &res.id,
+            "resolved",
+            Some(res.resolution.as_str()),
+        );
     }
     let open_after = deliberation_repo::count_open_agenda(pool, &delib.id).unwrap_or(0) as usize;
     decision.next_speakers = decision
@@ -760,7 +763,15 @@ pub async fn advance_one_deliberation(
                 t.status.as_str(),
             );
             for sp in &speakers {
-                match run_persona_deliberation_turn(pool, user_db, delib, sp, ctx.north_star.as_deref()).await {
+                match run_persona_deliberation_turn(
+                    pool,
+                    user_db,
+                    delib,
+                    sp,
+                    ctx.north_star.as_deref(),
+                )
+                .await
+                {
                     Ok(TurnOutcome::RequestedAction(action)) => {
                         // Park on the gated capability — no more speakers this tick.
                         if let Ok(json) = serde_json::to_string(&action) {
@@ -805,15 +816,29 @@ pub async fn advance_one_deliberation(
                 "proposal": proposal,
             })
             .to_string();
-            let _ = deliberation_repo::finalize(pool, &delib.id, t.status.as_str(), Some(&resolution_json), None);
+            let _ = deliberation_repo::finalize(
+                pool,
+                &delib.id,
+                t.status.as_str(),
+                Some(&resolution_json),
+                None,
+            );
             let note = match &proposal {
                 Some(p) => format!(
                     "Deliberation resolved — proposed: “{}” (awaiting your approval).",
                     p.title
                 ),
-                None => "Deliberation resolved (no proposal synthesized — awaiting your review).".to_string(),
+                None => "Deliberation resolved (no proposal synthesized — awaiting your review)."
+                    .to_string(),
             };
-            let _ = team_channel_repo::post_deliberation_turn(pool, &delib.id, &delib.team_id, "system", None, &note);
+            let _ = team_channel_repo::post_deliberation_turn(
+                pool,
+                &delib.id,
+                &delib.team_id,
+                "system",
+                None,
+                &note,
+            );
             tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved + proposal synthesized");
         }
         TickOutcome::Pause { reason } => {
@@ -1009,10 +1034,7 @@ fn extract_capability_title(body: &str, set: &mut std::collections::BTreeSet<Str
 /// top-level) plus all its tracks. The unit across which capability work is
 /// de-duped + shared (a parent and its parallel tracks are one logical effort).
 fn group_deliberation_ids(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
-    let root = delib
-        .parent_id
-        .clone()
-        .unwrap_or_else(|| delib.id.clone());
+    let root = delib.parent_id.clone().unwrap_or_else(|| delib.id.clone());
     let mut ids = std::collections::BTreeSet::new();
     ids.insert(root.clone());
     ids.insert(delib.id.clone());
@@ -1051,11 +1073,17 @@ fn finding_digest(body: &str) -> Option<(String, String)> {
     let title = rest[..b].trim().to_string();
     let after = rest.get(b + '”'.len_utf8()..).unwrap_or("");
     let lower = after.to_lowercase();
-    let anchor = ["verdict", "executive summary", "## summary", "ship/no-ship", "recommendation"]
-        .iter()
-        .filter_map(|k| lower.find(k))
-        .min()
-        .unwrap_or(0);
+    let anchor = [
+        "verdict",
+        "executive summary",
+        "## summary",
+        "ship/no-ship",
+        "recommendation",
+    ]
+    .iter()
+    .filter_map(|k| lower.find(k))
+    .min()
+    .unwrap_or(0);
     let digest: String = after[anchor..].chars().take(700).collect();
     let digest = digest.split_whitespace().collect::<Vec<_>>().join(" ");
     if digest.trim().is_empty() {
@@ -1070,7 +1098,8 @@ fn finding_digest(body: &str) -> Option<(String, String)> {
 /// result-CONTENT sharing the personas explicitly asked for). Deduped by title
 /// (latest wins), capped to the few most recent.
 fn gather_findings(pool: &DbPool, delib: &TeamDeliberation) -> Vec<(String, String)> {
-    let mut by_title: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    let mut by_title: std::collections::BTreeMap<String, String> =
+        std::collections::BTreeMap::new();
     for id in group_deliberation_ids(pool, delib) {
         if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
             // oldest-first so later (better-grounded) results overwrite earlier.
@@ -1096,11 +1125,9 @@ pub fn capability_active_in_group(pool: &DbPool, delib: &TeamDeliberation, title
         if id != delib.id {
             if let Ok(d) = deliberation_repo::get(pool, &id) {
                 if d.status == "action_running" {
-                    if let Some(pa) = d
-                        .pending_action
-                        .as_deref()
-                        .and_then(|j| serde_json::from_str::<crate::db::models::PendingAction>(j).ok())
-                    {
+                    if let Some(pa) = d.pending_action.as_deref().and_then(|j| {
+                        serde_json::from_str::<crate::db::models::PendingAction>(j).ok()
+                    }) {
                         if pa.use_case_title == title {
                             return true;
                         }
@@ -1393,13 +1420,15 @@ pub async fn run_persona_deliberation_turn(
                 tracing::info!(deliberation_id = %delib.id, persona_id, use_case = %use_case_id, "deliberation: capability already attempted — dropping re-request");
             } else {
                 tracing::info!(deliberation_id = %delib.id, persona_id, use_case = %use_case_id, "deliberation: persona requested a capability (gated — awaiting approval)");
-                return Ok(TurnOutcome::RequestedAction(crate::db::models::PendingAction {
-                    persona_id: persona_id.to_string(),
-                    persona_name: name,
-                    use_case_id,
-                    use_case_title,
-                    rationale: cap.rationale.clone(),
-                }));
+                return Ok(TurnOutcome::RequestedAction(
+                    crate::db::models::PendingAction {
+                        persona_id: persona_id.to_string(),
+                        persona_name: name,
+                        use_case_id,
+                        use_case_title,
+                        rationale: cap.rationale.clone(),
+                    },
+                ));
             }
         } else {
             tracing::info!(deliberation_id = %delib.id, persona_id, requested = %cap.use_case_id, "deliberation: persona requested an unknown capability — ignored");
@@ -1643,11 +1672,17 @@ pub fn build_split_prompt(
             }
         }
     }
-    let _ = writeln!(p, "\n## OPEN AGENDA (assign EVERY item id to exactly one track)");
+    let _ = writeln!(
+        p,
+        "\n## OPEN AGENDA (assign EVERY item id to exactly one track)"
+    );
     for (id, item) in open_agenda {
         let _ = writeln!(p, "- [{id}] {item}");
     }
-    let _ = writeln!(p, "\n## YOUR OUTPUT\nReturn EXACTLY one JSON object, no prose:");
+    let _ = writeln!(
+        p,
+        "\n## YOUR OUTPUT\nReturn EXACTLY one JSON object, no prose:"
+    );
     let _ = writeln!(
         p,
         r#"{{"tracks": [{{"focus": "<short track label>", "agenda_item_ids": ["<id>", ...], "persona_ids": ["<member id>", ...]}}]}}"#
@@ -1686,7 +1721,12 @@ pub async fn plan_split(
     delib: &TeamDeliberation,
 ) -> Result<Vec<TrackPlan>, AppError> {
     let (ctx, _) = build_moderator_context(pool, delib)?;
-    let prompt = build_split_prompt(&ctx.topic, ctx.goal.as_deref(), &ctx.roster, &ctx.open_agenda);
+    let prompt = build_split_prompt(
+        &ctx.topic,
+        ctx.goal.as_deref(),
+        &ctx.roster,
+        &ctx.open_agenda,
+    );
     let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
         prompt,
         user_db,
@@ -1702,11 +1742,7 @@ pub async fn plan_split(
 
 /// Build the merge prompt: fold the resolved tracks' outcomes into ONE coherent
 /// proposal. `tracks` is (focus, outcome summary). Pure + testable.
-pub fn build_merge_prompt(
-    topic: &str,
-    goal: Option<&str>,
-    tracks: &[(String, String)],
-) -> String {
+pub fn build_merge_prompt(topic: &str, goal: Option<&str>, tracks: &[(String, String)]) -> String {
     use std::fmt::Write as _;
     let mut p = String::new();
     let _ = writeln!(
@@ -1749,12 +1785,7 @@ pub async fn synthesize_merged_proposal(
                 .and_then(|v| v.get("proposal").cloned())
                 .filter(|p| !p.is_null())
                 .map(|p| {
-                    let g = |k: &str| {
-                        p.get(k)
-                            .and_then(|x| x.as_str())
-                            .unwrap_or("")
-                            .to_string()
-                    };
+                    let g = |k: &str| p.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
                     format!("{} — {} ({})", g("title"), g("objective"), g("summary"))
                 })
                 .unwrap_or_else(|| format!("(no proposal; status {})", t.status));
@@ -1796,7 +1827,13 @@ mod tests {
 
     #[test]
     fn progressed_round_resets_stall_and_continues() {
-        let t = plan_transition(prog(2, 2), &decision(RoundOutcome::Progressed, &["a"]), 3, None, false);
+        let t = plan_transition(
+            prog(2, 2),
+            &decision(RoundOutcome::Progressed, &["a"]),
+            3,
+            None,
+            false,
+        );
         assert_eq!(t.consecutive_stall_rounds, 0);
         assert_eq!(t.round, 3);
         assert_eq!(t.status, DeliberationStatus::Open);
@@ -1810,7 +1847,13 @@ mod tests {
 
     #[test]
     fn stalled_rounds_accumulate_then_escalate_at_limit() {
-        let t1 = plan_transition(prog(0, 0), &decision(RoundOutcome::Stalled, &["a"]), 2, None, false);
+        let t1 = plan_transition(
+            prog(0, 0),
+            &decision(RoundOutcome::Stalled, &["a"]),
+            2,
+            None,
+            false,
+        );
         assert_eq!(t1.consecutive_stall_rounds, 1);
         assert!(matches!(t1.outcome, TickOutcome::Continue { .. }));
 
@@ -1823,14 +1866,30 @@ mod tests {
         );
         assert_eq!(t2.consecutive_stall_rounds, STALL_LIMIT);
         assert_eq!(t2.status, DeliberationStatus::Escalated);
-        assert_eq!(t2.outcome, TickOutcome::Escalate { reason: "stall_limit" });
+        assert_eq!(
+            t2.outcome,
+            TickOutcome::Escalate {
+                reason: "stall_limit"
+            }
+        );
     }
 
     #[test]
     fn empty_agenda_resolves() {
-        let t = plan_transition(prog(1, 0), &decision(RoundOutcome::Progressed, &["a"]), 0, None, false);
+        let t = plan_transition(
+            prog(1, 0),
+            &decision(RoundOutcome::Progressed, &["a"]),
+            0,
+            None,
+            false,
+        );
         assert_eq!(t.status, DeliberationStatus::Resolved);
-        assert_eq!(t.outcome, TickOutcome::Resolve { reason: "agenda_clear" });
+        assert_eq!(
+            t.outcome,
+            TickOutcome::Resolve {
+                reason: "agenda_clear"
+            }
+        );
     }
 
     #[test]
@@ -1839,7 +1898,12 @@ mod tests {
         d.status = StatusSignal::Converged;
         let t = plan_transition(prog(1, 0), &d, 4, None, false);
         assert_eq!(t.status, DeliberationStatus::Resolved);
-        assert_eq!(t.outcome, TickOutcome::Resolve { reason: "converged" });
+        assert_eq!(
+            t.outcome,
+            TickOutcome::Resolve {
+                reason: "converged"
+            }
+        );
     }
 
     #[test]
@@ -1886,7 +1950,12 @@ mod tests {
             false,
         );
         assert_eq!(t.status, DeliberationStatus::Resolved);
-        assert_eq!(t.outcome, TickOutcome::Resolve { reason: "round_cap" });
+        assert_eq!(
+            t.outcome,
+            TickOutcome::Resolve {
+                reason: "round_cap"
+            }
+        );
     }
 
     #[test]
@@ -1924,17 +1993,30 @@ mod tests {
             floor_breach(5.0, Some(5.0), None, "2026-01-01T00:00:00Z"),
             Some(FloorBreach::Cost)
         );
-        assert_eq!(floor_breach(1.0, Some(5.0), None, "2026-01-01T00:00:00Z"), None);
+        assert_eq!(
+            floor_breach(1.0, Some(5.0), None, "2026-01-01T00:00:00Z"),
+            None
+        );
     }
 
     #[test]
     fn idle_floor_breach() {
         assert_eq!(
-            floor_breach(0.0, Some(5.0), Some("2026-01-01T00:00:00Z"), "2026-01-02T00:00:00Z"),
+            floor_breach(
+                0.0,
+                Some(5.0),
+                Some("2026-01-01T00:00:00Z"),
+                "2026-01-02T00:00:00Z"
+            ),
             Some(FloorBreach::Idle)
         );
         assert_eq!(
-            floor_breach(0.0, Some(5.0), Some("2026-01-02T00:00:00Z"), "2026-01-01T00:00:00Z"),
+            floor_breach(
+                0.0,
+                Some(5.0),
+                Some("2026-01-02T00:00:00Z"),
+                "2026-01-01T00:00:00Z"
+            ),
             None
         );
     }
@@ -1991,7 +2073,10 @@ mod moderator_tests {
         assert!(p.contains("[a1] How to test?"));
         assert!(p.contains("\"deliberation\""));
         // With a result pending, the moderator is told to react first.
-        let ctx2 = ModeratorContext { result_pending: true, ..ctx };
+        let ctx2 = ModeratorContext {
+            result_pending: true,
+            ..ctx
+        };
         assert!(build_moderator_prompt(&ctx2).contains("A RESULT JUST LANDED"));
     }
 
@@ -1999,14 +2084,35 @@ mod moderator_tests {
     fn resolve_speaker_handles_names_and_guessed_ids() {
         // Exactly the mismatches the live harness surfaced.
         let roster = vec![
-            RosterMember { id: "qa".into(), name: "QA Guardian".into(), core_profile: None },
-            RosterMember { id: "engineer".into(), name: "Dev Clone".into(), core_profile: None },
-            RosterMember { id: "product".into(), name: "Product Strategist".into(), core_profile: None },
+            RosterMember {
+                id: "qa".into(),
+                name: "QA Guardian".into(),
+                core_profile: None,
+            },
+            RosterMember {
+                id: "engineer".into(),
+                name: "Dev Clone".into(),
+                core_profile: None,
+            },
+            RosterMember {
+                id: "product".into(),
+                name: "Product Strategist".into(),
+                core_profile: None,
+            },
         ];
         assert_eq!(resolve_speaker("qa", &roster).as_deref(), Some("qa")); // exact id
-        assert_eq!(resolve_speaker("QA Guardian", &roster).as_deref(), Some("qa")); // display name
-        assert_eq!(resolve_speaker("dev_clone", &roster).as_deref(), Some("engineer")); // guessed id
-        assert_eq!(resolve_speaker("product_strategist", &roster).as_deref(), Some("product"));
+        assert_eq!(
+            resolve_speaker("QA Guardian", &roster).as_deref(),
+            Some("qa")
+        ); // display name
+        assert_eq!(
+            resolve_speaker("dev_clone", &roster).as_deref(),
+            Some("engineer")
+        ); // guessed id
+        assert_eq!(
+            resolve_speaker("product_strategist", &roster).as_deref(),
+            Some("product")
+        );
         assert_eq!(resolve_speaker("nobody", &roster), None); // hallucinated → dropped
     }
 }
@@ -2057,10 +2163,25 @@ mod turn_tests {
     #[test]
     fn turn_prompt_offers_real_capabilities_and_invites_acting() {
         let caps = [
-            ("run-regression".to_string(), "Run the regression suite".to_string()),
-            ("pull-metrics".to_string(), "Pull payment metrics".to_string()),
+            (
+                "run-regression".to_string(),
+                "Run the regression suite".to_string(),
+            ),
+            (
+                "pull-metrics".to_string(),
+                "Pull payment metrics".to_string(),
+            ),
         ];
-        let with = build_turn_prompt(
+        let with = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &caps, &[], &[]);
+        assert!(with.contains("## YOUR CAPABILITIES"));
+        assert!(with.contains("run-regression: Run the regression suite"));
+        assert!(with.contains("invoke_capability")); // invited to act
+                                                     // No capabilities → no capability section (the JSON schema still
+                                                     // names the field, so check the section HEADER, not the substring).
+        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[], &[], &[]);
+        assert!(!without.contains("## YOUR CAPABILITIES"));
+        // Already-attempted capabilities are listed so the persona won't re-request.
+        let dedup = build_turn_prompt(
             "QA",
             "id",
             None,
@@ -2068,20 +2189,6 @@ mod turn_tests {
             "topic",
             &[],
             &[],
-            &caps,
-            &[],
-            &[],
-        );
-        assert!(with.contains("## YOUR CAPABILITIES"));
-        assert!(with.contains("run-regression: Run the regression suite"));
-        assert!(with.contains("invoke_capability")); // invited to act
-                                                      // No capabilities → no capability section (the JSON schema still
-                                                      // names the field, so check the section HEADER, not the substring).
-        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[], &[], &[]);
-        assert!(!without.contains("## YOUR CAPABILITIES"));
-        // Already-attempted capabilities are listed so the persona won't re-request.
-        let dedup = build_turn_prompt(
-            "QA", "id", None, None, "topic", &[], &[],
             &[("uc-x".to_string(), "Run X".to_string())],
             &["Run X".to_string()],
             &[],
@@ -2090,8 +2197,19 @@ mod turn_tests {
         assert!(dedup.contains("- Run X"));
         // PRIOR FINDINGS digests are injected so tracks build on them.
         let shared = build_turn_prompt(
-            "QA", "id", None, None, "topic", &[], &[], &[], &[],
-            &[("Security Scan".to_string(), "Verdict: SHIP, 0 critical".to_string())],
+            "QA",
+            "id",
+            None,
+            None,
+            "topic",
+            &[],
+            &[],
+            &[],
+            &[],
+            &[(
+                "Security Scan".to_string(),
+                "Verdict: SHIP, 0 critical".to_string(),
+            )],
         );
         assert!(shared.contains("PRIOR FINDINGS"));
         assert!(shared.contains("Security Scan: Verdict: SHIP, 0 critical"));
@@ -2116,15 +2234,23 @@ mod turn_tests {
     #[test]
     fn resolve_capability_exact_then_fuzzy_else_none() {
         let caps = [
-            ("run-regression".to_string(), "Run the regression suite".to_string()),
-            ("pull-metrics".to_string(), "Pull payment metrics".to_string()),
+            (
+                "run-regression".to_string(),
+                "Run the regression suite".to_string(),
+            ),
+            (
+                "pull-metrics".to_string(),
+                "Pull payment metrics".to_string(),
+            ),
         ];
         assert_eq!(
             resolve_capability("run-regression", &caps).unwrap().0,
             "run-regression"
         ); // exact id
         assert_eq!(
-            resolve_capability("Run the regression suite", &caps).unwrap().0,
+            resolve_capability("Run the regression suite", &caps)
+                .unwrap()
+                .0,
             "run-regression"
         ); // by title
         assert_eq!(
@@ -2240,8 +2366,7 @@ mod core_content_tests {
             env!("CARGO_MANIFEST_DIR"),
             rel
         );
-        let raw =
-            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {rel}: {e}"));
+        let raw = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {rel}: {e}"));
         let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
         let core = v
             .get("payload")
@@ -2249,7 +2374,8 @@ mod core_content_tests {
             .and_then(|p| p.get("core"))
             .cloned()
             .unwrap_or_else(|| panic!("{rel}: missing payload.persona.core"));
-        serde_json::from_value(core).unwrap_or_else(|e| panic!("{rel}: core is not a PersonaCore: {e}"))
+        serde_json::from_value(core)
+            .unwrap_or_else(|e| panic!("{rel}: core is not a PersonaCore: {e}"))
     }
 
     #[test]
@@ -2267,7 +2393,10 @@ mod core_content_tests {
                 ("speed_vs_quality", c.speed_vs_quality),
                 ("deference", c.deference),
             ] {
-                assert!((0.0..=1.0).contains(&d), "{rel}: {name} dial {d} out of [0,1]");
+                assert!(
+                    (0.0..=1.0).contains(&d),
+                    "{rel}: {name} dial {d} out of [0,1]"
+                );
             }
             assert!(
                 matches!(
@@ -2300,7 +2429,10 @@ mod core_content_tests {
             security.risk_tolerance < product.risk_tolerance - 0.3,
             "security should be far more risk-averse than product"
         );
-        assert!(architect.speed_vs_quality < 0.4, "architect should lean to quality");
+        assert!(
+            architect.speed_vs_quality < 0.4,
+            "architect should lean to quality"
+        );
         assert!(
             product.risk_tolerance > 0.5 && qa.risk_tolerance < 0.3,
             "the ship-fast vs verify-first tension must be encoded"

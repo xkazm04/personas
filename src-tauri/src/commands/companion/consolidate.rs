@@ -433,9 +433,8 @@ pub fn companion_pin_widget_to_cockpit(
         .unwrap_or_else(|e| e.into_inner());
     let now = chrono::Utc::now().to_rfc3339();
     let mut spec: serde_json::Value = match cockpit::load_cockpit(&state.user_db)? {
-        Some(c) => serde_json::from_str(&c.spec_json).unwrap_or_else(|_| {
-            serde_json::json!({ "title": "Cockpit", "widgets": [] })
-        }),
+        Some(c) => serde_json::from_str(&c.spec_json)
+            .unwrap_or_else(|_| serde_json::json!({ "title": "Cockpit", "widgets": [] })),
         None => serde_json::json!({ "title": "Cockpit", "widgets": [] }),
     };
     let widgets = spec
@@ -458,15 +457,10 @@ pub fn companion_pin_widget_to_cockpit(
     // are normalized by serde_json's PartialEq.
     let mut promoted = false;
     for w in widgets.iter_mut() {
-        let kind_match =
-            w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str());
-        let config_match =
-            w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config;
+        let kind_match = w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str());
+        let config_match = w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config;
         if kind_match && config_match {
-            let already_pinned = w
-                .get("pinned")
-                .and_then(|p| p.as_bool())
-                .unwrap_or(false);
+            let already_pinned = w.get("pinned").and_then(|p| p.as_bool()).unwrap_or(false);
             if already_pinned {
                 return Ok(());
             }

@@ -874,10 +874,7 @@ mod tests {
         // Healthcheck commands trigger outbound HTTP using live secrets,
         // so they require the IPC session token even though their callers
         // (status pages) feel read-only.
-        assert_eq!(
-            command_tier("healthcheck_credential"),
-            AuthTier::Privileged
-        );
+        assert_eq!(command_tier("healthcheck_credential"), AuthTier::Privileged);
         assert_eq!(
             command_tier("healthcheck_credential_preview"),
             AuthTier::Privileged
@@ -1010,7 +1007,11 @@ mod tests {
             } else if let Some(name) = direct_call_command(line) {
                 *checked += 1;
                 if !PRIVILEGED_COMMANDS_SET.contains(name) {
-                    missing.push(format!("{name} (direct call, {}:{})", path.display(), i + 1));
+                    missing.push(format!(
+                        "{name} (direct call, {}:{})",
+                        path.display(),
+                        i + 1
+                    ));
                 }
             }
         }
@@ -1095,18 +1096,33 @@ mod tests {
         ("import_portability_bundle_from_path", "OWED: bulk import"),
         // — deliberate exclusions, documented at ipc_auth.rs:396: the wrapper
         //   already gates these and listing them would double-guard —
-        ("export_credentials", "deliberate: wrapper-level gate, see :396"),
-        ("import_credentials", "deliberate: wrapper-level gate, see :396"),
+        (
+            "export_credentials",
+            "deliberate: wrapper-level gate, see :396",
+        ),
+        (
+            "import_credentials",
+            "deliberate: wrapper-level gate, see :396",
+        ),
         ("export_full", "deliberate: wrapper-level gate, see :396"),
-        ("import_portability_bundle", "deliberate: wrapper-level gate, see :396"),
+        (
+            "import_portability_bundle",
+            "deliberate: wrapper-level gate, see :396",
+        ),
         ("get_api_proxy_metrics", "OWED: verify tier"),
         // — deliberate exclusions (ipc_auth.rs:245-252): the wrapper x-ipc-token
         //   check fails intermittently on Windows WebView2 when the renderer
         //   BATCHES several privileged invokes during page init. Their bodies call
         //   async require_privileged, which verifies init and emits an audit trace
         //   but does NOT authorize — audit depth, not access control. —
-        ("execute_api_request", "deliberate: WebView2 batched-invoke race, see :245"),
-        ("save_api_definition", "deliberate: WebView2 batched-invoke race, see :245"),
+        (
+            "execute_api_request",
+            "deliberate: WebView2 batched-invoke race, see :245",
+        ),
+        (
+            "save_api_definition",
+            "deliberate: WebView2 batched-invoke race, see :245",
+        ),
         // — OPERATOR DECISION REQUIRED —
     ];
 

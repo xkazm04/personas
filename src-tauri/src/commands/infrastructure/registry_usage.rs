@@ -119,7 +119,10 @@ pub fn dev_tools_write_registry_usage(
         // SQLite's `datetime()` yields `YYYY-MM-DD HH:MM:SS`; the lane wants
         // ISO-8601, and the gate checks it.
         if let Some(ts) = last_used {
-            entry.insert("lastUsed".into(), json!(format!("{}Z", ts.trim().replace(' ', "T"))));
+            entry.insert(
+                "lastUsed".into(),
+                json!(format!("{}Z", ts.trim().replace(' ', "T"))),
+            );
         }
         skills.insert(name, serde_json::Value::Object(entry));
     }
@@ -179,7 +182,10 @@ mod tests {
 
     #[test]
     fn usage_file_rel_matches_the_slug_the_writer_uses() {
-        assert_eq!(usage_file_rel("Dev Box").as_deref(), Some("usage/dev-box.json"));
+        assert_eq!(
+            usage_file_rel("Dev Box").as_deref(),
+            Some("usage/dev-box.json")
+        );
         assert_eq!(usage_file_rel("!!!"), None);
     }
 

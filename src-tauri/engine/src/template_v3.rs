@@ -19,8 +19,8 @@
 
 use serde_json::{json, Map, Value};
 
-use personas_db::models::RecipeDefinition;
 use personas_core::error::AppError;
+use personas_db::models::RecipeDefinition;
 
 /// Stage B Phase 2 — hydrate any `recipe_ref` shaped use cases in `payload`
 /// in place by looking up the referenced recipe and replacing the
@@ -44,18 +44,14 @@ use personas_core::error::AppError;
 /// corresponding binding value. Phase 1b's migration leaves bindings empty,
 /// so the substitution is a no-op for derived recipes today; the path is
 /// here for future template authors who introduce parameterization.
-pub fn hydrate_recipe_refs<F>(
-    payload: &mut Value,
-    lookup_recipe: F,
-) -> Result<(), AppError>
+pub fn hydrate_recipe_refs<F>(payload: &mut Value, lookup_recipe: F) -> Result<(), AppError>
 where
     F: Fn(&str) -> Result<RecipeDefinition, AppError>,
 {
     let Some(obj) = payload.as_object_mut() else {
         return Ok(());
     };
-    let Some(use_cases) = obj.get_mut("use_cases").and_then(|v| v.as_array_mut())
-    else {
+    let Some(use_cases) = obj.get_mut("use_cases").and_then(|v| v.as_array_mut()) else {
         return Ok(());
     };
 
@@ -69,17 +65,12 @@ where
     // with zero UCs at all (or pure-v2 payloads that don't look like v3 in
     // the first place) are still no-ops, so callers can pass arbitrary
     // payloads without fear of false-positive errors.
-    let any_recipe_ref = use_cases.iter().any(|uc| {
-        uc.as_object()
-            .and_then(|o| o.get("recipe_ref"))
-            .is_some()
-    });
+    let any_recipe_ref = use_cases
+        .iter()
+        .any(|uc| uc.as_object().and_then(|o| o.get("recipe_ref")).is_some());
     if any_recipe_ref {
         for (idx, uc) in use_cases.iter().enumerate() {
-            let has_ref = uc
-                .as_object()
-                .and_then(|o| o.get("recipe_ref"))
-                .is_some();
+            let has_ref = uc.as_object().and_then(|o| o.get("recipe_ref")).is_some();
             if !has_ref {
                 let uc_id = uc
                     .as_object()
@@ -110,9 +101,7 @@ where
             .get("id")
             .and_then(|v| v.as_str())
             .ok_or_else(|| {
-                AppError::Validation(
-                    "use_case.recipe_ref is missing required `id` field".into(),
-                )
+                AppError::Validation("use_case.recipe_ref is missing required `id` field".into())
             })?
             .to_string();
 
@@ -178,9 +167,8 @@ fn apply_bindings(value: &mut Value, bindings: &Map<String, Value>) -> Result<()
         return Ok(());
     }
 
-    let mut serialized = serde_json::to_string(value).map_err(|e| {
-        AppError::Internal(format!("hydrate apply_bindings serialize: {e}"))
-    })?;
+    let mut serialized = serde_json::to_string(value)
+        .map_err(|e| AppError::Internal(format!("hydrate apply_bindings serialize: {e}")))?;
 
     for (key, binding_value) in bindings.iter() {
         let placeholder = format!("{{{{{}}}}}", key); // produces literal {{key}}
@@ -191,9 +179,8 @@ fn apply_bindings(value: &mut Value, bindings: &Map<String, Value>) -> Result<()
         serialized = serialized.replace(&placeholder, &replacement);
     }
 
-    *value = serde_json::from_str(&serialized).map_err(|e| {
-        AppError::Internal(format!("hydrate apply_bindings deserialize: {e}"))
-    })?;
+    *value = serde_json::from_str(&serialized)
+        .map_err(|e| AppError::Internal(format!("hydrate apply_bindings deserialize: {e}")))?;
 
     Ok(())
 }
@@ -1652,10 +1639,7 @@ mod tests {
 
         hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
 
-        let ucs = payload
-            .get("use_cases")
-            .and_then(|v| v.as_array())
-            .unwrap();
+        let ucs = payload.get("use_cases").and_then(|v| v.as_array()).unwrap();
         assert_eq!(ucs.len(), 1);
         // The recipe_ref UC was replaced with the stored inline shape.
         assert_eq!(ucs[0].get("id").and_then(|v| v.as_str()), Some("uc_x"));
@@ -1663,7 +1647,10 @@ mod tests {
             ucs[0].get("name").and_then(|v| v.as_str()),
             Some("Hydrated UC")
         );
-        assert!(ucs[0].get("recipe_ref").is_none(), "recipe_ref should be gone post-hydration");
+        assert!(
+            ucs[0].get("recipe_ref").is_none(),
+            "recipe_ref should be gone post-hydration"
+        );
     }
 
     // Test removed in Stage B Phase 2.3: the mixed inline-+-recipe_ref shape
@@ -1785,7 +1772,10 @@ mod tests {
             "hydration must stamp source_recipe_id"
         );
         strip_provenance_uc(&mut hydrated_uc);
-        assert_eq!(hydrated_uc, stored_uc, "empty bindings = exact passthrough (modulo provenance)");
+        assert_eq!(
+            hydrated_uc, stored_uc,
+            "empty bindings = exact passthrough (modulo provenance)"
+        );
     }
 
     /// Remove the provenance keys hydration injects — used by the parity

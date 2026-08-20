@@ -195,7 +195,10 @@ pub async fn dev_tools_run_static_scan(
     let raw_output_excerpt = if stdout.is_empty() {
         None
     } else if stdout.len() > 4096 {
-        Some(format!("{}…", crate::utils::text::truncate_on_char_boundary(&stdout, 4096)))
+        Some(format!(
+            "{}…",
+            crate::utils::text::truncate_on_char_boundary(&stdout, 4096)
+        ))
     } else {
         Some(stdout)
     };
@@ -506,7 +509,10 @@ mod tests {
         ]"#;
         let f = parse_impeccable(out);
         assert_eq!(f.len(), 1);
-        assert_eq!(f[0].title, "[side-tab] Side-tab accent border (src/a.tsx:147)");
+        assert_eq!(
+            f[0].title,
+            "[side-tab] Side-tab accent border (src/a.tsx:147)"
+        );
         assert_eq!(f[0].description.as_deref(), Some("Matched: `border-l-2`"));
         assert_eq!(f[0].reasoning.as_deref(), Some("Thick colored border."));
     }

@@ -28,7 +28,9 @@ use std::sync::Arc;
 
 use tauri::AppHandle;
 
-use crate::db::models::{CreateTeamAssignmentInput, CreateTeamAssignmentStepInput, Persona, PersonaTrustLevel};
+use crate::db::models::{
+    CreateTeamAssignmentInput, CreateTeamAssignmentStepInput, Persona, PersonaTrustLevel,
+};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::dev_tools as dev_tools_repo;
 use crate::db::repos::orchestration::team_assignments as assignment_repo;
@@ -106,7 +108,12 @@ pub async fn advance_goal(
         ));
     }
 
-    let goal_text = match goal.description.as_deref().map(str::trim).filter(|d| !d.is_empty()) {
+    let goal_text = match goal
+        .description
+        .as_deref()
+        .map(str::trim)
+        .filter(|d| !d.is_empty())
+    {
         Some(d) => format!("{}\n{}", goal.title, d),
         None => goal.title.clone(),
     };
@@ -165,7 +172,8 @@ pub async fn advance_goal(
             .collect()
     } else {
         let candidates = matching::extract_candidates(&personas);
-        let proposed = matching::decompose_goal(&goal_text, &candidates, DECOMPOSE_TIMEOUT_SECS).await?;
+        let proposed =
+            matching::decompose_goal(&goal_text, &candidates, DECOMPOSE_TIMEOUT_SECS).await?;
         if proposed.is_empty() {
             return Err(AppError::Internal(
                 "Goal decomposition returned zero steps".into(),

@@ -184,7 +184,8 @@ impl EventProcessor for WebhookProcessor {
                 event_ctx,
             ),
         };
-        let provider = NotificationProvider::from_str(&sub.provider).unwrap_or_else(|never| match never {});
+        let provider =
+            NotificationProvider::from_str(&sub.provider).unwrap_or_else(|never| match never {});
         let body = providers::build_body(provider, &rendered, event_ctx);
 
         let outcome = dispatch_to_url(&url, provider, body).await;
@@ -282,7 +283,11 @@ pub mod providers {
     /// `rendered` is the user-provided template's output (already substituted)
     /// or, if the subscription has no template, the default summary string.
     /// `event_ctx` is the full event JSON, included for the generic provider.
-    pub fn build_body(provider: NotificationProvider, rendered: &str, event_ctx: &JsonValue) -> JsonValue {
+    pub fn build_body(
+        provider: NotificationProvider,
+        rendered: &str,
+        event_ctx: &JsonValue,
+    ) -> JsonValue {
         match provider {
             NotificationProvider::Slack => json!({ "text": rendered }),
             NotificationProvider::Discord => json!({ "content": rendered }),
@@ -582,7 +587,10 @@ fn breaker_note_skip(sub_id: &str) {
 fn seed_watermark_to_newest(pool: &DbPool) -> Result<(), AppError> {
     // `get_recent` orders by `created_at DESC, id DESC`, so the first row is the
     // newest event; the `id` tiebreaker matches the dispatch cursor's composite.
-    let newest = match event_repo::get_recent(pool, Some(1), None)?.into_iter().next() {
+    let newest = match event_repo::get_recent(pool, Some(1), None)?
+        .into_iter()
+        .next()
+    {
         Some(e) => e,
         None => return Ok(()), // no events yet — nothing to seed past
     };
@@ -660,7 +668,10 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
         let event_ctx = event_to_json(event);
 
         for (idx, patterns) in &sub_patterns {
-            if !patterns.iter().any(|p| pattern_matches(p, &event.event_type)) {
+            if !patterns
+                .iter()
+                .any(|p| pattern_matches(p, &event.event_type))
+            {
                 continue;
             }
             let sub = &subscriptions[*idx];
@@ -734,10 +745,7 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
 // One-shot test dispatch — used by `test_notification_subscription` command
 // =============================================================================
 
-pub async fn test_dispatch(
-    pool: &DbPool,
-    sub_id: &str,
-) -> Result<DispatchOutcome, AppError> {
+pub async fn test_dispatch(pool: &DbPool, sub_id: &str) -> Result<DispatchOutcome, AppError> {
     let sub = sub_repo::get_by_id(pool, sub_id)?;
     let url = resolve_webhook_url(
         pool,
@@ -759,7 +767,8 @@ pub async fn test_dispatch(
             sub.label
         ),
     };
-    let provider = NotificationProvider::from_str(&sub.provider).unwrap_or_else(|never| match never {});
+    let provider =
+        NotificationProvider::from_str(&sub.provider).unwrap_or_else(|never| match never {});
     let body = providers::build_body(provider, &rendered, &synthetic);
     let outcome = dispatch_to_url(&url, provider, body).await;
     let status = if outcome.ok { "success" } else { "failed" };
@@ -963,7 +972,7 @@ mod tests {
             breaker_record(id, false);
         }
         assert_ne!(breaker_decide(id), BreakerAction::Deliver); // broken
-        // A successful probe clears the breaker and the sub is healthy again.
+                                                                // A successful probe clears the breaker and the sub is healthy again.
         assert!(!breaker_record(id, true));
         assert_eq!(breaker_decide(id), BreakerAction::Deliver);
     }

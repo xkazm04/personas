@@ -77,7 +77,9 @@ pub fn file_claim(
     source: &str,
 ) -> Result<MemoryClaim, AppError> {
     if !CLAIM_VERDICTS.contains(&verdict) {
-        return Err(AppError::Validation(format!("invalid claim verdict: {verdict}")));
+        return Err(AppError::Validation(format!(
+            "invalid claim verdict: {verdict}"
+        )));
     }
     let conn = pool.get()?;
     let tx = conn.unchecked_transaction()?;
@@ -126,7 +128,9 @@ pub fn resolve_memory_claims(
     note: Option<&str>,
 ) -> Result<i64, AppError> {
     if !CLAIM_RESOLUTIONS.contains(&resolution) {
-        return Err(AppError::Validation(format!("invalid claim resolution: {resolution}")));
+        return Err(AppError::Validation(format!(
+            "invalid claim resolution: {resolution}"
+        )));
     }
     let conn = pool.get()?;
     let tx = conn.unchecked_transaction()?;

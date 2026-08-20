@@ -316,9 +316,9 @@ pub fn next_local_hour_utc(hour: u32) -> String {
     if now.hour() >= hour {
         day = day + ChronoDuration::days(1);
     }
-    let naive = day.and_hms_opt(hour, 0, 0).unwrap_or_else(|| {
-        day.and_hms_opt(0, 0, 0).expect("midnight is always valid")
-    });
+    let naive = day
+        .and_hms_opt(hour, 0, 0)
+        .unwrap_or_else(|| day.and_hms_opt(0, 0, 0).expect("midnight is always valid"));
     match Local.from_local_datetime(&naive) {
         chrono::LocalResult::Single(dt) | chrono::LocalResult::Ambiguous(dt, _) => {
             dt.with_timezone(&Utc).to_rfc3339()

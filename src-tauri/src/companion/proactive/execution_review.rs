@@ -67,7 +67,9 @@ pub async fn run_execution_review_debouncer(
     user_db: crate::db::UserDbPool,
     sys_db: DbPool,
     app: tauri::AppHandle,
-    #[cfg(feature = "ml")] embedder: Option<std::sync::Arc<crate::engine::embedder::EmbeddingManager>>,
+    #[cfg(feature = "ml")] embedder: Option<
+        std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    >,
 ) {
     loop {
         // Park until the first execution-finish since the last pass.
@@ -76,8 +78,8 @@ pub async fn run_execution_review_debouncer(
         // arriving, so a burst of scheduled runs collapses into one pass.
         loop {
             match tokio::time::timeout(DEBOUNCE, REVIEW_SIGNAL.notified()).await {
-                Ok(_) => continue,   // another finish landed — extend the window
-                Err(_) => break,     // quiet for DEBOUNCE — go review
+                Ok(_) => continue, // another finish landed — extend the window
+                Err(_) => break,   // quiet for DEBOUNCE — go review
             }
         }
         if !crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
@@ -98,7 +100,10 @@ pub async fn run_execution_review_debouncer(
         .await;
         match res {
             Ok(n) if n > 0 => {
-                tracing::info!(surfaced = n, "exec-review debouncer: triage surfaced finding(s)")
+                tracing::info!(
+                    surfaced = n,
+                    "exec-review debouncer: triage surfaced finding(s)"
+                )
             }
             Ok(_) => {}
             Err(e) => tracing::warn!(error = %e, "exec-review debouncer: triage pass failed"),
@@ -237,8 +242,17 @@ fn collect_candidates(
 
     let mut candidates = Vec::new();
     let mut qualifying_overflow = 0usize;
-    for (id, persona_id, persona_name, status, duration_ms, cost_usd, error_message, output_data, created_at) in
-        rows
+    for (
+        id,
+        persona_id,
+        persona_name,
+        status,
+        duration_ms,
+        cost_usd,
+        error_message,
+        output_data,
+        created_at,
+    ) in rows
     {
         let b = baseline_map.get(&persona_id);
         let expensive_threshold = baselines::PersonaBaseline::expensive_threshold(b, EXPENSIVE_USD);
@@ -554,16 +568,21 @@ fn truncate_tail(s: &str, max: usize) -> String {
     }
     // Keep the TAIL — for errors and outputs the end is usually the
     // informative part (the actual failure, the final answer).
-    let tail: String = s.chars().rev().take(max).collect::<Vec<_>>().into_iter().rev().collect();
+    let tail: String = s
+        .chars()
+        .rev()
+        .take(max)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
     format!("…{tail}")
 }
 
 /// Persist the new cursor value. Best-effort: a write failure means we
 /// might re-review next tick (the dedupe degrades, it doesn't break).
 fn advance_cursor(sys_db: &DbPool, newest: &str) {
-    if let Err(e) =
-        crate::db::repos::core::settings::set(sys_db, CURSOR_KEY, newest)
-    {
+    if let Err(e) = crate::db::repos::core::settings::set(sys_db, CURSOR_KEY, newest) {
         tracing::warn!(error = %e, "exec_review: failed to advance cursor");
     }
 }
@@ -616,7 +635,12 @@ fn clear_retry(sys_db: &DbPool) {
 /// Handle a triage CLI/parse failure: bump the attempt count and, only once the
 /// batch has failed [`MAX_TRIAGE_ATTEMPTS`] times, advance past it. Until then
 /// the main cursor stays put so the next pass re-scans the same window.
-fn handle_triage_failure(sys_db: &DbPool, window_cursor: &str, newest: Option<&str>, attempts: u32) {
+fn handle_triage_failure(
+    sys_db: &DbPool,
+    window_cursor: &str,
+    newest: Option<&str>,
+    attempts: u32,
+) {
     let next = attempts + 1;
     if next >= MAX_TRIAGE_ATTEMPTS {
         if let Some(n) = newest {
@@ -644,7 +668,9 @@ pub async fn review_recent_executions(
     user_db: &crate::db::UserDbPool,
     sys_db: &DbPool,
     app: &tauri::AppHandle,
-    #[cfg(feature = "ml")] embedder: Option<&std::sync::Arc<crate::engine::embedder::EmbeddingManager>>,
+    #[cfg(feature = "ml")] embedder: Option<
+        &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    >,
 ) -> Result<usize, AppError> {
     // In-flight guard. A triage CLI turn can run longer than the 5-min tick
     // interval, and log_wake is written only AFTER it finishes — so the wake
@@ -676,12 +702,8 @@ pub async fn review_recent_executions(
     // Wake window (docs/plans/athena-wake-window.md): gate BEFORE the cursor
     // advance so a skipped tick leaves the backlog accumulating. Exec triage
     // is observability — no priority bypass.
-    let wake = crate::companion::wake_window::gate(
-        sys_db,
-        "exec_triage",
-        scan.candidates.len(),
-        false,
-    );
+    let wake =
+        crate::companion::wake_window::gate(sys_db, "exec_triage", scan.candidates.len(), false);
     if !wake.due {
         return Ok(0);
     }
@@ -715,21 +737,18 @@ pub async fn review_recent_executions(
     );
 
     let prompt = build_triage_prompt(&groups, overflow, saturated);
-    let (blob, turn_id) = match crate::companion::athena_reaction::cli_text_tracked(
-        prompt,
-        user_db,
-        "exec_triage",
-    )
-    .await
-    {
-        Ok(x) => x,
-        Err(e) => {
-            // Triage CLI failed (rate/usage limit, spawn error, …) — bounded
-            // retry instead of silently skipping the batch.
-            handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
-            return Err(e);
-        }
-    };
+    let (blob, turn_id) =
+        match crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "exec_triage")
+            .await
+        {
+            Ok(x) => x,
+            Err(e) => {
+                // Triage CLI failed (rate/usage limit, spawn error, …) — bounded
+                // retry instead of silently skipping the batch.
+                handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
+                return Err(e);
+            }
+        };
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
         if let Some(tid) = &turn_id {
@@ -740,7 +759,12 @@ pub async fn review_recent_executions(
             );
         }
         crate::companion::wake_window::log_wake(
-            sys_db, "exec_triage", wake.reason, wake_pending, 1, 0,
+            sys_db,
+            "exec_triage",
+            wake.reason,
+            wake_pending,
+            1,
+            0,
             wake_started.elapsed().as_millis() as u64,
         );
         handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
@@ -754,8 +778,16 @@ pub async fn review_recent_executions(
     // Record the triage verdict distribution on the ledger row so the Athena
     // health funnel (A4) can show drop / digest / deep-dive at a glance.
     if let Some(tid) = &turn_id {
-        let deep_dive = decision.groups.iter().filter(|v| v.verdict == "deep_dive").count();
-        let digest = decision.groups.iter().filter(|v| v.verdict == "digest").count();
+        let deep_dive = decision
+            .groups
+            .iter()
+            .filter(|v| v.verdict == "deep_dive")
+            .count();
+        let digest = decision
+            .groups
+            .iter()
+            .filter(|v| v.verdict == "digest")
+            .count();
         let drop = decision.groups.len().saturating_sub(deep_dive + digest);
         let outcome = serde_json::json!({
             "groups": decision.groups.len(),
@@ -768,7 +800,12 @@ pub async fn review_recent_executions(
         crate::companion::turn_ledger::update_outcome(user_db, tid, &outcome);
     }
     crate::companion::wake_window::log_wake(
-        sys_db, "exec_triage", wake.reason, wake_pending, 1, decision.groups.len(),
+        sys_db,
+        "exec_triage",
+        wake.reason,
+        wake_pending,
+        1,
+        decision.groups.len(),
         wake_started.elapsed().as_millis() as u64,
     );
 
@@ -783,7 +820,10 @@ pub async fn review_recent_executions(
         match v.verdict.as_str() {
             "deep_dive" => {
                 let line = if v.line.trim().is_empty() {
-                    format!("{} — {} run(s) flagged {}", g.persona_name, g.count, g.reason)
+                    format!(
+                        "{} — {} run(s) flagged {}",
+                        g.persona_name, g.count, g.reason
+                    )
                 } else {
                     v.line.trim().to_string()
                 };
@@ -871,7 +911,10 @@ mod tests {
     /// retry helpers read and write.
     fn sys_test_pool() -> DbPool {
         let manager = SqliteConnectionManager::memory();
-        let pool = r2d2::Pool::builder().max_size(1).build(manager).expect("pool");
+        let pool = r2d2::Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("pool");
         pool.get()
             .unwrap()
             .execute_batch(
@@ -895,22 +938,39 @@ mod tests {
         // First failure: cursor held (main cursor unset), one attempt recorded.
         handle_triage_failure(&sys, cursor, Some(newest), 0);
         assert_eq!(retry_attempts_for(&sys, cursor), 1);
-        assert_eq!(get(CURSOR_KEY), None, "main cursor must NOT advance on first failure");
+        assert_eq!(
+            get(CURSOR_KEY),
+            None,
+            "main cursor must NOT advance on first failure"
+        );
 
         // A retry anchored to a different cursor reads as fresh (0).
         assert_eq!(retry_attempts_for(&sys, "different-cursor"), 0);
 
         // Second failure hits the cap: advance past the batch + clear retry.
         handle_triage_failure(&sys, cursor, Some(newest), 1);
-        assert_eq!(retry_attempts_for(&sys, cursor), 0, "retry cleared after giving up");
-        assert_eq!(get(CURSOR_KEY).as_deref(), Some(newest), "cursor advances after 2 failures");
+        assert_eq!(
+            retry_attempts_for(&sys, cursor),
+            0,
+            "retry cleared after giving up"
+        );
+        assert_eq!(
+            get(CURSOR_KEY).as_deref(),
+            Some(newest),
+            "cursor advances after 2 failures"
+        );
     }
 
     fn mk_candidate(persona: &str, reason: &'static str, cost: f64) -> ReviewCandidate {
         ReviewCandidate {
             execution_id: format!("exec-{persona}-{reason}"),
             persona_name: persona.to_string(),
-            status: if reason == "failed" { "failed" } else { "completed" }.to_string(),
+            status: if reason == "failed" {
+                "failed"
+            } else {
+                "completed"
+            }
+            .to_string(),
             duration_ms: Some(1_000),
             cost_usd: cost,
             error_tail: None,

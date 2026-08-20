@@ -79,8 +79,7 @@ fn pairing_slot() -> &'static RwLock<String> {
     static TOKEN: OnceLock<RwLock<String>> = OnceLock::new();
     TOKEN.get_or_init(|| {
         RwLock::new(
-            env_pairing_token()
-                .unwrap_or_else(|| uuid::Uuid::new_v4().simple().to_string()),
+            env_pairing_token().unwrap_or_else(|| uuid::Uuid::new_v4().simple().to_string()),
         )
     })
 }

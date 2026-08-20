@@ -134,7 +134,11 @@ pub fn get(pool: &DbPool, id: &str) -> Result<Option<PolicyProposal>, AppError> 
     Ok(row)
 }
 
-pub fn list(pool: &DbPool, only_pending: bool, limit: u32) -> Result<Vec<PolicyProposal>, AppError> {
+pub fn list(
+    pool: &DbPool,
+    only_pending: bool,
+    limit: u32,
+) -> Result<Vec<PolicyProposal>, AppError> {
     let conn = pool.get()?;
     let where_clause = if only_pending {
         "WHERE status = 'pending'"
@@ -277,7 +281,12 @@ mod tests {
     fn create_get_roundtrip_with_typed_payload() {
         let pool = test_pool();
         let routing = sample_routing();
-        let id = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         let got = get(&pool, &id).unwrap().unwrap();
         assert_eq!(got.kind, "routing_rule");
         assert_eq!(got.status, "pending");
@@ -293,12 +302,22 @@ mod tests {
     fn apply_and_decline_transitions_are_single_shot() {
         let pool = test_pool();
         let routing = sample_routing();
-        let id = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         assert!(mark_applied(&pool, &id).unwrap());
         assert!(!mark_applied(&pool, &id).unwrap()); // no re-apply
         assert!(!mark_declined(&pool, &id, Some("late")).unwrap()); // no post-apply decline
 
-        let id2 = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id2 = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         assert!(mark_declined(&pool, &id2, Some("prefer opus quality")).unwrap());
         let got = get(&pool, &id2).unwrap().unwrap();
         assert_eq!(got.status, "declined");
@@ -311,7 +330,12 @@ mod tests {
         let pool = test_pool();
         let routing = sample_routing();
         assert!(!exists_similar_routing(&pool, Some("research"), "sonnet").unwrap());
-        let id = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         assert!(exists_similar_routing(&pool, Some("research"), "sonnet").unwrap());
         // Different category or model → not similar.
         assert!(!exists_similar_routing(&pool, Some("dev"), "sonnet").unwrap());
@@ -322,7 +346,12 @@ mod tests {
         // Applied rows stop blocking (a later re-proposal after evidence
         // changes is legitimate — the rule is live and `already_routed`
         // suppresses duplicates at generation time instead).
-        let id3 = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id3 = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         mark_applied(&pool, &id3).unwrap();
         // id (declined) still present → still true; drop it to isolate.
         let conn = pool.get().unwrap();
@@ -335,8 +364,18 @@ mod tests {
     fn list_orders_and_filters_pending() {
         let pool = test_pool();
         let routing = sample_routing();
-        let a = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
-        let b = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let a = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
+        let b = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         mark_declined(&pool, &a, None).unwrap();
         let all = list(&pool, false, 10).unwrap();
         assert_eq!(all.len(), 2);

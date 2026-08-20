@@ -1,8 +1,8 @@
 use rusqlite::params;
 
 use crate::DbPool;
-use personas_core::trace::ExecutionTrace;
 use personas_core::error::AppError;
+use personas_core::trace::ExecutionTrace;
 
 /// Save an execution trace to the database.
 pub fn save(pool: &DbPool, trace: &ExecutionTrace) -> Result<(), AppError> {
@@ -85,14 +85,18 @@ pub fn set_chain_trace_id(
     execution_id: &str,
     chain_trace_id: &str,
 ) -> Result<(), AppError> {
-    timed_query!("execution_traces", "execution_traces::set_chain_trace_id", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE execution_traces SET chain_trace_id = ?1 WHERE execution_id = ?2",
-            params![chain_trace_id, execution_id],
-        )?;
-        Ok(())
-    })
+    timed_query!(
+        "execution_traces",
+        "execution_traces::set_chain_trace_id",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE execution_traces SET chain_trace_id = ?1 WHERE execution_id = ?2",
+                params![chain_trace_id, execution_id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
@@ -206,7 +210,9 @@ mod tests {
         // Ordered by created_at ASC.
         assert_eq!(group[0].execution_id, "exec-1");
         assert_eq!(group[1].execution_id, "exec-2");
-        assert!(group.iter().all(|t| t.chain_trace_id.as_deref() == Some("chain-A")));
+        assert!(group
+            .iter()
+            .all(|t| t.chain_trace_id.as_deref() == Some("chain-A")));
     }
 
     #[test]
@@ -221,9 +227,21 @@ mod tests {
     fn count_by_chain_trace_id_counts_only_the_matching_chain() {
         let pool = init_test_db().unwrap();
         assert_eq!(count_by_chain_trace_id(&pool, "chain-A").unwrap(), 0);
-        save(&pool, &make_trace("e1", "p", Some("chain-A"), "2026-07-10T00:00:01Z")).unwrap();
-        save(&pool, &make_trace("e2", "p", Some("chain-A"), "2026-07-10T00:00:02Z")).unwrap();
-        save(&pool, &make_trace("e3", "p", Some("chain-B"), "2026-07-10T00:00:03Z")).unwrap();
+        save(
+            &pool,
+            &make_trace("e1", "p", Some("chain-A"), "2026-07-10T00:00:01Z"),
+        )
+        .unwrap();
+        save(
+            &pool,
+            &make_trace("e2", "p", Some("chain-A"), "2026-07-10T00:00:02Z"),
+        )
+        .unwrap();
+        save(
+            &pool,
+            &make_trace("e3", "p", Some("chain-B"), "2026-07-10T00:00:03Z"),
+        )
+        .unwrap();
         // A run with no chain id must not be counted against any chain.
         save(&pool, &make_trace("e4", "p", None, "2026-07-10T00:00:04Z")).unwrap();
         assert_eq!(count_by_chain_trace_id(&pool, "chain-A").unwrap(), 2);
@@ -254,7 +272,12 @@ mod tests {
         assert_eq!(group[0].chain_trace_id.as_deref(), Some("trace-root-exec"));
         // Idempotent re-write.
         set_chain_trace_id(&pool, "root-exec", "trace-root-exec").unwrap();
-        assert_eq!(get_by_chain_trace_id(&pool, "trace-root-exec").unwrap().len(), 1);
+        assert_eq!(
+            get_by_chain_trace_id(&pool, "trace-root-exec")
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     /// End-to-end lineage of the event-bus dispatch shape: the ROOT run saves
@@ -270,7 +293,11 @@ mod tests {
 
         // Root completes → chooses chain id = its own trace id.
         let root_trace_id = "trace-root";
-        save(&pool, &make_trace("root", "p-root", None, "2026-07-10T00:00:01Z")).unwrap();
+        save(
+            &pool,
+            &make_trace("root", "p-root", None, "2026-07-10T00:00:01Z"),
+        )
+        .unwrap();
         // Completion back-fill (Direction 1b).
         set_chain_trace_id(&pool, "root", root_trace_id).unwrap();
 

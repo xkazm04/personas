@@ -299,7 +299,15 @@ pub struct HealthBundle {
 /// command; if the caller isn't privileged that ONE source reports an error
 /// while the rest of the bundle still returns.
 #[tauri::command]
-#[instrument(skip(state), fields(healing_window_days, healing_limit, stats_window_days, utc_offset_minutes))]
+#[instrument(
+    skip(state),
+    fields(
+        healing_window_days,
+        healing_limit,
+        stats_window_days,
+        utc_offset_minutes
+    )
+)]
 pub fn get_health_bundle(
     state: State<'_, Arc<AppState>>,
     healing_window_days: Option<i64>,
@@ -315,16 +323,17 @@ pub fn get_health_bundle(
     let stats_window = stats_window_days.unwrap_or(30).clamp(1, 365);
 
     // -- Monthly spend ----------------------------------------------------
-    let (monthly_spend, monthly_err) = split(
-        (|| {
-            let conn = pool.get()?;
-            get_all_monthly_spend_with_conn(&conn, utc_offset_minutes)
-        })(),
-    );
+    let (monthly_spend, monthly_err) = split((|| {
+        let conn = pool.get()?;
+        get_all_monthly_spend_with_conn(&conn, utc_offset_minutes)
+    })());
 
     // -- Healing issues (bounded) -----------------------------------------
-    let (healing_issues, healing_err) =
-        split(healing_repo::get_for_health(pool, healing_window, healing_limit));
+    let (healing_issues, healing_err) = split(healing_repo::get_for_health(
+        pool,
+        healing_window,
+        healing_limit,
+    ));
 
     // -- BYOM policy (Ok(None) = no policy configured, which is valid) -----
     let (byom_policy, byom_err) = match ByomPolicy::load(pool) {
@@ -333,11 +342,11 @@ pub fn get_health_bundle(
     };
 
     // -- Provider stats (privileged; degrade this source alone if not) ----
-    let (provider_stats, provider_err) =
-        match require_privileged_sync(&state, "get_health_bundle") {
-            Ok(()) => split(provider_audit::get_usage_stats(pool)),
-            Err(e) => (None, Some(e.to_string())),
-        };
+    let (provider_stats, provider_err) = match require_privileged_sync(&state, "get_health_bundle")
+    {
+        Ok(()) => split(provider_audit::get_usage_stats(pool)),
+        Err(e) => (None, Some(e.to_string())),
+    };
 
     // -- Per-persona reliability + daily series (the per-persona truth) ----
     let (persona_stats, persona_stats_err) =

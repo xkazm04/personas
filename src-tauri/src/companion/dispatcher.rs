@@ -768,9 +768,7 @@ pub fn dispatch_with_sys(
                     config,
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_recent_decisions" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_recent_decisions" => {
                 // Compact recall card — surfaces 1-5 of the most recent
                 // saved decisions for a given persona_context as small
                 // chips. Lighter than a full show_decision_log card;
@@ -811,9 +809,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_design_capabilities" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_design_capabilities" => {
                 // Onboarding-style card for the design-family. Athena
                 // emits this when a user asks "what can you help me
                 // design?" — surfaces her vocabulary (walkthrough, use
@@ -838,9 +834,7 @@ pub fn dispatch_with_sys(
                     config: serde_json::json!({ "intro": intro }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_persona_ready" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_persona_ready" => {
                 // End-of-design recap. Athena rolls up all the design
                 // decisions (intent line, use cases, triggers, model
                 // tier, observability) into one build-ready card with a
@@ -901,9 +895,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_decision_log" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_decision_log" => {
                 // Decision-log card — audit trail of design choices Athena
                 // made during the current conversation. Each entry has a
                 // label (what was decided), choice (what was picked), and
@@ -941,8 +933,7 @@ pub fn dispatch_with_sys(
                 let mut missing_field: Option<&'static str> = None;
                 for d in &decisions {
                     for field in ["label", "choice", "rationale"] {
-                        if d
-                            .get(field)
+                        if d.get(field)
                             .and_then(|v| v.as_str())
                             .map(str::trim)
                             .filter(|s| !s.is_empty())
@@ -973,23 +964,21 @@ pub fn dispatch_with_sys(
                 // the audit trail survives session reloads. Errors are
                 // logged but don't fail the dispatch — the chat-card
                 // still renders even if the write doesn't land.
-                let inputs: Vec<crate::companion::brain::decisions::DecisionInput<'_>> =
-                    decisions
-                        .iter()
-                        .filter_map(|d| {
-                            let label = d.get("label").and_then(|v| v.as_str())?;
-                            let choice = d.get("choice").and_then(|v| v.as_str())?;
-                            let rationale = d.get("rationale").and_then(|v| v.as_str())?;
-                            let decision_timestamp =
-                                d.get("timestamp").and_then(|v| v.as_str());
-                            Some(crate::companion::brain::decisions::DecisionInput {
-                                label,
-                                choice,
-                                rationale,
-                                decision_timestamp,
-                            })
+                let inputs: Vec<crate::companion::brain::decisions::DecisionInput<'_>> = decisions
+                    .iter()
+                    .filter_map(|d| {
+                        let label = d.get("label").and_then(|v| v.as_str())?;
+                        let choice = d.get("choice").and_then(|v| v.as_str())?;
+                        let rationale = d.get("rationale").and_then(|v| v.as_str())?;
+                        let decision_timestamp = d.get("timestamp").and_then(|v| v.as_str());
+                        Some(crate::companion::brain::decisions::DecisionInput {
+                            label,
+                            choice,
+                            rationale,
+                            decision_timestamp,
                         })
-                        .collect();
+                    })
+                    .collect();
                 // `intent` doubles as `persona_context` for now — it's
                 // either a persona id, build session id, or the intent
                 // string itself; all queryable for "decisions about X".
@@ -1016,9 +1005,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_observability_plan" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_observability_plan" => {
                 // Observability plan card — the 7th readiness item from
                 // cycle-6 doctrine. Two sections: error handling (what
                 // escalates to manual review + how) and success metric
@@ -1084,9 +1071,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_model_tier_choice" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_model_tier_choice" => {
                 // Model-tier recommendation card. Athena compares the
                 // three tiers (haiku / sonnet / opus) for a specific
                 // persona intent, marking one as recommended with the
@@ -1170,9 +1155,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_trigger_set" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_trigger_set" => {
                 // Trigger-decomposition card. Same family as use_case_set:
                 // Athena composes 1-4 trigger configurations applying
                 // cycle-6 doctrine's "one trigger condition → one persona
@@ -1247,9 +1230,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_use_case_set" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_use_case_set" => {
                 // Use-case decomposition card. Athena supplies an intent
                 // + a list of 3-5 use cases tagged golden / variant /
                 // out_of_scope, applying the use-case coverage rules
@@ -1315,9 +1296,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_browser_test_report" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_browser_test_report" => {
                 // Browser-test verdict card (Athena × browser tester arc,
                 // Phase 3). Emitted at the END of a browser-test turn so the
                 // result lands as a structured, scannable artifact instead of
@@ -1406,9 +1385,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_template_suggestions" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_template_suggestions" => {
                 // Template-match card. Athena supplies the intent text; the
                 // widget calls `companion_match_templates` on mount to
                 // fetch the actual matches (we don't query the system DB
@@ -1449,9 +1426,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_persona_walkthrough" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_persona_walkthrough" => {
                 // Persona-design walkthrough — long-form markdown plan
                 // Athena composes for a specific intent, pulling from the
                 // `concepts/persona-design-best-practices.md` doctrine.
@@ -1616,10 +1591,8 @@ pub fn dispatch_with_sys(
                 let blocks = spec
                     .and_then(|s| s.get("blocks"))
                     .and_then(|v| v.as_array());
-                let envelope_ok = spec
-                    .and_then(|s| s.get("surface"))
-                    .and_then(|v| v.as_str())
-                    == Some("v1");
+                let envelope_ok =
+                    spec.and_then(|s| s.get("surface")).and_then(|v| v.as_str()) == Some("v1");
                 match (envelope_ok, blocks) {
                     (true, Some(b)) if !b.is_empty() && b.len() <= CANVAS_PANEL_MAX_BLOCKS => {
                         out.canvas_panels.push(CanvasPanelCompose {
@@ -1679,9 +1652,9 @@ pub fn dispatch_with_sys(
                     continue;
                 };
                 match validate_canvas_control(db, &env.params) {
-                    Ok(action_json) => out
-                        .canvas_controls
-                        .push(CanvasControlDispatch { action: action_json }),
+                    Ok(action_json) => out.canvas_controls.push(CanvasControlDispatch {
+                        action: action_json,
+                    }),
                     Err(reason) => {
                         out.warnings.push(format!("canvas_control: {reason}"));
                         cleaned_lines.push(line);
@@ -1766,8 +1739,7 @@ pub fn dispatch_with_sys(
                 if !bypass_pin_gate {
                     match crate::companion::connectors::list(pool) {
                         Ok(active) => {
-                            let row =
-                                active.iter().find(|c| c.connector_name == connector_name);
+                            let row = active.iter().find(|c| c.connector_name == connector_name);
                             match row {
                                 Some(r) if !r.enabled => {
                                     let reason = format!(
@@ -1780,8 +1752,7 @@ pub fn dispatch_with_sys(
                                         capability,
                                         &reason,
                                     );
-                                    out.warnings
-                                        .push(format!("use_connector: {reason}"));
+                                    out.warnings.push(format!("use_connector: {reason}"));
                                     cleaned_lines.push(line);
                                     continue;
                                 }
@@ -1796,8 +1767,7 @@ pub fn dispatch_with_sys(
                                         capability,
                                         &reason,
                                     );
-                                    out.warnings
-                                        .push(format!("use_connector: {reason}"));
+                                    out.warnings.push(format!("use_connector: {reason}"));
                                     cleaned_lines.push(line);
                                     continue;
                                 }
@@ -1889,8 +1859,9 @@ pub fn dispatch_with_sys(
                     None, // parent_turn_id threaded in phase 2 (episode id not yet known here)
                     Some(session_id), // owning conversation (multiconv P1)
                 ) {
-                    let reason =
-                        format!("background-job enqueue failed for `{connector_name}.{capability}`: {e}");
+                    let reason = format!(
+                        "background-job enqueue failed for `{connector_name}.{capability}`: {e}"
+                    );
                     note_dispatcher_rejection(
                         pool,
                         session_id,
@@ -1911,9 +1882,7 @@ pub fn dispatch_with_sys(
             // honored when the session is in autonomous mode — session.rs
             // gates the actual schedule. We strip the line from display
             // either way so the user never sees the directive verbatim.
-            Ok(env)
-                if env.op == "propose_action" && env.action == "continue_autonomously" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "continue_autonomously" => {
                 let rationale = env
                     .params
                     .get("rationale")
@@ -1980,9 +1949,8 @@ pub fn dispatch_with_sys(
                     );
                     continue;
                 };
-                match crate::commands::companion::approvals::validate_fleet_plan(
-                    db, intent, &rows,
-                ) {
+                match crate::commands::companion::approvals::validate_fleet_plan(db, intent, &rows)
+                {
                     Ok((intent, plan)) => {
                         let rows_json: Vec<serde_json::Value> = plan
                             .iter()
@@ -2039,8 +2007,16 @@ pub fn dispatch_with_sys(
                     .get("project_slug")
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
-                let name = env.params.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                let goal = env.params.get("goal").and_then(|v| v.as_str()).unwrap_or("");
+                let name = env
+                    .params
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let goal = env
+                    .params
+                    .get("goal")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 let rows = env
                     .params
                     .get("rows")
@@ -2104,8 +2080,7 @@ pub fn dispatch_with_sys(
                 }
             }
             Ok(env)
-                if env.op == "propose_action"
-                    && env.action == "show_persona_creation_offer" =>
+                if env.op == "propose_action" && env.action == "show_persona_creation_offer" =>
             {
                 // Offer card: "Build it for me" vs "Show me how to build it".
                 // Athena emits this when a user describes a persona they want.
@@ -2129,9 +2104,7 @@ pub fn dispatch_with_sys(
                     config: serde_json::json!({ "intent": intent }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action" && env.action == "show_walkthrough_offer" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "show_walkthrough_offer" => {
                 // Generalized "Show me / Just tell me" offer for any guided
                 // walkthrough (E3). Auto-fire; the widget owns the click wiring.
                 // `topic` must be a real, allow-listed walkthrough.
@@ -2177,10 +2150,7 @@ pub fn dispatch_with_sys(
                     }),
                 });
             }
-            Ok(env)
-                if env.op == "propose_action"
-                    && env.action == "start_guided_walkthrough" =>
-            {
+            Ok(env) if env.op == "propose_action" && env.action == "start_guided_walkthrough" => {
                 // Auto-fire: launch a registry-defined guided walkthrough (orb
                 // glides + element glow + narration). The step content lives in
                 // the frontend registry (`guidance/walkthroughs.ts`); Athena
@@ -2209,7 +2179,11 @@ pub fn dispatch_with_sys(
                 // Auto-fire: ring one allow-listed UI anchor + narrate it (no
                 // pre-authored topic). The anchor names a stable target from the
                 // shared catalog; narration is the line Athena wrote this turn.
-                let anchor = env.params.get("anchor").and_then(|v| v.as_str()).unwrap_or("");
+                let anchor = env
+                    .params
+                    .get("anchor")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 let narration = env
                     .params
                     .get("narration")
@@ -2358,9 +2332,8 @@ pub fn dispatch_with_sys(
                     .unwrap_or("");
                 let action = env.action.as_str();
                 if query.is_empty() && !READ_OPS_QUERY_OPTIONAL.contains(&action) {
-                    let reason = format!(
-                        "`{action}` needs a `query` param (the name or id to look up)"
-                    );
+                    let reason =
+                        format!("`{action}` needs a `query` param (the name or id to look up)");
                     note_read_op_result(pool, session_id, action, query, &reason);
                     out.warnings.push(format!("{action}: missing `query`"));
                     continue;
@@ -2468,7 +2441,8 @@ pub fn dispatch_with_sys(
                             cleaned_lines.push(line);
                             continue;
                         }
-                        if let Some(err) = arr.iter().find_map(|d| IdentityDiff::from_json(d).err()) {
+                        if let Some(err) = arr.iter().find_map(|d| IdentityDiff::from_json(d).err())
+                        {
                             out.warnings
                                 .push(format!("rejected update_identity: {err}"));
                             cleaned_lines.push(line);
@@ -2674,18 +2648,19 @@ fn validate_canvas_control(
             if kind == "dim.open" {
                 let key = action.get("key").and_then(|v| v.as_str()).unwrap_or("");
                 if key.is_empty() || key.len() > 40 {
-                    return Err(
-                        "`dim.open` needs `key` — a dimension key you read from \
+                    return Err("`dim.open` needs `key` — a dimension key you read from \
                          `describe_canvas_project` (db, monitoring, ci, …)"
-                            .into(),
-                    );
+                        .into());
                 }
                 clean.insert("key".into(), serde_json::json!(key));
                 // `travel` stays at the grammar's default (true): steering the
                 // view there is the point of opening the cell for the user.
             }
             if kind == "category.open" {
-                let cat = action.get("category").and_then(|v| v.as_str()).unwrap_or("");
+                let cat = action
+                    .get("category")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if !CANVAS_CONTROL_CATEGORIES.contains(&cat) {
                     return Err(format!(
                         "`category.open` needs `category` ∈ {CANVAS_CONTROL_CATEGORIES:?}"
@@ -2700,18 +2675,14 @@ fn validate_canvas_control(
                     .as_array()
                     .ok_or("`slugs` must be an array of canvas slugs")?;
                 if arr.is_empty() || arr.len() > 12 {
-                    return Err(
-                        "`slugs` must carry 1-12 canvas slugs (omit it entirely to \
+                    return Err("`slugs` must carry 1-12 canvas slugs (omit it entirely to \
                          frame the whole portfolio)"
-                            .into(),
-                    );
+                        .into());
                 }
                 let mut resolved_list = Vec::with_capacity(arr.len());
                 for s in arr {
-                    let resolved = crate::companion::canvas::resolve_scene_slug(
-                        db,
-                        s.as_str().unwrap_or(""),
-                    )?;
+                    let resolved =
+                        crate::companion::canvas::resolve_scene_slug(db, s.as_str().unwrap_or(""))?;
                     resolved_list.push(serde_json::json!(resolved));
                 }
                 clean.insert("slugs".into(), serde_json::Value::Array(resolved_list));
@@ -2782,13 +2753,7 @@ fn one_line(s: &str, max: usize) -> String {
 /// at the top of her next turn. Same channel and same best-effort posture
 /// as `note_dispatcher_rejection`: a failed insert degrades to "the op did
 /// nothing", never to a broken turn.
-fn note_read_op_result(
-    pool: &UserDbPool,
-    session_id: &str,
-    action: &str,
-    query: &str,
-    body: &str,
-) {
+fn note_read_op_result(pool: &UserDbPool, session_id: &str, action: &str, query: &str, body: &str) {
     let target = if query.is_empty() {
         String::new()
     } else {
@@ -2857,11 +2822,7 @@ fn describe_persona(sys_db: &crate::db::DbPool, query: &str) -> String {
     };
     let model = serde_json::from_str::<serde_json::Value>(&model_profile)
         .ok()
-        .and_then(|v| {
-            v.get("model")
-                .and_then(|m| m.as_str())
-                .map(str::to_string)
-        })
+        .and_then(|v| v.get("model").and_then(|m| m.as_str()).map(str::to_string))
         .unwrap_or_else(|| "default".to_string());
     format!(
         "**{name}**\n- persona_id: `{id}`  (use this verbatim)\n- enabled: {enabled}\n\
@@ -2929,8 +2890,16 @@ fn describe_context(sys_db: &crate::db::DbPool, query: &str) -> String {
          - description: {description}\n- files: {file_count} ({sample})\n- keywords: {keywords}",
         name = name,
         id = id,
-        project = if project.is_empty() { "unknown" } else { &project },
-        group = if group.is_empty() { "ungrouped" } else { &group },
+        project = if project.is_empty() {
+            "unknown"
+        } else {
+            &project
+        },
+        group = if group.is_empty() {
+            "ungrouped"
+        } else {
+            &group
+        },
         description = one_line(&description, 260),
         file_count = file_count,
         sample = clip(&sample, 400),
@@ -2950,7 +2919,11 @@ fn describe_skill(sys_db: Option<&crate::db::DbPool>, query: &str) -> String {
     let hit = entries
         .iter()
         .find(|e| e.name.to_lowercase() == needle)
-        .or_else(|| entries.iter().find(|e| e.name.to_lowercase().contains(&needle)));
+        .or_else(|| {
+            entries
+                .iter()
+                .find(|e| e.name.to_lowercase().contains(&needle))
+        });
     let Some(hit) = hit else {
         let names: Vec<&str> = entries
             .iter()
@@ -3105,12 +3078,7 @@ fn list_teams(sys_db: &crate::db::DbPool, query: &str) -> String {
 /// the miss path runs while the caller still holds its connection, and
 /// asking a size-1 pool for a second one just stalls until the checkout
 /// timeout and then silently produces no suggestions at all.
-fn not_found(
-    conn: &rusqlite::Connection,
-    kind: &str,
-    query: &str,
-    suggest_sql: &str,
-) -> String {
+fn not_found(conn: &rusqlite::Connection, kind: &str, query: &str, suggest_sql: &str) -> String {
     let names: Vec<String> = (|| {
         let mut stmt = conn.prepare(suggest_sql).ok()?;
         let rows = stmt
@@ -3233,10 +3201,7 @@ mod tests {
     /// see the same tables (per the pattern in db/repos/resources/
     /// db_schema.rs's in-memory comment).
     fn test_pool() -> UserDbPool {
-        let manager = SqliteConnectionManager::file(
-            "file::memory:?cache=shared",
-        )
-        .with_flags(
+        let manager = SqliteConnectionManager::file("file::memory:?cache=shared").with_flags(
             rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
                 | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
                 | rusqlite::OpenFlags::SQLITE_OPEN_URI,
@@ -3321,7 +3286,10 @@ mod tests {
     fn show_fleet_plan_fails_closed_without_the_project_registry() {
         let op = r###"{"op":"propose_action","action":"show_fleet_plan","params":{"operation_intent":"do work","rows":[{"cwd":"C:/anywhere","objective":"go"}]}}"###;
         let out = dispatch_op(op);
-        assert!(out.chat_cards.is_empty(), "no card without containment proof");
+        assert!(
+            out.chat_cards.is_empty(),
+            "no card without containment proof"
+        );
         assert!(out
             .warnings
             .iter()
@@ -3405,7 +3373,10 @@ mod tests {
             .get("limit")
             .and_then(|v| v.as_u64())
             .expect("limit field");
-        assert!((1..=5).contains(&limit), "limit clamped to 1..=5, got {limit}");
+        assert!(
+            (1..=5).contains(&limit),
+            "limit clamped to 1..=5, got {limit}"
+        );
     }
 
     // ── show_browser_test_report ────────────────────────────────────────
@@ -3449,7 +3420,8 @@ mod tests {
 
     #[test]
     fn show_use_case_set_rejects_empty_array() {
-        let op = r###"{"op":"propose_action","action":"show_use_case_set","params":{"use_cases":[]}}"###;
+        let op =
+            r###"{"op":"propose_action","action":"show_use_case_set","params":{"use_cases":[]}}"###;
         let out = dispatch_op(op);
         assert!(out.chat_cards.is_empty());
         assert!(out.warnings.iter().any(|w| w.contains("use_cases")));
@@ -3604,7 +3576,10 @@ mod tests {
         let op = r###"{"op":"propose_action","action":"show_persona_ready","params":{"recommended_action":"explode","summary":{"intent_line":"x"}}}"###;
         let out = dispatch_op(op);
         assert!(out.chat_cards.is_empty());
-        assert!(out.warnings.iter().any(|w| w.contains("recommended_action")));
+        assert!(out
+            .warnings
+            .iter()
+            .any(|w| w.contains("recommended_action")));
     }
 
     // ── show_design_capabilities ────────────────────────────────────────
@@ -3664,7 +3639,10 @@ mod tests {
         assert_eq!(out.chat_cards.len(), 1);
         assert_eq!(out.chat_cards[0].kind, "persona_creation_offer");
         assert_eq!(
-            out.chat_cards[0].config.get("intent").and_then(|v| v.as_str()),
+            out.chat_cards[0]
+                .config
+                .get("intent")
+                .and_then(|v| v.as_str()),
             Some("a Slack triager"),
         );
         // OP line stripped from the displayed reply.
@@ -3673,7 +3651,8 @@ mod tests {
 
     #[test]
     fn persona_creation_offer_rejects_missing_intent() {
-        let op = r###"{"op":"propose_action","action":"show_persona_creation_offer","params":{}}"###;
+        let op =
+            r###"{"op":"propose_action","action":"show_persona_creation_offer","params":{}}"###;
         let out = dispatch_op(op);
         assert!(out.chat_cards.is_empty());
         assert!(!out.warnings.is_empty());
@@ -3701,7 +3680,11 @@ mod tests {
                 r###"{{"op":"propose_action","action":"start_guided_walkthrough","params":{{"topic":"{topic}"}},"rationale":"show me"}}"###
             );
             let out = dispatch_op(&op);
-            assert_eq!(out.guide_walkthroughs, vec![topic.to_string()], "topic {topic} should be accepted");
+            assert_eq!(
+                out.guide_walkthroughs,
+                vec![topic.to_string()],
+                "topic {topic} should be accepted"
+            );
             assert!(out.warnings.is_empty(), "topic {topic} should not warn");
         }
     }
@@ -3754,7 +3737,10 @@ mod tests {
         let out = dispatch_op(op);
         assert_eq!(out.composed_walkthroughs.len(), 1);
         assert_eq!(out.composed_walkthroughs[0].steps.len(), 2);
-        assert_eq!(out.composed_walkthroughs[0].title.as_deref(), Some("Quick tour"));
+        assert_eq!(
+            out.composed_walkthroughs[0].title.as_deref(),
+            Some("Quick tour")
+        );
         assert!(!out.cleaned_text.contains("compose_walkthrough"));
     }
 
@@ -3838,7 +3824,10 @@ mod tests {
     /// In-memory system pool with just the tables the read ops query.
     fn read_op_sys_pool() -> crate::db::DbPool {
         let manager = SqliteConnectionManager::memory();
-        let pool = Pool::builder().max_size(1).build(manager).expect("sys pool");
+        let pool = Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("sys pool");
         pool.get()
             .unwrap()
             .execute_batch(
@@ -3923,7 +3912,10 @@ OP: {{"op": "propose_action", "action": "{action}", "params": {{"query": "anythi
     /// scene snapshot.
     fn canvas_sys_pool(scene_json: Option<&str>) -> crate::db::DbPool {
         let manager = SqliteConnectionManager::memory();
-        let pool = Pool::builder().max_size(1).build(manager).expect("sys pool");
+        let pool = Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("sys pool");
         {
             let conn = pool.get().unwrap();
             conn.execute_batch(
@@ -3960,20 +3952,38 @@ OP: {{"op": "propose_action", "action": "{action}", "params": {{"query": "anythi
         assert!(detail.contains("`proj_1`"), "{detail}");
         assert!(detail.contains("Tests risk (41% cov)"), "{detail}");
         assert!(detail.contains("NEEDS THE USER"), "{detail}");
-        assert!(detail.contains("scans (failed)"), "must flag bad data: {detail}");
-        assert!(detail.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", detail.len());
+        assert!(
+            detail.contains("scans (failed)"),
+            "must flag bad data: {detail}"
+        );
+        assert!(
+            detail.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            detail.len()
+        );
 
         let fresh = crate::companion::canvas::describe_canvas_freshness(&sys, "proj_1");
         assert!(fresh.contains("42d old"), "{fresh}");
         assert!(fresh.contains("3 ongoing"), "{fresh}");
         assert!(fresh.contains("2 of 6 OFF TRACK"), "{fresh}");
-        assert!(fresh.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", fresh.len());
+        assert!(
+            fresh.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            fresh.len()
+        );
 
         // Empty query answers for the whole canvas, worst-first and bounded.
         let all = crate::companion::canvas::describe_canvas_freshness(&sys, "");
         assert!(all.contains("2 of 2 projects"), "{all}");
-        assert!(all.find("proj_1").unwrap() < all.find("proj_2").unwrap(), "{all}");
-        assert!(all.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", all.len());
+        assert!(
+            all.find("proj_1").unwrap() < all.find("proj_2").unwrap(),
+            "{all}"
+        );
+        assert!(
+            all.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            all.len()
+        );
     }
 
     #[test]
@@ -3994,7 +4004,11 @@ OP: {{"op": "propose_action", "action": "{action}", "params": {{"query": "anythi
             dims.join(",")
         )));
         let out = crate::companion::canvas::describe_canvas_project(&sys, "p");
-        assert!(out.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", out.len());
+        assert!(
+            out.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            out.len()
+        );
         assert!(
             out.contains("of 15"),
             "must say how many of the fifteen it printed: {out}"
@@ -4049,8 +4063,13 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
     fn compose_canvas_panel_emits_a_panel_for_a_slug_in_the_published_scene() {
         let pool = test_pool();
         let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
-        let out = dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("proj_1", GOOD_SPEC))
-            .expect("dispatch ok");
+        let out = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &panel_line("proj_1", GOOD_SPEC),
+        )
+        .expect("dispatch ok");
         assert_eq!(out.canvas_panels.len(), 1, "warnings: {:?}", out.warnings);
         let panel = &out.canvas_panels[0];
         assert_eq!(panel.slug, "proj_1");
@@ -4065,9 +4084,13 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
         assert!(!READ_OPS.contains(&"compose_canvas_panel"));
         // Resolved by NAME lands on the canonical slug, so the frontend keys
         // the panel the same way the canvas does.
-        let by_name =
-            dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("Personas", GOOD_SPEC))
-                .expect("dispatch ok");
+        let by_name = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &panel_line("Personas", GOOD_SPEC),
+        )
+        .expect("dispatch ok");
         assert_eq!(by_name.canvas_panels[0].slug, "proj_1");
     }
 
@@ -4076,8 +4099,13 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
         let pool = test_pool();
         let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
 
-        let demo = dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("demo-web", GOOD_SPEC))
-            .expect("dispatch ok");
+        let demo = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &panel_line("demo-web", GOOD_SPEC),
+        )
+        .expect("dispatch ok");
         assert!(demo.canvas_panels.is_empty());
         assert!(
             demo.warnings.iter().any(|w| w.contains("demo islands")),
@@ -4085,9 +4113,13 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
             demo.warnings
         );
 
-        let unknown =
-            dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("not-a-project", GOOD_SPEC))
-                .expect("dispatch ok");
+        let unknown = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &panel_line("not-a-project", GOOD_SPEC),
+        )
+        .expect("dispatch ok");
         assert!(unknown.canvas_panels.is_empty());
         // A refusal must name real slugs, or the next attempt is another guess.
         assert!(
@@ -4119,7 +4151,9 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
                 .expect("dispatch ok");
             assert!(out.canvas_panels.is_empty(), "accepted a bad spec: {spec}");
             assert!(
-                out.warnings.iter().any(|w| w.contains("compose_canvas_panel")),
+                out.warnings
+                    .iter()
+                    .any(|w| w.contains("compose_canvas_panel")),
                 "{spec}: {:?}",
                 out.warnings
             );
@@ -4140,9 +4174,13 @@ OP: {{"op":"propose_action","action":"compose_canvas_panel","params":{{"slug":"{
 
         // System DB present, but the canvas has never published.
         let sys = canvas_sys_pool(None);
-        let unpublished =
-            dispatch_with_sys(&pool, Some(&sys), "default", &panel_line("proj_1", GOOD_SPEC))
-                .expect("ok");
+        let unpublished = dispatch_with_sys(
+            &pool,
+            Some(&sys),
+            "default",
+            &panel_line("proj_1", GOOD_SPEC),
+        )
+        .expect("ok");
         assert!(unpublished.canvas_panels.is_empty());
         assert!(
             unpublished
@@ -4218,17 +4256,35 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
         let sys = canvas_sys_pool(Some(CANVAS_FIXTURE));
         for (action, needle) in [
             // Reads have a synchronous op already — point her at it.
-            (r#"{"kind":"island.read","slug":"proj_1"}"#, "describe_canvas_project"),
-            (r#"{"kind":"dim.read","slug":"proj_1","key":"ci"}"#, "describe_canvas_project"),
+            (
+                r#"{"kind":"island.read","slug":"proj_1"}"#,
+                "describe_canvas_project",
+            ),
+            (
+                r#"{"kind":"dim.read","slug":"proj_1","key":"ci"}"#,
+                "describe_canvas_project",
+            ),
             (r#"{"kind":"island.move","slug":"proj_1"}"#, "unknown kind"),
-            (r#"{"kind":"camera.focus","slug":"demo-web"}"#, "demo islands"),
-            (r#"{"kind":"camera.focus","slug":"not-a-project"}"#, "No project matches"),
+            (
+                r#"{"kind":"camera.focus","slug":"demo-web"}"#,
+                "demo islands",
+            ),
+            (
+                r#"{"kind":"camera.focus","slug":"not-a-project"}"#,
+                "No project matches",
+            ),
             (r#"{"kind":"camera.zoom"}"#, "needs `factor` or `band`"),
             (r#"{"kind":"camera.zoom","factor":-2}"#, "positive finite"),
-            (r#"{"kind":"camera.zoom","band":"orbit"}"#, "`band` must be one of"),
+            (
+                r#"{"kind":"camera.zoom","band":"orbit"}"#,
+                "`band` must be one of",
+            ),
             (r#"{"kind":"camera.pan","dx":1}"#, "finite numeric `dy`"),
             (r#"{"kind":"dim.open","slug":"proj_1"}"#, "needs `key`"),
-            (r#"{"kind":"category.open","slug":"proj_1","category":"vibes"}"#, "category"),
+            (
+                r#"{"kind":"category.open","slug":"proj_1","category":"vibes"}"#,
+                "category",
+            ),
             (r#"{"kind":"camera.fit","slugs":[]}"#, "1-12"),
         ] {
             let out = dispatch_with_sys(&pool, Some(&sys), "default", &control_line(action))
@@ -4270,7 +4326,10 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
 
         // Six steering ops in one turn → first four kept, the rest warned away.
         let line = r#"OP: {"op":"propose_action","action":"canvas_control","params":{"action":{"kind":"camera.read"}},"rationale":"w"}"#;
-        let burst = std::iter::repeat(line).take(6).collect::<Vec<_>>().join("\n");
+        let burst = std::iter::repeat(line)
+            .take(6)
+            .collect::<Vec<_>>()
+            .join("\n");
         let out = dispatch_with_sys(&pool, Some(&sys), "default", &burst).expect("dispatch ok");
         assert_eq!(out.canvas_controls.len(), CANVAS_CONTROL_MAX_PER_TURN);
         assert!(
@@ -4284,8 +4343,15 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
     fn canvas_actions_are_allowed_actions_not_read_ops() {
         // The two lists must not overlap: an action in READ_OPS would auto-fire
         // with no approval card and no executor, silently doing nothing.
-        for action in ["canvas_dispatch", "canvas_group_dispatch", "canvas_run_idea_scan"] {
-            assert!(ALLOWED_ACTIONS.contains(&action), "{action} needs an executor arm");
+        for action in [
+            "canvas_dispatch",
+            "canvas_group_dispatch",
+            "canvas_run_idea_scan",
+        ] {
+            assert!(
+                ALLOWED_ACTIONS.contains(&action),
+                "{action} needs an executor arm"
+            );
             assert!(!READ_OPS.contains(&action), "{action} must not auto-fire");
         }
         for action in ["describe_canvas_project", "describe_canvas_freshness"] {
@@ -4327,9 +4393,16 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
         seed_read_op_rows(&sys);
         let out = describe_persona(&sys, "Scout");
         assert!(out.contains("`p_scout`"), "{out}");
-        assert!(out.contains("opus") || out.contains("claude-opus-4-5"), "{out}");
+        assert!(
+            out.contains("opus") || out.contains("claude-opus-4-5"),
+            "{out}"
+        );
         assert!(out.contains("SDLC"), "{out}");
-        assert!(out.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", out.len());
+        assert!(
+            out.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            out.len()
+        );
 
         // A pathological system prompt must not blow the bound.
         sys.get()
@@ -4340,7 +4413,11 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
             )
             .unwrap();
         let big = describe_persona(&sys, "p_scout");
-        assert!(big.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", big.len());
+        assert!(
+            big.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            big.len()
+        );
     }
 
     #[test]
@@ -4349,7 +4426,10 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
         seed_read_op_rows(&sys);
         let out = describe_persona(&sys, "00000000-0000-0000-0000-000000000000");
         assert!(out.contains("No agent matches"), "{out}");
-        assert!(out.contains("Scout"), "should name a real alternative: {out}");
+        assert!(
+            out.contains("Scout"),
+            "should name a real alternative: {out}"
+        );
         assert!(out.contains("do not invent an id"), "{out}");
     }
 
@@ -4400,7 +4480,11 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
             }
         }
         let out = list_teams(&sys, "");
-        assert!(out.len() <= READ_OP_DETAIL_CHARS, "unbounded: {}", out.len());
+        assert!(
+            out.len() <= READ_OP_DETAIL_CHARS,
+            "unbounded: {}",
+            out.len()
+        );
         // Truncated by the char budget before the row cap, and it says so.
         assert!(out.contains(" of 200 teams"), "{out}");
         assert!(!out.contains("200 of 200 teams"), "{out}");
@@ -4427,7 +4511,12 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
             r###"{"op":"propose_action","action":"evaluate_pattern","params":{"target_project":"personas"},"rationale":"r"}"###,
         ] {
             let out = dispatch_op(op);
-            assert_eq!(out.approvals.len(), 1, "op {op} — warnings: {:?}", out.warnings);
+            assert_eq!(
+                out.approvals.len(),
+                1,
+                "op {op} — warnings: {:?}",
+                out.warnings
+            );
         }
     }
 
@@ -4436,9 +4525,7 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
         // Both digests are query-optional: an empty query is the overview, so
         // it must not be rejected as "missing query".
         for action in ["describe_skill_fleet", "describe_knowledge"] {
-            let op = format!(
-                r###"{{"op":"propose_action","action":"{action}","params":{{}}}}"###
-            );
+            let op = format!(r###"{{"op":"propose_action","action":"{action}","params":{{}}}}"###);
             let out = dispatch_op(&op);
             assert!(
                 out.approvals.is_empty(),
@@ -4464,4 +4551,3 @@ OP: {{"op":"propose_action","action":"canvas_control","params":{{"action":{actio
         );
     }
 }
-

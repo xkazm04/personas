@@ -306,7 +306,9 @@ pub async fn run_test(
         // consolidation: standard runs now pay for that extra LLM call same
         // as every other lab mode, with nowhere (yet) to show the result.
         update_llm_summary: Box::new(|_pool, _id, _text| {}),
-        should_halt_budget: Box::new(|run_id| personas_core::run_budget::ledger().should_halt(run_id)),
+        should_halt_budget: Box::new(|run_id| {
+            personas_core::run_budget::ledger().should_halt(run_id)
+        }),
         record_cost: Box::new(|run_id, cost_usd| {
             // scores.cost_usd mirrors lab_results.cost_usd, so the ledger
             // total tracks SUM(persona_test_results.cost_usd) for this run.
@@ -971,7 +973,6 @@ pub async fn score_result(
     let output_quality = Some(llm_result.output_quality.clamp(0, 100));
     let protocol_compliance = Some(llm_result.protocol_compliance.clamp(0, 100));
 
-
     ScoreResult {
         tool_accuracy,
         output_quality,
@@ -1049,7 +1050,11 @@ fn provider_cost_is_known(provider: &str) -> bool {
 fn best_value_model(rankings: &[serde_json::Value]) -> String {
     rankings
         .iter()
-        .filter(|r| !r.get("cost_unknown").and_then(|v| v.as_bool()).unwrap_or(false))
+        .filter(|r| {
+            !r.get("cost_unknown")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+        })
         .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
         .and_then(|r| r.get("model_id"))
         .and_then(|v| v.as_str())
@@ -1529,8 +1534,14 @@ async fn run_lab_loop(
     } else {
         emit_lab_status(app, cb.event_name, run_id, "generating", None);
 
-        match generate_scenarios(persona_for_scenarios, tools, use_case_filter, fixture_inputs, pool)
-            .await
+        match generate_scenarios(
+            persona_for_scenarios,
+            tools,
+            use_case_filter,
+            fixture_inputs,
+            pool,
+        )
+        .await
         {
             Ok(s) if s.is_empty() => {
                 let now = chrono::Utc::now().to_rfc3339();
@@ -2065,37 +2076,39 @@ pub async fn run_arena_test(
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
             let _ = arena_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
-        persist_result: Box::new(move |pool, run_id, _variant, scenario, model, status, scores| {
-            let base = make_common_result_fields(scenario, model, status, scores);
-            let (version_id, version_number) = match &attribution {
-                Some((vid, vnum)) => (Some(vid.clone()), Some(*vnum)),
-                None => (None, None),
-            };
-            match arena_repo::create_result(
-                pool,
-                &CreateArenaResultInput {
-                    run_id: run_id.to_string(),
-                    version_id,
-                    version_number,
-                    base,
-                },
-            ) {
-                Ok(result) => {
-                    if let Err(e) = events_repo::insert_events_batch(
-                        pool,
-                        &result.id,
-                        LabResultKind::Arena,
-                        &scores.events,
-                    ) {
-                        tracing::warn!(
-                            "Failed to persist arena event stream for result {}: {e}",
-                            result.id
-                        );
+        persist_result: Box::new(
+            move |pool, run_id, _variant, scenario, model, status, scores| {
+                let base = make_common_result_fields(scenario, model, status, scores);
+                let (version_id, version_number) = match &attribution {
+                    Some((vid, vnum)) => (Some(vid.clone()), Some(*vnum)),
+                    None => (None, None),
+                };
+                match arena_repo::create_result(
+                    pool,
+                    &CreateArenaResultInput {
+                        run_id: run_id.to_string(),
+                        version_id,
+                        version_number,
+                        base,
+                    },
+                ) {
+                    Ok(result) => {
+                        if let Err(e) = events_repo::insert_events_batch(
+                            pool,
+                            &result.id,
+                            LabResultKind::Arena,
+                            &scores.events,
+                        ) {
+                            tracing::warn!(
+                                "Failed to persist arena event stream for result {}: {e}",
+                                result.id
+                            );
+                        }
                     }
+                    Err(e) => tracing::error!("Arena result create failed: {e}"),
                 }
-                Err(e) => tracing::error!("Arena result create failed: {e}"),
-            }
-        }),
+            },
+        ),
         build_summary: Box::new(build_arena_summary),
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = arena_repo::update_llm_summary(pool, id, text);
@@ -2920,8 +2933,14 @@ mod tests {
     /// exam: persona identity, the tool surface, and the use-case filter.
     #[test]
     fn scenario_cache_key_discriminates_persona_tools_and_filter() {
-        let p1 = personas_db::models::Persona { id: "a".into(), ..Default::default() };
-        let p2 = personas_db::models::Persona { id: "b".into(), ..Default::default() };
+        let p1 = personas_db::models::Persona {
+            id: "a".into(),
+            ..Default::default()
+        };
+        let p2 = personas_db::models::Persona {
+            id: "b".into(),
+            ..Default::default()
+        };
         assert_ne!(
             scenario_cache_key(&p1, &[], None),
             scenario_cache_key(&p2, &[], None),
@@ -2936,7 +2955,13 @@ mod tests {
 
     // -- Direction 1: unscoped-arena attribution --------------------------------
 
-    fn insert_version(conn: &rusqlite::Connection, id: &str, persona_id: &str, num: i32, tag: &str) {
+    fn insert_version(
+        conn: &rusqlite::Connection,
+        id: &str,
+        persona_id: &str,
+        num: i32,
+        tag: &str,
+    ) {
         conn.execute(
             "INSERT INTO persona_prompt_versions (id, persona_id, version_number, tag, created_at)
              VALUES (?1, ?2, ?3, ?4, datetime('now'))",
@@ -3018,7 +3043,9 @@ mod tests {
     /// Ollama is the documented cost-unknown provider; everything else is known.
     #[test]
     fn provider_cost_known_only_for_non_ollama() {
-        assert!(!provider_cost_is_known(personas_core::types::providers::OLLAMA));
+        assert!(!provider_cost_is_known(
+            personas_core::types::providers::OLLAMA
+        ));
         assert!(provider_cost_is_known("anthropic"));
         assert!(provider_cost_is_known("qwen"));
     }
@@ -3055,18 +3082,16 @@ mod tests {
     async fn cancel_race_wins_over_slow_execution() {
         use std::sync::atomic::AtomicBool;
         let flag = std::sync::Arc::new(AtomicBool::new(true)); // already cancelled
-        let result: Result<(), String> = tokio::time::timeout(
-            std::time::Duration::from_secs(2),
-            async {
+        let result: Result<(), String> =
+            tokio::time::timeout(std::time::Duration::from_secs(2), async {
                 tokio::select! {
                     biased;
                     _ = await_cancel(&flag) => Err("Cancelled".to_string()),
                     _ = tokio::time::sleep(std::time::Duration::from_secs(30)) => Ok(()),
                 }
-            },
-        )
-        .await
-        .expect("cancel branch must win well before the 30s execution stub");
+            })
+            .await
+            .expect("cancel branch must win well before the 30s execution stub");
         assert_eq!(result, Err("Cancelled".to_string()));
     }
 
@@ -3074,12 +3099,7 @@ mod tests {
 
     /// Build a `ScoreResult` from just the three sub-scores + eval method; the
     /// rest is irrelevant to the verdict/composite paths under test.
-    fn score(
-        ta: Option<i32>,
-        oq: Option<i32>,
-        pc: Option<i32>,
-        method: &str,
-    ) -> ScoreResult {
+    fn score(ta: Option<i32>, oq: Option<i32>, pc: Option<i32>, method: &str) -> ScoreResult {
         ScoreResult {
             tool_accuracy: ta,
             output_quality: oq,
@@ -3119,12 +3139,21 @@ mod tests {
     #[test]
     fn verdict_status_real_cell_scoring_unchanged() {
         // 40*0.4 + 40*0.4 + 40*0.2 = 40 → below 50 → failed (was failed before).
-        assert_eq!(verdict_status(&score(Some(40), Some(40), Some(40), "llm")), "failed");
+        assert_eq!(
+            verdict_status(&score(Some(40), Some(40), Some(40), "llm")),
+            "failed"
+        );
         // 60*0.4 + 60*0.4 + 60*0.2 = 60 → passed (was passed before).
-        assert_eq!(verdict_status(&score(Some(60), Some(60), Some(60), "llm")), "passed");
+        assert_eq!(
+            verdict_status(&score(Some(60), Some(60), Some(60), "llm")),
+            "passed"
+        );
         // Mixed real cell straddling the boundary: 0*0.4 + 90*0.4 + 90*0.2 = 54
         // → passed; the zero here is a real judged tool_accuracy, not an absence.
-        assert_eq!(verdict_status(&score(Some(0), Some(90), Some(90), "llm")), "passed");
+        assert_eq!(
+            verdict_status(&score(Some(0), Some(90), Some(90), "llm")),
+            "passed"
+        );
     }
 
     /// A degraded evaluation (timeout / heuristic fallback) is still
@@ -3146,7 +3175,10 @@ mod tests {
     /// "failed".
     #[test]
     fn verdict_status_no_subscores_is_inconclusive() {
-        assert_eq!(verdict_status(&score(None, None, None, "llm")), "inconclusive");
+        assert_eq!(
+            verdict_status(&score(None, None, None, "llm")),
+            "inconclusive"
+        );
     }
 
     /// The renormalisation math: absent tool_accuracy reweights output_quality
@@ -3162,7 +3194,10 @@ mod tests {
         let expected = 50.0 * WEIGHT_TOOL_ACCURACY
             + 80.0 * WEIGHT_OUTPUT_QUALITY
             + 90.0 * WEIGHT_PROTOCOL_COMPLIANCE;
-        assert!((full - expected).abs() < 1e-9, "got {full}, expected {expected}");
+        assert!(
+            (full - expected).abs() < 1e-9,
+            "got {full}, expected {expected}"
+        );
         // Nothing present → None.
         assert_eq!(renormalized_composite(None, None, None), None);
     }

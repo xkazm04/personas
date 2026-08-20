@@ -407,22 +407,24 @@ pub fn declared_questions(agent_ir_json: &str) -> Vec<DeclaredQuestion> {
     };
     items
         .iter()
-        .filter_map(|item| match serde_json::from_value::<DeclaredQuestion>(item.clone()) {
-            Ok(q) if !q.id.is_empty() => Some(q),
-            Ok(_) => None,
-            Err(error) => {
-                // A question we cannot read is a question we cannot enforce.
-                // Dropping it is the right (fail-open) call, but do it out
-                // loud: a silent drop would look identical to a template that
-                // never declared the question.
-                tracing::warn!(
-                    error = %error,
-                    question = %item.get("id").and_then(|v| v.as_str()).unwrap_or("<no id>"),
-                    "adoption schema: skipping an unreadable adoption_question"
-                );
-                None
-            }
-        })
+        .filter_map(
+            |item| match serde_json::from_value::<DeclaredQuestion>(item.clone()) {
+                Ok(q) if !q.id.is_empty() => Some(q),
+                Ok(_) => None,
+                Err(error) => {
+                    // A question we cannot read is a question we cannot enforce.
+                    // Dropping it is the right (fail-open) call, but do it out
+                    // loud: a silent drop would look identical to a template that
+                    // never declared the question.
+                    tracing::warn!(
+                        error = %error,
+                        question = %item.get("id").and_then(|v| v.as_str()).unwrap_or("<no id>"),
+                        "adoption schema: skipping an unreadable adoption_question"
+                    );
+                    None
+                }
+            },
+        )
         .collect()
 }
 
@@ -751,7 +753,10 @@ mod tests {
             other => panic!("expected an out-of-range violation, got {other:?}"),
         }
         let message = describe_violations(&violations);
-        assert!(message.contains("Balanced"), "allowed set must be shown: {message}");
+        assert!(
+            message.contains("Balanced"),
+            "allowed set must be shown: {message}"
+        );
     }
 
     #[test]
@@ -759,8 +764,12 @@ mod tests {
         // allow_custom, dynamic_source and free text all legitimately carry
         // values the template never listed.
         let declared = declared_questions(DESIGN_JSON);
-        let violations =
-            validate_answers(&declared, &answers_of(&complete_pairs()), None, &HashMap::new());
+        let violations = validate_answers(
+            &declared,
+            &answers_of(&complete_pairs()),
+            None,
+            &HashMap::new(),
+        );
         assert!(violations.is_empty(), "got {violations:?}");
     }
 
@@ -770,8 +779,12 @@ mod tests {
         // gate lives in component state the server cannot see. Neither is
         // answered in `complete_pairs()`.
         let declared = declared_questions(DESIGN_JSON);
-        let violations =
-            validate_answers(&declared, &answers_of(&complete_pairs()), None, &HashMap::new());
+        let violations = validate_answers(
+            &declared,
+            &answers_of(&complete_pairs()),
+            None,
+            &HashMap::new(),
+        );
         assert!(violations.is_empty(), "got {violations:?}");
     }
 
@@ -820,7 +833,10 @@ mod tests {
         let mut pairs = complete_pairs();
         pairs.retain(|(id, _)| *id != "aq_cadence");
         let disabled = parse_disabled_dims(Some(r#"{"uc_report":["trigger"]}"#));
-        assert_eq!(disabled.get("uc_report").unwrap(), &vec!["trigger".to_string()]);
+        assert_eq!(
+            disabled.get("uc_report").unwrap(),
+            &vec!["trigger".to_string()]
+        );
         let violations = validate_answers(&declared, &answers_of(&pairs), None, &disabled);
         assert!(violations.is_empty(), "got {violations:?}");
     }
@@ -892,8 +908,7 @@ mod tests {
         let declared = declared_questions(design);
         assert_eq!(declared.len(), 2, "typed defaults must not drop questions");
         // …and both are still enforced as required.
-        let violations =
-            validate_answers(&declared, &answers_of(&[]), None, &HashMap::new());
+        let violations = validate_answers(&declared, &answers_of(&[]), None, &HashMap::new());
         assert_eq!(violations.len(), 2);
     }
 

@@ -1314,9 +1314,7 @@ fn with_modern_meta(mut params: serde_json::Value) -> serde_json::Value {
     if let Some(obj) = params.as_object_mut() {
         // tools/call params already carry a `_meta.traceparent`; merge rather
         // than clobber.
-        let meta = obj
-            .entry("_meta")
-            .or_insert_with(|| serde_json::json!({}));
+        let meta = obj.entry("_meta").or_insert_with(|| serde_json::json!({}));
         if let (Some(dst), Some(src)) = (meta.as_object_mut(), modern_request_meta().as_object()) {
             for (k, v) in src {
                 dst.insert(k.clone(), v.clone());
@@ -1371,9 +1369,12 @@ async fn fetch_tools_paginated_sse(
         let result = list_resp.get("result").ok_or_else(|| {
             AppError::Internal("Invalid tools/list response from SSE server".into())
         })?;
-        let page_tools = result.get("tools").and_then(|t| t.as_array()).ok_or_else(|| {
-            AppError::Internal("Invalid tools/list response from SSE server".into())
-        })?;
+        let page_tools = result
+            .get("tools")
+            .and_then(|t| t.as_array())
+            .ok_or_else(|| {
+                AppError::Internal("Invalid tools/list response from SSE server".into())
+            })?;
         all_tools.extend(page_tools.iter().cloned());
         min_ttl_ms = fold_min_ttl(min_ttl_ms, extract_ttl_ms(result));
 
@@ -1433,7 +1434,10 @@ async fn list_tools_sse(
         Some(HttpServerEra::Legacy) => list_tools_sse_legacy(&client, url, auth_token).await,
         None => match list_tools_sse_modern(&client, url, auth_token).await {
             Ok(r) => {
-                tracing::debug!(url, "MCP origin probed as MODERN (2026-07-28, handshake-less)");
+                tracing::debug!(
+                    url,
+                    "MCP origin probed as MODERN (2026-07-28, handshake-less)"
+                );
                 set_http_era(url, HttpServerEra::Modern);
                 Ok(r)
             }

@@ -186,10 +186,10 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
                        AND date(created_at) = date(?4)
                      ORDER BY created_at DESC LIMIT 1",
                 )?;
-                let dup: Result<String, _> = dup_stmt
-                    .query_row(params![input.persona_id, title, input.content, now], |row| {
-                        row.get(0)
-                    });
+                let dup: Result<String, _> = dup_stmt.query_row(
+                    params![input.persona_id, title, input.content, now],
+                    |row| row.get(0),
+                );
                 if let Ok(existing_id) = dup {
                     tracing::info!(
                         persona_id = %input.persona_id,
@@ -512,16 +512,20 @@ pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
 /// child `persona_message_deliveries` cascades. Single statement → atomic.
 /// Returns the number of rows deleted.
 pub fn cleanup_old_messages(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
-    timed_query!("persona_messages", "persona_messages::cleanup_old_messages", {
-        let conn = pool.get()?;
-        let cutoff = format!("-{retention_days} days");
-        let n = conn.execute(
-            "DELETE FROM persona_messages
+    timed_query!(
+        "persona_messages",
+        "persona_messages::cleanup_old_messages",
+        {
+            let conn = pool.get()?;
+            let cutoff = format!("-{retention_days} days");
+            let n = conn.execute(
+                "DELETE FROM persona_messages
              WHERE is_read = 1 AND created_at < datetime('now', ?1)",
-            params![cutoff],
-        )?;
-        Ok(n)
-    })
+                params![cutoff],
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 // ============================================================================

@@ -80,8 +80,7 @@ pub(crate) fn execute_skill_sync(
         let (source_id, source_name) = resolve(source).ok_or_else(|| {
             AppError::Validation(format!("skill_sync publish: unknown project `{source}`"))
         })?;
-        let (version, files) =
-            skill_files::publish_skill_to_library(state, skill, &source_id)?;
+        let (version, files) = skill_files::publish_skill_to_library(state, skill, &source_id)?;
         // The library moved — every project carrying the skill now reads as
         // behind. Refresh the registry snapshots so offline sessions see it.
         let carriers: Vec<String> = conn
@@ -128,11 +127,13 @@ pub(crate) fn execute_skill_sync(
 
     // Library version, for the sync verdicts. Missing library copy fails
     // adopt/sync early with an honest message instead of N copy errors.
-    let library_version: Option<Option<String>> =
-        skill_files::global_skills_dir().and_then(|d| {
-            let entries = skill_files::scan_skills_dir(&d);
-            entries.iter().find(|e| e.name == skill).map(|e| e.version.clone())
-        });
+    let library_version: Option<Option<String>> = skill_files::global_skills_dir().and_then(|d| {
+        let entries = skill_files::scan_skills_dir(&d);
+        entries
+            .iter()
+            .find(|e| e.name == skill)
+            .map(|e| e.version.clone())
+    });
     if library_version.is_none() {
         return Err(AppError::Validation(format!(
             "skill_sync {action}: `{skill}` is not in the workspace library. `publish` it \
@@ -153,23 +154,33 @@ pub(crate) fn execute_skill_sync(
             |r| r.get(0),
         );
         let copy = root.ok().and_then(|root| {
-            let dir = std::path::PathBuf::from(root).join(".claude").join("skills");
-            skill_files::scan_skills_dir(&dir).into_iter().find(|e| e.name == skill)
+            let dir = std::path::PathBuf::from(root)
+                .join(".claude")
+                .join("skills");
+            skill_files::scan_skills_dir(&dir)
+                .into_iter()
+                .find(|e| e.name == skill)
         });
 
         match (action, &copy) {
             ("adopt", Some(_)) => {
-                lines.push(format!("{pname}: already has `{skill}` — skipped (use `sync` to update)"));
+                lines.push(format!(
+                    "{pname}: already has `{skill}` — skipped (use `sync` to update)"
+                ));
             }
-            ("adopt", None) => match skill_files::install_skill_copy(state, skill, None, &pid, false) {
-                Ok(r) if r.installed => {
-                    lines.push(format!("{pname}: adopted ({} file(s))", r.file_count))
+            ("adopt", None) => {
+                match skill_files::install_skill_copy(state, skill, None, &pid, false) {
+                    Ok(r) if r.installed => {
+                        lines.push(format!("{pname}: adopted ({} file(s))", r.file_count))
+                    }
+                    Ok(_) => lines.push(format!("{pname}: already exists — skipped")),
+                    Err(e) => lines.push(format!("{pname}: failed — {e}")),
                 }
-                Ok(_) => lines.push(format!("{pname}: already exists — skipped")),
-                Err(e) => lines.push(format!("{pname}: failed — {e}")),
-            },
+            }
             ("sync", None) => {
-                lines.push(format!("{pname}: does not have `{skill}` — use `adopt` instead"));
+                lines.push(format!(
+                    "{pname}: does not have `{skill}` — use `adopt` instead"
+                ));
             }
             ("sync", Some(c)) if c.sync_state == "diverged" => {
                 lines.push(format!(
@@ -183,7 +194,10 @@ pub(crate) fn execute_skill_sync(
                 );
                 let local = skill_files::parse_skill_version(c.version.as_deref());
                 if local >= lib {
-                    lines.push(format!("{pname}: already at {} — nothing to sync", ver(&c.version)));
+                    lines.push(format!(
+                        "{pname}: already at {} — nothing to sync",
+                        ver(&c.version)
+                    ));
                 } else {
                     match skill_files::install_skill_copy(state, skill, None, &pid, true) {
                         Ok(r) => lines.push(format!(
@@ -291,12 +305,12 @@ pub(crate) fn execute_run_pattern_harvest(
     // otherwise stale-first: never harvested, then oldest `last_harvested_at`.
     let mut skipped: Vec<String> = Vec::new();
     let mut chosen: Vec<(String, String, i64)> = Vec::new(); // (id, label, files)
-    // Depth class of a territory: 0 = never harvested, 1 = harvested but depth
-    // unknown (pre-depth-report runs), 2 = below the depth target, 3 = read.
-    // The deep-re-scan ladder only auto-selects classes 0-2 — once everything
-    // reads >= HARVEST_DEPTH_TARGET_PCT, the ladder has nothing to pick and
-    // stops honestly. Explicit scope ids bypass the class filter (the operator
-    // or Athena may deliberately re-read a "read" territory).
+                                                             // Depth class of a territory: 0 = never harvested, 1 = harvested but depth
+                                                             // unknown (pre-depth-report runs), 2 = below the depth target, 3 = read.
+                                                             // The deep-re-scan ladder only auto-selects classes 0-2 — once everything
+                                                             // reads >= HARVEST_DEPTH_TARGET_PCT, the ladder has nothing to pick and
+                                                             // stops honestly. Explicit scope ids bypass the class filter (the operator
+                                                             // or Athena may deliberately re-read a "read" territory).
     type ScopeRow = (String, String, i64, Option<String>, Option<i64>);
     fn depth_class(s: &ScopeRow) -> u8 {
         use crate::commands::infrastructure::workspace_harvest::HARVEST_DEPTH_TARGET_PCT;
@@ -319,20 +333,19 @@ pub(crate) fn execute_run_pattern_harvest(
             }
         }
         None => {
-            let mut ranked: Vec<&ScopeRow> = core
-                .scopes
-                .iter()
-                .filter(|s| depth_class(s) < 3)
-                .collect();
+            let mut ranked: Vec<&ScopeRow> =
+                core.scopes.iter().filter(|s| depth_class(s) < 3).collect();
             ranked.sort_by(|a, b| {
-                depth_class(a).cmp(&depth_class(b)).then_with(|| match depth_class(a) {
-                    // Never harvested: biggest territory first (most unread ground).
-                    0 => b.2.cmp(&a.2),
-                    // Depth unknown: oldest pass first.
-                    1 => a.3.cmp(&b.3),
-                    // Below target: shallowest first.
-                    _ => a.4.unwrap_or(0).cmp(&b.4.unwrap_or(0)),
-                })
+                depth_class(a)
+                    .cmp(&depth_class(b))
+                    .then_with(|| match depth_class(a) {
+                        // Never harvested: biggest territory first (most unread ground).
+                        0 => b.2.cmp(&a.2),
+                        // Depth unknown: oldest pass first.
+                        1 => a.3.cmp(&b.3),
+                        // Below target: shallowest first.
+                        _ => a.4.unwrap_or(0).cmp(&b.4.unwrap_or(0)),
+                    })
             });
             chosen = ranked
                 .into_iter()
@@ -362,7 +375,9 @@ pub(crate) fn execute_run_pattern_harvest(
                 )
         });
         if live {
-            skipped.push(format!("{label}: a harvest session is already working here"));
+            skipped.push(format!(
+                "{label}: a harvest session is already working here"
+            ));
         }
         !live
     });
@@ -385,7 +400,11 @@ pub(crate) fn execute_run_pattern_harvest(
         core.project_name,
         chosen.len(),
         if chosen.len() == 1 { "y" } else { "ies" },
-        chosen.iter().map(|(_, l, _)| l.as_str()).collect::<Vec<_>>().join(", "),
+        chosen
+            .iter()
+            .map(|(_, l, _)| l.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
     );
     let op_id = crate::companion::orchestration::operative_memory::memory()
         .begin_dispatched_operation(intent.clone());
@@ -479,7 +498,7 @@ pub(crate) fn build_apply_prompt(
     project_name: &str,
     objective: Option<&str>,
     patterns: &[(String, String, String, Option<String>)], // (id, title, statement, detail)
-    territory: Option<(&str, &[(String, Vec<String>)])>, // (group name, [(context, paths)])
+    territory: Option<(&str, &[(String, Vec<String>)])>,   // (group name, [(context, paths)])
     violations: &std::collections::BTreeMap<String, ViolationBrief>,
 ) -> String {
     let mut cards = String::new();
@@ -559,7 +578,11 @@ pub(crate) fn build_apply_prompt(
          - Stay inside this repository{}.\n\
          - End with a short summary: per practice — applied (where) / already-followed / \
          not-applicable (why).",
-        if territory.is_some() { " and inside your territory for edits" } else { "" }
+        if territory.is_some() {
+            " and inside your territory for edits"
+        } else {
+            ""
+        }
     )
 }
 
@@ -651,8 +674,7 @@ pub(crate) fn execute_apply_pattern(
                 })?
                 .flatten()
                 .map(|(id, name, paths)| {
-                    let paths: Vec<String> =
-                        serde_json::from_str(&paths).unwrap_or_default();
+                    let paths: Vec<String> = serde_json::from_str(&paths).unwrap_or_default();
                     (id, name, paths)
                 })
                 .collect();
@@ -695,7 +717,8 @@ pub(crate) fn execute_apply_pattern(
         )));
     }
     let overlap = live.iter().any(|n| {
-        n.contains(&format!("{name_prefix}{group_token}")) || n.contains(&format!("{name_prefix}all"))
+        n.contains(&format!("{name_prefix}{group_token}"))
+            || n.contains(&format!("{name_prefix}all"))
     });
     if overlap || (group_token == "all" && !live.is_empty()) {
         return Err(AppError::Validation(format!(
@@ -732,8 +755,7 @@ pub(crate) fn execute_apply_pattern(
                 pb.status
             )));
         }
-        let members =
-            crate::db::repos::dev_workspaces::list_playbook_patterns(&state.db, &pb.id)?;
+        let members = crate::db::repos::dev_workspaces::list_playbook_patterns(&state.db, &pb.id)?;
         wanted_ids.extend(members.iter().map(|m| m.practice_id.clone()));
         label = format!("playbook {slug}");
     }
@@ -777,7 +799,11 @@ pub(crate) fn execute_apply_pattern(
     if patterns.is_empty() {
         return Err(AppError::Validation(format!(
             "apply_pattern: nothing applicable.{}",
-            if skipped.is_empty() { String::new() } else { format!(" {}", skipped.join("; ")) }
+            if skipped.is_empty() {
+                String::new()
+            } else {
+                format!(" {}", skipped.join("; "))
+            }
         )));
     }
     if patterns.len() > APPLY_MAX_PATTERNS {
@@ -824,10 +850,12 @@ pub(crate) fn execute_apply_pattern(
                     continue;
                 }
             }
-            let entry = violations.entry(practice_id).or_insert_with(|| ViolationBrief {
-                contexts: Vec::new(),
-                files: Vec::new(),
-            });
+            let entry = violations
+                .entry(practice_id)
+                .or_insert_with(|| ViolationBrief {
+                    contexts: Vec::new(),
+                    files: Vec::new(),
+                });
             entry.contexts.push(context_name);
             if let Some(ev) = evidence {
                 if let Ok(paths) = serde_json::from_str::<Vec<String>>(&ev) {
@@ -841,10 +869,12 @@ pub(crate) fn execute_apply_pattern(
         }
     }
 
-    let objective = params.get("objective").and_then(|v| v.as_str()).map(str::trim);
-    let territory_ref: Option<(&str, Vec<(String, Vec<String>)>)> = territory
-        .as_ref()
-        .map(|(_, gname, cs)| {
+    let objective = params
+        .get("objective")
+        .and_then(|v| v.as_str())
+        .map(str::trim);
+    let territory_ref: Option<(&str, Vec<(String, Vec<String>)>)> =
+        territory.as_ref().map(|(_, gname, cs)| {
             (
                 gname.as_str(),
                 cs.iter().map(|(_, n, p)| (n.clone(), p.clone())).collect(),
@@ -860,7 +890,10 @@ pub(crate) fn execute_apply_pattern(
 
     let intent = format!(
         "[apply-pattern] {project_name}{}: {label}",
-        territory.as_ref().map(|(_, g, _)| format!(" · {g}")).unwrap_or_default()
+        territory
+            .as_ref()
+            .map(|(_, g, _)| format!(" · {g}"))
+            .unwrap_or_default()
     );
     let op_id = crate::companion::orchestration::operative_memory::memory()
         .begin_dispatched_operation(intent.clone());
@@ -875,16 +908,25 @@ pub(crate) fn execute_apply_pattern(
     let _ = crate::companion::orchestration::operative_memory::memory()
         .attach_session_to_operation(&op_id, &id, "apply", &root_path);
     let sentinel = crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
-    let _ = crate::commands::fleet::registry::registry()
-        .rename(&id, Some(format!("{sentinel} · apply:{project_id}:{group_token}")));
+    let _ = crate::commands::fleet::registry::registry().rename(
+        &id,
+        Some(format!("{sentinel} · apply:{project_id}:{group_token}")),
+    );
     crate::companion::orchestration::emit_digest_changed(app);
 
     let mut msg = format!(
         "Applying {label} in {project_name}{} — session `{}` with {} adopted pattern(s): {}.",
-        territory.as_ref().map(|(_, g, _)| format!(" (territory: {g})")).unwrap_or_default(),
+        territory
+            .as_ref()
+            .map(|(_, g, _)| format!(" (territory: {g})"))
+            .unwrap_or_default(),
         &id[..id.len().min(8)],
         patterns.len(),
-        patterns.iter().map(|(_, t, ..)| t.as_str()).collect::<Vec<_>>().join("; "),
+        patterns
+            .iter()
+            .map(|(_, t, ..)| t.as_str())
+            .collect::<Vec<_>>()
+            .join("; "),
     );
     if !violations.is_empty() {
         msg.push_str(&format!(
@@ -926,12 +968,21 @@ mod apply_prompt_tests {
 
     #[test]
     fn apply_brief_carries_doctrine_and_patterns() {
-        let p = build_apply_prompt("brainiac", Some("harden IPC"), &patterns(), None, &BTreeMap::new());
+        let p = build_apply_prompt(
+            "brainiac",
+            Some("harden IPC"),
+            &patterns(),
+            None,
+            &BTreeMap::new(),
+        );
         assert!(p.contains("Wrap IPC in invokeWithTimeout"), "{p}");
         assert!(p.contains("`wk_1`"), "{p}");
         assert!(p.contains("OPERATOR OBJECTIVE — harden IPC"), "{p}");
         // The doctrine lines that must never be edited away.
-        assert!(p.contains("never write adoption/adherence/verification"), "{p}");
+        assert!(
+            p.contains("never write adoption/adherence/verification"),
+            "{p}"
+        );
         assert!(p.contains("Commit atomically"), "{p}");
         assert!(p.contains("NEVER `git add -A`"), "{p}");
         // Repo-projected bundle is preferred over invention.
@@ -951,7 +1002,10 @@ mod apply_prompt_tests {
             Some(("Agent Platform", contexts.as_slice())),
             &BTreeMap::new(),
         );
-        assert!(p.contains("YOUR TERRITORY — the `Agent Platform` context group"), "{p}");
+        assert!(
+            p.contains("YOUR TERRITORY — the `Agent Platform` context group"),
+            "{p}"
+        );
         assert!(p.contains("src/features/agents/editor"), "{p}");
         assert!(p.contains("OFF LIMITS"), "shared-file rule gone: {p}");
         assert!(p.contains("inside your territory for edits"), "{p}");
@@ -1024,13 +1078,14 @@ pub(crate) async fn execute_evaluate_pattern(
              adoptions to verify"
         )));
     };
-    let job_id = crate::commands::infrastructure::workspace_verify::dev_tools_workspace_verify_adoptions(
-        app.clone(),
-        state.clone(),
-        workspace_id.clone(),
-        project_id.clone(),
-    )
-    .await?;
+    let job_id =
+        crate::commands::infrastructure::workspace_verify::dev_tools_workspace_verify_adoptions(
+            app.clone(),
+            state.clone(),
+            workspace_id.clone(),
+            project_id.clone(),
+        )
+        .await?;
 
     // Campaign chaining: a verify pass is one rung of a ladder (~25 practices
     // per pass over a backlog of hundreds), and with autonomous mode on the
@@ -1065,8 +1120,7 @@ pub(crate) async fn execute_evaluate_pattern(
                     None => break, // evicted/unknown — terminal for our purposes
                 }
             }
-            let (status, checked, diverged) =
-                outcome.unwrap_or_else(|| ("unknown".into(), 0, 0));
+            let (status, checked, diverged) = outcome.unwrap_or_else(|| ("unknown".into(), 0, 0));
             // The honest remainder: practices still awaiting a first verdict.
             let remaining: i64 = sys_db
                 .get()

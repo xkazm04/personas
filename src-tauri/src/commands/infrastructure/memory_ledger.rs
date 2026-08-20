@@ -148,7 +148,9 @@ pub struct MemoryCoverage {
 }
 
 fn outbox_path(root: &str) -> PathBuf {
-    PathBuf::from(root).join(".personas").join("memory-outbox.jsonl")
+    PathBuf::from(root)
+        .join(".personas")
+        .join("memory-outbox.jsonl")
 }
 
 /// Skill-name sanitizer for attribution sources — mirrors valid skill dir
@@ -212,7 +214,10 @@ pub fn dev_tools_memory_ingest(
     let text = std::fs::read_to_string(&path)
         .map_err(|e| AppError::Internal(format!("read outbox failed: {e}")))?;
 
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Context NAME → id map (case-insensitive) for anchoring.
     let mut ctx_by_name = std::collections::HashMap::new();
@@ -257,7 +262,11 @@ pub fn dev_tools_memory_ingest(
         };
         match parsed.line_type.as_str() {
             "node" => {
-                let Some(title) = parsed.title.as_deref().map(str::trim).filter(|s| !s.is_empty())
+                let Some(title) = parsed
+                    .title
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
                 else {
                     out.skipped += 1;
                     continue;
@@ -354,7 +363,10 @@ pub fn dev_tools_memory_ingest(
                 // Resolve outbox-local ids first, then accept real node ids —
                 // both endpoints must exist in THIS project's ledger.
                 let resolve = |raw: &str| -> Option<String> {
-                    let id = local_ids.get(raw).cloned().unwrap_or_else(|| raw.to_string());
+                    let id = local_ids
+                        .get(raw)
+                        .cloned()
+                        .unwrap_or_else(|| raw.to_string());
                     conn.query_row(
                         "SELECT id FROM memory_nodes WHERE id = ?1 AND project_id = ?2",
                         rusqlite::params![id, project_id],
@@ -378,7 +390,11 @@ pub fn dev_tools_memory_ingest(
             // guarded door every generated idea uses (origin `scan_sweep`,
             // dedup honors rejected/archived, backlog-cap backpressure).
             "finding" => {
-                let Some(title) = parsed.title.as_deref().map(str::trim).filter(|s| !s.is_empty())
+                let Some(title) = parsed
+                    .title
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
                 else {
                     out.skipped += 1;
                     continue;
@@ -393,7 +409,9 @@ pub fn dev_tools_memory_ingest(
                     continue;
                 };
                 finding_lines += 1;
-                if finding_lines > MAX_FINDING_LINES || pending_ideas >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+                if finding_lines > MAX_FINDING_LINES
+                    || pending_ideas >= crate::engine::dispatch::IDEA_BACKLOG_CAP
+                {
                     out.findings_skipped += 1;
                     continue;
                 }
@@ -524,7 +542,10 @@ pub fn dev_tools_memory_list(
     limit: Option<i64>,
 ) -> Result<Vec<MemoryNodeRow>, AppError> {
     require_auth_sync(&state)?;
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     let limit = limit.unwrap_or(MAX_LIST).clamp(1, MAX_LIST);
     let mut sql = String::from(
         "SELECT id, project_id, context_id, kind, title, body, source, updated_at
@@ -548,7 +569,9 @@ pub fn dev_tools_memory_list(
             updated_at: r.get(7)?,
         })
     };
-    let mut stmt = conn.prepare(&sql).map_err(|e| AppError::Internal(e.to_string()))?;
+    let mut stmt = conn
+        .prepare(&sql)
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     let rows: Vec<MemoryNodeRow> = match &context_id {
         Some(cid) => stmt
             .query_map(rusqlite::params![project_id, cid], map_row)
@@ -683,14 +706,21 @@ pub fn dev_tools_memory_project_vault(
 ) -> Result<MemoryVaultProjectResult, AppError> {
     require_auth_sync(&state)?;
     let Some(root) = vault_root(&state) else {
-        return Ok(MemoryVaultProjectResult { vault_configured: false, written: 0, removed: 0 });
+        return Ok(MemoryVaultProjectResult {
+            vault_configured: false,
+            written: 0,
+            removed: 0,
+        });
     };
     let project = repo::get_project_by_id(&state.db, &project_id)?;
     let dir = vault_project_dir(&root, &project.name);
     std::fs::create_dir_all(&dir)
         .map_err(|e| AppError::Internal(format!("create vault dir failed: {e}")))?;
 
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Context id → name for readable frontmatter.
     let mut ctx_name = std::collections::HashMap::new();
@@ -699,7 +729,9 @@ pub fn dev_tools_memory_project_vault(
             .prepare("SELECT id, name FROM dev_contexts WHERE project_id = ?1")
             .map_err(|e| AppError::Internal(e.to_string()))?;
         for row in stmt
-            .query_map([&project_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .query_map([&project_id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })
             .map_err(|e| AppError::Internal(e.to_string()))?
             .flatten()
         {
@@ -707,7 +739,14 @@ pub fn dev_tools_memory_project_vault(
         }
     }
 
-    struct N { id: String, context_id: Option<String>, kind: String, title: String, body: Option<String>, updated_at: String }
+    struct N {
+        id: String,
+        context_id: Option<String>,
+        kind: String,
+        title: String,
+        body: Option<String>,
+        updated_at: String,
+    }
     let nodes: Vec<N> = {
         let mut stmt = conn
             .prepare(
@@ -746,7 +785,11 @@ pub fn dev_tools_memory_project_vault(
             .map_err(|e| AppError::Internal(e.to_string()))?;
         for row in stmt
             .query_map([&project_id], |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?))
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                ))
             })
             .map_err(|e| AppError::Internal(e.to_string()))?
             .flatten()
@@ -755,7 +798,11 @@ pub fn dev_tools_memory_project_vault(
         }
     }
 
-    let mut out = MemoryVaultProjectResult { vault_configured: true, written: 0, removed: 0 };
+    let mut out = MemoryVaultProjectResult {
+        vault_configured: true,
+        written: 0,
+        removed: 0,
+    };
     let active_ids: std::collections::HashSet<&str> = nodes.iter().map(|n| n.id.as_str()).collect();
 
     for n in &nodes {
@@ -797,7 +844,9 @@ pub fn dev_tools_memory_project_vault(
             if path.extension().and_then(|e| e.to_str()) != Some("md") {
                 continue;
             }
-            let Ok(content) = std::fs::read_to_string(&path) else { continue };
+            let Ok(content) = std::fs::read_to_string(&path) else {
+                continue;
+            };
             if let Some(pid) = note_frontmatter(&content, "personas_id") {
                 if !active_ids.contains(pid.as_str()) {
                     let _ = std::fs::remove_file(&path);
@@ -820,23 +869,36 @@ pub fn dev_tools_memory_import_vault(
 ) -> Result<MemoryVaultImportResult, AppError> {
     require_auth_sync(&state)?;
     let Some(root) = vault_root(&state) else {
-        return Ok(MemoryVaultImportResult { vault_configured: false, imported: 0, updated: 0 });
+        return Ok(MemoryVaultImportResult {
+            vault_configured: false,
+            imported: 0,
+            updated: 0,
+        });
     };
     let project = repo::get_project_by_id(&state.db, &project_id)?;
     let dir = vault_project_dir(&root, &project.name);
-    let mut out = MemoryVaultImportResult { vault_configured: true, imported: 0, updated: 0 };
+    let mut out = MemoryVaultImportResult {
+        vault_configured: true,
+        imported: 0,
+        updated: 0,
+    };
     let Ok(read) = std::fs::read_dir(&dir) else {
         return Ok(out); // no subtree yet — nothing to import
     };
 
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     let mut ctx_by_name = std::collections::HashMap::new();
     {
         let mut stmt = conn
             .prepare("SELECT id, name FROM dev_contexts WHERE project_id = ?1")
             .map_err(|e| AppError::Internal(e.to_string()))?;
         for row in stmt
-            .query_map([&project_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .query_map([&project_id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })
             .map_err(|e| AppError::Internal(e.to_string()))?
             .flatten()
         {
@@ -849,7 +911,9 @@ pub fn dev_tools_memory_import_vault(
         if path.extension().and_then(|e| e.to_str()) != Some("md") {
             continue;
         }
-        let Ok(content) = std::fs::read_to_string(&path) else { continue };
+        let Ok(content) = std::fs::read_to_string(&path) else {
+            continue;
+        };
         let body = note_body(&content);
         let body_capped: String = body.chars().take(MAX_BODY_CHARS).collect();
 
@@ -874,7 +938,9 @@ pub fn dev_tools_memory_import_vault(
             let title = note_frontmatter(&content, "title")
                 .filter(|t| !t.is_empty())
                 .unwrap_or_else(|| {
-                    path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()
+                    path.file_stem()
+                        .map(|s| s.to_string_lossy().to_string())
+                        .unwrap_or_default()
                 });
             let title: String = title.chars().take(MAX_TITLE_CHARS).collect();
             if title.is_empty() {
@@ -885,7 +951,12 @@ pub fn dev_tools_memory_import_vault(
                 .unwrap_or_else(|| "fact".to_string());
             let context_id = note_frontmatter(&content, "context")
                 .and_then(|n| ctx_by_name.get(&n.to_lowercase()).cloned());
-            let hash = content_hash(&kind, &title, &body_capped, context_id.as_deref().unwrap_or(""));
+            let hash = content_hash(
+                &kind,
+                &title,
+                &body_capped,
+                context_id.as_deref().unwrap_or(""),
+            );
             let node_id = uuid::Uuid::new_v4().to_string();
             conn.execute(
                 "INSERT INTO memory_nodes (id, project_id, context_id, kind, title, body, source, content_hash)
@@ -897,7 +968,10 @@ pub fn dev_tools_memory_import_vault(
             let stamped = if content.trim_start().starts_with("---") {
                 content.replacen("---", &format!("---\npersonas_id: {node_id}"), 1)
             } else {
-                format!("---\npersonas_id: {node_id}\ntitle: \"{}\"\n---\n\n{content}", title.replace('"', "'"))
+                format!(
+                    "---\npersonas_id: {node_id}\ntitle: \"{}\"\n---\n\n{content}",
+                    title.replace('"', "'")
+                )
             };
             let _ = std::fs::write(&path, stamped);
             out.imported += 1;
@@ -940,7 +1014,10 @@ pub fn dev_tools_memory_skill_coverage(
     project_id: String,
 ) -> Result<Vec<SkillCoverageRow>, AppError> {
     require_auth_sync(&state)?;
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     let mut stmt = conn
         .prepare(
             "SELECT SUBSTR(source, 7) AS skill,
@@ -982,7 +1059,10 @@ pub fn dev_tools_memory_skill_contexts(
     skill: String,
 ) -> Result<Vec<SkillContextRow>, AppError> {
     require_auth_sync(&state)?;
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     let source = format!("skill:{}", sanitize_skill_name(&skill));
     let mut stmt = conn
         .prepare(
@@ -1032,7 +1112,10 @@ mod tests {
     fn note_body_strips_frontmatter_and_links_section() {
         let md = "---\npersonas_id: x\ntitle: \"T\"\n---\n\nBody text here.\n\n## Links\n- relates [[other]]\n";
         assert_eq!(note_body(md), "Body text here.");
-        assert_eq!(note_body("Plain body, no frontmatter."), "Plain body, no frontmatter.");
+        assert_eq!(
+            note_body("Plain body, no frontmatter."),
+            "Plain body, no frontmatter."
+        );
     }
 
     #[test]
@@ -1050,7 +1133,11 @@ mod tests {
         assert_eq!(f.line_type, "finding");
         assert_eq!(f.lens.as_deref(), Some("security-auditor"));
         assert_eq!(f.evidence.as_deref(), Some("a.rs:1 proof"));
-        assert_eq!(f.impact, Some(11), "raw value kept; ingest clamps to 1..=10");
+        assert_eq!(
+            f.impact,
+            Some(11),
+            "raw value kept; ingest clamps to 1..=10"
+        );
 
         let e: OutboxLine = serde_json::from_str(
             r#"{"type":"escalation","lens":"security-auditor","context":"Vault","reason":"3 auth findings"}"#,
@@ -1068,7 +1155,10 @@ pub fn dev_tools_memory_coverage(
     project_id: String,
 ) -> Result<MemoryCoverage, AppError> {
     require_auth_sync(&state)?;
-    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     let q = |sql: &str| -> Result<i32, AppError> {
         conn.query_row(sql, [&project_id], |r| r.get::<_, i32>(0))
             .map_err(|e| AppError::Internal(e.to_string()))
@@ -1083,10 +1173,8 @@ pub fn dev_tools_memory_coverage(
             |r| r.get::<_, i32>(0),
         )
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    let unanchored = q(
-        "SELECT COUNT(*) FROM memory_nodes
-         WHERE project_id = ?1 AND status = 'active' AND context_id IS NULL",
-    )?;
+    let unanchored = q("SELECT COUNT(*) FROM memory_nodes
+         WHERE project_id = ?1 AND status = 'active' AND context_id IS NULL")?;
     Ok(MemoryCoverage {
         contexts,
         covered,

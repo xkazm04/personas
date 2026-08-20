@@ -119,7 +119,8 @@ impl SyncClient {
         path_and_query: &str,
         body: &B,
     ) -> Result<(), AppError> {
-        self.send_patch(path_and_query, body, "return=minimal").await?;
+        self.send_patch(path_and_query, body, "return=minimal")
+            .await?;
         Ok(())
     }
 

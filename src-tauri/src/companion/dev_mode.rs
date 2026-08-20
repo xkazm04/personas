@@ -268,15 +268,19 @@ pub fn list_dispatched_dev_ops(pool: &crate::db::UserDbPool) -> Vec<(String, Dev
     ) else {
         return Vec::new();
     };
-    stmt.query_map([], |row| Ok((row.get::<_, String>("op_id")?, row_to_meta(row)?)))
-        .map(|rows| rows.flatten().collect())
-        .unwrap_or_default()
+    stmt.query_map([], |row| {
+        Ok((row.get::<_, String>("op_id")?, row_to_meta(row)?))
+    })
+    .map(|rows| rows.flatten().collect())
+    .unwrap_or_default()
 }
 
 /// The workspace's current HEAD short SHA — the run's resulting commit
 /// for the ledger. Best-effort.
 pub fn latest_commit_short(workspace: &std::path::Path) -> Option<String> {
-    run_git(workspace, &["log", "-1", "--format=%h"]).ok().filter(|s| !s.is_empty())
+    run_git(workspace, &["log", "-1", "--format=%h"])
+        .ok()
+        .filter(|s| !s.is_empty())
 }
 
 // ── experiment harness (Phase 5) ────────────────────────────────────────
@@ -382,7 +386,13 @@ pub fn dev_op_metrics(pool: &crate::db::UserDbPool) -> DevOpMetrics {
         [],
         |row| {
             // SUM over an empty set is NULL → default 0.
-            let g = |i: usize| -> u32 { row.get::<_, Option<i64>>(i).ok().flatten().unwrap_or(0).max(0) as u32 };
+            let g = |i: usize| -> u32 {
+                row.get::<_, Option<i64>>(i)
+                    .ok()
+                    .flatten()
+                    .unwrap_or(0)
+                    .max(0) as u32
+            };
             Ok(DevOpMetrics {
                 total: g(0),
                 in_flight: g(1),
@@ -484,10 +494,7 @@ fn recover_uncommitted_work(workspace: &std::path::Path, request: &str) -> Optio
     latest_commit_short(workspace)
 }
 
-pub fn recover_interrupted_dev_ops(
-    pool: &crate::db::UserDbPool,
-    app: &tauri::AppHandle,
-) -> usize {
+pub fn recover_interrupted_dev_ops(pool: &crate::db::UserDbPool, app: &tauri::AppHandle) -> usize {
     let orphans = list_dispatched_dev_ops(pool);
     if orphans.is_empty() {
         return 0;
@@ -524,7 +531,9 @@ pub fn recover_interrupted_dev_ops(
         }
 
         // Capture what survived before flipping the status.
-        let commit = recovered.clone().or_else(|| latest_commit_short(&meta.workspace));
+        let commit = recovered
+            .clone()
+            .or_else(|| latest_commit_short(&meta.workspace));
         if recovered.is_none() {
             mark_dev_op(pool, &op_id, "interrupted", commit.as_deref());
         }
@@ -1183,8 +1192,14 @@ mod tests {
 
         set_verdict(&pool, "a", Some("up")).unwrap();
         set_verdict(&pool, "b", Some("down")).unwrap();
-        assert!(set_verdict(&pool, "a", Some("meh")).is_err(), "junk token rejected");
-        assert!(set_verdict(&pool, "ghost", Some("up")).is_err(), "no-row rejected");
+        assert!(
+            set_verdict(&pool, "a", Some("meh")).is_err(),
+            "junk token rejected"
+        );
+        assert!(
+            set_verdict(&pool, "ghost", Some("up")).is_err(),
+            "no-row rejected"
+        );
         // Clearing back to null is allowed.
         set_verdict(&pool, "b", None).unwrap();
 
@@ -1239,7 +1254,8 @@ mod tests {
     /// Fresh repo with an `a.txt` base commit + local identity config.
     fn t_fresh_repo() -> PathBuf {
         let n = SCRATCH_N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let root = std::env::temp_dir().join(format!("personas-devmerge-{}-{n}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("personas-devmerge-{}-{n}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&root).unwrap();
         run_git(&root, &["init"]).unwrap();
@@ -1255,7 +1271,11 @@ mod tests {
     fn t_worktree(root: &std::path::Path) -> (PathBuf, String) {
         let branch = "athena-dev-t".to_string();
         let wt = root.join(".claude/worktrees/athena-dev-t");
-        run_git(root, &["worktree", "add", &wt.to_string_lossy(), "-b", &branch]).unwrap();
+        run_git(
+            root,
+            &["worktree", "add", &wt.to_string_lossy(), "-b", &branch],
+        )
+        .unwrap();
         std::fs::write(wt.join("a.txt"), "base\ndev-change\n").unwrap();
         run_git(&wt, &["add", "a.txt"]).unwrap();
         t_commit(&wt, "dev change");
@@ -1269,11 +1289,15 @@ mod tests {
         }
         let root = t_fresh_repo();
         let (wt, branch) = t_worktree(&root);
-        let out = apply_dev_branch(&root, &wt, &branch).expect("ff applies").message;
+        let out = apply_dev_branch(&root, &wt, &branch)
+            .expect("ff applies")
+            .message;
         assert!(out.contains("fast-forward"), "got: {out}");
         // `.contains` (not byte-equality) — Windows autocrlf may rewrite \n→\r\n.
         assert!(
-            std::fs::read_to_string(root.join("a.txt")).unwrap().contains("dev-change"),
+            std::fs::read_to_string(root.join("a.txt"))
+                .unwrap()
+                .contains("dev-change"),
             "dev change landed on master"
         );
         assert!(!wt.exists(), "worktree removed");
@@ -1296,11 +1320,15 @@ mod tests {
         run_git(&root, &["add", "b.txt"]).unwrap();
         t_commit(&root, "master moves");
 
-        let out = apply_dev_branch(&root, &wt, &branch).expect("cherry-pick applies").message;
+        let out = apply_dev_branch(&root, &wt, &branch)
+            .expect("cherry-pick applies")
+            .message;
         assert!(out.contains("cherry-pick"), "got: {out}");
         // Both the dev change and the divergent master commit are present.
         assert!(
-            std::fs::read_to_string(root.join("a.txt")).unwrap().contains("dev-change"),
+            std::fs::read_to_string(root.join("a.txt"))
+                .unwrap()
+                .contains("dev-change"),
             "dev change cherry-picked onto master"
         );
         assert!(root.join("b.txt").exists());
@@ -1329,7 +1357,10 @@ mod tests {
         assert!(out.message.contains("merge"), "got: {}", out.message);
         assert!(!out.landed_sha.is_empty(), "landed sha reported");
         let a = std::fs::read_to_string(root.join("a.txt")).unwrap();
-        assert!(a.contains("dev-change") && a.contains("more"), "both commits landed");
+        assert!(
+            a.contains("dev-change") && a.contains("more"),
+            "both commits landed"
+        );
         assert!(root.join("b.txt").exists(), "master's own commit survived");
         assert!(!wt.exists(), "worktree removed after verification");
         let _ = std::fs::remove_dir_all(&root);
@@ -1355,9 +1386,14 @@ mod tests {
         // The whole point: nothing lost. Branch intact, worktree preserved,
         // live checkout unchanged and not mid-merge.
         assert!(wt.exists(), "worktree preserved for manual merge");
-        assert!(run_git(&root, &["rev-parse", "--verify", &branch]).is_ok(), "branch intact");
         assert!(
-            std::fs::read_to_string(root.join("a.txt")).unwrap().contains("master-took-this-line"),
+            run_git(&root, &["rev-parse", "--verify", &branch]).is_ok(),
+            "branch intact"
+        );
+        assert!(
+            std::fs::read_to_string(root.join("a.txt"))
+                .unwrap()
+                .contains("master-took-this-line"),
             "live checkout untouched"
         );
         assert!(
@@ -1382,9 +1418,16 @@ mod tests {
         t_commit(&root, "parallel session landed the same change");
 
         let out = apply_dev_branch(&root, &wt, &branch).expect("already-applied is a success");
-        assert!(out.message.contains("already applied"), "got: {}", out.message);
+        assert!(
+            out.message.contains("already applied"),
+            "got: {}",
+            out.message
+        );
         assert!(!out.landed_sha.is_empty());
-        assert!(!wt.exists(), "worktree cleaned up — there is nothing to come back for");
+        assert!(
+            !wt.exists(),
+            "worktree cleaned up — there is nothing to come back for"
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -1416,7 +1459,9 @@ mod tests {
         std::fs::write(wt.join("pnpm-lock.yaml"), "v2-drifted-by-npx\n").unwrap();
 
         // Drift alone must NOT block the merge — it's restored to HEAD first.
-        let out = apply_dev_branch(&root, &wt, &branch).expect("lockfile drift tolerated").message;
+        let out = apply_dev_branch(&root, &wt, &branch)
+            .expect("lockfile drift tolerated")
+            .message;
         assert!(out.contains("fast-forward"), "got: {out}");
         let _ = std::fs::remove_dir_all(&root);
     }

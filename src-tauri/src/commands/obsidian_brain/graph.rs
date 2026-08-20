@@ -29,7 +29,9 @@ use crate::AppState;
 use notify::{event::EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
 use super::get_config_or_err;
-use super::vault_fs::{extract_wikilinks, strip_alias_and_section, walk_markdown_files, WalkOptions};
+use super::vault_fs::{
+    extract_wikilinks, strip_alias_and_section, walk_markdown_files, WalkOptions,
+};
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -511,10 +513,7 @@ fn resolve_daily_note_path(vault_root: &Path, date: &NaiveDate) -> (PathBuf, Str
 /// (A concurrent read-modify-write on the same note can still last-writer-wins
 /// the merge; a per-path lock is the further fix.)
 fn atomic_write(path: &Path, contents: &[u8]) -> std::io::Result<()> {
-    let file_name = path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("note");
+    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("note");
     let tmp = path.with_file_name(format!(".{}.{}.tmp", file_name, uuid::Uuid::new_v4()));
     std::fs::write(&tmp, contents)?;
     match std::fs::rename(&tmp, path) {

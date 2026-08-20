@@ -20,8 +20,8 @@ use tokio::sync::watch;
 
 use portable_pty::MasterPty;
 
-use super::types::{state_to_token, FleetSession, FleetSessionMode, FleetSessionState};
 use super::screen_activity;
+use super::types::{state_to_token, FleetSession, FleetSessionMode, FleetSessionState};
 
 /// Default cap (bytes) for a session's output ring buffer. Bounds the desktop
 /// app's memory per session regardless of how much a 1M-token run prints: a
@@ -636,9 +636,8 @@ impl FleetRegistry {
     /// Drives the duplicate-spawn guard.
     pub fn has_active_cwd(&self, cwd: &std::path::Path) -> bool {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        map.values().any(|s| {
-            !matches!(s.state, FleetSessionState::Exited) && s.cwd == cwd
-        })
+        map.values()
+            .any(|s| !matches!(s.state, FleetSessionState::Exited) && s.cwd == cwd)
     }
 
     /// Writes `bytes` to the session's stdin. No-op if missing/exited.
@@ -862,8 +861,13 @@ impl FleetRegistry {
         reason: &str,
     ) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else { return false; };
-        if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if matches!(
+            session.state,
+            FleetSessionState::Exited | FleetSessionState::Hibernated
+        ) {
             return false;
         }
         session.last_activity_ms = now_ms();
@@ -950,7 +954,9 @@ impl FleetRegistry {
     /// fresh activity) so the staleness ticker sees the session as alive.
     pub fn revive_to_running_on_activity(&self, session_id: &str) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else { return false; };
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
         session.last_activity_ms = now_ms();
         if matches!(
             session.state,
@@ -1072,8 +1078,12 @@ impl FleetRegistry {
                 None => "Exited (signal or crash)".to_string(),
             };
             session.state_reason = Some(reason);
-            if let Ok(mut w) = session.writer.lock() { *w = None; }
-            if let Ok(mut m) = session.master.lock() { *m = None; }
+            if let Ok(mut w) = session.writer.lock() {
+                *w = None;
+            }
+            if let Ok(mut m) = session.master.lock() {
+                *m = None;
+            }
             // Confirmed exit: clear the tracked PID now (not on hibernate-intent),
             // so process_scan tracks the live PID for the session's whole life.
             session.child_pid = None;
@@ -1114,14 +1124,22 @@ impl FleetRegistry {
     /// Returns `false` if the session id is unknown.
     pub fn close_pty_handles(&self, session_id: &str) -> bool {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get(session_id) else { return false; };
+        let Some(session) = map.get(session_id) else {
+            return false;
+        };
         // Terminate the child first — interactive `claude` ignores stdin EOF, so
         // dropping the PTY handles alone leaves a zombie. The reaper then fires.
         if let Some(k) = &session.killer {
-            if let Ok(mut k) = k.lock() { let _ = k.kill(); }
+            if let Ok(mut k) = k.lock() {
+                let _ = k.kill();
+            }
         }
-        if let Ok(mut w) = session.writer.lock() { *w = None; }
-        if let Ok(mut m) = session.master.lock() { *m = None; }
+        if let Ok(mut w) = session.writer.lock() {
+            *w = None;
+        }
+        if let Ok(mut m) = session.master.lock() {
+            *m = None;
+        }
         true
     }
 
@@ -1147,12 +1165,20 @@ impl FleetRegistry {
     pub fn hibernate(&self, session_id: &str, require_resting: bool) -> bool {
         use std::sync::atomic::Ordering;
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else { return false; };
-        if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if matches!(
+            session.state,
+            FleetSessionState::Exited | FleetSessionState::Hibernated
+        ) {
             return false;
         }
         if require_resting
-            && !matches!(session.state, FleetSessionState::Idle | FleetSessionState::Stale)
+            && !matches!(
+                session.state,
+                FleetSessionState::Idle | FleetSessionState::Stale
+            )
         {
             // Re-engaged (Running) or now waiting on the user (AwaitingInput)
             // since the ticker snapshotted it — never sleep a live turn.
@@ -1164,16 +1190,23 @@ impl FleetRegistry {
         session.hibernating.store(true, Ordering::SeqCst);
         session.state = FleetSessionState::Hibernated;
         session.last_activity_ms = now_ms();
-        session.state_reason = Some("Hibernated — process freed; resume with claude --resume".to_string());
+        session.state_reason =
+            Some("Hibernated — process freed; resume with claude --resume".to_string());
         // Terminate the child (interactive claude won't exit on stdin EOF). KEEP
         // child_pid until the reaper confirms exit (cleared via clear_child_pid in
         // the reaper's hibernation branch) so process_scan doesn't mislabel the
         // still-live process as an untracked orphan during the kill→exit window.
         if let Some(k) = &session.killer {
-            if let Ok(mut k) = k.lock() { let _ = k.kill(); }
+            if let Ok(mut k) = k.lock() {
+                let _ = k.kill();
+            }
         }
-        if let Ok(mut w) = session.writer.lock() { *w = None; }
-        if let Ok(mut m) = session.master.lock() { *m = None; }
+        if let Ok(mut w) = session.writer.lock() {
+            *w = None;
+        }
+        if let Ok(mut m) = session.master.lock() {
+            *m = None;
+        }
         true
     }
 
@@ -1192,7 +1225,9 @@ impl FleetRegistry {
     pub fn doze(&self, session_id: &str) -> bool {
         use std::sync::atomic::Ordering;
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else { return false };
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
         if session.dozing
             || !matches!(
                 session.state,
@@ -1212,8 +1247,12 @@ impl FleetRegistry {
                 let _ = k.kill();
             }
         }
-        if let Ok(mut w) = session.writer.lock() { *w = None; }
-        if let Ok(mut m) = session.master.lock() { *m = None; }
+        if let Ok(mut w) = session.writer.lock() {
+            *w = None;
+        }
+        if let Ok(mut m) = session.master.lock() {
+            *m = None;
+        }
         true
     }
 
@@ -1230,7 +1269,9 @@ impl FleetRegistry {
     /// a window was actually cleared (caller emits registry-changed).
     pub fn clear_athena_active(&self, session_id: &str) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else { return false };
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
         let was = session.athena_active_until_ms != 0;
         session.athena_active_until_ms = 0;
         was
@@ -1341,7 +1382,9 @@ impl FleetRegistry {
     /// registry-changed only on a real transition rather than every tick.
     pub fn set_limit_reset(&self, session_id: &str, at_ms: Option<i64>) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get_mut(session_id) else { return false };
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
         let next = at_ms.unwrap_or(0);
         let changed = session.limit_reset_at_ms != next;
         session.limit_reset_at_ms = next;
@@ -1352,7 +1395,8 @@ impl FleetRegistry {
     /// before it replaces the row, so the resumed session can inherit them.
     pub fn lineage_of(&self, session_id: &str) -> Option<(i64, Option<String>)> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        map.get(session_id).map(|s| (s.created_at_ms, s.name.clone()))
+        map.get(session_id)
+            .map(|s| (s.created_at_ms, s.name.clone()))
     }
 
     /// Stamp an inherited `created_at_ms` (+ user rename) onto a freshly
@@ -1413,18 +1457,12 @@ impl FleetRegistry {
     /// still holding a live process (caller should soft-kill instead).
     pub fn forget_dead(&self, session_id: &str) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get(session_id) else { return false };
+        let Some(session) = map.get(session_id) else {
+            return false;
+        };
         let live = session.child_pid.is_some()
-            || session
-                .writer
-                .lock()
-                .map(|w| w.is_some())
-                .unwrap_or(true)
-            || session
-                .master
-                .lock()
-                .map(|m| m.is_some())
-                .unwrap_or(true);
+            || session.writer.lock().map(|w| w.is_some()).unwrap_or(true)
+            || session.master.lock().map(|m| m.is_some()).unwrap_or(true);
         if live {
             return false;
         }
@@ -1561,7 +1599,10 @@ mod tests {
             Some("Done. Files written.")
         );
         // All-noise screen → nothing to report.
-        assert_eq!(last_meaningful_line(&["".to_string(), "──".to_string()]), None);
+        assert_eq!(
+            last_meaningful_line(&["".to_string(), "──".to_string()]),
+            None
+        );
     }
 
     /// Build a minimal session record with no live PTY (master/writer `None`),
@@ -1613,7 +1654,10 @@ mod tests {
             \x1b[6;1HEnter to select";
         ring.push(seq);
         let joined = ring.render_screen(10, 80).join("\n");
-        assert!(joined.contains("Choose validation strategy:"), "got: {joined}");
+        assert!(
+            joined.contains("Choose validation strategy:"),
+            "got: {joined}"
+        );
         assert!(joined.contains("1. Throw"), "got: {joined}");
         assert!(joined.contains("2. Return null"), "got: {joined}");
         assert!(joined.contains("Enter to select"), "got: {joined}");
@@ -1638,7 +1682,10 @@ mod tests {
         full.push(part1);
         full.push(part2);
 
-        assert_eq!(incremental.render_screen(10, 80), full.render_screen(10, 80));
+        assert_eq!(
+            incremental.render_screen(10, 80),
+            full.render_screen(10, 80)
+        );
     }
 
     #[test]
@@ -1711,13 +1758,36 @@ mod tests {
         // Seed some buffered output as the reader would.
         {
             let map = reg.sessions.lock().unwrap();
-            map.get("s").unwrap().output.lock().unwrap().push(b"hello world");
+            map.get("s")
+                .unwrap()
+                .output
+                .lock()
+                .unwrap()
+                .push(b"hello world");
         }
         let snap = reg.subscribe_output("s");
         assert_eq!(snap.as_deref(), Some("hello world"));
-        assert!(reg.sessions.lock().unwrap().get("s").unwrap().output.lock().unwrap().is_subscribed());
+        assert!(reg
+            .sessions
+            .lock()
+            .unwrap()
+            .get("s")
+            .unwrap()
+            .output
+            .lock()
+            .unwrap()
+            .is_subscribed());
         reg.unsubscribe_output("s");
-        assert!(!reg.sessions.lock().unwrap().get("s").unwrap().output.lock().unwrap().is_subscribed());
+        assert!(!reg
+            .sessions
+            .lock()
+            .unwrap()
+            .get("s")
+            .unwrap()
+            .output
+            .lock()
+            .unwrap()
+            .is_subscribed());
         // Unknown session → None / no panic.
         assert_eq!(reg.subscribe_output("missing"), None);
         reg.unsubscribe_output("missing");
@@ -1737,12 +1807,19 @@ mod tests {
         // by the autonomous fleet_send_input autoapprove path.
         let reg = FleetRegistry::default();
         reg.insert(session("spawn", FleetSessionState::Idle, Some("cc-spawn")));
-        reg.insert(session("dispatch", FleetSessionState::Idle, Some("cc-dispatch")));
+        reg.insert(session(
+            "dispatch",
+            FleetSessionState::Idle,
+            Some("cc-dispatch"),
+        ));
         reg.insert(session("user", FleetSessionState::Idle, Some("cc-user")));
         reg.insert(session("anon", FleetSessionState::Idle, Some("cc-anon")));
 
         reg.rename("spawn", Some(ATHENA_SESSION_NAME_SENTINEL.to_string()));
-        reg.rename("dispatch", Some(format!("{ATHENA_SESSION_NAME_SENTINEL}-writer")));
+        reg.rename(
+            "dispatch",
+            Some(format!("{ATHENA_SESSION_NAME_SENTINEL}-writer")),
+        );
         // A user-spawned session the user renamed for themselves.
         reg.rename("user", Some("my debugging terminal".to_string()));
         // "anon" keeps its default name: None.
@@ -1762,7 +1839,11 @@ mod tests {
         // the shape of a live session whose PTY plumbing the test skips.
         reg.insert(session("live", FleetSessionState::Running, Some("cc-live")));
         reg.insert(session("stale", FleetSessionState::Stale, Some("cc-stale")));
-        reg.insert(session("hib", FleetSessionState::Hibernated, Some("cc-hib")));
+        reg.insert(session(
+            "hib",
+            FleetSessionState::Hibernated,
+            Some("cc-hib"),
+        ));
 
         // A tracked child pid counts as live → refuse, row stays.
         assert!(!reg.forget_dead("live"));
@@ -1804,16 +1885,33 @@ mod tests {
         reg.insert(session("fleet-1", FleetSessionState::Idle, Some("cc-1")));
         reg.insert(session("fleet-2", FleetSessionState::Running, None));
         // Fleet id → itself; claude_session_id → the owning fleet id.
-        assert_eq!(reg.resolve_session_id("fleet-1").as_deref(), Some("fleet-1"));
+        assert_eq!(
+            reg.resolve_session_id("fleet-1").as_deref(),
+            Some("fleet-1")
+        );
         assert_eq!(reg.resolve_session_id("cc-1").as_deref(), Some("fleet-1"));
-        assert_eq!(reg.resolve_session_id("fleet-2").as_deref(), Some("fleet-2"));
+        assert_eq!(
+            reg.resolve_session_id("fleet-2").as_deref(),
+            Some("fleet-2")
+        );
         // Unknown either way → None.
         assert_eq!(reg.resolve_session_id("nope"), None);
         // A live row wins over an exited predecessor sharing the same cc id
         // (a wake mints a new fleet id but keeps the claude_session_id).
-        reg.insert(session("fleet-old", FleetSessionState::Exited, Some("cc-shared")));
-        reg.insert(session("fleet-new", FleetSessionState::Idle, Some("cc-shared")));
-        assert_eq!(reg.resolve_session_id("cc-shared").as_deref(), Some("fleet-new"));
+        reg.insert(session(
+            "fleet-old",
+            FleetSessionState::Exited,
+            Some("cc-shared"),
+        ));
+        reg.insert(session(
+            "fleet-new",
+            FleetSessionState::Idle,
+            Some("cc-shared"),
+        ));
+        assert_eq!(
+            reg.resolve_session_id("cc-shared").as_deref(),
+            Some("fleet-new")
+        );
     }
 
     #[test]
@@ -1822,7 +1920,11 @@ mod tests {
         // resting states it could have been wrongly parked in, but never disturb
         // Spawning/Running/terminal sessions.
         let reg = FleetRegistry::default();
-        reg.insert(session("await", FleetSessionState::AwaitingInput, Some("cc-a")));
+        reg.insert(session(
+            "await",
+            FleetSessionState::AwaitingInput,
+            Some("cc-a"),
+        ));
         reg.insert(session("idle", FleetSessionState::Idle, Some("cc-i")));
         reg.insert(session("stale", FleetSessionState::Stale, Some("cc-s")));
         reg.insert(session("run", FleetSessionState::Running, Some("cc-r")));
@@ -1862,7 +1964,11 @@ mod tests {
         // must NOT be slept — its in-flight turn would be dropped silently.
         let reg = FleetRegistry::default();
         reg.insert(session("run", FleetSessionState::Running, Some("cc-run")));
-        reg.insert(session("await", FleetSessionState::AwaitingInput, Some("cc-await")));
+        reg.insert(session(
+            "await",
+            FleetSessionState::AwaitingInput,
+            Some("cc-await"),
+        ));
 
         assert!(!reg.hibernate("run", true));
         assert!(!reg.hibernate("await", true));
@@ -1889,7 +1995,11 @@ mod tests {
         reg.insert(session("nocsid", FleetSessionState::Idle, None));
         // Already terminal / already asleep.
         reg.insert(session("exited", FleetSessionState::Exited, Some("cc-x")));
-        reg.insert(session("slept", FleetSessionState::Hibernated, Some("cc-s")));
+        reg.insert(session(
+            "slept",
+            FleetSessionState::Hibernated,
+            Some("cc-s"),
+        ));
 
         for flag in [true, false] {
             assert!(!reg.hibernate("nocsid", flag));

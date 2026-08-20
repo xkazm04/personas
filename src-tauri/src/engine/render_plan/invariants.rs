@@ -332,17 +332,13 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
         }
         match o {
             OverlayStage::Image(img) => {
-                let src =
-                    source_by_id
-                        .get(&img.source_id)
-                        .ok_or_else(|| InvariantViolation {
-                            code: "I4",
-                            message: format!(
-                                "image overlay {} references unknown sourceId",
-                                img.id
-                            ),
-                            offending_id: Some(img.id.clone()),
-                        })?;
+                let src = source_by_id
+                    .get(&img.source_id)
+                    .ok_or_else(|| InvariantViolation {
+                        code: "I4",
+                        message: format!("image overlay {} references unknown sourceId", img.id),
+                        offending_id: Some(img.id.clone()),
+                    })?;
                 if matches!(src, SourceEntry::Color { .. }) {
                     return violation(
                         "I4",

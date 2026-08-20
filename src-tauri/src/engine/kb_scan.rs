@@ -106,8 +106,10 @@ pub fn search_all_kbs_with_vec(
         // nothing close still got padded with the least-irrelevant passages of every
         // KB. Applied per-KB before similarity conversion so an off-topic clipboard
         // event notifies with NOTHING rather than noise.
-        let (results, dropped) =
-            crate::retrieval::filter_by_distance_floor(&results, crate::retrieval::MAX_VECTOR_DISTANCE);
+        let (results, dropped) = crate::retrieval::filter_by_distance_floor(
+            &results,
+            crate::retrieval::MAX_VECTOR_DISTANCE,
+        );
         floor_filtered += dropped;
 
         for (chunk_id, distance) in results {

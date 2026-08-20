@@ -87,11 +87,7 @@ pub struct ShipMilestoneCreated {
 use crate::companion::dispatcher::READ_OP_SUGGESTIONS;
 
 /// `name (id)` pairs from one table, for a rejection message.
-fn candidates(
-    conn: &rusqlite::Connection,
-    sql: &str,
-    args: &[&dyn rusqlite::ToSql],
-) -> String {
+fn candidates(conn: &rusqlite::Connection, sql: &str, args: &[&dyn rusqlite::ToSql]) -> String {
     let rows: Vec<String> = match conn.prepare(sql) {
         Ok(mut stmt) => stmt
             .query_map(args, |r| {
@@ -463,8 +459,14 @@ mod ship_milestone_tests {
         )
         .expect_err("a hallucinated id must be refused");
         assert!(err.contains("uc_does_not_exist"), "{err}");
-        assert!(err.contains("uc_1"), "real candidate ids must be named: {err}");
-        assert!(err.contains("Ship tab"), "candidates carry names too: {err}");
+        assert!(
+            err.contains("uc_1"),
+            "real candidate ids must be named: {err}"
+        );
+        assert!(
+            err.contains("Ship tab"),
+            "candidates carry names too: {err}"
+        );
     }
 
     /// A use case id under `goal` is not "close enough" — the two tables are
@@ -503,16 +505,24 @@ mod ship_milestone_tests {
             let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &[row(kind, "x", None)])
                 .expect_err("only use_case and goal are members");
             assert!(err.contains("item_kind"), "{err}");
-            assert!(err.contains("KPI"), "the reason must state the KPI rule: {err}");
+            assert!(
+                err.contains("KPI"),
+                "the reason must state the KPI rule: {err}"
+            );
         }
     }
 
     #[test]
     fn rejects_an_unknown_project_and_names_the_real_ones() {
         let pool = pool_with_fixture();
-        let err =
-            validate_ship_milestone(&pool, "not-a-project", "M1", "", &[row("goal", "goal_1", None)])
-                .expect_err("an unknown project must be refused");
+        let err = validate_ship_milestone(
+            &pool,
+            "not-a-project",
+            "M1",
+            "",
+            &[row("goal", "goal_1", None)],
+        )
+        .expect_err("an unknown project must be refused");
         assert!(err.contains("Personas"), "{err}");
         assert!(err.contains("proj_1"), "{err}");
     }
@@ -528,7 +538,10 @@ mod ship_milestone_tests {
             .expect_err("the cap must hold");
         assert!(err.contains(&SHIP_MILESTONE_MAX_ROWS.to_string()), "{err}");
 
-        let dup = vec![row("use_case", "uc_1", None), row("use_case", "Ship tab", None)];
+        let dup = vec![
+            row("use_case", "uc_1", None),
+            row("use_case", "Ship tab", None),
+        ];
         let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &dup)
             .expect_err("the same member twice must be refused");
         assert!(err.contains("already in this milestone"), "{err}");
@@ -569,7 +582,10 @@ mod ship_milestone_tests {
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .unwrap();
-        assert_eq!(status, "planned", "a milestone is never born shipped or cut");
+        assert_eq!(
+            status, "planned",
+            "a milestone is never born shipped or cut"
+        );
         assert_eq!(
             goal.as_deref(),
             Some("everything the Ship tab needs to be believable")

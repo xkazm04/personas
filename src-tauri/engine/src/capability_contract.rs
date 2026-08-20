@@ -27,11 +27,11 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use personas_core::error::AppError;
 use personas_db::models::{PersonaAutomation, PersonaToolDefinition, PersonaTrigger};
 use personas_db::repos::core::personas as persona_repo;
 use personas_db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
 use personas_db::DbPool;
-use personas_core::error::AppError;
 
 // ============================================================================
 // Requirement -- a single typed dependency predicate

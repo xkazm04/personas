@@ -1098,7 +1098,10 @@ mod setup_install_slot_tests {
         // be a no-op (guards against a stale/late cleanup call stealing a
         // slot a different, newer install already claimed).
         registry.clear_id_if("setup", &install_b); // wrong id: no-op
-        assert_eq!(registry.get_id("setup").as_deref(), Some(install_a.as_str()));
+        assert_eq!(
+            registry.get_id("setup").as_deref(),
+            Some(install_a.as_str())
+        );
         drop(guard_a);
         assert!(!registry.is_run_registered("setup", &install_a));
         registry.clear_id_if("setup", &install_a); // right id: releases

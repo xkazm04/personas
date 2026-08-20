@@ -65,9 +65,8 @@ pub fn upsert(
                 ],
             )?;
 
-            get_by_execution_and_author(pool, execution_id, author)?.ok_or_else(|| {
-                AppError::Database(rusqlite::Error::QueryReturnedNoRows)
-            })
+            get_by_execution_and_author(pool, execution_id, author)?
+                .ok_or_else(|| AppError::Database(rusqlite::Error::QueryReturnedNoRows))
         }
     )
 }

@@ -96,7 +96,11 @@ pub(crate) fn render_skill_matrix(rows: &[SkillMatrixRow], project_count: usize)
         rows.iter().partition(|r| {
             r.copies.iter().any(|c| {
                 !matches!(
-                    drift_verdict(r.library_version.as_ref(), c.version.as_deref(), &c.sync_state),
+                    drift_verdict(
+                        r.library_version.as_ref(),
+                        c.version.as_deref(),
+                        &c.sync_state
+                    ),
                     "in sync"
                 )
             })
@@ -110,14 +114,21 @@ pub(crate) fn render_skill_matrix(rows: &[SkillMatrixRow], project_count: usize)
             .copies
             .iter()
             .map(|c| {
-                let verdict =
-                    drift_verdict(r.library_version.as_ref(), c.version.as_deref(), &c.sync_state);
+                let verdict = drift_verdict(
+                    r.library_version.as_ref(),
+                    c.version.as_deref(),
+                    &c.sync_state,
+                );
                 let uses = if c.invokes_30d > 0 {
                     format!(", {} uses/30d", c.invokes_30d)
                 } else {
                     String::new()
                 };
-                format!("{} {} ({verdict}{uses})", c.project, ver(c.version.as_deref()))
+                format!(
+                    "{} {} ({verdict}{uses})",
+                    c.project,
+                    ver(c.version.as_deref())
+                )
             })
             .collect();
         let copies_txt = if copies.is_empty() {
@@ -162,8 +173,11 @@ pub(crate) fn render_skill_detail(
         out.push_str("- installed in no registered project\n");
     }
     for c in &row.copies {
-        let verdict =
-            drift_verdict(row.library_version.as_ref(), c.version.as_deref(), &c.sync_state);
+        let verdict = drift_verdict(
+            row.library_version.as_ref(),
+            c.version.as_deref(),
+            &c.sync_state,
+        );
         out.push_str(&format!(
             "- {}: {} ({verdict}, {} uses/30d)\n",
             c.project,
@@ -209,7 +223,11 @@ pub fn describe_skill_fleet(db: &DbPool, query: &str) -> String {
          GROUP BY skill_name, project_id",
     ) {
         if let Ok(rows) = stmt.query_map([], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?, r.get::<_, i64>(2)?))
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, Option<String>>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
         }) {
             for (name, pid, n) in rows.flatten() {
                 if let Some(pid) = pid {
@@ -244,18 +262,25 @@ pub fn describe_skill_fleet(db: &DbPool, query: &str) -> String {
         let dir = PathBuf::from(root).join(".claude").join("skills");
         for e in scan_skills_dir(&dir) {
             if let Some(d) = &e.description {
-                descriptions.entry(e.name.clone()).or_insert_with(|| d.clone());
+                descriptions
+                    .entry(e.name.clone())
+                    .or_insert_with(|| d.clone());
             }
-            let row = rows.entry(e.name.clone()).or_insert_with(|| SkillMatrixRow {
-                name: e.name.clone(),
-                library_version: None,
-                copies: Vec::new(),
-            });
+            let row = rows
+                .entry(e.name.clone())
+                .or_insert_with(|| SkillMatrixRow {
+                    name: e.name.clone(),
+                    library_version: None,
+                    copies: Vec::new(),
+                });
             row.copies.push(SkillCopy {
                 project: pname.clone(),
                 version: e.version.clone(),
                 sync_state: e.sync_state.clone(),
-                invokes_30d: invokes.get(&(e.name.clone(), pid.clone())).copied().unwrap_or(0),
+                invokes_30d: invokes
+                    .get(&(e.name.clone(), pid.clone()))
+                    .copied()
+                    .unwrap_or(0),
             });
         }
     }
@@ -268,13 +293,20 @@ pub fn describe_skill_fleet(db: &DbPool, query: &str) -> String {
     let hit = rows
         .iter()
         .find(|r| r.name.to_lowercase() == needle)
-        .or_else(|| rows.iter().find(|r| r.name.to_lowercase().contains(&needle)));
+        .or_else(|| {
+            rows.iter()
+                .find(|r| r.name.to_lowercase().contains(&needle))
+        });
     let Some(hit) = hit else {
         let names: Vec<&str> = rows.iter().take(12).map(|r| r.name.as_str()).collect();
         return format!(
             "No skill matches `{query}` in the library or any registered project. Known skills \
              include: {}. Do not invent a skill name.",
-            if names.is_empty() { "none".to_string() } else { names.join(", ") }
+            if names.is_empty() {
+                "none".to_string()
+            } else {
+                names.join(", ")
+            }
         );
     };
     // Lessons: library copy first, else the first project copy that has one.
@@ -309,7 +341,11 @@ pub fn describe_skill_fleet(db: &DbPool, query: &str) -> String {
                 .collect()
         })
         .unwrap_or_default();
-    render_skill_detail(hit, descriptions.get(&hit.name).map(String::as_str), &lessons)
+    render_skill_detail(
+        hit,
+        descriptions.get(&hit.name).map(String::as_str),
+        &lessons,
+    )
 }
 
 // ── knowledge library ───────────────────────────────────────────────────
@@ -352,7 +388,11 @@ pub(crate) fn render_knowledge_digest(digests: &[KnowledgeDigest]) -> String {
         out.push_str(&format!(
             "**Workspace {}** — knowledge: {}.\n",
             d.workspace,
-            if counts.is_empty() { "empty".to_string() } else { counts }
+            if counts.is_empty() {
+                "empty".to_string()
+            } else {
+                counts
+            }
         ));
         let pending = d.by_status.get("observed").copied().unwrap_or(0)
             + d.by_status.get("proposed").copied().unwrap_or(0);
@@ -368,7 +408,10 @@ pub(crate) fn render_knowledge_digest(digests: &[KnowledgeDigest]) -> String {
                 .take(MAX_AREA_ROWS)
                 .map(|(a, n)| format!("{a} ({n})"))
                 .collect();
-            out.push_str(&format!("- adopted patterns by area: {}\n", areas.join(", ")));
+            out.push_str(&format!(
+                "- adopted patterns by area: {}\n",
+                areas.join(", ")
+            ));
         }
         if !d.playbooks_active.is_empty() || d.playbooks_draft > 0 {
             out.push_str(&format!(
@@ -459,7 +502,11 @@ pub fn describe_knowledge(db: &DbPool, query: &str) -> String {
         ) {
             if let Ok(rows) = stmt.query_map([&ws.id], |r| r.get::<_, Option<String>>(0)) {
                 for topic in rows.flatten().flatten() {
-                    let area = topic.split('/').next().unwrap_or("uncategorized").to_string();
+                    let area = topic
+                        .split('/')
+                        .next()
+                        .unwrap_or("uncategorized")
+                        .to_string();
                     *area_counts.entry(area).or_insert(0) += 1;
                 }
             }
@@ -490,7 +537,10 @@ pub fn describe_knowledge(db: &DbPool, query: &str) -> String {
             if rows.is_empty() {
                 continue;
             }
-            let never = rows.iter().filter(|c| c.last_harvested_at.is_none()).count();
+            let never = rows
+                .iter()
+                .filter(|c| c.last_harvested_at.is_none())
+                .count();
             let stale = rows
                 .iter()
                 .filter(|c| {
@@ -575,9 +625,8 @@ fn describe_knowledge_item(
         // Playbook slug first — slugs are exact, cheap, and unambiguous.
         if let Ok(playbooks) = crate::db::repos::dev_workspaces::list_playbooks(db, &ws.id) {
             if let Some(pb) = playbooks.iter().find(|p| p.slug.to_lowercase() == needle) {
-                let members =
-                    crate::db::repos::dev_workspaces::list_playbook_patterns(db, &pb.id)
-                        .unwrap_or_default();
+                let members = crate::db::repos::dev_workspaces::list_playbook_patterns(db, &pb.id)
+                    .unwrap_or_default();
                 let mut out = format!(
                     "**Playbook {}** ({}) — {}\n{}\n\nMembers by phase:\n",
                     pb.slug, pb.status, pb.title, pb.summary
@@ -596,15 +645,17 @@ fn describe_knowledge_item(
             Ok(k) => k,
             Err(_) => continue,
         };
-        let hit = all
-            .iter()
-            .find(|k| k.id == query)
-            .or_else(|| all.iter().find(|k| k.title.to_lowercase().contains(&needle)));
+        let hit = all.iter().find(|k| k.id == query).or_else(|| {
+            all.iter()
+                .find(|k| k.title.to_lowercase().contains(&needle))
+        });
         if let Some(k) = hit {
             let edges = crate::db::repos::dev_workspaces::list_pattern_edges(db, &ws.id)
                 .unwrap_or_default();
-            let titles: BTreeMap<&str, &str> =
-                all.iter().map(|x| (x.id.as_str(), x.title.as_str())).collect();
+            let titles: BTreeMap<&str, &str> = all
+                .iter()
+                .map(|x| (x.id.as_str(), x.title.as_str()))
+                .collect();
             let mut edge_lines = Vec::new();
             for e in &edges {
                 if e.from_id == k.id {
@@ -617,7 +668,9 @@ fn describe_knowledge_item(
                     edge_lines.push(format!(
                         "{} ← {}",
                         e.rel,
-                        titles.get(e.from_id.as_str()).unwrap_or(&e.from_id.as_str())
+                        titles
+                            .get(e.from_id.as_str())
+                            .unwrap_or(&e.from_id.as_str())
                     ));
                 }
             }
@@ -649,7 +702,11 @@ fn describe_knowledge_item(
                     .map(|t| format!(", topic {t}"))
                     .unwrap_or_default(),
                 statement = k.statement,
-                detail = if detail.is_empty() { String::new() } else { format!("\n{detail}\n") },
+                detail = if detail.is_empty() {
+                    String::new()
+                } else {
+                    format!("\n{detail}\n")
+                },
                 edges = if edge_lines.is_empty() {
                     String::new()
                 } else {
@@ -697,24 +754,41 @@ mod tests {
         assert_eq!(drift_verdict(Some(&lib), Some("2.2"), "in_sync"), "ahead");
         assert_eq!(drift_verdict(Some(&lib), Some("2.1"), "in_sync"), "in sync");
         // Content divergence beats an equal version number.
-        assert_eq!(drift_verdict(Some(&lib), Some("2.1"), "diverged"), "customized");
+        assert_eq!(
+            drift_verdict(Some(&lib), Some("2.1"), "diverged"),
+            "customized"
+        );
         // Unversioned copies compare as 1.0 (pre-standard skills).
         assert_eq!(drift_verdict(Some(&lib), None, "in_sync"), "behind");
         assert_eq!(drift_verdict(Some(&None), None, "in_sync"), "in sync");
         // A skill the library never carried.
-        assert_eq!(drift_verdict(None, Some("1.0"), "local_only"), "not in library");
+        assert_eq!(
+            drift_verdict(None, Some("1.0"), "local_only"),
+            "not in library"
+        );
     }
 
     #[test]
     fn matrix_lists_drifted_rows_first_and_names_actions() {
         let rows = vec![
-            row("alpha", Some(Some("1.0")), vec![("personas", Some("1.0"), "in_sync", 3)]),
-            row("beta", Some(Some("2.0")), vec![("personas", Some("1.0"), "in_sync", 0)]),
+            row(
+                "alpha",
+                Some(Some("1.0")),
+                vec![("personas", Some("1.0"), "in_sync", 3)],
+            ),
+            row(
+                "beta",
+                Some(Some("2.0")),
+                vec![("personas", Some("1.0"), "in_sync", 0)],
+            ),
         ];
         let out = render_skill_matrix(&rows, 1);
         let beta_at = out.find("**beta**").expect("beta listed");
         let alpha_at = out.find("**alpha**").expect("alpha listed");
-        assert!(beta_at < alpha_at, "drifted beta must render before in-sync alpha:\n{out}");
+        assert!(
+            beta_at < alpha_at,
+            "drifted beta must render before in-sync alpha:\n{out}"
+        );
         assert!(out.contains("behind"), "{out}");
         assert!(out.contains("skill_sync"), "{out}");
     }
@@ -727,7 +801,11 @@ mod tests {
 
     #[test]
     fn skill_detail_names_the_missing_library_case() {
-        let r = row("gamma", None, vec![("personas", Some("1.2"), "local_only", 7)]);
+        let r = row(
+            "gamma",
+            None,
+            vec![("personas", Some("1.2"), "local_only", 7)],
+        );
         let out = render_skill_detail(&r, Some("Does gamma things.\nMore."), &[]);
         assert!(out.contains("NOT in the workspace library"), "{out}");
         assert!(out.contains("7 uses/30d"), "{out}");
@@ -742,14 +820,20 @@ mod tests {
             adopted_by_area: vec![("backend".into(), 200), ("ui".into(), 100)],
             playbooks_active: vec!["add-db-table".into()],
             playbooks_draft: 7,
-            coverage: vec![("brainiac".into(), 12, 3, 2, 7), ("clean".into(), 4, 0, 0, 0)],
+            coverage: vec![
+                ("brainiac".into(), 12, 3, 2, 7),
+                ("clean".into(), 4, 0, 0, 0),
+            ],
             verify: vec![("personas".into(), 140, 37, 12)],
             violation_hotspots: vec![("Wrap IPC in invokeWithTimeout".into(), 9)],
         };
         let out = render_knowledge_digest(&[d]);
         assert!(out.contains("140 practices await a first verdict"), "{out}");
         assert!(out.contains("37 violating cells"), "{out}");
-        assert!(out.contains("Wrap IPC in invokeWithTimeout (9 contexts)"), "{out}");
+        assert!(
+            out.contains("Wrap IPC in invokeWithTimeout (9 contexts)"),
+            "{out}"
+        );
         assert!(out.contains("7 below/without a depth report"), "{out}");
         assert!(out.contains("455 adopted"), "{out}");
         assert!(out.contains("12 items await human review"), "{out}");

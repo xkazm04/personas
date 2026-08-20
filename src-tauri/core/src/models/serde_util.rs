@@ -38,8 +38,7 @@ mod tests {
         let omitted: UpdateCredentialInput = serde_json::from_str("{}").unwrap();
         assert_eq!(omitted.metadata, None);
 
-        let cleared: UpdateCredentialInput =
-            serde_json::from_str(r#"{"metadata": null}"#).unwrap();
+        let cleared: UpdateCredentialInput = serde_json::from_str(r#"{"metadata": null}"#).unwrap();
         assert_eq!(cleared.metadata, Some(None));
 
         let set: UpdateCredentialInput =

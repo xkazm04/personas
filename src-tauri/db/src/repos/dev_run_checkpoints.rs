@@ -61,5 +61,6 @@ pub fn list(pool: &DbPool, run_id: &str) -> Result<Vec<DevRunCheckpoint>, AppErr
             })
         })
         .map_err(AppError::Database)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }

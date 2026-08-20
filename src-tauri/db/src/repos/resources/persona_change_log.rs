@@ -185,7 +185,10 @@ fn compute_changes(existing: &Persona, input: &UpdatePersonaInput) -> Vec<Change
         if *v != existing.model_profile {
             changes.push((
                 "model_profile",
-                existing.model_profile.as_ref().map(|_| REDACTED.to_string()),
+                existing
+                    .model_profile
+                    .as_ref()
+                    .map(|_| REDACTED.to_string()),
                 v.as_ref().map(|_| REDACTED.to_string()),
             ));
         }
@@ -230,7 +233,8 @@ pub fn write_diff(
         return Ok(0);
     }
 
-    let cutoff = (chrono::Utc::now() - chrono::Duration::seconds(COALESCE_WINDOW_SECS)).to_rfc3339();
+    let cutoff =
+        (chrono::Utc::now() - chrono::Duration::seconds(COALESCE_WINDOW_SECS)).to_rfc3339();
 
     for (field, before, after) in &changes {
         // Coalesce: if a recent row for the same (persona, field, source) exists
@@ -291,20 +295,24 @@ pub fn list_for_persona(
     persona_id: &str,
     limit: u32,
 ) -> Result<Vec<PersonaChangeEntry>, AppError> {
-    timed_query!("persona_change_log", "persona_change_log::list_for_persona", {
-        let bounded = limit.clamp(1, 500);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, persona_id, field, before_value, after_value, source, created_at
+    timed_query!(
+        "persona_change_log",
+        "persona_change_log::list_for_persona",
+        {
+            let bounded = limit.clamp(1, 500);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT id, persona_id, field, before_value, after_value, source, created_at
              FROM persona_change_log
              WHERE persona_id = ?1
              ORDER BY created_at DESC
              LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, bounded], row_to_persona_change_entry)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![persona_id, bounded], row_to_persona_change_entry)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -410,7 +418,10 @@ mod tests {
             &conn,
             "p1",
             &existing,
-            &UpdatePersonaInput { name: Some("First".into()), ..Default::default() },
+            &UpdatePersonaInput {
+                name: Some("First".into()),
+                ..Default::default()
+            },
             Some("editor"),
             &now(),
         )
@@ -419,7 +430,10 @@ mod tests {
             &conn,
             "p1",
             &existing,
-            &UpdatePersonaInput { name: Some("Second".into()), ..Default::default() },
+            &UpdatePersonaInput {
+                name: Some("Second".into()),
+                ..Default::default()
+            },
             Some("editor"),
             &now(),
         )
@@ -454,7 +468,10 @@ mod tests {
             &conn,
             "p1",
             &existing,
-            &UpdatePersonaInput { name: Some("Trigger".into()), ..Default::default() },
+            &UpdatePersonaInput {
+                name: Some("Trigger".into()),
+                ..Default::default()
+            },
             Some("editor"),
             &now(),
         )

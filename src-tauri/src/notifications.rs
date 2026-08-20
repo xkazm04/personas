@@ -82,7 +82,6 @@ fn parse_channels(json: Option<&str>) -> Vec<ExternalChannel> {
 // unchanged.
 pub use personas_core::models::parse_channels_v2;
 
-
 // ---------------------------------------------------------------------------
 // Shape-v2 delivery types (Phase 19 DELIV-02, D-04, D-07)
 // ---------------------------------------------------------------------------
@@ -405,10 +404,7 @@ async fn resolve_credential_fields(
 /// credential fields layered under `spec.config` (config wins on collision so
 /// the per-channel destination — Slack channel, Discord channel_id, Telegram
 /// chat_id — set in the picker can override anything in the credential).
-async fn merged_channel_config(
-    app: &AppHandle,
-    spec: &ChannelSpecV2,
-) -> HashMap<String, String> {
+async fn merged_channel_config(app: &AppHandle, spec: &ChannelSpecV2) -> HashMap<String, String> {
     let mut merged = if let Some(cred_id) = spec.credential_id.as_deref() {
         resolve_credential_fields(app, cred_id).await
     } else {
@@ -841,14 +837,10 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
         return Ok(());
     }
 
-    let bot_token = ch
-        .config
-        .get("bot_token")
-        .filter(|t| !t.is_empty())
-        .ok_or(
-            "Discord: configure either webhook_url (inline) or \
+    let bot_token = ch.config.get("bot_token").filter(|t| !t.is_empty()).ok_or(
+        "Discord: configure either webhook_url (inline) or \
              bot_token+channel_id (vault credential + spec.config)",
-        )?;
+    )?;
     let channel_id = ch
         .config
         .get("channel_id")
@@ -866,10 +858,7 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
     );
     let resp = crate::SHARED_HTTP
         .post(&url)
-        .header(
-            "Authorization",
-            format!("Bot {}", token.expose_secret()),
-        )
+        .header("Authorization", format!("Bot {}", token.expose_secret()))
         .json(&serde_json::json!({ "content": content }))
         .timeout(std::time::Duration::from_secs(10))
         .send()
@@ -926,11 +915,7 @@ async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<
     // team_id and channel_id may come from spec.config (set in the picker)
     // or from the credential's scoped_resources fallback (surfaced as
     // `selected_teams` / `selected_channels` by `merged_channel_config`).
-    if let Some(access_token) = ch
-        .config
-        .get("access_token")
-        .filter(|t| !t.is_empty())
-    {
+    if let Some(access_token) = ch.config.get("access_token").filter(|t| !t.is_empty()) {
         let team_id = ch
             .config
             .get("team_id")
@@ -1056,7 +1041,11 @@ pub fn notify_execution_completed_rich(
     if let Some(err) = error {
         if !err.is_empty() {
             // Truncate error for notification readability
-            let short_err = if err.len() > 200 { crate::utils::text::truncate_on_char_boundary(&err, 200) } else { err };
+            let short_err = if err.len() > 200 {
+                crate::utils::text::truncate_on_char_boundary(&err, 200)
+            } else {
+                err
+            };
             body.push_str(&format!("\nError: {}", short_err));
         }
     }

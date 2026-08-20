@@ -63,7 +63,6 @@ pub fn apply_bundle_import(
     file_path: String,
     options: BundleImportOptions,
 ) -> Result<BundleImportResult, AppError> {
-
     // Use cached preview bytes if a preview_id was provided (TOCTOU mitigation).
     // Falls back to re-reading the file if the cache entry expired or is missing,
     // but always verifies the bundle hash matches the preview hash.
@@ -207,7 +206,6 @@ pub fn apply_bundle_from_clipboard(
     base64_data: String,
     options: BundleImportOptions,
 ) -> Result<BundleImportResult, AppError> {
-
     // Use cached preview bytes if available, otherwise decode from base64
     let bytes = if let Some(ref pid) = options.preview_id {
         match bundle::take_cached_preview_bytes(pid) {

@@ -478,8 +478,14 @@ mod tests {
     #[test]
     fn role_parse_rejects_nonconforming_paths() {
         assert_eq!(role_from_episode_path("episodes/2026/07/10/noext"), None);
-        assert_eq!(role_from_episode_path("episodes/2026/07/10/norole.md"), None);
-        assert_eq!(role_from_episode_path("episodes/2026/07/10/trailing_.md"), None);
+        assert_eq!(
+            role_from_episode_path("episodes/2026/07/10/norole.md"),
+            None
+        );
+        assert_eq!(
+            role_from_episode_path("episodes/2026/07/10/trailing_.md"),
+            None
+        );
     }
 
     // ── FTS5 match-expression builder ───────────────────────────────────
@@ -501,7 +507,10 @@ mod tests {
         assert!(!q.contains(':'), "no bare column filter: {q}");
         assert!(q.contains("\"fleet\""), "hyphen split into terms: {q}");
         assert!(q.contains("\"event\""), "hyphen split into terms: {q}");
-        assert!(q.contains("\"near\""), "NEAR is a literal, not an operator: {q}");
+        assert!(
+            q.contains("\"near\""),
+            "NEAR is a literal, not an operator: {q}"
+        );
         assert!(q.contains("\"idle\""), "colon split into terms: {q}");
         // "what" and "the" are stopwords; the apostrophe splits "what's".
         assert!(!q.contains("\"the\""), "stopword dropped: {q}");
@@ -511,10 +520,17 @@ mod tests {
     fn fts_query_is_empty_when_only_noise_survives() {
         // A pure-stopword question must produce NO keyword lane rather than a
         // MATCH that pulls the least-irrelevant rows. Empty is the signal.
-        assert_eq!(build_fts5_match_query("what is it? and so, they are", 12), "");
+        assert_eq!(
+            build_fts5_match_query("what is it? and so, they are", 12),
+            ""
+        );
         assert_eq!(build_fts5_match_query("", 12), "");
         assert_eq!(build_fts5_match_query("!!! ??? ...", 12), "");
-        assert_eq!(build_fts5_match_query("a i x", 12), "", "1-char noise dropped");
+        assert_eq!(
+            build_fts5_match_query("a i x", 12),
+            "",
+            "1-char noise dropped"
+        );
     }
 
     #[test]

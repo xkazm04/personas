@@ -236,10 +236,14 @@ pub async fn dev_tools_workspace_run_divergence(
         ));
     }
     let items = repo::list_knowledge(&state.db, &workspace_id, None)?;
-    let live: Vec<_> = items.into_iter().filter(|k| k.status != "rejected").collect();
+    let live: Vec<_> = items
+        .into_iter()
+        .filter(|k| k.status != "rejected")
+        .collect();
     if live.len() < 4 {
         return Err(AppError::Validation(
-            "Not enough harvested knowledge to compare yet — run the miners or a harvest first.".into(),
+            "Not enough harvested knowledge to compare yet — run the miners or a harvest first."
+                .into(),
         ));
     }
 
@@ -250,11 +254,16 @@ pub async fn dev_tools_workspace_run_divergence(
         .map(|p| std::path::PathBuf::from(&p.root_path))
         .find(|p| p.is_dir());
 
-    let name_by_id: std::collections::HashMap<String, String> =
-        members.iter().map(|p| (p.id.clone(), p.name.clone())).collect();
+    let name_by_id: std::collections::HashMap<String, String> = members
+        .iter()
+        .map(|p| (p.id.clone(), p.name.clone()))
+        .collect();
     let project_name_of = move |id: &Option<String>| -> String {
         match id {
-            Some(i) => name_by_id.get(i).cloned().unwrap_or_else(|| "(removed)".into()),
+            Some(i) => name_by_id
+                .get(i)
+                .cloned()
+                .unwrap_or_else(|| "(removed)".into()),
             None => "workspace".into(),
         }
     };
@@ -276,8 +285,17 @@ pub async fn dev_tools_workspace_run_divergence(
     let jid_for_panic = jid.clone();
     tauri::async_runtime::spawn(async move {
         let work = AssertUnwindSafe(async move {
-            let result =
-                run_divergence(&app, &jid, &db, &wid, prompt, exec_dir, &valid_projects, token).await;
+            let result = run_divergence(
+                &app,
+                &jid,
+                &db,
+                &wid,
+                prompt,
+                exec_dir,
+                &valid_projects,
+                token,
+            )
+            .await;
             match result {
                 Ok(counts) => {
                     DIVERGENCE_JOBS.emit_line(
@@ -359,7 +377,11 @@ async fn run_divergence(
     valid_projects: &[String],
     token: CancellationToken,
 ) -> Result<(u32, u32), AppError> {
-    DIVERGENCE_JOBS.emit_line(app, job_id, "[Milestone] Comparing practices across the workspace…");
+    DIVERGENCE_JOBS.emit_line(
+        app,
+        job_id,
+        "[Milestone] Comparing practices across the workspace…",
+    );
 
     let mut child = crate::engine::cli_process::spawn_headless_claude(
         prompt,
@@ -470,7 +492,8 @@ async fn run_divergence(
     }
 
     // ── the one governed door ──
-    let known: std::collections::HashSet<&str> = valid_projects.iter().map(|s| s.as_str()).collect();
+    let known: std::collections::HashSet<&str> =
+        valid_projects.iter().map(|s| s.as_str()).collect();
     let candidates: Vec<KnowledgeCandidate> = proposals
         .iter()
         .map(|p| {
@@ -487,23 +510,35 @@ async fn run_divergence(
                 detail.push_str(&format!("**Why this is one shared problem**\n\n{r}\n\n"));
             }
             if !approaches.is_empty() {
-                detail.push_str(&format!("**Current approaches**\n\n{}\n", approaches.join("\n")));
+                detail.push_str(&format!(
+                    "**Current approaches**\n\n{}\n",
+                    approaches.join("\n")
+                ));
             }
             KnowledgeCandidate {
                 // Not produced by a territory scan (miner / divergence pass).
                 harvest_scope: None,
-                kind: p.kind.clone().filter(|k| repo::KNOWLEDGE_KINDS.contains(&k.as_str()))
+                kind: p
+                    .kind
+                    .clone()
+                    .filter(|k| repo::KNOWLEDGE_KINDS.contains(&k.as_str()))
                     .unwrap_or_else(|| "decision".into()),
                 title: p.title.clone(),
                 statement: p.statement.clone(),
                 detail_md: (!detail.is_empty()).then_some(detail),
                 topic: p.topic.clone(),
-                abstraction: p.abstraction.clone().filter(|a| a == "macro" || a == "meso"),
+                abstraction: p
+                    .abstraction
+                    .clone()
+                    .filter(|a| a == "macro" || a == "meso"),
                 ftype: p.ftype.clone(),
                 durability: Some("durable".into()),
                 governing_id: None,
                 evidence_count: Some(
-                    p.approaches.iter().filter(|a| known.contains(a.project.as_str())).count() as i64,
+                    p.approaches
+                        .iter()
+                        .filter(|a| known.contains(a.project.as_str()))
+                        .count() as i64,
                 ),
                 applicability: None,
                 origin_project_id: None, // cross-project by construction
@@ -519,7 +554,13 @@ async fn run_divergence(
         })
         .collect();
 
-    let summary = repo::ingest_candidates(db, workspace_id, &candidates, "agent", Some(DIVERGENCE_MODEL))?;
+    let summary = repo::ingest_candidates(
+        db,
+        workspace_id,
+        &candidates,
+        "agent",
+        Some(DIVERGENCE_MODEL),
+    )?;
     for skip in &summary.skipped {
         DIVERGENCE_JOBS.emit_line(app, job_id, format!("[Skipped] {skip}"));
     }

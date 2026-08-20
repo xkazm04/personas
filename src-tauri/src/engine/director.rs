@@ -485,7 +485,10 @@ fn parse_score(output: &str) -> Option<(i64, String)> {
 /// - primary missing, salvage has a score → salvaged score.
 /// - primary missing, salvage missing/absent → `None` ⇒ caller writes an
 ///   explicit unscored marker (never silent).
-fn score_after_salvage(primary_output: &str, salvage_output: Option<&str>) -> Option<(i64, String)> {
+fn score_after_salvage(
+    primary_output: &str,
+    salvage_output: Option<&str>,
+) -> Option<(i64, String)> {
     parse_score(primary_output).or_else(|| salvage_output.and_then(parse_score))
 }
 
@@ -664,7 +667,11 @@ fn truncate(s: &str, max: usize) -> String {
 /// five inputs the rubric promises: identity, execution summary (incl. the
 /// value/efficiency rollup), open healing, a memory sample, and the Director's
 /// own past verdicts on this persona + how the user responded.
-fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup: &ValueRollup) -> String {
+fn build_director_payload(
+    pool: &DbPool,
+    ctx: &PersonaEvaluationContext,
+    rollup: &ValueRollup,
+) -> String {
     let p = &ctx.persona;
     let mut s = String::new();
 
@@ -751,7 +758,11 @@ fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup:
         s.push_str("- (none)\n");
     } else {
         for m in memories.iter().take(8) {
-            s.push_str(&format!("- [{}] {}\n", m.category, truncate(&m.content, 160)));
+            s.push_str(&format!(
+                "- [{}] {}\n",
+                m.category,
+                truncate(&m.content, 160)
+            ));
         }
     }
     s.push('\n');
@@ -780,7 +791,10 @@ fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup:
         s.push_str("- (none yet)\n");
     } else {
         for v in past.iter().take(10) {
-            s.push_str(&format!("- [{}] \"{}\" ({})\n", v.status, v.title, v.category));
+            s.push_str(&format!(
+                "- [{}] \"{}\" ({})\n",
+                v.status, v.title, v.category
+            ));
         }
         s.push_str(
             "Respect prior dispositions: do not re-emit a verdict the user already \
@@ -977,7 +991,10 @@ async fn salvage_missing_score(
 /// Poll an execution row until it reaches a terminal state or the timeout
 /// elapses. Returns the final row (terminal if we got there, last-seen
 /// otherwise; `None` only if the row can't be read at the deadline).
-pub(super) async fn await_execution_terminal(pool: &DbPool, execution_id: &str) -> Option<PersonaExecution> {
+pub(super) async fn await_execution_terminal(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Option<PersonaExecution> {
     let start = std::time::Instant::now();
     loop {
         match executions::get_by_id(pool, execution_id) {
@@ -1402,10 +1419,9 @@ fn render_persona_channel_digest(pool: &DbPool, persona_id: &str) -> Option<Stri
                    AND (author_id = ?2 OR addressed_to IS NULL OR addressed_to LIKE ?3)
                  ORDER BY datetime(created_at) DESC LIMIT 8",
             )?;
-            let rows = stmt.query_map(
-                rusqlite::params![team_id, persona_id, needle],
-                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
-            )?;
+            let rows = stmt.query_map(rusqlite::params![team_id, persona_id, needle], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })?;
             for row in rows {
                 out.push(row?);
             }
@@ -1570,9 +1586,7 @@ fn route_verdict_to_healing(pool: &DbPool, v: &DirectorVerdict) {
     let already_open = healing::get_all(pool, Some(&v.target_persona_id), Some("open"))
         .unwrap_or_default()
         .into_iter()
-        .any(|h| {
-            h.source.as_deref() == Some(DIRECTOR_HEALING_SOURCE) && h.title == v.title
-        });
+        .any(|h| h.source.as_deref() == Some(DIRECTOR_HEALING_SOURCE) && h.title == v.title);
     if already_open {
         return;
     }
@@ -1993,11 +2007,13 @@ mod tests {
         tokio::task::yield_now().await;
 
         // A concurrent task attempting the SAME persona is turned away.
-        let skipped =
-            tokio::spawn(async { REVIEW_GUARD.guard("persona-single-flight").is_none() })
-                .await
-                .unwrap();
-        assert!(skipped, "second concurrent review of the same persona must skip");
+        let skipped = tokio::spawn(async { REVIEW_GUARD.guard("persona-single-flight").is_none() })
+            .await
+            .unwrap();
+        assert!(
+            skipped,
+            "second concurrent review of the same persona must skip"
+        );
 
         // A different persona is unaffected.
         assert!(
@@ -2134,7 +2150,12 @@ mod tests {
 
         route_verdict_to_healing(
             &pool,
-            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Health, "Runs are failing"),
+            &verdict(
+                &pid,
+                DirectorSeverity::Warning,
+                DirectorCategory::Health,
+                "Runs are failing",
+            ),
         );
 
         let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
@@ -2180,24 +2201,48 @@ mod tests {
         // Subjective categories never route, regardless of severity.
         route_verdict_to_healing(
             &pool,
-            &verdict(&pid, DirectorSeverity::Error, DirectorCategory::Prompt, "Tighten the prompt"),
+            &verdict(
+                &pid,
+                DirectorSeverity::Error,
+                DirectorCategory::Prompt,
+                "Tighten the prompt",
+            ),
         );
         route_verdict_to_healing(
             &pool,
-            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Usefulness, "Low value"),
+            &verdict(
+                &pid,
+                DirectorSeverity::Warning,
+                DirectorCategory::Usefulness,
+                "Low value",
+            ),
         );
         route_verdict_to_healing(
             &pool,
-            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Memory, "Prune memories"),
+            &verdict(
+                &pid,
+                DirectorSeverity::Warning,
+                DirectorCategory::Memory,
+                "Prune memories",
+            ),
         );
         // Info is not a fault even in an auto-fixable category.
         route_verdict_to_healing(
             &pool,
-            &verdict(&pid, DirectorSeverity::Info, DirectorCategory::Health, "FYI health note"),
+            &verdict(
+                &pid,
+                DirectorSeverity::Info,
+                DirectorCategory::Health,
+                "FYI health note",
+            ),
         );
 
         let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
-        assert!(open.is_empty(), "no healing issues for non-qualifying verdicts, got {}", open.len());
+        assert!(
+            open.is_empty(),
+            "no healing issues for non-qualifying verdicts, got {}",
+            open.len()
+        );
     }
 
     fn ctx_baseline(persona: Persona) -> PersonaEvaluationContext {
@@ -2221,7 +2266,8 @@ mod tests {
 
     fn dummy_persona(system_prompt: &str) -> Persona {
         use crate::db::models::{PersonaGatewayExposure, PersonaTrustLevel, PersonaTrustOrigin};
-        Persona { lifecycle: "active".to_string(),
+        Persona {
+            lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "default".into(),
             name: "T".into(),
@@ -2334,7 +2380,10 @@ DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"prompt\",\"title\":\"
         let h = parse_hypothesis(&snake).expect("snake_case parses");
         // Round-trip through our own camelCase serialization.
         let camel = serde_json::to_value(&h).unwrap();
-        assert!(camel.get("proposedChange").is_some(), "serializes camelCase");
+        assert!(
+            camel.get("proposedChange").is_some(),
+            "serializes camelCase"
+        );
         let h2 = parse_hypothesis(&camel).expect("camelCase parses");
         assert_eq!(h, h2);
     }
@@ -2441,9 +2490,7 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
     /// memory category — and it must reach the payload the Director actually reads.
     #[test]
     fn calibration_tally_reads_director_review_dispositions() {
-        use crate::db::models::{
-            CreateManualReviewInput, CreatePersonaInput, ManualReviewStatus,
-        };
+        use crate::db::models::{CreateManualReviewInput, CreatePersonaInput, ManualReviewStatus};
         use crate::db::repos::communication::manual_reviews;
         use crate::db::repos::core::personas;
         use crate::db::repos::execution::executions;
@@ -2482,7 +2529,9 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
                     title: title.into(),
                     description: None,
                     severity: None,
-                    context_data: Some(format!("{{\"source\":\"{source}\",\"category\":\"prompt\"}}")),
+                    context_data: Some(format!(
+                        "{{\"source\":\"{source}\",\"category\":\"prompt\"}}"
+                    )),
                     suggested_actions: None,
                     use_case_id: None,
                     assignment_id: None,
@@ -2502,7 +2551,8 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
 
         // A non-Director review, approved — must NOT be counted.
         let other = mk("Unrelated healing note", "healing");
-        manual_reviews::update_status(&pool, &other.id, ManualReviewStatus::Approved, None).unwrap();
+        manual_reviews::update_status(&pool, &other.id, ManualReviewStatus::Approved, None)
+            .unwrap();
 
         // A still-pending Director review — must NOT be counted (no disposition yet).
         let _pending = mk("Not yet actioned", "director");

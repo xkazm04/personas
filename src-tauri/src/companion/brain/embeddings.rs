@@ -15,9 +15,9 @@
 //! sufficient.
 
 #[cfg(feature = "ml")]
-use std::sync::Arc;
-#[cfg(feature = "ml")]
 use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(feature = "ml")]
+use std::sync::Arc;
 
 #[cfg(feature = "ml")]
 use rusqlite::params;
@@ -73,8 +73,9 @@ fn apply_model_guard(
     if hits.is_empty() {
         return Ok(hits);
     }
-    let ids_json = serde_json::to_string(&hits.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>())
-        .map_err(|e| AppError::Internal(format!("model guard id serialize: {e}")))?;
+    let ids_json =
+        serde_json::to_string(&hits.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>())
+            .map_err(|e| AppError::Internal(format!("model guard id serialize: {e}")))?;
     let mut stmt = conn.prepare(
         "SELECT id, embedding_model FROM companion_node
          WHERE id IN (SELECT value FROM json_each(?1)) AND embedding_model IS NOT NULL",
@@ -219,15 +220,14 @@ pub fn reembed_candidates(
 ) -> Result<Vec<ReembedCandidate>, AppError> {
     let conn = pool.get()?;
 
-    let vectored: std::collections::HashSet<String> = match conn
-        .prepare("SELECT node_id FROM companion_embedding")
-    {
-        Ok(mut stmt) => match stmt.query_map([], |r| r.get::<_, String>(0)) {
-            Ok(rows) => rows.filter_map(Result::ok).collect(),
+    let vectored: std::collections::HashSet<String> =
+        match conn.prepare("SELECT node_id FROM companion_embedding") {
+            Ok(mut stmt) => match stmt.query_map([], |r| r.get::<_, String>(0)) {
+                Ok(rows) => rows.filter_map(Result::ok).collect(),
+                Err(_) => std::collections::HashSet::new(),
+            },
             Err(_) => std::collections::HashSet::new(),
-        },
-        Err(_) => std::collections::HashSet::new(),
-    };
+        };
 
     let mut stmt = conn.prepare(
         "SELECT id, file_path, body_excerpt, embedding_model FROM companion_node \
@@ -496,7 +496,11 @@ mod reembed_selection_tests {
             let conn = pool.get().unwrap();
             conn.execute_batch("CREATE TABLE companion_embedding (node_id TEXT);")
                 .unwrap();
-            for id in ["vectored_current", "vectored_foreign", "vectored_legacy_null"] {
+            for id in [
+                "vectored_current",
+                "vectored_foreign",
+                "vectored_legacy_null",
+            ] {
                 conn.execute(
                     "INSERT INTO companion_embedding (node_id) VALUES (?1)",
                     params![id],

@@ -44,7 +44,8 @@ static SYNC_WAKE: LazyLock<Notify> = LazyLock::new(Notify::new);
 static SYNC_DIRTY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// In-memory status surfaced by `cloud_sync_status`.
-static RUNTIME: LazyLock<Mutex<RuntimeState>> = LazyLock::new(|| Mutex::new(RuntimeState::default()));
+static RUNTIME: LazyLock<Mutex<RuntimeState>> =
+    LazyLock::new(|| Mutex::new(RuntimeState::default()));
 
 /// Canonical list of synced tables — the single source of truth for both the
 /// pass (below) and the status enumeration. Tuple = `(remote table, cursor key,
@@ -63,7 +64,12 @@ const SYNC_TABLES: &[(&str, &str, bool, bool)] = &[
     ("synced_metrics_snapshots", "metrics", false, true),
     ("synced_tool_usage", "tool_usage", false, false),
     ("synced_memories", "memories", true, false),
-    ("synced_knowledge_patterns", "knowledge_patterns", true, false),
+    (
+        "synced_knowledge_patterns",
+        "knowledge_patterns",
+        true,
+        false,
+    ),
     ("synced_healing_issues", "healing_issues", false, true),
     ("synced_triggers", "triggers", true, false),
 ];
@@ -223,7 +229,11 @@ where
     )
     .await
     {
-        Ok(rows) => LastTable { remote: remote_table.to_string(), rows, error: None },
+        Ok(rows) => LastTable {
+            remote: remote_table.to_string(),
+            rows,
+            error: None,
+        },
         Err(e) => {
             tracing::warn!(table = remote_table, error = %e, "cloud sync: table failed (isolated)");
             LastTable {
@@ -292,11 +302,22 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
 
     // Device heartbeat (own outcome, kept out of the displayed grid).
     let dev = rows::device_row(device_id);
-    let heartbeat = match client.upsert("synced_devices", std::slice::from_ref(&dev)).await {
-        Ok(()) => LastTable { remote: "synced_devices".into(), rows: 1, error: None },
+    let heartbeat = match client
+        .upsert("synced_devices", std::slice::from_ref(&dev))
+        .await
+    {
+        Ok(()) => LastTable {
+            remote: "synced_devices".into(),
+            rows: 1,
+            error: None,
+        },
         Err(e) => {
             tracing::warn!(error = %e, "cloud sync: device heartbeat failed");
-            LastTable { remote: "synced_devices".into(), rows: 0, error: Some(e.to_string()) }
+            LastTable {
+                remote: "synced_devices".into(),
+                rows: 0,
+                error: Some(e.to_string()),
+            }
         }
     };
     tables.push(heartbeat);
@@ -354,7 +375,9 @@ const PERSONA_SCOPED_TABLES: &[&str] = &[
 /// rather than orphaning its children.
 async fn delete_persona_cascade(client: &SyncClient, persona_id: &str) -> Result<(), AppError> {
     for table in PERSONA_SCOPED_TABLES {
-        client.delete(&format!("{table}?persona_id=eq.{persona_id}")).await?;
+        client
+            .delete(&format!("{table}?persona_id=eq.{persona_id}"))
+            .await?;
     }
     // Events reference the persona via target_persona_id, not persona_id.
     client
@@ -375,7 +398,11 @@ async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
     let tombstones = match rows::fetch_tombstones(pool, &cursor_prev) {
         Ok(t) => t,
         Err(e) => {
-            return LastTable { remote: "deletes".into(), rows: 0, error: Some(e.to_string()) };
+            return LastTable {
+                remote: "deletes".into(),
+                rows: 0,
+                error: Some(e.to_string()),
+            };
         }
     };
 
@@ -385,13 +412,21 @@ async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
             tracing::warn!(persona_id = %tomb.persona_id, error = %e, "cloud sync: delete propagation failed");
             // Don't advance the cursor — the failed (and any later) tombstone
             // is reprocessed next pass. Deletes are idempotent.
-            return LastTable { remote: "deletes".into(), rows: deleted, error: Some(e.to_string()) };
+            return LastTable {
+                remote: "deletes".into(),
+                rows: deleted,
+                error: Some(e.to_string()),
+            };
         }
         deleted += 1;
     }
 
     let _ = cursor::set_cursor(pool, "tombstones", &tick_start);
-    LastTable { remote: "deletes".into(), rows: deleted, error: None }
+    LastTable {
+        remote: "deletes".into(),
+        rows: deleted,
+        error: None,
+    }
 }
 
 /// Run one full sync pass. No-op when sync is disabled or no Supabase JWT is
@@ -423,7 +458,11 @@ pub async fn run_sync_once(state: &Arc<AppState>) {
             collect_pass(&pool, &client, &device_id).await
         }
         Err(e) => SyncReport {
-            tables: vec![LastTable { remote: "client".into(), rows: 0, error: Some(e.to_string()) }],
+            tables: vec![LastTable {
+                remote: "client".into(),
+                rows: 0,
+                error: Some(e.to_string()),
+            }],
             total: 0,
         },
     };
@@ -489,8 +528,16 @@ mod tests {
     fn report_clean_when_no_table_errors() {
         let r = SyncReport {
             tables: vec![
-                LastTable { remote: "a".into(), rows: 3, error: None },
-                LastTable { remote: "b".into(), rows: 0, error: None },
+                LastTable {
+                    remote: "a".into(),
+                    rows: 3,
+                    error: None,
+                },
+                LastTable {
+                    remote: "b".into(),
+                    rows: 0,
+                    error: None,
+                },
             ],
             total: 3,
         };
@@ -504,15 +551,30 @@ mod tests {
         // isolation: total still reflects the tables that succeeded.
         let r = SyncReport {
             tables: vec![
-                LastTable { remote: "a".into(), rows: 5, error: None },
-                LastTable { remote: "b".into(), rows: 0, error: Some("boom".into()) },
-                LastTable { remote: "c".into(), rows: 2, error: None },
+                LastTable {
+                    remote: "a".into(),
+                    rows: 5,
+                    error: None,
+                },
+                LastTable {
+                    remote: "b".into(),
+                    rows: 0,
+                    error: Some("boom".into()),
+                },
+                LastTable {
+                    remote: "c".into(),
+                    rows: 2,
+                    error: None,
+                },
             ],
             total: 7,
         };
         assert!(!r.is_clean());
         assert_eq!(r.first_error(), Some("boom".into()));
-        assert_eq!(r.total, 7, "healthy tables still contribute rows when a sibling fails");
+        assert_eq!(
+            r.total, 7,
+            "healthy tables still contribute rows when a sibling fails"
+        );
     }
 
     #[test]
@@ -524,6 +586,10 @@ mod tests {
         let mut keys: Vec<&str> = SYNC_TABLES.iter().map(|(_, c, _, _)| *c).collect();
         keys.sort_unstable();
         keys.dedup();
-        assert_eq!(keys.len(), SYNC_TABLES.len(), "duplicate cursor key in SYNC_TABLES");
+        assert_eq!(
+            keys.len(),
+            SYNC_TABLES.len(),
+            "duplicate cursor key in SYNC_TABLES"
+        );
     }
 }

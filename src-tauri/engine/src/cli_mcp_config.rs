@@ -220,7 +220,11 @@ pub fn install_mcp_sidecar(
         env_map.insert(
             "PERSONAS_DELEGATE_AUDIT".to_string(),
             serde_json::Value::String(
-                exec_dir.join(".claude").join("delegate-audit.jsonl").display().to_string(),
+                exec_dir
+                    .join(".claude")
+                    .join("delegate-audit.jsonl")
+                    .display()
+                    .to_string(),
             ),
         );
         // Hosted delegate backends (Ollama Cloud) need a Bearer token. Only
@@ -368,8 +372,11 @@ mod tests {
         let exec_dir = dir.path();
         std::fs::create_dir_all(exec_dir.join(".claude")).unwrap();
         let config = mcp_config_path(exec_dir);
-        std::fs::write(&config, r#"{"mcpServers":{"personas":{"env":{"PERSONAS_API_KEY":"sekret"}}}}"#)
-            .unwrap();
+        std::fs::write(
+            &config,
+            r#"{"mcpServers":{"personas":{"env":{"PERSONAS_API_KEY":"sekret"}}}}"#,
+        )
+        .unwrap();
         assert!(config.exists(), "precondition: config file present");
 
         scrub_mcp_sidecar(exec_dir);
@@ -429,7 +436,10 @@ mod tests {
             .map(|m| !m.contains_key(MCP_SERVER_NAME) && m.contains_key("other"))
             .unwrap_or(false));
         assert_eq!(
-            after.get("hooks").and_then(|h| h.get("keep")).and_then(|v| v.as_str()),
+            after
+                .get("hooks")
+                .and_then(|h| h.get("keep"))
+                .and_then(|v| v.as_str()),
             Some("me")
         );
     }

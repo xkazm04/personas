@@ -833,10 +833,7 @@ pub fn list_audit_log(
             param_values.iter().map(|p| p.as_ref()).collect();
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params_ref.as_slice(), row_to_audit_entry)?;
-        Ok(crate::repos::utils::collect_rows(
-            rows,
-            "healing_audit_log",
-        ))
+        Ok(crate::repos::utils::collect_rows(rows, "healing_audit_log"))
     })
 }
 
@@ -1524,7 +1521,10 @@ mod tests {
 
         // A wide window includes the backdated row; a narrow one excludes it.
         let wide = get_healing_effectiveness(&pool, Some(365)).unwrap();
-        assert_eq!(wide.confirmed, 5, "365-day window includes the 60-day-old row");
+        assert_eq!(
+            wide.confirmed, 5,
+            "365-day window includes the 60-day-old row"
+        );
     }
 
     #[test]
@@ -1606,7 +1606,11 @@ mod tests {
         let rows = get_for_health(&pool, 7, 1000).unwrap();
         let titles: std::collections::HashSet<&str> =
             rows.iter().map(|r| r.title.as_str()).collect();
-        assert_eq!(rows.len(), 3, "old resolved non-circuit-breaker row must be dropped");
+        assert_eq!(
+            rows.len(),
+            3,
+            "old resolved non-circuit-breaker row must be dropped"
+        );
         assert!(titles.contains("old open"));
         assert!(titles.contains("old cb"));
         assert!(titles.contains("recent"));

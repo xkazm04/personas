@@ -362,7 +362,10 @@ mod tests {
         let id = insert_card(&pool, "c", None, "fleet_plan", None, "{}".into()).unwrap();
         resolve_card(&pool, &id, "dismissed", None).unwrap();
         assert!(list_cards(&pool, "c", true).unwrap().is_empty());
-        assert_eq!(list_cards(&pool, "c", false).unwrap()[0].status, "dismissed");
+        assert_eq!(
+            list_cards(&pool, "c", false).unwrap()[0].status,
+            "dismissed"
+        );
 
         let id2 = insert_card(&pool, "c", None, "fleet_plan", None, "{}".into()).unwrap();
         resolve_card(&pool, &id2, "dispatched", Some(r#"{"m":"ok"}"#.into())).unwrap();
@@ -414,7 +417,10 @@ mod tests {
             record_dispatch_result(&conn, &id, "{}".into());
             release_claim(&conn, &id);
         }
-        assert_eq!(list_cards(&pool, "c", false).unwrap()[0].status, "dispatched");
+        assert_eq!(
+            list_cards(&pool, "c", false).unwrap()[0].status,
+            "dispatched"
+        );
     }
 
     #[test]

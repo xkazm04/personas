@@ -18,9 +18,7 @@ use tauri::State;
 
 use crate::db::repos::resources::recipes as recipe_repo;
 use crate::db::repos::resources::tools as tool_repo;
-use crate::engine::recipe_eligibility::{
-    score_recipe_eligibility, RecipeEligibility,
-};
+use crate::engine::recipe_eligibility::{score_recipe_eligibility, RecipeEligibility};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;

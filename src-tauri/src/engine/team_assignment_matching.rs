@@ -338,7 +338,8 @@ pub async fn match_via_llm_eval(
         ));
     }
 
-    let prompt_text = build_llm_match_prompt(step_title, step_description, candidates, team_lessons);
+    let prompt_text =
+        build_llm_match_prompt(step_title, step_description, candidates, team_lessons);
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
@@ -365,9 +366,7 @@ pub async fn match_via_llm_eval(
     let parsed = parse_llm_match_response(&assistant_text)?;
     // Validate the persona_id returned is one of the offered candidates — Sonnet
     // sometimes hallucinates an id that wasn't on the list.
-    let valid = candidates
-        .iter()
-        .any(|c| c.persona_id == parsed.persona_id);
+    let valid = candidates.iter().any(|c| c.persona_id == parsed.persona_id);
     if !valid {
         return Err(AppError::Internal(format!(
             "LLM returned persona_id '{}' that was not in the candidate list",
@@ -496,8 +495,9 @@ pub async fn decompose_goal(
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
-    let mut driver = CliProcessDriver::spawn_temp_no_stderr(&cli_args, "personas-assignment-decompose")
-        .map_err(|e| AppError::Internal(format!("Failed to spawn decompose: {e}")))?;
+    let mut driver =
+        CliProcessDriver::spawn_temp_no_stderr(&cli_args, "personas-assignment-decompose")
+            .map_err(|e| AppError::Internal(format!("Failed to spawn decompose: {e}")))?;
     driver.write_stdin(prompt_text.as_bytes()).await;
     let _ = driver.close_stdin().await;
 
@@ -515,14 +515,14 @@ pub async fn decompose_goal(
         .map_err(|e| AppError::Internal(format!("Decompose timeout/failure: {e}")))?;
     let _ = driver.finish().await;
 
-    let parsed: DecomposeResponse =
-        crate::engine::safe_json::parse_lenient_json(&assistant_text).map_err(|_| {
-            let trimmed = assistant_text.trim();
-            AppError::Internal(format!(
-                "Decompose returned unparseable response: {}",
-                crate::utils::text::truncate_on_char_boundary(trimmed, 300)
-            ))
-        })?;
+    let parsed: DecomposeResponse = crate::engine::safe_json::parse_lenient_json(&assistant_text)
+        .map_err(|_| {
+        let trimmed = assistant_text.trim();
+        AppError::Internal(format!(
+            "Decompose returned unparseable response: {}",
+            crate::utils::text::truncate_on_char_boundary(trimmed, 300)
+        ))
+    })?;
 
     if parsed.steps.is_empty() {
         return Err(AppError::Internal(

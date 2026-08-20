@@ -278,10 +278,7 @@ pub async fn fan_out_resolution(
             let args = cli_args.clone();
             let sid = session_id.clone();
             let cid = cap_id.clone();
-            Some(lane(
-                cap_id,
-                resolve_one_capability(args, prompt, sid, cid),
-            ))
+            Some(lane(cap_id, resolve_one_capability(args, prompt, sid, cid)))
         })
         .collect();
 
@@ -368,7 +365,12 @@ fn extract_capabilities(enumeration: &Value) -> Vec<Value> {
     if let Some(arr) = enumeration.as_array() {
         return arr.clone();
     }
-    for key in ["capabilities", "use_cases", "useCases", "capability_enumeration"] {
+    for key in [
+        "capabilities",
+        "use_cases",
+        "useCases",
+        "capability_enumeration",
+    ] {
         if let Some(arr) = enumeration.get(key).and_then(|v| v.as_array()) {
             return arr.clone();
         }
@@ -416,7 +418,10 @@ fn extract_persona_wide(line: &str) -> Option<Value> {
         .get("message")
         .and_then(|m| m.get("content"))
         .and_then(|c| c.as_array())
-        .and_then(|a| a.iter().find_map(|it| it.get("text").and_then(|t| t.as_str())))
+        .and_then(|a| {
+            a.iter()
+                .find_map(|it| it.get("text").and_then(|t| t.as_str()))
+        })
         .or_else(|| json.get("result").and_then(|r| r.as_str()));
     if let Some(text) = text {
         let cleaned = text.replace("```json", "").replace("```", "");
@@ -522,7 +527,12 @@ const CLARIFY_ALLOWED_CELLS: &[&str] = &[
 /// The single batched clarify turn. Its whole job is to decide WHICH questions
 /// carry information the build cannot safely default, and to emit them all at
 /// once so the user answers one round instead of N serial ones.
-fn build_clarify_prompt(intent: &str, behavior_core: &Value, capabilities: &[Value], connector_context: &str) -> String {
+fn build_clarify_prompt(
+    intent: &str,
+    behavior_core: &Value,
+    capabilities: &[Value],
+    connector_context: &str,
+) -> String {
     let caps_brief: Vec<Value> = capabilities
         .iter()
         .map(|c| {
@@ -628,7 +638,10 @@ fn extract_clarify_questions(line: &str) -> Option<Vec<ClarifyQuestion>> {
         .get("message")
         .and_then(|m| m.get("content"))
         .and_then(|c| c.as_array())
-        .and_then(|a| a.iter().find_map(|it| it.get("text").and_then(|t| t.as_str())))
+        .and_then(|a| {
+            a.iter()
+                .find_map(|it| it.get("text").and_then(|t| t.as_str()))
+        })
         .or_else(|| json.get("result").and_then(|r| r.as_str()));
 
     let parse_arr = |v: &Value| -> Option<Vec<ClarifyQuestion>> {
@@ -641,9 +654,17 @@ fn extract_clarify_questions(line: &str) -> Option<Vec<ClarifyQuestion>> {
                     let options = q
                         .get("options")
                         .and_then(|x| x.as_array())
-                        .map(|a| a.iter().filter_map(|o| o.as_str().map(str::to_string)).collect())
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|o| o.as_str().map(str::to_string))
+                                .collect()
+                        })
                         .unwrap_or_default();
-                    Some(ClarifyQuestion { cell_key: cell, question, options })
+                    Some(ClarifyQuestion {
+                        cell_key: cell,
+                        question,
+                        options,
+                    })
                 })
                 .collect(),
         )
@@ -946,10 +967,11 @@ fn assemble_agent_ir(
                         "connectors" => {
                             if let Some(arr) = value.as_array() {
                                 for c in arr {
-                                    let name = c
-                                        .as_str()
-                                        .map(|s| s.to_string())
-                                        .or_else(|| c.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()));
+                                    let name = c.as_str().map(|s| s.to_string()).or_else(|| {
+                                        c.get("name")
+                                            .and_then(|n| n.as_str())
+                                            .map(|s| s.to_string())
+                                    });
                                     if let Some(n) = name {
                                         if seen_conn.insert(n) {
                                             connectors.push(c.clone());
@@ -976,9 +998,16 @@ fn assemble_agent_ir(
                         // resolution may emit a rich object (e.g. structured
                         // error_handling); JSON-stringify so it can't break the
                         // untagged-enum parse while preserving the guidance text.
-                        "error_handling" | "description" | "category" | "execution_mode"
-                        | "capability_summary" | "title" | "model_rationale" | "id"
-                        | "source_recipe_id" | "source_recipe_version" => {
+                        "error_handling"
+                        | "description"
+                        | "category"
+                        | "execution_mode"
+                        | "capability_summary"
+                        | "title"
+                        | "model_rationale"
+                        | "id"
+                        | "source_recipe_id"
+                        | "source_recipe_version" => {
                             if let Some(s) = coerce_to_string(value) {
                                 uc.insert(field.clone(), Value::String(s));
                             }
@@ -1003,10 +1032,7 @@ fn assemble_agent_ir(
                                         _ => None,
                                     })
                                     .collect();
-                                uc.insert(
-                                    "event_subscriptions".to_string(),
-                                    Value::Array(coerced),
-                                );
+                                uc.insert("event_subscriptions".to_string(), Value::Array(coerced));
                             }
                         }
                         // Every remaining field maps to an Option<Value> on
@@ -1022,7 +1048,10 @@ fn assemble_agent_ir(
         use_cases.push(Value::Object(uc));
     }
 
-    let tools: Vec<Value> = tool_hints.into_iter().map(|t| serde_json::json!(t)).collect();
+    let tools: Vec<Value> = tool_hints
+        .into_iter()
+        .map(|t| serde_json::json!(t))
+        .collect();
     let name = prose
         .get("name")
         .filter(|v| v.is_string())
@@ -1081,8 +1110,14 @@ pub async fn run_multiagent(
          Output raw JSON only, one event per line.",
         initial = initial_prompt,
     );
-    let (head, head_usage) =
-        run_cli_turn(&cli_args, &exec_dir, head_prompt.as_bytes(), &session_id, false).await?;
+    let (head, head_usage) = run_cli_turn(
+        &cli_args,
+        &exec_dir,
+        head_prompt.as_bytes(),
+        &session_id,
+        false,
+    )
+    .await?;
     for ev in &head {
         emit(ev);
     }
@@ -1137,10 +1172,7 @@ pub async fn run_multiagent(
             &cancel_flag,
         )
         .await?;
-        let narrowed = answers
-            .first()
-            .map(|(_, a)| a.clone())
-            .unwrap_or_default();
+        let narrowed = answers.first().map(|(_, a)| a.clone()).unwrap_or_default();
         if narrowed.trim().is_empty() {
             return Err("intent too broad and no narrowing answer was given".to_string());
         }
@@ -1155,8 +1187,14 @@ pub async fn run_multiagent(
             initial = initial_prompt,
             narrowed = narrowed,
         );
-        let (head2, usage2) =
-            run_cli_turn(&cli_args, &exec_dir, retry_prompt.as_bytes(), &session_id, false).await?;
+        let (head2, usage2) = run_cli_turn(
+            &cli_args,
+            &exec_dir,
+            retry_prompt.as_bytes(),
+            &session_id,
+            false,
+        )
+        .await?;
         scope_usage = usage2;
         for ev in &head2 {
             emit(ev);
@@ -1205,7 +1243,12 @@ pub async fn run_multiagent(
     } else {
         let (questions, usage) = resolve_clarify(
             cli_args.clone(),
-            build_clarify_prompt(&raw_intent, &behavior_core, &capabilities, &connector_context),
+            build_clarify_prompt(
+                &raw_intent,
+                &behavior_core,
+                &capabilities,
+                &connector_context,
+            ),
         )
         .await;
         clarify_usage = usage;
@@ -1226,9 +1269,9 @@ pub async fn run_multiagent(
             // per-capability resolution (clarify-bench: workflow-overloaded asked
             // "which single area first?" but the 6 already-enumerated capabilities
             // were resolved anyway).
-            scope_shaping = questions
-                .iter()
-                .any(|q| q.cell_key.starts_with("behavior_core") || q.cell_key.starts_with("use-cases"));
+            scope_shaping = questions.iter().any(|q| {
+                q.cell_key.starts_with("behavior_core") || q.cell_key.starts_with("use-cases")
+            });
             let answers = run_clarify_round(
                 &pool,
                 &channel,
@@ -1263,8 +1306,14 @@ pub async fn run_multiagent(
             initial = initial_prompt,
             clar = clarifications,
         );
-        let (re_head, re_usage) =
-            run_cli_turn(&cli_args, &exec_dir, reenum_prompt.as_bytes(), &session_id, false).await?;
+        let (re_head, re_usage) = run_cli_turn(
+            &cli_args,
+            &exec_dir,
+            reenum_prompt.as_bytes(),
+            &session_id,
+            false,
+        )
+        .await?;
         clarify_usage.add(re_usage);
         for ev in &re_head {
             emit(ev);
@@ -1342,9 +1391,15 @@ pub async fn run_multiagent(
     if !has_system_prompt {
         return Err("assembled agent_ir has no usable system_prompt".to_string());
     }
-    let use_case_count = ir.get("use_cases").and_then(|v| v.as_array()).map_or(0, |a| a.len());
+    let use_case_count = ir
+        .get("use_cases")
+        .and_then(|v| v.as_array())
+        .map_or(0, |a| a.len());
     if use_case_count == 0 {
-        return Err("assembled agent_ir has zero capabilities — refusing to save an empty persona".to_string());
+        return Err(
+            "assembled agent_ir has zero capabilities — refusing to save an empty persona"
+                .to_string(),
+        );
     }
     tracing::info!(
         session_id = %session_id,
@@ -1412,15 +1467,36 @@ mod tests {
             clarifications,
         );
         // Targets exactly this capability id, in the required event shape.
-        assert!(p.contains("uc_summarize_url"), "prompt must name the capability id");
-        assert!(p.contains("capability_resolution"), "prompt must ask for capability_resolution events");
-        assert!(p.contains("ONLY this one"), "prompt must scope to a single capability");
+        assert!(
+            p.contains("uc_summarize_url"),
+            "prompt must name the capability id"
+        );
+        assert!(
+            p.contains("capability_resolution"),
+            "prompt must ask for capability_resolution events"
+        );
+        assert!(
+            p.contains("ONLY this one"),
+            "prompt must scope to a single capability"
+        );
         // Grounds the sub-agent in the persona identity + connectors.
-        assert!(p.contains("Summarize the web"), "prompt must inject behavior_core");
-        assert!(p.contains("WebFetch"), "prompt must inject connector context");
+        assert!(
+            p.contains("Summarize the web"),
+            "prompt must inject behavior_core"
+        );
+        assert!(
+            p.contains("WebFetch"),
+            "prompt must inject connector context"
+        );
         // Injects the sibling list + scope rules so it won't over-bind for other caps.
-        assert!(p.contains("uc_other"), "prompt must list sibling capabilities");
-        assert!(p.contains("SCOPE RULES"), "prompt must carry the scope constraints");
+        assert!(
+            p.contains("uc_other"),
+            "prompt must list sibling capabilities"
+        );
+        assert!(
+            p.contains("SCOPE RULES"),
+            "prompt must carry the scope constraints"
+        );
         // Suppresses the things a sub-agent must not do.
         assert!(p.contains("do NOT") || p.contains("Do NOT") || p.contains("DO NOT"));
     }
@@ -1438,13 +1514,41 @@ mod tests {
     #[test]
     fn sanitize_clarify_drops_template_cells_and_caps_at_four() {
         let proposed = vec![
-            ClarifyQuestion { cell_key: "memory".into(), question: "remember?".into(), options: vec![] },
-            ClarifyQuestion { cell_key: "sample-output".into(), question: "format?".into(), options: vec![] },
-            ClarifyQuestion { cell_key: "connectors".into(), question: "which chat?".into(), options: vec![] },
-            ClarifyQuestion { cell_key: "connectors".into(), question: "which sheet?".into(), options: vec![] },
-            ClarifyQuestion { cell_key: "triggers".into(), question: "when?".into(), options: vec![] },
-            ClarifyQuestion { cell_key: "behavior_core".into(), question: "which job?".into(), options: vec![] },
-            ClarifyQuestion { cell_key: "use-cases".into(), question: "extra".into(), options: vec![] },
+            ClarifyQuestion {
+                cell_key: "memory".into(),
+                question: "remember?".into(),
+                options: vec![],
+            },
+            ClarifyQuestion {
+                cell_key: "sample-output".into(),
+                question: "format?".into(),
+                options: vec![],
+            },
+            ClarifyQuestion {
+                cell_key: "connectors".into(),
+                question: "which chat?".into(),
+                options: vec![],
+            },
+            ClarifyQuestion {
+                cell_key: "connectors".into(),
+                question: "which sheet?".into(),
+                options: vec![],
+            },
+            ClarifyQuestion {
+                cell_key: "triggers".into(),
+                question: "when?".into(),
+                options: vec![],
+            },
+            ClarifyQuestion {
+                cell_key: "behavior_core".into(),
+                question: "which job?".into(),
+                options: vec![],
+            },
+            ClarifyQuestion {
+                cell_key: "use-cases".into(),
+                question: "extra".into(),
+                options: vec![],
+            },
         ];
         let out = sanitize_clarify(proposed);
         assert!(out.len() <= 4, "caps at 4, got {}", out.len());
@@ -1471,6 +1575,9 @@ mod tests {
         let qs = extract_clarify_questions(&line).expect("parses");
         assert_eq!(qs.len(), 1);
         assert_eq!(qs[0].cell_key, "connectors");
-        assert_eq!(qs[0].options, vec!["Slack".to_string(), "Notion".to_string()]);
+        assert_eq!(
+            qs[0].options,
+            vec!["Slack".to_string(), "Notion".to_string()]
+        );
     }
 }

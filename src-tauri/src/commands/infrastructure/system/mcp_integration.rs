@@ -78,9 +78,7 @@ pub(crate) fn is_personas_mcp_registered() -> bool {
 
 #[tauri::command]
 #[requires(privileged)]
-pub fn register_claude_desktop_mcp(
-    state: State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub fn register_claude_desktop_mcp(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
     let mcp_server_path = resolve_mcp_server_path()
         .ok_or_else(|| AppError::NotFound("Personas MCP server script not found".into()))?;
 
@@ -141,9 +139,7 @@ pub fn register_claude_desktop_mcp(
 
 #[tauri::command]
 #[requires(privileged)]
-pub fn unregister_claude_desktop_mcp(
-    state: State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub fn unregister_claude_desktop_mcp(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
     let config_path = claude_desktop_config_path()
         .ok_or_else(|| AppError::NotFound("Claude Desktop config path not found".into()))?;
 
@@ -181,8 +177,6 @@ pub fn unregister_claude_desktop_mcp(
 
 #[tauri::command]
 #[requires(privileged)]
-pub fn check_claude_desktop_mcp(
-    state: State<'_, Arc<AppState>>,
-) -> Result<bool, AppError> {
+pub fn check_claude_desktop_mcp(state: State<'_, Arc<AppState>>) -> Result<bool, AppError> {
     Ok(is_personas_mcp_registered())
 }

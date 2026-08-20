@@ -34,8 +34,8 @@ pub fn gather(pool: &DbPool, window_days: Option<i64>) -> Result<PolicyEvidenceS
     let lab: HashMap<String, (i64, f64)>;
     let spend_totals: (f64, i64);
     {
-    let mut stmt = conn.prepare(
-        "SELECT COALESCE(NULLIF(LOWER(p.template_category), ''), 'uncategorized') AS category,
+        let mut stmt = conn.prepare(
+            "SELECT COALESCE(NULLIF(LOWER(p.template_category), ''), 'uncategorized') AS category,
                 e.model_used AS model,
                 COUNT(*) AS runs,
                 SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS completed,
@@ -49,34 +49,34 @@ pub fn gather(pool: &DbPool, window_days: Option<i64>) -> Result<PolicyEvidenceS
            AND e.created_at >= ?1
          GROUP BY category, model
          ORDER BY category ASC, runs DESC",
-    )?;
-    cells = stmt
-        .query_map(params![cutoff], |row| {
-            let runs: i64 = row.get("runs")?;
-            let completed: i64 = row.get("completed")?;
-            Ok(EvidenceCell {
-                category: row.get("category")?,
-                model: row.get("model")?,
-                runs,
-                completed,
-                failed: runs - completed,
-                success_rate: if runs > 0 {
-                    completed as f64 / runs as f64
-                } else {
-                    0.0
-                },
-                avg_cost_usd: row.get("avg_cost")?,
-                total_cost_usd: row.get("total_cost")?,
-                avg_duration_ms: row.get("avg_dur")?,
-                lab_samples: 0,
-                avg_lab_quality: None,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        )?;
+        cells = stmt
+            .query_map(params![cutoff], |row| {
+                let runs: i64 = row.get("runs")?;
+                let completed: i64 = row.get("completed")?;
+                Ok(EvidenceCell {
+                    category: row.get("category")?,
+                    model: row.get("model")?,
+                    runs,
+                    completed,
+                    failed: runs - completed,
+                    success_rate: if runs > 0 {
+                        completed as f64 / runs as f64
+                    } else {
+                        0.0
+                    },
+                    avg_cost_usd: row.get("avg_cost")?,
+                    total_cost_usd: row.get("total_cost")?,
+                    avg_duration_ms: row.get("avg_dur")?,
+                    lab_samples: 0,
+                    avg_lab_quality: None,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
-    // -- Per-model lab quality (matrix results, non-error, scored) ---------
-    let mut stmt = conn.prepare(
-        "SELECT model_id,
+        // -- Per-model lab quality (matrix results, non-error, scored) ---------
+        let mut stmt = conn.prepare(
+            "SELECT model_id,
                 COUNT(*) AS n,
                 AVG(output_quality_score) AS q
          FROM lab_matrix_results
@@ -84,24 +84,24 @@ pub fn gather(pool: &DbPool, window_days: Option<i64>) -> Result<PolicyEvidenceS
            AND status != 'error'
            AND created_at >= ?1
          GROUP BY model_id",
-    )?;
-    lab = stmt
-        .query_map(params![cutoff], |row| {
-            Ok((
-                row.get::<_, String>("model_id")?,
-                (row.get::<_, i64>("n")?, row.get::<_, f64>("q")?),
-            ))
-        })?
-        .collect::<Result<HashMap<_, _>, _>>()?;
+        )?;
+        lab = stmt
+            .query_map(params![cutoff], |row| {
+                Ok((
+                    row.get::<_, String>("model_id")?,
+                    (row.get::<_, i64>("n")?, row.get::<_, f64>("q")?),
+                ))
+            })?
+            .collect::<Result<HashMap<_, _>, _>>()?;
 
-    // -- Calendar-month spend (budget-ceiling evidence) --------------------
-    spend_totals = conn.query_row(
-        "SELECT COALESCE(SUM(COALESCE(cost_usd, 0)), 0), COUNT(*)
+        // -- Calendar-month spend (budget-ceiling evidence) --------------------
+        spend_totals = conn.query_row(
+            "SELECT COALESCE(SUM(COALESCE(cost_usd, 0)), 0), COUNT(*)
          FROM dev_llm_spend
          WHERE created_at >= datetime('now', 'start of month')",
-        [],
-        |row| Ok((row.get(0)?, row.get(1)?)),
-    )?;
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
     }
     drop(conn);
     let (monthly_spend_usd, monthly_spend_rows) = spend_totals;

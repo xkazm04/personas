@@ -89,7 +89,10 @@ fn build_memory_filters(
     }
     match tier {
         Some(TIER_NON_ARCHIVED) => {
-            qb.where_raw(|i| format!("tier != ?{i}"), vec![Box::new("archive".to_string())]);
+            qb.where_raw(
+                |i| format!("tier != ?{i}"),
+                vec![Box::new("archive".to_string())],
+            );
         }
         Some(t) if !t.is_empty() => {
             qb.where_eq("tier", t.to_string());
@@ -404,15 +407,19 @@ pub fn get_active_for_decay(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<PersonaMemory>, AppError> {
-    timed_query!("persona_memories", "persona_memories::get_active_for_decay", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories
+    timed_query!(
+        "persona_memories",
+        "persona_memories::get_active_for_decay",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND tier = 'active'",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
-        Ok(collect_rows(rows, "memories::get_active_for_decay"))
-    })
+            )?;
+            let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+            Ok(collect_rows(rows, "memories::get_active_for_decay"))
+        }
+    )
 }
 
 /// Why a row was rejected by `batch_create`. Stays a `&'static str` so
@@ -481,10 +488,7 @@ pub fn batch_create(
             )?;
             for pid in &persona_ids {
                 let rows = sel.query_map(params![pid], |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, Option<String>>(1)?,
-                    ))
+                    Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
                 })?;
                 for row in rows {
                     let (content, uc) = row?;
@@ -767,8 +771,7 @@ pub fn update_content(
         validate_importance(importance)?;
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
-        let tags_json = tags
-            .map(|t| serde_json::to_string(t).unwrap_or_else(|_| "[]".to_string()));
+        let tags_json = tags.map(|t| serde_json::to_string(t).unwrap_or_else(|_| "[]".to_string()));
         let rows = conn.execute(
             "UPDATE persona_memories
              SET title = ?1, content = ?2, importance = ?3, tags = ?4, updated_at = ?5
@@ -856,7 +859,11 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 /// [`create`] but spans all time (the 24h guard misses same-content rows from
 /// later runs — the documented Stock-Price-Logger case).
 fn normalize_for_dedup(content: &str) -> String {
-    content.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    content
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 /// Write-path dedup lookup: does `persona_id` already hold a NON-core,
@@ -965,41 +972,45 @@ pub fn find_duplicate_groups(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<Vec<PersonaMemory>>, AppError> {
-    timed_query!("persona_memories", "persona_memories::find_duplicate_groups", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories
+    timed_query!(
+        "persona_memories",
+        "persona_memories::find_duplicate_groups",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
-        let all: Vec<PersonaMemory> = collect_rows(rows, "memories::find_duplicate_groups");
+            )?;
+            let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+            let all: Vec<PersonaMemory> = collect_rows(rows, "memories::find_duplicate_groups");
 
-        let mut buckets: std::collections::HashMap<String, Vec<PersonaMemory>> =
-            std::collections::HashMap::new();
-        for m in all {
-            buckets
-                .entry(normalize_for_dedup(&m.content))
-                .or_default()
-                .push(m);
+            let mut buckets: std::collections::HashMap<String, Vec<PersonaMemory>> =
+                std::collections::HashMap::new();
+            for m in all {
+                buckets
+                    .entry(normalize_for_dedup(&m.content))
+                    .or_default()
+                    .push(m);
+            }
+            let mut groups: Vec<Vec<PersonaMemory>> = buckets
+                .into_values()
+                .filter(|g| g.len() >= 2)
+                .map(|mut g| {
+                    // Keeper first: highest importance, then oldest (stable id tiebreak).
+                    g.sort_by(|a, b| {
+                        b.importance
+                            .cmp(&a.importance)
+                            .then(a.created_at.cmp(&b.created_at))
+                            .then(a.id.cmp(&b.id))
+                    });
+                    g
+                })
+                .collect();
+            // Stable output order (largest groups first) for predictable reporting.
+            groups.sort_by_key(|g| std::cmp::Reverse(g.len()));
+            Ok(groups)
         }
-        let mut groups: Vec<Vec<PersonaMemory>> = buckets
-            .into_values()
-            .filter(|g| g.len() >= 2)
-            .map(|mut g| {
-                // Keeper first: highest importance, then oldest (stable id tiebreak).
-                g.sort_by(|a, b| {
-                    b.importance
-                        .cmp(&a.importance)
-                        .then(a.created_at.cmp(&b.created_at))
-                        .then(a.id.cmp(&b.id))
-                });
-                g
-            })
-            .collect();
-        // Stable output order (largest groups first) for predictable reporting.
-        groups.sort_by_key(|g| std::cmp::Reverse(g.len()));
-        Ok(groups)
-    })
+    )
 }
 
 /// Stale-ranked archival candidates for the LLM "won't-use" pass: `active` +
@@ -1010,17 +1021,21 @@ pub fn get_archivable_candidates(
     persona_id: &str,
     limit: i64,
 ) -> Result<Vec<PersonaMemory>, AppError> {
-    timed_query!("persona_memories", "persona_memories::get_archivable_candidates", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories
+    timed_query!(
+        "persona_memories",
+        "persona_memories::get_archivable_candidates",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND tier IN ('active', 'working')
              ORDER BY importance ASC, access_count ASC, created_at ASC
              LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
-        Ok(collect_rows(rows, "memories::get_archivable_candidates"))
-    })
+            )?;
+            let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
+            Ok(collect_rows(rows, "memories::get_archivable_candidates"))
+        }
+    )
 }
 
 crud_delete!("persona_memories");
@@ -1262,7 +1277,10 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
                 params![id],
                 |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
             ) {
-                spawn_embed_memory(id.to_string(), memory_embedding_text_parts(&title, &content));
+                spawn_embed_memory(
+                    id.to_string(),
+                    memory_embedding_text_parts(&title, &content),
+                );
             }
         }
         Ok(rows > 0)
@@ -1328,9 +1346,7 @@ impl<'a> InjectionScope<'a> {
 /// The placeholder indices in returned SQL are 1-based and ALREADY account
 /// for the 3-param prefix — `?1` = persona_id, `?2` = core_limit, `?3` =
 /// active_limit, `?4..` = the values in `extra_params`.
-fn build_scope_predicates<'a>(
-    scope: &InjectionScope<'a>,
-) -> (String, String, Vec<&'a str>) {
+fn build_scope_predicates<'a>(scope: &InjectionScope<'a>) -> (String, String, Vec<&'a str>) {
     let mut extra: Vec<&str> = Vec::new();
     let mut next_idx: usize = 4; // ?1..?3 reserved
 
@@ -1370,7 +1386,12 @@ pub fn get_for_injection(
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
-    get_for_injection_v2(pool, InjectionScope::for_persona(persona_id), core_limit, active_limit)
+    get_for_injection_v2(
+        pool,
+        InjectionScope::for_persona(persona_id),
+        core_limit,
+        active_limit,
+    )
 }
 
 /// Capability- and home-team-aware memory fetch for prompt injection.
@@ -1408,8 +1429,7 @@ pub fn get_for_injection_v2(
         {
             let conn = pool.get()?;
 
-            let (persona_scope_sql, active_uc_sql, extra_params) =
-                build_scope_predicates(&scope);
+            let (persona_scope_sql, active_uc_sql, extra_params) = build_scope_predicates(&scope);
 
             let sql = format!(
                 "SELECT * FROM (
@@ -1437,7 +1457,8 @@ pub fn get_for_injection_v2(
             // ?1 = persona_id, ?2 = core_limit, ?3 = active_limit, then the
             // extras the scope builder produced in declaration order
             // (home_team_id before use_case_id).
-            let mut boxed_params: Vec<Box<dyn rusqlite::ToSql>> = Vec::with_capacity(3 + extra_params.len());
+            let mut boxed_params: Vec<Box<dyn rusqlite::ToSql>> =
+                Vec::with_capacity(3 + extra_params.len());
             boxed_params.push(Box::new(scope.persona_id.to_string()));
             boxed_params.push(Box::new(core_limit));
             boxed_params.push(Box::new(active_limit));
@@ -1449,8 +1470,7 @@ pub fn get_for_injection_v2(
 
             let mut stmt = conn.prepare_cached(&sql)?;
             let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
-            let all: Vec<PersonaMemory> =
-                collect_rows(rows, "memories::get_for_injection_v2");
+            let all: Vec<PersonaMemory> = collect_rows(rows, "memories::get_for_injection_v2");
 
             let (core, active) = all.into_iter().partition(|m| m.tier == "core");
 
@@ -1693,7 +1713,10 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::UserDbPool) -> Result<(), AppEr
          );"
     ))?;
     if !MEMORY_VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
-        tracing::info!(dims = MEMORY_VEC_DIMS, "persona_memory_embedding table ready");
+        tracing::info!(
+            dims = MEMORY_VEC_DIMS,
+            "persona_memory_embedding table ready"
+        );
     }
     Ok(())
 }
@@ -1738,7 +1761,11 @@ pub async fn embed_and_store_memory(
     conn.execute(
         "INSERT INTO persona_memory_embedding_meta (memory_id, embedding_model, embedding_dims) \
          VALUES (?1, ?2, ?3)",
-        params![memory_id, embedder.model_name(), embedder.dimensions() as i64],
+        params![
+            memory_id,
+            embedder.model_name(),
+            embedder.dimensions() as i64
+        ],
     )?;
     Ok(())
 }
@@ -1823,7 +1850,8 @@ fn apply_memory_model_guard(
         let (id, model) = row?;
         model_of.insert(id, model);
     }
-    let (kept, excluded) = personas_core::retrieval::filter_by_model(&hits, current_model, &model_of);
+    let (kept, excluded) =
+        personas_core::retrieval::filter_by_model(&hits, current_model, &model_of);
     if excluded > 0 {
         MEMORY_MODEL_GUARD_EXCLUDED
             .fetch_add(excluded as u64, std::sync::atomic::Ordering::Relaxed);
@@ -2115,8 +2143,6 @@ mod tests {
                 importance: Some(5),
                 tags: Some(Json(vec!["ui".to_string(), "preference".to_string()])),
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2135,8 +2161,6 @@ mod tests {
                 importance: None, // defaults to 3
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2156,8 +2180,18 @@ mod tests {
         assert_eq!(all.len(), 2);
 
         // Get all filtered by persona_id
-        let by_persona =
-            get_all(&pool, Some(&persona.id), None, None, None, None, None, None, None).unwrap();
+        let by_persona = get_all(
+            &pool,
+            Some(&persona.id),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(by_persona.len(), 2);
 
         // Get all filtered by category
@@ -2230,8 +2264,6 @@ mod tests {
             importance,
             tags: None,
             use_case_id: None,
-        
-        
         };
 
         // Valid boundaries
@@ -2291,8 +2323,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2308,8 +2338,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2427,7 +2455,13 @@ mod tests {
         let active_other =
             insert_scoped_memory(&pool, &persona_id, "active other", "active", Some("uc-b"));
 
-        let tiered = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id).with_use_case(Some("uc-a")), 10, 40).unwrap();
+        let tiered = get_for_injection_v2(
+            &pool,
+            InjectionScope::for_persona(&persona_id).with_use_case(Some("uc-a")),
+            10,
+            40,
+        )
+        .unwrap();
 
         let core_ids: Vec<&str> = tiered.core.iter().map(|m| m.id.as_str()).collect();
         // Both core memories surface regardless of use_case_id (rule: core is
@@ -2461,7 +2495,8 @@ mod tests {
         let active_scoped =
             insert_scoped_memory(&pool, &persona_id, "active scoped", "active", Some("uc-a"));
 
-        let tiered = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
+        let tiered =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
 
         assert_eq!(tiered.core.len(), 1);
         assert_eq!(tiered.core[0].id, core_global);
@@ -2484,7 +2519,8 @@ mod tests {
         insert_scoped_memory(&pool, &persona_id, "scoped", "active", Some("uc-a"));
 
         let v1 = get_for_injection(&pool, &persona_id, 10, 40).unwrap();
-        let v2 = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
+        let v2 =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
         assert_eq!(v1.core.len(), v2.core.len());
         assert_eq!(v1.active.len(), v2.active.len());
     }
@@ -2549,7 +2585,10 @@ mod tests {
         )
         .unwrap();
         let ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
-        assert!(ids.contains(&priv_a.as_str()), "persona's own memory missing");
+        assert!(
+            ids.contains(&priv_a.as_str()),
+            "persona's own memory missing"
+        );
         assert!(
             ids.contains(&shared_in_x.as_str()),
             "team-X shared memory not surfaced for member"
@@ -2591,8 +2630,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: Some("uc-x".into()),
-            
-            
             },
         )
         .unwrap();
@@ -2642,8 +2679,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
             // 1: empty content after strip → empty_title_or_content
             CreatePersonaMemoryInput {
@@ -2655,8 +2690,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
             // 2: bogus category → invalid_category
             CreatePersonaMemoryInput {
@@ -2668,8 +2701,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
             // 3: valid
             CreatePersonaMemoryInput {
@@ -2681,8 +2712,6 @@ mod tests {
                 importance: None,
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         ];
 
@@ -2746,8 +2775,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: Some("uc-deleted-on-purpose".into()),
-            
-            
             },
         )
         .unwrap();
@@ -2762,8 +2789,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2779,8 +2804,13 @@ mod tests {
         // 2. Capability-scoped injection for a DIFFERENT use_case must not
         //    surface the orphan. The persona-wide memory must surface (it has
         //    use_case_id IS NULL).
-        let scoped =
-            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id).with_use_case(Some("uc-something-else")), 10, 10).unwrap();
+        let scoped = get_for_injection_v2(
+            &pool,
+            InjectionScope::for_persona(&persona.id).with_use_case(Some("uc-something-else")),
+            10,
+            10,
+        )
+        .unwrap();
         let active_ids: Vec<_> = scoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !active_ids.contains(&orphan.id.as_str()),
@@ -2793,7 +2823,8 @@ mod tests {
 
         // 3. Unscoped injection (use_case_id = None) must also exclude the
         //    orphan — see CONTRACT (2): "use_case_id IS NULL only".
-        let unscoped = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id), 10, 10).unwrap();
+        let unscoped =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id), 10, 10).unwrap();
         let unscoped_ids: Vec<_> = unscoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !unscoped_ids.contains(&orphan.id.as_str()),
@@ -2867,7 +2898,11 @@ mod tests {
         assert_eq!(n, 2, "delete_all must hard-delete non-core memories only");
 
         let after = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
-        assert_eq!(after.len(), 1, "the pinned core memory must survive a clear-all");
+        assert_eq!(
+            after.len(),
+            1,
+            "the pinned core memory must survive a clear-all"
+        );
         assert_eq!(after[0].id, all[0].id);
         assert_eq!(after[0].tier, "core");
     }
@@ -3008,7 +3043,11 @@ mod tests {
     fn write_path_dedup_collapses_whitespace_and_case_variants() {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "Dedup Variants");
-        let a = create(&pool, dedup_input(&persona_id, "The user prefers dark mode")).unwrap();
+        let a = create(
+            &pool,
+            dedup_input(&persona_id, "The user prefers dark mode"),
+        )
+        .unwrap();
         let b = create(
             &pool,
             dedup_input(&persona_id, "  the   USER prefers   Dark Mode "),
@@ -3031,10 +3070,7 @@ mod tests {
         update_tier(&pool, &pinned.id, "core").unwrap();
 
         let fresh = create(&pool, dedup_input(&persona_id, "Ship on Fridays")).unwrap();
-        assert_ne!(
-            fresh.id, pinned.id,
-            "must NOT dedup against a core memory"
-        );
+        assert_ne!(fresh.id, pinned.id, "must NOT dedup against a core memory");
         assert_eq!(fresh.tier, "active");
         assert_eq!(
             get_by_persona(&pool, &persona_id, None).unwrap().len(),
@@ -3054,7 +3090,10 @@ mod tests {
         let a = create(&pool, dedup_input(&persona_a, "Deploy target is prod")).unwrap();
         let b = create(&pool, dedup_input(&persona_b, "Deploy target is prod")).unwrap();
 
-        assert_ne!(a.id, b.id, "different personas must not dedup against each other");
+        assert_ne!(
+            a.id, b.id,
+            "different personas must not dedup against each other"
+        );
         assert_eq!(get_by_persona(&pool, &persona_a, None).unwrap().len(), 1);
         assert_eq!(get_by_persona(&pool, &persona_b, None).unwrap().len(), 1);
     }
@@ -3327,7 +3366,10 @@ mod vec_tests {
         ];
         let before = memory_model_guard_excluded_total();
         let kept = apply_memory_model_guard(&conn, hits.clone(), "AllMiniLML6V2Q").unwrap();
-        assert_eq!(kept, hits, "inert when every stamp matches the current model");
+        assert_eq!(
+            kept, hits,
+            "inert when every stamp matches the current model"
+        );
         assert_eq!(memory_model_guard_excluded_total(), before);
     }
 
@@ -3393,7 +3435,10 @@ mod vec_tests {
 
         // Sweep: exactly the archived row's leftover vector is cleaned.
         let cleaned = gc_archived_memory_embeddings(&main, &vp, 100).unwrap();
-        assert_eq!(cleaned, 1, "only the archived row's leftover vector is swept");
+        assert_eq!(
+            cleaned, 1,
+            "only the archived row's leftover vector is swept"
+        );
 
         let remaining = embedded_memory_ids(&vp).unwrap();
         assert!(

@@ -26,9 +26,7 @@ use tracing::{info, warn};
 
 use crate::db::UserDbPool;
 use crate::engine::project_tracking::consolidator::{self, TickSnapshot};
-use crate::engine::project_tracking::events::{
-    insert_event, prune_old_events, EventPayload,
-};
+use crate::engine::project_tracking::events::{insert_event, prune_old_events, EventPayload};
 use crate::engine::project_tracking::subscription::{
     list_enabled, update_last_pulse_at, watch_since, Subscription,
 };
@@ -39,11 +37,7 @@ pub const TICK_INTERVAL: Duration = Duration::from_secs(3600);
 
 /// Spawn the scheduler loop. Returns the JoinHandle so a future
 /// shutdown path can abort it; for v1 we just spawn-and-forget.
-pub fn spawn(
-    pool: UserDbPool,
-    enabled: Arc<AtomicBool>,
-    app_handle: AppHandle,
-) -> JoinHandle<()> {
+pub fn spawn(pool: UserDbPool, enabled: Arc<AtomicBool>, app_handle: AppHandle) -> JoinHandle<()> {
     // Use tauri::async_runtime::spawn rather than tokio::spawn — the Tauri
     // setup() closure runs synchronously outside any tokio runtime context,
     // so a raw tokio::spawn here panics with "no reactor running".
@@ -177,9 +171,7 @@ async fn run_project(
             .unwrap_or(&sub.project_path)
             .to_string();
         let snapshot = TickSnapshot::from_events(project_name, &all_events);
-        if let Err(e) =
-            consolidator::run_for_project(pool, sub, snapshot, Some(app_handle)).await
-        {
+        if let Err(e) = consolidator::run_for_project(pool, sub, snapshot, Some(app_handle)).await {
             warn!(
                 project_id = %sub.project_id,
                 error = %e,

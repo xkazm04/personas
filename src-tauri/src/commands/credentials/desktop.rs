@@ -152,10 +152,9 @@ pub async fn register_imported_mcp_server(
         service_type: service_type.clone(),
         encrypted_data: String::new(),
         iv: String::new(),
-        metadata: Some(
-            serde_json::to_string(&metadata)
-                .map_err(|e| AppError::Internal(format!("Failed to serialize credential metadata: {e}")))?,
-        ),
+        metadata: Some(serde_json::to_string(&metadata).map_err(|e| {
+            AppError::Internal(format!("Failed to serialize credential metadata: {e}"))
+        })?),
         session_encrypted_data: None,
         healthcheck_passed: None,
         oauth_session_ref: None,

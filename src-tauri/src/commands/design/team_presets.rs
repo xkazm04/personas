@@ -101,10 +101,7 @@ pub fn adopt_team_preset(
     id: String,
     language: Option<String>,
     parameter_overrides: Option<
-        std::collections::HashMap<
-            String,
-            std::collections::HashMap<String, serde_json::Value>,
-        >,
+        std::collections::HashMap<String, std::collections::HashMap<String, serde_json::Value>>,
     >,
     // Optional subset of manifest roles to adopt. `None` (or omitted) adopts
     // every member — the default. The preview modal passes the user's
@@ -146,10 +143,7 @@ pub fn retry_team_preset_members(
     roles: Vec<String>,
     language: Option<String>,
     parameter_overrides: Option<
-        std::collections::HashMap<
-            String,
-            std::collections::HashMap<String, serde_json::Value>,
-        >,
+        std::collections::HashMap<String, std::collections::HashMap<String, serde_json::Value>>,
     >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;

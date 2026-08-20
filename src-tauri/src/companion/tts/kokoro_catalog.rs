@@ -51,18 +51,16 @@ pub struct KokoroVoiceEntry {
 
 /// Curated Kokoro voice catalog — currently just `af_heart`, the voice we've
 /// judged worth shipping. Add rows (with verified sids) to expose more.
-pub const KOKORO_VOICES: &[KokoroVoiceEntry] = &[
-    KokoroVoiceEntry {
-        voice_id: "af_heart",
-        sid: 3,
-        speaker: "Heart",
-        gender: "female",
-        language_code: "en-US",
-        language_label: "English (US)",
-        grade: "A",
-        description: "Warm, expressive US female — Kokoro's flagship voice.",
-    },
-];
+pub const KOKORO_VOICES: &[KokoroVoiceEntry] = &[KokoroVoiceEntry {
+    voice_id: "af_heart",
+    sid: 3,
+    speaker: "Heart",
+    gender: "female",
+    language_code: "en-US",
+    language_label: "English (US)",
+    grade: "A",
+    description: "Warm, expressive US female — Kokoro's flagship voice.",
+}];
 
 pub fn find_voice_by_id(voice_id: &str) -> Option<&'static KokoroVoiceEntry> {
     KOKORO_VOICES.iter().find(|v| v.voice_id == voice_id)
@@ -76,7 +74,11 @@ mod tests {
     fn catalog_voice_ids_are_unique() {
         let mut seen = std::collections::HashSet::new();
         for v in KOKORO_VOICES {
-            assert!(seen.insert(v.voice_id), "duplicate voice id: {}", v.voice_id);
+            assert!(
+                seen.insert(v.voice_id),
+                "duplicate voice id: {}",
+                v.voice_id
+            );
         }
     }
 

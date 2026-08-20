@@ -417,10 +417,13 @@ pub fn get_sla_dashboard_with_offset(
                  ORDER BY persona_id, rn ASC",
                 CONSECUTIVE_FAILURE_LOOKBACK,
             );
-            let statuses_map =
-                batch_query_map_vec(&conn, &consec_sql, &persona_ids, Some(&window_cutoff), |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-                })?;
+            let statuses_map = batch_query_map_vec(
+                &conn,
+                &consec_sql,
+                &persona_ids,
+                Some(&window_cutoff),
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+            )?;
             statuses_map
                 .into_iter()
                 .map(|(pid, statuses)| {
@@ -996,7 +999,10 @@ pub fn get_persona_breach_signal(
             .iter()
             .take_while(|s| s.as_str() == "failed")
             .count() as i64;
-        let successful = statuses.iter().filter(|s| s.as_str() == "completed").count() as i64;
+        let successful = statuses
+            .iter()
+            .filter(|s| s.as_str() == "completed")
+            .count() as i64;
         let failed = statuses.iter().filter(|s| s.as_str() == "failed").count() as i64;
         let decided = successful + failed;
         let success_rate = if decided > 0 {
@@ -1324,7 +1330,11 @@ mod tests {
         let day = (base + chrono::Duration::minutes(server_offset_minutes()))
             .format("%Y-%m-%d")
             .to_string();
-        let ts = |minute: i64| (base + chrono::Duration::minutes(minute)).format("%Y-%m-%d %H:%M:%S").to_string();
+        let ts = |minute: i64| {
+            (base + chrono::Duration::minutes(minute))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
 
         for i in 0..4 {
             insert_execution(&pool, &persona_id, "completed", &ts(i));
@@ -1557,9 +1567,11 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = create_test_persona(&pool, "rollup-idem");
         let base = chrono::Utc::now() - chrono::Duration::hours(2);
-        let ts = |m: i64| (base + chrono::Duration::minutes(m))
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string();
+        let ts = |m: i64| {
+            (base + chrono::Duration::minutes(m))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
         for i in 0..3 {
             insert_execution(&pool, &persona_id, "completed", &ts(i));
         }
@@ -1627,7 +1639,10 @@ mod tests {
             row.consecutive_failures, 2,
             "streak must be bounded to the 30-day window (2 recent), not the 7 total failures",
         );
-        assert_eq!(row.failed, 2, "windowed failure count excludes the 40-day-old rows");
+        assert_eq!(
+            row.failed, 2,
+            "windowed failure count excludes the 40-day-old rows"
+        );
     }
 
     /// The trend read from persisted rollups must match a raw recompute — and
@@ -1640,17 +1655,26 @@ mod tests {
 
         let now = chrono::Utc::now();
         let ins = |offset_days: i64, minute: i64, status: &str| {
-            let ts = (now - chrono::Duration::days(offset_days) + chrono::Duration::minutes(minute))
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string();
+            let ts = (now - chrono::Duration::days(offset_days)
+                + chrono::Duration::minutes(minute))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
             insert_execution(&pool, &persona_id, status, &ts);
         };
         // Spread across three days, all inside a 30-day window.
-        for i in 0..3 { ins(2, i, "completed"); }
+        for i in 0..3 {
+            ins(2, i, "completed");
+        }
         ins(2, 30, "failed");
-        for i in 0..2 { ins(1, i, "completed"); }
-        for i in 0..2 { ins(1, 30 + i, "failed"); }
-        for i in 0..4 { ins(0, -60 + i, "completed"); } // ~1h ago
+        for i in 0..2 {
+            ins(1, i, "completed");
+        }
+        for i in 0..2 {
+            ins(1, 30 + i, "failed");
+        }
+        for i in 0..4 {
+            ins(0, -60 + i, "completed");
+        } // ~1h ago
         ins(0, -30, "failed");
 
         // Raw-path trend (no rollups written yet).
@@ -1674,13 +1698,23 @@ mod tests {
         for (a, b) in raw_trend.iter().zip(rollup_trend.iter()) {
             assert_eq!(a.date, b.date, "day keys must match");
             assert_eq!(a.total, b.total, "total must match for {}", a.date);
-            assert_eq!(a.successful, b.successful, "successful must match for {}", a.date);
+            assert_eq!(
+                a.successful, b.successful,
+                "successful must match for {}",
+                a.date
+            );
             assert_eq!(a.failed, b.failed, "failed must match for {}", a.date);
-            assert_eq!(a.cancelled, b.cancelled, "cancelled must match for {}", a.date);
+            assert_eq!(
+                a.cancelled, b.cancelled,
+                "cancelled must match for {}",
+                a.date
+            );
             assert!(
                 (a.success_rate - b.success_rate).abs() < 1e-9,
                 "success_rate must match for {} ({} vs {})",
-                a.date, a.success_rate, b.success_rate,
+                a.date,
+                a.success_rate,
+                b.success_rate,
             );
         }
     }
@@ -1752,7 +1786,10 @@ mod tests {
             vec![utc_date.as_str()],
             "under UTC both runs fall on the UTC day {utc_date}",
         );
-        assert_ne!(local_date, utc_date, "the offset must actually shift the day");
+        assert_ne!(
+            local_date, utc_date,
+            "the offset must actually shift the day"
+        );
     }
 
     /// Empty timed-execution set surfaces p95 as `None` (→ "N/A"), never 0.0.
@@ -1777,7 +1814,10 @@ mod tests {
             .iter()
             .find(|p| p.persona_id == persona_id)
             .expect("persona row missing");
-        assert_eq!(row.p95_duration_ms, None, "no timed runs ⇒ p95 is N/A, not 0ms");
+        assert_eq!(
+            row.p95_duration_ms, None,
+            "no timed runs ⇒ p95 is N/A, not 0ms"
+        );
     }
 
     // -- Direction 2: per-persona reliability + daily series -----------------
@@ -1824,8 +1864,12 @@ mod tests {
         let pool = init_test_db().unwrap();
         let p1 = create_test_persona(&pool, "alpha");
         let now = chrono::Utc::now();
-        let day_a = (now - chrono::Duration::days(3)).format("%Y-%m-%d").to_string();
-        let day_b = (now - chrono::Duration::days(1)).format("%Y-%m-%d").to_string();
+        let day_a = (now - chrono::Duration::days(3))
+            .format("%Y-%m-%d")
+            .to_string();
+        let day_b = (now - chrono::Duration::days(1))
+            .format("%Y-%m-%d")
+            .to_string();
 
         // Day A: 2 completed → 100%. Day B: 1 completed + 1 failed → 50%.
         insert_execution(&pool, &p1, "completed", &format!("{day_a} 10:00:00"));

@@ -134,7 +134,13 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                 let tick_result = AssertUnwindSafe(async {
                     #[cfg(feature = "ml")]
                     {
-                        crate::companion::jobs::worker_tick(&pool, &cred_pool, embedder.as_ref(), &sink).await
+                        crate::companion::jobs::worker_tick(
+                            &pool,
+                            &cred_pool,
+                            embedder.as_ref(),
+                            &sink,
+                        )
+                        .await
                     }
                     #[cfg(not(feature = "ml"))]
                     {
@@ -267,7 +273,10 @@ fn fleet_census<I: IntoIterator<Item = (crate::commands::fleet::types::FleetSess
     rows: I,
 ) -> FleetCensus {
     use crate::commands::fleet::types::FleetSessionState as S;
-    let mut census = FleetCensus { pending: 0, has_priority: false };
+    let mut census = FleetCensus {
+        pending: 0,
+        has_priority: false,
+    };
     for (state, idle_ms) in rows {
         if matches!(state, S::Exited | S::Hibernated) {
             continue;
@@ -630,9 +639,7 @@ fn run_proactive_tick_release(pool: &UserDbPool, app: &AppHandle) -> Result<(), 
     if released.is_empty() {
         return Ok(());
     }
-    let payload = crate::commands::companion::proactive::ProactiveDelivery {
-        messages: released,
-    };
+    let payload = crate::commands::companion::proactive::ProactiveDelivery { messages: released };
     if let Err(e) = app.emit(
         crate::commands::companion::proactive::PROACTIVE_EVENT,
         payload,
@@ -670,8 +677,14 @@ mod tests {
     fn scheduler_slot_is_claimed_exactly_once() {
         // The whole point of moving the start into `setup()` while leaving the
         // `companion_init` call in place: the second start must be inert.
-        assert!(claim_proactive_scheduler_slot(), "first start owns the loop");
-        assert!(!claim_proactive_scheduler_slot(), "second start must not stack a scheduler");
+        assert!(
+            claim_proactive_scheduler_slot(),
+            "first start owns the loop"
+        );
+        assert!(
+            !claim_proactive_scheduler_slot(),
+            "second start must not stack a scheduler"
+        );
         assert!(!claim_proactive_scheduler_slot());
     }
 

@@ -241,7 +241,10 @@ fn reconcile_scope(
     for n in &seen {
         params.push(Box::new(n.clone()));
     }
-    conn.execute(&sql, rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())))?;
+    conn.execute(
+        &sql,
+        rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
+    )?;
 
     Ok(())
 }
@@ -347,7 +350,9 @@ fn mine_line(
                             // get() guards the byte index if lowercasing ever
                             // shifted a non-ASCII length.
                             let fwd = fp.replace('\\', "/");
-                            let Some(rel) = fwd.get(root_len + 1..) else { continue };
+                            let Some(rel) = fwd.get(root_len + 1..) else {
+                                continue;
+                            };
                             if rel.is_empty() {
                                 continue;
                             }
@@ -370,7 +375,9 @@ fn mine_line(
         let mut rest = line;
         while let Some(start) = rest.find("<command-name>") {
             rest = &rest[start + "<command-name>".len()..];
-            let Some(end) = rest.find("</command-name>") else { break };
+            let Some(end) = rest.find("</command-name>") else {
+                break;
+            };
             let name = rest[..end].trim().trim_start_matches('/');
             if !name.is_empty() && name.len() <= 64 && !name.contains('<') {
                 out.push(MinedEvent {
@@ -403,10 +410,15 @@ fn mine_file(
         )
         .unwrap_or(0);
 
-    let meta = std::fs::metadata(path).map_err(|e| AppError::Internal(format!("stat failed: {e}")))?;
+    let meta =
+        std::fs::metadata(path).map_err(|e| AppError::Internal(format!("stat failed: {e}")))?;
     let len = meta.len();
     // Truncated/rotated file → restart; INSERT OR IGNORE keeps events idempotent.
-    let mut offset = if (stored_offset as u64) > len { 0 } else { stored_offset as u64 };
+    let mut offset = if (stored_offset as u64) > len {
+        0
+    } else {
+        stored_offset as u64
+    };
     if offset >= len {
         return Ok(0);
     }
@@ -439,7 +451,14 @@ fn mine_file(
     let mut reads: Vec<MinedRead> = Vec::new();
     for line in String::from_utf8_lossy(chunk).lines() {
         if !line.trim().is_empty() {
-            mine_line(line, &fallback_session, &root_norm, root_len, &mut events, &mut reads);
+            mine_line(
+                line,
+                &fallback_session,
+                &root_norm,
+                root_len,
+                &mut events,
+                &mut reads,
+            );
         }
     }
 
@@ -505,7 +524,9 @@ fn mine_file(
 /// first run (watermarks). Never throws for a single bad file — vital signs
 /// must not cost the caller its answer (per-file failures are warned + skipped).
 #[tauri::command]
-pub fn skill_usage_scan(state: State<'_, Arc<AppState>>) -> Result<SkillUsageScanSummary, AppError> {
+pub fn skill_usage_scan(
+    state: State<'_, Arc<AppState>>,
+) -> Result<SkillUsageScanSummary, AppError> {
     require_auth_sync(&state)?;
     let conn = state
         .db
@@ -552,7 +573,9 @@ pub fn skill_usage_scan(state: State<'_, Arc<AppState>>) -> Result<SkillUsageSca
 
     'outer: for (encoded, (pid, root)) in &by_encoded {
         let dir = projects_dir.join(encoded);
-        let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            continue;
+        };
         for entry in rd.flatten() {
             let path = entry.path();
             if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
@@ -725,7 +748,11 @@ mod tests {
     #[test]
     fn ignores_lines_without_markers_or_timestamp() {
         let (a, _) = run(r#"{"type":"user","message":{"content":"plain"}}"#, "f", "");
-        let (b, _) = run(r#"{"message":{"content":"<command-name>/x</command-name>"}}"#, "f", ""); // no timestamp
+        let (b, _) = run(
+            r#"{"message":{"content":"<command-name>/x</command-name>"}}"#,
+            "f",
+            "",
+        ); // no timestamp
         assert!(a.is_empty() && b.is_empty());
     }
 

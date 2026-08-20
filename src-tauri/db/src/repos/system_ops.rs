@@ -54,7 +54,8 @@ pub fn list(pool: &DbPool) -> Result<Vec<SystemOpAutomation>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM system_op_automations ORDER BY created_at DESC")?;
     let rows = stmt.query_map([], row_to_automation)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn get(pool: &DbPool, id: &str) -> Result<SystemOpAutomation, AppError> {
@@ -110,7 +111,10 @@ pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<bool, AppEr
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM system_op_automations WHERE id = ?1", params![id])?;
+    let rows = conn.execute(
+        "DELETE FROM system_op_automations WHERE id = ?1",
+        params![id],
+    )?;
     Ok(rows > 0)
 }
 
@@ -168,7 +172,8 @@ pub fn get_due_schedules(pool: &DbPool, now: &str) -> Result<Vec<SystemOpAutomat
           ORDER BY next_run_at ASC",
     )?;
     let rows = stmt.query_map(params![now], row_to_automation)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// All enabled event-listener automations (matched against bus events per tick).
@@ -179,5 +184,6 @@ pub fn list_enabled_event_automations(pool: &DbPool) -> Result<Vec<SystemOpAutom
           WHERE trigger_kind = 'event' AND enabled = 1 AND listen_event_type IS NOT NULL",
     )?;
     let rows = stmt.query_map([], row_to_automation)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }

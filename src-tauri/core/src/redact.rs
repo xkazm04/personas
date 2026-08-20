@@ -71,8 +71,9 @@ static PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
 });
 
 /// `Bearer <token>` — handled separately so the `Bearer ` prefix survives.
-static BEARER: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?i)\bBearer\s+[A-Za-z0-9._\-]{20,}").expect("valid bearer pattern"));
+static BEARER: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)\bBearer\s+[A-Za-z0-9._\-]{20,}").expect("valid bearer pattern")
+});
 
 /// Candidate high-entropy token shape for the entropy sweep.
 static TOKEN: LazyLock<Regex> =
@@ -107,7 +108,9 @@ pub fn redact_string(input: &str) -> String {
         }
     }
     if BEARER.is_match(&out) {
-        out = BEARER.replace_all(&out, format!("Bearer {MARKER}")).into_owned();
+        out = BEARER
+            .replace_all(&out, format!("Bearer {MARKER}"))
+            .into_owned();
     }
 
     // 2. Entropy sweep over remaining long tokens.
@@ -134,10 +137,7 @@ fn looks_like_secret(tok: &str) -> bool {
         return false;
     }
     // Pure hex / hex-with-dashes (UUIDs, SHAs, digests) are identifiers, not secrets.
-    if tok
-        .chars()
-        .all(|c| c.is_ascii_hexdigit() || c == '-')
-    {
+    if tok.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
         return false;
     }
     // Real key material mixes classes; an all-lowercase or all-uppercase slug is
@@ -180,10 +180,19 @@ mod tests {
     fn redacts_anthropic_and_aws_keys() {
         let s = "key=sk-ant-api03-AbCdEf012345678901234567890XyZ and AKIAIOSFODNN7EXAMPLE end"; // gitleaks:allow
         let r = redact_string(s);
-        assert!(!r.contains("sk-ant-api03"), "anthropic key not redacted: {r}");
-        assert!(!r.contains("AKIAIOSFODNN7EXAMPLE"), "aws key not redacted: {r}");
+        assert!(
+            !r.contains("sk-ant-api03"),
+            "anthropic key not redacted: {r}"
+        );
+        assert!(
+            !r.contains("AKIAIOSFODNN7EXAMPLE"),
+            "aws key not redacted: {r}"
+        );
         assert!(r.contains(MARKER));
-        assert!(r.contains("key=") && r.contains("end"), "surrounding text dropped: {r}");
+        assert!(
+            r.contains("key=") && r.contains("end"),
+            "surrounding text dropped: {r}"
+        );
     }
 
     #[test]
@@ -198,7 +207,8 @@ mod tests {
     #[test]
     fn preserves_uuids_and_shas() {
         // UUID + 40-char git SHA must survive (they are identifiers, not secrets).
-        let s = "run 550e8400-e29b-41d4-a716-446655440000 at da39a3ee5e6b4b0d3255bfef95601890afd80709";
+        let s =
+            "run 550e8400-e29b-41d4-a716-446655440000 at da39a3ee5e6b4b0d3255bfef95601890afd80709";
         let r = redact_string(s);
         assert_eq!(r, s, "identifier was wrongly redacted: {r}");
     }
@@ -222,9 +232,15 @@ mod tests {
         set_enabled(false);
         let mut f = Some("sk-ant-api03-AbCdEf012345678901234567890XyZ".to_string()); // gitleaks:allow
         redact_opt(&mut f);
-        assert!(f.as_deref().unwrap().contains("sk-ant-api03"), "redacted while disabled");
+        assert!(
+            f.as_deref().unwrap().contains("sk-ant-api03"),
+            "redacted while disabled"
+        );
         set_enabled(true);
         redact_opt(&mut f);
-        assert!(!f.as_deref().unwrap().contains("sk-ant-api03"), "not redacted while enabled");
+        assert!(
+            !f.as_deref().unwrap().contains("sk-ant-api03"),
+            "not redacted while enabled"
+        );
     }
 }

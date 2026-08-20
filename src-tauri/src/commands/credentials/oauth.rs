@@ -283,8 +283,7 @@ where
         // and is handled as a terminal outcome below.
         let strings_match = callback_state.as_deref() == Some(&expected_state);
         let state_check = verify_oauth_state(callback_state.as_deref().unwrap_or(""));
-        let csrf_failure =
-            !strings_match || matches!(state_check, OAuthStateVerification::Invalid);
+        let csrf_failure = !strings_match || matches!(state_check, OAuthStateVerification::Invalid);
 
         if csrf_failure {
             tracing::warn!(
@@ -548,8 +547,7 @@ pub async fn start_google_credential_oauth(
     let google_uses_pkce = true;
     if !google_uses_pkce && !has_client_secret {
         return Err(AppError::Validation(
-            "Google OAuth requires PKCE or a client secret to complete the token exchange."
-                .into(),
+            "Google OAuth requires PKCE or a client secret to complete the token exchange.".into(),
         ));
     }
 
@@ -1669,7 +1667,6 @@ pub async fn start_oauth(
     use_pkce: Option<bool>,
     extra_params: Option<HashMap<String, String>>,
 ) -> Result<serde_json::Value, AppError> {
-
     // Resolve app-managed credentials when user doesn't provide their own.
     let (client_id, client_secret) =
         resolve_universal_oauth_credentials(&provider_id, client_id, client_secret)?;
@@ -2070,9 +2067,7 @@ mod tests {
                 } else {
                     "google".into()
                 },
-                access_token: super::encrypt_token(Some(SecureString::new(
-                    "at-secret-123".into(),
-                ))),
+                access_token: super::encrypt_token(Some(SecureString::new("at-secret-123".into()))),
                 refresh_token: super::encrypt_token(Some(SecureString::new(
                     "rt-secret-456".into(),
                 ))),
@@ -2110,7 +2105,10 @@ mod tests {
         // The serialized payload must not carry the plaintext tokens or even
         // the token field names — metadata booleans + session ref only.
         let text = value.to_string();
-        assert!(!text.contains("at-secret-123"), "status leaked access token");
+        assert!(
+            !text.contains("at-secret-123"),
+            "status leaked access token"
+        );
         assert!(
             !text.contains("rt-secret-456"),
             "status leaked refresh token"
@@ -2158,8 +2156,7 @@ mod tests {
 
         let mut fields: HashMap<String, String> = HashMap::new();
         fields.insert("scopes".into(), "user-typed.scope".into());
-        super::redeem_oauth_session_into_fields(&id, &mut fields, true)
-            .expect("redeem succeeds");
+        super::redeem_oauth_session_into_fields(&id, &mut fields, true).expect("redeem succeeds");
 
         assert_eq!(
             fields.get("refresh_token").map(String::as_str),
@@ -2202,8 +2199,7 @@ mod tests {
         );
 
         let mut fields: HashMap<String, String> = HashMap::new();
-        super::redeem_oauth_session_into_fields(&id, &mut fields, false)
-            .expect("redeem succeeds");
+        super::redeem_oauth_session_into_fields(&id, &mut fields, false).expect("redeem succeeds");
 
         assert_eq!(
             fields.get("access_token").map(String::as_str),
@@ -2220,7 +2216,11 @@ mod tests {
             let sessions = super::oauth_sessions()
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
-            assert!(sessions.get(&id).expect("session kept").redeemed_at.is_none());
+            assert!(sessions
+                .get(&id)
+                .expect("session kept")
+                .redeemed_at
+                .is_none());
         }
 
         drop_session(&id);
@@ -2261,8 +2261,8 @@ mod tests {
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
             if let Some(s) = sessions.get_mut(&expired) {
-                s.created_at = super::now_unix_secs()
-                    .saturating_sub(super::OAUTH_SESSION_TTL_SECS + 60);
+                s.created_at =
+                    super::now_unix_secs().saturating_sub(super::OAUTH_SESSION_TTL_SECS + 60);
             }
         }
         let err = super::redeem_oauth_session_into_fields(&expired, &mut fields, true)
@@ -2331,7 +2331,10 @@ mod tests {
             !body.contains("rt-super-secret-value") && !body.contains("cs-leak-abcdef"),
             "body leaked a secret"
         );
-        assert!(body.contains("[secret]"), "secrets should be masked as [secret]");
+        assert!(
+            body.contains("[secret]"),
+            "secrets should be masked as [secret]"
+        );
         // Non-secret context is preserved so the error stays diagnosable.
         assert!(err.message.contains("invalid_grant"));
         assert_eq!(err.status, Some(reqwest::StatusCode::BAD_REQUEST));
@@ -2369,8 +2372,14 @@ mod tests {
             Some("the-code-verifier"),
         );
         let has = |k: &str| params.iter().any(|(pk, _)| *pk == k);
-        assert!(has("client_secret"), "Google exchange must still send the secret");
-        assert!(has("code_verifier"), "Google exchange must send the PKCE verifier");
+        assert!(
+            has("client_secret"),
+            "Google exchange must still send the secret"
+        );
+        assert!(
+            has("code_verifier"),
+            "Google exchange must send the PKCE verifier"
+        );
         assert_eq!(
             params
                 .iter()
@@ -2379,7 +2388,10 @@ mod tests {
             Some("the-code-verifier")
         );
         assert_eq!(
-            params.iter().find(|(k, _)| *k == "grant_type").map(|(_, v)| v.as_str()),
+            params
+                .iter()
+                .find(|(k, _)| *k == "grant_type")
+                .map(|(_, v)| v.as_str()),
             Some("authorization_code")
         );
     }
@@ -2474,9 +2486,11 @@ mod tests {
         let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
             .await
             .expect("connect to callback server");
-        let req =
-            format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
-        stream.write_all(req.as_bytes()).await.expect("write request");
+        let req = format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+        stream
+            .write_all(req.as_bytes())
+            .await
+            .expect("write request");
         let mut buf = Vec::new();
         let _ = stream.read_to_end(&mut buf).await;
     }
@@ -2566,8 +2580,7 @@ mod tests {
     fn verify_reports_expired_for_authentic_but_stale_state() {
         // A genuine state (valid HMAC) past the freshness window must surface as
         // Expired, not Invalid — so a slow login is not mislabeled a CSRF attack.
-        let stale_ts =
-            super::now_unix_secs().saturating_sub(super::OAUTH_STATE_MAX_AGE_SECS + 60);
+        let stale_ts = super::now_unix_secs().saturating_sub(super::OAUTH_STATE_MAX_AGE_SECS + 60);
         let state = super::generate_oauth_state_at(stale_ts);
         match super::verify_oauth_state(&state) {
             super::OAuthStateVerification::Expired { age_secs } => {

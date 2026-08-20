@@ -19,8 +19,8 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use personas_macros::requires;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, State};
 use ts_rs::TS;
 
@@ -804,13 +804,7 @@ pub fn drive_search(
     Ok(hits)
 }
 
-fn walk_search(
-    root: &Path,
-    dir: &Path,
-    query: &str,
-    limit: usize,
-    hits: &mut Vec<DriveSearchHit>,
-) {
+fn walk_search(root: &Path, dir: &Path, query: &str, limit: usize, hits: &mut Vec<DriveSearchHit>) {
     if hits.len() >= limit {
         return;
     }
@@ -851,10 +845,7 @@ fn walk_search(
 /// jump to whatever a persona just exported without remembering the path.
 /// Folders are skipped — the rail is for actual files.
 #[tauri::command]
-pub fn drive_recent(
-    app: AppHandle,
-    limit: Option<u32>,
-) -> Result<Vec<DriveEntry>, AppError> {
+pub fn drive_recent(app: AppHandle, limit: Option<u32>) -> Result<Vec<DriveEntry>, AppError> {
     let n = limit.unwrap_or(5).clamp(1, 50) as usize;
     let root = managed_root(&app)?;
     let mut acc: Vec<DriveEntry> = Vec::new();

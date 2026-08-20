@@ -26,8 +26,7 @@ pub fn resolve_bun() -> Result<PathBuf, AppError> {
     }
     path_lookup().ok_or_else(|| {
         AppError::Validation(
-            "Bun runtime not found. Install Bun (https://bun.sh) or set PERSONAS_BUN_BIN."
-                .into(),
+            "Bun runtime not found. Install Bun (https://bun.sh) or set PERSONAS_BUN_BIN.".into(),
         )
     })
 }
@@ -112,7 +111,11 @@ mod tests {
         // A non-existent override path must not resolve to it; it falls through
         // to PATH (which may or may not have bun in the test env — we only
         // assert the override file-check doesn't panic and a bad path is ignored).
-        let bogus = if cfg!(windows) { "Z:\\no\\such\\bun.exe" } else { "/no/such/bun" };
+        let bogus = if cfg!(windows) {
+            "Z:\\no\\such\\bun.exe"
+        } else {
+            "/no/such/bun"
+        };
         std::env::set_var("PERSONAS_BUN_BIN", bogus);
         let resolved = resolve_bun();
         std::env::remove_var("PERSONAS_BUN_BIN");

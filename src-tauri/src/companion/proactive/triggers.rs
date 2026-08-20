@@ -55,11 +55,11 @@ use rusqlite::params;
 use serde_json::Value;
 
 use crate::companion::brain::{backlog, goals, rituals};
+use crate::db::{DbPool, UserDbPool};
 #[cfg(feature = "desktop")]
 use crate::engine::ambient_context::{AmbientContextHandle, ContextEvent};
 #[cfg(feature = "desktop")]
 use crate::engine::context_rules::ContextRuleEngineHandle;
-use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
 
 use super::Nudge;
@@ -731,7 +731,10 @@ mod on_this_day_tests {
 
     fn msg_pool() -> UserDbPool {
         let manager = r2d2_sqlite::SqliteConnectionManager::memory();
-        let pool: UserDbPool = r2d2::Pool::builder().max_size(1).build(manager).expect("pool");
+        let pool: UserDbPool = r2d2::Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("pool");
         pool.get()
             .unwrap()
             .execute_batch(

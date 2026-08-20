@@ -44,9 +44,9 @@ impl QuicTransport {
 
         let socket = Socket::new(Domain::IPV6, Type::DGRAM, Some(Protocol::UDP))
             .map_err(|e| AppError::Internal(format!("UDP socket creation failed: {e}")))?;
-        socket.set_only_v6(false).map_err(|e| {
-            AppError::Internal(format!("Failed to enable dual-stack socket: {e}"))
-        })?;
+        socket
+            .set_only_v6(false)
+            .map_err(|e| AppError::Internal(format!("Failed to enable dual-stack socket: {e}")))?;
         socket
             .set_nonblocking(true)
             .map_err(|e| AppError::Internal(format!("Failed to set non-blocking: {e}")))?;

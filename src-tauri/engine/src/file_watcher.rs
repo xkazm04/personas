@@ -17,12 +17,12 @@ use std::time::{Duration, Instant};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::Mutex;
 
+use crate::ambient_context::AmbientContextHandle;
+use crate::ambient_signal_repo;
 use personas_db::models::{CreatePersonaEventInput, TriggerConfig};
 use personas_db::repos::communication::events as event_repo;
 use personas_db::repos::resources::triggers as trigger_repo;
 use personas_db::DbPool;
-use crate::ambient_context::AmbientContextHandle;
-use crate::ambient_signal_repo;
 
 /// Raw FS event received from notify, before trigger matching.
 pub struct RawFsEvent {

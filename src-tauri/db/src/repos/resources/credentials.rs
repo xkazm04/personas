@@ -1581,8 +1581,14 @@ mod tests {
             let row = by_key[key];
             let (ref id, ref updated_at, ref cipher) = before[key];
             assert_eq!(&row.id, id, "{key} row id must be untouched");
-            assert_eq!(&row.updated_at, updated_at, "{key} updated_at must be untouched");
-            assert_eq!(&row.encrypted_value, cipher, "{key} ciphertext must be untouched");
+            assert_eq!(
+                &row.updated_at, updated_at,
+                "{key} updated_at must be untouched"
+            );
+            assert_eq!(
+                &row.encrypted_value, cipher,
+                "{key} ciphertext must be untouched"
+            );
         }
 
         // 1c. The legacy camelCase alias row was removed in the same tx.
@@ -1601,8 +1607,7 @@ mod tests {
                 "{key} must be encrypted (non-empty iv), never plaintext-at-rest"
             );
             assert_ne!(
-                row.encrypted_value,
-                changed[key],
+                row.encrypted_value, changed[key],
                 "{key} ciphertext must not equal the plaintext value"
             );
         }

@@ -23,7 +23,8 @@ pub async fn dev_tools_get_autopilot_mode(
     project_id: String,
 ) -> Result<Option<String>, AppError> {
     require_auth(&state).await?;
-    let value = crate::db::repos::core::settings::get(&state.db, &autopilot::setting_key(&project_id))?;
+    let value =
+        crate::db::repos::core::settings::get(&state.db, &autopilot::setting_key(&project_id))?;
     Ok(value)
 }
 

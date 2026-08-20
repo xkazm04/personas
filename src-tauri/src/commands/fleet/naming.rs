@@ -65,7 +65,11 @@ pub fn task_from_args(args: &[String]) -> Option<String> {
     while i < args.len() {
         let a = &args[i];
         if a.starts_with("--") {
-            i += if VALUE_FLAGS.contains(&a.as_str()) { 2 } else { 1 };
+            i += if VALUE_FLAGS.contains(&a.as_str()) {
+                2
+            } else {
+                1
+            };
         } else {
             let t = a.trim();
             if !t.is_empty() {
@@ -136,7 +140,10 @@ mod tests {
 
     #[test]
     fn clean_name_strips_quotes_and_takes_first_line() {
-        assert_eq!(clean_name("\"Eval Engine Refactor\"\nextra"), "Eval Engine Refactor");
+        assert_eq!(
+            clean_name("\"Eval Engine Refactor\"\nextra"),
+            "Eval Engine Refactor"
+        );
         assert_eq!(clean_name("  Auth Bug Fix.  "), "Auth Bug Fix");
         assert_eq!(clean_name(""), "");
     }
@@ -156,7 +163,10 @@ mod tests {
     #[test]
     fn result_field_extracts_clean_answer() {
         let line = "{\"type\":\"result\",\"subtype\":\"success\",\"result\":\"JWT Token Authentication Refactor\"}";
-        assert_eq!(result_field(line), Some("JWT Token Authentication Refactor".to_string()));
+        assert_eq!(
+            result_field(line),
+            Some("JWT Token Authentication Refactor".to_string())
+        );
         assert_eq!(result_field("not json"), None);
         assert_eq!(result_field("{\"type\":\"result\"}"), None);
     }
@@ -165,7 +175,11 @@ mod tests {
     fn task_from_args_skips_flags_and_their_values() {
         // --model's value (sonnet) is skipped; the task is found.
         assert_eq!(
-            task_from_args(&["--model".into(), "sonnet".into(), "Modularize the eval engine".into()]),
+            task_from_args(&[
+                "--model".into(),
+                "sonnet".into(),
+                "Modularize the eval engine".into()
+            ]),
             Some("Modularize the eval engine".into())
         );
         assert_eq!(

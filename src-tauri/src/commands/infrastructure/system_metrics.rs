@@ -82,7 +82,11 @@ impl SystemMetricsSampler {
         };
 
         let metrics = SystemMetrics {
-            cpu_percent: if self.primed { self.sys.global_cpu_usage() } else { 0.0 },
+            cpu_percent: if self.primed {
+                self.sys.global_cpu_usage()
+            } else {
+                0.0
+            },
             mem_used_percent,
             mem_available_mb: available / BYTES_PER_MB,
             mem_total_mb: total / BYTES_PER_MB,

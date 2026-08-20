@@ -445,7 +445,9 @@ pub fn artist_read_image_base64(file_path: String) -> Result<String, AppError> {
         .map(|e| e.to_lowercase())
         .unwrap_or_default();
     if !ALLOWED_EXTS.contains(&ext.as_str()) {
-        return Err(AppError::Validation(format!("Unsupported image type: .{ext}")));
+        return Err(AppError::Validation(format!(
+            "Unsupported image type: .{ext}"
+        )));
     }
 
     // 3. Confine to the managed app-data root (resolving symlinks).

@@ -187,7 +187,10 @@ pub async fn transcribe(
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let snippet = if stderr.len() > 400 {
-            format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr, 400))
+            format!(
+                "{}…",
+                crate::utils::text::truncate_on_char_boundary(&stderr, 400)
+            )
         } else {
             stderr.into_owned()
         };
@@ -241,7 +244,8 @@ mod tests {
 
     #[test]
     fn engine_status_reports_expected_path() {
-        let tmp = std::env::temp_dir().join(format!("personas-whisper-status-{}", std::process::id()));
+        let tmp =
+            std::env::temp_dir().join(format!("personas-whisper-status-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&tmp);
         std::env::set_var("PERSONAS_HOME", &tmp);
         std::env::remove_var("PERSONAS_WHISPER_BIN");

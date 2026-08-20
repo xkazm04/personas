@@ -32,10 +32,10 @@
 
 use serde::Serialize;
 
+use personas_core::error::AppError;
 use personas_db::models::CreateTriggerInput;
 use personas_db::repos::resources::triggers as trigger_repo;
 use personas_db::DbPool;
-use personas_core::error::AppError;
 
 /// Summary of a wiring pass — returned by the `repair_team_handoff` command
 /// and logged by the adoption path.

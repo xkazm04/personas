@@ -121,7 +121,14 @@ pub fn extract_build_turn(
         }
         kept.push(line);
     }
-    (kept.join("\n").trim().to_string(), phases, question, options, area, selector)
+    (
+        kept.join("\n").trim().to_string(),
+        phases,
+        question,
+        options,
+        area,
+        selector,
+    )
 }
 
 #[cfg(test)]
@@ -134,7 +141,10 @@ mod tests {
         let (reply, phases, question, _options, _area, _selector) = extract_build_turn(txt);
         assert_eq!(reply, "Set up the hero.");
         assert_eq!(phases.expect("phases").len(), 1);
-        assert_eq!(question.as_deref(), Some("Should the palette be warm or cool?"));
+        assert_eq!(
+            question.as_deref(),
+            Some("Should the palette be warm or cool?")
+        );
     }
 
     #[test]

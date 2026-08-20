@@ -75,9 +75,9 @@
 
 use std::collections::HashMap;
 
+use crate::autopilot::{self, AutopilotMode, Capability};
 use personas_db::settings_keys;
 use personas_db::DbPool;
-use crate::autopilot::{self, AutopilotMode, Capability};
 
 // `autonomy` is the single front door: re-export the per-project primitives from
 // `autopilot` so callers import mode-loading and the "any project opted in"
@@ -210,7 +210,12 @@ mod tests {
         assert!(!is_allowed(&m, "p_off", true, Action::KpiEvaluation));
         // Measure grants KpiEvaluation but not KpiGoalDerivation, regardless of global.
         assert!(is_allowed(&m, "p_measure", false, Action::KpiEvaluation));
-        assert!(!is_allowed(&m, "p_measure", true, Action::KpiGoalDerivation));
+        assert!(!is_allowed(
+            &m,
+            "p_measure",
+            true,
+            Action::KpiGoalDerivation
+        ));
         // UNSET project → follow the global flag in both directions (legacy).
         assert!(is_allowed(&m, "p_unset", true, Action::GoalAdvancement));
         assert!(!is_allowed(&m, "p_unset", false, Action::GoalAdvancement));

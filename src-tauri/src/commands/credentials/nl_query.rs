@@ -125,7 +125,6 @@ pub async fn get_nl_query_snapshot(
     state: State<'_, Arc<AppState>>,
     query_id: String,
 ) -> Result<serde_json::Value, AppError> {
-
     let snapshot = NL_QUERY_JOBS.get_task_snapshot(&query_id, |extra| NlQuerySnapshotExtras {
         generated_sql: extra.generated_sql.clone(),
         explanation: extra.explanation.clone(),
@@ -413,4 +412,3 @@ async fn build_db_schema_context(
 
     ctx
 }
-

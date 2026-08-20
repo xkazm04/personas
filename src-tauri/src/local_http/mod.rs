@@ -116,4 +116,3 @@ fn pick_free_port() -> Result<u16, String> {
         "Could not find a free local_http port near {PREFERRED_PORT}"
     ))
 }
-

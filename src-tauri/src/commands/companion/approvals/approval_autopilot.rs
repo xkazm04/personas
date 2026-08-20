@@ -102,7 +102,10 @@ pub async fn auto_resolve_if_allowed(
     // the boldness dial + execution-time screen re-check apply identically.
     // `fleet_send_input` (answer an AwaitingInput prompt) and `fleet_intervene`
     // (Phase 3b — unblock a stuck session) go through the same bar.
-    if matches!(approval.action.as_str(), "fleet_send_input" | "fleet_intervene") {
+    if matches!(
+        approval.action.as_str(),
+        "fleet_send_input" | "fleet_intervene"
+    ) {
         // Phase 2: the boldness dial + Athena's `decision_class` + `confidence`
         // together decide auto-fire vs orb consult (was: high-confidence only).
         let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
@@ -332,7 +335,9 @@ pub async fn auto_resolve_if_allowed(
 /// here — their targets are hibernated/orphaned rows with nothing to escalate.
 pub(crate) fn escalate_fleet_consult(app: &tauri::AppHandle, params_json: &str) {
     let v: serde_json::Value = serde_json::from_str(params_json).unwrap_or(serde_json::Value::Null);
-    let Some(sid) = v.get("session_id").and_then(|x| x.as_str()) else { return };
+    let Some(sid) = v.get("session_id").and_then(|x| x.as_str()) else {
+        return;
+    };
     let proposal = v
         .get("text")
         .or_else(|| v.get("message"))
@@ -344,7 +349,11 @@ pub(crate) fn escalate_fleet_consult(app: &tauri::AppHandle, params_json: &str) 
     } else {
         format!(
             "Athena needs your review — she proposes: {capped}{}",
-            if proposal.chars().count() > 120 { "…" } else { "" }
+            if proposal.chars().count() > 120 {
+                "…"
+            } else {
+                ""
+            }
         )
     };
     crate::commands::companion::fleet_bridge::resolve_athena_assessment(app, sid, Some(&reason));
@@ -357,8 +366,7 @@ pub(crate) fn record_fleet_decision(
     outcome: &str,
     defer_reason: Option<&str>,
 ) {
-    let v: serde_json::Value =
-        serde_json::from_str(params_json).unwrap_or(serde_json::Value::Null);
+    let v: serde_json::Value = serde_json::from_str(params_json).unwrap_or(serde_json::Value::Null);
     let get = |k: &str| {
         v.get(k)
             .and_then(|x| x.as_str())
@@ -386,7 +394,9 @@ pub(crate) fn record_fleet_decision(
                 "action={action} class={} conf={}{}",
                 get("decision_class").unwrap_or_else(|| "?".into()),
                 get("confidence").unwrap_or_else(|| "?".into()),
-                defer_reason.map(|r| format!(" reason={r}")).unwrap_or_default(),
+                defer_reason
+                    .map(|r| format!(" reason={r}"))
+                    .unwrap_or_default(),
             ),
             &extra,
         );
@@ -418,7 +428,10 @@ pub(crate) fn record_fleet_decision(
 /// failed emit just means no notice. The session's project label is looked up
 /// from the live registry so the notice names the project, not a raw UUID.
 pub(crate) fn emit_fleet_auto_decided(app: &tauri::AppHandle, params: &serde_json::Value) {
-    let session_id = params.get("session_id").and_then(|v| v.as_str()).unwrap_or("");
+    let session_id = params
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     // `fleet_send_input` carries `text`; `fleet_intervene` carries `message` —
     // surface whichever is present so both auto-fires flash on the orb.
     let text = params
@@ -450,7 +463,8 @@ pub(crate) fn emit_fleet_auto_decided(app: &tauri::AppHandle, params: &serde_jso
 /// by the dispatcher and never reach this executor, but naming them documents
 /// the contract; `prefill_persona_create` reaches here (the user approves it),
 /// so it's listed explicitly to stay quiet.
-pub(crate) const NAVIGATION_ONLY_ACTIONS: &[&str] = &["open_route", "open_lab", "prefill_persona_create"];
+pub(crate) const NAVIGATION_ONLY_ACTIONS: &[&str] =
+    &["open_route", "open_lab", "prefill_persona_create"];
 
 /// Actions that ALREADY spawn their OWN follow-up reasoning turn into the chat
 /// (`analyze_fleet` → fleet analysis, `run_browser_test` → the browser-test
@@ -644,9 +658,7 @@ mod confidence_gate_tests {
         assert!(fleet_action_is_high_confidence(
             r#"{"session_id":"s","text":"go","confidence":"high"}"#
         ));
-        assert!(fleet_action_is_high_confidence(
-            r#"{"confidence":"HIGH"}"#
-        ));
+        assert!(fleet_action_is_high_confidence(r#"{"confidence":"HIGH"}"#));
         assert!(fleet_action_is_high_confidence(
             r#"{"confidence":" High "}"#
         ));
@@ -654,11 +666,15 @@ mod confidence_gate_tests {
 
     #[test]
     fn medium_low_missing_and_garbage_defer() {
-        assert!(!fleet_action_is_high_confidence(r#"{"confidence":"medium"}"#));
+        assert!(!fleet_action_is_high_confidence(
+            r#"{"confidence":"medium"}"#
+        ));
         assert!(!fleet_action_is_high_confidence(r#"{"confidence":"low"}"#));
         assert!(!fleet_action_is_high_confidence(r#"{"confidence":"very"}"#));
         // Missing field, wrong type, and unparseable all fail safe.
-        assert!(!fleet_action_is_high_confidence(r#"{"session_id":"s","text":"go"}"#));
+        assert!(!fleet_action_is_high_confidence(
+            r#"{"session_id":"s","text":"go"}"#
+        ));
         assert!(!fleet_action_is_high_confidence(r#"{"confidence":0.9}"#));
         assert!(!fleet_action_is_high_confidence("not json"));
     }
@@ -667,7 +683,11 @@ mod confidence_gate_tests {
     fn matrix_high_always_fires() {
         use super::fleet_action_auto_fires;
         use crate::commands::companion::chat::FleetBoldness;
-        for b in [FleetBoldness::Cautious, FleetBoldness::Balanced, FleetBoldness::Bold] {
+        for b in [
+            FleetBoldness::Cautious,
+            FleetBoldness::Balanced,
+            FleetBoldness::Bold,
+        ] {
             assert!(fleet_action_auto_fires(
                 r#"{"confidence":"high","decision_class":"choice"}"#,
                 b
@@ -691,7 +711,10 @@ mod confidence_gate_tests {
                 b
             ));
             // missing confidence + unparseable → never fire.
-            assert!(!fleet_action_auto_fires(r#"{"decision_class":"drive_forward"}"#, b));
+            assert!(!fleet_action_auto_fires(
+                r#"{"decision_class":"drive_forward"}"#,
+                b
+            ));
             assert!(!fleet_action_auto_fires("not json", b));
         }
     }
@@ -711,7 +734,10 @@ mod confidence_gate_tests {
             r#"{"confidence":"low","decision_class":"drive_forward"}"#,
             b
         ));
-        assert!(fleet_action_auto_fires(r#"{"decision_class":"drive_forward"}"#, b));
+        assert!(fleet_action_auto_fires(
+            r#"{"decision_class":"drive_forward"}"#,
+            b
+        ));
         // Unparseable params still never fire, at any dial.
         assert!(!fleet_action_auto_fires("not json", b));
     }
@@ -747,7 +773,6 @@ mod confidence_gate_tests {
     }
 }
 
-
 #[cfg(test)]
 mod fleet_kill_gate_tests {
     use super::fleet_kill_state_is_closable;
@@ -762,10 +787,13 @@ mod fleet_kill_gate_tests {
         for s in [
             FleetSessionState::Finished,
             FleetSessionState::Idle,
-            FleetSessionState::Stale,      // incl. rehydrated dead tombstones
+            FleetSessionState::Stale, // incl. rehydrated dead tombstones
             FleetSessionState::Hibernated, // slept rows restored after a restart
         ] {
-            assert!(fleet_kill_state_is_closable(Some(s)), "{s:?} should auto-close");
+            assert!(
+                fleet_kill_state_is_closable(Some(s)),
+                "{s:?} should auto-close"
+            );
         }
         for s in [
             FleetSessionState::Running,
@@ -773,7 +801,10 @@ mod fleet_kill_gate_tests {
             FleetSessionState::AwaitingInput,
             FleetSessionState::Exited,
         ] {
-            assert!(!fleet_kill_state_is_closable(Some(s)), "{s:?} must NOT auto-close");
+            assert!(
+                !fleet_kill_state_is_closable(Some(s)),
+                "{s:?} must NOT auto-close"
+            );
         }
         // Unknown / hallucinated session id fails closed.
         assert!(!fleet_kill_state_is_closable(None));
@@ -840,6 +871,8 @@ mod containment_posture_tests {
     #[test]
     fn remote_instruct_has_its_own_arm() {
         // A grammar entry is the precondition; the arm is the code above.
-        assert!(crate::companion::dispatcher::action_is_allowed("remote_instruct"));
+        assert!(crate::companion::dispatcher::action_is_allowed(
+            "remote_instruct"
+        ));
     }
 }

@@ -1872,7 +1872,10 @@ mod tests {
             outcome(HealthProbeState::Failed),
         ];
         let (passed, failed, unverifiable) = summarize_probe_states(&results);
-        assert_eq!(passed, 1, "only the truly-Verified outcome should count as passed");
+        assert_eq!(
+            passed, 1,
+            "only the truly-Verified outcome should count as passed"
+        );
         assert_eq!(failed, 1);
         assert_eq!(unverifiable, 2);
         assert_eq!(passed + failed + unverifiable, results.len() as u32);

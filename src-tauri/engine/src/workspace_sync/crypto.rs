@@ -96,9 +96,7 @@ pub fn open_snapshot(
         .decode(&payload.nonce_b64)
         .map_err(|e| AppError::Validation(format!("invalid sealed nonce b64: {e}")))?;
     if nonce_bytes.len() != 12 {
-        return Err(AppError::Validation(
-            "sealed nonce must be 12 bytes".into(),
-        ));
+        return Err(AppError::Validation("sealed nonce must be 12 bytes".into()));
     }
 
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key.0));

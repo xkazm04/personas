@@ -37,9 +37,7 @@ fn broadcast(app: &AppHandle, state: &RadioState) {
 }
 
 #[tauri::command]
-pub fn radio_list_stations(
-    state: State<'_, RadioServiceHandle>,
-) -> Result<Vec<Station>, AppError> {
+pub fn radio_list_stations(state: State<'_, RadioServiceHandle>) -> Result<Vec<Station>, AppError> {
     with_service(&state, |svc| svc.stations().to_vec())
 }
 

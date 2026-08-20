@@ -191,7 +191,10 @@ impl From<GhReleaseRaw> for GitHubRelease {
         GitHubRelease {
             id: r.id,
             // GitHub allows a null release name — fall back to the tag.
-            name: r.name.filter(|n| !n.is_empty()).unwrap_or_else(|| tag_name.clone()),
+            name: r
+                .name
+                .filter(|n| !n.is_empty())
+                .unwrap_or_else(|| tag_name.clone()),
             tag_name,
             html_url: r.html_url,
             draft: r.draft,
@@ -359,9 +362,10 @@ impl GitHubClient {
             )));
         }
 
-        let raw: GhPullRequestRaw = resp.json().await.map_err(|e| {
-            AppError::Execution(format!("Failed to parse GitHub PR response: {e}"))
-        })?;
+        let raw: GhPullRequestRaw = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Execution(format!("Failed to parse GitHub PR response: {e}")))?;
 
         Ok(GitHubPullRequest {
             number: raw.number,
@@ -428,7 +432,9 @@ impl GitHubClient {
             .headers(self.headers())
             .send()
             .await
-            .map_err(|e| AppError::Execution(format!("GitHub latest-release request failed: {e}")))?;
+            .map_err(|e| {
+                AppError::Execution(format!("GitHub latest-release request failed: {e}"))
+            })?;
 
         if resp.status().as_u16() == 404 {
             return Ok(None);
@@ -647,7 +653,9 @@ pub fn bump_patch(tag: &str) -> Result<String, AppError> {
         .map(|p| p.parse::<u64>())
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| {
-            AppError::Validation(format!("Cannot parse a MAJOR.MINOR.PATCH version from tag '{tag}'"))
+            AppError::Validation(format!(
+                "Cannot parse a MAJOR.MINOR.PATCH version from tag '{tag}'"
+            ))
         })?;
     if parts.is_empty() || parts.len() > 3 {
         return Err(AppError::Validation(format!(

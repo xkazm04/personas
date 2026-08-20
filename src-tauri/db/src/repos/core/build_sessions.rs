@@ -223,12 +223,7 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
 /// ledger (build-orchestration Phase 0 telemetry). Uses `json_insert` at
 /// `$[#]` so it is a single atomic UPDATE with no read-modify-write race;
 /// `COALESCE(...,'[]')` seeds the array on the first call. `ts` is RFC3339.
-pub fn append_phase_timing(
-    pool: &DbPool,
-    id: &str,
-    phase: &str,
-    ts: &str,
-) -> Result<(), AppError> {
+pub fn append_phase_timing(pool: &DbPool, id: &str, phase: &str, ts: &str) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::append_phase_timing", {
         let conn = pool.get()?;
         let entry = serde_json::json!({ "phase": phase, "ts": ts }).to_string();
@@ -305,10 +300,7 @@ pub const STALE_SESSION_MIN_AGE_HOURS: i64 = 24;
 /// Idempotent: once a row is `cancelled` it is terminal and no longer matches.
 ///
 /// Returns the number of sessions swept.
-pub fn expire_stale_non_terminal(
-    pool: &DbPool,
-    min_age_hours: i64,
-) -> Result<usize, AppError> {
+pub fn expire_stale_non_terminal(pool: &DbPool, min_age_hours: i64) -> Result<usize, AppError> {
     timed_query!(
         "build_sessions",
         "build_sessions::expire_stale_non_terminal",
@@ -428,18 +420,27 @@ mod tests {
         let pool = init_test_db().unwrap();
         // Promoted (active) persona with a session parked at draft_ready 48h ago.
         let persona_id = make_persona(&pool, "Promoted Sentinel", None);
-        assert_eq!(personas::get_by_id(&pool, &persona_id).unwrap().lifecycle, "active");
+        assert_eq!(
+            personas::get_by_id(&pool, &persona_id).unwrap().lifecycle,
+            "active"
+        );
         let sid = insert_session(&pool, &persona_id, BuildPhase::DraftReady, &hours_ago(48));
 
         let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
-        assert_eq!(swept, 1, "the stuck session on a promoted persona must be swept");
+        assert_eq!(
+            swept, 1,
+            "the stuck session on a promoted persona must be swept"
+        );
 
         let after = get_by_id(&pool, &sid).unwrap().unwrap();
         assert_eq!(after.phase, BuildPhase::Cancelled);
         assert!(after.error_message.is_some());
 
         // Idempotent: a second sweep is a no-op.
-        assert_eq!(expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap(), 0);
+        assert_eq!(
+            expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap(),
+            0
+        );
     }
 
     #[test]
@@ -452,7 +453,10 @@ mod tests {
 
         let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
         assert_eq!(swept, 0, "draft-lifecycle personas must never be swept");
-        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::DraftReady);
+        assert_eq!(
+            get_by_id(&pool, &sid).unwrap().unwrap().phase,
+            BuildPhase::DraftReady
+        );
     }
 
     #[test]
@@ -464,7 +468,10 @@ mod tests {
 
         let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
         assert_eq!(swept, 0, "recently-active sessions must never be swept");
-        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::Testing);
+        assert_eq!(
+            get_by_id(&pool, &sid).unwrap().unwrap().phase,
+            BuildPhase::Testing
+        );
     }
 
     #[test]
@@ -476,7 +483,10 @@ mod tests {
 
         let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
         assert_eq!(swept, 0);
-        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::Promoted);
+        assert_eq!(
+            get_by_id(&pool, &sid).unwrap().unwrap().phase,
+            BuildPhase::Promoted
+        );
     }
 
     #[test]
@@ -488,6 +498,9 @@ mod tests {
 
         let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
         assert_eq!(swept, 1, "archived personas' stuck sessions are swept too");
-        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::Cancelled);
+        assert_eq!(
+            get_by_id(&pool, &sid).unwrap().unwrap().phase,
+            BuildPhase::Cancelled
+        );
     }
 }

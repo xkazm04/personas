@@ -118,9 +118,7 @@ pub fn list(pool: &UserDbPool, include_archived: bool) -> Result<Vec<Conversatio
 pub fn get(pool: &UserDbPool, id: &str) -> Result<Option<ConversationRow>, AppError> {
     let conn = pool.get()?;
     let sql = format!("SELECT {SELECT_COLS} FROM companion_session s WHERE s.id = ?1");
-    let row = conn
-        .query_row(&sql, params![id], map_row)
-        .optional()?;
+    let row = conn.query_row(&sql, params![id], map_row).optional()?;
     Ok(row)
 }
 

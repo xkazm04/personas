@@ -54,10 +54,8 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use personas_db::models::{
-    PresetAdoptionSchema, PresetMemberAdoptionSchema, TeamPreset,
-};
 use personas_core::error::AppError;
+use personas_db::models::{PresetAdoptionSchema, PresetMemberAdoptionSchema, TeamPreset};
 
 const PRESETS_RELATIVE_DIR: &str = "scripts/templates/_team_presets";
 const SUPPORTED_SCHEMA_VERSION: i32 = 1;
@@ -516,9 +514,7 @@ fn is_persona_parameter_maps_to(maps_to: &str) -> bool {
         .strip_prefix("persona.parameters[")
         .and_then(|s| s.strip_suffix(']'))
     {
-        Some(key) => {
-            !key.is_empty() && key.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
-        }
+        Some(key) => !key.is_empty() && key.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_'),
         None => false,
     }
 }
@@ -529,8 +525,7 @@ pub fn get_adoption_schema(
 ) -> Result<PresetAdoptionSchema, AppError> {
     let preset = get_preset(preset_id, language)?;
 
-    let mut members: Vec<PresetMemberAdoptionSchema> =
-        Vec::with_capacity(preset.members.len());
+    let mut members: Vec<PresetMemberAdoptionSchema> = Vec::with_capacity(preset.members.len());
     let mut total_questions: i32 = 0;
     let mut configurable: i32 = 0;
 

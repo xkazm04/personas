@@ -227,7 +227,9 @@ pub fn update_result_fitness_measured(
                 params![fitness_json, fitness_overall, result_id],
             )?;
             if rows == 0 {
-                return Err(AppError::NotFound(format!("GenomeBreedingResult {result_id}")));
+                return Err(AppError::NotFound(format!(
+                    "GenomeBreedingResult {result_id}"
+                )));
             }
             Ok(())
         }

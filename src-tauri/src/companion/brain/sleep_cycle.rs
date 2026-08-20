@@ -405,12 +405,7 @@ fn measure(pool: &UserDbPool) -> Result<Reading, AppError> {
     let last = cycle_report::last_completed(pool)?;
 
     let hours_since = last.as_ref().and_then(|l| match parse_ts(&l.finished_at) {
-        Some(fin) => Some(
-            Utc::now()
-                .signed_duration_since(fin)
-                .num_hours()
-                .max(0),
-        ),
+        Some(fin) => Some(Utc::now().signed_duration_since(fin).num_hours().max(0)),
         // An unparseable timestamp must not wedge cycles forever. Treat the
         // floor as satisfied and say so — a noisy log beats a memory that
         // silently stops reconciling because one row is malformed.
@@ -878,8 +873,13 @@ async fn run_phases(
             // Record before propagating: a phase that failed is a phase that
             // happened, and the audit trail is the only place that says which
             // one broke.
-            let _ =
-                cycle_report::record_phase(pool, cycle_id, PHASE_COMPRESS, "failed", &e.to_string());
+            let _ = cycle_report::record_phase(
+                pool,
+                cycle_id,
+                PHASE_COMPRESS,
+                "failed",
+                &e.to_string(),
+            );
             return Err(e);
         }
     }
@@ -947,8 +947,7 @@ async fn phase_compress(
         .map(|t| normalize_tag(&t.tag))
         .filter(|t| !t.is_empty())
         .collect();
-    let known_episodes: HashSet<String> =
-        input.episodes.iter().map(|e| e.id.clone()).collect();
+    let known_episodes: HashSet<String> = input.episodes.iter().map(|e| e.id.clone()).collect();
 
     let prompt = build_compress_prompt(&input.episodes, &vocabulary);
     let text = llm
@@ -1615,7 +1614,11 @@ fn collect_sources(
 /// Tags, filtered to the ACTIVE vocabulary. An unknown tag is dropped from the
 /// item and counted — never invented into the registry, because a classifier
 /// that can mint its own vocabulary makes the approval gate decorative.
-fn collect_tags(item: &Value, active_tags: &HashSet<String>, stats: &mut CycleStats) -> Vec<String> {
+fn collect_tags(
+    item: &Value,
+    active_tags: &HashSet<String>,
+    stats: &mut CycleStats,
+) -> Vec<String> {
     let mut out = Vec::new();
     let Some(arr) = item.get("tags").and_then(|v| v.as_array()) else {
         return out;
@@ -1891,7 +1894,9 @@ fn render_report(cycle_id: &str, status: &str, stats: &CycleStats, notes: &Cycle
     r.push_str(&format!("# Sleep cycle — {cycle_id}\n\n"));
 
     if status == cycle_report::STATUS_FAILED {
-        r.push_str("**This cycle FAILED.** What is below is what it managed before it stopped.\n\n");
+        r.push_str(
+            "**This cycle FAILED.** What is below is what it managed before it stopped.\n\n",
+        );
         if let Some(err) = &stats.error {
             r.push_str(&format!("> {err}\n\n"));
         }
@@ -2142,8 +2147,10 @@ mod tests {
     impl BrainHome {
         fn new(tag: &str) -> Self {
             let guard = HOME_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-            let dir = std::env::temp_dir()
-                .join(format!("personas_sleep_test_{tag}_{}", uuid::Uuid::new_v4()));
+            let dir = std::env::temp_dir().join(format!(
+                "personas_sleep_test_{tag}_{}",
+                uuid::Uuid::new_v4()
+            ));
             std::fs::create_dir_all(&dir).unwrap();
             std::env::set_var("PERSONAS_HOME", &dir);
             Self {
@@ -2357,8 +2364,8 @@ mod tests {
                 |r| r.get(0),
             )
             .unwrap();
-        let tags: Vec<String> = serde_json::from_str(&tags_json.expect("tags_json is written"))
-            .unwrap();
+        let tags: Vec<String> =
+            serde_json::from_str(&tags_json.expect("tags_json is written")).unwrap();
         assert_eq!(tags, vec!["workflow".to_string(), "incident".to_string()]);
 
         // …and the tag is REACHABLE, which is the half that matters on a build
@@ -2455,9 +2462,13 @@ mod tests {
                 "tags":["environment"],"confidence":0.9,"provenance":[]}"#,
         )
         .unwrap();
-        let poison =
-            sync_staging::insert_delta(&pool, "workstation-b", sync_staging::KIND_FACT, "{not json")
-                .unwrap();
+        let poison = sync_staging::insert_delta(
+            &pool,
+            "workstation-b",
+            sync_staging::KIND_FACT,
+            "{not json",
+        )
+        .unwrap();
         let unknown =
             sync_staging::insert_delta(&pool, "workstation-b", "wat", r#"{"a":1}"#).unwrap();
 
@@ -2477,7 +2488,9 @@ mod tests {
         assert_eq!(facts[0].sources, vec![format!("sync:workstation-b:{good}")]);
 
         // Every listed row stamped, exactly once, by THIS cycle.
-        assert!(sync_staging::list_unprocessed(&pool, 50).unwrap().is_empty());
+        assert!(sync_staging::list_unprocessed(&pool, 50)
+            .unwrap()
+            .is_empty());
         for id in [&good, &poison, &unknown] {
             let claimed: String = pool
                 .get()
@@ -2612,7 +2625,9 @@ mod tests {
             MAX_FACTS_PER_CYCLE
         );
         assert_eq!(
-            procedural::list_rules(&pool, None, false, 100).unwrap().len(),
+            procedural::list_rules(&pool, None, false, 100)
+                .unwrap()
+                .len(),
             MAX_PROCEDURALS_PER_CYCLE
         );
         let stats = cycle_stats(&pool, &cycle_id);
@@ -2688,9 +2703,15 @@ mod tests {
             semantic::get_fact(&pool, &a).unwrap().is_some(),
             "demotion is never deletion"
         );
-        assert_eq!(semantic::get_fact(&pool, &a).unwrap().unwrap().importance, 0);
         assert_eq!(
-            semantic::get_fact(&pool, &b).unwrap().unwrap().supersedes_id,
+            semantic::get_fact(&pool, &a).unwrap().unwrap().importance,
+            0
+        );
+        assert_eq!(
+            semantic::get_fact(&pool, &b)
+                .unwrap()
+                .unwrap()
+                .supersedes_id,
             Some(a.clone()),
             "the survivor records what it replaced"
         );
@@ -2700,7 +2721,10 @@ mod tests {
         assert_eq!(stats["supersedes_dropped"], 2, "invented id + self-pair");
         assert_eq!(stats["contradictions"], 1);
         let report = report_body(&pool, &cycle_id);
-        assert!(report.contains("did not resolve"), "contradictions reported");
+        assert!(
+            report.contains("did not resolve"),
+            "contradictions reported"
+        );
     }
 
     // ── acceptance 5 · forgetting is report-only ─────────────────────────
@@ -2735,7 +2759,9 @@ mod tests {
                 .unwrap();
             }
         }
-        let live_before = semantic::list_facts(&pool, None, false, 1000).unwrap().len();
+        let live_before = semantic::list_facts(&pool, None, false, 1000)
+            .unwrap()
+            .len();
         assert_eq!(live_before, 503);
 
         let compress = format!(
@@ -2753,7 +2779,9 @@ mod tests {
         let stats = cycle_stats(&pool, &cycle_id);
         assert_eq!(stats["prune_candidates"], 3, "503 user facts, cap 500");
         assert_eq!(
-            semantic::list_facts(&pool, None, false, 1000).unwrap().len(),
+            semantic::list_facts(&pool, None, false, 1000)
+                .unwrap()
+                .len(),
             live_before + 1,
             "the cycle added one fact and demoted NONE — forgetting is report-only in v0"
         );
@@ -2771,13 +2799,8 @@ mod tests {
         let mut left = chars;
         while left > 0 {
             let n = left.min(SQL_SERVED_BODY);
-            episodic::append_episode(
-                pool,
-                "default",
-                episodic::EpisodeRole::User,
-                &"x".repeat(n),
-            )
-            .unwrap();
+            episodic::append_episode(pool, "default", episodic::EpisodeRole::User, &"x".repeat(n))
+                .unwrap();
             left -= n;
         }
     }
@@ -2936,14 +2959,8 @@ mod tests {
         // Worst case for admission: a cycle finished seconds ago (floor blocks)
         // and there is almost nothing waiting (minimum blocks).
         let first = cycle_report::begin_cycle(&pool).unwrap();
-        cycle_report::finish_cycle(
-            &pool,
-            &first,
-            cycle_report::STATUS_COMPLETED,
-            "{}",
-            "seed",
-        )
-        .unwrap();
+        cycle_report::finish_cycle(&pool, &first, cycle_report::STATUS_COMPLETED, "{}", "seed")
+            .unwrap();
         seed_chars(&pool, 40);
 
         assert!(
@@ -2997,7 +3014,10 @@ mod tests {
         backdate_cycle(&pool, &cycle_id, MIN_INTERVAL_HOURS + 1);
         match run_sleep_cycle(&pool, false).await.unwrap() {
             CycleOutcome::Skipped { reason } => {
-                assert!(reason.contains("nothing worth compressing"), "got: {reason}");
+                assert!(
+                    reason.contains("nothing worth compressing"),
+                    "got: {reason}"
+                );
             }
             other => panic!("an elapsed floor is not a reason to cycle, got {other:?}"),
         }
@@ -3061,7 +3081,8 @@ mod tests {
             .expect("a cycle that read episodes MUST record consumed_through")
             .to_string();
         assert_eq!(
-            boundary, ordered[read1 - 1].created_at,
+            boundary,
+            ordered[read1 - 1].created_at,
             "cycle 1 must consume oldest-first and stop where it ran out of budget"
         );
         assert_ne!(
@@ -3202,7 +3223,10 @@ mod tests {
         let (answer, admitted) = trigger(&pool, false).unwrap();
         assert_eq!(answer.status, "started");
         assert!(answer.skipped_reason.is_none());
-        let id = answer.cycle_id.clone().expect("a started trigger names its cycle");
+        let id = answer
+            .cycle_id
+            .clone()
+            .expect("a started trigger names its cycle");
         assert_eq!(
             id,
             admitted.as_ref().unwrap().cycle_id(),
@@ -3302,7 +3326,11 @@ mod tests {
 
         let huge = vec![ep(0, &"y".repeat(50_000))];
         let bound = bound_input(huge, 1);
-        assert_eq!(bound.episodes.len(), 1, "one giant episode is kept, excerpted");
+        assert_eq!(
+            bound.episodes.len(),
+            1,
+            "one giant episode is kept, excerpted"
+        );
         assert!(bound.episodes[0].content.contains("[excerpted]"));
         assert!(bound.chars < MAX_CHARS_IN);
 
@@ -3403,7 +3431,10 @@ mod tests {
             stats_json: "not json".into(),
             ..with.clone()
         };
-        assert_eq!(boundary_for(Some(&unparseable)), "2026-08-01T00:00:00+00:00");
+        assert_eq!(
+            boundary_for(Some(&unparseable)),
+            "2026-08-01T00:00:00+00:00"
+        );
 
         // No cycle has ever completed: a bounded first look-back, not the archive.
         let fresh = boundary_for(None);

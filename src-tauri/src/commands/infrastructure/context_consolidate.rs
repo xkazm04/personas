@@ -56,7 +56,12 @@ fn path_segments(path: &str) -> Vec<String> {
     }
     if dirs[0] == "src-tauri" {
         let mut out = vec!["tauri".to_string()];
-        out.extend(dirs[1..].iter().filter(|d| **d != "src").map(|s| s.to_string()));
+        out.extend(
+            dirs[1..]
+                .iter()
+                .filter(|d| **d != "src")
+                .map(|s| s.to_string()),
+        );
         return out;
     }
     if dirs[0] == "src" {
@@ -92,7 +97,11 @@ fn unit_name(unit: &str) -> String {
         })
         .filter(|s| !s.is_empty())
         .collect();
-    let joined = if segs.is_empty() { unit.replace('/', "-") } else { segs.join("-") };
+    let joined = if segs.is_empty() {
+        unit.replace('/', "-")
+    } else {
+        segs.join("-")
+    };
     // Collapse runs of '-' left by markers like `__tests__`.
     let mut out = String::with_capacity(joined.len());
     let mut prev_dash = false;
@@ -127,7 +136,8 @@ struct Ctx {
 }
 
 fn arr(s: Option<&str>) -> Vec<String> {
-    s.and_then(|x| serde_json::from_str::<Vec<String>>(x).ok()).unwrap_or_default()
+    s.and_then(|x| serde_json::from_str::<Vec<String>>(x).ok())
+        .unwrap_or_default()
 }
 
 // ---------------------------------------------------------------------------
@@ -266,18 +276,28 @@ const MAX_DEPTH: usize = 8;
 /// Recursively partition members: group at `depth`; groups over the ceiling
 /// descend a directory level until they fit or can no longer split (whole
 /// contexts are never broken apart).
-fn partition(ctxs: &[Ctx], members: Vec<usize>, depth: usize, out: &mut BTreeMap<String, Vec<usize>>) {
+fn partition(
+    ctxs: &[Ctx],
+    members: Vec<usize>,
+    depth: usize,
+    out: &mut BTreeMap<String, Vec<usize>>,
+) {
     let mut groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     for i in members {
-        groups.entry(majority_sig(&ctxs[i], depth)).or_default().push(i);
+        groups
+            .entry(majority_sig(&ctxs[i], depth))
+            .or_default()
+            .push(i);
     }
     for (sig, m) in groups {
         let size: usize = m.iter().map(|i| ctxs[*i].files.len()).sum();
         if size > MERGE_CEILING && m.len() > 1 {
             // Recurse when a deeper directory level actually separates them.
             if depth < MAX_DEPTH {
-                let deeper: HashSet<String> =
-                    m.iter().map(|i| majority_sig(&ctxs[*i], depth + 1)).collect();
+                let deeper: HashSet<String> = m
+                    .iter()
+                    .map(|i| majority_sig(&ctxs[*i], depth + 1))
+                    .collect();
                 if deeper.len() > 1 {
                     partition(ctxs, m, depth + 1, out);
                     continue;
@@ -331,14 +351,17 @@ fn plan_clusters(ctxs: &[Ctx]) -> (Vec<(String, Vec<usize>)>, Vec<String>) {
     // Pass B — absorb units still under MIN_FILES into a sibling unit (same
     // parent directory), preferring the largest sibling that stays under the
     // ceiling. Isolated leaves (no sibling) stay as they are.
-    let unit_size = |members: &[usize]| -> usize { members.iter().map(|i| ctxs[*i].files.len()).sum() };
+    let unit_size =
+        |members: &[usize]| -> usize { members.iter().map(|i| ctxs[*i].files.len()).sum() };
     let units: Vec<String> = by_unit.keys().cloned().collect();
     for unit in units {
         let size = unit_size(&by_unit[&unit]);
         if size >= MIN_FILES {
             continue;
         }
-        let Some((parent, _leaf)) = unit.rsplit_once('/') else { continue };
+        let Some((parent, _leaf)) = unit.rsplit_once('/') else {
+            continue;
+        };
         let target = by_unit
             .iter()
             .filter(|(u, m)| {
@@ -387,8 +410,7 @@ pub fn consolidate_contexts(
 
     let (clusters, skipped) = plan_clusters(&ctxs);
 
-    let mut taken_names: HashSet<String> =
-        ctxs.iter().map(|c| c.name.to_lowercase()).collect();
+    let mut taken_names: HashSet<String> = ctxs.iter().map(|c| c.name.to_lowercase()).collect();
     let mut merges: Vec<Value> = Vec::new();
     let mut ops: Vec<MergeOp> = Vec::new();
 
@@ -420,7 +442,9 @@ pub fn consolidate_contexts(
         // Keep the survivor's own name when the derived one is taken by an
         // unrelated context.
         let final_name = if taken_names.contains(&name.to_lowercase())
-            && !cluster.iter().any(|i| ctxs[*i].name.to_lowercase() == name.to_lowercase())
+            && !cluster
+                .iter()
+                .any(|i| ctxs[*i].name.to_lowercase() == name.to_lowercase())
         {
             name = ctxs[survivor].name.clone();
             name
@@ -588,16 +612,28 @@ fn project_cross_ref_effect(ctxs: &[Ctx], ops: &[MergeOp]) -> CrossRefEffect {
     let after: HashSet<&str> = ctxs
         .iter()
         .filter(|c| !absorbed_ids.contains(c.id.as_str()))
-        .map(|c| renamed.get(c.id.as_str()).copied().unwrap_or(c.name.as_str()))
+        .map(|c| {
+            renamed
+                .get(c.id.as_str())
+                .copied()
+                .unwrap_or(c.name.as_str())
+        })
         .collect();
 
     let mut eff = CrossRefEffect::default();
     for c in ctxs {
-        eff.dangling_before += c.cross_refs.iter().filter(|r| !before.contains(r.as_str())).count() as u32;
+        eff.dangling_before += c
+            .cross_refs
+            .iter()
+            .filter(|r| !before.contains(r.as_str()))
+            .count() as u32;
         if absorbed_ids.contains(c.id.as_str()) {
             continue; // this row goes away; its refs go with it
         }
-        let owner = renamed.get(c.id.as_str()).copied().unwrap_or(c.name.as_str());
+        let owner = renamed
+            .get(c.id.as_str())
+            .copied()
+            .unwrap_or(c.name.as_str());
         eff.would_orphan += c
             .cross_refs
             .iter()
@@ -648,24 +684,72 @@ fn apply(pool: &DbPool, project_id: &str, ops: &[MergeOp]) -> Result<Value, AppE
         for old in &op.absorbed_ids {
             let s = &op.survivor_id;
             let mut bump = |key: &'static str, n: usize| *counts.entry(key).or_default() += n;
-            bump("kpis", tx.execute("UPDATE dev_kpis SET context_id = ?1 WHERE context_id = ?2", [s, old]).map_err(AppError::Database)?);
-            bump("ideas", tx.execute("UPDATE dev_ideas SET context_id = ?1 WHERE context_id = ?2", [s, old]).map_err(AppError::Database)?);
-            bump("goals", tx.execute("UPDATE dev_goals SET context_id = ?1 WHERE context_id = ?2", [s, old]).map_err(AppError::Database)?);
-            bump("memoryNodes", tx.execute("UPDATE memory_nodes SET context_id = ?1 WHERE context_id = ?2", [s, old]).map_err(AppError::Database)?);
+            bump(
+                "kpis",
+                tx.execute(
+                    "UPDATE dev_kpis SET context_id = ?1 WHERE context_id = ?2",
+                    [s, old],
+                )
+                .map_err(AppError::Database)?,
+            );
+            bump(
+                "ideas",
+                tx.execute(
+                    "UPDATE dev_ideas SET context_id = ?1 WHERE context_id = ?2",
+                    [s, old],
+                )
+                .map_err(AppError::Database)?,
+            );
+            bump(
+                "goals",
+                tx.execute(
+                    "UPDATE dev_goals SET context_id = ?1 WHERE context_id = ?2",
+                    [s, old],
+                )
+                .map_err(AppError::Database)?,
+            );
+            bump(
+                "memoryNodes",
+                tx.execute(
+                    "UPDATE memory_nodes SET context_id = ?1 WHERE context_id = ?2",
+                    [s, old],
+                )
+                .map_err(AppError::Database)?,
+            );
             bump("useCasePrimary", tx.execute("UPDATE dev_use_cases SET primary_context_id = ?1 WHERE primary_context_id = ?2", [s, old]).map_err(AppError::Database)?);
             // Membership: move rows unless the survivor is already a member.
-            bump("useCaseSlices", tx.execute(
-                "INSERT OR IGNORE INTO dev_use_case_contexts (use_case_id, context_id)
+            bump(
+                "useCaseSlices",
+                tx.execute(
+                    "INSERT OR IGNORE INTO dev_use_case_contexts (use_case_id, context_id)
                  SELECT use_case_id, ?1 FROM dev_use_case_contexts WHERE context_id = ?2",
-                [s, old],
-            ).map_err(AppError::Database)?);
-            tx.execute("DELETE FROM dev_use_case_contexts WHERE context_id = ?1", [old]).map_err(AppError::Database)?;
+                    [s, old],
+                )
+                .map_err(AppError::Database)?,
+            );
+            tx.execute(
+                "DELETE FROM dev_use_case_contexts WHERE context_id = ?1",
+                [old],
+            )
+            .map_err(AppError::Database)?;
             // Fingerprints are a per-file-list cache — stale either way.
-            tx.execute("DELETE FROM dev_context_fingerprints WHERE context_id = ?1", [old]).map_err(AppError::Database)?;
-            bump("deleted", tx.execute("DELETE FROM dev_contexts WHERE id = ?1", [old]).map_err(AppError::Database)?);
+            tx.execute(
+                "DELETE FROM dev_context_fingerprints WHERE context_id = ?1",
+                [old],
+            )
+            .map_err(AppError::Database)?;
+            bump(
+                "deleted",
+                tx.execute("DELETE FROM dev_contexts WHERE id = ?1", [old])
+                    .map_err(AppError::Database)?,
+            );
         }
         // Survivor's fingerprint no longer matches its widened file list.
-        tx.execute("DELETE FROM dev_context_fingerprints WHERE context_id = ?1", [&op.survivor_id]).map_err(AppError::Database)?;
+        tx.execute(
+            "DELETE FROM dev_context_fingerprints WHERE context_id = ?1",
+            [&op.survivor_id],
+        )
+        .map_err(AppError::Database)?;
     }
 
     // The seventh anchored artifact. `cross_refs` is keyed by NAME, so every
@@ -683,7 +767,9 @@ fn apply(pool: &DbPool, project_id: &str, ops: &[MergeOp]) -> Result<Value, AppE
             let mapped = stmt
                 .query_map([project_id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
                 .map_err(AppError::Database)?;
-            mapped.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?
+            mapped
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?
         };
         for (id, name, raw) in rows {
             let current = arr(raw.as_deref());
@@ -837,7 +923,10 @@ pub fn repair_cross_refs(
             1 => {
                 map.insert(ghost, owners.into_iter().next().unwrap_or_default());
             }
-            _ => ambiguous.push(AmbiguousGhost { name: ghost, claimed_by: owners }),
+            _ => ambiguous.push(AmbiguousGhost {
+                name: ghost,
+                claimed_by: owners,
+            }),
         }
     }
 
@@ -894,7 +983,11 @@ pub fn repair_cross_refs(
                 plan.rewrites.push(CrossRefRewrite {
                     context: c.name.clone(),
                     from: r.clone(),
-                    to: if target == c.name { None } else { Some(target.to_string()) },
+                    to: if target == c.name {
+                        None
+                    } else {
+                        Some(target.to_string())
+                    },
                 });
             } else {
                 plan.rewrites_omitted += 1;
@@ -950,11 +1043,26 @@ mod tests {
 
     #[test]
     fn unit_signature_maps_the_repo_shapes() {
-        assert_eq!(unit_signature("src/features/plugins/artist/Viewer.tsx"), "features/plugins/artist");
-        assert_eq!(unit_signature("src/features/vault/VaultPage.tsx"), "features/vault");
-        assert_eq!(unit_signature("src-tauri/db/src/repos/dev_tools.rs"), "tauri/db/repos");
-        assert_eq!(unit_signature("src-tauri/src/commands/infrastructure/x.rs"), "tauri/commands/infrastructure");
-        assert_eq!(unit_signature("src/stores/slices/system/fleetSlice.ts"), "src/stores/slices");
+        assert_eq!(
+            unit_signature("src/features/plugins/artist/Viewer.tsx"),
+            "features/plugins/artist"
+        );
+        assert_eq!(
+            unit_signature("src/features/vault/VaultPage.tsx"),
+            "features/vault"
+        );
+        assert_eq!(
+            unit_signature("src-tauri/db/src/repos/dev_tools.rs"),
+            "tauri/db/repos"
+        );
+        assert_eq!(
+            unit_signature("src-tauri/src/commands/infrastructure/x.rs"),
+            "tauri/commands/infrastructure"
+        );
+        assert_eq!(
+            unit_signature("src/stores/slices/system/fleetSlice.ts"),
+            "src/stores/slices"
+        );
         assert_eq!(unit_signature("scripts/i18n/gen-types.mjs"), "scripts");
     }
 
@@ -968,7 +1076,9 @@ mod tests {
     #[test]
     fn tiny_units_absorb_into_siblings_and_pins_survive() {
         let mk = |name: &str, dir: &str, n: usize, pinned: bool| {
-            let files: Vec<String> = (0..n).map(|i| format!("src/features/{dir}/f{i}.ts")).collect();
+            let files: Vec<String> = (0..n)
+                .map(|i| format!("src/features/{dir}/f{i}.ts"))
+                .collect();
             let file_segs = files.iter().map(|f| path_segments(f)).collect();
             Ctx {
                 id: name.into(),
@@ -1010,7 +1120,10 @@ mod tests {
         assert_eq!(absorbed_from_description(&desc), vec!["alpha", "beta-two"]);
         // Repeated consolidations stack markers; all of them are readable.
         let twice = format!("{desc}{}", consolidated_marker(&["gamma".into()]));
-        assert_eq!(absorbed_from_description(&twice), vec!["alpha", "beta-two", "gamma"]);
+        assert_eq!(
+            absorbed_from_description(&twice),
+            vec!["alpha", "beta-two", "gamma"]
+        );
         // A marker truncated by the 900-char cap is skipped, not guessed at.
         let cut = "d [Consolidated 2026-08-01: absorbed alpha, be";
         assert!(absorbed_from_description(cut).is_empty());
@@ -1039,17 +1152,21 @@ mod tests {
 
     #[test]
     fn remap_follows_a_rename_chain_to_the_live_name() {
-        let map: HashMap<String, String> =
-            [("a".to_string(), "b".to_string()), ("b".to_string(), "c".to_string())]
-                .into_iter()
-                .collect();
+        let map: HashMap<String, String> = [
+            ("a".to_string(), "b".to_string()),
+            ("b".to_string(), "c".to_string()),
+        ]
+        .into_iter()
+        .collect();
         let (out, _) = remap_cross_refs("owner", &["a".to_string()], &map);
         assert_eq!(out, vec!["c"]);
         // A cycle terminates instead of hanging.
-        let cyclic: HashMap<String, String> =
-            [("x".to_string(), "y".to_string()), ("y".to_string(), "x".to_string())]
-                .into_iter()
-                .collect();
+        let cyclic: HashMap<String, String> = [
+            ("x".to_string(), "y".to_string()),
+            ("y".to_string(), "x".to_string()),
+        ]
+        .into_iter()
+        .collect();
         let (cy, _) = remap_cross_refs("owner", &["x".to_string()], &cyclic);
         assert_eq!(cy.len(), 1);
     }
@@ -1067,7 +1184,9 @@ mod tests {
 
     /// Insert a context with `n` files under `src/features/<dir>/`.
     fn seed_ctx(pool: &DbPool, project_id: &str, name: &str, dir: &str, n: usize, refs: &[&str]) {
-        let files: Vec<String> = (0..n).map(|i| format!("src/features/{dir}/f{i}.ts")).collect();
+        let files: Vec<String> = (0..n)
+            .map(|i| format!("src/features/{dir}/f{i}.ts"))
+            .collect();
         let conn = pool.get().unwrap();
         conn.execute(
             "INSERT INTO dev_contexts (id, project_id, name, description, file_paths, cross_refs)
@@ -1087,7 +1206,9 @@ mod tests {
     fn read_contexts(pool: &DbPool, project_id: &str) -> Vec<(String, Vec<String>)> {
         let conn = pool.get().unwrap();
         let mut stmt = conn
-            .prepare("SELECT name, cross_refs FROM dev_contexts WHERE project_id = ?1 ORDER BY name")
+            .prepare(
+                "SELECT name, cross_refs FROM dev_contexts WHERE project_id = ?1 ORDER BY name",
+            )
             .unwrap();
         let rows = stmt
             .query_map([project_id], |r| {
@@ -1119,12 +1240,17 @@ mod tests {
         let before = read_contexts(&pool, pid);
         let live_before: HashSet<String> = before.iter().map(|(n, _)| n.clone()).collect();
         assert!(
-            before.iter().all(|(_, refs)| refs.iter().all(|r| live_before.contains(r))),
+            before
+                .iter()
+                .all(|(_, refs)| refs.iter().all(|r| live_before.contains(r))),
             "fixture precondition: every reference resolves before the merge"
         );
 
         let summary = consolidate_contexts(&pool, pid, false).unwrap();
-        assert!(summary["absorbed"].as_u64().unwrap() > 0, "the fixture must actually merge");
+        assert!(
+            summary["absorbed"].as_u64().unwrap() > 0,
+            "the fixture must actually merge"
+        );
 
         let after = read_contexts(&pool, pid);
         let live: HashSet<String> = after.iter().map(|(n, _)| n.clone()).collect();
@@ -1159,10 +1285,19 @@ mod tests {
         consolidate_contexts(&pool, pid, false).unwrap();
         let after = read_contexts(&pool, pid);
         let live: HashSet<String> = after.iter().map(|(n, _)| n.clone()).collect();
-        assert!(!live.contains("big-one"), "the survivor took the derived unit name");
-        let (_, refs) = after.iter().find(|(n, _)| n == "onlooker").expect("onlooker survives");
+        assert!(
+            !live.contains("big-one"),
+            "the survivor took the derived unit name"
+        );
+        let (_, refs) = after
+            .iter()
+            .find(|(n, _)| n == "onlooker")
+            .expect("onlooker survives");
         assert_eq!(refs.len(), 1);
-        assert!(live.contains(&refs[0]), "inbound ref followed the rename: {refs:?}");
+        assert!(
+            live.contains(&refs[0]),
+            "inbound ref followed the rename: {refs:?}"
+        );
     }
 
     #[test]
@@ -1173,7 +1308,14 @@ mod tests {
         seed_ctx(&pool, pid, "alpha-one", "x/a", 4, &[]);
         seed_ctx(&pool, pid, "alpha-two", "x/a", 3, &[]);
         seed_ctx(&pool, pid, "bravo", "x/b", 20, &[]);
-        seed_ctx(&pool, pid, "onlooker", "y/z", 9, &["alpha-one", "alpha-two"]);
+        seed_ctx(
+            &pool,
+            pid,
+            "onlooker",
+            "y/z",
+            9,
+            &["alpha-one", "alpha-two"],
+        );
 
         let plan = consolidate_contexts(&pool, pid, true).unwrap();
         assert!(
@@ -1191,30 +1333,56 @@ mod tests {
         let pool = crate::db::init_test_db().unwrap();
         let pid = "p-repair";
         seed_project(&pool, pid);
-        seed_ctx(&pool, pid, "survivor", "x/b", 12, &["ghost-a", "hallucination", "onlooker"]);
+        seed_ctx(
+            &pool,
+            pid,
+            "survivor",
+            "x/b",
+            12,
+            &["ghost-a", "hallucination", "onlooker"],
+        );
         seed_ctx(&pool, pid, "onlooker", "y/z", 9, &["ghost-a", "ghost-b"]);
         // Stamp the markers a past consolidation would have written.
         {
             let conn = pool.get().unwrap();
             conn.execute(
                 "UPDATE dev_contexts SET description = ?1 WHERE name = 'survivor'",
-                [format!("base{}", consolidated_marker(&["ghost-a".into(), "ghost-b".into()]))],
+                [format!(
+                    "base{}",
+                    consolidated_marker(&["ghost-a".into(), "ghost-b".into()])
+                )],
             )
             .unwrap();
         }
 
         let dry = repair_cross_refs(&pool, pid, false).unwrap();
         assert!(dry.dry_run);
-        assert_eq!(dry.dangling_before, 4, "ghost-a x2 + ghost-b + hallucination");
-        assert_eq!(dry.ghost_names, 3, "distinct ghosts: ghost-a, ghost-b, hallucination");
+        assert_eq!(
+            dry.dangling_before, 4,
+            "ghost-a x2 + ghost-b + hallucination"
+        );
+        assert_eq!(
+            dry.ghost_names, 3,
+            "distinct ghosts: ghost-a, ghost-b, hallucination"
+        );
         assert_eq!(dry.unresolved, 1);
         assert_eq!(dry.unresolved_names, vec!["hallucination".to_string()]);
-        assert_eq!(dry.contexts_written, 0, "dry run is the default and writes nothing");
-        assert_eq!(read_contexts(&pool, pid)[1].1.len(), 3, "survivor untouched by the dry run");
+        assert_eq!(
+            dry.contexts_written, 0,
+            "dry run is the default and writes nothing"
+        );
+        assert_eq!(
+            read_contexts(&pool, pid)[1].1.len(),
+            3,
+            "survivor untouched by the dry run"
+        );
 
         let applied = repair_cross_refs(&pool, pid, true).unwrap();
         assert_eq!(applied.contexts_written, 2);
-        assert_eq!(applied.stats.self_dropped, 1, "survivor's ref to ghost-a is now itself");
+        assert_eq!(
+            applied.stats.self_dropped, 1,
+            "survivor's ref to ghost-a is now itself"
+        );
         let after = read_contexts(&pool, pid);
         let live: HashSet<String> = after.iter().map(|(n, _)| n.clone()).collect();
         for (name, refs) in &after {
@@ -1245,7 +1413,9 @@ mod tests {
     #[test]
     #[ignore = "needs PERSONAS_MAP_DB + PERSONAS_MAP_PROJECT"]
     fn repair_dry_run_against_a_real_map() {
-        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else { return };
+        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else {
+            return;
+        };
         let project_id = std::env::var("PERSONAS_MAP_PROJECT").expect("PERSONAS_MAP_PROJECT");
         let pool = crate::db::open_pool_at(std::path::Path::new(&path)).expect("open db");
         let plan = repair_cross_refs(&pool, &project_id, false).expect("repair");
@@ -1270,7 +1440,9 @@ mod tests {
     #[test]
     #[ignore = "MUTATES a real DB; needs PERSONAS_MAP_APPLY=i-have-a-backup"]
     fn repair_apply_against_a_real_map() {
-        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else { return };
+        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else {
+            return;
+        };
         if std::env::var("PERSONAS_MAP_APPLY").as_deref() != Ok("i-have-a-backup") {
             panic!("refusing to write: set PERSONAS_MAP_APPLY=i-have-a-backup");
         }
@@ -1280,17 +1452,30 @@ mod tests {
         // Plan first, so the record shows what was about to change.
         let plan = repair_cross_refs(&pool, &project_id, false).expect("plan");
         println!("PLAN {}", serde_json::to_string_pretty(&plan).unwrap());
-        assert_eq!(plan.ambiguous.len(), 0, "refusing to apply with ambiguous ghosts");
+        assert_eq!(
+            plan.ambiguous.len(),
+            0,
+            "refusing to apply with ambiguous ghosts"
+        );
 
         let applied = repair_cross_refs(&pool, &project_id, true).expect("apply");
-        println!("APPLIED {}", serde_json::to_string_pretty(&applied).unwrap());
+        println!(
+            "APPLIED {}",
+            serde_json::to_string_pretty(&applied).unwrap()
+        );
         assert!(!applied.dry_run);
 
         // Re-plan: the only refs left must be the ones no marker explains.
         let after = repair_cross_refs(&pool, &project_id, false).expect("verify");
         println!("AFTER {}", serde_json::to_string_pretty(&after).unwrap());
-        assert_eq!(after.stats.rewritten, 0, "a second pass must find nothing to rewrite");
-        assert_eq!(after.dangling_before, plan.unresolved, "residue must equal the unresolvable set");
+        assert_eq!(
+            after.stats.rewritten, 0,
+            "a second pass must find nothing to rewrite"
+        );
+        assert_eq!(
+            after.dangling_before, plan.unresolved,
+            "residue must equal the unresolvable set"
+        );
     }
 
     /// Re-publish `context-map.json` (and the `CLAUDE.md` managed block) from the
@@ -1308,7 +1493,9 @@ mod tests {
     #[test]
     #[ignore = "writes context-map.json; needs PERSONAS_MAP_APPLY=i-have-a-backup"]
     fn republish_map_from_a_real_db() {
-        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else { return };
+        let Ok(path) = std::env::var("PERSONAS_MAP_DB") else {
+            return;
+        };
         if std::env::var("PERSONAS_MAP_APPLY").as_deref() != Ok("i-have-a-backup") {
             panic!("refusing to write: set PERSONAS_MAP_APPLY=i-have-a-backup");
         }
@@ -1335,13 +1522,19 @@ mod tests {
         {
             let conn = pool.get().unwrap();
             let marker = consolidated_marker(&["ghost".into()]);
-            conn.execute("UPDATE dev_contexts SET description = ?1 WHERE name IN ('one','two')", [marker])
-                .unwrap();
+            conn.execute(
+                "UPDATE dev_contexts SET description = ?1 WHERE name IN ('one','two')",
+                [marker],
+            )
+            .unwrap();
         }
         let plan = repair_cross_refs(&pool, pid, true).unwrap();
         assert_eq!(plan.ambiguous.len(), 1);
         assert_eq!(plan.ambiguous[0].claimed_by.len(), 2);
-        assert_eq!(plan.contexts_written, 0, "an ambiguous ghost is reported, never guessed");
+        assert_eq!(
+            plan.contexts_written, 0,
+            "an ambiguous ghost is reported, never guessed"
+        );
         assert_eq!(plan.unresolved, 1);
     }
 }

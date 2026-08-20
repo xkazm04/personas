@@ -5,13 +5,13 @@
 
 use std::collections::HashSet;
 
+use personas_core::error::AppError;
 use personas_db::models::{
     ConnectorDefinition, HealingTimelineEvent, PersonaHealingIssue, PersonaToolDefinition,
 };
 use personas_db::repos::execution::executions as exec_repo;
 use personas_db::repos::execution::healing as repo;
 use personas_db::DbPool;
-use personas_core::error::AppError;
 
 use personas_core::healing::{self, HealingAction, KnowledgeHint, MAX_RETRY_COUNT};
 
@@ -34,7 +34,8 @@ pub fn resolve_knowledge_hint(
         _ => return None,
     };
 
-    let tools = match personas_db::repos::resources::tools::get_tools_for_persona(pool, persona_id) {
+    let tools = match personas_db::repos::resources::tools::get_tools_for_persona(pool, persona_id)
+    {
         Ok(t) => t,
         Err(e) => {
             tracing::error!(
@@ -84,8 +85,7 @@ fn resolve_hint_from_cache(
 ) -> Option<KnowledgeHint> {
     for tool in tools {
         for connector in connectors {
-            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
-            {
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services) {
                 Ok(v) => v,
                 Err(e) => {
                     tracing::warn!(
@@ -175,7 +175,8 @@ pub fn run_healing_analysis(
 
     let consecutive = exec_repo::get_consecutive_failure_count(pool, persona_id)?;
 
-    let tools = match personas_db::repos::resources::tools::get_tools_for_persona(pool, persona_id) {
+    let tools = match personas_db::repos::resources::tools::get_tools_for_persona(pool, persona_id)
+    {
         Ok(t) => Some(t),
         Err(e) => {
             tracing::warn!(

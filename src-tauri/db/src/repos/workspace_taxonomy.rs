@@ -39,21 +39,89 @@
 /// Areas in precedence order, each with its starter cluster vocabulary.
 /// Order is load-bearing — see rule 2 above.
 pub const TAXONOMY: &[(&str, &[&str])] = &[
-    ("security", &["trust-boundaries", "secrets", "input-hardening"]),
+    (
+        "security",
+        &["trust-boundaries", "secrets", "input-hardening"],
+    ),
     ("auth", &["tenancy", "authorization", "tokens", "session"]),
     ("billing", &["metering", "charge-reclaim", "limits"]),
-    ("llm", &["chokepoint", "providers", "quality-gates", "prompt-safety", "orchestration", "retrieval"]),
-    ("testing", &["strategy", "coverage", "harnesses", "parity", "testability"]),
+    (
+        "llm",
+        &[
+            "chokepoint",
+            "providers",
+            "quality-gates",
+            "prompt-safety",
+            "orchestration",
+            "retrieval",
+        ],
+    ),
+    (
+        "testing",
+        &["strategy", "coverage", "harnesses", "parity", "testability"],
+    ),
     ("observability", &["logging", "telemetry", "diagnostics"]),
     ("performance", &["hot-paths", "caching", "resource-limits"]),
-    ("errors", &["result-contracts", "classification", "degradation", "surfacing"]),
-    ("concurrency", &["pipelines", "queues", "cancellation", "rate-limiting", "retry-idempotency"]),
-    ("data", &["store-boundary", "migrations", "modeling", "write-semantics", "queries"]),
+    (
+        "errors",
+        &[
+            "result-contracts",
+            "classification",
+            "degradation",
+            "surfacing",
+        ],
+    ),
+    (
+        "concurrency",
+        &[
+            "pipelines",
+            "queues",
+            "cancellation",
+            "rate-limiting",
+            "retry-idempotency",
+        ],
+    ),
+    (
+        "data",
+        &[
+            "store-boundary",
+            "migrations",
+            "modeling",
+            "write-semantics",
+            "queries",
+        ],
+    ),
     ("api", &["request-pipeline", "routing", "client-seam"]),
-    ("frontend", &["state", "data-fetching", "components", "forms"]),
-    ("integration", &["external-services", "protocol-contracts", "resilience"]),
-    ("architecture", &["boundaries", "layering", "chokepoints", "extensibility", "contract-artifacts", "events"]),
-    ("process", &["adr-discipline", "documentation", "enforcement", "readiness", "knowledge", "outcomes"]),
+    (
+        "frontend",
+        &["state", "data-fetching", "components", "forms"],
+    ),
+    (
+        "integration",
+        &["external-services", "protocol-contracts", "resilience"],
+    ),
+    (
+        "architecture",
+        &[
+            "boundaries",
+            "layering",
+            "chokepoints",
+            "extensibility",
+            "contract-artifacts",
+            "events",
+        ],
+    ),
+    (
+        "process",
+        &[
+            "adr-discipline",
+            "documentation",
+            "enforcement",
+            "readiness",
+            "knowledge",
+            "outcomes",
+        ],
+    ),
 ];
 
 /// One-line gloss per area, shipped to agents so they can apply the precedence
@@ -67,12 +135,18 @@ pub const AREA_HINTS: &[(&str, &str)] = &[
     ("observability", "seeing what the system did"),
     ("performance", "latency, throughput, resource cost"),
     ("errors", "how failures are represented and handled"),
-    ("concurrency", "long-running, parallel, or interruptible work"),
+    (
+        "concurrency",
+        "long-running, parallel, or interruptible work",
+    ),
     ("data", "persistence"),
     ("api", "the server request/response seam"),
     ("frontend", "UI, client state, forms"),
     ("integration", "other systems"),
-    ("architecture", "the codebase's OWN structure — only when no subsystem above governs"),
+    (
+        "architecture",
+        "the codebase's OWN structure — only when no subsystem above governs",
+    ),
     ("process", "how the work itself is done"),
 ];
 
@@ -335,8 +409,10 @@ pub fn normalize_ftype(raw: Option<&str>) -> Option<String> {
 pub fn ftype_prompt_block() -> String {
     let mut s = String::new();
     for (t, hint) in FTYPE_HINTS {
-        s.push_str(&format!("- `{t}` — {hint}
-"));
+        s.push_str(&format!(
+            "- `{t}` — {hint}
+"
+        ));
     }
     s
 }
@@ -386,14 +462,23 @@ mod tests {
         // path, facet or not.
         assert_eq!(normalize_topic(Some("nonsense/x/y")), UNSORTED);
         // Area aliasing still applies in front of the facet.
-        assert_eq!(normalize_topic(Some("ui/motion/reveals")), "frontend/motion/reveals");
+        assert_eq!(
+            normalize_topic(Some("ui/motion/reveals")),
+            "frontend/motion/reveals"
+        );
     }
 
     #[test]
     fn ftype_closes_the_shape_axis() {
         // Exact hits and casing/spacing noise.
-        assert_eq!(normalize_ftype(Some("error-strategy")).as_deref(), Some("error-strategy"));
-        assert_eq!(normalize_ftype(Some("Error Strategy")).as_deref(), Some("error-strategy"));
+        assert_eq!(
+            normalize_ftype(Some("error-strategy")).as_deref(),
+            Some("error-strategy")
+        );
+        assert_eq!(
+            normalize_ftype(Some("Error Strategy")).as_deref(),
+            Some("error-strategy")
+        );
         // The real drift from the 12-territory scan, mapped not invented.
         for raw in ["guard", "guardrail", "trap", "anti-pattern", "user-honesty"] {
             assert_eq!(
@@ -402,11 +487,23 @@ mod tests {
                 "{raw} should land on error-strategy"
             );
         }
-        assert_eq!(normalize_ftype(Some("perf-technique")).as_deref(), Some("perf-strategy"));
-        assert_eq!(normalize_ftype(Some("contract")).as_deref(), Some("api-design"));
-        assert_eq!(normalize_ftype(Some("boundary")).as_deref(), Some("module-boundary"));
+        assert_eq!(
+            normalize_ftype(Some("perf-technique")).as_deref(),
+            Some("perf-strategy")
+        );
+        assert_eq!(
+            normalize_ftype(Some("contract")).as_deref(),
+            Some("api-design")
+        );
+        assert_eq!(
+            normalize_ftype(Some("boundary")).as_deref(),
+            Some("module-boundary")
+        );
         // Unknown lands on a visible shelf, never a 90th private word.
-        assert_eq!(normalize_ftype(Some("bespoke-nonsense")).as_deref(), Some(UNSORTED_LEAF));
+        assert_eq!(
+            normalize_ftype(Some("bespoke-nonsense")).as_deref(),
+            Some(UNSORTED_LEAF)
+        );
         // Unset stays unset — "no shape given" is not "shape unknown".
         assert_eq!(normalize_ftype(None), None);
         assert_eq!(normalize_ftype(Some("   ")), None);
@@ -462,9 +559,18 @@ mod tests {
 
     #[test]
     fn normalizes_shape() {
-        assert_eq!(normalize_topic(Some("data/store-boundary")), "data/store-boundary");
-        assert_eq!(normalize_topic(Some("  Data / Store Boundary ")), "data/store-boundary");
-        assert_eq!(normalize_topic(Some("data/store_boundary")), "data/store-boundary");
+        assert_eq!(
+            normalize_topic(Some("data/store-boundary")),
+            "data/store-boundary"
+        );
+        assert_eq!(
+            normalize_topic(Some("  Data / Store Boundary ")),
+            "data/store-boundary"
+        );
+        assert_eq!(
+            normalize_topic(Some("data/store_boundary")),
+            "data/store-boundary"
+        );
         // Depth cap moved from two to THREE on 2026-08-10 (pattern-fabric S1):
         // a third segment is now a kept facet. The singleton worry the old cap
         // encoded is handled socially instead — facets are earned when a
@@ -488,15 +594,27 @@ mod tests {
         // A new CLUSTER under a real area is how the taxonomy grows.
         let grown = normalize_topic(Some("data/sharding"));
         assert_eq!(grown, "data/sharding");
-        assert!(!is_canonical(&grown), "new cluster is not yet starter vocabulary");
+        assert!(
+            !is_canonical(&grown),
+            "new cluster is not yet starter vocabulary"
+        );
         assert!(is_canonical("data/store-boundary"));
     }
 
     #[test]
     fn legacy_vocabulary_lands_on_real_shelves() {
-        assert_eq!(normalize_topic(Some("ui/components")), "frontend/components");
-        assert_eq!(normalize_topic(Some("state/client-stores")), "frontend/client-stores");
-        assert_eq!(normalize_topic(Some("data-flow/pipelines")), "data/pipelines");
+        assert_eq!(
+            normalize_topic(Some("ui/components")),
+            "frontend/components"
+        );
+        assert_eq!(
+            normalize_topic(Some("state/client-stores")),
+            "frontend/client-stores"
+        );
+        assert_eq!(
+            normalize_topic(Some("data-flow/pipelines")),
+            "data/pipelines"
+        );
         assert_eq!(normalize_topic(Some("cost/llm")), "billing/llm");
     }
 

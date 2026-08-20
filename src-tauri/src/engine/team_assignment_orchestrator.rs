@@ -293,7 +293,12 @@ pub fn resolve_review_reassign(
     persona_id: String,
     use_case_id: Option<String>,
 ) -> Result<(), AppError> {
-    assignment_repo::override_step_assignment(&pool, &step_id, &persona_id, use_case_id.as_deref())?;
+    assignment_repo::override_step_assignment(
+        &pool,
+        &step_id,
+        &persona_id,
+        use_case_id.as_deref(),
+    )?;
     let step = assignment_repo::get_step(&pool, &step_id)?;
     // F1 (manual path): mirror resolve_review_edit / auto_resume_retryable_steps
     // — re-queuing only the reassigned step would leave its cascade-skipped
@@ -393,14 +398,24 @@ pub fn auto_resume_retryable_steps(
     let roots: HashSet<String> = step_ids.iter().cloned().collect();
     match restore_cascade_skipped_dependents(&pool, assignment_id, &roots) {
         Ok(n) if n > 0 => {
-            tracing::info!(assignment_id, restored = n, "auto-resume: restored cascade-skipped dependents");
+            tracing::info!(
+                assignment_id,
+                restored = n,
+                "auto-resume: restored cascade-skipped dependents"
+            );
         }
         Err(e) => {
             tracing::warn!(assignment_id, error = %e, "auto-resume: failed to restore skipped dependents");
         }
         _ => {}
     }
-    resume_assignment(pool, app, engine, embedding_manager, assignment_id.to_string());
+    resume_assignment(
+        pool,
+        app,
+        engine,
+        embedding_manager,
+        assignment_id.to_string(),
+    );
     Ok(())
 }
 
@@ -544,10 +559,7 @@ pub fn pause_assignment(
 // Tick loop — heart of the orchestrator
 // ----------------------------------------------------------------------------
 
-async fn tick_loop(
-    deps: &OrchestratorDeps,
-    assignment_id: &str,
-) -> Result<(), AppError> {
+async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), AppError> {
     let pool = &deps.pool;
     let app = &deps.app;
     // Transition queued → running on first entry. If already running (resumed),
@@ -614,9 +626,9 @@ async fn tick_loop(
         let steps = assignment_repo::list_steps(pool, assignment_id)?;
         let any_failed = steps.iter().any(|s| s.status == "failed");
         let all_terminal = steps.iter().all(|s| terminal_step_status(&s.status));
-        let any_pending_or_running = steps.iter().any(|s| {
-            matches!(s.status.as_str(), "pending" | "matching" | "running")
-        });
+        let any_pending_or_running = steps
+            .iter()
+            .any(|s| matches!(s.status.as_str(), "pending" | "matching" | "running"));
 
         if any_failed && !any_pending_or_running && in_flight.is_empty() {
             // Stop the loop; user must resolve via review modal.
@@ -772,7 +784,12 @@ async fn tick_loop(
                             Some(&msg),
                             None,
                         );
-                        emit_progress(&deps_clone.app, &assignment_id_owned, "running", Some(&step_id));
+                        emit_progress(
+                            &deps_clone.app,
+                            &assignment_id_owned,
+                            "running",
+                            Some(&step_id),
+                        );
                     }
                 });
                 in_flight.insert(step.id.clone(), handle);
@@ -915,7 +932,10 @@ async fn run_step(
     assignment_repo::update_step_status(pool, &step.id, "running", None, None)?;
     for d in &directives {
         let _ = crate::db::repos::resources::team_channel::record_delivery(
-            pool, &d.id, &step.id, &persona_id,
+            pool,
+            &d.id,
+            &step.id,
+            &persona_id,
         );
     }
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
@@ -975,7 +995,13 @@ async fn run_step(
                         // W7: the costliest bounce (the one that reaches a
                         // human) must also teach the team — previously only
                         // rework rounds wrote the lesson.
-                        record_bounce_lesson(pool, &step, summary.as_deref(), step.retry_count, true);
+                        record_bounce_lesson(
+                            pool,
+                            &step,
+                            summary.as_deref(),
+                            step.retry_count,
+                            true,
+                        );
                         assignment_repo::update_step_status(
                             pool,
                             &step.id,
@@ -988,7 +1014,13 @@ async fn run_step(
                     }
                 }
 
-                assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
+                assignment_repo::update_step_status(
+                    pool,
+                    &step.id,
+                    "done",
+                    None,
+                    summary.as_deref(),
+                )?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
                 // C1 (multi-author channel): gated roles (Implementer/QA/
                 // Architect) may broadcast ONE short message to the team channel
@@ -1021,9 +1053,7 @@ async fn run_step(
                 // (the resolver never silently regresses). Best-effort.
                 if let Some(gid) = goal_id.as_deref() {
                     if let Ok(items) = crate::db::repos::dev_tools::list_goal_items(pool, gid) {
-                        if let Some(it) =
-                            items.iter().find(|i| !i.done && i.title == step.title)
-                        {
+                        if let Some(it) = items.iter().find(|i| !i.done && i.title == step.title) {
                             let _ = crate::db::repos::dev_tools::update_goal_item(
                                 pool,
                                 &it.id,
@@ -1215,7 +1245,13 @@ fn trigger_qa_rework(
     assignment_repo::increment_step_retry(pool, &qa_step.id)?;
 
     // T6/W7 (learning loop): every bounce is a durable lesson.
-    record_bounce_lesson(pool, qa_step, Some(&verdict), qa_step.retry_count + 1, false);
+    record_bounce_lesson(
+        pool,
+        qa_step,
+        Some(&verdict),
+        qa_step.retry_count + 1,
+        false,
+    );
     assignment_repo::insert_event(
         pool,
         &qa_step.assignment_id,
@@ -1242,10 +1278,7 @@ fn trigger_qa_rework(
 /// Load the outputs of the steps this step `depends_on` (direct predecessors
 /// only), in step order, for forwarding into the step input. Best-effort: a
 /// repo error or a predecessor without an output simply contributes nothing.
-fn collect_predecessor_outputs(
-    pool: &DbPool,
-    step: &TeamAssignmentStep,
-) -> Vec<serde_json::Value> {
+fn collect_predecessor_outputs(pool: &DbPool, step: &TeamAssignmentStep) -> Vec<serde_json::Value> {
     let dep_ids = parse_depends_on(step.depends_on.as_deref());
     if dep_ids.is_empty() {
         return Vec::new();
@@ -1431,7 +1464,11 @@ fn maybe_post_channel_message(
         return;
     };
     if body.chars().count() > CHANNEL_POST_MAX_CHARS {
-        body = body.chars().take(CHANNEL_POST_MAX_CHARS).collect::<String>() + "…";
+        body = body
+            .chars()
+            .take(CHANNEL_POST_MAX_CHARS)
+            .collect::<String>()
+            + "…";
     }
     let _ = crate::db::repos::resources::team_channel::create(
         pool,
@@ -1873,8 +1910,16 @@ mod tests {
         .expect("add gated member");
 
         // Hand-built member: no semantic role anywhere.
-        team_repo::add_member(&pool, &team.id, &plain, Some("worker".into()), None, None, None)
-            .expect("add plain member");
+        team_repo::add_member(
+            &pool,
+            &team.id,
+            &plain,
+            Some("worker".into()),
+            None,
+            None,
+            None,
+        )
+        .expect("add plain member");
 
         let assignment = assignment_repo::create(
             &pool,

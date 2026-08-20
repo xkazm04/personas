@@ -241,11 +241,7 @@ fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
     if !recall.doctrine.is_empty() {
         p.push_str("# Reference docs (curated)\n\n");
         for d in &recall.doctrine {
-            p.push_str(&format!(
-                "## {}\n\n{}\n\n",
-                d.file_path,
-                d.content.trim()
-            ));
+            p.push_str(&format!("## {}\n\n{}\n\n", d.file_path, d.content.trim()));
         }
     }
 
@@ -343,11 +339,7 @@ mod tests {
         }
     }
 
-    fn make_recall(
-        episodes: Vec<Episode>,
-        doctrine: Vec<DoctrineHit>,
-        facts: Vec<Fact>,
-    ) -> Recall {
+    fn make_recall(episodes: Vec<Episode>, doctrine: Vec<DoctrineHit>, facts: Vec<Fact>) -> Recall {
         Recall {
             episodes,
             doctrine,
@@ -413,7 +405,8 @@ mod tests {
     #[test]
     fn format_briefing_with_facts_and_obligations() {
         let b = Briefing {
-            summary: "User just asked about deploys; recent context is the Friday lab failure.".into(),
+            summary: "User just asked about deploys; recent context is the Friday lab failure."
+                .into(),
             key_facts: vec![
                 "User prefers terse responses on Fridays.".into(),
                 "Two lab agents have been failing since 2026-05-08.".into(),
@@ -442,7 +435,8 @@ mod tests {
 
     #[test]
     fn parse_envelope_accepts_clean_json() {
-        let s = r#"{"briefing":{"summary":"hello","key_facts":["a","b"],"salient_obligations":["c"]}}"#;
+        let s =
+            r#"{"briefing":{"summary":"hello","key_facts":["a","b"],"salient_obligations":["c"]}}"#;
         let b = parse_envelope(s).unwrap();
         assert_eq!(b.summary, "hello");
         assert_eq!(b.key_facts.len(), 2);

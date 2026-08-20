@@ -32,8 +32,8 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine::design;
 use crate::engine::event_registry::{emit_event_bus, event_name};
-use crate::engine::prompt;
 use crate::engine::inflight_guard::InflightGuard;
+use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -957,7 +957,12 @@ pub async fn rebuild_design_review(
         if let Err(panic) = work {
             let msg = extract_panic_message(panic);
             tracing::error!(rebuild_id = %rebuild_id_for_panic, panic = %msg, "design review rebuild task panicked — marking job as failed");
-            n8n_job_state::set_n8n_transform_status(&app_for_panic, &rebuild_id_for_panic, "failed", Some(msg));
+            n8n_job_state::set_n8n_transform_status(
+                &app_for_panic,
+                &rebuild_id_for_panic,
+                "failed",
+                Some(msg),
+            );
         }
     });
 
@@ -1271,8 +1276,7 @@ pub(crate) fn react_to_review_decision(
 
     let pool = Arc::new(state.db.clone());
     let engine = state.engine.clone();
-    let embedding_manager =
-        crate::commands::teams::assignments::embedding_manager_for_state(state);
+    let embedding_manager = crate::commands::teams::assignments::embedding_manager_for_state(state);
     if failed_steps.is_empty() {
         // Held but no failed step (a soft-pause / gate hold) — re-spawn the tick
         // loop so the assignment advances from its current step states.
@@ -1387,18 +1391,14 @@ pub async fn dispatch_review_action(
                     review_id = %review.id, error = %e,
                     "Could not dispatch follow-up run from review action — surfacing to user"
                 );
-                let persona_name: Option<String> = state
-                    .db
-                    .get()
+                let persona_name: Option<String> = state.db.get().ok().and_then(|conn| {
+                    conn.query_row(
+                        "SELECT name FROM personas WHERE id = ?1",
+                        rusqlite::params![review.persona_id],
+                        |r| r.get::<_, String>(0),
+                    )
                     .ok()
-                    .and_then(|conn| {
-                        conn.query_row(
-                            "SELECT name FROM personas WHERE id = ?1",
-                            rusqlite::params![review.persona_id],
-                            |r| r.get::<_, String>(0),
-                        )
-                        .ok()
-                    });
+                });
                 // A real blocker → an INCIDENT (not a transient toast). Lands in
                 // the Incidents inbox AND — because it's attributed to the
                 // persona — gets surfaced in that persona's run context under

@@ -821,8 +821,7 @@ pub fn update_pipeline_run(
         // emits "cancelled" as a final status (pipeline_executor.rs); omitting
         // it here left cancelled runs with completed_at = NULL forever, which
         // breaks duration math in pipeline analytics.
-        let completed_at = if status == "completed" || status == "failed" || status == "cancelled"
-        {
+        let completed_at = if status == "completed" || status == "failed" || status == "cancelled" {
             Some(chrono::Utc::now().to_rfc3339())
         } else {
             None

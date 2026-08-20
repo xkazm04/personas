@@ -304,8 +304,7 @@ async fn run_breeding_pipeline(
     // (mid-parent) prediction with a measured evaluation — assertion pass-rate
     // + cost + latency, `fitness_source = 'measured'`. Budget-capped with a
     // hard stop; offspring not reached stay honestly marked `inherited`.
-    let measured_count =
-        measure_top_offspring(&pool, &run_id, &parent_ids[0], &objective).await;
+    let measured_count = measure_top_offspring(&pool, &run_id, &parent_ids[0], &objective).await;
 
     let summary = if measured_count > 0 {
         format!(

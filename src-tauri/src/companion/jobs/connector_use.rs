@@ -244,9 +244,8 @@ async fn sentry_list_issues(
     if !status.is_success() {
         return Ok(upstream_err_md("Sentry — list_issues", status, &body));
     }
-    let issues: Vec<Value> = serde_json::from_str(&body).map_err(|e| {
-        AppError::Internal(format!("sentry list_issues: malformed JSON — {e}"))
-    })?;
+    let issues: Vec<Value> = serde_json::from_str(&body)
+        .map_err(|e| AppError::Internal(format!("sentry list_issues: malformed JSON — {e}")))?;
     if issues.is_empty() {
         return Ok(format!(
             "## Sentry — no unresolved issues for `{org}`\n\nThe project is currently quiet."
@@ -261,10 +260,7 @@ async fn sentry_list_issues(
             .get("id")
             .and_then(|v| v.as_str())
             .unwrap_or("(no id)");
-        let short_id = issue
-            .get("shortId")
-            .and_then(|v| v.as_str())
-            .unwrap_or(id);
+        let short_id = issue.get("shortId").and_then(|v| v.as_str()).unwrap_or(id);
         let title = issue
             .get("title")
             .and_then(|v| v.as_str())
@@ -274,10 +270,7 @@ async fn sentry_list_issues(
             .get("lastSeen")
             .and_then(|v| v.as_str())
             .unwrap_or("?");
-        let level = issue
-            .get("level")
-            .and_then(|v| v.as_str())
-            .unwrap_or("?");
+        let level = issue.get("level").and_then(|v| v.as_str()).unwrap_or("?");
         out.push_str(&format!(
             "- **{short_id}** — {title}\n  · level: `{level}` · events: `{count}` · last seen: `{last_seen}`\n  · id: `{id}`\n"
         ));
@@ -313,9 +306,8 @@ async fn sentry_get_issue(
             &body,
         ));
     }
-    let issue: Value = serde_json::from_str(&body).map_err(|e| {
-        AppError::Internal(format!("sentry get_issue: malformed JSON — {e}"))
-    })?;
+    let issue: Value = serde_json::from_str(&body)
+        .map_err(|e| AppError::Internal(format!("sentry get_issue: malformed JSON — {e}")))?;
     let title = issue
         .get("title")
         .and_then(|v| v.as_str())
@@ -331,10 +323,7 @@ async fn sentry_get_issue(
         .map(|n| n.to_string())
         .unwrap_or_else(|| "?".into());
     let level = issue.get("level").and_then(|v| v.as_str()).unwrap_or("?");
-    let status_field = issue
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("?");
+    let status_field = issue.get("status").and_then(|v| v.as_str()).unwrap_or("?");
     let first_seen = issue
         .get("firstSeen")
         .and_then(|v| v.as_str())
@@ -409,7 +398,10 @@ async fn github_list_repos(
             .get("full_name")
             .and_then(|v| v.as_str())
             .unwrap_or("(no name)");
-        let private = repo.get("private").and_then(|v| v.as_bool()).unwrap_or(false);
+        let private = repo
+            .get("private")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let desc = repo
             .get("description")
             .and_then(|v| v.as_str())
@@ -497,10 +489,7 @@ async fn github_list_open_prs(
             .and_then(|v| v.as_str())
             .unwrap_or("?");
         let draft = pr.get("draft").and_then(|v| v.as_bool()).unwrap_or(false);
-        let updated_at = pr
-            .get("updated_at")
-            .and_then(|v| v.as_str())
-            .unwrap_or("?");
+        let updated_at = pr.get("updated_at").and_then(|v| v.as_str()).unwrap_or("?");
         let url = pr.get("html_url").and_then(|v| v.as_str()).unwrap_or("");
         let draft_marker = if draft { " (draft)" } else { "" };
         out.push_str(&format!(
@@ -572,7 +561,10 @@ async fn slack_list_channels(
     for c in channels.iter() {
         let id = c.get("id").and_then(|v| v.as_str()).unwrap_or("?");
         let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("?");
-        let is_private = c.get("is_private").and_then(|v| v.as_bool()).unwrap_or(false);
+        let is_private = c
+            .get("is_private")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let num_members = c.get("num_members").and_then(|v| v.as_u64()).unwrap_or(0);
         let topic = c
             .get("topic")
@@ -624,14 +616,20 @@ async fn gmail_list_recent_threads(
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("gmail list_recent_threads: request failed — {e}")))?;
+        .map_err(|e| {
+            AppError::Internal(format!("gmail list_recent_threads: request failed — {e}"))
+        })?;
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if status.as_u16() == 401 {
         return Ok("## Gmail — access token expired\n\nRe-authorize the Gmail connector in **Connections → Gmail**, then ask me again.".into());
     }
     if !status.is_success() {
-        return Ok(upstream_err_md("Gmail — list_recent_threads", status, &body));
+        return Ok(upstream_err_md(
+            "Gmail — list_recent_threads",
+            status,
+            &body,
+        ));
     }
     let parsed: Value = serde_json::from_str(&body).map_err(|e| {
         AppError::Internal(format!("gmail list_recent_threads: malformed JSON — {e}"))
@@ -644,14 +642,19 @@ async fn gmail_list_recent_threads(
     if threads.is_empty() {
         return Ok("## Gmail — inbox is empty (no threads under INBOX label)".into());
     }
-    let mut out = format!("## Gmail — {n} recent inbox thread(s)\n\n", n = threads.len());
+    let mut out = format!(
+        "## Gmail — {n} recent inbox thread(s)\n\n",
+        n = threads.len()
+    );
     for t in threads.iter() {
         let id = t.get("id").and_then(|v| v.as_str()).unwrap_or("?");
         let snippet = t.get("snippet").and_then(|v| v.as_str()).unwrap_or("");
         let snippet = truncate_for_episode(snippet, 160);
         out.push_str(&format!("- `{id}` — {snippet}\n"));
     }
-    out.push_str("\n_(Snippets only; ask me to fetch a specific thread by id for subject/sender/body.)_\n");
+    out.push_str(
+        "\n_(Snippets only; ask me to fetch a specific thread by id for subject/sender/body.)_\n",
+    );
     Ok(out)
 }
 
@@ -669,9 +672,7 @@ async fn gmail_mark_thread_read(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("gmail mark_thread_read: missing `thread_id`".into()))?;
     let client = http_client()?;
-    let url = format!(
-        "https://gmail.googleapis.com/gmail/v1/users/me/threads/{thread_id}/modify"
-    );
+    let url = format!("https://gmail.googleapis.com/gmail/v1/users/me/threads/{thread_id}/modify");
     let resp = client
         .post(&url)
         .bearer_auth(token)
@@ -757,22 +758,26 @@ async fn discord_list_recent_messages(
     let channel_id = args
         .get("channel_id")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("discord list_recent_messages: missing `channel_id`".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal("discord list_recent_messages: missing `channel_id`".into())
+        })?;
     let limit = args
         .get("limit")
         .and_then(|v| v.as_u64())
         .unwrap_or(20)
         .min(100);
     let client = http_client()?;
-    let url = format!(
-        "https://discord.com/api/v10/channels/{channel_id}/messages?limit={limit}"
-    );
+    let url = format!("https://discord.com/api/v10/channels/{channel_id}/messages?limit={limit}");
     let resp = client
         .get(&url)
         .header("Authorization", format!("Bot {token}"))
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("discord list_recent_messages: request failed — {e}")))?;
+        .map_err(|e| {
+            AppError::Internal(format!(
+                "discord list_recent_messages: request failed — {e}"
+            ))
+        })?;
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
@@ -782,7 +787,9 @@ async fn discord_list_recent_messages(
         ));
     }
     let messages: Value = serde_json::from_str(&body).map_err(|e| {
-        AppError::Internal(format!("discord list_recent_messages: malformed JSON — {e}"))
+        AppError::Internal(format!(
+            "discord list_recent_messages: malformed JSON — {e}"
+        ))
     })?;
     let messages = messages.as_array().cloned().unwrap_or_default();
     if messages.is_empty() {
@@ -884,16 +891,21 @@ async fn notion_list_pages(
     if !status.is_success() {
         return Ok(upstream_err_md("Notion -- list_pages", status, &body));
     }
-    let parsed: Value = serde_json::from_str(&body).map_err(|e| {
-        AppError::Internal(format!("notion list_pages: malformed JSON -- {e}"))
-    })?;
-    let results = parsed.get("results").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-    let cutoff_iso = older_than_days.map(|days| {
-        chrono::Utc::now() - chrono::Duration::days(days)
-    });
+    let parsed: Value = serde_json::from_str(&body)
+        .map_err(|e| AppError::Internal(format!("notion list_pages: malformed JSON -- {e}")))?;
+    let results = parsed
+        .get("results")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let cutoff_iso = older_than_days.map(|days| chrono::Utc::now() - chrono::Duration::days(days));
     let mut rows: Vec<(String, String, String)> = Vec::new();
     for p in results.iter() {
-        let id = p.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let id = p
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         let last_edited = p
             .get("last_edited_time")
             .and_then(|v| v.as_str())
@@ -908,16 +920,14 @@ async fn notion_list_pages(
         let title = p
             .get("properties")
             .and_then(|props| {
-                props
-                    .as_object()
-                    .and_then(|obj| {
-                        obj.values().find_map(|v| {
-                            v.get("title")
-                                .and_then(|t| t.as_array())
-                                .and_then(|arr| arr.first())
-                                .and_then(|rt| rt.get("plain_text").and_then(|s| s.as_str()))
-                        })
+                props.as_object().and_then(|obj| {
+                    obj.values().find_map(|v| {
+                        v.get("title")
+                            .and_then(|t| t.as_array())
+                            .and_then(|arr| arr.first())
+                            .and_then(|rt| rt.get("plain_text").and_then(|s| s.as_str()))
                     })
+                })
             })
             .unwrap_or("(untitled)")
             .to_string();
@@ -935,13 +945,12 @@ async fn notion_list_pages(
     let filter_note = older_than_days
         .map(|d| format!(" (older than {d} days)"))
         .unwrap_or_default();
-    let mut out = format!(
-        "## Notion -- {n} page(s){filter_note}\n\n",
-        n = rows.len()
-    );
+    let mut out = format!("## Notion -- {n} page(s){filter_note}\n\n", n = rows.len());
     for (id, title, last_edited) in rows.iter() {
         let title = truncate_for_episode(title, 80);
-        out.push_str(&format!("- `{id}` -- **{title}** (last edited {last_edited})\n"));
+        out.push_str(&format!(
+            "- `{id}` -- **{title}** (last edited {last_edited})\n"
+        ));
     }
     Ok(out)
 }
@@ -1087,18 +1096,31 @@ async fn local_drive_list_files(args: &Value) -> Result<String, AppError> {
         let is_dir = entry.file_type()?.is_dir();
         entries.push((name, is_dir));
     }
-    entries.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.to_lowercase().cmp(&b.0.to_lowercase())));
+    entries.sort_by(|a, b| {
+        b.1.cmp(&a.1)
+            .then(a.0.to_lowercase().cmp(&b.0.to_lowercase()))
+    });
     if entries.is_empty() {
         return Ok(format!("## Local drive -- `{rel}` is empty"));
     }
-    let label = if rel.is_empty() { "/".to_string() } else { format!("/{rel}") };
-    let mut out = format!("## Local drive -- {n} entr(y/ies) at `{label}`\n\n", n = entries.len());
+    let label = if rel.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{rel}")
+    };
+    let mut out = format!(
+        "## Local drive -- {n} entr(y/ies) at `{label}`\n\n",
+        n = entries.len()
+    );
     for (name, is_dir) in entries.iter().take(50) {
         let kind = if *is_dir { "FOLDER" } else { "FILE" };
         out.push_str(&format!("- [{kind}] `{name}`\n"));
     }
     if entries.len() > 50 {
-        out.push_str(&format!("\n_(and {} more -- ask for a specific subpath to drill in.)_\n", entries.len() - 50));
+        out.push_str(&format!(
+            "\n_(and {} more -- ask for a specific subpath to drill in.)_\n",
+            entries.len() - 50
+        ));
     }
     Ok(out)
 }
@@ -1149,10 +1171,7 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
             // Don't follow symlinks/junctions — a cycle inside the
             // managed drive (e.g. `a/ -> ../`) would otherwise make the
             // walk push directories forever.
-            let is_symlink = entry
-                .file_type()
-                .map(|ft| ft.is_symlink())
-                .unwrap_or(false);
+            let is_symlink = entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false);
             if is_symlink {
                 continue;
             }
@@ -1168,7 +1187,11 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
             }
         }
     }
-    let label = if rel.is_empty() { "/".to_string() } else { format!("/{rel}") };
+    let label = if rel.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{rel}")
+    };
     let mb = (bytes as f64) / 1_048_576.0;
     let note = match bailed {
         Some(reason) => format!(" _(stopped early — {reason} exceeded)_"),
@@ -1183,11 +1206,15 @@ async fn local_drive_write_text_file(args: &Value) -> Result<String, AppError> {
     let rel = args
         .get("rel_path")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("local_drive write_text_file: missing `rel_path`".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal("local_drive write_text_file: missing `rel_path`".into())
+        })?;
     let content = args
         .get("content")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("local_drive write_text_file: missing `content`".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal("local_drive write_text_file: missing `content`".into())
+        })?;
     let root = drive_root_path()?;
     let target = resolve_within(&root, rel)?;
     if let Some(parent) = target.parent() {
@@ -1219,7 +1246,9 @@ async fn elevenlabs_list_voices(
         .header("xi-api-key", api_key)
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("elevenlabs list_voices: request failed -- {e}")))?;
+        .map_err(|e| {
+            AppError::Internal(format!("elevenlabs list_voices: request failed -- {e}"))
+        })?;
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
@@ -1228,7 +1257,11 @@ async fn elevenlabs_list_voices(
     let parsed: Value = serde_json::from_str(&body).map_err(|e| {
         AppError::Internal(format!("elevenlabs list_voices: malformed JSON -- {e}"))
     })?;
-    let voices = parsed.get("voices").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+    let voices = parsed
+        .get("voices")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
     if voices.is_empty() {
         return Ok("## ElevenLabs -- no voices available".into());
     }
@@ -1282,16 +1315,17 @@ async fn elevenlabs_generate_tts(
         }))
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("elevenlabs generate_tts: request failed -- {e}")))?;
+        .map_err(|e| {
+            AppError::Internal(format!("elevenlabs generate_tts: request failed -- {e}"))
+        })?;
     let status = resp.status();
     if !status.is_success() {
         let body = resp.text().await.unwrap_or_default();
         return Ok(upstream_err_md("ElevenLabs -- generate_tts", status, &body));
     }
-    let audio_bytes = resp
-        .bytes()
-        .await
-        .map_err(|e| AppError::Internal(format!("elevenlabs generate_tts: body read failed -- {e}")))?;
+    let audio_bytes = resp.bytes().await.map_err(|e| {
+        AppError::Internal(format!("elevenlabs generate_tts: body read failed -- {e}"))
+    })?;
 
     let root = drive_root_path()?;
     let target = resolve_within(&root, out_rel)?;
@@ -1338,14 +1372,13 @@ async fn personas_db_list_tables(pool: &UserDbPool) -> Result<String, AppError> 
     Ok(out)
 }
 
-async fn personas_db_describe_table(
-    pool: &UserDbPool,
-    args: &Value,
-) -> Result<String, AppError> {
+async fn personas_db_describe_table(pool: &UserDbPool, args: &Value) -> Result<String, AppError> {
     let name = args
         .get("table_name")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("personas_database describe_table: missing `table_name`".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal("personas_database describe_table: missing `table_name`".into())
+        })?;
     if !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return Err(AppError::Internal(format!(
             "personas_database describe_table: invalid table name `{name}` (alphanumeric + underscore only)"
@@ -1367,20 +1400,20 @@ async fn personas_db_describe_table(
     }
     let mut out = format!("## Personas database -- `{name}` schema\n\n");
     for (col, ty, notnull) in rows.iter() {
-        let nullable = if *notnull == 1 { "NOT NULL" } else { "nullable" };
+        let nullable = if *notnull == 1 {
+            "NOT NULL"
+        } else {
+            "nullable"
+        };
         out.push_str(&format!("- `{col}` -- `{ty}` ({nullable})\n"));
     }
     Ok(out)
 }
 
-async fn personas_db_execute_select(
-    pool: &UserDbPool,
-    args: &Value,
-) -> Result<String, AppError> {
-    let sql = args
-        .get("sql")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("personas_database execute_select: missing `sql`".into()))?;
+async fn personas_db_execute_select(pool: &UserDbPool, args: &Value) -> Result<String, AppError> {
+    let sql = args.get("sql").and_then(|v| v.as_str()).ok_or_else(|| {
+        AppError::Internal("personas_database execute_select: missing `sql`".into())
+    })?;
     let limit = args
         .get("limit")
         .and_then(|v| v.as_u64())
@@ -1432,7 +1465,11 @@ async fn personas_db_execute_select(
         "## Personas database -- SELECT returned {} row(s)\n\n| {} |\n| {} |\n",
         rows.len(),
         col_names.join(" | "),
-        col_names.iter().map(|_| "---").collect::<Vec<_>>().join(" | ")
+        col_names
+            .iter()
+            .map(|_| "---")
+            .collect::<Vec<_>>()
+            .join(" | ")
     );
     for r in rows.iter() {
         out.push_str(&format!("| {} |\n", r.join(" | ")));
@@ -1440,18 +1477,15 @@ async fn personas_db_execute_select(
     Ok(out)
 }
 
-async fn personas_db_execute_mutation(
-    pool: &UserDbPool,
-    args: &Value,
-) -> Result<String, AppError> {
-    let sql = args
-        .get("sql")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("personas_database execute_mutation: missing `sql`".into()))?;
+async fn personas_db_execute_mutation(pool: &UserDbPool, args: &Value) -> Result<String, AppError> {
+    let sql = args.get("sql").and_then(|v| v.as_str()).ok_or_else(|| {
+        AppError::Internal("personas_database execute_mutation: missing `sql`".into())
+    })?;
     let trimmed = sql.trim();
     let lower = trimmed.to_lowercase();
-    let allowed_starts =
-        ["create", "insert", "update", "delete", "drop", "alter", "replace"];
+    let allowed_starts = [
+        "create", "insert", "update", "delete", "drop", "alter", "replace",
+    ];
     if !allowed_starts.iter().any(|v| lower.starts_with(v)) {
         return Err(AppError::Internal(format!(
             "personas_database execute_mutation: rejected -- must start with one of {allowed_starts:?}"

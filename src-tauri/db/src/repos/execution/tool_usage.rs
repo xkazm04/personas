@@ -1,8 +1,6 @@
 use rusqlite::params;
 
-use crate::models::{
-    PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary,
-};
+use crate::models::{PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary};
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;

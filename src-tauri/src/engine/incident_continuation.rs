@@ -36,16 +36,14 @@ use crate::db::repos::execution::audit_incidents as incident_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
-use crate::error::AppError;
 use crate::engine::types::Continuation;
+use crate::error::AppError;
 
 /// cfg-gated accessor for the optional ml-feature EmbeddingManager off
 /// AppState (the orchestrator's auto-resume signature needs it; lite builds
 /// pass the stub None).
 #[cfg(feature = "ml")]
-fn embedding_manager_of(
-    app: &AppHandle,
-) -> Option<Arc<crate::engine::embedder::EmbeddingManager>> {
+fn embedding_manager_of(app: &AppHandle) -> Option<Arc<crate::engine::embedder::EmbeddingManager>> {
     use tauri::Manager;
     app.try_state::<Arc<crate::AppState>>()
         .and_then(|s| s.inner().embedding_manager.clone())
@@ -78,7 +76,8 @@ fn failed_assignment_steps(pool: &DbPool, assignment_id: &str) -> Result<Vec<Str
          WHERE assignment_id = ?1 AND status = 'failed'",
     )?;
     let rows = stmt.query_map([assignment_id], |r| r.get::<_, String>(0))?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Re-run the blocked work for every resolved-but-uncontinued persona incident.
@@ -92,14 +91,14 @@ pub async fn continue_resolved_incidents(
     app: AppHandle,
     pool: DbPool,
 ) -> usize {
-    let candidates = match incident_repo::find_continuation_candidates(&pool, MAX_CONTINUATIONS_PER_TICK)
-    {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::warn!(error = %e, "incident_continuation: candidate query failed");
-            return 0;
-        }
-    };
+    let candidates =
+        match incident_repo::find_continuation_candidates(&pool, MAX_CONTINUATIONS_PER_TICK) {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::warn!(error = %e, "incident_continuation: candidate query failed");
+                return 0;
+            }
+        };
     if candidates.is_empty() {
         return 0;
     }
@@ -113,23 +112,23 @@ pub async fn continue_resolved_incidents(
         // Err we skip WITHOUT claiming, so `continued_at` stays NULL and the
         // next tick retries this incident; a genuine Ok(empty) is claimed-and-
         // skipped below exactly as before (legitimately already-resumed/done).
-        let team_failed_steps: Option<Vec<String>> =
-            if incident.source_table == "team_assignments" {
-                match failed_assignment_steps(&pool, &incident.source_id) {
-                    Ok(steps) => Some(steps),
-                    Err(e) => {
-                        tracing::warn!(
-                            incident_id = %incident.id,
-                            assignment_id = %incident.source_id,
-                            error = %e,
-                            "incident_continuation: failed-steps lookup errored; leaving incident unclaimed to retry next tick"
-                        );
-                        continue;
-                    }
+        let team_failed_steps: Option<Vec<String>> = if incident.source_table == "team_assignments"
+        {
+            match failed_assignment_steps(&pool, &incident.source_id) {
+                Ok(steps) => Some(steps),
+                Err(e) => {
+                    tracing::warn!(
+                        incident_id = %incident.id,
+                        assignment_id = %incident.source_id,
+                        error = %e,
+                        "incident_continuation: failed-steps lookup errored; leaving incident unclaimed to retry next tick"
+                    );
+                    continue;
                 }
-            } else {
-                None
-            };
+            }
+        } else {
+            None
+        };
 
         // Atomic claim — exactly one caller wins. Losers (already claimed by a
         // racing tick/instance) and errors are skipped, never retried.
@@ -229,7 +228,8 @@ pub async fn continue_resolved_incidents(
             continue;
         }
 
-        let tools = tool_repo::get_tools_for_persona(&pool, &blocked.persona_id).unwrap_or_default();
+        let tools =
+            tool_repo::get_tools_for_persona(&pool, &blocked.persona_id).unwrap_or_default();
 
         // Require the original task context. Previously NULL and unparseable
         // input_data both silently collapsed to None, starting a contextless
@@ -322,7 +322,10 @@ pub async fn continue_resolved_incidents(
     }
 
     if started > 0 {
-        tracing::info!(count = started, "incident_continuation: started {started} continuation(s)");
+        tracing::info!(
+            count = started,
+            "incident_continuation: started {started} continuation(s)"
+        );
     }
     started
 }

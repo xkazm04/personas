@@ -397,10 +397,8 @@ impl ReactiveSubscription for TriggerSchedulerSubscription {
     async fn tick(&self) {
         let scheduler = self.scheduler.clone();
         let pool = self.pool.clone();
-        run_blocking_tick(move || {
-            super::background::trigger_scheduler_tick(&scheduler, &pool)
-        })
-        .await;
+        run_blocking_tick(move || super::background::trigger_scheduler_tick(&scheduler, &pool))
+            .await;
     }
 }
 
@@ -519,12 +517,8 @@ impl ReactiveSubscription for ClipboardSubscription {
         // actual paste (redacted at capture) instead of the prior
         // length-only `("text", 0)` placeholder. The fusion's per-source
         // gate is the privacy contract — capture is a no-op when off.
-        super::clipboard_monitor::clipboard_tick(
-            &self.pool,
-            &self.state,
-            Some(&self.ambient_ctx),
-        )
-        .await;
+        super::clipboard_monitor::clipboard_tick(&self.pool, &self.state, Some(&self.ambient_ctx))
+            .await;
 
         // Hash diff still drives the error-detection / KB search side
         // path (which is independent of the ambient pipeline).
@@ -876,10 +870,7 @@ impl ReactiveSubscription for CompositeSubscription {
     async fn tick(&self) {
         let pool = self.pool.clone();
         let composite_state = self.composite_state.clone();
-        run_blocking_tick(move || {
-            super::composite::composite_tick(&pool, &composite_state)
-        })
-        .await;
+        run_blocking_tick(move || super::composite::composite_tick(&pool, &composite_state)).await;
     }
 }
 
@@ -903,10 +894,8 @@ impl ReactiveSubscription for AutoRollbackSubscription {
         let pool = self.pool.clone();
         let app = self.app.clone();
         let engine = self.engine.clone();
-        run_blocking_tick(move || {
-            super::auto_rollback::auto_rollback_tick(&pool, &app, &engine)
-        })
-        .await;
+        run_blocking_tick(move || super::auto_rollback::auto_rollback_tick(&pool, &app, &engine))
+            .await;
     }
 }
 
@@ -1500,7 +1489,10 @@ static QUOTA_PROBE_CACHE: std::sync::Mutex<Option<(std::time::Instant, bool)>> =
     std::sync::Mutex::new(None);
 
 pub(crate) fn quota_cooldown_active(pool: &DbPool) -> bool {
-    if let Some((at, cached)) = *QUOTA_PROBE_CACHE.lock().expect("quota probe cache poisoned") {
+    if let Some((at, cached)) = *QUOTA_PROBE_CACHE
+        .lock()
+        .expect("quota probe cache poisoned")
+    {
         if at.elapsed() < QUOTA_PROBE_TTL {
             return cached;
         }
@@ -1524,8 +1516,9 @@ pub(crate) fn quota_cooldown_active(pool: &DbPool) -> bool {
         )
         .unwrap_or(0);
     let active = n > 0;
-    *QUOTA_PROBE_CACHE.lock().expect("quota probe cache poisoned") =
-        Some((std::time::Instant::now(), active));
+    *QUOTA_PROBE_CACHE
+        .lock()
+        .expect("quota probe cache poisoned") = Some((std::time::Instant::now(), active));
     active
 }
 
@@ -1610,16 +1603,15 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
 
         // Candidate query is sync rusqlite — offload off the async worker.
         let pool = self.pool.clone();
-        let candidates = match tokio::task::spawn_blocking(move || find_goal_advance_candidates(&pool))
-            .await
-        {
-            Ok(Ok(c)) => c,
-            Ok(Err(e)) => {
-                tracing::warn!(error = %e, "goal_advance: candidate query failed");
-                return;
-            }
-            Err(_) => return,
-        };
+        let candidates =
+            match tokio::task::spawn_blocking(move || find_goal_advance_candidates(&pool)).await {
+                Ok(Ok(c)) => c,
+                Ok(Err(e)) => {
+                    tracing::warn!(error = %e, "goal_advance: candidate query failed");
+                    return;
+                }
+                Err(_) => return,
+            };
 
         let mut started = 0usize;
         // X2 fairness: advance AT MOST ONE goal per team per tick (breadth over
@@ -1662,7 +1654,10 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
             }
         }
         if started > 0 {
-            tracing::info!(count = started, "goal_advance: autonomous tick started {started} assignment(s)");
+            tracing::info!(
+                count = started,
+                "goal_advance: autonomous tick started {started} assignment(s)"
+            );
         }
     }
 }
@@ -1744,7 +1739,11 @@ fn find_assignment_retry_candidates(
 /// credential failure, validation, tool errors, or unknown — waiting won't fix
 /// those, so the assignment stays paused for a human (and the per-step retry cap
 /// bounds the cost of a step that keeps failing transiently).
-fn step_failure_is_retryable(pool: &DbPool, exec_id: Option<&str>, step_error: Option<&str>) -> bool {
+fn step_failure_is_retryable(
+    pool: &DbPool,
+    exec_id: Option<&str>,
+    step_error: Option<&str>,
+) -> bool {
     use crate::engine::error_taxonomy::ErrorCategory;
     let mut blob = step_error.unwrap_or("").to_string();
     if let Some(eid) = exec_id {
@@ -1780,10 +1779,17 @@ fn persona_repeats_on_failure(pool: &DbPool, persona_id: Option<&str>) -> bool {
     let Some(pid) = persona_id else { return true };
     let Ok(conn) = pool.get() else { return true };
     let dc: Option<String> = conn
-        .query_row("SELECT design_context FROM personas WHERE id = ?1", rusqlite::params![pid], |r| r.get(0))
+        .query_row(
+            "SELECT design_context FROM personas WHERE id = ?1",
+            rusqlite::params![pid],
+            |r| r.get(0),
+        )
         .ok()
         .flatten();
-    match dc.as_deref().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()) {
+    match dc
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+    {
         Some(v) => v
             .get("repeat_on_failure")
             .and_then(|b| b.as_bool())
@@ -1830,8 +1836,11 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
             let mut grouped: std::collections::BTreeMap<String, Vec<String>> =
                 std::collections::BTreeMap::new();
             for c in cands {
-                if !step_failure_is_retryable(&pool, c.execution_id.as_deref(), c.step_error.as_deref())
-                {
+                if !step_failure_is_retryable(
+                    &pool,
+                    c.execution_id.as_deref(),
+                    c.step_error.as_deref(),
+                ) {
                     continue;
                 }
                 if !persona_repeats_on_failure(&pool, c.persona_id.as_deref()) {
@@ -1874,7 +1883,10 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
             }
         }
         if resumed > 0 {
-            tracing::info!(count = resumed, "assignment_auto_resume: resumed {resumed} assignment(s)");
+            tracing::info!(
+                count = resumed,
+                "assignment_auto_resume: resumed {resumed} assignment(s)"
+            );
         }
     }
 }
@@ -1946,12 +1958,36 @@ fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::
 /// change, secrets/credentials). The denylist wins on any overlap with the
 /// safe-technical allowlist below.
 const REVIEW_BUSINESS_POLICY_MARKERS: &[&str] = &[
-    "phi", "hipaa", "baa", "pii", "compliance", "gdpr",
-    "production", "prod deploy", "prod-deploy", "production config", "production-config",
-    "pricing", "price", "payment", "billing",
-    "origin push", "push to origin", "force push", "force-push", "--force",
-    "irreversible", "destructive", "rm -rf", "drop table", "delete all", "purge",
-    "credential", "secret", "api key", "egress",
+    "phi",
+    "hipaa",
+    "baa",
+    "pii",
+    "compliance",
+    "gdpr",
+    "production",
+    "prod deploy",
+    "prod-deploy",
+    "production config",
+    "production-config",
+    "pricing",
+    "price",
+    "payment",
+    "billing",
+    "origin push",
+    "push to origin",
+    "force push",
+    "force-push",
+    "--force",
+    "irreversible",
+    "destructive",
+    "rm -rf",
+    "drop table",
+    "delete all",
+    "purge",
+    "credential",
+    "secret",
+    "api key",
+    "egress",
 ];
 
 /// Safe technical-status markers — items the team policy says should NOT be human
@@ -1960,14 +1996,40 @@ const REVIEW_BUSINESS_POLICY_MARKERS: &[&str] = &[
 /// review matching one of these (and NO business/policy marker) is safe to
 /// auto-approve unattended.
 const REVIEW_SAFE_TECHNICAL_MARKERS: &[&str] = &[
-    "lint", "eslint", "tsc", "typecheck", "type error",
-    "red build", "build is red", "build red", "ci red", "ci fail", "build fail",
-    "test fail", "tests fail", "failing test",
-    "request_changes", "request-changes", "request changes", "change-request",
-    "missing dependency", "missing migration", "migration landed", "migration needed",
-    "migration before", "pre-existing lint", "pre-existing", "baseline lint", "stray file",
-    "mis-sequenced", "handoff", "blocked — fix", "blocked - fix",
-    "findings to triage", "review findings", "e2e review",
+    "lint",
+    "eslint",
+    "tsc",
+    "typecheck",
+    "type error",
+    "red build",
+    "build is red",
+    "build red",
+    "ci red",
+    "ci fail",
+    "build fail",
+    "test fail",
+    "tests fail",
+    "failing test",
+    "request_changes",
+    "request-changes",
+    "request changes",
+    "change-request",
+    "missing dependency",
+    "missing migration",
+    "migration landed",
+    "migration needed",
+    "migration before",
+    "pre-existing lint",
+    "pre-existing",
+    "baseline lint",
+    "stray file",
+    "mis-sequenced",
+    "handoff",
+    "blocked — fix",
+    "blocked - fix",
+    "findings to triage",
+    "review findings",
+    "e2e review",
 ];
 
 /// Decide whether a HIGH/critical-severity pending review is safe to auto-approve
@@ -1976,10 +2038,15 @@ const REVIEW_SAFE_TECHNICAL_MARKERS: &[&str] = &[
 /// human. Pure + unit-tested.
 fn high_severity_auto_approvable(title: &str, description: &str, suggested_actions: &str) -> bool {
     let hay = format!("{title}\n{description}\n{suggested_actions}").to_ascii_lowercase();
-    if REVIEW_BUSINESS_POLICY_MARKERS.iter().any(|m| hay.contains(m)) {
+    if REVIEW_BUSINESS_POLICY_MARKERS
+        .iter()
+        .any(|m| hay.contains(m))
+    {
         return false; // genuine business/policy decision — never auto-approve
     }
-    REVIEW_SAFE_TECHNICAL_MARKERS.iter().any(|m| hay.contains(m))
+    REVIEW_SAFE_TECHNICAL_MARKERS
+        .iter()
+        .any(|m| hay.contains(m))
 }
 
 #[async_trait::async_trait]
@@ -2063,7 +2130,10 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
         .unwrap_or(0);
 
         if triaged > 0 {
-            tracing::info!(count = triaged, "manual_review_auto_triage: auto-approved {triaged} routine review(s)");
+            tracing::info!(
+                count = triaged,
+                "manual_review_auto_triage: auto-approved {triaged} routine review(s)"
+            );
         }
     }
 }
@@ -2217,7 +2287,10 @@ impl ReactiveSubscription for BacklogToGoalSubscription {
         .unwrap_or(0);
 
         if promoted > 0 {
-            tracing::info!(count = promoted, "backlog_to_goal: promoted {promoted} backlog idea(s) to goals");
+            tracing::info!(
+                count = promoted,
+                "backlog_to_goal: promoted {promoted} backlog idea(s) to goals"
+            );
         }
     }
 }
@@ -2575,8 +2648,12 @@ impl ReactiveSubscription for DirectorStormSubscription {
         )
         .await
         {
-            Ok(n) => tracing::info!(persona_id = %persona_id, verdicts = n, "director_storm: coaching complete"),
-            Err(e) => tracing::warn!(persona_id = %persona_id, error = %e, "director_storm: coaching failed"),
+            Ok(n) => {
+                tracing::info!(persona_id = %persona_id, verdicts = n, "director_storm: coaching complete")
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %persona_id, error = %e, "director_storm: coaching failed")
+            }
         }
     }
 }
@@ -2728,16 +2805,33 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
         .await
         {
             Ok(posted) if posted > 0 => {
-                tracing::info!(posted, signals = n, "athena_channel_reactions: batch posted Athena reactions");
+                tracing::info!(
+                    posted,
+                    signals = n,
+                    "athena_channel_reactions: batch posted Athena reactions"
+                );
                 crate::companion::wake_window::log_wake(
-                    &self.pool, "channel_reactions", wake.reason, n, 1, posted,
+                    &self.pool,
+                    "channel_reactions",
+                    wake.reason,
+                    n,
+                    1,
+                    posted,
                     wake_started.elapsed().as_millis() as u64,
                 );
             }
             Ok(_) => {
-                tracing::debug!(signals = n, "athena_channel_reactions: batch declined all signals");
+                tracing::debug!(
+                    signals = n,
+                    "athena_channel_reactions: batch declined all signals"
+                );
                 crate::companion::wake_window::log_wake(
-                    &self.pool, "channel_reactions", wake.reason, n, 1, 0,
+                    &self.pool,
+                    "channel_reactions",
+                    wake.reason,
+                    n,
+                    1,
+                    0,
                     wake_started.elapsed().as_millis() as u64,
                 );
             }
@@ -2885,7 +2979,9 @@ impl ReactiveSubscription for KpiEvaluationSubscription {
         let projects: Vec<String> = {
             let pool = self.pool.clone();
             tokio::task::spawn_blocking(move || -> Vec<String> {
-                let Ok(conn) = pool.get() else { return Vec::new() };
+                let Ok(conn) = pool.get() else {
+                    return Vec::new();
+                };
                 let Ok(mut stmt) = conn.prepare(
                     "SELECT DISTINCT dp.id FROM dev_projects dp
                      JOIN dev_kpis k ON k.project_id = dp.id
@@ -3066,7 +3162,9 @@ impl ReactiveSubscription for FleetLivenessWatchdog {
                 execution_id: None,
                 severity: "high".to_string(),
                 kind: "fleet_stall".to_string(),
-                title: format!("Fleet stalled: no executions in {FLEET_STALL_HOURS}h with work available"),
+                title: format!(
+                    "Fleet stalled: no executions in {FLEET_STALL_HOURS}h with work available"
+                ),
                 detail: Some(detail),
             },
         );

@@ -409,9 +409,8 @@ impl AmbientContextFusion {
     /// current toggle positions and to surface "what's currently captured"
     /// counts.
     pub fn source_state(&self) -> SensorySourceState {
-        let by_source = |src: &str| -> u32 {
-            self.signals.iter().filter(|s| s.source == src).count() as u32
-        };
+        let by_source =
+            |src: &str| -> u32 { self.signals.iter().filter(|s| s.source == src).count() as u32 };
         SensorySourceState {
             global_enabled: self.enabled,
             clipboard_enabled: self.clipboard_enabled,
@@ -460,12 +459,7 @@ impl AmbientContextFusion {
         let redacted = redact_clipboard_content(content);
         let summary = format!("Clipboard: {content_type} ({raw_len} chars)");
         self.broadcast_event("clipboard", &summary, Vec::new(), None, None);
-        Some(self.push_signal_with_payload(
-            "clipboard",
-            summary,
-            Vec::new(),
-            Some(redacted),
-        ))
+        Some(self.push_signal_with_payload("clipboard", summary, Vec::new(), Some(redacted)))
     }
 
     /// Legacy push site for clipboard signals when only metadata is
@@ -488,11 +482,7 @@ impl AmbientContextFusion {
 
     /// Push a file change signal. Captured iff master `enabled` AND the
     /// per-source `file_changes_enabled` gate are on.
-    pub fn push_file_change(
-        &mut self,
-        kind: &str,
-        paths: &[String],
-    ) -> Option<AmbientSignal> {
+    pub fn push_file_change(&mut self, kind: &str, paths: &[String]) -> Option<AmbientSignal> {
         if !self.enabled || !self.file_changes_enabled {
             return None;
         }
@@ -512,11 +502,7 @@ impl AmbientContextFusion {
     /// (`redact_window_title`) before being stored or broadcast — file
     /// paths in titles are reduced to basenames, email-shaped patterns are
     /// masked, and overall length is capped.
-    pub fn push_app_focus(
-        &mut self,
-        app_name: &str,
-        window_title: &str,
-    ) -> Option<AmbientSignal> {
+    pub fn push_app_focus(&mut self, app_name: &str, window_title: &str) -> Option<AmbientSignal> {
         if !self.enabled || !self.app_focus_enabled {
             return None;
         }
@@ -899,9 +885,7 @@ pub fn format_signals_for_prompt(
 
     let mut doc = String::with_capacity(512);
     doc.push_str("## Ambient Desktop Context\n");
-    doc.push_str(
-        "The following is a summary of recent desktop activity observed by the system.\n",
-    );
+    doc.push_str("The following is a summary of recent desktop activity observed by the system.\n");
     doc.push_str("Use this context to understand what the user is currently working on.\n\n");
 
     if let Some(label) = active_app_label {
@@ -1055,7 +1039,9 @@ pub fn redact_window_title(title: &str) -> String {
             out.push(' ');
         }
         let looks_like_path = token.contains('\\')
-            || (token.contains('/') && !token.starts_with("http://") && !token.starts_with("https://"));
+            || (token.contains('/')
+                && !token.starts_with("http://")
+                && !token.starts_with("https://"));
         if looks_like_path {
             // Take the basename — the last component after the rightmost separator.
             let basename = token
@@ -1156,7 +1142,10 @@ pub async fn format_ambient_for_persona(
 ///
 /// No-op when `ambient_md` is empty or whitespace-only — the goal is
 /// to add context, not produce an empty section header.
-pub fn prepend_ambient_to_system_prompt(persona: &mut personas_db::models::Persona, ambient_md: &str) {
+pub fn prepend_ambient_to_system_prompt(
+    persona: &mut personas_db::models::Persona,
+    ambient_md: &str,
+) {
     if ambient_md.trim().is_empty() {
         return;
     }
@@ -1825,8 +1814,8 @@ mod tests {
         let mut fusion = AmbientContextFusion::new(); // OFF
         fusion.push_clipboard("text", 10); // dropped
         fusion.set_source_enabled("clipboard", true); // late opt-in
-        // Enabling AFTER a push must NOT replay the dropped signal —
-        // the user said "start now," not "include the past."
+                                                      // Enabling AFTER a push must NOT replay the dropped signal —
+                                                      // the user said "start now," not "include the past."
         assert_eq!(fusion.signals.len(), 0);
     }
 
@@ -1888,7 +1877,8 @@ mod tests {
         // Browser titles often expose the full URL in the tab. Keeping
         // host but dropping path+query reduces leak surface while
         // preserving "user is on github.com" context.
-        let out = redact_window_title("Issue #42 — https://github.com/owner/repo/issues/42?token=secret");
+        let out =
+            redact_window_title("Issue #42 — https://github.com/owner/repo/issues/42?token=secret");
         assert!(out.contains("https://github.com"));
         assert!(!out.contains("token=secret"));
         assert!(!out.contains("/owner/repo"));
@@ -2014,7 +2004,7 @@ mod tests {
         // tiny window cap via policy, then attempt to delete the original.
         let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.push_clipboard("text", 10); // sig_0
-        // Force eviction by registering a 0-size policy and pushing more.
+                                           // Force eviction by registering a 0-size policy and pushing more.
         fusion.set_policy(
             "p1".to_string(),
             SensoryPolicy {
@@ -2023,7 +2013,7 @@ mod tests {
             },
         );
         fusion.push_clipboard("text", 20); // sig_1 — pushes sig_0 out
-        // sig_0 has been evicted; delete is a no-op.
+                                           // sig_0 has been evicted; delete is a no-op.
         assert!(!fusion.delete_signal("sig_0"));
         assert!(fusion.delete_signal("sig_1"));
     }
@@ -2034,7 +2024,8 @@ mod tests {
         // Construct a minimal Persona for prefix-injection tests. The
         // prepend helper only reads/writes `system_prompt`; the rest
         // are filled with sensible defaults so the struct compiles.
-        personas_db::models::Persona { lifecycle: "active".to_string(),
+        personas_db::models::Persona {
+            lifecycle: "active".to_string(),
             id: "p_test".into(),
             project_id: "proj_test".into(),
             name: "Test".into(),

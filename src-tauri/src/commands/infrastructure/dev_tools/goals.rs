@@ -1,10 +1,13 @@
-use std::sync::Arc;
-use tauri::State;
-use crate::db::models::{AttentionQueue, AttentionThresholds, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, GoalProgressSuggestion, PortfolioSummary, UndispatchedIdea};
+use crate::db::models::{
+    AttentionQueue, AttentionThresholds, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal,
+    GoalProgressSuggestion, PortfolioSummary, UndispatchedIdea,
+};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use std::sync::Arc;
+use tauri::State;
 
 // ============================================================================
 // Goals
@@ -321,16 +324,17 @@ pub fn dev_tools_run_goal_uat(
     }
     // Resolve scenario + target URL from the gate config, falling back to the
     // project's configured test-environment URL.
-    let cfg: serde_json::Value =
-        match serde_json::from_str(gate.verify_config.as_deref().unwrap_or("{}")) {
-            Ok(v) => v,
-            Err(e) => {
-                tracing::error!(goal_id = %goal_id, error = %e, "unparseable verify_config on browser UAT gate");
-                return Err(AppError::Validation(format!(
-                    "This goal's UAT gate configuration is corrupted and could not be parsed: {e}"
-                )));
-            }
-        };
+    let cfg: serde_json::Value = match serde_json::from_str(
+        gate.verify_config.as_deref().unwrap_or("{}"),
+    ) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::error!(goal_id = %goal_id, error = %e, "unparseable verify_config on browser UAT gate");
+            return Err(AppError::Validation(format!(
+                "This goal's UAT gate configuration is corrupted and could not be parsed: {e}"
+            )));
+        }
+    };
     let scenario = cfg
         .get("scenario")
         .and_then(|v| v.as_str())
@@ -355,7 +359,10 @@ pub fn dev_tools_run_goal_uat(
         &scenario,
         Some(&goal_id),
     );
-    Ok(format!("Browser UAT started for \"{}\" against {url}.", goal.title))
+    Ok(format!(
+        "Browser UAT started for \"{}\" against {url}.",
+        goal.title
+    ))
 }
 
 /// Close a goal's browser-test UAT gate (ticks the verification item and
@@ -429,9 +436,7 @@ pub fn dev_tools_resolve_goal_progress(
 
 /// Every goal across all projects — backs the Portfolio + Timeline surfaces.
 #[tauri::command]
-pub fn dev_tools_list_all_goals(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<DevGoal>, AppError> {
+pub fn dev_tools_list_all_goals(state: State<'_, Arc<AppState>>) -> Result<Vec<DevGoal>, AppError> {
     require_auth_sync(&state)?;
     repo::list_all_goals(&state.db)
 }
@@ -570,4 +575,3 @@ pub fn dev_tools_goal_advancing_teams(
     require_auth_sync(&state)?;
     repo::goal_advancing_teams(&state.db)
 }
-

@@ -29,7 +29,12 @@ fn set_vault(pool: &DbPool, vault: &Path) {
 }
 
 fn set_mirror(pool: &DbPool, cfg: ObsidianMirrorConfig) {
-    settings_repo::set(pool, MIRROR_SETTINGS_KEY, &serde_json::to_string(&cfg).unwrap()).unwrap();
+    settings_repo::set(
+        pool,
+        MIRROR_SETTINGS_KEY,
+        &serde_json::to_string(&cfg).unwrap(),
+    )
+    .unwrap();
 }
 
 #[test]
@@ -60,7 +65,10 @@ fn availability_requires_a_configured_vault() {
     set_vault(&pool, &vault);
     let a = resolve_availability(&pool);
     assert!(a.vault_configured, "vault should register as configured");
-    assert!(a.available, "available must be true once a vault is configured");
+    assert!(
+        a.available,
+        "available must be true once a vault is configured"
+    );
     let _ = std::fs::remove_dir_all(&vault);
 }
 
@@ -124,11 +132,17 @@ fn execution_knowledge_mirror_writes_then_skips() {
     assert!(any_md, "expected an .md note under {}", dir.display());
 
     // Re-run with no changes → incremental skip → nothing written.
-    assert_eq!(mirror_execution_knowledge_for_persona(&pool, "persona-x"), 0);
+    assert_eq!(
+        mirror_execution_knowledge_for_persona(&pool, "persona-x"),
+        0
+    );
 
     // Disabled toggle → no-op even though a row exists.
     set_mirror(&pool, ObsidianMirrorConfig::default());
-    assert_eq!(mirror_execution_knowledge_for_persona(&pool, "persona-x"), 0);
+    assert_eq!(
+        mirror_execution_knowledge_for_persona(&pool, "persona-x"),
+        0
+    );
 
     let _ = std::fs::remove_dir_all(&vault);
 }

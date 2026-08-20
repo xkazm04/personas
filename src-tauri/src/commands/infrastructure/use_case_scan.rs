@@ -163,16 +163,27 @@ fn context_map_block(pool: &crate::db::DbPool, project_id: &str) -> String {
     let mut out = String::new();
     for g in &groups {
         out.push_str(&format!("### {}\n", g.name));
-        for c in contexts.iter().filter(|c| c.group_id.as_deref() == Some(g.id.as_str())) {
+        for c in contexts
+            .iter()
+            .filter(|c| c.group_id.as_deref() == Some(g.id.as_str()))
+        {
             out.push_str(&format!(
                 "- {}: {}\n",
                 c.name,
-                c.description.as_deref().unwrap_or("").chars().take(160).collect::<String>()
+                c.description
+                    .as_deref()
+                    .unwrap_or("")
+                    .chars()
+                    .take(160)
+                    .collect::<String>()
             ));
         }
     }
-    let ungrouped: Vec<&str> =
-        contexts.iter().filter(|c| c.group_id.is_none()).map(|c| c.name.as_str()).collect();
+    let ungrouped: Vec<&str> = contexts
+        .iter()
+        .filter(|c| c.group_id.is_none())
+        .map(|c| c.name.as_str())
+        .collect();
     if !ungrouped.is_empty() {
         out.push_str(&format!("### (ungrouped)\n- {}\n", ungrouped.join(", ")));
     }
@@ -265,46 +276,74 @@ pub(crate) fn launch_use_case_scan(
     let scan_id_for_panic = scan_id_for_task.clone();
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => {
-                Err(AppError::Internal("Use-case scan cancelled".into()))
-            }
-            res = run_use_case_scan(
-                &app_handle,
-                &scan_id_for_task,
-                &pool_task,
-                &project_id,
-                &root_path,
-                prompt_text,
-            ) => res
-        };
-        match result {
-            Ok(created) => {
-                let _ = repo::update_scan(
-                    &pool_task, &scan_id_for_task, Some("complete"), Some(created),
-                    None, None, None, None,
-                );
-                USE_CASE_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
-                let _ = app_handle.emit(
-                    event_name::USE_CASE_SCAN_COMPLETE,
-                    json!({ "scan_id": scan_id_for_task, "proposals": created }),
-                );
-                crate::notifications::send(
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => {
+                    Err(AppError::Internal("Use-case scan cancelled".into()))
+                }
+                res = run_use_case_scan(
                     &app_handle,
-                    "Use-case scan complete",
-                    &format!("{project_name}: {created} use-case proposal(s) await your review."),
-                );
+                    &scan_id_for_task,
+                    &pool_task,
+                    &project_id,
+                    &root_path,
+                    prompt_text,
+                ) => res
+            };
+            match result {
+                Ok(created) => {
+                    let _ = repo::update_scan(
+                        &pool_task,
+                        &scan_id_for_task,
+                        Some("complete"),
+                        Some(created),
+                        None,
+                        None,
+                        None,
+                        None,
+                    );
+                    USE_CASE_SCAN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        "completed",
+                        None,
+                    );
+                    let _ = app_handle.emit(
+                        event_name::USE_CASE_SCAN_COMPLETE,
+                        json!({ "scan_id": scan_id_for_task, "proposals": created }),
+                    );
+                    crate::notifications::send(
+                        &app_handle,
+                        "Use-case scan complete",
+                        &format!(
+                            "{project_name}: {created} use-case proposal(s) await your review."
+                        ),
+                    );
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    let _ = repo::update_scan(
+                        &pool_task,
+                        &scan_id_for_task,
+                        Some("error"),
+                        None,
+                        None,
+                        None,
+                        None,
+                        Some(Some(&msg)),
+                    );
+                    USE_CASE_SCAN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        "failed",
+                        Some(msg.clone()),
+                    );
+                    USE_CASE_SCAN_JOBS.emit_line(
+                        &app_handle,
+                        &scan_id_for_task,
+                        format!("[Error] {msg}"),
+                    );
+                }
             }
-            Err(e) => {
-                let msg = format!("{e}");
-                let _ = repo::update_scan(
-                    &pool_task, &scan_id_for_task, Some("error"), None,
-                    None, None, None, Some(Some(&msg)),
-                );
-                USE_CASE_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "failed", Some(msg.clone()));
-                USE_CASE_SCAN_JOBS.emit_line(&app_handle, &scan_id_for_task, format!("[Error] {msg}"));
-            }
-        }
         })
         .catch_unwind()
         .await;
@@ -317,11 +356,26 @@ pub(crate) fn launch_use_case_scan(
                 "use-case scan task panicked — marking scan as failed"
             );
             let _ = repo::update_scan(
-                &pool_for_panic, &scan_id_for_panic, Some("error"), None,
-                None, None, None, Some(Some(&msg)),
+                &pool_for_panic,
+                &scan_id_for_panic,
+                Some("error"),
+                None,
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
             );
-            USE_CASE_SCAN_JOBS.set_status(&app_handle_for_panic, &scan_id_for_panic, "failed", Some(msg.clone()));
-            USE_CASE_SCAN_JOBS.emit_line(&app_handle_for_panic, &scan_id_for_panic, format!("[Error] {msg}"));
+            USE_CASE_SCAN_JOBS.set_status(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            USE_CASE_SCAN_JOBS.emit_line(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                format!("[Error] {msg}"),
+            );
         }
     });
 
@@ -339,7 +393,13 @@ pub async fn dev_tools_cancel_use_case_scan(
         token.cancel();
         USE_CASE_SCAN_JOBS.set_status(&app, &scan_id, "cancelled", None);
         let _ = repo::update_scan(
-            &state.db, &scan_id, Some("error"), None, None, None, None,
+            &state.db,
+            &scan_id,
+            Some("error"),
+            None,
+            None,
+            None,
+            None,
             Some(Some("Cancelled by user")),
         );
         Ok(true)
@@ -392,7 +452,11 @@ async fn run_use_case_scan(
     root_path: &str,
     prompt_text: String,
 ) -> Result<i32, AppError> {
-    USE_CASE_SCAN_JOBS.emit_line(app, scan_id, "[Milestone] Starting use-case proposal scan...");
+    USE_CASE_SCAN_JOBS.emit_line(
+        app,
+        scan_id,
+        "[Milestone] Starting use-case proposal scan...",
+    );
 
     // Context-name → id. A proposal naming a context that does not exist is
     // hallucinating the slice; we drop the unknown names rather than write a
@@ -428,7 +492,11 @@ async fn run_use_case_scan(
             let mut reader = BufReader::new(stderr).lines();
             while let Ok(Some(line)) = reader.next_line().await {
                 if !line.trim().is_empty() {
-                    USE_CASE_SCAN_JOBS.emit_line(&app_clone, &scan_id_clone, format!("[stderr] {line}"));
+                    USE_CASE_SCAN_JOBS.emit_line(
+                        &app_clone,
+                        &scan_id_clone,
+                        format!("[stderr] {line}"),
+                    );
                 }
             }
         });
@@ -457,7 +525,9 @@ async fn run_use_case_scan(
     let stream = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             crate::db::repos::llm_spend::observe_line(pool, &spend_ctx, &line);
-            let Some(text) = extract_display_text(&line) else { continue };
+            let Some(text) = extract_display_text(&line) else {
+                continue;
+            };
             let trimmed = text.trim();
             if trimmed.is_empty() {
                 continue;
@@ -465,13 +535,17 @@ async fn run_use_case_scan(
             USE_CASE_SCAN_JOBS.record_line(scan_id, trimmed.to_string());
 
             for proto_line in trimmed.lines() {
-                let Some(p) = parse_use_case_proposal(proto_line) else { continue };
+                let Some(p) = parse_use_case_proposal(proto_line) else {
+                    continue;
+                };
                 if created as usize >= MAX_PROPOSALS_PER_SCAN {
                     dropped += 1;
                     USE_CASE_SCAN_JOBS.emit_line(
                         app,
                         scan_id,
-                        format!("[Cap] {MAX_PROPOSALS_PER_SCAN} proposals reached — ignoring the rest"),
+                        format!(
+                            "[Cap] {MAX_PROPOSALS_PER_SCAN} proposals reached — ignoring the rest"
+                        ),
                     );
                     continue;
                 }
@@ -509,13 +583,21 @@ async fn run_use_case_scan(
                     pool,
                     project_id,
                     name,
-                    if p.description.trim().is_empty() { None } else { Some(p.description.trim()) },
+                    if p.description.trim().is_empty() {
+                        None
+                    } else {
+                        Some(p.description.trim())
+                    },
                     &p.kind,
                     primary.as_deref(),
                     &resolved,
                     Some("proposed"),
                     "scan",
-                    if p.rationale.trim().is_empty() { None } else { Some(p.rationale.trim()) },
+                    if p.rationale.trim().is_empty() {
+                        None
+                    } else {
+                        Some(p.rationale.trim())
+                    },
                 ) {
                     Ok(uc) => {
                         created += 1;

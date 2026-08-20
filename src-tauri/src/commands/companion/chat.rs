@@ -95,7 +95,9 @@ pub async fn companion_send_message(
     #[cfg(feature = "ml")]
     let embedder = state.embedding_manager.clone();
     let origin = match system_source.as_deref().map(str::trim) {
-        Some(s) if !s.is_empty() => session::TurnOrigin::External { source: s.to_string() },
+        Some(s) if !s.is_empty() => session::TurnOrigin::External {
+            source: s.to_string(),
+        },
         _ => session::TurnOrigin::User,
     };
     let conversation_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
@@ -135,9 +137,7 @@ pub async fn companion_send_message(
 /// scheduled. Does NOT interrupt an in-flight stream — use
 /// `companion_interrupt_turn` for that.
 #[tauri::command]
-pub async fn companion_cancel_autonomy(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn companion_cancel_autonomy(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
     session::cancel_all_pending_autonomy();
     Ok(())
@@ -226,7 +226,9 @@ pub fn fleet_boldness(db: &crate::db::DbPool) -> FleetBoldness {
         crate::db::settings_keys::COMPANION_FLEET_BOLDNESS,
     ) {
         Ok(Some(v)) => FleetBoldness::from_setting(&v),
-        _ => FleetBoldness::from_setting(crate::db::settings_keys::COMPANION_FLEET_BOLDNESS_DEFAULT),
+        _ => {
+            FleetBoldness::from_setting(crate::db::settings_keys::COMPANION_FLEET_BOLDNESS_DEFAULT)
+        }
     }
 }
 

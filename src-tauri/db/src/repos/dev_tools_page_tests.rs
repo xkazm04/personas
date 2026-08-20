@@ -31,9 +31,18 @@ fn test_pool() -> DbPool {
 }
 
 fn project(pool: &DbPool, name: &str) -> String {
-    create_project(pool, name, &format!("/tmp/{name}"), None, None, None, None, None)
-        .unwrap()
-        .id
+    create_project(
+        pool,
+        name,
+        &format!("/tmp/{name}"),
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .id
 }
 
 /// Insert an idea and pin its `created_at` so ordering is deterministic
@@ -88,7 +97,15 @@ fn keyset_walks_every_row_exactly_once() {
     let pool = test_pool();
     let pid = project(&pool, "p");
     for day in 1..=7u32 {
-        seed_idea(&pool, &pid, &format!("idea {day}"), "technical", "pending", None, &ts(day));
+        seed_idea(
+            &pool,
+            &pid,
+            &format!("idea {day}"),
+            "technical",
+            "pending",
+            None,
+            &ts(day),
+        );
     }
 
     let filter = TriageFilter {
@@ -105,7 +122,9 @@ fn keyset_walks_every_row_exactly_once() {
         seen.extend(page.ideas.iter().map(|i| i.title.clone()));
         // Newest first, within and across pages.
         assert!(
-            page.ideas.windows(2).all(|w| w[0].created_at >= w[1].created_at),
+            page.ideas
+                .windows(2)
+                .all(|w| w[0].created_at >= w[1].created_at),
             "page is not sorted newest-first"
         );
         match page.cursor {
@@ -131,7 +150,15 @@ fn keyset_breaks_created_at_ties_by_id() {
     let pool = test_pool();
     let pid = project(&pool, "p");
     for n in 0..6 {
-        seed_idea(&pool, &pid, &format!("tie {n}"), "technical", "pending", None, &ts(3));
+        seed_idea(
+            &pool,
+            &pid,
+            &format!("tie {n}"),
+            "technical",
+            "pending",
+            None,
+            &ts(3),
+        );
     }
 
     let filter = TriageFilter {
@@ -152,7 +179,11 @@ fn keyset_breaks_created_at_ties_by_id() {
         .collect();
     ids.sort_unstable();
     ids.dedup();
-    assert_eq!(ids.len(), 6, "tied timestamps must not duplicate or drop rows");
+    assert_eq!(
+        ids.len(),
+        6,
+        "tied timestamps must not duplicate or drop rows"
+    );
 }
 
 #[test]
@@ -172,7 +203,10 @@ fn last_page_reports_no_cursor() {
     )
     .unwrap();
     assert!(!page.has_more);
-    assert!(page.cursor.is_none(), "a last page must not hand out a cursor");
+    assert!(
+        page.cursor.is_none(),
+        "a last page must not hand out a cursor"
+    );
 }
 
 #[test]
@@ -221,7 +255,11 @@ fn no_project_id_is_a_cross_project_read() {
     seed_idea(&pool, &b, "from b", "technical", "pending", None, &ts(2));
 
     let all = triage_ideas(&pool, &TriageFilter::default(), None, None).unwrap();
-    assert_eq!(all.ideas.len(), 2, "None project_id means cross-project, not empty");
+    assert_eq!(
+        all.ideas.len(),
+        2,
+        "None project_id means cross-project, not empty"
+    );
 
     let scoped = triage_ideas(
         &pool,
@@ -242,7 +280,15 @@ fn scanner_origin_is_the_pseudo_value_for_null() {
     let pool = test_pool();
     let pid = project(&pool, "p");
     seed_idea(&pool, &pid, "classic", "technical", "pending", None, &ts(1));
-    seed_idea(&pool, &pid, "sensor", "technical", "pending", Some("doc_rot"), &ts(2));
+    seed_idea(
+        &pool,
+        &pid,
+        "sensor",
+        "technical",
+        "pending",
+        Some("doc_rot"),
+        &ts(2),
+    );
 
     let scanner = triage_ideas(
         &pool,
@@ -304,10 +350,26 @@ fn counts_ignore_the_status_filter_and_survive_pagination() {
     let pool = test_pool();
     let pid = project(&pool, "p");
     for n in 0..5 {
-        seed_idea(&pool, &pid, &format!("p{n}"), "technical", "pending", None, &ts(n + 1));
+        seed_idea(
+            &pool,
+            &pid,
+            &format!("p{n}"),
+            "technical",
+            "pending",
+            None,
+            &ts(n + 1),
+        );
     }
     seed_idea(&pool, &pid, "a", "user", "accepted", None, &ts(7));
-    seed_idea(&pool, &pid, "r", "user", "rejected", Some("doc_rot"), &ts(8));
+    seed_idea(
+        &pool,
+        &pid,
+        "r",
+        "user",
+        "rejected",
+        Some("doc_rot"),
+        &ts(8),
+    );
     seed_idea(&pool, &pid, "z", "user", "archived", None, &ts(9));
 
     // A single small page must still report the whole filtered set's buckets —
@@ -359,15 +421,34 @@ fn counts_are_scoped_to_the_project() {
         None,
     )
     .unwrap();
-    assert_eq!(page.counts.total, 2, "another project's backlog must not leak in");
+    assert_eq!(
+        page.counts.total, 2,
+        "another project's backlog must not leak in"
+    );
 }
 
 // ---------------------------------------------------------------------------
 // tasks_page
 // ---------------------------------------------------------------------------
 
-fn seed_task(pool: &DbPool, project_id: &str, title: &str, status: &str, created_at: &str) -> String {
-    let task = create_task(pool, Some(project_id), title, None, None, None, Some(status), None).unwrap();
+fn seed_task(
+    pool: &DbPool,
+    project_id: &str,
+    title: &str,
+    status: &str,
+    created_at: &str,
+) -> String {
+    let task = create_task(
+        pool,
+        Some(project_id),
+        title,
+        None,
+        None,
+        None,
+        Some(status),
+        None,
+    )
+    .unwrap();
     pool.get()
         .unwrap()
         .execute(
@@ -387,7 +468,14 @@ fn tasks_page_paginates_and_counts_every_status() {
     seed_task(&pool, &pid, "t3", "running", &ts(3));
     seed_task(&pool, &pid, "t4", "failed", &ts(4));
 
-    let page = tasks_page(&pool, Some(&pid), Some(&["queued".to_string()]), Some(1), None).unwrap();
+    let page = tasks_page(
+        &pool,
+        Some(&pid),
+        Some(&["queued".to_string()]),
+        Some(1),
+        None,
+    )
+    .unwrap();
     assert_eq!(page.tasks.len(), 1);
     assert_eq!(page.tasks[0].title, "t2", "newest queued first");
     assert!(page.has_more);

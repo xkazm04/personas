@@ -28,7 +28,10 @@ pub struct FixLoopConfig {
 
 impl Default for FixLoopConfig {
     fn default() -> Self {
-        Self { enabled: false, max_attempts: DEFAULT_MAX_ATTEMPTS }
+        Self {
+            enabled: false,
+            max_attempts: DEFAULT_MAX_ATTEMPTS,
+        }
     }
 }
 
@@ -44,7 +47,9 @@ impl FixLoopConfig {
             return cfg;
         };
         for p in &params {
-            let Some(key) = p.get("key").and_then(Value::as_str) else { continue };
+            let Some(key) = p.get("key").and_then(Value::as_str) else {
+                continue;
+            };
             // The stored value may live under "value" or fall back to "default".
             let v = p.get("value").or_else(|| p.get("default"));
             match key {
@@ -149,10 +154,14 @@ pub fn decide(
     signature_tripped: bool,
 ) -> FixDecision {
     if !config.enabled {
-        return FixDecision::Stop { reason: "fix-loop not enabled for this persona".into() };
+        return FixDecision::Stop {
+            reason: "fix-loop not enabled for this persona".into(),
+        };
     }
     if failures.is_empty() {
-        return FixDecision::Stop { reason: "quality gate passed".into() };
+        return FixDecision::Stop {
+            reason: "quality gate passed".into(),
+        };
     }
     if signature_tripped {
         return FixDecision::Stop {
@@ -164,7 +173,10 @@ pub fn decide(
             reason: format!("reached max fix attempts ({})", config.max_attempts),
         };
     }
-    FixDecision::ReEnter { fix: build_fix_instruction(failures), attempt: attempt + 1 }
+    FixDecision::ReEnter {
+        fix: build_fix_instruction(failures),
+        attempt: attempt + 1,
+    }
 }
 
 /// Build the corrective re-entry's `input_data`, carrying the ORIGINAL input
@@ -224,10 +236,18 @@ pub fn build_reentry_input(
         .unwrap_or_default();
 
     merged.insert(FIX_ATTEMPT_KEY.to_string(), Value::from(attempt));
-    merged.insert(FIX_FRAMING_KEY.to_string(), Value::String(fix.framing.to_string()));
+    merged.insert(
+        FIX_FRAMING_KEY.to_string(),
+        Value::String(fix.framing.to_string()),
+    );
     merged.insert(
         FIX_EVIDENCE_KEY.to_string(),
-        Value::Array(fix.evidence.iter().map(|e| Value::String(e.clone())).collect()),
+        Value::Array(
+            fix.evidence
+                .iter()
+                .map(|e| Value::String(e.clone()))
+                .collect(),
+        ),
     );
     Value::Object(merged).to_string()
 }
@@ -278,7 +298,10 @@ mod tests {
 
     #[test]
     fn disabled_by_default() {
-        assert_eq!(FixLoopConfig::from_persona_parameters(None), FixLoopConfig::default());
+        assert_eq!(
+            FixLoopConfig::from_persona_parameters(None),
+            FixLoopConfig::default()
+        );
         assert!(!FixLoopConfig::from_persona_parameters(Some("not json")).enabled);
     }
 
@@ -315,7 +338,10 @@ mod tests {
 
     #[test]
     fn decide_reenters_on_failure_within_budget() {
-        let cfg = FixLoopConfig { enabled: true, max_attempts: 2 };
+        let cfg = FixLoopConfig {
+            enabled: true,
+            max_attempts: 2,
+        };
         match decide(&cfg, &["lint failed".into()], 0, false) {
             FixDecision::ReEnter { fix, attempt } => {
                 assert_eq!(attempt, 1);
@@ -356,8 +382,14 @@ mod tests {
         let prior = r#"{"ticket":"PROD-1","_use_case":{"id":"uc-1"},"_time_filter":{"field":"created_at"}}"#;
         let m = reentry(Some(prior), 1);
         assert_eq!(m.get("ticket").and_then(Value::as_str), Some("PROD-1"));
-        assert!(m.contains_key("_use_case"), "capability scope must survive the re-entry");
-        assert!(m.contains_key("_time_filter"), "query bounds must survive the re-entry");
+        assert!(
+            m.contains_key("_use_case"),
+            "capability scope must survive the re-entry"
+        );
+        assert!(
+            m.contains_key("_time_filter"),
+            "query bounds must survive the re-entry"
+        );
         assert_eq!(m.get(FIX_ATTEMPT_KEY).and_then(Value::as_u64), Some(1));
         // The two halves travel as two keys, never pre-joined.
         assert_eq!(
@@ -375,7 +407,8 @@ mod tests {
         // A prior input that was ITSELF a fix attempt must not carry its stale
         // counter forward — otherwise `attempt` never advances and the bound
         // never trips. The same applies to a stale (or planted) failure list.
-        let prior = r#"{"_fix_attempt":1,"_fix_instruction":"stale","_fix_failures":["stale"],"k":"v"}"#;
+        let prior =
+            r#"{"_fix_attempt":1,"_fix_instruction":"stale","_fix_failures":["stale"],"k":"v"}"#;
         let m = reentry(Some(prior), 2);
         assert_eq!(m.get(FIX_ATTEMPT_KEY).and_then(Value::as_u64), Some(2));
         assert_eq!(
@@ -394,7 +427,10 @@ mod tests {
     fn reentry_wraps_non_object_input_as_user_input() {
         // Plain prose: the same fallback `execute_persona_inner` applies.
         let m = reentry(Some("just some prose"), 1);
-        assert_eq!(m.get("user_input").and_then(Value::as_str), Some("just some prose"));
+        assert_eq!(
+            m.get("user_input").and_then(Value::as_str),
+            Some("just some prose")
+        );
         // A bare JSON string unwraps rather than keeping its quotes.
         let m = reentry(Some("\"quoted\""), 1);
         assert_eq!(m.get("user_input").and_then(Value::as_str), Some("quoted"));
@@ -414,7 +450,10 @@ mod tests {
 
     #[test]
     fn decide_stops_at_max_attempts_and_on_breaker() {
-        let cfg = FixLoopConfig { enabled: true, max_attempts: 2 };
+        let cfg = FixLoopConfig {
+            enabled: true,
+            max_attempts: 2,
+        };
         assert!(matches!(
             decide(&cfg, &["x".into()], 2, false),
             FixDecision::Stop { .. }

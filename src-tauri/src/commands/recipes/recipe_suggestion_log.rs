@@ -9,9 +9,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::db::models::{
-    RecipeSuggestionEvent, RecipeSuggestionEventType, RecipeSuggestionStats,
-};
+use crate::db::models::{RecipeSuggestionEvent, RecipeSuggestionEventType, RecipeSuggestionStats};
 use crate::db::repos::resources::recipe_suggestions as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;

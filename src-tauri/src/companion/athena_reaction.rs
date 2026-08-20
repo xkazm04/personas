@@ -273,7 +273,11 @@ Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON
         headline = signal.headline(),
         kind = signal.kind,
         title = signal.title,
-        detail = if signal.detail.is_empty() { "(none)" } else { &signal.detail },
+        detail = if signal.detail.is_empty() {
+            "(none)"
+        } else {
+            &signal.detail
+        },
         history = history_block,
         ledger = ledger_block,
     )
@@ -334,7 +338,11 @@ fn post_reaction_message(
 
     // Compose the channel body: the message, plus a subtle one-line rationale
     // footer so the decision trail is auditable from the channel alone.
-    let escalate_prefix = if decision.escalate_to_user { "⚠️ " } else { "" };
+    let escalate_prefix = if decision.escalate_to_user {
+        "⚠️ "
+    } else {
+        ""
+    };
     let body = if decision.rationale.trim().is_empty() {
         format!("{escalate_prefix}{}", decision.message.trim())
     } else {
@@ -360,7 +368,11 @@ fn post_reaction_message(
     };
     // Injected only when addressed to a persona (reaches their next step);
     // otherwise a visible observation for the human in the Collab UI.
-    let consumer = if addressed_to.is_some() { "inject" } else { "display" };
+    let consumer = if addressed_to.is_some() {
+        "inject"
+    } else {
+        "display"
+    };
 
     let posted = channel_repo::create(
         pool,
@@ -713,18 +725,19 @@ fn build_batch_prompt(pool: &crate::db::DbPool, signals: &[ReactionSignal]) -> S
         } else {
             history
         };
-        let ledger = crate::db::repos::resources::team_memories::get_for_injection(pool, &signal.team_id, 5)
-            .ok()
-            .filter(|m| !m.is_empty())
-            .map(|m| {
-                let items = m
-                    .iter()
-                    .map(|tm| format!("  - [{}] {}: {}", tm.category, tm.title, tm.content))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                format!("\nTeam ledger:\n{items}")
-            })
-            .unwrap_or_default();
+        let ledger =
+            crate::db::repos::resources::team_memories::get_for_injection(pool, &signal.team_id, 5)
+                .ok()
+                .filter(|m| !m.is_empty())
+                .map(|m| {
+                    let items = m
+                        .iter()
+                        .map(|tm| format!("  - [{}] {}: {}", tm.category, tm.title, tm.content))
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    format!("\nTeam ledger:\n{items}")
+                })
+                .unwrap_or_default();
         blocks.push_str(&format!(
             "### Signal {n} — team \"{team}\"\n- Moment: {headline}\n- Kind: `{kind}`\n- Artifact: {title}\n- Detail: {detail}\nRecent channel activity (oldest → newest):\n{history}{ledger}\n\n",
             n = i + 1,
@@ -1110,8 +1123,16 @@ fn build_review_resolution_prompt(c: &ReviewResolutionCandidate, history: &str) 
                 "- Step \"{}\" (QA rounds used: {})\n  Error: {}\n  Last output (tail): {}",
                 s.title,
                 s.retry_count,
-                if s.error_message.is_empty() { "(none)" } else { &s.error_message },
-                if s.output_tail.is_empty() { "(none)" } else { &s.output_tail },
+                if s.error_message.is_empty() {
+                    "(none)"
+                } else {
+                    &s.error_message
+                },
+                if s.output_tail.is_empty() {
+                    "(none)"
+                } else {
+                    &s.output_tail
+                },
             )
         })
         .collect::<Vec<_>>()
@@ -1130,8 +1151,10 @@ fn build_review_resolution_prompt(c: &ReviewResolutionCandidate, history: &str) 
                     .iter()
                     .map(|(_, t, done)| format!("  - [{}] {}", if *done { "x" } else { " " }, t))
                     .collect::<Vec<_>>()
-                    .join("
-")
+                    .join(
+                        "
+",
+                    )
             };
             format!(
                 "
@@ -1209,7 +1232,11 @@ pub async fn run_athena_review_resolution(
         return Ok("none");
     };
 
-    let aborted_attempts = candidate.goal.as_ref().map(|g| g.aborted_attempts).unwrap_or(0);
+    let aborted_attempts = candidate
+        .goal
+        .as_ref()
+        .map(|g| g.aborted_attempts)
+        .unwrap_or(0);
     let outcome: &'static str = match decision.resolution.as_str() {
         "approve" => "approve",
         "incident" => "incident",
@@ -1269,7 +1296,11 @@ pub async fn run_athena_review_resolution(
                     author_kind: "athena".into(),
                     author_id: None,
                     body,
-                    addressed_to: if qa_ids.is_empty() { None } else { Some(qa_ids) },
+                    addressed_to: if qa_ids.is_empty() {
+                        None
+                    } else {
+                        Some(qa_ids)
+                    },
                     reply_to: None,
                     assignment_id: Some(candidate.assignment_id.clone()),
                     consumer: Some("inject".into()),
@@ -1383,7 +1414,10 @@ pub async fn run_athena_review_resolution(
                         let t = item_title.trim().to_lowercase();
                         if t == want_norm || t.contains(&want_norm) || want_norm.contains(&t) {
                             if crate::db::repos::dev_tools::update_goal_item(
-                                pool, item_id, None, Some(false),
+                                pool,
+                                item_id,
+                                None,
+                                Some(false),
                             )
                             .is_ok()
                             {
@@ -1434,8 +1468,10 @@ pub async fn run_athena_review_resolution(
                 head,
                 decision.message.trim(),
                 if unchecked > 0 {
-                    format!("
-(rolled back {unchecked} to-do(s) the aborted attempt had checked)")
+                    format!(
+                        "
+(rolled back {unchecked} to-do(s) the aborted attempt had checked)"
+                    )
                 } else {
                     String::new()
                 },
@@ -1693,7 +1729,10 @@ later corrected: {"athena_channel":{"react":true,"message":"final","rationale":"
             )
             .unwrap();
         assert_eq!(is_error, 1);
-        assert_eq!(cost, None, "unknown cost stays NULL rather than blocking the row");
+        assert_eq!(
+            cost, None,
+            "unknown cost stays NULL rather than blocking the row"
+        );
     }
 
     // `a_timed_out_leg_is_flagged_even_though_it_returned_ok` and

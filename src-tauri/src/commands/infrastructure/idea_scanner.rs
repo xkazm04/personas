@@ -113,7 +113,11 @@ fn build_idea_scan_prompt(
     // of findings without padding — quality stays the gate.
     let granularity_hint = match target_count {
         Some(n) if n > 0 => {
-            let scope_word = if scoped { "per context in scope" } else { "in total" };
+            let scope_word = if scoped {
+                "per context in scope"
+            } else {
+                "in total"
+            };
             format!("\n## Target volume\nAim for roughly {n} high-quality ideas {scope_word}. Favor signal over volume — produce fewer than {n} if the code doesn't warrant them; never pad with low-value or speculative findings.\n")
         }
         _ => String::new(),
@@ -381,7 +385,15 @@ pub async fn dev_tools_run_scan(
     let ids = context_ids
         .filter(|v| !v.is_empty())
         .or_else(|| context_id.filter(|c| !c.is_empty()).map(|c| vec![c]));
-    run_scan_core(app, state.db.clone(), project_id, scan_types, ids, target_count).await
+    run_scan_core(
+        app,
+        state.db.clone(),
+        project_id,
+        scan_types,
+        ids,
+        target_count,
+    )
+    .await
 }
 
 /// Core scan launcher — shared by the `dev_tools_run_scan` command and the
@@ -407,7 +419,11 @@ pub async fn run_scan_core(
     // the stale window and never became work. Reversible (status → 'archived',
     // row + dedup_key intact), so this frees the cap for fresh signal without
     // ever deleting a decision or reopening the duplication door.
-    match repo::archive_stale_ideas(&db, Some(&project_id), crate::engine::dispatch::IDEA_STALE_DAYS) {
+    match repo::archive_stale_ideas(
+        &db,
+        Some(&project_id),
+        crate::engine::dispatch::IDEA_STALE_DAYS,
+    ) {
         Ok(n) if n > 0 => {
             tracing::info!(project_id = %project_id, archived = n, "Archived stale pending ideas before scan");
         }
@@ -452,12 +468,7 @@ pub async fn run_scan_core(
 
     // Create scan record
     let scan_type_str = scan_types.join(",");
-    let scan = repo::create_scan(
-        &db,
-        Some(&project_id),
-        &scan_type_str,
-        Some("running"),
-    )?;
+    let scan = repo::create_scan(&db, Some(&project_id), &scan_type_str, Some("running"))?;
     let scan_id = scan.id.clone();
 
     let cancel_token = CancellationToken::new();
@@ -493,16 +504,22 @@ pub async fn run_scan_core(
 
     // Triage learning loop: feed rejected ideas back so the scan won't
     // re-surface items the human already triaged away.
-    let rejected_titles: Option<String> =
-        repo::list_ideas(&db, Some(&project_id), Some("rejected"), None, Some(50), None)
-            .ok()
-            .filter(|v| !v.is_empty())
-            .map(|v| {
-                v.iter()
-                    .map(|i| format!("- {}", i.title))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            });
+    let rejected_titles: Option<String> = repo::list_ideas(
+        &db,
+        Some(&project_id),
+        Some("rejected"),
+        None,
+        Some(50),
+        None,
+    )
+    .ok()
+    .filter(|v| !v.is_empty())
+    .map(|v| {
+        v.iter()
+            .map(|i| format!("- {}", i.title))
+            .collect::<Vec<_>>()
+            .join("\n")
+    });
 
     // Duplicate suppression, prompt half (Phase 1): the `dedup_key` guard in
     // `create_idea_deduped` catches exact re-proposals, but only AFTER the model
@@ -541,14 +558,10 @@ pub async fn run_scan_core(
     // runs actually LEARNED. Rejected titles tell the scan what not to propose;
     // outcomes tell it what already shipped and what already failed, so the next
     // round of ideas builds on real results instead of re-deriving them.
-    let outcomes: Option<String> = crate::db::repos::dev_memories::list_recent_by_kind(
-        &db,
-        &project_id,
-        "task_outcome",
-        12,
-    )
-    .ok()
-    .and_then(|rows| crate::db::repos::dev_memories::render_for_prompt(&rows, 1_200));
+    let outcomes: Option<String> =
+        crate::db::repos::dev_memories::list_recent_by_kind(&db, &project_id, "task_outcome", 12)
+            .ok()
+            .and_then(|rows| crate::db::repos::dev_memories::render_for_prompt(&rows, 1_200));
 
     let prompt_text = build_idea_scan_prompt(
         &project_id,
@@ -1091,20 +1104,26 @@ fn apply_goal_relation(
     relation: &str,
 ) -> bool {
     let in_project = |gid: &str| {
-        pool.get().ok().and_then(|conn| {
-            conn.query_row(
-                "SELECT 1 FROM dev_goals WHERE id = ?1 AND project_id = ?2",
-                rusqlite::params![gid, project_id],
-                |_| Ok(true),
-            )
+        pool.get()
             .ok()
-        })
-        .unwrap_or(false)
+            .and_then(|conn| {
+                conn.query_row(
+                    "SELECT 1 FROM dev_goals WHERE id = ?1 AND project_id = ?2",
+                    rusqlite::params![gid, project_id],
+                    |_| Ok(true),
+                )
+                .ok()
+            })
+            .unwrap_or(false)
     };
     if !in_project(from_goal_id) || !in_project(to_goal_id) {
         return false;
     }
-    let dep_type = if relation == "depends" { "blocks" } else { "follows" };
+    let dep_type = if relation == "depends" {
+        "blocks"
+    } else {
+        "follows"
+    };
     match repo::add_goal_dependency(pool, from_goal_id, to_goal_id, Some(dep_type)) {
         Ok(_) => true,
         Err(e) => {
@@ -1158,7 +1177,11 @@ fn build_backlog_triage_prompt(
         .unwrap_or_default();
     let goals_block = open_goals
         .filter(|s| !s.trim().is_empty())
-        .map(|s| format!("\n## Open goals (relate these where natural sequences/dependencies exist)\n{s}\n"))
+        .map(|s| {
+            format!(
+                "\n## Open goals (relate these where natural sequences/dependencies exist)\n{s}\n"
+            )
+        })
         .unwrap_or_default();
     format!(
         r#"# Backlog Triage — {project_name}
@@ -1205,7 +1228,14 @@ pub async fn run_backlog_triage(
     project_id: String,
 ) -> Result<serde_json::Value, AppError> {
     let project = repo::get_project_by_id(&db, &project_id)?;
-    let ideas = repo::list_ideas(&db, Some(&project_id), Some("pending"), None, Some(60), None)?;
+    let ideas = repo::list_ideas(
+        &db,
+        Some(&project_id),
+        Some("pending"),
+        None,
+        Some(60),
+        None,
+    )?;
     if ideas.len() < 3 {
         return Err(AppError::Validation(
             "Backlog triage skipped: fewer than 3 pending ideas".into(),
@@ -1331,7 +1361,9 @@ pub async fn run_backlog_triage(
             Err(panic) => {
                 let msg = extract_panic_message(panic);
                 tracing::error!(scan_id = %scan_id_for_task, panic = %msg, "backlog triage panicked");
-                Err(AppError::Internal(format!("Backlog triage panicked: {msg}")))
+                Err(AppError::Internal(format!(
+                    "Backlog triage panicked: {msg}"
+                )))
             }
         };
         match result {
@@ -1341,8 +1373,14 @@ pub async fn run_backlog_triage(
                 // decisions tally, not an ideas-created count.
                 let decisions = counts.triage_decisions + counts.relations_created;
                 let _ = repo::update_scan(
-                    &pool, &scan_id_for_task, Some("complete"), Some(decisions),
-                    None, None, None, None,
+                    &pool,
+                    &scan_id_for_task,
+                    Some("complete"),
+                    Some(decisions),
+                    None,
+                    None,
+                    None,
+                    None,
                 );
                 IDEA_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
                 tracing::info!(scan_id = %scan_id_for_task, decisions, "backlog triage complete");
@@ -1350,7 +1388,13 @@ pub async fn run_backlog_triage(
             Err(e) => {
                 let msg = format!("{e}");
                 let _ = repo::update_scan(
-                    &pool, &scan_id_for_task, Some("error"), None, None, None, None,
+                    &pool,
+                    &scan_id_for_task,
+                    Some("error"),
+                    None,
+                    None,
+                    None,
+                    None,
                     Some(Some(&msg)),
                 );
                 IDEA_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "failed", Some(msg));

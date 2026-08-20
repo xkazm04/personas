@@ -20,12 +20,10 @@ use crate::companion::brain::backlog::BacklogItem;
 use crate::companion::brain::episodic::{self, Episode};
 use crate::companion::brain::goals::Goal;
 use crate::companion::brain::procedural::Procedural;
-#[cfg(feature = "ml")]
-use crate::companion::brain::recall_synthesis::{
-    self, Briefing, SYNTHESIS_TOKEN_THRESHOLD,
-};
 #[cfg(not(feature = "ml"))]
 use crate::companion::brain::recall_synthesis::Briefing;
+#[cfg(feature = "ml")]
+use crate::companion::brain::recall_synthesis::{self, Briefing, SYNTHESIS_TOKEN_THRESHOLD};
 use crate::companion::brain::retrieval;
 use crate::companion::brain::retrieval::{DoctrineHit, Recall};
 use crate::companion::brain::semantic::Fact;
@@ -1294,10 +1292,11 @@ fn daily_goals_addendum(user_db: &crate::db::UserDbPool) -> String {
 /// weeks. The anchor must always be present; the mirror-the-user clause
 /// still lets a genuinely bilingual conversation switch.
 fn language_addendum(sys_db: &DbPool) -> String {
-    let lang = crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::APP_LANGUAGE)
-        .ok()
-        .flatten()
-        .unwrap_or_default();
+    let lang =
+        crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::APP_LANGUAGE)
+            .ok()
+            .flatten()
+            .unwrap_or_default();
     language_directive(&lang)
 }
 
@@ -1752,7 +1751,12 @@ impl PromptBlockSizes {
         let map: serde_json::Map<String, serde_json::Value> = self
             .hashes
             .iter()
-            .map(|(name, hash)| ((*name).to_string(), serde_json::json!(format!("{hash:016x}"))))
+            .map(|(name, hash)| {
+                (
+                    (*name).to_string(),
+                    serde_json::json!(format!("{hash:016x}")),
+                )
+            })
             .collect();
         serde_json::to_string(&map).ok()
     }
@@ -2713,7 +2717,10 @@ mod tests {
         );
         // The two rules she cannot derive from the list itself.
         assert!(block.contains("never invent one"), "{block}");
-        assert!(block.contains("Omitting `device` means the home device"), "{block}");
+        assert!(
+            block.contains("Omitting `device` means the home device"),
+            "{block}"
+        );
         // A complete list carries no truncation footer.
         assert!(!block.contains("Listing"), "{block}");
     }
@@ -2727,7 +2734,10 @@ mod tests {
         ]);
         let pos = |s: &str| block.find(s).unwrap_or(usize::MAX);
         assert!(pos("Desktop") < pos("Air"), "home leads: {block}");
-        assert!(pos("Air") < pos("Work laptop"), "then alphabetical: {block}");
+        assert!(
+            pos("Air") < pos("Work laptop"),
+            "then alphabetical: {block}"
+        );
         // Exactly one row is marked home, and the sleeping machine says so.
         assert_eq!(block.matches("— home device").count(), 1, "{block}");
         assert!(block.contains("Air** — unreachable right now"), "{block}");
@@ -2891,7 +2901,10 @@ mod tests {
         let mut recall = empty_recall();
         recall.facts = vec![fact("alpha", vec!["identity.md".to_string()])];
         let facts_len = format_facts(&recall.facts).len();
-        assert!(facts_len > 0, "fixture should render a non-empty facts block");
+        assert!(
+            facts_len > 0,
+            "fixture should render a non-empty facts block"
+        );
 
         let (out, sizes) = compose(
             "CONSTITUTION",
@@ -2929,7 +2942,10 @@ mod tests {
         ] {
             assert!(map.contains_key(name), "missing block {name} in {json}");
         }
-        assert_eq!(map["constitution"].as_u64(), Some("CONSTITUTION".len() as u64));
+        assert_eq!(
+            map["constitution"].as_u64(),
+            Some("CONSTITUTION".len() as u64)
+        );
         assert_eq!(map["mode_addenda"].as_u64(), Some("MODE".len() as u64));
         // The six raw memory blocks collapse into one `recall` bucket.
         assert_eq!(map["recall"].as_u64(), Some(facts_len as u64));
@@ -2938,7 +2954,10 @@ mod tests {
         // The blocks account for everything but compose()'s own headings.
         let block_sum: u64 = map.values().filter_map(serde_json::Value::as_u64).sum();
         assert!(block_sum <= sizes.total() as u64);
-        assert!(sizes.total() as u64 - block_sum < 128, "scaffolding drifted");
+        assert!(
+            sizes.total() as u64 - block_sum < 128,
+            "scaffolding drifted"
+        );
     }
 
     /// The hash must be a pure function of the bytes, stable across calls and
@@ -2973,7 +2992,9 @@ mod tests {
 
         // Every measured block reports a hash, and it is 16 hex chars.
         for (name, value) in &a {
-            let hex = value.as_str().unwrap_or_else(|| panic!("{name} not a string"));
+            let hex = value
+                .as_str()
+                .unwrap_or_else(|| panic!("{name} not a string"));
             assert_eq!(hex.len(), 16, "{name} hash is not 16 hex chars: {hex}");
             assert!(
                 hex.chars().all(|c| c.is_ascii_hexdigit()),
@@ -2999,9 +3020,7 @@ mod tests {
         // measured but never audited — the exact silence this feature exists
         // to end.
         let recall = empty_recall();
-        let (_, sizes) = compose(
-            "", "", "", &recall, None, "", "", "", "", "", "",
-        );
+        let (_, sizes) = compose("", "", "", &recall, None, "", "", "", "", "", "");
         for (name, _) in &sizes.blocks {
             assert!(budget_for(name).is_some(), "block {name} has no budget");
         }

@@ -54,11 +54,10 @@ pub const SUGGESTION_THRESHOLD: f32 = 0.40;
 /// English stopwords stripped from token sets before scoring. Kept narrow on
 /// purpose — we don't want to remove domain words like "data" or "report".
 const STOPWORDS: &[&str] = &[
-    "a", "an", "the", "and", "or", "of", "to", "in", "on", "at", "for", "with",
-    "from", "by", "as", "is", "are", "was", "were", "be", "been", "being",
-    "i", "me", "my", "you", "your", "we", "our", "it", "its",
-    "this", "that", "these", "those", "do", "does", "did", "doing",
-    "have", "has", "had", "having", "want", "wants", "wanted",
+    "a", "an", "the", "and", "or", "of", "to", "in", "on", "at", "for", "with", "from", "by", "as",
+    "is", "are", "was", "were", "be", "been", "being", "i", "me", "my", "you", "your", "we", "our",
+    "it", "its", "this", "that", "these", "those", "do", "does", "did", "doing", "have", "has",
+    "had", "having", "want", "wants", "wanted",
 ];
 
 /// One match result. `score` is in [0.0, 1.0]; higher is better. `recipe_id`
@@ -233,7 +232,12 @@ pub fn match_intent_to_recipes(
 mod tests {
     use super::*;
 
-    fn make_recipe(id: &str, name: &str, description: Option<&str>, tags: Option<&[&str]>) -> RecipeDefinition {
+    fn make_recipe(
+        id: &str,
+        name: &str,
+        description: Option<&str>,
+        tags: Option<&[&str]>,
+    ) -> RecipeDefinition {
         let tags_json = tags.map(|t| {
             serde_json::to_string(&t.iter().map(|s| s.to_string()).collect::<Vec<_>>()).unwrap()
         });
@@ -337,11 +341,7 @@ mod tests {
             Some("Classifies incoming emails as urgent, normal, or spam"),
             Some(&["email", "triage", "classification"]),
         )];
-        let matches = match_intent_to_recipes(
-            "Triage my email inbox",
-            &recipes,
-            Some(1),
-        );
+        let matches = match_intent_to_recipes("Triage my email inbox", &recipes, Some(1));
         assert_eq!(matches.len(), 1);
         // Name overlap (email, triage) drives the score; with NAME_WEIGHT=0.6
         // and 2-of-3 in the recipe name + 2-of-3 in the intent, jaccard ≈ 0.5,
@@ -371,16 +371,16 @@ mod tests {
             None,
         );
         let recipes = vec![perfect, weak];
-        let matches = match_intent_to_recipes(
-            "summarize incoming support emails",
-            &recipes,
-            Some(2),
-        );
+        let matches =
+            match_intent_to_recipes("summarize incoming support emails", &recipes, Some(2));
         assert_eq!(matches.len(), 2);
         // Best match is the identical-text recipe.
         assert_eq!(matches[0].recipe_id, "perfect");
-        assert!(matches[0].above_threshold,
-            "identical-text match should clear threshold; score={}", matches[0].score);
+        assert!(
+            matches[0].above_threshold,
+            "identical-text match should clear threshold; score={}",
+            matches[0].score
+        );
         // Weak match gets a non-zero but below-threshold score.
         assert_eq!(matches[1].recipe_id, "weak");
         assert!(!matches[1].above_threshold);
@@ -390,7 +390,12 @@ mod tests {
     fn match_filters_zero_overlap_recipes() {
         let recipes = vec![
             make_recipe("r1", "Email Triage", Some("inbox stuff"), None),
-            make_recipe("r2", "Generate Quarterly Report", Some("revenue numbers"), None),
+            make_recipe(
+                "r2",
+                "Generate Quarterly Report",
+                Some("revenue numbers"),
+                None,
+            ),
             make_recipe("r3", "Database Performance Monitor", Some("postgres"), None),
         ];
         let matches = match_intent_to_recipes("Triage my inbox emails", &recipes, Some(5));
@@ -459,8 +464,7 @@ mod tests {
         );
         let recipes = vec![recipe];
 
-        let matches =
-            match_intent_to_recipes("triage my emails every morning", &recipes, Some(1));
+        let matches = match_intent_to_recipes("triage my emails every morning", &recipes, Some(1));
         assert_eq!(matches.len(), 1);
         assert!(
             matches[0].above_threshold,
@@ -476,11 +480,8 @@ mod tests {
 
         // Guardrail: a clearly-unrelated intent must NOT fire against the
         // same recipe, so the recalibration didn't lower the bar into noise.
-        let unrelated = match_intent_to_recipes(
-            "generate the quarterly revenue report",
-            &recipes,
-            Some(1),
-        );
+        let unrelated =
+            match_intent_to_recipes("generate the quarterly revenue report", &recipes, Some(1));
         assert!(
             unrelated.iter().all(|m| !m.above_threshold),
             "unrelated intent should not fire a suggestion: {unrelated:?}"

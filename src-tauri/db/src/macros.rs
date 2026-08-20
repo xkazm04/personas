@@ -152,15 +152,14 @@ macro_rules! crud_get_by_id {
                 .query_row(rusqlite::params![id], $mapper)
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
-                        $crate::personas_core::error::AppError::NotFound(format!(concat!($entity, " {}"), id))
+                        $crate::personas_core::error::AppError::NotFound(format!(
+                            concat!($entity, " {}"),
+                            id
+                        ))
                     }
                     other => $crate::personas_core::error::AppError::Database(other),
                 });
-            $crate::perf::record_query(
-                $table,
-                concat!($table, "::get_by_id"),
-                _start.elapsed(),
-            );
+            $crate::perf::record_query($table, concat!($table, "::get_by_id"), _start.elapsed());
             result
         }
     };
@@ -178,7 +177,9 @@ macro_rules! crud_get_by_id {
 #[macro_export]
 macro_rules! crud_get_all {
     ($model:ty, $table:literal, $mapper:ident, $order:literal) => {
-        pub fn get_all(pool: &$crate::DbPool) -> Result<Vec<$model>, $crate::personas_core::error::AppError> {
+        pub fn get_all(
+            pool: &$crate::DbPool,
+        ) -> Result<Vec<$model>, $crate::personas_core::error::AppError> {
             let _start = std::time::Instant::now();
             let conn = pool.get()?;
             let mut stmt =
@@ -395,9 +396,12 @@ macro_rules! lab_crud {
                     conn.prepare_cached(concat!("SELECT * FROM ", $run_table, " WHERE id = ?1"))?;
                 stmt.query_row(rusqlite::params![id], $run_mapper)
                     .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => $crate::personas_core::error::AppError::NotFound(
-                            format!(concat!($run_entity, " {}"), id),
-                        ),
+                        rusqlite::Error::QueryReturnedNoRows => {
+                            $crate::personas_core::error::AppError::NotFound(format!(
+                                concat!($run_entity, " {}"),
+                                id
+                            ))
+                        }
                         other => $crate::personas_core::error::AppError::Database(other),
                     })
             })
@@ -440,9 +444,12 @@ macro_rules! lab_crud {
                         |row| row.get(0),
                     )
                     .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => $crate::personas_core::error::AppError::NotFound(
-                            format!(concat!($run_entity, " {}"), id),
-                        ),
+                        rusqlite::Error::QueryReturnedNoRows => {
+                            $crate::personas_core::error::AppError::NotFound(format!(
+                                concat!($run_entity, " {}"),
+                                id
+                            ))
+                        }
                         other => $crate::personas_core::error::AppError::Database(other),
                     })?;
                 let current_status = $crate::models::LabRunStatus::from_db(&current);
@@ -525,9 +532,12 @@ macro_rules! lab_crud {
                         $result_mapper,
                     )
                     .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => $crate::personas_core::error::AppError::NotFound(
-                            format!(concat!($result_entity, " {}"), id),
-                        ),
+                        rusqlite::Error::QueryReturnedNoRows => {
+                            $crate::personas_core::error::AppError::NotFound(format!(
+                                concat!($result_entity, " {}"),
+                                id
+                            ))
+                        }
                         other => $crate::personas_core::error::AppError::Database(other),
                     })
                 }

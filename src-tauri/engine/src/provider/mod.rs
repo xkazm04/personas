@@ -30,7 +30,6 @@ pub enum PromptDelivery {
 // crate root as `EngineKind`).
 pub use personas_core::engine_kind::EngineKind;
 
-
 // =============================================================================
 // CliProvider trait
 // =============================================================================

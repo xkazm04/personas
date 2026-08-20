@@ -219,7 +219,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             release_version  TEXT,
             created_at       TEXT NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_shared_firings_slug_seq ON shared_event_firings(slug, seq);"
+        CREATE INDEX IF NOT EXISTS idx_shared_firings_slug_seq ON shared_event_firings(slug, seq);",
     )?;
 
     // -- Local scraper datasets (embedded Pumper, Phase 1) ----------------------

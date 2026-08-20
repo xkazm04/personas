@@ -218,8 +218,8 @@ pub async fn dry_run_persona(
 
     // -- Capability contract pre-check ------------------------------------
     let mut warnings: Vec<String> = Vec::new();
-    let contract_report = capability_contract::validate_persona_contracts(&state.db, persona_id)
-        .ok();
+    let contract_report =
+        capability_contract::validate_persona_contracts(&state.db, persona_id).ok();
     if let Some(ref report) = contract_report {
         if !report.all_satisfied {
             for u in &report.unmet {
@@ -280,9 +280,7 @@ pub async fn dry_run_persona(
         .as_deref()
         .filter(|s| !s.trim().is_empty())
         .map(|s| {
-            serde_json::from_str(s).unwrap_or_else(|_| {
-                serde_json::json!({ "user_input": s })
-            })
+            serde_json::from_str(s).unwrap_or_else(|_| serde_json::json!({ "user_input": s }))
         });
 
     // -- Assemble prompt (same path as the real runner) -------------------

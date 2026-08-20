@@ -108,7 +108,6 @@ pub fn create_memory(
     repo::create(&state.db, input)
 }
 
-
 #[tauri::command]
 pub fn get_memory_count(
     state: State<'_, Arc<AppState>>,
@@ -245,7 +244,6 @@ pub fn batch_delete_memories(
     require_auth_sync(&state)?;
     repo::batch_delete(&state.db, &ids)
 }
-
 
 // -- Tier Management --------------------------------------------------------
 
@@ -411,7 +409,17 @@ pub(crate) async fn run_memory_review_pipeline(
     } = opts;
 
     // 1. Fetch memories.
-    let memories = repo::get_all(pool, persona_id, None, None, None, Some(200), Some(0), None, None)?;
+    let memories = repo::get_all(
+        pool,
+        persona_id,
+        None,
+        None,
+        None,
+        Some(200),
+        Some(0),
+        None,
+        None,
+    )?;
     if memories.is_empty() {
         return Ok(None);
     }
@@ -597,8 +605,7 @@ Memories to review:
             // The memory is KEPT either way. We only constrain the importance
             // mutation: never lower a value, and never auto-touch a user-pinned
             // `core`-tier row. (existing, tier) come from the fetched row.
-            let (existing_importance, tier) =
-                meta_map.get(id).copied().unwrap_or((0, "active"));
+            let (existing_importance, tier) = meta_map.get(id).copied().unwrap_or((0, "active"));
             let mapped = score_to_importance(score);
             // Only RAISE (new = max(existing, mapped) => write iff mapped >
             // existing) and skip importance writes entirely for `core`.
@@ -805,8 +812,7 @@ pub async fn review_memories_with_cli(
             Ok(false) => {
                 if let Some(d) = details.iter_mut().find(|d| d.id == *id) {
                     d.action = "error".to_string();
-                    d.error =
-                        Some("Memory not found or protected (core-pinned)".to_string());
+                    d.error = Some("Memory not found or protected (core-pinned)".to_string());
                 }
             }
             Err(e) => {
@@ -1010,16 +1016,14 @@ pub fn apply_persona_memory_review_proposal(
                     Err(e) => errors.push(format!("synthesize `{title}`: {e}")),
                 }
             }
-            "archive" => {
-                match repo::archive_by_ids(&state.db, &[entry.memory_id.clone()]) {
-                    Ok(n) if n > 0 => archived += n as usize,
-                    Ok(_) => errors.push(format!(
-                        "memory `{}` not archived (core-pinned or already gone)",
-                        entry.memory_id
-                    )),
-                    Err(e) => errors.push(format!("memory `{}` archive: {}", entry.memory_id, e)),
-                }
-            }
+            "archive" => match repo::archive_by_ids(&state.db, &[entry.memory_id.clone()]) {
+                Ok(n) if n > 0 => archived += n as usize,
+                Ok(_) => errors.push(format!(
+                    "memory `{}` not archived (core-pinned or already gone)",
+                    entry.memory_id
+                )),
+                Err(e) => errors.push(format!("memory `{}` archive: {}", entry.memory_id, e)),
+            },
             "keep" => {} // no-op
             other => errors.push(format!(
                 "unknown action `{other}` on memory `{}`; skipped",
@@ -1258,8 +1262,6 @@ pub fn seed_mock_memory(_state: State<'_, Arc<AppState>>) -> Result<PersonaMemor
                 [t % MOCK_TAGS.len()]
             .to_string()])),
             use_case_id: None,
-        
-        
         };
 
         return repo::create(&_state.db, input);

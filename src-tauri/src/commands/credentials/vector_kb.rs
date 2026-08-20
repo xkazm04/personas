@@ -15,8 +15,8 @@ use crate::db::models::{
 use crate::db::repos::resources::audit_log;
 use crate::db::{DbPool, UserDbPool};
 use crate::engine::event_registry::event_name;
-use crate::engine::{kb_extract, kb_ingest};
 use crate::engine::vector_store::SqliteVectorStore;
+use crate::engine::{kb_extract, kb_ingest};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -459,54 +459,54 @@ async fn spawn_ingest_job(
 
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
-        let result = kb_ingest::ingest_files(
-            app.clone(),
-            user_db,
-            embedder,
-            vector_store,
-            kb,
-            file_paths,
-            job_id_clone.clone(),
-            cancel,
-        )
-        .await;
+            let result = kb_ingest::ingest_files(
+                app.clone(),
+                user_db,
+                embedder,
+                vector_store,
+                kb,
+                file_paths,
+                job_id_clone.clone(),
+                cancel,
+            )
+            .await;
 
-        // Unregister the job now that ingestion is done.
-        {
-            let mut jobs = ingest_jobs.lock().await;
-            jobs.remove(&kb_id);
-        }
+            // Unregister the job now that ingestion is done.
+            {
+                let mut jobs = ingest_jobs.lock().await;
+                jobs.remove(&kb_id);
+            }
 
-        match &result {
-            Ok(_) => {
-                audit_log::insert_warn(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_ingest_complete",
-                    Some(&format!("{file_count} file(s) ingested")),
-                );
+            match &result {
+                Ok(_) => {
+                    audit_log::insert_warn(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_ingest_complete",
+                        Some(&format!("{file_count} file(s) ingested")),
+                    );
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "Ingestion failed");
+                    let _ = audit_log::insert(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_ingest_failed",
+                        None,
+                        None,
+                        Some(&e.to_string()),
+                    );
+                    let _ = app.emit(
+                        event_name::KB_INGEST_ERROR,
+                        serde_json::json!({
+                            "jobId": job_id_clone,
+                            "error": e.to_string()
+                        }),
+                    );
+                }
             }
-            Err(e) => {
-                tracing::error!(error = %e, "Ingestion failed");
-                let _ = audit_log::insert(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_ingest_failed",
-                    None,
-                    None,
-                    Some(&e.to_string()),
-                );
-                let _ = app.emit(
-                    event_name::KB_INGEST_ERROR,
-                    serde_json::json!({
-                        "jobId": job_id_clone,
-                        "error": e.to_string()
-                    }),
-                );
-            }
-        }
         })
         .catch_unwind()
         .await;
@@ -768,53 +768,53 @@ pub async fn reindex_kb_internal(
 
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
-        let result = kb_ingest::reindex_kb(
-            app_task.clone(),
-            user_db,
-            embedder,
-            vector_store,
-            kb,
-            job_id_clone.clone(),
-            cancel,
-        )
-        .await;
+            let result = kb_ingest::reindex_kb(
+                app_task.clone(),
+                user_db,
+                embedder,
+                vector_store,
+                kb,
+                job_id_clone.clone(),
+                cancel,
+            )
+            .await;
 
-        // Unregister the job now that reindex is done.
-        {
-            let mut jobs = ingest_jobs.lock().await;
-            jobs.remove(&kb_id_task);
-        }
+            // Unregister the job now that reindex is done.
+            {
+                let mut jobs = ingest_jobs.lock().await;
+                jobs.remove(&kb_id_task);
+            }
 
-        match &result {
-            Ok(_) => {
-                audit_log::insert_warn(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_reindex_complete",
-                    None,
-                );
+            match &result {
+                Ok(_) => {
+                    audit_log::insert_warn(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_reindex_complete",
+                        None,
+                    );
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "Reindex failed");
+                    let _ = audit_log::insert(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_reindex_failed",
+                        None,
+                        None,
+                        Some(&e.to_string()),
+                    );
+                    let _ = app_task.emit(
+                        event_name::KB_INGEST_ERROR,
+                        serde_json::json!({
+                            "jobId": job_id_clone,
+                            "error": e.to_string()
+                        }),
+                    );
+                }
             }
-            Err(e) => {
-                tracing::error!(error = %e, "Reindex failed");
-                let _ = audit_log::insert(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_reindex_failed",
-                    None,
-                    None,
-                    Some(&e.to_string()),
-                );
-                let _ = app_task.emit(
-                    event_name::KB_INGEST_ERROR,
-                    serde_json::json!({
-                        "jobId": job_id_clone,
-                        "error": e.to_string()
-                    }),
-                );
-            }
-        }
         })
         .catch_unwind()
         .await;
@@ -1546,11 +1546,11 @@ mod search_floor_tests {
         // two "far" ones are orthogonal / opposite (distance √2 / 2.0).
         let query = [1.0f32, 0.0, 0.0, 0.0];
         let seeds: &[(&str, [f32; 4])] = &[
-            ("near-a", [1.0, 0.0, 0.0, 0.0]),        // d = 0
+            ("near-a", [1.0, 0.0, 0.0, 0.0]),         // d = 0
             ("near-b", [0.9, 0.435_889_9, 0.0, 0.0]), // unit, d ≈ 0.447
-            ("near-c", [0.6, 0.8, 0.0, 0.0]),        // unit, d ≈ 0.894
-            ("far-x", [0.0, 1.0, 0.0, 0.0]),         // orthogonal, d ≈ 1.414
-            ("far-y", [-1.0, 0.0, 0.0, 0.0]),        // opposite,  d = 2
+            ("near-c", [0.6, 0.8, 0.0, 0.0]),         // unit, d ≈ 0.894
+            ("far-x", [0.0, 1.0, 0.0, 0.0]),          // orthogonal, d ≈ 1.414
+            ("far-y", [-1.0, 0.0, 0.0, 0.0]),         // opposite,  d = 2
         ];
         let entries: Vec<(String, Vec<f32>)> = seeds
             .iter()
@@ -1616,7 +1616,11 @@ mod search_filter_tests {
         let mut hydrated = HashMap::new();
         for i in 0..30 {
             let id = format!("c{i}");
-            let path = if i % 5 == 0 { "/reports/q3" } else { "/notes/x" };
+            let path = if i % 5 == 0 {
+                "/reports/q3"
+            } else {
+                "/notes/x"
+            };
             matches.push((id.clone(), i as f32 * 0.01));
             hydrated.insert(id, chunk(path));
         }

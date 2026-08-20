@@ -251,7 +251,9 @@ fn validate_ship_result(
         }
         let id = it.item_id.trim();
         if id.is_empty() {
-            return Err(AppError::Validation(format!("items[{i}]: item_id is empty")));
+            return Err(AppError::Validation(format!(
+                "items[{i}]: item_id is empty"
+            )));
         }
         let key = (kind.to_string(), id.to_string());
         if seen.contains(&key) {
@@ -280,7 +282,11 @@ fn validate_ship_result(
             }
         }
         let description = match it.suggested_description.as_deref() {
-            Some(d) => Some(trimmed(d, MAX_TEXT, &format!("items[{i}].suggested_description"))?),
+            Some(d) => Some(trimmed(
+                d,
+                MAX_TEXT,
+                &format!("items[{i}].suggested_description"),
+            )?),
             None => None,
         };
 
@@ -306,7 +312,11 @@ fn validate_ship_result(
         }
         let name = trimmed(&a.name, MAX_NAME, &format!("proposed_additions[{i}].name"))?;
         let rationale = match a.rationale.as_deref() {
-            Some(r) => Some(trimmed(r, MAX_TEXT, &format!("proposed_additions[{i}].rationale"))?),
+            Some(r) => Some(trimmed(
+                r,
+                MAX_TEXT,
+                &format!("proposed_additions[{i}].rationale"),
+            )?),
             None => None,
         };
         out.additions.push(ShipMilestoneProposedAddition {
@@ -320,10 +330,12 @@ fn validate_ship_result(
         .asked
         .iter()
         .take(MAX_QUESTIONS)
-        .map(|q| match q.answer.as_deref().map(str::trim).filter(|a| !a.is_empty()) {
-            Some(a) => format!("{} → {}", q.question.trim(), a),
-            None => q.question.trim().to_string(),
-        })
+        .map(
+            |q| match q.answer.as_deref().map(str::trim).filter(|a| !a.is_empty()) {
+                Some(a) => format!("{} → {}", q.question.trim(), a),
+                None => q.question.trim().to_string(),
+            },
+        )
         .filter(|s| !s.is_empty())
         .collect();
     out.summary = result
@@ -339,7 +351,9 @@ fn validate_ship_result(
 // ── path confinement ────────────────────────────────────────────────────────
 
 fn runs_root(root: &Path) -> PathBuf {
-    RUNS_REL.iter().fold(root.to_path_buf(), |p, seg| p.join(seg))
+    RUNS_REL
+        .iter()
+        .fold(root.to_path_buf(), |p, seg| p.join(seg))
 }
 
 /// Newest run dir with a `result.json` and no `ingested.json`.
@@ -349,7 +363,8 @@ fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
         .flatten()
         .filter_map(|e| {
             let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file() {
+            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
+            {
                 return None;
             }
             let t = e.metadata().and_then(|m| m.modified()).ok()?;
@@ -375,9 +390,7 @@ fn resolve_run_dir(root: &Path, run_dir: Option<String>) -> Result<PathBuf, AppE
         .canonicalize()
         .map_err(|e| AppError::Validation(format!("Run dir not readable: {e}")))?;
     let canon_root = runs_root(root).canonicalize().map_err(|_| {
-        AppError::Validation(
-            "No .personas/ship-milestone/runs directory in this repo yet".into(),
-        )
+        AppError::Validation("No .personas/ship-milestone/runs directory in this repo yet".into())
     })?;
     if !canon.starts_with(&canon_root) {
         return Err(AppError::Validation(
@@ -524,7 +537,10 @@ mod tests {
     }
 
     fn members() -> Vec<DevMilestoneItem> {
-        vec![member("use_case", "uc-a", "core"), member("goal", "g-1", "later")]
+        vec![
+            member("use_case", "uc-a", "core"),
+            member("goal", "g-1", "later"),
+        ]
     }
 
     #[test]
@@ -558,7 +574,9 @@ mod tests {
     #[test]
     fn refuses_an_unknown_schema_version() {
         let raw = r#"{ "schema_version": 99, "items": [] }"#;
-        let err = validate_ship_result(raw, "m1", &members()).unwrap_err().to_string();
+        let err = validate_ship_result(raw, "m1", &members())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("99"), "{err}");
         assert!(err.contains("refusing to ingest"), "{err}");
     }
@@ -586,7 +604,9 @@ mod tests {
               { "item_kind": "goal", "item_id": "g-1", "suggested_rating": 9 }
             ]
         }"#;
-        let err = validate_ship_result(raw, "m1", &members()).unwrap_err().to_string();
+        let err = validate_ship_result(raw, "m1", &members())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("outside 1..5"), "{err}");
     }
 
@@ -594,7 +614,9 @@ mod tests {
     fn refuses_an_item_that_is_not_a_member() {
         let raw = r#"{ "schema_version": 1,
             "items": [ { "item_kind": "use_case", "item_id": "uc-ghost", "suggested_rating": 3 } ] }"#;
-        let err = validate_ship_result(raw, "m1", &members()).unwrap_err().to_string();
+        let err = validate_ship_result(raw, "m1", &members())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("not a member"), "{err}");
         assert!(err.contains("proposed_additions"), "{err}");
     }
@@ -609,7 +631,9 @@ mod tests {
     fn refuses_a_kpi_as_a_milestone_item() {
         let raw = r#"{ "schema_version": 1,
             "items": [ { "item_kind": "kpi", "item_id": "k-1", "suggested_rating": 3 } ] }"#;
-        let err = validate_ship_result(raw, "m1", &members()).unwrap_err().to_string();
+        let err = validate_ship_result(raw, "m1", &members())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("unknown item_kind"), "{err}");
     }
 
@@ -676,7 +700,10 @@ mod door_tests {
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let uri = format!("file:ship_ingest_testdb_{id}?mode=memory&cache=shared");
         let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
-        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
+        let pool = r2d2::Pool::builder()
+            .max_size(4)
+            .build(manager)
+            .expect("pool");
         {
             let conn = pool.get().expect("conn");
             conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
@@ -729,7 +756,11 @@ mod door_tests {
         assert_eq!(summary.proposed_additions.len(), 1);
 
         let items = repo::list_milestone_items(&pool, &ms.id).unwrap();
-        assert_eq!(items.len(), 1, "a proposed addition must never become a member");
+        assert_eq!(
+            items.len(),
+            1,
+            "a proposed addition must never become a member"
+        );
         assert_eq!(items[0].rating, Some(2));
         assert_eq!(items[0].description.as_deref(), Some("sensors disagree"));
         // Proof the write went through set_milestone_item's upsert rather than
@@ -739,7 +770,9 @@ mod door_tests {
         assert!(!items[0].added_after_cut);
 
         // Idempotency: the marker refuses the second pass.
-        let err = ingest_ship_milestone(&pool, &ms.id, None).unwrap_err().to_string();
+        let err = ingest_ship_milestone(&pool, &ms.id, None)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("No un-ingested run"), "{err}");
         let dir = runs_root(&tmp).join("2026-08-04-1200");
         let err = ingest_ship_milestone(&pool, &ms.id, Some(dir.to_string_lossy().into_owned()))
@@ -777,7 +810,10 @@ mod door_tests {
         let items = repo::list_milestone_items(&pool, &ms.id).unwrap();
         assert_eq!(items[0].rating, None, "a refused run must apply nothing");
         // No marker written, so a corrected result can be re-ingested.
-        assert!(!runs_root(&tmp).join("2026-08-04-1300").join("ingested.json").is_file());
+        assert!(!runs_root(&tmp)
+            .join("2026-08-04-1300")
+            .join("ingested.json")
+            .is_file());
 
         let _ = std::fs::remove_dir_all(&tmp);
     }

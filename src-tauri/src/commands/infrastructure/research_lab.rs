@@ -6,9 +6,8 @@ use tauri::State;
 use crate::db::models::{
     CreateResearchExperiment, CreateResearchFinding, CreateResearchHypothesis,
     CreateResearchProject, CreateResearchReport, CreateResearchSource, CreateSourceResult,
-    ResearchDashboardStats,
-    ResearchExperiment, ResearchExperimentRun, ResearchFinding, ResearchHypothesis,
-    ResearchProject, ResearchReport, ResearchSource, UpdateResearchProject,
+    ResearchDashboardStats, ResearchExperiment, ResearchExperimentRun, ResearchFinding,
+    ResearchHypothesis, ResearchProject, ResearchReport, ResearchSource, UpdateResearchProject,
 };
 use crate::db::repos::research_lab as repo;
 use crate::error::AppError;
@@ -23,8 +22,8 @@ use crate::AppState;
 pub fn research_lab_list_projects(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ResearchProject>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_projects(&state.db)
+    require_auth_sync(&state)?;
+    repo::list_projects(&state.db)
 }
 
 #[tauri::command]
@@ -32,8 +31,8 @@ pub fn research_lab_get_project(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<ResearchProject, AppError> {
-
-    require_auth_sync(&state)?;    repo::get_project(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::get_project(&state.db, &id)
 }
 
 #[tauri::command]
@@ -41,8 +40,8 @@ pub fn research_lab_create_project(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchProject,
 ) -> Result<ResearchProject, AppError> {
-
-    require_auth_sync(&state)?;    repo::create_project(&state.db, &input)
+    require_auth_sync(&state)?;
+    repo::create_project(&state.db, &input)
 }
 
 #[tauri::command]
@@ -51,8 +50,8 @@ pub fn research_lab_update_project(
     id: String,
     input: UpdateResearchProject,
 ) -> Result<ResearchProject, AppError> {
-
-    require_auth_sync(&state)?;    repo::update_project(&state.db, &id, &input)
+    require_auth_sync(&state)?;
+    repo::update_project(&state.db, &id, &input)
 }
 
 #[tauri::command]
@@ -60,8 +59,8 @@ pub fn research_lab_delete_project(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::delete_project(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::delete_project(&state.db, &id)
 }
 
 // ============================================================================
@@ -73,8 +72,8 @@ pub fn research_lab_list_sources(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<ResearchSource>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_sources(&state.db, &project_id)
+    require_auth_sync(&state)?;
+    repo::list_sources(&state.db, &project_id)
 }
 
 #[tauri::command]
@@ -82,8 +81,8 @@ pub fn research_lab_create_source(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchSource,
 ) -> Result<CreateSourceResult, AppError> {
-
-    require_auth_sync(&state)?;    let (source, created) = repo::create_source(&state.db, &input)?;
+    require_auth_sync(&state)?;
+    let (source, created) = repo::create_source(&state.db, &input)?;
     Ok(CreateSourceResult { source, created })
 }
 
@@ -92,8 +91,8 @@ pub fn research_lab_delete_source(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::delete_source(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::delete_source(&state.db, &id)
 }
 
 // ============================================================================
@@ -105,8 +104,8 @@ pub fn research_lab_list_hypotheses(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<ResearchHypothesis>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_hypotheses(&state.db, &project_id)
+    require_auth_sync(&state)?;
+    repo::list_hypotheses(&state.db, &project_id)
 }
 
 #[tauri::command]
@@ -114,8 +113,8 @@ pub fn research_lab_create_hypothesis(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchHypothesis,
 ) -> Result<ResearchHypothesis, AppError> {
-
-    require_auth_sync(&state)?;    repo::create_hypothesis(&state.db, &input)
+    require_auth_sync(&state)?;
+    repo::create_hypothesis(&state.db, &input)
 }
 
 #[tauri::command]
@@ -127,8 +126,8 @@ pub fn research_lab_update_hypothesis(
     supporting_evidence: Option<String>,
     counter_evidence: Option<String>,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::update_hypothesis(
+    require_auth_sync(&state)?;
+    repo::update_hypothesis(
         &state.db,
         &id,
         status.as_deref(),
@@ -143,8 +142,8 @@ pub fn research_lab_delete_hypothesis(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::delete_hypothesis(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::delete_hypothesis(&state.db, &id)
 }
 
 // ============================================================================
@@ -156,8 +155,8 @@ pub fn research_lab_list_experiments(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<ResearchExperiment>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_experiments(&state.db, &project_id)
+    require_auth_sync(&state)?;
+    repo::list_experiments(&state.db, &project_id)
 }
 
 #[tauri::command]
@@ -165,8 +164,8 @@ pub fn research_lab_create_experiment(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchExperiment,
 ) -> Result<ResearchExperiment, AppError> {
-
-    require_auth_sync(&state)?;    repo::create_experiment(&state.db, &input)
+    require_auth_sync(&state)?;
+    repo::create_experiment(&state.db, &input)
 }
 
 #[tauri::command]
@@ -174,8 +173,8 @@ pub fn research_lab_delete_experiment(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::delete_experiment(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::delete_experiment(&state.db, &id)
 }
 
 // ============================================================================
@@ -187,8 +186,8 @@ pub fn research_lab_list_findings(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<ResearchFinding>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_findings(&state.db, &project_id)
+    require_auth_sync(&state)?;
+    repo::list_findings(&state.db, &project_id)
 }
 
 #[tauri::command]
@@ -196,8 +195,8 @@ pub fn research_lab_create_finding(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchFinding,
 ) -> Result<ResearchFinding, AppError> {
-
-    require_auth_sync(&state)?;    repo::create_finding(&state.db, &input)
+    require_auth_sync(&state)?;
+    repo::create_finding(&state.db, &input)
 }
 
 #[tauri::command]
@@ -205,8 +204,8 @@ pub fn research_lab_delete_finding(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::delete_finding(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::delete_finding(&state.db, &id)
 }
 
 // ============================================================================
@@ -218,8 +217,8 @@ pub fn research_lab_list_reports(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<ResearchReport>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_reports(&state.db, &project_id)
+    require_auth_sync(&state)?;
+    repo::list_reports(&state.db, &project_id)
 }
 
 #[tauri::command]
@@ -227,8 +226,8 @@ pub fn research_lab_create_report(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchReport,
 ) -> Result<ResearchReport, AppError> {
-
-    require_auth_sync(&state)?;    repo::create_report(&state.db, &input)
+    require_auth_sync(&state)?;
+    repo::create_report(&state.db, &input)
 }
 
 #[tauri::command]
@@ -236,8 +235,8 @@ pub fn research_lab_delete_report(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::delete_report(&state.db, &id)
+    require_auth_sync(&state)?;
+    repo::delete_report(&state.db, &id)
 }
 
 // ============================================================================
@@ -248,8 +247,8 @@ pub fn research_lab_delete_report(
 pub fn research_lab_get_dashboard_stats(
     state: State<'_, Arc<AppState>>,
 ) -> Result<ResearchDashboardStats, AppError> {
-
-    require_auth_sync(&state)?;    repo::get_dashboard_stats(&state.db)
+    require_auth_sync(&state)?;
+    repo::get_dashboard_stats(&state.db)
 }
 
 // ============================================================================
@@ -263,8 +262,8 @@ pub fn research_lab_update_source_status(
     status: String,
     knowledge_base_id: Option<String>,
 ) -> Result<(), AppError> {
-
-    require_auth_sync(&state)?;    repo::update_source_status(&state.db, &id, &status, knowledge_base_id.as_deref())
+    require_auth_sync(&state)?;
+    repo::update_source_status(&state.db, &id, &status, knowledge_base_id.as_deref())
 }
 
 // ============================================================================
@@ -276,15 +275,16 @@ pub fn research_lab_sync_to_obsidian(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<u32, AppError> {
-
-    require_auth_sync(&state)?;    let project = repo::get_project(&state.db, &project_id)?;
+    require_auth_sync(&state)?;
+    let project = repo::get_project(&state.db, &project_id)?;
 
     // Mirror model: when the Research Lab mirror is enabled, route notes through
     // the Brain-configured vault + its research folder; otherwise fall back to
     // the project's legacy per-project vault path (back-compat).
-    let (vault_root, research_folder) =
-        if crate::commands::obsidian_brain::mirror_config(&state.db).research_lab {
-            match crate::commands::obsidian_brain::mirror_vault_root(&state.db) {
+    let (vault_root, research_folder) = if crate::commands::obsidian_brain::mirror_config(&state.db)
+        .research_lab
+    {
+        match crate::commands::obsidian_brain::mirror_vault_root(&state.db) {
                 Some(cfg) => (cfg.vault_path, cfg.folder_mapping.research_folder),
                 None => {
                     return Err(AppError::Validation(
@@ -292,14 +292,16 @@ pub fn research_lab_sync_to_obsidian(
                     ))
                 }
             }
-        } else {
-            let vp = project
-                .obsidian_vault_path
-                .as_deref()
-                .filter(|p| !p.is_empty())
-                .ok_or_else(|| AppError::Validation("No Obsidian vault linked to this project".into()))?;
-            (vp.to_string(), "Research".to_string())
-        };
+    } else {
+        let vp = project
+            .obsidian_vault_path
+            .as_deref()
+            .filter(|p| !p.is_empty())
+            .ok_or_else(|| {
+                AppError::Validation("No Obsidian vault linked to this project".into())
+            })?;
+        (vp.to_string(), "Research".to_string())
+    };
 
     let experiments = repo::list_experiments(&state.db, &project_id)?;
     let hypotheses = repo::list_hypotheses(&state.db, &project_id)?;
@@ -307,7 +309,6 @@ pub fn research_lab_sync_to_obsidian(
     let project_slug = slug(&project.name);
     let mut written = 0u32;
     for exp in &experiments {
-
         let hypothesis_stmt = exp
             .hypothesis_id
             .as_ref()
@@ -389,8 +390,8 @@ pub fn research_lab_sync_daily_note(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<String, AppError> {
-
-    require_auth_sync(&state)?;    let project = repo::get_project(&state.db, &project_id)?;
+    require_auth_sync(&state)?;
+    let project = repo::get_project(&state.db, &project_id)?;
 
     // Resolve the vault the SAME way `research_lab_sync_to_obsidian` does:
     // when the Research Lab mirror is enabled, route through the Brain-configured
@@ -410,7 +411,9 @@ pub fn research_lab_sync_daily_note(
             .obsidian_vault_path
             .as_deref()
             .filter(|p| !p.is_empty())
-            .ok_or_else(|| AppError::Validation("No Obsidian vault linked to this project".into()))?;
+            .ok_or_else(|| {
+                AppError::Validation("No Obsidian vault linked to this project".into())
+            })?;
         vp.to_string()
     };
 
@@ -479,8 +482,8 @@ pub fn research_lab_list_experiment_runs(
     state: State<'_, Arc<AppState>>,
     experiment_id: String,
 ) -> Result<Vec<ResearchExperimentRun>, AppError> {
-
-    require_auth_sync(&state)?;    repo::list_experiment_runs(&state.db, &experiment_id)
+    require_auth_sync(&state)?;
+    repo::list_experiment_runs(&state.db, &experiment_id)
 }
 
 #[tauri::command]
@@ -491,8 +494,8 @@ pub fn research_lab_create_experiment_run(
     metrics: Option<String>,
     passed: bool,
 ) -> Result<ResearchExperimentRun, AppError> {
-
-    require_auth_sync(&state)?;    repo::create_experiment_run(
+    require_auth_sync(&state)?;
+    repo::create_experiment_run(
         &state.db,
         &experiment_id,
         outputs.as_deref(),

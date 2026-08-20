@@ -1666,7 +1666,10 @@ mod tests {
     #[test]
     fn resolved_schema_admits_every_trigger_kind() {
         let sql = resolved_schema();
-        assert!(!sql.contains(TRIGGER_TYPE_CHECK_MARKER), "marker not substituted");
+        assert!(
+            !sql.contains(TRIGGER_TYPE_CHECK_MARKER),
+            "marker not substituted"
+        );
         for kind in TriggerKind::ALL {
             assert!(
                 sql.contains(&format!("'{}'", kind.as_str())),

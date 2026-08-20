@@ -149,7 +149,9 @@ fn breaker_record(key: &str, ok: bool) -> bool {
 /// Advance the probe cadence for a broken bridge whose tick we skipped.
 fn breaker_note_skip(key: &str) {
     let mut map = breaker_lock();
-    let count = map.entry(key.to_string()).or_insert(BROKEN_FAILURE_THRESHOLD);
+    let count = map
+        .entry(key.to_string())
+        .or_insert(BROKEN_FAILURE_THRESHOLD);
     *count = count.saturating_add(1);
 }
 
@@ -601,8 +603,14 @@ mod tests {
             "teamBridge": true, "teamId": "t", "channel": "C1",
             "outboundMessages": true,
         }));
-        assert!(slack_bridge::should_mirror_message(&messages_only, "persona"));
-        assert!(slack_bridge::should_mirror_message(&messages_only, "athena"));
+        assert!(slack_bridge::should_mirror_message(
+            &messages_only,
+            "persona"
+        ));
+        assert!(slack_bridge::should_mirror_message(
+            &messages_only,
+            "athena"
+        ));
         assert!(!slack_bridge::should_mirror_message(&messages_only, "user"));
         assert!(!messages_only.outbound_steps);
 
@@ -610,8 +618,14 @@ mod tests {
             "teamBridge": true, "teamId": "t", "channel": "C1",
             "outboundDirectives": true,
         }));
-        assert!(slack_bridge::should_mirror_message(&directives_only, "user"));
-        assert!(!slack_bridge::should_mirror_message(&directives_only, "persona"));
+        assert!(slack_bridge::should_mirror_message(
+            &directives_only,
+            "user"
+        ));
+        assert!(!slack_bridge::should_mirror_message(
+            &directives_only,
+            "persona"
+        ));
 
         let steps_only = bridge(json!({
             "teamBridge": true, "teamId": "t", "channel": "C1",

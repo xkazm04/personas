@@ -146,8 +146,7 @@ fn expand_h_field(field: &str, fmin: u32, fmax: u32, seed: u64) -> Result<String
     let mut parts_out: Vec<String> = Vec::new();
     for (part_idx, part) in field.split(',').enumerate() {
         let trimmed = part.trim();
-        let part_seed =
-            seed.wrapping_add((part_idx as u64).wrapping_mul(0x517C_C1B7_2722_0A95));
+        let part_seed = seed.wrapping_add((part_idx as u64).wrapping_mul(0x517C_C1B7_2722_0A95));
         parts_out.push(expand_h_part(trimmed, fmin, fmax, part_seed)?);
     }
     Ok(parts_out.join(","))
@@ -192,9 +191,7 @@ fn expand_h_part(part: &str, fmin: u32, fmax: u32, seed: u64) -> Result<String, 
             .parse()
             .map_err(|_| format!("Invalid H range end: {b}"))?;
         if a < fmin || b > fmax || a > b {
-            return Err(format!(
-                "H range {a}-{b} out of bounds {fmin}-{fmax}"
-            ));
+            return Err(format!("H range {a}-{b} out of bounds {fmin}-{fmax}"));
         }
         (a, b)
     } else {
@@ -530,7 +527,11 @@ fn next_fire_time_in_zone<Z: TimeZone>(
             continue;
         }
 
-        if !day_matches(schedule, naive.day(), naive.weekday().num_days_from_sunday()) {
+        if !day_matches(
+            schedule,
+            naive.day(),
+            naive.weekday().num_days_from_sunday(),
+        ) {
             naive = (naive + Duration::days(1))
                 .with_hour(0)
                 .and_then(|d| d.with_minute(0))

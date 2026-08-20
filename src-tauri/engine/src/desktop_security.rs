@@ -10,8 +10,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 use ts_rs::TS;
 
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 // -- Capability declarations ------------------------------------------
 
@@ -251,8 +251,7 @@ impl DesktopConnectorManifest {
             // shares a name prefix ("/home/u/project" vs "/home/u/project-x")
             // is NOT treated as inside the allowed root. Mirrors the
             // blocked-prefix logic in path_safety.rs.
-            check_path == canon_prefix
-                || check_path.starts_with(&format!("{canon_prefix}/"))
+            check_path == canon_prefix || check_path.starts_with(&format!("{canon_prefix}/"))
         })
     }
 

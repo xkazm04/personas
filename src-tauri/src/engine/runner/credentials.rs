@@ -121,8 +121,7 @@ pub(crate) async fn resolve_credential_env_vars(
         // -- Primary: match tool name in connector services --
         let mut matched_connector = false;
         for connector in &connectors {
-            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
-            {
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services) {
                 Ok(v) => v,
                 Err(e) => {
                     tracing::warn!(
@@ -609,26 +608,26 @@ async fn try_refresh_oauth_token(
                 zeroize::Zeroizing::new(secret.to_string()),
             )
         } else {
-        // Upgraded from `debug!` to `warn!`. This is the most common silent
-        // failure for app-managed Google credentials in dev builds: the
-        // credential stores no client_id (app_managed=true) and the dev
-        // binary wasn't built with GCP_DESKTOP_CLIENT_ID /
-        // GOOGLE_CLIENT_ID env vars set, so refresh has no client
-        // identity to send. The user sees a "healthy" credential
-        // in the catalog (the catalog uses a different refresh path
-        // via run_healthcheck → connector_strategy::resolve_auth_token)
-        // and is then surprised when the build-test gets 401.
-        tracing::warn!(
-            connector = connector_name,
-            "OAuth refresh skipped: no client credentials available. \
+            // Upgraded from `debug!` to `warn!`. This is the most common silent
+            // failure for app-managed Google credentials in dev builds: the
+            // credential stores no client_id (app_managed=true) and the dev
+            // binary wasn't built with GCP_DESKTOP_CLIENT_ID /
+            // GOOGLE_CLIENT_ID env vars set, so refresh has no client
+            // identity to send. The user sees a "healthy" credential
+            // in the catalog (the catalog uses a different refresh path
+            // via run_healthcheck → connector_strategy::resolve_auth_token)
+            // and is then surprised when the build-test gets 401.
+            tracing::warn!(
+                connector = connector_name,
+                "OAuth refresh skipped: no client credentials available. \
              For Google/Microsoft platform OAuth, set GCP_DESKTOP_CLIENT_ID + \
              GCP_DESKTOP_CLIENT_SECRET (or GOOGLE_CLIENT_ID/SECRET, \
              MICROSOFT_CLIENT_ID/SECRET) at build time, or store client \
              credentials per-credential in the vault. Tools will use the \
              stored access_token as-is; expect 401 once it expires."
-        );
-        return None;
-    };
+            );
+            return None;
+        };
     let client_id = &cid;
     let client_secret = &csec;
 
@@ -797,7 +796,8 @@ pub(crate) async fn inject_credential(
                 .unwrap_or(true);
             // Scrub the previous (now-expired) access_token value we're
             // overwriting so it isn't left un-zeroized on the heap.
-            if let Some(mut old) = fields.insert("access_token".to_string(), refresh_ok.access_token.clone())
+            if let Some(mut old) =
+                fields.insert("access_token".to_string(), refresh_ok.access_token.clone())
             {
                 old.zeroize();
             }
@@ -901,9 +901,7 @@ pub(crate) async fn inject_credential(
         // as ANTHROPIC_API_KEY would silently flip the CLI onto the API account
         // and bill credits ("Credit balance is too low"). (User directive
         // 2026-06-11: executions/evaluation route to the .cmd subscription only.)
-        if crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV
-            .contains(&env_key.as_str())
-        {
+        if crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV.contains(&env_key.as_str()) {
             tracing::warn!(
                 env_key = %env_key,
                 credential = %cred.name,
@@ -1094,7 +1092,12 @@ mod tests {
     async fn requires_credential_type_falls_back_to_connector_name_match() {
         let pool = init_test_db().unwrap();
         seed_connector(&pool, "zetasvc_qq", "[]");
-        seed_credential(&pool, "zetasvc_qq", "Zeta Cred", &[("token", "zeta-token-1")]);
+        seed_credential(
+            &pool,
+            "zetasvc_qq",
+            "Zeta Cred",
+            &[("token", "zeta-token-1")],
+        );
 
         let tools = vec![make_tool("tool_without_services_qq", Some("zetasvc_qq"))];
         let (env, _hints, failures, injected) =
@@ -1280,7 +1283,8 @@ mod tests {
         // Force every audit insert to fail.
         {
             let conn = pool.get().unwrap();
-            conn.execute_batch("DROP TABLE credential_audit_log").unwrap();
+            conn.execute_batch("DROP TABLE credential_audit_log")
+                .unwrap();
         }
 
         let before = crate::engine::crypto::credential_audit_write_failures();

@@ -56,7 +56,9 @@ pub(crate) async fn execute_run_persona(
 ///   - `content: "..."` — a full identity.md replacement. The intake interview's
 ///     first-draft path (nothing exists yet to diff against).
 /// Both back up the prior file first.
-pub(crate) fn execute_update_identity(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+pub(crate) fn execute_update_identity(
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
     use crate::companion::brain::identity;
 
     // Anchored-diff mode (preferred).
@@ -102,7 +104,9 @@ pub(crate) fn execute_update_identity(params: &serde_json::Value) -> Result<Exec
         .get("content")
         .and_then(|v| v.as_str())
         .ok_or_else(|| {
-            AppError::Internal("update_identity: need `diffs` (anchored) or `content` (full)".into())
+            AppError::Internal(
+                "update_identity: need `diffs` (anchored) or `content` (full)".into(),
+            )
         })?;
     let backup = identity::write_full(content)?;
     tracing::debug!(
@@ -275,7 +279,11 @@ pub(crate) async fn execute_write_fact(
     );
     let trimmed = value.trim();
     let preview: String = trimmed.chars().take(100).collect();
-    let ellipsis = if trimmed.chars().count() > 100 { "…" } else { "" };
+    let ellipsis = if trimmed.chars().count() > 100 {
+        "…"
+    } else {
+        ""
+    };
     Ok(ExecuteResult::message(format!(
         "Saved that to memory: \"{preview}{ellipsis}\"."
     )))
@@ -293,7 +301,9 @@ pub(crate) fn execute_delete_fact(
         .ok_or_else(|| AppError::Internal("delete_fact: missing `id`".into()))?;
     crate::companion::brain::semantic::delete_fact(&state.user_db, id)?;
     tracing::debug!(fact_id = %id, "companion: deleted fact");
-    Ok(ExecuteResult::message("Removed that from memory.".to_string()))
+    Ok(ExecuteResult::message(
+        "Removed that from memory.".to_string(),
+    ))
 }
 
 // ── Phase D executors ───────────────────────────────────────────────────
@@ -468,7 +478,14 @@ pub(crate) fn execute_update_dev_goal(
         }
         format!("Athena updated goal ({})", parts.join(", "))
     });
-    let _ = dt::create_goal_signal(&state.db, goal_id, "athena_update", None, progress, Some(&summary));
+    let _ = dt::create_goal_signal(
+        &state.db,
+        goal_id,
+        "athena_update",
+        None,
+        progress,
+        Some(&summary),
+    );
     Ok(ExecuteResult::message(format!(
         "Dev goal `{goal_id}` updated — {summary}."
     )))
@@ -575,13 +592,11 @@ pub(crate) fn execute_set_ritual_active(
         .ok_or_else(|| AppError::Internal("set_ritual_active: missing `active` (bool)".into()))?;
     crate::companion::brain::rituals::set_active(&state.user_db, id, active)?;
     tracing::debug!(ritual_id = %id, active, "companion: set ritual active");
-    Ok(ExecuteResult::message(
-        if active {
-            "Turned that routine back on.".to_string()
-        } else {
-            "Paused that routine.".to_string()
-        },
-    ))
+    Ok(ExecuteResult::message(if active {
+        "Turned that routine back on.".to_string()
+    } else {
+        "Paused that routine.".to_string()
+    }))
 }
 
 pub(crate) fn execute_delete_ritual(
@@ -641,13 +656,11 @@ pub(crate) fn execute_resolve_backlog_item(
         .unwrap_or(false);
     crate::companion::brain::backlog::resolve_item(&state.user_db, id, dropped)?;
     tracing::debug!(item_id = %id, dropped, "companion: resolved backlog item");
-    Ok(ExecuteResult::message(
-        if dropped {
-            "Dropped that follow-up.".to_string()
-        } else {
-            "Marked that follow-up as done.".to_string()
-        },
-    ))
+    Ok(ExecuteResult::message(if dropped {
+        "Dropped that follow-up.".to_string()
+    } else {
+        "Marked that follow-up as done.".to_string()
+    }))
 }
 
 // ── Phase F executors ───────────────────────────────────────────────────
@@ -657,7 +670,9 @@ pub(crate) fn execute_resolve_backlog_item(
 /// executor just validates params and emits the action so a single
 /// click on the approval card lands the user on personas/ with the
 /// intent box filled (and optionally launches the build).
-pub(crate) fn execute_prefill_persona_create(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+pub(crate) fn execute_prefill_persona_create(
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
     let intent = params
         .get("intent")
         .and_then(|v| v.as_str())
@@ -705,7 +720,11 @@ pub(crate) fn execute_prefill_persona_create(params: &serde_json::Value) -> Resu
 /// pass renames the persona from its agent_ir once it resolves, so this is only
 /// the placeholder label the row carries while the build is in flight.
 pub(crate) fn derive_build_name(intent: &str) -> String {
-    let mut n: String = intent.split_whitespace().take(5).collect::<Vec<_>>().join(" ");
+    let mut n: String = intent
+        .split_whitespace()
+        .take(5)
+        .collect::<Vec<_>>()
+        .join(" ");
     if n.chars().count() > 40 {
         n = n.chars().take(40).collect();
     }
@@ -1093,10 +1112,9 @@ pub(crate) async fn execute_use_connector(
     .into_iter()
     .next()
     {
-        Some(cred) => crate::db::repos::resources::credentials::get_decrypted_fields(
-            &state.db,
-            &cred,
-        )?,
+        Some(cred) => {
+            crate::db::repos::resources::credentials::get_decrypted_fields(&state.db, &cred)?
+        }
         None => std::collections::HashMap::new(),
     };
     let result = crate::companion::jobs::connector_use::dispatch_capability_public(
@@ -1169,21 +1187,24 @@ pub(crate) fn execute_register_project(
             //    the team's codebase tools return rich results. Best-effort: a
             //    bad path / missing CLI logs and continues; the project + codebase
             //    connector are already valid.
-            let scan_note = match crate::commands::infrastructure::context_generation::launch_context_scan(
-                app.clone(),
-                &state.db,
-                &project,
-                path,
-                false,
-                None,
-            ) {
-                Ok(_) => "(context scan started — its structure will be mapped in the background)"
-                    .to_string(),
-                Err(e) => {
-                    tracing::warn!(project = %project.id, error = %e, "register_project: auto-scan launch failed (continuing)");
-                    format!("(couldn't auto-start the context scan: {e} — start it manually from Dev Tools)")
-                }
-            };
+            let scan_note =
+                match crate::commands::infrastructure::context_generation::launch_context_scan(
+                    app.clone(),
+                    &state.db,
+                    &project,
+                    path,
+                    false,
+                    None,
+                ) {
+                    Ok(_) => {
+                        "(context scan started — its structure will be mapped in the background)"
+                            .to_string()
+                    }
+                    Err(e) => {
+                        tracing::warn!(project = %project.id, error = %e, "register_project: auto-scan launch failed (continuing)");
+                        format!("(couldn't auto-start the context scan: {e} — start it manually from Dev Tools)")
+                    }
+                };
             (project.id, scan_note)
         }
     };
@@ -1258,11 +1279,14 @@ pub(crate) fn execute_post_team_message(
         .or_else(|| params.get("message").and_then(|v| v.as_str()))
         .ok_or_else(|| AppError::Internal("post_team_message: missing `body`".into()))?
         .to_string();
-    let addressed_to = params.get("addressed_to").and_then(|v| v.as_array()).map(|a| {
-        a.iter()
-            .filter_map(|x| x.as_str().map(String::from))
-            .collect::<Vec<_>>()
-    });
+    let addressed_to = params
+        .get("addressed_to")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect::<Vec<_>>()
+        });
 
     let msg = crate::db::repos::resources::team_channel::create(
         &state.db,

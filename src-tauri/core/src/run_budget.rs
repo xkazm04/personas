@@ -59,7 +59,10 @@ fn env_ceiling(var: &str, default: f64) -> f64 {
 }
 
 pub fn evolution_ceiling_usd() -> f64 {
-    env_ceiling("PERSONAS_RUN_BUDGET_EVOLUTION_USD", DEFAULT_EVOLUTION_CEILING_USD)
+    env_ceiling(
+        "PERSONAS_RUN_BUDGET_EVOLUTION_USD",
+        DEFAULT_EVOLUTION_CEILING_USD,
+    )
 }
 
 pub fn lab_ceiling_usd() -> f64 {
@@ -67,7 +70,10 @@ pub fn lab_ceiling_usd() -> f64 {
 }
 
 pub fn pipeline_ceiling_usd() -> f64 {
-    env_ceiling("PERSONAS_RUN_BUDGET_PIPELINE_USD", DEFAULT_PIPELINE_CEILING_USD)
+    env_ceiling(
+        "PERSONAS_RUN_BUDGET_PIPELINE_USD",
+        DEFAULT_PIPELINE_CEILING_USD,
+    )
 }
 
 /// Whether enforce-mode is active: a run that crosses its ceiling stops launching

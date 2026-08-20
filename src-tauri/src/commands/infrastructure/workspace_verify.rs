@@ -248,7 +248,11 @@ pub async fn dev_tools_workspace_verify_adoptions(
     // `fact` has no work behind it either way. Then never-verified cells
     // (`proposed`) ahead of re-checks, so the queue fills before it refreshes.
     candidates.sort_by_key(|k| {
-        let actionable = if repo::is_actionable_kind(&k.kind) { 0 } else { 1 };
+        let actionable = if repo::is_actionable_kind(&k.kind) {
+            0
+        } else {
+            1
+        };
         let unseen = match prior_state.get(&k.id).map(String::as_str) {
             Some("proposed") => 0,
             Some("to_process") => 1,
@@ -431,7 +435,11 @@ async fn run_verify(
                     // An out-of-range index is a model error, not a verdict —
                     // dropping it is safer than mismarking a neighbour.
                     if v.n == 0 || v.n > ids.len() {
-                        VERIFY_JOBS.emit_line(app, job_id, format!("[Ignored] verdict for unknown item #{}", v.n));
+                        VERIFY_JOBS.emit_line(
+                            app,
+                            job_id,
+                            format!("[Ignored] verdict for unknown item #{}", v.n),
+                        );
                         continue;
                     }
                     let title = &titles[v.n - 1];
@@ -487,7 +495,9 @@ async fn run_verify(
             let trimmed = e.trim();
             crate::utils::text::truncate_on_char_boundary(trimmed, 600).to_string()
         });
-        if let Err(e) = repo::set_adoption(db, practice_id, project_id, state, note.as_deref(), None) {
+        if let Err(e) =
+            repo::set_adoption(db, practice_id, project_id, state, note.as_deref(), None)
+        {
             tracing::warn!(error = %e, practice_id, "verify: failed to record verdict");
             continue;
         }

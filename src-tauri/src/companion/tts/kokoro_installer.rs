@@ -172,7 +172,12 @@ fn extract_model(archive: &std::path::Path, model_dir: &std::path::Path) -> Resu
         |first| {
             matches!(
                 first,
-                "model.onnx" | "voices.bin" | "tokens.txt" | "lexicon-us-en.txt" | "LICENSE" | "README.md"
+                "model.onnx"
+                    | "voices.bin"
+                    | "tokens.txt"
+                    | "lexicon-us-en.txt"
+                    | "LICENSE"
+                    | "README.md"
             ) || first == "espeak-ng-data"
         },
         "model.onnx",

@@ -264,10 +264,13 @@ pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, App
 /// and the starvation where a full window of non-headless events blocked
 /// headless ones indefinitely while the windowed app was closed.
 pub fn claim_pending_headless(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
-    timed_query!("persona_events", "persona_events::claim_pending_headless", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "UPDATE persona_events
+    timed_query!(
+        "persona_events",
+        "persona_events::claim_pending_headless",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_events
              SET status = 'processing'
              WHERE id IN (
                  SELECT e.id FROM persona_events e
@@ -278,10 +281,11 @@ pub fn claim_pending_headless(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEv
                  LIMIT ?1
              )
              RETURNING *",
-        )?;
-        let rows = stmt.query_map(params![limit], row_to_event)?;
-        Ok(collect_rows(rows, "claim_pending_headless"))
-    })
+            )?;
+            let rows = stmt.query_map(params![limit], row_to_event)?;
+            Ok(collect_rows(rows, "claim_pending_headless"))
+        }
+    )
 }
 
 pub fn update_status(
@@ -574,8 +578,8 @@ pub fn count_by_type_and_source_since(
                 "SELECT COUNT(*) FROM persona_events
                  WHERE event_type = ?1 AND source_id = ?2 AND created_at >= ?3",
             )?;
-            let count: i64 =
-                stmt.query_row(params![event_type, source_persona_id, since], |row| {
+            let count: i64 = stmt
+                .query_row(params![event_type, source_persona_id, since], |row| {
                     row.get(0)
                 })?;
             Ok(count)
@@ -1115,51 +1119,55 @@ pub fn bulk_retry_dead_letter(
     pool: &DbPool,
     ids: &[String],
 ) -> Result<BulkDeadLetterOutcome, AppError> {
-    timed_query!("persona_events", "persona_events::bulk_retry_dead_letter", {
-        if ids.is_empty() {
-            return Ok(BulkDeadLetterOutcome {
-                succeeded: Vec::new(),
-                failed: Vec::new(),
-            });
-        }
-
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
-
-        let mut succeeded: Vec<String> = Vec::new();
-        let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
-
-        for id in ids {
-            let rows = tx.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
-
-            if rows == 1 {
-                succeeded.push(id.clone());
-            } else {
-                let current: Option<(String, i32)> = tx
-                    .query_row(
-                        "SELECT status, retry_count FROM persona_events WHERE id = ?1",
-                        params![id],
-                        |row| Ok((row.get(0)?, row.get(1)?)),
-                    )
-                    .optional()?;
-
-                let reason = match current {
-                    None => "not_found",
-                    Some((status, _)) if status != "dead_letter" => "wrong_status",
-                    Some((_, rc)) if rc >= MAX_MANUAL_RETRIES => "retry_exhausted",
-                    Some(_) => "wrong_status",
-                };
-                failed.push(BulkDeadLetterFailure {
-                    id: id.clone(),
-                    reason: reason.into(),
+    timed_query!(
+        "persona_events",
+        "persona_events::bulk_retry_dead_letter",
+        {
+            if ids.is_empty() {
+                return Ok(BulkDeadLetterOutcome {
+                    succeeded: Vec::new(),
+                    failed: Vec::new(),
                 });
             }
+
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+
+            let mut succeeded: Vec<String> = Vec::new();
+            let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
+
+            for id in ids {
+                let rows = tx.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
+
+                if rows == 1 {
+                    succeeded.push(id.clone());
+                } else {
+                    let current: Option<(String, i32)> = tx
+                        .query_row(
+                            "SELECT status, retry_count FROM persona_events WHERE id = ?1",
+                            params![id],
+                            |row| Ok((row.get(0)?, row.get(1)?)),
+                        )
+                        .optional()?;
+
+                    let reason = match current {
+                        None => "not_found",
+                        Some((status, _)) if status != "dead_letter" => "wrong_status",
+                        Some((_, rc)) if rc >= MAX_MANUAL_RETRIES => "retry_exhausted",
+                        Some(_) => "wrong_status",
+                    };
+                    failed.push(BulkDeadLetterFailure {
+                        id: id.clone(),
+                        reason: reason.into(),
+                    });
+                }
+            }
+
+            tx.commit().map_err(AppError::Database)?;
+
+            Ok(BulkDeadLetterOutcome { succeeded, failed })
         }
-
-        tx.commit().map_err(AppError::Database)?;
-
-        Ok(BulkDeadLetterOutcome { succeeded, failed })
-    })
+    )
 }
 
 /// Discard many dead-lettered events in a single transaction. Same
@@ -3060,7 +3068,10 @@ mod tests {
 
         let row = get_by_id(&pool, &evt.id).unwrap();
         assert_eq!(row.status, PersonaEventStatus::DeadLetter);
-        assert_eq!(row.error_message.as_deref(), Some("handoff_target_disabled"));
+        assert_eq!(
+            row.error_message.as_deref(),
+            Some("handoff_target_disabled")
+        );
         assert!(row.processed_at.is_some());
     }
 
@@ -3223,7 +3234,10 @@ mod tests {
         .unwrap();
 
         let moved = dead_letter_from_processing(&pool, &evt.id, Some("x".into())).unwrap();
-        assert!(!moved, "a pending row must not be dead-lettered by this path");
+        assert!(
+            !moved,
+            "a pending row must not be dead-lettered by this path"
+        );
         let row = get_by_id(&pool, &evt.id).unwrap();
         assert_eq!(row.status, PersonaEventStatus::Pending);
         assert!(row.error_message.is_none());

@@ -980,7 +980,10 @@ mod llm_obs_tests {
     fn langfuse_apply_auth_sets_basic_header() {
         let s = LangfuseBasicAuthStrategy;
         let req = s
-            .apply_auth(reqwest::Client::new().get("https://cloud.langfuse.com/"), "ENC")
+            .apply_auth(
+                reqwest::Client::new().get("https://cloud.langfuse.com/"),
+                "ENC",
+            )
             .build()
             .unwrap();
         assert_eq!(req.headers().get("authorization").unwrap(), "Basic ENC");
@@ -1022,7 +1025,11 @@ mod llm_obs_tests {
         let mut lf = HashMap::new();
         lf.insert("public_key".to_string(), "pk".to_string());
         lf.insert("secret_key".to_string(), "sk".to_string());
-        let lf_tok = langfuse.resolve_auth_token(None, &lf).await.unwrap().unwrap();
+        let lf_tok = langfuse
+            .resolve_auth_token(None, &lf)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(lf_tok.token, base64_encode(b"pk:sk"));
 
         // langsmith → LangSmithStrategy: apply_auth emits x-api-key (not Bearer).
@@ -1040,7 +1047,11 @@ mod llm_obs_tests {
         let mut hf = HashMap::new();
         hf.insert("api_key".to_string(), "sk-helicone-1".to_string());
         assert!(!helicone.is_oauth(&hf));
-        let he_tok = helicone.resolve_auth_token(None, &hf).await.unwrap().unwrap();
+        let he_tok = helicone
+            .resolve_auth_token(None, &hf)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(he_tok.token, "sk-helicone-1");
     }
 }

@@ -436,7 +436,14 @@ mod approval_gating_tests {
 
     /// Slug prefixes that denote a read-only capability (safe to auto-fire).
     const READ_PREFIXES: &[&str] = &[
-        "list_", "get_", "count_", "describe_", "read_", "query_", "search_", "fetch_",
+        "list_",
+        "get_",
+        "count_",
+        "describe_",
+        "read_",
+        "query_",
+        "search_",
+        "fetch_",
     ];
 
     fn looks_read_only(slug: &str) -> bool {

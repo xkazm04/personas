@@ -103,6 +103,7 @@ pub use exposure::*;
 pub use external_api_key::*;
 pub use frontend_crash::*;
 pub use genome::*;
+pub use gitlab::*;
 pub use healing::*;
 #[cfg(feature = "p2p")]
 pub use identity::*;
@@ -123,7 +124,6 @@ pub use obsidian_brain::*;
 pub use ocr::*;
 pub use output_assertion::*;
 pub use owned_device::*;
-pub use gitlab::*;
 pub use persona::*;
 pub use persona_change_log::*;
 pub use platform_definition::*;

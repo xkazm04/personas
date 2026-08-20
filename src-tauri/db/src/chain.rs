@@ -31,8 +31,8 @@ use crate::models::CreatePersonaEventInput;
 use crate::repos::communication::events as event_repo;
 use crate::repos::resources::triggers as trigger_repo;
 use crate::DbPool;
-use personas_core::lifecycle::TriggerStatus;
 use personas_core::error::AppError;
+use personas_core::lifecycle::TriggerStatus;
 
 /// Maximum chain depth before we refuse to fire further chain triggers.
 /// Prevents infinite cascades from A->B->A or longer cycles.
@@ -171,21 +171,21 @@ enum CostCeilingReading {
 /// a malformed row must not silently disable the only brake on runaway
 /// cascade spend the way a genuinely-unset setting does.
 fn read_chain_cost_ceiling(pool: &DbPool) -> CostCeilingReading {
-    let raw = match crate::repos::core::settings::get(pool, crate::settings_keys::CHAIN_MAX_COST_USD)
-    {
-        Ok(Some(raw)) => raw,
-        Ok(None) => return CostCeilingReading::Disabled,
-        Err(e) => {
-            // A transient DB read failure is infrastructure trouble, not data
-            // corruption — treat like unset (fail open) rather than halting
-            // every cascade because the settings table hiccuped.
-            tracing::warn!(
-                error = %e,
-                "Failed to read chain cost ceiling setting; treating as unset"
-            );
-            return CostCeilingReading::Disabled;
-        }
-    };
+    let raw =
+        match crate::repos::core::settings::get(pool, crate::settings_keys::CHAIN_MAX_COST_USD) {
+            Ok(Some(raw)) => raw,
+            Ok(None) => return CostCeilingReading::Disabled,
+            Err(e) => {
+                // A transient DB read failure is infrastructure trouble, not data
+                // corruption — treat like unset (fail open) rather than halting
+                // every cascade because the settings table hiccuped.
+                tracing::warn!(
+                    error = %e,
+                    "Failed to read chain cost ceiling setting; treating as unset"
+                );
+                return CostCeilingReading::Disabled;
+            }
+        };
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return CostCeilingReading::Disabled;
@@ -725,9 +725,7 @@ pub fn evaluate_chain_triggers(
                             Some(&trigger.id),
                             Some(&trigger.persona_id),
                             stop_reason::QUARANTINED,
-                            Some(format!(
-                                "trigger quarantined + dead-lettered ({error_ctx})"
-                            )),
+                            Some(format!("trigger quarantined + dead-lettered ({error_ctx})")),
                         );
 
                         false
@@ -1516,8 +1514,18 @@ mod tests {
         let a = make_persona(&pool, "Agent A");
 
         let visited = HashSet::new();
-        let metrics =
-            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 0, &visited, None, false, 0.0);
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            None,
+            false,
+            0.0,
+        );
 
         assert_eq!(metrics.chain_depth, 0);
         assert_eq!(metrics.triggers_evaluated, 0);
@@ -1625,7 +1633,16 @@ mod tests {
         // Source is an assignment step → handoff suppressed, normal fires.
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, None, true, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            None,
+            true,
+            0.0,
         );
         assert_eq!(metrics.triggers_evaluated, 2);
         assert_eq!(metrics.handoffs_suppressed, 1);
@@ -1633,7 +1650,16 @@ mod tests {
 
         // Source is NOT a step → both fire, nothing suppressed.
         let metrics2 = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-2", 0, &visited, None, false, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-2",
+            0,
+            &visited,
+            None,
+            false,
+            0.0,
         );
         assert_eq!(metrics2.handoffs_suppressed, 0);
         assert_eq!(metrics2.events_published, 2);
@@ -1641,7 +1667,16 @@ mod tests {
         // T3: handoffs are single-hop — a chain execution (depth ≥ 1) does not
         // fire further handoffs, but normal chain triggers still cascade.
         let metrics3 = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-3", 1, &visited, None, false, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-3",
+            1,
+            &visited,
+            None,
+            false,
+            0.0,
         );
         assert_eq!(metrics3.handoffs_suppressed, 1);
         assert_eq!(metrics3.events_published, 1);
@@ -1687,8 +1722,9 @@ mod tests {
 
         let visited = HashSet::new();
         // Execution failed, so predicate should not match
-        let metrics =
-            evaluate_chain_triggers(&pool, &a, "failed", None, "exec-1", 0, &visited, None, false, 0.0);
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "failed", None, "exec-1", 0, &visited, None, false, 0.0,
+        );
 
         assert_eq!(metrics.triggers_evaluated, 1);
         assert_eq!(metrics.predicates_matched, 0);
@@ -1722,8 +1758,18 @@ mod tests {
         // B is already visited — should detect cycle
         let mut visited = HashSet::new();
         visited.insert(b.clone());
-        let metrics =
-            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 1, &visited, None, false, 0.0);
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            1,
+            &visited,
+            None,
+            false,
+            0.0,
+        );
 
         assert_eq!(metrics.chain_depth, 1);
         assert_eq!(metrics.triggers_evaluated, 1);
@@ -1786,7 +1832,10 @@ mod tests {
             false,
             0.0,
         );
-        assert_eq!(stop_tokens(&pool, "trace-depth"), vec![stop_reason::DEPTH_LIMIT]);
+        assert_eq!(
+            stop_tokens(&pool, "trace-depth"),
+            vec![stop_reason::DEPTH_LIMIT]
+        );
     }
 
     #[test]
@@ -1808,9 +1857,11 @@ mod tests {
             0.0,
         );
         // Nothing is queryable (there is no trace id to query by).
-        assert!(chain_stop_reasons::get_by_chain_trace_id(&pool, "trace-depth")
-            .unwrap()
-            .is_empty());
+        assert!(
+            chain_stop_reasons::get_by_chain_trace_id(&pool, "trace-depth")
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -2031,12 +2082,8 @@ mod tests {
         let a = make_persona(&pool, "Agent A");
         let b = make_persona(&pool, "Agent B");
         make_chain(&pool, &a, &b);
-        crate::repos::core::settings::set(
-            &pool,
-            crate::settings_keys::CHAIN_MAX_COST_USD,
-            "1.0",
-        )
-        .unwrap();
+        crate::repos::core::settings::set(&pool, crate::settings_keys::CHAIN_MAX_COST_USD, "1.0")
+            .unwrap();
         let visited = HashSet::new();
         // Accumulated cost 2.0 >= ceiling 1.0 → halt before firing any link.
         let metrics = evaluate_chain_triggers(
@@ -2065,12 +2112,8 @@ mod tests {
         let a = make_persona(&pool, "Agent A");
         let b = make_persona(&pool, "Agent B");
         make_chain(&pool, &a, &b);
-        crate::repos::core::settings::set(
-            &pool,
-            crate::settings_keys::CHAIN_MAX_COST_USD,
-            "10.0",
-        )
-        .unwrap();
+        crate::repos::core::settings::set(&pool, crate::settings_keys::CHAIN_MAX_COST_USD, "10.0")
+            .unwrap();
         let visited = HashSet::new();
         // 2.0 < 10.0 → fires normally.
         let metrics = evaluate_chain_triggers(
@@ -2192,12 +2235,8 @@ mod tests {
     }
 
     fn set_max_links(pool: &crate::DbPool, value: &str) {
-        crate::repos::core::settings::set(
-            pool,
-            crate::settings_keys::CHAIN_MAX_LINKS,
-            value,
-        )
-        .unwrap();
+        crate::repos::core::settings::set(pool, crate::settings_keys::CHAIN_MAX_LINKS, value)
+            .unwrap();
     }
 
     #[test]
@@ -2211,7 +2250,16 @@ mod tests {
         seed_chain_links(&pool, "trace-br0", 100);
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br0"), false, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-br0"),
+            false,
+            0.0,
         );
         assert_eq!(metrics.events_published, 1);
         assert!(stop_tokens(&pool, "trace-br0").is_empty());
@@ -2228,7 +2276,16 @@ mod tests {
         seed_chain_links(&pool, "trace-br1", 2);
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br1"), false, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-br1"),
+            false,
+            0.0,
         );
         assert_eq!(metrics.events_published, 0);
         // Breadth is a whole-cascade halt evaluated right after the triggers are
@@ -2251,7 +2308,16 @@ mod tests {
         seed_chain_links(&pool, "trace-br2", 2); // 2 < 5 → fires
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br2"), false, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-br2"),
+            false,
+            0.0,
         );
         assert_eq!(metrics.events_published, 1);
         assert!(stop_tokens(&pool, "trace-br2").is_empty());
@@ -2267,7 +2333,16 @@ mod tests {
         seed_chain_links(&pool, "trace-br3", 3);
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br3"), false, 0.0,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-br3"),
+            false,
+            0.0,
         );
         assert_eq!(metrics.events_published, 1);
         assert!(stop_tokens(&pool, "trace-br3").is_empty());

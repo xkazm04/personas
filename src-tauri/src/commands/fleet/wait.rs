@@ -258,7 +258,13 @@ pub async fn wait_for_screen(
     };
 
     if let WaitCondition::StableMs(window_ms) = condition {
-        return wait_stable(&mut handle, Duration::from_millis(window_ms), start, deadline).await;
+        return wait_stable(
+            &mut handle,
+            Duration::from_millis(window_ms),
+            start,
+            deadline,
+        )
+        .await;
     }
 
     // Compile once so a bad pattern fails immediately rather than per check.
@@ -381,7 +387,10 @@ mod tests {
             ended: false,
         };
         let shape = d.shape();
-        assert!(!shape.contains("secret"), "shape leaked screen content: {shape}");
+        assert!(
+            !shape.contains("secret"),
+            "shape leaked screen content: {shape}"
+        );
         assert!(shape.contains("27ch"));
         assert!(shape.contains("gen=7"));
         assert!(shape.contains("ended=false"));

@@ -42,8 +42,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/airtable.svg"##),
         color: Some(r##"#18BFFF"##),
-        sample_payload: Some(r##"{"connector":"airtable","label":"Airtable","docs_url":"https://airtable.com/create/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Airtable added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"airtable","label":"Airtable","docs_url":"https://airtable.com/create/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Airtable added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-alpha_vantage"##,
@@ -54,8 +58,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/alpha-vantage.svg"##),
         color: Some(r##"#222832"##),
-        sample_payload: Some(r##"{"connector":"alpha_vantage","label":"Alpha Vantage","docs_url":"https://www.alphavantage.co/documentation/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Alpha Vantage added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"alpha_vantage","label":"Alpha Vantage","docs_url":"https://www.alphavantage.co/documentation/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Alpha Vantage added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-apify"##,
@@ -66,8 +74,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/apify.svg"##),
         color: Some(r##"#246DFF"##),
-        sample_payload: Some(r##"{"connector":"apify","label":"Apify","docs_url":"https://docs.apify.com/api/v2","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Apify added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"apify","label":"Apify","docs_url":"https://docs.apify.com/api/v2","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Apify added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-arcade"##,
@@ -78,8 +90,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/arcade.svg"##),
         color: Some(r##"#F97316"##),
-        sample_payload: Some(r##"{"connector":"arcade","label":"Arcade","docs_url":"https://docs.arcade.dev/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Arcade added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"arcade","label":"Arcade","docs_url":"https://docs.arcade.dev/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Arcade added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-arxiv"##,
@@ -90,8 +106,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/arxiv.svg"##),
         color: Some(r##"#B31B1B"##),
-        sample_payload: Some(r##"{"connector":"arxiv","label":"arXiv","docs_url":"https://info.arxiv.org/help/api/index.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: arXiv added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"arxiv","label":"arXiv","docs_url":"https://info.arxiv.org/help/api/index.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: arXiv added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-asana"##,
@@ -102,8 +122,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/asana.svg"##),
         color: Some(r##"#F06A6A"##),
-        sample_payload: Some(r##"{"connector":"asana","label":"Asana","docs_url":"https://developers.asana.com/docs/personal-access-token","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Asana added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"asana","label":"Asana","docs_url":"https://developers.asana.com/docs/personal-access-token","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Asana added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-attio"##,
@@ -114,8 +138,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/attio.svg"##),
         color: Some(r##"#4F46E5"##),
-        sample_payload: Some(r##"{"connector":"attio","label":"Attio","docs_url":"https://developers.attio.com/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Attio added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"attio","label":"Attio","docs_url":"https://developers.attio.com/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Attio added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-aws_cloud"##,
@@ -126,8 +154,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/aws-s3.svg"##),
         color: Some(r##"#FF9900"##),
-        sample_payload: Some(r##"{"connector":"aws_cloud","label":"Amazon Web Services","docs_url":"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Amazon Web Services added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"aws_cloud","label":"Amazon Web Services","docs_url":"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Amazon Web Services added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-aws_s3"##,
@@ -138,8 +170,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/aws-s3.svg"##),
         color: Some(r##"#569A31"##),
-        sample_payload: Some(r##"{"connector":"aws_s3","label":"AWS S3","docs_url":"https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: AWS S3 added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"aws_s3","label":"AWS S3","docs_url":"https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: AWS S3 added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-azure_cloud"##,
@@ -150,8 +186,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/azure-devops.svg"##),
         color: Some(r##"#0078D4"##),
-        sample_payload: Some(r##"{"connector":"azure_cloud","label":"Microsoft Azure","docs_url":"https://learn.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Azure added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"azure_cloud","label":"Microsoft Azure","docs_url":"https://learn.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Azure added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-azure_devops_org"##,
@@ -162,8 +202,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/azure-devops.svg"##),
         color: Some(r##"#0078D7"##),
-        sample_payload: Some(r##"{"connector":"azure_devops_org","label":"Azure DevOps (org-aware)","docs_url":"https://learn.microsoft.com/en-us/rest/api/azure/devops/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Azure DevOps (org-aware) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"azure_devops_org","label":"Azure DevOps (org-aware)","docs_url":"https://learn.microsoft.com/en-us/rest/api/azure/devops/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Azure DevOps (org-aware) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-azure_devops"##,
@@ -174,8 +218,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/azure-devops.svg"##),
         color: Some(r##"#0078D7"##),
-        sample_payload: Some(r##"{"connector":"azure_devops","label":"Azure DevOps","docs_url":"https://learn.microsoft.com/en-us/rest/api/azure/devops/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Azure DevOps added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"azure_devops","label":"Azure DevOps","docs_url":"https://learn.microsoft.com/en-us/rest/api/azure/devops/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Azure DevOps added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-backblaze_b2"##,
@@ -186,8 +234,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/backblaze-b2.svg"##),
         color: Some(r##"#E21E29"##),
-        sample_payload: Some(r##"{"connector":"backblaze_b2","label":"Backblaze B2","docs_url":"https://www.backblaze.com/docs/cloud-storage","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Backblaze B2 added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"backblaze_b2","label":"Backblaze B2","docs_url":"https://www.backblaze.com/docs/cloud-storage","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Backblaze B2 added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-betterstack"##,
@@ -198,8 +250,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/betterstack.svg"##),
         color: Some(r##"#E5484D"##),
-        sample_payload: Some(r##"{"connector":"betterstack","label":"Better Stack","docs_url":"https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Better Stack added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"betterstack","label":"Better Stack","docs_url":"https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Better Stack added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-bright_data"##,
@@ -210,8 +266,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/bright_data.svg"##),
         color: Some(r##"#00B6FF"##),
-        sample_payload: Some(r##"{"connector":"bright_data","label":"Bright Data","docs_url":"https://docs.brightdata.com","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Bright Data added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"bright_data","label":"Bright Data","docs_url":"https://docs.brightdata.com","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Bright Data added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-buffer"##,
@@ -222,8 +282,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/buffer.svg"##),
         color: Some(r##"#168EEA"##),
-        sample_payload: Some(r##"{"connector":"buffer","label":"Buffer","docs_url":"https://buffer.com/developers/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Buffer added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"buffer","label":"Buffer","docs_url":"https://buffer.com/developers/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Buffer added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-cal_com"##,
@@ -234,8 +298,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/cal-com.svg"##),
         color: Some(r##"#292929"##),
-        sample_payload: Some(r##"{"connector":"cal_com","label":"Cal.com","docs_url":"https://cal.com/docs/api-reference/v2/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Cal.com added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"cal_com","label":"Cal.com","docs_url":"https://cal.com/docs/api-reference/v2/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Cal.com added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-calendly"##,
@@ -246,8 +314,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/calendly.svg"##),
         color: Some(r##"#006BFF"##),
-        sample_payload: Some(r##"{"connector":"calendly","label":"Calendly","docs_url":"https://developer.calendly.com/api-docs/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Calendly added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"calendly","label":"Calendly","docs_url":"https://developer.calendly.com/api-docs/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Calendly added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-canva"##,
@@ -258,8 +330,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/canva.svg"##),
         color: Some(r##"#00C4CC"##),
-        sample_payload: Some(r##"{"connector":"canva","label":"Canva","docs_url":"https://www.canva.dev/docs/connect/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Canva added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"canva","label":"Canva","docs_url":"https://www.canva.dev/docs/connect/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Canva added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-circleci"##,
@@ -270,8 +346,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/circleci.svg"##),
         color: Some(r##"#343434"##),
-        sample_payload: Some(r##"{"connector":"circleci","label":"CircleCI","docs_url":"https://circleci.com/docs/managing-api-tokens/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: CircleCI added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"circleci","label":"CircleCI","docs_url":"https://circleci.com/docs/managing-api-tokens/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: CircleCI added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-clickup"##,
@@ -282,8 +362,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/clickup.svg"##),
         color: Some(r##"#7B68EE"##),
-        sample_payload: Some(r##"{"connector":"clickup","label":"ClickUp","docs_url":"https://clickup.com/api/developer-portal/authentication","detected_at":"2026-01-01T00:00:00Z","summary":"Example: ClickUp added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"clickup","label":"ClickUp","docs_url":"https://clickup.com/api/developer-portal/authentication","detected_at":"2026-01-01T00:00:00Z","summary":"Example: ClickUp added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-clockify"##,
@@ -294,8 +378,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"https://cdn.simpleicons.org/clockify/03A9F4"##),
         color: Some(r##"#03A9F4"##),
-        sample_payload: Some(r##"{"connector":"clockify","label":"Clockify","docs_url":"https://docs.clockify.me/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Clockify added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"clockify","label":"Clockify","docs_url":"https://docs.clockify.me/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Clockify added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-cloudflare_r2"##,
@@ -306,8 +394,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/cloudflare-r2.svg"##),
         color: Some(r##"#F38020"##),
-        sample_payload: Some(r##"{"connector":"cloudflare_r2","label":"Cloudflare R2","docs_url":"https://developers.cloudflare.com/r2/api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Cloudflare R2 added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"cloudflare_r2","label":"Cloudflare R2","docs_url":"https://developers.cloudflare.com/r2/api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Cloudflare R2 added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-cloudflare"##,
@@ -318,8 +410,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/cloudflare.svg"##),
         color: Some(r##"#F38020"##),
-        sample_payload: Some(r##"{"connector":"cloudflare","label":"Cloudflare","docs_url":"https://dash.cloudflare.com/profile/api-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Cloudflare added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"cloudflare","label":"Cloudflare","docs_url":"https://dash.cloudflare.com/profile/api-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Cloudflare added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-confluence"##,
@@ -330,8 +426,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/confluence.svg"##),
         color: Some(r##"#172B4D"##),
-        sample_payload: Some(r##"{"connector":"confluence","label":"Confluence","docs_url":"https://id.atlassian.com/manage-profile/security/api-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Confluence added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"confluence","label":"Confluence","docs_url":"https://id.atlassian.com/manage-profile/security/api-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Confluence added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-convex"##,
@@ -342,8 +442,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/convex.svg"##),
         color: Some(r##"#F97316"##),
-        sample_payload: Some(r##"{"connector":"convex","label":"Convex","docs_url":"https://docs.convex.dev/http-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Convex added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"convex","label":"Convex","docs_url":"https://docs.convex.dev/http-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Convex added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-crisp"##,
@@ -354,8 +458,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/crisp.svg"##),
         color: Some(r##"#4B60F5"##),
-        sample_payload: Some(r##"{"connector":"crisp","label":"Crisp","docs_url":"https://docs.crisp.chat/references/rest-api/v1/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Crisp added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"crisp","label":"Crisp","docs_url":"https://docs.crisp.chat/references/rest-api/v1/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Crisp added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-deepgram"##,
@@ -366,8 +474,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/deepgram.svg"##),
         color: Some(r##"#13EF93"##),
-        sample_payload: Some(r##"{"connector":"deepgram","label":"Deepgram","docs_url":"https://developers.deepgram.com/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Deepgram added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"deepgram","label":"Deepgram","docs_url":"https://developers.deepgram.com/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Deepgram added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-desktop_docker"##,
@@ -378,8 +490,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/docker.svg"##),
         color: Some(r##"#2496ED"##),
-        sample_payload: Some(r##"{"connector":"desktop_docker","label":"Docker","docs_url":"https://docs.docker.com/reference/cli/docker/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Docker added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"desktop_docker","label":"Docker","docs_url":"https://docs.docker.com/reference/cli/docker/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Docker added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-desktop_obsidian"##,
@@ -390,8 +506,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/obsidian.svg"##),
         color: Some(r##"#7C3AED"##),
-        sample_payload: Some(r##"{"connector":"desktop_obsidian","label":"Obsidian","docs_url":"https://obsidian.md/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Obsidian added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"desktop_obsidian","label":"Obsidian","docs_url":"https://obsidian.md/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Obsidian added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-digitalocean"##,
@@ -402,8 +522,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/digitalocean.svg"##),
         color: Some(r##"#0080FF"##),
-        sample_payload: Some(r##"{"connector":"digitalocean","label":"DigitalOcean","docs_url":"https://docs.digitalocean.com/reference/api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: DigitalOcean added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"digitalocean","label":"DigitalOcean","docs_url":"https://docs.digitalocean.com/reference/api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: DigitalOcean added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-discord_webhook"##,
@@ -414,8 +538,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/discord.svg"##),
         color: Some(r##"#5865F2"##),
-        sample_payload: Some(r##"{"connector":"discord_webhook","label":"Discord (channel webhook)","docs_url":"https://support.discord.com/hc/en-us/articles/228383668","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Discord (channel webhook) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"discord_webhook","label":"Discord (channel webhook)","docs_url":"https://support.discord.com/hc/en-us/articles/228383668","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Discord (channel webhook) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-discord"##,
@@ -426,8 +554,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/discord.svg"##),
         color: Some(r##"#5865F2"##),
-        sample_payload: Some(r##"{"connector":"discord","label":"Discord","docs_url":"https://discord.com/developers/applications","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Discord added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"discord","label":"Discord","docs_url":"https://discord.com/developers/applications","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Discord added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-dropbox"##,
@@ -438,8 +570,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/dropbox.svg"##),
         color: Some(r##"#0061FF"##),
-        sample_payload: Some(r##"{"connector":"dropbox","label":"Dropbox","docs_url":"https://www.dropbox.com/developers/apps","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Dropbox added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"dropbox","label":"Dropbox","docs_url":"https://www.dropbox.com/developers/apps","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Dropbox added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-duckdb"##,
@@ -450,8 +586,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/duckdb.svg"##),
         color: Some(r##"#FFC107"##),
-        sample_payload: Some(r##"{"connector":"duckdb","label":"DuckDB","docs_url":"https://duckdb.org/docs/connect/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: DuckDB added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"duckdb","label":"DuckDB","docs_url":"https://duckdb.org/docs/connect/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: DuckDB added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-elevenlabs"##,
@@ -462,8 +602,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/elevenlabs.svg"##),
         color: Some(r##"#000000"##),
-        sample_payload: Some(r##"{"connector":"elevenlabs","label":"ElevenLabs","docs_url":"https://elevenlabs.io/docs/api-reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: ElevenLabs added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"elevenlabs","label":"ElevenLabs","docs_url":"https://elevenlabs.io/docs/api-reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: ElevenLabs added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-figma"##,
@@ -474,8 +618,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/figma.svg"##),
         color: Some(r##"#F24E1E"##),
-        sample_payload: Some(r##"{"connector":"figma","label":"Figma","docs_url":"https://www.figma.com/developers/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Figma added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"figma","label":"Figma","docs_url":"https://www.figma.com/developers/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Figma added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-firecrawl"##,
@@ -486,8 +634,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/firecrawl.svg"##),
         color: Some(r##"#F97316"##),
-        sample_payload: Some(r##"{"connector":"firecrawl","label":"Firecrawl","docs_url":"https://docs.firecrawl.dev/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Firecrawl added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"firecrawl","label":"Firecrawl","docs_url":"https://docs.firecrawl.dev/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Firecrawl added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-fly_io"##,
@@ -498,8 +650,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/fly-io.svg"##),
         color: Some(r##"#7B3FE4"##),
-        sample_payload: Some(r##"{"connector":"fly_io","label":"Fly.io","docs_url":"https://fly.io/docs/reference/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Fly.io added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"fly_io","label":"Fly.io","docs_url":"https://fly.io/docs/reference/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Fly.io added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-formbricks"##,
@@ -510,8 +666,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/formbricks.svg"##),
         color: Some(r##"#00C4B8"##),
-        sample_payload: Some(r##"{"connector":"formbricks","label":"Formbricks","docs_url":"https://formbricks.com/docs/api/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Formbricks added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"formbricks","label":"Formbricks","docs_url":"https://formbricks.com/docs/api/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Formbricks added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-gcp_cloud"##,
@@ -522,8 +682,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google.svg"##),
         color: Some(r##"#4285F4"##),
-        sample_payload: Some(r##"{"connector":"gcp_cloud","label":"Google Cloud Platform","docs_url":"https://cloud.google.com/iam/docs/service-account-overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Cloud Platform added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"gcp_cloud","label":"Google Cloud Platform","docs_url":"https://cloud.google.com/iam/docs/service-account-overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Cloud Platform added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-gemini_vision"##,
@@ -534,8 +698,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/gemini-vision.svg"##),
         color: Some(r##"#4285F4"##),
-        sample_payload: Some(r##"{"connector":"gemini_vision","label":"Gemini Vision","docs_url":"https://ai.google.dev/gemini-api/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Gemini Vision added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"gemini_vision","label":"Gemini Vision","docs_url":"https://ai.google.dev/gemini-api/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Gemini Vision added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-generic_webhook"##,
@@ -546,8 +714,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/webhook.svg"##),
         color: Some(r##"#6B7280"##),
-        sample_payload: Some(r##"{"connector":"generic_webhook","label":"Generic JSON webhook","docs_url":"https://docs.personas.app/docs/notifications","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Generic JSON webhook added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"generic_webhook","label":"Generic JSON webhook","docs_url":"https://docs.personas.app/docs/notifications","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Generic JSON webhook added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-github_actions"##,
@@ -558,8 +730,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/github.svg"##),
         color: Some(r##"#2088FF"##),
-        sample_payload: Some(r##"{"connector":"github_actions","label":"GitHub Actions","docs_url":"https://github.com/settings/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: GitHub Actions added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"github_actions","label":"GitHub Actions","docs_url":"https://github.com/settings/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: GitHub Actions added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-github"##,
@@ -570,8 +746,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/github.svg"##),
         color: Some(r##"#1F2937"##),
-        sample_payload: Some(r##"{"connector":"github","label":"GitHub","docs_url":"https://github.com/settings/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: GitHub added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"github","label":"GitHub","docs_url":"https://github.com/settings/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: GitHub added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-gitlab"##,
@@ -582,8 +762,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/gitlab.svg"##),
         color: Some(r##"#FC6D26"##),
-        sample_payload: Some(r##"{"connector":"gitlab","label":"GitLab","docs_url":"https://docs.gitlab.com/ee/api/rest/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: GitLab added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"gitlab","label":"GitLab","docs_url":"https://docs.gitlab.com/ee/api/rest/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: GitLab added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-gmail"##,
@@ -594,8 +778,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/gmail.svg"##),
         color: Some(r##"#EA4335"##),
-        sample_payload: Some(r##"{"connector":"gmail","label":"Gmail","docs_url":"https://developers.google.com/workspace/gmail/api/reference/rest","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Gmail added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"gmail","label":"Gmail","docs_url":"https://developers.google.com/workspace/gmail/api/reference/rest","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Gmail added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-google_ads"##,
@@ -606,8 +794,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google-ads.svg"##),
         color: Some(r##"#4285F4"##),
-        sample_payload: Some(r##"{"connector":"google_ads","label":"Google Ads","docs_url":"https://developers.google.com/google-ads/api/rest/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Ads added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"google_ads","label":"Google Ads","docs_url":"https://developers.google.com/google-ads/api/rest/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Ads added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-google_calendar"##,
@@ -618,8 +810,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google-calendar.svg"##),
         color: Some(r##"#4285F4"##),
-        sample_payload: Some(r##"{"connector":"google_calendar","label":"Google Calendar","docs_url":"https://developers.google.com/calendar/api/v3/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Calendar added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"google_calendar","label":"Google Calendar","docs_url":"https://developers.google.com/calendar/api/v3/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Calendar added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-google_drive"##,
@@ -630,8 +826,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google-drive.svg"##),
         color: Some(r##"#1FA463"##),
-        sample_payload: Some(r##"{"connector":"google_drive","label":"Google Drive","docs_url":"https://developers.google.com/drive/api/guides/about-sdk","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Drive added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"google_drive","label":"Google Drive","docs_url":"https://developers.google.com/drive/api/guides/about-sdk","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Drive added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-google_gemini"##,
@@ -642,8 +842,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google-gemini.svg"##),
         color: Some(r##"#4285F4"##),
-        sample_payload: Some(r##"{"connector":"google_gemini","label":"Google Gemini","docs_url":"https://ai.google.dev/gemini-api/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Gemini added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"google_gemini","label":"Google Gemini","docs_url":"https://ai.google.dev/gemini-api/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Gemini added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-google_sheets"##,
@@ -654,8 +858,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google-sheets.svg"##),
         color: Some(r##"#34A853"##),
-        sample_payload: Some(r##"{"connector":"google_sheets","label":"Google Sheets","docs_url":"https://developers.google.com/workspace/sheets/api/reference/rest","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Sheets added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"google_sheets","label":"Google Sheets","docs_url":"https://developers.google.com/workspace/sheets/api/reference/rest","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Sheets added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-google_workspace_oauth_template"##,
@@ -666,8 +874,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/google.svg"##),
         color: Some(r##"#4285F4"##),
-        sample_payload: Some(r##"{"connector":"google_workspace_oauth_template","label":"Google Workspace","docs_url":"https://console.cloud.google.com/apis/credentials","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Workspace added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"google_workspace_oauth_template","label":"Google Workspace","docs_url":"https://console.cloud.google.com/apis/credentials","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Google Workspace added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-granola"##,
@@ -678,8 +890,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/granola.svg"##),
         color: Some(r##"#C49A6C"##),
-        sample_payload: Some(r##"{"connector":"granola","label":"Granola","docs_url":"https://docs.granola.ai/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Granola added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"granola","label":"Granola","docs_url":"https://docs.granola.ai/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Granola added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-harvest"##,
@@ -690,8 +906,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/harvest.svg"##),
         color: Some(r##"#FA5D00"##),
-        sample_payload: Some(r##"{"connector":"harvest","label":"Harvest","docs_url":"https://help.getharvest.com/api-v2/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Harvest added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"harvest","label":"Harvest","docs_url":"https://help.getharvest.com/api-v2/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Harvest added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-helicone"##,
@@ -702,8 +922,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/helicone.svg"##),
         color: Some(r##"#F1A208"##),
-        sample_payload: Some(r##"{"connector":"helicone","label":"Helicone","docs_url":"https://docs.helicone.ai/rest/request/post-v1requestquery","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Helicone added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"helicone","label":"Helicone","docs_url":"https://docs.helicone.ai/rest/request/post-v1requestquery","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Helicone added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-higgsfield"##,
@@ -714,8 +938,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/higgsfield.svg"##),
         color: Some(r##"#5B5FFF"##),
-        sample_payload: Some(r##"{"connector":"higgsfield","label":"Higgsfield","docs_url":"https://github.com/higgsfield-ai/higgsfield-js","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Higgsfield added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"higgsfield","label":"Higgsfield","docs_url":"https://github.com/higgsfield-ai/higgsfield-js","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Higgsfield added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-hubspot"##,
@@ -726,8 +954,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/hubspot.svg"##),
         color: Some(r##"#FF7A59"##),
-        sample_payload: Some(r##"{"connector":"hubspot","label":"HubSpot","docs_url":"https://developers.hubspot.com/docs/api/private-apps","detected_at":"2026-01-01T00:00:00Z","summary":"Example: HubSpot added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"hubspot","label":"HubSpot","docs_url":"https://developers.hubspot.com/docs/api/private-apps","detected_at":"2026-01-01T00:00:00Z","summary":"Example: HubSpot added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-huggingface"##,
@@ -738,8 +970,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/huggingface.svg"##),
         color: Some(r##"#FFD21E"##),
-        sample_payload: Some(r##"{"connector":"huggingface","label":"Hugging Face","docs_url":"https://huggingface.co/docs/hub/security-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Hugging Face added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"huggingface","label":"Hugging Face","docs_url":"https://huggingface.co/docs/hub/security-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Hugging Face added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-humbalytics"##,
@@ -750,8 +986,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/humbalytics.svg"##),
         color: Some(r##"#7C3AED"##),
-        sample_payload: Some(r##"{"connector":"humbalytics","label":"Humbalytics","docs_url":"https://humbalytics.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Humbalytics added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"humbalytics","label":"Humbalytics","docs_url":"https://humbalytics.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Humbalytics added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-jira"##,
@@ -762,8 +1002,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/jira.svg"##),
         color: Some(r##"#0052CC"##),
-        sample_payload: Some(r##"{"connector":"jira","label":"Jira","docs_url":"https://id.atlassian.com/manage-profile/security/api-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Jira added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"jira","label":"Jira","docs_url":"https://id.atlassian.com/manage-profile/security/api-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Jira added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-kalshi"##,
@@ -774,8 +1018,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/kalshi.svg"##),
         color: Some(r##"#4DE4B2"##),
-        sample_payload: Some(r##"{"connector":"kalshi","label":"Kalshi","docs_url":"https://docs.kalshi.com","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Kalshi added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"kalshi","label":"Kalshi","docs_url":"https://docs.kalshi.com","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Kalshi added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-knock"##,
@@ -786,8 +1034,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/knock.svg"##),
         color: Some(r##"#6C47FF"##),
-        sample_payload: Some(r##"{"connector":"knock","label":"Knock","docs_url":"https://docs.knock.app/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Knock added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"knock","label":"Knock","docs_url":"https://docs.knock.app/reference","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Knock added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-kubernetes"##,
@@ -798,8 +1050,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/kubernetes.svg"##),
         color: Some(r##"#326CE5"##),
-        sample_payload: Some(r##"{"connector":"kubernetes","label":"Kubernetes","docs_url":"https://kubernetes.io/docs/reference/kubernetes-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Kubernetes added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"kubernetes","label":"Kubernetes","docs_url":"https://kubernetes.io/docs/reference/kubernetes-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Kubernetes added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-langfuse"##,
@@ -810,8 +1066,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/langfuse.svg"##),
         color: Some(r##"#0A60FF"##),
-        sample_payload: Some(r##"{"connector":"langfuse","label":"Langfuse","docs_url":"https://langfuse.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Langfuse added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"langfuse","label":"Langfuse","docs_url":"https://langfuse.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Langfuse added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-langsmith"##,
@@ -822,8 +1082,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/langsmith.svg"##),
         color: Some(r##"#1C3C3C"##),
-        sample_payload: Some(r##"{"connector":"langsmith","label":"LangSmith","docs_url":"https://docs.smith.langchain.com/reference/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LangSmith added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"langsmith","label":"LangSmith","docs_url":"https://docs.smith.langchain.com/reference/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LangSmith added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-lemonsqueezy"##,
@@ -834,8 +1098,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/lemonsqueezy.svg"##),
         color: Some(r##"#FFC233"##),
-        sample_payload: Some(r##"{"connector":"lemonsqueezy","label":"Lemon Squeezy","docs_url":"https://docs.lemonsqueezy.com/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Lemon Squeezy added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"lemonsqueezy","label":"Lemon Squeezy","docs_url":"https://docs.lemonsqueezy.com/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Lemon Squeezy added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-leonardo_ai"##,
@@ -846,8 +1114,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/leonardo-ai.svg"##),
         color: Some(r##"#6C3AEF"##),
-        sample_payload: Some(r##"{"connector":"leonardo_ai","label":"Leonardo AI","docs_url":"https://docs.leonardo.ai/docs/getting-started","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Leonardo AI added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"leonardo_ai","label":"Leonardo AI","docs_url":"https://docs.leonardo.ai/docs/getting-started","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Leonardo AI added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-linear"##,
@@ -858,8 +1130,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/linear.svg"##),
         color: Some(r##"#5E6AD2"##),
-        sample_payload: Some(r##"{"connector":"linear","label":"Linear","docs_url":"https://linear.app/settings/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Linear added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"linear","label":"Linear","docs_url":"https://linear.app/settings/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Linear added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-linkedin_ads"##,
@@ -870,8 +1146,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/linkedin-ads.svg"##),
         color: Some(r##"#0A66C2"##),
-        sample_payload: Some(r##"{"connector":"linkedin_ads","label":"LinkedIn Ads","docs_url":"https://learn.microsoft.com/en-us/linkedin/marketing/integrations/ads-reporting/ads-reporting","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LinkedIn Ads added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"linkedin_ads","label":"LinkedIn Ads","docs_url":"https://learn.microsoft.com/en-us/linkedin/marketing/integrations/ads-reporting/ads-reporting","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LinkedIn Ads added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-linkedin"##,
@@ -882,8 +1162,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/linkedin.svg"##),
         color: Some(r##"#0A66C2"##),
-        sample_payload: Some(r##"{"connector":"linkedin","label":"LinkedIn","docs_url":"https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LinkedIn added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"linkedin","label":"LinkedIn","docs_url":"https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LinkedIn added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-mcp_gateway"##,
@@ -894,8 +1178,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/mcp_gateway.svg"##),
         color: Some(r##"#6366F1"##),
-        sample_payload: Some(r##"{"connector":"mcp_gateway","label":"MCP Gateway","docs_url":"https://modelcontextprotocol.io/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: MCP Gateway added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"mcp_gateway","label":"MCP Gateway","docs_url":"https://modelcontextprotocol.io/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: MCP Gateway added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-meta_ads"##,
@@ -906,8 +1194,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/meta-ads.svg"##),
         color: Some(r##"#1877F2"##),
-        sample_payload: Some(r##"{"connector":"meta_ads","label":"Meta Ads","docs_url":"https://developers.facebook.com/docs/marketing-api/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Meta Ads added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"meta_ads","label":"Meta Ads","docs_url":"https://developers.facebook.com/docs/marketing-api/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Meta Ads added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-metabase"##,
@@ -918,8 +1210,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/metabase.svg"##),
         color: Some(r##"#509EE3"##),
-        sample_payload: Some(r##"{"connector":"metabase","label":"Metabase","docs_url":"https://www.metabase.com/docs/latest/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Metabase added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"metabase","label":"Metabase","docs_url":"https://www.metabase.com/docs/latest/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Metabase added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-microsoft_calendar"##,
@@ -930,8 +1226,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/microsoft-calendar.svg"##),
         color: Some(r##"#0078D4"##),
-        sample_payload: Some(r##"{"connector":"microsoft_calendar","label":"Microsoft Outlook Calendar","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/calendar","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Outlook Calendar added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"microsoft_calendar","label":"Microsoft Outlook Calendar","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/calendar","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Outlook Calendar added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-microsoft_excel"##,
@@ -942,8 +1242,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/microsoft-excel.svg"##),
         color: Some(r##"#217346"##),
-        sample_payload: Some(r##"{"connector":"microsoft_excel","label":"Microsoft Excel","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/excel","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Excel added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"microsoft_excel","label":"Microsoft Excel","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/excel","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Excel added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-microsoft_outlook"##,
@@ -954,8 +1258,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/microsoft-outlook.svg"##),
         color: Some(r##"#0078D4"##),
-        sample_payload: Some(r##"{"connector":"microsoft_outlook","label":"Microsoft Outlook","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Outlook added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"microsoft_outlook","label":"Microsoft Outlook","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Outlook added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-microsoft_teams"##,
@@ -966,8 +1274,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/microsoft-teams.svg"##),
         color: Some(r##"#6264A7"##),
-        sample_payload: Some(r##"{"connector":"microsoft_teams","label":"Microsoft Teams","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Teams added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"microsoft_teams","label":"Microsoft Teams","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Teams added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-mixpanel"##,
@@ -978,8 +1290,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/mixpanel.svg"##),
         color: Some(r##"#7856FF"##),
-        sample_payload: Some(r##"{"connector":"mixpanel","label":"Mixpanel","docs_url":"https://developer.mixpanel.com/reference/project-secret","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Mixpanel added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"mixpanel","label":"Mixpanel","docs_url":"https://developer.mixpanel.com/reference/project-secret","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Mixpanel added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-monday"##,
@@ -990,8 +1306,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/monday.svg"##),
         color: Some(r##"#FF3D57"##),
-        sample_payload: Some(r##"{"connector":"monday","label":"Monday.com","docs_url":"https://developer.monday.com/api-reference/docs/authentication","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Monday.com added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"monday","label":"Monday.com","docs_url":"https://developer.monday.com/api-reference/docs/authentication","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Monday.com added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-mongodb"##,
@@ -1002,8 +1322,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/mongodb.svg"##),
         color: Some(r##"#47A248"##),
-        sample_payload: Some(r##"{"connector":"mongodb","label":"MongoDB","docs_url":"https://www.mongodb.com/docs/manual/reference/connection-string/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: MongoDB added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"mongodb","label":"MongoDB","docs_url":"https://www.mongodb.com/docs/manual/reference/connection-string/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: MongoDB added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-n8n"##,
@@ -1014,8 +1338,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/n8n.svg"##),
         color: Some(r##"#EA4B71"##),
-        sample_payload: Some(r##"{"connector":"n8n","label":"n8n","docs_url":"https://docs.n8n.io/api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: n8n added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"n8n","label":"n8n","docs_url":"https://docs.n8n.io/api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: n8n added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-neon"##,
@@ -1026,8 +1354,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/neon.svg"##),
         color: Some(r##"#00E699"##),
-        sample_payload: Some(r##"{"connector":"neon","label":"Neon","docs_url":"https://neon.tech/docs/manage/api-keys","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Neon added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"neon","label":"Neon","docs_url":"https://neon.tech/docs/manage/api-keys","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Neon added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-netlify"##,
@@ -1038,8 +1370,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/netlify.svg"##),
         color: Some(r##"#00C7B7"##),
-        sample_payload: Some(r##"{"connector":"netlify","label":"Netlify","docs_url":"https://app.netlify.com/user/applications#personal-access-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Netlify added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"netlify","label":"Netlify","docs_url":"https://app.netlify.com/user/applications#personal-access-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Netlify added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-news_api"##,
@@ -1050,8 +1386,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/news-api.svg"##),
         color: Some(r##"#CF212B"##),
-        sample_payload: Some(r##"{"connector":"news_api","label":"News API","docs_url":"https://newsapi.org/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: News API added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"news_api","label":"News API","docs_url":"https://newsapi.org/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: News API added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-notion"##,
@@ -1062,8 +1402,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/notion.svg"##),
         color: Some(r##"#000000"##),
-        sample_payload: Some(r##"{"connector":"notion","label":"Notion","docs_url":"https://www.notion.so/my-integrations","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Notion added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"notion","label":"Notion","docs_url":"https://www.notion.so/my-integrations","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Notion added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-novu"##,
@@ -1074,8 +1418,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/novu.svg"##),
         color: Some(r##"#FF4981"##),
-        sample_payload: Some(r##"{"connector":"novu","label":"Novu","docs_url":"https://docs.novu.co/api-reference/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Novu added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"novu","label":"Novu","docs_url":"https://docs.novu.co/api-reference/overview","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Novu added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-ntfy"##,
@@ -1086,8 +1434,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/ntfy.svg"##),
         color: Some(r##"#317F6E"##),
-        sample_payload: Some(r##"{"connector":"ntfy","label":"ntfy","docs_url":"https://docs.ntfy.sh/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: ntfy added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"ntfy","label":"ntfy","docs_url":"https://docs.ntfy.sh/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: ntfy added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-obsidian"##,
@@ -1098,8 +1450,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/obsidian.svg"##),
         color: Some(r##"#7C3AED"##),
-        sample_payload: Some(r##"{"connector":"obsidian","label":"Obsidian","docs_url":"https://coddingtonbear.github.io/obsidian-local-rest-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Obsidian added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"obsidian","label":"Obsidian","docs_url":"https://coddingtonbear.github.io/obsidian-local-rest-api/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Obsidian added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-onedrive"##,
@@ -1110,8 +1466,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/onedrive.svg"##),
         color: Some(r##"#0078D4"##),
-        sample_payload: Some(r##"{"connector":"onedrive","label":"OneDrive","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/onedrive","detected_at":"2026-01-01T00:00:00Z","summary":"Example: OneDrive added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"onedrive","label":"OneDrive","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/onedrive","detected_at":"2026-01-01T00:00:00Z","summary":"Example: OneDrive added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-penpot"##,
@@ -1122,8 +1482,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/penpot.svg"##),
         color: Some(r##"#0D1117"##),
-        sample_payload: Some(r##"{"connector":"penpot","label":"Penpot","docs_url":"https://penpot.app/developers","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Penpot added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"penpot","label":"Penpot","docs_url":"https://penpot.app/developers","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Penpot added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-pipedrive"##,
@@ -1134,8 +1498,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/pipedrive.svg"##),
         color: Some(r##"#017737"##),
-        sample_payload: Some(r##"{"connector":"pipedrive","label":"Pipedrive","docs_url":"https://developers.pipedrive.com/docs/api/v1","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Pipedrive added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"pipedrive","label":"Pipedrive","docs_url":"https://developers.pipedrive.com/docs/api/v1","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Pipedrive added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-planetscale"##,
@@ -1146,8 +1514,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/planetscale.svg"##),
         color: Some(r##"#000000"##),
-        sample_payload: Some(r##"{"connector":"planetscale","label":"PlanetScale","docs_url":"https://planetscale.com/docs/concepts/service-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PlanetScale added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"planetscale","label":"PlanetScale","docs_url":"https://planetscale.com/docs/concepts/service-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PlanetScale added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-postgres"##,
@@ -1158,8 +1530,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/postgres.svg"##),
         color: Some(r##"#336791"##),
-        sample_payload: Some(r##"{"connector":"postgres","label":"PostgreSQL","docs_url":"https://www.postgresql.org/docs/current/libpq-connect.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PostgreSQL added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"postgres","label":"PostgreSQL","docs_url":"https://www.postgresql.org/docs/current/libpq-connect.html","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PostgreSQL added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-posthog"##,
@@ -1170,8 +1546,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/posthog.svg"##),
         color: Some(r##"#F9BD2B"##),
-        sample_payload: Some(r##"{"connector":"posthog","label":"PostHog","docs_url":"https://posthog.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PostHog added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"posthog","label":"PostHog","docs_url":"https://posthog.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PostHog added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-pubmed"##,
@@ -1182,8 +1562,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/pubmed.svg"##),
         color: Some(r##"#326599"##),
-        sample_payload: Some(r##"{"connector":"pubmed","label":"PubMed","docs_url":"https://www.ncbi.nlm.nih.gov/books/NBK25501/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PubMed added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"pubmed","label":"PubMed","docs_url":"https://www.ncbi.nlm.nih.gov/books/NBK25501/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: PubMed added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-railway"##,
@@ -1194,8 +1578,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/railway.svg"##),
         color: Some(r##"#0B0D0E"##),
-        sample_payload: Some(r##"{"connector":"railway","label":"Railway","docs_url":"https://docs.railway.com/reference/public-api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Railway added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"railway","label":"Railway","docs_url":"https://docs.railway.com/reference/public-api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Railway added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-ramp"##,
@@ -1206,8 +1594,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/ramp.svg"##),
         color: Some(r##"#FFCD1C"##),
-        sample_payload: Some(r##"{"connector":"ramp","label":"Ramp","docs_url":"https://docs.ramp.com/developer-api/v1","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Ramp added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"ramp","label":"Ramp","docs_url":"https://docs.ramp.com/developer-api/v1","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Ramp added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-redash"##,
@@ -1218,8 +1610,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/redash.svg"##),
         color: Some(r##"#FF7964"##),
-        sample_payload: Some(r##"{"connector":"redash","label":"Redash","docs_url":"https://redash.io/help/user-guide/integrations-and-api/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Redash added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"redash","label":"Redash","docs_url":"https://redash.io/help/user-guide/integrations-and-api/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Redash added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-reddit"##,
@@ -1230,8 +1626,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/reddit.svg"##),
         color: Some(r##"#FF4500"##),
-        sample_payload: Some(r##"{"connector":"reddit","label":"Reddit","docs_url":"https://www.reddit.com/dev/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Reddit added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"reddit","label":"Reddit","docs_url":"https://www.reddit.com/dev/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Reddit added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-redis"##,
@@ -1242,8 +1642,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/redis.svg"##),
         color: Some(r##"#DC382D"##),
-        sample_payload: Some(r##"{"connector":"redis","label":"Redis","docs_url":"https://redis.io/docs/latest/develop/connect/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Redis added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"redis","label":"Redis","docs_url":"https://redis.io/docs/latest/develop/connect/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Redis added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-resend"##,
@@ -1254,8 +1658,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/resend.svg"##),
         color: Some(r##"#000000"##),
-        sample_payload: Some(r##"{"connector":"resend","label":"Resend","docs_url":"https://resend.com/docs/api-reference/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Resend added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"resend","label":"Resend","docs_url":"https://resend.com/docs/api-reference/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Resend added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-semantic_scholar"##,
@@ -1266,8 +1674,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/semantic-scholar.svg"##),
         color: Some(r##"#1857B6"##),
-        sample_payload: Some(r##"{"connector":"semantic_scholar","label":"Semantic Scholar","docs_url":"https://api.semanticscholar.org/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Semantic Scholar added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"semantic_scholar","label":"Semantic Scholar","docs_url":"https://api.semanticscholar.org/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Semantic Scholar added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-sendgrid"##,
@@ -1278,8 +1690,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/sendgrid.svg"##),
         color: Some(r##"#1A82E2"##),
-        sample_payload: Some(r##"{"connector":"sendgrid","label":"SendGrid","docs_url":"https://docs.sendgrid.com/ui/account-and-settings/api-keys","detected_at":"2026-01-01T00:00:00Z","summary":"Example: SendGrid added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"sendgrid","label":"SendGrid","docs_url":"https://docs.sendgrid.com/ui/account-and-settings/api-keys","detected_at":"2026-01-01T00:00:00Z","summary":"Example: SendGrid added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-sentry"##,
@@ -1290,8 +1706,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/sentry.svg"##),
         color: Some(r##"#362D59"##),
-        sample_payload: Some(r##"{"connector":"sentry","label":"Sentry","docs_url":"https://docs.sentry.io/api/guides/create-auth-token/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Sentry added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"sentry","label":"Sentry","docs_url":"https://docs.sentry.io/api/guides/create-auth-token/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Sentry added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-sharepoint"##,
@@ -1302,8 +1722,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/sharepoint.svg"##),
         color: Some(r##"#038387"##),
-        sample_payload: Some(r##"{"connector":"sharepoint","label":"SharePoint","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/sharepoint","detected_at":"2026-01-01T00:00:00Z","summary":"Example: SharePoint added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"sharepoint","label":"SharePoint","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/sharepoint","detected_at":"2026-01-01T00:00:00Z","summary":"Example: SharePoint added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-slack_webhook"##,
@@ -1314,8 +1738,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/slack.svg"##),
         color: Some(r##"#4A154B"##),
-        sample_payload: Some(r##"{"connector":"slack_webhook","label":"Slack (incoming webhook)","docs_url":"https://api.slack.com/messaging/webhooks","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Slack (incoming webhook) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"slack_webhook","label":"Slack (incoming webhook)","docs_url":"https://api.slack.com/messaging/webhooks","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Slack (incoming webhook) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-slack"##,
@@ -1326,8 +1754,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/slack.svg"##),
         color: Some(r##"#4A154B"##),
-        sample_payload: Some(r##"{"connector":"slack","label":"Slack","docs_url":"https://api.slack.com/authentication/token-types","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Slack added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"slack","label":"Slack","docs_url":"https://api.slack.com/authentication/token-types","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Slack added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-stripe"##,
@@ -1338,8 +1770,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/stripe.svg"##),
         color: Some(r##"#635BFF"##),
-        sample_payload: Some(r##"{"connector":"stripe","label":"Stripe","docs_url":"https://stripe.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Stripe added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"stripe","label":"Stripe","docs_url":"https://stripe.com/docs/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Stripe added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-supabase"##,
@@ -1350,8 +1786,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/supabase.svg"##),
         color: Some(r##"#3ECF8E"##),
-        sample_payload: Some(r##"{"connector":"supabase","label":"Supabase","docs_url":"https://supabase.com/dashboard/project/_/settings/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Supabase added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"supabase","label":"Supabase","docs_url":"https://supabase.com/dashboard/project/_/settings/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Supabase added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-tally"##,
@@ -1362,8 +1802,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/tally.svg"##),
         color: Some(r##"#3CCF91"##),
-        sample_payload: Some(r##"{"connector":"tally","label":"Tally","docs_url":"https://tally.so/help/developer-resources","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Tally added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"tally","label":"Tally","docs_url":"https://tally.so/help/developer-resources","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Tally added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-teams_webhook"##,
@@ -1374,8 +1818,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/microsoft-teams.svg"##),
         color: Some(r##"#4B53BC"##),
-        sample_payload: Some(r##"{"connector":"teams_webhook","label":"Microsoft Teams (incoming webhook)","docs_url":"https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Teams (incoming webhook) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"teams_webhook","label":"Microsoft Teams (incoming webhook)","docs_url":"https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Microsoft Teams (incoming webhook) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-telegram"##,
@@ -1386,8 +1834,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/telegram.svg"##),
         color: Some(r##"#26A5E4"##),
-        sample_payload: Some(r##"{"connector":"telegram","label":"Telegram","docs_url":"https://core.telegram.org/bots/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Telegram added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"telegram","label":"Telegram","docs_url":"https://core.telegram.org/bots/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Telegram added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-toggl"##,
@@ -1398,8 +1850,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"https://cdn.simpleicons.org/toggltrack/E57CD8"##),
         color: Some(r##"#E57CD8"##),
-        sample_payload: Some(r##"{"connector":"toggl","label":"Toggl Track","docs_url":"https://engineering.toggl.com/docs/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Toggl Track added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"toggl","label":"Toggl Track","docs_url":"https://engineering.toggl.com/docs/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Toggl Track added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-tracklight"##,
@@ -1410,8 +1866,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/tracklight.svg"##),
         color: Some(r##"#0EA5E9"##),
-        sample_payload: Some(r##"{"connector":"tracklight","label":"LightTrack","docs_url":"https://github.com/xkazm04/tracklight","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LightTrack added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"tracklight","label":"LightTrack","docs_url":"https://github.com/xkazm04/tracklight","detected_at":"2026-01-01T00:00:00Z","summary":"Example: LightTrack added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-twilio_segment"##,
@@ -1422,8 +1882,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/twilio.svg"##),
         color: Some(r##"#52BD94"##),
-        sample_payload: Some(r##"{"connector":"twilio_segment","label":"Twilio Segment","docs_url":"https://segment.com/docs/connections/sources/catalog/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Twilio Segment added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"twilio_segment","label":"Twilio Segment","docs_url":"https://segment.com/docs/connections/sources/catalog/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Twilio Segment added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-twilio_sms"##,
@@ -1434,8 +1898,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/twilio.svg"##),
         color: Some(r##"#F22F46"##),
-        sample_payload: Some(r##"{"connector":"twilio_sms","label":"Twilio","docs_url":"https://www.twilio.com/docs/usage/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Twilio added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"twilio_sms","label":"Twilio","docs_url":"https://www.twilio.com/docs/usage/api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Twilio added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-upstash"##,
@@ -1446,8 +1914,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/upstash.svg"##),
         color: Some(r##"#00E9A3"##),
-        sample_payload: Some(r##"{"connector":"upstash","label":"Upstash","docs_url":"https://upstash.com/docs/redis/features/restapi","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Upstash added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"upstash","label":"Upstash","docs_url":"https://upstash.com/docs/redis/features/restapi","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Upstash added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-vercel"##,
@@ -1458,8 +1930,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/vercel.svg"##),
         color: Some(r##"#000000"##),
-        sample_payload: Some(r##"{"connector":"vercel","label":"Vercel","docs_url":"https://vercel.com/account/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Vercel added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"vercel","label":"Vercel","docs_url":"https://vercel.com/account/tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Vercel added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-woocommerce"##,
@@ -1470,8 +1946,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/woocommerce.svg"##),
         color: Some(r##"#96588A"##),
-        sample_payload: Some(r##"{"connector":"woocommerce","label":"WooCommerce","docs_url":"https://woocommerce.github.io/woocommerce-rest-api-docs/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: WooCommerce added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"woocommerce","label":"WooCommerce","docs_url":"https://woocommerce.github.io/woocommerce-rest-api-docs/","detected_at":"2026-01-01T00:00:00Z","summary":"Example: WooCommerce added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-x_twitter"##,
@@ -1482,8 +1962,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/x-twitter.svg"##),
         color: Some(r##"#000000"##),
-        sample_payload: Some(r##"{"connector":"x_twitter","label":"X (Twitter)","docs_url":"https://docs.x.com/x-api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: X (Twitter) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"x_twitter","label":"X (Twitter)","docs_url":"https://docs.x.com/x-api","detected_at":"2026-01-01T00:00:00Z","summary":"Example: X (Twitter) added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-youtube_data"##,
@@ -1494,8 +1978,12 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/youtube-data.svg"##),
         color: Some(r##"#FF0000"##),
-        sample_payload: Some(r##"{"connector":"youtube_data","label":"YouTube Data API","docs_url":"https://developers.google.com/youtube/v3/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: YouTube Data API added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"youtube_data","label":"YouTube Data API","docs_url":"https://developers.google.com/youtube/v3/docs","detected_at":"2026-01-01T00:00:00Z","summary":"Example: YouTube Data API added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
     BuiltinSharedEvent {
         id: r##"shared-connector-zapier"##,
@@ -1506,10 +1994,13 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         publisher: r##"Personas"##,
         icon: Some(r##"/icons/connectors/zapier.svg"##),
         color: Some(r##"#FF4A00"##),
-        sample_payload: Some(r##"{"connector":"zapier","label":"Zapier","docs_url":"https://platform.zapier.com/reference/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Zapier added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
-        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+        sample_payload: Some(
+            r##"{"connector":"zapier","label":"Zapier","docs_url":"https://platform.zapier.com/reference/introduction","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Zapier added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##,
+        ),
+        event_schema: Some(
+            r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##,
+        ),
     },
 ];
 
-pub(crate) const BUILTIN_SHARED_EVENT_FIRINGS: &[BuiltinSharedEventFiring] = &[
-];
+pub(crate) const BUILTIN_SHARED_EVENT_FIRINGS: &[BuiltinSharedEventFiring] = &[];

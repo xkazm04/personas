@@ -197,7 +197,10 @@ mod tests {
         let new = create(&pool, &input("p1")).unwrap();
 
         let old_now = get_by_id(&pool, &old.id).unwrap();
-        assert_eq!(old_now.status, "rejected", "older pending proposal must be superseded");
+        assert_eq!(
+            old_now.status, "rejected",
+            "older pending proposal must be superseded"
+        );
         assert_eq!(get_by_id(&pool, &new.id).unwrap().status, "pending");
 
         // Other personas' pending proposals are untouched.
@@ -214,8 +217,14 @@ mod tests {
         resolve(&pool, &a.id, false, None).unwrap();
 
         assert_eq!(list(&pool, Some("p1"), None, 50).unwrap().len(), 1);
-        assert_eq!(list(&pool, Some("p1"), Some("rejected"), 50).unwrap().len(), 1);
-        assert_eq!(list(&pool, Some("p1"), Some("pending"), 50).unwrap().len(), 0);
+        assert_eq!(
+            list(&pool, Some("p1"), Some("rejected"), 50).unwrap().len(),
+            1
+        );
+        assert_eq!(
+            list(&pool, Some("p1"), Some("pending"), 50).unwrap().len(),
+            0
+        );
         assert_eq!(list(&pool, None, None, 50).unwrap().len(), 2);
     }
 }

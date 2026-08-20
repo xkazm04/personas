@@ -275,7 +275,11 @@ mod tests {
         // voice cloning through the shared binary.
         assert_eq!(ENGINE_VERSION, "v1.13.4");
 
-        let expect_arch = if cfg!(target_arch = "aarch64") { "win-arm64" } else { "win-x64" };
+        let expect_arch = if cfg!(target_arch = "aarch64") {
+            "win-arm64"
+        } else {
+            "win-x64"
+        };
         assert!(
             ENGINE_ARCHIVE_URL.contains(expect_arch),
             "archive URL must match the compiled target arch ({expect_arch}): {ENGINE_ARCHIVE_URL}"

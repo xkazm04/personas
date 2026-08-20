@@ -29,7 +29,12 @@ impl BridgeActionResult {
     /// Build a `BridgeActionResult` from the outcome of running a bridge action,
     /// folding the success/error envelope construction that every bridge's
     /// `execute` fn used to repeat inline.
-    fn finish(bridge: &str, action: String, duration_ms: u64, result: Result<String, AppError>) -> Self {
+    fn finish(
+        bridge: &str,
+        action: String,
+        duration_ms: u64,
+        result: Result<String, AppError>,
+    ) -> Self {
         match result {
             Ok(output) => Self {
                 success: true,
@@ -545,7 +550,9 @@ pub mod terminal {
                         if content.len() > 1_048_576 {
                             Ok(format!(
                                 "{}...\n[truncated at 1MB, total {} bytes]",
-                                personas_core::utils::text::truncate_on_char_boundary(&content, 1048576),
+                                personas_core::utils::text::truncate_on_char_boundary(
+                                    &content, 1048576
+                                ),
                                 content.len()
                             ))
                         } else {
@@ -1134,11 +1141,7 @@ mod tests {
         std::fs::create_dir_all(vault.join("notes")).unwrap();
         std::fs::write(vault.join("notes").join("nested.md"), "# nested").unwrap();
         std::fs::create_dir_all(dir.path().join("outside")).unwrap();
-        std::fs::write(
-            dir.path().join("outside").join("secret.txt"),
-            "PRIVATE KEY",
-        )
-        .unwrap();
+        std::fs::write(dir.path().join("outside").join("secret.txt"), "PRIVATE KEY").unwrap();
         (dir, vault)
     }
 
@@ -1190,13 +1193,7 @@ mod tests {
             r"\\server\share\secret.txt".to_string(),
             "C:evil.md".to_string(),
         ] {
-            let r = run(
-                &vault,
-                ObsidianAction::ReadNote {
-                    path: path.clone(),
-                },
-            )
-            .await;
+            let r = run(&vault, ObsidianAction::ReadNote { path: path.clone() }).await;
             assert!(!r.success, "absolute path must be rejected: {path}");
             assert!(!r.output.contains("PRIVATE KEY"));
         }
@@ -1297,10 +1294,16 @@ mod tests {
             },
         )
         .await;
-        assert!(append.success, "legitimate append failed: {:?}", append.error);
-        assert!(std::fs::read_to_string(vault.join("notes").join("nested.md"))
-            .unwrap()
-            .contains("more"));
+        assert!(
+            append.success,
+            "legitimate append failed: {:?}",
+            append.error
+        );
+        assert!(
+            std::fs::read_to_string(vault.join("notes").join("nested.md"))
+                .unwrap()
+                .contains("more")
+        );
 
         let list = run(&vault, ObsidianAction::ListNotes { folder: None }).await;
         assert!(list.success, "legitimate list failed: {:?}", list.error);

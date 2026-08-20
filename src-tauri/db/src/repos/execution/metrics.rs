@@ -517,11 +517,7 @@ pub fn get_value_rollup_with_conn(
     } else {
         0.0
     };
-    let cost_per_value_delivered = if vd > 0 {
-        Some(cost / vd as f64)
-    } else {
-        None
-    };
+    let cost_per_value_delivered = if vd > 0 { Some(cost / vd as f64) } else { None };
 
     // 2) Per-model efficiency breakdown.
     let models_sql = format!(
@@ -627,8 +623,10 @@ pub fn get_error_category_breakdown_with_conn(
         Some(pid) => vec![prior_lower.clone(), cur_lower.clone(), pid.to_string()],
         None => vec![prior_lower.clone(), cur_lower.clone()],
     };
-    let param_refs: Vec<&dyn rusqlite::ToSql> =
-        params_vec.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let param_refs: Vec<&dyn rusqlite::ToSql> = params_vec
+        .iter()
+        .map(|s| s as &dyn rusqlite::ToSql)
+        .collect();
 
     // Accumulators keyed by the snake_case ErrorCategory serde token.
     let mut cur_counts: HashMap<String, i64> = HashMap::new();
@@ -683,7 +681,11 @@ pub fn get_error_category_breakdown_with_conn(
         })
         .collect();
     // Descending by current count, then by category token for a stable order.
-    categories.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.category.cmp(&b.category)));
+    categories.sort_by(|a, b| {
+        b.count
+            .cmp(&a.count)
+            .then_with(|| a.category.cmp(&b.category))
+    });
 
     // Per-persona dominant category (max count, tie broken by token).
     let mut persona_top_categories: Vec<PersonaTopErrorCategory> = per_persona
@@ -699,8 +701,11 @@ pub fn get_error_category_breakdown_with_conn(
                 })
         })
         .collect();
-    persona_top_categories
-        .sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.persona_name.cmp(&b.persona_name)));
+    persona_top_categories.sort_by(|a, b| {
+        b.count
+            .cmp(&a.count)
+            .then_with(|| a.persona_name.cmp(&b.persona_name))
+    });
     persona_top_categories.truncate(PERSONA_TOP_CATEGORY_LIMIT);
 
     let total_failures: i64 = cur_counts.values().sum();
@@ -2048,7 +2053,11 @@ fn heatmap_cache() -> &'static Mutex<HashMap<String, HeatmapCacheEntry>> {
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn heatmap_cache_key(days: i64, persona_id: Option<&str>, tz_offset_minutes: Option<i64>) -> String {
+fn heatmap_cache_key(
+    days: i64,
+    persona_id: Option<&str>,
+    tz_offset_minutes: Option<i64>,
+) -> String {
     let tz = tz_offset_minutes.unwrap_or(0);
     match persona_id {
         Some(id) => format!("{days}|{id}|{tz}"),
@@ -2347,9 +2356,8 @@ mod tests {
         assert_eq!(v2.version_number, 2);
 
         // Different persona starts at 1
-        let other =
-            create_prompt_version(&pool, &persona_2, Some("structured".into()), None, None)
-                .unwrap();
+        let other = create_prompt_version(&pool, &persona_2, Some("structured".into()), None, None)
+            .unwrap();
         assert_eq!(other.version_number, 1);
 
         // List versions for persona-1
@@ -2396,8 +2404,7 @@ mod tests {
         assert!(
             data.correlated_events
                 .iter()
-                .any(|e| e.event_type == "credential_rotation"
-                    && e.label.contains("GitHub token")),
+                .any(|e| e.event_type == "credential_rotation" && e.label.contains("GitHub token")),
             "the rotation event did not come back with its credential name: {:?}",
             data.correlated_events
         );

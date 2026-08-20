@@ -42,9 +42,7 @@ use std::fs;
 use chrono::Utc;
 use rusqlite::params;
 
-use crate::companion::brain::procedural::{
-    write_rule, ProceduralInput, ProceduralScope,
-};
+use crate::companion::brain::procedural::{write_rule, ProceduralInput, ProceduralScope};
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -125,9 +123,7 @@ pub fn extract_patterns(pool: &UserDbPool) -> Result<Vec<String>, AppError> {
         } else {
             1
         };
-        let trigger = format!(
-            "When dispatching fleet sessions with roles {role_combo_label}"
-        );
+        let trigger = format!("When dispatching fleet sessions with roles {role_combo_label}");
         let behavior = format!(
             "Recent track record in the last {LOOKBACK_DAYS} days: \
 {completed}/{total} ops completed cleanly ({rate:.0}% success rate); \
@@ -140,8 +136,7 @@ pub fn extract_patterns(pool: &UserDbPool) -> Result<Vec<String>, AppError> {
         );
         // Cite at most the newest 10 episodes — keeps the provenance
         // section of the procedural readable.
-        let sources: Vec<String> =
-            stats.episode_ids.iter().take(10).cloned().collect();
+        let sources: Vec<String> = stats.episode_ids.iter().take(10).cloned().collect();
         match write_rule(
             pool,
             &ProceduralInput {
@@ -188,9 +183,7 @@ fn hint_for_rate(rate: f32) -> &'static str {
 /// `fleet-orchestration op:` marker. We rely on the body_excerpt
 /// (first 500 chars) for the cheap pre-filter, then read the full
 /// body from disk for parsing.
-fn recent_orchestration_episodes(
-    pool: &UserDbPool,
-) -> Result<Vec<(String, String)>, AppError> {
+fn recent_orchestration_episodes(pool: &UserDbPool) -> Result<Vec<(String, String)>, AppError> {
     let conn = pool.get()?;
     let cutoff = Utc::now()
         .checked_sub_signed(chrono::Duration::days(LOOKBACK_DAYS))
@@ -282,9 +275,7 @@ fn extract_role(line: &str) -> Option<String> {
     Some(role.to_string())
 }
 
-fn aggregate_by_role_combo(
-    parsed: &[ParsedOpEpisode],
-) -> BTreeMap<String, RoleComboStats> {
+fn aggregate_by_role_combo(parsed: &[ParsedOpEpisode]) -> BTreeMap<String, RoleComboStats> {
     let mut buckets: BTreeMap<String, RoleComboStats> = BTreeMap::new();
     for op in parsed {
         let key = format_role_combo(&op.roles);
@@ -333,19 +324,21 @@ mod tests {
 
     #[test]
     fn skips_active_ops() {
-        let (id, body) = ep(
-            "ep_active",
-            "op_active",
-            "- `aa` (writer) [running]\n",
-        );
+        let (id, body) = ep("ep_active", "op_active", "- `aa` (writer) [running]\n");
         assert!(parse_episode(&id, &body).is_none());
     }
 
     #[test]
     fn extract_role_ignores_prose_parens() {
-        assert_eq!(extract_role("- `abcd` (writer) [exited]"), Some("writer".into()));
+        assert_eq!(
+            extract_role("- `abcd` (writer) [exited]"),
+            Some("writer".into())
+        );
         assert_eq!(extract_role("- `abcd` (if any) note"), None);
-        assert_eq!(extract_role("Files touched across all sessions: foo.rs"), None);
+        assert_eq!(
+            extract_role("Files touched across all sessions: foo.rs"),
+            None
+        );
     }
 
     #[test]

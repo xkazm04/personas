@@ -28,15 +28,15 @@ use serde_json::json;
 use tauri::State;
 use ts_rs::TS;
 
+use crate::db::models::WorkspaceHarvestCoverage;
 use crate::db::repos::dev_tools as dev_repo;
 use crate::db::repos::dev_workspaces as repo;
 use crate::db::repos::dev_workspaces::KnowledgeCandidate;
 use crate::db::repos::workspace_taxonomy as taxonomy;
-use personas_core::harvest_scopes as scopes;
-use crate::db::models::WorkspaceHarvestCoverage;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+use personas_core::harvest_scopes as scopes;
 
 const MAX_RESULT_BYTES: u64 = 1_048_576;
 
@@ -211,10 +211,8 @@ pub(crate) fn prepare_harvest_core(
             .collect::<Vec<_>>(),
     )?;
     let coverage = repo::list_harvest_coverage(&state.db, &project_id)?;
-    let covered_at: std::collections::HashMap<&str, &WorkspaceHarvestCoverage> = coverage
-        .iter()
-        .map(|c| (c.scope_id.as_str(), c))
-        .collect();
+    let covered_at: std::collections::HashMap<&str, &WorkspaceHarvestCoverage> =
+        coverage.iter().map(|c| (c.scope_id.as_str(), c)).collect();
     let scopes_json: Vec<serde_json::Value> = scopes
         .iter()
         .map(|s| {
@@ -342,7 +340,8 @@ fn find_ingestable_runs(root: &Path) -> Vec<PathBuf> {
         .flatten()
         .filter_map(|e| {
             let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file() {
+            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
+            {
                 return None;
             }
             let t = e.metadata().and_then(|m| m.modified()).ok()?;
@@ -548,12 +547,12 @@ fn ingest_one_run(
         files_total: cov.files_total,
         // Derive the percentage when the agent gave counts but no percentage;
         // never invent one from nothing.
-        estimated_pct: cov.estimated_pct.or_else(|| {
-            match (cov.files_read, cov.files_total) {
+        estimated_pct: cov
+            .estimated_pct
+            .or_else(|| match (cov.files_read, cov.files_total) {
                 (Some(r), Some(t)) if t > 0 => Some(((r as f64 / t as f64) * 100.0).round() as i64),
                 _ => None,
-            }
-        }),
+            }),
         unread_pockets: if cov.unread_pockets.is_empty() {
             None
         } else {
@@ -841,7 +840,8 @@ fn wake_athena_after_harvest(
         .filter(|c| {
             c.last_harvested_at.is_none()
                 || c.estimated_pct.is_none()
-                || c.estimated_pct.is_some_and(|p| p < HARVEST_DEPTH_TARGET_PCT)
+                || c.estimated_pct
+                    .is_some_and(|p| p < HARVEST_DEPTH_TARGET_PCT)
         })
         .map(|c| {
             format!(
@@ -925,7 +925,10 @@ mod harvest_prompt_tests {
         assert!(p.contains("scope id:    group:x"), "scope id not injected");
         assert!(p.contains("~120 files"), "file count not injected");
         // The proposing-not-adopting doctrine must survive any rewrite.
-        assert!(p.contains("proposing, not adopting"), "consent doctrine gone");
+        assert!(
+            p.contains("proposing, not adopting"),
+            "consent doctrine gone"
+        );
     }
 
     #[test]

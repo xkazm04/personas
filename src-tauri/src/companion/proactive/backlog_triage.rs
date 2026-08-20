@@ -157,13 +157,25 @@ pub fn build_backlog_triage_prompt(
             project = project,
             origin = idea.origin.as_deref().unwrap_or("idea_scanner"),
             category = idea.category,
-            e = idea.effort.map(|v| v.to_string()).unwrap_or_else(|| "?".into()),
-            i = idea.impact.map(|v| v.to_string()).unwrap_or_else(|| "?".into()),
-            r = idea.risk.map(|v| v.to_string()).unwrap_or_else(|| "?".into()),
+            e = idea
+                .effort
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "?".into()),
+            i = idea
+                .impact
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "?".into()),
+            r = idea
+                .risk
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "?".into()),
             title = idea.title.trim(),
         ));
         if let Some(d) = idea.description.as_deref().filter(|s| !s.trim().is_empty()) {
-            listing.push_str(&format!("  description: {}\n", truncate(d, DESCRIPTION_MAX)));
+            listing.push_str(&format!(
+                "  description: {}\n",
+                truncate(d, DESCRIPTION_MAX)
+            ));
         }
         if let Some(ev) = idea.evidence.as_deref().filter(|s| !s.trim().is_empty()) {
             listing.push_str(&format!("  evidence: {}\n", truncate(ev, EVIDENCE_MAX)));
@@ -241,10 +253,7 @@ fn parse_backlog_triage(blob: &str) -> Option<TriageDecision> {
 ///
 /// Output order always mirrors the input order, so the card reads like the
 /// table the user selected from.
-pub fn merge_verdicts(
-    ideas: &[DevIdea],
-    raw: &[(String, String, String)],
-) -> Vec<BacklogVerdict> {
+pub fn merge_verdicts(ideas: &[DevIdea], raw: &[(String, String, String)]) -> Vec<BacklogVerdict> {
     let mut by_id: HashMap<&str, (&str, &str)> = HashMap::new();
     let known: std::collections::HashSet<&str> = ideas.iter().map(|i| i.id.as_str()).collect();
     for v in raw {
@@ -351,7 +360,10 @@ pub async fn run_backlog_triage_batch(
     let summary = {
         let s = decision.summary.trim();
         if s.is_empty() {
-            format!("{accepts} accepted, {rejects} rejected of {} items", items.len())
+            format!(
+                "{accepts} accepted, {rejects} rejected of {} items",
+                items.len()
+            )
         } else {
             truncate(s, 200)
         }
@@ -437,7 +449,10 @@ correction: {"athena_backlog_triage":{"items":[{"id":"a","verdict":"reject","rea
         ];
         let merged = merge_verdicts(&ideas, &raw);
         assert_eq!(merged.len(), 1, "hallucinated id must not create a row");
-        assert_eq!(merged[0].verdict, "reject", "non-`accept` token is not consent");
+        assert_eq!(
+            merged[0].verdict, "reject",
+            "non-`accept` token is not consent"
+        );
     }
 
     #[test]
@@ -456,7 +471,10 @@ correction: {"athena_backlog_triage":{"items":[{"id":"a","verdict":"reject","rea
     fn prompt_lists_every_item_and_its_project_memories() {
         let ideas = vec![mk_idea("a", "Add retry"), mk_idea("b", "Improve things")];
         let mut mem = HashMap::new();
-        mem.insert("proj-1".to_string(), "- [constraint] No new deps: keep it stdlib\n".to_string());
+        mem.insert(
+            "proj-1".to_string(),
+            "- [constraint] No new deps: keep it stdlib\n".to_string(),
+        );
         let mut names = HashMap::new();
         names.insert("proj-1".to_string(), "Personas".to_string());
         let p = build_backlog_triage_prompt(&ideas, &mem, &names);

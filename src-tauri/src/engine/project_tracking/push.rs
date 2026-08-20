@@ -17,8 +17,8 @@ use std::sync::{Arc, OnceLock, RwLock};
 use std::time::{Duration, Instant};
 
 use axum::{
-    extract::Json as JsonExtractor, http::StatusCode, response::IntoResponse,
-    response::Json, routing::post, Router,
+    extract::Json as JsonExtractor, http::StatusCode, response::IntoResponse, response::Json,
+    routing::post, Router,
 };
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
@@ -276,10 +276,9 @@ async fn run_out_of_cadence_for_project(
              ORDER BY created_at",
         )?;
         let rows: Vec<String> = stmt
-            .query_map(
-                params![project_id, since.to_rfc3339()],
-                |row| row.get::<_, String>(0),
-            )?
+            .query_map(params![project_id, since.to_rfc3339()], |row| {
+                row.get::<_, String>(0)
+            })?
             .collect::<Result<Vec<_>, _>>()?;
         rows.into_iter()
             .filter_map(|json| serde_json::from_str(&json).ok())
@@ -314,8 +313,7 @@ async fn run_out_of_cadence_for_project(
     // sync-reconciliation-and-conflicts.md.
     let consumed_through = chrono::Utc::now();
 
-    consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle))
-        .await?;
+    consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle)).await?;
 
     // Advance the watermark (mirrors scheduler::run_project) so the next
     // push/tick consolidates only the NEW slice instead of overlapping ranges.

@@ -14,8 +14,8 @@ use crate::db::models::{
     CreatePersonaEventInput, PersonaEvent, PersonaEventStatus, UpdateExecutionStatus,
 };
 use crate::db::repos::communication::events as event_repo;
-use crate::db::repos::core::{personas as persona_repo, settings};
 use crate::db::repos::communication::messages as messages_repo;
+use crate::db::repos::core::{personas as persona_repo, settings};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::resources::audit_log;
@@ -475,7 +475,10 @@ pub fn start_loops(
             return tx;
         }
     };
-    tracing::info!(generation, "Scheduler starting via unified subscription model");
+    tracing::info!(
+        generation,
+        "Scheduler starting via unified subscription model"
+    );
 
     // V8: re-attach orchestrator tick tasks to team assignments orphaned by the
     // last shutdown (status running/queued with no task) — their in-flight
@@ -597,16 +600,12 @@ pub fn start_loops(
         // AUTONOMOUS_REVIEW_TRIAGE key is no longer read). Auto-approves routine
         // (low/medium) pending reviews past a grace window so the accept→memory
         // learning loop keeps turning unattended; high severity stays for a human.
-        Box::new(subscription::ManualReviewAutoTriageSubscription {
-            pool: pool.clone(),
-        }),
+        Box::new(subscription::ManualReviewAutoTriageSubscription { pool: pool.clone() }),
         // Autonomous backlog -> goal (G7) — default-OFF; gated on the
         // AUTONOMOUS_BACKLOG_TO_GOAL setting inside its tick. When a goal-linked
         // project runs out of open goals, promote its best pending backlog idea
         // to a new goal so the goal-advance loop self-sustains instead of idling.
-        Box::new(subscription::BacklogToGoalSubscription {
-            pool: pool.clone(),
-        }),
+        Box::new(subscription::BacklogToGoalSubscription { pool: pool.clone() }),
         // G7 — autonomous idea replenishment: when a goal-managed project is
         // fully idle (no open goals, no pending ideas), run a backlog scan to
         // refeed the loop. Default-OFF (`autonomous_idea_scan`); 20h
@@ -665,10 +664,12 @@ pub fn start_loops(
         // Overnight Portfolio Engine — nightly mechanical scan-delta → triage
         // rules → budget-governed fleet dispatch per autopilot suggest/full
         // project (explicit opt-in only; no global flag). Branch-only writes.
-        Box::new(crate::commands::infrastructure::overnight::OvernightEngineSubscription {
-            pool: pool.clone(),
-            app: app.clone(),
-        }),
+        Box::new(
+            crate::commands::infrastructure::overnight::OvernightEngineSubscription {
+                pool: pool.clone(),
+                app: app.clone(),
+            },
+        ),
         // Fleet liveness watchdog — raises ONE deduped fleet_stall incident +
         // notification when autonomy is on, work is available, no quota
         // cooldown applies, and nothing has executed for 2h (the 06-09 silent
@@ -688,11 +689,13 @@ pub fn start_loops(
         }),
         // Incident auto-continuation (P2.3b): re-run blocked work when its
         // persona-raised incident is resolved. Idempotent via claim_continuation.
-        Box::new(crate::engine::incident_continuation::IncidentContinuationSubscription {
-            pool: pool.clone(),
-            app: app.clone(),
-            engine: engine.clone(),
-        }),
+        Box::new(
+            crate::engine::incident_continuation::IncidentContinuationSubscription {
+                pool: pool.clone(),
+                app: app.clone(),
+                engine: engine.clone(),
+            },
+        ),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context
@@ -761,8 +764,12 @@ pub fn start_loops(
     // captures `generation` at spawn and compares it against
     // `scheduler.generation()` on every tick (see `run_single`) instead of
     // trusting the bare `running` flag.
-    let handles =
-        subscription::spawn_subscriptions(subscriptions, scheduler.clone(), app.clone(), generation);
+    let handles = subscription::spawn_subscriptions(
+        subscriptions,
+        scheduler.clone(),
+        app.clone(),
+        generation,
+    );
     scheduler.store_subscription_handles(handles);
 
     // -- Startup overdue sweep ------------------------------------------------
@@ -1086,12 +1093,17 @@ pub(crate) fn reap_stuck_processing_events(scheduler: &SchedulerState, pool: &Db
     if last_ms != 0 && now_ms.saturating_sub(last_ms) < interval_ms {
         return;
     }
-    scheduler.stuck_reap_last_ms.store(now_ms, Ordering::Relaxed);
+    scheduler
+        .stuck_reap_last_ms
+        .store(now_ms, Ordering::Relaxed);
 
     let current = match event_repo::list_processing_ids(pool, STUCK_EVENT_REAP_SCAN_LIMIT) {
         Ok(ids) => ids,
         Err(e) => {
-            tracing::error!("Stuck-event reaper: failed to list processing events: {}", e);
+            tracing::error!(
+                "Stuck-event reaper: failed to list processing events: {}",
+                e
+            );
             return;
         }
     };
@@ -2506,8 +2518,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             // work, so short-circuit before touching the DB. schedule_over_budget
             // re-applies the same guard so it is correct in isolation too.
             let over_budget = if matches!(max_budget, Some(b) if b > 0.0) {
-                let spend =
-                    exec_repo::get_monthly_spend(pool, &trigger.persona_id).unwrap_or(0.0);
+                let spend = exec_repo::get_monthly_spend(pool, &trigger.persona_id).unwrap_or(0.0);
                 schedule_over_budget(max_budget, spend)
             } else {
                 false
@@ -2666,28 +2677,28 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                         }
                     };
                     if claimed {
-                    let last_utc = last_dt.with_timezone(&chrono::Utc);
-                    let mut missed = compute_missed_backfill_slots(
-                        &cfg,
-                        last_utc,
-                        now,
-                        crate::engine::cron::seed_hash(&trigger.id),
-                    );
-                    // Cap to (cap - 1) extras; the live fire below counts
-                    // toward the user's intent. Drop the OLDEST when over.
-                    let extras_wanted = backfill_cap.saturating_sub(1);
-                    if missed.len() > extras_wanted {
-                        missed.drain(..(missed.len() - extras_wanted));
-                    }
-                    for slot in &missed {
-                        // Stop if this tick's global backfill budget is spent —
-                        // remaining slots (and triggers) defer their catch-up.
-                        if backfill_emitted_this_tick >= GLOBAL_BACKFILL_PER_TICK {
-                            break;
+                        let last_utc = last_dt.with_timezone(&chrono::Utc);
+                        let mut missed = compute_missed_backfill_slots(
+                            &cfg,
+                            last_utc,
+                            now,
+                            crate::engine::cron::seed_hash(&trigger.id),
+                        );
+                        // Cap to (cap - 1) extras; the live fire below counts
+                        // toward the user's intent. Drop the OLDEST when over.
+                        let extras_wanted = backfill_cap.saturating_sub(1);
+                        if missed.len() > extras_wanted {
+                            missed.drain(..(missed.len() - extras_wanted));
                         }
-                        // Per-slot budget re-check so catch-up runs respect
-                        // the persona's monthly cap mid-loop.
-                        let exhausted: bool = pool.get().map_err(|e| e.to_string()).and_then(|conn| {
+                        for slot in &missed {
+                            // Stop if this tick's global backfill budget is spent —
+                            // remaining slots (and triggers) defer their catch-up.
+                            if backfill_emitted_this_tick >= GLOBAL_BACKFILL_PER_TICK {
+                                break;
+                            }
+                            // Per-slot budget re-check so catch-up runs respect
+                            // the persona's monthly cap mid-loop.
+                            let exhausted: bool = pool.get().map_err(|e| e.to_string()).and_then(|conn| {
                             conn.query_row(
                                 "SELECT COALESCE((
                                     SELECT SUM(cost_usd)
@@ -2700,89 +2711,89 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                                 |row| row.get(0),
                             ).map_err(|e| e.to_string())
                         }).unwrap_or(false);
-                        if exhausted {
-                            tracing::warn!(
-                                persona_id = %trigger.persona_id,
-                                "Backfill halted mid-loop: budget exhausted"
-                            );
-                            break;
-                        }
+                            if exhausted {
+                                tracing::warn!(
+                                    persona_id = %trigger.persona_id,
+                                    "Backfill halted mid-loop: budget exhausted"
+                                );
+                                break;
+                            }
 
-                        // Per-slot active-window check: don't emit catch-up
-                        // events for slots that fell outside the window.
-                        if !trigger.is_within_active_window(*slot) {
-                            tracing::debug!(
-                                trigger_id = %trigger.id,
-                                slot = %slot,
-                                "Backfill slot skipped — outside active window"
-                            );
-                            continue;
-                        }
-
-                        if schedule_hourly_cap_exceeded(
-                            pool,
-                            &trigger,
-                            now,
-                            hourly_ceiling,
-                            &scheduled_publishes_by_persona,
-                        ) {
-                            log_schedule_rate_limit_issue(pool, &trigger, hourly_ceiling);
-                            tracing::warn!(
-                                trigger_id = %trigger.id,
-                                persona_id = %trigger.persona_id,
-                                hourly_ceiling,
-                                "Backfill slot skipped: scheduled execution hourly cap exceeded"
-                            );
-                            break;
-                        }
-
-                        let slot_iso = slot.to_rfc3339();
-                        let payload = cfg.payload().or_else(|| {
-                            Some(synthesize_backfill_payload(&trigger, &cfg, &slot_iso))
-                        });
-                        let event_type = cfg.event_type().to_string();
-                        match event_repo::publish(
-                            pool,
-                            CreatePersonaEventInput {
-                                event_type,
-                                source_type: "trigger".into(),
-                                source_id: Some(trigger.id.clone()),
-                                target_persona_id: Some(trigger.persona_id.clone()),
-                                project_id: None,
-                                payload,
-                                use_case_id: trigger.use_case_id.clone(),
-                            },
-                        ) {
-                            Ok(_) => {
+                            // Per-slot active-window check: don't emit catch-up
+                            // events for slots that fell outside the window.
+                            if !trigger.is_within_active_window(*slot) {
                                 tracing::debug!(
                                     trigger_id = %trigger.id,
                                     slot = %slot,
-                                    "Backfill event published"
+                                    "Backfill slot skipped — outside active window"
                                 );
-                                scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
-                                *scheduled_publishes_by_persona
-                                    .entry(trigger.persona_id.clone())
-                                    .or_default() += 1;
-                                fired += 1;
-                                backfill_emitted_this_tick += 1;
-                                backfill_emitted_for_trigger += 1;
+                                continue;
                             }
-                            Err(e) => {
-                                tracing::error!(
+
+                            if schedule_hourly_cap_exceeded(
+                                pool,
+                                &trigger,
+                                now,
+                                hourly_ceiling,
+                                &scheduled_publishes_by_persona,
+                            ) {
+                                log_schedule_rate_limit_issue(pool, &trigger, hourly_ceiling);
+                                tracing::warn!(
                                     trigger_id = %trigger.id,
-                                    "Backfill publish failed: {}", e
+                                    persona_id = %trigger.persona_id,
+                                    hourly_ceiling,
+                                    "Backfill slot skipped: scheduled execution hourly cap exceeded"
                                 );
-                                // Direction 3: a dropped backfill slot is a lost
-                                // fire too — give it a home instead of only a log.
-                                log_schedule_lost_fire_issue(
-                                    pool,
-                                    &trigger,
-                                    &slot_iso,
-                                    &e.to_string(),
-                                );
+                                break;
+                            }
+
+                            let slot_iso = slot.to_rfc3339();
+                            let payload = cfg.payload().or_else(|| {
+                                Some(synthesize_backfill_payload(&trigger, &cfg, &slot_iso))
+                            });
+                            let event_type = cfg.event_type().to_string();
+                            match event_repo::publish(
+                                pool,
+                                CreatePersonaEventInput {
+                                    event_type,
+                                    source_type: "trigger".into(),
+                                    source_id: Some(trigger.id.clone()),
+                                    target_persona_id: Some(trigger.persona_id.clone()),
+                                    project_id: None,
+                                    payload,
+                                    use_case_id: trigger.use_case_id.clone(),
+                                },
+                            ) {
+                                Ok(_) => {
+                                    tracing::debug!(
+                                        trigger_id = %trigger.id,
+                                        slot = %slot,
+                                        "Backfill event published"
+                                    );
+                                    scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
+                                    *scheduled_publishes_by_persona
+                                        .entry(trigger.persona_id.clone())
+                                        .or_default() += 1;
+                                    fired += 1;
+                                    backfill_emitted_this_tick += 1;
+                                    backfill_emitted_for_trigger += 1;
+                                }
+                                Err(e) => {
+                                    tracing::error!(
+                                        trigger_id = %trigger.id,
+                                        "Backfill publish failed: {}", e
+                                    );
+                                    // Direction 3: a dropped backfill slot is a lost
+                                    // fire too — give it a home instead of only a log.
+                                    log_schedule_lost_fire_issue(
+                                        pool,
+                                        &trigger,
+                                        &slot_iso,
+                                        &e.to_string(),
+                                    );
+                                }
                             }
                         }
-                    }
                     } // end if claimed (Finding #3 backfill claim)
                 }
             }
@@ -3662,7 +3673,11 @@ mod tests {
         assert!(!state.is_running());
 
         let first = state.try_begin_start();
-        assert_eq!(first, Some(1), "first start should succeed and claim generation 1");
+        assert_eq!(
+            first,
+            Some(1),
+            "first start should succeed and claim generation 1"
+        );
         assert!(state.is_running());
 
         // A second start attempt while still running (simulating a racing
@@ -3703,7 +3718,9 @@ mod tests {
         // the orphaned loop's captured gen1 can never match again, even
         // though `running` is now back to true (the exact condition that
         // previously fooled a bare `is_running()` check).
-        let gen2 = state.try_begin_start().expect("restart succeeds after stop");
+        let gen2 = state
+            .try_begin_start()
+            .expect("restart succeeds after stop");
         assert!(state.is_running());
         assert_ne!(gen2, gen1, "restart must claim a fresh generation");
         assert_eq!(
@@ -4043,9 +4060,7 @@ mod tests {
                 "duplicate gate token {token} — the UI cannot tell the gates apart"
             );
             assert!(
-                token
-                    .chars()
-                    .all(|c| c.is_ascii_lowercase() || c == '_'),
+                token.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
                 "{token} must be a language-agnostic identifier, not prose"
             );
             assert!(

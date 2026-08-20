@@ -430,9 +430,7 @@ mod tests {
         let events = parse_build_line(&assistant(pretty), SID);
         assert_eq!(kinds(&events), vec!["cell"], "got: {events:?}");
         match &events[0] {
-            BuildEvent::CellUpdate {
-                cell_key, data, ..
-            } => {
+            BuildEvent::CellUpdate { cell_key, data, .. } => {
                 assert_eq!(cell_key, "agent_ir");
                 assert_eq!(data["name"], serde_json::json!("Inbox Triage"));
             }
@@ -464,7 +462,8 @@ mod tests {
     #[test]
     fn braces_inside_string_values_do_not_break_the_scan() {
         // A curl command in a description is the realistic case.
-        let text = "{\n  \"agent_ir\": {\n    \"note\": \"run curl -w '{http_code}' \\\"x\\\"\"\n  }\n}";
+        let text =
+            "{\n  \"agent_ir\": {\n    \"note\": \"run curl -w '{http_code}' \\\"x\\\"\"\n  }\n}";
         let events = parse_build_line(&assistant(text), SID);
         assert_eq!(kinds(&events), vec!["cell"]);
     }

@@ -139,7 +139,9 @@ pub fn cancel_for_session(fleet_session_id: &str) {
         .collect();
     for id in ids {
         if let Some(e) = h.by_id.remove(&id) {
-            let _ = e.sender.send(Err("session exited before request resolved".to_string()));
+            let _ = e
+                .sender
+                .send(Err("session exited before request resolved".to_string()));
         }
     }
 }

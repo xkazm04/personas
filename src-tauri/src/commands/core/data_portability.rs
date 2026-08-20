@@ -16,11 +16,10 @@ use ts_rs::TS;
 use crate::commands::infrastructure::skill_files;
 use crate::db::credential_fields::classify_field_type;
 use crate::db::repos::communication::events as event_repo;
-use crate::db::repos::dev_tools as dev_tools_repo;
-use crate::engine::persona_icon::export_safe_icon;
 use crate::db::repos::core::{
     memories as memory_repo, personas as persona_repo, settings as settings_repo,
 };
+use crate::db::repos::dev_tools as dev_tools_repo;
 use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::{
     audit_log, connectors as connector_repo, credentials as cred_repo,
@@ -29,6 +28,7 @@ use crate::db::repos::resources::{
 };
 use crate::db::{DbPool, UserDbPool};
 use crate::engine::crypto;
+use crate::engine::persona_icon::export_safe_icon;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
 use crate::validation;
@@ -1309,7 +1309,6 @@ impl AthenaMemoryExport {
             && self.nodes.is_empty()
             && self.decisions.is_empty()
     }
-
 }
 
 /// One `app_settings` row. Only keys in `ATHENA_PORTABLE_PREF_KEYS` are ever
@@ -1671,7 +1670,12 @@ fn compute_export_stats(
             ));
         }
     };
-    rejects(&mut warnings, "Personas", personas.len() as u32, MAX_PERSONAS);
+    rejects(
+        &mut warnings,
+        "Personas",
+        personas.len() as u32,
+        MAX_PERSONAS,
+    );
     rejects(&mut warnings, "Tools", tools.len() as u32, MAX_TOOLS);
     rejects(&mut warnings, "Teams", teams.len() as u32, MAX_TEAMS);
     rejects(
@@ -1681,7 +1685,12 @@ fn compute_export_stats(
         MAX_CREDENTIALS,
     );
     truncates(&mut warnings, "KPIs", kpi_count, MAX_KPIS);
-    truncates(&mut warnings, "Projects", dev_project_count, MAX_DEV_PROJECTS);
+    truncates(
+        &mut warnings,
+        "Projects",
+        dev_project_count,
+        MAX_DEV_PROJECTS,
+    );
     truncates(&mut warnings, "Twins", twin_count, MAX_TWINS);
 
     Ok(ExportStats {
@@ -2011,9 +2020,12 @@ fn spawn_pending_kb_reindex(
             let state = state.inner().clone();
             let kb_id = kb_id.clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) =
-                    crate::commands::credentials::vector_kb::reindex_kb_internal(app, state, kb_id.clone())
-                        .await
+                if let Err(e) = crate::commands::credentials::vector_kb::reindex_kb_internal(
+                    app,
+                    state,
+                    kb_id.clone(),
+                )
+                .await
                 {
                     tracing::warn!(kb_id = %kb_id, error = %e, "Imported knowledge base could not be re-indexed");
                 }
@@ -2693,21 +2705,20 @@ fn build_export_bundle(
     /// `None` = every row of that kind (Full scope); `Some(ids)` = exactly
     /// those, where an EMPTY slice means none.
     type IdFilter<'a> = Option<&'a [String]>;
-    let (project_filter, workspace_filter, twin_filter): (IdFilter, IdFilter, IdFilter) = match
-        &scope
-    {
-        ExportScope::Full => (None, None, None),
-        ExportScope::Selective {
-            project_ids,
-            workspace_ids,
-            twin_ids,
-            ..
-        } => (
-            Some(project_ids.as_slice()),
-            Some(workspace_ids.as_slice()),
-            Some(twin_ids.as_slice()),
-        ),
-    };
+    let (project_filter, workspace_filter, twin_filter): (IdFilter, IdFilter, IdFilter) =
+        match &scope {
+            ExportScope::Full => (None, None, None),
+            ExportScope::Selective {
+                project_ids,
+                workspace_ids,
+                twin_ids,
+                ..
+            } => (
+                Some(project_ids.as_slice()),
+                Some(workspace_ids.as_slice()),
+                Some(twin_ids.as_slice()),
+            ),
+        };
     let dev_project_exports =
         collect_dev_project_exports(pool, project_filter, &mut export_warnings)?;
     let bundled_project_ids: Vec<String> =
@@ -2845,11 +2856,15 @@ fn collect_dev_project_exports(
     let project_rows: Vec<ProjectRow> = match filter_ids {
         None => {
             let total: usize = conn
-                .query_row("SELECT COUNT(*) FROM dev_projects", [], |r| r.get::<_, i64>(0))
+                .query_row("SELECT COUNT(*) FROM dev_projects", [], |r| {
+                    r.get::<_, i64>(0)
+                })
                 .unwrap_or(0) as usize;
             let sql = format!("SELECT {PROJECT_COLS} FROM dev_projects ORDER BY created_at");
             let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
-            let rows = stmt.query_map([], map_project).map_err(AppError::Database)?;
+            let rows = stmt
+                .query_map([], map_project)
+                .map_err(AppError::Database)?;
             let mut out = Vec::new();
             for r in rows {
                 out.push(r.map_err(AppError::Database)?);
@@ -2857,7 +2872,13 @@ fn collect_dev_project_exports(
                     break;
                 }
             }
-            push_truncation_warning(export_warnings, "projects", out.len(), total, "Dev projects");
+            push_truncation_warning(
+                export_warnings,
+                "projects",
+                out.len(),
+                total,
+                "Dev projects",
+            );
             out
         }
         Some(ids) => {
@@ -2879,7 +2900,9 @@ fn collect_dev_project_exports(
             let mut out = Vec::new();
             for id in unique.into_iter().take(MAX_DEV_PROJECTS) {
                 let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
-                let mut rows = stmt.query_map([id.as_str()], map_project).map_err(AppError::Database)?;
+                let mut rows = stmt
+                    .query_map([id.as_str()], map_project)
+                    .map_err(AppError::Database)?;
                 if let Some(row) = rows.next() {
                     out.push(row.map_err(AppError::Database)?);
                 }
@@ -3579,7 +3602,9 @@ fn collect_project_skills(
     project_name: &str,
     export_warnings: &mut Vec<String>,
 ) -> Vec<SkillFileExport> {
-    let skills_dir = std::path::Path::new(root_path).join(".claude").join("skills");
+    let skills_dir = std::path::Path::new(root_path)
+        .join(".claude")
+        .join("skills");
     let Ok(read_dir) = std::fs::read_dir(&skills_dir) else {
         return Vec::new();
     };
@@ -3799,9 +3824,13 @@ fn collect_workspace_knowledge_exports(
     let workspace_rows: Vec<WorkspaceRow> = match filter_ids {
         None => {
             let mut stmt = conn
-                .prepare("SELECT id, name, color, description FROM dev_workspaces ORDER BY created_at")
+                .prepare(
+                    "SELECT id, name, color, description FROM dev_workspaces ORDER BY created_at",
+                )
                 .map_err(AppError::Database)?;
-            let rows = stmt.query_map([], map_workspace).map_err(AppError::Database)?;
+            let rows = stmt
+                .query_map([], map_workspace)
+                .map_err(AppError::Database)?;
             let mut out = Vec::new();
             for r in rows {
                 out.push(r.map_err(AppError::Database)?);
@@ -3816,7 +3845,9 @@ fn collect_workspace_knowledge_exports(
                     continue;
                 }
                 let mut stmt = conn
-                    .prepare("SELECT id, name, color, description FROM dev_workspaces WHERE id = ?1")
+                    .prepare(
+                        "SELECT id, name, color, description FROM dev_workspaces WHERE id = ?1",
+                    )
                     .map_err(AppError::Database)?;
                 let mut rows = stmt
                     .query_map([id.as_str()], map_workspace)
@@ -3987,7 +4018,9 @@ fn collect_twin_exports(
     let twin_rows: Vec<TwinRow> = match filter_ids {
         None => {
             let total: usize = conn
-                .query_row("SELECT COUNT(*) FROM twin_profiles", [], |r| r.get::<_, i64>(0))
+                .query_row("SELECT COUNT(*) FROM twin_profiles", [], |r| {
+                    r.get::<_, i64>(0)
+                })
                 .unwrap_or(0) as usize;
             let sql = format!("SELECT {TWIN_COLS} FROM twin_profiles ORDER BY created_at");
             let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
@@ -4247,15 +4280,17 @@ fn collect_twin_exports(
                     ));
                     None
                 }
-                Some(udb) => match collect_twin_knowledge_base(udb, kb_id, &name, export_warnings) {
-                    Ok(kb) => kb,
-                    Err(e) => {
-                        export_warnings.push(format!(
-                            "Twin '{name}': knowledge base '{kb_id}' not exported ({e})."
-                        ));
-                        None
+                Some(udb) => {
+                    match collect_twin_knowledge_base(udb, kb_id, &name, export_warnings) {
+                        Ok(kb) => kb,
+                        Err(e) => {
+                            export_warnings.push(format!(
+                                "Twin '{name}': knowledge base '{kb_id}' not exported ({e})."
+                            ));
+                            None
+                        }
                     }
-                },
+                }
             },
         };
 
@@ -4707,8 +4742,17 @@ fn collect_athena_learned(
     // anonymous cap casualty.
     let mut dropped_per_kind: HashMap<String, usize> = HashMap::new();
     for row in rows {
-        let (id, kind, file_path, content_hash, importance, body_excerpt, created_at, updated_at, session_id): NodeRow =
-            row.map_err(AppError::Database)?;
+        let (
+            id,
+            kind,
+            file_path,
+            content_hash,
+            importance,
+            body_excerpt,
+            created_at,
+            updated_at,
+            session_id,
+        ): NodeRow = row.map_err(AppError::Database)?;
         let cap = athena_cap_for(&kind);
         let kept = kept_per_kind.entry(kind.clone()).or_insert(0);
         if *kept >= cap {
@@ -5916,7 +5960,11 @@ fn validate_athena(bundle: &PortabilityBundle) -> Result<(), AppError> {
     for (i, d) in a.decisions.iter().enumerate() {
         let p = format!("athena.decision[{i}]");
         validation::require_max_len(&format!("{p}.id"), &d.id, MAX_SHORT_FIELD_LEN)?;
-        validation::require_max_len(&format!("{p}.session_id"), &d.session_id, MAX_SHORT_FIELD_LEN)?;
+        validation::require_max_len(
+            &format!("{p}.session_id"),
+            &d.session_id,
+            MAX_SHORT_FIELD_LEN,
+        )?;
         validation::require_optional_max_len(
             &format!("{p}.persona_context"),
             &d.persona_context,
@@ -5998,60 +6046,60 @@ fn import_bundle(
 
     // Phase 2: Import tool definitions (map old IDs to new IDs, skip builtins)
     if !is_resolution_pass {
-    for t in &bundle.tool_definitions {
-        if t.is_builtin {
-            // Builtin tools already exist -- try to find matching by name
-            let found = tx
-                .query_row(
-                    "SELECT id FROM persona_tool_definitions WHERE name = ?1 LIMIT 1",
-                    rusqlite::params![t.name],
-                    |row| row.get::<_, String>(0),
-                )
-                .ok();
-            if let Some(existing_id) = found {
-                result.id_mapping.insert(t.id.clone(), existing_id);
-                continue;
+        for t in &bundle.tool_definitions {
+            if t.is_builtin {
+                // Builtin tools already exist -- try to find matching by name
+                let found = tx
+                    .query_row(
+                        "SELECT id FROM persona_tool_definitions WHERE name = ?1 LIMIT 1",
+                        rusqlite::params![t.name],
+                        |row| row.get::<_, String>(0),
+                    )
+                    .ok();
+                if let Some(existing_id) = found {
+                    result.id_mapping.insert(t.id.clone(), existing_id);
+                    continue;
+                }
             }
-        }
 
-        let id = uuid::Uuid::new_v4().to_string();
-        let is_builtin_i = if t.is_builtin { 1i32 } else { 0i32 };
-        match tx.execute(
-            "INSERT INTO persona_tool_definitions
+            let id = uuid::Uuid::new_v4().to_string();
+            let is_builtin_i = if t.is_builtin { 1i32 } else { 0i32 };
+            match tx.execute(
+                "INSERT INTO persona_tool_definitions
              (id, name, category, description, script_path,
               input_schema, output_schema, requires_credential_type,
               implementation_guide, is_builtin, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
-            rusqlite::params![
-                id,
-                t.name,
-                t.category,
-                t.description,
-                "",
-                t.input_schema,
-                Option::<String>::None,
-                t.requires_credential_type,
-                t.implementation_guide,
-                is_builtin_i,
-                now,
-            ],
-        ) {
-            Ok(_) => {
-                result.id_mapping.insert(t.id.clone(), id);
-                result.tools_created += 1;
+                rusqlite::params![
+                    id,
+                    t.name,
+                    t.category,
+                    t.description,
+                    "",
+                    t.input_schema,
+                    Option::<String>::None,
+                    t.requires_credential_type,
+                    t.implementation_guide,
+                    is_builtin_i,
+                    now,
+                ],
+            ) {
+                Ok(_) => {
+                    result.id_mapping.insert(t.id.clone(), id);
+                    result.tools_created += 1;
+                }
+                Err(e) => result.warnings.push(format!("Tool '{}': {}", t.name, e)),
             }
-            Err(e) => result.warnings.push(format!("Tool '{}': {}", t.name, e)),
         }
-    }
 
-    // Phase 3: Import credential metadata (no secrets — user must re-enter via Credential Vault)
-    for c in &bundle.credentials {
-        let imported_name = format!("{} (imported)", c.name);
-        // Skip if a credential shell for this import already exists. Check
-        // against the name actually stored below (the "(imported)"-suffixed
-        // one) — checking the raw export name here would never match what
-        // gets inserted, letting re-imports pile up duplicate shells.
-        let exists = tx
+        // Phase 3: Import credential metadata (no secrets — user must re-enter via Credential Vault)
+        for c in &bundle.credentials {
+            let imported_name = format!("{} (imported)", c.name);
+            // Skip if a credential shell for this import already exists. Check
+            // against the name actually stored below (the "(imported)"-suffixed
+            // one) — checking the raw export name here would never match what
+            // gets inserted, letting re-imports pile up duplicate shells.
+            let exists = tx
             .query_row(
                 "SELECT COUNT(*) FROM persona_credentials WHERE name = ?1 AND service_type = ?2",
                 rusqlite::params![imported_name, c.service_type],
@@ -6059,133 +6107,133 @@ fn import_bundle(
             )
             .unwrap_or(0)
             > 0;
-        if exists {
-            continue;
-        }
+            if exists {
+                continue;
+            }
 
-        let id = uuid::Uuid::new_v4().to_string();
-        // Create credential shell with empty encrypted data — secrets must be added separately
-        let empty_encrypted =
-            crypto::encrypt_for_db("{}").map_err(|e| AppError::Internal(e.to_string()))?;
-        match tx.execute(
-            "INSERT INTO persona_credentials
+            let id = uuid::Uuid::new_v4().to_string();
+            // Create credential shell with empty encrypted data — secrets must be added separately
+            let empty_encrypted =
+                crypto::encrypt_for_db("{}").map_err(|e| AppError::Internal(e.to_string()))?;
+            match tx.execute(
+                "INSERT INTO persona_credentials
              (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?7)",
-            rusqlite::params![
-                id,
-                imported_name,
-                c.service_type,
-                empty_encrypted.0,
-                empty_encrypted.1,
-                c.metadata,
-                now,
-            ],
-        ) {
-            Ok(_) => result.credentials_created += 1,
-            Err(e) => result
-                .warnings
-                .push(format!("Credential '{}': {}", c.name, e)),
+                rusqlite::params![
+                    id,
+                    imported_name,
+                    c.service_type,
+                    empty_encrypted.0,
+                    empty_encrypted.1,
+                    c.metadata,
+                    now,
+                ],
+            ) {
+                Ok(_) => result.credentials_created += 1,
+                Err(e) => result
+                    .warnings
+                    .push(format!("Credential '{}': {}", c.name, e)),
+            }
         }
-    }
 
-    // Phase 4: Import personas (map old IDs to new)
-    for p in &bundle.personas {
-        let new_id = uuid::Uuid::new_v4().to_string();
-        let persona_name = format!("{} (imported)", p.name);
-        let enabled_i = 0i32; // imported personas start disabled
-        let max_concurrent = p.max_concurrent;
-        let timeout_ms = p.timeout_ms;
+        // Phase 4: Import personas (map old IDs to new)
+        for p in &bundle.personas {
+            let new_id = uuid::Uuid::new_v4().to_string();
+            let persona_name = format!("{} (imported)", p.name);
+            let enabled_i = 0i32; // imported personas start disabled
+            let max_concurrent = p.max_concurrent;
+            let timeout_ms = p.timeout_ms;
 
-        // Encrypt notification channel secrets before storing.
-        // Never fall back to the original plaintext on failure: downstream
-        // reads treat this column as ciphertext, so persisting plaintext
-        // would leak webhook secrets / Slack tokens / SMTP passwords on disk
-        // and break decryption on every subsequent read. If the keyring is
-        // unavailable, skip this persona and surface a warning so the user
-        // can re-import once it's healthy.
-        let encrypted_channels = match &p.notification_channels {
-            Some(json) if !json.trim().is_empty() => {
-                match persona_repo::encrypt_notification_channels(json) {
-                    Ok(enc) => Some(enc),
-                    Err(e) => {
-                        result.warnings.push(format!(
+            // Encrypt notification channel secrets before storing.
+            // Never fall back to the original plaintext on failure: downstream
+            // reads treat this column as ciphertext, so persisting plaintext
+            // would leak webhook secrets / Slack tokens / SMTP passwords on disk
+            // and break decryption on every subsequent read. If the keyring is
+            // unavailable, skip this persona and surface a warning so the user
+            // can re-import once it's healthy.
+            let encrypted_channels = match &p.notification_channels {
+                Some(json) if !json.trim().is_empty() => {
+                    match persona_repo::encrypt_notification_channels(json) {
+                        Ok(enc) => Some(enc),
+                        Err(e) => {
+                            result.warnings.push(format!(
                             "Persona '{}': skipped — failed to encrypt notification channels ({}). Re-import once the keyring is available.",
                             p.name, e
                         ));
-                        continue;
+                            continue;
+                        }
                     }
                 }
-            }
-            other => other.clone(),
-        };
+                other => other.clone(),
+            };
 
-        match tx.execute(
-            "INSERT INTO personas
+            match tx.execute(
+                "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, max_concurrent, timeout_ms,
               model_profile, max_budget_usd, max_turns, design_context,
               notification_channels, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,?16,?17,?17)",
-            rusqlite::params![
-                new_id,
-                "default",
-                persona_name,
-                p.description,
-                p.system_prompt,
-                p.structured_prompt,
-                p.icon,
-                p.color,
-                enabled_i,
-                max_concurrent,
-                timeout_ms,
-                p.model_profile,
-                p.max_budget_usd,
-                p.max_turns,
-                p.design_context,
-                encrypted_channels,
-                now,
-            ],
-        ) {
-            Ok(_) => {
-                result.id_mapping.insert(p.id.clone(), new_id.clone());
-                result.personas_created += 1;
+                rusqlite::params![
+                    new_id,
+                    "default",
+                    persona_name,
+                    p.description,
+                    p.system_prompt,
+                    p.structured_prompt,
+                    p.icon,
+                    p.color,
+                    enabled_i,
+                    max_concurrent,
+                    timeout_ms,
+                    p.model_profile,
+                    p.max_budget_usd,
+                    p.max_turns,
+                    p.design_context,
+                    encrypted_channels,
+                    now,
+                ],
+            ) {
+                Ok(_) => {
+                    result.id_mapping.insert(p.id.clone(), new_id.clone());
+                    result.personas_created += 1;
 
-                // Sub-entities: triggers
-                for t in &p.triggers {
-                    let tid = uuid::Uuid::new_v4().to_string();
-                    let enabled_i = if t.enabled { 1i32 } else { 0i32 };
-                    // Arm time-based triggers on import, and write `status`
-                    // explicitly. This INSERT named neither, so (a) an imported
-                    // schedule was written `next_trigger_at` NULL and could
-                    // never become due, and (b) an imported DISABLED trigger got
-                    // `status` from the column default 'active' — off in the UI
-                    // and on to both dispatch predicates.
-                    let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
-                        &t.trigger_type,
-                        t.config.as_deref(),
-                    );
-                    let next_trigger_at = personas_core::scheduler::compute_next_from_config(
-                        &parsed_cfg,
-                        chrono::Utc::now(),
-                        personas_core::cron::seed_hash(&tid),
-                    );
-                    if next_trigger_at.is_none()
-                        && personas_core::models::TriggerKind::from_wire(&t.trigger_type)
-                            .is_some_and(|k| k.is_time_based())
-                    {
-                        result.warnings.push(format!(
-                            "Persona '{}' trigger ({}): {}",
-                            p.name,
-                            t.trigger_type,
-                            personas_core::validation::trigger::unschedulable_error(
-                                &t.trigger_type,
-                                t.config.as_deref(),
-                            )
-                            .message
-                        ));
-                        continue;
-                    }
-                    if let Err(e) = tx.execute(
+                    // Sub-entities: triggers
+                    for t in &p.triggers {
+                        let tid = uuid::Uuid::new_v4().to_string();
+                        let enabled_i = if t.enabled { 1i32 } else { 0i32 };
+                        // Arm time-based triggers on import, and write `status`
+                        // explicitly. This INSERT named neither, so (a) an imported
+                        // schedule was written `next_trigger_at` NULL and could
+                        // never become due, and (b) an imported DISABLED trigger got
+                        // `status` from the column default 'active' — off in the UI
+                        // and on to both dispatch predicates.
+                        let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
+                            &t.trigger_type,
+                            t.config.as_deref(),
+                        );
+                        let next_trigger_at = personas_core::scheduler::compute_next_from_config(
+                            &parsed_cfg,
+                            chrono::Utc::now(),
+                            personas_core::cron::seed_hash(&tid),
+                        );
+                        if next_trigger_at.is_none()
+                            && personas_core::models::TriggerKind::from_wire(&t.trigger_type)
+                                .is_some_and(|k| k.is_time_based())
+                        {
+                            result.warnings.push(format!(
+                                "Persona '{}' trigger ({}): {}",
+                                p.name,
+                                t.trigger_type,
+                                personas_core::validation::trigger::unschedulable_error(
+                                    &t.trigger_type,
+                                    t.config.as_deref(),
+                                )
+                                .message
+                            ));
+                            continue;
+                        }
+                        if let Err(e) = tx.execute(
                         "INSERT INTO persona_triggers
                          (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
                          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
@@ -6200,13 +6248,13 @@ fn import_bundle(
                             p.name, t.trigger_type, e
                         ));
                     }
-                }
+                    }
 
-                // Sub-entities: subscriptions
-                for s in &p.subscriptions {
-                    let sid = uuid::Uuid::new_v4().to_string();
-                    let enabled_i = if s.enabled { 1i32 } else { 0i32 };
-                    if let Err(e) = tx.execute(
+                    // Sub-entities: subscriptions
+                    for s in &p.subscriptions {
+                        let sid = uuid::Uuid::new_v4().to_string();
+                        let enabled_i = if s.enabled { 1i32 } else { 0i32 };
+                        if let Err(e) = tx.execute(
                         "INSERT OR IGNORE INTO persona_event_subscriptions
                          (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
                          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
@@ -6217,14 +6265,14 @@ fn import_bundle(
                             p.name, s.event_type, e
                         ));
                     }
-                }
+                    }
 
-                // Sub-entities: memories
-                for m in &p.memories {
-                    let mid = uuid::Uuid::new_v4().to_string();
-                    let category = m.category.as_str();
-                    let importance = m.importance;
-                    if let Err(e) = tx.execute(
+                    // Sub-entities: memories
+                    for m in &p.memories {
+                        let mid = uuid::Uuid::new_v4().to_string();
+                        let category = m.category.as_str();
+                        let importance = m.importance;
+                        if let Err(e) = tx.execute(
                         "INSERT INTO persona_memories
                          (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)
                          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
@@ -6235,13 +6283,13 @@ fn import_bundle(
                             p.name, m.title, e
                         ));
                     }
-                }
+                    }
 
-                // Sub-entities: tool assignments
-                for old_tool_id in &p.tool_ids {
-                    if let Some(new_tool_id) = result.id_mapping.get(old_tool_id) {
-                        let aid = uuid::Uuid::new_v4().to_string();
-                        if let Err(e) = tx.execute(
+                    // Sub-entities: tool assignments
+                    for old_tool_id in &p.tool_ids {
+                        if let Some(new_tool_id) = result.id_mapping.get(old_tool_id) {
+                            let aid = uuid::Uuid::new_v4().to_string();
+                            if let Err(e) = tx.execute(
                             "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
                              VALUES (?1, ?2, ?3, ?4, ?5)",
                             rusqlite::params![aid, new_id, new_tool_id, Option::<String>::None, now],
@@ -6251,13 +6299,13 @@ fn import_bundle(
                                 p.name, e
                             ));
                         }
+                        }
                     }
-                }
 
-                // Sub-entities: test suites
-                for s in &p.test_suites {
-                    let sid = uuid::Uuid::new_v4().to_string();
-                    if let Err(e) = tx.execute(
+                    // Sub-entities: test suites
+                    for s in &p.test_suites {
+                        let sid = uuid::Uuid::new_v4().to_string();
+                        if let Err(e) = tx.execute(
                         "INSERT INTO test_suites (id, persona_id, name, description, scenarios, scenario_count, source_run_id, created_at, updated_at)
                          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
                         rusqlite::params![sid, new_id, s.name, s.description, s.scenarios, s.scenario_count, Option::<String>::None, now],
@@ -6267,19 +6315,19 @@ fn import_bundle(
                             p.name, s.name, e
                         ));
                     }
+                    }
                 }
+                Err(e) => result.warnings.push(format!("Persona '{}': {}", p.name, e)),
             }
-            Err(e) => result.warnings.push(format!("Persona '{}': {}", p.name, e)),
         }
-    }
 
-    // Phase 5: Import teams (remap member persona IDs)
-    for t in &bundle.teams {
-        let new_team_id = uuid::Uuid::new_v4().to_string();
-        let team_name = format!("{} (imported)", t.name);
-        let enabled_i = 0i32; // imported teams start disabled
+        // Phase 5: Import teams (remap member persona IDs)
+        for t in &bundle.teams {
+            let new_team_id = uuid::Uuid::new_v4().to_string();
+            let team_name = format!("{} (imported)", t.name);
+            let enabled_i = 0i32; // imported teams start disabled
 
-        match tx.execute(
+            match tx.execute(
             "INSERT INTO persona_teams
              (id, project_id, parent_team_id, name, description, canvas_data, team_config, icon, color, enabled, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
@@ -6396,27 +6444,27 @@ fn import_bundle(
                 .warnings
                 .push(format!("Team '{}': {}", t.name, e)),
         }
-    }
+        }
 
-    // Phase 6: Import KPI setup. KPIs are project-scoped and FK-bound to
-    // dev_projects, but neither projects nor a team's project survive the bundle.
-    // So imported KPIs land in a single, deduped, dormant "Imported" project —
-    // grouped, paused, and reviewable — instead of polluting a real project. The
-    // measure config is tied to the source environment, so a `paused` status keeps
-    // them out of autonomous measurement/derivation until the user reconfigures.
-    if !bundle.kpis.is_empty() {
-        let imported_project_id: Option<String> = match tx
-            .query_row(
-                "SELECT id FROM dev_projects WHERE name = 'Imported' LIMIT 1",
-                [],
-                |row| row.get::<_, String>(0),
-            )
-            .ok()
-        {
-            Some(id) => Some(id),
-            None => {
-                let pid = uuid::Uuid::new_v4().to_string();
-                match tx.execute(
+        // Phase 6: Import KPI setup. KPIs are project-scoped and FK-bound to
+        // dev_projects, but neither projects nor a team's project survive the bundle.
+        // So imported KPIs land in a single, deduped, dormant "Imported" project —
+        // grouped, paused, and reviewable — instead of polluting a real project. The
+        // measure config is tied to the source environment, so a `paused` status keeps
+        // them out of autonomous measurement/derivation until the user reconfigures.
+        if !bundle.kpis.is_empty() {
+            let imported_project_id: Option<String> = match tx
+                .query_row(
+                    "SELECT id FROM dev_projects WHERE name = 'Imported' LIMIT 1",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .ok()
+            {
+                Some(id) => Some(id),
+                None => {
+                    let pid = uuid::Uuid::new_v4().to_string();
+                    match tx.execute(
                     "INSERT INTO dev_projects (id, name, root_path, description, status, created_at, updated_at)
                      VALUES (?1, 'Imported', ?2, ?3, 'active', ?4, ?4)",
                     rusqlite::params![
@@ -6434,32 +6482,32 @@ fn import_bundle(
                         None
                     }
                 }
-            }
-        };
-
-        if let Some(project_id) = imported_project_id {
-            for k in bundle.kpis.iter().take(MAX_KPIS) {
-                // Dedup by (project, name) so re-imports don't duplicate.
-                let exists = tx
-                    .query_row(
-                        "SELECT COUNT(*) FROM dev_kpis WHERE project_id = ?1 AND name = ?2",
-                        rusqlite::params![project_id, k.name],
-                        |row| row.get::<_, i32>(0),
-                    )
-                    .unwrap_or(0)
-                    > 0;
-                if exists {
-                    continue;
                 }
+            };
 
-                let kpi_id = uuid::Uuid::new_v4().to_string();
-                // Measurements are exported newest-first; the head seeds current state.
-                let latest = k.measurements.first();
-                let current_value = latest.map(|m| m.value);
-                let last_measured_at = latest.map(|m| m.measured_at.clone());
+            if let Some(project_id) = imported_project_id {
+                for k in bundle.kpis.iter().take(MAX_KPIS) {
+                    // Dedup by (project, name) so re-imports don't duplicate.
+                    let exists = tx
+                        .query_row(
+                            "SELECT COUNT(*) FROM dev_kpis WHERE project_id = ?1 AND name = ?2",
+                            rusqlite::params![project_id, k.name],
+                            |row| row.get::<_, i32>(0),
+                        )
+                        .unwrap_or(0)
+                        > 0;
+                    if exists {
+                        continue;
+                    }
 
-                // Base insert mirrors create_kpi's proven column set; always paused.
-                match tx.execute(
+                    let kpi_id = uuid::Uuid::new_v4().to_string();
+                    // Measurements are exported newest-first; the head seeds current state.
+                    let latest = k.measurements.first();
+                    let current_value = latest.map(|m| m.value);
+                    let last_measured_at = latest.map(|m| m.measured_at.clone());
+
+                    // Base insert mirrors create_kpi's proven column set; always paused.
+                    match tx.execute(
                     "INSERT INTO dev_kpis (id, project_id, context_group_id, name, description,
                         category, measure_kind, measure_config, unit, direction,
                         baseline_value, target_value, target_date, cadence, status,
@@ -6508,10 +6556,9 @@ fn import_bundle(
                     }
                     Err(e) => result.warnings.push(format!("KPI '{}': {}", k.name, e)),
                 }
+                }
             }
         }
-    }
-
     } // end !is_resolution_pass (phases 2–6 run on pass 1 only)
 
     // Phase 7: Workspaces + knowledge libraries. Runs on both passes — the
@@ -6561,11 +6608,9 @@ fn import_bundle(
                 result.projects_skipped += 1;
                 continue;
             }
-            (Some((existing_id, _)), Some("replace")) => {
-                ProjectImportMode::Replace {
-                    existing_id: existing_id.clone(),
-                }
-            }
+            (Some((existing_id, _)), Some("replace")) => ProjectImportMode::Replace {
+                existing_id: existing_id.clone(),
+            },
             (Some(_), Some("duplicate")) => ProjectImportMode::Duplicate,
             // No conflict: import with original uuids. This also covers a
             // resolution whose conflict vanished between the two passes.
@@ -6587,7 +6632,10 @@ fn import_bundle(
             &p.team_id,
             "persona_teams",
             &mut result.warnings,
-            &format!("Project '{}': team not found in this workspace; cleared", p.name),
+            &format!(
+                "Project '{}': team not found in this workspace; cleared",
+                p.name
+            ),
         );
         let workspace_id = resolve_soft_row_ref(
             &tx,
@@ -6595,13 +6643,18 @@ fn import_bundle(
             &p.workspace_id,
             "dev_workspaces",
             &mut result.warnings,
-            &format!(
-                "Project '{}': workspace not found here; cleared",
-                p.name
-            ),
+            &format!("Project '{}': workspace not found here; cleared", p.name),
         );
 
-        match import_dev_project_graph(&tx, p, &mode, team_id, workspace_id, &now, &mut result.warnings) {
+        match import_dev_project_graph(
+            &tx,
+            p,
+            &mode,
+            team_id,
+            workspace_id,
+            &now,
+            &mut result.warnings,
+        ) {
             Some((target_id, final_root_path)) => {
                 result.projects_imported += 1;
                 project_id_map.insert(p.id.clone(), target_id);
@@ -6633,7 +6686,11 @@ fn import_bundle(
                 None => {
                     // Non-conflicting projects keep their original uuids, so a
                     // pass-2 run (or a re-import) can still resolve them by id.
-                    if row_exists(&tx, "SELECT 1 FROM dev_projects WHERE id = ?1", &a.project_id) {
+                    if row_exists(
+                        &tx,
+                        "SELECT 1 FROM dev_projects WHERE id = ?1",
+                        &a.project_id,
+                    ) {
                         Some(a.project_id.clone())
                     } else {
                         None
@@ -6647,7 +6704,14 @@ fn import_bundle(
                 "INSERT OR IGNORE INTO workspace_practice_adoption
                  (practice_id, project_id, state, fleet_key, note, last_verified_at, updated_at)
                  VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6)",
-                rusqlite::params![practice_id, project_id, a.state, a.note, a.last_verified_at, now],
+                rusqlite::params![
+                    practice_id,
+                    project_id,
+                    a.state,
+                    a.note,
+                    a.last_verified_at,
+                    now
+                ],
             ) {
                 result
                     .warnings
@@ -6721,7 +6785,12 @@ fn import_bundle(
     // project's `<root_path>/.claude/skills/`. Deliberately after the commit —
     // disk must never change for a rolled-back import.
     for (root_path, overwrite, idx) in pending_skills {
-        write_project_skills(&root_path, &bundle.dev_projects[idx].skills, overwrite, &mut result);
+        write_project_skills(
+            &root_path,
+            &bundle.dev_projects[idx].skills,
+            overwrite,
+            &mut result,
+        );
     }
 
     // Phase 12 (post-commit, other database): recreate each imported twin's
@@ -6977,27 +7046,69 @@ fn import_dev_project_graph(
             };
             map.insert(old.clone(), new);
         };
-        for r in &p.goals { add(&r.id); }
-        for r in &p.goal_dependencies { add(&r.id); }
-        for r in &p.goal_signals { add(&r.id); }
-        for r in &p.goal_items { add(&r.id); }
-        for r in &p.context_groups { add(&r.id); }
-        for r in &p.contexts { add(&r.id); }
-        for r in &p.context_group_relationships { add(&r.id); }
-        for r in &p.ideas { add(&r.id); }
-        for r in &p.tasks { add(&r.id); }
-        for r in &p.competitions { add(&r.id); }
-        for r in &p.competition_slots { add(&r.id); }
-        for r in &p.triage_rules { add(&r.id); }
-        for r in &p.pipelines { add(&r.id); }
-        for r in &p.standards { add(&r.id); }
-        for r in &p.use_cases { add(&r.id); }
-        for r in &p.milestones { add(&r.id); }
-        for r in &p.kpis { add(&r.id); }
-        for r in &p.kpi_measurements { add(&r.id); }
-        for r in &p.kpi_bindings { add(&r.id); }
-        for r in &p.memories { add(&r.id); }
-        for r in &p.memory_nodes { add(&r.id); }
+        for r in &p.goals {
+            add(&r.id);
+        }
+        for r in &p.goal_dependencies {
+            add(&r.id);
+        }
+        for r in &p.goal_signals {
+            add(&r.id);
+        }
+        for r in &p.goal_items {
+            add(&r.id);
+        }
+        for r in &p.context_groups {
+            add(&r.id);
+        }
+        for r in &p.contexts {
+            add(&r.id);
+        }
+        for r in &p.context_group_relationships {
+            add(&r.id);
+        }
+        for r in &p.ideas {
+            add(&r.id);
+        }
+        for r in &p.tasks {
+            add(&r.id);
+        }
+        for r in &p.competitions {
+            add(&r.id);
+        }
+        for r in &p.competition_slots {
+            add(&r.id);
+        }
+        for r in &p.triage_rules {
+            add(&r.id);
+        }
+        for r in &p.pipelines {
+            add(&r.id);
+        }
+        for r in &p.standards {
+            add(&r.id);
+        }
+        for r in &p.use_cases {
+            add(&r.id);
+        }
+        for r in &p.milestones {
+            add(&r.id);
+        }
+        for r in &p.kpis {
+            add(&r.id);
+        }
+        for r in &p.kpi_measurements {
+            add(&r.id);
+        }
+        for r in &p.kpi_bindings {
+            add(&r.id);
+        }
+        for r in &p.memories {
+            add(&r.id);
+        }
+        for r in &p.memory_nodes {
+            add(&r.id);
+        }
     }
 
     // Project row.
@@ -7161,8 +7272,17 @@ fn insert_project_children(
                  position, health_score, last_scan_at, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
             rusqlite::params![
-                remap_req(map, &g.id), project_id, g.name, g.color, g.icon, g.group_type,
-                g.position, g.health_score, g.last_scan_at, g.created_at, g.updated_at,
+                remap_req(map, &g.id),
+                project_id,
+                g.name,
+                g.color,
+                g.icon,
+                g.group_type,
+                g.position,
+                g.health_score,
+                g.last_scan_at,
+                g.created_at,
+                g.updated_at,
             ],
             &format!("Project '{pname}' context group '{}'", g.name),
             warnings,
@@ -7170,7 +7290,13 @@ fn insert_project_children(
     }
 
     for c in &p.contexts {
-        let group_id = remap_soft(map, &c.group_id, strict, warnings, &format!("Project '{pname}' context '{}'", c.name));
+        let group_id = remap_soft(
+            map,
+            &c.group_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' context '{}'", c.name),
+        );
         exec_row(
             tx,
             "INSERT INTO dev_contexts (id, project_id, group_id, name, description, file_paths, \
@@ -7178,9 +7304,23 @@ fn insert_project_children(
                  category, business_feature, pinned, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)",
             rusqlite::params![
-                remap_req(map, &c.id), project_id, group_id, c.name, c.description, c.file_paths,
-                c.entry_points, c.db_tables, c.keywords, c.api_surface, c.cross_refs,
-                c.tech_stack, c.category, c.business_feature, c.pinned, c.created_at, c.updated_at,
+                remap_req(map, &c.id),
+                project_id,
+                group_id,
+                c.name,
+                c.description,
+                c.file_paths,
+                c.entry_points,
+                c.db_tables,
+                c.keywords,
+                c.api_surface,
+                c.cross_refs,
+                c.tech_stack,
+                c.category,
+                c.business_feature,
+                c.pinned,
+                c.created_at,
+                c.updated_at,
             ],
             &format!("Project '{pname}' context '{}'", c.name),
             warnings,
@@ -7193,8 +7333,10 @@ fn insert_project_children(
             "INSERT INTO dev_context_group_relationships (id, project_id, source_group_id, \
                  target_group_id, created_at) VALUES (?1,?2,?3,?4,?5)",
             rusqlite::params![
-                remap_req(map, &r.id), project_id,
-                remap_req(map, &r.source_group_id), remap_req(map, &r.target_group_id),
+                remap_req(map, &r.id),
+                project_id,
+                remap_req(map, &r.source_group_id),
+                remap_req(map, &r.target_group_id),
                 r.created_at,
             ],
             &format!("Project '{pname}' context group relationship"),
@@ -7212,11 +7354,25 @@ fn insert_project_children(
                  exports_commands, exports_repo_fns, computed_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
             rusqlite::params![
-                project_id, remap_req(map, &f.context_id), f.content_hash, f.file_count,
-                f.missing_file_count, f.imports, f.primitives, f.promise_all_count,
-                f.join_all_count, f.await_count, f.sql_write_count, f.spawn_count,
-                f.use_effect_count, f.set_state_after_await_count, f.exports_components,
-                f.exports_hooks, f.exports_commands, f.exports_repo_fns, f.computed_at,
+                project_id,
+                remap_req(map, &f.context_id),
+                f.content_hash,
+                f.file_count,
+                f.missing_file_count,
+                f.imports,
+                f.primitives,
+                f.promise_all_count,
+                f.join_all_count,
+                f.await_count,
+                f.sql_write_count,
+                f.spawn_count,
+                f.use_effect_count,
+                f.set_state_after_await_count,
+                f.exports_components,
+                f.exports_hooks,
+                f.exports_commands,
+                f.exports_repo_fns,
+                f.computed_at,
             ],
             &format!("Project '{pname}' context fingerprint"),
             warnings,
@@ -7224,7 +7380,13 @@ fn insert_project_children(
     }
 
     for uc in &p.use_cases {
-        let primary = remap_soft(map, &uc.primary_context_id, strict, warnings, &format!("Project '{pname}' use case '{}'", uc.name));
+        let primary = remap_soft(
+            map,
+            &uc.primary_context_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' use case '{}'", uc.name),
+        );
         exec_row(
             tx,
             "INSERT INTO dev_use_cases (id, project_id, name, slug, description, kind, \
@@ -7241,9 +7403,27 @@ fn insert_project_children(
     }
 
     for k in &p.kpis {
-        let ctx_group = remap_soft(map, &k.context_group_id, strict, warnings, &format!("Project '{pname}' KPI '{}'", k.name));
-        let ctx = remap_soft(map, &k.context_id, strict, warnings, &format!("Project '{pname}' KPI '{}'", k.name));
-        let uc = remap_soft(map, &k.use_case_id, strict, warnings, &format!("Project '{pname}' KPI '{}'", k.name));
+        let ctx_group = remap_soft(
+            map,
+            &k.context_group_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' KPI '{}'", k.name),
+        );
+        let ctx = remap_soft(
+            map,
+            &k.context_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' KPI '{}'", k.name),
+        );
+        let uc = remap_soft(
+            map,
+            &k.use_case_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' KPI '{}'", k.name),
+        );
         exec_row(
             tx,
             "INSERT INTO dev_kpis (id, project_id, context_group_id, context_id, use_case_id, \
@@ -7255,13 +7435,39 @@ fn insert_project_children(
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,\
                  ?21,?22,?23,?24,?25,?26,?27,?28,?29,?30,?31,?32,?33)",
             rusqlite::params![
-                remap_req(map, &k.id), project_id, ctx_group, ctx, uc,
-                k.name, k.description, k.category, k.measure_kind, k.measure_config, k.unit,
-                k.direction, k.baseline_value, k.target_value, k.target_date, k.current_value,
-                k.last_measured_at, k.cadence, k.status, k.created_by, k.rationale,
-                k.needed_connector, k.metric_type, k.tier, k.warn_at, k.crit_at,
-                k.manual_rating, k.assessment_pros, k.assessment_cons, k.last_skip_at,
-                k.last_skip_rationale, k.created_at, k.updated_at,
+                remap_req(map, &k.id),
+                project_id,
+                ctx_group,
+                ctx,
+                uc,
+                k.name,
+                k.description,
+                k.category,
+                k.measure_kind,
+                k.measure_config,
+                k.unit,
+                k.direction,
+                k.baseline_value,
+                k.target_value,
+                k.target_date,
+                k.current_value,
+                k.last_measured_at,
+                k.cadence,
+                k.status,
+                k.created_by,
+                k.rationale,
+                k.needed_connector,
+                k.metric_type,
+                k.tier,
+                k.warn_at,
+                k.crit_at,
+                k.manual_rating,
+                k.assessment_pros,
+                k.assessment_cons,
+                k.last_skip_at,
+                k.last_skip_rationale,
+                k.created_at,
+                k.updated_at,
             ],
             &format!("Project '{pname}' KPI '{}'", k.name),
             warnings,
@@ -7274,8 +7480,14 @@ fn insert_project_children(
             "INSERT INTO dev_kpi_measurements (id, kpi_id, value, measured_at, source, env, \
                  evidence, note) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
             rusqlite::params![
-                remap_req(map, &m.id), remap_req(map, &m.kpi_id), m.value, m.measured_at,
-                m.source, m.env, m.evidence, m.note,
+                remap_req(map, &m.id),
+                remap_req(map, &m.kpi_id),
+                m.value,
+                m.measured_at,
+                m.source,
+                m.env,
+                m.evidence,
+                m.note,
             ],
             &format!("Project '{pname}' KPI measurement"),
             warnings,
@@ -7292,8 +7504,14 @@ fn insert_project_children(
                  composed_by, status, verified_at, created_at) \
              VALUES (?1,?2,'',?3,?4,?5,?6,?7,?8)",
             rusqlite::params![
-                remap_req(map, &b.id), remap_req(map, &b.kpi_id), b.service_type, b.procedure,
-                b.composed_by, b.status, b.verified_at, b.created_at,
+                remap_req(map, &b.id),
+                remap_req(map, &b.kpi_id),
+                b.service_type,
+                b.procedure,
+                b.composed_by,
+                b.status,
+                b.verified_at,
+                b.created_at,
             ],
             &format!("Project '{pname}' KPI binding"),
             warnings,
@@ -7319,7 +7537,13 @@ fn insert_project_children(
                     next.push(g);
                     continue;
                 }
-                let parent = remap_soft(map, &g.parent_goal_id, strict, warnings, &format!("Project '{pname}' goal '{}'", g.title));
+                let parent = remap_soft(
+                    map,
+                    &g.parent_goal_id,
+                    strict,
+                    warnings,
+                    &format!("Project '{pname}' goal '{}'", g.title),
+                );
                 insert_goal_row(tx, project_id, g, map, parent, pname, warnings);
                 inserted.insert(g.id.as_str());
             }
@@ -7385,8 +7609,20 @@ fn insert_project_children(
     }
 
     for i in &p.ideas {
-        let ctx = remap_soft(map, &i.context_id, strict, warnings, &format!("Project '{pname}' idea '{}'", i.title));
-        let uc = remap_soft(map, &i.use_case_id, strict, warnings, &format!("Project '{pname}' idea '{}'", i.title));
+        let ctx = remap_soft(
+            map,
+            &i.context_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' idea '{}'", i.title),
+        );
+        let uc = remap_soft(
+            map,
+            &i.use_case_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' idea '{}'", i.title),
+        );
         exec_row(
             tx,
             "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, \
@@ -7396,10 +7632,31 @@ fn insert_project_children(
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,\
                  ?21,?22,?23,?24,?25)",
             rusqlite::params![
-                remap_req(map, &i.id), project_id, ctx, i.scan_type, i.category, i.title,
-                i.description, i.reasoning, i.status, i.effort, i.impact, i.risk, i.priority,
-                i.provider, i.model, i.rejection_reason, i.origin, uc, i.evidence, i.dedup_key,
-                i.verify_state, i.verify_checked_at, i.verify_evidence, i.created_at, i.updated_at,
+                remap_req(map, &i.id),
+                project_id,
+                ctx,
+                i.scan_type,
+                i.category,
+                i.title,
+                i.description,
+                i.reasoning,
+                i.status,
+                i.effort,
+                i.impact,
+                i.risk,
+                i.priority,
+                i.provider,
+                i.model,
+                i.rejection_reason,
+                i.origin,
+                uc,
+                i.evidence,
+                i.dedup_key,
+                i.verify_state,
+                i.verify_checked_at,
+                i.verify_evidence,
+                i.created_at,
+                i.updated_at,
             ],
             &format!("Project '{pname}' idea '{}'", i.title),
             warnings,
@@ -7407,9 +7664,27 @@ fn insert_project_children(
     }
 
     for t in &p.tasks {
-        let src_idea = remap_soft(map, &t.source_idea_id, strict, warnings, &format!("Project '{pname}' task '{}'", t.title));
-        let goal = remap_soft(map, &t.goal_id, strict, warnings, &format!("Project '{pname}' task '{}'", t.title));
-        let parent = remap_soft(map, &t.parent_task_id, strict, warnings, &format!("Project '{pname}' task '{}'", t.title));
+        let src_idea = remap_soft(
+            map,
+            &t.source_idea_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' task '{}'", t.title),
+        );
+        let goal = remap_soft(
+            map,
+            &t.goal_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' task '{}'", t.title),
+        );
+        let parent = remap_soft(
+            map,
+            &t.parent_task_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' task '{}'", t.title),
+        );
         exec_row(
             tx,
             // `updated_at` is derived, not carried: the export format predates the
@@ -7422,9 +7697,23 @@ fn insert_project_children(
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,\
                  COALESCE(?16,?15,?17))",
             rusqlite::params![
-                remap_req(map, &t.id), project_id, t.title, t.description, src_idea, goal,
-                t.status, t.session_id, t.progress_pct, t.output_lines, t.error, t.depth,
-                parent, t.attempt, t.started_at, t.completed_at, t.created_at,
+                remap_req(map, &t.id),
+                project_id,
+                t.title,
+                t.description,
+                src_idea,
+                goal,
+                t.status,
+                t.session_id,
+                t.progress_pct,
+                t.output_lines,
+                t.error,
+                t.depth,
+                parent,
+                t.attempt,
+                t.started_at,
+                t.completed_at,
+                t.created_at,
             ],
             &format!("Project '{pname}' task '{}'", t.title),
             warnings,
@@ -7432,9 +7721,27 @@ fn insert_project_children(
     }
 
     for c in &p.competitions {
-        let src_idea = remap_soft(map, &c.source_idea_id, strict, warnings, &format!("Project '{pname}' competition '{}'", c.task_title));
-        let src_goal = remap_soft(map, &c.source_goal_id, strict, warnings, &format!("Project '{pname}' competition '{}'", c.task_title));
-        let winner = remap_soft(map, &c.winner_task_id, strict, warnings, &format!("Project '{pname}' competition '{}'", c.task_title));
+        let src_idea = remap_soft(
+            map,
+            &c.source_idea_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' competition '{}'", c.task_title),
+        );
+        let src_goal = remap_soft(
+            map,
+            &c.source_goal_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' competition '{}'", c.task_title),
+        );
+        let winner = remap_soft(
+            map,
+            &c.winner_task_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' competition '{}'", c.task_title),
+        );
         exec_row(
             tx,
             "INSERT INTO dev_competitions (id, project_id, task_title, task_description, \
@@ -7443,9 +7750,21 @@ fn insert_project_children(
                  resolved_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
             rusqlite::params![
-                remap_req(map, &c.id), project_id, c.task_title, c.task_description,
-                src_idea, src_goal, c.slot_count, c.status, winner, c.winner_insight,
-                c.baseline_json, c.reviewer_notes, c.worktree_base_ref, c.created_at, c.resolved_at,
+                remap_req(map, &c.id),
+                project_id,
+                c.task_title,
+                c.task_description,
+                src_idea,
+                src_goal,
+                c.slot_count,
+                c.status,
+                winner,
+                c.winner_insight,
+                c.baseline_json,
+                c.reviewer_notes,
+                c.worktree_base_ref,
+                c.created_at,
+                c.resolved_at,
             ],
             &format!("Project '{pname}' competition '{}'", c.task_title),
             warnings,
@@ -7460,10 +7779,19 @@ fn insert_project_children(
                  disqualify_reason, diff_hash, diff_stats_json, diff_analyzed_at, created_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)",
             rusqlite::params![
-                remap_req(map, &s.id), remap_req(map, &s.competition_id),
-                remap_req(map, &s.task_id), s.strategy_label, s.strategy_prompt,
-                s.worktree_name, s.branch_name, s.slot_index, s.disqualified,
-                s.disqualify_reason, s.diff_hash, s.diff_stats_json, s.diff_analyzed_at,
+                remap_req(map, &s.id),
+                remap_req(map, &s.competition_id),
+                remap_req(map, &s.task_id),
+                s.strategy_label,
+                s.strategy_prompt,
+                s.worktree_name,
+                s.branch_name,
+                s.slot_index,
+                s.disqualified,
+                s.disqualify_reason,
+                s.diff_hash,
+                s.diff_stats_json,
+                s.diff_analyzed_at,
                 s.created_at,
             ],
             &format!("Project '{pname}' competition slot"),
@@ -7477,8 +7805,14 @@ fn insert_project_children(
             "INSERT INTO dev_triage_rules (id, project_id, name, conditions, action, enabled, \
                  times_fired, created_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
             rusqlite::params![
-                remap_req(map, &r.id), project_id, r.name, r.conditions, r.action, r.enabled,
-                r.times_fired, r.created_at,
+                remap_req(map, &r.id),
+                project_id,
+                r.name,
+                r.conditions,
+                r.action,
+                r.enabled,
+                r.times_fired,
+                r.created_at,
             ],
             &format!("Project '{pname}' triage rule '{}'", r.name),
             warnings,
@@ -7492,11 +7826,24 @@ fn insert_project_children(
                  verify_after, verification_scan_id, error, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
             rusqlite::params![
-                remap_req(map, &pl.id), project_id, remap_req(map, &pl.idea_id),
-                remap_soft(map, &pl.task_id, strict, warnings, &format!("Project '{pname}' pipeline")),
-                pl.stage, pl.auto_execute, pl.verify_after,
+                remap_req(map, &pl.id),
+                project_id,
+                remap_req(map, &pl.idea_id),
+                remap_soft(
+                    map,
+                    &pl.task_id,
+                    strict,
+                    warnings,
+                    &format!("Project '{pname}' pipeline")
+                ),
+                pl.stage,
+                pl.auto_execute,
+                pl.verify_after,
                 // Scans don't travel — verification_scan_id stays as-is.
-                pl.verification_scan_id, pl.error, pl.created_at, pl.updated_at,
+                pl.verification_scan_id,
+                pl.error,
+                pl.created_at,
+                pl.updated_at,
             ],
             &format!("Project '{pname}' pipeline"),
             warnings,
@@ -7510,10 +7857,19 @@ fn insert_project_children(
                  status, severity, evidence, recommendation, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
             rusqlite::params![
-                remap_req(map, &s.id), project_id,
+                remap_req(map, &s.id),
+                project_id,
                 // Scans don't travel — scan_id stays as-is.
-                s.scan_id, s.rule_key, s.category, s.title, s.status, s.severity,
-                s.evidence, s.recommendation, s.created_at, s.updated_at,
+                s.scan_id,
+                s.rule_key,
+                s.category,
+                s.title,
+                s.status,
+                s.severity,
+                s.evidence,
+                s.recommendation,
+                s.created_at,
+                s.updated_at,
             ],
             &format!("Project '{pname}' standard '{}'", s.rule_key),
             warnings,
@@ -7525,7 +7881,8 @@ fn insert_project_children(
             tx,
             "INSERT OR IGNORE INTO dev_use_case_contexts (use_case_id, context_id) VALUES (?1,?2)",
             rusqlite::params![
-                remap_req(map, &ucc.use_case_id), remap_req(map, &ucc.context_id),
+                remap_req(map, &ucc.use_case_id),
+                remap_req(map, &ucc.context_id),
             ],
             &format!("Project '{pname}' use case context pair"),
             warnings,
@@ -7539,8 +7896,17 @@ fn insert_project_children(
                  target_date, cut_at, shipped_at, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
             rusqlite::params![
-                remap_req(map, &m.id), project_id, m.name, m.goal, m.status, m.order_index,
-                m.target_date, m.cut_at, m.shipped_at, m.created_at, m.updated_at,
+                remap_req(map, &m.id),
+                project_id,
+                m.name,
+                m.goal,
+                m.status,
+                m.order_index,
+                m.target_date,
+                m.cut_at,
+                m.shipped_at,
+                m.created_at,
+                m.updated_at,
             ],
             &format!("Project '{pname}' milestone '{}'", m.name),
             warnings,
@@ -7569,8 +7935,15 @@ fn insert_project_children(
                  bucket, added_after_cut, order_index, created_at, description, rating) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
             rusqlite::params![
-                remap_req(map, &mi.milestone_id), mi.item_kind, item_id, mi.bucket,
-                mi.added_after_cut, mi.order_index, mi.created_at, mi.description, mi.rating,
+                remap_req(map, &mi.milestone_id),
+                mi.item_kind,
+                item_id,
+                mi.bucket,
+                mi.added_after_cut,
+                mi.order_index,
+                mi.created_at,
+                mi.description,
+                mi.rating,
             ],
             &format!("Project '{pname}' milestone item"),
             warnings,
@@ -7584,10 +7957,18 @@ fn insert_project_children(
                  source_kind, source_id, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
             rusqlite::params![
-                remap_req(map, &m.id), project_id, m.category, m.title, m.content, m.importance,
+                remap_req(map, &m.id),
+                project_id,
+                m.category,
+                m.title,
+                m.content,
+                m.importance,
                 // source_id points at runs/tasks in the source workspace —
                 // advisory, kept as-is.
-                m.source_kind, m.source_id, m.created_at, m.updated_at,
+                m.source_kind,
+                m.source_id,
+                m.created_at,
+                m.updated_at,
             ],
             &format!("Project '{pname}' memory '{}'", m.title),
             warnings,
@@ -7595,15 +7976,30 @@ fn insert_project_children(
     }
 
     for n in &p.memory_nodes {
-        let ctx = remap_soft(map, &n.context_id, strict, warnings, &format!("Project '{pname}' memory node '{}'", n.title));
+        let ctx = remap_soft(
+            map,
+            &n.context_id,
+            strict,
+            warnings,
+            &format!("Project '{pname}' memory node '{}'", n.title),
+        );
         exec_row(
             tx,
             "INSERT INTO memory_nodes (id, project_id, context_id, kind, title, body, source, \
                  status, content_hash, created_at, updated_at) \
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
             rusqlite::params![
-                remap_req(map, &n.id), project_id, ctx, n.kind, n.title, n.body, n.source,
-                n.status, n.content_hash, n.created_at, n.updated_at,
+                remap_req(map, &n.id),
+                project_id,
+                ctx,
+                n.kind,
+                n.title,
+                n.body,
+                n.source,
+                n.status,
+                n.content_hash,
+                n.created_at,
+                n.updated_at,
             ],
             &format!("Project '{pname}' memory node '{}'", n.title),
             warnings,
@@ -7645,9 +8041,21 @@ fn insert_goal_row(
              created_at, updated_at) \
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
         rusqlite::params![
-            remap_req(map, &g.id), project_id, parent, context_id, kpi_id, g.order_index,
-            g.title, g.description, g.status, g.progress, g.target_date, g.started_at,
-            g.completed_at, g.created_at, g.updated_at,
+            remap_req(map, &g.id),
+            project_id,
+            parent,
+            context_id,
+            kpi_id,
+            g.order_index,
+            g.title,
+            g.description,
+            g.status,
+            g.progress,
+            g.target_date,
+            g.started_at,
+            g.completed_at,
+            g.created_at,
+            g.updated_at,
         ],
         &format!("Project '{pname}' goal '{}'", g.title),
         warnings,
@@ -7668,16 +8076,17 @@ fn import_workspace_knowledge(
     knowledge_id_map: &mut HashMap<String, String>,
 ) {
     for ws in &bundle.workspace_knowledge {
-        let target_ws: Option<String> = if row_exists(tx, "SELECT 1 FROM dev_workspaces WHERE id = ?1", &ws.id) {
-            Some(ws.id.clone())
-        } else if let Ok(id) = tx.query_row(
-            "SELECT id FROM dev_workspaces WHERE name = ?1 COLLATE NOCASE",
-            [ws.name.as_str()],
-            |r| r.get::<_, String>(0),
-        ) {
-            Some(id)
-        } else {
-            match tx.execute(
+        let target_ws: Option<String> =
+            if row_exists(tx, "SELECT 1 FROM dev_workspaces WHERE id = ?1", &ws.id) {
+                Some(ws.id.clone())
+            } else if let Ok(id) = tx.query_row(
+                "SELECT id FROM dev_workspaces WHERE name = ?1 COLLATE NOCASE",
+                [ws.name.as_str()],
+                |r| r.get::<_, String>(0),
+            ) {
+                Some(id)
+            } else {
+                match tx.execute(
                 "INSERT INTO dev_workspaces (id, name, color, description, created_at, updated_at) \
                  VALUES (?1,?2,?3,?4,?5,?5)",
                 rusqlite::params![ws.id, ws.name, ws.color, ws.description, now],
@@ -7688,7 +8097,7 @@ fn import_workspace_knowledge(
                     None
                 }
             }
-        };
+            };
         let Some(target_ws) = target_ws else { continue };
         workspace_id_map.insert(ws.id.clone(), target_ws.clone());
 
@@ -7733,11 +8142,31 @@ fn import_workspace_knowledge(
                  VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,\
                      ?20,?21,?22,?23,?24,?25)",
                 rusqlite::params![
-                    k.id, target_ws, k.kind, k.title, k.statement, k.detail_md, k.topic,
-                    k.abstraction, k.ftype, k.durability, k.governing_id, k.evidence_count,
-                    k.applicability, k.status, k.origin_project_id, k.provenance, k.confidence,
-                    k.dedup_key, k.superseded_by, k.harvest_scope, k.valid_from, k.valid_to,
-                    k.decided_at, k.created_at, k.updated_at,
+                    k.id,
+                    target_ws,
+                    k.kind,
+                    k.title,
+                    k.statement,
+                    k.detail_md,
+                    k.topic,
+                    k.abstraction,
+                    k.ftype,
+                    k.durability,
+                    k.governing_id,
+                    k.evidence_count,
+                    k.applicability,
+                    k.status,
+                    k.origin_project_id,
+                    k.provenance,
+                    k.confidence,
+                    k.dedup_key,
+                    k.superseded_by,
+                    k.harvest_scope,
+                    k.valid_from,
+                    k.valid_to,
+                    k.decided_at,
+                    k.created_at,
+                    k.updated_at,
                 ],
             ) {
                 Ok(_) => {
@@ -8003,7 +8432,9 @@ fn import_twin(
         let sources_json = match serde_json::to_string(&remapped) {
             Ok(s) => s,
             Err(e) => {
-                warnings.push(format!("Twin '{display_name}': fact sources unencodable ({e})"));
+                warnings.push(format!(
+                    "Twin '{display_name}': fact sources unencodable ({e})"
+                ));
                 continue;
             }
         };
@@ -8334,9 +8765,10 @@ fn import_athena_memory(
     };
     {
         let Ok(conn) = user_db.get() else {
-            result
-                .warnings
-                .push("Athena: her brain database could not be opened; her memory was not imported.".into());
+            result.warnings.push(
+                "Athena: her brain database could not be opened; her memory was not imported."
+                    .into(),
+            );
             return;
         };
         if !has_companion_schema(&conn) {
@@ -8349,9 +8781,9 @@ fn import_athena_memory(
     }
 
     if let Err(e) = import_athena_sessions(user_db, athena, result) {
-        result
-            .warnings
-            .push(format!("Athena: her conversation list could not be imported ({e})."));
+        result.warnings.push(format!(
+            "Athena: her conversation list could not be imported ({e})."
+        ));
     }
     if let Err(e) = import_athena_learned(user_db, athena, now, result) {
         result
@@ -8948,8 +9380,7 @@ fn write_project_skills(
             continue;
         }
 
-        let single_file =
-            files.len() == 1 && files[0].rel_path == format!("{}.md", skill.name);
+        let single_file = files.len() == 1 && files[0].rel_path == format!("{}.md", skill.name);
 
         if single_file {
             let target = skills_dir.join(format!("{}.md", skill.name));
@@ -9320,19 +9751,11 @@ fn seal_sensitive_sections(
     };
 
     if has_twins {
-        bundle.encrypted_twins = Some(encrypt_section(
-            &bundle.twins,
-            pp,
-            TWINS_EXPORT_FORMAT,
-        )?);
+        bundle.encrypted_twins = Some(encrypt_section(&bundle.twins, pp, TWINS_EXPORT_FORMAT)?);
         bundle.twins = Vec::new();
     }
     if has_athena {
-        bundle.encrypted_athena = Some(encrypt_section(
-            &bundle.athena,
-            pp,
-            ATHENA_EXPORT_FORMAT,
-        )?);
+        bundle.encrypted_athena = Some(encrypt_section(&bundle.athena, pp, ATHENA_EXPORT_FORMAT)?);
         bundle.athena = None;
     }
     // Same rule the credential envelope already established: an encrypted
@@ -9625,7 +10048,6 @@ pub async fn export_credentials(
     app: AppHandle,
     passphrase: String,
 ) -> Result<bool, AppError> {
-
     if passphrase.len() < 8 {
         return Err(AppError::Validation(
             "Passphrase must be at least 8 characters".into(),
@@ -9741,7 +10163,6 @@ pub async fn import_credentials(
     resolutions_json: Option<String>,
     file_path_override: Option<String>,
 ) -> Result<Option<CredentialImportResult>, AppError> {
-
     let path = if let Some(override_path) = file_path_override {
         std::path::PathBuf::from(override_path)
     } else {
@@ -10048,7 +10469,8 @@ mod tests {
             },
         ]));
 
-        let result = import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
+        let result =
+            import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
         assert_eq!(result.teams_created, 1);
         assert_eq!(result.team_memories_created, 2);
 
@@ -10076,7 +10498,8 @@ mod tests {
         let mut bundle = empty_bundle();
         bundle.teams.push(team_with_memories(Vec::new()));
 
-        let result = import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
+        let result =
+            import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
         assert_eq!(result.teams_created, 1);
         assert_eq!(result.team_memories_created, 0);
     }
@@ -10112,9 +10535,11 @@ mod tests {
 
     #[test]
     fn portable_team_memory_tags_strips_revision_history() {
-        let with_revisions =
-            Some(r#"{"source":"auto","revisions":[{"title":"old"}]}"#.to_string());
-        assert_eq!(portable_team_memory_tags(&with_revisions), Some("auto".into()));
+        let with_revisions = Some(r#"{"source":"auto","revisions":[{"title":"old"}]}"#.to_string());
+        assert_eq!(
+            portable_team_memory_tags(&with_revisions),
+            Some("auto".into())
+        );
 
         let empty_source = Some(r#"{"source":"","revisions":[]}"#.to_string());
         assert_eq!(portable_team_memory_tags(&empty_source), None);
@@ -10174,14 +10599,17 @@ mod tests {
             ],
         ));
 
-        let result = import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
+        let result =
+            import_bundle(&pool, None, &bundle, &HashMap::new()).expect("import must succeed");
         assert_eq!(result.kpis_created, 1);
 
         let conn = pool.get().unwrap();
         let project_id: String = conn
-            .query_row("SELECT id FROM dev_projects WHERE name = 'Imported'", [], |r| {
-                r.get(0)
-            })
+            .query_row(
+                "SELECT id FROM dev_projects WHERE name = 'Imported'",
+                [],
+                |r| r.get(0),
+            )
             .expect("dedicated Imported project should exist");
 
         let kpis = dev_tools_repo::list_kpis(&pool, &project_id, None).unwrap();
@@ -10207,9 +10635,19 @@ mod tests {
         let mut bundle = empty_bundle();
         bundle.kpis.push(kpi_export("Coverage", Vec::new()));
 
-        assert_eq!(import_bundle(&pool, None, &bundle, &HashMap::new()).unwrap().kpis_created, 1);
+        assert_eq!(
+            import_bundle(&pool, None, &bundle, &HashMap::new())
+                .unwrap()
+                .kpis_created,
+            1
+        );
         // Second import reuses the Imported project and skips the duplicate.
-        assert_eq!(import_bundle(&pool, None, &bundle, &HashMap::new()).unwrap().kpis_created, 0);
+        assert_eq!(
+            import_bundle(&pool, None, &bundle, &HashMap::new())
+                .unwrap()
+                .kpis_created,
+            0
+        );
 
         let conn = pool.get().unwrap();
         let kpi_count: i32 = conn
@@ -10326,7 +10764,15 @@ mod tests {
         seed_dev_project(&pool, "p1", &tmp.path().to_string_lossy());
         seed_dev_project_graph(&pool, "p1");
 
-        let bundle = build_export_bundle(&pool, None, ExportScope::Full, true, true, SensitiveSections::Include).unwrap();
+        let bundle = build_export_bundle(
+            &pool,
+            None,
+            ExportScope::Full,
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap();
         assert_eq!(bundle.dev_projects.len(), 1);
         let p = &bundle.dev_projects[0];
         assert_eq!(p.id, "p1");
@@ -10379,7 +10825,10 @@ mod tests {
         assert_eq!(reparsed.dev_projects.len(), 1);
         assert_eq!(reparsed.dev_projects[0].kpi_bindings.len(), 1);
         assert_eq!(reparsed.dev_projects[0].status, "paused");
-        assert_eq!(reparsed.dev_projects[0].tech_stack.as_deref(), Some("rust+react"));
+        assert_eq!(
+            reparsed.dev_projects[0].tech_stack.as_deref(),
+            Some("rust+react")
+        );
         assert_eq!(reparsed.dev_projects[0].team_id.as_deref(), Some("team-x"));
         assert!(reparsed.dev_projects[0].auto_pr_on_success);
         let legacy: PortabilityBundle = serde_json::from_str(
@@ -10407,7 +10856,9 @@ mod tests {
             twin_ids: Vec::new(),
             athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
+        let bundle =
+            build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
+                .unwrap();
         assert_eq!(bundle.dev_projects.len(), 1);
         assert_eq!(bundle.dev_projects[0].id, "p1");
         // Empty workspace selection means none travel.
@@ -10422,7 +10873,9 @@ mod tests {
             twin_ids: Vec::new(),
             athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
+        let bundle =
+            build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
+                .unwrap();
         assert!(bundle.dev_projects.is_empty());
         assert_eq!(bundle.workspace_knowledge.len(), 1);
         assert_eq!(bundle.workspace_knowledge[0].id, "w1");
@@ -10455,7 +10908,9 @@ mod tests {
             twin_ids: Vec::new(),
             athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
+        let bundle =
+            build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
+                .unwrap();
         assert_eq!(bundle.workspace_knowledge.len(), 1);
         let w = &bundle.workspace_knowledge[0];
         assert_eq!(w.knowledge.len(), 3);
@@ -10542,7 +10997,9 @@ mod tests {
     fn validate_bundle_rejects_too_many_dev_projects() {
         let mut bundle = empty_bundle();
         for i in 0..=MAX_DEV_PROJECTS {
-            bundle.dev_projects.push(minimal_dev_project(&format!("p{i}")));
+            bundle
+                .dev_projects
+                .push(minimal_dev_project(&format!("p{i}")));
         }
         assert!(validate_bundle(&bundle).is_err());
     }
@@ -10594,7 +11051,15 @@ mod tests {
             )
             .unwrap();
         }
-        build_export_bundle(&source, None, ExportScope::Full, true, true, SensitiveSections::Include).unwrap()
+        build_export_bundle(
+            &source,
+            None,
+            ExportScope::Full,
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap()
     }
 
     #[test]
@@ -10612,11 +11077,19 @@ mod tests {
         let conn = target.get().unwrap();
         // Original uuids preserved across the graph.
         let pid: String = conn
-            .query_row("SELECT project_id FROM dev_goals WHERE id = 'g1-p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT project_id FROM dev_goals WHERE id = 'g1-p1'",
+                [],
+                |r| r.get(0),
+            )
             .expect("goal with original uuid");
         assert_eq!(pid, "p1");
         let goal_count: i32 = conn
-            .query_row("SELECT COUNT(*) FROM dev_goals WHERE project_id = 'p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM dev_goals WHERE project_id = 'p1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(goal_count, 2);
         let item_id: String = conn
@@ -10639,22 +11112,37 @@ mod tests {
         assert_eq!(desc.as_deref(), Some("why it is core"));
         assert_eq!(rating, Some(4), "milestone item rating round-trips");
         let edge_count: i32 = conn
-            .query_row("SELECT COUNT(*) FROM memory_edges WHERE from_id = 'n1-p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM memory_edges WHERE from_id = 'n1-p1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(edge_count, 1);
         // The stripped vault ref lands as an empty placeholder.
         let cred: String = conn
-            .query_row("SELECT credential_id FROM dev_kpi_bindings WHERE id = 'kb1-p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT credential_id FROM dev_kpi_bindings WHERE id = 'kb1-p1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(cred, "");
         // team-x does not exist in the target — nulled with a warning.
         let team: Option<String> = conn
-            .query_row("SELECT team_id FROM dev_projects WHERE id = 'p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT team_id FROM dev_projects WHERE id = 'p1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert!(team.is_none());
         assert!(result.warnings.iter().any(|w| w.contains("team not found")));
         // Folder does not exist on this machine — advisory warning, never a failure.
-        assert!(result.warnings.iter().any(|w| w.contains("Project Manager")));
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("Project Manager")));
 
         // Knowledge statuses survive faithfully, including rejected.
         let rejected: i32 = conn
@@ -10704,7 +11192,11 @@ mod tests {
 
         let conn = target.get().unwrap();
         let projects: i32 = conn
-            .query_row("SELECT COUNT(*) FROM dev_projects WHERE id = 'p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM dev_projects WHERE id = 'p1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(projects, 1);
         let goals: i32 = conn
@@ -10728,8 +11220,11 @@ mod tests {
             )
             .unwrap();
             // Local drift the replace must undo…
-            conn.execute("UPDATE dev_goals SET title = 'mutated' WHERE id = 'g1-p1'", [])
-                .unwrap();
+            conn.execute(
+                "UPDATE dev_goals SET title = 'mutated' WHERE id = 'g1-p1'",
+                [],
+            )
+            .unwrap();
             // …and a local extra child the replace must clear.
             conn.execute(
                 "INSERT INTO dev_goals (id, project_id, title, status) VALUES ('local-extra', 'p1', 'local', 'open')",
@@ -10747,19 +11242,33 @@ mod tests {
         let conn = target.get().unwrap();
         // Project id is stable, children carry their original uuids again.
         let title: String = conn
-            .query_row("SELECT title FROM dev_goals WHERE id = 'g1-p1'", [], |r| r.get(0))
+            .query_row("SELECT title FROM dev_goals WHERE id = 'g1-p1'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(title, "Goal one");
         let extra: i32 = conn
-            .query_row("SELECT COUNT(*) FROM dev_goals WHERE id = 'local-extra'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM dev_goals WHERE id = 'local-extra'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(extra, 0);
         let scans: i32 = conn
-            .query_row("SELECT COUNT(*) FROM dev_scans WHERE id = 'scan1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM dev_scans WHERE id = 'scan1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(scans, 1);
         let goals: i32 = conn
-            .query_row("SELECT COUNT(*) FROM dev_goals WHERE project_id = 'p1'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM dev_goals WHERE project_id = 'p1'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(goals, 2);
     }
@@ -10892,7 +11401,11 @@ mod tests {
 
         let conn = target.get().unwrap();
         let adoption: i32 = conn
-            .query_row("SELECT COUNT(*) FROM workspace_practice_adoption", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM workspace_practice_adoption",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(adoption, 0);
     }
@@ -10969,13 +11482,16 @@ mod tests {
             "# Foo skill"
         );
         assert_eq!(
-            std::fs::read_to_string(skills.join("foo").join("references").join("notes.md")).unwrap(),
+            std::fs::read_to_string(skills.join("foo").join("references").join("notes.md"))
+                .unwrap(),
             "notes"
         );
-        assert_eq!(std::fs::read_to_string(skills.join("bar.md")).unwrap(), "# Bar");
+        assert_eq!(
+            std::fs::read_to_string(skills.join("bar.md")).unwrap(),
+            "# Bar"
+        );
         // Provenance sidecar: bundle-kind, no absolute source path, real hash.
-        let prov =
-            std::fs::read_to_string(skills.join("foo").join(SKILL_PROVENANCE_FILE)).unwrap();
+        let prov = std::fs::read_to_string(skills.join("foo").join(SKILL_PROVENANCE_FILE)).unwrap();
         let prov: serde_json::Value = serde_json::from_str(&prov).unwrap();
         assert_eq!(prov["source_kind"], "bundle");
         assert_eq!(prov["source_path"], "");
@@ -11007,7 +11523,10 @@ mod tests {
         let mut result = empty_import_result();
         write_project_skills(&root, std::slice::from_ref(&skill), false, &mut result);
         assert_eq!(result.skills_written, 0);
-        assert!(result.warnings.iter().any(|w| w.contains("incoming copy skipped")));
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("incoming copy skipped")));
         assert_eq!(
             std::fs::read_to_string(foo_dir.join("SKILL.md")).unwrap(),
             "local content"
@@ -11110,11 +11629,7 @@ mod tests {
                  last_seen_at) \
              VALUES (?1,?2,'alice','Prefers async',5,?3,'2026-01-06T00:00:00Z',\
                      '2026-01-06T00:00:00Z')",
-            rusqlite::params![
-                format!("fact-ok-{id}"),
-                id,
-                format!("[\"comm-a-{id}\"]")
-            ],
+            rusqlite::params![format!("fact-ok-{id}"), id, format!("[\"comm-a-{id}\"]")],
         )
         .unwrap();
         conn.execute(
@@ -11181,7 +11696,10 @@ mod tests {
             rusqlite::params![kb_id],
         )
         .unwrap();
-        for (cid, idx, text) in [("chunk-1", 0, "first chunk"), ("chunk-2", 1, "second chunk")] {
+        for (cid, idx, text) in [
+            ("chunk-1", 0, "first chunk"),
+            ("chunk-2", 1, "second chunk"),
+        ] {
             conn.execute(
                 "INSERT INTO kb_chunks \
                     (id, kb_id, document_id, chunk_index, content, token_count, created_at) \
@@ -11193,7 +11711,15 @@ mod tests {
     }
 
     fn twin_bundle(pool: &DbPool, user_db: Option<&UserDbPool>) -> PortabilityBundle {
-        build_export_bundle(pool, user_db, ExportScope::Full, true, true, SensitiveSections::Include).unwrap()
+        build_export_bundle(
+            pool,
+            user_db,
+            ExportScope::Full,
+            true,
+            true,
+            SensitiveSections::Include,
+        )
+        .unwrap()
     }
 
     /// AC1 — every exported column survives a round trip, `summary` and
@@ -11474,9 +12000,11 @@ mod tests {
             .unwrap();
         assert_ne!(dup_id, first_id);
         let dup_slug: String = conn
-            .query_row("SELECT slug FROM twin_profiles WHERE id = ?1", [dup_id.as_str()], |r| {
-                r.get(0)
-            })
+            .query_row(
+                "SELECT slug FROM twin_profiles WHERE id = ?1",
+                [dup_id.as_str()],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(dup_slug, "founder-twin-imported");
         // The duplicate's fact cites the duplicate's OWN communication.
@@ -11562,7 +12090,8 @@ mod tests {
             seed_twin(&pool, &format!("t{i}"), &format!("Twin {i}"), None);
             // Only the first twin may be active; seed_twin sets is_active=1.
             let conn = pool.get().unwrap();
-            conn.execute("UPDATE twin_profiles SET is_active = 0", []).unwrap();
+            conn.execute("UPDATE twin_profiles SET is_active = 0", [])
+                .unwrap();
         }
         let stats = compute_export_stats(&pool, None).unwrap();
         assert_eq!(stats.twin_count as usize, MAX_TWINS + 2);
@@ -11589,7 +12118,9 @@ mod tests {
             twin_ids: vec!["t2".into()],
             athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
+        let bundle =
+            build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
+                .unwrap();
         assert_eq!(bundle.twins.len(), 1);
         assert_eq!(bundle.twins[0].name, "Personal Twin");
 
@@ -11602,7 +12133,9 @@ mod tests {
             twin_ids: Vec::new(),
             athena_tiers: Vec::new(),
         };
-        let bundle = build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include).unwrap();
+        let bundle =
+            build_export_bundle(&pool, None, scope, true, true, SensitiveSections::Include)
+                .unwrap();
         assert!(bundle.twins.is_empty());
     }
 
@@ -11627,7 +12160,10 @@ mod tests {
         // No vectors, no embeddings, no local credential ref.
         let json = serde_json::to_string(&bundle).unwrap();
         for forbidden in ["kb_vec", "embedding\"", "\"credential_id\":\"kb-cred-old\""] {
-            assert!(!json.contains(forbidden), "bundle must not contain {forbidden}");
+            assert!(
+                !json.contains(forbidden),
+                "bundle must not contain {forbidden}"
+            );
         }
 
         let target = init_test_db().unwrap();
@@ -11821,7 +12357,10 @@ mod tests {
                     |r| r.get(0),
                 )
                 .unwrap();
-            assert_eq!(n, 1, "replace keeps exactly one copy of the bundled project");
+            assert_eq!(
+                n, 1,
+                "replace keeps exactly one copy of the bundled project"
+            );
             let id: String = conn
                 .query_row(
                     "SELECT id FROM dev_projects WHERE root_path = ?1",
@@ -11972,7 +12511,10 @@ mod tests {
         home.write("cockpit.md", "SECRET-COCKPIT\n");
         home.write("dashboard.md", "SECRET-DASHBOARD\n");
         home.write("reflections/2026-01-01_ref_1.md", "SECRET-REFLECTION\n");
-        home.write("episodes-archive-20260101T000000/old.md", "SECRET-ARCHIVE\n");
+        home.write(
+            "episodes-archive-20260101T000000/old.md",
+            "SECRET-ARCHIVE\n",
+        );
 
         conn.execute(
             "INSERT INTO companion_session (id, claude_session_id, title, status, pinned, origin) \
@@ -12496,7 +13038,8 @@ mod tests {
         // And a memory with NO provenance at all reads as an empty list.
         {
             let conn = target_user.get().unwrap();
-            conn.execute("DELETE FROM companion_provenance", []).unwrap();
+            conn.execute("DELETE FROM companion_provenance", [])
+                .unwrap();
         }
         let facts = crate::companion::brain::semantic::list_facts(&target_user, None, true, 50)
             .expect("no provenance is still not an error");
@@ -12579,8 +13122,8 @@ mod tests {
         )
         .is_ok());
         // An unknown tier is its own error, not masked by the passphrase one.
-        let err =
-            require_passphrase_for_selection(&[], &["lerned".into()], Some("longenough")).unwrap_err();
+        let err = require_passphrase_for_selection(&[], &["lerned".into()], Some("longenough"))
+            .unwrap_err();
         assert!(format!("{err}").contains("unknown tier"));
     }
 

@@ -21,7 +21,6 @@ use crate::db::DbPool;
 // module (which needs `notifications`). Re-exported: callers unchanged.
 pub use personas_core::digest_config::DigestConfig;
 
-
 /// Load digest config from app_settings. Returns default (disabled) if unset.
 pub fn load_config(pool: &DbPool) -> DigestConfig {
     settings::get(pool, crate::db::settings_keys::PERFORMANCE_DIGEST)

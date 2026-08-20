@@ -468,11 +468,7 @@ mod tests {
     #[test]
     fn interpolate_required_param_present() {
         let m = parse_manifest_str(sample_manifest_json()).unwrap();
-        let action = m
-            .actions
-            .iter()
-            .find(|a| a.name == "issue_create")
-            .unwrap();
+        let action = m.actions.iter().find(|a| a.name == "issue_create").unwrap();
         let mut params = HashMap::new();
         params.insert("repo".into(), json!("foo/bar"));
         params.insert("title".into(), json!("Hello"));
@@ -481,16 +477,7 @@ mod tests {
         let args = interpolate_args(action, &params).unwrap();
         assert_eq!(
             args,
-            vec![
-                "issue",
-                "create",
-                "--repo",
-                "foo/bar",
-                "--title",
-                "Hello",
-                "--body",
-                "World"
-            ]
+            vec!["issue", "create", "--repo", "foo/bar", "--title", "Hello", "--body", "World"]
         );
     }
 

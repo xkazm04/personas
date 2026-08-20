@@ -5,8 +5,8 @@ use crate::models::{
     PersonaExecution, UpdateExecutionStatus,
 };
 use crate::DbPool;
-use personas_core::types::ExecutionState;
 use personas_core::error::AppError;
+use personas_core::types::ExecutionState;
 
 /// Recipe provenance stamped onto an execution at insert time:
 /// `(source_recipe_id, source_recipe_version)`.
@@ -961,12 +961,8 @@ pub fn update_status_if_running(
         "persona_executions::update_status_if_running",
         {
             let conn = pool.get()?;
-            let rows_changed = exec_status_update(
-                &conn,
-                id,
-                &input,
-                "WHERE id = ?12 AND status = 'running'",
-            )?;
+            let rows_changed =
+                exec_status_update(&conn, id, &input, "WHERE id = ?12 AND status = 'running'")?;
             Ok(rows_changed > 0)
         }
     )
@@ -1103,10 +1099,7 @@ pub fn get_recent_failures(
 /// "N consecutive"), EXCLUDING environmental failures that say nothing about
 /// the persona itself: provider session/usage/rate limits and app-restart
 /// kills. One quota storm must not trip the breaker.
-pub fn count_consecutive_real_failures(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<u32, AppError> {
+pub fn count_consecutive_real_failures(pool: &DbPool, persona_id: &str) -> Result<u32, AppError> {
     timed_query!(
         "persona_executions",
         "persona_executions::count_consecutive_real_failures",
@@ -1355,15 +1348,19 @@ pub fn list_active_chains(pool: &DbPool) -> Result<Vec<ActiveChain>, AppError> {
 /// `queued` rows (which are re-admitted instead). See
 /// `ExecutionEngine::recover_stale_executions`.
 pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_running_only", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
-        )?;
-        let rows = stmt.query_map([], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_running_only",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
+            )?;
+            let rows = stmt.query_map([], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Only executions persisted as `queued` (waiting for a slot, never started).
@@ -1371,15 +1368,19 @@ pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError
 /// startup by `ExecutionEngine::requeue_persisted_executions` so scheduled /
 /// event-triggered work is not lost across a restart.
 pub fn get_queued_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_queued_only", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
-        )?;
-        let rows = stmt.query_map([], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_queued_only",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
+            )?;
+            let rows = stmt.query_map([], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Lightweight check: are any executions currently in-flight?
@@ -1660,8 +1661,7 @@ pub fn get_retry_chains_batch(
             let conn = pool.get()?;
 
             // Step 1: resolve root IDs for all requested execution_ids
-            let placeholders: String =
-                crate::repos::utils::in_placeholders(execution_ids.len());
+            let placeholders: String = crate::repos::utils::in_placeholders(execution_ids.len());
 
             let root_sql = format!(
         "SELECT id, retry_of_execution_id FROM persona_executions WHERE id IN ({placeholders})"
@@ -2047,9 +2047,12 @@ pub struct RecipeRunTally {
 /// a recipe with no runs has none. Executions predating provenance stamping
 /// have a NULL `source_recipe_id` and are excluded, not guessed at.
 pub fn recipe_run_tallies(pool: &DbPool, limit: i64) -> Result<Vec<RecipeRunTally>, AppError> {
-    timed_query!("persona_executions", "persona_executions::recipe_run_tallies", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::recipe_run_tallies",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
             "SELECT e.source_recipe_id                                            AS recipe_id,
                     r.name                                                        AS recipe_name,
                     COUNT(*)                                                      AS runs,
@@ -2065,23 +2068,24 @@ pub fn recipe_run_tallies(pool: &DbPool, limit: i64) -> Result<Vec<RecipeRunTall
              ORDER BY runs DESC, last_run_at DESC
              LIMIT ?1",
         )?;
-        let rows = stmt.query_map(params![limit], |row| {
-            Ok(RecipeRunTally {
-                recipe_id: row.get("recipe_id")?,
-                recipe_name: row.get("recipe_name")?,
-                runs: row.get("runs")?,
-                terminal: row.get("terminal")?,
-                completed: row.get("completed")?,
-                failed: row.get("failed")?,
-                value_delivered: row.get("value_delivered")?,
-                last_run_at: row.get("last_run_at")?,
-            })
-        })?;
-        Ok(crate::repos::utils::collect_rows(
-            rows,
-            "persona_executions::recipe_run_tallies",
-        ))
-    })
+            let rows = stmt.query_map(params![limit], |row| {
+                Ok(RecipeRunTally {
+                    recipe_id: row.get("recipe_id")?,
+                    recipe_name: row.get("recipe_name")?,
+                    runs: row.get("runs")?,
+                    terminal: row.get("terminal")?,
+                    completed: row.get("completed")?,
+                    failed: row.get("failed")?,
+                    value_delivered: row.get("value_delivered")?,
+                    last_run_at: row.get("last_run_at")?,
+                })
+            })?;
+            Ok(crate::repos::utils::collect_rows(
+                rows,
+                "persona_executions::recipe_run_tallies",
+            ))
+        }
+    )
 }
 
 #[cfg(test)]
@@ -2128,7 +2132,10 @@ mod tests {
         let a = claim_for_instance(&pool, &exec.id, "instance-A", 300).unwrap();
         let b = claim_for_instance(&pool, &exec.id, "instance-B", 300).unwrap();
         assert!(a, "first claimant must win");
-        assert!(!b, "second claimant must lose — row no longer queued + unexpired");
+        assert!(
+            !b,
+            "second claimant must lose — row no longer queued + unexpired"
+        );
 
         // The row is now running and stamped with the winner.
         let claimed = get_by_id(&pool, &exec.id).unwrap();
@@ -2346,8 +2353,14 @@ mod tests {
 
         let chain = chains.get(&root.id).expect("root must map to its chain");
         let found: Vec<&str> = chain.iter().map(|e| e.id.as_str()).collect();
-        assert!(found.contains(&root.id.as_str()), "root is part of its chain");
-        assert!(found.contains(&retry.id.as_str()), "retry is part of the chain");
+        assert!(
+            found.contains(&root.id.as_str()),
+            "root is part of its chain"
+        );
+        assert!(
+            found.contains(&retry.id.as_str()),
+            "retry is part of the chain"
+        );
         assert_eq!(chain.len(), 2);
 
         // Empty input short-circuits without touching the DB.
@@ -2647,7 +2660,15 @@ mod tests {
         mk("failed", None);
         mk("running", None);
         // A run with no recipe behind it must not pollute any recipe's tally.
-        create(&pool, &persona_id, None, None, None, Some("uc-manual".into())).unwrap();
+        create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            None,
+            Some("uc-manual".into()),
+        )
+        .unwrap();
 
         let tallies = recipe_run_tallies(&pool, 50).unwrap();
         assert_eq!(tallies.len(), 1, "only recipe-attributed runs are tallied");

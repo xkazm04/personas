@@ -157,7 +157,10 @@ pub async fn gallery_import_persona(
 
     // Record the install — best-effort; a failed counter bump must never fail
     // the import the user actually got value from.
-    let _ = client.post(format!("{base}/api/personas/{slug}")).send().await;
+    let _ = client
+        .post(format!("{base}/api/personas/{slug}"))
+        .send()
+        .await;
 
     Ok(result)
 }

@@ -281,7 +281,9 @@ fn validate_triage_result(
 // ── path confinement (mirrors ship_ingest.rs) ───────────────────────────────
 
 fn runs_root(root: &Path) -> PathBuf {
-    RUNS_REL.iter().fold(root.to_path_buf(), |p, seg| p.join(seg))
+    RUNS_REL
+        .iter()
+        .fold(root.to_path_buf(), |p, seg| p.join(seg))
 }
 
 /// Newest run dir with a `result.json` and no `ingested.json`.
@@ -291,7 +293,8 @@ fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
         .flatten()
         .filter_map(|e| {
             let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file() {
+            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
+            {
                 return None;
             }
             let t = e.metadata().and_then(|m| m.modified()).ok()?;
@@ -317,9 +320,7 @@ fn resolve_run_dir(root: &Path, run_dir: Option<String>) -> Result<PathBuf, AppE
         .canonicalize()
         .map_err(|e| AppError::Validation(format!("Run dir not readable: {e}")))?;
     let canon_root = runs_root(root).canonicalize().map_err(|_| {
-        AppError::Validation(
-            "No .personas/triage-verdicts/runs directory in this repo yet".into(),
-        )
+        AppError::Validation("No .personas/triage-verdicts/runs directory in this repo yet".into())
     })?;
     if !canon.starts_with(&canon_root) {
         return Err(AppError::Validation(
@@ -477,8 +478,14 @@ mod tests {
 
     fn ideas() -> HashMap<String, DevIdea> {
         let mut m = HashMap::new();
-        m.insert("a".to_string(), mk_idea("a", "Add retry", "pending", Some(PROJECT)));
-        m.insert("b".to_string(), mk_idea("b", "Cache the probe", "pending", Some(PROJECT)));
+        m.insert(
+            "a".to_string(),
+            mk_idea("a", "Add retry", "pending", Some(PROJECT)),
+        );
+        m.insert(
+            "b".to_string(),
+            mk_idea("b", "Cache the probe", "pending", Some(PROJECT)),
+        );
         m
     }
 
@@ -500,21 +507,34 @@ mod tests {
         // Omitted title falls back to the idea's own, so the approval row
         // stays legible without joining back to dev_ideas.
         assert_eq!(run.items[1].title, "Cache the probe");
-        assert!(run.summary.contains("1 of 2 worth scheduling"), "{}", run.summary);
-        assert!(run.summary.contains("verdicts computed at 2026-08-09T22:00:00Z"), "{}", run.summary);
+        assert!(
+            run.summary.contains("1 of 2 worth scheduling"),
+            "{}",
+            run.summary
+        );
+        assert!(
+            run.summary
+                .contains("verdicts computed at 2026-08-09T22:00:00Z"),
+            "{}",
+            run.summary
+        );
     }
 
     #[test]
     fn refuses_a_result_with_no_schema_version() {
         let raw = r#"{ "items": [ { "ideaId": "a", "verdict": "accept", "reason": "x" } ] }"#;
-        let err = validate_triage_result(raw, PROJECT, &ideas()).unwrap_err().to_string();
+        let err = validate_triage_result(raw, PROJECT, &ideas())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("no schema_version"), "{err}");
     }
 
     #[test]
     fn refuses_an_unknown_schema_version() {
         let raw = r#"{ "schema_version": 99, "items": [ { "ideaId": "a", "verdict": "accept", "reason": "x" } ] }"#;
-        let err = validate_triage_result(raw, PROJECT, &ideas()).unwrap_err().to_string();
+        let err = validate_triage_result(raw, PROJECT, &ideas())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("99"), "{err}");
         assert!(err.contains("refusing to ingest"), "{err}");
     }
@@ -541,7 +561,9 @@ mod tests {
         let raw = r#"{ "schema_version": 1, "items": [
             { "ideaId": "a", "verdict": "accept", "reason": "x" },
             { "ideaId": "a", "verdict": "reject", "reason": "y" } ] }"#;
-        let err = validate_triage_result(raw, PROJECT, &ideas()).unwrap_err().to_string();
+        let err = validate_triage_result(raw, PROJECT, &ideas())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("appears twice"), "{err}");
     }
 
@@ -552,7 +574,9 @@ mod tests {
             .collect::<Vec<_>>()
             .join(",");
         let raw = format!(r#"{{ "schema_version": 1, "items": [{rows}] }}"#);
-        let err = validate_triage_result(&raw, PROJECT, &ideas()).unwrap_err().to_string();
+        let err = validate_triage_result(&raw, PROJECT, &ideas())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("cap"), "{err}");
     }
 
@@ -565,10 +589,15 @@ mod tests {
     #[test]
     fn refuses_a_non_pending_idea_naming_its_actual_status() {
         let mut m = ideas();
-        m.insert("c".to_string(), mk_idea("c", "Old one", "accepted", Some(PROJECT)));
+        m.insert(
+            "c".to_string(),
+            mk_idea("c", "Old one", "accepted", Some(PROJECT)),
+        );
         let raw = r#"{ "schema_version": 1, "items": [
             { "ideaId": "c", "verdict": "reject", "reason": "stale" } ] }"#;
-        let err = validate_triage_result(raw, PROJECT, &m).unwrap_err().to_string();
+        let err = validate_triage_result(raw, PROJECT, &m)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("c"), "{err}");
         assert!(err.contains("accepted"), "{err}");
     }
@@ -576,10 +605,15 @@ mod tests {
     #[test]
     fn refuses_an_idea_from_another_project() {
         let mut m = ideas();
-        m.insert("d".to_string(), mk_idea("d", "Foreign", "pending", Some("proj-2")));
+        m.insert(
+            "d".to_string(),
+            mk_idea("d", "Foreign", "pending", Some("proj-2")),
+        );
         let raw = r#"{ "schema_version": 1, "items": [
             { "ideaId": "d", "verdict": "accept", "reason": "good" } ] }"#;
-        let err = validate_triage_result(raw, PROJECT, &m).unwrap_err().to_string();
+        let err = validate_triage_result(raw, PROJECT, &m)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("proj-2"), "{err}");
     }
 
@@ -587,7 +621,9 @@ mod tests {
     fn refuses_an_unknown_idea() {
         let raw = r#"{ "schema_version": 1, "items": [
             { "ideaId": "ghost", "verdict": "accept", "reason": "x" } ] }"#;
-        let err = validate_triage_result(raw, PROJECT, &ideas()).unwrap_err().to_string();
+        let err = validate_triage_result(raw, PROJECT, &ideas())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("ghost"), "{err}");
         assert!(err.contains("not found"), "{err}");
     }
@@ -598,7 +634,9 @@ mod tests {
         let raw = format!(
             r#"{{ "schema_version": 1, "items": [ {{ "ideaId": "a", "verdict": "accept", "reason": "{long}" }} ] }}"#
         );
-        let err = validate_triage_result(&raw, PROJECT, &ideas()).unwrap_err().to_string();
+        let err = validate_triage_result(&raw, PROJECT, &ideas())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("longer than"), "{err}");
 
         let raw = r#"{ "schema_version": 1, "items": [ { "ideaId": "a", "verdict": "accept", "reason": "  " } ] }"#;
