@@ -30,14 +30,14 @@ use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
 
 use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::repos::communication::manual_reviews as manual_review_repo;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::settings as settings_repo;
-use crate::db::repos::communication::manual_reviews as manual_review_repo;
-use crate::db::repos::resources::team_memories as team_memory_repo;
-use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
 use crate::db::repos::resources::connectors as connector_repo;
+use crate::db::repos::resources::team_memories as team_memory_repo;
+use crate::db::repos::resources::teams as team_repo;
 use crate::db::DbPool;
 
 use super::failover;
@@ -182,7 +182,11 @@ pub async fn run_execution(
     // has no explicit one — an explicit model_profile.model always wins (mirroring
     // fabro's "explicit node attr beats stylesheet"). Lets operators tier models by
     // persona category/id without editing each persona.
-    if model_profile.as_ref().and_then(|p| p.model.as_ref()).is_none() {
+    if model_profile
+        .as_ref()
+        .and_then(|p| p.model.as_ref())
+        .is_none()
+    {
         if let Some(resolved) = crate::engine::model_routing::resolve_for_persona(&pool, &persona) {
             let profile = model_profile.get_or_insert_with(Default::default);
             profile.model = Some(resolved.model);
@@ -597,7 +601,9 @@ pub async fn run_execution(
     // exec_dir) so the worktree path can become both the cwd and the
     // CODEBASE_ROOT_PATH override below. Any failure falls back to the
     // non-isolated path and never fails the execution.
-    let exec_worktree: Option<crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace> = {
+    let exec_worktree: Option<
+        crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace,
+    > = {
         let isolation_on = crate::db::repos::core::settings::get(
             &pool,
             crate::db::settings_keys::EXECUTION_WORKTREE_ISOLATION,
@@ -620,9 +626,7 @@ pub async fn run_execution(
                         .and_then(|x| x.as_str())
                         .map(|s| s.to_string())
                 })
-                .and_then(|id| {
-                    crate::db::repos::dev_tools::get_project_by_id(&pool, &id).ok()
-                })
+                .and_then(|id| crate::db::repos::dev_tools::get_project_by_id(&pool, &id).ok())
                 .map(|p| std::path::PathBuf::from(p.root_path.as_str()))
                 .filter(|p| p.join(".git").exists());
             match repo_root {
@@ -967,7 +971,9 @@ pub async fn run_execution(
                     // fell below the floor (category half-lives; reversible).
                     match crate::engine::memory_recall::run_decay_forgetting(&pool, &persona.id) {
                         Ok(n) if n > 0 => {
-                            logger.log(&format!("[MEMORY] Decay-forgetting archived {n} stale memories"));
+                            logger.log(&format!(
+                                "[MEMORY] Decay-forgetting archived {n} stale memories"
+                            ));
                         }
                         Ok(_) => {}
                         Err(e) => logger.log(&format!("[MEMORY] Decay-forgetting failed: {e}")),
@@ -1020,7 +1026,11 @@ pub async fn run_execution(
                     use_case_title: field("title"),
                     use_case_description: {
                         let s = field("capability_summary");
-                        if s.is_empty() { field("description") } else { s }
+                        if s.is_empty() {
+                            field("description")
+                        } else {
+                            s
+                        }
                     },
                 };
                 match kc::consult(&root, &signals) {
@@ -1029,7 +1039,9 @@ pub async fn run_execution(
                         format!("{prompt_text}{section}")
                     }
                     None => {
-                        logger.log("[KNOWLEDGE] No technique matched this execution — no section injected");
+                        logger.log(
+                            "[KNOWLEDGE] No technique matched this execution — no section injected",
+                        );
                         prompt_text
                     }
                 }
@@ -1086,21 +1098,29 @@ pub async fn run_execution(
     // event-cascade path the SDLC team runs on.) Skip on session resume.
     let prompt_text = if !is_session_resume {
         match persona.home_team_id.as_deref() {
-            Some(team_id) if !team_id.is_empty() => match team_memory_repo::get_for_injection(&pool, team_id, 15) {
-                Ok(tm) if !tm.is_empty() => {
-                    let mut sec = String::from("\n\n## Team Shared Knowledge — Decisions & Constraints\n\nThe team's shared ledger from prior work. Treat decisions as settled (don't re-litigate) and constraints as hard rules. Build on these.\n\n");
-                    for m in &tm {
-                        sec.push_str(&format!("- [{}] **{}**: {}\n", m.category, m.title, m.content));
+            Some(team_id) if !team_id.is_empty() => {
+                match team_memory_repo::get_for_injection(&pool, team_id, 15) {
+                    Ok(tm) if !tm.is_empty() => {
+                        let mut sec = String::from("\n\n## Team Shared Knowledge — Decisions & Constraints\n\nThe team's shared ledger from prior work. Treat decisions as settled (don't re-litigate) and constraints as hard rules. Build on these.\n\n");
+                        for m in &tm {
+                            sec.push_str(&format!(
+                                "- [{}] **{}**: {}\n",
+                                m.category, m.title, m.content
+                            ));
+                        }
+                        logger.log(&format!(
+                            "[TEAM-MEM] Injected {} shared team decisions/constraints",
+                            tm.len()
+                        ));
+                        format!("{prompt_text}{sec}")
                     }
-                    logger.log(&format!("[TEAM-MEM] Injected {} shared team decisions/constraints", tm.len()));
-                    format!("{prompt_text}{sec}")
+                    Ok(_) => prompt_text,
+                    Err(e) => {
+                        logger.log(&format!("[TEAM-MEM] Failed to load team memory: {e}"));
+                        prompt_text
+                    }
                 }
-                Ok(_) => prompt_text,
-                Err(e) => {
-                    logger.log(&format!("[TEAM-MEM] Failed to load team memory: {e}"));
-                    prompt_text
-                }
-            },
+            }
             _ => prompt_text,
         }
     } else {
@@ -1136,7 +1156,8 @@ pub async fn run_execution(
                     .as_ref()
                     .map(|w| w.name.as_str())
                     .unwrap_or("your team");
-                match team_context::build_team_alignment_block(&pool, &persona, team_name, team_id) {
+                match team_context::build_team_alignment_block(&pool, &persona, team_name, team_id)
+                {
                     Some(block) => {
                         logger
                             .log("[TEAM-ALIGN] Injected team roster + active-goal alignment block");
@@ -1212,8 +1233,7 @@ pub async fn run_execution(
     // tools (gmail_*) reach the desktop credential proxy on :9420. Best-effort —
     // if minting fails, the bridge env is simply omitted and those tools report
     // "bridge unavailable" rather than failing the whole run.
-    let bridge_api_key =
-        crate::engine::management_api::get_or_create_system_api_key(&pool).ok();
+    let bridge_api_key = crate::engine::management_api::get_or_create_system_api_key(&pool).ok();
     // Codebase pin: surface this persona's `design_context.dev_project_id` to the
     // sidecar so its codebase/context MCP tools resolve THIS repo (not the global
     // first-project default). Set once by the team adoption questionnaire and
@@ -1291,23 +1311,19 @@ pub async fn run_execution(
         .flatten()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| "http://localhost:11434".to_string());
-        let model = crate::db::repos::core::settings::get(
-            &pool,
-            crate::db::settings_keys::DELEGATE_MODEL,
-        )
-        .ok()
-        .flatten()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "auto".to_string());
+        let model =
+            crate::db::repos::core::settings::get(&pool, crate::db::settings_keys::DELEGATE_MODEL)
+                .ok()
+                .flatten()
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| "auto".to_string());
         // Hosted delegate backends (Ollama Cloud) authenticate with the
         // shared `ollama_api_key` setting. Unset for local Ollama.
-        let api_key = crate::db::repos::core::settings::get(
-            &pool,
-            crate::db::settings_keys::OLLAMA_API_KEY,
-        )
-        .ok()
-        .flatten()
-        .filter(|s| !s.trim().is_empty());
+        let api_key =
+            crate::db::repos::core::settings::get(&pool, crate::db::settings_keys::OLLAMA_API_KEY)
+                .ok()
+                .flatten()
+                .filter(|s| !s.trim().is_empty());
         logger.log(&format!(
             "[mixed-engine] llm_delegate armed (mode: {}, model: {model}, base: {base}, auth: {})",
             engine_mode.as_deref().unwrap_or("?"),
@@ -1389,8 +1405,7 @@ pub async fn run_execution(
     // here on (normal, error, cancel, timeout, panic-unwind) via Drop. The
     // worktree-isolation case additionally scrubs explicitly before the finalize
     // commit below, so secrets never land on the review branch.
-    let _sidecar_scrub_guard =
-        super::cli_mcp_config::SidecarScrubGuard::new(exec_dir.clone());
+    let _sidecar_scrub_guard = super::cli_mcp_config::SidecarScrubGuard::new(exec_dir.clone());
 
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
@@ -1864,12 +1879,9 @@ pub async fn run_execution(
         let launch_model = flag_value("--model");
         let effort = flag_value("--effort")
             .unwrap_or_else(|| crate::engine::prompt::DEFAULT_EFFORT.to_string());
-        if let Err(e) = exec_repo::set_launch_model_info(
-            &pool,
-            &execution_id,
-            launch_model.as_deref(),
-            &effort,
-        ) {
+        if let Err(e) =
+            exec_repo::set_launch_model_info(&pool, &execution_id, launch_model.as_deref(), &effort)
+        {
             tracing::warn!(execution_id = %execution_id, "launch model/effort persist failed: {e}");
         }
     }
@@ -3066,7 +3078,10 @@ pub async fn run_execution(
             }
         };
         let content = if assistant_text.len() > 50_000 {
-            format!("{}...\n[truncated at 50KB]", crate::utils::text::truncate_on_char_boundary(&assistant_text, 50000))
+            format!(
+                "{}...\n[truncated at 50KB]",
+                crate::utils::text::truncate_on_char_boundary(&assistant_text, 50000)
+            )
         } else {
             assistant_text.clone()
         };

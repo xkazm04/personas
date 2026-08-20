@@ -190,6 +190,23 @@ jobs:
         run: npm run test -- --run
 
   # ─── Job B: Rust tests on all 3 platforms ───────────────────
+  # ─── Job B0: Rust formatting ────────────────────────────────────────
+  # Deliberately NOT a step inside rust-tests. Formatting needs no dependency
+  # graph, no features and no target directory, so it answers in seconds on a
+  # cold runner while rust-tests takes up to an hour — and a formatting nit
+  # should never wait on a compile to be reported. It also means a red format
+  # cannot be mistaken for a red build.
+  rust-fmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        run: cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+
   rust-tests:
     strategy:
       fail-fast: false

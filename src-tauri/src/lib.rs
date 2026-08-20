@@ -3806,7 +3806,10 @@ mod registry_target_tests {
 
         // Deleting recipe-B must not see a conflict from a run targeting recipe-A.
         let blocks_b = reg.active_target("recipe_execution").as_deref() == Some("recipe-B");
-        assert!(!blocks_b, "a run for recipe-A must not block deleting recipe-B");
+        assert!(
+            !blocks_b,
+            "a run for recipe-A must not block deleting recipe-B"
+        );
     }
 
     #[test]
@@ -3911,9 +3914,13 @@ mod network_command_registration_tests {
                         break;
                     }
                 }
-                let sig = lines
-                    .get(j)
-                    .unwrap_or_else(|| panic!("#[tauri::command] at {}:{} has no fn", path.display(), i + 1));
+                let sig = lines.get(j).unwrap_or_else(|| {
+                    panic!(
+                        "#[tauri::command] at {}:{} has no fn",
+                        path.display(),
+                        i + 1
+                    )
+                });
                 let name = command_fn_name(sig).unwrap_or_else(|| {
                     panic!(
                         "cannot parse fn name from {}:{} -- {sig:?}",

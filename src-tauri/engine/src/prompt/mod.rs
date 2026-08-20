@@ -23,11 +23,10 @@ use advisory::build_advisory_prompt;
 use runtime_safety::{wrap_runtime_xml_boundary, RUNTIME_CANARY_INSTRUCTION};
 use templates::{
     CORRECTION_EVIDENCE_BANNER, DATA_HONESTY_INVARIANT, DELIBERATE_MODE_DIRECTIVE,
-    EXECUTION_MODE_DIRECTIVE,
-    MEMORY_SYSTEM_PREAMBLE,
-    PROTOCOL_AGENT_MEMORY, PROTOCOL_EMIT_EVENT, PROTOCOL_EXECUTION_FLOW,
-    PROTOCOL_INTEGRATION_REQUIREMENTS, PROTOCOL_KNOWLEDGE_ANNOTATION, PROTOCOL_MANUAL_REVIEW,
-    PROTOCOL_OUTCOME_ASSESSMENT, PROTOCOL_PERSONA_ACTION, PROTOCOL_USER_MESSAGE,
+    EXECUTION_MODE_DIRECTIVE, MEMORY_SYSTEM_PREAMBLE, PROTOCOL_AGENT_MEMORY, PROTOCOL_EMIT_EVENT,
+    PROTOCOL_EXECUTION_FLOW, PROTOCOL_INTEGRATION_REQUIREMENTS, PROTOCOL_KNOWLEDGE_ANNOTATION,
+    PROTOCOL_MANUAL_REVIEW, PROTOCOL_OUTCOME_ASSESSMENT, PROTOCOL_PERSONA_ACTION,
+    PROTOCOL_USER_MESSAGE,
 };
 
 use personas_db::models::{LlmUsageHint, Persona, PersonaToolDefinition};
@@ -1029,11 +1028,12 @@ mod tests {
     use super::cli_args::DEFAULT_EFFORT;
     use super::runtime_safety::{sanitize_runtime_variable, MAX_RUNTIME_VAR_LENGTH};
     use super::*;
-    use personas_db::models::{Persona, PersonaToolDefinition};
     use personas_core::types::ModelProfile;
+    use personas_db::models::{Persona, PersonaToolDefinition};
 
     fn test_persona() -> Persona {
-        Persona { lifecycle: "active".to_string(),
+        Persona {
+            lifecycle: "active".to_string(),
             id: "test-id".into(),
             project_id: "proj-1".into(),
             name: "Test Agent".into(),
@@ -1159,7 +1159,8 @@ mod tests {
 
         // Opted in via the deep_fanout parameter (accepts bool or "true").
         persona.parameters = Some(
-            serde_json::json!([{ "key": "deep_fanout", "type": "boolean", "value": true }]).to_string(),
+            serde_json::json!([{ "key": "deep_fanout", "type": "boolean", "value": true }])
+                .to_string(),
         );
         let prompt = assemble_prompt(
             &persona,
@@ -2194,7 +2195,9 @@ mod tests {
         let result = sanitize_runtime_variable(&long);
         // The retained CONTENT still respects the cap; the announcement is
         // appended past it deliberately (see step 9 in sanitize_runtime_variable).
-        let content_end = result.find("... [truncated").expect("cut must announce itself");
+        let content_end = result
+            .find("... [truncated")
+            .expect("cut must announce itself");
         assert!(content_end <= MAX_RUNTIME_VAR_LENGTH);
     }
 
@@ -2206,7 +2209,10 @@ mod tests {
             result.contains("truncated"),
             "a silently-cut value reads as the whole input: {result:.120}"
         );
-        assert!(result.contains("5000 chars total"), "must state the real size");
+        assert!(
+            result.contains("5000 chars total"),
+            "must state the real size"
+        );
         assert!(
             result.contains("## Input Data"),
             "must point at the section that still holds the complete value"
@@ -2217,7 +2223,10 @@ mod tests {
     fn untruncated_variable_gets_no_marker() {
         let short = "A".repeat(MAX_RUNTIME_VAR_LENGTH - 1);
         let result = sanitize_runtime_variable(&short);
-        assert!(!result.contains("truncated"), "must not claim a cut that never happened");
+        assert!(
+            !result.contains("truncated"),
+            "must not claim a cut that never happened"
+        );
         assert_eq!(result, short);
     }
 
@@ -2249,7 +2258,10 @@ mod tests {
             #[cfg(feature = "desktop")]
             None,
         );
-        assert!(prompt.contains("truncated to"), "the {{var}} site must announce its cut");
+        assert!(
+            prompt.contains("truncated to"),
+            "the {{var}} site must announce its cut"
+        );
         // The dump is complete: 5000 consecutive Z's appear somewhere in the prompt.
         assert!(
             prompt.contains(&doc),
@@ -2330,17 +2342,26 @@ mod tests {
             attempt_2.contains("PROD-4171 payment webhook retries"),
             "attempt 2 lost the input variable it was asked to correct work on"
         );
-        assert!(!attempt_2.contains("{{ticket}}"), "unresolved placeholder shipped to the model");
+        assert!(
+            !attempt_2.contains("{{ticket}}"),
+            "unresolved placeholder shipped to the model"
+        );
 
         // 2. Current Focus survives.
         assert!(attempt_1.contains("## Current Focus"));
-        assert!(attempt_2.contains("## Current Focus"), "attempt 2 lost its capability scope");
+        assert!(
+            attempt_2.contains("## Current Focus"),
+            "attempt 2 lost its capability scope"
+        );
         assert!(attempt_2.contains("Triage inbound incidents"));
 
         // 3. Every generation-policy line attempt 1 got, attempt 2 gets. This is
         //    the class of defect that silently skipped approvals in production.
         let policy_lines = render_capability_policy_lines(original.get("_use_case").unwrap());
-        assert!(!policy_lines.is_empty(), "fixture must exercise the policy renderer");
+        assert!(
+            !policy_lines.is_empty(),
+            "fixture must exercise the policy renderer"
+        );
         for line in &policy_lines {
             assert!(attempt_1.contains(line.as_str()));
             assert!(
@@ -2348,7 +2369,10 @@ mod tests {
                 "attempt 2 dropped a generation-policy line: {line}"
             );
         }
-        assert!(attempt_2.contains("never skip this step"), "review_policy=always must survive");
+        assert!(
+            attempt_2.contains("never skip this step"),
+            "review_policy=always must survive"
+        );
 
         // 4. Time bounds survive, so the corrective run doesn't re-query all history.
         assert!(attempt_2.contains("## Time Filter (IMPORTANT)"));
@@ -2366,11 +2390,23 @@ mod tests {
             "_fix_instruction": "…",
         });
         let control = assemble_for(&persona, &metadata_only);
-        assert!(control.contains("{{ticket}}"), "control: placeholder leaks verbatim");
-        assert!(!control.contains("## Current Focus"), "control: capability scope is gone");
-        assert!(!control.contains("## Time Filter"), "control: query bounds are gone");
+        assert!(
+            control.contains("{{ticket}}"),
+            "control: placeholder leaks verbatim"
+        );
+        assert!(
+            !control.contains("## Current Focus"),
+            "control: capability scope is gone"
+        );
+        assert!(
+            !control.contains("## Time Filter"),
+            "control: query bounds are gone"
+        );
         for line in &policy_lines {
-            assert!(!control.contains(line.as_str()), "control: policy line is gone");
+            assert!(
+                !control.contains(line.as_str()),
+                "control: policy line is gone"
+            );
         }
     }
 
@@ -2432,7 +2468,10 @@ mod tests {
 
         // HALF 2 — the model-authored evidence is still delivered, but only
         // ever as data.
-        assert!(prompt.contains(&failure), "the failure must still reach the model");
+        assert!(
+            prompt.contains(&failure),
+            "the failure must still reach the model"
+        );
         assert!(
             !trusted.contains(INJECTION),
             "model-authored failure text was spliced into trusted prompt structure"
@@ -2485,7 +2524,10 @@ mod tests {
             trusted.contains(crate::fix_loop::FIX_INSTRUCTION_FRAMING),
             "framing comes from the constant, so it is present even for a payload with none"
         );
-        assert!(prompt.contains(PLANTED), "the text still reaches the model as data");
+        assert!(
+            prompt.contains(PLANTED),
+            "the text still reaches the model as data"
+        );
         assert!(
             !trusted.contains(PLANTED),
             "a payload-supplied correction must be data, never instruction"
@@ -2553,7 +2595,10 @@ mod tests {
             &crate::fix_loop::build_fix_instruction(&["fix it".to_string()]),
         );
         let reentry: serde_json::Value = serde_json::from_str(&reentry_json).unwrap();
-        assert_eq!(reentry.get("_fix_attempt").and_then(|v| v.as_u64()), Some(1));
+        assert_eq!(
+            reentry.get("_fix_attempt").and_then(|v| v.as_u64()),
+            Some(1)
+        );
         let prompt = assemble_for(&test_persona(), &reentry);
         assert!(prompt.contains("## Input Data"));
     }

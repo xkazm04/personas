@@ -9,9 +9,9 @@ pub mod bundle;
 pub mod capability;
 pub mod cloud_webhook_relay;
 pub mod composite;
-pub mod pattern_miner;
 pub mod connector_strategy;
 pub mod credential_broker;
+pub mod pattern_miner;
 // Moved to `personas-core` (crate-split step 3). Re-exported so every existing
 // `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
 // keeps resolving — these six modules are needed by `db::models` and
@@ -34,15 +34,14 @@ pub use personas_engine::*;
 pub use personas_core::{healing, limits, redact, run_budget, scheduler, topology_graph};
 // Relocated into `db` (crate-split step 4c) — see the note there. Re-exported
 // so `crate::engine::chain::…` and friends keep resolving.
-pub use crate::db::{
-    audit_incidents_promoter, byom, chain, memory_recall, model_routing, quality_gate,
-};
 #[cfg(feature = "ml")]
 pub use crate::db::embedder;
 #[cfg(feature = "ml")]
 pub use crate::db::vector_store;
+pub use crate::db::{
+    audit_incidents_promoter, byom, chain, memory_recall, model_routing, quality_gate,
+};
 pub mod curation_scheduler;
-pub mod system_ops;
 pub mod db_query;
 pub mod deliberation;
 pub mod digest;
@@ -54,6 +53,7 @@ pub mod discord_poller;
 pub mod discovery;
 pub mod dispatch;
 pub mod dry_run;
+pub mod system_ops;
 /// Moved to `personas-core` (crate-split step 2) — `error.rs` depends on it, so
 /// it had to sit below both. Re-exported so the 6 existing
 /// `crate::engine::error_taxonomy::…` call sites resolve unchanged.
@@ -64,7 +64,6 @@ pub mod fitness_driver;
 pub mod genome;
 pub mod genome_critique;
 pub mod healthcheck;
-pub mod leadership;
 #[cfg(feature = "ml")]
 pub mod kb_extract;
 #[cfg(feature = "ml")]
@@ -73,6 +72,7 @@ pub mod kb_ingest;
 pub mod kb_scan;
 pub mod knowledge;
 pub mod knowledge_consult;
+pub mod leadership;
 pub mod llm_topology;
 pub mod management_api;
 pub mod mcp_tools;
@@ -82,25 +82,22 @@ pub mod oauth_refresh;
 // HTTP path here is not dispatched from `runner` and is gated behind the
 // `ollama` Cargo feature so it does not get compiled into normal builds.
 // See ollama.rs module docs for the full revival checklist.
+pub mod goal_advance;
 /// Remote HTTP inference (Qwen/DashScope) — Phase 1 split engine. See module docs.
 pub mod http_engine;
+pub mod incident_continuation;
+pub mod kpi_binding;
+pub mod kpi_derivation;
+pub mod kpi_eval;
 pub mod persona_jobs;
 pub mod pipeline_executor;
-pub mod goal_advance;
-pub mod incident_continuation;
-pub mod kpi_eval;
-pub mod kpi_derivation;
-pub mod kpi_binding;
-pub mod team_assignment_learning;
-pub mod team_assignment_matching;
-pub mod team_assignment_orchestrator;
 pub mod platforms;
 pub mod polling;
 pub mod process_session;
 pub mod project_tracking;
-pub mod resource_governor;
 pub mod recipe_seed;
 pub mod render_plan;
+pub mod resource_governor;
 pub mod resource_listing;
 pub mod rotation;
 pub mod runner;
@@ -111,6 +108,9 @@ pub mod slack_bridge;
 pub mod slack_poller;
 pub mod smee_relay;
 pub mod subscription;
+pub mod team_assignment_learning;
+pub mod team_assignment_matching;
+pub mod team_assignment_orchestrator;
 pub mod team_preset_adopter;
 pub mod team_slack_relay;
 pub mod tool_runner;
@@ -138,9 +138,9 @@ use crate::db::models::{
     ConnectorDefinition, Persona, PersonaToolDefinition, UpdateExecutionStatus,
 };
 use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::execution::audit_incidents as incidents_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
-use crate::db::repos::execution::audit_incidents as incidents_repo;
 use crate::db::repos::execution::scheduled_retries as scheduled_retries_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
@@ -179,16 +179,8 @@ pub struct HostHooks {
     pub notify_execution_completed: fn(&AppHandle, &str, &str, u64, Option<&str>),
     /// Notify that an execution finished, with cost/model/error detail.
     #[allow(clippy::type_complexity)]
-    pub notify_execution_completed_rich: fn(
-        &AppHandle,
-        &str,
-        &str,
-        u64,
-        Option<&str>,
-        Option<f64>,
-        Option<&str>,
-        Option<&str>,
-    ),
+    pub notify_execution_completed_rich:
+        fn(&AppHandle, &str, &str, u64, Option<&str>, Option<f64>, Option<&str>, Option<&str>),
     /// Notify that a healing issue was raised.
     pub notify_healing_issue: fn(&AppHandle, &str, &str, &str, Option<&str>, Option<&str>),
     /// Tell the companion's proactive lane that a run finished.
@@ -287,22 +279,22 @@ async fn run_execution_with_ceiling(
             if global_enabled {
                 if let Some(home) = dirs::home_dir() {
                     let now = std::time::SystemTime::now();
-                    if let Some(active) =
-                        cli_session_awareness::discovery::discover_active_session(
-                            &home,
-                            now,
-                            cli_session_awareness::discovery::DEFAULT_FRESHNESS_CUTOFF,
-                        )
-                    {
+                    if let Some(active) = cli_session_awareness::discovery::discover_active_session(
+                        &home,
+                        now,
+                        cli_session_awareness::discovery::DEFAULT_FRESHNESS_CUTOFF,
+                    ) {
                         // Cap at 8 turns total (~4 user + 4 assistant; the
                         // tail-N is role-agnostic so the boundary is
                         // approximate). 500-char/turn cap is enforced
                         // inside the reader.
                         let turns =
                             cli_session_awareness::transcript::read_recent_turns(&active.path, 8);
-                        if let Some(md) = cli_session_awareness::render::render_cli_session_for_prompt(
-                            &active, &turns, now,
-                        ) {
+                        if let Some(md) =
+                            cli_session_awareness::render::render_cli_session_for_prompt(
+                                &active, &turns, now,
+                            )
+                        {
                             ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
 
                             // Phase 5 v1: write the transparency audit row
@@ -313,10 +305,7 @@ async fn run_execution_with_ceiling(
                                 .duration_since(std::time::UNIX_EPOCH)
                                 .map(|d| d.as_secs())
                                 .unwrap_or(0);
-                            let audit_id = format!(
-                                "cliread_{}",
-                                uuid::Uuid::new_v4().simple()
-                            );
+                            let audit_id = format!("cliread_{}", uuid::Uuid::new_v4().simple());
                             if let Err(e) = cli_session_audit_repo::insert_audit(
                                 &pool,
                                 &audit_id,
@@ -580,7 +569,11 @@ impl ExecutionEngine {
             let mut t = self.tracker.lock().await;
             let prev = t.global_max_concurrent();
             t.set_global_max_concurrent(max);
-            tracing::info!(prev, new = max, "Global concurrency cap updated (hot-reload)");
+            tracing::info!(
+                prev,
+                new = max,
+                "Global concurrency cap updated (hot-reload)"
+            );
             max > prev
         };
         if !raised {
@@ -782,8 +775,8 @@ impl ExecutionEngine {
                 }
             };
 
-            let tools = tool_repo::get_tools_for_persona(&pool, &exec.persona_id)
-                .unwrap_or_default();
+            let tools =
+                tool_repo::get_tools_for_persona(&pool, &exec.persona_id).unwrap_or_default();
             let input_data = exec
                 .input_data
                 .as_deref()
@@ -2041,9 +2034,8 @@ pub struct FixReentryRequest {
 
 /// Sender to the fix-loop worker, installed once at startup by
 /// [`init_fix_loop_worker`].
-static FIX_REENTRY_TX: std::sync::OnceLock<
-    tokio::sync::mpsc::UnboundedSender<FixReentryRequest>,
-> = std::sync::OnceLock::new();
+static FIX_REENTRY_TX: std::sync::OnceLock<tokio::sync::mpsc::UnboundedSender<FixReentryRequest>> =
+    std::sync::OnceLock::new();
 
 /// Install the fix-loop re-entry channel and hand the receiver to the host.
 ///
@@ -2068,9 +2060,7 @@ pub fn init_fix_loop_worker() -> Option<tokio::sync::mpsc::UnboundedReceiver<Fix
 /// of burning budget on a deterministic error.
 static FIX_LOOP_BREAKER: std::sync::LazyLock<
     tokio::sync::Mutex<failure_signature::FailureBreaker>,
-> = std::sync::LazyLock::new(|| {
-    tokio::sync::Mutex::new(failure_signature::FailureBreaker::new(3))
-});
+> = std::sync::LazyLock::new(|| tokio::sync::Mutex::new(failure_signature::FailureBreaker::new(3)));
 
 /// F7: re-enter a persona with a corrective instruction after a run COMPLETED but
 /// failed a critical quality assertion. Opt-in per persona (`fix_loop_enabled`
@@ -2765,10 +2755,7 @@ fn check_and_apply_circuit_breaker(pool: &DbPool, app: &AppHandle, persona_id: &
         types::ExecutionStatusEvent {
             execution_id: format!("circuit-breaker-{}", persona_id),
             status: ExecutionState::Failed,
-            error: Some(format!(
-                "{} auto-disabled — {}",
-                persona.name, last_outcome
-            )),
+            error: Some(format!("{} auto-disabled — {}", persona.name, last_outcome)),
             duration_ms: None,
             cost_usd: None,
         },
@@ -2879,8 +2866,7 @@ fn evaluate_healing_and_retry(
     // with >= 5 lifetime failures permanently read as "5 consecutive" and
     // tripped the breaker on every subsequent failure (incident spam during
     // the 2026-06-10 quota storm).
-    let consecutive = exec_repo::count_consecutive_real_failures(pool, persona_id)
-        .unwrap_or(0);
+    let consecutive = exec_repo::count_consecutive_real_failures(pool, persona_id).unwrap_or(0);
 
     // Storm guard signal: environmental provider failures (usage-limit /
     // API-server-error) for this persona within the storm window. These bypass
@@ -3005,7 +2991,10 @@ fn evaluate_healing_and_retry(
     // escalate_after consecutive failures so a single blip doesn't escalate.
     {
         let failed_exec = exec_repo::get_by_id(pool, exec_id).ok();
-        let is_simulation = failed_exec.as_ref().map(|e| e.is_simulation).unwrap_or(false);
+        let is_simulation = failed_exec
+            .as_ref()
+            .map(|e| e.is_simulation)
+            .unwrap_or(false);
         let use_case_id = failed_exec.as_ref().and_then(|e| e.use_case_id.clone());
         if !is_simulation {
             let (route_incident, route_lab, escalate_after) =
@@ -3013,9 +3002,10 @@ fn evaluate_healing_and_retry(
             // The `consecutive` count above is capped at 5 (it drives the
             // circuit breaker); re-count sized to escalate_after so the full
             // card range (up to 20) actually fires.
-            let escalation_failures = exec_repo::get_recent_failures(pool, persona_id, escalate_after as i64)
-                .map(|v| v.len() as u32)
-                .unwrap_or(consecutive);
+            let escalation_failures =
+                exec_repo::get_recent_failures(pool, persona_id, escalate_after as i64)
+                    .map(|v| v.len() as u32)
+                    .unwrap_or(consecutive);
             if escalation_failures >= escalate_after {
                 if route_incident {
                     let detail = serde_json::json!({
@@ -3133,11 +3123,7 @@ fn evaluate_healing_and_retry(
             ),
             healing::HealingAction::RetryAt { retry_at } => (
                 Some("Scheduled retry at usage-limit reset".to_string()),
-                Some(
-                    (*retry_at - chrono::Utc::now())
-                        .num_seconds()
-                        .max(0) as u64,
-                ),
+                Some((*retry_at - chrono::Utc::now()).num_seconds().max(0) as u64),
             ),
             _ => (None, None),
         }
@@ -4052,7 +4038,7 @@ fn spawn_delayed_retry(
             child_pids.clone(),
             cancelled.clone(),
             continuation, // SessionResume for api-error retries; None restarts fresh
-            None, // chain_trace_id -- healing retries don't inherit chain context
+            None,         // chain_trace_id -- healing retries don't inherit chain context
             circuit_breaker,
         )
         .await;
@@ -4264,8 +4250,7 @@ fn spawn_delayed_retry(
                 .unwrap_or_default();
             visited.insert(persona_id.clone());
             let is_downstream_hop = existing_chain_trace_id.is_some();
-            let chain_trace_id =
-                existing_chain_trace_id.or_else(|| result.trace_id.clone());
+            let chain_trace_id = existing_chain_trace_id.or_else(|| result.trace_id.clone());
             let chain_cost_total = chain_cost_in + result.cost_usd;
 
             let cascade_metrics = chain::evaluate_chain_triggers(
@@ -4333,8 +4318,7 @@ fn find_matching_connector_names(
     let mut seen = std::collections::HashSet::new();
     for tool in tools {
         for connector in connectors {
-            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
-            {
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services) {
                 Ok(v) => v,
                 Err(e) => {
                     tracing::warn!(

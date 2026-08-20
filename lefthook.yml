@@ -26,6 +26,17 @@ pre-commit:
     - name: gitleaks-staged
       run: node scripts/secret-scan.mjs
 
+    # Rust formatting on staged files only. `rustfmt --check` rather than
+    # `cargo fmt`, because cargo fmt formats the whole workspace and this hook
+    # must never mutate a tree that concurrent sessions share. --edition is
+    # required: invoked directly rather than through cargo, rustfmt defaults to
+    # 2015, which parses `async` and `dyn` differently and would report bogus
+    # diffs. The workspace was formatted wholesale on 2026-08-20, so this only
+    # ever fires on a file the author actually changed.
+    - name: rustfmt-staged
+      glob: "*.rs"
+      run: rustfmt --edition 2021 --check {staged_files}
+
     # Block commits that would ship a translation gap (English mixed into a
     # non-English UI — which the user has ruled unacceptable). Scoped to locale
     # edits so unrelated commits are unaffected; --strict fails on MISSING keys

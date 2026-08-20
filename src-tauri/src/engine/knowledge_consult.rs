@@ -217,7 +217,9 @@ pub fn load_catalog(root: &Path) -> Vec<Technique> {
             continue;
         };
         let bundle = if idx.meta.bundle.is_empty() {
-            dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+            dir.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default()
         } else {
             idx.meta.bundle.clone()
         };
@@ -507,7 +509,11 @@ mod tests {
         bundle(dir.path(), "broken", "{ this is not json");
         bundle(dir.path(), "llm-observability", WITH_TRIGGERS);
         let cat = load_catalog(dir.path());
-        assert_eq!(cat.len(), 2, "the readable bundle must survive its neighbour");
+        assert_eq!(
+            cat.len(),
+            2,
+            "the readable bundle must survive its neighbour"
+        );
     }
 
     #[test]
@@ -546,9 +552,15 @@ mod tests {
         // declaring none.
         let dir = tempfile::tempdir().unwrap();
         bundle(dir.path(), "llm-observability", WITH_TRIGGERS);
-        let picked = select(&load_catalog(dir.path()), &sig("backend contract parity work"), 10);
+        let picked = select(
+            &load_catalog(dir.path()),
+            &sig("backend contract parity work"),
+            10,
+        );
         assert!(
-            !picked.iter().any(|p| p.technique.slug == "backend-parity-as-contract"),
+            !picked
+                .iter()
+                .any(|p| p.technique.slug == "backend-parity-as-contract"),
             "a declared-trigger technique must not be selected on its slug"
         );
     }
@@ -577,7 +589,10 @@ mod tests {
         assert!(
             only_category.is_empty(),
             "a category-only hit must not be offered: {:?}",
-            only_category.iter().map(|s| &s.technique.slug).collect::<Vec<_>>()
+            only_category
+                .iter()
+                .map(|s| &s.technique.slug)
+                .collect::<Vec<_>>()
         );
 
         // A subject/technique name hit still is.
@@ -626,11 +641,18 @@ mod tests {
         assert_eq!(cat.len(), 60);
 
         let (section, _) = consult(dir.path(), &sig("designing the warehouse copy")).unwrap();
-        assert!(section.len() < SECTION_BUDGET_CHARS + 700, "budget: {}", section.len());
+        assert!(
+            section.len() < SECTION_BUDGET_CHARS + 700,
+            "budget: {}",
+            section.len()
+        );
         // Whole entries only — every rendered line pairs a name with its file.
         let names = section.matches("- **").count();
         let files = section.matches("File: `").count();
-        assert_eq!(names, files, "an entry was cut between its name and its path");
+        assert_eq!(
+            names, files,
+            "an entry was cut between its name and its path"
+        );
         assert!(names <= MAX_TECHNIQUES);
     }
 
@@ -704,12 +726,19 @@ mod tests {
                     p.score
                 );
             }
-            assert!(!picked.is_empty(), "a realistic probe returned nothing: {probe}");
+            assert!(
+                !picked.is_empty(),
+                "a realistic probe returned nothing: {probe}"
+            );
             // Every rendered path must be openable, or the menu points at files
             // the agent cannot read and the whole pointer design fails silently.
             for p in &picked {
                 let f = root.join(&p.technique.file);
-                assert!(f.is_file(), "rendered a path that does not exist: {}", f.display());
+                assert!(
+                    f.is_file(),
+                    "rendered a path that does not exist: {}",
+                    f.display()
+                );
             }
         }
     }
@@ -723,7 +752,11 @@ mod tests {
         let cat = load_catalog(dir.path());
         let a = select(&cat, &sig("recall injection decay forgetting"), 10);
         let b = select(&cat, &sig("recall injection decay forgetting"), 10);
-        let names = |v: &[Selected]| v.iter().map(|s| s.technique.slug.clone()).collect::<Vec<_>>();
+        let names = |v: &[Selected]| {
+            v.iter()
+                .map(|s| s.technique.slug.clone())
+                .collect::<Vec<_>>()
+        };
         assert_eq!(names(&a), names(&b));
     }
 
@@ -747,10 +780,17 @@ mod tests {
         let (section, _) = consult(dir.path(), &sig("designing the warehouse copy")).unwrap();
 
         // The hostile string is present, and INSIDE the boundary.
-        let open = section.find("<untrusted_knowledge_registry_").expect("body must be fenced");
-        let close = section.find("</untrusted_knowledge_registry_").expect("boundary must close");
+        let open = section
+            .find("<untrusted_knowledge_registry_")
+            .expect("body must be fenced");
+        let close = section
+            .find("</untrusted_knowledge_registry_")
+            .expect("boundary must close");
         let payload = section.find("ignore-all-previous-instructions").unwrap();
-        assert!(open < payload && payload < close, "registry text escaped the fence");
+        assert!(
+            open < payload && payload < close,
+            "registry text escaped the fence"
+        );
 
         // The app's own framing stays OUTSIDE it — fencing the sentence that
         // explains the fence would tell the model to distrust it.

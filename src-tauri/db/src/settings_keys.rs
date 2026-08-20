@@ -1476,7 +1476,11 @@ mod tests {
             r#"{"memoryRules":[],"memoryRejectCategories":[],"reviewRules":[]}"#
         )
         .is_ok());
-        assert!(validate_value(PERFORMANCE_DIGEST, r#"{"enabled":false,"cadence":"weekly"}"#).is_ok());
+        assert!(validate_value(
+            PERFORMANCE_DIGEST,
+            r#"{"enabled":false,"cadence":"weekly"}"#
+        )
+        .is_ok());
         // All-optional-field structs accept an empty object.
         assert!(validate_value(GLOBAL_MODEL_PROFILE, "{}").is_ok());
         assert!(validate_value(OBSIDIAN_MIRROR_CONFIG, "{}").is_ok());
@@ -1510,11 +1514,9 @@ mod tests {
         )
         .is_ok());
         // Unknown theme id is ACCEPTED (frontend-owned catalog; coerced on read).
-        assert!(validate_value(
-            APPEARANCE_PREFERENCES,
-            r#"{"themeId":"some-future-theme"}"#
-        )
-        .is_ok());
+        assert!(
+            validate_value(APPEARANCE_PREFERENCES, r#"{"themeId":"some-future-theme"}"#).is_ok()
+        );
         // Stable enum fields ARE validated when present.
         assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"textScale":"gigantic"}"#).is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"brightness":"ultra"}"#).is_err());
@@ -1561,7 +1563,10 @@ mod tests {
         // Prefix families.
         assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
         assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
-        assert_eq!(audit_category("health_watch:persona-2"), Some("notifications"));
+        assert_eq!(
+            audit_category("health_watch:persona-2"),
+            Some("notifications")
+        );
         assert_eq!(
             audit_category("execution_retention_months:persona-3"),
             Some("retention")
