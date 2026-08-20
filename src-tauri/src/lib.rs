@@ -55,18 +55,23 @@ mod webbuild;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{Arc, Mutex};
 
 use db::DbPool;
 use engine::event_registry::event_name;
 use keyed_pool::KeyedResourcePool;
 use tauri::{Emitter, Manager};
 
-// The three process-wide HTTP clients live in `personas_core::http_clients` —
-// eleven engine call sites use them, and a `LazyLock` at this crate's root is
-// unreachable from any crate below. Re-exported so `crate::SHARED_HTTP` and
-// friends keep resolving.
-pub(crate) use personas_core::http_clients::{HTTP_ALLOW_PRIVATE, SHARED_HTTP, SSRF_SAFE_HTTP};
+// The process-wide HTTP clients live in `personas_core::http_clients` — engine
+// call sites use them, and a `LazyLock` at this crate's root is unreachable
+// from any crate below. Re-exported so `crate::SHARED_HTTP` and friends keep
+// resolving.
+//
+// HTTP_ALLOW_PRIVATE is deliberately NOT re-exported: its three callers
+// (engine/api_proxy.rs, engine/healthcheck.rs, engine/resource_listing.rs) all
+// spell the full personas_core path, so the re-export resolved for nobody. Add
+// it back in the same change that adds a `crate::`-qualified caller.
+pub(crate) use personas_core::http_clients::{SHARED_HTTP, SSRF_SAFE_HTTP};
 
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 pub struct ActiveProcess {

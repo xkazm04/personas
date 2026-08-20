@@ -38,9 +38,10 @@ pub use personas_core::{healing, limits, redact, run_budget, scheduler, topology
 pub use crate::db::embedder;
 #[cfg(feature = "ml")]
 pub use crate::db::vector_store;
-pub use crate::db::{
-    audit_incidents_promoter, byom, chain, memory_recall, model_routing, quality_gate,
-};
+// `audit_incidents_promoter` is deliberately absent from this list: every
+// caller is inside personas_db and reaches it as `crate::audit_incidents_promoter`,
+// so the app_lib re-export had no users at all.
+pub use crate::db::{byom, chain, memory_recall, model_routing, quality_gate};
 pub mod curation_scheduler;
 pub mod db_query;
 pub mod deliberation;
@@ -483,8 +484,9 @@ impl ExecutionEngine {
             .flatten()
             .and_then(|s| s.trim().parse::<usize>().ok())
             .filter(|&n| {
-                n >= crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MIN
-                    && n <= crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MAX
+                (crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MIN
+                    ..=crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MAX)
+                    .contains(&n)
             })
             .unwrap_or(crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_DEFAULT);
             tracker.set_global_max_concurrent(configured);
@@ -2335,13 +2337,13 @@ async fn handle_execution_result(
     // single value_delivered (or unknown — back-compat) run resets the
     // counter on the SQL side via the most-recent-N window. Failure /
     // crash paths don't trigger this — only LLM self-assessment.
-    if result.success {
-        if matches!(
+    if result.success
+        && matches!(
             result.business_outcome.as_deref(),
             Some("no_input_available") | Some("precondition_failed")
-        ) {
-            check_and_apply_circuit_breaker(pool, app, persona_id);
-        }
+        )
+    {
+        check_and_apply_circuit_breaker(pool, app, persona_id);
     }
 
     // Session pool: cache successful session for warm reuse on next execution.

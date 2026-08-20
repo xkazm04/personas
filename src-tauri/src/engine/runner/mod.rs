@@ -2739,7 +2739,7 @@ pub async fn run_execution(
     // every file that changed. Lets personas that write outputs through the
     // built-in Local Drive surface them on the event bus without needing a
     // dedicated `drive_write_text` MCP tool registered with the CLI.
-    if let (Some(ref drive_root), Some(before)) =
+    if let (Some(drive_root), Some(before)) =
         (drive_root_for_sync.as_ref(), pre_drive_snapshot.as_ref())
     {
         let after = crate::commands::drive::snapshot_drive(drive_root);
