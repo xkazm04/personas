@@ -1,6 +1,6 @@
 ---
 name: deepen
-version: 0.2
+version: 0.3
 description: Review and widen EXISTING topics in an ai-registry knowledge bundle via deep web research + training data. Scans the domain for the top-5 undercooked subjects; interactive mode deepens one user-picked topic through finding-level triage, batch mode processes all top candidates with parallel full-pipeline workers under Director diff-review. Optional benchmarks. Cross-session memory in the Obsidian vault + the bundle's own log.md.
 argument-hint: "[domain] [--topic <subject>] [--batch] [--registry <path>]"
 category: Knowledge
@@ -80,6 +80,17 @@ Skipped when `--topic` was given. Otherwise score every subject in the bundle:
 
 **Memory signals**: the domain state note's banked leads and prior scores — a subject
 deepened last run and unchanged since scores lower; a banked lead scores its subject up.
+
+**Demand signals (v0.3 — the strongest discriminator).** Deterministic scores go flat
+on uniformly-forged bundles (measured 2026-08-20); demand breaks the tie. Build a
+**demand matrix**: registered consumer apps' use-case inventories and context maps
+(machine-readable where the app is managed) crossed against the bundle's `index.json` —
+which subjects does each app concern lean on? Score up: subjects many app concerns
+consult; subjects with an app concern and NO covering subject (a coverage hole — forge
+it, don't deepen around it); subjects with a registered consumer **deviation** or a
+failed consult (an app saying "your mastery is short here" outranks any scan score).
+Score down: subjects no registered app touches. Final ranking =
+**demand × undercooked × staleness**, each recomputed fresh.
 
 **Judgment pass last**: for the ~8 highest-scoring candidates, one honest paragraph
 each from training data: *what would a principal practitioner expect here that is
@@ -240,6 +251,54 @@ For each accepted finding/cluster, in risk-ascending order:
 One screen: subject deepened, findings applied/declined (with the one-line why for
 declines), gate status, commits, benchmark spend if any, movement ("subject X:
 techniques 5→7, applications 1→4, two corrections"), and where the run notes live.
+
+## Phase 9 — Saturation ledger + staleness clocks (v0.3)
+
+After every run, update the domain state note as a **saturation ledger** — one row per
+subject: `depth level` (L1 synthesis / L2 primary / L3 empirical — the best source
+class its load-bearing claims rest on) · `last-pass yield` (corrections + earned
+techniques; confirmations counted separately) · `clocks` (earliest refresh_by among
+its dated applications) · `demand score` · `open leads/deviations`.
+
+**A subject is SATURATED when all three hold:** (1) two consecutive passes returned
+counter-evidence all-confirmed and no convergence-earned technique (dry=2); (2) the
+structural floor passes (every technique ≥1 application, a dated field application
+exists, laws wired, use_when present); (3) no undated confident claims, and every
+dated claim inside its clock. Saturation is a state, not an end — clocks and events
+re-open it.
+
+**Staleness clocks are data.** Every dated application declares `refresh_by:` in its
+frontmatter (the gate ignores unknown keys; the ledger reads it). Class defaults:
+vendor/model landscapes ~3 months · regulatory: on rule-cycle events, ceiling 12
+months · standards ~6 months · craft principles: no clock — they re-open only on
+signal. A clock expiry re-opens the subject for a cheap **refresh pass**
+(landscape + counter-evidence lanes only).
+
+**Depth escalation is triggered by evidence quality, never by calendar:** sources
+disagreed widely (an honestly-wide range is a flag saying "go deeper"); a local probe
+contradicted the literature; a load-bearing claim rests on a single synthesis-grade
+source; a consumer registered a deviation. Deeper = climb the source ladder one rung
+(L1→L2 primary texts, L2→L3 benchmarks with n) for the contested claims — never
+"more sources at the same rung", which is research theater.
+
+## Phase 10 — Loop mode (`/deepen loop`)
+
+The long-running shape: **cycle** = score all subjects (demand × undercooked ×
+staleness, fresh) → take those above threshold (cap: batch size the Director can
+review in one sitting, ≤8; above that, review in two sittings) → batch workers →
+Director diff-review → commit → update the saturation ledger → schedule the next
+cycle. When **no subject clears threshold**, the loop does not terminate — it
+**idles until the earliest clock or an event** (a new app registered for the domain,
+a consumer deviation, a banked lead's return condition, a probe contradiction) and
+reports honestly: "domain saturated until <date>; watching <events>". Pace with the
+wakeup/cron machinery; every cycle resumes from the ledger.
+
+Guardrails the loop itself obeys: `unmeasured-is-not-pass` applies to the loop — no
+re-run of a saturated subject without a clock or event to point at; yield is recorded
+per cycle so the dry=2 rule has data; a cycle of pure confirmations is a *successful
+measurement*, not a failure to find. Worker-brief addition for batch cycles: a gate
+failure naming a SIBLING subject is transient (mid-write read) — re-run the gate once
+before reporting it.
 
 ## Worked example (the calibration case)
 
