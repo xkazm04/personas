@@ -55,7 +55,9 @@ describe('OrbQuickInputBar', () => {
     fireEvent.change(input, { target: { value: 'quick hello' } });
     fireEvent.click(screen.getByTestId('orb-quick-input-send'));
 
-    expect(useCompanionStore.getState().voiceTurnRequest).toBe('quick hello');
+    // The orb's quick-input bar is the USER typing, so the request carries no
+    // provenance source — it must stay indistinguishable from a composer send.
+    expect(useCompanionStore.getState().voiceTurnRequest).toEqual({ text: 'quick hello' });
     expect(input.value).toBe('');
   });
 

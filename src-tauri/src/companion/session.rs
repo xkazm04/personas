@@ -853,7 +853,29 @@ async fn send_turn_inner(
             EpisodeRole::System,
             format!("[proactive: {trigger_kind}]"),
         ),
-        TurnOrigin::External { source } => (EpisodeRole::System, format!("[{source}]")),
+        // `[{source}] {message}`, not a bare `[{source}]` tag. Two reasons, and
+        // the second is the load-bearing one:
+        //
+        // 1. The transcript. `systemMarkerOf` (systemMarkers.ts) renders a bare
+        //    tag as a slim divider and a tag-plus-prose as a readable system
+        //    note. A surface that composes a prompt on the operator's behalf —
+        //    the Ship control bar's "Ask Athena" — must leave him able to SEE
+        //    what was asked in his name, or he cannot steer the conversation it
+        //    started. A divider tells him only that something happened.
+        //
+        // 2. Recall and the sleep cycle read episodes. An episode whose entire
+        //    body is `[Ship]` carries no retrievable content: it can never
+        //    match a search, and consolidation has nothing to distil. The
+        //    question is the part worth remembering.
+        //
+        // No live regression surface when this changed (2026-08-20): remote
+        // devices are the only other `External` producer and they take the
+        // `suppress_chat` branch above, so no episode is written for them at
+        // all — this arm had no reachable caller until the frontend started
+        // passing `system_source`.
+        TurnOrigin::External { source } => {
+            (EpisodeRole::System, format!("[{source}] {user_message}"))
+        }
     };
     let user_ep_id = if suppress_chat {
         String::new()
