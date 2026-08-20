@@ -63,7 +63,9 @@ Advisory pre-release scripts (manual, not CI-gated):
 > *real* gates **before** the branch leaves the box; CI is the backstop. Run these and confirm green
 > before opening a PR (the local lefthook hooks enforce the fast subset; the full suites run in CI):
 
-- `npm run check` — TypeScript + ESLint (incl. the 18 custom rules)
+- `npm run check` — **ten gates, not two.** Eight project checks run *first* (`check:contracts`, `check:tiers`, `check:tauri-configs`, `check:csp-hosts`, `check:corpus`, `check:evidence`, `check:doc-map`, **`census:check`**), then `tsc --noEmit`, then `eslint src/` (21 custom rules — 3 at `error`, 17 at `warn`, 1 `off`). It is a `&&` chain: the first failure stops it and you never see the gates behind it, so a green `tsc` locally tells you nothing about the eight that run ahead of it. The census is the one most likely to fail a diff that compiles — see [The golden-path census](#the-golden-path-census--the-gate-most-likely-to-fail-a-clean-diff) below.
+
+  > **Corrected 2026-08-20.** This line read "TypeScript + ESLint (incl. the 18 custom rules)" and named neither the eight project checks nor the census. There are **21** custom rules, not 18. An agent reading it would run `npm run check`, watch `census:check` fail on a rule it had never heard of, and have no doctrine for what to do next — which is the whole reason the section below now exists.
 - `npm run check:i18n:strict` (no translation gaps — see i18n § "Translation completeness") · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
 - `npm run test -- --run` (Vitest)
 - If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings` (then commit `src/lib/bindings/`; without `--workspace --features desktop` **zero** bindings regenerate)
@@ -78,6 +80,61 @@ Then the judgment checks a linter can't make:
 
 Dependency bumps come in via Renovate (`renovate.json`): the agent reads the changelog / breaking
 changes and evaluates — never blind-merges minor/major. The human-facing DoD lives in the PR template.
+
+### The golden-path census — the gate most likely to fail a clean diff
+
+**This is the repo's strongest enforcement mechanism and until 2026-08-20 this file
+never described it.** If your change compiles, type-checks, lints clean and still fails
+the push, this is almost certainly why.
+
+`scripts/census/rules.json` holds **201 regex-shaped rules** — one per golden-path
+violation the repo has decided to stop growing (`hand-rolled-spinner`,
+`untyped-command-payload`, `native-title-tooltip`, `bindingless-catch-on-io`, …). Each
+carries a **ratcheting baseline**: the count measured at adoption. `scripts/census/run-census.mjs`
+walks the tree and compares.
+
+**Where it runs:** inside `npm run check`, and at **pre-push** (`lefthook.yml:74`) —
+deliberately *not* pre-commit, because the walk is minutes long. So a `git commit`
+never consults it and a `git push` always does. That gap is the normal way an agent
+meets this gate for the first time.
+
+**It fails in both directions, and the second one surprises everybody:**
+
+| Outcome | Meaning |
+|---|---|
+| a count **rises** above baseline | you added a violation — fix it |
+| a count **drops** below baseline | usually a *broken matcher*, sometimes a real fix — never silently accepted |
+| walk visits fewer files than `floor` | the matcher is broken, not the codebase clean |
+| a rule matches **zero** files anywhere | same — a rule that finds nothing is assumed broken |
+| an `exclude` entry matches nothing | stale exemption, delete it |
+
+The last three are the **fail-loud contract**: this repo is, in the runner's own words,
+"a museum of gates that ran green while checking nothing", so *found nothing* and
+*looked at nothing* are treated as different outcomes and only one is success.
+
+**When it fails, do this — not a blind edit:**
+
+```bash
+npm run census -- --rule <rule-id> --verbose   # prints the offending file:line list
+npm run census:check                            # the gate itself
+npm run census -- --json                        # machine-readable
+node scripts/census/self-test.mjs               # proves the engine still detects its own failure modes
+```
+
+`npm run census -- --update` re-baselines to measured reality. It is the **legitimate**
+way to clear a drop you caused with a real fix — it is a deliberate act that lands in
+the diff where a reviewer sees it, which is the entire point of a ratchet. **Never
+reach for it to make a *rise* go away**; that is how you launder a new violation into
+the baseline.
+
+**Adding a gate is an entry in `rules.json`, not a new script.** That is the system's
+whole design — 247 situation leaves × ~2 gates each would otherwise be ~460 bespoke
+checkers. Prefer it to a new ESLint rule for anything regex-shaped, and note that it
+reads `.rs`, `.md` and `.sql` too, where ESLint cannot reach.
+
+> Measured 2026-08-20 at HEAD: 201 rules, 518,843 file-visits, **13,245 surviving
+> violations across 6,005 files** — all baselined, all green. A large number here is
+> not debt out of control; it is debt that has been counted and frozen.
 
 ## Architecture
 
@@ -132,6 +189,49 @@ src-tauri/
   > **What the fix does not reach: orphans.** Measured 2026-08-17 by three independent implementations (48 / 31 / **29**; the loosest was wrong by 19 because macro-generated derives have no literal `enum` line). **29 orphan bindings** — types whose Rust source is gone. ts-rs never deletes, so an orphan produces **no diff and no untracked file**, which makes it invisible to a diff-shaped gate by construction. **26 are still imported and 22 are still the declared return type of a live `invoke`** — including `invoke<VaultStatus>("vault_status")` against a Rust fn returning `serde_json::Value`, with no `VaultStatus` type anywhere in 963 `.rs` files. Only an inventory of what *should* exist finds these; `scripts/check-unused-bindings.sh` exits 1 with 98 findings today and *protects* 26 of the 29 because they are imported.
 - CI verifies via `git diff --quiet src/lib/bindings/` — a missing regen fails the build at `.github/workflows/ci.yml`'s binding-drift job.
 - New Tauri commands additionally need `node scripts/generate-command-names.mjs` (or just `npm run dev`/`npm run build` which trigger `predev`/`prebuild`).
+
+### Type assertions — name the invariant, or don't assert
+
+> **A chained assertion (`x as unknown as T`) discards the evidence the compiler
+> already had.** That is not a bug on its own — it compiles, and everything downstream
+> believes the new type. It becomes a bug the first time reality disagrees, and by then
+> TypeScript has no way to warn you, because you threw away the thing it would have
+> warned from.
+
+**The convention: any assertion that crosses a data boundary carries a comment naming
+the invariant that makes it safe.** Parsed JSON, a DB blob, an IPC payload, an imported
+`.json` fixture, an i18n proxy — anywhere the value's real shape is decided somewhere
+other than the type annotation. Prefer parsing at the boundary (narrow once, into a
+named domain type) over asserting past it.
+
+The canonical *good* site is `src/features/home/sub_releases/i18n/useReleasesTranslation.ts:88-90`:
+three lines of comment explaining why the generated type must be flattened, then the cast.
+
+The canonical *bad* outcome is recorded in that same file's header (`:5`): the version
+before it carried **"9 `as unknown as` casts papering over key drift"**. The refactor
+removed them. Nothing prevents the next nine.
+
+**Measured 2026-08-20** across `src/` — 220 `as unknown as`, 124 of them in production code:
+
+| Shape | Count | Verdict |
+|---|---|---|
+| ambient-global escape (`window as unknown as { webkitAudioContext }`) | 44 | **fine** — the DOM lib genuinely lacks these; there is no evidence to discard |
+| data-boundary cast (`parsed as unknown as DesignContextData`) | 80 | **this is the one the convention is about** |
+| carrying any justifying comment | 30 / 220 | ~14% |
+
+**This is convention, not a gate — deliberately.** 0 of the 201 census rules and 0 of
+the 21 custom ESLint rules inspect a type assertion (both checked uncapped, 2026-08-20).
+A blanket rule was considered and declined the same day: it would fire on all 44
+ambient-global sites, where converting them would be a regression. The repo instead
+gates the *specific doors* where a cast has actually caused harm — `unnamed-cast-at-navigation-door`,
+`asserted-definition-blob`, `caller-asserted-owner`, `unchecked-destination-id-assertion`,
+`unverifiable-catalog-lookup`. If you find a sixth such door, add it to `rules.json`
+rather than reaching for a blanket rule.
+
+> Note the asymmetry this closes: `.claude/skills/codebase-init/skill.md:110` has always
+> instructed every *managed* repo's generated CLAUDE.md that escape hatches "need a
+> comment justifying them". Personas prescribed this to its customers before it wrote
+> it down for itself.
 
 ### Styling
 - **Canonical reference: [`.claude/Design.md`](./Design.md)** — single source of truth for tokens, typography, color, spacing, radius, elevation, motion, and component primitives. Read it before adding any new UI surface or extending an existing one.
