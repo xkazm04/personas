@@ -72,7 +72,11 @@
     { "id": "secret-scan", "run": "node scripts/secret-scan.mjs", "blocks": "pre-commit" },
     { "id": "tests", "run": "npm run test -- --run", "blocks": "CI" },
     { "id": "umbrella", "run": "npm run check", "blocks": "CI", "note": "contracts + tiers + typecheck + lint + themes + tauri-configs + error-registry" },
-    { "id": "ai-conformance", "run": "node .ai/doctor.mjs", "blocks": "pre-push", "note": "no hard FAILs" }
+    { "id": "ai-conformance", "run": "node .ai/doctor.mjs", "blocks": "pre-push", "note": "no hard FAILs" },
+    { "id": "rust-clippy", "run": "cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop --all-targets -- -D warnings", "blocks": "CI", "note": "--workspace AND --features desktop are both load-bearing. Without --features desktop the tauri build script aborts on the updater capability before compiling anything; without --workspace only the root package is linted." },
+    { "id": "rust-tests", "run": "npm run test:rust", "blocks": "CI", "note": "NEVER bare `cargo test` on Windows - the lib unit-test binary carries no comctl32-v6 manifest and dies in the loader with exit 127 (0xc0000139) before main(). npm run test:rust embeds it post-link. npm run test:rust:crates narrows to core/db/engine." },
+    { "id": "rust-census", "run": "npm run census:check", "blocks": "CI (inside npm run check)", "note": "97 of the 201 census rules target src-tauri. A baseline fails on a RISE and also on a silent DROP; `floor` catches a matcher that broke rather than a codebase that got clean. Ratchet with `npm run census -- --update` only when you can explain the movement." },
+    { "id": "rust-deny", "run": "cd src-tauri && cargo deny check", "blocks": "CI", "note": "Reports 14 unaddressed RUSTSEC advisories as of 2026-08-20. This gate was silently broken until then - the config carried a key cargo-deny 0.17 removed, so it exited on a deserialization error instead of checking anything." }
   ],
 
   "codegenTriggers": [
@@ -83,9 +87,9 @@
     },
     {
       "when": "you add #[derive(TS)] #[ts(export)] to a Rust struct/enum",
-      "run": ["cargo test --manifest-path src-tauri/Cargo.toml export_bindings"],
+      "run": ["cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings"],
       "commit": ["src/lib/bindings/"],
-      "note": "CI fails on `git diff --quiet src/lib/bindings/`. On a box where the test binary cannot launch (STATUS_ENTRYPOINT_NOT_FOUND), hand-edit the binding and say so in the PR."
+      "note": "--workspace and --features desktop are BOTH required; without them ZERO bindings regenerate, and a run that produces no diff is indistinguishable from one that was already up to date. CI fails on `git diff --quiet src/lib/bindings/`. On a box where the test binary cannot launch (STATUS_ENTRYPOINT_NOT_FOUND), hand-edit the binding and say so in the PR."
     },
     {
       "when": "you add a new Tauri command",
@@ -161,6 +165,99 @@
     "effects": { "rule": "Clean up listeners, timers and subscriptions.", "enforcedBy": "custom/no-unmanaged-effect-resources" }
   },
 
+  "rustRules": {
+    "$comment": [
+      "The backend is a 5-crate cargo workspace under src-tauri/: core (no Personas dep) -> db -> engine -> personas-desktop (app_lib), plus the macros proc-macro crate.",
+      "`crate::db` IS `personas_db` and `crate::error` IS `personas_core::error` (src/lib.rs:12,18) - re-exports, not separate layers.",
+      "Measured 2026-08-20 during the rust-refactor campaign. Full plan: docs/plans/rust-refactor.md (local, docs/plans is gitignored)."
+    ],
+    "placement": {
+      "rule": "Put a module in the LOWEST crate whose reach closes. Anything touching AppState, AppHandle, tauri::, notifications, tray or a command entry point belongs in app_lib and nowhere else.",
+      "check": "node scripts/build/crate-split-deps.mjs --closure <module>",
+      "note": "Cargo enforces acyclicity for free - a path-dependency cycle fails resolution before anything compiles. What is NOT enforced is placement, and src/engine/mod.rs re-exports four crates into one namespace, so a call site cannot tell which crate it reached.",
+      "goldenPath": "docs/concepts/golden-paths/crate-layering.md"
+    },
+    "errors": {
+      "rule": "Every #[tauri::command] returns Result<T, AppError>. Pick the variant that names the failure's CAUSE (Auth, NetworkOffline, RateLimited, Forbidden, NotFound, ProcessSpawn, Validation). Reach for Internal/External only for text you genuinely do not control, and then put the operation in the message.",
+      "never": [
+        "Result<T, String>",
+        "AppError::Internal(format!(...)) as the default variant",
+        ".map_err(|e| e.to_string())",
+        "returning serde_json::Value from a command"
+      ],
+      "note": "1,614 of 1,655 commands already comply, so the error type is NOT the debt. The payload is: ~100 commands return an untyped serde_json::Value, and 387 sites collapse a real cause into AppError::Internal(format!(..)).",
+      "goldenPath": "docs/concepts/golden-paths/typed-error-contract.md"
+    },
+    "commands": {
+      "rule": "A command is an adapter: validate, make ONE call into engine or repo, map the result. A body over ~40 lines is a service function sitting in the wrong file.",
+      "returnType": "a named #[derive(Serialize, TS)] #[ts(export)] struct - never serde_json::Value",
+      "sync": "A sync command must not touch rusqlite; that blocks the IPC worker. Use an async command over spawn_blocking, or an async repo call.",
+      "exemplars": [
+        "src-tauri/src/commands/infrastructure/dev_workspaces.rs (33 commands, ~11 lines each)",
+        "src-tauri/src/commands/fleet/commands.rs (structure only - its Result<_, String> is the exception, not the model)"
+      ],
+      "goldenPaths": [
+        "docs/concepts/golden-paths/new-ipc-command.md",
+        "docs/concepts/golden-paths/command-naming-placement.md",
+        "docs/concepts/golden-paths/command-input-validation.md"
+      ]
+    },
+    "database": {
+      "rule": "A repo fn is `pub fn verb_noun(pool: &DbPool, ...) -> Result<T, AppError>` in db/src/repos/<area>/<table>.rs. A get-by-id returns Result<Option<T>> so it can say 'no such row'.",
+      "transactions": "A write that must be atomic with another write gets a `pub(crate) fn verb_noun_in(tx: &Transaction<'_>, ...)` inner fn, and the pool fn opens the transaction. Use transaction_with_behavior(Immediate) whenever a read informs a write - a deferred transaction fails SQLITE_BUSY_SNAPSHOT in 0ms and ignores busy_timeout.",
+      "rowMapping": "const COLUMNS plus the row_mapper! macro (db/src/macros.rs). Never SELECT * and never positional row.get(0) - together they mean any mid-table ADD COLUMN silently shifts every index.",
+      "queries": "QueryBuilder (db/src/query_builder.rs) for list/filter/paginate shapes.",
+      "exemplars": [
+        "src-tauri/db/src/repos/lab/ratings.rs",
+        "src-tauri/db/src/repos/resources/remote_jobs.rs"
+      ],
+      "goldenPaths": [
+        "docs/concepts/golden-paths/repository-crud-surface.md",
+        "docs/concepts/golden-paths/transaction-boundary.md",
+        "docs/concepts/golden-paths/boot-migration-step.md"
+      ]
+    },
+    "concurrency": {
+      "rule": "Every spawn decides who waits: keep the JoinHandle and surface is_panic(), or run under catch_unwind with a durable write.",
+      "never": [
+        "holding a std::sync guard across .await (clippy::await_holding_lock)",
+        "a perpetual loop with no stop path",
+        "a bare tokio::time::sleep as a loop's only wait",
+        "caching a Result in a OnceLock - it freezes the first attempt's failure for the life of the process"
+      ],
+      "loops": "Implement ReactiveSubscription (src/engine/subscription.rs:69, 41 impls) or race the wait against a shutdown token inside tokio::select!.",
+      "goldenPaths": [
+        "docs/concepts/golden-paths/background-loop.md",
+        "docs/concepts/golden-paths/panic-isolation.md",
+        "docs/concepts/golden-paths/process-global-command-state.md"
+      ]
+    },
+    "panics": {
+      "rule": "No .unwrap() or .expect() in production code. Three exceptions: a static initialiser over a literal, a lock whose poisoning is deliberately treated as a panic report, and a documented invariant carrying an `// INVARIANT:` comment on the line above.",
+      "tests": "Tests may unwrap freely - clippy.toml sets allow-unwrap-in-tests."
+    },
+    "sharedPrimitives": {
+      "$comment": "This backend's dominant defect is not missing abstractions, it is unadopted ones. Reach for these before writing your own. A NEW shared primitive must retire at least three hand-rolled copies in the same change - primitives built ahead of their callers is how this repo ended up with run_lanes at zero callers and acquire_logged under #[allow(dead_code)].",
+      "httpClient": "personas_core::http_clients::{SHARED_HTTP, SSRF_SAFE_HTTP, HTTP_ALLOW_PRIVATE} - never reqwest::Client::new()",
+      "subprocess": "personas_engine::cli_process - the one place env scrubbing, timeout, PID registration and cancellation live",
+      "authGuard": "the #[requires(level)] proc-macro (src-tauri/macros/src/lib.rs:57)",
+      "rowMapper": "row_mapper! (src-tauri/db/src/macros.rs)",
+      "queryBuilder": "QueryBuilder (src-tauri/db/src/query_builder.rs)",
+      "poolAccess": "acquire_logged(pool, label) (src-tauri/db/src/lib.rs:113) - carries the starvation instrumentation a bare pool.get() does not",
+      "boundedFanOut": "run_lanes / LaneOutcome<T> (src/engine/build_session/orchestrator.rs)",
+      "panicMessage": "the shared panic-payload decoder - do not paste another copy of extract_panic_message",
+      "events": "emit_event plus the event_names! registry (src-tauri/core/src/events.rs) - never an inline json! payload under an unregistered name"
+    },
+    "testing": {
+      "rule": "Get the database from personas_db::init_test_db() / init_test_user_db(). Never write CREATE TABLE in a test - a hand-built fixture is not the production schema, and a self-opened Connection has foreign_keys OFF.",
+      "run": "npm run test:rust (whole workspace) or npm run test:rust:crates (core/db/engine only)",
+      "goldenPaths": [
+        "docs/concepts/golden-paths/rust-unit-test-harness.md",
+        "docs/concepts/golden-paths/rust-test-fixtures.md"
+      ]
+    }
+  },
+
   "gitDiscipline": {
     "rule": "Multiple CLI sessions share this checkout concurrently.",
     "never": [
@@ -172,7 +269,9 @@
       "classify every line of `git status --porcelain` as yours / pre-existing / another session's",
       "after `git add` and BEFORE `git commit`, run `git diff --cached --stat` and confirm the file count matches what you staged",
       "use `git worktree` for multi-file work",
-      "commit atomically per task; never hold >30 minutes of uncommitted work"
+      "commit atomically per task; never hold >30 minutes of uncommitted work",
+    "commit through an isolated index when a sibling session is active: IDX=$(mktemp); GIT_INDEX_FILE=$IDX git read-tree HEAD; GIT_INDEX_FILE=$IDX git add <paths>; GIT_INDEX_FILE=$IDX git commit. Seed it with read-tree, NEVER with `cp .git/index` - the copy inherits staleness and silently records your own previous commit's files as deleted.",
+    "verify `git log --oneline -1` is YOUR message after every commit. Both `git commit -- <paths>` and `git commit --only <paths>` commit the WORKING TREE rather than the index, so a sibling's unstaged edit inside your pathspec rides in under your message."
     ]
   },
 
