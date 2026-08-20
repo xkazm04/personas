@@ -295,7 +295,23 @@ jobs:
         # tests in personas-db alone, including every migration and
         # boot-safety assertion. Three independent reviews of this repo
         # arrived at this same missing word.
-        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop
+        #
+        # --no-fail-fast is the third word this line was missing, and it is the
+        # one that decides how much of the tree a red build can hide. Cargo
+        # stops the whole run at the first crate whose test binary fails, and
+        # the crate order is the dependency order, so personas-db failing takes
+        # personas-engine and personas-desktop down with it unrun. On CI run
+        # 32025966929 that was literally the outcome: core passed 760/760, db
+        # reported 808 passed / 10 failed, and the root crate's 331,560 lines
+        # compiled and never executed a single test. The layering makes the
+        # bottom crate a global circuit breaker, and one flag turns that back
+        # into four independent verdicts in one job.
+        #
+        # This is deliberately NOT a split into per-crate jobs. Every crate
+        # here depends on personas-core, and personas-desktop depends on all of
+        # them, so four runners would each rebuild most of the same dependency
+        # closure to report what one runner can report for free.
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop --no-fail-fast
 
       - name: Run Clippy
         # if: always() so a failing test step does not hide a lint regression.
