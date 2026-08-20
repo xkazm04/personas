@@ -1,6 +1,9 @@
 # Active Runs Ledger
 
 ## Active
+### deepen-skill-design — author draft /deepen skill (.claude/skills/deepen/ only) — session athena-fable[registry]
+- 2026-08-20. Scope: NEW dir `.claude/skills/deepen/` (SKILL.md draft v0.1). No other paths touched. Trial runs against ai-registry follow in-session; hardened version later migrates to the ai-registry skills lane.
+
 
 ### skills-heatmap-design — design the Skills coverage heatmap against the knowledge registry + ship the row-source fix — session opus-5[1m] — **COMPLETE**
 - 2026-08-19. Deliverable: `docs/plans/skills-heatmap.md` (design/proposal; naming collision, row source, fleet-usage question, 6-step order). Code change is ONE file: `src/features/plugins/dev-tools/sub_skills/registry/useSkillsRegistry.ts`.
