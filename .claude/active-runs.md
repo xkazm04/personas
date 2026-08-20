@@ -1,10 +1,6 @@
 # Active Runs Ledger
 
 ## Active
-### deepen-skill-design — author draft /deepen skill (.claude/skills/deepen/ only) — session athena-fable[registry]
-- 2026-08-20. Scope: NEW dir `.claude/skills/deepen/` (SKILL.md draft v0.1). No other paths touched. Trial runs against ai-registry follow in-session; hardened version later migrates to the ai-registry skills lane.
-
-
 ### skills-heatmap-design — design the Skills coverage heatmap against the knowledge registry + ship the row-source fix — session opus-5[1m] — **COMPLETE**
 - 2026-08-19. Deliverable: `docs/plans/skills-heatmap.md` (design/proposal; naming collision, row source, fleet-usage question, 6-step order). Code change is ONE file: `src/features/plugins/dev-tools/sub_skills/registry/useSkillsRegistry.ts`.
 - **Shipped:** the heatmap's rows now come from the wired registry's `skills/` lane (same library the Overview tab reads) instead of `~/.claude/skills` unconditionally, and union in everything installed in any column so heading the library at a registry cannot subtract a row that has coverage. The "no workspace in scope" blocker was false — `useSkillsRegistry.ts:52-60` resolved it already. No strings changed → no i18n. tsc clean, eslint 0.
@@ -358,6 +354,10 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### deepen-skill-design — author draft /deepen skill (.claude/skills/deepen/ only) — session athena-fable[registry]
+- 2026-08-20. Scope: NEW dir `.claude/skills/deepen/` (SKILL.md draft v0.1). No other paths touched. Trial runs against ai-registry follow in-session; hardened version later migrates to the ai-registry skills lane.
+- **Completed** 2026-08-20, commit 13122309e (SKILL.md draft v0.1 + this ledger entry). Trial runs proceed in-session against ai-registry only.
 
 ### agent-plugins-open-standard - /research code: Agent Plugins 1.0.0 (agent-plugins.org) - session opus-5[1m] - **COMPLETE**
 - 2026-08-13. Commits: `ee97789bc` skill-tree symlink containment (5 walks: copy/hash/scan/ref-listing/export; classify_skill_entry rejects symlinks incl. Windows junctions and non-regular files; MAX_SKILL_DIR_DEPTH=8); `50714e4ee` one typed model for the 8 mcpServers writers (personas_core::mcp_config); `b2690c5c8` skill(research) v1.2 (standalone).
