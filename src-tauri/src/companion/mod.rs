@@ -35,6 +35,7 @@ pub mod remote_jobs;
 pub mod wake_window;
 pub mod prompt;
 pub mod session;
+pub mod ship_ops;
 pub mod stt;
 pub mod templates;
 pub mod generated_tour_anchors;

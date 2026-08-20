@@ -822,6 +822,9 @@ mod containment_posture_tests {
             "run_pattern_harvest",
             "apply_pattern",
             "evaluate_pattern",
+            // Ship layer (2026-08-20).
+            "set_ship_scope",
+            "ship_milestone_lifecycle",
         ] {
             assert!(
                 crate::companion::dispatcher::action_is_allowed(action),

@@ -366,6 +366,353 @@ pub async fn companion_create_ship_milestone(
     create_ship_milestone_inner(&state.db, &plan)
 }
 
+// ── Scope + lifecycle: acting on a milestone that already exists ──────────
+//
+// `show_ship_milestone` creates a whole cut from nothing. These two are the
+// other half of the toolset the operator asked for on 2026-08-20: Athena
+// reads the live milestone (`describe_ship_milestone`, a read op) and can then
+// MOVE things in and out of it and advance its lifecycle — the same two verbs
+// the Ship tab gives a human.
+//
+// Both are ordinary approval actions, so under manual mode they wait on a
+// click. Under autonomous mode they fire (the allowlist was retired on
+// 2026-08-10 — see approval_autopilot's header), which is exactly why the SHIP
+// transition below carries a real precondition check instead of leaning on a
+// human being there to notice.
+
+/// Scope edits one proposal may carry. Same reviewability ceiling as the plan
+/// card and the milestone card — the operator READS these rows before they
+/// apply, and this codebase already decided where that stops being true.
+pub(crate) const SHIP_SCOPE_MAX_ROWS: usize = FLEET_PLAN_MAX_ROWS;
+
+/// One validated scope edit.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct ShipScopeEdit {
+    pub item_kind: String,
+    pub item_id: String,
+    /// `Some(bucket)` upserts the member there; `None` removes it from the
+    /// milestone entirely. Spelled as an Option rather than a fourth bucket
+    /// value because `dev_milestone_items.bucket` is CHECK-constrained to the
+    /// three real ones and "gone" is not a bucket.
+    pub bucket: Option<String>,
+}
+
+/// Validate a `set_ship_scope` proposal against the real registry.
+///
+/// Every id is resolved HERE, before an approval row is written, for the same
+/// reason `validate_ship_milestone` does it: a proposal whose ids do not exist
+/// should be refused while the model can still read the reason and re-propose,
+/// not silently applied as a row pointing at nothing.
+pub(crate) fn validate_ship_scope(
+    pool: &crate::db::DbPool,
+    milestone_id: &str,
+    rows: &[serde_json::Value],
+) -> Result<(String, Vec<ShipScopeEdit>), String> {
+    let milestone_id = milestone_id.trim();
+    if milestone_id.is_empty() {
+        return Err("`milestone_id` is required".into());
+    }
+    if rows.is_empty() {
+        return Err("`items` is empty — nothing to change".into());
+    }
+    if rows.len() > SHIP_SCOPE_MAX_ROWS {
+        return Err(format!(
+            "{} scope edits is more than the {SHIP_SCOPE_MAX_ROWS} an operator can review in one card",
+            rows.len()
+        ));
+    }
+    let conn = pool
+        .get()
+        .map_err(|e| format!("the project database is not reachable: {e}"))?;
+
+    let project_id: String = conn
+        .query_row(
+            "SELECT project_id FROM dev_milestones WHERE id = ?1",
+            params![milestone_id],
+            |r| r.get(0),
+        )
+        .map_err(|_| {
+            format!(
+                "no milestone `{milestone_id}` — resolve it with `describe_ship_milestone` first"
+            )
+        })?;
+
+    let mut edits = Vec::with_capacity(rows.len());
+    let mut seen: Vec<(String, String)> = Vec::new();
+    for (i, row) in rows.iter().enumerate() {
+        let n = i + 1;
+        let item_kind = row
+            .get("item_kind")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        if !SHIP_MILESTONE_ITEM_KINDS.contains(&item_kind) {
+            return Err(format!(
+                "item {n}: `item_kind` must be one of {SHIP_MILESTONE_ITEM_KINDS:?} — a milestone's \
+                 members are use cases and goals only. A KPI is the outcome layer ABOVE a \
+                 milestone; use `calibrate_kpi` / `propose_kpi` for those."
+            ));
+        }
+        let item_id = row
+            .get("item_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        if item_id.is_empty() {
+            return Err(format!("item {n}: `item_id` is required"));
+        }
+        // `bucket` absent OR the literal "remove" means drop the membership.
+        let raw_bucket = row
+            .get("bucket")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("remove");
+        let bucket = match raw_bucket {
+            "remove" => None,
+            b if ["core", "later", "never"].contains(&b) => Some(b.to_string()),
+            other => {
+                return Err(format!(
+                    "item {n}: `bucket` was `{other}` — use core, later, never, or remove"
+                ))
+            }
+        };
+
+        // The same id twice in one card is a proposal that contradicts itself;
+        // whichever row won would be an accident of ordering.
+        let key = (item_kind.to_string(), item_id.to_string());
+        if seen.contains(&key) {
+            return Err(format!(
+                "item {n}: `{item_id}` appears twice in this proposal — one row per member"
+            ));
+        }
+        seen.push(key);
+
+        // A REMOVAL only has to name a member that is actually in the
+        // milestone; it may legitimately point at a use case that no longer
+        // exists (that is exactly the orphan the read op reports, and this is
+        // how it gets cleaned up). An ADD has to name a live row.
+        if bucket.is_none() {
+            let present: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_milestone_items
+                      WHERE milestone_id = ?1 AND item_kind = ?2 AND item_id = ?3",
+                    params![milestone_id, item_kind, item_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            if present == 0 {
+                return Err(format!(
+                    "item {n}: `{item_id}` is not in this milestone, so there is nothing to remove"
+                ));
+            }
+        } else {
+            let table = if item_kind == "goal" {
+                "dev_goals"
+            } else {
+                "dev_use_cases"
+            };
+            let exists: i64 = conn
+                .query_row(
+                    &format!("SELECT COUNT(*) FROM {table} WHERE id = ?1 AND project_id = ?2"),
+                    params![item_id, project_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            if exists == 0 {
+                return Err(format!(
+                    "item {n}: no {item_kind} `{item_id}` in this milestone's project. Read the \
+                     real ids with `describe_ship_milestone` or `describe_context` — never invent one."
+                ));
+            }
+        }
+
+        edits.push(ShipScopeEdit {
+            item_kind: item_kind.to_string(),
+            item_id: item_id.to_string(),
+            bucket,
+        });
+    }
+    Ok((milestone_id.to_string(), edits))
+}
+
+/// Apply validated scope edits. Re-validates rather than trusting the stored
+/// params: an approval can sit for a long time, and the rows it names can be
+/// deleted while it waits.
+pub(crate) fn execute_set_ship_scope(
+    state: &State<'_, Arc<AppState>>,
+    params_json: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let milestone_id = params_json
+        .get("milestone_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let rows: Vec<serde_json::Value> = params_json
+        .get("items")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let (milestone_id, edits) = validate_ship_scope(&state.db, milestone_id, &rows)
+        .map_err(|reason| AppError::Validation(format!("set_ship_scope: {reason}")))?;
+
+    let mut moved = 0usize;
+    let mut removed = 0usize;
+    for e in &edits {
+        match &e.bucket {
+            Some(bucket) => {
+                // `description`/`rating` are the OPERATOR's columns. Passing
+                // None for both is deliberate: the repo's nullable-patch
+                // convention leaves an omitted field untouched, so re-bucketing
+                // a member Athena did not author never erases his note or his
+                // rating — see `set_milestone_item`'s own header.
+                repo::set_milestone_item(
+                    &state.db,
+                    &milestone_id,
+                    &e.item_kind,
+                    &e.item_id,
+                    bucket,
+                    None,
+                    None,
+                )?;
+                moved += 1;
+            }
+            None => {
+                repo::remove_milestone_item(&state.db, &milestone_id, &e.item_kind, &e.item_id)?;
+                removed += 1;
+            }
+        }
+    }
+    tracing::info!(
+        milestone_id = %milestone_id,
+        moved,
+        removed,
+        "companion: applied ship scope edits"
+    );
+    Ok(ExecuteResult::message(format!(
+        "Scope updated on milestone `{milestone_id}` — {moved} member(s) placed, {removed} removed."
+    )))
+}
+
+/// Resolve a lifecycle transition to its target status, enforcing every
+/// precondition this side of the app can actually check.
+///
+/// Split out of the executor so the guards are testable against a plain pool:
+/// the executor needs a Tauri `State<AppState>`, which no unit test can build,
+/// and these preconditions are the whole safety story of the op.
+///
+/// Returns `(target_status, milestone_name)` or a reason the operator can read.
+pub(crate) fn ship_lifecycle_target(
+    pool: &crate::db::DbPool,
+    milestone_id: &str,
+    transition: &str,
+) -> Result<(&'static str, String), String> {
+    let conn = pool
+        .get()
+        .map_err(|e| format!("the project database is not reachable: {e}"))?;
+    let (name, status): (String, String) = conn
+        .query_row(
+            "SELECT name, status FROM dev_milestones WHERE id = ?1",
+            params![milestone_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .map_err(|_| {
+            format!(
+                "no milestone `{milestone_id}` — resolve it with `describe_ship_milestone` first"
+            )
+        })?;
+
+    let target = match transition {
+        "cut" => {
+            if status != "planned" {
+                return Err(format!(
+                    "`{name}` is already {status} — only a planned milestone can be cut"
+                ));
+            }
+            "active"
+        }
+        "ship" => {
+            if status != "active" {
+                return Err(format!(
+                    "`{name}` is {status} — a milestone must be cut before it can ship"
+                ));
+            }
+            // THE PRECONDITION THIS PATH CANNOT SKIP.
+            //
+            // In the Ship tab the ship button is gated by `shipVerdict` over the
+            // exit-criteria registry, which is derived CLIENT-SIDE from live
+            // runtime signals (this week's error counts, which connector
+            // credentials are bound). None of that is reachable here, and
+            // reimplementing it would give the app two derivations that drift.
+            //
+            // So this path enforces the subset the database can answer with
+            // certainty, and refuses on it. `objective` is the one that matters
+            // most: a milestone with no goal bound to it had nothing to be for,
+            // and under autonomous mode there is no human in the loop to notice.
+            let bound_goals: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_milestone_items
+                      WHERE milestone_id = ?1 AND item_kind = 'goal'",
+                    params![milestone_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            if bound_goals == 0 {
+                return Err(format!(
+                    "`{name}` has no goal bound to it, so its `objective` exit criterion is \
+                     unmet. Bind one with `set_ship_scope` (item_kind: goal) before shipping."
+                ));
+            }
+            "shipped"
+        }
+        other => {
+            return Err(format!(
+                "`transition` was `{other}` — use `cut` or `ship`"
+            ))
+        }
+    };
+    Ok((target, name))
+}
+
+/// Advance a milestone's lifecycle. Two transitions, named by intent rather
+/// than by target status, because "cut" and "ship" are what they mean to the
+/// operator and `active` is not a word anyone says out loud.
+pub(crate) fn execute_ship_milestone_lifecycle(
+    state: &State<'_, Arc<AppState>>,
+    params_json: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let milestone_id = params_json
+        .get("milestone_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            AppError::Validation("ship_milestone_lifecycle: `milestone_id` is required".into())
+        })?;
+    let transition = params_json
+        .get("transition")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or("");
+
+    let (target, name) = ship_lifecycle_target(&state.db, milestone_id, transition)
+        .map_err(|reason| AppError::Validation(format!("ship_milestone_lifecycle: {reason}")))?;
+
+    repo::update_milestone(&state.db, milestone_id, None, None, Some(target), None, None)?;
+    tracing::info!(milestone_id = %milestone_id, transition, "companion: ship milestone lifecycle");
+
+    Ok(ExecuteResult::message(if target == "active" {
+        format!(
+            "Cut `{name}` — its scope is frozen now, and anything that joins from here is \
+             recorded as scope creep."
+        )
+    } else {
+        format!(
+            "Shipped `{name}`. Its `objective` criterion was verified here; the context-health \
+             and sensor criteria are live readings this path cannot see, so they were NOT \
+             machine-checked."
+        )
+    }))
+}
+
 #[cfg(test)]
 mod ship_milestone_tests {
     use super::*;
@@ -601,5 +948,208 @@ mod ship_milestone_tests {
         assert_eq!(SHIP_MILESTONE_MAX_ROWS, FLEET_PLAN_MAX_ROWS);
         assert_eq!(SHIP_MILESTONE_NAME_MAX, FLEET_PLAN_INTENT_MAX);
         assert_eq!(SHIP_MILESTONE_GOAL_MAX, FLEET_PLAN_OBJECTIVE_MAX);
+    }
+}
+
+// ── set_ship_scope / ship_milestone_lifecycle ─────────────────────────────
+//
+// These cover the two guards that actually protect something: an id Athena
+// invented never reaches the database, and a milestone with nothing to have
+// been for never reaches `shipped` on the autonomous path.
+
+#[cfg(test)]
+mod ship_scope_tests {
+    use super::*;
+    use r2d2::Pool;
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    /// Same shape as `pool_with_fixture` above plus a real milestone, so the
+    /// scope path has something to edit. A second project exists to prove the
+    /// cross-project guard is a guard and not a coincidence.
+    fn pool_with_milestone() -> crate::db::DbPool {
+        let manager = SqliteConnectionManager::memory();
+        let pool = Pool::builder().max_size(1).build(manager).expect("pool");
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE dev_projects (id TEXT PRIMARY KEY, name TEXT NOT NULL);
+             CREATE TABLE dev_use_cases (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+                name TEXT NOT NULL);
+             CREATE TABLE dev_goals (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+                title TEXT NOT NULL);
+             CREATE TABLE dev_milestones (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+                name TEXT NOT NULL, goal TEXT,
+                status TEXT NOT NULL DEFAULT 'planned'
+                    CHECK(status IN ('planned','active','shipped')),
+                order_index INTEGER NOT NULL DEFAULT 0, target_date TEXT,
+                cut_at TEXT, shipped_at TEXT,
+                created_at TEXT NOT NULL DEFAULT '2026-08-20',
+                updated_at TEXT NOT NULL DEFAULT '2026-08-20');
+             CREATE TABLE dev_milestone_items (milestone_id TEXT NOT NULL,
+                item_kind TEXT NOT NULL CHECK(item_kind IN ('use_case','goal')),
+                item_id TEXT NOT NULL,
+                bucket TEXT NOT NULL DEFAULT 'core'
+                    CHECK(bucket IN ('core','later','never')),
+                added_after_cut INTEGER NOT NULL DEFAULT 0,
+                order_index INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT '2026-08-20',
+                description TEXT, rating INTEGER,
+                PRIMARY KEY (milestone_id, item_kind, item_id));
+
+             INSERT INTO dev_projects VALUES ('proj_1','Personas'), ('proj_2','Other');
+             INSERT INTO dev_use_cases VALUES
+               ('uc_1','proj_1','Ship tab'), ('uc_2','proj_1','Vault catalog'),
+               ('uc_foreign','proj_2','Someone else''s feature');
+             INSERT INTO dev_goals VALUES ('goal_1','proj_1','Cut the first milestone');
+             INSERT INTO dev_milestones (id, project_id, name, status)
+               VALUES ('ms_1','proj_1','M1',  'planned'),
+                      ('ms_cut','proj_1','M2','active'),
+                      ('ms_done','proj_1','M0','shipped');
+             INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket)
+               VALUES ('ms_1','use_case','uc_1','core'),
+                      ('ms_1','use_case','uc_ghost','core');",
+        )
+        .unwrap();
+        pool
+    }
+
+    fn edit(kind: &str, id: &str, bucket: Option<&str>) -> serde_json::Value {
+        match bucket {
+            Some(b) => serde_json::json!({"item_kind": kind, "item_id": id, "bucket": b}),
+            None => serde_json::json!({"item_kind": kind, "item_id": id}),
+        }
+    }
+
+    #[test]
+    fn places_and_removes_in_one_validated_batch() {
+        let pool = pool_with_milestone();
+        let (ms, edits) = validate_ship_scope(
+            &pool,
+            "ms_1",
+            &[
+                edit("use_case", "uc_2", Some("core")),
+                edit("goal", "goal_1", Some("core")),
+                edit("use_case", "uc_1", Some("later")),
+                // An omitted bucket means "drop it" — the ghost row the read op
+                // reports as a deleted use case is cleaned up this way.
+                edit("use_case", "uc_ghost", None),
+            ],
+        )
+        .expect("validates");
+        assert_eq!(ms, "ms_1");
+        assert_eq!(edits.len(), 4);
+        assert_eq!(edits[2].bucket.as_deref(), Some("later"));
+        assert_eq!(edits[3].bucket, None, "no bucket = removal");
+    }
+
+    #[test]
+    fn refuses_an_id_that_belongs_to_another_project() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_scope(&pool, "ms_1", &[edit("use_case", "uc_foreign", Some("core"))])
+            .expect_err("cross-project add must be refused");
+        assert!(err.contains("uc_foreign"), "the reason names the id: {err}");
+    }
+
+    #[test]
+    fn refuses_an_invented_id_rather_than_writing_a_dangling_row() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_scope(&pool, "ms_1", &[edit("goal", "goal_that_never_was", Some("core"))])
+            .expect_err("invented id must be refused");
+        assert!(err.contains("never invent one"), "{err}");
+    }
+
+    #[test]
+    fn refuses_removing_something_that_is_not_in_the_milestone() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_scope(&pool, "ms_1", &[edit("use_case", "uc_2", None)])
+            .expect_err("removing a non-member must be refused");
+        assert!(err.contains("nothing to remove"), "{err}");
+    }
+
+    #[test]
+    fn refuses_the_same_member_twice_in_one_card() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_scope(
+            &pool,
+            "ms_1",
+            &[edit("use_case", "uc_1", Some("core")), edit("use_case", "uc_1", Some("never"))],
+        )
+        .expect_err("a self-contradicting card must be refused");
+        assert!(err.contains("twice"), "{err}");
+    }
+
+    #[test]
+    fn refuses_a_kpi_as_a_scope_member() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_scope(&pool, "ms_1", &[edit("kpi", "k_1", Some("core"))])
+            .expect_err("a KPI is the layer ABOVE a milestone, never a member");
+        assert!(err.contains("use cases and goals only"), "{err}");
+    }
+
+    #[test]
+    fn refuses_an_unknown_milestone_and_an_empty_batch() {
+        let pool = pool_with_milestone();
+        assert!(validate_ship_scope(&pool, "ms_nope", &[edit("use_case", "uc_1", Some("core"))])
+            .expect_err("unknown milestone")
+            .contains("describe_ship_milestone"));
+        assert!(validate_ship_scope(&pool, "ms_1", &[]).is_err(), "empty batch");
+    }
+
+    #[test]
+    fn caps_the_batch_at_the_shared_reviewability_ceiling() {
+        let pool = pool_with_milestone();
+        let many: Vec<_> = (0..SHIP_SCOPE_MAX_ROWS + 1)
+            .map(|i| edit("use_case", &format!("uc_{i}"), Some("core")))
+            .collect();
+        assert!(validate_ship_scope(&pool, "ms_1", &many).is_err());
+        assert_eq!(SHIP_SCOPE_MAX_ROWS, FLEET_PLAN_MAX_ROWS, "borrowed, not copied");
+    }
+
+    // ── lifecycle preconditions ───────────────────────────────────────────
+
+    #[test]
+    fn a_planned_milestone_cuts_and_an_already_cut_one_refuses() {
+        let pool = pool_with_milestone();
+        assert_eq!(ship_lifecycle_target(&pool, "ms_1", "cut").unwrap().0, "active");
+        assert!(ship_lifecycle_target(&pool, "ms_cut", "cut")
+            .expect_err("already cut")
+            .contains("already active"));
+    }
+
+    #[test]
+    fn shipping_refuses_a_milestone_that_was_never_cut() {
+        let pool = pool_with_milestone();
+        assert!(ship_lifecycle_target(&pool, "ms_1", "ship")
+            .expect_err("never cut")
+            .contains("must be cut"));
+    }
+
+    /// The guard that earns its keep: under autonomous mode nothing waits on a
+    /// click, so a cut with no objective bound to it must be refused HERE.
+    #[test]
+    fn shipping_refuses_a_cut_with_no_goal_bound_to_it() {
+        let pool = pool_with_milestone();
+        let err = ship_lifecycle_target(&pool, "ms_cut", "ship")
+            .expect_err("no objective bound");
+        assert!(err.contains("objective"), "{err}");
+        assert!(err.contains("set_ship_scope"), "names the fix: {err}");
+
+        // Bind one, and the same call now passes.
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket)
+                 VALUES ('ms_cut','goal','goal_1','core')",
+                [],
+            )
+            .unwrap();
+        assert_eq!(ship_lifecycle_target(&pool, "ms_cut", "ship").unwrap().0, "shipped");
+    }
+
+    #[test]
+    fn refuses_a_transition_it_does_not_have_a_verb_for() {
+        let pool = pool_with_milestone();
+        assert!(ship_lifecycle_target(&pool, "ms_1", "unship")
+            .expect_err("unknown transition")
+            .contains("use `cut` or `ship`"));
     }
 }
