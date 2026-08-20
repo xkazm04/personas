@@ -166,7 +166,13 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
         topWorldY={topY - 10}
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
-        onShipOpen={mode === 'edit' ? () => onShipOpen(island.slug) : undefined}
+        // Clickable in EVERY mode (was edit-only until 2026-08-20). The chip is
+        // a deep link, not an editing affordance: gating it on edit mode meant
+        // the one control that answers "where is this project's delivery at"
+        // went inert the moment you picked up the connect or note tool, for no
+        // reason a user could infer. It stops its own pointer events, so the
+        // ~300x20px strip it occupies is all any other tool loses.
+        onShipOpen={() => onShipOpen(island.slug)}
       />
       {!far && <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />}
       {/* Badges are the per-state fleet/persona readout — which is exactly what

@@ -38,7 +38,7 @@ const island = (over: Partial<Island> = {}): Island => ({
   monitorErrors: 3,
   stateSource: 'errors',
   stats: [],
-  ship: { next: 'MVP', shipped: 1, total: 4, late: false },
+  ship: { next: 'MVP', nextStatus: 'active' as const, shipped: 1, total: 4, targetDate: null, forecastDate: null, late: false },
   ...over,
 });
 
@@ -144,7 +144,7 @@ describe('payload builders', () => {
       attention: true,
       monitorErrors: 3,
       personasRunning: ['Dev Clone'],
-      ship: { next: 'MVP', shipped: 1, total: 4, late: false },
+      ship: { next: 'MVP', nextStatus: 'active' as const, shipped: 1, total: 4, targetDate: null, forecastDate: null, late: false },
     });
     expect(p.fleet).toEqual([{ id: 'f1', label: 'dev', state: 'running' }]);
     expect(p.dims).toHaveLength(1);

@@ -70,8 +70,17 @@ export interface DimNode {
 export interface IslandShip {
   /** Next milestone name (active before planned); null once everything shipped. */
   next: string | null;
+  /** Whether that next milestone has been CUT (`active`) or is still `planned`.
+   *  The status bar says which, because "cut" and "planned" are different kinds
+   *  of open: a cut milestone has a frozen scope you are executing against. */
+  nextStatus: 'active' | 'planned' | null;
   shipped: number;
   total: number;
+  /** The next milestone's own target date (`YYYY-MM-DD`), when one is set. */
+  targetDate: string | null;
+  /** Cycle-time forecast for it, derived from this project's own cut-to-ship
+   *  history. Null below the evidence bar — see shipVelocity. */
+  forecastDate: string | null;
   /** Velocity forecast says the next milestone lands past its target date. */
   late: boolean;
 }

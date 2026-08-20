@@ -113,7 +113,18 @@ function toProject(island: Island, kpi: KpiRollup | undefined): ScenePayloadProj
     goalsOngoing: dimDays(island, 'goals'),
     kpiTotal: kpi ? kpi.total : null,
     kpiOff: kpi ? kpi.off : null,
-    ship: island.ship ?? null,
+    // Projected FIELD BY FIELD, not spread. `IslandShip` grew target/forecast
+    // dates for the canvas status bar; this payload is deserialized by the Rust
+    // canvas reader (what `describe_canvas_project` answers from), so its shape
+    // is a cross-language contract and must change only deliberately.
+    ship: island.ship
+      ? {
+        next: island.ship.next,
+        shipped: island.ship.shipped,
+        total: island.ship.total,
+        late: island.ship.late,
+      }
+      : null,
     dims: island.nodes.map((n) => ({
       key: n.key,
       label: n.label,
