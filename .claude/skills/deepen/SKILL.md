@@ -1,8 +1,8 @@
 ---
 name: deepen
-version: 0.1
-description: Review and widen an EXISTING topic in an ai-registry knowledge bundle via deep web research + training data. Scans the domain for the top-5 undercooked subjects, lets the user pick one, researches it in dynamic lanes (with optional benchmarks), then triages findings into gate-clean bundle edits. Cross-session memory in the Obsidian vault + the bundle's own log.md.
-argument-hint: "[domain] [--topic <subject>] [--registry <path>]"
+version: 0.2
+description: Review and widen EXISTING topics in an ai-registry knowledge bundle via deep web research + training data. Scans the domain for the top-5 undercooked subjects; interactive mode deepens one user-picked topic through finding-level triage, batch mode processes all top candidates with parallel full-pipeline workers under Director diff-review. Optional benchmarks. Cross-session memory in the Obsidian vault + the bundle's own log.md.
+argument-hint: "[domain] [--topic <subject>] [--batch] [--registry <path>]"
 category: Knowledge
 memory: vault
 ---
@@ -92,21 +92,56 @@ label; description = the gap thesis in one or two sentences + the deterministic 
 (e.g. "1 application, no benchmarks behind its numbers, provider landscape moved since
 forge"). The user may always answer Other with a subject you didn't shortlist.
 
+## Batch mode (`--batch`) — all top candidates, Director-reviewed
+
+Validated 2026-08-20 (round 2: three subjects in parallel matched round 1's
+single-subject quality at ~3× the volume per token). When the operator asks for
+volume — `--batch`, or "process all the candidates" — replace Phases 3-5's
+per-finding user triage with this shape:
+
+1. One **full-pipeline worker per top candidate** (research + apply in one agent),
+   run in parallel, ≤10 concurrent. Each worker's brief carries: the gap thesis, the
+   three mandatory lanes (landscape/current-practice · **counter-evidence,
+   non-optional** · training-data-only), the full gate contract, and these hard
+   rules — **read every current file of the subject before correcting** (files may
+   already be hedged; the research summary is not the file), **edit only inside your
+   own subject folder** (cross-subject findings return as PROPOSALS), **at most one
+   new technique and only on lane convergence**, one dated application, **never touch
+   shared files** (log.md, index.json, catalog.json), **never commit**.
+2. **The Director reviews actual diffs, not worker self-reports** — purity spot-grep
+   over upper layers, a read of every new technique, correction diffs checked against
+   the file's prior voice. Weak edits are fixed or reverted before commit. This
+   review is the quality gate that replaces the user's finding triage; it is not
+   optional and not delegable.
+3. Commit per subject; the Director consolidates log-block drafts into `log.md`,
+   regenerates index + catalog, banks cross-subject proposals as vault leads, and
+   presents the operator one per-subject outcome summary (what changed, what the
+   counter-evidence lane confirmed unchanged, what was reverted in review).
+
+Interactive single-topic mode remains the default for precision runs and for
+domains where the operator wants finding-level control.
+
 ## Phase 3 — Research (dynamic lanes)
 
 From the chosen subject's gap thesis, derive **3-6 research lanes**. The recurring lane
 shapes (pick what fits, invent freely):
 
+- **counter-evidence** (NON-OPTIONAL — the highest-value lane per token in every run
+  so far) — actively try to REFUTE the subject's strongest current claims; a stale
+  confident claim is worse than a gap, and a claim *verified against standards and
+  left untouched* is an equally real result. **Read the current file text before
+  drafting any correction** — golden paths often hedge better than techniques, and a
+  correction against the research summary instead of the file produces phantom fixes.
 - **landscape** — providers / tools / models the subject's applications don't cover yet
   (e.g. image generation: more providers, models per use-case and artstyle)
 - **specifics** — per-case knowledge the subject states generically (prompts per
   artstyle, settings per scenario, model-recognition pairings and comparisons)
-- **counter-evidence** — actively try to REFUTE the subject's strongest current claims;
-  a stale confident claim is worse than a gap
 - **current-practice** — what changed in the field since the forge (releases, deprecations,
   new standards); training-data date limits stated honestly
 - **training-data-only** — one lane with NO web: what the expert draft would add today,
-  free of search-result gravity
+  free of search-result gravity. Its highest value is as a **convergence instrument**:
+  a claim reached independently by this lane and a web lane earns technique-level
+  placement; a claim from one lane alone stays application-level or waits
 - **benchmark-design** — where a claim is measurable, design the smallest test that
   would settle it (executed in Phase 4)
 
@@ -138,6 +173,11 @@ size: S | M | L
 
 ## Phase 4 — Validation (only where it earns its cost)
 
+**Prefer fixtures with known ground truth over fresh generations** — an existing
+graded artifact set (e.g. a style-lock experiment triple with measured outcomes)
+makes a ten-call probe genuinely informative at zero generation cost, and lets the
+probe test the *judging protocol* against a known answer instead of judging
+judgments. Run a large probe as ONE agent executing N calls, not N agents.
 Findings whose value hinges on a measurable claim get a benchmark **when a local
 harness exists** — e.g. image generation probes (the media bundle's own trial-matrix /
 model-fit-probe techniques describe the method; gravitone's `pipeline/*.mts` is a
