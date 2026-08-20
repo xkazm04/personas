@@ -43,6 +43,12 @@ pub const MAX_MEMORIES: usize = 500;
 /// Callers that need an "empty name" distinct from a length error (e.g. to
 /// reject a blank raw name before applying a suffix) should keep their own
 /// `require_non_empty` on the raw value in addition to this call.
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn validate_persona_import_fields(
     name: &str,
     system_prompt: &str,

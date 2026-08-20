@@ -5990,7 +5990,7 @@ pub fn get_tech_radar(pool: &DbPool) -> Result<Vec<TechRadarEntry>, AppError> {
             })
             .collect();
 
-        entries.sort_by(|a, b| b.project_count.cmp(&a.project_count));
+        entries.sort_by_key(|e| std::cmp::Reverse(e.project_count));
         Ok(entries)
     })
 }

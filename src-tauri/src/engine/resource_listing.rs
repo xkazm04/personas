@@ -555,7 +555,7 @@ fn extract_items(root: &serde_json::Value, items_path: &str) -> Vec<serde_json::
 }
 
 /// Dotted-path getter.  Does not support array indexing or wildcards.
-fn jsonpath_get<'a>(root: &'a serde_json::Value, path: &str) -> Option<serde_json::Value> {
+fn jsonpath_get(root: &serde_json::Value, path: &str) -> Option<serde_json::Value> {
     let mut cur = root;
     for seg in path.split('.').filter(|s| !s.is_empty()) {
         cur = cur.get(seg)?;

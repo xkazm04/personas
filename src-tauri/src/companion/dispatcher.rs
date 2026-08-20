@@ -571,10 +571,10 @@ const COMPOSE_MAX_STEPS: usize = 6;
 ///
 /// We accept two formats:
 ///   - One JSON object per line, prefixed with `OP:` for readability:
-///       `OP: {"op": "propose_action", ...}`
+///     `OP: {"op": "propose_action", ...}`
 ///   - Bare lines that start with `{"op":` are also accepted.
-/// Both forms get stripped from the cleaned text. Markdown code fences
-/// containing JSON are not parsed (those are display-only).
+///     Both forms get stripped from the cleaned text. Markdown code fences
+///     containing JSON are not parsed (those are display-only).
 pub fn dispatch(
     pool: &UserDbPool,
     session_id: &str,

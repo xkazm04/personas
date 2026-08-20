@@ -125,8 +125,8 @@ pub fn ensure_vec_table(_pool: &UserDbPool) -> Result<(), AppError> {
 
 /// Embed `text` and write to `companion_embedding`. Best-effort — caller
 /// can choose to swallow errors so embedding failure doesn't fail the
-/// surrounding write (e.g., we still want the episode persisted to disk
-/// + companion_node even if embedding fails).
+/// surrounding write (e.g., we still want the episode persisted to disk +
+/// companion_node even if embedding fails).
 #[cfg(feature = "ml")]
 pub async fn embed_and_store(
     pool: &UserDbPool,

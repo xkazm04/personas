@@ -150,7 +150,10 @@ pub fn allocate_attention_budget(
     total_usd: f64,
     roster: &[(String, Option<i64>)],
 ) -> HashMap<String, f64> {
-    if roster.is_empty() || !(total_usd > 0.0) {
+    // NaN must take the empty-map branch, so it is tested explicitly rather
+    // than relying on a negated `>` (which clippy rejects, and which reads as if
+    // NaN had been overlooked).
+    if roster.is_empty() || total_usd.is_nan() || total_usd <= 0.0 {
         return HashMap::new();
     }
     let weight = |score: &Option<i64>| -> f64 {

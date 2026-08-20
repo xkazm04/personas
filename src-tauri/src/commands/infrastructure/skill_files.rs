@@ -275,7 +275,7 @@ pub(crate) fn is_system_skill(name: &str) -> bool {
 ///      global copy of passport-onboard).
 ///   3. The user-global library — last resort so a hand-installed copy still
 ///      works.
-/// Returns the first candidate that actually contains files.
+///      Returns the first candidate that actually contains files.
 fn system_skills_dir(app: &AppHandle) -> Option<PathBuf> {
     // 1. Bundled resource dir — the packaged installer (and dev, when the sync
     //    script has populated `src-tauri/resources/skills`).

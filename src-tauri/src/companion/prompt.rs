@@ -153,6 +153,12 @@ pub type EmbedderArg<'a> = Option<&'a ()>;
 ///
 /// Returns the composed prompt, the recall preview the panel renders, and
 /// the per-block size breakdown the caller hands to the turn ledger.
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub async fn build_system_prompt(
     user_db: &UserDbPool,
     sys_db: &DbPool,
@@ -1780,6 +1786,12 @@ impl PromptBlockSizes {
     }
 }
 
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 fn compose(
     constitution: &str,
     identity: &str,

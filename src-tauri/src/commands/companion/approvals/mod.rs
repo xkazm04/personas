@@ -83,9 +83,9 @@ pub enum ClientAction {
     ///   - `Some("one_shot")` → autonomous build; the frontend opens
     ///     a read-only Glyph view and waits for the terminal
     ///     notification rather than driving the questionnaire.
-    /// `companion_session_id` links the build back to the chat that
-    /// originated it so the BuildWatcher job can post the result message
-    /// into that chat's episode log on terminal phase.
+    ///     `companion_session_id` links the build back to the chat that
+    ///     originated it so the BuildWatcher job can post the result message
+    ///     into that chat's episode log on terminal phase.
     // Field-level casing has to be declared per variant: the enum-level
     // `rename_all` above renames the VARIANTS (the `type` tag), not their
     // fields, so without this `auto_launch` / `companion_session_id` went over

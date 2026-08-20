@@ -233,7 +233,7 @@ fn walk(
     // After populating, sort each folder's notes by mtime descending so the
     // "max files" cap surfaces the freshest material.
     for notes in out.values_mut() {
-        notes.sort_by(|a, b| b.mtime_secs.cmp(&a.mtime_secs));
+        notes.sort_by_key(|n| std::cmp::Reverse(n.mtime_secs));
     }
 
     Ok(())

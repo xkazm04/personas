@@ -884,7 +884,6 @@ impl ReactiveSubscription for DeliberationSubscription {
             return;
         };
         let user_db = state.user_db.clone();
-        drop(state);
 
         // Reap finished background actions first (post output + resume to 'open'
         // so the next advance discusses the result — the recovery path).

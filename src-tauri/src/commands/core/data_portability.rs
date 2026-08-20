@@ -7255,6 +7255,13 @@ fn import_dev_project_graph(
 /// ids through `map`. Ordered FK-safe (groups → contexts → use cases → KPIs →
 /// goals → …); every row failure degrades to a warning.
 #[allow(clippy::too_many_lines)]
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 fn insert_project_children(
     tx: &rusqlite::Transaction<'_>,
     p: &DevProjectExport,

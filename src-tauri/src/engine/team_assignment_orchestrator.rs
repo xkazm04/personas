@@ -1541,12 +1541,12 @@ fn build_step_input(
 ///   `llm_eval` is always available (subscription path).
 /// - On success, persists the match to the step (assigned_persona_id +
 ///   use_case_id + match_confidence + match_rationale + step_matched event).
-/// Resolve a pre-bound persona's capability when the step left it unscoped.
-/// Returns the persona's sole enabled use-case id, or — for a multi-capability
-/// persona on an implement-shaped step — the implementation capability. `None`
-/// when the persona has no enabled capabilities or the choice is ambiguous
-/// (multiple capabilities, not implement-shaped) — the caller leaves it NULL
-/// and the runner's sonnet floor still applies.
+///   Resolve a pre-bound persona's capability when the step left it unscoped.
+///   Returns the persona's sole enabled use-case id, or — for a multi-capability
+///   persona on an implement-shaped step — the implementation capability. `None`
+///   when the persona has no enabled capabilities or the choice is ambiguous
+///   (multiple capabilities, not implement-shaped) — the caller leaves it NULL
+///   and the runner's sonnet floor still applies.
 fn scope_sole_or_impl_use_case(persona: &Persona, step_title: &str) -> Option<String> {
     let dc: serde_json::Value =
         serde_json::from_str(persona.design_context.as_deref().unwrap_or("")).ok()?;

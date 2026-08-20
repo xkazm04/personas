@@ -350,8 +350,7 @@ async fn run_retrospective(
     outcome_repo::set_retro(pool, assignment_id, Some(&delib.id), None)?;
 
     // Agenda: each failed/reviewed step (capped) + the standing improvement item.
-    let mut problem_steps = 0usize;
-    for s in steps.iter().filter(|s| step_was_reviewed(s)) {
+    for (problem_steps, s) in steps.iter().filter(|s| step_was_reviewed(s)).enumerate() {
         if problem_steps >= RETRO_MAX_AGENDA_STEPS {
             break;
         }
@@ -366,7 +365,6 @@ async fn run_retrospective(
             ),
         };
         let _ = delib_repo::add_agenda_item(pool, &delib.id, &label, Some("moderator"));
-        problem_steps += 1;
     }
     let _ = delib_repo::add_agenda_item(
         pool,

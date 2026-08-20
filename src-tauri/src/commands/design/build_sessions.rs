@@ -2286,10 +2286,7 @@ fn create_event_subscriptions_in_tx(
     // signals). Accept both "subscribe" (legacy v1/v2) and "listen" (v3.1) as
     // synonyms — the v3 build prompt emits "listen" explicitly.
     fn is_listen(d: Option<&str>) -> bool {
-        match d.unwrap_or("subscribe") {
-            "subscribe" | "listen" => true,
-            _ => false,
-        }
+        matches!(d.unwrap_or("subscribe"), "subscribe" | "listen")
     }
 
     // Track (event_type, source_filter) pairs we've already inserted so the

@@ -292,7 +292,7 @@ async fn patterns_consult(
         .map(|p| (match_score(&intent, &p.triggers, &p.title), p))
         .filter(|(score, _)| *score > 0)
         .collect();
-    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    scored.sort_by_key(|b| std::cmp::Reverse(b.0));
     let draft_hits: Vec<Value> = playbooks
         .iter()
         .filter(|p| p.status == "draft" && match_score(&intent, &p.triggers, &p.title) > 0)

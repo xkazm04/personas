@@ -477,7 +477,7 @@ pub fn validate_answers(
 
         if answered {
             if let Some(allowed) = q.closed_option_set() {
-                if !allowed.iter().any(|opt| *opt == answer) {
+                if !allowed.contains(&answer) {
                     violations.push(AnswerViolation {
                         question_id: q.id.clone(),
                         question: q.question.clone(),

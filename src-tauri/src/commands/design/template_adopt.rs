@@ -504,7 +504,7 @@ pub fn instant_adopt_template_inner(
         .unwrap_or_default();
     let mapped_use_cases: Vec<serde_json::Value> = raw_use_cases
         .iter()
-        .map(|uc| map_template_use_case_to_design_use_case(uc))
+        .map(map_template_use_case_to_design_use_case)
         .collect();
     let design_context_summary = design
         .get("summary")

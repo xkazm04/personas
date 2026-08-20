@@ -4,7 +4,7 @@
 //! Generic shape: `(kind, id?)` dispatches to the right backing store.
 //! - episode      → `companion_node` rows + on-disk markdown body
 //! - doctrine     → `companion_node` rows + on-disk source doc, re-extract
-//!                  the matching H2 section by anchor
+//!   the matching H2 section by anchor
 //! - identity     → `~/.personas/companion-brain/identity.md`
 //! - constitution → `~/.personas/companion-brain/constitution.md`
 //!
@@ -477,7 +477,6 @@ fn get_doctrine(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetai
     // content, not just the 500-char excerpt.
     let (rel_path, anchor) = file_path
         .split_once('#')
-        .map(|(p, a)| (p, a))
         .unwrap_or((file_path.as_str(), "intro"));
 
     let docs_root = doctrine::find_docs_root();

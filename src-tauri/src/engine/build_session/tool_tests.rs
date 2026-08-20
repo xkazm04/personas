@@ -317,10 +317,7 @@ pub async fn run_tool_tests(
         // matches the user-visible name) but fall back to direct
         // service_type credential lookup when the connector isn't in the
         // catalog yet.
-        let connectors = match crate::db::repos::resources::connectors::get_all(pool) {
-            Ok(c) => c,
-            Err(_) => Vec::new(),
-        };
+        let connectors = crate::db::repos::resources::connectors::get_all(pool).unwrap_or_default();
         let conn_def = connectors
             .iter()
             .find(|c| c.name.eq_ignore_ascii_case(name));

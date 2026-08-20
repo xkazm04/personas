@@ -12,16 +12,16 @@
 //! episodes) that classifies every message:
 //!
 //!   - **done**      — routine, no decision content: marked read, with an
-//!                     `athena_triage` audit annotation in the message's
-//!                     metadata so "why is this read?" is answerable.
+//!     `athena_triage` audit annotation in the message's
+//!     metadata so "why is this read?" is answerable.
 //!   - **digest**    — business value worth knowing but not worth a full
-//!                     read: its essence is folded into one aggregated
-//!                     `message_digest` proactive card, then marked read
-//!                     (same audit annotation).
+//!     read: its essence is folded into one aggregated
+//!     `message_digest` proactive card, then marked read
+//!     (same audit annotation).
 //!   - **attention** — the user should read this personally (decisions,
-//!                     questions, money/security/credentials): stays
-//!                     UNREAD, is listed on the card, and fires a desktop
-//!                     notification (quiet-hours guarded).
+//!     questions, money/security/credentials): stays
+//!     UNREAD, is listed on the card, and fires a desktop
+//!     notification (quiet-hours guarded).
 //!
 //! Safety floor in code, not just prompt: messages with high/urgent/
 //! critical priority are forced to `attention` regardless of the model's

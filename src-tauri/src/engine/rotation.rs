@@ -102,11 +102,11 @@ const DEVELOPMENT_TOLERANCE: f64 = 0.50;
 // HTTP-status extraction) live in `personas_core::healthcheck_ledger` —
 // `db::repos::resources::credentials` appends entries while persisting the
 // credential ledger, and cannot depend on the rotation engine above it.
-// Re-exported so `engine::rotation::{ErrorClass, append_healthcheck_entry}`
-// keep resolving.
-pub use personas_core::healthcheck_ledger::{
-    append_healthcheck_entry, ErrorClass, HEALTHCHECK_RING_BUFFER_SIZE,
-};
+// Re-exported so `engine::rotation::append_healthcheck_entry` keeps resolving.
+// `ErrorClass` and `HEALTHCHECK_RING_BUFFER_SIZE` were re-exported here too
+// until 2026-08-20; nothing outside `personas_core` names them, so the
+// re-export was dead and is gone.
+pub use personas_core::healthcheck_ledger::append_healthcheck_entry;
 
 // ---------------------------------------------------------------------------
 // Healthcheck ring buffer entry

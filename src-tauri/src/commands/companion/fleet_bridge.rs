@@ -216,12 +216,12 @@ impl FleetSituation {
     }
 }
 
-/// Active fleet orchestration (autonomous mode only): when a session enters
-/// `AwaitingInput` — it finished its turn / is paused waiting for the next
-/// instruction — wake Athena with the live fleet digest so she decides the
-/// next step. She either proposes a `fleet_send_input` (auto-applied via the
-/// autonomous allowlist) or surfaces a decision to the user via the orb. Thin
-/// wrapper over [`orchestrate_session`]; see there for the shared machinery.
+// Active fleet orchestration (autonomous mode only): when a session enters
+// `AwaitingInput` — it finished its turn / is paused waiting for the next
+// instruction — wake Athena with the live fleet digest so she decides the
+// next step. She either proposes a `fleet_send_input` (auto-applied via the
+// autonomous allowlist) or surfaces a decision to the user via the orb. Thin
+// wrapper over `orchestrate_session`; see there for the shared machinery.
 // ---------------------------------------------------------------------------
 // Batched assessment (2026-07-24, the 30x throughput fix).
 //
@@ -287,13 +287,16 @@ static ASSESSMENT_TURN_STARTED_MS: std::sync::atomic::AtomicI64 =
 static NEXT_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 static ACTIVE_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
+/// FIFO of `(generation, session_ids)` for in-flight assessment batches.
+type BatchQueue = std::collections::VecDeque<(u64, Vec<String>)>;
+
 /// FIFO of `(generation, session_ids)` for batches whose turn has been
 /// spawned but not yet finished. Pushed in `drain_assessment_batch`, popped
 /// in `finish_assessment_turn` — never mutated by the wedge-recovery path
 /// (it only peeks), so a poisoned generation's entry stays in place for its
 /// eventual, now-inert, real completion to consume.
-fn batch_queue() -> &'static Mutex<std::collections::VecDeque<(u64, Vec<String>)>> {
-    static Q: OnceLock<Mutex<std::collections::VecDeque<(u64, Vec<String>)>>> = OnceLock::new();
+fn batch_queue() -> &'static Mutex<BatchQueue> {
+    static Q: OnceLock<Mutex<BatchQueue>> = OnceLock::new();
     Q.get_or_init(|| Mutex::new(std::collections::VecDeque::new()))
 }
 
@@ -789,6 +792,13 @@ enum MechanicalCue {
 /// protocol ("FLEET:DONE marks a fully-complete task…") have none, and
 /// template echoes (`FLEET:DONE — <one-line summary>`) are rejected by the
 /// leading `<`.
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
     // Blank vt100 rows and the composer chrome eat most of the raw bottom-15
     // window (probe 3: the recap sat just above it and fell through to a full
@@ -1664,7 +1674,7 @@ pub fn validate_fleet_session_ids(
             .unwrap_or("")
             .trim()
             .to_string();
-        let resolved = if allowed.iter().any(|id| *id == given) {
+        let resolved = if allowed.contains(&given) {
             Some(given.clone())
         } else if given.len() >= 6 {
             allowed.iter().find(|id| id.starts_with(&given)).cloned()

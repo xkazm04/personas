@@ -176,11 +176,11 @@ impl Drop for BuildTurnGuard {
 /// 2. The semantics from Q3 are "stop = next user input"; that's a
 ///    cooperative pause, not a process-kill. A flag the spawned task
 ///    checks before each potentially-blocking step is exactly that.
-/// Monotonic generation counters for autonomous continuation ticks, **keyed by
-/// conversation** (multiconv P1): a user message in thread A must not cancel a
-/// pending tick in thread B. Each scheduled tick captures its conversation's
-/// current value; cancelling advances it. A tick aborts as soon as its
-/// conversation's value no longer matches the one it captured.
+///    Monotonic generation counters for autonomous continuation ticks, **keyed by
+///    conversation** (multiconv P1): a user message in thread A must not cancel a
+///    pending tick in thread B. Each scheduled tick captures its conversation's
+///    current value; cancelling advances it. A tick aborts as soon as its
+///    conversation's value no longer matches the one it captured.
 ///
 /// This replaces a single `AtomicBool` that was *reset* on every new schedule:
 /// a user "stop" set the bool, but if that same turn's reply also emitted
@@ -1655,7 +1655,10 @@ fn schedule_autonomous_tick(
     // can never be revived. Other conversations' ticks are independent.
     let my_gen = autonomy_gen_of(&conversation_id);
     let gen_conversation = conversation_id.clone();
-    let _ = tauri::async_runtime::spawn_blocking(move || {
+    // Detached on purpose: the tick's lifetime is governed by the generation
+    // counter, not by anyone awaiting it. Named so the lint can tell this
+    // apart from a JoinHandle that was dropped by accident.
+    let _detached = tauri::async_runtime::spawn_blocking(move || {
         // Poll the generation while waiting out the delay. A coarse
         // 200ms tick is plenty — the delay itself is 15s; finer polling
         // wouldn't change the user's experience.
@@ -1736,7 +1739,10 @@ pub fn spawn_proactive_turn_in(
     directive: String,
     conversation_id: String,
 ) {
-    let _ = tauri::async_runtime::spawn_blocking(move || {
+    // Detached on purpose: the tick's lifetime is governed by the generation
+    // counter, not by anyone awaiting it. Named so the lint can tell this
+    // apart from a JoinHandle that was dropped by accident.
+    let _detached = tauri::async_runtime::spawn_blocking(move || {
         let rt = match tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -2013,6 +2019,12 @@ quality.\n\n\
 /// resumable session from Athena's main chat — session id `webbuild:<project_id>`,
 /// spawned at the project cwd with a coding system prompt. Streams on
 /// `STREAM_EVENT` keyed by that session id; returns the assistant's summary text.
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_build_turn(
     app: &AppHandle,
     user_db: &UserDbPool,
@@ -2118,6 +2130,12 @@ pub async fn run_build_turn(
     })
 }
 
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 async fn run_cli(
     app: &AppHandle,
     turn_id: &str,
@@ -2273,7 +2291,7 @@ async fn run_cli(
     // build session overrides this to root the turn in its project directory.
     let cwd = cwd_override
         .map(|p| p.to_path_buf())
-        .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(|| std::env::temp_dir()));
+        .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(std::env::temp_dir));
 
     let mut cmd = Command::new(&cmd_program);
     cmd.args(&argv)

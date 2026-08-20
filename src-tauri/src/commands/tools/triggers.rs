@@ -68,7 +68,7 @@ fn validate_chain_cycle(
                 use crate::db::models::ChainConditionType;
                 ctype
                     .parse::<ChainConditionType>()
-                    .map_err(|e| AppError::Validation(e))?;
+                    .map_err(AppError::Validation)?;
             }
         }
     }

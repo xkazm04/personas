@@ -252,7 +252,7 @@ fn trim_lines(lines: &mut Vec<String>, max: usize) {
 ///   - CSI `…J` (erase display) and alt-screen toggles (`…?1049h/l`) clear all.
 ///   - CSI `…K` (erase line) clears the current line (in-place input-box redraws).
 ///   - all other CSI / OSC / `ESC x` sequences are consumed and dropped.
-/// Absolute cursor positioning isn't modeled (no grid) — fine for a glance.
+///     Absolute cursor positioning isn't modeled (no grid) — fine for a glance.
 fn cook_lines(bytes: &[u8], max_lines: usize) -> Vec<String> {
     let text = String::from_utf8_lossy(bytes);
     let mut lines: Vec<String> = Vec::new();

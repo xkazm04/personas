@@ -107,10 +107,8 @@ fn redact_secrets(value: &mut serde_json::Value) {
                 redact_secrets(val);
             }
         }
-        serde_json::Value::String(s) => {
-            if value_looks_secret(s) {
-                *s = "[redacted]".into();
-            }
+        serde_json::Value::String(s) if value_looks_secret(s) => {
+            *s = "[redacted]".into();
         }
         _ => {}
     }

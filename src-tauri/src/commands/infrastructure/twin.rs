@@ -2000,7 +2000,7 @@ pub async fn twin_compile_wiki(
         if line.trim() == "=== END FILE ===" {
             if let Some(name) = current_file.take() {
                 // Sanitize filename — only allow basename, strip path traversal
-                let safe_name = name.replace("..", "_").replace('/', "_").replace('\\', "_");
+                let safe_name = name.replace("..", "_").replace(['/', '\\'], "_");
                 if !safe_name.is_empty() {
                     let path = std::path::Path::new(&output_dir).join(&safe_name);
                     std::fs::write(&path, current_content.trim_start_matches('\n')).map_err(

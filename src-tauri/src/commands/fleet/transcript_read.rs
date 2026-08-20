@@ -225,10 +225,8 @@ impl RollupAcc {
                     }
                 }
             }
-            "user" => {
-                if is_real_user_prompt(message) {
-                    self.user_messages += 1;
-                }
+            "user" if is_real_user_prompt(message) => {
+                self.user_messages += 1;
             }
             _ => {}
         }
@@ -538,7 +536,7 @@ pub fn latest_session_for_cwd(cwd: &str) -> Option<String> {
     let projects = projects_dir()?;
     let target = normalize_cwd(cwd);
     let mut files = collect_transcript_files(&projects);
-    files.sort_by(|a, b| b.0.cmp(&a.0)); // newest first
+    files.sort_by_key(|b| std::cmp::Reverse(b.0)); // newest first
     for (_mtime, path) in files {
         if read_transcript_cwd(&path)
             .map(|c| normalize_cwd(&c))
@@ -575,7 +573,7 @@ pub async fn fleet_recent_transcripts(
         let cutoff = SystemTime::now().checked_sub(Duration::from_secs(within * 86_400));
         let mut files = collect_transcript_files(&projects);
         // Newest first so the cutoff + limit can short-circuit cleanly.
-        files.sort_by(|a, b| b.0.cmp(&a.0));
+        files.sort_by_key(|b| std::cmp::Reverse(b.0));
 
         let mut summaries = Vec::new();
         for (mtime, path) in files {

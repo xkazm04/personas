@@ -301,7 +301,7 @@ fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
             Some((t, p))
         })
         .collect();
-    candidates.sort_by(|a, b| b.0.cmp(&a.0));
+    candidates.sort_by_key(|b| std::cmp::Reverse(b.0));
     candidates.into_iter().map(|(_, p)| p).next()
 }
 

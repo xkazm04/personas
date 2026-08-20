@@ -55,18 +55,16 @@ pub fn parse_plan(notation: &str) -> Result<Vec<Vec<u8>>, String> {
 
     while !rest.is_empty() {
         if let Some(after) = rest.strip_prefix('<') {
-            match after.find('>') {
-                Some(end) => {
-                    // Flush any pending literal run as its own chunk first.
-                    if !literal.is_empty() {
-                        chunks.push(std::mem::take(&mut literal).into_bytes());
-                    }
-                    chunks.push(parse_key(&after[..end])?);
-                    rest = &after[end + 1..];
-                    continue;
+            // No '>' means an unterminated '<', which is a literal '<' — fall
+            // through to the literal path below, matching ptyctl.
+            if let Some(end) = after.find('>') {
+                // Flush any pending literal run as its own chunk first.
+                if !literal.is_empty() {
+                    chunks.push(std::mem::take(&mut literal).into_bytes());
                 }
-                // Unterminated '<' is a literal '<', matching ptyctl.
-                None => {}
+                chunks.push(parse_key(&after[..end])?);
+                rest = &after[end + 1..];
+                continue;
             }
         }
         let ch = rest.chars().next().expect("non-empty");

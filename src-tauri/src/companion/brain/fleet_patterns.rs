@@ -15,11 +15,11 @@
 //!   - Predictable output (counts don't hallucinate; an LLM might).
 //!   - Easy to dismiss in the brain viewer if the user disagrees with
 //!     a pattern's framing.
-//! v2 can layer LLM synthesis on top: pull the role-combo + sample
-//! episodes into a prompt and ask claude for a richer "what worked /
-//! what didn't" narrative. The substrate this module lays down — the
-//! episode index, the role-combo aggregator, the sources list — is
-//! reusable in that v2.
+//!     v2 can layer LLM synthesis on top: pull the role-combo + sample
+//!     episodes into a prompt and ask claude for a richer "what worked /
+//!     what didn't" narrative. The substrate this module lays down — the
+//!     episode index, the role-combo aggregator, the sources list — is
+//!     reusable in that v2.
 //!
 //! ## Inputs
 //!

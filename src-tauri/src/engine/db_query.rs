@@ -423,8 +423,8 @@ fn validate_ddl_only(sql: &str) -> Result<(), AppError> {
     }
 
     // Allow only CREATE TABLE / INDEX / UNIQUE INDEX / VIEW / TRIGGER
-    if upper.starts_with("CREATE ") {
-        let after = upper["CREATE ".len()..].trim_start();
+    if let Some(after_create) = upper.strip_prefix("CREATE ") {
+        let after = after_create.trim_start();
         // Handle optional "IF NOT EXISTS" and similar noise after the object type
         if after.starts_with("TABLE")
             || after.starts_with("INDEX")

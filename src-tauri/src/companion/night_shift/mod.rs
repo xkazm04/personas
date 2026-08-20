@@ -314,7 +314,7 @@ pub fn next_local_hour_utc(hour: u32) -> String {
     let now = Local::now();
     let mut day = now.date_naive();
     if now.hour() >= hour {
-        day = day + ChronoDuration::days(1);
+        day += ChronoDuration::days(1);
     }
     let naive = day
         .and_hms_opt(hour, 0, 0)

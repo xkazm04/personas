@@ -111,6 +111,12 @@ pub struct CompetitionSlotInput {
 /// before spawning the slots; preserves any other user-authored keys. NULL
 /// leaves settings.json untouched and Claude Code uses its built-in default.
 #[tauri::command]
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_start_competition(
     state: State<'_, Arc<AppState>>,
     project_id: String,

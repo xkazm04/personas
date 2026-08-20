@@ -512,7 +512,7 @@ pub fn describe_knowledge(db: &DbPool, query: &str) -> String {
             }
         }
         let mut adopted_by_area: Vec<(String, i64)> = area_counts.into_iter().collect();
-        adopted_by_area.sort_by(|a, b| b.1.cmp(&a.1));
+        adopted_by_area.sort_by_key(|b| std::cmp::Reverse(b.1));
 
         let playbooks =
             crate::db::repos::dev_workspaces::list_playbooks(db, &ws.id).unwrap_or_default();

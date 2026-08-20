@@ -226,7 +226,7 @@ pub fn get_dev_op(pool: &crate::db::UserDbPool, op_id: &str) -> Option<DevOpMeta
         "SELECT request, backend, workspace, branch, fleet_session_id
          FROM companion_dev_op WHERE op_id = ?1",
         rusqlite::params![op_id],
-        |row| row_to_meta(row),
+        row_to_meta,
     )
     .ok()
 }

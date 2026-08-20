@@ -57,11 +57,16 @@ pub const TTS_REMOTE_TIMEOUT: Duration = Duration::from_secs(30);
 /// Identifier for which engine should fulfill a TTS request. Serializes as
 /// a snake_case string — matches the wire format the frontend already uses
 /// for every other token-based identifier in the app.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum TtsEngineId {
     /// Local Kokoro TTS via the sherpa-onnx sidecar (primary engine).
     /// Requires the engine binary + the (shared) Kokoro model package.
+    ///
+    /// The default since the 2026-07-10 descope of ElevenLabs/Piper: callers
+    /// that do not pass `engine` (legacy persisted state) get the curated
+    /// local voices.
+    #[default]
     Kokoro,
     /// Local Pocket TTS (kyutai) — experimental. The only engine with
     /// zero-shot voice cloning; packaged sherpa-onnx sidecar or optional
@@ -75,15 +80,6 @@ impl TtsEngineId {
             TtsEngineId::Kokoro => "kokoro",
             TtsEngineId::PocketTts => "pocket_tts",
         }
-    }
-}
-
-impl Default for TtsEngineId {
-    fn default() -> Self {
-        // Kokoro is the primary engine since the 2026-07-10 descope of
-        // ElevenLabs/Piper. Callers that don't pass `engine` (legacy
-        // persisted state) get the curated local voices.
-        TtsEngineId::Kokoro
     }
 }
 

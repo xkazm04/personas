@@ -8,7 +8,7 @@
 //! - URL:        [`ROADMAP_URL`]
 //! - Cache:      `<app_data_dir>/roadmap_cache.json`, 1 h TTL, ETag-revalidated
 //! - Fallback:   if the network fails *and* no cache exists, returns Err.
-//!               The frontend interprets Err as "use bundled content".
+//!   The frontend interprets Err as "use bundled content".
 
 use std::collections::HashMap;
 use std::path::PathBuf;

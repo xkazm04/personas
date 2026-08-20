@@ -129,6 +129,10 @@ pub async fn dev_tools_workspace_harvest_prepare(
     prepare_harvest_core(&state, &workspace_id, &project_id).map(|c| c.prepared)
 }
 
+/// One harvestable scope joined with its coverage:
+/// `(scope_id, label, file_count, last_harvested_at, estimated_pct)`.
+pub(crate) type HarvestScopeRow = (String, String, i64, Option<String>, Option<i64>);
+
 /// What the companion's `run_pattern_harvest` executor needs beyond the
 /// frontend's `HarvestPrepared`: the names for prompt-building and the
 /// territory list (with coverage) for depth-first scope selection.
@@ -139,7 +143,7 @@ pub(crate) struct PreparedHarvestCore {
     /// `(scope_id, label, file_count, last_harvested_at, estimated_pct)` —
     /// coverage-joined. `estimated_pct = None` on a harvested scope means the
     /// run predates depth reporting — treat as UNKNOWN depth, i.e. owing.
-    pub scopes: Vec<(String, String, i64, Option<String>, Option<i64>)>,
+    pub scopes: Vec<HarvestScopeRow>,
 }
 
 /// A territory counts as READ once its self-reported depth reaches this.
@@ -171,7 +175,7 @@ pub(crate) fn prepare_harvest_core(
     }
 
     // Siblings (other members) with their stacks — the "portfolio" context.
-    let members = repo::list_workspace_projects(&state.db, &workspace_id)?;
+    let members = repo::list_workspace_projects(&state.db, workspace_id)?;
     let siblings: Vec<serde_json::Value> = members
         .iter()
         .filter(|p| p.id != project_id)
@@ -179,7 +183,7 @@ pub(crate) fn prepare_harvest_core(
         .collect();
 
     // Existing practice titles (any live status) — do not re-propose these.
-    let existing = repo::list_knowledge(&state.db, &workspace_id, None)?;
+    let existing = repo::list_knowledge(&state.db, workspace_id, None)?;
     let existing_titles: Vec<String> = existing
         .iter()
         .filter(|k| k.status != "rejected")
@@ -199,7 +203,7 @@ pub(crate) fn prepare_harvest_core(
     let scopes = scopes::derive_scopes(&root);
     repo::sync_harvest_scopes(
         &state.db,
-        &project_id,
+        project_id,
         &scopes
             .iter()
             .map(|s| repo::HarvestScopeInput {
@@ -210,7 +214,7 @@ pub(crate) fn prepare_harvest_core(
             })
             .collect::<Vec<_>>(),
     )?;
-    let coverage = repo::list_harvest_coverage(&state.db, &project_id)?;
+    let coverage = repo::list_harvest_coverage(&state.db, project_id)?;
     let covered_at: std::collections::HashMap<&str, &WorkspaceHarvestCoverage> =
         coverage.iter().map(|c| (c.scope_id.as_str(), c)).collect();
     let scopes_json: Vec<serde_json::Value> = scopes
@@ -348,7 +352,7 @@ fn find_ingestable_runs(root: &Path) -> Vec<PathBuf> {
             Some((t, p))
         })
         .collect();
-    candidates.sort_by(|a, b| a.0.cmp(&b.0));
+    candidates.sort_by_key(|a| a.0);
     candidates.into_iter().map(|(_, p)| p).collect()
 }
 
@@ -453,7 +457,7 @@ pub(crate) fn ingest_harvest_runs_core(
     // what a topic already holds — this is the one place the full topic is
     // visible. Never fatal: the practices are already stored.
     if total.inserted > 0 {
-        if let Err(e) = repo::roll_up_topic_doctrine(&state.db, &workspace_id) {
+        if let Err(e) = repo::roll_up_topic_doctrine(&state.db, workspace_id) {
             tracing::warn!(error = %e, "could not roll up topic doctrine after ingest");
         }
     }
@@ -535,7 +539,7 @@ fn ingest_one_run(
         })
         .collect();
 
-    let summary = repo::ingest_candidates(&state.db, &workspace_id, &candidates, "agent", None)?;
+    let summary = repo::ingest_candidates(&state.db, workspace_id, &candidates, "agent", None)?;
 
     // Coverage is stamped on WHAT WAS READ, not on what survived dedup: a
     // territory that was harvested and yielded only duplicates has still been

@@ -36,8 +36,8 @@
 //!      the DESIGN.md sitting beside the feature it describes;
 //!   3. the rest of `docs/**`, breadth-first with a per-directory cap so one
 //!      generated tree cannot crowd out the maintained pages.
-//! Everything is sorted, so the truncated set is stable run to run (the scan
-//! deletes rows for docs it no longer lists — an unstable order would thrash).
+//!      Everything is sorted, so the truncated set is stable run to run (the scan
+//!      deletes rows for docs it no longer lists — an unstable order would thrash).
 //!
 //! NOT in scope, by decision: Rust `//!` module headers (and doc comments
 //! generally). They have no git history independent of the source file they

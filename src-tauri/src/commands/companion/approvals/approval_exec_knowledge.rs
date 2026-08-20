@@ -13,6 +13,17 @@ use super::*;
 
 use crate::commands::infrastructure::skill_files;
 
+/// One workspace territory as it comes out of the database: the group's id
+/// and name, then its contexts as `(context id, context name, paths)`.
+type OwnedTerritory = (String, String, Vec<(String, String, Vec<String>)>);
+
+/// A territory reduced to what a digest renderer needs — the group name and
+/// its contexts as `(context name, paths)` — owning the context list.
+type TerritoryDigest<'a> = (&'a str, Vec<(String, Vec<String>)>);
+
+/// The same digest as a prompt-builder argument, borrowing the context list.
+type TerritoryArg<'a> = (&'a str, &'a [(String, Vec<String>)]);
+
 /// Longest accepted `targets` fan-out for one `skill_sync`. Workspaces are
 /// single-digit small; a longer list is a hallucinated loop.
 const SKILL_SYNC_MAX_TARGETS: usize = 12;
@@ -21,13 +32,13 @@ const SKILL_SYNC_MAX_TARGETS: usize = 12;
 /// copies, in one of three directions:
 ///
 /// - `adopt`:   library → each target that does NOT yet have the skill
-///              (existing copies are skipped, never overwritten).
+///   (existing copies are skipped, never overwritten).
 /// - `sync`:    library → each target whose copy is BEHIND the library's
-///              declared version. A `diverged` (customized) copy is skipped
-///              and reported — autonomous or not, local edits are never
-///              clobbered by a sync.
+///   declared version. A `diverged` (customized) copy is skipped
+///   and reported — autonomous or not, local edits are never
+///   clobbered by a sync.
 /// - `publish`: `source` project's copy → the library, guarded inside
-///              `publish_skill_to_library`: the copy must be a version bump.
+///   `publish_skill_to_library`: the copy must be a version bump.
 ///
 /// Pure file operations plus a best-effort `.personas/skill-registry.json`
 /// refresh per touched repo — no CLI session, no LLM cost. Params:
@@ -498,7 +509,7 @@ pub(crate) fn build_apply_prompt(
     project_name: &str,
     objective: Option<&str>,
     patterns: &[(String, String, String, Option<String>)], // (id, title, statement, detail)
-    territory: Option<(&str, &[(String, Vec<String>)])>,   // (group name, [(context, paths)])
+    territory: Option<TerritoryArg<'_>>,
     violations: &std::collections::BTreeMap<String, ViolationBrief>,
 ) -> String {
     let mut cards = String::new();
@@ -643,7 +654,7 @@ pub(crate) fn execute_apply_pattern(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    let territory: Option<(String, String, Vec<(String, String, Vec<String>)>)> = match group_q {
+    let territory: Option<OwnedTerritory> = match group_q {
         None => None,
         Some(g) => {
             let (gid, gname): (String, String) = conn
@@ -873,13 +884,12 @@ pub(crate) fn execute_apply_pattern(
         .get("objective")
         .and_then(|v| v.as_str())
         .map(str::trim);
-    let territory_ref: Option<(&str, Vec<(String, Vec<String>)>)> =
-        territory.as_ref().map(|(_, gname, cs)| {
-            (
-                gname.as_str(),
-                cs.iter().map(|(_, n, p)| (n.clone(), p.clone())).collect(),
-            )
-        });
+    let territory_ref: Option<TerritoryDigest<'_>> = territory.as_ref().map(|(_, gname, cs)| {
+        (
+            gname.as_str(),
+            cs.iter().map(|(_, n, p)| (n.clone(), p.clone())).collect(),
+        )
+    });
     let prompt = build_apply_prompt(
         &project_name,
         objective,

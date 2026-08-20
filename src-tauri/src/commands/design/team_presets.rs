@@ -134,6 +134,12 @@ pub fn adopt_team_preset(
 /// Returns the FULL member list (existing + newly-retried) so the
 /// modal can swap state in one assignment.
 #[tauri::command]
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn retry_team_preset_members(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,

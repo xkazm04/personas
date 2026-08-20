@@ -1043,11 +1043,11 @@ const LIMIT_RETRY_MAX: u32 = 24;
 /// inventing a state:
 ///
 /// - `Done`   → `mark_finished` (the same path the `FLEET:DONE` cue uses), and
-///              the completion is handed to Athena's fleet bridge so a finished
-///              run finally reaches the chat instead of dying in the grid.
+///   the completion is handed to Athena's fleet bridge so a finished
+///   run finally reaches the chat instead of dying in the grid.
 /// - `Blocked`→ `AwaitingInput` with a typed reason.
 /// - `Hung`   → left `Stale`; only the typed kind is stamped, because the
-///              existing frozen reasons already say it well.
+///   existing frozen reasons already say it well.
 fn classify_pass(app: &AppHandle, grew_ids: &HashSet<String>) {
     use super::classify::{classify_parked, verdict_token, BlockedKind, ParkedVerdict};
 

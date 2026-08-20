@@ -240,7 +240,7 @@ fn count_ux_variants(
         }
     }
     let mut out: Vec<_> = counts.into_iter().collect();
-    out.sort_by(|a, b| b.1.cmp(&a.1));
+    out.sort_by_key(|b| std::cmp::Reverse(b.1));
     Ok(out)
 }
 
@@ -270,7 +270,7 @@ fn approval_rates(conn: &rusqlite::Connection) -> Result<Vec<(String, i64, i64)>
         }
     }
     let mut out: Vec<_> = by.into_iter().map(|(a, (ap, rj))| (a, ap, rj)).collect();
-    out.sort_by(|a, b| (b.1 + b.2).cmp(&(a.1 + a.2)));
+    out.sort_by_key(|b| std::cmp::Reverse(b.1 + b.2));
     Ok(out)
 }
 

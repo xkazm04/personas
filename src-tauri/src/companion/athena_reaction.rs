@@ -1412,17 +1412,16 @@ pub async fn run_athena_review_resolution(
                             continue;
                         }
                         let t = item_title.trim().to_lowercase();
-                        if t == want_norm || t.contains(&want_norm) || want_norm.contains(&t) {
-                            if crate::db::repos::dev_tools::update_goal_item(
+                        if (t == want_norm || t.contains(&want_norm) || want_norm.contains(&t))
+                            && crate::db::repos::dev_tools::update_goal_item(
                                 pool,
                                 item_id,
                                 None,
                                 Some(false),
                             )
                             .is_ok()
-                            {
-                                unchecked += 1;
-                            }
+                        {
+                            unchecked += 1;
                         }
                     }
                 }

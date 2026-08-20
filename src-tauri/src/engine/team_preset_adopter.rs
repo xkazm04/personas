@@ -11,18 +11,18 @@
 //!      `instant_adopt_template_inner` returns.
 //!   2. `repos::resources::teams::create` for the parent PersonaTeam.
 //!   3. For each member in the manifest, in declaration order:
-//!        a. `team_preset_loader::load_template_design_by_id` reads the
-//!           canonical template JSON from disk.
-//!        b. `commands::design::template_adopt::instant_adopt_template_inner`
-//!           creates the persona atomically (persona + tools + triggers
-//!           in one tx) — same path the existing "Dev Clone" shortcut
-//!           uses, so the integrity check still runs.
-//!        c. If a group was created in step 1, `UPDATE personas SET
+//!      a. `team_preset_loader::load_template_design_by_id` reads the
+//!      canonical template JSON from disk.
+//!      b. `commands::design::template_adopt::instant_adopt_template_inner`
+//!      creates the persona atomically (persona + tools + triggers
+//!      in one tx) — same path the existing "Dev Clone" shortcut
+//!      uses, so the integrity check still runs.
+//!      c. If a group was created in step 1, `UPDATE personas SET
 //!           group_id = ?` is issued for the new persona.
-//!        d. `repos::resources::teams::add_member` adds the persona to
-//!           the team at the manifest's `(x, y)` with the role label.
-//!        e. Emit a `team-preset-adopt-progress` event with the
-//!           per-member status (queued → adopting → done/failed).
+//!      d. `repos::resources::teams::add_member` adds the persona to
+//!      the team at the manifest's `(x, y)` with the role label.
+//!      e. Emit a `team-preset-adopt-progress` event with the
+//!      per-member status (queued → adopting → done/failed).
 //!   4. For each connection in the manifest, if BOTH endpoint roles
 //!      adopted successfully: `repos::resources::teams::create_connection`
 //!      maps the role strings to the freshly-created member ids and
@@ -607,6 +607,12 @@ pub fn adopt_preset(
 /// Connections from the original adoption that survived are left
 /// untouched (the existing-edge guard in `teams::create_connection`
 /// rejects duplicates with an error, which we catch + log + skip).
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn retry_failed_members(
     state: &Arc<AppState>,
     app: Option<AppHandle>,

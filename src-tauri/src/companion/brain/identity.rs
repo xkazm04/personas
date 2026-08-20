@@ -14,6 +14,12 @@
 use crate::error::AppError;
 
 /// The anchored edit operations Athena may propose.
+//
+// `enum_variant_names` fires on the shared `Bullet` postfix. It stays: the
+// postfix names what these ops act on (a bullet inside a section), it is not
+// redundant with the enum's own name (`DiffOp`), and dropping it would make
+// `DiffOp::Append` ambiguous at the 25 call sites outside this module.
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiffOp {
     /// Add a new bullet to the end of the named section.
@@ -258,8 +264,8 @@ pub fn apply_to(lines: &mut Vec<String>, diff: &IdentityDiff) -> Result<(), AppE
             // Insert after the section's last existing bullet, else right under
             // the heading.
             let mut insert_at = hidx + 1;
-            for i in (hidx + 1)..end {
-                if lines[i].trim_start().starts_with("- ") {
+            for (i, line) in lines.iter().enumerate().take(end).skip(hidx + 1) {
+                if line.trim_start().starts_with("- ") {
                     insert_at = i + 1;
                 }
             }

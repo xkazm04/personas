@@ -54,9 +54,9 @@ const TRASH_DIRNAME: &str = ".trash";
 /// convention closely enough that users don't need to learn a new policy.
 const TRASH_TTL_SECS: u64 = 7 * 24 * 60 * 60;
 
-/// Cached canonical managed root — resolved lazily on first call.
-// The cache itself lives in `personas_core::drive_root` so `engine::prompt`
-// can read it without depending on the command layer. Resolution stays here.
+// Cached canonical managed root — resolved lazily on first call. The cache
+// itself lives in `personas_core::drive_root` so `engine::prompt` can read it
+// without depending on the command layer. Resolution stays here.
 
 /// Returns true for filesystem noise the drive walkers should never surface
 /// (OS-generated metadata files). Shared by every directory walker so the
@@ -531,7 +531,7 @@ fn build_entry(root: &Path, abs: &Path) -> Result<DriveEntry, AppError> {
     let modified = meta
         .modified()
         .ok()
-        .and_then(|t| Some(DateTime::<Utc>::from(t).to_rfc3339()))
+        .map(|t| DateTime::<Utc>::from(t).to_rfc3339())
         .unwrap_or_else(|| Utc::now().to_rfc3339());
     let extension = abs
         .extension()
@@ -728,7 +728,7 @@ fn walk_tree(root: &Path, dir: &Path, depth_remaining: u32) -> DriveTreeNode {
     let name = dir
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_else(|| "".to_string());
+        .unwrap_or_default();
     let path = to_relative_display(root, dir);
 
     let mut children = Vec::new();

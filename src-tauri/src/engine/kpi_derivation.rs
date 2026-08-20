@@ -49,8 +49,8 @@ const TOLERANCE_FRAC: f64 = 0.1;
 ///      Factory console lever, honored independently of pace;
 ///   3. pace lag — with a target_date + baseline, current lags the linearly-
 ///      paced expectation by more than the tolerance.
-/// Without any of these (e.g. a missed target but no date to pace against and
-/// no crit line drawn) the verdict is on-track, matching the UI.
+///      Without any of these (e.g. a missed target but no date to pace against and
+///      no crit line drawn) the verdict is on-track, matching the UI.
 pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     if kpi_floor_breached(kpi) {
         return true;

@@ -194,8 +194,7 @@ fn extract_early_behavior_core(buf: &str, session_id: &str) -> Option<Vec<BuildE
     let mut in_str = false;
     let mut esc = false;
     let mut end = None;
-    for i in open..buf.len() {
-        let c = bytes[i];
+    for (i, &c) in bytes.iter().enumerate().take(buf.len()).skip(open) {
         if in_str {
             if esc {
                 esc = false;
@@ -288,9 +287,8 @@ async fn wait_for_driver_or_cancel(
         if tokio::time::Instant::now() >= deadline {
             return Ok(DriverWait::TimedOut);
         }
-        match tokio::time::timeout(CANCEL_POLL_INTERVAL, driver.wait()).await {
-            Ok(result) => return result.map(|_| DriverWait::Exited),
-            Err(_) => {}
+        if let Ok(result) = tokio::time::timeout(CANCEL_POLL_INTERVAL, driver.wait()).await {
+            return result.map(|_| DriverWait::Exited);
         }
     }
 }
@@ -420,7 +418,7 @@ pub(super) async fn run_session(
     let initial_prompt: Arc<str> =
         if let (Some(ref wf_json), Some(ref parser_json)) = (&workflow_json, &parser_result_json) {
             let wf_preview = if wf_json.len() > 8000 {
-                crate::utils::text::truncate_on_char_boundary(&wf_json, 8000)
+                crate::utils::text::truncate_on_char_boundary(wf_json, 8000)
             } else {
                 wf_json.as_str()
             };

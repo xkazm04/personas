@@ -13,8 +13,8 @@
 //!   through the normal execution runner with a synthetic payload describing
 //!   the target (identity + value/efficiency rollup + healing + memory sample
 //!   + past verdicts), then parse `DIRECTOR_VERDICT: {...}` lines out of its
-//!   output. The deterministic rule-based evaluator was retired — the LLM is
-//!   now the sole verdict source.
+//!     output. The deterministic rule-based evaluator was retired — the LLM is
+//!     now the sole verdict source.
 //! - The Director's evaluation runs are real, fully-visible execution rows
 //!   (cost-tracked, shown in the activity feed) — no special hiding.
 //! - Verdicts route to `persona_manual_reviews` (severity info/warning/error);

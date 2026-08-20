@@ -104,14 +104,14 @@ pub(crate) mod testable {
              SET enabled = ?1, status = ?2, updated_at = ?3
              WHERE persona_id = ?4 AND use_case_id = ?5",
             rusqlite::params![enabled as i64, trigger_status, now, persona_id, use_case_id],
-        )? as usize;
+        )?;
 
         let subscriptions_updated = tx.execute(
             "UPDATE persona_event_subscriptions
              SET enabled = ?1, updated_at = ?2
              WHERE persona_id = ?3 AND use_case_id = ?4",
             rusqlite::params![enabled as i64, now, persona_id, use_case_id],
-        )? as usize;
+        )?;
 
         // Pause runnable automations on disable; leave them paused on re-enable
         // so the user must explicitly reactivate (avoids accidentally restarting
@@ -125,7 +125,7 @@ pub(crate) mod testable {
                  WHERE persona_id = ?2 AND use_case_id = ?3
                    AND deployment_status IN ('running', 'active')",
                 rusqlite::params![now, persona_id, use_case_id],
-            )? as usize
+            )?
         };
 
         tx.commit().map_err(AppError::Database)?;
@@ -528,7 +528,7 @@ pub async fn rename_event_listeners(
                  SET event_type = ?1, updated_at = ?2
                  WHERE event_type = ?3 AND (?4 = '' OR persona_id <> ?4)",
                 rusqlite::params![to_event, now, from_event, exclude],
-            )? as usize;
+            )?;
             // Rewrite each trigger's config.event_type via JSON1 json_set,
             // scoped to rows whose PARSED event_type equals from_event. This
             // avoids the raw-text REPLACE hazards: partial-name LIKE matches
@@ -544,7 +544,7 @@ pub async fn rename_event_listeners(
                    AND json_valid(config)
                    AND json_extract(config, '$.event_type') = ?4",
                 rusqlite::params![to_event, now, exclude, from_event],
-            )? as usize;
+            )?;
             (subs, trigs)
         }
         RenameConsumerAction::Delete => {
@@ -552,7 +552,7 @@ pub async fn rename_event_listeners(
                 "DELETE FROM persona_event_subscriptions
                  WHERE event_type = ?1 AND (?2 = '' OR persona_id <> ?2)",
                 rusqlite::params![from_event, exclude],
-            )? as usize;
+            )?;
             let trigs = tx.execute(
                 "DELETE FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
@@ -560,7 +560,7 @@ pub async fn rename_event_listeners(
                    AND json_valid(config)
                    AND json_extract(config, '$.event_type') = ?2",
                 rusqlite::params![exclude, from_event],
-            )? as usize;
+            )?;
             (subs, trigs)
         }
         RenameConsumerAction::Leave => (0, 0),

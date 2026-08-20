@@ -463,7 +463,7 @@ pub struct CompanionAssignTeamResult {
 fn derive_title_from_goal(goal: &str) -> String {
     let trimmed = goal.trim();
     let first_clause = trimmed
-        .split(|c: char| c == '.' || c == '\n' || c == ';')
+        .split(['.', '\n', ';'])
         .next()
         .unwrap_or(trimmed)
         .trim();

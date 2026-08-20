@@ -877,7 +877,7 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
 ///   - `webhook_url` (inline) → Incoming Webhook MessageCard.
 ///   - `access_token` + `team_id` + `channel_id` (vault OAuth credential
 ///     + spec.config or `selected_teams`/`selected_channels` fallback) →
-///     `POST /teams/{team_id}/channels/{channel_id}/messages` on Graph.
+///       `POST /teams/{team_id}/channels/{channel_id}/messages` on Graph.
 ///   - Otherwise → actionable error explaining which fields are missing.
 ///
 /// Slice 4 ships the Graph path WITHOUT proactive token refresh — if the
@@ -1042,7 +1042,7 @@ pub fn notify_execution_completed_rich(
         if !err.is_empty() {
             // Truncate error for notification readability
             let short_err = if err.len() > 200 {
-                crate::utils::text::truncate_on_char_boundary(&err, 200)
+                crate::utils::text::truncate_on_char_boundary(err, 200)
             } else {
                 err
             };
@@ -1342,7 +1342,7 @@ fn test_deliver_titlebar(app: &tauri::AppHandle, spec: &ChannelSpecV2, title: &s
         body: body.to_string(),
         priority: "normal".into(),
     };
-    let _ = emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
+    emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
 }
 
 /// Deliver ONE shape-v2 external channel spec and await the result.

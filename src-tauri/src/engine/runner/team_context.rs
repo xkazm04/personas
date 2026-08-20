@@ -64,6 +64,10 @@ struct IncidentLine {
     desc: String,
 }
 
+/// One roster member as the alignment query reads it:
+/// `(persona_id, name, role, design_context, description)`.
+type RosterRow = (String, String, String, Option<String>, Option<String>);
+
 /// Build the team-alignment block for `persona` executing under `team_id`.
 ///
 /// Returns `None` when there's nothing meaningful to inject (the persona has no
@@ -86,7 +90,7 @@ pub fn build_team_alignment_block(
     // `persona_team_semantic_role` in the assignment orchestrator does.
     // Reading the raw `role` here is what made `render_channel_post_capability`
     // below unreachable for every team.
-    let roster_rows: Vec<(String, String, String, Option<String>, Option<String>)> = {
+    let roster_rows: Vec<RosterRow> = {
         let conn = pool.get().ok()?;
         let mut stmt = conn
             .prepare(

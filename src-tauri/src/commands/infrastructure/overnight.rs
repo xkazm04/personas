@@ -88,7 +88,7 @@ pub const NIGHT_DIGEST_EVENT_TYPE: &str = "autopilot.night_digest";
 
 /// True when `hour` (local, 0-23) falls inside the night window.
 pub fn in_night_window(hour: u32) -> bool {
-    hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR
+    !(NIGHT_END_HOUR..NIGHT_START_HOUR).contains(&hour)
 }
 
 /// The identity of the night a local timestamp belongs to (`YYYY-MM-DD` of the
@@ -303,7 +303,7 @@ fn get_night_run(pool: &DbPool, run_id: &str) -> Result<NightRun, AppError> {
     conn.query_row(
         "SELECT * FROM autopilot_night_runs WHERE id = ?1",
         rusqlite::params![run_id],
-        |r| row_to_night_run(r),
+        row_to_night_run,
     )
     .map_err(|_| AppError::NotFound(format!("NightRun {run_id}")))
 }
@@ -649,7 +649,7 @@ pub fn dev_tools_list_night_runs(
                 "SELECT * FROM autopilot_night_runs WHERE project_id = ?1
                  ORDER BY started_at DESC LIMIT ?2",
             )?;
-            let rows = stmt.query_map(rusqlite::params![pid, limit], |r| row_to_night_run(r))?;
+            let rows = stmt.query_map(rusqlite::params![pid, limit], row_to_night_run)?;
             for r in rows {
                 out.push(r?);
             }
@@ -657,7 +657,7 @@ pub fn dev_tools_list_night_runs(
         None => {
             let mut stmt = conn
                 .prepare("SELECT * FROM autopilot_night_runs ORDER BY started_at DESC LIMIT ?1")?;
-            let rows = stmt.query_map(rusqlite::params![limit], |r| row_to_night_run(r))?;
+            let rows = stmt.query_map(rusqlite::params![limit], row_to_night_run)?;
             for r in rows {
                 out.push(r?);
             }

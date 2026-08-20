@@ -19,7 +19,7 @@
 //!    `commands::core::memories::apply_persona_memory_review_proposal`:
 //!    synthesize = `create_synthesized` (with `derived_from` provenance)
 //!    + archive sources; archive = reversible tier flip. `core` (user-
-//!    pinned) is read-only context at every step.
+//!      pinned) is read-only context at every step.
 //!
 //! Two extensions on the same pipeline:
 //!
@@ -136,7 +136,7 @@ pub(crate) fn cluster_hints(memories: &[PersonaMemory]) -> Vec<Vec<String>> {
     let sets: Vec<_> = memories.iter().map(word_set).collect();
     // Union-find
     let mut parent: Vec<usize> = (0..n).collect();
-    fn find(parent: &mut Vec<usize>, i: usize) -> usize {
+    fn find(parent: &mut [usize], i: usize) -> usize {
         let mut i = i;
         while parent[i] != i {
             parent[i] = parent[parent[i]];
@@ -156,9 +156,9 @@ pub(crate) fn cluster_hints(memories: &[PersonaMemory]) -> Vec<Vec<String>> {
     }
     let mut groups: std::collections::HashMap<usize, Vec<String>> =
         std::collections::HashMap::new();
-    for i in 0..n {
+    for (i, memory) in memories.iter().enumerate().take(n) {
         let root = find(&mut parent, i);
-        groups.entry(root).or_default().push(memories[i].id.clone());
+        groups.entry(root).or_default().push(memory.id.clone());
     }
     let mut out: Vec<Vec<String>> = groups.into_values().filter(|g| g.len() >= 2).collect();
     out.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a[0].cmp(&b[0])));

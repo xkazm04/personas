@@ -55,7 +55,7 @@ pub(crate) async fn execute_run_persona(
 ///     (reflection / synthesis): targeted, reviewable, preserves the rest.
 ///   - `content: "..."` — a full identity.md replacement. The intake interview's
 ///     first-draft path (nothing exists yet to diff against).
-/// Both back up the prior file first.
+///     Both back up the prior file first.
 pub(crate) fn execute_update_identity(
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {

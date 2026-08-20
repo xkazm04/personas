@@ -80,6 +80,12 @@ pub(crate) fn get_scan_agents() -> &'static Vec<ScanAgentMeta> {
 // Prompt
 // =============================================================================
 
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 fn build_idea_scan_prompt(
     project_id: &str,
     agents: &[&ScanAgentMeta],

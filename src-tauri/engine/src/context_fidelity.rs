@@ -118,7 +118,7 @@ pub fn build_upstream_preamble(
             continue;
         };
         let lines: Vec<&str> = body.lines().filter(|l| !l.trim().is_empty()).collect();
-        let take = per_node.min(total_budget.saturating_sub(used)).max(0);
+        let take = per_node.min(total_budget.saturating_sub(used));
         if take == 0 {
             out.push_str("- …(truncated)\n");
             break;

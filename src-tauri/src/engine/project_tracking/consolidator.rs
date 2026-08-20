@@ -29,8 +29,8 @@ use crate::engine::project_tracking::pulse::{self, PulseRow, PulseUpdate};
 use crate::engine::project_tracking::subscription::Subscription;
 use crate::error::AppError;
 
-/// Per-tick consolidator timeout. Project pulses are small (one paragraph
-/// + 3-5 directions); 90s is generous but not overgenerous given a busy
+/// Per-tick consolidator timeout. Project pulses are small (one paragraph +
+/// 3-5 directions); 90s is generous but not overgenerous given a busy
 /// Sonnet endpoint.
 const CONSOLIDATOR_TIMEOUT: Duration = Duration::from_secs(90);
 
@@ -257,7 +257,7 @@ fn build_prompt(
             s.push_str("(no prior pulse — this is the first tick of the day)\n");
         }
     }
-    s.push_str("\n");
+    s.push('\n');
 
     let (n_commits, n_runs, n_notes) = snapshot.counts();
     s.push_str("## New signals this tick\n\n");
@@ -504,7 +504,7 @@ pub fn render_for_prompt(pulse: &PulseRow, project_name: &str) -> String {
         for d in &pulse.directions {
             s.push_str(&format!("- {d}\n"));
         }
-        s.push_str("\n");
+        s.push('\n');
     }
     if !pulse.tensions.is_empty() {
         s.push_str("**Tensions:**\n");

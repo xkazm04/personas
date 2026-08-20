@@ -20,10 +20,10 @@
 //!      resolutions into `resolved_cells`;
 //!   3. run one lead turn to assemble `agent_ir` from the merged capabilities,
 //!      then continue to DraftReady → oneshot test/promote as today.
-//! The prompt grounding + the merge/assembly correctness need live iteration
-//! against the `lite-web-summary` baseline (a `cargo check` can't prove them),
-//! which is why the wiring is deferred to a verifiable session. Gated on
-//! `multiagent`; the sequential path is untouched.
+//!      The prompt grounding + the merge/assembly correctness need live iteration
+//!      against the `lite-web-summary` baseline (a `cargo check` can't prove them),
+//!      which is why the wiring is deferred to a verifiable session. Gated on
+//!      `multiagent`; the sequential path is untouched.
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
@@ -162,20 +162,15 @@ async fn resolve_one_capability(
         let mut raw_events: Vec<BuildEvent> = Vec::new();
         let mut usage = TurnUsage::default();
         if let Some(mut reader) = driver.take_stdout_reader() {
-            loop {
-                match read_line_limited(&mut reader).await {
-                    Ok(Some(line)) => {
-                        if let Some(u) = super::parser::extract_result_usage(&line) {
-                            usage.add(TurnUsage {
-                                cost_usd: u.cost_usd,
-                                input_tokens: u.input_tokens,
-                                output_tokens: u.output_tokens,
-                            });
-                        }
-                        raw_events.extend(parse_build_line(&line, &session_id));
-                    }
-                    Ok(None) | Err(_) => break,
+            while let Ok(Some(line)) = read_line_limited(&mut reader).await {
+                if let Some(u) = super::parser::extract_result_usage(&line) {
+                    usage.add(TurnUsage {
+                        cost_usd: u.cost_usd,
+                        input_tokens: u.input_tokens,
+                        output_tokens: u.output_tokens,
+                    });
                 }
+                raw_events.extend(parse_build_line(&line, &session_id));
             }
         }
         let _ = driver.finish().await;
@@ -339,20 +334,15 @@ async fn run_cli_turn(
     let mut events = Vec::new();
     let mut usage = TurnUsage::default();
     if let Some(mut reader) = driver.take_stdout_reader() {
-        loop {
-            match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => {
-                    if let Some(u) = super::parser::extract_result_usage(&line) {
-                        usage.add(TurnUsage {
-                            cost_usd: u.cost_usd,
-                            input_tokens: u.input_tokens,
-                            output_tokens: u.output_tokens,
-                        });
-                    }
-                    events.extend(parse_build_line(&line, session_id));
-                }
-                Ok(None) | Err(_) => break,
+        while let Ok(Some(line)) = read_line_limited(&mut reader).await {
+            if let Some(u) = super::parser::extract_result_usage(&line) {
+                usage.add(TurnUsage {
+                    cost_usd: u.cost_usd,
+                    input_tokens: u.input_tokens,
+                    output_tokens: u.output_tokens,
+                });
             }
+            events.extend(parse_build_line(&line, session_id));
         }
     }
     let _ = driver.wait().await;
@@ -480,21 +470,16 @@ async fn resolve_persona_wide(cli_args: CliArgs, prompt: String) -> (Value, Turn
     let mut usage = TurnUsage::default();
     let mut found = Value::Null;
     if let Some(mut reader) = driver.take_stdout_reader() {
-        loop {
-            match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => {
-                    if let Some(u) = super::parser::extract_result_usage(&line) {
-                        usage.add(TurnUsage {
-                            cost_usd: u.cost_usd,
-                            input_tokens: u.input_tokens,
-                            output_tokens: u.output_tokens,
-                        });
-                    }
-                    if let Some(pw) = extract_persona_wide(&line) {
-                        found = pw;
-                    }
-                }
-                Ok(None) | Err(_) => break,
+        while let Ok(Some(line)) = read_line_limited(&mut reader).await {
+            if let Some(u) = super::parser::extract_result_usage(&line) {
+                usage.add(TurnUsage {
+                    cost_usd: u.cost_usd,
+                    input_tokens: u.input_tokens,
+                    output_tokens: u.output_tokens,
+                });
+            }
+            if let Some(pw) = extract_persona_wide(&line) {
+                found = pw;
             }
         }
     }
@@ -726,21 +711,16 @@ async fn resolve_clarify(cli_args: CliArgs, prompt: String) -> (Vec<ClarifyQuest
     let mut usage = TurnUsage::default();
     let mut found: Option<Vec<ClarifyQuestion>> = None;
     if let Some(mut reader) = driver.take_stdout_reader() {
-        loop {
-            match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => {
-                    if let Some(u) = super::parser::extract_result_usage(&line) {
-                        usage.add(TurnUsage {
-                            cost_usd: u.cost_usd,
-                            input_tokens: u.input_tokens,
-                            output_tokens: u.output_tokens,
-                        });
-                    }
-                    if let Some(qs) = extract_clarify_questions(&line) {
-                        found = Some(qs);
-                    }
-                }
-                Ok(None) | Err(_) => break,
+        while let Ok(Some(line)) = read_line_limited(&mut reader).await {
+            if let Some(u) = super::parser::extract_result_usage(&line) {
+                usage.add(TurnUsage {
+                    cost_usd: u.cost_usd,
+                    input_tokens: u.input_tokens,
+                    output_tokens: u.output_tokens,
+                });
+            }
+            if let Some(qs) = extract_clarify_questions(&line) {
+                found = Some(qs);
             }
         }
     }

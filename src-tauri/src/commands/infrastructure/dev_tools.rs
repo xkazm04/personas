@@ -2235,7 +2235,7 @@ fn probe_agent_memory(root: &std::path::Path, root_path: &str) -> (bool, u32, u3
                     continue;
                 }
                 file_count += 1;
-                bump_age(days_since(entry.metadata().map_err(std::io::Error::from)));
+                bump_age(days_since(entry.metadata()));
                 if name == "MEMORY.md" {
                     if let Ok(txt) = std::fs::read_to_string(entry.path()) {
                         index_lines = txt
@@ -2341,7 +2341,7 @@ fn probe_docs(root: &std::path::Path) -> (u32, bool) {
             }
             let name = entry.file_name().to_string_lossy().to_lowercase();
             if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-                if depth + 1 <= MAX_DEPTH && !name.starts_with('.') {
+                if depth < MAX_DEPTH && !name.starts_with('.') {
                     stack.push((entry.path(), depth + 1));
                 }
             } else if name.ends_with(".md") || name.ends_with(".mdx") {
@@ -2400,7 +2400,7 @@ fn bounded_probe(root: &std::path::Path) -> (u32, bool, bool) {
                 if name == "evals" || name == "eval" {
                     has_eval = true;
                 }
-                if depth + 1 <= MAX_DEPTH {
+                if depth < MAX_DEPTH {
                     stack.push((entry.path(), depth + 1));
                 }
             } else if name.contains(".test.")

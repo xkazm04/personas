@@ -1649,7 +1649,7 @@ fn goal_to_markdown(
     if let Some(ref td) = goal.target_date {
         md.push_str(&format!("target_date: \"{}\"\n", td));
     }
-    md.push_str(&format!("type: \"dev-goal\"\n"));
+    md.push_str("type: \"dev-goal\"\n");
     md.push_str(&format!("created: \"{}\"\n", goal.created_at));
     md.push_str(&format!("updated: \"{}\"\n", goal.updated_at));
     md.push_str("---\n\n");
@@ -1681,7 +1681,7 @@ fn goal_to_markdown(
                 child.progress
             ));
         }
-        md.push_str("\n");
+        md.push('\n');
     }
 
     md
@@ -1855,11 +1855,11 @@ pub async fn obsidian_drive_status(
 
     let token = get_google_provider_token(&state).await?;
     let config = get_config_or_err(&state.db)?;
-    let vault_name = config
-        .vault_name
-        .is_empty()
-        .then(|| "default".to_string())
-        .unwrap_or(config.vault_name);
+    let vault_name = if config.vault_name.is_empty() {
+        "default".to_string()
+    } else {
+        config.vault_name
+    };
 
     drive::get_drive_status(&token, &vault_name).await
 }

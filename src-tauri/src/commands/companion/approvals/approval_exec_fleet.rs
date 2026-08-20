@@ -8,8 +8,8 @@ use super::*;
 
 /// Spawn a proactive Athena turn that reviews the whole fleet (or one team)
 /// against the certification rubric — the post-certification "are the teams on
-/// track?" analysis. Athena gathers current state from her observability digest
-/// + connectors, recalls her prior per-team note (timeline continuity), writes
+/// track?" analysis. Athena gathers current state from her observability digest +
+/// connectors, recalls her prior per-team note (timeline continuity), writes
 /// an updated note, and proposes improvements via her normal approval-gated ops.
 pub(crate) async fn execute_analyze_fleet(
     state: &State<'_, Arc<AppState>>,

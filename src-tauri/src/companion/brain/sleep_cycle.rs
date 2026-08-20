@@ -401,6 +401,13 @@ fn consumed_through_of(stats_json: &str) -> Option<String> {
 /// Costs one indexed COUNT plus one bounded window fetch. Cheap enough for the
 /// manual trigger and a UI hover; the night-shift tick fires every 30s and
 /// throttles itself before calling in (see `night_shift::maybe_run_sleep_cycle`).
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 fn measure(pool: &UserDbPool) -> Result<Reading, AppError> {
     let last = cycle_report::last_completed(pool)?;
 

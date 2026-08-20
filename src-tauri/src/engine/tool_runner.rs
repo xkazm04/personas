@@ -1109,7 +1109,7 @@ pub async fn execute_test_curl(
             let preview = if body.len() > 300 {
                 format!(
                     "{}...",
-                    crate::utils::text::truncate_on_char_boundary(&body, 300)
+                    crate::utils::text::truncate_on_char_boundary(body, 300)
                 )
             } else {
                 body.to_string()

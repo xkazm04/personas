@@ -353,6 +353,12 @@ Begin by exploring the codebase structure."#
 // Protocol message parsing
 // =============================================================================
 
+// `large_enum_variant`: `Group` is ~312 bytes larger than the smallest
+// variant. This enum is a short-lived parse target for one JSON protocol
+// message and is never held in a collection, so the size difference costs
+// nothing; boxing a field would restructure every construction and match
+// site to buy back stack space nobody is short of.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 enum ContextMapProtocol {
     Group {
@@ -1124,6 +1130,12 @@ fn is_coverage_regression(prior: usize, written: usize) -> bool {
     (written as f64) < (prior as f64) * COVERAGE_REGRESSION_RATIO
 }
 
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 async fn run_context_generation(
     app: &tauri::AppHandle,
     scan_id: &str,

@@ -1016,14 +1016,16 @@ pub fn apply_persona_memory_review_proposal(
                     Err(e) => errors.push(format!("synthesize `{title}`: {e}")),
                 }
             }
-            "archive" => match repo::archive_by_ids(&state.db, &[entry.memory_id.clone()]) {
-                Ok(n) if n > 0 => archived += n as usize,
-                Ok(_) => errors.push(format!(
-                    "memory `{}` not archived (core-pinned or already gone)",
-                    entry.memory_id
-                )),
-                Err(e) => errors.push(format!("memory `{}` archive: {}", entry.memory_id, e)),
-            },
+            "archive" => {
+                match repo::archive_by_ids(&state.db, std::slice::from_ref(&entry.memory_id)) {
+                    Ok(n) if n > 0 => archived += n as usize,
+                    Ok(_) => errors.push(format!(
+                        "memory `{}` not archived (core-pinned or already gone)",
+                        entry.memory_id
+                    )),
+                    Err(e) => errors.push(format!("memory `{}` archive: {}", entry.memory_id, e)),
+                }
+            }
             "keep" => {} // no-op
             other => errors.push(format!(
                 "unknown action `{other}` on memory `{}`; skipped",

@@ -6,7 +6,7 @@
 //!   2. `companion_node` row (kind='fact') — drives generic listing/retrieval.
 //!   3. `companion_fact` sidecar — typed metadata for queries (scope, key,
 //!      confidence, supersedes/contradicts, last_seen).
-//! Plus `companion_provenance` rows linking the fact to source episode IDs.
+//!      Plus `companion_provenance` rows linking the fact to source episode IDs.
 //!
 //! **Provenance contract**: every fact write requires ≥1 source episode id.
 //! Writes without sources are rejected at this layer — Athena can't bury a

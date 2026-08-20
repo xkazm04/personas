@@ -117,8 +117,8 @@ pub fn webbuild_session_stop(
     ))
 }
 
-/// Of the given projects, return the ids that are Next.js apps Studio can build
-/// + preview (checked against each project's files on disk). Lets the import
+/// Of the given projects, return the ids that are Next.js apps Studio can build +
+/// preview (checked against each project's files on disk). Lets the import
 /// picker flag incompatible Dev Tools projects before they fail to start.
 #[tauri::command]
 pub fn webbuild_next_ready(

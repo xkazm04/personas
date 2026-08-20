@@ -146,39 +146,39 @@ pub(crate) async fn execute_approval_action(
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     match action {
-        "run_persona" => execute_run_persona(&state, &app, &params).await,
-        "resolve_human_review" => execute_resolve_human_review(&state, &app, &params).await,
-        "update_identity" => execute_update_identity(&params),
-        "write_fact" => execute_write_fact(&state, &params).await,
-        "delete_fact" => execute_delete_fact(&state, &params),
+        "run_persona" => execute_run_persona(&state, &app, params).await,
+        "resolve_human_review" => execute_resolve_human_review(&state, &app, params).await,
+        "update_identity" => execute_update_identity(params),
+        "write_fact" => execute_write_fact(&state, params).await,
+        "delete_fact" => execute_delete_fact(&state, params),
         // Phase D
-        "write_procedural" => execute_write_procedural(&state, &params).await,
-        "delete_procedural" => execute_delete_procedural(&state, &params),
-        "write_goal" => execute_write_goal(&state, &params),
-        "update_goal_status" => execute_update_goal_status(&state, &params),
-        "delete_goal" => execute_delete_goal(&state, &params),
-        "write_ritual" => execute_write_ritual(&state, &params),
-        "set_ritual_active" => execute_set_ritual_active(&state, &params),
-        "delete_ritual" => execute_delete_ritual(&state, &params),
-        "write_backlog_item" => execute_write_backlog_item(&state, &params),
-        "resolve_backlog_item" => execute_resolve_backlog_item(&state, &params),
+        "write_procedural" => execute_write_procedural(&state, params).await,
+        "delete_procedural" => execute_delete_procedural(&state, params),
+        "write_goal" => execute_write_goal(&state, params),
+        "update_goal_status" => execute_update_goal_status(&state, params),
+        "delete_goal" => execute_delete_goal(&state, params),
+        "write_ritual" => execute_write_ritual(&state, params),
+        "set_ritual_active" => execute_set_ritual_active(&state, params),
+        "delete_ritual" => execute_delete_ritual(&state, params),
+        "write_backlog_item" => execute_write_backlog_item(&state, params),
+        "resolve_backlog_item" => execute_resolve_backlog_item(&state, params),
         // Phase F — advanced UI control.
-        "prefill_persona_create" => execute_prefill_persona_create(&params),
+        "prefill_persona_create" => execute_prefill_persona_create(params),
         // 2026-05-06 — autonomous build shortcut. Same ClientAction shape as
         // prefill_persona_create but defaults `auto_launch=true` and
         // `mode="one_shot"` so the prompt vocabulary cleanly separates the
         // "let me edit it first" path from the "decide everything for me"
         // path. Behavior is otherwise identical — the frontend's
         // UnifiedMatrixEntry consumes both via the same prefill slot.
-        "build_oneshot" => execute_build_oneshot(&state, &app, &params).await,
-        "run_arena" => execute_run_arena(&state, &app, &params).await,
-        "companion_breed_personas" => execute_companion_breed_personas(&state, &app, &params).await,
-        "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, &params).await,
+        "build_oneshot" => execute_build_oneshot(&state, &app, params).await,
+        "run_arena" => execute_run_arena(&state, &app, params).await,
+        "companion_breed_personas" => execute_companion_breed_personas(&state, &app, params).await,
+        "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, params).await,
         // `compose_dashboard` is now auto-fire (no approval card) —
         // handled by the dispatcher + session.rs. The executor below
         // is kept as a fallback in case an old approval row from
         // before the change still resolves through here.
-        "compose_dashboard" => execute_compose_dashboard(&state, &params),
+        "compose_dashboard" => execute_compose_dashboard(&state, params),
         // `use_connector` for read-only capabilities auto-fires through
         // the dispatcher → background-job worker. For write capabilities
         // (`requires_approval: true` on `ConnectorCapability`) the
@@ -186,46 +186,46 @@ pub(crate) async fn execute_approval_action(
         // visible actions land behind an approval card. Athena
         // spontaneously requested this gate during the 2026-05-27
         // connector audit.
-        "use_connector" => execute_use_connector(&state, &params).await,
+        "use_connector" => execute_use_connector(&state, params).await,
         // Cross-device link (WP3). The mode-conditional consent rule runs
         // INSIDE the executor, so this manual path enforces it too: a card
         // filed while autonomous mode was on and clicked after it was turned
         // off is refused at fire time, naming the reason.
-        "remote_instruct" => execute_remote_instruct(&state, &params).await,
+        "remote_instruct" => execute_remote_instruct(&state, params).await,
         // Phase G — project registry + background jobs.
-        "register_project" => execute_register_project(&state, &app, &params),
-        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
-        "enqueue_runner_task" => execute_enqueue_runner_task(&state, &params),
-        "open_test_env" => execute_open_test_env(&state, &app, &params),
-        "update_dev_goal" => execute_update_dev_goal(&state, &params),
+        "register_project" => execute_register_project(&state, &app, params),
+        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, params),
+        "enqueue_runner_task" => execute_enqueue_runner_task(&state, params),
+        "open_test_env" => execute_open_test_env(&state, &app, params),
+        "update_dev_goal" => execute_update_dev_goal(&state, params),
         // Workstream 2 — apply one batch of Athena backlog verdicts. Created by
         // `dev_tools_athena_triage_batch`, not by Athena's own grammar; this arm
         // is the plain-Approvals door (the Backlog verdict card uses
         // `dev_tools_apply_triage_verdicts` for per-item overrides).
-        "backlog_apply_triage" => execute_backlog_apply_triage(&state, &params),
+        "backlog_apply_triage" => execute_backlog_apply_triage(&state, params),
         // KPI layer — outcome steering on the user's behalf.
-        "calibrate_kpi" => execute_calibrate_kpi(&state, &params),
-        "evaluate_kpi" => execute_evaluate_kpi(&state, &params).await,
-        "scan_kpis" => execute_scan_kpis(&state, &app, &params),
-        "propose_kpi" => execute_propose_kpi(&state, &app, &params),
-        "schedule_proactive" => execute_schedule_proactive(&state, &params),
+        "calibrate_kpi" => execute_calibrate_kpi(&state, params),
+        "evaluate_kpi" => execute_evaluate_kpi(&state, params).await,
+        "scan_kpis" => execute_scan_kpis(&state, &app, params),
+        "propose_kpi" => execute_propose_kpi(&state, &app, params),
+        "schedule_proactive" => execute_schedule_proactive(&state, params),
         // Phase J — Fleet integration.
-        "fleet_send_input" => execute_fleet_send_input(&app, &params),
-        "fleet_broadcast" => execute_fleet_broadcast(&params),
-        "fleet_kill" => execute_fleet_kill(&app, &params),
-        "fleet_spawn" => execute_fleet_spawn(&app, &params),
-        "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
+        "fleet_send_input" => execute_fleet_send_input(&app, params),
+        "fleet_broadcast" => execute_fleet_broadcast(params),
+        "fleet_kill" => execute_fleet_kill(&app, params),
+        "fleet_spawn" => execute_fleet_spawn(&app, params),
+        "fleet_dispatch" => execute_fleet_dispatch(&app, params),
         // WP2 — Mastermind canvas actions. Thin slug-resolving wrappers over
         // the two executors above (plus the idea scanner); see
         // approval_exec_canvas.rs for why they are wrappers and not new
         // capability.
-        "canvas_dispatch" => execute_canvas_dispatch(&state, &app, &params),
-        "canvas_group_dispatch" => execute_canvas_group_dispatch(&state, &app, &params),
-        "canvas_run_idea_scan" => execute_canvas_run_idea_scan(&state, &app, &params).await,
-        "fleet_intervene" => execute_fleet_intervene(&app, &params),
-        "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
-        "fleet_wake" => execute_fleet_wake(&app, &params).await,
-        "fleet_resume" => execute_fleet_resume(&app, &params).await,
+        "canvas_dispatch" => execute_canvas_dispatch(&state, &app, params),
+        "canvas_group_dispatch" => execute_canvas_group_dispatch(&state, &app, params),
+        "canvas_run_idea_scan" => execute_canvas_run_idea_scan(&state, &app, params).await,
+        "fleet_intervene" => execute_fleet_intervene(&app, params),
+        "fleet_redirect_op" => execute_fleet_redirect_op(&app, params),
+        "fleet_wake" => execute_fleet_wake(&app, params).await,
+        "fleet_resume" => execute_fleet_resume(&app, params).await,
         // DEV MODE — self-development loop. Gated on dev mode + a debug build
         // inside the executor itself (see approval_exec_dev.rs), which is what
         // bounds it on BOTH consent paths.
@@ -247,24 +247,24 @@ pub(crate) async fn execute_approval_action(
                 ))),
             }
         }
-        "dev_merge" => execute_dev_merge(&state, &params),
+        "dev_merge" => execute_dev_merge(&state, params),
         // Phase C3 — Team assignment dispatch.
-        "assign_team" => execute_assign_team(&state, &app, &params).await,
-        "analyze_fleet" => execute_analyze_fleet(&state, &app, &params).await,
-        "run_browser_test" => execute_run_browser_test(&state, &app, &params),
+        "assign_team" => execute_assign_team(&state, &app, params).await,
+        "analyze_fleet" => execute_analyze_fleet(&state, &app, params).await,
+        "run_browser_test" => execute_run_browser_test(&state, &app, params),
         // Team-channel orchestration (C2) — Athena posts into a team channel.
-        "post_team_message" => execute_post_team_message(&state, &params),
+        "post_team_message" => execute_post_team_message(&state, params),
         // Night Shift v1 — the ONLY dispatch path for a night plan (no plan
         // runs unapproved; see approval_exec_night.rs).
-        "night_shift_execute_plan" => execute_night_shift_execute_plan(&state, &app, &params),
+        "night_shift_execute_plan" => execute_night_shift_execute_plan(&state, &app, params),
         // Skills + Knowledge ops (approval_exec_knowledge.rs). `skill_sync`
         // is pure file ops between the workspace library and project copies;
         // the read halves are the `describe_skill_fleet` / `describe_knowledge`
         // READ_OPS in the dispatcher.
-        "skill_sync" => execute_skill_sync(&state, &params),
-        "run_pattern_harvest" => execute_run_pattern_harvest(&state, &app, &params),
-        "apply_pattern" => execute_apply_pattern(&state, &app, &params),
-        "evaluate_pattern" => execute_evaluate_pattern(&state, &app, &params).await,
+        "skill_sync" => execute_skill_sync(&state, params),
+        "run_pattern_harvest" => execute_run_pattern_harvest(&state, &app, params),
+        "apply_pattern" => execute_apply_pattern(&state, &app, params),
+        "evaluate_pattern" => execute_evaluate_pattern(&state, &app, params).await,
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),

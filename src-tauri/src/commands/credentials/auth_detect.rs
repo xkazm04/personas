@@ -408,7 +408,7 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
 
     let handles: Vec<_> = CLI_PROBES
         .iter()
-        .zip(resolved.into_iter())
+        .zip(resolved)
         .map(|(probe, maybe_path)| {
             let service_type = probe.service_type.to_string();
             let args: Vec<String> = probe.args.iter().map(|a| a.to_string()).collect();

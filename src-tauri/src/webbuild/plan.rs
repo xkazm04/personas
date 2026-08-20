@@ -57,20 +57,22 @@ struct DecisionEnvelope {
     selector: Option<String>,
 }
 
-/// Extract trailing `BUILD_PLAN: {json}` and `NEEDS_INPUT: <question>` lines from
-/// the assistant text. Returns the cleaned reply (markers stripped — never show
-/// raw markers) plus the parsed phases and question when present. Malformed
-/// markers are still stripped so they never leak into the reply.
-pub fn extract_build_turn(
-    assistant_text: &str,
-) -> (
+/// One parsed assistant turn: the cleaned reply, then the parsed phases,
+/// question, options, area and selector when their markers were present.
+pub type BuildTurn = (
     String,
     Option<Vec<WebBuildPhase>>,
     Option<String>,
     Vec<String>,
     Option<String>,
     Option<String>,
-) {
+);
+
+/// Extract trailing `BUILD_PLAN: {json}` and `NEEDS_INPUT: <question>` lines from
+/// the assistant text. Returns the cleaned reply (markers stripped — never show
+/// raw markers) plus the parsed phases and question when present. Malformed
+/// markers are still stripped so they never leak into the reply.
+pub fn extract_build_turn(assistant_text: &str) -> BuildTurn {
     let mut phases: Option<Vec<WebBuildPhase>> = None;
     let mut question: Option<String> = None;
     let mut options: Vec<String> = Vec::new();

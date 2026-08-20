@@ -127,14 +127,13 @@ pub fn score_measured_fitness(
     } else {
         let scored: Vec<f64> = samples
             .iter()
-            .map(|s| {
+            .filter_map(|s| {
                 if !s.success {
                     Some(0.0)
                 } else {
                     s.eval_composite
                 }
             })
-            .flatten()
             .collect();
         if !scored.is_empty() {
             (scored.iter().sum::<f64>() / scored.len() as f64, "eval")

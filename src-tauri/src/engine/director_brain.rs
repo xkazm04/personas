@@ -85,7 +85,7 @@ fn list_note_files(dir: &Path) -> Vec<(SystemTime, PathBuf)> {
             .collect(),
         Err(_) => return Vec::new(),
     };
-    files.sort_by(|a, b| a.0.cmp(&b.0));
+    files.sort_by_key(|a| a.0);
     files
 }
 

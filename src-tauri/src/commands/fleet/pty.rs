@@ -608,6 +608,13 @@ pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
 /// the bounded ring (so claude never blocks on a full pipe and memory stays
 /// flat regardless of a 1M-token run), they just don't pay the
 /// serialize→IPC→xterm-parse cost for output nobody is looking at.
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 fn reader_loop(
     app: AppHandle,
     session_id: String,

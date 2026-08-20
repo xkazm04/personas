@@ -665,11 +665,11 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
         }
     }
 
-    Ok(serde_json::to_string_pretty(&json!({
+    serde_json::to_string_pretty(&json!({
         "self": { "id": src_id, "name": src_name },
         "neighbors": neighbors,
     }))
-    .map_err(|e| format!("Serialize error: {e}"))?)
+    .map_err(|e| format!("Serialize error: {e}"))
 }
 
 /// Return the list of available MCP tools with their schemas.
@@ -2103,8 +2103,7 @@ fn handle_arena_list_runs(args: &Value, pool: &McpDbPool) -> Result<String, Stri
         .get("limit")
         .and_then(|v| v.as_i64())
         .unwrap_or(10)
-        .max(1)
-        .min(100);
+        .clamp(1, 100);
 
     let conn = pool.get()?;
     let mut stmt = conn

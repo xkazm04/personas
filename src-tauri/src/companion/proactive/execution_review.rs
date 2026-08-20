@@ -9,11 +9,11 @@
 //!
 //!   - **drop**      — routine noise; nothing surfaces anywhere (tracing only).
 //!   - **digest**    — worth one line on an aggregated proactive card
-//!                     (`trigger_kind = "execution_review"`, deduped per
-//!                     hour bucket) — NOT a chat turn.
+//!     (`trigger_kind = "execution_review"`, deduped per
+//!     hour bucket) — NOT a chat turn.
 //!   - **deep_dive** — at most ONE group per batch graduates to a full
-//!                     `TurnOrigin::Proactive` reasoning turn (chat +
-//!                     operation proposals), pre-screened as worth it.
+//!     `TurnOrigin::Proactive` reasoning turn (chat +
+//!     operation proposals), pre-screened as worth it.
 //!
 //! This replaces the original per-candidate design (≤2 full chat turns per
 //! tick, each persisting a `[proactive: execution_review]` system episode
@@ -76,12 +76,12 @@ pub async fn run_execution_review_debouncer(
         REVIEW_SIGNAL.notified().await;
         // Debounce: keep resetting the window while finishes keep
         // arriving, so a burst of scheduled runs collapses into one pass.
-        loop {
-            match tokio::time::timeout(DEBOUNCE, REVIEW_SIGNAL.notified()).await {
-                Ok(_) => continue, // another finish landed — extend the window
-                Err(_) => break,   // quiet for DEBOUNCE — go review
-            }
-        }
+        // Ok: another finish landed, so extend the window. Err: quiet for a
+        // whole DEBOUNCE, so go review.
+        while tokio::time::timeout(DEBOUNCE, REVIEW_SIGNAL.notified())
+            .await
+            .is_ok()
+        {}
         if !crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
             continue; // mode off — drop the signal, no reviews
         }
@@ -170,6 +170,21 @@ struct CandidateScan {
     window_saturated: bool,
 }
 
+/// One terminal execution as the candidate scan reads it: `(id, persona_id,
+/// persona_name, status, duration_ms, cost_usd, error_message, business_outcome,
+/// finished_at)`.
+type TerminalExecutionRow = (
+    String,
+    String,
+    String,
+    String,
+    Option<i64>,
+    f64,
+    Option<String>,
+    Option<String>,
+    String,
+);
+
 /// Scan for qualifying executions after the cursor. Flag thresholds are
 /// per-persona-adaptive (see `baselines`): a run flags when it deviates from
 /// *its persona's* learned cost/duration norm, falling back to the global
@@ -183,17 +198,7 @@ fn collect_candidates(
     // can both pick triage candidates AND learn the newest timestamp to
     // advance the cursor to. Scope the borrow so the connection is released
     // before the baseline pass opens its own.
-    let rows: Vec<(
-        String,
-        String,
-        String,
-        String,
-        Option<i64>,
-        f64,
-        Option<String>,
-        Option<String>,
-        String,
-    )> = {
+    let rows: Vec<TerminalExecutionRow> = {
         let conn = sys_db.get()?;
         let mut stmt = conn.prepare(
             "SELECT e.id, e.persona_id, COALESCE(p.name, e.persona_id) AS persona_name, e.status,

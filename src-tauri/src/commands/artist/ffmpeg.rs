@@ -537,8 +537,8 @@ async fn find_ffprobe_path() -> Option<PathBuf> {
 /// Compile a Composition JSON blob to a RenderPlan IR.
 ///
 /// Exposed so the browser preview can share the Rust compiler instead of
-/// maintaining a parallel TypeScript port. Preview mode uses Fold + frame-snap
-/// + !for_export; export still calls `render_plan::compile` directly in its
+/// maintaining a parallel TypeScript port. Preview mode uses Fold + frame-snap +
+/// !for_export; export still calls `render_plan::compile` directly in its
 /// own command. Auth-gated because the parser is reachable from any IPC
 /// caller and unbounded composition_json size is a CPU-DoS vector.
 #[tauri::command]
@@ -1682,6 +1682,7 @@ fn bg_source_hex(plan: &RenderPlan) -> String {
 /// - `speed = 0.0` → `0.0 / 0.5 == 0.0` → `while remaining < 0.5` infinite loop.
 /// - `speed = +∞` → `inf / 2.0 == inf` → `while remaining > 2.0` infinite loop.
 /// - `speed < 0`  → `−x / 0.5 == −2x`, diverges → `while remaining < 0.5` infinite loop.
+///
 /// The cancel token is only checked at await points, so this hang is
 /// unrecoverable from the UI; the user must kill the app.
 fn atempo_chain(speed: f64) -> Vec<String> {

@@ -179,6 +179,12 @@ pub fn dev_tools_workspace_knowledge_create(
 }
 
 #[tauri::command]
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_workspace_knowledge_update(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -287,8 +293,8 @@ pub fn dev_tools_workspace_knowledge_decide_bulk(
     repo::decide_knowledge_bulk(&state.db, &ids, &decision, None)
 }
 
-/// Derive `governing_id` across a workspace: within each topic, the macro
-/// doctrine adopts its instances. Runs after ingest and on demand.
+// Derive `governing_id` across a workspace: within each topic, the macro
+// doctrine adopts its instances. Runs after ingest and on demand.
 // ── pattern-fabric v2: evidence + structure doors ───────────────────────
 
 /// Evidence rows for one knowledge item (pattern-fabric v2), newest first.

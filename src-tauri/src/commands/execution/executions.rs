@@ -696,7 +696,7 @@ pub fn get_execution_log_lines(
             // Forward pagination: skip `offset` matching lines, take `limit`
             let lines: Vec<String> = reader
                 .lines()
-                .filter_map(|l| l.ok())
+                .map_while(Result::ok)
                 .filter_map(|line| {
                     line.find("[STDOUT] ")
                         .map(|pos| sanitize_secrets(&line[pos + 9..]))
@@ -710,7 +710,7 @@ pub fn get_execution_log_lines(
             // using a ring buffer to keep memory bounded.
             use std::collections::VecDeque;
             let mut ring = VecDeque::with_capacity(max_lines + 1);
-            for line in reader.lines().filter_map(|l| l.ok()) {
+            for line in reader.lines().map_while(Result::ok) {
                 if let Some(pos) = line.find("[STDOUT] ") {
                     ring.push_back(sanitize_secrets(&line[pos + 9..]));
                     if ring.len() > max_lines {
@@ -959,7 +959,7 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
                 if let Some(ref err) = e.error_message {
                     // Truncate error to keep context compact
                     let truncated = if err.len() > 200 {
-                        crate::utils::text::truncate_on_char_boundary(&err, 200)
+                        crate::utils::text::truncate_on_char_boundary(err, 200)
                     } else {
                         err.as_str()
                     };
