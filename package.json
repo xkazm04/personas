@@ -60,6 +60,7 @@
     "test:playwright:tour": "playwright test --config=playwright.config.ts getting-started-tour",
     "test:playwright:tours": "playwright test --config=playwright.config.ts tours-explore",
     "test:rust": "node scripts/build/run-rust-tests.mjs",
+    "test:smoke": "playwright test --config=playwright.config.ts module-smoke",
     "test:rust:crates": "node scripts/build/run-rust-tests.mjs --crates",
     "test:tours:fresh": "node scripts/test/run-tours-fresh.mjs",
     "test:watch": "vitest",
