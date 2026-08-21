@@ -4418,7 +4418,7 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/db/src/repos/dev_tools_page_tests.rs",
+          "path": "src-tauri/db/src/repos/dev/tasks_page_tests.rs",
           "reason": "a test-fixture module carrying NO #[cfg(test)] attribute, so only a filename rule can see it — the doctrine's named case."
         }
       ],
