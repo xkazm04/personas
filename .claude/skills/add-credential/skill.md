@@ -358,8 +358,8 @@ If the env vars are not configured, skip this step and inform the user they can 
 ## Step 8: Verify
 
 Run these checks:
-1. `cargo check` in `src-tauri/` — Rust compilation
-2. `npx tsc --noEmit` in project root — TypeScript type checking
+1. `npm run check` — the repo's real gate: **ten** checks in an `&&` chain, ending in `tsc --noEmit` + `eslint src/`. Not a hand-rolled `tsc`+`lint` pair — the chain stops at the first failure, so a green `tsc` alone says nothing about the eight gates ahead of it. See `.claude/CLAUDE.md` → "PR self-review".
+2. `cargo check --manifest-path src-tauri/Cargo.toml --features desktop` — Rust compilation
 3. Verify the JSON file is valid JSON
 4. Verify the SVG renders (check `fill="currentColor"` is present)
 
