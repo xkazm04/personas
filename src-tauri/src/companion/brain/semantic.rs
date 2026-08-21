@@ -280,6 +280,41 @@ pub async fn find_near_duplicate(
     Ok(None)
 }
 
+/// Reinforce an existing fact: boost importance by 1 (cap 5), bump
+/// last_seen_at, append any new source episode ids. Used when a near-
+/// duplicate fact is found at consolidation time — the new evidence
+/// strengthens the existing entry instead of producing a redundant row.
+/// The provenance contract is preserved: every reinforce path adds at
+/// least one source (caller passes the proposal's sources).
+#[cfg(feature = "ml")]
+pub fn reinforce_fact(
+    pool: &UserDbPool,
+    fact_id: &str,
+    new_sources: &[String],
+) -> Result<(), AppError> {
+    let now = Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "UPDATE companion_node
+         SET importance = MIN(5, importance + 1), updated_at = ?1
+         WHERE id = ?2 AND kind = 'fact'",
+        params![now, fact_id],
+    )?;
+    tx.execute(
+        "UPDATE companion_fact SET last_seen_at = ?1 WHERE id = ?2",
+        params![now, fact_id],
+    )?;
+    for src in new_sources {
+        tx.execute(
+            "INSERT OR IGNORE INTO companion_provenance (fact_id, episode_id) VALUES (?1, ?2)",
+            params![fact_id, src],
+        )?;
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 #[cfg(not(feature = "ml"))]
 #[allow(dead_code)]
 pub async fn write_fact_and_embed(

@@ -38,12 +38,33 @@
 //! - Not a streaming surface. The synthesis call completes before the chat
 //!   turn starts; users don't see the briefing being generated.
 
+#[cfg(feature = "ml")]
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "ml")]
-use crate::companion::brain::oneshot::{self, call_claude_text};
+use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
+#[cfg(feature = "ml")]
+use crate::companion::brain::retrieval::Recall;
 #[cfg(feature = "ml")]
 use crate::db::UserDbPool;
+#[cfg(feature = "ml")]
+use crate::error::AppError;
+
+/// Token estimate above which synthesis is preferred over raw injection.
+/// 5000 tokens of raw chunks dilutes context per the Sharma blueprint.
+/// Below this, the cost of an extra Claude call outweighs the dilution
+/// savings.
+#[cfg(feature = "ml")]
+pub const SYNTHESIS_TOKEN_THRESHOLD: usize = 5000;
+
+/// Wall-clock cap on the synthesis call. The chat turn can't proceed
+/// until synthesis returns (or fails through to raw chunks). Generous
+/// enough that a slow Opus call doesn't trip over the limit, tight
+/// enough that a hung CLI doesn't hold the user's chat hostage.
+#[cfg(feature = "ml")]
+const SYNTHESIS_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// One synthesized briefing — the output of a single synthesis pass.
 /// Replaces the raw recall sections in the system prompt when present.
@@ -60,6 +81,50 @@ pub struct Briefing {
     /// Up to 3 active goals or open promises that should bias the response.
     #[serde(default)]
     pub salient_obligations: Vec<String>,
+}
+
+/// Outer envelope the synthesis prompt asks Claude to emit. Keeping this
+/// thin (one field) so future fields can be added without breaking the
+/// envelope schema (any new field defaults out via `#[serde(default)]`).
+#[cfg(feature = "ml")]
+#[derive(Debug, Deserialize)]
+struct BriefingEnvelope {
+    briefing: Briefing,
+}
+
+/// Rough char-based token estimate. We don't ship a tokenizer with the
+/// app; charcount/4 is the standard ballpark for English text and is good
+/// enough for budget gating (off by 20% on either side is fine — the
+/// threshold is not a hard cliff).
+#[cfg(feature = "ml")]
+pub fn estimate_recall_tokens(r: &Recall) -> usize {
+    let mut chars: usize = 0;
+    // Episodes: role + timestamp + content. Add 16 chars overhead per item
+    // for the role + created_at metadata that gets rendered.
+    for ep in &r.episodes {
+        chars = chars.saturating_add(ep.content.len() + 16);
+    }
+    // Doctrine hits: file_path + content.
+    for d in &r.doctrine {
+        chars = chars.saturating_add(d.content.len() + d.file_path.len() + 8);
+    }
+    // Facts: key + value + scope/importance/confidence overhead.
+    for f in &r.facts {
+        chars = chars.saturating_add(f.value.len() + f.key.len() + 16);
+    }
+    // Procedurals: trigger + behavior + scope overhead.
+    for p in &r.procedurals {
+        chars = chars.saturating_add(p.trigger.len() + p.behavior.len() + 16);
+    }
+    // Goals: description + title + status overhead.
+    for g in &r.goals {
+        chars = chars.saturating_add(g.description.len() + g.title.len() + 16);
+    }
+    // Backlog: summary + kind/source overhead.
+    for b in &r.backlog {
+        chars = chars.saturating_add(b.summary.len() + 16);
+    }
+    chars / 4
 }
 
 /// Synthesize a `Recall` into a focused briefing via an ephemeral
@@ -138,6 +203,100 @@ async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<Briefing
     )
     .await?;
     parse_envelope(&text)
+}
+
+#[cfg(feature = "ml")]
+fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
+    let mut p = String::with_capacity(8 * 1024);
+    p.push_str(
+        "You are a context summarizer for Athena, a personal AI companion. \
+         The user just sent a message; below is everything Athena's memory \
+         system retrieved as potentially relevant. Most of it isn't directly \
+         useful for this turn — your job is to compress it into a focused \
+         briefing Athena can use without drowning in detail.\n\n",
+    );
+    p.push_str("# User's current message\n\n");
+    p.push_str(query.trim());
+    p.push_str("\n\n");
+
+    if !recall.episodes.is_empty() {
+        p.push_str("# Recent conversation episodes (oldest first)\n\n");
+        for ep in &recall.episodes {
+            p.push_str(&format!(
+                "## {} — {}\n\n{}\n\n",
+                ep.role, ep.created_at, ep.content
+            ));
+        }
+    }
+    if !recall.facts.is_empty() {
+        p.push_str("# Known facts about the user/projects/world\n\n");
+        for f in &recall.facts {
+            p.push_str(&format!(
+                "- [{scope}/{key}, imp {imp}] {value}\n",
+                scope = f.scope,
+                key = f.key,
+                imp = f.importance,
+                value = f.value.trim().replace('\n', " "),
+            ));
+        }
+        p.push('\n');
+    }
+    if !recall.goals.is_empty() {
+        p.push_str("# Active goals\n\n");
+        for g in &recall.goals {
+            p.push_str(&format!("- {}: {}\n", g.title.trim(), g.description.trim()));
+        }
+        p.push('\n');
+    }
+    if !recall.procedurals.is_empty() {
+        p.push_str("# Behavioral rules Athena follows\n\n");
+        for r in &recall.procedurals {
+            p.push_str(&format!(
+                "- when {} → {}\n",
+                r.trigger.trim(),
+                r.behavior.trim(),
+            ));
+        }
+        p.push('\n');
+    }
+    if !recall.backlog.is_empty() {
+        p.push_str("# Open commitments / capability gaps\n\n");
+        for b in &recall.backlog {
+            p.push_str(&format!("- [{}] {}\n", b.kind, b.summary.trim()));
+        }
+        p.push('\n');
+    }
+    if !recall.doctrine.is_empty() {
+        p.push_str("# Reference docs (curated)\n\n");
+        for d in &recall.doctrine {
+            p.push_str(&format!("## {}\n\n{}\n\n", d.file_path, d.content.trim()));
+        }
+    }
+
+    p.push_str(
+        "\n# Output\n\nReturn ONLY a JSON object of this shape, nothing else, no prose, no fencing:\n\n\
+         {\n  \"briefing\": {\n    \"summary\": \"<200-300 token narrative specific to the user's current message>\",\n    \"key_facts\": [\"<verbatim fact>\", ...],\n    \"salient_obligations\": [\"<active goal or open promise>\", ...]\n  }\n}\n\n\
+         Rules:\n\
+         - summary: 200-300 tokens, narrative, specific to the user's current message\n\
+         - key_facts: up to 5 verbatim facts that should bias this turn's response\n\
+         - salient_obligations: up to 3 active goals/promises that matter now\n\
+         - Drop anything that doesn't help with the user's current message\n\
+         - If no recall is relevant, return empty arrays and a one-line summary\n\
+         - Start with `{` and end with `}`. No code fences.\n",
+    );
+    p
+}
+
+#[cfg(feature = "ml")]
+fn parse_envelope(text: &str) -> Result<Briefing, AppError> {
+    let json = extract_json_span(text, "recall synthesis reply")?;
+    let envelope: BriefingEnvelope = serde_json::from_str(json).map_err(|e| {
+        AppError::Internal(format!(
+            "recall synthesis JSON parse failed: {e}; got: {}",
+            preview(json, 200)
+        ))
+    })?;
+    Ok(envelope.briefing)
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────

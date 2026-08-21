@@ -23,7 +23,15 @@ use std::sync::Arc;
 use rusqlite::params;
 
 #[cfg(feature = "ml")]
+use crate::db::UserDbPool;
+#[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
+#[cfg(feature = "ml")]
+use crate::error::AppError;
+
+/// Native dim for AllMiniLML6V2Q (the model the app already ships with).
+#[cfg(feature = "ml")]
+pub const COMPANION_VEC_DIMS: usize = 384;
 
 /// Latched to `true` only after the table has been created *successfully* this
 /// process. Unlike a `Once` (which records that the closure *ran*, not that it
@@ -182,6 +190,61 @@ pub struct ReembedCandidate {
     /// reference instead of a real file; those fall back to the excerpt.
     pub file_path: String,
     pub body_excerpt: Option<String>,
+}
+
+/// Which nodes have no vector, or a vector recorded under a different model.
+///
+/// Compiled under both feature sets and free of any embedder dependency, so
+/// the selection rule — the part with actual room to be wrong — is unit
+/// testable without an ONNX model.
+///
+/// A NULL `embedding_model` with a vector present is deliberately LEFT ALONE:
+/// `retrieval::filter_by_model` grandfathers an unstamped node as
+/// current-model, so re-embedding it would be churn rather than repair.
+/// A missing `companion_embedding` table (no `ml` build has ever run here)
+/// reads as "nothing is vectored", which is exactly right.
+#[cfg(feature = "ml")]
+pub fn reembed_candidates(
+    pool: &UserDbPool,
+    current_model: &str,
+) -> Result<Vec<ReembedCandidate>, AppError> {
+    let conn = pool.get()?;
+
+    let vectored: std::collections::HashSet<String> =
+        match conn.prepare("SELECT node_id FROM companion_embedding") {
+            Ok(mut stmt) => match stmt.query_map([], |r| r.get::<_, String>(0)) {
+                Ok(rows) => rows.filter_map(Result::ok).collect(),
+                Err(_) => std::collections::HashSet::new(),
+            },
+            Err(_) => std::collections::HashSet::new(),
+        };
+
+    let mut stmt = conn.prepare(
+        "SELECT id, file_path, body_excerpt, embedding_model FROM companion_node \
+         ORDER BY importance DESC, updated_at DESC",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, Option<String>>(2)?,
+            r.get::<_, Option<String>>(3)?,
+        ))
+    })?;
+
+    let mut out = Vec::new();
+    for row in rows {
+        let (id, file_path, body_excerpt, stamped) = row?;
+        let stale_model = stamped.as_deref().is_some_and(|m| m != current_model);
+        if stale_model || !vectored.contains(&id) {
+            out.push(ReembedCandidate {
+                id,
+                file_path,
+                body_excerpt,
+            });
+        }
+    }
+    Ok(out)
 }
 
 /// Backfill `companion_embedding` for every node that has no vector, or whose

@@ -8,10 +8,6 @@
 //! subscription (`engine::subscription`), which previously carried a drifted
 //! copy of the same logic.
 
-use std::sync::Arc;
-
-use tauri::State;
-
 use crate::error::AppError;
 use crate::AppState;
 

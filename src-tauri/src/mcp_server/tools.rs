@@ -728,8 +728,11 @@ fn handle_query_dataset(args: &Value, _pool: &McpDbPool) -> Result<String, Strin
     scrape_bridge("query", &body)
 }
 
-#[cfg_attr(not(feature = "scraper"), allow(unused_variables))]
-pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
+// `pool` is unused in EVERY feature shape — it exists for signature symmetry
+// with `call_tool`, which does take one. The attribute here used to read
+// `cfg_attr(not(feature = "scraper"), ...)`, which suppressed the warning in
+// the one shape that never emits it and left it live in the shape that does.
+pub fn list_tools(_pool: &McpDbPool) -> Vec<Value> {
     let mut tools = vec![
         json!({
             "name": "personas_list",
