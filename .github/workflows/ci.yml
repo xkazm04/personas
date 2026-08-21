@@ -349,6 +349,102 @@ jobs:
         if: always()
         run: sccache --show-stats
 
+  # ─── Job B2: Feature-shape compile matrix ───────────────────────────
+  # WHY THIS EXISTS. On 2026-08-21 a wave deleted 72 unreachable IPC commands
+  # and everything clippy said they held up. That verification ran under
+  # `--features desktop`, so ~23 symbols whose ONLY consumers sit behind
+  # `#[cfg(feature = "ml")]` looked dead and were removed. The result was 56
+  # compile errors under `desktop-full` — which is the feature set CI and
+  # production actually ship — while every gate in the repository stayed green.
+  #
+  # The hole was known and written down before it was walked into: 643 of the
+  # 701 `#[cfg(feature = …)]` mentions in this workspace are never compiled by
+  # CI, because the only Rust job builds one shape. A lint cannot see code it
+  # does not compile, and neither can a person reading the lint's output.
+  #
+  # `cargo check` rather than build or test: the failure class is "this feature
+  # shape no longer compiles", and check catches all of it for a fraction of the
+  # cost. Widening to `--all-targets` would also cover feature-gated test code
+  # and is the obvious next step once the wall-clock here is known.
+  #
+  # Runs on Linux only. The shapes are about cfg resolution, not about
+  # platform, and the three-OS matrix already lives in rust-tests.
+  rust-features:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # What ships. ml + p2p on top of desktop; pulls ORT and fastembed.
+          - features: desktop-full
+            label: desktop-full
+          # Embedded scraper (pumper-core, a git dependency).
+          - features: desktop,scraper
+            label: scraper
+          # The :17320 automation server the Playwright suite drives.
+          - features: desktop,test-automation
+            label: test-automation
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      PERSONAS_ALLOW_FALLBACK_KEY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mozilla-actions/sccache-action@v0.0.7
+      - name: Enable sccache only if it actually works
+        shell: bash
+        run: |
+          if sccache --start-server >/dev/null 2>&1 && sccache --show-stats >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=sccache unavailable::Compiling without sccache."
+          fi
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: features-${{ matrix.label }}
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libpipewire-0.3-dev \
+            libgbm-dev \
+            libwayland-dev \
+            libdbus-1-dev
+      - name: cargo check --features ${{ matrix.features }}
+        run: cargo check --workspace --manifest-path src-tauri/Cargo.toml --features ${{ matrix.features }}
+
+  # ─── Job B3: the featureless shape ──────────────────────────────────
+  # The root crate cannot build without `desktop` — capabilities/default.json
+  # references `updater:default`, whose plugin is an optional dependency that
+  # only `desktop` enables, so the tauri build script aborts before compiling.
+  # The three library crates have no such constraint, and their no-feature
+  # shape is what a mobile target compiles: personas-core swaps the OS-keychain
+  # path for a stub, and both db and engine gate their ml/p2p surfaces off.
+  # Nothing else in CI ever compiles that.
+  rust-no-features:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: no-features
+      - name: cargo check (library crates, no features)
+        run: |
+          cargo check --manifest-path src-tauri/Cargo.toml \
+            -p personas-core -p personas-db -p personas-engine --all-targets
+
   # ─── Job C: Check generated command names are fresh ─────────
   command-name-drift:
     runs-on: ubuntu-latest

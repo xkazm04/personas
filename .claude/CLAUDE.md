@@ -443,6 +443,18 @@ fails on the repository's own sanctioned pattern. Widening CI to `--all-targets`
 is worth doing after the dead-code wave; it needs those two sites annotated
 first.
 
+> **⚠ `--features desktop` compiles ONE shape, and it is not the one that
+> ships.** `desktop-full = desktop + ml + p2p` is what CI and production build,
+> and **643 of the workspace's 701 `#[cfg(feature = …)]` mentions are never
+> compiled by a `desktop` run**. On 2026-08-21 a deletion wave removed ~23
+> symbols whose only consumers were `ml`-gated: every gate in the repository
+> stayed green and `desktop-full` failed with **56 errors**. A `rust-features`
+> CI matrix now compiles `desktop-full`, `desktop,scraper` and
+> `desktop,test-automation`, plus a `rust-no-features` job for the three
+> library crates. **If you delete Rust, run
+> `cargo check --workspace --manifest-path src-tauri/Cargo.toml --features desktop-full`
+> before you believe clippy.**
+
 `--workspace` and `--features desktop` are load-bearing on both cargo lines:
 without the feature the tauri build script aborts on the updater capability
 before compiling anything, and without `--workspace` only the root package is
