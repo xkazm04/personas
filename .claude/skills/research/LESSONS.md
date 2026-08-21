@@ -37,3 +37,38 @@ bumped independently (that run 1.1→1.2, this one 1.2→1.3).
 - **On a product-demo source, name where the source is WORSE, not just where it is ahead.** Not applied (the 1.3 compare-mode subsection already covers the adjacent case). The 1.3 rule says an outside checklist is not automatically the higher authority; this run showed the same move pays on a *non*-compare run. Two of twelve catches were places the repo's answer is strictly better — a machine-built vault index vs. the video's hand-maintained `index.md` files, and a 1,026-turn bench vs. "Haiku because it's smallest and cheapest". Writing down *why* the repo wins is what stops the next run on the next Obsidian video from re-proposing them as gaps.
 - **Codegen that lives in `predev`/`prebuild` has to be invoked by hand mid-session.** Not applied (project-shaped, but the class generalizes). `tsc` failed on three brand-new i18n keys until `scripts/i18n/gen-types.mjs` ran, and a new Tauri command needs `generate-command-names.mjs`. Both are wired into lifecycle hooks nobody runs during an in-session edit. When a repo generates a type tree from data files, run its generator immediately after touching the data, not at the gate.
 - **Shell cwd persists across tool calls, and a `cd` for a build step will silently redirect later searches.** Not applied (harness hygiene). After `cd src-tauri` for `cargo check`, the next repo-root grep searched the wrong tree and "found" my own new Rust file as a match for a TypeScript hook query. Caught only because the result was absurd. After any build step that changes directory, `cd` back explicitly or use absolute paths.
+
+## 1.4 — 2026-08-21 — personas
+
+- **A gate the skill names in prose is not the gate the repo runs.** This run audited the repo's own
+  `.claude/skills/` tree and found 12 skills each enumerating their own validation list; only 3 called
+  the canonical `npm run check`, and **zero** named `census:check` — which lefthook runs at pre-push. A
+  skill following its own instructions reported green and got stopped at push. Generalizes: when a repo
+  has one composite gate command, a skill should CALL it, never restate its parts. Applied in SKILL.md
+  Phase 8 (validation now routes through the composite gate).
+- **Prose rituals duplicated across skills are the drift surface, and the ledger proves it.** The
+  active-runs register/deregister ritual was prose in 23 skills with zero implementations. The file it
+  governs had reached 3,429 lines with two rival `## Active` sections, three "Recently completed"
+  sections, two incompatible entry formats, and 10 runs never closed. Deterministic steps (parse,
+  place, timestamp, compare, trim) belong in a script the skill calls; only judgment stays in prose.
+  Applied: `scripts/active-runs.mjs` + Phase 1.5/13h now invoke it.
+- **Split the iteration log out of SKILL.md.** 337 of 1,658 lines (20%) were history that loads on every
+  invocation and directs no behavior. `LESSONS.md` already established the on-demand-sibling contract in
+  this same directory; the log simply never used it. Now `ITERATION-LOG.md`.
+- **Absence claims still need uncapped greps — and presence claims need the RIGHT PATH.** Two near-misses
+  this run. (1) `git add <SKILL.md>` silently no-oped because git tracks 11 of 36 skills as lowercase
+  `skill.md`; Windows' case-insensitive FS let the edit land and the stage skip, so the commit looked
+  complete. Resolve real paths with `git ls-files` before staging. (2) A worktree probe "proved" a gate
+  failure was mine when the probe had merely changed relative-path resolution — the file-level argument
+  (did I touch what it reads?) was the correct test.
+
+### Redesign proposal — the isolated-index ritual must be ONE tool call, not a documented sequence
+
+- CLAUDE.md primitive #5 prescribes `IDX=$(mktemp); GIT_INDEX_FILE=$IDX git read-tree HEAD; git add …;
+  git commit …`. I followed it correctly and it still failed, because I split staging and commit across
+  two Bash calls and **shell env does not persist between them** — so the commit silently used the shared
+  index, reverted an entire prior task, and deleted a file, with green hooks and the right message.
+  Recovered via `git reset --mixed HEAD~1` (content was all on disk). The ritual is only safe as a single
+  invocation, which makes it exactly the kind of deterministic step that should be a script
+  (`scripts/git-scoped-commit.mjs`) rather than a documented sequence agents retype. NOT applied here —
+  it is CLAUDE.md-wide doctrine and the operator's call, not a /research change.

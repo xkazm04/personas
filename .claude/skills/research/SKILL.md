@@ -1,6 +1,6 @@
 ---
 name: research
-version: 1.4
+version: 1.5
 description: Extract actionable improvements for a project from external sources (video, blog, article, raw text). Scores ideas against the codebase, buckets into Code / Template / Credential, and persists findings to an Obsidian memory vault.
 argument-hint: "[source or question]"
 category: Maintenance
