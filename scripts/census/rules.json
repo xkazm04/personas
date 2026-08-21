@@ -4884,8 +4884,8 @@
         "description": "an agent-facing instruction to scope a commit with a pathspec. PROXY FOR the stack-free condition: the project prescribes a technique it has already measured to be unsound. Executed in a hook-free throwaway repo, BOTH `git commit -- <p>` and `git commit --only <p>` commit the WORKING TREE rather than the index, so a sibling's unstaged edits to a file in your pathspec ride in under your message. Four of the matching sites claim the opposite in so many words (\"bypass the shared index entirely\") and one calls it \"safe by construction\"."
       },
       "baseline": {
-        "files": 6,
-        "matches": 11
+        "files": 1,
+        "matches": 3
       },
       "floor": 40
     },

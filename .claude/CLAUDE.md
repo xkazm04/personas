@@ -341,8 +341,27 @@ deliberate.
 
 Multiple CLI sessions (Claude Code agents, manual sessions, skill invocations) often work in parallel on this checkout, on the same branch, without branching for isolation. The coordination surface is **[`.claude/active-runs.md`](./active-runs.md)** — a single git-tracked ledger that any session materially editing the working tree should touch twice:
 
-1. **At session start (Phase 0):** read the ledger; if any `## Active` entry's declared paths overlap your planned scope and the entry is `started`-status and less than 2 hours old, surface the conflict to the user before proceeding. Append your own entry to `## Active`.
-2. **At session end (Phase 11/13):** move your entry to the top of `## Recently completed` with the resulting commit SHA (or `aborted (<reason>)` / `handoff: <path>`).
+1. **At session start:** check for conflicts, then register.
+   ```bash
+   node scripts/active-runs.mjs check --paths "src/features/foo/**" "docs/bar/"   # exit 2 = live conflict
+   node scripts/active-runs.mjs register --slug my-run --title "what I am doing" --paths "src/features/foo/**"
+   ```
+2. **At session end:** deregister with the outcome.
+   ```bash
+   node scripts/active-runs.mjs complete --slug my-run --status "completed (commit: abc1234)"
+   ```
+
+**Do not hand-edit the ledger for these three operations.** They are deterministic —
+parsing, placement, timestamping, overlap comparison and staleness — and doing them by
+hand is what produced the state the script was written against: the file had reached
+3,429 lines with **two** `## Active` sections (against its own "the `## Active` section
+is the source of truth"), **three** "Recently completed" sections against a documented
+14-day window, **two mutually incompatible entry formats**, and **10** entries still
+marked `started` that no session ever closed. Run `node scripts/active-runs.mjs doctor`
+to see the current damage; it reports and never rewrites, because a coordination file
+other sessions are reading is not something to repair behind their backs.
+
+Judgment stays yours: the slug, the declared paths, and what to do about a real conflict.
 
 Rationale and full design space in **[`docs/architecture/cli-coordination.md`](../docs/architecture/cli-coordination.md)**. Ledger format conventions (timestamps, path declaration granularity, edit-conflict retries) live at the top of `active-runs.md` itself.
 

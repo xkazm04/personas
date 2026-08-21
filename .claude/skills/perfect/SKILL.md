@@ -203,7 +203,8 @@ Loop while `pool < 10` and the user hasn't said stop:
      entire locale-conflict machinery rounds 1–2 had to invent.
    - **Commits — builders still commit their own work** (never-lose-work beats commit hygiene, and
      builder death is the norm), but through an index-safe form: `git add <only your NEW files>`,
-     then **`git commit --only <every path in this commit>`**. `--only` builds the commit from those
+     then commit through an **isolated index** (`GIT_INDEX_FILE` seeded with `git read-tree HEAD`;
+     `.claude/CLAUDE.md` primitive #5). It builds the commit from those
      paths alone and *disregards whatever else is staged*, so a sibling's in-flight staging can never
      ride along. **Never** `git add -A` / `git add .` / `git add -u` / bare `git commit` /
      `git commit -a` / `git stash` / `git checkout <path>` / `git restore`. An `index.lock` race fails
@@ -223,7 +224,7 @@ Loop while `pool < 10` and the user hasn't said stop:
    via `SendMessage` — product calls, trade-offs and scope cuts are the Director's alone. A builder
    that stops without its final report gets one `SendMessage` nudge.
    **Builder-death recovery (session limits WILL kill builders):** the instant a builder dies, snapshot
-   its work as `wip(…)` with **`git commit --only <its write set> --no-verify`** — *not* `git add -A`,
+   its work as `wip(…)` through an **isolated index** over its write set (`--no-verify`) — *not* `git add -A`,
    which was safe only while the tree was private and is now actively dangerous. Then the Director
    either finishes inline or re-briefs a fresh builder with "continue from the WIP commit".
 
@@ -332,7 +333,7 @@ SHARED-RESOURCE PROTOCOL (non-negotiable):
   REPORT what you need instead — new i18n keys as a JSON fragment in your final
   report, new ts-rs structs by name — and the Director applies them once.
 - COMMITS: `git add <only your NEW files>` then
-  `git commit --only <every path in this commit> -m "..."`.
+  an isolated-index commit over every path in this commit (`.claude/CLAUDE.md` primitive #5).
   `--only` builds the commit from those paths alone and ignores whatever else is
   staged, so a sibling's in-flight staging can never ride along in your commit.
   FORBIDDEN: git add -A · git add . · git add -u · bare git commit · git commit -a
@@ -395,7 +396,9 @@ per direction → status (done|blocked|decision-needed), commits, files, verific
 
 ## Guardrails
 
-- **Never stash, never `git add -A`** — per-file staging, staged-count check before every commit; other sessions' work is sacred (parallel-safety primitives in CLAUDE.md apply in full). Inside a wave, `git commit --only <paths>` is the form that makes this safe by construction.
+- **Never stash, never `git add -A`** — per-file staging, staged-count check before every commit; other sessions' work is sacred (parallel-safety primitives in CLAUDE.md apply in full). Inside a wave, an **isolated-index** commit (`GIT_INDEX_FILE` + `git read-tree HEAD`) is the form that
+  makes this safe. `git commit --only` is NOT: it commits the working tree, so a sibling's unstaged edit
+  inside your pathspec rides in under your message.
 - **Efficiency outranks defensive isolation.** Before adding any protective step to this loop, ask whether the risk it defends against is instead a signal that the *grouping* is wrong. Machinery that exists to survive a bad wave plan should be deleted and the wave plan fixed.
 - **Cost discipline**: scouts are Explore-tier; builder-tier model spend goes only to accepted work; the Director never re-runs a scout whose brief is < 1 round old (it's in the context note).
 - **Honest ledger**: a direction only reaches `shipped` with gates green AND the Director having read the diff; anything else is `failed` with a reason. No silent drops — every accepted direction's fate is recorded.

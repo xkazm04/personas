@@ -1,6 +1,12 @@
 # Active Runs Ledger
 
 ## Active
+### research-adw-loop-engineering — /research (focus: local skills + CLAUDE.md) on IndyDevDan "Forget loop engineering / AI Developer Workflows" — session opus-5[1m]
+- **[2026-08-21 18:35]** Source: https://www.youtube.com/watch?v=VQy50fuxI34
+- **Paths:** `.claude/skills/**` (gate + ledger ritual prose) · `scripts/` (possible new ledger script) · `C:/Users/kazda/Documents/Obsidian/personas/{Research,Lessons,Patterns}/` · `.claude/active-runs.md`
+- **Status:** started
+- Note: stale `started` entry `research-mattpocock-prototype` (2026-08-13, 8d old) declares `.claude/skills/prototype/SKILL.md`, which overlaps my scope. Treated as stale, not a live conflict.
+
 ### skills-heatmap-design — design the Skills coverage heatmap against the knowledge registry + ship the row-source fix — session opus-5[1m] — **COMPLETE**
 - 2026-08-19. Deliverable: `docs/plans/skills-heatmap.md` (design/proposal; naming collision, row source, fleet-usage question, 6-step order). Code change is ONE file: `src/features/plugins/dev-tools/sub_skills/registry/useSkillsRegistry.ts`.
 - **Shipped:** the heatmap's rows now come from the wired registry's `skills/` lane (same library the Overview tab reads) instead of `~/.claude/skills` unconditionally, and union in everything installed in any column so heading the library at a registry cannot subtract a row that has coverage. The "no workspace in scope" blocker was false — `useSkillsRegistry.ts:52-60` resolved it already. No strings changed → no i18n. tsc clean, eslint 0.
@@ -1224,6 +1230,11 @@ If your session crashes, your entry stays under `## Active` with a stale
 timestamp — the next session can recognize it as abandoned.
 
 ## Conventions
+
+> **Use `scripts/active-runs.mjs`, not a hand edit.** `check` / `register` / `complete`
+> implement everything below deterministically; `doctor` reports where this file has
+> already drifted from it. Hand-editing these three operations is what produced the
+> duplicate `## Active` sections and the two rival entry formats now in this file.
 
 - Timestamps are local time, format `YYYY-MM-DD HH:MM`.
 - `Paths` declares the directories or globs the session expects to read or

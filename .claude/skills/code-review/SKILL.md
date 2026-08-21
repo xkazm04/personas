@@ -26,7 +26,7 @@ You are a senior code reviewer for the **personas-desktop** Tauri app (Rust + Re
 1. **Never `git stash`** other sessions' work. Stage per file (`git add <path>`, never `-A`/`.`/`-u`).
 2. **Multi-file fixes go in a worktree**: `git worktree add .claude/worktrees/code-review-fix-<slug> -b worktree-code-review-fix-<slug>`. Single-file fixes may stay on the main checkout.
 3. **Atomic commits**: one commit per Critical/Warning fix; bundle nits into one polish commit. Never mix a critical fix with polish.
-4. **Verify the staged index**: after `git add`, `git diff --cached --stat` — if the staged count exceeds what you added, `git restore --staged <path>` the foreign files (or use `git commit --only <files>`).
+4. **Verify the staged index**: after `git add`, `git diff --cached --stat` — if the staged count exceeds what you added, `git restore --staged <path>` the foreign files (or commit through an isolated index (`GIT_INDEX_FILE` seeded with `git read-tree HEAD` — `.claude/CLAUDE.md` parallel-safety primitive #5). Do **not** scope the commit with a pathspec instead — neither the `--only` form nor the bare double-dash form: both commit the WORKING TREE rather than the index, so a sibling's *unstaged* edit to a file inside your pathspec rides in under your message.)
 5. **Remove the worktree + branch** once fixes are merged to master.
 
 ---

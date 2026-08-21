@@ -186,18 +186,26 @@ Overlap on `.claude/active-runs.md` alone is **expected** — it's the coordinat
 
 ### 1.5c. Append your entry under `## Active`
 
-Use the entry format from the top of the ledger:
+Do **not** hand-edit the ledger — run the script. It picks the authoritative
+`## Active` section, stamps the time, formats the entry and refuses a duplicate slug:
 
-```markdown
-- **[YYYY-MM-DD HH:MM] /research — <slug>**
-  - **Source:** <url-or-pasted-or-text-hint>
-  - **Paths:** <best-guess directories or globs>
-  - **Status:** started
+```bash
+node scripts/active-runs.mjs register --slug <slug> --title "/research on <source>"   --paths ".claude/skills/**" "docs/concepts/" --source "<url>"
 ```
 
-The `<slug>` should match the one you'll use in Phase 9's Research note path (kebab-case from the source title, ≤40 chars). Timestamp is local time.
+The `<slug>` should match the one you'll use in Phase 9's Research note path (kebab-case
+from the source title, <=40 chars).
 
-If your Edit fails because the ledger has changed (another session edited it between your Read and Edit), re-read and retry. The Edit tool's unique-old-string rule prevents silent clobbers — a failed Edit is a hint to re-check for conflicts before retrying.
+Phase 1.5a's conflict check is the same script, and its exit code is the answer —
+`0` clean, `2` live conflict:
+
+```bash
+node scripts/active-runs.mjs check --paths ".claude/skills/**" "docs/concepts/"
+```
+
+It already excludes `.claude/active-runs.md` itself (expected overlap — it is the
+coordination surface) and already ignores entries past the 2-hour staleness window, so
+you do not re-implement either rule by hand.
 
 ---
 
@@ -1256,7 +1264,14 @@ This gives the user one line to verify the whole run is safely captured in git b
 
 ### 13h. Deregister from the Active-Runs Ledger
 
-Move your `## Active` entry in `.claude/active-runs.md` to the top of `## Recently completed`. Update its `Status` to one of:
+Run the script — it finds your entry, rewrites its status and moves it under
+`## Recently completed` in one call:
+
+```bash
+node scripts/active-runs.mjs complete --slug <slug> --status "completed (commit: <short-sha>)"
+```
+
+`--status` is one of:
 
 - `completed (commit: <short-sha>)` — Phase 13 successfully committed.
 - `aborted (skip 1: no changes)` — Phase 13a found no changes.
@@ -1265,7 +1280,10 @@ Move your `## Active` entry in `.claude/active-runs.md` to the top of `## Recent
 
 If your edit to `active-runs.md` happens AFTER Phase 13's commit, that's fine — the ledger update lands as an uncommitted file in the working tree, ready to be committed by the next session that ships work. (This avoids a chicken-and-egg of "needing to commit the deregister before the commit it references exists".)
 
-If you spot entries older than 14 days under `## Recently completed` while editing, trim them — keep the ledger focused on the recent rolling window.
+`node scripts/active-runs.mjs doctor` reports structural damage — duplicate `## Active`
+sections, entries past the 14-day window, and runs still marked `started` that nobody
+closed. It only reports; trimming stays a human call, because other sessions are reading
+this file live.
 
 If your run aborted before reaching Phase 13 (e.g., the user terminated mid-run), your `## Active` entry stays — the next session reads it as stale (>2h old) and surfaces it to its user. That's the recovery path; don't try to write a deregister from a half-finished state.
 

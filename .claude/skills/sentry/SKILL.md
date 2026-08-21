@@ -56,7 +56,7 @@ Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI ses
    cd .claude/worktrees/sentry-<YYYYMMDD>
    ```
 3. **Atomic commits per issue.** One commit per Sentry issue resolution — never bundle N issue fixes into one commit. The Sentry issue ID belongs in the commit message subject (`fix(sentry): <issue-id> — <short title>`) so the resolve API call and the commit are traceable from each other.
-4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or commit through an isolated index (`GIT_INDEX_FILE` seeded with `git read-tree HEAD` — `.claude/CLAUDE.md` parallel-safety primitive #5). Do **not** scope the commit with a pathspec instead — neither the `--only` form nor the bare double-dash form: both commit the WORKING TREE rather than the index, so a sibling's *unstaged* edit to a file inside your pathspec rides in under your message.
 5. **Clean up the worktree after merge.** Once the worktree's branch is in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/sentry-<YYYYMMDD>` and `git branch -D worktree-sentry-<YYYYMMDD>`. Treat as part of the session-end ledger ritual.
 
 ---
