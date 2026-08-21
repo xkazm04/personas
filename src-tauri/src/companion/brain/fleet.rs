@@ -17,7 +17,6 @@
 //! activity over time) and *now* (digest of what the fleet is doing this
 //! instant), without requiring her to call any tools.
 
-use crate::commands::fleet::registry::registry;
 use crate::commands::fleet::types::FleetSessionState;
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::session::DEFAULT_SESSION_ID;
@@ -145,72 +144,4 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
     }
-}
-
-/// One-block prompt digest of the *current* fleet state. Empty string
-/// when no non-exited sessions exist (so the prompt stays clean when
-/// fleet isn't in use). Called from `prompt::build_system_prompt` and
-/// appended into the observability section.
-pub fn current_state_digest() -> String {
-    let dtos = registry().list_dto();
-    let active: Vec<_> = dtos
-        .into_iter()
-        .filter(|s| !matches!(s.state, FleetSessionState::Exited))
-        .collect();
-    if active.is_empty() {
-        return String::new();
-    }
-
-    let mut waiting = 0usize;
-    let mut working = 0usize;
-    let mut idle = 0usize;
-    let mut stale = 0usize;
-    let mut spawning = 0usize;
-    let mut hibernated = 0usize;
-    for s in &active {
-        match s.state {
-            FleetSessionState::AwaitingInput => waiting += 1,
-            FleetSessionState::Running => working += 1,
-            FleetSessionState::Idle => idle += 1,
-            FleetSessionState::Stale => stale += 1,
-            FleetSessionState::Spawning => spawning += 1,
-            FleetSessionState::Hibernated => hibernated += 1,
-            // Finished counts as idle capacity for the digest — declared
-            // complete, awaiting the operator.
-            FleetSessionState::Finished => idle += 1,
-            FleetSessionState::Exited => {}
-        }
-    }
-
-    let mut s = String::from("\n## Active Fleet (Claude Code sessions)\n");
-    s.push_str(&format!(
-        "{} session{} live — {} awaiting input · {} working · {} idle · {} stale · {} spawning · {} hibernated.\n",
-        active.len(),
-        if active.len() == 1 { "" } else { "s" },
-        waiting, working, idle, stale, spawning, hibernated,
-    ));
-    s.push_str("Per-session:\n");
-    for sess in active.iter().take(10) {
-        let name = sess
-            .name
-            .as_deref()
-            .map(|n| format!(" — \"{n}\""))
-            .unwrap_or_default();
-        s.push_str(&format!(
-            "- `{id}` ({proj}{name}): {state}\n",
-            id = &sess.id[..sess.id.len().min(8)],
-            proj = sess.project_label,
-            name = name,
-            state = state_label(sess.state),
-        ));
-    }
-    if active.len() > 10 {
-        s.push_str(&format!("- … {} more not shown\n", active.len() - 10));
-    }
-    s.push_str(
-        "\nYou may reference these sessions by id, project, or name. When \
-the user asks about \"the fleet\", \"sessions\", \"what's running\", or \
-similar, ground the answer in this list.\n",
-    );
-    s
 }

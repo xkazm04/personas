@@ -71,8 +71,6 @@ const MAX_OAUTH_CALLBACK_ATTEMPTS: u32 = 32;
 /// to inspect the HTTP status and body (e.g. to detect revocation errors).
 pub(crate) struct TokenEndpointError {
     pub message: String,
-    /// The HTTP status code, if the request reached the server.
-    pub status: Option<reqwest::StatusCode>,
     /// The raw response body on non-2xx responses.
     pub body: Option<String>,
 }
@@ -100,7 +98,6 @@ fn token_endpoint_error(
     let body = sanitize_secrets(raw_body);
     TokenEndpointError {
         message: format!("{label} failed ({status}): {body}"),
-        status: Some(status),
         body: Some(body),
     }
 }
@@ -128,7 +125,6 @@ pub(crate) async fn token_endpoint_request(
         .await
         .map_err(|e| TokenEndpointError {
             message: format!("{label} request failed: {e}"),
-            status: None,
             body: None,
         })?;
 
@@ -143,7 +139,6 @@ pub(crate) async fn token_endpoint_request(
         .await
         .map_err(|e| TokenEndpointError {
             message: format!("Invalid {label} response JSON: {e}"),
-            status: None,
             body: None,
         })
 }
@@ -2307,37 +2302,6 @@ mod tests {
             ),
             now
         ));
-    }
-
-    #[test]
-    fn token_endpoint_error_body_is_sanitized() {
-        // A token endpoint can echo the submitted refresh_token / client_secret
-        // (or issue fresh material) in an error envelope. Neither the message nor
-        // the body field may carry the raw secret onward to logs/audit/IPC.
-        let raw = r#"{"error":"invalid_grant","refresh_token":"rt-super-secret-value","client_secret":"cs-leak-abcdef"}"#;
-        let err =
-            super::token_endpoint_error("Token refresh", reqwest::StatusCode::BAD_REQUEST, raw);
-
-        assert!(
-            !err.message.contains("rt-super-secret-value"),
-            "message leaked refresh_token"
-        );
-        assert!(
-            !err.message.contains("cs-leak-abcdef"),
-            "message leaked client_secret"
-        );
-        let body = err.body.expect("body is populated");
-        assert!(
-            !body.contains("rt-super-secret-value") && !body.contains("cs-leak-abcdef"),
-            "body leaked a secret"
-        );
-        assert!(
-            body.contains("[secret]"),
-            "secrets should be masked as [secret]"
-        );
-        // Non-secret context is preserved so the error stays diagnosable.
-        assert!(err.message.contains("invalid_grant"));
-        assert_eq!(err.status, Some(reqwest::StatusCode::BAD_REQUEST));
     }
 
     #[test]

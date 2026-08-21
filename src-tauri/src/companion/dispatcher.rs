@@ -428,14 +428,6 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "evaluate_pattern",
 ];
 
-/// True when `action` has an [`ALLOWED_ACTIONS`] entry, i.e. a proposal
-/// carrying it becomes an approval row instead of being dropped as unknown.
-/// Exposed so the approval side can assert the two lists agree without
-/// publishing the list itself.
-pub fn action_is_allowed(action: &str) -> bool {
-    ALLOWED_ACTIONS.contains(&action)
-}
-
 /// Auto-fire, read-only detail lookups. Each one answers "what is this
 /// thing, exactly" for an entity kind whose always-on prompt index is
 /// deliberately truncated (personas, dev contexts, skills) or absent

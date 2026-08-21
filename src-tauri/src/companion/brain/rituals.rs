@@ -57,9 +57,7 @@ pub struct Ritual {
     pub schedule_json: String,
     pub active: bool,
     pub sources: Vec<String>,
-    pub created_at: String,
     pub updated_at: String,
-    pub file_path: String,
 }
 
 #[derive(Debug)]
@@ -157,7 +155,7 @@ pub fn list_rituals(
     };
     let sql = format!(
         "SELECT r.id, r.kind, r.description, r.schedule_json, r.active, r.sources_json,
-                r.created_at, r.updated_at, n.file_path
+                r.updated_at
          FROM companion_ritual r
          JOIN companion_node n ON n.id = r.id
          {where_clause}
@@ -179,7 +177,7 @@ pub fn get_ritual(pool: &UserDbPool, id: &str) -> Result<Option<Ritual>, AppErro
     let row = conn
         .query_row(
             "SELECT r.id, r.kind, r.description, r.schedule_json, r.active, r.sources_json,
-                    r.created_at, r.updated_at, n.file_path
+                    r.updated_at
              FROM companion_ritual r
              JOIN companion_node n ON n.id = r.id
              WHERE r.id = ?1",
@@ -245,9 +243,7 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Ritual> {
         schedule_json: row.get(3)?,
         active: row.get::<_, i32>(4)? != 0,
         sources,
-        created_at: row.get(6)?,
-        updated_at: row.get(7)?,
-        file_path: row.get(8)?,
+        updated_at: row.get(6)?,
     })
 }
 

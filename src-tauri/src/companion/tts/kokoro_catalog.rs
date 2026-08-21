@@ -20,9 +20,6 @@
 
 use serde::Serialize;
 
-/// The default Kokoro voice — `af_heart`, Kokoro's flagship warm US female.
-pub const DEFAULT_KOKORO_VOICE_ID: &str = "af_heart";
-
 /// One curated Kokoro voice. `sid` is the `--sid` index into the shared
 /// model; everything else is UI metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -88,11 +85,6 @@ mod tests {
         for v in KOKORO_VOICES {
             assert!(seen.insert(v.sid), "duplicate sid: {}", v.sid);
         }
-    }
-
-    #[test]
-    fn default_voice_is_in_catalog() {
-        assert!(find_voice_by_id(DEFAULT_KOKORO_VOICE_ID).is_some());
     }
 
     #[test]

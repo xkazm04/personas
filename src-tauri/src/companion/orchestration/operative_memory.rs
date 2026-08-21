@@ -222,14 +222,6 @@ impl OperativeMemory {
         ops.clear();
     }
 
-    /// Begin a new operation with an explicit user intent. Returns the
-    /// new operation id. This is the path Direction 5 will use; for
-    /// v1 (Direction 1) all sessions get assigned to ad-hoc operations
-    /// via [`Self::record_session_event`].
-    pub fn begin_operation(&self, user_intent: String) -> String {
-        self.begin_operation_inner(user_intent, false)
-    }
-
     /// D5 path: begin an operation explicitly dispatched by Athena.
     /// Sets `dispatched_by_athena = true` so the proactive evaluator
     /// can skip nudges for sessions Athena herself spawned.

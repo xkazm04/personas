@@ -2129,20 +2129,6 @@ pub async fn adjust_adoption_draft(
 // below are additionally NOT registered in `lib.rs`, so they are unreachable
 // over IPC today.
 
-/// Verify a single template's content integrity against the embedded Rust
-/// manifest, and return the verdict. Reports only — nothing acts on it.
-#[tauri::command]
-pub fn verify_template_integrity(
-    state: State<'_, Arc<AppState>>,
-    path: String,
-    content: String,
-) -> Result<crate::engine::template_checksums::TemplateIntegrityResult, AppError> {
-    require_auth_sync(&state)?;
-    Ok(crate::engine::template_checksums::verify_template(
-        &path, &content,
-    ))
-}
-
 /// Input for batch template verification.
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2166,14 +2152,6 @@ pub fn verify_template_integrity_batch(
     Ok(crate::engine::template_checksums::verify_templates_batch(
         &pairs,
     ))
-}
-
-/// Get the count of templates in the backend's embedded checksum manifest.
-/// Useful for the frontend to detect manifest staleness.
-#[tauri::command]
-pub fn get_template_manifest_count(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
-    require_auth_sync(&state)?;
-    Ok(crate::engine::template_checksums::manifest_entry_count())
 }
 
 /// Synthesize a readable `system_prompt` markdown body from a v3 template's

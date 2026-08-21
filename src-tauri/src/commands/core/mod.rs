@@ -17,4 +17,3 @@ pub mod persona_jobs;
 pub mod personas;
 pub mod saved_views;
 pub mod use_cases;
-pub mod validation;

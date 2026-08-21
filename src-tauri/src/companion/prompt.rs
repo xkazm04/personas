@@ -2426,10 +2426,7 @@ mod tests {
             sources,
             supersedes_id: None,
             contradicts_id: None,
-            created_at: "2026-01-01T00:00:00Z".to_string(),
             updated_at: "2026-01-01T00:00:00Z".to_string(),
-            last_seen_at: "2026-01-01T00:00:00Z".to_string(),
-            file_path: "identity.md".to_string(),
         }
     }
 

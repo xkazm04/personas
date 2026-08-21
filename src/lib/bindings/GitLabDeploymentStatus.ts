@@ -9,14 +9,14 @@
  * state per deployment instead of a green `active` by construction:
  *
  * - `active`     — a live Duo Agent definition is currently registered in
- *                  GitLab (confirmed present via the API on this probe).
+ *   GitLab (confirmed present via the API on this probe).
  * - `file-based` — deployed via the AGENTS.md fallback, i.e. no live Duo
- *                  agent exists. A distinct honest state, previously invisible.
+ *   agent exists. A distinct honest state, previously invisible.
  * - `failed`     — a deploy recorded an `agent_id` (was a live Duo agent) but
- *                  that agent is no longer in the live registry (removed/gone).
+ *   that agent is no longer in the live registry (removed/gone).
  * - `unknown`    — the GitLab API probe could not confirm live state
- *                  (unreachable / errored / Duo API unavailable). Never a
- *                  false green.
+ *   (unreachable / errored / Duo API unavailable). Never a
+ *   false green.
  */
 export type GitLabDeploymentStatus = { 
 /**

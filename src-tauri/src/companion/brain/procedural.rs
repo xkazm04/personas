@@ -77,9 +77,7 @@ pub struct Procedural {
     pub confidence: f32,
     pub sources: Vec<String>,
     pub supersedes_id: Option<String>,
-    pub created_at: String,
     pub updated_at: String,
-    pub last_used_at: String,
     pub file_path: String,
 }
 
@@ -216,7 +214,7 @@ pub fn list_rules(
     let sql = format!(
         "SELECT n.id, p.scope, p.trigger_pattern, n.body_excerpt, n.importance,
                 p.confidence, p.supersedes_id,
-                n.created_at, n.updated_at, p.last_used_at, n.file_path
+                n.updated_at, n.file_path
          FROM companion_procedural p
          JOIN companion_node n ON n.id = p.id
          WHERE n.kind = 'procedural' {scope_filter} {imp_filter}
@@ -252,7 +250,7 @@ pub fn get_rule(pool: &UserDbPool, id: &str) -> Result<Option<Procedural>, AppEr
         .query_row(
             "SELECT n.id, p.scope, p.trigger_pattern, n.body_excerpt, n.importance,
                     p.confidence, p.supersedes_id,
-                    n.created_at, n.updated_at, p.last_used_at, n.file_path
+                    n.updated_at, n.file_path
              FROM companion_procedural p
              JOIN companion_node n ON n.id = p.id
              WHERE n.id = ?1",
@@ -343,10 +341,8 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Procedural> {
         importance: row.get(4)?,
         confidence: row.get(5)?,
         supersedes_id: row.get(6)?,
-        created_at: row.get(7)?,
-        updated_at: row.get(8)?,
-        last_used_at: row.get(9)?,
-        file_path: row.get(10)?,
+        updated_at: row.get(7)?,
+        file_path: row.get(8)?,
         sources: Vec::new(),
     })
 }

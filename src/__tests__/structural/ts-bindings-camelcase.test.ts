@@ -72,7 +72,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   // not touched this pass: file had uncommitted work in another session
   'src-tauri/src/commands/core/memories.rs': [
-    'ApplyMemoryReviewProposalResult', 'MemoryLifecycleResult', 'MemoryReviewDetail',
+    'ApplyMemoryReviewProposalResult', 'MemoryReviewDetail',
     'MemoryReviewResult',
   ],
   'src-tauri/src/commands/core/use_cases.rs': [
@@ -85,17 +85,11 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/commands/design/connector_readiness.rs': [
     'PersonaSetup',
   ],
-  'src-tauri/src/commands/design/reviews.rs': [
-    'SeededLinkedArtifacts',
-  ],
   'src-tauri/src/commands/design/team_synthesis.rs': [
     'TeamSynthesisResult',
   ],
   'src-tauri/src/commands/execution/tests.rs': [
     'DraftValidationResult', 'ToolIssue',
-  ],
-  'src-tauri/src/commands/fleet/types.rs': [
-    'FleetHookEvent',
   ],
   'src-tauri/src/commands/infrastructure/auth.rs': [
     'AuthStateResponse', 'AuthUser',
@@ -124,7 +118,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   'src-tauri/src/commands/tools/triggers.rs': [
     'CronAgent', 'CronPreview', 'DryRunChainTarget', 'DryRunMatchedSubscription',
-    'DryRunResult', 'DryRunSimulatedEvent', 'RecentScheduleRun', 'TriggerChainLink',
+    'DryRunResult', 'DryRunSimulatedEvent', 'RecentScheduleRun',
     'TriggerCleanupResult', 'WebhookStatus',
   ],
   'src-tauri/core/src/models/audit_incident.rs': [

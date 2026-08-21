@@ -361,15 +361,6 @@ pub async fn cancel_recipe_generation(
 }
 
 #[tauri::command]
-pub fn get_use_case_recipes(
-    state: State<'_, Arc<AppState>>,
-    use_case_id: String,
-) -> Result<Vec<RecipeDefinition>, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_for_use_case(&state.db, &use_case_id)
-}
-
-#[tauri::command]
 pub fn promote_use_case_to_recipe(
     state: State<'_, Arc<AppState>>,
     credential_id: Option<String>,

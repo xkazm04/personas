@@ -1,6 +1,4 @@
-use crate::db::models::{
-    ContextHealthSnapshot, DevContext, DevContextGroup, DevContextGroupRelationship,
-};
+use crate::db::models::{DevContext, DevContextGroup, DevContextGroupRelationship};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -103,15 +101,6 @@ pub fn dev_tools_list_contexts(
 }
 
 #[tauri::command]
-pub fn dev_tools_get_context(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevContext, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_context_by_id(&state.db, &id)
-}
-
-#[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub fn dev_tools_create_context(
     state: State<'_, Arc<AppState>>,
@@ -192,16 +181,6 @@ pub fn dev_tools_delete_context(
     repo::delete_context(&state.db, &id)
 }
 
-#[tauri::command]
-pub fn dev_tools_move_context_to_group(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    group_id: Option<String>,
-) -> Result<DevContext, AppError> {
-    require_auth_sync(&state)?;
-    repo::move_context_to_group(&state.db, &id, group_id.as_deref())
-}
-
 /// Pin (or unpin) a context so a full rescan preserves it instead of
 /// DELETE-and-recreate. Pinning is how a maintainer protects hand-curation.
 #[tauri::command]
@@ -255,47 +234,3 @@ pub fn dev_tools_delete_context_group_relationship(
 // ============================================================================
 // Context Health Snapshots
 // ============================================================================
-
-#[tauri::command]
-pub fn dev_tools_list_health_snapshots(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-    limit: Option<i32>,
-) -> Result<Vec<ContextHealthSnapshot>, AppError> {
-    require_auth_sync(&state)?;
-    repo::list_health_snapshots(&state.db, &project_id, limit)
-}
-#[allow(clippy::too_many_arguments)]
-#[tauri::command]
-pub fn dev_tools_save_health_snapshot(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-    group_id: Option<String>,
-    group_name: String,
-    overall_score: i32,
-    security_score: Option<i32>,
-    quality_score: Option<i32>,
-    coverage_score: Option<i32>,
-    debt_score: Option<i32>,
-    issues_found: i32,
-    issues_json: Option<String>,
-    recommendations: Option<String>,
-) -> Result<ContextHealthSnapshot, AppError> {
-    require_auth_sync(&state)?;
-    let snap = ContextHealthSnapshot {
-        id: uuid::Uuid::new_v4().to_string(),
-        project_id,
-        group_id,
-        group_name,
-        overall_score,
-        security_score,
-        quality_score,
-        coverage_score,
-        debt_score,
-        issues_found,
-        issues_json,
-        recommendations,
-        scanned_at: chrono::Utc::now().to_rfc3339(),
-    };
-    repo::insert_health_snapshot(&state.db, &snap)
-}

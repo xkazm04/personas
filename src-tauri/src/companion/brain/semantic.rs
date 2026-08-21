@@ -72,10 +72,7 @@ pub struct Fact {
     pub sources: Vec<String>,
     pub supersedes_id: Option<String>,
     pub contradicts_id: Option<String>,
-    pub created_at: String,
     pub updated_at: String,
-    pub last_seen_at: String,
-    pub file_path: String,
 }
 
 /// Input for writing a fact. `sources` non-empty is mandatory — caller
@@ -283,40 +280,6 @@ pub async fn find_near_duplicate(
     Ok(None)
 }
 
-/// Reinforce an existing fact: boost importance by 1 (cap 5), bump
-/// last_seen_at, append any new source episode ids. Used when a near-
-/// duplicate fact is found at consolidation time — the new evidence
-/// strengthens the existing entry instead of producing a redundant row.
-/// The provenance contract is preserved: every reinforce path adds at
-/// least one source (caller passes the proposal's sources).
-pub fn reinforce_fact(
-    pool: &UserDbPool,
-    fact_id: &str,
-    new_sources: &[String],
-) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    let tx = conn.unchecked_transaction()?;
-    tx.execute(
-        "UPDATE companion_node
-         SET importance = MIN(5, importance + 1), updated_at = ?1
-         WHERE id = ?2 AND kind = 'fact'",
-        params![now, fact_id],
-    )?;
-    tx.execute(
-        "UPDATE companion_fact SET last_seen_at = ?1 WHERE id = ?2",
-        params![now, fact_id],
-    )?;
-    for src in new_sources {
-        tx.execute(
-            "INSERT OR IGNORE INTO companion_provenance (fact_id, episode_id) VALUES (?1, ?2)",
-            params![fact_id, src],
-        )?;
-    }
-    tx.commit()?;
-    Ok(())
-}
-
 #[cfg(not(feature = "ml"))]
 #[allow(dead_code)]
 pub async fn write_fact_and_embed(
@@ -348,7 +311,7 @@ pub fn list_facts(
     let sql = format!(
         "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                 f.confidence, f.supersedes_id, f.contradicts_id,
-                n.created_at, n.updated_at, f.last_seen_at, n.file_path
+                n.updated_at
          FROM companion_fact f
          JOIN companion_node n ON n.id = f.id
          WHERE n.kind = 'fact' {scope_filter} {imp_filter}
@@ -384,7 +347,7 @@ pub fn get_fact(pool: &UserDbPool, id: &str) -> Result<Option<Fact>, AppError> {
         .query_row(
             "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                     f.confidence, f.supersedes_id, f.contradicts_id,
-                    n.created_at, n.updated_at, f.last_seen_at, n.file_path
+                    n.updated_at
              FROM companion_fact f
              JOIN companion_node n ON n.id = f.id
              WHERE n.id = ?1",
@@ -478,10 +441,7 @@ fn map_fact_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Fact> {
         confidence: row.get(5)?,
         supersedes_id: row.get(6)?,
         contradicts_id: row.get(7)?,
-        created_at: row.get(8)?,
-        updated_at: row.get(9)?,
-        last_seen_at: row.get(10)?,
-        file_path: row.get(11)?,
+        updated_at: row.get(8)?,
         sources: Vec::new(),
     })
 }

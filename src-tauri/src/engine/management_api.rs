@@ -211,13 +211,6 @@ pub fn add_paired_origin(origin: &str) {
     }
 }
 
-/// Remove a paired origin from the live CORS allowlist (on revoke).
-pub fn remove_paired_origin(origin: &str) {
-    if let Ok(mut set) = paired_origins().write() {
-        set.remove(origin);
-    }
-}
-
 /// Repopulate the cache from the DB. Called once at server start so approvals
 /// survive a restart (they persist as `external_api_keys.bound_origin`).
 pub fn load_paired_origins(pool: &DbPool) {
@@ -239,19 +232,6 @@ pub fn load_paired_origins(pool: &DbPool) {
 #[cfg(test)]
 mod paired_origin_tests {
     use super::*;
-
-    #[test]
-    fn add_remove_and_membership() {
-        let o = "https://pairtest.example";
-        assert!(!is_paired_origin(o));
-        add_paired_origin(o);
-        assert!(is_paired_origin(o));
-        // Trusted-origin check is independent and still works.
-        assert!(is_trusted_management_origin("http://localhost:1420"));
-        assert!(!is_trusted_management_origin(o));
-        remove_paired_origin(o);
-        assert!(!is_paired_origin(o));
-    }
 }
 
 // =============================================================================

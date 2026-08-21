@@ -149,17 +149,6 @@ impl JobProgress {
             JobEventSink::Noop => None,
         }
     }
-
-    /// Report determinate progress (current/total) plus a note, so the task
-    /// tag can render a progress bar (e.g. files scanned). Event-only.
-    pub fn report_progress(&self, current: u32, total: u32, message: impl Into<String>) {
-        let mut snapshot = self.job.clone();
-        snapshot.status = "running".into();
-        snapshot.progress_text = Some(message.into());
-        snapshot.progress_current = Some(current);
-        snapshot.progress_total = Some(total);
-        self.sink.emit(&snapshot);
-    }
 }
 
 /// Recover orphaned `running` jobs on startup. A job in `running`

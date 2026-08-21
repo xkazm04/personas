@@ -117,30 +117,6 @@ pub fn get_execution(
     Ok(execution)
 }
 
-// NOT an IPC command: never registered in `generate_handler!`, so the
-// `#[tauri::command]` this used to carry advertised a surface nothing could
-// reach. `#[requires(privileged)]` is kept on purpose: it is what makes the
-// guard correct the moment this IS registered.
-// See scripts/check-command-registration.mjs.
-#[requires(privileged)]
-pub fn create_execution(
-    state: State<'_, Arc<AppState>>,
-    persona_id: String,
-    trigger_id: Option<String>,
-    input_data: Option<String>,
-    model_used: Option<String>,
-    use_case_id: Option<String>,
-) -> Result<PersonaExecution, AppError> {
-    repo::create(
-        &state.db,
-        &persona_id,
-        trigger_id,
-        input_data,
-        model_used,
-        use_case_id,
-    )
-}
-
 /// Start a persona execution: create record, spawn Claude CLI, stream output.
 ///
 /// Pipeline stages executed here:

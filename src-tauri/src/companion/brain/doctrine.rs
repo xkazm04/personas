@@ -27,60 +27,11 @@ use std::sync::Arc;
 
 #[cfg(feature = "ml")]
 use chrono::Utc;
-use rusqlite::params;
 
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
-use crate::companion::brain::util;
-use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
-use crate::error::AppError;
-
-/// Curated allowlist — 24 docs that capture Personas' philosophy and
-/// architecture without dragging in handoffs, test logs, or stale plans.
-/// Paths are relative to the docs root (the directory whose entries
-/// include `concepts/`).
-const INCLUDED_DOCS: &[&str] = &[
-    // Personas — the core ontology (data model, capabilities, governance).
-    "features/personas/01-data-model.md",
-    "features/personas/02-capabilities.md",
-    "features/personas/03-trust-and-governance.md",
-    // Templates — adoption flow, catalog, schema, security.
-    "features/templates/01-template-format.md",
-    "features/templates/02-catalog-loading.md",
-    "features/templates/03-adoption-flow.md",
-    "features/templates/04-adoption-questionnaire.md",
-    "features/templates/05-dynamic-discovery.md",
-    "features/templates/06-integrity-and-security.md",
-    "features/templates/07-adoption-answer-pipeline.md",
-    // Execution — runtime / lifecycle / chaining / observability.
-    "features/execution/01-entry-points.md",
-    "features/execution/02-lifecycle.md",
-    "features/execution/03-chaining-and-approval.md",
-    "features/execution/04-observability.md",
-    // Events / recipes / artist / live roadmap.
-    "features/events/event-routing.md",
-    "features/recipes/recipe-templates.md",
-    "features/plugins/artist/media-studio-architecture.md",
-    "features/plugins/artist/media-studio-render-plan.md",
-    "features/live-roadmap/live-roadmap.md",
-    // Top-level concepts — design philosophy.
-    "features/agents/operations-hub.md",
-    // (ambient-context-fusion.md and mobile.md were removed in the 2026-07-26
-    // docs pruning; their EMBEDDED_DOCS entries went with them at the time,
-    // but these two INCLUDED_DOCS entries were left behind, so every ingest
-    // permanently counted files_missing=2 for paths that no longer exist on
-    // disk or in the binary. Removed here to match EMBEDDED_DOCS.)
-    "concepts/invisible-apps-p2p.md",
-    "concepts/persona-design-best-practices.md",
-    "concepts/operational-data-views.md",
-    // Athena's own capability surface — kept in doctrine so the
-    // "what can you do?" question pulls a current, honest answer via
-    // embedding retrieval instead of relying on the constitution's
-    // op-grammar reference alone.
-    "features/companion/athena-usecases.md",
-];
 
 /// Compile-time embedded copies of every `INCLUDED_DOCS` entry. Used as a
 /// fallback when the on-disk doc isn't reachable (production builds, no
@@ -194,25 +145,6 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         include_str!("../../../../docs/features/companion/athena-usecases.md"),
     ),
 ];
-
-/// Soft target — sections larger than this are split further. Generous
-/// because Athena reads markdown well and we'd rather keep a logical
-/// section together than split it just for tidiness.
-const CHUNK_SOFT_CAP_BYTES: usize = 8_000;
-
-/// Iterate every embedded doc as `(relative_path, content)` pairs. Used by
-/// the Twin plugin's "Ingest docs/features" button to seed a Twin's
-/// knowledge base with product documentation without re-reading the repo
-/// from disk (which doesn't exist in a production install).
-pub fn embedded_docs() -> impl Iterator<Item = (&'static str, &'static str)> {
-    EMBEDDED_DOCS.iter().copied()
-}
-
-/// Same as [`embedded_docs`] but filtered to `features/*` paths only —
-/// what the Twin's "Ingest docs/features" button should feed in.
-pub fn embedded_feature_docs() -> impl Iterator<Item = (&'static str, &'static str)> {
-    embedded_docs().filter(|(p, _)| p.starts_with("features/"))
-}
 
 /// Read a curated doc, preferring on-disk content (so dev edits are
 /// hot-reloadable) and falling back to the embedded compile-time copy
@@ -353,125 +285,9 @@ pub async fn ingest_all(
     Ok(stats)
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn ingest_all(_pool: &UserDbPool) -> Result<IngestStats, AppError> {
-    Ok(IngestStats::default())
-}
-
 // ── chunking ────────────────────────────────────────────────────────────
 
-#[derive(Debug, Clone)]
-struct DoctrineChunk {
-    /// `<rel_path>#<heading_anchor>` — also the upsert key.
-    file_path: String,
-    /// Heading text (empty for doc-level intro chunk).
-    heading: String,
-    /// Markdown body of the section, *including* the heading line if any.
-    content: String,
-    /// sha256 of `content`.
-    content_hash: String,
-}
-
-fn chunk_markdown(rel_path: &str, body: &str) -> Vec<DoctrineChunk> {
-    let mut chunks = Vec::new();
-    let mut current_heading = String::new();
-    let mut current_lines: Vec<&str> = Vec::new();
-
-    let flush = |heading: &str, lines: &[&str], out: &mut Vec<DoctrineChunk>| {
-        let content = lines.join("\n");
-        if content.trim().is_empty() {
-            return;
-        }
-        let anchor = if heading.is_empty() {
-            "intro".to_string()
-        } else {
-            slugify(heading)
-        };
-        // Soft-cap: if a section exceeds the cap, split on H3, then on
-        // hard byte boundaries. Each piece gets a UNIQUE upsert key with
-        // a `-pN` suffix on the anchor — without this, all pieces of an
-        // oversized section share a single key and overwrite each other
-        // on every ingest pass (visible as a stable ~N "updated" count
-        // that never converges to zero).
-        let pieces = split_oversized(&content, CHUNK_SOFT_CAP_BYTES);
-        let multi = pieces.len() > 1;
-        for (idx, piece) in pieces.into_iter().enumerate() {
-            let piece_anchor = if multi {
-                format!("{anchor}-p{}", idx + 1)
-            } else {
-                anchor.clone()
-            };
-            let file_path = format!("{rel_path}#{piece_anchor}");
-            let hash = sha256_hex(&piece);
-            out.push(DoctrineChunk {
-                file_path,
-                heading: heading.to_string(),
-                content: piece,
-                content_hash: hash,
-            });
-        }
-    };
-
-    for line in body.lines() {
-        if let Some(rest) = line.strip_prefix("## ") {
-            // Boundary: flush prior section, start new one with this line included.
-            flush(&current_heading, &current_lines, &mut chunks);
-            current_heading = rest.trim().to_string();
-            current_lines.clear();
-            current_lines.push(line);
-        } else {
-            current_lines.push(line);
-        }
-    }
-    flush(&current_heading, &current_lines, &mut chunks);
-    chunks
-}
-
-/// Split a section that's larger than `cap` bytes. Tries H3 boundaries
-/// first, then falls back to hard byte splits at line boundaries (never
-/// splitting mid-line). Keeps each piece under cap when possible.
-fn split_oversized(content: &str, cap: usize) -> Vec<String> {
-    if content.len() <= cap {
-        return vec![content.to_string()];
-    }
-    // Try H3 split first
-    let h3_pieces: Vec<&str> = content.split_inclusive("\n### ").collect();
-    if h3_pieces.iter().all(|p| p.len() <= cap) && h3_pieces.len() > 1 {
-        return h3_pieces.into_iter().map(|s| s.to_string()).collect();
-    }
-    // Hard split on line boundaries
-    let mut out = Vec::new();
-    let mut buf = String::new();
-    for line in content.lines() {
-        if buf.len() + line.len() + 1 > cap && !buf.is_empty() {
-            out.push(std::mem::take(&mut buf));
-        }
-        if !buf.is_empty() {
-            buf.push('\n');
-        }
-        buf.push_str(line);
-    }
-    if !buf.is_empty() {
-        out.push(buf);
-    }
-    out
-}
-
-fn slugify(s: &str) -> String {
-    util::slugify(s, "section", None)
-}
-
-fn sha256_hex(s: &str) -> String {
-    util::sha256_hex(s)
-}
-
 // ── upsert ─────────────────────────────────────────────────────────────
-
-enum UpsertOutcome {
-    Inserted,
-    Updated,
-    Unchanged,
-}
 
 #[cfg(feature = "ml")]
 async fn upsert_chunk(
@@ -576,53 +392,6 @@ async fn upsert_chunk(
     }
 }
 
-/// Does this node have an entry in `companion_embedding`?
-fn has_vec_entry(pool: &UserDbPool, node_id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM companion_embedding WHERE node_id = ?1",
-            params![node_id],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    Ok(count > 0)
-}
-
-fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> {
-    let conn = pool.get()?;
-    // Get all doctrine ids and file_paths.
-    let mut stmt =
-        conn.prepare("SELECT id, file_path FROM companion_node WHERE kind = 'doctrine'")?;
-    let rows = stmt
-        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
-        .collect::<Result<Vec<_>, _>>()?;
-    drop(stmt);
-
-    let seen_set: std::collections::HashSet<&str> = seen.iter().map(|s| s.as_str()).collect();
-    let mut deleted = 0;
-    for (id, file_path) in rows {
-        if !seen_set.contains(file_path.as_str()) {
-            conn.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
-            conn.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id])?;
-            conn.execute(
-                "DELETE FROM companion_embedding WHERE node_id = ?1",
-                params![id],
-            )?;
-            deleted += 1;
-        }
-    }
-    Ok(deleted)
-}
-
-fn excerpt_500(content: &str) -> String {
-    util::excerpt(content, 500)
-}
-
-fn short_random() -> String {
-    util::short_id(10)
-}
-
 // Path is intentionally unused on builds without the ml feature — silence.
 #[cfg(not(feature = "ml"))]
 fn _silence_unused(_p: &Path) {}
@@ -630,46 +399,4 @@ fn _silence_unused(_p: &Path) {}
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// Pins the two allowlists in lock-step: every `INCLUDED_DOCS` entry must
-    /// have a matching `EMBEDDED_DOCS` entry, else `read_curated_doc` silently
-    /// returns `None` for it in production (no repo on disk) and every ingest
-    /// permanently counts it in `files_missing` — exactly the drift that left
-    /// `ambient-context-fusion.md` and `mobile.md` orphaned in `INCLUDED_DOCS`
-    /// after their `EMBEDDED_DOCS` entries were removed in the 2026-07-26 docs
-    /// pruning, with nothing tying the two lists together to catch it.
-    #[test]
-    fn included_docs_all_have_an_embedded_copy() {
-        let embedded: std::collections::HashSet<String> =
-            EMBEDDED_DOCS.iter().map(|(p, _)| p.to_string()).collect();
-        let missing: Vec<String> = INCLUDED_DOCS
-            .iter()
-            .map(|p| p.to_string())
-            .filter(|p| !embedded.contains(p))
-            .collect();
-        assert!(
-            missing.is_empty(),
-            "INCLUDED_DOCS entries with no EMBEDDED_DOCS counterpart (the \
-             production fallback silently fails for these; either remove from \
-             INCLUDED_DOCS or add an include_str! entry to EMBEDDED_DOCS): {missing:?}"
-        );
-    }
-
-    /// The inverse direction: an embedded doc with no curated-allowlist entry
-    /// is dead weight baked into the binary that never actually gets ingested.
-    #[test]
-    fn embedded_docs_all_are_curated() {
-        let included: std::collections::HashSet<String> =
-            INCLUDED_DOCS.iter().map(|p| p.to_string()).collect();
-        let orphaned: Vec<String> = EMBEDDED_DOCS
-            .iter()
-            .map(|(p, _)| p.to_string())
-            .filter(|p| !included.contains(p))
-            .collect();
-        assert!(
-            orphaned.is_empty(),
-            "EMBEDDED_DOCS entries not in INCLUDED_DOCS (dead weight baked into the \
-             binary, never ingested): {orphaned:?}"
-        );
-    }
 }

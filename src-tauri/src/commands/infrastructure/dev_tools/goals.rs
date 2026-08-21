@@ -1,6 +1,6 @@
 use crate::db::models::{
     AttentionQueue, AttentionThresholds, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal,
-    GoalProgressSuggestion, PortfolioSummary, UndispatchedIdea,
+    GoalProgressSuggestion, UndispatchedIdea,
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -21,15 +21,6 @@ pub fn dev_tools_list_goals(
 ) -> Result<Vec<DevGoal>, AppError> {
     require_auth_sync(&state)?;
     repo::list_goals_by_project(&state.db, &project_id, status.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_goal(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevGoal, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_goal_by_id(&state.db, &id)
 }
 
 #[tauri::command]
@@ -163,26 +154,6 @@ pub fn dev_tools_list_goal_signals(
 ) -> Result<Vec<DevGoalSignal>, AppError> {
     require_auth_sync(&state)?;
     repo::list_goal_signals(&state.db, &goal_id, limit)
-}
-
-#[tauri::command]
-pub fn dev_tools_create_goal_signal(
-    state: State<'_, Arc<AppState>>,
-    goal_id: String,
-    signal_type: String,
-    source_id: Option<String>,
-    delta: Option<i32>,
-    message: Option<String>,
-) -> Result<DevGoalSignal, AppError> {
-    require_auth_sync(&state)?;
-    repo::create_goal_signal(
-        &state.db,
-        &goal_id,
-        &signal_type,
-        source_id.as_deref(),
-        delta,
-        message.as_deref(),
-    )
 }
 
 // ============================================================================
@@ -517,15 +488,6 @@ pub fn dev_tools_list_goal_items_for_project(
 ) -> Result<Vec<DevGoalItem>, AppError> {
     require_auth_sync(&state)?;
     repo::list_goal_items_for_project(&state.db, &project_id)
-}
-
-/// Cross-project health rollup (per-project counts by status, at-risk, avg progress).
-#[tauri::command]
-pub fn dev_tools_portfolio_summary(
-    state: State<'_, Arc<AppState>>,
-) -> Result<PortfolioSummary, AppError> {
-    require_auth_sync(&state)?;
-    repo::portfolio_summary(&state.db)
 }
 
 /// Cross-project "needs you" queue over goals, ideas AND tasks: awaiting-review

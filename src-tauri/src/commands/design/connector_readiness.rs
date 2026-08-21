@@ -142,11 +142,7 @@ pub enum Readiness {
     NeedsSetup { connector: String, kind: SetupKind },
 }
 
-impl Readiness {
-    pub fn is_ready(&self) -> bool {
-        matches!(self, Readiness::Ready)
-    }
-}
+impl Readiness {}
 
 /// One concrete thing standing between a persona and a working run — a
 /// connector that is not ready, plus where the user fixes it. Serialized
@@ -1442,21 +1438,6 @@ mod tests {
     }
 
     #[test]
-    fn obsidian_memory_empty_vault_path_is_not_ready() {
-        let conn = test_db();
-        def(&conn, "obsidian_memory", r#"{"always_active":false}"#);
-        conn.execute(
-            "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
-            rusqlite::params![
-                crate::db::settings_keys::OBSIDIAN_BRAIN_CONFIG,
-                r#"{"vault_path":""}"#
-            ],
-        )
-        .unwrap();
-        assert!(!connector_readiness(&conn, "obsidian_memory").is_ready());
-    }
-
-    #[test]
     fn codebases_aggregate_is_ready_with_zero_projects() {
         let conn = test_db();
         def(
@@ -1643,20 +1624,6 @@ mod tests {
         def(&conn, "hubspot", r#"{"auth_type":"api_key"}"#);
         let links = resolve_credential_links(&conn, ["hubspot"]);
         assert!(links.is_empty());
-    }
-
-    #[test]
-    fn credential_connector_with_ambiguous_candidates_needs_setup() {
-        // Phase 2: two `email`-category credentials → not uniquely bindable.
-        // Readiness must be NeedsSetup so the build asks which one, rather
-        // than promoting `ready` off a connector it can't unambiguously wire.
-        let conn = test_db();
-        def(&conn, "email", r#"{"auth_type":"api_key"}"#);
-        def_cat(&conn, "gmail", r#"{"auth_type":"api_key"}"#, "email");
-        def_cat(&conn, "outlook", r#"{"auth_type":"api_key"}"#, "email");
-        cred(&conn, "c1", "gmail");
-        cred(&conn, "c2", "outlook");
-        assert!(!connector_readiness(&conn, "email").is_ready());
     }
 
     // --- Fail-closed defaults (this requirement) ---

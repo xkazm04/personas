@@ -305,25 +305,6 @@ pub fn is_always_active_builtin(name: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Pin a connector. Idempotent — duplicate add of the same name is a
-/// no-op (status preserved). Default enabled=true on first add.
-pub fn add(pool: &UserDbPool, connector_name: &str) -> Result<(), AppError> {
-    if connector_name.trim().is_empty() {
-        return Err(AppError::Internal(
-            "companion connector add: empty connector_name".into(),
-        ));
-    }
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO companion_active_connector (connector_name, enabled, created_at, updated_at)
-         VALUES (?1, 1, ?2, ?2)
-         ON CONFLICT(connector_name) DO NOTHING",
-        params![connector_name, now],
-    )?;
-    Ok(())
-}
-
 pub fn remove(pool: &UserDbPool, connector_name: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(

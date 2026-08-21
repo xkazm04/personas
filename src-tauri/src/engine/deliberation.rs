@@ -34,8 +34,6 @@ pub const STALL_LIMIT: i32 = 3;
 /// bounded cost/time per unit of wall-clock. THE mechanism that makes a
 /// turn-budget-free deliberation safe.
 pub const MAX_TURNS_PER_TICK: usize = 3;
-/// A single persona may not speak more than this many times in a row.
-pub const MAX_CONSECUTIVE_PERSONA_TURNS: usize = 2;
 /// Force a resolution (synthesize a proposal from the current state) by this
 /// round if the moderator hasn't converged on its own — a productive
 /// deliberation must still PRODUCE an outcome rather than run out a budget with
@@ -46,10 +44,6 @@ pub const MAX_CONSECUTIVE_PERSONA_TURNS: usize = 2;
 pub const CONVERGE_BY_ROUND: i32 = 12;
 /// Default cost ceiling (USD) when a deliberation declares none.
 pub const DEFAULT_COST_BUDGET_USD: f64 = 5.0;
-/// Default idle window (minutes) — no progress and no user activity past this
-/// auto-pauses the deliberation.
-pub const DEFAULT_IDLE_MINUTES: i64 = 180;
-
 // ── The moderator's decision (the JSON protocol it returns) ─────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
@@ -139,9 +133,6 @@ impl DeliberationStatus {
             Self::Paused => "paused",
             Self::Aborted => "aborted",
         }
-    }
-    pub fn is_terminal(self) -> bool {
-        matches!(self, Self::Resolved | Self::Aborted)
     }
 }
 

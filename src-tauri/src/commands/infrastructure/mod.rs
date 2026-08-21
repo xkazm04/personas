@@ -21,7 +21,6 @@ pub mod workspace_verify;
 
 pub mod director;
 pub mod doc_rot;
-pub mod git_checkpoint;
 pub mod gitlab;
 pub mod hierarchy_read;
 pub mod idea_scanner;

@@ -523,25 +523,6 @@ pub async fn answer_build_question(
         .send_answer(&session_id, user_answer)
 }
 
-/// Reset a build session to draft_ready phase (e.g., after test rejection for retry).
-#[tauri::command]
-pub async fn reset_build_session_phase(
-    state: State<'_, Arc<AppState>>,
-    session_id: String,
-) -> Result<(), AppError> {
-    require_auth(&state).await?;
-
-    build_session_repo::update(
-        &state.db,
-        &session_id,
-        &UpdateBuildSession {
-            phase: Some(BuildPhase::DraftReady.as_str().to_string()),
-            ..Default::default()
-        },
-    )?;
-    Ok(())
-}
-
 /// Cancel an active build session.
 #[tauri::command]
 pub async fn cancel_build_session(
@@ -580,29 +561,6 @@ pub async fn cancel_build_session(
     }
 
     Ok(())
-}
-
-/// Read the currently pending clarifying question on a build session, if any.
-///
-/// Returns the parsed JSON question payload (a `clarifying_question` shape —
-/// scope, question text, options, optional connector_category, etc.) or
-/// `None` when the session has no question pending. Used by the in-app
-/// Companion chat (and the future external MCP wrapper) to inspect the
-/// session state without subscribing to the event stream.
-#[tauri::command]
-pub async fn list_pending_build_questions(
-    state: State<'_, Arc<AppState>>,
-    session_id: String,
-) -> Result<Option<serde_json::Value>, AppError> {
-    require_auth(&state).await?;
-
-    let session = build_session_repo::get_by_id(&state.db, &session_id)?
-        .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
-
-    Ok(session
-        .pending_question
-        .as_deref()
-        .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok()))
 }
 
 /// Aggregated read-only snapshot of a build session for headless / Companion

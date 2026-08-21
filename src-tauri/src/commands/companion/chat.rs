@@ -329,29 +329,6 @@ pub fn companion_dev_op_set_verdict(
     crate::companion::dev_mode::set_verdict(&state.user_db, &op_id, verdict.as_deref())
 }
 
-/// Run the execution-review pass on demand, bypassing the 5-min scheduler
-/// cadence. Runs the batched headless triage over qualifying recent
-/// executions (digest card + at most one deep-dive `TurnOrigin::Proactive`
-/// turn) and returns how many findings it surfaced. Used by the test
-/// harness to drive a deterministic review, and usable as a "review my
-/// recent runs now" affordance. Async: the triage awaits one headless CLI
-/// decision before returning the count.
-#[tauri::command]
-pub async fn companion_review_recent_executions_now(
-    state: State<'_, Arc<AppState>>,
-    app: AppHandle,
-) -> Result<usize, AppError> {
-    crate::ipc_auth::require_auth(&state).await?;
-    crate::companion::proactive::execution_review::review_recent_executions(
-        &state.user_db,
-        &state.db,
-        &app,
-        #[cfg(feature = "ml")]
-        state.embedding_manager.as_ref(),
-    )
-    .await
-}
-
 /// Read the most recent N messages oldest-first for the panel transcript.
 #[tauri::command]
 pub fn companion_list_recent_messages(

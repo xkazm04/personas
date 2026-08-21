@@ -253,23 +253,3 @@ pub struct FleetHookStatus {
     /// Whether the installed port matches the currently-bound port.
     pub port_matches: bool,
 }
-
-/// Inbound payload from a Claude Code hook POST. The hook event type is
-/// in the URL path (`/fleet/hooks/:event`); the body carries CC's own
-/// hook payload as opaque JSON. Every field is `Option` because CC ships
-/// different shapes per hook type — we extract opportunistically.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "snake_case")]
-pub struct FleetHookEvent {
-    /// Claude Code's session_id — primary key for hook routing.
-    pub session_id: Option<String>,
-    /// Working directory of the CC session. Used as a fallback key when
-    /// `session_id` isn't bound yet (race: hook fires before our registry
-    /// learns the id from SessionStart).
-    pub cwd: Option<String>,
-    /// Free-form payload — passed through to UI for diagnostics, never
-    /// parsed for state transitions (use the URL path for that).
-    #[serde(default)]
-    pub raw: serde_json::Value,
-}

@@ -354,16 +354,6 @@ pub fn dev_tools_workspace_get_verify_status(
     }
 }
 
-#[tauri::command]
-pub fn dev_tools_workspace_cancel_verify(
-    app: tauri::AppHandle,
-    state: State<'_, Arc<AppState>>,
-    job_id: String,
-) -> Result<(), AppError> {
-    require_auth_sync(&state)?;
-    VERIFY_JOBS.cancel(&app, &job_id)
-}
-
 #[allow(clippy::too_many_arguments)]
 async fn run_verify(
     app: &tauri::AppHandle,

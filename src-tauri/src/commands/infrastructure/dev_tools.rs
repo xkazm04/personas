@@ -30,8 +30,7 @@ pub use ship_ingest::*;
 pub use triage_ingest::*;
 
 use crate::db::models::{
-    DevIdea, DevKpi, DevKpiMeasurement, DevPipeline, DevProject, DevScan, DevTask, DevUseCase,
-    TriageRule,
+    DevIdea, DevKpi, DevKpiMeasurement, DevProject, DevScan, DevTask, DevUseCase, TriageRule,
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -49,15 +48,6 @@ pub fn dev_tools_list_projects(
 ) -> Result<Vec<DevProject>, AppError> {
     require_auth_sync(&state)?;
     repo::list_projects(&state.db, status.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_project(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevProject, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_project_by_id(&state.db, &id)
 }
 
 #[tauri::command]
@@ -833,47 +823,6 @@ pub fn dev_tools_get_scan(
     repo::get_scan_by_id(&state.db, &id)
 }
 
-#[tauri::command]
-pub fn dev_tools_create_scan(
-    state: State<'_, Arc<AppState>>,
-    project_id: Option<String>,
-    scan_type: String,
-    status: Option<String>,
-) -> Result<DevScan, AppError> {
-    require_auth_sync(&state)?;
-    repo::create_scan(
-        &state.db,
-        project_id.as_deref(),
-        &scan_type,
-        status.as_deref(),
-    )
-}
-
-#[tauri::command]
-#[allow(clippy::too_many_arguments)]
-pub fn dev_tools_update_scan(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    status: Option<String>,
-    idea_count: Option<i32>,
-    input_tokens: Option<i64>,
-    output_tokens: Option<i64>,
-    duration_ms: Option<i64>,
-    error: Option<Option<String>>,
-) -> Result<DevScan, AppError> {
-    require_auth_sync(&state)?;
-    repo::update_scan(
-        &state.db,
-        &id,
-        status.as_deref(),
-        idea_count,
-        input_tokens,
-        output_tokens,
-        duration_ms,
-        error.as_ref().map(|o| o.as_deref()),
-    )
-}
-
 // ============================================================================
 // Tasks
 // ============================================================================
@@ -886,15 +835,6 @@ pub fn dev_tools_list_tasks(
 ) -> Result<Vec<DevTask>, AppError> {
     require_auth_sync(&state)?;
     repo::list_tasks(&state.db, project_id.as_deref(), status.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_task(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevTask, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_task_by_id(&state.db, &id)
 }
 
 #[tauri::command]
@@ -1525,102 +1465,6 @@ pub fn run_triage_rules_core(
 // ============================================================================
 // Pipelines (Idea-to-Execution)
 // ============================================================================
-
-#[tauri::command]
-pub fn dev_tools_create_pipeline(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-    idea_id: String,
-    auto_execute: Option<bool>,
-    verify_after: Option<bool>,
-) -> Result<DevPipeline, AppError> {
-    require_auth_sync(&state)?;
-    repo::create_pipeline(
-        &state.db,
-        &project_id,
-        &idea_id,
-        auto_execute.unwrap_or(true),
-        verify_after.unwrap_or(false),
-    )
-}
-
-#[tauri::command]
-pub fn dev_tools_list_pipelines(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-    stage: Option<String>,
-) -> Result<Vec<DevPipeline>, AppError> {
-    require_auth_sync(&state)?;
-    repo::list_pipelines(&state.db, &project_id, stage.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_pipeline(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevPipeline, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_pipeline_by_id(&state.db, &id)
-}
-
-#[tauri::command]
-pub async fn dev_tools_advance_pipeline(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    new_stage: String,
-    task_id: Option<String>,
-    error: Option<String>,
-) -> Result<DevPipeline, AppError> {
-    require_auth_sync(&state)?;
-    let pipeline = repo::advance_pipeline_stage(
-        &state.db,
-        &id,
-        &new_stage,
-        task_id.as_deref(),
-        error.as_deref(),
-    )?;
-
-    // F5: non-disruptive auto-checkpoint of the project repo at each stage
-    // transition (git stash create + a hidden ref — never touches the user's
-    // branch/working tree). Best-effort: a snapshot failure never blocks the
-    // advance, and a clean tree records nothing.
-    if let Ok(project) = repo::get_project_by_id(&state.db, &pipeline.project_id) {
-        if !project.root_path.is_empty() {
-            let checkpoint_id = uuid::Uuid::new_v4().to_string();
-            let status = if error.is_some() {
-                "failed"
-            } else {
-                "advanced"
-            };
-            match crate::engine::git_checkpoint::snapshot_stage(
-                std::path::Path::new(&project.root_path),
-                &id,
-                &checkpoint_id,
-            )
-            .await
-            {
-                Ok(Some(sha)) => {
-                    let _ = crate::db::repos::dev_run_checkpoints::insert(
-                        &state.db, &id, &new_stage, &sha, status,
-                    );
-                }
-                Ok(None) => {}
-                Err(e) => tracing::debug!("dev checkpoint snapshot skipped: {e}"),
-            }
-        }
-    }
-
-    Ok(pipeline)
-}
-
-#[tauri::command]
-pub fn dev_tools_delete_pipeline(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    repo::delete_pipeline(&state.db, &id)
-}
 
 // ============================================================================
 // KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)

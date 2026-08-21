@@ -210,26 +210,6 @@ pub async fn match_via_embedding(
     ))
 }
 
-fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
-    if a.len() != b.len() || a.is_empty() {
-        return 0.0;
-    }
-    let mut dot = 0f32;
-    let mut na = 0f32;
-    let mut nb = 0f32;
-    for i in 0..a.len() {
-        dot += a[i] * b[i];
-        na += a[i] * a[i];
-        nb += b[i] * b[i];
-    }
-    let denom = (na.sqrt()) * (nb.sqrt());
-    if denom == 0.0 {
-        0.0
-    } else {
-        dot / denom
-    }
-}
-
 // ----------------------------------------------------------------------------
 // LLM-eval strategy (Phase B2) — Sonnet via ClaudeProvider one-shot
 // ----------------------------------------------------------------------------

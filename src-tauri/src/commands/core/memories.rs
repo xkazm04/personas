@@ -257,25 +257,6 @@ pub fn update_memory_tier(
     repo::update_tier(&state.db, &id, &tier)
 }
 
-/// Run automatic memory lifecycle transitions for a persona.
-/// Returns { promoted, archived } counts.
-#[tauri::command]
-pub fn run_memory_lifecycle(
-    state: State<'_, Arc<AppState>>,
-    persona_id: String,
-) -> Result<MemoryLifecycleResult, AppError> {
-    require_auth_sync(&state)?;
-    let (promoted, archived) = repo::run_lifecycle(&state.db, &persona_id)?;
-    Ok(MemoryLifecycleResult { promoted, archived })
-}
-
-#[derive(Debug, serde::Serialize, TS)]
-#[ts(export)]
-pub struct MemoryLifecycleResult {
-    pub promoted: i64,
-    pub archived: i64,
-}
-
 // -- LLM CLI Memory Review --------------------------------------------------
 
 #[derive(Debug, serde::Serialize, TS)]
@@ -1196,84 +1177,6 @@ pub async fn reflect_team_memories_with_cli(
 }
 
 // -- Dev seed: mock memory (debug builds only) -----------------------------------
-
-#[tauri::command]
-pub fn seed_mock_memory(_state: State<'_, Arc<AppState>>) -> Result<PersonaMemory, AppError> {
-    #[cfg(debug_assertions)]
-    {
-        require_auth_sync(&_state)?;
-
-        const MOCK_TITLES: &[&str] = &[
-            "Prefers JSON responses over XML",
-            "Retry failed API calls up to 3 times",
-            "Use UTC timezone for all timestamps",
-            "Customer prefers email over Slack",
-            "Rate limit: 100 req/min on external APIs",
-            "Always include correlation ID in logs",
-            "Summarize long documents to under 500 words",
-            "Skip weekend scheduling for notifications",
-        ];
-        const MOCK_CONTENTS: &[&str] = &[
-            "When formatting output, always use JSON. The downstream consumers parse JSON and XML causes failures.",
-            "External API calls should retry with exponential backoff. Max 3 attempts with 1s, 2s, 4s delays.",
-            "All date/time values must be in UTC. Converting to local timezone happens on the frontend only.",
-            "Based on past interactions, this customer responds faster to email. Slack messages are often missed.",
-            "The third-party API enforces 100 requests per minute. Implement token-bucket rate limiting.",
-            "Every log entry must include the X-Correlation-ID header value for distributed tracing.",
-            "Long documents (>2000 words) should be summarized before processing to stay within token limits.",
-            "Business notifications should only be sent Mon-Fri 9am-6pm UTC. Queue weekend events for Monday.",
-        ];
-        const MOCK_CATEGORIES: &[&str] = &[
-            "preference",
-            "instruction",
-            "instruction",
-            "preference",
-            "constraint",
-            "instruction",
-            "preference",
-            "constraint",
-        ];
-        const MOCK_TAGS: &[&str] = &[
-            r#"["formatting","output"]"#,
-            r#"["reliability","api"]"#,
-            r#"["timezone","standard"]"#,
-            r#"["communication","customer"]"#,
-            r#"["api","rate-limit"]"#,
-            r#"["logging","observability"]"#,
-            r#"["summarization","nlp"]"#,
-            r#"["scheduling","notifications"]"#,
-        ];
-
-        let personas = crate::db::repos::core::personas::get_all(&_state.db)?;
-        let idx =
-            (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
-        let persona_id = personas
-            .get(idx)
-            .map(|p| p.id.clone())
-            .unwrap_or_else(|| "mock-persona".to_string());
-
-        let t = (chrono::Utc::now().timestamp_millis() as usize) / 7;
-        let input = CreatePersonaMemoryInput {
-            persona_id,
-            title: MOCK_TITLES[t % MOCK_TITLES.len()].to_string(),
-            content: MOCK_CONTENTS[t % MOCK_CONTENTS.len()].to_string(),
-            category: Some(MOCK_CATEGORIES[t % MOCK_CATEGORIES.len()].to_string()),
-            source_execution_id: None,
-            importance: Some(((t % 5) + 1) as i32),
-            tags: Some(crate::db::models::Json(vec![MOCK_TAGS
-                [t % MOCK_TAGS.len()]
-            .to_string()])),
-            use_case_id: None,
-        };
-
-        return repo::create(&_state.db, input);
-    }
-
-    #[allow(unreachable_code)]
-    Err(AppError::Internal(
-        "seed_mock_memory is only available in debug builds".into(),
-    ))
-}
 
 /// Extract the first top-level JSON array from mixed text output.
 fn extract_json_array(text: &str) -> Option<String> {

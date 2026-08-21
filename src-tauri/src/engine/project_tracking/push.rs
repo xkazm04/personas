@@ -66,19 +66,6 @@ pub fn init(pool: UserDbPool, app_handle: AppHandle) {
     let _ = PUSH_HANDLE.set(handle);
 }
 
-/// In-process helper for skill/CLI hooks that already run inside the
-/// Tauri process and don't want to round-trip through HTTP. Same
-/// behavior: optional event insert + debounced consolidator trigger.
-/// Returns the resolved project_id (None if unknown).
-pub async fn push_cli_event(
-    project_path: &str,
-    summary: Option<&str>,
-    title: Option<&str>,
-) -> Option<String> {
-    let handle = PUSH_HANDLE.get()?;
-    do_push(handle, project_path, summary, title).await.ok()?
-}
-
 #[derive(Debug, Deserialize)]
 struct CliEventBody {
     project_path: String,

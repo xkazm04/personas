@@ -59,14 +59,6 @@ impl N8nPayloadLimits {
     }
 }
 
-/// Tauri command exposing the canonical limits to the frontend at runtime.
-/// Static-import callers should prefer `src/lib/n8nLimits.generated.ts`;
-/// this command exists for tests, diagnostics, and future dynamic surfaces.
-#[tauri::command]
-pub fn get_n8n_payload_limits() -> N8nPayloadLimits {
-    N8nPayloadLimits::current()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

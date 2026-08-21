@@ -899,7 +899,6 @@ pub fn fetch_triggers(
 #[derive(Debug, Clone)]
 pub struct Tombstone {
     pub persona_id: String,
-    pub deleted_at: String,
 }
 
 /// Persona deletions recorded after `cursor_prev` (RFC3339), oldest first.
@@ -908,13 +907,12 @@ pub struct Tombstone {
 pub fn fetch_tombstones(pool: &DbPool, cursor_prev: &str) -> Result<Vec<Tombstone>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT persona_id, deleted_at FROM persona_tombstones \
+        "SELECT persona_id FROM persona_tombstones \
          WHERE datetime(deleted_at) > datetime(?1) ORDER BY deleted_at ASC",
     )?;
     let it = stmt.query_map(params![cursor_prev], |r| {
         Ok(Tombstone {
             persona_id: r.get(0)?,
-            deleted_at: r.get(1)?,
         })
     })?;
     it.collect::<Result<Vec<_>, _>>()

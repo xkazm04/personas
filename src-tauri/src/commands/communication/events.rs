@@ -56,40 +56,6 @@ pub fn search_events(
     Ok(PaginatedEvents { events, has_more })
 }
 
-#[tauri::command]
-pub fn publish_event(
-    _app: AppHandle,
-    state: State<'_, Arc<AppState>>,
-    input: CreatePersonaEventInput,
-) -> Result<PersonaEvent, AppError> {
-    require_auth_sync(&state)?;
-    let event_source_max = state
-        .tier_config
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .event_source_max;
-    let rate_key = format!("event:{}", input.source_type);
-    if let Err(retry_after) =
-        state
-            .rate_limiter
-            .check(&rate_key, event_source_max, EVENT_SOURCE_WINDOW)
-    {
-        return Err(AppError::RateLimited(format!(
-            "Event source '{}' exceeded {} events/minute. Retry after {}s",
-            input.source_type, event_source_max, retry_after
-        )));
-    }
-
-    // Known-vocabulary validation: an unknown event_type logs a warning with the
-    // nearest known type (never rejects). Catches typo'd types that would
-    // otherwise silently never match any listener.
-    crate::engine::event_vocabulary::validate_and_warn(&input.event_type);
-
-    let event = repo::publish(&state.db, input)?;
-    // CDC auto-emits on persona_events INSERT
-    Ok(event)
-}
-
 /// List the known event-type vocabulary: the curated builtin seed merged with
 /// every distinct type actually observed in `persona_events`. Feeds the events
 /// UI type filter and trigger/listener creation so discovery isn't limited to

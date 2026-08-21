@@ -130,9 +130,6 @@ pub trait EventProcessor: Send + Sync {
         event: &PersonaEvent,
         event_ctx: &JsonValue,
     ) -> DispatchOutcome;
-
-    /// Short stable identifier for logging / future dispatch routing.
-    fn kind(&self) -> &'static str;
 }
 
 /// Pick the right processor for a subscription. Today every subscription
@@ -192,10 +189,6 @@ impl EventProcessor for WebhookProcessor {
         let status = if outcome.ok { "success" } else { "failed" };
         let _ = sub_repo::record_delivery(pool, &sub.id, status, outcome.error.as_deref());
         outcome
-    }
-
-    fn kind(&self) -> &'static str {
-        "webhook"
     }
 }
 
@@ -923,12 +916,6 @@ mod tests {
             assert_eq!(NotificationProvider::from_str(s).unwrap(), p);
             assert_eq!(p.to_string(), s);
         }
-    }
-
-    #[test]
-    fn webhook_processor_kind() {
-        let p = WebhookProcessor;
-        assert_eq!(p.kind(), "webhook");
     }
 
     // --- Circuit breaker -----------------------------------------------------

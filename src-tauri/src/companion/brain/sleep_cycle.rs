@@ -3405,10 +3405,7 @@ mod tests {
             sources: vec!["ep_1".into()],
             supersedes_id: None,
             contradicts_id: None,
-            created_at: String::new(),
             updated_at: String::new(),
-            last_seen_at: String::new(),
-            file_path: String::new(),
         }];
         let r = build_reconcile_prompt(&facts);
         assert!(r.find("RULES — non-negotiable").unwrap() < r.find("<untrusted_facts_").unwrap());

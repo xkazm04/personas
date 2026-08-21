@@ -193,26 +193,6 @@ pub async fn adopt_recipe_for_persona(
     )
 }
 
-/// Inverse of `adopt_recipe_for_persona`: removes the link. Existing
-/// `unlink_recipe_from_persona` does the same thing — this thin
-/// wrapper exists for symmetry with the adoption surface and to give
-/// the frontend a single import point for both halves of the pair.
-#[tauri::command]
-pub async fn unadopt_recipe_from_persona(
-    state: State<'_, Arc<AppState>>,
-    persona_id: String,
-    recipe_id: String,
-) -> Result<bool, AppError> {
-    require_auth(&state).await?;
-    if persona_id.trim().is_empty() {
-        return Err(AppError::Validation("persona_id cannot be empty".into()));
-    }
-    if recipe_id.trim().is_empty() {
-        return Err(AppError::Validation("recipe_id cannot be empty".into()));
-    }
-    recipe_repo::unlink_from_persona(&state.db, &persona_id, &recipe_id)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

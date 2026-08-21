@@ -135,23 +135,6 @@ impl OutputRing {
         String::from_utf8_lossy(&bytes).into_owned()
     }
 
-    /// Cook the recent tail into the last `max_lines` plain-text lines for a
-    /// glanceable grid preview — no xterm, no live stream. Strips ANSI/CSI/OSC
-    /// escapes, applies `\n`/`\r`, and resets on screen-clear / alt-screen /
-    /// erase-line so an interactive TUI's in-place redraws don't pile up as junk.
-    /// Approximate by design: the focused tile gets a real terminal; this is the
-    /// cheap "what's on screen" snapshot the *unwatched* tiles render, polled at
-    /// a low rate. Only the tail is scanned so cost is bounded regardless of ring
-    /// size (the oldest scanned line may be slightly garbled, but it's dropped
-    /// anyway when we keep just the last `max_lines`).
-    pub fn preview_lines(&self, max_lines: usize) -> Vec<String> {
-        const SCAN: usize = 64 * 1024;
-        let len = self.buf.len();
-        let start = len.saturating_sub(SCAN);
-        let bytes: Vec<u8> = self.buf.iter().copied().skip(start).collect();
-        cook_lines(&bytes, max_lines)
-    }
-
     /// Reconstruct the CURRENTLY-RENDERED screen from the raw ring bytes via a
     /// real VT emulator, returning the visible grid as plain-text lines
     /// (trailing blank lines trimmed). Unlike `preview_lines`' line-cooker, this
@@ -234,111 +217,6 @@ impl OutputRing {
         }
         self.last_delta
     }
-}
-
-/// Trim `lines` in place to at most `max` entries, dropping from the front
-/// (oldest). A tiny helper so the cook loop can cap as it goes.
-fn trim_lines(lines: &mut Vec<String>, max: usize) {
-    if lines.len() > max {
-        let drop = lines.len() - max;
-        lines.drain(0..drop);
-    }
-}
-
-/// Cook raw PTY bytes into plain-text lines for a preview (see
-/// [`OutputRing::preview_lines`]). Handles the escape sequences that actually
-/// matter for a scrolling-buffer TUI like Claude Code:
-///   - `\n` ends a line; `\r` overwrites the current line (spinner/progress).
-///   - CSI `…J` (erase display) and alt-screen toggles (`…?1049h/l`) clear all.
-///   - CSI `…K` (erase line) clears the current line (in-place input-box redraws).
-///   - all other CSI / OSC / `ESC x` sequences are consumed and dropped.
-///     Absolute cursor positioning isn't modeled (no grid) — fine for a glance.
-fn cook_lines(bytes: &[u8], max_lines: usize) -> Vec<String> {
-    let text = String::from_utf8_lossy(bytes);
-    let mut lines: Vec<String> = Vec::new();
-    let mut cur = String::new();
-    let mut chars = text.chars().peekable();
-    while let Some(c) = chars.next() {
-        match c {
-            '\n' => {
-                lines.push(std::mem::take(&mut cur));
-                trim_lines(&mut lines, max_lines);
-            }
-            '\r' => cur.clear(),
-            '\t' => cur.push(' '),
-            '\u{1b}' => match chars.peek().copied() {
-                Some('[') => {
-                    chars.next();
-                    let mut params = String::new();
-                    while let Some(&p) = chars.peek() {
-                        chars.next();
-                        if ('\u{40}'..='\u{7e}').contains(&p) {
-                            match p {
-                                // Erase display. ONLY 2 (entire screen) and 3
-                                // (screen + scrollback) are genuine clears that
-                                // wipe everything. 0 (cursor→end), 1 (start→
-                                // cursor) and the bare `\x1b[J` are PARTIAL erases
-                                // that an inline TUI — Claude's input-box redraw —
-                                // emits on every keystroke/redraw; treating those
-                                // as a full wipe collapsed the cooked preview to
-                                // empty (the unwatched grid tiles went black).
-                                // Without a cursor grid we approximate the partial
-                                // case by clearing only the in-progress line and
-                                // preserving the scrollback above.
-                                'J' => {
-                                    let full = params
-                                        .trim()
-                                        .parse::<u32>()
-                                        .map(|n| n == 2 || n == 3)
-                                        .unwrap_or(false);
-                                    cur.clear();
-                                    if full {
-                                        lines.clear();
-                                    }
-                                }
-                                'h' | 'l' if params.contains("1049") => {
-                                    cur.clear();
-                                    lines.clear();
-                                }
-                                // Erase line → clear the in-progress line.
-                                'K' => cur.clear(),
-                                _ => {}
-                            }
-                            break;
-                        }
-                        params.push(p);
-                    }
-                }
-                Some(']') => {
-                    // OSC — consume to BEL or ST (ESC \).
-                    chars.next();
-                    while let Some(&p) = chars.peek() {
-                        chars.next();
-                        if p == '\u{7}' {
-                            break;
-                        }
-                        if p == '\u{1b}' {
-                            if chars.peek() == Some(&'\\') {
-                                chars.next();
-                            }
-                            break;
-                        }
-                    }
-                }
-                Some(_) => {
-                    chars.next();
-                }
-                None => {}
-            },
-            c if (c as u32) < 0x20 => {} // drop other control chars
-            c => cur.push(c),
-        }
-    }
-    if !cur.is_empty() {
-        lines.push(cur);
-    }
-    trim_lines(&mut lines, max_lines);
-    lines
 }
 
 /// Visible-name sentinel stamped on every Fleet session Athena spawns
@@ -630,14 +508,6 @@ impl FleetRegistry {
             .and_then(|s| s.name.as_deref())
             .map(|name| name.starts_with(ATHENA_SESSION_NAME_SENTINEL))
             .unwrap_or(false)
-    }
-
-    /// Returns `true` if a non-exited session with this `cwd` is tracked.
-    /// Drives the duplicate-spawn guard.
-    pub fn has_active_cwd(&self, cwd: &std::path::Path) -> bool {
-        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        map.values()
-            .any(|s| !matches!(s.state, FleetSessionState::Exited) && s.cwd == cwd)
     }
 
     /// Writes `bytes` to the session's stdin. No-op if missing/exited.
@@ -1642,30 +1512,6 @@ mod tests {
     }
 
     #[test]
-    fn render_screen_reconstructs_cursor_addressed_tui() {
-        let mut ring = OutputRing::new(OUTPUT_RING_CAP);
-        // Enter alt-screen, clear, then draw a menu via cursor positioning
-        // (CSI row;col H) — exactly the shape an AskUserQuestion menu uses and
-        // the line-cooker collapses (it resets on ?1049h/2J and ignores cursor
-        // moves, so it would yield only the last fragment).
-        let seq = b"\x1b[?1049h\x1b[2J\
-            \x1b[1;1HChoose validation strategy:\
-            \x1b[3;3H1. Throw\x1b[4;3H2. Return null\
-            \x1b[6;1HEnter to select";
-        ring.push(seq);
-        let joined = ring.render_screen(10, 80).join("\n");
-        assert!(
-            joined.contains("Choose validation strategy:"),
-            "got: {joined}"
-        );
-        assert!(joined.contains("1. Throw"), "got: {joined}");
-        assert!(joined.contains("2. Return null"), "got: {joined}");
-        assert!(joined.contains("Enter to select"), "got: {joined}");
-        // The cooker would NOT reconstruct these cursor-addressed rows.
-        assert!(cook_lines(seq, 40).join("\n").trim() != joined.trim());
-    }
-
-    #[test]
     fn render_screen_incremental_feed_matches_full_reparse() {
         // Tier C: after the parser is materialized by a first render, later
         // pushes feed it incrementally — the resulting screen must equal what
@@ -1707,38 +1553,6 @@ mod tests {
         r.push(b"ghij"); // total 10 > cap 8 → drop oldest 2
         assert_eq!(r.snapshot(), "cdefghij");
         assert_eq!(r.snapshot().len(), 8);
-    }
-
-    #[test]
-    fn cook_strips_ansi_and_splits_lines() {
-        // SGR colour codes stripped; newlines split.
-        let out = cook_lines(b"\x1b[31mred\x1b[0m line\nsecond\n", 10);
-        assert_eq!(out, vec!["red line".to_string(), "second".to_string()]);
-    }
-
-    #[test]
-    fn cook_carriage_return_overwrites_current_line() {
-        // A spinner redraw: "10%\r20%\r30%" → only the final survives.
-        let out = cook_lines(b"working 10%\rworking 20%\rworking 30%", 10);
-        assert_eq!(out, vec!["working 30%".to_string()]);
-    }
-
-    #[test]
-    fn cook_erase_display_clears_scrollback() {
-        let out = cook_lines(b"old line\nmore\n\x1b[2Jfresh\n", 10);
-        assert_eq!(out, vec!["fresh".to_string()]);
-    }
-
-    #[test]
-    fn cook_alt_screen_enter_clears() {
-        let out = cook_lines(b"before\n\x1b[?1049hafter\n", 10);
-        assert_eq!(out, vec!["after".to_string()]);
-    }
-
-    #[test]
-    fn cook_caps_to_max_lines_keeping_tail() {
-        let out = cook_lines(b"a\nb\nc\nd\ne\n", 3);
-        assert_eq!(out, vec!["c".to_string(), "d".to_string(), "e".to_string()]);
     }
 
     #[test]

@@ -97,9 +97,6 @@ struct ShipRunResult {
 struct ShipRunItem {
     item_kind: String,
     item_id: String,
-    /// What the run actually changed for this member. Reported, not stored.
-    #[serde(default)]
-    changed: Option<String>,
     #[serde(default)]
     suggested_description: Option<String>,
     #[serde(default)]

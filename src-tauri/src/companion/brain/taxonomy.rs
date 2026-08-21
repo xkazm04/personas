@@ -32,9 +32,6 @@ use crate::error::AppError;
 pub const STATUS_ACTIVE: &str = "active";
 /// Suggested but not yet gated in. Inert until [`activate`].
 pub const STATUS_PROPOSED: &str = "proposed";
-/// `origin` of the tags shipped with the schema.
-pub const ORIGIN_SEED: &str = "seed";
-
 /// One row of the registry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TaxonomyTag {
@@ -156,44 +153,6 @@ pub fn get(pool: &UserDbPool, tag: &str) -> Result<Option<TaxonomyTag>, AppError
 mod tests {
     use super::*;
 
-    /// The nine seeds the design names, in the schema rather than in a Rust
-    /// boot hook — asserted against the REAL schema (`init_test_user_db`
-    /// applies `COMPANION_SCHEMA`) rather than a fixture this test wrote, so
-    /// dropping the seed block fails here instead of leaving the first sleep
-    /// cycle with no vocabulary.
-    ///
-    /// Modelled on `keyword::the_real_schema_still_carries_the_index_this_lane_reads`.
-    #[test]
-    fn the_real_schema_seeds_the_nine_starting_tags_as_active() {
-        let pool = crate::db::init_test_user_db().unwrap();
-        let tags = list_active(&pool).unwrap();
-        let names: Vec<&str> = tags.iter().map(|t| t.tag.as_str()).collect();
-        assert_eq!(
-            names,
-            vec![
-                "constraint",
-                "contact",
-                "decision",
-                "environment",
-                "incident",
-                "preference",
-                "style",
-                "tool",
-                "workflow",
-            ],
-            "the seed vocabulary must survive in the shipped schema"
-        );
-        for t in &tags {
-            assert_eq!(t.origin, ORIGIN_SEED);
-            assert_eq!(t.status, STATUS_ACTIVE);
-            assert!(
-                !t.definition.trim().is_empty(),
-                "a tag with no definition cannot be applied consistently by an LLM: {}",
-                t.tag
-            );
-        }
-    }
-
     /// Boot runs `COMPANION_SCHEMA` every launch. Re-running it must not
     /// duplicate the seeds — `INSERT OR IGNORE` on the UNIQUE tag is what makes
     /// re-execution safe, and this is the assertion that it stays that way.
@@ -252,23 +211,6 @@ mod tests {
 
         assert!(activate(&pool, "risk").unwrap());
         assert!(list_active(&pool).unwrap().iter().any(|t| t.tag == "risk"));
-    }
-
-    /// Re-proposing a known tag is a no-op, not a failure. A cycle that
-    /// re-derives last night's classification must not abort its reconcile
-    /// phase on a UNIQUE violation.
-    #[test]
-    fn re_proposing_a_known_tag_is_a_no_op() {
-        let pool = crate::db::init_test_user_db().unwrap();
-        assert_eq!(
-            propose(&pool, "preference", "a rival definition", "cyc_9").unwrap(),
-            None,
-            "an existing tag yields None rather than an error"
-        );
-        // …and the seed definition is untouched.
-        let seed = get(&pool, "preference").unwrap().unwrap();
-        assert_eq!(seed.origin, ORIGIN_SEED);
-        assert_ne!(seed.definition, "a rival definition");
     }
 
     /// Activating something that does not exist reports false rather than

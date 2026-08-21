@@ -522,12 +522,6 @@ fn log_frontend_error(level: String, message: String) {
     }
 }
 
-/// Return the backend startup timing report to the frontend.
-#[tauri::command]
-fn get_startup_timing() -> Option<startup_timing::StartupTimingReport> {
-    startup_timing::get_full_report()
-}
-
 /// Called by the frontend to report its time-to-interactive.
 #[tauri::command]
 fn report_frontend_ready(tti_ms: f64) {
@@ -2909,6 +2903,8 @@ pub fn run() {
             commands::companion::mcp_bridge::companion_mcp_resolve_request,
             commands::companion::mcp_bridge::companion_mcp_pending_snapshot,
             #[cfg(feature = "test-automation")]
+            commands::companion::mcp_bridge::companion_test_fleet_dispatch,
+            #[cfg(feature = "test-automation")]
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::backlog_triage::dev_tools_athena_triage_batch,
             commands::companion::backlog_triage::dev_tools_apply_triage_verdicts,
@@ -3947,17 +3943,52 @@ mod network_command_registration_tests {
             .find("generate_handler![")
             .expect("lib.rs must contain a generate_handler![ list");
         let open = start + "generate_handler![".len();
+        // Bracket-match, but ONLY over code. The list carries prose comments,
+        // and several of them quote `#[cfg(` — an unbalanced `[` that a naive
+        // counter reads as real nesting. It did: from the commit that added
+        // that comment until 2026-08-21 this fn panicked "unterminated" on
+        // every run, taking BOTH tests in this module down with it, and the
+        // failure looked like a missing `]` rather than a comment.
         let mut depth = 1usize;
-        for (offset, ch) in src[open..].char_indices() {
-            match ch {
-                '[' => depth += 1,
-                ']' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        return src[open..open + offset].to_string();
+        let bytes = src.as_bytes();
+        let mut i = open;
+        while i < bytes.len() {
+            let c = bytes[i];
+            match c {
+                // line comment — skip to end of line
+                b'/' if bytes.get(i + 1) == Some(&b'/') => {
+                    while i < bytes.len() && bytes[i] != b'\n' {
+                        i += 1;
                     }
                 }
-                _ => {}
+                // block comment — skip to the closing delimiter
+                b'/' if bytes.get(i + 1) == Some(&b'*') => {
+                    i += 2;
+                    while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                        i += 1;
+                    }
+                    i += 2;
+                }
+                // string literal — skip it, honouring backslash escapes
+                b'"' => {
+                    i += 1;
+                    while i < bytes.len() && bytes[i] != b'"' {
+                        i += if bytes[i] == b'\\' { 2 } else { 1 };
+                    }
+                    i += 1;
+                }
+                b'[' => {
+                    depth += 1;
+                    i += 1;
+                }
+                b']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return src[open..i].to_string();
+                    }
+                    i += 1;
+                }
+                _ => i += 1,
             }
         }
         panic!("unterminated generate_handler![ list in lib.rs");

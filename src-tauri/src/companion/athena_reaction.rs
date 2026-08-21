@@ -66,12 +66,6 @@ impl ReactionSignal {
     }
 }
 
-/// Athena's decision protocol — the single JSON object she must emit.
-#[derive(Debug, serde::Deserialize)]
-struct AthenaChannelEnvelope {
-    athena_channel: AthenaChannelDecision,
-}
-
 #[derive(Debug, serde::Deserialize)]
 struct AthenaChannelDecision {
     /// Whether to post anything at all. Restraint default is `false`.
@@ -230,91 +224,6 @@ fn recent_channel_history(pool: &crate::db::DbPool, team_id: &str) -> String {
     lines.join("\n")
 }
 
-/// Build Athena's decision prompt. Frames her as the team's orchestrator,
-/// gives the moment + recent context, demands restraint, and pins the exact
-/// single-line output protocol.
-fn build_reaction_prompt(signal: &ReactionSignal, history: &str, ledger: Option<&str>) -> String {
-    let history_block = if history.trim().is_empty() {
-        "(no recent channel messages)".to_string()
-    } else {
-        history.to_string()
-    };
-    let ledger_block = ledger
-        .filter(|s| !s.trim().is_empty())
-        .map(|s| format!("\n\nTeam ledger (settled decisions/constraints):\n{s}"))
-        .unwrap_or_default();
-
-    format!(
-        r#"You are **Athena**, the autonomous orchestrator overseeing the team "{team}". You are running unattended. You watch the team's software-delivery stream and decide whether to step into the team channel — the same channel the personas (Dev Clone, QA Guardian, Reviewer, Security, Release, Docs) and the Director use to coordinate.
-
-A development moment just occurred:
-- Moment: {headline}
-- Kind: `{kind}`
-- Artifact: {title}
-- Detail: {detail}
-
-Recent channel activity (oldest → newest):
-{history}{ledger}
-
-YOUR DECISION
-Decide whether to react, and if so, how. Be disciplined — you are judged on RESTRAINT as much as on coverage:
-- The DEFAULT is `react: false`. Routine progress does not need narration. Do not congratulate every shipped goal or echo every bounce.
-- React when it is genuinely useful to the human or the team:
-  • AWAITING-REVIEW cap-out → almost always react AND `escalate_to_user: true`: the team is stuck and only a human can unblock it. Say concisely what's blocked and what call is needed.
-  • A QA bounce → usually stay silent (it's normal SDLC); react only if you see a repeating pattern in the history that the team isn't self-correcting, optionally addressing the implementer with one concrete steer.
-  • A shipped goal → react only if it's a meaningful milestone worth recording for momentum; otherwise silent.
-- If you address a specific persona, put their persona id in `addressed_to` (it will be injected into their next step). Otherwise leave it empty (the message is a visible observation for the human).
-- Keep `message` to 1–3 sentences, plain and specific. No filler. `rationale` is one short clause explaining WHY you made this call (it is recorded as an audit footer).
-
-Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"athena_channel": {{"react": true|false, "message": "...", "rationale": "...", "escalate_to_user": true|false, "addressed_to": []}}}}
-"#,
-        team = signal.team_name,
-        headline = signal.headline(),
-        kind = signal.kind,
-        title = signal.title,
-        detail = if signal.detail.is_empty() {
-            "(none)"
-        } else {
-            &signal.detail
-        },
-        history = history_block,
-        ledger = ledger_block,
-    )
-}
-
-/// Run one Athena reaction decision end-to-end: build context → ask Athena
-/// (headless Claude) → parse her decision → post to the channel (or log a
-/// decline). Returns `Ok(true)` if she posted, `Ok(false)` if she declined.
-pub async fn run_athena_reaction(
-    app: &tauri::AppHandle,
-    pool: &crate::db::DbPool,
-    signal: ReactionSignal,
-) -> Result<bool, AppError> {
-    let history = recent_channel_history(pool, &signal.team_id);
-    let ledger: Option<String> =
-        crate::db::repos::resources::team_memories::get_for_injection(pool, &signal.team_id, 8)
-            .ok()
-            .filter(|m| !m.is_empty())
-            .map(|m| {
-                m.iter()
-                    .map(|tm| format!("- [{}] {}: {}", tm.category, tm.title, tm.content))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            });
-    let prompt = build_reaction_prompt(&signal, &history, ledger.as_deref());
-
-    // Athena's headless spend lands in the companion_turn ledger (user DB).
-    let state = app.state::<std::sync::Arc<crate::AppState>>();
-    let decision = cli_decide(prompt, &state.user_db).await?;
-    let Some(decision) = decision else {
-        tracing::warn!(team = %signal.team_name, kind = %signal.kind, "athena_reaction: no decision parsed from CLI output");
-        return Ok(false);
-    };
-
-    post_reaction_message(app, pool, &signal, decision)
-}
-
 /// Post one decided reaction to the team channel (shared by the single-signal
 /// path and the batch path): audit-footer body, inject-vs-display consumer,
 /// assignment linkage, optional user escalation. Returns Ok(true) if posted.
@@ -406,35 +315,6 @@ fn post_reaction_message(
     }
 
     Ok(true)
-}
-
-/// Spawn the Claude CLI with the prompt on stdin, stream stdout, and parse the
-/// single `{"athena_channel": {...}}` decision object. Returns `Ok(None)` if
-/// no valid decision object was emitted.
-async fn cli_decide(
-    prompt_text: String,
-    user_db: &crate::db::UserDbPool,
-) -> Result<Option<AthenaChannelDecision>, AppError> {
-    let (blob, _turn_id) = cli_text_tracked(prompt_text, user_db, "reaction").await?;
-    Ok(parse_athena_decision(&blob))
-}
-
-/// Spawn the Claude CLI with the prompt on stdin and return the accumulated
-/// display text. Lean clone of `idea_scanner::run_idea_scan`'s subprocess
-/// handling without the scan-job bookkeeping; shared by the channel-reaction,
-/// review-resolution, execution-triage and message-triage decisions (each
-/// parses its own protocol object).
-///
-/// Untracked variant — kept for engine callers (`kpi_binding` / `kpi_derivation`)
-/// that don't carry a user-db handle. Prefer [`cli_text_tracked`] for Athena's
-/// headless decision legs so the spend lands in the `companion_turn` ledger.
-pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
-    let micro = &crate::companion::model_routing::MICRO;
-    // No user-db handle here, so there is no `companion_turn` row to write or
-    // to flag — these callers meter themselves (`kpi_*` → `dev_llm_spend`).
-    Ok(cli_text_inner(prompt_text, micro.model, micro.effort)
-        .await?
-        .text)
 }
 
 /// Like [`cli_text`], but also returns the parsed terminal `result` usage so an
@@ -654,32 +534,6 @@ async fn cli_text_inner(
         usage,
         timed_out,
     })
-}
-
-/// Extract the `{"athena_channel": {...}}` object from the model's free-text
-/// output: find the marker, walk back to its enclosing `{`, brace-match
-/// forward, and deserialize. Tolerant of prose before/after the JSON line.
-fn parse_athena_decision(blob: &str) -> Option<AthenaChannelDecision> {
-    let marker = "\"athena_channel\"";
-    // Scan every occurrence (last one wins if the model restated it).
-    let mut result = None;
-    let mut search_from = 0;
-    while let Some(rel) = blob[search_from..].find(marker) {
-        let marker_pos = search_from + rel;
-        search_from = marker_pos + marker.len();
-        // Walk back to the nearest preceding '{' (the envelope's opening brace).
-        let Some(open) = blob[..marker_pos].rfind('{') else {
-            continue;
-        };
-        // Brace-match forward from `open`, respecting string literals.
-        if let Some(close) = match_braces(&blob[open..]) {
-            let candidate = &blob[open..open + close + 1];
-            if let Ok(env) = serde_json::from_str::<AthenaChannelEnvelope>(candidate) {
-                result = Some(env.athena_channel);
-            }
-        }
-    }
-    result
 }
 
 /// Extract the `{"athena_channel_batch": {...}}` object (same brace-match
@@ -1553,50 +1407,6 @@ fn parse_athena_review(blob: &str) -> Option<AthenaReviewDecision> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_clean_decision_line() {
-        let blob = r#"Some reasoning here.
-{"athena_channel": {"react": true, "message": "PR #4 is blocked on a migration.", "rationale": "cap-out needs a human", "escalate_to_user": true, "addressed_to": []}}
-trailing text"#;
-        let d = parse_athena_decision(blob).expect("should parse");
-        assert!(d.react);
-        assert!(d.escalate_to_user);
-        assert!(d.message.contains("blocked"));
-        assert_eq!(d.rationale, "cap-out needs a human");
-        assert!(d.addressed_to.is_empty());
-    }
-
-    #[test]
-    fn parses_decline_with_minimal_fields() {
-        let blob = r#"{"athena_channel": {"react": false}}"#;
-        let d = parse_athena_decision(blob).expect("should parse");
-        assert!(!d.react);
-        assert!(d.message.is_empty());
-        assert!(!d.escalate_to_user);
-    }
-
-    #[test]
-    fn parses_addressed_directive() {
-        let blob = r#"prose {"athena_channel":{"react":true,"message":"Dev Clone, stabilize the flaky test.","rationale":"repeating bounce pattern","escalate_to_user":false,"addressed_to":["persona-123"]}} more"#;
-        let d = parse_athena_decision(blob).expect("should parse");
-        assert!(d.react);
-        assert_eq!(d.addressed_to, vec!["persona-123".to_string()]);
-    }
-
-    #[test]
-    fn last_occurrence_wins() {
-        let blob = r#"{"athena_channel":{"react":false}}
-later corrected: {"athena_channel":{"react":true,"message":"final","rationale":"r"}}"#;
-        let d = parse_athena_decision(blob).expect("should parse");
-        assert!(d.react);
-        assert_eq!(d.message, "final");
-    }
-
-    #[test]
-    fn returns_none_without_marker() {
-        assert!(parse_athena_decision("no decision here {\"foo\": 1}").is_none());
-    }
 
     #[test]
     fn match_braces_respects_strings() {

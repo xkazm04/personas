@@ -654,24 +654,3 @@ async fn run_claude_ocr(
 // ---------------------------------------------------------------------------
 // CRUD
 // ---------------------------------------------------------------------------
-
-#[tauri::command]
-pub fn list_ocr_documents(state: State<'_, Arc<AppState>>) -> Result<Vec<OcrDocument>, AppError> {
-    require_auth_sync(&state)?;
-    repo::list_documents(&state.db)
-}
-
-#[tauri::command]
-pub fn get_ocr_document(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<OcrDocument, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_document(&state.db, &id)
-}
-
-#[tauri::command]
-pub fn delete_ocr_document(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    repo::delete_document(&state.db, &id)
-}

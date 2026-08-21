@@ -2408,22 +2408,6 @@ pub async fn companion_get_operative_memory_digest(
     Ok(crate::companion::orchestration::operative_memory::memory().digest_for_prompt())
 }
 
-/// D10 — run the rule-based fleet pattern extractor on demand. Reads
-/// recent dispatched-op episodes from episodic memory, aggregates by
-/// role combination, and writes one low-confidence procedural per
-/// combo that has at least the minimum-sample threshold of runs.
-/// Returns the ids of any procedurals written this pass.
-///
-/// Not auto-scheduled in v1 — Athena (or the user via the brain
-/// viewer) invokes it when fresh patterns would be useful.
-#[tauri::command]
-pub async fn companion_extract_fleet_patterns(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<String>, AppError> {
-    crate::ipc_auth::require_auth(&state).await?;
-    crate::companion::brain::fleet_patterns::extract_patterns(&state.user_db)
-}
-
 #[cfg(test)]
 mod fleet_note_tests {
     use super::{classify_fleet_note, FleetNoteKind};
