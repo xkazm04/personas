@@ -5310,6 +5310,102 @@
         "matches": 55
       },
       "floor": 500
+    },
+    {
+      "id": "process-spawn-outside-chokepoint",
+      "goldenPath": "docs/concepts/golden-paths/spawning-a-cli-subprocess.md",
+      "title": "A child process is spawned outside the one module that owns argv separation, env scrubbing, stdio, timeouts and kill-on-drop",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:[A-Za-z_][A-Za-z0-9_]*)?Command::new\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Command::new( in any of its four spellings -- bare, std::process::, tokio::process::, or the TokioCommand alias -- anywhere outside engine/src/cli_process.rs. PROXY FOR the stack-free condition: a process is created by code that has not agreed to any of the guarantees the application makes about child processes, so whatever the chokepoint does for spawns that go through it simply does not happen for this one. CONCRETELY HERE cli_process.rs:576 build_and_spawn_core is where a child gets its argv as an ARRAY, its stdio decided on all three streams with the deadlock reason written down (:565-567), its .kill_on_drop(true) with the billing reason written down (:584-589), its current_dir, its CREATE_NO_WINDOW and its env_removals -> env_overrides -> force_subscription_auth sequence. COMPLIANT SHAPE: build a CliArgs (core/src/types.rs:287) and hand it to the driver -- 9 files / 16 call sites. VIOLATING SHAPE: commands/fleet/external.rs:156 `let mut cmd = std::process::Command::new(&program);`. The 138 outside inherit the app's whole environment (97 of 125 production sites), its cwd (71), configure no stdio at all (75), have NEITHER a timeout NOR kill_on_drop (87), and never read the exit status (42) -- the itemised population table is in this path's Deviations section. RELATIONSHIP TO TWO REGISTERED SIBLINGS, declared: unbound-child-lifetime (12/13) and wholesale-inherited-child-env (10/13) each gate ONE property of a spawn -- a missing kill_on_drop, a missing env_clear -- and each goes to zero when that one property is added WITHOUT THE SPAWN EVER MOVING. Both are subsets of this population. This rule asks the prior question and is the only one of the three that falls when a call site adopts the driver and inherits all the properties at once. NOT THE REFUSED RULE: this path refuses to gate child LIFETIME (job objects / process groups) because that fix is one change in one helper correcting 125 sites at once, so a ratchet would read 125 -> 125 -> 0 and never cause the fix. That argument does not transfer here: a spawn that never reaches the chokepoint is repaired per-site, one count at a time. MEASURED 2026-08-21 at b7fba447f: 138 matches across 58 of 963 files, plus 5 inside the excluded chokepoint (143 total) and 4 on comment-only lines correctly skipped. PRECISION 13/13 on a systematic hand-opened sample (every 11th site), all real process spawns. The SPELLING vocabulary was enumerated EXHAUSTIVELY rather than sampled: exactly four forms exist -- std::process::Command::new 46, tokio::process::Command::new 39, bare Command::new 38, TokioCommand::new 15. RECALL, and the number that punishes a careless matcher: an anchor with a lookbehind forbidding a preceding colon scores 43, missing every qualified call -- a 3.2x undercount that reads as 'mostly clean'. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: the alias arm accepts ANY identifier ending in Command, so a future clap::Command::new (an argument parser, not a process) would count. No such type exists in this tree today; if one arrives, tighten the alternation to the aliases actually in use rather than baselining the noise. PRECONDITION (must be re-derived per repo): this repo spawns children through std/tokio Command and has ONE module that owns the policy. A repo that shells out through a library wrapper, or that has no chokepoint at all, has the same condition wearing different syntax. LEGAL FIX: build a CliArgs and route the spawn through cli_process.rs. If it needs a shape the chokepoint does not offer, WIDEN THE CHOKEPOINT rather than opening a second door -- and do not silence a match by wrapping Command::new in a local helper, which moves the match without moving the guarantees."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/engine/src/cli_process.rs",
+          "reason": "the chokepoint itself — this file IS where argv separation, env scrubbing, stdio, timeouts, PID recording and kill-on-drop live, so it must call Command::new"
+        }
+      ],
+      "baseline": {
+        "files": 58,
+        "matches": 138
+      },
+      "floor": 900
+    },
+    {
+      "id": "positional-row-get",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "A result row is read by column POSITION, so any mid-table column addition silently shifts every index below it",
+      "roots": [
+        "src-tauri/db/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:row|r)\\.get(?:::<[^()]{0,40}?>)?\\s*\\(\\s*\\d+\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "row.get(N) / r.get(N) with an integer index, in every turbofish spelling (row.get::<_, String>(N), row.get::<_, Option<String>>(N)), anywhere under src-tauri/db/src. PROXY FOR the stack-free condition: a persistence read is bound to the ORDER of a schema rather than to its NAMES, so a schema edit that is legal, additive and reviewed can still corrupt every read below it -- and it does so SILENTLY, because a positional read of the wrong column usually still type-checks (column 7 and column 8 are both TEXT). CONCRETELY HERE it compounds with select-star-in-repo: 379 projections are SELECT *, so the index-to-column mapping is not even visible at the call site, and db/src/migrations/incremental.rs adds columns routinely. COMPLIANT SHAPE, present at parity: named reads score 1440 matches across 51 files against these 1479, i.e. this repo is almost exactly half migrated -- the correct alternative is not hypothetical. VIOLATING SHAPE: repos/lab/versions.rs:100 `model_profile: row.get(7)?`, repos/resources/broker_edges.rs:113 `row.get::<_, Option<i64>>(5)?`, cdc.rs:479. MEASURED 2026-08-21 at b7fba447f: 1479 matches across 84 of 143 files. PRECISION 12/12 on a systematic hand-opened sample (every 123rd site), all real rusqlite positional reads inside a query_map/query_row closure. The RECEIVER vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly two identifiers ever carry a positional get in this tree, `row` and `r` -- and that anchoring is what keeps collection indexing out: args.get(0) and map.get(k) are a different concept wearing the same method name. DECLARED FALSE-POSITIVE SURFACE, stated rather than papered over: 22 of the 1479 (1.5%) are single-column AGGREGATE reads -- conn.query_row(\"SELECT COUNT(*) ...\", [], |r| r.get(0)) -- where no column name exists and get(0) is the only available spelling. They are COUNTED, not excluded, because an exclusion would have to name whole files and a stale exemption is how an allowlist becomes the bug; the honest number is 1457 + 22. TWO INDEPENDENT IMPLEMENTATIONS agree exactly at 84/1479 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A matcher that reads only the bare `row.get(N)` form scores 847, a 1.75x undercount that reads as 'mostly clean'; the gap is the turbofish spellings plus the `r` receiver. PRECONDITION (must be re-derived per repo): this repo reads rows through rusqlite's positional get. A repo on sqlx with compile-time-checked queries, or on an ORM that maps by name, has the condition designed out and scores zero. LEGAL FIX: read by name -- row.get(\"column_name\") -- which costs one string lookup and makes the read survive any additive migration. Do it TOGETHER with replacing the SELECT * that feeds it: a named read against a wildcard projection is only half the fix and still over-fetches every BLOB on the table."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 84,
+        "matches": 1479
+      },
+      "floor": 100
+    },
+    {
+      "id": "select-star-in-repo",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "A repository query projects SELECT *, so the column set the code depends on is invisible at the call site and changes under it",
+      "roots": [
+        "src-tauri/db/src/repos"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "SELECT\\s+\\*",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A wildcard projection (SELECT followed by whitespace and *) in the repository layer. PROXY FOR the stack-free condition: a query declares no contract with the schema, so the shape of what comes back is decided by the table definition at runtime rather than by the code at review time -- an additive migration changes the result shape of a query nobody edited, and the diff that caused it touches no query file. CONCRETELY HERE it is the other half of positional-row-get: SELECT * fixes the ordinal mapping to CREATE TABLE order, 1479 positional reads consume that mapping, and migrations/incremental.rs adds columns as a matter of routine -- so the two together describe a schema change that can rewrite a read without touching it. It also over-fetches: every BLOB and long TEXT column crosses the driver boundary whether or not the caller wanted it. COMPLIANT SHAPE, present at parity: named projections score 391 matches across 83 files against these 379. MEASURED 2026-08-21 at b7fba447f: 379 matches across 56 of 116 files; 2 further matches sit on comment-only lines and are correctly not counted. PRECISION 12/12 on a systematic hand-opened sample (every 31st site), all real wildcard projections -- repos/communication/chat.rs:220, repos/dev_tools.rs:606, repos/execution/audit_incidents.rs:291, repos/twin.rs:1117 in its line-continuation form. The MANDATORY WHITESPACE is the discriminator that keeps aggregates out: 110 SELECT COUNT(*) sites in the same tree, 0 of them matched. TWO INDEPENDENT IMPLEMENTATIONS agree exactly at 56/379 -- the census engine and a hand-written walker sharing no code with it -- and a third, case-insensitive raw grep returns 381, which is 379 plus exactly the 2 comment lines, and finds no lowercase spelling anywhere. DISAGREEMENT RECORDED RATHER THAN RECONCILED: this document's own Gap 7 says '~176' explicit column lists; the measurement here is 391. The 381 in the same sentence reconciles (379 + 2 comment lines) but the ~176 does not, and the likely cause -- distinct query FUNCTIONS versus occurrences -- was not re-derived, so it is a lead and not a finding. PRECONDITION (must be re-derived per repo): this repo writes SQL as string literals inside repository functions. A repo using a query builder or a typed query macro has the condition designed out. LEGAL FIX: name the columns. Where a struct maps a whole row, generate or hand-write the column list once NEXT TO the struct, so the projection and the mapping live together and drift becomes a compile error rather than a silent shift."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 56,
+        "matches": 379
+      },
+      "floor": 100
+    },
+    {
+      "id": "pool-get-unwrapped",
+      "goldenPath": "docs/concepts/golden-paths/connection-pool-pragmas.md",
+      "title": "A connection-pool checkout is unwrapped, so pool exhaustion or an acquire timeout aborts the thread instead of surfacing as an error the caller can report",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*\\.get\\(\\)\\s*\\.\\s*(?:unwrap\\(\\)|expect\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
+      },
+      "baseline": {
+        "files": 92,
+        "matches": 323
+      },
+      "floor": 900
     }
   ]
 }

@@ -272,6 +272,123 @@ The runner supplies the whole §9 fail-loud requirement so this path does not re
 
 **No `exclude` entries.** Deliberate: every candidate exemption here (the four test-module matches) would require excluding a whole production file, and a stale exemption is how an allowlist becomes the bug. The 4 test hits are carried in the baseline and named above so the next reader knows the number is 144 + 4, not 148.
 
+### Two more census rules — the schema-ordinal pair
+
+`silent-row-skip` above is about what happens when a mapping **fails**. This pair
+is about a mapping that **succeeds and is wrong**, which is the worse outcome
+because nothing anywhere reports it. Gap 7 already names the mechanism: *"Nothing
+checks that a mapper's column names are in its query's `SELECT`. … `SELECT *`
+hides it (381 sites) and an explicit column list exposes it."* The join between
+mapper and SQL is not expressible as a regex — §9 below says so and that stands —
+but **each of the two halves separately is**, and each is a ratchet the other
+cannot substitute for.
+
+> **The condition, stack-free:** *a persistence read is bound to the ORDER of a
+> schema rather than to its NAMES, and the projection that fixes that order is
+> not written down at the call site.*
+
+The two halves compound, and that is why they ship together rather than as one
+rule. `SELECT *` fixes the ordinal mapping to `CREATE TABLE` order; a positional
+`row.get(N)` consumes that mapping; and `db/src/migrations/incremental.rs` adds
+columns as a matter of routine. So an additive migration — legal, reviewed,
+touching no query file — can shift every read below the insertion point, and it
+will usually still type-check, because column 7 and column 8 are both `TEXT`.
+Fixing one half alone does not close it: a named read against a wildcard
+projection still over-fetches every BLOB on the table, and a named projection
+consumed positionally is still ordinal.
+
+**The compliant shape is present at scale on both halves, which is what makes
+these ratchets rather than rewrite proposals.** Named-column reads score
+**1,440 matches across 51 files** against the 1,479 positional ones — this repo
+is almost exactly half migrated. Named projections score **391 matches across 83
+files** against 379 wildcards. Neither half is a minority practice being
+legislated into existence; both are the majority-or-parity practice, unenforced.
+
+**Precision, hand-measured.** `positional-row-get`: **12/12** on a systematic
+sample opened by hand (every 123rd site), all real rusqlite positional reads
+inside a `query_map`/`query_row` closure — `cdc.rs:479`, `repos/lab/versions.rs:100`,
+`repos/resources/broker_edges.rs:113` in its turbofish spelling, and so on. The
+receiver vocabulary was enumerated exhaustively rather than sampled: exactly two
+identifiers carry a positional get in this tree, `row` and `r`, which is the
+anchor that keeps `args.get(0)` and `map.get(k)` — a different concept wearing
+the same method name — out of the count. `select-star-in-repo`: **12/12** on a
+systematic sample, all real wildcard projections; the mandatory whitespace is the
+discriminator that keeps `SELECT COUNT(*)` out, and 110 aggregate counts in the
+same tree match zero times.
+
+**Declared false-positive surface, because it is real and small.** **22 of the
+1,479** positional reads (**1.5%**) are single-column aggregate reads —
+`conn.query_row("SELECT COUNT(*) …", [], |r| r.get(0))` — where there is no
+column name to read by and `get(0)` is the only spelling available. They are
+**counted, not excluded**: an exclusion would have to name whole files, and a
+stale exemption is how an allowlist becomes the bug. The honest number is 1,457
++ 22, and it is stated here so the next reader is not surprised by it.
+
+**Two independent implementations agree exactly** — 84/1,479 and 56/379 from the
+census engine, and the same from a hand-written walker with its own directory
+recursion, comment filter and line mapping that shares no code with
+`scripts/census/lib/`. The disagreement worth recording is with **this document's
+own §8 Gap 7**, which says **381** wildcards and **~176** explicit column lists.
+The 381 reconciles: it is 379 plus exactly the two matches that sit on
+comment-only lines, which the engine correctly does not count. The ~176 does
+**not** reconcile with the 391 measured here, and the two are left in
+disagreement rather than silently averaged — the likely cause is that ~176 counted
+distinct query functions while 391 counts occurrences, but nobody re-derived it,
+so it is a lead, not a finding.
+
+```json
+{
+  "rules": [
+    {
+      "id": "positional-row-get",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "A result row is read by column POSITION, so any mid-table column addition silently shifts every index below it",
+      "roots": ["src-tauri/db/src"],
+      "extensions": [".rs"],
+      "signal": {
+        "pattern": "\\b(?:row|r)\\.get(?:::<[^()]{0,40}?>)?\\s*\\(\\s*\\d+\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "row.get(N) / r.get(N) with an integer index, in every turbofish spelling (row.get::<_, String>(N), row.get::<_, Option<String>>(N)), anywhere under src-tauri/db/src. PROXY FOR the stack-free condition: a persistence read is bound to the ORDER of a schema rather than to its NAMES, so a schema edit that is legal, additive and reviewed can still corrupt every read below it -- and it does so SILENTLY, because a positional read of the wrong column usually still type-checks (column 7 and column 8 are both TEXT). CONCRETELY HERE it compounds with select-star-in-repo: 379 projections are SELECT *, so the index-to-column mapping is not even visible at the call site, and db/src/migrations/incremental.rs adds columns routinely. COMPLIANT SHAPE, present at parity: named reads score 1440 matches across 51 files against these 1479, i.e. this repo is almost exactly half migrated -- the correct alternative is not hypothetical. VIOLATING SHAPE: repos/lab/versions.rs:100 `model_profile: row.get(7)?`, repos/resources/broker_edges.rs:113 `row.get::<_, Option<i64>>(5)?`, cdc.rs:479. MEASURED 2026-08-21 at b7fba447f: 1479 matches across 84 of 143 files. PRECISION 12/12 on a systematic hand-opened sample (every 123rd site), all real rusqlite positional reads inside a query_map/query_row closure. The RECEIVER vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly two identifiers ever carry a positional get in this tree, `row` and `r` -- and that anchoring is what keeps collection indexing out: args.get(0) and map.get(k) are a different concept wearing the same method name. DECLARED FALSE-POSITIVE SURFACE, stated rather than papered over: 22 of the 1479 (1.5%) are single-column AGGREGATE reads -- conn.query_row(\"SELECT COUNT(*) ...\", [], |r| r.get(0)) -- where no column name exists and get(0) is the only available spelling. They are COUNTED, not excluded, because an exclusion would have to name whole files and a stale exemption is how an allowlist becomes the bug; the honest number is 1457 + 22. TWO INDEPENDENT IMPLEMENTATIONS agree exactly at 84/1479 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A matcher that reads only the bare `row.get(N)` form scores 847, a 1.75x undercount that reads as 'mostly clean'; the gap is the turbofish spellings plus the `r` receiver. PRECONDITION (must be re-derived per repo): this repo reads rows through rusqlite's positional get. A repo on sqlx with compile-time-checked queries, or on an ORM that maps by name, has the condition designed out and scores zero. LEGAL FIX: read by name -- row.get(\"column_name\") -- which costs one string lookup and makes the read survive any additive migration. Do it TOGETHER with replacing the SELECT * that feeds it: a named read against a wildcard projection is only half the fix and still over-fetches every BLOB on the table."
+      },
+      "exclude": [],
+      "baseline": { "files": 84, "matches": 1479 },
+      "floor": 100
+    },
+    {
+      "id": "select-star-in-repo",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "A repository query projects SELECT *, so the column set the code depends on is invisible at the call site and changes under it",
+      "roots": ["src-tauri/db/src/repos"],
+      "extensions": [".rs"],
+      "signal": {
+        "pattern": "SELECT\\s+\\*",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A wildcard projection (SELECT followed by whitespace and *) in the repository layer. PROXY FOR the stack-free condition: a query declares no contract with the schema, so the shape of what comes back is decided by the table definition at runtime rather than by the code at review time -- an additive migration changes the result shape of a query nobody edited, and the diff that caused it touches no query file. CONCRETELY HERE it is the other half of positional-row-get: SELECT * fixes the ordinal mapping to CREATE TABLE order, 1479 positional reads consume that mapping, and migrations/incremental.rs adds columns as a matter of routine -- so the two together describe a schema change that can rewrite a read without touching it. It also over-fetches: every BLOB and long TEXT column crosses the driver boundary whether or not the caller wanted it. COMPLIANT SHAPE, present at parity: named projections score 391 matches across 83 files against these 379. MEASURED 2026-08-21 at b7fba447f: 379 matches across 56 of 116 files; 2 further matches sit on comment-only lines and are correctly not counted. PRECISION 12/12 on a systematic hand-opened sample (every 31st site), all real wildcard projections -- repos/communication/chat.rs:220, repos/dev_tools.rs:606, repos/execution/audit_incidents.rs:291, repos/twin.rs:1117 in its line-continuation form. The MANDATORY WHITESPACE is the discriminator that keeps aggregates out: 110 SELECT COUNT(*) sites in the same tree, 0 of them matched. TWO INDEPENDENT IMPLEMENTATIONS agree exactly at 56/379 -- the census engine and a hand-written walker sharing no code with it -- and a third, case-insensitive raw grep returns 381, which is 379 plus exactly the 2 comment lines, and finds no lowercase spelling anywhere. DISAGREEMENT RECORDED RATHER THAN RECONCILED: this document's own Gap 7 says '~176' explicit column lists; the measurement here is 391. The 381 in the same sentence reconciles (379 + 2 comment lines) but the ~176 does not, and the likely cause -- distinct query FUNCTIONS versus occurrences -- was not re-derived, so it is a lead and not a finding. PRECONDITION (must be re-derived per repo): this repo writes SQL as string literals inside repository functions. A repo using a query builder or a typed query macro has the condition designed out. LEGAL FIX: name the columns. Where a struct maps a whole row, generate or hand-write the column list once NEXT TO the struct, so the projection and the mapping live together and drift becomes a compile error rather than a silent shift."
+      },
+      "exclude": [],
+      "baseline": { "files": 56, "matches": 379 },
+      "floor": 100
+    }
+  ]
+}
+```
+
+**Floor rationale.** `src-tauri/db/src` walks **143** `.rs` files and
+`src-tauri/db/src/repos` walks **116**. `floor: 100` on both is what the two
+rules already registered over `src-tauri/db/src/repos` use, and what the one over
+`src-tauri/db/src` uses; a fourth opinion about what "the persistence tree is
+intact" means would only make a reader work out which to believe. It is tight
+enough that a crate move or a renamed root fails loudly as *"the matcher is
+broken, not the codebase clean"*, which is the job.
+
+**Neither rule can reach zero, and neither should be expected to.** The 22
+aggregate reads have no named alternative, and a `SELECT *` behind a
+`build_select` query builder (`repos/core/memories.rs:215`) is a different
+refactor from a hand-written projection. These are ratchets on a 1,479 and a 379,
+not marches to nothing.
+
 ### What this rule does NOT cover, and why the second half needs ESLint's *shape*, not ESLint
 
 Two conditions from §7 are real and are **not** countable:
