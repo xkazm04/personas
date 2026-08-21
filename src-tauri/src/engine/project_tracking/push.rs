@@ -276,13 +276,7 @@ async fn run_out_of_cadence_for_project(
         return Ok(());
     }
 
-    let project_name = sub
-        .project_path
-        .rsplit(['/', '\\'])
-        .next()
-        .unwrap_or(&sub.project_path)
-        .to_string();
-    let snapshot = TickSnapshot::from_events(project_name, &events);
+    let snapshot = TickSnapshot::from_events(&events);
 
     // Stamp the watermark BEFORE the await, not after.
     //

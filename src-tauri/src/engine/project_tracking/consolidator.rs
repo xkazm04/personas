@@ -61,14 +61,13 @@ struct PulseEnvelope {
 /// Snapshot of the new events for one tick — partitioned by kind so
 /// the prompt can render each section neatly.
 pub struct TickSnapshot<'a> {
-    pub project_name: String,
     pub commits: Vec<&'a EventPayload>,
     pub runs: Vec<&'a EventPayload>,
     pub notes: Vec<&'a EventPayload>,
 }
 
 impl<'a> TickSnapshot<'a> {
-    pub fn from_events(project_name: String, events: &'a [EventPayload]) -> Self {
+    pub fn from_events(events: &'a [EventPayload]) -> Self {
         let mut commits = Vec::new();
         let mut runs = Vec::new();
         let mut notes = Vec::new();
@@ -82,7 +81,6 @@ impl<'a> TickSnapshot<'a> {
             }
         }
         Self {
-            project_name,
             commits,
             runs,
             notes,

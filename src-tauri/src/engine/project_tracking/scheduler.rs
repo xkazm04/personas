@@ -164,13 +164,7 @@ async fn run_project(
             event_count,
             "project_tracking: ingested events; running consolidator",
         );
-        let project_name = sub
-            .project_path
-            .rsplit(['/', '\\'])
-            .next()
-            .unwrap_or(&sub.project_path)
-            .to_string();
-        let snapshot = TickSnapshot::from_events(project_name, &all_events);
+        let snapshot = TickSnapshot::from_events(&all_events);
         if let Err(e) = consolidator::run_for_project(pool, sub, snapshot, Some(app_handle)).await {
             warn!(
                 project_id = %sub.project_id,

@@ -189,8 +189,14 @@ pub struct ClipboardSubscription {
     pub state: Arc<tokio::sync::Mutex<super::clipboard_monitor::ClipboardState>>,
     pub ambient_ctx: super::ambient_context::AmbientContextHandle,
     /// App handle for sending OS notifications and Tauri events.
+    /// Read only from the `ml`-gated error->KB notification path
+    /// (`handle_detection`, lines ~607/616), so it is genuinely dead in a
+    /// build without `ml` and genuinely live in one with it.
+    #[cfg_attr(not(feature = "ml"), allow(dead_code))]
     pub app: AppHandle,
-    /// User database pool (for KB lookups).
+    /// User database pool (for KB lookups). Read only by the `ml`-gated
+    /// `search_kb`, which is the sole KB entry point for this subscription.
+    #[cfg_attr(not(feature = "ml"), allow(dead_code))]
     pub user_db: crate::db::UserDbPool,
     /// Embedding manager for vectorising error queries.
     #[cfg(feature = "ml")]

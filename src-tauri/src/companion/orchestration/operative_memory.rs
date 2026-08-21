@@ -79,7 +79,6 @@ impl OperationStatus {
 /// doing, separately from what we can infer from tool calls.
 #[derive(Debug, Clone)]
 pub struct Checkpoint {
-    pub at_ms: i64,
     pub progress: String,
     pub blockers: Option<String>,
 }
@@ -88,6 +87,19 @@ pub struct Checkpoint {
 pub struct SessionRef {
     pub fleet_session_id: String,
     pub claude_session_id: Option<String>,
+    /// Working directory this session was spawned in. Recorded on every
+    /// `SessionRef::new` and never read back: the operator digest renders
+    /// id / role / state / intent / last-checkpoint, not the path.
+    ///
+    /// Kept rather than deleted because removing the field cannot stop at
+    /// the field — `cwd` reaches here only to be stored, so dropping it
+    /// unwinds the parameter out of `SessionRef::new`, `ensure_session_ref`,
+    /// `ensure_op_for_session`, `record_session_event` and the public
+    /// `attach_session_to_operation`, whose callers live in three
+    /// `commands/companion/**` modules. That is a public-signature change
+    /// across modules in exchange for one `String`, and it discards the only
+    /// per-session record of where the work happened.
+    #[allow(dead_code)]
     pub cwd: String,
     pub role: Option<String>,
     pub last_state: FleetSessionState,
@@ -631,7 +643,6 @@ impl OperativeMemory {
         let now = now_ms();
         s.last_event_at_ms = now;
         s.checkpoints.push(Checkpoint {
-            at_ms: now,
             progress: progress.to_string(),
             blockers: blockers.map(str::to_string),
         });
@@ -658,7 +669,6 @@ impl OperativeMemory {
             .unwrap_or_else(|e| e.into_inner());
         let q = pending.entry(fleet_session_id.to_string()).or_default();
         q.push(Checkpoint {
-            at_ms: now_ms(),
             progress: progress.to_string(),
             blockers: blockers.map(str::to_string),
         });

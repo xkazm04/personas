@@ -58,6 +58,10 @@ pub const EMBEDDING_FALLBACK_CONFIDENCE: f64 = 0.45;
 pub struct Candidate {
     pub persona_id: String,
     pub persona_name: String,
+    /// Tie-break weight, read only by the `ml`-gated `match_via_embedding`
+    /// (the cosine composite). The `not(ml)` keyword strategy never scores,
+    /// so this is correctly dead in a build without `ml`.
+    #[cfg_attr(not(feature = "ml"), allow(dead_code))]
     pub trust_score: f64,
     pub use_case_id: String,
     pub use_case_title: String,

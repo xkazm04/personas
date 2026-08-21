@@ -430,10 +430,6 @@ pub struct TurnResult {
     pub assistant_text: String,
     pub quick_replies: Vec<String>,
     pub tts_text: Option<String>,
-    /// Athena emitted `OP: continue_autonomously` this turn. The caller
-    /// (or the post-turn scheduler in this module) inspects this to
-    /// decide whether to fire a continuation tick.
-    pub requests_continuation: bool,
 }
 
 /// Hard ceiling per turn — Athena is designed to run long background
@@ -1621,7 +1617,6 @@ async fn send_turn_inner(
         assistant_text: display_text,
         quick_replies: dispatched.quick_replies,
         tts_text: dispatched.tts_text,
-        requests_continuation: dispatched.requests_continuation,
     })
 }
 

@@ -279,6 +279,12 @@ const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
 ///
 /// `scopes` comes from `parsed_scopes`, which fails closed (empty vec) on a
 /// corrupt column, so a malformed row authorizes nothing scope-gated.
+/// Wire shape of `POST /api/scrape/query`. Every field is consumed by
+/// `scraper::query_dataset` inside the `#[cfg(feature = "scraper")]` arm of
+/// `scrape_query`; the `not(scraper)` arm returns 501 without reading the
+/// body, so the fields are dead in a build without `scraper` while remaining
+/// the documented request contract for one that has it.
+#[cfg_attr(not(feature = "scraper"), allow(dead_code))]
 #[derive(Deserialize)]
 struct ScrapeQueryBody {
     dataset: String,

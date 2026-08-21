@@ -113,13 +113,33 @@ pub struct ModeratorEnvelope {
 
 // ── Deliberation status (the persisted `status` column, typed) ──────────────
 
+/// The typed mirror of the persisted `team_deliberations.status` column.
+///
+/// `Converging` and `Aborted` are never constructed by the transition
+/// function, but both strings are live in the database and deleting the
+/// variants would desynchronise this type from the column it mirrors:
+///
+/// - `'converging'` is queried by `db/src/repos/resources/deliberation.rs`
+///   (lines 107 and 158) and appears in four migrations
+///   (`db/src/migrations/incremental.rs` 4010, 4156, 4184, 4210), so rows
+///   carrying it exist in shipped databases.
+/// - `'aborted'` is *written* today, at
+///   `commands/teams/deliberations.rs:436`, and read back at :106 and :595 —
+///   but through bare string literals rather than through this enum.
+///
+/// So the dead-code report here is really a report about the *call sites*:
+/// the enum is right and the literals are the drift. Converting those call
+/// sites to `DeliberationStatus::…as_str()` is the fix that would make these
+/// variants live; it is out of scope for a lint pass and left annotated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeliberationStatus {
     Open,
+    #[allow(dead_code)]
     Converging,
     Resolved,
     Escalated,
     Paused,
+    #[allow(dead_code)]
     Aborted,
 }
 
@@ -178,8 +198,6 @@ pub enum TickOutcome {
     Escalate { reason: &'static str },
     /// The agenda is clear / the moderator converged — synthesize a proposal.
     Resolve { reason: &'static str },
-    /// A backstop tripped — park the deliberation.
-    Pause { reason: &'static str },
 }
 
 /// The persisted progress the transition reasons over.
@@ -702,6 +720,18 @@ pub async fn advance_one_deliberation(
     if let Some(c) = cost {
         let _ = deliberation_repo::add_cost(pool, &delib.id, c);
     }
+    // The moderator's own justification for the verdict it just returned.
+    // Logged rather than dropped: when a deliberation escalates or resolves
+    // unexpectedly, `reason` is the only record of why the model decided so,
+    // and the `&'static str` reasons on `TickOutcome` are our labels, not its.
+    tracing::debug!(
+        deliberation_id = %delib.id,
+        status = ?decision.status,
+        action = ?decision.action,
+        outcome = ?decision.round_outcome,
+        reason = %decision.reason,
+        "deliberation: moderator verdict",
+    );
     for item in &decision.agenda_add {
         let _ = deliberation_repo::add_agenda_item(pool, &delib.id, item, Some("moderator"));
     }
@@ -831,16 +861,6 @@ pub async fn advance_one_deliberation(
                 &note,
             );
             tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved + proposal synthesized");
-        }
-        TickOutcome::Pause { reason } => {
-            let _ = deliberation_repo::update_progress(
-                pool,
-                &delib.id,
-                t.round,
-                t.consecutive_stall_rounds,
-                t.status.as_str(),
-            );
-            tracing::info!(deliberation_id = %delib.id, reason, "deliberation: paused (backstop)");
         }
     }
     Ok(())
@@ -1427,7 +1447,7 @@ pub async fn run_persona_deliberation_turn(
     // propose_assignment stays a soft signal — the resolve-time proposal path
     // turns the deliberation's conclusion into one assignment.
     if let Some(prop) = &turn.propose_assignment {
-        tracing::info!(deliberation_id = %delib.id, persona_id, title = %prop.title, "deliberation: persona proposed an assignment (synthesized at resolve)");
+        tracing::info!(deliberation_id = %delib.id, persona_id, title = %prop.title, rationale = %prop.rationale, "deliberation: persona proposed an assignment (synthesized at resolve)");
     }
     Ok(TurnOutcome::Spoke)
 }
