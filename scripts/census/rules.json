@@ -884,7 +884,7 @@
           "reason": "the production schema itself — the frozen legacy fresh-install table set applied by migrations::run"
         },
         {
-          "path": "src-tauri/db/src/migrations/incremental.rs",
+          "path": "src-tauri/db/src/migrations/incremental/",
           "reason": "the production migration chain — run_incremental's ddl_step/run_step bodies, replayed verbatim by the fixture"
         },
         {
@@ -3314,8 +3314,8 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/db/src/migrations/incremental.rs",
-          "reason": "A schema-migration data correction, not a recovery pass. incremental.rs:4497-4505 rewrites dev_tasks rows whose status is the literal 'pending' — a value that was never part of that table's vocabulary (queued|running|completed|failed|cancelled) and was written only by a legacy writer that no longer exists, as its own comment states. It therefore cannot match work any live process owns, and unlike the six real recovery passes there is no owner it could ever be scoped to, so leaving it in would pin this ratchet permanently above zero and break the rule's designed end of life."
+          "path": "src-tauri/db/src/migrations/incremental/e08_sla_and_dev_tools.rs",
+          "reason": "A schema-migration data correction, not a recovery pass. incremental/e08_sla_and_dev_tools.rs:476 rewrites dev_tasks rows whose status is the literal 'pending' — a value that was never part of that table's vocabulary (queued|running|completed|failed|cancelled) and was written only by a legacy writer that no longer exists, as its own comment states. It therefore cannot match work any live process owns, and unlike the six real recovery passes there is no owner it could ever be scoped to, so leaving it in would pin this ratchet permanently above zero and break the rule's designed end of life."
         }
       ],
       "baseline": {
