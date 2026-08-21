@@ -401,6 +401,22 @@ The active-runs ledger is intent coordination; these are the **never-lose-work**
 
   **Untested gap, stated rather than papered over:** `GIT_INDEX_FILE` and lefthook have not been exercised *together* here. Full derivation, seven fault-injection cases and the remaining gaps are in [`docs/concepts/golden-paths/parallel-session-coordination.md`](../docs/concepts/golden-paths/parallel-session-coordination.md).
 
+  > **Measured 2026-08-21: the isolated-index ritual is ONE shell invocation, or it is not the ritual.**
+  A session followed the recipe correctly but split `git add` and `git commit` across two Bash tool
+  calls. **Shell environment does not persist between tool calls**, so `GIT_INDEX_FILE` was unset by
+  commit time and the commit silently used the shared `.git/index` — which still held a stale phantom
+  deletion. The commit **reverted an entire completed task (7 files) and deleted a 342-line file**, with
+  green hooks, a correct message, and a plausible-looking file list. Nothing in the hook output hinted
+  at it; only `git show --name-status HEAD` compared against the intended file set caught it. Recovery
+  was `git reset --mixed HEAD~1` (all content was still on disk). Keep `IDX=…`, `read-tree`, `add` and
+  `commit` in a single invocation, and **assert `git diff --cached --name-status | grep -c '^D'` is 0**
+  before committing unless you are deliberately deleting.
+
+  > **Also 2026-08-21: resolve skill paths with `git ls-files` before staging.** 11 of the 36 skills are
+  tracked as lowercase `skill.md`, 25 as `SKILL.md`. On Windows' case-insensitive filesystem an edit to
+  the wrong casing lands on disk while `git add` silently no-ops, so the file stays dirty and the commit
+  looks complete.
+
   Still true regardless of which technique you use: (a) verify `git log --oneline -1` is YOUR message after every commit — this is the only step that detects the failure at all; (b) recover by amending rather than resetting, since the content is present and only the attribution is wrong; and (c) for multi-file work, use a real `git worktree`, which is the only structural fix. A commit that didn't happen looks exactly like one that did if you only read the hook output. Note also that `git diff --cached --stat` is a **TOCTOU** check, not a guarantee — measured reading 1 file while the commit shipped 2.
 
 6. **The scratchpad directory is shared between sibling agents.** Two agents wrote their commit message to the same generic filename (`msg1.txt`) and one overwrote the other between `Write` and `git commit -F`. Use a unique filename per agent, or pass the message inline.
