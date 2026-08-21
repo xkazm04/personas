@@ -19,6 +19,7 @@ pub mod system_ops;
 pub mod twin;
 pub mod utils;
 pub mod workspace_taxonomy;
+pub mod workspaces;
 
 #[cfg(test)]
 pub mod test_fixtures;
