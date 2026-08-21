@@ -174,12 +174,40 @@ async function crashCardText(): Promise<string | null> {
   return (nodes[0].text ?? '').replace(/\s+/g, ' ').trim().slice(0, 200) || '(crash card, no text)';
 }
 
-/** Assert the content slot mounted and rendered something. */
-async function assertContentRendered(where: string): Promise<void> {
-  const slot = await app.query('#main-content');
-  expect(slot.length, `${where}: #main-content did not mount`).toBeGreaterThan(0);
-  const text = (slot[0].text ?? '').trim();
-  expect(text.length, `${where}: #main-content mounted but rendered no text`).toBeGreaterThan(0);
+/**
+ * Assert the content slot mounted and rendered something.
+ *
+ * POLLS rather than reading once after a fixed settle. The first live run of
+ * this suite failed on `plugins/browse` with "mounted but rendered no text",
+ * and the tab was fine — driven by hand with a longer pause it renders 101
+ * nodes under `plugin-browse-page`. A fixed 250ms settle is simply not enough
+ * for a tab that fetches before it paints, and the surfaces here differ by an
+ * order of magnitude in how long they take.
+ *
+ * A smoke that cries wolf is barely better than one that cannot fail: both
+ * end up ignored. So the wait is bounded by an OUTCOME (text appeared) rather
+ * than by a guessed duration, and the failure message still fires within a
+ * couple of seconds when the content genuinely never arrives.
+ */
+async function assertContentRendered(where: string, timeoutMs = 4_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let mounted = false;
+  let text = '';
+  for (;;) {
+    const slot = await app.query('#main-content');
+    if (slot.length > 0) {
+      mounted = true;
+      text = (slot[0].text ?? '').trim();
+      if (text.length > 0) return;
+    }
+    if (Date.now() >= deadline) break;
+    await settle(150);
+  }
+  expect(mounted, `${where}: #main-content did not mount within ${timeoutMs}ms`).toBe(true);
+  expect(
+    text.length,
+    `${where}: #main-content mounted but rendered no text within ${timeoutMs}ms`,
+  ).toBeGreaterThan(0);
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
