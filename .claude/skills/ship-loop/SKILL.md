@@ -51,7 +51,7 @@ A permanent loop that moves the app toward a user-defined **ship bar** (e.g. "di
 - Premise-check before executing: audits overstate (see item 12 factoryMock, item 4 "permanently disabled") — verify the claim against current code first; correct the backlog item if the premise moved.
 
 ### Gate (after every milestone — certifies it)
-1. `npx tsc --noEmit` · `npm run lint` (0 errors) · `npm run test -- --run` · `npx vite build`.
+1. `npm run check` (**ten** gates in an `&&` chain incl. **`census:check`**, `tsc --noEmit`, `eslint src/` — never the `tsc`+`lint` pair alone; see `.claude/CLAUDE.md` → "PR self-review") · `npm run test -- --run` · `npx vite build`.
 2. Rust touched → `cargo check` + clippy + the touched modules' filtered test suites (full suite failures are triaged: pre-existing vs regression — only regressions block).
 3. UI touched → tours (`npm run test:tours:fresh`), **serialized after the suites — never concurrently** (CPU contention alone blows the 360s bridge window; bitten twice). Pre-warm the e2e target (`CARGO_TARGET_DIR=.personas-e2e-target`, features `desktop,test-automation`) AFTER committing, and retry once on a settled machine before deeper diagnosis. Test-only diffs may justified-skip tours — record the justification.
 4. Record the gate line in `journal.md`; flip milestone ☑ in `state.md`; update the scorecard.

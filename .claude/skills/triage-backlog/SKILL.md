@@ -202,7 +202,8 @@ working in the worktree at {worktree-path}. Read CLAUDE.md conventions first.
 ## Rules
 - Re-verify each item's premise before editing; if the code no longer matches
   the idea's description, SKIP it and report STALE — do not force the fix.
-- After each item, run: npx tsc --noEmit (and cargo check if Rust touched).
+- After each item, run: npm run check (ten gates incl. census:check — NOT a bare
+  tsc, which skips the eight gates ahead of it; and cargo check if Rust touched).
   On failure: revert that item's changes, report FAILED, continue.
 - Surgical changes only — no drive-by refactors, no "// per idea-xxx" comments,
   no speculative abstractions. New UI strings go through i18n (t.section.key).

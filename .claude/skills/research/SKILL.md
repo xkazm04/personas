@@ -633,7 +633,7 @@ For each accepted finding:
 Do NOT fall back to a handoff because the work feels large. "Large" is a signal to break into smaller atomic commits, not to defer. Cross-language work (Rust + TS + i18n + migration in the same run) is still in-session-executable as long as validation passes per-task.
 
 **Option A — Single isolated finding → execute + commit + optional todo (NEW DEFAULT)**
-For one code finding with a clear `file_path:line` anchor, apply the edit, run the relevant validation (`cargo check` for Rust, `npx tsc --noEmit` for TypeScript, `npm run lint`), and commit with a `research:` prefix. Offer a follow-up todo via `/gsd-add-todo` only if the finding surfaces adjacent cleanup that is out of scope for this PR. Do NOT write the finding to Obsidian as a "noted but not implemented" item — that is the old default and it fragments the record.
+For one code finding with a clear `file_path:line` anchor, apply the edit, run the relevant validation (`npm run check` — ten gates incl. `census:check`, never a bare `tsc`+`lint` pair; plus `cargo check` if Rust changed), and commit with a `research:` prefix. Offer a follow-up todo via `/gsd-add-todo` only if the finding surfaces adjacent cleanup that is out of scope for this PR. Do NOT write the finding to Obsidian as a "noted but not implemented" item — that is the old default and it fragments the record.
 
 **Option B — Clustered findings → in-session execution with atomic commits (NEW DEFAULT for 2+ findings)**
 For 2+ clustered code findings:
@@ -641,10 +641,9 @@ For 2+ clustered code findings:
 1. **Present the full task plan inline** (same shape as the old handoff structure below) before executing, so the user sees what is about to happen.
 2. **Execute in the recommended ship order** (risk-ascending: trivial constants first, complex cross-file work last).
 3. **After each task, run the relevant validation**:
+   - Every task → `npm run check` — **ten** gates in an `&&` chain incl. **`census:check`**, `tsc --noEmit`, `eslint src/`. Never a hand-rolled `tsc`+`lint` pair: the chain stops at the first failure, and `census:check` is the one most likely to fail a diff that compiles. See `.claude/CLAUDE.md` → "PR self-review".
    - Rust changes → `cargo check` in `src-tauri/`
-   - TypeScript changes → `npx tsc --noEmit`
    - i18n changes → `npm run check:i18n:strict` (no-gap gate; use the translate-extract/merge pipeline from CLAUDE.md to close gaps)
-   - Any frontend task → `npm run lint` (eslint)
 4. **Commit atomically per task** with `research: <short task title>` prefix, Co-Authored-By footer, and a body that explains the why.
 5. **If validation fails for a task**, fix the issue inline before moving to the next task. Do NOT stack failing commits. Do NOT use `--no-verify` or `--amend`.
 6. **If a task genuinely cannot be completed in-session** (e.g., hits a real blocker), commit the completed tasks, then write a handoff for the remainder — do not discard the completed work.

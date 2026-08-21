@@ -429,10 +429,9 @@ For each accepted item, execute it **in this same session**. Same default as `/r
 **Single accepted item with a clear anchor (Option A):**
 1. Apply the edit at `anchor`.
 2. Run validation:
+   - Everything → `npm run check` — **ten** gates in an `&&` chain incl. **`census:check`**, `tsc --noEmit`, `eslint src/`. Never substitute a hand-rolled `tsc`+`lint` pair; `census:check` is the one most likely to fail a diff that compiles, and it re-runs at pre-push, so skipping it here only moves the failure later. See `.claude/CLAUDE.md` → "PR self-review".
    - Rust → `cargo check` in `src-tauri/` (needs `--features desktop`)
-   - TypeScript → `npx tsc --noEmit`
    - i18n (if locales touched) → `npm run check:i18n:strict`
-   - Frontend → `npm run lint` (warnings OK; errors must be fixed)
 3. **Stage scoped + verify + commit in ONE Bash invocation** (concurrent sessions rewrite the index between separate calls):
    ```bash
    git add path/one path/two && git diff --cached --stat

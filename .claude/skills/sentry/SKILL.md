@@ -195,8 +195,11 @@ Use Edit directly on the source. Style guidance (inherits from CLAUDE.md):
 Verify locally:
 
 ```bash
-# If frontend-only:
-npx tsc --noEmit                              # must be 0 errors
+# Always — ten gates in an && chain (contracts, tiers, tauri-configs, csp-hosts,
+# corpus, evidence, doc-map, census:check, tsc --noEmit, eslint src/).
+# A bare `tsc` is NOT this gate: the chain stops at the first failure, so a green
+# tsc says nothing about the eight ahead of it. See .claude/CLAUDE.md.
+npm run check                                 # must be 0 errors
 # If backend:
 cd src-tauri && cargo check 2>&1 | tail -30
 ```
@@ -267,7 +270,7 @@ Print this summary to the console. Done.
 ## Safety rails
 
 1. **Never resolve an issue you didn't fix.** If the user says "skip this one", leave the Sentry status untouched.
-2. **Never commit without the sanity check passing** (`tsc --noEmit` for frontend, `cargo check` for backend).
+2. **Never commit without the sanity check passing** (`npm run check` — ten gates incl. `census:check`, not a bare `tsc`; plus `cargo check` for backend).
 3. **Never bulk-resolve without individual inspection** — Sentry's API can resolve in bulk, but that defeats the purpose.
 4. **Never fetch more than 100 issues per call** — paginate via the `Link` response header if needed.
 5. **Don't log the PAT.** Read it once into `$TOKEN`, never `echo` it. If the user shares the transcript, they shouldn't see it.

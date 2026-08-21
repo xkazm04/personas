@@ -597,8 +597,7 @@ For each step in the ADR's Rollout section:
 After the last step:
 
 1. Run all validation commands one more time, fully:
-   - `npx tsc --noEmit`
-   - `npm run lint`
+   - `npm run check` — **ten** gates in an `&&` chain (contracts · tiers · tauri-configs · csp-hosts · corpus · evidence · doc-map · **`census:check`** · `tsc --noEmit` · `eslint src/`). Run this, not the `tsc`+`lint` pair: the chain stops at the first failure, so a green `tsc` says nothing about the eight gates ahead of it, and `census:check` is the one most likely to fail a diff that compiles. See `.claude/CLAUDE.md` → "PR self-review".
    - `cargo check` in `src-tauri/`
    - `npm run test -- --run`
 2. Walk through the ADR's regression checklist. For each item, verify it works (run the actual code path if possible — `npm run tauri dev` and exercise the surface).

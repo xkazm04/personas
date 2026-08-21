@@ -400,8 +400,7 @@ For a small polish cycle, do this inline. For a vertical-slice cycle (multi-file
 
 Run, scoped to what was touched:
 
-- TypeScript: `npx tsc --noEmit` if any `.ts`/`.tsx` changed.
-- Lint: `npm run lint` (silenced — only fail on new errors above the baseline; warnings are fine on the `custom/no-raw-*-classes` / `custom/no-hardcoded-jsx-text` migrations, but never on the lines you just wrote).
+- Gate: `npm run check` — **ten** checks in an `&&` chain incl. **`census:check`**, `tsc --noEmit`, `eslint src/`. Never substitute a hand-rolled `tsc`+`lint` pair: the chain stops at the first failure, and `census:check` is the one most likely to fail a diff that compiles. Lint warnings are fine on the `custom/no-raw-*-classes` / `custom/no-hardcoded-jsx-text` migrations, but never on the lines you just wrote. See `.claude/CLAUDE.md` → "PR self-review".
 - Rust: `cargo check --manifest-path src-tauri/Cargo.toml` if any `.rs` changed in `src-tauri/`.
 - Tests: skip by default — `/friend` is fast cycles. Only run `npm run test -- <path>` if the direction explicitly added or changed test files.
 
