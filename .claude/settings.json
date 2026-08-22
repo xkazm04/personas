@@ -1,0 +1,30 @@
+{
+  "extraKnownMarketplaces": {
+    "ai-registry": {
+      "source": {
+        "source": "github",
+        "repo": "xkazm04/ai-registry"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "architect@ai-registry": true,
+    "explorer@ai-registry": true,
+    "friend@ai-registry": true,
+    "i18n-translate@ai-registry": true,
+    "kpi-sim@ai-registry": true,
+    "leonardo@ai-registry": true,
+    "motionize@ai-registry": true,
+    "mvp@ai-registry": true,
+    "perfect@ai-registry": true,
+    "project-populate@ai-registry": true,
+    "promote@ai-registry": true,
+    "research@ai-registry": true,
+    "scan-sweep@ai-registry": true,
+    "ship-loop@ai-registry": true,
+    "spark@ai-registry": true,
+    "tiger@ai-registry": true,
+    "uat@ai-registry": true,
+    "consult@ai-registry": true
+  }
+}

@@ -50,3 +50,11 @@ agents:
 controls:
   prePush: [lint, typecheck, scan-secrets, evals]
   ciHardPass: [test, sast, merge-gate]
+
+# The organization's AI registry - knowledge bundles this repo consumes and the skill
+# marketplace it installs from. Unknown fields MUST be ignored by a reader.
+registry:
+  remote: github:xkazm04/ai-registry
+  local: ../ai-registry
+knowledge:
+  domains: [software-engineering, llm-observability]

@@ -72,7 +72,11 @@ recordings/
 !.claude/Design.md
 !.claude/conventions.json
 !.claude/active-runs.md
+!.claude/settings.json
 !.claude/skills/
+!.claude/perfect/
+!.claude/ship-loop/
+!.claude/mvp/
 !.claude/agents/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md
@@ -140,3 +144,6 @@ practice-harvest/
 # src-tauri/build.rs TS_RS_EXPORT_DIR); a cargo invocation that misses that env
 # drops a duplicate tree here. Ignored so it never dirties the tree or drifts.
 /bindings/
+
+# /consult skill log (counts reach the ai-registry signals lane; the log itself stays local)
+.ai/consults.jsonl

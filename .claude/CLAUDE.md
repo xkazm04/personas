@@ -1008,3 +1008,10 @@ Corrections are the highest-value signal in the ledger — never skip one, never
 paraphrase away the user's reasoning. The ledger (`.claude/decision-ledger/`)
 is personal data: gitignored, never committed, never quoted into committed
 files. Distillation runs via the `/reflect-me` skill.
+
+## AI registry (knowledge + skills)
+
+This repo is wired to the organization's AI registry (github:xkazm04/ai-registry; local sibling checkout `../ai-registry`).
+
+- **Knowledge**: this repo consumes the `software-engineering` and `llm-observability` bundle(s). Before a product, architecture or domain decision in those areas, run `/consult <topic>` - it reads the relevant subjects (golden path + techniques) and logs the consult to `.ai/consults.jsonl` (gitignored).
+- **Skills**: shared skills come from the `ai-registry` plugin marketplace, declared in `.claude/settings.json` (`enabledPlugins`). Do not copy a registry skill into `.claude/skills/` - only project-specific skills live there. Update with `claude plugin update <skill>@ai-registry`. Project-specific configuration for a registry skill lives in its committed overlay (e.g. `.claude/perfect/config.md`).
