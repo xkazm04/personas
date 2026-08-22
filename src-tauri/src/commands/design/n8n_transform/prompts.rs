@@ -276,7 +276,7 @@ Note on implementation_guide: CRITICAL -- for EVERY tool, you MUST generate a de
 2. HTTP method (GET, POST, PUT, DELETE)
 3. Authentication header using credential env var pattern: $CONNECTOR_NAME_UPPER_FIELD_UPPER (e.g., -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN")
 4. Query parameters or request body format, mapping from input_schema fields to API parameters
-5. A complete curl example that can be copied and run in a shell
+5. A complete curl example that can be copied and run in a shell, on a line starting with `Curl:`. The runtime executes this line directly and validates it against an ALLOWLIST of flags first, so use only: `-s -S -L -f -i -I -G --compressed -H -X -A -u -m --max-time --connect-timeout --retry -d --data --data-raw --data-urlencode -w --url`, plus exactly ONE http/https URL. Anything else (`-o`, `-O`, `-T`, `-K`, `-D`, `-c`, `-b`, `-k`, `-F`, `--trace`, `--proto`, …) is rejected and the tool will not run. A `-d`/`--data` value must NOT begin with `@` — that makes curl read a local file and POST it. The URL must be a public host; loopback/private addresses are blocked unless the connector is declared self-hosted.
 6. Expected response JSON format summary
 Example for a Gmail list tool:
 "implementation_guide": "API: GET https://www.googleapis.com/gmail/v1/users/me/messages\nAuth: -H 'Authorization: Bearer $GOOGLE_ACCESS_TOKEN'\nParams: maxResults=${limit}, q=${query}\nCurl: curl -s -H 'Authorization: Bearer $GOOGLE_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=10'\nResponse: {\"messages\": [{\"id\": \"...\", \"threadId\": \"...\"}], \"resultSizeEstimate\": 10}"
