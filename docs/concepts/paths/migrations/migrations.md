@@ -11,7 +11,7 @@ techniques:
   - schema-drift-detection
 evidence:
   - src-tauri/db/src/migrations/mod.rs            # the chain: consolidated initial + incremental replay, ledger-less convergent variant
-  - src-tauri/db/src/migrations/incremental.rs    # guarded steps (run_step/already_applied), ddl_step atomic unit, reference table rebuilds, swallow-regression tests
+  - src-tauri/db/src/migrations/incremental/    # guarded steps (run_step/already_applied), ddl_step atomic unit, reference table rebuilds, swallow-regression tests
   - src-tauri/db/src/backup.rs                    # snapshot-before-migrate incl. journal sidecars, boundary-keyed rotation, every-boot policy priced in its module doc
   - src-tauri/db/src/migrations/fk_hygiene.rs     # referential-hygiene retrofit via rebuild, idempotency gated on live FK list
   - src-tauri/db/src/migrations/helpers.rs        # data migration with escrow: blob cleared only after every field confirmed extracted; boot invariant assertion

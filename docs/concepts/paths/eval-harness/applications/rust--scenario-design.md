@@ -9,7 +9,7 @@ stack: rust
 
 The Agent Lab generates test scenarios with an LLM (expensive: a headless
 CLI spawn per generation) and caches them in
-`src-tauri/engine/src/test_runner.rs`:
+`src-tauri/engine/src/test_runner/`:
 
 - `SCENARIO_CACHE` (`:14-20`) — an in-memory `HashMap<u64, (Instant,
   Vec<TestScenario>)>` behind a mutex, TTL `SCENARIO_CACHE_TTL_SECS = 600`.

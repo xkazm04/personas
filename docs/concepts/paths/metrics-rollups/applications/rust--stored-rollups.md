@@ -18,7 +18,7 @@ lesson in the technique comes directly from this incident; see
 
 ## The pieces, mapped
 
-- **The rollup table** — `src-tauri/db/src/migrations/incremental.rs:4225`
+- **The rollup table** — `src-tauri/db/src/migrations/incremental/:4225`
   creates `sla_daily (persona_id, day, total, successful, failed, cancelled,
   timed_count, duration_sum_ms, cost_sum_usd, updated_at)` with
   `PRIMARY KEY (persona_id, day)`. Note what it stores: **composable parts**

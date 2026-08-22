@@ -18,7 +18,7 @@ real, and the chain-level failure no per-step property could see.
 
 ## The step record and the legal probes
 
-`IncrementalMigration` (`src-tauri/db/src/migrations/incremental.rs:5-10`)
+`IncrementalMigration` (`src-tauri/db/src/migrations/incremental/:5-10`)
 is `{ id, description, already_applied, apply }`; `run_step` (`:12-24`)
 evaluates the guard, short-circuits or applies, and logs. Note what it does
 NOT do: record anything — `id` is a log field only. The three legal guard

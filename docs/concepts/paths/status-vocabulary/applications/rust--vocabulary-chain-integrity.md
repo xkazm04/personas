@@ -15,7 +15,7 @@ chain exists here, every joint has been measured, and the deep audit is
 ## The four layers, as built here
 
 - **Storage constraint:** 82 `CHECK(col IN (…))` occurrences in
-  `src-tauri/db/src/migrations/incremental.rs` and siblings — **66 unique
+  `src-tauri/db/src/migrations/incremental/` and siblings — **66 unique
   vocabularies** over 38 distinct columns / 184 distinct tokens (e.g.
   `CHECK(status IN ('observed','proposed','adopted','deprecated','rejected'))`
   at `incremental.rs:6939`).

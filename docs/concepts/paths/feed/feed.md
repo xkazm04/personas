@@ -18,7 +18,7 @@ evidence:
   - src/features/overview/sub_events/components/EventLogList.tsx           # detached end-reached load-older trigger + the honest "N+" total when the server has more
   - src/stores/slices/pipeline/channelSlice.ts                             # per-team last-seen watermark persisted; countUnread DERIVED by comparison (predicate excludes the reader's own posts); mergeHorizon; id-dedupe at both merge doors
   - src/features/home/sub_welcome/lib/sinceLeftBriefing.ts                 # last-seen anchor persisted and frozen at entry; the since-you-left delta derived by comparison, never a maintained counter
-  - src-tauri/src/engine/background.rs                                     # the named reaper: settings-driven retention_days + min-keep-per-entity floor, terminal rows only
+  - src-tauri/src/engine/background/                                     # the named reaper: settings-driven retention_days + min-keep-per-entity floor, terminal rows only
 counter_evidence:
   - src/features/fleet/monitor/channels/mergedFeed.tsx  # same items, same directory as useLensFeed — tiebreaker dropped; on a 45%-tied key the window cut falls to team iteration order
 deviations:

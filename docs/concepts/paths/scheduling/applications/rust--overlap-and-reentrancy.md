@@ -14,7 +14,7 @@ stuck-claim reaper. File references are to the desktop backend.
 ## 1. Single-flight, drop — with a visible signal
 
 The scheduled-fire path implements the technique's default policy (single-flight,
-drop, recorded) at `src-tauri/src/engine/background.rs:2545-2566`. When a `schedule`
+drop, recorded) at `src-tauri/src/engine/background/:2545-2566`. When a `schedule`
 trigger comes due while its previous run is still active, the tick:
 
 - detects overlap via `schedule_overlap_active` (`background.rs:2199-2229`) — an
@@ -59,7 +59,7 @@ for the tick.
 alive, and a bare `running: AtomicBool` reads `true` again after restart — the orphan
 concludes it is current, and every trigger fires twice. The generation is bumped on
 every start *and* stop; each loop captures it at spawn and `run_single`
-(`src-tauri/src/engine/subscription.rs:1218-1272`) re-loads it per tick, self-retiring
+(`src-tauri/src/engine/subscription/:1218-1272`) re-loads it per tick, self-retiring
 when it moved on. The start transition itself is guarded by `try_begin_start`
 (`background.rs:197-206`), a `compare_exchange` on `running`, closing the
 two-concurrent-starts double-spawn race.

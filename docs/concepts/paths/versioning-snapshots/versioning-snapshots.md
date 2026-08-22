@@ -19,7 +19,7 @@ evidence:
   - src-tauri/db/src/repos/resources/persona_change_log.rs       # the field-log shape of history: per-field diff rows on the caller's transaction, redaction, coalescing window, write-time retention cap
   - docs/concepts/golden-paths/definition-version-history.md     # measured census: three version mechanisms, one live; capture-bypass and constraint gaps counted against real databases
 counter_evidence:
-  - src-tauri/db/src/migrations/incremental.rs   # persona_versions DDL: per-entity version_number with NO unique constraint — the sequence is code-enforced only, and the census found 12 such tables
+  - src-tauri/db/src/migrations/incremental/   # persona_versions DDL: per-entity version_number with NO unique constraint — the sequence is code-enforced only, and the census found 12 such tables
 deviations:
   - w9-versioning-snapshots   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

@@ -59,7 +59,7 @@ with the cap fetched from backend config rather than duplicated (`:133`,
 Two gaps, both visible from the surface. The record's **failure story is
 thin**: the automatic escalation path writes one generic prose string
 ("One or more subscription executions failed",
-`src-tauri/src/engine/background.rs:1706-1711`) for every subscription-fan-out
+`src-tauri/src/engine/background/:1706-1711`) for every subscription-fan-out
 failure, so clustering has little to bite on for that class, and there is no
 per-attempt history or triage state (untouched/investigating/discarded-by)
 on the record. And the lane's **binding is misaimed in practice**: the

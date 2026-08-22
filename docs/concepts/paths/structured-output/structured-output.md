@@ -11,7 +11,7 @@ techniques:
   - extraction-observability
 evidence:
   - src-tauri/src/commands/credentials/ai_artifact_flow.rs   # reusable idle→running→completed|error artifact lifecycle: pluggable extractor, per-flow events, cancellation via registry, panic-safe terminal event, extraction_failed logged as its own outcome with a size-capped raw preview
-  - src-tauri/src/companion/dispatcher.rs                    # op extraction from finalized text, ALLOWED_ACTIONS closed vocabulary, unknown actions rejected+warned+left visible as data, cleaned_text display channel, repair_op_json bounded syntactic brace-completion
+  - src-tauri/src/companion/dispatcher/                    # op extraction from finalized text, ALLOWED_ACTIONS closed vocabulary, unknown actions rejected+warned+left visible as data, cleaned_text display channel, repair_op_json bounded syntactic brace-completion
   - src-tauri/engine/src/design.rs                           # extract_json_by_key strategy ladder: fenced block first, then bare balanced span, discriminant keys to pick the right candidate
   - src/features/plugins/research-lab/sub_reports/parseSynthesis.ts  # tolerant ladder with a schema-declared prose fallback (markdown headings), null only when nothing usable
   - src-tauri/engine/src/safe_json.rs                        # bounded parse: size + nesting-depth caps enforced before deserialization

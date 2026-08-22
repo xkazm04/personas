@@ -9,7 +9,7 @@ stack: rust
 
 The repo runs the technique twice over one belief store: a **manual,
 review-gated pass** (`src-tauri/src/companion/brain/consolidation.rs`) and a
-**pressure-triggered sleep cycle** (`src-tauri/src/companion/brain/sleep_cycle.rs`).
+**pressure-triggered sleep cycle** (`src-tauri/src/companion/brain/sleep_cycle/`).
 Both distill episodes from `src-tauri/src/companion/brain/episodic.rs` into
 facts via the same writers in `src-tauri/src/companion/brain/semantic.rs` —
 the one-door property realized as shared functions, not shared discipline.
