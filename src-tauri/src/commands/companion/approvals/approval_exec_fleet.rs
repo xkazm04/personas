@@ -1274,14 +1274,22 @@ pub(crate) fn execute_fleet_dispatch(
         let cols = spec.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
         let rows = spec.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
 
-        let id = match crate::commands::fleet::pty::spawn_session(
+        // CLI-safe form of the role name (`athena-<role>`, lowercase-kebab,
+        // ≤ 24 chars) rides down into the spawn as `--name` so the process
+        // itself carries the identity; the spawn returns the collision-resolved
+        // name so the registry display name below is built around the same
+        // string. The sentinel prefix comes from `cli_safe_label`, which reads
+        // `ATHENA_SESSION_NAME_SENTINEL` — see the guard note below.
+        let cli_label = crate::commands::fleet::naming::cli_safe_label(&role);
+        let (id, cli_name) = match crate::commands::fleet::pty::spawn_session_named(
             app.clone(),
             std::path::PathBuf::from(cwd),
             args,
             cols,
             rows,
+            Some(cli_label),
         ) {
-            Ok(id) => id,
+            Ok(spawned) => spawned,
             Err(e) => {
                 failures.push(format!("role `{role}`: spawn failed: {e}"));
                 continue;
@@ -1299,12 +1307,17 @@ pub(crate) fn execute_fleet_dispatch(
         // falls back to `project_label` while `name` is unset). Sourced from
         // the shared `ATHENA_SESSION_NAME_SENTINEL` so the autonomous
         // `fleet_send_input`/`fleet_kill` guard (`is_athena_owned`) recognizes
-        // these dispatched sessions as Athena-owned (prefix match).
+        // these dispatched sessions as Athena-owned (prefix match). The CLI
+        // part is the name the process was actually spawned with (including
+        // any collision discriminator), so registry and `claude agents --json`
+        // agree; the `·` + project label stay registry-only.
         let dispatch_name = {
-            let base = format!(
-                "{}-{role}",
-                crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
-            );
+            let base = cli_name.unwrap_or_else(|| {
+                format!(
+                    "{}-{role}",
+                    crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+                )
+            });
             match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
                 Some(label) => format!("{base} · {label}"),
                 None => base,
