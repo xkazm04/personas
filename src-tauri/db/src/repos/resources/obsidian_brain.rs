@@ -4,6 +4,57 @@ use crate::models::{RevitalizeRunRecord, SyncLogEntry, SyncState};
 use crate::DbPool;
 use personas_core::error::AppError;
 
+// One projection + one mapper per table, so a SELECT and its mapping cannot
+// disagree. Every mapper below binds by column NAME; the const column order
+// mirrors the `CREATE TABLE` purely so the two read alike.
+const SYNC_STATE_COLUMNS: &str =
+    "id, entity_type, entity_id, vault_file_path, content_hash, sync_direction, synced_at";
+
+row_mapper!(row_to_sync_state -> SyncState {
+    id,
+    entity_type,
+    entity_id,
+    vault_file_path,
+    content_hash,
+    sync_direction,
+    synced_at,
+});
+
+const SYNC_LOG_COLUMNS: &str =
+    "id, sync_type, entity_type, entity_id, vault_file_path, action, details, created_at";
+
+row_mapper!(row_to_sync_log -> SyncLogEntry {
+    id,
+    sync_type,
+    entity_type,
+    entity_id,
+    vault_file_path,
+    action,
+    details,
+    created_at,
+});
+
+const REVITALIZE_RUN_COLUMNS: &str = "id, vault_name, vault_path, status, error,                                       files_deleted, files_merged, files_updated, files_reviewed,                                       notes_before, notes_after, est_tokens_before, est_tokens_after,                                       duration_secs, started_at, created_at";
+
+row_mapper!(row_to_revitalize_run -> RevitalizeRunRecord {
+    id,
+    vault_name,
+    vault_path,
+    status,
+    error,
+    files_deleted,
+    files_merged,
+    files_updated,
+    files_reviewed,
+    notes_before,
+    notes_after,
+    est_tokens_before,
+    est_tokens_after,
+    duration_secs,
+    started_at,
+    created_at,
+});
+
 pub fn upsert_sync_state(pool: &DbPool, state: &SyncState) -> Result<(), AppError> {
     timed_query!("obsidian_sync_state", "obsidian_sync::upsert_sync_state", {
         let conn = pool.get()?;
@@ -34,20 +85,11 @@ pub fn get_sync_state(
     timed_query!("obsidian_sync_state", "obsidian_sync::get_sync_state", {
         let conn = pool.get()?;
         let result = conn.query_row(
-            "SELECT id, entity_type, entity_id, vault_file_path, content_hash, sync_direction, synced_at
-             FROM obsidian_sync_state WHERE entity_type = ?1 AND entity_id = ?2",
+            &format!(
+                "SELECT {SYNC_STATE_COLUMNS} FROM obsidian_sync_state WHERE entity_type = ?1 AND entity_id = ?2"
+            ),
             params![entity_type, entity_id],
-            |row| {
-                Ok(SyncState {
-                    id: row.get(0)?,
-                    entity_type: row.get(1)?,
-                    entity_id: row.get(2)?,
-                    vault_file_path: row.get(3)?,
-                    content_hash: row.get(4)?,
-                    sync_direction: row.get(5)?,
-                    synced_at: row.get(6)?,
-                })
-            },
+            row_to_sync_state,
         );
         match result {
             Ok(s) => Ok(Some(s)),
@@ -66,22 +108,11 @@ pub fn get_sync_states_by_type(
         "obsidian_sync::get_sync_states_by_type",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-            "SELECT id, entity_type, entity_id, vault_file_path, content_hash, sync_direction, synced_at
-             FROM obsidian_sync_state WHERE entity_type = ?1 ORDER BY synced_at DESC",
-        )?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {SYNC_STATE_COLUMNS} FROM obsidian_sync_state WHERE entity_type = ?1 ORDER BY synced_at DESC"
+            ))?;
             let rows = stmt
-                .query_map(params![entity_type], |row| {
-                    Ok(SyncState {
-                        id: row.get(0)?,
-                        entity_type: row.get(1)?,
-                        entity_id: row.get(2)?,
-                        vault_file_path: row.get(3)?,
-                        content_hash: row.get(4)?,
-                        sync_direction: row.get(5)?,
-                        synced_at: row.get(6)?,
-                    })
-                })?
+                .query_map(params![entity_type], row_to_sync_state)?
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(rows)
         }
@@ -127,23 +158,11 @@ pub fn insert_sync_log(pool: &DbPool, entry: &SyncLogEntry) -> Result<(), AppErr
 pub fn list_sync_log(pool: &DbPool, limit: i64) -> Result<Vec<SyncLogEntry>, AppError> {
     timed_query!("obsidian_sync_log", "obsidian_sync::list_sync_log", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, sync_type, entity_type, entity_id, vault_file_path, action, details, created_at
-             FROM obsidian_sync_log ORDER BY created_at DESC LIMIT ?1",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {SYNC_LOG_COLUMNS} FROM obsidian_sync_log ORDER BY created_at DESC LIMIT ?1"
+        ))?;
         let rows = stmt
-            .query_map(params![limit], |row| {
-                Ok(SyncLogEntry {
-                    id: row.get(0)?,
-                    sync_type: row.get(1)?,
-                    entity_type: row.get(2)?,
-                    entity_id: row.get(3)?,
-                    vault_file_path: row.get(4)?,
-                    action: row.get(5)?,
-                    details: row.get(6)?,
-                    created_at: row.get(7)?,
-                })
-            })?
+            .query_map(params![limit], row_to_sync_log)?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     })
@@ -197,34 +216,11 @@ pub fn list_revitalize_runs(
         "obsidian_revitalize::list_runs",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT id, vault_name, vault_path, status, error,
-                        files_deleted, files_merged, files_updated, files_reviewed,
-                        notes_before, notes_after, est_tokens_before, est_tokens_after,
-                        duration_secs, started_at, created_at
-                 FROM obsidian_revitalize_runs ORDER BY created_at DESC LIMIT ?1",
-            )?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {REVITALIZE_RUN_COLUMNS} FROM obsidian_revitalize_runs ORDER BY created_at DESC LIMIT ?1"
+            ))?;
             let rows = stmt
-                .query_map(params![limit], |row| {
-                    Ok(RevitalizeRunRecord {
-                        id: row.get(0)?,
-                        vault_name: row.get(1)?,
-                        vault_path: row.get(2)?,
-                        status: row.get(3)?,
-                        error: row.get(4)?,
-                        files_deleted: row.get(5)?,
-                        files_merged: row.get(6)?,
-                        files_updated: row.get(7)?,
-                        files_reviewed: row.get(8)?,
-                        notes_before: row.get(9)?,
-                        notes_after: row.get(10)?,
-                        est_tokens_before: row.get(11)?,
-                        est_tokens_after: row.get(12)?,
-                        duration_secs: row.get(13)?,
-                        started_at: row.get(14)?,
-                        created_at: row.get(15)?,
-                    })
-                })?
+                .query_map(params![limit], row_to_revitalize_run)?
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(rows)
         }

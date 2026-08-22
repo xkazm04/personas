@@ -4,6 +4,37 @@ use crate::models::{ToolExecutionAuditEntry, ToolPerformanceSummary};
 use crate::DbPool;
 use personas_core::error::AppError;
 
+/// One projection for every full-row read of `tool_execution_audit_log`.
+/// Mirrors `CREATE TABLE` at
+/// `migrations/incremental/e02_credentials_and_audit_trails.rs:207`.
+const COLUMNS: &str = "id, tool_id, tool_name, tool_type, persona_id, persona_name,                        credential_id, result_status, duration_ms, error_message,                        error_kind, created_at";
+
+row_mapper!(row_to_entry -> ToolExecutionAuditEntry {
+    id,
+    tool_id,
+    tool_name,
+    tool_type,
+    persona_id,
+    persona_name,
+    credential_id,
+    result_status,
+    duration_ms,
+    error_message,
+    error_kind,
+    created_at,
+});
+
+// The aggregate query names every computed column with an `AS` alias that
+// matches the struct field, so the same by-name mapper works there too.
+row_mapper!(row_to_summary -> ToolPerformanceSummary {
+    tool_name,
+    tool_type,
+    total_runs,
+    error_runs,
+    avg_duration_ms,
+    max_duration_ms,
+});
+
 /// Append a tool execution entry to the audit log.
 #[allow(clippy::too_many_arguments)]
 pub fn insert(
@@ -71,29 +102,11 @@ pub fn insert(
 pub fn get_recent(pool: &DbPool, limit: u32) -> Result<Vec<ToolExecutionAuditEntry>, AppError> {
     timed_query!("tool_audit_log", "tool_audit_log::get_recent", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, error_kind, created_at
-             FROM tool_execution_audit_log
-             ORDER BY created_at DESC
-             LIMIT ?1",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM tool_execution_audit_log ORDER BY created_at DESC LIMIT ?1"
+        ))?;
         let rows = stmt
-            .query_map(params![limit], |row| {
-                Ok(ToolExecutionAuditEntry {
-                    id: row.get(0)?,
-                    tool_id: row.get(1)?,
-                    tool_name: row.get(2)?,
-                    tool_type: row.get(3)?,
-                    persona_id: row.get(4)?,
-                    persona_name: row.get(5)?,
-                    credential_id: row.get(6)?,
-                    result_status: row.get(7)?,
-                    duration_ms: row.get(8)?,
-                    error_message: row.get(9)?,
-                    error_kind: row.get(10)?,
-                    created_at: row.get(11)?,
-                })
-            })?
+            .query_map(params![limit], row_to_entry)?
             .filter_map(|r| r.ok())
             .collect();
         Ok(rows)
@@ -145,16 +158,7 @@ pub fn get_performance_summary(
                 }
             };
             let mut stmt = conn.prepare(sql)?;
-            let map_row = |row: &rusqlite::Row<'_>| -> rusqlite::Result<ToolPerformanceSummary> {
-                Ok(ToolPerformanceSummary {
-                    tool_name: row.get(0)?,
-                    tool_type: row.get(1)?,
-                    total_runs: row.get(2)?,
-                    error_runs: row.get(3)?,
-                    avg_duration_ms: row.get(4)?,
-                    max_duration_ms: row.get(5)?,
-                })
-            };
+            let map_row = row_to_summary;
             let rows: Vec<ToolPerformanceSummary> = match persona_id {
                 Some(pid) => stmt
                     .query_map(params![since, pid, limit], map_row)?
@@ -178,30 +182,11 @@ pub fn get_by_persona(
 ) -> Result<Vec<ToolExecutionAuditEntry>, AppError> {
     timed_query!("tool_audit_log", "tool_audit_log::get_by_persona", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, error_kind, created_at
-             FROM tool_execution_audit_log
-             WHERE persona_id = ?1
-             ORDER BY created_at DESC
-             LIMIT ?2",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM tool_execution_audit_log WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2"
+        ))?;
         let rows = stmt
-            .query_map(params![persona_id, limit], |row| {
-                Ok(ToolExecutionAuditEntry {
-                    id: row.get(0)?,
-                    tool_id: row.get(1)?,
-                    tool_name: row.get(2)?,
-                    tool_type: row.get(3)?,
-                    persona_id: row.get(4)?,
-                    persona_name: row.get(5)?,
-                    credential_id: row.get(6)?,
-                    result_status: row.get(7)?,
-                    duration_ms: row.get(8)?,
-                    error_message: row.get(9)?,
-                    error_kind: row.get(10)?,
-                    created_at: row.get(11)?,
-                })
-            })?
+            .query_map(params![persona_id, limit], row_to_entry)?
             .filter_map(|r| r.ok())
             .collect();
         Ok(rows)
