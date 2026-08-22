@@ -137,12 +137,9 @@ pub fn delete_workspace(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_workspaces", "dev_workspaces::delete_workspace", {
         let mut conn = pool.get()?;
         let tx = conn.transaction()?;
-        // FOREIGN TABLE: dev_projects is owned by `repos::dev::projects`; the
-        // membership column lives there rather than on the workspace row.
-        tx.execute(
-            "UPDATE dev_projects SET workspace_id = NULL WHERE workspace_id = ?1",
-            params![id],
-        )?;
+        // Membership is a dev_projects column, so unassigning members is that
+        // repo's query, not this one's.
+        crate::repos::dev::projects::clear_workspace_membership(&tx, id)?;
         tx.execute(
             "DELETE FROM workspace_practice_adoption WHERE practice_id IN
                  (SELECT id FROM workspace_knowledge WHERE workspace_id = ?1)",
@@ -225,11 +222,7 @@ pub fn assign_project(
             }
         }
 
-        // FOREIGN TABLE: dev_projects is owned by `repos::dev::projects`.
-        tx.execute(
-            "UPDATE dev_projects SET workspace_id = ?1, updated_at = ?2 WHERE id = ?3",
-            params![workspace_id, now, project_id],
-        )?;
+        crate::repos::dev::projects::set_workspace_membership(&tx, project_id, workspace_id, &now)?;
 
         if let Some(new_ws) = workspace_id {
             let adopted: Vec<(String, String, Option<String>)> = {
@@ -292,13 +285,7 @@ pub fn import_local(
             // (an explicit in-app assignment wins over the legacy prototype).
             let current: Option<Option<String>> = {
                 let conn = pool.get()?;
-                // FOREIGN TABLE: dev_projects is owned by `repos::dev::projects`.
-                conn.query_row(
-                    "SELECT workspace_id FROM dev_projects WHERE id = ?1",
-                    params![project_id],
-                    |r| r.get(0),
-                )
-                .optional()?
+                crate::repos::dev::projects::workspace_id_of(&conn, project_id)?
             };
             if matches!(current, Some(None)) {
                 assign_project(pool, project_id, Some(&ws.id))?;
@@ -321,15 +308,7 @@ pub fn list_workspace_projects(
 ) -> Result<Vec<DevProject>, AppError> {
     timed_query!("dev_projects", "dev_workspaces::list_workspace_projects", {
         let conn = pool.get()?;
-        // FOREIGN TABLE: dev_projects is owned by `repos::dev::projects`.
-        let mut stmt = conn.prepare(
-            "SELECT * FROM dev_projects WHERE workspace_id = ?1 ORDER BY name COLLATE NOCASE",
-        )?;
-        let rows = stmt.query_map(
-            params![workspace_id],
-            crate::repos::dev_tools::row_to_project,
-        )?;
-        rows.collect::<Result<Vec<_>, _>>()
+        crate::repos::dev::projects::list_by_workspace(&conn, workspace_id)
             .map_err(AppError::Database)
     })
 }

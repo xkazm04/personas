@@ -1,6 +1,5 @@
 use crate::DbPool;
 use personas_core::error::AppError;
-use rusqlite::params;
 use std::collections::HashMap;
 
 use super::ingest::KnowledgeCandidate;
@@ -13,12 +12,7 @@ fn workspace_members(
     workspace_id: &str,
 ) -> Result<Vec<(String, Option<String>)>, AppError> {
     let conn = pool.get()?;
-    // FOREIGN TABLE: dev_projects is owned by `repos::dev::projects`.
-    let mut stmt =
-        conn.prepare("SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1")?;
-    let rows = stmt
-        .query_map(params![workspace_id], |r| Ok((r.get(0)?, r.get(1)?)))?
-        .collect::<Result<Vec<_>, _>>()?;
+    let rows = crate::repos::dev::projects::workspace_members_with_tech_stack(&conn, workspace_id)?;
     Ok(rows)
 }
 

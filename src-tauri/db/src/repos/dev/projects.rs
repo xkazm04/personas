@@ -39,6 +39,91 @@ pub(crate) fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
 // Projects
 // ============================================================================
 
+// ----------------------------------------------------------------------------
+// Workspace membership
+//
+// `workspace_id` is a column on dev_projects, so every workspace-membership
+// query is a dev_projects query. `repos::workspaces` used to run these five
+// inline against its own connection, each carrying a foreign-table marker left by the
+// Wave 1 split. They live here now, with the SQL unchanged to the byte.
+//
+// They take `&rusqlite::Connection` rather than `&DbPool` on purpose: three of
+// the five callers are mid-transaction, and a pool-taking signature would have
+// moved them onto a second connection — a behaviour change wearing a
+// refactor's clothes. `Transaction` derefs to `Connection`, so one signature
+// serves both.
+// ----------------------------------------------------------------------------
+
+/// Member projects of a workspace, projected to the two columns the knowledge
+/// lanes need. Was inline in `workspaces::mining` and `workspaces::knowledge`.
+pub(crate) fn workspace_members_with_tech_stack(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+) -> rusqlite::Result<Vec<(String, Option<String>)>> {
+    let mut stmt =
+        conn.prepare("SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1")?;
+    let rows = stmt.query_map(params![workspace_id], |r| {
+        Ok((r.get("id")?, r.get("tech_stack")?))
+    })?;
+    rows.collect()
+}
+
+/// Full member projects of a workspace, name-sorted. Was inline in
+/// `workspaces::org::list_workspace_projects`, which already had to reach for
+/// this module's `row_to_project` to read the result.
+pub(crate) fn list_by_workspace(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+) -> rusqlite::Result<Vec<DevProject>> {
+    let mut stmt = conn.prepare(
+        "SELECT * FROM dev_projects WHERE workspace_id = ?1 ORDER BY name COLLATE NOCASE",
+    )?;
+    let rows = stmt.query_map(params![workspace_id], row_to_project)?;
+    rows.collect()
+}
+
+/// The workspace a project belongs to. `Ok(None)` means no such project;
+/// `Ok(Some(None))` means the project exists and is unassigned — the caller
+/// distinguishes the two.
+pub(crate) fn workspace_id_of(
+    conn: &rusqlite::Connection,
+    project_id: &str,
+) -> rusqlite::Result<Option<Option<String>>> {
+    use rusqlite::OptionalExtension;
+    conn.query_row(
+        "SELECT workspace_id FROM dev_projects WHERE id = ?1",
+        params![project_id],
+        |r| r.get("workspace_id"),
+    )
+    .optional()
+}
+
+/// Unassign every member of a workspace. Used when the workspace is deleted:
+/// membership goes, the projects stay.
+pub(crate) fn clear_workspace_membership(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+) -> rusqlite::Result<usize> {
+    conn.execute(
+        "UPDATE dev_projects SET workspace_id = NULL WHERE workspace_id = ?1",
+        params![workspace_id],
+    )
+}
+
+/// Move one project into a workspace, or out of every workspace when
+/// `workspace_id` is `None`.
+pub(crate) fn set_workspace_membership(
+    conn: &rusqlite::Connection,
+    project_id: &str,
+    workspace_id: Option<&str>,
+    now: &str,
+) -> rusqlite::Result<usize> {
+    conn.execute(
+        "UPDATE dev_projects SET workspace_id = ?1, updated_at = ?2 WHERE id = ?3",
+        params![workspace_id, now, project_id],
+    )
+}
+
 pub fn list_projects(pool: &DbPool, status: Option<&str>) -> Result<Vec<DevProject>, AppError> {
     timed_query!("dev_projects", "dev_projects::list_projects", {
         let conn = pool.get()?;

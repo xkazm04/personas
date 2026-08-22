@@ -423,15 +423,11 @@ pub fn decide_knowledge_cas(
                 }
             }
 
-            let members: Vec<(String, Option<String>)> = {
-                // FOREIGN TABLE: dev_projects is owned by `repos::dev::projects`.
-                let mut stmt =
-                    tx.prepare("SELECT id, tech_stack FROM dev_projects WHERE workspace_id = ?1")?;
-                let rows = stmt
-                    .query_map(params![item.workspace_id], |r| Ok((r.get(0)?, r.get(1)?)))?
-                    .collect::<Result<Vec<_>, _>>()?;
-                rows
-            };
+            let members: Vec<(String, Option<String>)> =
+                crate::repos::dev::projects::workspace_members_with_tech_stack(
+                    &tx,
+                    &item.workspace_id,
+                )?;
             for (project_id, tech_stack) in members {
                 let state = initial_adoption_state(
                     &item.kind,

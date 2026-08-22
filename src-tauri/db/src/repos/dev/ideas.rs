@@ -5,6 +5,23 @@ use personas_core::error::AppError;
 use rusqlite::{params, Row};
 use std::collections::HashMap;
 
+/// Archive every PENDING idea carrying one (origin, dedup_key) pair. Was
+/// inline in `workspaces::practice_ideas::archive_practice_ideas`, which is
+/// still the only caller; the SQL is unchanged to the byte. Takes a
+/// `&Connection` so the caller keeps its own checkout.
+pub(crate) fn archive_pending_by_origin_and_dedup_key(
+    conn: &rusqlite::Connection,
+    now: &str,
+    origin: &str,
+    dedup_key: &str,
+) -> rusqlite::Result<usize> {
+    conn.execute(
+        "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+         WHERE origin = ?2 AND dedup_key = ?3 AND status = 'pending'",
+        params![now, origin, dedup_key],
+    )
+}
+
 pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
     Ok(DevIdea {
         id: row.get("id")?,

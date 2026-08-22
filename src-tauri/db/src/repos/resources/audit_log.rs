@@ -6,6 +6,24 @@ use crate::DbPool;
 use personas_core::error::AppError;
 use personas_core::utils::sanitization::sanitize_secrets;
 
+/// One projection for every full-row read of `credential_audit_log`. Mirrors
+/// `CREATE TABLE` at `migrations/schema.rs:677` and the incremental copy at
+/// `migrations/incremental/e02_credentials_and_audit_trails.rs:122`, which
+/// agree column for column.
+const COLUMNS: &str = "id, credential_id, credential_name, operation, persona_id, \
+     persona_name, detail, created_at";
+
+row_mapper!(row_to_entry -> CredentialAuditEntry {
+    id,
+    credential_id,
+    credential_name,
+    operation,
+    persona_id,
+    persona_name,
+    detail,
+    created_at,
+});
+
 // ---------------------------------------------------------------------------
 // Insert (append-only -- no update or delete functions)
 // ---------------------------------------------------------------------------
@@ -105,25 +123,14 @@ pub fn get_by_credential(
 ) -> Result<Vec<CredentialAuditEntry>, AppError> {
     timed_query!("audit_log", "audit_log::get_by_credential", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, credential_id, credential_name, operation, persona_id, persona_name, detail, created_at
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS}
              FROM credential_audit_log
              WHERE credential_id = ?1
              ORDER BY created_at DESC
              LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![credential_id, limit], |row| {
-            Ok(CredentialAuditEntry {
-                id: row.get(0)?,
-                credential_id: row.get(1)?,
-                credential_name: row.get(2)?,
-                operation: row.get(3)?,
-                persona_id: row.get(4)?,
-                persona_name: row.get(5)?,
-                detail: row.get(6)?,
-                created_at: row.get(7)?,
-            })
-        })?;
+        ))?;
+        let rows = stmt.query_map(params![credential_id, limit], row_to_entry)?;
         let rows = collect_rows(rows, "audit_log::get_by_credential");
         Ok(rows)
     })
@@ -150,15 +157,22 @@ pub fn get_usage_stats(
              FROM credential_audit_log
              WHERE credential_id = ?1",
             params![credential_id, cutoff_24h, cutoff_7d],
+            // Hand-written, not `row_mapper!`: `credential_id` comes from the
+            // parameter rather than the row, and four counts narrow i64 to u32.
+            // Note the two aliases that do NOT match their field —
+            // `accesses_24h` feeds `accesses_last_24h` and `accesses_7d` feeds
+            // `accesses_last_7d`. The SQL is left exactly as it was and the
+            // read names the real alias; inferring a column from the field name
+            // here would have compiled and failed at runtime.
             |row| {
                 Ok(CredentialUsageStats {
                     credential_id: credential_id.to_string(),
-                    total_accesses: row.get::<_, i64>(0)? as u32,
-                    distinct_personas: row.get::<_, i64>(1)? as u32,
-                    last_accessed_at: row.get(2)?,
-                    first_accessed_at: row.get(3)?,
-                    accesses_last_24h: row.get::<_, i64>(4)? as u32,
-                    accesses_last_7d: row.get::<_, i64>(5)? as u32,
+                    total_accesses: row.get::<_, i64>("total_accesses")? as u32,
+                    distinct_personas: row.get::<_, i64>("distinct_personas")? as u32,
+                    last_accessed_at: row.get("last_accessed_at")?,
+                    first_accessed_at: row.get("first_accessed_at")?,
+                    accesses_last_24h: row.get::<_, i64>("accesses_24h")? as u32,
+                    accesses_last_7d: row.get::<_, i64>("accesses_7d")? as u32,
                 })
             },
         )?;
@@ -229,24 +243,13 @@ pub fn cleanup_old_entries(pool: &DbPool, retention_days: i64) -> Result<usize, 
 pub fn get_all(pool: &DbPool, limit: u32) -> Result<Vec<CredentialAuditEntry>, AppError> {
     timed_query!("audit_log", "audit_log::get_all", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, credential_id, credential_name, operation, persona_id, persona_name, detail, created_at
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS}
              FROM credential_audit_log
              ORDER BY created_at DESC
              LIMIT ?1",
-        )?;
-        let rows = stmt.query_map(params![limit], |row| {
-            Ok(CredentialAuditEntry {
-                id: row.get(0)?,
-                credential_id: row.get(1)?,
-                credential_name: row.get(2)?,
-                operation: row.get(3)?,
-                persona_id: row.get(4)?,
-                persona_name: row.get(5)?,
-                detail: row.get(6)?,
-                created_at: row.get(7)?,
-            })
-        })?;
+        ))?;
+        let rows = stmt.query_map(params![limit], row_to_entry)?;
         let rows = collect_rows(rows, "audit_log::get_all");
         Ok(rows)
     })
@@ -267,7 +270,7 @@ pub fn get_dependents(
             .query_row(
                 "SELECT service_type FROM persona_credentials WHERE id = ?1",
                 params![credential_id],
-                |row| row.get(0),
+                |row| row.get("service_type"),
             )
             .map_err(|_| AppError::NotFound(format!("Credential {credential_id}")))?;
 
@@ -280,7 +283,7 @@ pub fn get_dependents(
         // rows with malformed `services` (SQLite short-circuits the AND so
         // json_each is never run on invalid JSON).
         let mut stmt = conn.prepare(
-            "SELECT DISTINCT p.id, p.name, cd.label
+            "SELECT DISTINCT p.id AS persona_id, p.name AS persona_name, cd.label AS via_connector
              FROM personas p
              INNER JOIN persona_tools pt ON pt.persona_id = p.id
              INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
@@ -292,10 +295,10 @@ pub fn get_dependents(
         )?;
         let structural = stmt.query_map(params![service_type], |row| {
             Ok(CredentialDependent {
-                persona_id: row.get(0)?,
-                persona_name: row.get(1)?,
+                persona_id: row.get("persona_id")?,
+                persona_name: row.get("persona_name")?,
                 link_type: "tool_connector".to_string(),
-                via_connector: row.get(2)?,
+                via_connector: row.get("via_connector")?,
                 last_used_at: None,
             })
         })?;
@@ -313,7 +316,8 @@ pub fn get_dependents(
         // snapshot so renamed personas read correctly too, matching the
         // structural query above.
         let mut stmt2 = conn.prepare(
-            "SELECT cal.persona_id, p.name, MAX(cal.created_at) AS last_used
+            "SELECT cal.persona_id AS persona_id, p.name AS persona_name,
+                    MAX(cal.created_at) AS last_used_at
              FROM credential_audit_log cal
              INNER JOIN personas p ON p.id = cal.persona_id
              WHERE cal.credential_id = ?1 AND cal.persona_id IS NOT NULL
@@ -321,11 +325,13 @@ pub fn get_dependents(
         )?;
         let observed = stmt2.query_map(params![credential_id], |row| {
             Ok(CredentialDependent {
-                persona_id: row.get(0)?,
-                persona_name: row.get::<_, Option<String>>(1)?.unwrap_or_default(),
+                persona_id: row.get("persona_id")?,
+                persona_name: row
+                    .get::<_, Option<String>>("persona_name")?
+                    .unwrap_or_default(),
                 link_type: "audit_log".to_string(),
                 via_connector: None,
-                last_used_at: row.get(2)?,
+                last_used_at: row.get("last_used_at")?,
             })
         })?;
         let observed = collect_rows(observed, "audit_log::get_dependents/observed");
@@ -341,7 +347,9 @@ pub fn get_dependents(
         // partial test schemas): treat a missing table as zero consumers
         // instead of failing the whole dependents read.
         let consumers = match conn.prepare(
-            "SELECT e.consumer_key_id, e.consumer_name, e.last_used_at
+            "SELECT e.consumer_key_id AS consumer_key_id,
+                    e.consumer_name   AS consumer_name,
+                    e.last_used_at    AS last_used_at
              FROM credential_consumer_edges e
              INNER JOIN external_api_keys k ON k.id = e.consumer_key_id
              WHERE e.credential_id = ?1 AND k.enabled = 1 AND k.revoked_at IS NULL
@@ -350,11 +358,14 @@ pub fn get_dependents(
             Ok(mut stmt3) => {
                 let rows = stmt3.query_map(params![credential_id], |row| {
                     Ok(CredentialDependent {
-                        persona_id: format!("consumer:{}", row.get::<_, String>(0)?),
-                        persona_name: row.get(1)?,
+                        persona_id: format!(
+                            "consumer:{}",
+                            row.get::<_, String>("consumer_key_id")?
+                        ),
+                        persona_name: row.get("consumer_name")?,
                         link_type: "broker_consumer".to_string(),
                         via_connector: None,
-                        last_used_at: row.get(2)?,
+                        last_used_at: row.get("last_used_at")?,
                     })
                 })?;
                 collect_rows(rows, "audit_log::get_dependents/broker_consumers")
@@ -378,4 +389,121 @@ pub fn get_dependents(
 
         Ok(result)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The `COLUMNS` projection must prepare against the real migrated schema.
+    /// A by-name read of a column the table does not have compiles fine and
+    /// fails at runtime on the first row; this is the only gate that sees it.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for (columns, table) in [(COLUMNS, "credential_audit_log")] {
+            let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
+            conn.prepare(&sql)
+                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
+        }
+    }
+
+    /// The aggregate and join projections are not plain column lists, so the
+    /// probe above cannot cover them; prepare the real statements instead.
+    /// This is what catches an alias renamed on one side only.
+    #[test]
+    fn aggregate_and_join_projections_still_carry_their_aliases() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        let stats = conn
+            .prepare(
+                "SELECT
+                COUNT(*) AS total_accesses,
+                COUNT(DISTINCT persona_id) AS distinct_personas,
+                MAX(created_at) AS last_accessed_at,
+                MIN(created_at) AS first_accessed_at,
+                SUM(CASE WHEN created_at >= ?2 THEN 1 ELSE 0 END) AS accesses_24h,
+                SUM(CASE WHEN created_at >= ?3 THEN 1 ELSE 0 END) AS accesses_7d
+             FROM credential_audit_log
+             WHERE credential_id = ?1",
+            )
+            .unwrap();
+        assert_eq!(
+            stats.column_names(),
+            vec![
+                "total_accesses",
+                "distinct_personas",
+                "last_accessed_at",
+                "first_accessed_at",
+                "accesses_24h",
+                "accesses_7d",
+            ],
+        );
+
+        let observed = conn
+            .prepare(
+                "SELECT cal.persona_id AS persona_id, p.name AS persona_name,
+                    MAX(cal.created_at) AS last_used_at
+             FROM credential_audit_log cal
+             INNER JOIN personas p ON p.id = cal.persona_id
+             WHERE cal.credential_id = ?1 AND cal.persona_id IS NOT NULL
+             GROUP BY cal.persona_id",
+            )
+            .unwrap();
+        assert_eq!(
+            observed.column_names(),
+            vec!["persona_id", "persona_name", "last_used_at"],
+        );
+    }
+    /// The projection probes prove the column NAMES resolve; this proves the
+    /// mapping itself — every field arrives with the value that was written.
+    /// A pair of adjacent same-typed columns swapped in the mapper survives a
+    /// prepare and dies here.
+    #[test]
+    fn every_field_round_trips_through_the_named_mapper() {
+        let pool = crate::init_test_db().unwrap();
+        insert(
+            &pool,
+            "cred-1",
+            "Production key",
+            "decrypt",
+            Some("persona-1"),
+            Some("Analyst"),
+            Some("api_proxy"),
+        )
+        .unwrap();
+
+        let entries = get_by_credential(&pool, "cred-1", 10).unwrap();
+        assert_eq!(entries.len(), 1);
+        let e = &entries[0];
+        assert_eq!(e.credential_id, "cred-1");
+        assert_eq!(e.credential_name, "Production key");
+        assert_eq!(e.operation, "decrypt");
+        assert_eq!(e.persona_id.as_deref(), Some("persona-1"));
+        assert_eq!(e.persona_name.as_deref(), Some("Analyst"));
+        assert_eq!(e.detail.as_deref(), Some("api_proxy"));
+        assert!(!e.id.is_empty());
+        assert!(!e.created_at.is_empty());
+
+        // `get_all` uses the same projection and mapper.
+        let all = get_all(&pool, 10).unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(all[0].id, e.id);
+
+        let stats = get_usage_stats(&pool, "cred-1").unwrap();
+        assert_eq!(stats.credential_id, "cred-1");
+        assert_eq!(stats.total_accesses, 1);
+        assert_eq!(stats.distinct_personas, 1);
+        assert_eq!(stats.accesses_last_24h, 1);
+        assert_eq!(stats.accesses_last_7d, 1);
+        assert_eq!(
+            stats.last_accessed_at.as_deref(),
+            Some(e.created_at.as_str())
+        );
+        assert_eq!(
+            stats.first_accessed_at.as_deref(),
+            Some(e.created_at.as_str())
+        );
+    }
 }

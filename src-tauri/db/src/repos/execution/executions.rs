@@ -42,7 +42,7 @@ fn resolve_recipe_provenance(
         .query_row(
             "SELECT design_context FROM personas WHERE id = ?1",
             params![persona_id],
-            |row| row.get(0),
+            |row| row.get("design_context"),
         )
         .ok()
         .flatten();
@@ -73,6 +73,48 @@ fn resolve_recipe_provenance(
         Some(recipe_id) => (Some(recipe_id), str_field("source_recipe_version")),
         None => (None, None),
     }
+}
+
+/// One projection for every full-row read of `persona_executions`, in the
+/// order `row_to_execution` below consumes it.
+///
+/// Checked against `migrations/schema.rs:109` for the base table and against
+/// every `ALTER TABLE persona_executions ADD COLUMN` in `migrations/` for the
+/// rest — `thinking_level`, `cache_read_tokens`, `cache_creation_tokens`,
+/// `tool_steps`, `retry_of_execution_id`, `retry_count`, `use_case_id`,
+/// `is_simulation`, `business_outcome`, `director_score`,
+/// `director_review_md`, `execution_config` and `log_truncated` exist ONLY by
+/// ALTER, so no single DDL block lists this table's real shape.
+///
+/// It is deliberately NOT every column: `traceparent`, `idempotency_key`,
+/// `last_heartbeat_at`, `claimed_by_instance`, `claim_expires_at`,
+/// `source_recipe_id` and `source_recipe_version` are written here and read
+/// elsewhere, and a wildcard was fetching all seven on every list page.
+const COLUMNS: &str = "id, persona_id, trigger_id, use_case_id, status, input_data, \
+     output_data, claude_session_id, log_file_path, execution_flows, model_used, \
+     thinking_level, input_tokens, output_tokens, cost_usd, cache_read_tokens, \
+     cache_creation_tokens, error_message, duration_ms, tool_steps, \
+     retry_of_execution_id, retry_count, started_at, completed_at, created_at, \
+     execution_config, log_truncated, is_simulation, business_outcome, \
+     director_score, director_review_md";
+
+/// The lighter projection behind `row_to_execution_list_item`. Kept separate
+/// on purpose: the list page does not need input_data / output_data / the log
+/// paths, and this is the shape whose sixteenth column went missing for three
+/// months (see `list_items_projection_covers_every_field_the_mapper_reads`).
+const LIST_ITEM_COLUMNS: &str = "id, persona_id, use_case_id, status, input_tokens, \
+     output_tokens, cost_usd, error_message, duration_ms, retry_of_execution_id, \
+     retry_count, started_at, completed_at, created_at, is_simulation, business_outcome";
+
+/// `COLUMNS` with every name qualified by a table alias, for the joins that
+/// used to project `e.*`. Derived from the one const rather than duplicated,
+/// so the two can never drift.
+fn columns_for(alias: &str) -> String {
+    COLUMNS
+        .split(',')
+        .map(|c| format!("{alias}.{}", c.trim()))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
@@ -204,12 +246,12 @@ pub fn get_by_persona_id(
             let conn = pool.conn("executions::get_by_persona_id")?;
             // Exclude ops chat executions (input_data contains "_ops") — those are
             // conversational queries from the Chat tab, not real agent executions.
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_executions
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_executions
              WHERE persona_id = ?1
                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
              ORDER BY created_at DESC LIMIT ?2",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -232,28 +274,13 @@ pub fn list_items_by_persona_id(
             // existing callers that don't paginate.
             let offset = offset.unwrap_or(0).max(0);
             let conn = pool.conn("executions::list_items_by_persona_id")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT
-                 id,
-                 persona_id,
-                 use_case_id,
-                 status,
-                 input_tokens,
-                 output_tokens,
-                 cost_usd,
-                 error_message,
-                 duration_ms,
-                 retry_of_execution_id,
-                 retry_count,
-                 started_at,
-                 completed_at,
-                 created_at,
-                 is_simulation
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {LIST_ITEM_COLUMNS}
              FROM persona_executions
              WHERE persona_id = ?1
                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
              ORDER BY created_at DESC LIMIT ?2 OFFSET ?3",
-            )?;
+            ))?;
             let rows = stmt.query_map(
                 params![persona_id, limit, offset],
                 row_to_execution_list_item,
@@ -286,12 +313,18 @@ pub fn get_all_global(
             let limit = limit.unwrap_or(200);
             let conn = pool.conn("executions::get_all_global")?;
 
-            let base = "SELECT e.*, \
+            // `e.*` fetched every column of the table including the seven
+            // this mapper never reads; the qualified list is derived from
+            // COLUMNS so it cannot drift from `row_to_execution`.
+            let base = format!(
+                "SELECT {}, \
                 COALESCE(p.name, 'Unknown') as persona_name, \
                 p.icon as persona_icon, \
                 p.color as persona_color \
              FROM persona_executions e \
-             LEFT JOIN personas p ON p.id = e.persona_id";
+             LEFT JOIN personas p ON p.id = e.persona_id",
+                columns_for("e")
+            );
 
             let mut qb = crate::query_builder::QueryBuilder::new();
 
@@ -312,7 +345,7 @@ pub fn get_all_global(
             qb.order_by("e.created_at", "DESC");
             qb.limit(limit);
 
-            let sql = qb.build_select(base);
+            let sql = qb.build_select(&base);
             let mut stmt = conn.prepare_cached(&sql)?;
 
             let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
@@ -356,7 +389,7 @@ pub fn count_all_global(
             let mut stmt = conn.prepare_cached(&sql)?;
             let mut counts = ExecutionCounts::default();
             let map_row = |row: &Row| -> rusqlite::Result<(String, i64)> {
-                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+                Ok((row.get::<_, String>("status")?, row.get::<_, i64>("n")?))
             };
 
             let iter: Box<dyn Iterator<Item = rusqlite::Result<(String, i64)>>> =
@@ -456,7 +489,9 @@ pub fn search(
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaExecution, AppError> {
     timed_query!("persona_executions", "persona_executions::get_by_id", {
         let conn = pool.conn("executions::get_by_id")?;
-        let mut stmt = conn.prepare_cached("SELECT * FROM persona_executions WHERE id = ?1")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_executions WHERE id = ?1"
+        ))?;
         stmt.query_row(params![id], row_to_execution)
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => {
@@ -633,8 +668,9 @@ pub fn get_by_idempotency_key(
         "persona_executions::get_by_idempotency_key",
         {
             let conn = pool.conn("executions::get_by_idempotency_key")?;
-            let mut stmt =
-                conn.prepare_cached("SELECT * FROM persona_executions WHERE idempotency_key = ?1")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_executions WHERE idempotency_key = ?1"
+            ))?;
             match stmt.query_row(params![key], row_to_execution) {
                 Ok(exec) => Ok(Some(exec)),
                 Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
@@ -655,9 +691,9 @@ pub fn get_by_trigger_id(
         {
             let limit = limit.unwrap_or(10);
             let conn = pool.conn("executions::get_by_trigger_id")?;
-            let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE trigger_id = ?1 ORDER BY created_at DESC LIMIT ?2",
-        )?;
+            let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_executions WHERE trigger_id = ?1 ORDER BY created_at DESC LIMIT ?2",
+        ))?;
             let rows = stmt.query_map(params![trigger_id, limit], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -677,9 +713,9 @@ pub fn get_by_use_case_id(
         {
             let limit = limit.unwrap_or(20);
             let conn = pool.conn("executions::get_by_use_case_id")?;
-            let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE persona_id = ?1 AND use_case_id = ?2 ORDER BY created_at DESC LIMIT ?3",
-        )?;
+            let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_executions WHERE persona_id = ?1 AND use_case_id = ?2 ORDER BY created_at DESC LIMIT ?3",
+        ))?;
             let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -1065,8 +1101,9 @@ pub fn get_recent(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaExecut
     timed_query!("persona_executions", "persona_executions::get_recent", {
         let limit = limit.unwrap_or(20);
         let conn = pool.conn("executions::get_recent")?;
-        let mut stmt = conn
-            .prepare_cached("SELECT * FROM persona_executions ORDER BY created_at DESC LIMIT ?1")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_executions ORDER BY created_at DESC LIMIT ?1"
+        ))?;
         let rows = stmt.query_map(params![limit], row_to_execution)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1083,9 +1120,9 @@ pub fn get_recent_failures(
         "persona_executions::get_recent_failures",
         {
             let conn = pool.conn("executions::get_recent_failures")?;
-            let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE persona_id = ?1 AND status = 'failed' ORDER BY created_at DESC LIMIT ?2",
-        )?;
+            let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_executions WHERE persona_id = ?1 AND status = 'failed' ORDER BY created_at DESC LIMIT ?2",
+        ))?;
             let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -1107,7 +1144,7 @@ pub fn count_consecutive_real_failures(pool: &DbPool, persona_id: &str) -> Resul
         {
             let conn = pool.conn("executions::count_consecutive_real_failures")?;
             let n: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_executions
+                "SELECT COUNT(*) AS n FROM persona_executions
                  WHERE persona_id = ?1 AND status = 'failed'
                    AND datetime(created_at) > COALESCE(
                        (SELECT MAX(datetime(created_at)) FROM persona_executions
@@ -1122,7 +1159,7 @@ pub fn count_consecutive_real_failures(pool: &DbPool, persona_id: &str) -> Resul
                      OR LOWER(COALESCE(output_data,'')) LIKE '%usage limit%'
                    )",
                 params![persona_id],
-                |r| r.get(0),
+                |r| r.get("n"),
             )?;
             Ok(n.min(u32::MAX as i64) as u32)
         }
@@ -1157,7 +1194,7 @@ pub fn count_environmental_failures_in_window(
         {
             let conn = pool.conn("executions::count_environmental_failures_in_window")?;
             let n: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_executions
+                "SELECT COUNT(*) AS n FROM persona_executions
                  WHERE persona_id = ?1 AND status = 'failed'
                    AND datetime(created_at) > datetime('now', ?2)
                    AND (
@@ -1174,7 +1211,7 @@ pub fn count_environmental_failures_in_window(
                      OR COALESCE(error_message,'') LIKE '%529%'
                    )",
                 params![persona_id, format!("-{window_minutes} minutes")],
-                |r| r.get(0),
+                |r| r.get("n"),
             )?;
             Ok(n.min(u32::MAX as i64) as u32)
         }
@@ -1184,9 +1221,9 @@ pub fn count_environmental_failures_in_window(
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_running", {
         let conn = pool.conn("executions::get_running")?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
-        )?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_executions WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
+        ))?;
         let rows = stmt.query_map([], row_to_execution)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1354,9 +1391,9 @@ pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError
         "persona_executions::get_running_only",
         {
             let conn = pool.conn("executions::get_running_only")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
-            )?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
+            ))?;
             let rows = stmt.query_map([], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -1374,9 +1411,9 @@ pub fn get_queued_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError>
         "persona_executions::get_queued_only",
         {
             let conn = pool.conn("executions::get_queued_only")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
-            )?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
+            ))?;
             let rows = stmt.query_map([], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -1393,9 +1430,9 @@ pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {
         {
             let conn = pool.conn("executions::has_running_executions")?;
             let exists: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM persona_executions WHERE status IN ('queued', 'running'))",
+            "SELECT EXISTS(SELECT 1 FROM persona_executions WHERE status IN ('queued', 'running')) AS present",
             [],
-            |row| row.get(0),
+            |row| row.get("present"),
         )?;
             Ok(exists)
         }
@@ -1409,9 +1446,9 @@ pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<
         {
             let conn = pool.conn("executions::get_running_count_for_persona")?;
             let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND status IN ('queued', 'running')",
+            "SELECT COUNT(*) AS n FROM persona_executions WHERE persona_id = ?1 AND status IN ('queued', 'running')",
             params![persona_id],
-            |row| row.get(0),
+            |row| row.get("n"),
         )?;
             Ok(count)
         }
@@ -1429,9 +1466,9 @@ pub fn count_for_persona_since(
         {
             let conn = pool.conn("executions::count_for_persona_since")?;
             let count: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND created_at >= ?2",
+                "SELECT COUNT(*) AS n FROM persona_executions WHERE persona_id = ?1 AND created_at >= ?2",
                 params![persona_id, since_rfc3339],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         }
@@ -1453,10 +1490,10 @@ pub fn get_running_count_for_persona_use_case(
         {
             let conn = pool.conn("executions::get_running_count_for_persona_use_case")?;
             let count: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_executions \
+                "SELECT COUNT(*) AS n FROM persona_executions \
              WHERE persona_id = ?1 AND use_case_id = ?2 AND status IN ('queued', 'running')",
                 params![persona_id, use_case_id],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         }
@@ -1536,7 +1573,7 @@ pub fn find_silent_running(
              LIMIT ?2",
             )?;
             let rows = stmt.query_map(params![cutoff_rfc3339, limit], |row| {
-                row.get::<_, String>(0)
+                row.get::<_, String>("id")
             })?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -1601,7 +1638,7 @@ pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<
              LIMIT 20",
             )?;
             let statuses: Vec<String> = crate::repos::utils::collect_rows(
-                stmt.query_map(params![persona_id], |row| row.get::<_, String>(0))?,
+                stmt.query_map(params![persona_id], |row| row.get::<_, String>("status"))?,
                 "persona_executions::get_consecutive_failure_count",
             );
 
@@ -1631,11 +1668,11 @@ pub fn get_retry_chain(
                 .unwrap_or(execution_id);
 
             let conn = pool.conn("executions::get_retry_chain")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_executions
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_executions
              WHERE id = ?1 OR retry_of_execution_id = ?1
              ORDER BY retry_count ASC, created_at ASC",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![root_id], row_to_execution)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
@@ -1676,8 +1713,8 @@ pub fn get_retry_chains_batch(
 
             let mut root_stmt = conn.prepare_cached(&root_sql)?;
             let root_rows = root_stmt.query_map(params_ref.as_slice(), |row| {
-                let id: String = row.get(0)?;
-                let retry_of: Option<String> = row.get(1)?;
+                let id: String = row.get("id")?;
+                let retry_of: Option<String> = row.get("retry_of_execution_id")?;
                 Ok((id, retry_of))
             })?;
 
@@ -1704,7 +1741,7 @@ pub fn get_retry_chains_batch(
             // `id IN (...)` (the roots themselves) and once for
             // `retry_of_execution_id IN (...)` (their retries).
             let chain_sql = format!(
-                "SELECT * FROM persona_executions
+                "SELECT {COLUMNS} FROM persona_executions
          WHERE id IN ({placeholders}) OR retry_of_execution_id IN ({placeholders})
          ORDER BY retry_count ASC, created_at ASC",
                 placeholders = root_placeholders
@@ -1780,11 +1817,11 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
             // never drift on status set, month boundary, or ops-chat exclusion.
             // See its doc comment above + the engine/background.rs invariant.
             let sql = format!(
-                "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
+                "SELECT COALESCE(SUM(cost_usd), 0.0) AS spend FROM persona_executions
              WHERE persona_id = ?1 AND {}",
                 MONTHLY_SPEND_PREDICATE
             );
-            let spend: f64 = conn.query_row(&sql, params![persona_id], |row| row.get(0))?;
+            let spend: f64 = conn.query_row(&sql, params![persona_id], |row| row.get("spend"))?;
             Ok(spend)
         }
     )
@@ -1831,11 +1868,11 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
                 crate::repos::utils::collect_rows(
                     stmt.query_map([], |row| {
                         Ok((
-                            row.get::<_, String>(0)?,
-                            row.get::<_, String>(1)?,
-                            row.get::<_, String>(2)?,
-                            row.get::<_, Option<String>>(3)?,
-                            row.get::<_, String>(4)?,
+                            row.get::<_, String>("id")?,
+                            row.get::<_, String>("persona_id")?,
+                            row.get::<_, String>("status")?,
+                            row.get::<_, Option<String>>("started_at")?,
+                            row.get::<_, String>("created_at")?,
                         ))
                     })?,
                     "persona_executions::sweep_zombie_executions",
@@ -1969,7 +2006,8 @@ pub fn cleanup_old_executions(
            AND created_at < datetime('now', ?1)",
             )?;
             let persona_ids: Vec<String> = crate::repos::utils::collect_rows(
-                persona_stmt.query_map(params![cutoff], |row| row.get::<_, String>(0))?,
+                persona_stmt
+                    .query_map(params![cutoff], |row| row.get::<_, String>("persona_id"))?,
                 "persona_executions::cleanup_old_executions",
             );
 
@@ -1987,7 +2025,7 @@ pub fn cleanup_old_executions(
                  ORDER BY created_at DESC
                  LIMIT 1 OFFSET ?2",
                         params![pid, min_keep_per_persona as i64],
-                        |row| row.get(0),
+                        |row| row.get("created_at"),
                     )
                     .ok();
 
@@ -2092,6 +2130,53 @@ pub fn recipe_run_tallies(pool: &DbPool, limit: i64) -> Result<Vec<RecipeRunTall
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Both projection consts, and the alias-qualified form of the first, must
+    /// prepare against the real migrated schema. A by-name read of a column
+    /// the table does not have compiles fine and fails at runtime on the first
+    /// row — which is exactly how `list_items_by_persona_id` stayed broken for
+    /// three months. This test is the gate that would have caught it.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for columns in [COLUMNS.to_string(), LIST_ITEM_COLUMNS.to_string()] {
+            let sql = format!("SELECT {columns} FROM persona_executions LIMIT 0");
+            conn.prepare(&sql).unwrap_or_else(|e| {
+                panic!("persona_executions projection does not match schema: {e}")
+            });
+        }
+        let sql = format!(
+            "SELECT {} FROM persona_executions e LIMIT 0",
+            columns_for("e")
+        );
+        conn.prepare(&sql)
+            .unwrap_or_else(|e| panic!("aliased persona_executions projection is wrong: {e}"));
+    }
+
+    /// `list_items_by_persona_id` returned
+    /// `Err(InvalidColumnName("business_outcome"))` on EVERY call between
+    /// 2026-05-11 and this commit: `business_outcome` was added to
+    /// `row_to_execution_list_item` and to nothing else, while this function's
+    /// hand-written projection was left at fifteen columns. Nothing failed to
+    /// compile, no other caller shares the mapper, and the file had no test
+    /// that ran the query — so the Tauri command behind the persona execution
+    /// list simply always errored. Assert the rows come back, and that the
+    /// field the projection forgot has a value.
+    #[test]
+    fn list_items_projection_covers_every_field_the_mapper_reads() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "List Items Agent");
+        let created = create(&pool, &persona_id, None, None, None, None).unwrap();
+
+        let items = list_items_by_persona_id(&pool, &persona_id, None, None)
+            .expect("list_items_by_persona_id must not fail");
+        assert_eq!(items.len(), 1);
+        let item = &items[0];
+        assert_eq!(item.id, created.id);
+        assert_eq!(item.persona_id, persona_id);
+        assert_eq!(item.business_outcome, "unknown");
+    }
     use crate::init_test_db;
     use crate::models::{CreatePersonaInput, Json};
     use crate::repos::core::personas;
@@ -2527,7 +2612,12 @@ mod tests {
         conn.query_row(
             "SELECT source_recipe_id, source_recipe_version FROM persona_executions WHERE id = ?1",
             params![execution_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
+            |row| {
+                Ok((
+                    row.get("source_recipe_id")?,
+                    row.get("source_recipe_version")?,
+                ))
+            },
         )
         .unwrap()
     }

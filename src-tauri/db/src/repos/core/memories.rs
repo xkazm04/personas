@@ -123,6 +123,24 @@ fn build_memory_filters(
     qb
 }
 
+/// One projection for every full-row read of `persona_memories`, listing
+/// exactly the columns `row_to_memory` below consumes and nothing else.
+///
+/// The base table (`migrations/schema.rs:523`) has ten columns; `tier`,
+/// `access_count`, `last_accessed_at`, `use_case_id`, `home_team_id`,
+/// `derived_from` and `open_claim_count` arrive only by ALTER TABLE, each
+/// checked against its migration site. Two more ALTER-added columns —
+/// `deliberation_id` and `group_id` — are deliberately absent: the mapper does
+/// not read them, and the wildcard was fetching both on every injection.
+///
+/// The mapper's `[opt_*]` hatches predate this const and are left alone, but
+/// they are now unreachable as drift-swallowers: a missing column fails the
+/// PREPARE, before any row is mapped. That is the intended direction — loud at
+/// the query, not silently defaulted per row.
+const COLUMNS: &str = "id, persona_id, title, content, category, source_execution_id, \
+     importance, tags, tier, access_count, last_accessed_at, created_at, updated_at, \
+     use_case_id, home_team_id, derived_from, open_claim_count";
+
 row_mapper!(row_to_memory -> PersonaMemory {
     id, persona_id, title, content, category,
     source_execution_id, importance, tags,
@@ -180,7 +198,7 @@ pub fn get_all(
         qb.limit(limit);
         qb.offset(offset);
 
-        let sql = qb.build_select("SELECT * FROM persona_memories");
+        let sql = qb.build_select(&format!("SELECT {COLUMNS} FROM persona_memories"));
         let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_all");
@@ -213,7 +231,7 @@ pub fn get_all_by_persona_ids(
                 vec![Box::new("context".to_string())],
             );
             qb.order_by("created_at", "DESC");
-            let sql = qb.build_select("SELECT * FROM persona_memories");
+            let sql = qb.build_select(&format!("SELECT {COLUMNS} FROM persona_memories"));
             let mut stmt = conn.prepare_cached(&sql)?;
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_all_by_persona_ids"))
@@ -221,12 +239,30 @@ pub fn get_all_by_persona_ids(
     )
 }
 
-crud_get_by_id!(
-    PersonaMemory,
-    "persona_memories",
-    "PersonaMemory",
-    row_to_memory
-);
+/// Hand-written rather than `crud_get_by_id!`, which projects `SELECT *`.
+/// Same shape as the macro — cached statement, `QueryReturnedNoRows` mapped to
+/// `NotFound`, the same perf sample — over an explicit column list.
+pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMemory, AppError> {
+    let _start = std::time::Instant::now();
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare_cached(&format!(
+        "SELECT {COLUMNS} FROM persona_memories WHERE id = ?1"
+    ))?;
+    let result = stmt
+        .query_row(params![id], row_to_memory)
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("PersonaMemory {id}"))
+            }
+            other => AppError::Database(other),
+        });
+    crate::perf::record_query(
+        "persona_memories",
+        "persona_memories::get_by_id",
+        _start.elapsed(),
+    );
+    result
+}
 
 pub fn get_by_persona(
     pool: &DbPool,
@@ -236,10 +272,10 @@ pub fn get_by_persona(
     timed_query!("persona_memories", "persona_memories::get_by_persona", {
         let limit = limit.unwrap_or(50);
         let conn = pool.conn("memories::get_by_persona")?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories WHERE persona_id = ?1
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_memories WHERE persona_id = ?1
              ORDER BY importance DESC, created_at DESC LIMIT ?2",
-        )?;
+        ))?;
         let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_by_persona");
         Ok(results)
@@ -249,10 +285,10 @@ pub fn get_by_persona(
 pub fn get_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaMemory>, AppError> {
     timed_query!("persona_memories", "persona_memories::get_by_execution", {
         let conn = pool.conn("memories::get_by_execution")?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories WHERE source_execution_id = ?1
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_memories WHERE source_execution_id = ?1
              ORDER BY created_at ASC",
-        )?;
+        ))?;
         let rows = stmt.query_map(params![execution_id], row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_by_execution");
         Ok(results)
@@ -267,9 +303,9 @@ pub fn count_by_execution(pool: &DbPool, execution_id: &str) -> Result<i64, AppE
         {
             let conn = pool.conn("memories::count_by_execution")?;
             let count: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_memories WHERE source_execution_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_memories WHERE source_execution_id = ?1",
                 params![execution_id],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         }
@@ -413,10 +449,10 @@ pub fn get_active_for_decay(
         "persona_memories::get_active_for_decay",
         {
             let conn = pool.conn("memories::get_active_for_decay")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_memories
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND tier = 'active'",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id], row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_active_for_decay"))
         }
@@ -489,7 +525,10 @@ pub fn batch_create(
             )?;
             for pid in &persona_ids {
                 let rows = sel.query_map(params![pid], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+                    Ok((
+                        row.get::<_, String>("content")?,
+                        row.get::<_, Option<String>>("use_case_id")?,
+                    ))
                 })?;
                 for row in rows {
                     let (content, uc) = row?;
@@ -606,10 +645,10 @@ pub fn get_total_count(
 
         let qb = build_memory_filters(persona_id, category, search, tier);
         let sql = format!(
-            "SELECT COUNT(*) FROM persona_memories {}",
+            "SELECT COUNT(*) AS n FROM persona_memories {}",
             qb.where_clause()
         );
-        let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get(0))?;
+        let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get("n"))?;
         Ok(count)
     })
 }
@@ -633,17 +672,21 @@ fn compute_memory_stats(
 ) -> Result<MemoryStats, AppError> {
     // Total + avg importance in one query
     let agg_sql = format!(
-        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM persona_memories {where_clause}"
+        "SELECT COUNT(*) AS n, COALESCE(AVG(importance), 0) AS avg_importance \
+         FROM persona_memories {where_clause}"
     );
-    let (total, avg_importance): (i64, f64) =
-        conn.query_row(&agg_sql, params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let (total, avg_importance): (i64, f64) = conn.query_row(&agg_sql, params_ref, |row| {
+        Ok((row.get("n")?, row.get("avg_importance")?))
+    })?;
 
     // Category breakdown
     let cat_sql = format!(
         "SELECT category, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY category ORDER BY cnt DESC"
     );
     let mut cat_stmt = conn.prepare_cached(&cat_sql)?;
-    let category_rows = cat_stmt.query_map(params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let category_rows = cat_stmt.query_map(params_ref, |row| {
+        Ok((row.get("category")?, row.get("cnt")?))
+    })?;
     let category_counts: Vec<(String, i64)> = collect_rows(
         category_rows,
         "memories::compute_memory_stats/category_counts",
@@ -654,7 +697,9 @@ fn compute_memory_stats(
         "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY persona_id ORDER BY cnt DESC"
     );
     let mut agent_stmt = conn.prepare_cached(&agent_sql)?;
-    let agent_rows = agent_stmt.query_map(params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let agent_rows = agent_stmt.query_map(params_ref, |row| {
+        Ok((row.get("persona_id")?, row.get("cnt")?))
+    })?;
     let agent_counts: Vec<(String, i64)> =
         collect_rows(agent_rows, "memories::compute_memory_stats/agent_counts");
 
@@ -724,7 +769,7 @@ pub fn get_all_with_stats(
             qb.limit(limit_val);
             qb.offset(offset_val);
 
-            let mem_sql = qb.build_select("SELECT * FROM persona_memories");
+            let mem_sql = qb.build_select(&format!("SELECT {COLUMNS} FROM persona_memories"));
             let mut mem_stmt = conn.prepare_cached(&mem_sql)?;
             let mem_rows = mem_stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
             let memories: Vec<PersonaMemory> =
@@ -897,9 +942,9 @@ fn find_normalized_duplicate(
     )?;
     let rows = stmt.query_map(params![persona_id], |row| {
         Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, Option<String>>(2)?,
+            row.get::<_, String>("id")?,
+            row.get::<_, String>("content")?,
+            row.get::<_, Option<String>>("use_case_id")?,
         ))
     })?;
     for row in rows {
@@ -954,7 +999,7 @@ pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
                 let mut stmt = conn.prepare(&format!(
                     "SELECT id FROM persona_memories WHERE tier = 'archive' AND id IN ({ph})"
                 ))?;
-                let rows = stmt.query_map(ps.as_slice(), |r| r.get::<_, String>(0))?;
+                let rows = stmt.query_map(ps.as_slice(), |r| r.get::<_, String>("id"))?;
                 for r in rows {
                     now_archived.push(r?);
                 }
@@ -978,10 +1023,10 @@ pub fn find_duplicate_groups(
         "persona_memories::find_duplicate_groups",
         {
             let conn = pool.conn("memories::find_duplicate_groups")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_memories
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id], row_to_memory)?;
             let all: Vec<PersonaMemory> = collect_rows(rows, "memories::find_duplicate_groups");
 
@@ -1027,12 +1072,12 @@ pub fn get_archivable_candidates(
         "persona_memories::get_archivable_candidates",
         {
             let conn = pool.conn("memories::get_archivable_candidates")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_memories
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND tier IN ('active', 'working')
              ORDER BY importance ASC, access_count ASC, created_at ASC
              LIMIT ?2",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_archivable_candidates"))
         }
@@ -1261,7 +1306,7 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
             .query_row(
                 "SELECT tier FROM persona_memories WHERE id = ?1",
                 params![id],
-                |r| r.get::<_, String>(0),
+                |r| r.get::<_, String>("tier"),
             )
             .optional()?;
         let now = chrono::Utc::now().to_rfc3339();
@@ -1276,7 +1321,7 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
             if let Ok((title, content)) = conn.query_row(
                 "SELECT title, content FROM persona_memories WHERE id = ?1",
                 params![id],
-                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+                |r| Ok((r.get::<_, String>("title")?, r.get::<_, String>("content")?)),
             ) {
                 spawn_embed_memory(
                     id.to_string(),
@@ -1433,15 +1478,15 @@ pub fn get_for_injection_v2(
             let (persona_scope_sql, active_uc_sql, extra_params) = build_scope_predicates(&scope);
 
             let sql = format!(
-                "SELECT * FROM (
-                 SELECT * FROM persona_memories
+                "SELECT {COLUMNS} FROM (
+                 SELECT {COLUMNS} FROM persona_memories
                  WHERE {persona_scope_sql} AND tier = 'core'
                  ORDER BY importance DESC, created_at DESC
                  LIMIT ?2
              )
              UNION ALL
-             SELECT * FROM (
-                 SELECT * FROM persona_memories
+             SELECT {COLUMNS} FROM (
+                 SELECT {COLUMNS} FROM persona_memories
                  WHERE {persona_scope_sql} AND tier IN ('active', 'working')
                  {active_uc_sql}
                  ORDER BY (importance * 10.0
@@ -1494,12 +1539,12 @@ pub fn get_by_use_case_id(
         {
             let limit = limit.unwrap_or(100);
             let conn = pool.conn("memories::get_by_use_case_id")?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_memories
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND use_case_id = ?2
              ORDER BY importance DESC, created_at DESC
              LIMIT ?3",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_by_use_case_id"))
         }
@@ -1789,9 +1834,11 @@ pub async fn search_similar_memories(
     let blob: &[u8] = bytemuck::cast_slice(&vec);
     let conn = vec_pool.conn("memories::search_similar_memories")?;
     let count: i64 = conn
-        .query_row("SELECT COUNT(*) FROM persona_memory_embedding", [], |r| {
-            r.get(0)
-        })
+        .query_row(
+            "SELECT COUNT(*) AS n FROM persona_memory_embedding",
+            [],
+            |r| r.get("n"),
+        )
         .unwrap_or(0);
     if count == 0 {
         return Ok(Vec::new());
@@ -1802,7 +1849,10 @@ pub async fn search_similar_memories(
     )?;
     let rows = stmt
         .query_map(params![blob, k as i64], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, f32>(1)?))
+            Ok((
+                row.get::<_, String>("memory_id")?,
+                row.get::<_, f32>("distance")?,
+            ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
     apply_memory_model_guard(&conn, rows, embedder.model_name())
@@ -1845,7 +1895,10 @@ fn apply_memory_model_guard(
     )?;
     let mut model_of = std::collections::HashMap::new();
     let rows = stmt.query_map(params![ids_json], |r| {
-        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        Ok((
+            r.get::<_, String>("memory_id")?,
+            r.get::<_, String>("embedding_model")?,
+        ))
     })?;
     for row in rows {
         let (id, model) = row?;
@@ -1902,7 +1955,7 @@ pub fn embedded_memory_ids(
     ensure_memory_vec_table(vec_pool)?;
     let conn = vec_pool.conn("memories::embedded_memory_ids")?;
     let mut stmt = conn.prepare("SELECT memory_id FROM persona_memory_embedding")?;
-    let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+    let rows = stmt.query_map([], |r| r.get::<_, String>("memory_id"))?;
     let mut set = std::collections::HashSet::new();
     for r in rows {
         set.insert(r?);
@@ -1965,7 +2018,7 @@ pub fn gc_archived_memory_embeddings(
         let mut stmt =
             conn.prepare("SELECT id FROM persona_memories WHERE tier = 'archive' LIMIT ?1")?;
         let ids = stmt
-            .query_map(params![limit as i64], |r| r.get::<_, String>(0))?
+            .query_map(params![limit as i64], |r| r.get::<_, String>("id"))?
             .collect::<Result<Vec<_>, _>>()?;
         ids
     };
@@ -1984,7 +2037,7 @@ pub fn gc_archived_memory_embeddings(
              WHERE memory_id IN (SELECT value FROM json_each(?1))",
         )?;
         let ids = stmt
-            .query_map(params![ids_json], |r| r.get::<_, String>(0))?
+            .query_map(params![ids_json], |r| r.get::<_, String>("memory_id"))?
             .collect::<Result<Vec<_>, _>>()?;
         ids
     };
@@ -2044,7 +2097,9 @@ pub async fn backfill_memory_embeddings(
     let already = embedded_memory_ids(vec_pool)?;
     let candidates: Vec<PersonaMemory> = {
         let conn = main_pool.conn("memories::backfill_memory_embeddings")?;
-        let mut stmt = conn.prepare("SELECT * FROM persona_memories WHERE tier != 'archive'")?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM persona_memories WHERE tier != 'archive'"
+        ))?;
         let rows = stmt.query_map([], row_to_memory)?;
         collect_rows(rows, "memories::backfill_memory_embeddings")
     };
@@ -2069,6 +2124,17 @@ pub async fn backfill_memory_embeddings(
 
 #[cfg(test)]
 mod tests {
+    /// The `COLUMNS` projection must prepare against the real migrated schema.
+    /// Seven of its seventeen columns exist only by ALTER TABLE, so no single
+    /// DDL block proves them present; this does.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        let sql = format!("SELECT {} FROM persona_memories LIMIT 0", super::COLUMNS);
+        conn.prepare(&sql)
+            .unwrap_or_else(|e| panic!("persona_memories projection does not match schema: {e}"));
+    }
     use super::*;
     use crate::init_test_db;
     use crate::models::{CreatePersonaInput, CreatePersonaMemoryInput, Json};
@@ -3248,10 +3314,12 @@ mod vec_tests {
                  WHERE embedding MATCH ?1 ORDER BY distance LIMIT ?2",
             )
             .expect("vec0 MATCH must prepare (sqlite-vec registered)");
-        stmt.query_map(params![blob, k], |r| Ok((r.get(0)?, r.get(1)?)))
-            .unwrap()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
+        stmt.query_map(params![blob, k], |r| {
+            Ok((r.get("memory_id")?, r.get("distance")?))
+        })
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap()
     }
 
     #[test]
@@ -3304,9 +3372,9 @@ mod vec_tests {
             .get()
             .unwrap()
             .query_row(
-                "SELECT COUNT(*) FROM persona_memory_embedding WHERE memory_id = 'on_topic'",
+                "SELECT COUNT(*) AS n FROM persona_memory_embedding WHERE memory_id = 'on_topic'",
                 [],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .unwrap();
         assert_eq!(n, 1);

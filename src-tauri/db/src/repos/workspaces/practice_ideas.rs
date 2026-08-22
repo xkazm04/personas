@@ -150,11 +150,11 @@ pub fn materialize_pending_for_practice(pool: &DbPool, practice_id: &str) -> Res
 pub fn archive_practice_ideas(pool: &DbPool, practice_id: &str) -> Result<u32, AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
-    // FOREIGN TABLE: dev_ideas is owned by `repos::dev::ideas`.
-    let rows = conn.execute(
-        "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
-         WHERE origin = ?2 AND dedup_key = ?3 AND status = 'pending'",
-        params![now, PRACTICE_ORIGIN, practice_dedup_key(practice_id)],
+    let rows = crate::repos::dev::ideas::archive_pending_by_origin_and_dedup_key(
+        &conn,
+        &now,
+        PRACTICE_ORIGIN,
+        &practice_dedup_key(practice_id),
     )?;
     Ok(rows as u32)
 }
