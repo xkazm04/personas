@@ -168,7 +168,7 @@ pub fn companion_set_autonomous_mode(
 #[tauri::command]
 pub fn companion_wake_stats(
     state: State<'_, Arc<AppState>>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<crate::companion::wake_window::CompanionWakeStats, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
     crate::companion::wake_window::stats_24h(&state.db)
 }

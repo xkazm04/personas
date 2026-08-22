@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { getGoogleCredentialOAuthStatus, startGoogleCredentialOAuth } from "@/api/vault/oauthGatewayApi";
 
-import type { GoogleCredentialOAuthStatusResult } from "@/api/vault/oauthGatewayApi";
+import type { OAuthStatusResult } from "@/api/vault/oauthGatewayApi";
 
 import { useOAuthProtocol } from '@/hooks/design/oauth/useOAuthProtocol';
 import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
@@ -35,7 +35,7 @@ interface UseGoogleOAuthOptions {
 }
 
 export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuthState {
-  const protocol = useOAuthProtocol<[string, string[] | undefined], GoogleCredentialOAuthStatusResult>({
+  const protocol = useOAuthProtocol<[string, string[] | undefined], OAuthStatusResult>({
     startFn: (connectorName, extraScopes) =>
       startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
     pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),

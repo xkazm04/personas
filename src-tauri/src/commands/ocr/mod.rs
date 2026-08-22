@@ -591,7 +591,7 @@ async fn run_claude_ocr(
             .stderr(std::process::Stdio::piped())
             .creation_flags(0x08000000)
             .spawn()
-            .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+            .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn Claude Code: {e}")))?;
 
         #[cfg(not(target_os = "windows"))]
         let mut child = tokio::process::Command::new(&binary)
@@ -600,7 +600,7 @@ async fn run_claude_ocr(
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
-            .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+            .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn Claude Code: {e}")))?;
 
         // Write prompt to stdin then close it
         if let Some(mut stdin) = child.stdin.take() {

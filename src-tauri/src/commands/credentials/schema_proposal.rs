@@ -6,6 +6,7 @@ use tauri::{Emitter, State};
 use tokio_util::sync::CancellationToken;
 
 use serde::Serialize;
+use ts_rs::TS;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::resources::credentials as cred_repo;
@@ -155,13 +156,29 @@ pub async fn cancel_schema_proposal(
     SCHEMA_PROPOSAL_JOBS.cancel_or_preempt(&app, &proposal_id, SchemaProposalExtra::default())
 }
 
+/// Result of checking a live database against the table list a connector
+/// template expects.
+///
+/// snake_case (no `rename_all`) — the connector-setup UI already reads
+/// `result.all_tables` / `result.missing`.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct SchemaValidationResult {
+    /// True when every expected table was found.
+    pub valid: bool,
+    pub found: Vec<String>,
+    pub missing: Vec<String>,
+    /// Every table the introspection query returned, not just the expected ones.
+    pub all_tables: Vec<String>,
+}
+
 #[tauri::command]
 #[requires(privileged)]
 pub async fn validate_db_schema(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     expected_tables: Vec<String>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<SchemaValidationResult, AppError> {
     let tables_result =
         db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await?;
 
@@ -198,12 +215,12 @@ pub async fn validate_db_schema(
         }
     }
 
-    Ok(serde_json::json!({
-        "valid": missing.is_empty(),
-        "found": found,
-        "missing": missing,
-        "all_tables": existing,
-    }))
+    Ok(SchemaValidationResult {
+        valid: missing.is_empty(),
+        found,
+        missing,
+        all_tables: existing,
+    })
 }
 
 // -- Internal logic ------------------------------------------------------

@@ -260,7 +260,7 @@ async fn run_standards_scan(
                     .into(),
             )
         } else {
-            AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
+            AppError::ProcessSpawn(format!("Failed to spawn Claude CLI: {e}"))
         }
     })?;
 

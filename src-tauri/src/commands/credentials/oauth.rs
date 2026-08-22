@@ -9,12 +9,12 @@ use base64::Engine as _;
 use futures_util::FutureExt;
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sha2::{Digest, Sha256};
 use tauri::State;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
+use ts_rs::TS;
 use url::Url;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -387,9 +387,10 @@ const DEFAULT_GOOGLE_OAUTH_SCOPES: &[&str] = &[
 ///
 /// Transitions:  `Pending` → `Success` | `Error`.
 /// `NotFound` is only used in poll-handler responses when a session is missing/expired.
-#[derive(Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "snake_case")]
-enum OAuthSessionStatus {
+#[ts(export)]
+pub enum OAuthSessionStatus {
     Pending,
     Success,
     Error,
@@ -509,6 +510,21 @@ fn decrypt_token(token: &Option<EncryptedToken>) -> Option<SecureString> {
 
 // -- Commands ----------------------------------------------------
 
+/// Handle for a freshly opened Google connector consent flow.
+///
+/// snake_case to match what the polling hooks already read (`auth_url`,
+/// `session_id`).
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct GoogleCredentialOAuthStartResult {
+    pub session_id: String,
+    pub auth_url: String,
+    pub redirect_uri: String,
+    /// `"user_provided"` when the operator supplied their own OAuth client,
+    /// `"app_managed"` when the bundled desktop client was used.
+    pub credential_source: Option<String>,
+}
+
 #[tauri::command]
 #[requires(privileged)]
 pub async fn start_google_credential_oauth(
@@ -517,7 +533,7 @@ pub async fn start_google_credential_oauth(
     client_secret: String,
     connector_name: String,
     extra_scopes: Option<Vec<String>>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<GoogleCredentialOAuthStartResult, AppError> {
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
 
@@ -694,12 +710,12 @@ pub async fn start_google_credential_oauth(
         }
     });
 
-    Ok(json!({
-        "session_id": session_id,
-        "auth_url": auth_url.to_string(),
-        "redirect_uri": redirect_uri,
-        "credential_source": credential_source,
-    }))
+    Ok(GoogleCredentialOAuthStartResult {
+        session_id,
+        auth_url: auth_url.to_string(),
+        redirect_uri,
+        credential_source: Some(credential_source),
+    })
 }
 
 #[tauri::command]
@@ -707,7 +723,7 @@ pub async fn start_google_credential_oauth(
 pub fn get_google_credential_oauth_status(
     state: State<'_, Arc<AppState>>,
     session_id: String,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<OAuthStatusResult, AppError> {
     Ok(get_session_status(&session_id))
 }
 
@@ -1487,7 +1503,33 @@ fn apply_oauth_outcome(
     is_success
 }
 
-/// Read session status as a JSON value. Shared implementation backing both
+/// Poll result for an in-flight OAuth consent session, shared by the universal
+/// gateway (`get_oauth_status`) and the Google connector flow
+/// (`get_google_credential_oauth_status`) — one server-side session table, so
+/// one contract.
+///
+/// Field names stay snake_case (no `rename_all`): the polling hooks have read
+/// `poll.oauth_session_ref` and `poll.scope` since before this payload was
+/// typed. **No token material crosses this boundary** — the booleans report
+/// only whether a token exists, and `oauth_session_ref` is a one-time handle
+/// the backend redeems server-side.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct OAuthStatusResult {
+    pub status: OAuthSessionStatus,
+    pub provider_id: Option<String>,
+    pub has_access_token: bool,
+    pub has_refresh_token: bool,
+    /// Present only once `status == Success`.
+    pub oauth_session_ref: Option<String>,
+    pub scope: Option<String>,
+    pub token_type: Option<String>,
+    #[ts(type = "number | null")]
+    pub expires_in: Option<u64>,
+    pub error: Option<String>,
+}
+
+/// Read session status. Shared implementation backing both
 /// `get_google_credential_oauth_status` and `get_oauth_status`.
 ///
 /// SECURITY: returns token *metadata* only — the actual access/refresh tokens
@@ -1500,32 +1542,39 @@ fn apply_oauth_outcome(
 /// must survive until a credential save redeems it. Abandoned sessions are
 /// still evicted by `cleanup_oauth_sessions` (10-minute TTL + post-redeem
 /// grace + hard cap).
-fn get_session_status(session_id: &str) -> serde_json::Value {
+fn get_session_status(session_id: &str) -> OAuthStatusResult {
     cleanup_oauth_sessions();
     let sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     if let Some(s) = sessions.get(session_id) {
         let session_ref = if s.status == OAuthSessionStatus::Success {
-            Some(session_id)
+            Some(session_id.to_string())
         } else {
             None
         };
-        return json!({
-            "status": s.status,
-            "provider_id": s.provider_id,
-            "has_access_token": s.access_token.is_some(),
-            "has_refresh_token": s.refresh_token.is_some(),
-            "oauth_session_ref": session_ref,
-            "scope": s.scope,
-            "token_type": s.token_type,
-            "expires_in": s.expires_in,
-            "error": s.error,
-        });
+        return OAuthStatusResult {
+            status: s.status,
+            provider_id: Some(s.provider_id.clone()),
+            has_access_token: s.access_token.is_some(),
+            has_refresh_token: s.refresh_token.is_some(),
+            oauth_session_ref: session_ref,
+            scope: s.scope.clone(),
+            token_type: s.token_type.clone(),
+            expires_in: s.expires_in,
+            error: s.error.clone(),
+        };
     }
 
-    json!({
-        "status": OAuthSessionStatus::NotFound,
-        "error": "OAuth session not found or expired",
-    })
+    OAuthStatusResult {
+        status: OAuthSessionStatus::NotFound,
+        provider_id: None,
+        has_access_token: false,
+        has_refresh_token: false,
+        oauth_session_ref: None,
+        scope: None,
+        token_type: None,
+        expires_in: None,
+        error: Some("OAuth session not found or expired".to_string()),
+    }
 }
 
 /// Redeem a completed OAuth session's tokens into a credential field map,
@@ -1603,25 +1652,52 @@ pub(crate) fn redeem_oauth_session_into_fields(
 
 // -- Universal OAuth Commands -------------------------------------
 
+/// One entry of the built-in OAuth provider registry, as offered to the
+/// connector-design UI.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct OAuthProvider {
+    pub id: String,
+    pub name: String,
+    pub supports_pkce: bool,
+    pub default_scopes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct OAuthProviderListResult {
+    pub providers: Vec<OAuthProvider>,
+}
+
 /// List available OAuth providers.
 #[tauri::command]
 #[requires(privileged)]
 pub fn list_oauth_providers(
     state: State<'_, Arc<AppState>>,
-) -> Result<serde_json::Value, AppError> {
-    let providers: Vec<serde_json::Value> = PROVIDER_REGISTRY
+) -> Result<OAuthProviderListResult, AppError> {
+    let providers: Vec<OAuthProvider> = PROVIDER_REGISTRY
         .iter()
-        .map(|p| {
-            json!({
-                "id": p.id,
-                "name": p.name,
-                "supports_pkce": p.supports_pkce,
-                "default_scopes": p.default_scopes,
-            })
+        .map(|p| OAuthProvider {
+            id: p.id.to_string(),
+            name: p.name.to_string(),
+            supports_pkce: p.supports_pkce,
+            default_scopes: p.default_scopes.iter().map(|s| (*s).to_string()).collect(),
         })
         .collect();
 
-    Ok(json!({ "providers": providers }))
+    Ok(OAuthProviderListResult { providers })
+}
+
+/// Handle for a freshly opened universal-gateway consent flow.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct OAuthStartResult {
+    pub session_id: String,
+    pub auth_url: String,
+    pub redirect_uri: String,
+    pub provider_id: String,
+    /// Whether the authorize URL carried a PKCE S256 challenge.
+    pub pkce_used: bool,
 }
 
 /// Start a universal OAuth flow for any provider.
@@ -1650,7 +1726,7 @@ pub async fn start_oauth(
     oidc_issuer: Option<String>,
     use_pkce: Option<bool>,
     extra_params: Option<HashMap<String, String>>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<OAuthStartResult, AppError> {
     // Resolve app-managed credentials when user doesn't provide their own.
     let (client_id, client_secret) =
         resolve_universal_oauth_credentials(&provider_id, client_id, client_secret)?;
@@ -1892,13 +1968,13 @@ pub async fn start_oauth(
         }
     });
 
-    Ok(json!({
-        "session_id": session_id,
-        "auth_url": auth_url.to_string(),
-        "redirect_uri": redirect_uri,
-        "provider_id": provider_id,
-        "pkce_used": code_challenge.is_some(),
-    }))
+    Ok(OAuthStartResult {
+        session_id,
+        auth_url: auth_url.to_string(),
+        redirect_uri,
+        provider_id,
+        pkce_used: code_challenge.is_some(),
+    })
 }
 
 #[tauri::command]
@@ -1906,7 +1982,7 @@ pub async fn start_oauth(
 pub fn get_oauth_status(
     state: State<'_, Arc<AppState>>,
     session_id: String,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<OAuthStatusResult, AppError> {
     Ok(get_session_status(&session_id))
 }
 
@@ -2084,7 +2160,11 @@ mod tests {
             Some("scope.a scope.b"),
         );
 
-        let value = super::get_session_status(&id);
+        // Assert against the SERIALIZED form, not the struct: what this test
+        // guards is what crosses the IPC boundary, and typing the payload
+        // (`OAuthStatusResult`) must not quietly move that goalpost.
+        let value =
+            serde_json::to_value(super::get_session_status(&id)).expect("status serializes");
 
         // The serialized payload must not carry the plaintext tokens or even
         // the token field names — metadata booleans + session ref only.
@@ -2109,7 +2189,8 @@ mod tests {
 
         // A terminal read must NOT consume the session anymore — the
         // credential save is what redeems it.
-        let again = super::get_session_status(&id);
+        let again =
+            serde_json::to_value(super::get_session_status(&id)).expect("status serializes");
         assert_eq!(again["oauth_session_ref"], id.as_str());
 
         drop_session(&id);
@@ -2123,7 +2204,8 @@ mod tests {
             false,
             None,
         );
-        let value = super::get_session_status(&id);
+        let value =
+            serde_json::to_value(super::get_session_status(&id)).expect("status serializes");
         assert_eq!(value["status"], "pending");
         assert_eq!(value["oauth_session_ref"], serde_json::Value::Null);
         drop_session(&id);

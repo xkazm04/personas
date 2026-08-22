@@ -687,7 +687,7 @@ async fn run_creative_cli(
                     .into(),
             )
         } else {
-            AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
+            AppError::ProcessSpawn(format!("Failed to spawn Claude CLI: {e}"))
         }
     })?;
 

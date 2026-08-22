@@ -13,23 +13,16 @@
  * its per-kind payload fields had no compile-time contract at all.
  */
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import type { CompanionWakeStats } from '@/lib/bindings/CompanionWakeStats';
+import type { CompanionWakeSurfaceStats } from '@/lib/bindings/CompanionWakeSurfaceStats';
 
 // ============================================================================
 // Wake cadence (autonomy window)
 // ============================================================================
 
-export interface CompanionWakeSurfaceStats {
-  surface: string;
-  wakes: number;
-  signals: number;
-  cli_calls: number;
-  actions: number;
-}
-
-export interface CompanionWakeStats {
-  window_minutes: number;
-  surfaces: CompanionWakeSurfaceStats[];
-}
+// Both shapes are now generated from the Rust source of truth
+// (`companion::wake_window`) rather than hand-mirrored here.
+export type { CompanionWakeSurfaceStats, CompanionWakeStats };
 
 /** 24 h rollup of autonomy wakes/signals/actions, grouped by surface. */
 export const companionWakeStats = () =>

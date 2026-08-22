@@ -1,13 +1,12 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { GoogleCredentialOAuthStartResult } from "@/lib/bindings/GoogleCredentialOAuthStartResult";
-import type { GoogleCredentialOAuthStatusResult } from "@/lib/bindings/GoogleCredentialOAuthStatusResult";
 import type { OAuthProvider } from "@/lib/bindings/OAuthProvider";
 import type { OAuthProviderListResult } from "@/lib/bindings/OAuthProviderListResult";
 import type { OAuthStartResult } from "@/lib/bindings/OAuthStartResult";
 import type { OAuthStatusResult } from "@/lib/bindings/OAuthStatusResult";
 import type { StartOAuthParams } from "@/lib/bindings/StartOAuthParams";
-export type { GoogleCredentialOAuthStartResult, GoogleCredentialOAuthStatusResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
+export type { GoogleCredentialOAuthStartResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
 
 // ============================================================================
 // Google OAuth
@@ -27,8 +26,12 @@ export const startGoogleCredentialOAuth = (
   });
 };
 
+// Both OAuth poll commands read the same server-side session table, so they
+// share one payload type (`OAuthStatusResult`). The former
+// `GoogleCredentialOAuthStatusResult` binding was an orphan — a hand-frozen
+// copy of this same shape whose Rust source had been gone for some time.
 export const getGoogleCredentialOAuthStatus = (sessionId: string) =>
-  invoke<GoogleCredentialOAuthStatusResult>("get_google_credential_oauth_status", {
+  invoke<OAuthStatusResult>("get_google_credential_oauth_status", {
     sessionId,
   });
 

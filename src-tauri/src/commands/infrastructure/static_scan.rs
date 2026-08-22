@@ -105,7 +105,7 @@ pub async fn dev_tools_run_static_scan(
         .current_dir(&project.root_path)
         .output()
         .await
-        .map_err(|e| AppError::Internal(format!("Failed to spawn {exe}: {e}")))?;
+        .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn {exe}: {e}")))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr_str = if output.stderr.is_empty() {

@@ -949,7 +949,7 @@ pub(crate) fn execute_dev_improve(
         140,
         40,
     )
-    .map_err(|e| AppError::Internal(format!("dev_improve: spawn failed: {e}")))?;
+    .map_err(|e| AppError::ProcessSpawn(format!("dev_improve: spawn failed: {e}")))?;
 
     // Operative-memory operation — the reflection reconciler keys off this
     // (fleet_bridge::reconcile_if_dispatched → dev-op registry).

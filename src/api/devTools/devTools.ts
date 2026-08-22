@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
+import type { GitStatusSummary } from "@/lib/bindings/GitStatusSummary";
 import type { SkillInstallResult } from "@/lib/bindings/SkillInstallResult";
 import type { RegistrySync } from "@/lib/bindings/RegistrySync";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
@@ -1472,15 +1473,7 @@ export const runTests = (projectId: string, testCommand?: string) =>
   );
 
 export const getGitStatus = (projectId: string) =>
-  safeInvoke<{
-    project_id: string;
-    project_name: string;
-    branch: string;
-    is_clean: boolean;
-    changed_files_count: number;
-    changed_files: string[];
-    recent_commits: string[];
-  }>(
+  safeInvoke<GitStatusSummary>(
     { project_id: projectId, project_name: '', branch: '', is_clean: true, changed_files_count: 0, changed_files: [], recent_commits: [] },
     "dev_tools_get_git_status",
     { projectId },

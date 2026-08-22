@@ -3,8 +3,10 @@ use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use serde::Serialize;
 use std::sync::Arc;
 use tauri::State;
+use ts_rs::TS;
 
 // ============================================================================
 // Direction 3: Agent-Driven Implementation Pipeline
@@ -62,7 +64,7 @@ pub async fn dev_tools_apply_diff(
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        .map_err(|e| AppError::Internal(format!("Failed to spawn git apply: {e}")))?;
+        .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn git apply: {e}")))?;
 
     if let Some(mut stdin) = child.stdin.take() {
         use tokio::io::AsyncWriteExt;
@@ -233,12 +235,33 @@ fn parse_test_counts(output: &str) -> (i32, i32, i32, i32) {
     (0, 0, 0, 0)
 }
 
+/// Working-tree snapshot for one managed project, as the Dev Tools project
+/// card renders it.
+///
+/// snake_case (no `rename_all`) — the call site in `api/devTools` already
+/// declared this exact shape inline, down to `changed_files_count`.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct GitStatusSummary {
+    pub project_id: String,
+    pub project_name: String,
+    /// Empty string on a detached HEAD (`git branch --show-current` prints
+    /// nothing), which the card renders as "no branch".
+    pub branch: String,
+    pub is_clean: bool,
+    pub changed_files_count: usize,
+    /// Raw `git status --porcelain` lines, status prefix included.
+    pub changed_files: Vec<String>,
+    /// Up to five `git log --oneline` lines.
+    pub recent_commits: Vec<String>,
+}
+
 /// Get git status for a project.
 #[tauri::command]
 pub async fn dev_tools_get_git_status(
     state: State<'_, Arc<AppState>>,
     project_id: String,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<GitStatusSummary, AppError> {
     require_auth_sync(&state)?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
 
@@ -271,15 +294,15 @@ pub async fn dev_tools_get_git_status(
 
     let changed_files: Vec<&str> = status.lines().filter(|l| !l.is_empty()).collect();
 
-    Ok(serde_json::json!({
-        "project_id": project_id,
-        "project_name": project.name,
-        "branch": branch,
-        "is_clean": changed_files.is_empty(),
-        "changed_files_count": changed_files.len(),
-        "changed_files": changed_files,
-        "recent_commits": log.lines().collect::<Vec<&str>>(),
-    }))
+    Ok(GitStatusSummary {
+        project_id,
+        project_name: project.name,
+        branch,
+        is_clean: changed_files.is_empty(),
+        changed_files_count: changed_files.len(),
+        changed_files: changed_files.iter().map(|l| (*l).to_string()).collect(),
+        recent_commits: log.lines().map(str::to_string).collect(),
+    })
 }
 
 /// Commit staged/all changes in a project.
