@@ -451,7 +451,16 @@ pub async fn validate_trigger(
                                         crate::engine::url_safety::SsrfSafeDnsResolver,
                                     ))
                                     .build()
-                                    .unwrap_or_default();
+                                    // Fail CLOSED. `.unwrap_or_default()` here
+                                    // returned `reqwest::Client::default()` ==
+                                    // `Client::new()` on a builder failure: no
+                                    // timeout, the SYSTEM DNS resolver and a
+                                    // ten-hop redirect follow — every guarantee
+                                    // above silently gone, on the one path whose
+                                    // whole job is to safely probe a URL the user
+                                    // just typed. `url_safety.rs:264-267` forbids
+                                    // exactly this in prose.
+                                    .expect("SSRF-safe polling-probe client");
                                 match client.head(endpoint).send().await {
                                     Ok(resp) => {
                                         let status = resp.status().as_u16();

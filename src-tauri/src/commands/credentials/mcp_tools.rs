@@ -38,6 +38,10 @@ pub async fn probe_mcp_server(
     let port = crate::engine::webhook::webhook_port();
     let url = format!("http://127.0.0.1:{port}/health");
 
+    // Deliberately NOT an SSRF-safe client: the host is the literal
+    // `127.0.0.1` above and only the PORT is influenced by config, so the
+    // private-IP-rejecting resolver would reject this very target. 2 s because
+    // a liveness chip must not stall the Settings panel.
     let live = match reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()

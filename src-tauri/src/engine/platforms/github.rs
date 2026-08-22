@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::sync::LazyLock;
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -29,18 +27,6 @@ fn validate_repo_segment(field: &str, value: &str) -> Result<(), AppError> {
     }
     Ok(())
 }
-
-/// Module-scoped HTTP client shared across all `GitHubClient` instances.
-///
-/// The builder config is entirely static (30-second timeout, no default
-/// headers). The per-user bearer token is added on each request via
-/// `self.headers()`, so a process-scoped client does not leak per-user state.
-static GITHUB_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()
-        .expect("Failed to build GitHub HTTP client")
-});
 
 /// GitHub API client for repository and workflow management.
 pub struct GitHubClient {
@@ -117,7 +103,15 @@ impl GitHubClient {
             })?
             .clone();
 
-        let http = GITHUB_HTTP.clone();
+        // `SHARED_HTTP` (30 s, no default headers) — identical to the
+        // module-scoped client this replaced. Every host in this file is the
+        // compile-time literal `https://api.github.com`; nothing a user or a
+        // config supplies can influence it (owner/repo segments are validated
+        // by `validate_github_name` above), so the SSRF-safe resolver would buy
+        // nothing here. The per-user bearer token is attached per request in
+        // `self.headers()`, so sharing one process-wide client leaks no
+        // per-user state.
+        let http = crate::SHARED_HTTP.clone();
 
         Ok(Self { token, http })
     }

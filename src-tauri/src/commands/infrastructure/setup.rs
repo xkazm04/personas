@@ -252,6 +252,9 @@ async fn download_file(
 ) -> Result<std::path::PathBuf, String> {
     emit_output(app, install_id, target, &format!("Downloading {url}..."));
 
+    // Not `SHARED_HTTP`: an installer download needs 300 s, not 30 s. Both
+    // callers pass a `https://nodejs.org/dist/...` URL built from compile-time
+    // literals plus a version string this module fetched from that same host.
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()
@@ -310,6 +313,8 @@ async fn download_file(
 const FALLBACK_NODE_VERSION: &str = "22.14.0";
 
 async fn get_node_lts_version() -> String {
+    // Literal `nodejs.org` host; 10 s because a slow version lookup falls back
+    // to `FALLBACK_NODE_VERSION` rather than delaying the install.
     let Ok(client) = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()

@@ -392,6 +392,11 @@ async fn fetch_new_messages(
         url.push_str(&format!("&after={}", id));
     }
 
+    // Not `SHARED_HTTP`: a poller on a short loop wants an 8 s deadline, not
+    // 30 s. The host is the compile-time literal `discord.com`, and the bot
+    // token rides in `Authorization`, which reqwest strips across a host
+    // change — so neither the SSRF resolver nor a redirect policy would add
+    // anything here.
     let client = reqwest::Client::builder()
         .timeout(HTTP_TIMEOUT)
         .build()
@@ -491,6 +496,8 @@ async fn post_reply(
         "allowed_mentions": { "parse": [] },
     });
 
+    // Same 8 s poller deadline and same literal `discord.com` host as
+    // `fetch_new_messages` above.
     let client = reqwest::Client::builder()
         .timeout(HTTP_TIMEOUT)
         .build()
