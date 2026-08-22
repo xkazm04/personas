@@ -589,20 +589,11 @@ mod tests {
                 let req = String::from_utf8_lossy(&buf[..n]).to_string();
                 let resp = if req.starts_with("GET /start") {
                     format!(
-                        "HTTP/1.1 302 Found
-Location: {location}
-                         Content-Length: 0
-Connection: close
-
-"
+                        "HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
                     )
                 } else {
-                    "HTTP/1.1 200 OK
-Content-Length: 2
-Connection: close
-
-ok"
-                    .to_string()
+                    "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+                        .to_string()
                 };
                 let _ = sock.write_all(resp.as_bytes()).await;
                 let _ = sock.flush().await;

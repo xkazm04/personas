@@ -241,18 +241,10 @@ mod tests {
                 };
                 let mut buf = [0u8; 4096];
                 let _ = sock.read(&mut buf).await;
-                let body = "data: {\"choices\":[{\"delta\":{\"content\":\"PONG\"}}]}
-
-                            data: [DONE]
-
-";
+                let body =
+                    "data: {\"choices\":[{\"delta\":{\"content\":\"PONG\"}}]}\n\ndata: [DONE]\n\n";
                 let resp = format!(
-                    "HTTP/1.1 200 OK
-Content-Type: text/event-stream
-                     Content-Length: {}
-Connection: close
-
-{body}",
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                     body.len()
                 );
                 let _ = sock.write_all(resp.as_bytes()).await;
