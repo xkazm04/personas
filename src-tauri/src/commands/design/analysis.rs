@@ -1,23 +1,12 @@
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use crate::utils::extract_panic_message;
 use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 use crate::db::repos::core::design_conversations as conv_repo;
 use crate::db::repos::core::personas as persona_repo;

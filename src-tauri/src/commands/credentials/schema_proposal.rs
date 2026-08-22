@@ -13,20 +13,9 @@ use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
+use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -246,21 +235,21 @@ async fn run_schema_proposal(params: RunParams) {
         cancel_token,
     } = params;
 
-    emit_line(&app, &proposal_id, "> Starting schema proposal...");
+    SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Starting schema proposal...");
 
     // Build schema context from existing tables
     let schema_context =
         ai_helpers::build_schema_context(&pool, &credential_id, Some(&user_db)).await;
 
     if cancel_token.is_cancelled() {
-        emit_line(&app, &proposal_id, "> Cancelled.");
+        SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Cancelled.");
         return;
     }
 
-    emit_line(
+    SCHEMA_PROPOSAL_JOBS.emit_line(
         &app,
         &proposal_id,
-        &format!("> Analyzing template: {template_name}"),
+        format!("> Analyzing template: {template_name}"),
     );
 
     // Build the AI prompt
@@ -278,13 +267,13 @@ async fn run_schema_proposal(params: RunParams) {
         SCHEMA_PROPOSAL_JOBS.emit_line(&app_clone, &id_clone, line);
     };
 
-    emit_line(&app, &proposal_id, "> Generating schema with AI...");
+    SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Generating schema with AI...");
 
     // Run the AI helper (fast model, single turn -- shared scaffold)
     let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
 
     if cancel_token.is_cancelled() {
-        emit_line(&app, &proposal_id, "> Cancelled.");
+        SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Cancelled.");
         return;
     }
 
@@ -296,7 +285,7 @@ async fn run_schema_proposal(params: RunParams) {
 
             match sql {
                 Some(proposed_sql) => {
-                    emit_line(
+                    SCHEMA_PROPOSAL_JOBS.emit_line(
                         &app,
                         &proposal_id,
                         "> Schema proposal generated successfully.",
@@ -326,7 +315,7 @@ async fn run_schema_proposal(params: RunParams) {
                     }
                 }
                 None => {
-                    emit_line(
+                    SCHEMA_PROPOSAL_JOBS.emit_line(
                         &app,
                         &proposal_id,
                         "[ERROR] Could not extract SQL from AI response.",
@@ -342,7 +331,7 @@ async fn run_schema_proposal(params: RunParams) {
         }
         Err(e) => {
             tracing::warn!(proposal_id = %proposal_id, "Schema proposal CLI failed: {}", e);
-            emit_line(
+            SCHEMA_PROPOSAL_JOBS.emit_line(
                 &app,
                 &proposal_id,
                 "[ERROR] AI schema proposal failed. See application logs.",
@@ -358,10 +347,6 @@ async fn run_schema_proposal(params: RunParams) {
 }
 
 // -- Helpers --------------------------------------------------------------
-
-fn emit_line(app: &tauri::AppHandle, proposal_id: &str, line: &str) {
-    SCHEMA_PROPOSAL_JOBS.emit_line(app, proposal_id, line);
-}
 
 fn build_prompt(
     template_name: &str,

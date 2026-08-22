@@ -62,7 +62,10 @@ impl ExecutionLogger {
             if let Err(e) = writeln!(w, "[{timestamp}] {msg}") {
                 if !self.write_failed {
                     self.write_failed = true;
-                    eprintln!("[ExecutionLogger] write error (log may be truncated): {e}");
+                    tracing::warn!(
+                        error = %e,
+                        "ExecutionLogger write error; log may be truncated"
+                    );
                 }
             }
         }
@@ -84,14 +87,14 @@ impl ExecutionLogger {
                     if let Err(e) = f.flush() {
                         if !self.write_failed {
                             self.write_failed = true;
-                            eprintln!("[ExecutionLogger] flush error on close: {e}");
+                            tracing::warn!(error = %e, "ExecutionLogger flush error on close");
                         }
                     }
                 }
                 Err(e) => {
                     if !self.write_failed {
                         self.write_failed = true;
-                        eprintln!("[ExecutionLogger] buffer flush error on close: {e}");
+                        tracing::warn!(error = %e, "ExecutionLogger buffer flush error on close");
                     }
                 }
             }

@@ -19,7 +19,7 @@
 //! values cannot claim `production`; every measurement needs evidence; caps
 //! mirror the KPI scan's; an ingested run dir is marked and refused twice.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde::Deserialize;
@@ -232,27 +232,6 @@ pub(crate) fn prepare_kpi_sim(
 
 // ── ingest ─────────────────────────────────────────────────────────────────
 
-/// Newest run dir under `<root>/kpi-sim/runs/` that has a result.json and no
-/// ingested marker.
-fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
-    let runs = root.join("kpi-sim").join("runs");
-    let mut candidates: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(&runs)
-        .ok()?
-        .flatten()
-        .filter_map(|e| {
-            let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
-            {
-                return None;
-            }
-            let t = e.metadata().and_then(|m| m.modified()).ok()?;
-            Some((t, p))
-        })
-        .collect();
-    candidates.sort_by_key(|b| std::cmp::Reverse(b.0));
-    candidates.into_iter().map(|(_, p)| p).next()
-}
-
 /// Ingest a finished simulation run. `run_dir` optional — defaults to the
 /// newest un-ingested run. Idempotent: a run dir is marked after ingest and
 /// refused on a second attempt.
@@ -296,7 +275,10 @@ pub(crate) fn ingest_kpi_sim(
             }
             canon
         }
-        None => find_ingestable_run(&root).ok_or_else(|| {
+        None => crate::commands::infrastructure::skill_runs::newest_ingestable_run(
+            &root.join("kpi-sim").join("runs"),
+        )
+        .ok_or_else(|| {
             AppError::Validation(
                 "No un-ingested simulation run found under kpi-sim/runs/ — run the simulation first"
                     .into(),

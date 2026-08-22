@@ -7,7 +7,7 @@
 //!
 //! Resource ownership:
 //! - `master` (for resize) and `writer` (for write_input) are stored
-//!   here behind `parking_lot::Mutex<Option<...>>`.
+//!   here behind `std::sync::Mutex<Option<...>>`.
 //! - The PTY **reader** and the spawned **child** are NOT held here — they
 //!   move into their respective tokio blocking tasks (see `pty::spawn_session`).
 //!   This avoids cross-task lock dances when the reader is blocked on read.

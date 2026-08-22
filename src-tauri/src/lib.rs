@@ -2108,7 +2108,14 @@ pub fn run() {
         ]))
         .build(tauri::generate_context!())
         .unwrap_or_else(|e| {
-            eprintln!("Fatal: Tauri application failed to start: {e}");
+            // Deliberately NOT `tracing::error!`: the next statement is
+            // `process::exit(1)`, which runs no destructors, so a buffered
+            // subscriber would never flush this. stderr is the only sink
+            // guaranteed to carry a message out of a failed startup.
+            #[allow(clippy::print_stderr)]
+            {
+                eprintln!("Fatal: Tauri application failed to start: {e}");
+            }
             std::process::exit(1);
         })
         .run(|app_handle, event| {

@@ -77,15 +77,27 @@ unimplemented = "warn"
 # warn so the next real one is caught the day it is written.
 await_holding_lock = "warn"
 
+# The output lints. These keep *library* diagnostics going through `tracing`
+# rather than a stream nobody captures. The measured baseline was 17 stderr + 12
+# stdout production sites; W2 drove it to zero by (a) routing `ExecutionLogger`'s
+# own I/O failures to `tracing::warn!` and (b) scoping a documented
+# `#![allow(...)]` to the four binary entry points and `mcp_server::install`,
+# whose prints ARE the CLI's user interface and run before any subscriber
+# exists. Two further single-line allows sit on the Tauri-startup fatal (followed
+# by `process::exit`, which never flushes a subscriber) and the panic hook
+# (re-entering `tracing` there can deadlock). `clippy.toml` sets
+# `allow-print-in-tests = true`, so measurement harnesses in `#[cfg(test)]` are
+# exempt by configuration and need no attribute.
+print_stderr = "warn"
+print_stdout = "warn"
+
 # --- RATCHET: measured non-zero, enable when the count reaches 0 ------------
 # Counts are production / all-targets, from the run described above.
 # clone_on_ref_ptr      = "warn"   # 275 / 280  (271 of them in personas-desktop)
 # unwrap_used           = "warn"   #  94 /  94  (tests already exempt via clippy.toml)
 # expect_used           = "warn"   #  78 /  87
 # inefficient_to_string = "warn"   #  63 / 100
-# print_stderr          = "warn"   #  17 /  17  (logger.rs, mcp_bin.rs, main.rs — mostly pre-tracing startup paths)
 # large_futures         = "warn"   #  13 /  15
-# print_stdout          = "warn"   #  12 /  12  (mcp_server/install.rs + main.rs CLI output)
 # rc_buffer             = "warn"   #   1 /   1  (src/commands/obsidian_brain/graph.rs:112 — one line from live)
 
 [workspace.lints.rust]

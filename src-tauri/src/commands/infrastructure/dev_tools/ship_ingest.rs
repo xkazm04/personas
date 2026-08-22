@@ -353,30 +353,11 @@ fn runs_root(root: &Path) -> PathBuf {
         .fold(root.to_path_buf(), |p, seg| p.join(seg))
 }
 
-/// Newest run dir with a `result.json` and no `ingested.json`.
-fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
-    let mut candidates: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(runs_root(root))
-        .ok()?
-        .flatten()
-        .filter_map(|e| {
-            let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
-            {
-                return None;
-            }
-            let t = e.metadata().and_then(|m| m.modified()).ok()?;
-            Some((t, p))
-        })
-        .collect();
-    candidates.sort_by_key(|b| std::cmp::Reverse(b.0));
-    candidates.into_iter().map(|(_, p)| p).next()
-}
-
 /// Resolve the run dir, refusing anything outside the project's own runs tree.
 /// An arbitrary path would let a crafted call read foreign files.
 fn resolve_run_dir(root: &Path, run_dir: Option<String>) -> Result<PathBuf, AppError> {
     let Some(d) = run_dir else {
-        return find_ingestable_run(root).ok_or_else(|| {
+        return crate::commands::infrastructure::skill_runs::newest_ingestable_run(&runs_root(root)).ok_or_else(|| {
             AppError::Validation(
                 "No un-ingested run found under .personas/ship-milestone/runs/ — run /ship-milestone first"
                     .into(),

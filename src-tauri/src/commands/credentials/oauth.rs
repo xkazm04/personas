@@ -23,21 +23,10 @@ use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
 
+use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
 use std::sync::Arc;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const CLEANUP_THROTTLE: Duration = Duration::from_secs(30);

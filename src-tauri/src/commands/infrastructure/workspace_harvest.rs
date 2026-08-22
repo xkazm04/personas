@@ -328,34 +328,6 @@ pub(crate) fn prepare_harvest_core(
 
 // ── ingest ─────────────────────────────────────────────────────────────────
 
-/// EVERY un-ingested run, oldest first.
-///
-/// A scope fan-out puts several sessions in the same repo at once, so several
-/// run dirs land within seconds of each other. The previous "newest only"
-/// behaviour would import one and strand the rest until some later poll
-/// happened to pick them up — the fan-out's whole yield hanging on ingest
-/// order. Oldest-first so a partially-failing batch still advances.
-fn find_ingestable_runs(root: &Path) -> Vec<PathBuf> {
-    let runs = root.join("practice-harvest").join("runs");
-    let Ok(entries) = std::fs::read_dir(&runs) else {
-        return Vec::new();
-    };
-    let mut candidates: Vec<(std::time::SystemTime, PathBuf)> = entries
-        .flatten()
-        .filter_map(|e| {
-            let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
-            {
-                return None;
-            }
-            let t = e.metadata().and_then(|m| m.modified()).ok()?;
-            Some((t, p))
-        })
-        .collect();
-    candidates.sort_by_key(|a| a.0);
-    candidates.into_iter().map(|(_, p)| p).collect()
-}
-
 /// Ingest finished harvest run(s) into the workspace library.
 ///
 /// `run_dir` optional — when omitted EVERY un-ingested run is imported, not
@@ -411,7 +383,9 @@ pub(crate) fn ingest_harvest_runs_core(
             vec![canon]
         }
         None => {
-            let found = find_ingestable_runs(&root);
+            let found = crate::commands::infrastructure::skill_runs::ingestable_runs_oldest_first(
+                &root.join("practice-harvest").join("runs"),
+            );
             if found.is_empty() {
                 return Err(AppError::Validation(
                     "No un-ingested harvest run found under practice-harvest/runs/ — run the harvest first"

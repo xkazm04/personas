@@ -42,6 +42,7 @@ pub mod setup;
 pub mod skill_files;
 pub mod skill_lessons;
 pub mod skill_registry_export;
+pub mod skill_runs;
 pub mod skill_usage;
 pub mod standards_scan;
 pub mod static_scan;
