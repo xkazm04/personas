@@ -4,6 +4,28 @@ use crate::models::GitLabDeploymentRecord;
 use crate::DbPool;
 use personas_core::error::AppError;
 
+/// One projection for every read in this module, so the SELECT and the mapper
+/// cannot drift apart. Column order here is cosmetic — `row_to_record` binds by
+/// NAME — but it is kept in `CREATE TABLE` order (`migrations/initial.rs:107`)
+/// so the two read alike.
+const COLUMNS: &str = "id, persona_id, persona_name, project_id, method,                        credentials_provisioned, deploy_result, agent_id, web_url,                        snapshot_prompt, rolled_back_from, target, created_at";
+
+row_mapper!(row_to_record -> GitLabDeploymentRecord {
+    id,
+    persona_id,
+    persona_name,
+    project_id,
+    method,
+    credentials_provisioned,
+    deploy_result,
+    agent_id,
+    web_url,
+    snapshot_prompt,
+    rolled_back_from,
+    target,
+    created_at,
+});
+
 /// Insert a deployment history record.
 #[allow(clippy::too_many_arguments)]
 pub fn insert(
@@ -62,33 +84,14 @@ pub fn list_by_persona_project(
         "deployment_history::list_by_persona_project",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT id, persona_id, persona_name, project_id, method,
-                    credentials_provisioned, deploy_result, agent_id, web_url,
-                    snapshot_prompt, rolled_back_from, target, created_at
-             FROM deployment_history
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {COLUMNS} FROM deployment_history
              WHERE persona_id = ?1 AND project_id = ?2
              ORDER BY created_at DESC
              LIMIT ?3",
-            )?;
+            ))?;
             let rows = stmt
-                .query_map(params![persona_id, project_id, limit], |row| {
-                    Ok(GitLabDeploymentRecord {
-                        id: row.get(0)?,
-                        persona_id: row.get(1)?,
-                        persona_name: row.get(2)?,
-                        project_id: row.get(3)?,
-                        method: row.get(4)?,
-                        credentials_provisioned: row.get(5)?,
-                        deploy_result: row.get(6)?,
-                        agent_id: row.get(7)?,
-                        web_url: row.get(8)?,
-                        snapshot_prompt: row.get(9)?,
-                        rolled_back_from: row.get(10)?,
-                        target: row.get(11)?,
-                        created_at: row.get(12)?,
-                    })
-                })?
+                .query_map(params![persona_id, project_id, limit], row_to_record)?
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(rows)
         }
@@ -106,33 +109,14 @@ pub fn list_by_project(
         "deployment_history::list_by_project",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT id, persona_id, persona_name, project_id, method,
-                    credentials_provisioned, deploy_result, agent_id, web_url,
-                    snapshot_prompt, rolled_back_from, target, created_at
-             FROM deployment_history
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {COLUMNS} FROM deployment_history
              WHERE project_id = ?1
              ORDER BY created_at DESC
              LIMIT ?2",
-            )?;
+            ))?;
             let rows = stmt
-                .query_map(params![project_id, limit], |row| {
-                    Ok(GitLabDeploymentRecord {
-                        id: row.get(0)?,
-                        persona_id: row.get(1)?,
-                        persona_name: row.get(2)?,
-                        project_id: row.get(3)?,
-                        method: row.get(4)?,
-                        credentials_provisioned: row.get(5)?,
-                        deploy_result: row.get(6)?,
-                        agent_id: row.get(7)?,
-                        web_url: row.get(8)?,
-                        snapshot_prompt: row.get(9)?,
-                        rolled_back_from: row.get(10)?,
-                        target: row.get(11)?,
-                        created_at: row.get(12)?,
-                    })
-                })?
+                .query_map(params![project_id, limit], row_to_record)?
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(rows)
         }
@@ -151,33 +135,15 @@ pub fn get_previous_deployment(
         "deployment_history::get_previous_deployment",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT id, persona_id, persona_name, project_id, method,
-                    credentials_provisioned, deploy_result, agent_id, web_url,
-                    snapshot_prompt, rolled_back_from, target, created_at
-             FROM deployment_history
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {COLUMNS} FROM deployment_history
              WHERE persona_id = ?1 AND project_id = ?2 AND id != ?3
                    AND deploy_result = 'success'
              ORDER BY created_at DESC
              LIMIT 1",
-            )?;
-            let mut rows = stmt.query_map(params![persona_id, project_id, exclude_id], |row| {
-                Ok(GitLabDeploymentRecord {
-                    id: row.get(0)?,
-                    persona_id: row.get(1)?,
-                    persona_name: row.get(2)?,
-                    project_id: row.get(3)?,
-                    method: row.get(4)?,
-                    credentials_provisioned: row.get(5)?,
-                    deploy_result: row.get(6)?,
-                    agent_id: row.get(7)?,
-                    web_url: row.get(8)?,
-                    snapshot_prompt: row.get(9)?,
-                    rolled_back_from: row.get(10)?,
-                    target: row.get(11)?,
-                    created_at: row.get(12)?,
-                })
-            })?;
+            ))?;
+            let mut rows =
+                stmt.query_map(params![persona_id, project_id, exclude_id], row_to_record)?;
             match rows.next() {
                 Some(Ok(record)) => Ok(Some(record)),
                 Some(Err(e)) => Err(AppError::Database(e)),
@@ -259,32 +225,13 @@ mod tests {
 pub fn list_all(pool: &DbPool, limit: u32) -> Result<Vec<GitLabDeploymentRecord>, AppError> {
     timed_query!("deployment_history", "deployment_history::list_all", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, persona_id, persona_name, project_id, method,
-                    credentials_provisioned, deploy_result, agent_id, web_url,
-                    snapshot_prompt, rolled_back_from, target, created_at
-             FROM deployment_history
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM deployment_history
              ORDER BY created_at DESC
              LIMIT ?1",
-        )?;
+        ))?;
         let rows = stmt
-            .query_map(params![limit], |row| {
-                Ok(GitLabDeploymentRecord {
-                    id: row.get(0)?,
-                    persona_id: row.get(1)?,
-                    persona_name: row.get(2)?,
-                    project_id: row.get(3)?,
-                    method: row.get(4)?,
-                    credentials_provisioned: row.get(5)?,
-                    deploy_result: row.get(6)?,
-                    agent_id: row.get(7)?,
-                    web_url: row.get(8)?,
-                    snapshot_prompt: row.get(9)?,
-                    rolled_back_from: row.get(10)?,
-                    target: row.get(11)?,
-                    created_at: row.get(12)?,
-                })
-            })?
+            .query_map(params![limit], row_to_record)?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     })

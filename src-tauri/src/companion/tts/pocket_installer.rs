@@ -88,6 +88,15 @@ async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
         })?;
     }
 
+    // Not `SHARED_HTTP`: a model/engine archive needs the 20-minute
+    // `DOWNLOAD_TIMEOUT`, not 30 s. The URL is built from compile-time literals
+    // (`ENGINE_ARCHIVE_URL` / `MODEL_ARCHIVE_URL`) plus a curated id, so nothing user-supplied reaches the
+    // authority and the SSRF-safe resolver would add nothing. This is one of
+    // FOUR byte-for-byte identical download clients (stt/downloader.rs,
+    // stt/installer.rs, tts/kokoro_installer.rs, tts/pocket_installer.rs) — the
+    // right home for them is the `ClientProfile` factory named in
+    // `outbound-http-call.md` §8 Gap 1, not a fifth fixed constant beside
+    // `SHARED_HTTP`.
     let client = reqwest::Client::builder()
         .timeout(DOWNLOAD_TIMEOUT)
         .build()

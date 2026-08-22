@@ -182,6 +182,10 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         // 300s: reasoning models (LFM2.5-class) burn minutes thinking before
         // the first byte of a non-streamed response; with stream:false the
         // headers arrive only after the FULL generation.
+        // Deliberately NOT an SSRF-safe client: `base` is the configured local
+        // delegate (an Ollama/LM-Studio-shaped server, normally on loopback),
+        // so a private-IP-rejecting resolver would reject every call this tool
+        // exists to make.
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(300))
             .build()
@@ -691,7 +695,15 @@ fn scrape_bridge(path: &str, body: &Value) -> Result<String, String> {
         .build()
         .map_err(|e| format!("runtime build failed: {e}"))?;
     rt.block_on(async move {
-        let client = reqwest::Client::new();
+        // `SHARED_HTTP`: the host is this process's own management server
+        // (`PERSONAS_BRIDGE_URL`, default `http://127.0.0.1:9420`), so the
+        // SSRF-safe resolver would reject the very loopback target this call
+        // needs. What the bare `reqwest::Client::new()` here dropped was the
+        // TIME BOUND: this runs inside `rt.block_on` on a CURRENT-THREAD
+        // runtime, so a hung bridge blocked this MCP tool forever with no
+        // cancel. `SHARED_HTTP`'s 30 s deadline ends it. The credential rides
+        // in `Authorization`, which the client strips across a host change.
+        let client = crate::SHARED_HTTP.clone();
         let resp = client
             .post(&endpoint)
             .bearer_auth(&api_key)
@@ -1528,7 +1540,12 @@ fn bridge_proxy(credential_id: &str, method: &str, path: &str) -> Result<String,
         .build()
         .map_err(|e| format!("runtime build failed: {e}"))?;
     rt.block_on(async move {
-        let client = reqwest::Client::new();
+        // `SHARED_HTTP`: same reasoning as `scrape_bridge` above — the host is
+        // this process's own management server on loopback, so an SSRF-safe
+        // resolver would reject it; the bare `reqwest::Client::new()` this
+        // replaced had NO time bound at all inside a current-thread
+        // `block_on`, which is the actual defect.
+        let client = crate::SHARED_HTTP.clone();
         let resp = client
             .post(&url)
             .bearer_auth(&api_key)

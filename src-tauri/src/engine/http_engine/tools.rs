@@ -35,6 +35,10 @@ pub(super) async fn run_tool_loop(
     start_time: Instant,
 ) -> ExecutionResult {
     let url = format!("{base_url}/chat/completions");
+    // Same deliberate choice as `openai.rs`: `base_url` is the user's BYOM
+    // endpoint and is expected to be able to be a LOCAL inference server, so
+    // the SSRF-safe resolver is not applicable here; 600 s is the tool loop's
+    // real deadline.
     let client = match Client::builder()
         .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
         .build()

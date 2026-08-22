@@ -258,6 +258,9 @@ enum FetchOutcome {
 }
 
 async fn fetch_from_network(cached: Option<&CachedRoadmap>) -> Result<FetchOutcome, String> {
+    // Not `SHARED_HTTP`: this is the only client in the tree with a
+    // `connect_timeout`, and it wants both bounds at 5 s so a roadmap fetch
+    // never delays a paint. `ROADMAP_URL` is a compile-time literal.
     let client = reqwest::Client::builder()
         .connect_timeout(REQUEST_TIMEOUT)
         .timeout(REQUEST_TIMEOUT)

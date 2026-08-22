@@ -91,6 +91,14 @@ pub(super) async fn run_streaming(
         }),
     };
 
+    // Deliberately NOT `SSRF_SAFE_HTTP`. `base_url` comes from the persona's
+    // model profile — a user-supplied BYOM endpoint — and pointing it at a
+    // LOCAL inference server (`http://127.0.0.1:11434`, LM Studio, vLLM) is the
+    // headline use case, which an SSRF-safe resolver would refuse outright.
+    // The 600 s deadline is likewise load-bearing: a local reasoning model can
+    // burn minutes before the first byte. What this client accepts as the price
+    // is the system resolver and reqwest's ten-hop redirect follow; the API key
+    // travels in `Authorization`, which is stripped on a host change.
     let client = match Client::builder()
         .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
         .build()

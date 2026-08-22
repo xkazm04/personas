@@ -31,29 +31,60 @@ fn parse_enum_column<E: FromStr<Err = String>>(
     })
 }
 
+/// One projection per table, so a SELECT and its mapper cannot drift apart.
+/// Mirrors `CREATE TABLE alert_rules` / `fired_alerts` at
+/// `migrations/initial.rs:133` and `:147`.
+const RULE_COLUMNS: &str = "id, name, metric, operator, threshold, severity, \
+                            persona_id, enabled, created_at, updated_at";
+
+const FIRED_COLUMNS: &str = "id, rule_id, rule_name, metric, severity, message, value, \
+                             threshold, persona_id, fired_at, dismissed";
+
+/// Hand-written rather than `row_mapper!`-generated: three columns go through
+/// [`parse_enum_column`], which the macro has no annotation for. Every read is
+/// still by NAME.
+fn row_to_alert_rule(row: &rusqlite::Row) -> rusqlite::Result<AlertRule> {
+    Ok(AlertRule {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        metric: parse_enum_column::<AlertMetric>(row.get("metric")?, "metric")?,
+        operator: parse_enum_column::<AlertOperator>(row.get("operator")?, "operator")?,
+        threshold: row.get("threshold")?,
+        severity: parse_enum_column::<AlertSeverity>(row.get("severity")?, "severity")?,
+        persona_id: row.get("persona_id")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+fn row_to_fired_alert(row: &rusqlite::Row) -> rusqlite::Result<FiredAlert> {
+    Ok(FiredAlert {
+        id: row.get("id")?,
+        rule_id: row.get("rule_id")?,
+        rule_name: row.get("rule_name")?,
+        metric: parse_enum_column::<AlertMetric>(row.get("metric")?, "fired_alerts.metric")?,
+        severity: parse_enum_column::<AlertSeverity>(
+            row.get("severity")?,
+            "fired_alerts.severity",
+        )?,
+        message: row.get("message")?,
+        value: row.get("value")?,
+        threshold: row.get("threshold")?,
+        persona_id: row.get("persona_id")?,
+        fired_at: row.get("fired_at")?,
+        dismissed: row.get::<_, i32>("dismissed")? != 0,
+    })
+}
+
 /// List all alert rules, ordered by creation date.
 pub fn list_alert_rules(db: &DbPool) -> Result<Vec<AlertRule>, AppError> {
     timed_query!("alert_rules", "alert_rules::list_alert_rules", {
         let conn = db.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, name, metric, operator, threshold, severity, persona_id, enabled, created_at, updated_at
-             FROM alert_rules
-             ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map([], |row| {
-            Ok(AlertRule {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                metric: parse_enum_column::<AlertMetric>(row.get(2)?, "metric")?,
-                operator: parse_enum_column::<AlertOperator>(row.get(3)?, "operator")?,
-                threshold: row.get(4)?,
-                severity: parse_enum_column::<AlertSeverity>(row.get(5)?, "severity")?,
-                persona_id: row.get(6)?,
-                enabled: row.get::<_, i32>(7)? != 0,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
-        })?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {RULE_COLUMNS} FROM alert_rules ORDER BY created_at DESC"
+        ))?;
+        let rows = stmt.query_map([], row_to_alert_rule)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     })
 }
@@ -171,23 +202,9 @@ pub fn get_alert_rule(db: &DbPool, id: &str) -> Result<AlertRule, AppError> {
     timed_query!("alert_rules", "alert_rules::get_alert_rule", {
         let conn = db.get()?;
         conn.query_row(
-            "SELECT id, name, metric, operator, threshold, severity, persona_id, enabled, created_at, updated_at
-             FROM alert_rules WHERE id = ?1",
+            &format!("SELECT {RULE_COLUMNS} FROM alert_rules WHERE id = ?1"),
             [id],
-            |row| {
-                Ok(AlertRule {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    metric: parse_enum_column::<AlertMetric>(row.get(2)?, "metric")?,
-                    operator: parse_enum_column::<AlertOperator>(row.get(3)?, "operator")?,
-                    threshold: row.get(4)?,
-                    severity: parse_enum_column::<AlertSeverity>(row.get(5)?, "severity")?,
-                    persona_id: row.get(6)?,
-                    enabled: row.get::<_, i32>(7)? != 0,
-                    created_at: row.get(8)?,
-                    updated_at: row.get(9)?,
-                })
-            },
+            row_to_alert_rule,
         )
         .map_err(|e| match e {
             rusqlite::Error::QueryReturnedNoRows => {
@@ -235,27 +252,10 @@ pub fn list_fired_alerts(db: &DbPool, limit: Option<i64>) -> Result<Vec<FiredAle
     timed_query!("alert_rules", "alert_rules::list_fired_alerts", {
         let conn = db.get()?;
         let max = limit.unwrap_or(200).clamp(1, 1000);
-        let mut stmt = conn.prepare(
-            "SELECT id, rule_id, rule_name, metric, severity, message, value, threshold, persona_id, fired_at, dismissed
-             FROM fired_alerts
-             ORDER BY fired_at DESC
-             LIMIT ?1",
-        )?;
-        let rows = stmt.query_map([max], |row| {
-            Ok(FiredAlert {
-                id: row.get(0)?,
-                rule_id: row.get(1)?,
-                rule_name: row.get(2)?,
-                metric: parse_enum_column::<AlertMetric>(row.get(3)?, "fired_alerts.metric")?,
-                severity: parse_enum_column::<AlertSeverity>(row.get(4)?, "fired_alerts.severity")?,
-                message: row.get(5)?,
-                value: row.get(6)?,
-                threshold: row.get(7)?,
-                persona_id: row.get(8)?,
-                fired_at: row.get(9)?,
-                dismissed: row.get::<_, i32>(10)? != 0,
-            })
-        })?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {FIRED_COLUMNS} FROM fired_alerts ORDER BY fired_at DESC LIMIT ?1"
+        ))?;
+        let rows = stmt.query_map([max], row_to_fired_alert)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     })
 }

@@ -156,6 +156,11 @@ pub async fn dispatch_capability_public(
 // Shared helpers
 // ============================================================================
 
+/// Not `SHARED_HTTP`: 20 s, not 30 s, is the budget a companion job is allowed
+/// to spend on one connector call. Every host in this module is a compile-time
+/// literal (`sentry.io`, `api.github.com`, `slack.com`, `gmail.googleapis.com`,
+/// `discord.com`, `api.notion.com`, `api.elevenlabs.io`); the credential
+/// supplies the token, never the host.
 fn http_client() -> Result<reqwest::Client, AppError> {
     reqwest::Client::builder()
         .timeout(HTTP_TIMEOUT)

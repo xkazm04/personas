@@ -50,7 +50,7 @@ const HIGGSFIELD_MODEL: &str = "flux-pro/kontext/max";
 
 /// Async-job polling budget: at most `POLL_ATTEMPTS` polls, `POLL_INTERVAL`
 /// apart. This bounds the *number* of polls but not wall-clock time — each poll
-/// request can itself take up to `HTTP_TIMEOUT`, so 40 slow polls could run far
+/// request can itself take up to `SHARED_HTTP`'s 30 s, so 40 slow polls could run far
 /// past 2 minutes. `POLL_DEADLINE` is the real bound: the loop aborts with a
 /// clean "timed out" error once total elapsed wall-clock crosses it, whichever
 /// comes first. Kept below the 150s frontend IPC timeout so the backend, not the
@@ -58,9 +58,6 @@ const HIGGSFIELD_MODEL: &str = "flux-pro/kontext/max";
 const POLL_ATTEMPTS: u32 = 40;
 const POLL_INTERVAL: Duration = Duration::from_secs(3);
 const POLL_DEADLINE: Duration = Duration::from_secs(120);
-
-/// Per-request HTTP timeout.
-const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Spend-ledger coordinates for persona-icon generations. Rows land in the
 /// shared `dev_llm_spend` ledger under this `source`/`trigger_kind` (token
@@ -178,10 +175,11 @@ pub async fn generate_persona_icon(
     }
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
 
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client: {e}")))?;
+    // `SHARED_HTTP` — 30 s, which is exactly what the hand-rolled client here
+    // asked for. Both image hosts are compile-time literals inside
+    // `leonardo_generate` / `higgsfield_generate`; the credential supplies only
+    // the API key, never the host, so the SSRF-safe resolver would buy nothing.
+    let client = crate::SHARED_HTTP.clone();
 
     let (image_bytes, cost_usd) = match credential.service_type.as_str() {
         "leonardo_ai" => leonardo_generate(&client, &fields, prompt).await?,

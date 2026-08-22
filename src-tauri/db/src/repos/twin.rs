@@ -8,6 +8,50 @@ use crate::DbPool;
 use personas_core::error::AppError;
 
 // ============================================================================
+// Projections
+//
+// One `const` per table so every read declares the column set it depends on.
+// `SELECT *` left that set to whatever `CREATE TABLE` happened to say at
+// runtime -- including columns added later by `ALTER TABLE`
+// (`twin_profiles.knowledge_base_id` / `.training_directives` at
+// `migrations/incremental/c01_plugin_tables.rs:507,519` and
+// `twin_pending_memories.source_communication_id` at
+// `migrations/incremental/e05_twin_and_memory_review.rs:505`), which is exactly
+// the drift a wildcard cannot show at the call site. Every mapper in this file
+// already binds by NAME, so these consts pin the FETCH, not the mapping.
+// ============================================================================
+
+const PROFILE_COLUMNS: &str =
+    "id, name, slug, bio, role, languages, pronouns, obsidian_subpath, is_active, \
+     knowledge_base_id, training_directives, created_at, updated_at";
+
+const TONE_COLUMNS: &str =
+    "id, twin_id, channel, voice_directives, examples_json, constraints_json, \
+     length_hint, updated_at";
+
+const PENDING_MEMORY_COLUMNS: &str =
+    "id, twin_id, channel, content, title, importance, status, reviewer_notes, \
+     source_communication_id, created_at, reviewed_at";
+
+const COMMUNICATION_COLUMNS: &str =
+    "id, twin_id, channel, direction, contact_handle, content, summary, \
+     key_facts_json, occurred_at, created_at";
+
+const VOICE_PROFILE_COLUMNS: &str =
+    "id, twin_id, provider, credential_id, voice_id, model_id, stability, \
+     similarity_boost, style, updated_at";
+
+const CHANNEL_COLUMNS: &str =
+    "id, twin_id, channel_type, credential_id, persona_id, label, is_active, \
+     created_at, updated_at";
+
+const REFLECTION_COLUMNS: &str = "id, twin_id, prompt_seed, content, created_at";
+
+const DISTILLED_FACT_COLUMNS: &str =
+    "id, twin_id, contact_handle, content, importance, sources_json, \
+     created_at, last_seen_at";
+
+// ============================================================================
 // Row mapper
 // ============================================================================
 
@@ -80,9 +124,9 @@ pub fn unique_slug_on(conn: &rusqlite::Connection, base: &str) -> Result<String,
     loop {
         let exists: i32 = conn
             .query_row(
-                "SELECT COUNT(*) FROM twin_profiles WHERE slug = ?1",
+                "SELECT COUNT(*) AS n FROM twin_profiles WHERE slug = ?1",
                 params![candidate],
-                |row| row.get(0),
+                |row| row.get("n"),
             )
             .unwrap_or(0);
         if exists == 0 {
@@ -99,8 +143,9 @@ pub fn unique_slug_on(conn: &rusqlite::Connection, base: &str) -> Result<String,
 
 pub fn list_profiles(pool: &DbPool) -> Result<Vec<TwinProfile>, AppError> {
     let conn = pool.get()?;
-    let mut stmt =
-        conn.prepare("SELECT * FROM twin_profiles ORDER BY is_active DESC, updated_at DESC")?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {PROFILE_COLUMNS} FROM twin_profiles ORDER BY is_active DESC, updated_at DESC"
+    ))?;
     let rows = stmt.query_map([], row_to_twin_profile)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
@@ -109,7 +154,7 @@ pub fn list_profiles(pool: &DbPool) -> Result<Vec<TwinProfile>, AppError> {
 pub fn get_profile_by_id(pool: &DbPool, id: &str) -> Result<TwinProfile, AppError> {
     let conn = pool.get()?;
     conn.query_row(
-        "SELECT * FROM twin_profiles WHERE id = ?1",
+        &format!("SELECT {PROFILE_COLUMNS} FROM twin_profiles WHERE id = ?1"),
         params![id],
         row_to_twin_profile,
     )
@@ -122,7 +167,7 @@ pub fn get_profile_by_id(pool: &DbPool, id: &str) -> Result<TwinProfile, AppErro
 pub fn get_active_profile(pool: &DbPool) -> Result<Option<TwinProfile>, AppError> {
     let conn = pool.get()?;
     let result = conn.query_row(
-        "SELECT * FROM twin_profiles WHERE is_active = 1 LIMIT 1",
+        &format!("SELECT {PROFILE_COLUMNS} FROM twin_profiles WHERE is_active = 1 LIMIT 1"),
         [],
         row_to_twin_profile,
     );
@@ -153,7 +198,9 @@ pub fn create_profile(
     // First twin auto-activates so the connector has something to resolve.
     let conn = pool.get()?;
     let existing_count: i32 = conn
-        .query_row("SELECT COUNT(*) FROM twin_profiles", [], |row| row.get(0))
+        .query_row("SELECT COUNT(*) AS n FROM twin_profiles", [], |row| {
+            row.get("n")
+        })
         .unwrap_or(0);
     let is_active = if existing_count == 0 { 1 } else { 0 };
 
@@ -305,7 +352,9 @@ fn row_to_tone(row: &Row) -> rusqlite::Result<TwinTone> {
 /// List all tone profiles for a twin, ordered by channel name.
 pub fn list_tones(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinTone>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT * FROM twin_tones WHERE twin_id = ?1 ORDER BY channel")?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 ORDER BY channel"
+    ))?;
     let rows = stmt.query_map(params![twin_id], row_to_tone)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
@@ -317,7 +366,7 @@ pub fn get_tone(pool: &DbPool, twin_id: &str, channel: &str) -> Result<TwinTone,
     let conn = pool.get()?;
     // Try exact channel first
     let result = conn.query_row(
-        "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = ?2",
+        &format!("SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 AND channel = ?2"),
         params![twin_id, channel],
         row_to_tone,
     );
@@ -326,7 +375,9 @@ pub fn get_tone(pool: &DbPool, twin_id: &str, channel: &str) -> Result<TwinTone,
         Err(rusqlite::Error::QueryReturnedNoRows) if channel != "generic" => {
             // Fallback to generic
             conn.query_row(
-                "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = 'generic'",
+                &format!(
+    "SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 AND channel = 'generic'"
+),
                 params![twin_id],
                 row_to_tone,
             )
@@ -378,7 +429,7 @@ pub fn upsert_tone(
     let conn2 = pool.get()?;
     conn2
         .query_row(
-            "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = ?2",
+            &format!("SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 AND channel = ?2"),
             params![twin_id, channel],
             row_to_tone,
         )
@@ -457,14 +508,18 @@ pub fn list_pending_memories(
     let conn = pool.get()?;
     if let Some(s) = status {
         let mut stmt = conn.prepare(
-            "SELECT * FROM twin_pending_memories WHERE twin_id = ?1 AND status = ?2 ORDER BY created_at DESC",
+            &format!(
+    "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 AND status = ?2 ORDER BY created_at DESC"
+),
         )?;
         let rows = stmt.query_map(params![twin_id, s], row_to_pending_memory)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     } else {
         let mut stmt = conn.prepare(
-            "SELECT * FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC",
+            &format!(
+    "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC"
+),
         )?;
         let rows = stmt.query_map(params![twin_id], row_to_pending_memory)?;
         rows.collect::<Result<Vec<_>, _>>()
@@ -491,7 +546,7 @@ pub fn create_pending_memory(
         params![id, twin_id, channel, content, title, importance, source_communication_id, now],
     )?;
     conn.query_row(
-        "SELECT * FROM twin_pending_memories WHERE id = ?1",
+        &format!("SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE id = ?1"),
         params![id],
         row_to_pending_memory,
     )
@@ -517,7 +572,7 @@ pub fn review_pending_memory(
         )));
     }
     conn.query_row(
-        "SELECT * FROM twin_pending_memories WHERE id = ?1",
+        &format!("SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE id = ?1"),
         params![id],
         row_to_pending_memory,
     )
@@ -552,14 +607,18 @@ pub fn list_communications(
     let conn = pool.get()?;
     if let Some(ch) = channel {
         let mut stmt = conn.prepare(
-            "SELECT * FROM twin_communications WHERE twin_id = ?1 AND channel = ?2 ORDER BY occurred_at DESC LIMIT ?3",
+            &format!(
+    "SELECT {COMMUNICATION_COLUMNS} FROM twin_communications WHERE twin_id = ?1 AND channel = ?2 ORDER BY occurred_at DESC LIMIT ?3"
+),
         )?;
         let rows = stmt.query_map(params![twin_id, ch, limit], row_to_communication)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     } else {
         let mut stmt = conn.prepare(
-            "SELECT * FROM twin_communications WHERE twin_id = ?1 ORDER BY occurred_at DESC LIMIT ?2",
+            &format!(
+    "SELECT {COMMUNICATION_COLUMNS} FROM twin_communications WHERE twin_id = ?1 ORDER BY occurred_at DESC LIMIT ?2"
+),
         )?;
         let rows = stmt.query_map(params![twin_id, limit], row_to_communication)?;
         rows.collect::<Result<Vec<_>, _>>()
@@ -579,11 +638,11 @@ pub fn list_communications_by_contact(
 ) -> Result<Vec<TwinCommunication>, AppError> {
     let conn = pool.get()?;
     if let Some(handle) = contact_handle {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM twin_communications \
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COMMUNICATION_COLUMNS} FROM twin_communications \
              WHERE twin_id = ?1 AND contact_handle = ?2 \
-             ORDER BY occurred_at DESC LIMIT ?3",
-        )?;
+             ORDER BY occurred_at DESC LIMIT ?3"
+        ))?;
         let rows = stmt.query_map(params![twin_id, handle, limit], row_to_communication)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -641,7 +700,7 @@ pub fn record_interaction(
     }
 
     conn.query_row(
-        "SELECT * FROM twin_communications WHERE id = ?1",
+        &format!("SELECT {COMMUNICATION_COLUMNS} FROM twin_communications WHERE id = ?1"),
         params![id],
         row_to_communication,
     )
@@ -673,7 +732,7 @@ pub fn get_voice_profile(
 ) -> Result<Option<TwinVoiceProfile>, AppError> {
     let conn = pool.get()?;
     let result = conn.query_row(
-        "SELECT * FROM twin_voice_profiles WHERE twin_id = ?1",
+        &format!("SELECT {VOICE_PROFILE_COLUMNS} FROM twin_voice_profiles WHERE twin_id = ?1"),
         params![twin_id],
         row_to_voice_profile,
     );
@@ -753,7 +812,9 @@ fn row_to_channel(row: &Row) -> rusqlite::Result<TwinChannel> {
 pub fn list_channels(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinChannel>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT * FROM twin_channels WHERE twin_id = ?1 ORDER BY is_active DESC, channel_type",
+        &format!(
+    "SELECT {CHANNEL_COLUMNS} FROM twin_channels WHERE twin_id = ?1 ORDER BY is_active DESC, channel_type"
+),
     )?;
     let rows = stmt.query_map(params![twin_id], row_to_channel)?;
     rows.collect::<Result<Vec<_>, _>>()
@@ -778,7 +839,7 @@ pub fn create_channel(
         params![id, twin_id, channel_type, credential_id, persona_id, label, now],
     )?;
     conn.query_row(
-        "SELECT * FROM twin_channels WHERE id = ?1",
+        &format!("SELECT {CHANNEL_COLUMNS} FROM twin_channels WHERE id = ?1"),
         params![id],
         row_to_channel,
     )
@@ -829,7 +890,7 @@ pub fn update_channel(
     conn.execute(&sql, params_ref.as_slice())?;
 
     conn.query_row(
-        "SELECT * FROM twin_channels WHERE id = ?1",
+        &format!("SELECT {CHANNEL_COLUMNS} FROM twin_channels WHERE id = ?1"),
         params![id],
         row_to_channel,
     )
@@ -962,8 +1023,9 @@ fn row_to_reflection(row: &Row) -> rusqlite::Result<TwinReflection> {
 
 pub fn list_reflections(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinReflection>, AppError> {
     let conn = pool.get()?;
-    let mut stmt =
-        conn.prepare("SELECT * FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC")?;
+    let mut stmt = conn.prepare(&format!(
+    "SELECT {REFLECTION_COLUMNS} FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC"
+))?;
     let rows = stmt.query_map(params![twin_id], row_to_reflection)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
@@ -984,7 +1046,7 @@ pub fn create_reflection(
         params![id, twin_id, prompt_seed, content, now],
     )?;
     conn.query_row(
-        "SELECT * FROM twin_reflections WHERE id = ?1",
+        &format!("SELECT {REFLECTION_COLUMNS} FROM twin_reflections WHERE id = ?1"),
         params![id],
         row_to_reflection,
     )
@@ -1021,20 +1083,20 @@ pub fn list_distilled_facts(
 ) -> Result<Vec<TwinDistilledFact>, AppError> {
     let conn = pool.get()?;
     if let Some(handle) = contact_handle {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM twin_distilled_facts \
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {DISTILLED_FACT_COLUMNS} FROM twin_distilled_facts \
              WHERE twin_id = ?1 AND contact_handle = ?2 \
-             ORDER BY importance DESC, last_seen_at DESC",
-        )?;
+             ORDER BY importance DESC, last_seen_at DESC"
+        ))?;
         let rows = stmt.query_map(params![twin_id, handle], row_to_distilled_fact)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     } else {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM twin_distilled_facts \
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {DISTILLED_FACT_COLUMNS} FROM twin_distilled_facts \
              WHERE twin_id = ?1 \
-             ORDER BY importance DESC, last_seen_at DESC",
-        )?;
+             ORDER BY importance DESC, last_seen_at DESC"
+        ))?;
         let rows = stmt.query_map(params![twin_id], row_to_distilled_fact)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1085,7 +1147,7 @@ pub fn create_distilled_fact(
         ],
     )?;
     conn.query_row(
-        "SELECT * FROM twin_distilled_facts WHERE id = ?1",
+        &format!("SELECT {DISTILLED_FACT_COLUMNS} FROM twin_distilled_facts WHERE id = ?1"),
         params![id],
         row_to_distilled_fact,
     )
@@ -1114,15 +1176,19 @@ pub fn top_distilled_facts_for_recall(
         // Include both contact-scoped facts AND self-facts (NULL contact_handle).
         // Self-facts about the twin's voice/preferences are always relevant
         // even when recall is filtered to a specific contact.
-        "SELECT * FROM twin_distilled_facts \
+        &format!(
+            "SELECT {DISTILLED_FACT_COLUMNS} FROM twin_distilled_facts \
          WHERE twin_id = ?1 AND (contact_handle = ?2 OR contact_handle IS NULL) \
          ORDER BY importance DESC, last_seen_at DESC \
          LIMIT ?3"
+        )
     } else {
-        "SELECT * FROM twin_distilled_facts \
+        &format!(
+            "SELECT {DISTILLED_FACT_COLUMNS} FROM twin_distilled_facts \
          WHERE twin_id = ?1 \
          ORDER BY importance DESC, last_seen_at DESC \
          LIMIT ?3"
+        )
     };
     let mut stmt = conn.prepare(sql)?;
     let rows = if let Some(handle) = contact_handle {
@@ -1170,7 +1236,7 @@ pub fn get_tone_optional(
 ) -> Result<Option<TwinTone>, AppError> {
     let conn = pool.get()?;
     let result = conn.query_row(
-        "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = ?2",
+        &format!("SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 AND channel = ?2"),
         params![twin_id, channel],
         row_to_tone,
     );
@@ -1184,6 +1250,32 @@ pub fn get_tone_optional(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every projection const must name columns that actually exist on a
+    /// migrated database. This is the check the compiler cannot make: a
+    /// mistyped or renamed column in a `const *_COLUMNS` string is a runtime
+    /// `prepare` failure, and the `SELECT *` these replaced could never fail
+    /// that way. Preparing each one against a real migrated schema is what
+    /// makes the wildcard removal safe rather than merely tidy.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for (columns, table) in [
+            (PROFILE_COLUMNS, "twin_profiles"),
+            (TONE_COLUMNS, "twin_tones"),
+            (PENDING_MEMORY_COLUMNS, "twin_pending_memories"),
+            (COMMUNICATION_COLUMNS, "twin_communications"),
+            (VOICE_PROFILE_COLUMNS, "twin_voice_profiles"),
+            (CHANNEL_COLUMNS, "twin_channels"),
+            (REFLECTION_COLUMNS, "twin_reflections"),
+            (DISTILLED_FACT_COLUMNS, "twin_distilled_facts"),
+        ] {
+            let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
+            conn.prepare(&sql)
+                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
+        }
+    }
 
     #[test]
     fn slugify_basic() {

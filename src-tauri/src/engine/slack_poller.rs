@@ -923,6 +923,10 @@ fn page_min_ts(msgs: &[SlackMessage]) -> Option<String> {
 /// One shared connection-pooled client for the whole poller. Building a fresh
 /// Client per poll/reply (on a 5-second loop) re-established TLS connections
 /// and threw away the pool every tick.
+///
+/// Not `SHARED_HTTP`: a 5-second poll loop wants an 8 s deadline, not 30 s.
+/// The host is the compile-time literal `slack.com` and the bot token rides in
+/// `Authorization`, which reqwest strips across a host change.
 fn shared_http_client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     CLIENT.get_or_init(|| {

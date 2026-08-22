@@ -252,6 +252,11 @@ struct VoicesResponse {
     voices: Vec<PocketVoiceEntry>,
 }
 
+/// Deliberately NOT an SSRF-safe client: `base_url()` defaults to loopback and
+/// is overridden only by `PERSONAS_POCKET_TTS_URL` in this process's own
+/// environment, so the target is a local service by design and a private-IP
+/// rejecting resolver would refuse every call. 3 s is a liveness probe's
+/// deadline, not a request's.
 fn probe_client() -> Result<reqwest::Client, AppError> {
     reqwest::Client::builder()
         .timeout(POCKET_PROBE_TIMEOUT)
@@ -461,6 +466,9 @@ async fn synthesize_sidecar(
 
 async fn synthesize_service(request: &TtsSynthesisRequest<'_>) -> Result<TtsAudio, AppError> {
     let base = base_url();
+    // Same loopback-by-design target as `probe_client`; 90 s because a cold
+    // synthesis on CPU is slow, which is why this cannot take the 30 s
+    // `SHARED_HTTP`.
     let client = reqwest::Client::builder()
         .timeout(POCKET_TIMEOUT)
         .build()

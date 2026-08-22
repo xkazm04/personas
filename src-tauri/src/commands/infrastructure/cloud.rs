@@ -370,6 +370,14 @@ pub async fn cloud_diagnose(
     let is_https = parsed.scheme() == "https";
     if is_https {
         let step_start = Instant::now();
+        // Deliberately NOT `SSRF_SAFE_HTTP`. `parsed` IS a user-typed host
+        // (the `url` argument of `cloud_diagnose`), but `validate_cloud_url`
+        // above ADMITS `http://localhost`, `127.0.0.1` and `[::1]` on purpose —
+        // a self-hosted orchestrator on this machine is a supported
+        // deployment. An SSRF-safe resolver would reject exactly that target
+        // and turn the diagnostics panel's most useful case into a hard error.
+        // The scheme gate is the control that remains: anything non-loopback
+        // must be `https`, so the API key below is never sent in clear.
         let tls_client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
@@ -439,6 +447,10 @@ pub async fn cloud_diagnose(
     let normalized = parsed.as_str().trim_end_matches('/').to_string();
     let step_start = Instant::now();
     let health_url = format!("{normalized}/health");
+    // Same deliberate choice as the TLS probe above: a user-typed host that is
+    // ALLOWED to be loopback. The API key rides in `Authorization`
+    // (`bearer_auth` below), which reqwest strips across a host change, so an
+    // attacker-authored `302` cannot carry it off the host the user named.
     let http_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
         .build()
