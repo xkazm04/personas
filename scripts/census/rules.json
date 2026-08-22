@@ -5102,8 +5102,8 @@
         "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
       },
       "baseline": {
-        "files": 37,
-        "matches": 43
+        "files": 38,
+        "matches": 45
       },
       "floor": 900
     },

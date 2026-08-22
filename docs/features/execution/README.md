@@ -202,6 +202,30 @@ learnings outrank generic doctrine when they disagree). Source:
   `knowledge/<bundle>/<subject>/…` will hand out dead links the first time that
   happens, and will do it silently.
 
+### Promoting what a run learned (propose-upward)
+
+The reverse of the consult lane. When a persona emits a
+`knowledge_annotation` scoped `global`, `tool` or `connector`, that insight can
+be promoted into a workspace's knowledge queue for a person to adjudicate —
+`dev_tools_promote_persona_knowledge(workspaceId, dryRun)`.
+
+- **`persona`-scoped annotations are never promoted.** The protocol defines that
+  scope as an insight specific to the current persona, which is the definition
+  of not generalizable.
+- **Nothing auto-adopts.** Candidates land as `observed` through the same
+  governed ingest the practice-harvest uses, so they inherit its dedup key, its
+  90-day rejected window (a re-run cannot re-propose what a human declined) and
+  its per-run cap.
+- **Only above-default confidence travels.** The protocol's default is 0.5; the
+  floor is 0.6, so an annotation must have claimed more than "unspecified".
+  Everything filtered is counted in the report.
+- **Run `dryRun: true` first** — it maps everything and lists the exact titles it
+  would propose without writing, which matters because each one becomes triage
+  work for a person.
+- Candidates arrive unclassified (`kind: "fact"`) on purpose; classifying free
+  text by keyword would put a confident wrong label on a row a reviewer then
+  trusts.
+
 ## Relation to other pillars
 
 ```

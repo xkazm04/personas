@@ -407,9 +407,35 @@ memory but no expert system. Connection design (sketch, to be its own plan):
          subject through `index.json`; 105/105 matched, byte count identical.
     - A relevance floor came out of the same real-corpus run: without it, one shared
       *category* word pulled 11 irrelevant techniques in behind a single genuine match.
-  - **Propose-upward lane:** persona executions that surface generalizable lessons emit
-    candidates through the EXISTING harvest door shape (`result.json` → governed ingest →
-    human adjudication), tagged `source: persona-execution` — nothing auto-adopts.
+  - ✅ **Propose-upward lane — SHIPPED 2026-08-22**
+    (`src-tauri/src/commands/infrastructure/knowledge_promote.rs`,
+    `dev_tools_promote_persona_knowledge`).
+    - **The material already existed.** The Knowledge Annotation Protocol has long asked
+      personas to emit `{"knowledge_annotation": …}` when they learn something "valuable
+      for future executions (by you or other personas)"; those land in
+      `execution_knowledge` scoped `persona` | `tool` | `connector` | `global`. That scope
+      is the persona's own claim about how far its insight travels, so it is the selector:
+      `persona` stays put, the other three are org candidates. **No new protocol, no new
+      prompt text, no new burden on the model.**
+    - **Through the existing door, not beside it.** `ws_repo::ingest_candidates` with
+      `actor_kind = "persona-execution"` — the same governed ingest the practice-harvest
+      uses. That inherits the whole contract: candidates land **`observed`**, never
+      adopted; the dedup key and the 90-day rejected window mean a re-promotion cannot
+      re-propose what a human already declined; the 120-per-run cap holds. A second door
+      would have been a second set of rules to keep honest.
+    - Confidence floor 0.6, deliberately just above the protocol's unstated 0.5 default,
+      so promotion means the persona actively claimed more than the default. Filtered rows
+      are counted in the report, never silently dropped, and `dryRun` shows the exact
+      titles before anything is written.
+    - **Three things it refuses to do**, each because the alternative fabricates
+      confidence: it does not classify (every candidate is `fact` — a keyword guess would
+      put a *confident* wrong label on a row a human then trusts; the adjudicator re-kinds
+      it, and an LLM pass is the legitimate refinement); it does not stamp
+      `origin_project_id` (a persona's `project_id` is not a dev project, and faking that
+      column would read as verified provenance — the persona and execution ids go in
+      `detail_md` as what they are); it does not track what it promoted (the door's dedup
+      already absorbs a re-run, and a tracking column would be a second source of truth
+      about the same fact).
   - Non-coding domains slot in the moment their bundle exists (`knowledge/media-craft/`
     for a gravitone-flavored persona) — the mechanism is domain-blind by construction.
 

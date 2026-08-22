@@ -4,6 +4,7 @@ import type { DevProject } from "@/lib/bindings/DevProject";
 import type { GitStatusSummary } from "@/lib/bindings/GitStatusSummary";
 import type { SkillInstallResult } from "@/lib/bindings/SkillInstallResult";
 import type { RegistrySync } from "@/lib/bindings/RegistrySync";
+import type { PromotionReport } from "@/lib/bindings/PromotionReport";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
@@ -1792,6 +1793,20 @@ export const syncRegistryClone = (clonePath: string) =>
  */
 export const setKnowledgeRegistryRoot = (clonePath: string | null) =>
   invoke<void>("dev_tools_set_knowledge_root", { clonePath });
+
+/**
+ * Promote a persona's generalizable `knowledge_annotation` findings into a
+ * workspace's knowledge queue for human adjudication (P6 propose-upward lane).
+ *
+ * Candidates land as `observed` through the same governed ingest the
+ * practice-harvest uses — nothing auto-adopts, and the door's dedup means a
+ * re-run cannot re-propose what a reviewer already declined.
+ *
+ * **Call with `dryRun: true` first.** Every promoted candidate becomes triage
+ * work for a person, and the dry run lists the exact titles without writing.
+ */
+export const promotePersonaKnowledge = (workspaceId: string, dryRun = false) =>
+  invoke<PromotionReport>("dev_tools_promote_persona_knowledge", { workspaceId, dryRun });
 
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
