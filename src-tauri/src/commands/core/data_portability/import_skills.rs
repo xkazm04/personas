@@ -8,24 +8,11 @@ use super::*;
 // Skills-to-disk (post-commit)
 // ----------------------------------------------------------------------------
 
-/// One safe path segment — same shape as the export-side skill-name guard.
-pub(crate) fn is_safe_skill_segment(s: &str) -> bool {
-    !s.is_empty()
-        && s != "."
-        && s != ".."
-        && !s.contains('/')
-        && !s.contains('\\')
-        && !s.contains("..")
-        && !s.contains(':')
-}
-
-/// A skill file's rel path: forward-slash separated safe segments, never
-/// absolute, never escaping the skill directory, never the provenance sidecar.
+/// A skill file's rel path: a safe bundle path (see `helpers::is_safe_rel_path`,
+/// which this module's own segment rules were folded into) that is also not the
+/// provenance sidecar — that file is ours to write, never theirs to supply.
 pub(crate) fn is_safe_skill_rel_path(rel: &str) -> bool {
-    !rel.is_empty()
-        && !rel.starts_with('/')
-        && rel.split('/').all(is_safe_skill_segment)
-        && rel.split('/').next_back() != Some(SKILL_PROVENANCE_FILE)
+    is_safe_rel_path(rel) && rel.split('/').next_back() != Some(SKILL_PROVENANCE_FILE)
 }
 
 /// Hash a set of skill files exactly like the export side does (sorted
@@ -86,7 +73,7 @@ pub(crate) fn write_project_skills(
     let skills_dir = root.join(".claude").join("skills");
 
     'skills: for skill in skills {
-        if !is_safe_skill_segment(&skill.name) {
+        if !is_safe_rel_segment(&skill.name) {
             result
                 .warnings
                 .push(format!("Skill '{}': unsafe name; skipped", skill.name));

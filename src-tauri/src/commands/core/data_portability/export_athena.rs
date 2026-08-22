@@ -14,19 +14,23 @@ use super::*;
 /// rejected otherwise.
 pub(crate) fn relative_brain_path(file_path: &str, root: &std::path::Path) -> Option<String> {
     let p = std::path::Path::new(file_path);
-    if !p.is_absolute() {
-        // Reject traversal too — `../../x` re-anchored on the target would
-        // write outside the brain.
-        if p.components()
-            .any(|c| matches!(c, std::path::Component::ParentDir))
-        {
-            return None;
-        }
-        return Some(file_path.replace('\\', "/"));
-    }
-    p.strip_prefix(root)
-        .ok()
-        .map(|rel| rel.to_string_lossy().replace('\\', "/"))
+    // `is_anchored_path`, not `is_absolute()`: on Windows a rooted-but-
+    // prefixless `\Users\...` and a drive-relative `C:x` are both non-absolute
+    // and both still discard the root they are joined onto, so `is_absolute()`
+    // alone lets them through. See `helpers::is_safe_rel_path`.
+    let rel = if is_anchored_path(p) {
+        // Anchored on the exporting machine: keep it only if it really is one
+        // of ours, de-anchored. Anything else names a foreign directory.
+        p.strip_prefix(root)
+            .ok()?
+            .to_string_lossy()
+            .replace('\\', "/")
+    } else {
+        file_path.replace('\\', "/")
+    };
+    // Traversal, an embedded separator flavour we do not emit, a drive letter:
+    // whatever survived de-anchoring still has to be a plain relative name.
+    is_safe_rel_path(&rel).then_some(rel)
 }
 
 /// Collect Athena's memory for the requested tiers.

@@ -98,9 +98,11 @@ pub(crate) fn validate_athena(bundle: &PortabilityBundle) -> Result<(), AppError
         one_of(&format!("{p}.kind"), &n.kind, &ATHENA_LEARNED_KINDS)?;
         validation::require_non_empty(&format!("{p}.file_path"), &n.file_path)?;
         validation::require_max_len(&format!("{p}.file_path"), &n.file_path, MAX_DESCRIPTION_LEN)?;
-        // The import re-anchors this onto THIS machine's brain root, so an
-        // absolute path or a traversal would write outside it.
-        if std::path::Path::new(&n.file_path).is_absolute() || n.file_path.contains("..") {
+        // The import re-anchors this onto THIS machine's brain root, so
+        // anything that is not a plain relative name would write outside it.
+        // See `is_safe_rel_path` for why an `is_absolute()` + `..` test is not
+        // that check on Windows.
+        if !is_safe_rel_path(&n.file_path) {
             return Err(AppError::Validation(format!(
                 "{p}.file_path: '{}' must be relative to the brain directory",
                 n.file_path

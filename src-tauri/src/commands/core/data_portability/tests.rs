@@ -2862,13 +2862,128 @@ mod tests {
             "app_settings is not an open write surface for a bundle"
         );
 
-        let mut bad = athena_bundle(&pool, &user);
-        bad.athena.as_mut().unwrap().nodes[0].file_path = "../../../etc/passwd".into();
-        assert!(
-            validate_bundle(&bad).is_err(),
-            "a traversal path would escape the brain directory on import"
-        );
+        // Every shape that re-anchors somewhere other than the brain root. The
+        // first is the only one the pre-2026-08-22 `is_absolute() || contains("..")`
+        // guard caught; see `validate_athena_refuses_every_anchored_file_path`
+        // for what the other three do to `join` on Windows.
+        for evil in [
+            "../../../etc/passwd",
+            r"\Users\victim\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\pwn.bat",
+            r"C:evil.bat",
+            r"\\server\share\pwn.bat",
+            "/etc/cron.d/pwn",
+            r"..\..\pwn.bat",
+        ] {
+            let mut bad = athena_bundle(&pool, &user);
+            bad.athena.as_mut().unwrap().nodes[0].file_path = evil.into();
+            assert!(
+                validate_bundle(&bad).is_err(),
+                "'{evil}' would escape the brain directory on import"
+            );
+        }
+
+        // The negative control. A check that refuses everything is not a check:
+        // the ordinary relative path the exporter actually emits must survive.
+        let mut ok = athena_bundle(&pool, &user);
+        ok.athena.as_mut().unwrap().nodes[0].file_path = "semantic/user/fact_new_editor.md".into();
+        validate_bundle(&ok).expect("an ordinary relative brain path still validates");
+
         drop(home);
+    }
+
+    /// Why the guard above is structural and not `is_absolute()`.
+    ///
+    /// `PathBuf::push` — which `join` calls — documents that an argument with a
+    /// root but no prefix "replaces everything except for the prefix (if any) of
+    /// `self`", and that an argument with a prefix but no root "replaces
+    /// `self`". On Windows `is_absolute()` requires BOTH, so those two shapes
+    /// are non-absolute, contain no `..`, and still discard the root they are
+    /// joined onto. This test pins the std behaviour that makes them dangerous
+    /// and asserts every layer of the fix refuses them.
+    #[test]
+    fn validate_athena_refuses_every_anchored_file_path() {
+        // A brain root shaped like the host's, so the `join` / `strip_prefix`
+        // assertions below mean the same thing on either platform.
+        #[cfg(windows)]
+        let root = std::path::Path::new(r"C:\Users\u\.personas\companion-brain");
+        #[cfg(not(windows))]
+        let root = std::path::Path::new("/home/u/.personas/companion-brain");
+
+        // The old guard's two predicates, on the two bypass shapes.
+        #[cfg(windows)]
+        {
+            let rooted = r"\Users\victim\Startup\pwn.bat";
+            let drive_rel = r"C:evil.bat";
+            for shape in [rooted, drive_rel] {
+                assert!(
+                    !std::path::Path::new(shape).is_absolute(),
+                    "'{shape}' is NOT absolute on Windows -- this is the hole"
+                );
+                assert!(
+                    !shape.contains(".."),
+                    "'{shape}' carries no traversal either"
+                );
+            }
+            // ...and yet joining them leaves the brain root entirely.
+            assert_eq!(
+                root.join(rooted),
+                std::path::PathBuf::from(r"C:\Users\victim\Startup\pwn.bat"),
+                "a rooted-but-prefixless path keeps only the drive prefix"
+            );
+            assert_eq!(
+                root.join(drive_rel),
+                std::path::PathBuf::from(r"C:evil.bat"),
+                "a drive-relative path replaces the receiver outright"
+            );
+        }
+
+        // The structural check refuses all of them, on every platform, and
+        // `safe_join` refuses them a second time at the write site.
+        for evil in [
+            r"\Users\victim\Startup\pwn.bat",
+            r"C:evil.bat",
+            r"\\server\share\pwn.bat",
+            "../../../etc/passwd",
+            "/etc/cron.d/pwn",
+            r"notes\..\..\pwn.bat",
+            "",
+            "./x",
+            "a//b",
+        ] {
+            assert!(
+                !is_safe_rel_path(evil),
+                "'{evil}' must not be a safe rel path"
+            );
+            assert!(
+                safe_join(root, evil).is_none(),
+                "'{evil}' must not resolve to a path under the brain root"
+            );
+        }
+
+        // Negative control, both layers: the real shape the exporter emits.
+        assert!(is_safe_rel_path("semantic/user/fact_new_editor.md"));
+        let joined = safe_join(root, "semantic/user/fact_new_editor.md")
+            .expect("an ordinary relative path still joins");
+        assert!(joined.starts_with(root), "and lands inside the brain root");
+        assert!(joined.ends_with("fact_new_editor.md"));
+
+        // The export side de-anchors one of ours and refuses a foreign anchor.
+        assert_eq!(
+            relative_brain_path(&root.join("semantic/user/a.md").to_string_lossy(), root),
+            Some("semantic/user/a.md".to_string()),
+            "a path under our own root is de-anchored, not dropped"
+        );
+        for foreign in [
+            r"\Users\victim\Startup\pwn.bat",
+            r"C:evil.bat",
+            "../../../etc/passwd",
+        ] {
+            assert_eq!(
+                relative_brain_path(foreign, root),
+                None,
+                "'{foreign}' must never be written into a bundle"
+            );
+        }
     }
 
     /// A memory whose markdown is gone is dropped WITH its sidecar, by name.
