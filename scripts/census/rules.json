@@ -2861,11 +2861,27 @@
         {
           "path": "src-tauri/engine/src/pairing.rs",
           "reason": "the pairing ceremony itself: nonce + explicit human approval is the gate, by design"
+        },
+        {
+          "path": "src-tauri/src/commands/infrastructure/dev_tools_http.rs",
+          "reason": "2026-08-22: covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), applied once over the composed tree in local_http::start"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/hooks.rs",
+          "reason": "2026-08-22: same layer. The credential is baked into the installed curl command; a hook carrying no/stale token reads as drifted and startup re-installs it"
+        },
+        {
+          "path": "src-tauri/src/engine/project_tracking/push.rs",
+          "reason": "2026-08-22: same layer. Its 'no nonce gate in v1 because no remote actor can reach the endpoint' header was wrong and has been corrected in place"
+        },
+        {
+          "path": "src-tauri/src/local_http/mod.rs",
+          "reason": "2026-08-22: the module that INSTALLS the layer. Its only `.route(\"` literals are the #[cfg(test)] fixtures that prove an unauthenticated request is refused"
         }
       ],
       "baseline": {
-        "files": 4,
-        "matches": 80
+        "files": 1,
+        "matches": 46
       },
       "floor": 900
     },
@@ -5335,7 +5351,7 @@
       ],
       "baseline": {
         "files": 58,
-        "matches": 138
+        "matches": 137
       },
       "floor": 900
     },

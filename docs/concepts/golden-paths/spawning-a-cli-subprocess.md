@@ -695,12 +695,33 @@ the excluded chokepoint itself (143 total).
           "reason": "the chokepoint itself — this file IS where argv separation, env scrubbing, stdio, timeouts, PID recording and kill-on-drop live, so it must call Command::new"
         }
       ],
-      "baseline": { "files": 58, "matches": 138 },
+      "baseline": { "files": 58, "matches": 137 },
       "floor": 900
     }
   ]
 }
 ```
+
+> **Ratcheted 138 -> 137 on 2026-08-22, and the file count deliberately did NOT move.**
+> `personas-core` had two `icacls` spawns — `crypto.rs`'s `restrict_file_permissions`
+> and its `repair_key_file_permissions`. Both now go through a single private
+> `run_icacls` in the new `core/src/fs_private.rs`, so `crypto.rs` leaves the
+> violating set and `fs_private.rs` enters it: **58 files either way, one fewer
+> spawn site.**
+>
+> **This is the move this rule explicitly warns against ("do not silence a match by
+> wrapping `Command::new` in a local helper"), so it needs the distinction stated.**
+> The warning is about relocating a spawn to make a counter drop while the
+> guarantees stay absent. Here two spawn sites became one — the count fell because
+> a call to `Command::new` genuinely stopped existing, not because it moved.
+>
+> **What it is NOT: routing through the chokepoint.** `personas-core` is the
+> dependency-free foundation crate and `cli_process` lives in `personas-engine`, so
+> core structurally cannot reach it; the legal fix this path prescribes is
+> unavailable here without inverting the crate graph. `fs_private::run_icacls` is
+> therefore core's own one-function chokepoint, with fixed argv, no env, no stdin
+> and no caller-supplied program name. The remaining 137 are unaffected.
+
 
 **One `exclude`, and it is the chokepoint.** Nothing else is exempt: the two
 sites this path *does* trust with a shell — `verification_command.rs`, whose

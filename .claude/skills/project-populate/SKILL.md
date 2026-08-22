@@ -82,8 +82,8 @@ brief's verdicts; they were derived from the same database you would be
 querying.
 
 **Standalone (`/project-populate [--scope …]` in a repo).** No brief. Derive
-everything yourself per [`references/bridge.md`](references/bridge.md): find the
-bridge port, resolve this repo's `project_id` from `GET /dev-tools/projects` by
+everything yourself per [`references/bridge.md`](references/bridge.md): read the
+bridge port and token from `~/.personas/local-http.json`, resolve this repo's `project_id` from `GET /dev-tools/projects` by
 matching `root_path`, and compute the freshness gates from
 `/context-groups/{id}`, `/use-cases/{id}` and `/kpis/{id}`. If the repo is not
 registered in Personas at all, say so and stop — registering it is the
@@ -93,8 +93,12 @@ operator's call, not yours.
 
 The bridge is the app. If it does not answer, nothing in this skill works:
 
-1. Confirm the bridge responds (`GET /dev-tools/projects`). If it does not,
-   tell the operator Personas is not running and stop. Do not fall back to
+1. Confirm the bridge responds (`GET /dev-tools/projects`) **with the local
+   token on every request** — the port and the token both come from
+   `~/.personas/local-http.json`; see
+   [`references/bridge.md`](references/bridge.md) § "Finding the port AND the
+   token". A bare request now gets a 401, which is not "Personas is down". If
+   nothing answers at all, tell the operator Personas is not running and stop. Do not fall back to
    editing the database or writing files that mimic scan output — the app's
    ingest path is the only door, and inventing another one silently corrupts
    the data model.

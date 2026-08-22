@@ -595,6 +595,54 @@ pub async fn dev_tools_scan_codebase(
     )
 }
 
+/// Resolve a caller-supplied scan root against the project's REGISTERED root,
+/// refusing anything outside it.
+///
+/// Why this is a security boundary and not tidiness: the resolved value
+/// becomes the `current_dir` of a `claude` child spawned with
+/// `--dangerously-skip-permissions` (see `spawn_headless_claude`). Whoever
+/// picks that directory picks the `CLAUDE.md` and the `.claude/settings.json`
+/// hooks the agent will read and obey. The only check this path had was
+/// `is_dir()` — "the attacker's directory exists" — so any caller who could
+/// reach `launch_context_scan` could aim a permission-disabled agent at any
+/// directory on the machine.
+///
+/// `""` and `"."` keep their documented meaning (the project's own root).
+/// Anything else must canonicalize to the project root or a descendant of it.
+/// On success the ORIGINAL string is returned, so a passing call behaves
+/// byte-identically to before.
+pub(crate) fn confine_to_project_root(
+    project_root: &str,
+    requested: &str,
+) -> Result<String, AppError> {
+    if requested.is_empty() || requested == "." {
+        return Ok(project_root.to_string());
+    }
+    let base = std::path::Path::new(project_root)
+        .canonicalize()
+        .map_err(|e| {
+            AppError::Validation(format!(
+                "Project root is not a readable directory ({project_root}): {e}"
+            ))
+        })?;
+    let want = std::path::Path::new(requested)
+        .canonicalize()
+        .map_err(|e| AppError::Validation(format!("Path is not a directory: {requested} ({e})")))?;
+    if !want.is_dir() {
+        return Err(AppError::Validation(format!(
+            "Path is not a directory: {requested}"
+        )));
+    }
+    // Component-wise, never `starts_with` on the string: `C:/repo-evil` has
+    // the string prefix `C:/repo` but is a different tree.
+    if !want.starts_with(&base) {
+        return Err(AppError::Validation(format!(
+            "Scan root must be inside the project's registered root ({project_root}); refused: {requested}"
+        )));
+    }
+    Ok(requested.to_string())
+}
+
 /// Launch a context-map scan for `project` as a background task. Shared by the
 /// `dev_tools_scan_codebase` command and Athena's `register_project` auto-scan
 /// (`commands/companion/approvals.rs`). Returns immediately with the scan_id; the
@@ -609,6 +657,10 @@ pub(crate) fn launch_context_scan(
     subtree: Option<&str>,
 ) -> Result<serde_json::Value, AppError> {
     let project_id = project.id.clone();
+
+    // Confine BEFORE taking the single-flight guard or registering a job, so a
+    // refused root leaves no state behind.
+    let resolved_root = confine_to_project_root(&project.root_path, root_path)?;
 
     // Subtree scans must be able to run CONCURRENTLY — that is the entire point
     // of the mode. One session cannot emit a map for a large codebase: it runs
@@ -640,14 +692,9 @@ pub(crate) fn launch_context_scan(
     )?;
     CONTEXT_GEN_JOBS.set_status(&app, &scan_id, "running", None);
 
-    // Resolve root path
-    let resolved_root = if root_path == "." || root_path.is_empty() {
-        project.root_path.clone()
-    } else {
-        root_path.to_string()
-    };
-
-    // Validate directory
+    // Directory check. `confine_to_project_root` already proved the requested
+    // root is a directory inside the project; this still catches the case it
+    // short-circuits — a project whose own stored root no longer exists.
     let root_dir = std::path::Path::new(&resolved_root);
     if !root_dir.is_dir() {
         CONTEXT_GEN_JOBS.set_status(
@@ -2739,6 +2786,69 @@ mod tests {
         assert!(
             !truncated.is_usable(),
             "a partial vocabulary would delete true names"
+        );
+    }
+    /// The Vuln-4 chain in one assertion: a caller who names a directory
+    /// outside the project must not be able to choose the cwd of a
+    /// `--dangerously-skip-permissions` agent.
+    #[test]
+    fn scan_root_outside_the_project_is_refused() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let elsewhere = tmp.path().join("attacker");
+        std::fs::create_dir_all(&project).expect("mkdir repo");
+        std::fs::create_dir_all(&elsewhere).expect("mkdir attacker");
+
+        let err = confine_to_project_root(&project.to_string_lossy(), &elsewhere.to_string_lossy())
+            .expect_err("a sibling directory must be refused");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "expected a validation error, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn scan_root_defaults_and_descendants_are_allowed() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let child = project.join("src").join("features");
+        std::fs::create_dir_all(&child).expect("mkdir child");
+        let root = project.to_string_lossy().to_string();
+
+        assert_eq!(confine_to_project_root(&root, "").unwrap(), root);
+        assert_eq!(confine_to_project_root(&root, ".").unwrap(), root);
+        assert_eq!(confine_to_project_root(&root, &root).unwrap(), root);
+        let child_s = child.to_string_lossy().to_string();
+        assert_eq!(confine_to_project_root(&root, &child_s).unwrap(), child_s);
+    }
+
+    /// A sibling whose name merely EXTENDS the project's is a different tree.
+    /// A `starts_with` on the string would let this through.
+    #[test]
+    fn sibling_with_a_prefix_name_is_refused() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let sibling = tmp.path().join("repo-evil");
+        std::fs::create_dir_all(&project).expect("mkdir repo");
+        std::fs::create_dir_all(&sibling).expect("mkdir repo-evil");
+        assert!(
+            confine_to_project_root(&project.to_string_lossy(), &sibling.to_string_lossy())
+                .is_err()
+        );
+    }
+
+    /// Traversal out of the tree must not survive canonicalisation.
+    #[test]
+    fn dot_dot_traversal_is_refused() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let outside = tmp.path().join("outside");
+        std::fs::create_dir_all(&project).expect("mkdir repo");
+        std::fs::create_dir_all(&outside).expect("mkdir outside");
+        let traversal = project.join("..").join("outside");
+        assert!(
+            confine_to_project_root(&project.to_string_lossy(), &traversal.to_string_lossy())
+                .is_err()
         );
     }
 }

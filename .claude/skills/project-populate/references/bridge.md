@@ -7,26 +7,62 @@ reimplementing it.
 Everything below writes through the same repository functions the UI calls, so
 work done here is indistinguishable from work done by clicking.
 
-## Finding the port
+## Finding the port AND the token
 
-The server takes **the first free port at or above 17400**, scanning up to 16
-ports. It is therefore not a constant: a restart while another process holds
-17400 moves it. A dispatch brief names the port that was live when the
-dispatch was composed — start there, and if it does not answer, probe upward:
+**Every route below needs a credential.** The server is bound to `127.0.0.1`,
+but loopback is not an authentication boundary — a DNS-rebound web page is
+same-origin with `127.0.0.1:<port>` and can read responses, and `127.0.0.1` is
+machine-scoped rather than user-scoped. So `local_http` gates every request on
+a `Host` allowlist plus a shared secret. Without the secret you get **401**;
+with a `Host` header that is not `127.0.0.1` / `localhost` you get **403**.
+
+Both halves live in one handshake file the app writes when it binds:
 
 ```bash
+read -r PORT TOKEN <<<"$(python -c "import json,os;d=json.load(open(os.path.expanduser('~/.personas/local-http.json')));print(d['port'],d['token'])")"
+B="http://127.0.0.1:$PORT"          # every route below is "$B/dev-tools/..."
+AUTH=(-H "X-Personas-Local-Token: $TOKEN")
+```
+
+or, without python:
+
+```bash
+PORT=$(grep -o '"port"[^,]*' ~/.personas/local-http.json | grep -o '[0-9]*')
+TOKEN=$(grep -o '"token": *"[^"]*"' ~/.personas/local-http.json | sed 's/.*"\([^"]*\)"$/\1/')
+B="http://127.0.0.1:$PORT"
+AUTH=(-H "X-Personas-Local-Token: $TOKEN")
+```
+
+No file → **Personas has not bound its server on this machine.** That is the
+same "app is not running" verdict as no port answering. Do not invent a token.
+
+**Every `curl` in this document needs `"${AUTH[@]}"`** (or
+`-H "X-Personas-Local-Token: $TOKEN"` written out). A `?__token=<token>` query
+parameter works too, for callers that cannot set headers.
+
+The file is stale if the app restarted on a different port — it is rewritten on
+every bind, but a crashed process leaves the last one behind. So verify, and
+fall back to the probe if it does not answer:
+
+```bash
+curl -s -m 1 "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/projects" >/dev/null || \
 for p in $(seq 17400 17415); do
-  curl -s -m 1 "http://127.0.0.1:$p/dev-tools/projects" >/dev/null && echo "$p" && break
+  curl -s -m 1 "${AUTH[@]}" "http://127.0.0.1:$p/dev-tools/projects" >/dev/null && PORT=$p && echo "$p" && break
 done
 ```
 
+The server takes **the first free port at or above 17400**, scanning up to 16
+ports, so it is not a constant: a restart while another process holds 17400
+moves it.
+
 No port answers → **Personas is not running.** Stop and say so. There is no
-offline path.
+offline path. A port answers with **401** → your token is stale; re-read the
+handshake file (the app rewrote it on its last bind).
 
 ## Finding the project
 
 ```bash
-curl -s "http://127.0.0.1:$PORT/dev-tools/projects"
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/projects"
 ```
 
 Returns every registered project. Match on `root_path` against the repo you
@@ -43,21 +79,29 @@ repo behind their back is not this skill's job).
 
 ```bash
 # whole-tree — delta_mode false = full re-exploration, true = incremental
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-codebase" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/scan-codebase" \
   -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>","root_path":".","delta_mode":false}'
 
 # SUBTREE-scoped — the mode that actually maps a large codebase
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-codebase" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/scan-codebase" \
   -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>","root_path":".","subtree":"src/features/agents"}'
 
-curl -s "http://127.0.0.1:$PORT/dev-tools/scan-status/<scan_id>"
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/scan-status/<scan_id>"
 # → {"scan_id":..., "status":"running|completed|failed|not_found", "error":..., "lines":[...]}
 ```
 
 `lines` carries the lane's milestone output. Relay it while polling — these
 scans run for minutes and silence reads as a hang.
+
+**`root_path` must be the project's registered root or a directory inside it.**
+Anything else is a 400. That value becomes the working directory of a `claude`
+child spawned with `--dangerously-skip-permissions`, which means it also picks
+the `CLAUDE.md` and the `.claude/settings.json` hooks that child reads and
+obeys — so it is confined to the tree the operator actually registered. Passing
+`"."` (or omitting it) is the normal case and keeps its meaning. The same rule
+applies to `export-context-map`.
 
 ### Use the subtree sweep on anything non-trivial
 
@@ -123,20 +167,20 @@ All four are idempotent, so running them on a clean map is free:
 
 ```bash
 # same-named context rows (older writes could duplicate them)
-curl -s -X POST "$B/dev-tools/dedupe-contexts"          -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/dedupe-contexts"          -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
 # same-named groups (concurrent scans could each create one)
-curl -s -X POST "$B/dev-tools/dedupe-context-groups"    -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/dedupe-context-groups"    -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
 # strip generated / locale / non-source paths, dropping contexts left empty
-curl -s -X POST "$B/dev-tools/prune-nonsource-contexts" -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/prune-nonsource-contexts" -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
 # merge semantically-overlapping groups — pairs are EXPLICIT, never inferred
-curl -s -X POST "$B/dev-tools/merge-context-groups" -H 'Content-Type: application/json' \
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/merge-context-groups" -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>","delete_empty":true,
        "merges":[{"from":"Execution & Quality Data","into":"Execution Engine"}]}'
 # delete contexts by EXPLICIT id (NOT idempotent in effect — rows are gone).
 # For rows no heuristic can pick: e.g. the old coarse map's husks after a
 # subtree sweep claimed their files. Ids not owned by the project come back
 # in rejected_ids instead of being skipped silently.
-curl -s -X POST "$B/dev-tools/retire-contexts" -H 'Content-Type: application/json' \
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/retire-contexts" -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>","context_ids":["<ctx>", "..."]}'
 ```
 
@@ -146,7 +190,7 @@ then consolidate group sprawl — is exactly what desynchronizes the artifacts.
 Re-export from current DB state when the repairs are done:
 
 ```bash
-curl -s -X POST "$B/dev-tools/export-context-map" -H 'Content-Type: application/json' \
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/export-context-map" -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>"}'          # root_path optional, defaults to the project's
 # → {"project_id":..., "root_path":..., "contexts": N}
 ```
@@ -164,7 +208,7 @@ is ON DELETE SET NULL, so deleting a context strands its adopted KPIs as
 unbound project-level rows. Re-point them FIRST:
 
 ```bash
-curl -s -X POST "$B/dev-tools/kpi-rebind" -H 'Content-Type: application/json' \
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/kpi-rebind" -H 'Content-Type: application/json' \
   -d '{"kpi_id":"<kpi>","context_id":"<new ctx>"}'
 ```
 
@@ -181,9 +225,9 @@ groups that genuinely differ.
 ### Reading the map back
 
 ```bash
-curl -s "$B/dev-tools/contexts/<project_id>"        # every context + file_paths
-curl -s "$B/dev-tools/context-groups/<project_id>"  # the group taxonomy
-curl -s "$B/dev-tools/use-cases/<project_id>"       # the feature inventory
+curl -s "${AUTH[@]}" "$B/dev-tools/contexts/<project_id>"        # every context + file_paths
+curl -s "${AUTH[@]}" "$B/dev-tools/context-groups/<project_id>"  # the group taxonomy
+curl -s "${AUTH[@]}" "$B/dev-tools/use-cases/<project_id>"       # the feature inventory
 ```
 
 Verify a sweep by counting DISTINCT paths across all contexts and comparing
@@ -193,11 +237,11 @@ several of this pipeline's bugs were visible only in the aggregate.
 ### Features (use cases)
 
 ```bash
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-use-cases" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/scan-use-cases" \
   -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
 # → {"scan_id":"..."}   or 500 with the reason
 
-curl -s "http://127.0.0.1:$PORT/dev-tools/use-case-scan-status/<scan_id>"
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/use-case-scan-status/<scan_id>"
 ```
 
 Two 500s are expected rather than exceptional:
@@ -211,24 +255,24 @@ Two 500s are expected rather than exceptional:
 
 ```bash
 # project-wide pass — up to 8 KPIs across the whole product
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-kpis" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/scan-kpis" \
   -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
 
 # context-scoped pass — up to 4 KPIs, all bound to that one context
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-kpis" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/scan-kpis" \
   -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>","context_id":"<ctx>"}'
 
-curl -s "http://127.0.0.1:$PORT/dev-tools/kpi-scan-status/<scan_id>"
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/kpi-scan-status/<scan_id>"
 
 # the sweep's worklist — every context, with file_paths for ranking
-curl -s "http://127.0.0.1:$PORT/dev-tools/contexts/<project_id>"
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/contexts/<project_id>"
 
 # read (omit ?status= for all statuses)
-curl -s "http://127.0.0.1:$PORT/dev-tools/kpis/<project_id>?status=proposed"
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/kpis/<project_id>?status=proposed"
 
 # decide — one call per KPI, as each answer arrives
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-decision" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-decision" \
   -H 'Content-Type: application/json' \
   -d '{"kpi_id":"<id>","status":"active","target_value":95}'
 ```
@@ -257,7 +301,7 @@ Adopt-and-leave-it writes those false instructions into the row as the only
 record of how to measure the thing.
 
 ```bash
-curl -s -X POST "$B/dev-tools/kpi-update" -H 'Content-Type: application/json' \
+curl -s "${AUTH[@]}" -X POST "$B/dev-tools/kpi-update" -H 'Content-Type: application/json' \
   -d '{"kpi_id":"<id>",
        "description":"…what it measures, corrected…",
        "measure_kind":"codebase",
@@ -281,7 +325,7 @@ references it.
 ### Before relaunching a scan, ask what is already running
 
 ```bash
-curl -s "$B/dev-tools/scans/<project_id>"
+curl -s "${AUTH[@]}" "$B/dev-tools/scans/<project_id>"
 # → {"project_id":…, "running": 2,
 #    "scans":[{"scan_id":…, "status":"running", "subtree":"app/_lib", "lines": 41},
 #             {"scan_id":…, "status":"completed", "subtree":null,      "lines": 124}]}
@@ -305,12 +349,12 @@ unsure whether a launch landed, call this route instead of relaunching.
 
 ```bash
 # write kpi-sim/snapshot.json (the sim refuses to run without it)
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-sim/prepare" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-sim/prepare" \
   -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
 # → {"snapshot_path":"...","root_path":"...","kpi_count":N}
 
 # after /kpi-sim run has written kpi-sim/runs/<id>/result.json
-curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-sim/ingest" \
+curl -s "${AUTH[@]}" -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-sim/ingest" \
   -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
 # → {"run_dir":"...","measurements_recorded":N,"proposals_created":N,
 #    "findings_created":N,"skipped":[...]}
@@ -325,9 +369,9 @@ than treating a partial ingest as clean.
 Every gate is computable over the bridge:
 
 ```bash
-curl -s "http://127.0.0.1:$PORT/dev-tools/context-groups/<project_id>"   # Phase 1
-curl -s "http://127.0.0.1:$PORT/dev-tools/use-cases/<project_id>"        # Phase 2
-curl -s "http://127.0.0.1:$PORT/dev-tools/kpis/<project_id>"             # Phase 3
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/context-groups/<project_id>"   # Phase 1
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/use-cases/<project_id>"        # Phase 2
+curl -s "${AUTH[@]}" "http://127.0.0.1:$PORT/dev-tools/kpis/<project_id>"             # Phase 3
 ```
 
 Compare `updated_at` against a 14-day window. **Do not substitute

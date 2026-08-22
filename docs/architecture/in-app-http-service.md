@@ -49,6 +49,86 @@ Registrations after `start()` are dropped with a `tracing::warn!` — call them 
 
 Routes mount at `/<prefix>/...`. A handler at `Router::new().route("/webhook", post(handler))` registered with prefix `gitlab` becomes `http://localhost:<port>/gitlab/webhook`.
 
+### Admission control (added 2026-08-22)
+
+Every mounted router sits behind **one** `tower` layer, applied in `start()` over
+the composed tree: `local_http/auth.rs`. Two independent gates.
+
+1. **`Host` allowlist.** The value must be `127.0.0.1`, `localhost` or `::1`,
+   with a port matching the bound one when present. Anything else is **403**.
+   This is the DNS-rebinding defence: a page that rebinds its own hostname to
+   `127.0.0.1` becomes same-origin with this server and can both send
+   `application/json` and read the response, but the browser still sends
+   `Host: evil.example:<port>`.
+2. **Shared secret.** `X-Personas-Local-Token: <token>` (or `?__token=<token>`),
+   compared without an early return. Missing or wrong is **401**. This is the
+   defence against *another principal on the same machine* — `127.0.0.1` is
+   machine-scoped, not user-scoped, so a second OS account or a sandboxed
+   process can connect.
+
+Not claimed: ordinary drive-by CSRF from a non-rebound page. Every mutating
+route takes `Json<T>`, so it requires `Content-Type: application/json`, so it
+forces a preflight the router answers 405. That was already true.
+
+**The token is stable across restarts**, not minted per boot, because
+out-of-process consumers bake it in at install time next to the port — a
+per-boot value would 401 every installed Fleet hook until the next reinstall.
+It persists in the handshake file itself rather than in `app_settings`: the
+token must reach same-user consumers as plaintext on disk anyway, so a second
+plaintext copy in the settings table would widen the exposure (`getAppSetting`
+returns raw values to the renderer) for no gain, and would grow the
+credential-in-settings debt the `settings-key-holding-secret` census rule
+exists to stop growing. `PERSONAS_LOCAL_HTTP_TOKEN` overrides it for QA
+harnesses. Delete the file and a fresh token is minted; the hook self-heal
+below repairs the installs on the next launch.
+
+#### How each consumer gets the credential
+
+| Consumer | How |
+|---|---|
+| `project-populate` / `kpi-sim` and any terminal caller | reads `{port, token}` from `~/.personas/local-http.json`, written on every successful bind. Permissions are set EXPLICITLY, never inherited - see the warning below |
+| Fleet hooks in `~/.claude/settings.json` | `hook_install::build_command` bakes the header into the `curl` line. `check_hooks_inner` reports a hook whose command lacks the current token as drifted, which routes it through the same startup self-heal that already fixes port drift — so an install from before this change repairs itself on next launch |
+| Fleet CLI sessions calling `/mcp/rpc` | `pty.rs::build_mcp_spawn` adds the header to the per-session `mcp.json`, alongside `X-Athena-Session` |
+| Athena Browser Bridge extension | **exempt from the token check** — `browser-bridge` is on `auth::SELF_AUTHENTICATED_PREFIXES` because both its handlers already gate on their own credential and the extension is paired by hand with that one. The `Host` allowlist still applies |
+
+> ### WARNING: do not trust the Windows user-profile ACL for this file
+>
+> An earlier draft of this section said the profile ACL already covered Windows.
+> Measured with `icacls` on the operator's machine, 2026-08-22, that is FALSE:
+>
+> ```text
+> C:\Users\<user>                       SYSTEM / Administrators / <user>      (clean)
+> C:\Users\<user>\.personas             CodexSandboxUsers:(OI)(CI)(RX)   <-- inheritable READ
+> C:\Users\<user>\.claude               CodexSandboxUsers:(OI)(CI)(RX)
+> C:\Users\<user>\AppData\Local\Temp    CodexSandboxUsers:(OI)(CI)(M,DC) <-- MODIFY
+> ```
+>
+> The profile root is clean; three of its subtrees are not, because sandbox
+> tooling added explicit inheritable ACEs to them. A file created under
+> `~/.personas` is therefore **born readable by a sandbox group** - which is
+> precisely the "another principal on this machine" attacker the shared secret
+> exists to defeat. Inheriting would have published the token to the attacker.
+>
+> `personas_core::fs_private` therefore sets the DACL explicitly (Windows:
+> `/inheritance:r` then `/grant:r <user>:(F)`; Unix: 0600/0700), and
+> `write_handshake` writes to a temp path, restricts it, and only then renames
+> into place - so the token is never visible at the final path under inherited
+> permissions. If the DACL cannot be set, the file is **not published at all**.
+>
+> The same reasoning applies to the per-user Temp directory, which is **Modify**
+> for that group: `tempfile::tempdir()` alone is not a private scratch directory
+> on Windows, which is why the project-tracking consolidator restricts its
+> scratch dir too.
+>
+> **Still exposed, and deliberately not fixed here:** `~/.claude/settings.json`
+> carries the token inside the Fleet hook `curl` commands, and that tree has the
+> same sandbox-readable ACE. It is Claude Code's file, not ours; stripping its
+> inheritance risks breaking the tool.
+
+Adding a prefix to that exemption list is a security decision, not a
+convenience: every handler under it must reject an unauthenticated request, and
+that has to stay true of handlers added later.
+
 ### Nonce store
 
 `mint_nonce()` returns a fresh UUID with a 60-second TTL. `consume_nonce(s)` returns `true` exactly once per minted token. Used to gate sensitive endpoints — without a nonce, anyone on the local machine could replay a URL.
