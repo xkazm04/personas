@@ -27,6 +27,7 @@ use personas_core::error::AppError;
 
 use crate::journal::{is_journaled_table, json_to_value};
 use crate::DbPool;
+use crate::PoolExt;
 
 // ---------------------------------------------------------------------------
 // Rows + DTOs
@@ -256,7 +257,7 @@ pub fn get_execution_data_diff(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<ExecutionDataDiff, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("change_journal::get_execution_data_diff")?;
     let total: i64 = conn.query_row(
         "SELECT COUNT(*) FROM change_journal WHERE execution_id = ?1",
         [execution_id],
@@ -319,7 +320,7 @@ fn live_columns(conn: &rusqlite::Connection, tbl: &str) -> Result<HashSet<String
 /// successful reversals are flagged `'undone'`; the transaction commits
 /// with both marks so a re-run is a no-op.
 pub fn undo_execution(pool: &DbPool, execution_id: &str) -> Result<UndoExecutionResult, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("change_journal::undo_execution")?;
     let tx = conn.unchecked_transaction()?;
 
     // No LIMIT here: undo must see the whole run, not the display cap.

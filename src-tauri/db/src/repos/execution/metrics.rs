@@ -14,6 +14,7 @@ use crate::models::{
 };
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // ============================================================================
@@ -93,7 +94,7 @@ pub fn create_prompt_version_with_snapshot(
             let now = chrono::Utc::now().to_rfc3339();
             let tag = "experimental".to_string();
 
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::create_prompt_version_with_snapshot")?;
 
             // Wrap SELECT MAX + INSERT in a transaction to prevent concurrent callers
             // from reading the same MAX and inserting duplicate version numbers.
@@ -159,7 +160,7 @@ pub fn create_prompt_version_if_changed(
         "execution_metrics",
         "execution_metrics::create_prompt_version_if_changed",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::create_prompt_version_if_changed")?;
 
             // Get latest version's prompt to diff
             let latest: Option<(Option<String>,)> = conn
@@ -200,7 +201,7 @@ pub fn get_prompt_versions(
         "execution_metrics::get_prompt_versions",
         {
             let limit = limit.unwrap_or(50);
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_prompt_versions")?;
             let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT ?2",
         )?;
@@ -223,7 +224,7 @@ pub fn get_prompt_version_by_id(pool: &DbPool, id: &str) -> Result<PersonaPrompt
         "execution_metrics",
         "execution_metrics::get_prompt_version_by_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_prompt_version_by_id")?;
             conn.query_row(
                 "SELECT * FROM persona_prompt_versions WHERE id = ?1",
                 params![id],
@@ -248,7 +249,7 @@ pub fn update_prompt_version_tag(
         "execution_metrics",
         "execution_metrics::update_prompt_version_tag",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::update_prompt_version_tag")?;
             let rows = conn.execute(
                 "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
                 params![tag, id],
@@ -269,7 +270,7 @@ pub fn promote_to_production(pool: &DbPool, id: &str) -> Result<PersonaPromptVer
         "execution_metrics",
         "execution_metrics::promote_to_production",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::promote_to_production")?;
             conn.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<(), AppError> {
                 let persona_id: String = conn
@@ -324,7 +325,7 @@ pub fn get_production_version(
         "execution_metrics",
         "execution_metrics::get_production_version",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_production_version")?;
             let result = conn.query_row(
             "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 AND tag = 'production' ORDER BY version_number DESC LIMIT 1",
             params![persona_id],
@@ -349,7 +350,7 @@ pub fn get_recent_error_rate(
         "execution_metrics",
         "execution_metrics::get_recent_error_rate",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_recent_error_rate")?;
             let (total, failed): (i64, i64) = conn.query_row(
             "SELECT COUNT(*), COALESCE(SUM(CASE WHEN status IN ('failed','error') THEN 1 ELSE 0 END), 0)
              FROM (SELECT status FROM persona_executions WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2)",
@@ -393,7 +394,7 @@ pub fn get_summary(
     timed_query!("execution_metrics", "execution_metrics::get_summary", {
         let start = std::time::Instant::now();
         let days = days.unwrap_or(30).clamp(1, 365);
-        let conn = pool.get()?;
+        let conn = pool.conn("metrics::get_summary")?;
         let result = get_summary_with_conn(&conn, days, persona_id)?;
 
         info!(
@@ -459,7 +460,7 @@ pub fn get_value_rollup(
     persona_id: Option<&str>,
 ) -> Result<ValueRollup, AppError> {
     let days = days.unwrap_or(30).clamp(1, 365);
-    let conn = pool.get()?;
+    let conn = pool.conn("metrics::get_value_rollup")?;
     get_value_rollup_with_conn(&conn, days, persona_id)
 }
 
@@ -580,7 +581,7 @@ pub fn get_error_category_breakdown(
     persona_id: Option<&str>,
 ) -> Result<ErrorCategoryBreakdown, AppError> {
     let days = days.unwrap_or(30).clamp(1, 365);
-    let conn = pool.get()?;
+    let conn = pool.conn("metrics::get_error_category_breakdown")?;
     get_error_category_breakdown_with_conn(&conn, days, persona_id)
 }
 
@@ -736,7 +737,7 @@ pub fn get_chart_data(
     timed_query!("execution_metrics", "execution_metrics::get_chart_data", {
         let start = std::time::Instant::now();
         let days = days.unwrap_or(30).clamp(1, 365);
-        let conn = pool.get()?;
+        let conn = pool.conn("metrics::get_chart_data")?;
         let result = get_chart_data_with_conn(&conn, days, persona_id)?;
 
         info!(
@@ -1011,7 +1012,7 @@ pub fn get_prompt_performance(
         {
             let start = std::time::Instant::now();
             let days = days.clamp(1, 365);
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_prompt_performance")?;
             let date_filter = format!("-{days} days");
 
             // 1) Fetch raw execution rows for this persona
@@ -1178,7 +1179,7 @@ pub fn get_execution_dashboard(
         {
             let start = std::time::Instant::now();
             let days = days.clamp(1, 365);
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_execution_dashboard")?;
             let date_filter = format!("-{days} days");
 
             // Single query: fetch all rows with persona name, aggregated in Rust.
@@ -1586,7 +1587,7 @@ pub fn get_anomaly_drilldown(
         "execution_metrics::get_anomaly_drilldown",
         {
             let start = std::time::Instant::now();
-            let conn = pool.get()?;
+            let conn = pool.conn("metrics::get_anomaly_drilldown")?;
 
             // Parse the anomaly date as midday UTC so ±1 day window is clean
             let anomaly_dt = chrono::NaiveDate::parse_from_str(anomaly_date, "%Y-%m-%d")
@@ -2139,7 +2140,7 @@ fn compute_execution_heatmap(
     tz_offset_minutes: Option<i64>,
 ) -> Result<ExecutionHeatmapData, AppError> {
     timed_query!("execution_metrics", "execution_metrics::get_heatmap", {
-        let conn = pool.get()?;
+        let conn = pool.conn("metrics::compute_execution_heatmap")?;
         let qb = persona_filter_qb(format!("-{window_days} days"), persona_id);
         let pid_clause = if qb.has_conditions() {
             format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))

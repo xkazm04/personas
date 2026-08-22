@@ -11,6 +11,7 @@ use crate::models::{
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::crypto;
 use personas_core::crypto::CryptoError;
 use personas_core::error::AppError;
@@ -441,7 +442,7 @@ fn row_to_persona_redacted(row: &Row) -> rusqlite::Result<Persona> {
 pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_all", {
         let start = Instant::now();
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all")?;
         let mut stmt = conn.prepare_cached("SELECT * FROM personas ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_persona_redacted)?;
         let result = collect_rows(rows, "personas::get_all");
@@ -464,7 +465,7 @@ pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Person
         return get_all(pool);
     }
     timed_query!("personas", "personas::get_all_by_lifecycle", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all_by_lifecycle")?;
         let mut qb = QueryBuilder::new();
         qb.where_in(
             "COALESCE(lifecycle, 'active')",
@@ -600,7 +601,7 @@ fn row_to_persona_lean(row: &Row) -> rusqlite::Result<Persona> {
 #[instrument(skip(pool))]
 pub fn get_all_lean(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_all_lean", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all_lean")?;
         let sql = format!("SELECT {LEAN_LIST_COLUMNS} FROM personas ORDER BY created_at DESC");
         let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map([], row_to_persona_lean)?;
@@ -616,7 +617,7 @@ pub fn get_all_by_lifecycle_lean(pool: &DbPool, stages: &[&str]) -> Result<Vec<P
         return get_all_lean(pool);
     }
     timed_query!("personas", "personas::get_all_by_lifecycle_lean", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all_by_lifecycle_lean")?;
         let mut qb = QueryBuilder::new();
         qb.where_in(
             "COALESCE(lifecycle, 'active')",
@@ -634,7 +635,7 @@ pub fn get_all_by_lifecycle_lean(pool: &DbPool, stages: &[&str]) -> Result<Vec<P
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::get_by_id", {
         let start = Instant::now();
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_by_id")?;
         let mut stmt = conn.prepare_cached("SELECT * FROM personas WHERE id = ?1")?;
         let result = stmt
             .query_row(params![id], row_to_persona)
@@ -656,7 +657,7 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
 /// avoid leaking the existence of personas not opted in to gateway visibility.
 pub fn find_by_id_if_exposed(pool: &DbPool, id: &str) -> Result<Option<Persona>, AppError> {
     timed_query!("personas", "personas::find_by_id_if_exposed", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::find_by_id_if_exposed")?;
         let mut stmt = conn.prepare_cached("SELECT * FROM personas WHERE id = ?1")?;
         let result = stmt
             .query_row(params![id], row_to_persona)
@@ -672,7 +673,7 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
         return Ok(Vec::new());
     }
     timed_query!("personas", "personas::get_by_ids", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_by_ids")?;
         let mut qb = QueryBuilder::new();
         qb.where_in("id", ids.to_vec());
         let sql = qb.build_select("SELECT * FROM personas");
@@ -686,7 +687,7 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
 pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_enabled", {
         let start = Instant::now();
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_enabled")?;
         let mut stmt =
             conn.prepare_cached("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
         let rows = stmt.query_map([], row_to_persona)?;
@@ -705,7 +706,7 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 #[instrument(skip(pool))]
 pub fn get_starred(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_starred", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_starred")?;
         let mut stmt =
             conn.prepare_cached("SELECT * FROM personas WHERE starred = 1 ORDER BY name")?;
         let rows = stmt.query_map([], row_to_persona)?;
@@ -715,7 +716,7 @@ pub fn get_starred(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 
 /// Toggle a persona's starred flag (Director scope). Returns the new value.
 pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("personas::set_starred")?;
     let updated = conn.execute(
         "UPDATE personas SET starred = ?1, updated_at = datetime('now') WHERE id = ?2",
         rusqlite::params![if starred { 1 } else { 0 }, id],
@@ -731,7 +732,7 @@ pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppEr
 /// build cancel/fail cleanup guard. Does NOT touch `enabled` — lifecycle and
 /// the runtime-pause switch are orthogonal.
 pub fn set_lifecycle(pool: &DbPool, id: &str, lifecycle: PersonaLifecycle) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("personas::set_lifecycle")?;
     let updated = conn.execute(
         "UPDATE personas SET lifecycle = ?1, updated_at = datetime('now') WHERE id = ?2",
         params![lifecycle.as_str(), id],
@@ -802,7 +803,7 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
         // collision so the user can tell them apart in lists/sidebar
         // without changing intent semantics. Only mutates `input.name`
         // when needed; original name is preserved when unique.
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("personas::create")?;
         // Serialize the name-uniqueness check + INSERT under one IMMEDIATE
         // transaction. Previously the check and the INSERT used two separate
         // pooled connections, so two concurrent creates of the same name both
@@ -968,7 +969,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         };
 
         let now = chrono::Utc::now().to_rfc3339();
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("personas::update")?;
 
         // Build dynamic SET clause and params in a single pass
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
@@ -1195,7 +1196,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
     timed_query!("personas", "personas::update_name", {
         validate_name(name)?;
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("personas::update_name")?;
         // IMMEDIATE transaction so the collision check + UPDATE are atomic vs.
         // other writers — otherwise two concurrent renames (or a rename racing
         // a create) both pass the "does another row have this name?" probe and
@@ -1256,7 +1257,7 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     timed_query!("personas", "personas::get_summaries", {
         let start = Instant::now();
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_summaries")?;
 
         let today_start = chrono::Utc::now()
             .date_naive()
@@ -1449,7 +1450,7 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
 /// - **Volume bonus** (weight 0.15): more executions = more confidence in the score
 pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     timed_query!("personas", "personas::compute_trust_score", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::compute_trust_score")?;
 
         // Last 50 terminal executions
         let mut stmt = conn.prepare(
@@ -1533,7 +1534,7 @@ pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
 pub fn refresh_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     timed_query!("personas", "personas::refresh_trust_score", {
         let score = compute_trust_score(pool, persona_id)?;
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::refresh_trust_score")?;
         conn.execute(
             "UPDATE personas SET trust_score = ?1, updated_at = datetime('now') WHERE id = ?2",
             params![score, persona_id],
@@ -1573,7 +1574,7 @@ pub fn duplicate(
     source_id: &str,
 ) -> Result<(Persona, DuplicationSummary), AppError> {
     timed_query!("personas", "personas::duplicate", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::duplicate")?;
         let new_id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -1760,7 +1761,7 @@ fn count_credential_links(conn: &rusqlite::Connection, persona_id: &str) -> usiz
 #[instrument(skip(pool))]
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("personas", "personas::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::delete")?;
 
         let tx = conn.unchecked_transaction()?;
 
@@ -1785,7 +1786,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// paths (build cancel/fail, TTL sweep) so a draft that already produced work
 /// is never silently swept.
 pub fn has_executions(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("personas::has_executions")?;
     let count: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1",
@@ -1890,7 +1891,7 @@ pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, A
         return Ok(0);
     }
     let candidate_ids: Vec<String> = {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::sweep_stale_drafts")?;
         let cutoff = (chrono::Utc::now() - chrono::Duration::days(retention_days)).to_rfc3339();
         let mut stmt = conn.prepare(
             "SELECT id FROM personas
@@ -1918,7 +1919,7 @@ pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, A
 #[instrument(skip(pool))]
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("personas", "personas::blast_radius", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::blast_radius")?;
         let mut impacts: Vec<(String, String)> = Vec::new();
 
         // Active automations

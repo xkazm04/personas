@@ -6,6 +6,7 @@ use crate::repos::resources::settings_audit_log;
 use crate::repos::utils::escape_like;
 use crate::settings_keys;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Best-effort settings-audit write for a user-facing settings mutation.
@@ -71,7 +72,7 @@ pub fn get(pool: &DbPool, key: &str) -> Result<Option<String>, AppError> {
         tracing::warn!(key = key, reason = %msg, "settings::get called with unknown key");
     }
     timed_query!("app_settings", "app_settings::get", {
-        let conn = pool.get()?;
+        let conn = pool.conn("settings::get")?;
         let result = conn.query_row(
             "SELECT value FROM app_settings WHERE key = ?1",
             params![key],
@@ -108,7 +109,7 @@ pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
     // trail. `get` is a cache-hot single-row read; settings writes are rare.
     let before = get(pool, key)?;
     let write: Result<(), AppError> = timed_query!("app_settings", "app_settings::set", {
-        let conn = pool.get()?;
+        let conn = pool.conn("settings::set")?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "INSERT INTO app_settings (key, value, updated_at)
@@ -166,7 +167,7 @@ pub fn get_batch(
     }
 
     timed_query!("app_settings", "app_settings::get_batch", {
-        let conn = pool.get()?;
+        let conn = pool.conn("settings::get_batch")?;
         let placeholders = std::iter::repeat("?")
             .take(unique_valid.len())
             .collect::<Vec<_>>()
@@ -194,7 +195,7 @@ pub fn get_batch(
 /// from user-derived input.
 pub fn get_by_prefix(pool: &DbPool, prefix: &str) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("app_settings", "app_settings::get_by_prefix", {
-        let conn = pool.get()?;
+        let conn = pool.conn("settings::get_by_prefix")?;
         let pattern = format!("{}%", escape_like(prefix));
         let mut stmt =
             conn.prepare("SELECT key, value FROM app_settings WHERE key LIKE ?1 ESCAPE '\\'")?;
@@ -226,7 +227,7 @@ pub fn delete(pool: &DbPool, key: &str) -> Result<bool, AppError> {
     // Capture the prior value BEFORE the delete, for the audit trail.
     let before = get(pool, key)?;
     let removed: Result<bool, AppError> = timed_query!("app_settings", "app_settings::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("settings::delete")?;
         let rows = conn.execute("DELETE FROM app_settings WHERE key = ?1", params![key])?;
         Ok(rows > 0)
     });

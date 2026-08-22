@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::policy_tuning::{BudgetCeilingChange, PolicyEvidenceSnapshot, RoutingRuleChange};
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// One row in `policy_proposals`, hydrated for the frontend.
@@ -75,7 +76,7 @@ pub fn create(
         ProposalPayload::Budget(b) => ("budget_ceiling", None, serde_json::to_string(b)?),
     };
     let evidence_json = serde_json::to_string(evidence)?;
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::create")?;
     conn.execute(
         "INSERT INTO policy_proposals
             (id, kind, category, payload_json, evidence_snapshot_id, evidence_json,
@@ -94,7 +95,7 @@ pub fn exists_similar_routing(
     category: Option<&str>,
     to_model: &str,
 ) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::exists_similar_routing")?;
     let n: i64 = conn.query_row(
         "SELECT COUNT(*) FROM policy_proposals
          WHERE kind = 'routing_rule'
@@ -110,7 +111,7 @@ pub fn exists_similar_routing(
 /// Same answered-question guard for budget-ceiling proposals (any open or
 /// declined ceiling proposal blocks a new one — one budget question at a time).
 pub fn exists_open_budget(pool: &DbPool) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::exists_open_budget")?;
     let n: i64 = conn.query_row(
         "SELECT COUNT(*) FROM policy_proposals
          WHERE kind = 'budget_ceiling' AND status IN ('pending', 'declined')",
@@ -121,7 +122,7 @@ pub fn exists_open_budget(pool: &DbPool) -> Result<bool, AppError> {
 }
 
 pub fn get(pool: &DbPool, id: &str) -> Result<Option<PolicyProposal>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::get")?;
     let row = conn
         .query_row(
             "SELECT id, kind, category, payload_json, evidence_snapshot_id,
@@ -139,7 +140,7 @@ pub fn list(
     only_pending: bool,
     limit: u32,
 ) -> Result<Vec<PolicyProposal>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::list")?;
     let where_clause = if only_pending {
         "WHERE status = 'pending'"
     } else {
@@ -164,7 +165,7 @@ pub fn list(
 /// (rule / setting) first, in the same command, so a failed write never
 /// strands an "applied" row. Returns false when the row was not pending.
 pub fn mark_applied(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::mark_applied")?;
     let updated = conn.execute(
         "UPDATE policy_proposals
          SET status = 'applied', decided_at = datetime('now')
@@ -176,7 +177,7 @@ pub fn mark_applied(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 
 /// Flip `pending → declined`, recording the operator's reason as feedback.
 pub fn mark_declined(pool: &DbPool, id: &str, reason: Option<&str>) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::mark_declined")?;
     let updated = conn.execute(
         "UPDATE policy_proposals
          SET status = 'declined', decline_reason = ?2, decided_at = datetime('now')

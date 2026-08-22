@@ -17,6 +17,7 @@ use rusqlite::params;
 use serde::Serialize;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 pub const CLAIM_VERDICTS: [&str; 3] = ["helpful", "wrong", "outdated"];
@@ -81,7 +82,7 @@ pub fn file_claim(
             "invalid claim verdict: {verdict}"
         )));
     }
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_claims::file_claim")?;
     let tx = conn.unchecked_transaction()?;
     // FK enforcement is belt-and-suspenders here — a claim on a vanished
     // memory must fail loudly, not dangle.
@@ -132,7 +133,7 @@ pub fn resolve_memory_claims(
             "invalid claim resolution: {resolution}"
         )));
     }
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_claims::resolve_memory_claims")?;
     let tx = conn.unchecked_transaction()?;
     let resolved = tx.execute(
         "UPDATE memory_claims
@@ -160,7 +161,7 @@ pub fn resolve_memory_claims(
 
 /// Every claim on a memory, newest first — the detail modal's dispute history.
 pub fn list_claims(pool: &DbPool, memory_id: &str) -> Result<Vec<MemoryClaim>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_claims::list_claims")?;
     let mut stmt = conn.prepare_cached(&format!(
         "SELECT {CLAIM_COLS} FROM memory_claims WHERE memory_id = ?1 ORDER BY created_at DESC"
     ))?;
@@ -173,7 +174,7 @@ pub fn list_claims(pool: &DbPool, memory_id: &str) -> Result<Vec<MemoryClaim>, A
 /// team (roster = persona_team_members ∪ personas.home_team_id ∪ the memory's
 /// own home_team_id anchor). The `memory_disputed` findings sensor.
 pub fn disputed_overview(pool: &DbPool) -> Result<Vec<DisputedMemoryRow>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_claims::disputed_overview")?;
     let mut stmt = conn.prepare_cached(
         "SELECT dp.id, m.id, m.title, m.persona_id, p.name, m.open_claim_count,
                 (SELECT c.verdict FROM memory_claims c

@@ -3,6 +3,7 @@ use rusqlite::{params, Row};
 use crate::models::{BuildPhase, BuildSession, UpdateBuildSession};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 const UPDATE_BUILD_SESSION_SQL: &str = "
@@ -62,7 +63,7 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
 /// Insert a new build session.
 pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::create", {
-        let conn = pool.get()?;
+        let conn = pool.conn("build_sessions::create")?;
         let mut stmt = conn.prepare_cached(
             "INSERT INTO build_sessions
              (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
@@ -97,7 +98,7 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
 /// Get a build session by ID.
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<BuildSession>, AppError> {
     timed_query!("build_sessions", "build_sessions::get_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("build_sessions::get_by_id")?;
         let mut stmt = conn.prepare_cached("SELECT * FROM build_sessions WHERE id = ?1")?;
         let result = stmt.query_row(params![id], row_to_build_session);
         match result {
@@ -117,7 +118,7 @@ pub fn get_active_for_persona(
         "build_sessions",
         "build_sessions::get_active_for_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("build_sessions::get_active_for_persona")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM build_sessions
              WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
@@ -143,7 +144,7 @@ pub fn get_latest_for_persona(
         "build_sessions",
         "build_sessions::get_latest_for_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("build_sessions::get_latest_for_persona")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM build_sessions
              WHERE persona_id = ?1
@@ -163,7 +164,7 @@ pub fn get_latest_for_persona(
 /// Always updates `updated_at`.
 pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::update", {
-        let conn = pool.get()?;
+        let conn = pool.conn("build_sessions::update")?;
         let now = chrono::Utc::now().to_rfc3339();
         let cli_pid = updates.cli_pid.map(|value| value.map(|pid| pid as i64));
 
@@ -225,7 +226,7 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
 /// `COALESCE(...,'[]')` seeds the array on the first call. `ts` is RFC3339.
 pub fn append_phase_timing(pool: &DbPool, id: &str, phase: &str, ts: &str) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::append_phase_timing", {
-        let conn = pool.get()?;
+        let conn = pool.conn("build_sessions::append_phase_timing")?;
         let entry = serde_json::json!({ "phase": phase, "ts": ts }).to_string();
         let mut stmt = conn.prepare_cached(
             "UPDATE build_sessions
@@ -244,7 +245,7 @@ pub fn list_non_terminal(
     persona_id: Option<&str>,
 ) -> Result<Vec<BuildSession>, AppError> {
     timed_query!("build_sessions", "build_sessions::list_non_terminal", {
-        let conn = pool.get()?;
+        let conn = pool.conn("build_sessions::list_non_terminal")?;
 
         if let Some(pid) = persona_id {
             let mut stmt = conn.prepare_cached(
@@ -306,7 +307,7 @@ pub fn expire_stale_non_terminal(pool: &DbPool, min_age_hours: i64) -> Result<us
         "build_sessions::expire_stale_non_terminal",
         {
             let now = chrono::Utc::now().to_rfc3339();
-            let conn = pool.get()?;
+            let conn = pool.conn("build_sessions::expire_stale_non_terminal")?;
             // julianday() parses the RFC3339 timestamps this codebase stores
             // (same pattern as automation_runs::reap_stale_runs). The elapsed
             // hours = (julianday(now) - julianday(updated_at)) * 24.
@@ -333,7 +334,7 @@ pub fn expire_stale_non_terminal(pool: &DbPool, min_age_hours: i64) -> Result<us
 /// Delete a build session by ID.
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("build_sessions::delete")?;
         let mut stmt = conn.prepare_cached("DELETE FROM build_sessions WHERE id = ?1")?;
         stmt.execute(params![id])?;
         Ok(())

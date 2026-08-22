@@ -5,6 +5,7 @@ use ts_rs::TS;
 use crate::models::{HealingAuditEntry, HealingKnowledge, PersonaHealingIssue};
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Subsystem tag stamped on the `healing_audit_log` rows that record a
@@ -85,7 +86,7 @@ pub fn get_all(
     status: Option<&str>,
 ) -> Result<Vec<PersonaHealingIssue>, AppError> {
     timed_query!("healing_events", "healing_events::get_all", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::get_all")?;
 
         let mut qb = QueryBuilder::new();
         if let Some(pid) = persona_id {
@@ -126,7 +127,7 @@ pub fn get_for_health(
     limit: i64,
 ) -> Result<Vec<PersonaHealingIssue>, AppError> {
     timed_query!("healing_events", "healing_events::get_for_health", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::get_for_health")?;
         let window = format!("-{} days", window_days);
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_healing_issues
@@ -208,7 +209,7 @@ pub fn create_with_source(
         let category = category.unwrap_or("config");
         let is_circuit_breaker = if is_circuit_breaker { 1 } else { 0 };
 
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::create_with_source")?;
         let rows = conn.execute(
             "INSERT OR IGNORE INTO persona_healing_issues
              (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at, source)
@@ -363,7 +364,7 @@ pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppErr
         // Verify exists
         get_by_id(pool, id)?;
 
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::update_status")?;
 
         if status == "resolved" {
             let now = chrono::Utc::now().to_rfc3339();
@@ -387,7 +388,7 @@ pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppErr
 /// [`confirm_auto_fix`] (on success) or [`revert_auto_fix_pending`] (on failure).
 pub fn mark_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("healing_events", "healing_events::mark_auto_fix_pending", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::mark_auto_fix_pending")?;
         conn.execute(
             "UPDATE persona_healing_issues SET auto_fixed = 1, status = 'auto_fix_pending' WHERE id = ?1",
             params![id],
@@ -401,7 +402,7 @@ pub fn mark_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
 pub fn confirm_auto_fix(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("healing_events", "healing_events::confirm_auto_fix", {
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::confirm_auto_fix")?;
         // CAS semantics (deliberate, differs from
         // triggers.rs::resolve_pending_fire): a LOST compare-and-swap here IS an
         // error. Unlike the trigger-fire case, a 0-row result means the issue
@@ -430,7 +431,7 @@ pub fn revert_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> 
         "healing_events",
         "healing_events::revert_auto_fix_pending",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("healing::revert_auto_fix_pending")?;
             let rows = conn.execute(
             "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' WHERE id = ?1 AND status = 'auto_fix_pending'",
             params![id],
@@ -594,7 +595,7 @@ pub fn get_by_execution_id(
     execution_id: &str,
 ) -> Result<Vec<PersonaHealingIssue>, AppError> {
     timed_query!("healing_events", "healing_events::get_by_execution_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::get_by_execution_id")?;
         let mut stmt =
             conn.prepare("SELECT * FROM persona_healing_issues WHERE execution_id = ?1")?;
         let rows = stmt.query_map(params![execution_id], row_to_healing_issue)?;
@@ -607,7 +608,7 @@ pub fn get_by_execution_id(
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("healing_events", "healing_events::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::delete")?;
         let rows = conn.execute(
             "DELETE FROM persona_healing_issues WHERE id = ?1",
             params![id],
@@ -643,7 +644,7 @@ pub fn upsert_knowledge(
     recommended_delay_secs: Option<i64>,
 ) -> Result<HealingKnowledge, AppError> {
     timed_query!("healing_events", "healing_events::upsert_knowledge", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::upsert_knowledge")?;
         let now = chrono::Utc::now().to_rfc3339();
 
         // Try to update existing entry
@@ -700,7 +701,7 @@ pub fn get_knowledge_by_service(
         "healing_events",
         "healing_events::get_knowledge_by_service",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("healing::get_knowledge_by_service")?;
             let mut stmt = conn.prepare(
             "SELECT * FROM healing_knowledge WHERE service_type = ?1 ORDER BY occurrence_count DESC",
         )?;
@@ -714,7 +715,7 @@ pub fn get_knowledge_by_service(
 /// Get all knowledge entries.
 pub fn get_all_knowledge(pool: &DbPool) -> Result<Vec<HealingKnowledge>, AppError> {
     timed_query!("healing_events", "healing_events::get_all_knowledge", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::get_all_knowledge")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM healing_knowledge ORDER BY occurrence_count DESC, last_seen_at DESC",
         )?;
@@ -732,7 +733,7 @@ pub fn get_knowledge_hint(
     pattern_key: &str,
 ) -> Result<Option<personas_core::healing::KnowledgeHint>, AppError> {
     timed_query!("healing_events", "healing_events::get_knowledge_hint", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::get_knowledge_hint")?;
         let result = conn.query_row(
             "SELECT recommended_delay_secs, occurrence_count FROM healing_knowledge
              WHERE service_type = ?1 AND pattern_key = ?2",
@@ -815,7 +816,7 @@ pub fn list_audit_log(
     limit: i64,
 ) -> Result<Vec<HealingAuditEntry>, AppError> {
     timed_query!("healing_audit", "healing_audit::list_audit_log", {
-        let conn = pool.get()?;
+        let conn = pool.conn("healing::list_audit_log")?;
         let (sql, param_values): (String, Vec<Box<dyn rusqlite::types::ToSql>>) = if let Some(pid) =
             persona_id
         {
@@ -854,7 +855,7 @@ pub fn get_healing_effectiveness(
             let window_days = window_days.unwrap_or(30).max(1);
             let cutoff = (chrono::Utc::now() - chrono::Duration::days(window_days)).to_rfc3339();
 
-            let conn = pool.get()?;
+            let conn = pool.conn("healing::get_healing_effectiveness")?;
             let mut stmt = conn.prepare(
                 "SELECT COALESCE(NULLIF(detail, ''), 'unknown') AS strategy,
                         SUM(CASE WHEN event_type = ?1 THEN 1 ELSE 0 END) AS confirmed,

@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// One recorded reason a chain relay did not continue past a given link.
@@ -65,7 +66,7 @@ pub struct ChainStopReasonInput<'a> {
 pub fn record(pool: &DbPool, input: ChainStopReasonInput) -> Result<(), AppError> {
     timed_query!("chain_stop_reasons", "chain_stop_reasons::record", {
         let id = uuid::Uuid::new_v4().to_string();
-        let conn = pool.get()?;
+        let conn = pool.conn("chain_stop_reasons::record")?;
         conn.execute(
             "INSERT INTO chain_stop_reasons
                 (id, chain_trace_id, link_execution_id, trigger_id, target_persona_id,
@@ -96,7 +97,7 @@ pub fn get_by_chain_trace_id(
         "chain_stop_reasons",
         "chain_stop_reasons::get_by_chain_trace_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("chain_stop_reasons::get_by_chain_trace_id")?;
             let mut stmt = conn.prepare(
                 "SELECT id, chain_trace_id, link_execution_id, trigger_id, target_persona_id,
                         reason_token, detail, chain_depth, created_at

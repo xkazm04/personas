@@ -7,6 +7,7 @@ use crate::models::{
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Strip HTML/XML tags from a string to prevent stored XSS.
@@ -172,7 +173,7 @@ pub fn get_all(
         let order_col = validated_sort_column(sort_column);
         let order_dir = validated_sort_direction(sort_direction);
 
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_all")?;
 
         let mut qb = build_memory_filters(persona_id, category, search, tier);
         qb.order_by(order_col, order_dir);
@@ -199,7 +200,7 @@ pub fn get_all_by_persona_ids(
         "persona_memories",
         "persona_memories::get_all_by_persona_ids",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_all_by_persona_ids")?;
             let mut qb = QueryBuilder::new();
             qb.where_in(
                 "persona_id",
@@ -234,7 +235,7 @@ pub fn get_by_persona(
 ) -> Result<Vec<PersonaMemory>, AppError> {
     timed_query!("persona_memories", "persona_memories::get_by_persona", {
         let limit = limit.unwrap_or(50);
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_by_persona")?;
         let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_memories WHERE persona_id = ?1
              ORDER BY importance DESC, created_at DESC LIMIT ?2",
@@ -247,7 +248,7 @@ pub fn get_by_persona(
 
 pub fn get_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaMemory>, AppError> {
     timed_query!("persona_memories", "persona_memories::get_by_execution", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_by_execution")?;
         let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_memories WHERE source_execution_id = ?1
              ORDER BY created_at ASC",
@@ -264,7 +265,7 @@ pub fn count_by_execution(pool: &DbPool, execution_id: &str) -> Result<i64, AppE
         "persona_memories",
         "persona_memories::count_by_execution",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::count_by_execution")?;
             let count: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM persona_memories WHERE source_execution_id = ?1",
                 params![execution_id],
@@ -297,7 +298,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
             None => 3,
         };
 
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::create")?;
 
         // Write-path semantic dedup (2026-07 — supersedes the old 24h
         // exact-content guard). The original guard only skipped BYTE-identical
@@ -387,7 +388,7 @@ pub fn create_synthesized(
     if !derived_from.is_empty() || home_team_id.is_some() {
         let json = serde_json::to_string(derived_from)
             .map_err(|e| AppError::Internal(format!("serialize derived_from: {e}")))?;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::create_synthesized")?;
         conn.execute(
             "UPDATE persona_memories
              SET derived_from = ?1,
@@ -411,7 +412,7 @@ pub fn get_active_for_decay(
         "persona_memories",
         "persona_memories::get_active_for_decay",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_active_for_decay")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND tier = 'active'",
@@ -459,7 +460,7 @@ pub fn batch_create(
         return Ok(BatchCreateMemoryResult::default());
     }
     timed_query!("persona_memories", "persona_memories::batch_create", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::batch_create")?;
         let tx = conn.unchecked_transaction()?;
         let now = chrono::Utc::now().to_rfc3339();
         let mut count: i64 = 0;
@@ -601,7 +602,7 @@ pub fn get_total_count(
     tier: Option<&str>,
 ) -> Result<i64, AppError> {
     timed_query!("persona_memories", "persona_memories::get_total_count", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_total_count")?;
 
         let qb = build_memory_filters(persona_id, category, search, tier);
         let sql = format!(
@@ -674,7 +675,7 @@ pub fn get_stats(
     tier: Option<&str>,
 ) -> Result<MemoryStats, AppError> {
     timed_query!("persona_memories", "persona_memories::get_stats", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_stats")?;
         let qb = build_memory_filters(persona_id, category, search, tier);
         compute_memory_stats(&conn, &qb.where_clause(), &qb.params_ref())
     })
@@ -711,7 +712,7 @@ pub fn get_all_with_stats(
             let order_col = validated_sort_column(sort_column);
             let order_dir = validated_sort_direction(sort_direction);
 
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_all_with_stats")?;
             let filter_qb = build_memory_filters(persona_id, category, search, tier);
             let where_clause = filter_qb.where_clause();
             let stats = compute_memory_stats(&conn, &where_clause, &filter_qb.params_ref())?;
@@ -741,7 +742,7 @@ pub fn get_all_with_stats(
 pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::update_importance", {
         validate_importance(importance)?;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::update_importance")?;
         let now = chrono::Utc::now().to_rfc3339();
         let rows = conn.execute(
             "UPDATE persona_memories SET importance = ?1, updated_at = ?2 WHERE id = ?3",
@@ -769,7 +770,7 @@ pub fn update_content(
 ) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::update_content", {
         validate_importance(importance)?;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::update_content")?;
         let now = chrono::Utc::now().to_rfc3339();
         let tags_json = tags.map(|t| serde_json::to_string(t).unwrap_or_else(|_| "[]".to_string()));
         let rows = conn.execute(
@@ -797,7 +798,7 @@ pub fn batch_update_importance(pool: &DbPool, updates: &[(String, i32)]) -> Resu
         "persona_memories",
         "persona_memories::batch_update_importance",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::batch_update_importance")?;
             let tx = conn.unchecked_transaction()?;
             let now = chrono::Utc::now().to_rfc3339();
             let mut total_updated: i64 = 0;
@@ -829,7 +830,7 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
         // Chunk deletes into batches of 500 to stay well under the limit.
         const CHUNK_SIZE: usize = 500;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::batch_delete")?;
         let tx = conn.unchecked_transaction()?;
         let mut total_deleted: i64 = 0;
 
@@ -920,7 +921,7 @@ pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
     timed_query!("persona_memories", "persona_memories::archive_by_ids", {
         const CHUNK_SIZE: usize = 400;
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::archive_by_ids")?;
         let tx = conn.unchecked_transaction()?;
         let mut total: i64 = 0;
         for chunk in ids.chunks(CHUNK_SIZE) {
@@ -976,7 +977,7 @@ pub fn find_duplicate_groups(
         "persona_memories",
         "persona_memories::find_duplicate_groups",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::find_duplicate_groups")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
@@ -1025,7 +1026,7 @@ pub fn get_archivable_candidates(
         "persona_memories",
         "persona_memories::get_archivable_candidates",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_archivable_candidates")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND tier IN ('active', 'working')
@@ -1048,7 +1049,7 @@ crud_delete!("persona_memories");
 /// Returns `Ok(false)` when nothing was deleted (row absent OR core-protected).
 pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_non_core", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::delete_non_core")?;
         let affected = conn.execute(
             "DELETE FROM persona_memories WHERE id = ?1 AND tier != 'core'",
             params![id],
@@ -1066,7 +1067,7 @@ pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// No FK children. Returns the number of rows deleted.
 pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_all", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::delete_all")?;
         let n = conn.execute("DELETE FROM persona_memories WHERE tier != 'core'", [])?;
         Ok(n)
     })
@@ -1195,7 +1196,7 @@ pub fn merge(
             .clone()
             .or_else(|| mem_b.home_team_id.clone());
 
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::merge")?;
         let tx = conn.unchecked_transaction()?;
 
         tx.execute(
@@ -1251,7 +1252,7 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
     }
     timed_query!("persona_memories", "persona_memories::update_tier", {
         use rusqlite::OptionalExtension;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::update_tier")?;
         // Snapshot the prior tier BEFORE the update so we can detect an
         // unarchive transition (archive → live tier). Archiving drops the KNN
         // vector (see `archive_by_ids`); un-archiving must restore it or the
@@ -1427,7 +1428,7 @@ pub fn get_for_injection_v2(
         "persona_memories",
         "persona_memories::get_for_injection_v2",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_for_injection_v2")?;
 
             let (persona_scope_sql, active_uc_sql, extra_params) = build_scope_predicates(&scope);
 
@@ -1492,7 +1493,7 @@ pub fn get_by_use_case_id(
         "persona_memories::get_by_use_case_id",
         {
             let limit = limit.unwrap_or(100);
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_by_use_case_id")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND use_case_id = ?2
@@ -1514,7 +1515,7 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
         "persona_memories",
         "persona_memories::increment_access_batch",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::increment_access_batch")?;
             let now = chrono::Utc::now().to_rfc3339();
             let mut qb = QueryBuilder::new();
             let p_now1 = qb.push_param(now.clone());
@@ -1539,7 +1540,7 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
 /// Returns `(promoted, archived)` counts.
 pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppError> {
     timed_query!("persona_memories", "persona_memories::run_lifecycle", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::run_lifecycle")?;
         let tx = conn.unchecked_transaction()?;
         let now = chrono::Utc::now();
         let updated_at = now.to_rfc3339();
@@ -1695,7 +1696,7 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::UserDbPool) -> Result<(), AppEr
     if MEMORY_VEC_TABLE_READY.load(Ordering::Acquire) {
         return Ok(());
     }
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::ensure_memory_vec_table")?;
     // The vec0 table cannot carry an auxiliary model-stamp column without a
     // destructive recreate, so the stamp lives in a plain sidecar keyed 1:1 by
     // memory_id. Created at runtime alongside the vec table (mirroring how the
@@ -1742,7 +1743,7 @@ pub async fn embed_and_store_memory(
         )));
     }
     let blob: &[u8] = bytemuck::cast_slice(&vec);
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::embed_and_store_memory")?;
     conn.execute(
         "DELETE FROM persona_memory_embedding WHERE memory_id = ?1",
         params![memory_id],
@@ -1786,7 +1787,7 @@ pub async fn search_similar_memories(
     ensure_memory_vec_table(vec_pool)?;
     let vec = embedder.embed_query(query).await?;
     let blob: &[u8] = bytemuck::cast_slice(&vec);
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::search_similar_memories")?;
     let count: i64 = conn
         .query_row("SELECT COUNT(*) FROM persona_memory_embedding", [], |r| {
             r.get(0)
@@ -1899,7 +1900,7 @@ pub fn embedded_memory_ids(
     vec_pool: &crate::UserDbPool,
 ) -> Result<std::collections::HashSet<String>, AppError> {
     ensure_memory_vec_table(vec_pool)?;
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::embedded_memory_ids")?;
     let mut stmt = conn.prepare("SELECT memory_id FROM persona_memory_embedding")?;
     let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
     let mut set = std::collections::HashSet::new();
@@ -1920,7 +1921,7 @@ pub fn delete_memory_embeddings(
         return Ok(());
     }
     ensure_memory_vec_table(vec_pool)?;
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::delete_memory_embeddings")?;
     const CHUNK: usize = 400;
     for chunk in ids.chunks(CHUNK) {
         let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
@@ -1960,7 +1961,7 @@ pub fn gc_archived_memory_embeddings(
 ) -> Result<usize, AppError> {
     ensure_memory_vec_table(vec_pool)?;
     let archived_ids: Vec<String> = {
-        let conn = main_pool.get()?;
+        let conn = main_pool.conn("memories::gc_archived_memory_embeddings")?;
         let mut stmt =
             conn.prepare("SELECT id FROM persona_memories WHERE tier = 'archive' LIMIT ?1")?;
         let ids = stmt
@@ -1977,7 +1978,7 @@ pub fn gc_archived_memory_embeddings(
     let ids_json = serde_json::to_string(&archived_ids)
         .map_err(|e| AppError::Internal(format!("gc archived ids serialize: {e}")))?;
     let present: Vec<String> = {
-        let conn = vec_pool.get()?;
+        let conn = vec_pool.conn("memories::gc_archived_memory_embeddings")?;
         let mut stmt = conn.prepare(
             "SELECT memory_id FROM persona_memory_embedding
              WHERE memory_id IN (SELECT value FROM json_each(?1))",
@@ -2042,7 +2043,7 @@ pub async fn backfill_memory_embeddings(
     ensure_memory_vec_table(vec_pool)?;
     let already = embedded_memory_ids(vec_pool)?;
     let candidates: Vec<PersonaMemory> = {
-        let conn = main_pool.get()?;
+        let conn = main_pool.conn("memories::backfill_memory_embeddings")?;
         let mut stmt = conn.prepare("SELECT * FROM persona_memories WHERE tier != 'archive'")?;
         let rows = stmt.query_map([], row_to_memory)?;
         collect_rows(rows, "memories::backfill_memory_embeddings")

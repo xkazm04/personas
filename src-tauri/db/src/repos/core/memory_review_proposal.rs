@@ -16,6 +16,7 @@ use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// One memory's proposed disposition in a review batch. Matches the
@@ -110,7 +111,7 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
     let reviewed_count = input.entries.len() as i32;
     let proposed_changes = input.entries.iter().filter(|e| e.action != "keep").count() as i32;
 
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_review_proposal::create")?;
     conn.execute(
         "INSERT INTO persona_memory_review_proposal
             (id, persona_id, threshold, instructions, proposal_json,
@@ -133,7 +134,7 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
 }
 
 pub fn get(pool: &DbPool, id: &str) -> Result<Option<MemoryReviewProposal>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_review_proposal::get")?;
     let row = conn
         .query_row(
             "SELECT id, persona_id, threshold, instructions, proposal_json,
@@ -153,7 +154,7 @@ pub fn list(
     only_pending: bool,
     limit: u32,
 ) -> Result<Vec<MemoryReviewProposal>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_review_proposal::list")?;
     let mut clauses: Vec<&str> = Vec::new();
     if persona_id.is_some() {
         clauses.push("persona_id = ?1");
@@ -192,7 +193,7 @@ pub fn list(
 /// function only flips the status so the proposal can't be re-applied.
 /// Returns true if the row transitioned (was `pending_review`).
 pub fn mark_applied(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_review_proposal::mark_applied")?;
     let updated = conn.execute(
         "UPDATE persona_memory_review_proposal
          SET status = 'applied', decided_at = datetime('now')
@@ -206,7 +207,7 @@ pub fn mark_applied(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// `discarded` row returns false but does not error. Returns true if
 /// the row transitioned from `pending_review`.
 pub fn mark_discarded(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("memory_review_proposal::mark_discarded")?;
     let updated = conn.execute(
         "UPDATE persona_memory_review_proposal
          SET status = 'discarded', decided_at = datetime('now')

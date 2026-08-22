@@ -2,6 +2,7 @@ use rusqlite::params;
 
 use crate::models::{CreateTestResultInput, LabRunStatus, PersonaTestResult, PersonaTestRun};
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // -- Row mappers ------------------------------------------------
@@ -54,7 +55,7 @@ pub fn create_run(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::create_run")?;
         conn.execute(
             "INSERT INTO persona_test_runs (id, persona_id, status, models_tested, created_at)
              VALUES (?1, ?2, 'generating', ?3, ?4)",
@@ -66,7 +67,7 @@ pub fn create_run(
 
 pub fn get_run_by_id(pool: &DbPool, id: &str) -> Result<PersonaTestRun, AppError> {
     timed_query!("test_runs", "test_runs::get_run_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::get_run_by_id")?;
         conn.query_row(
             "SELECT * FROM persona_test_runs WHERE id = ?1",
             params![id],
@@ -86,7 +87,7 @@ pub fn get_runs_by_persona(
 ) -> Result<Vec<PersonaTestRun>, AppError> {
     timed_query!("test_runs", "test_runs::get_runs_by_persona", {
         let limit = limit.unwrap_or(20);
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::get_runs_by_persona")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_test_runs WHERE persona_id = ?1
              ORDER BY created_at DESC LIMIT ?2",
@@ -107,7 +108,7 @@ pub fn update_run_status(
     completed_at: Option<&str>,
 ) -> Result<(), AppError> {
     timed_query!("test_runs", "test_runs::update_run_status", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::update_run_status")?;
         // Validate state transition
         let current: String = conn
             .query_row(
@@ -146,7 +147,7 @@ pub fn update_run_status(
 
 pub fn delete_run(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("test_runs", "test_runs::delete_run", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::delete_run")?;
         let rows = conn.execute("DELETE FROM persona_test_runs WHERE id = ?1", params![id])?;
         Ok(rows > 0)
     })
@@ -162,7 +163,7 @@ pub fn create_result(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::create_result")?;
         // Tool calls now write only to the lab_tool_calls child table (see
         // write_tool_calls_child_rows below). The parent-table JSON columns are
         // dropped in step 7 of the lab-tool-calls-child-table ADR.
@@ -215,7 +216,7 @@ pub fn batch_create_results(
     inputs: &[CreateTestResultInput],
 ) -> Result<Vec<PersonaTestResult>, AppError> {
     timed_query!("test_runs", "test_runs::batch_create_results", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::batch_create_results")?;
         let tx = conn.unchecked_transaction()?;
         let mut results = Vec::with_capacity(inputs.len());
         for input in inputs {
@@ -271,7 +272,7 @@ pub fn batch_create_results(
 
 pub fn get_result_by_id(pool: &DbPool, id: &str) -> Result<PersonaTestResult, AppError> {
     timed_query!("test_runs", "test_runs::get_result_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::get_result_by_id")?;
         conn.query_row(
             "SELECT * FROM persona_test_results WHERE id = ?1",
             params![id],
@@ -289,7 +290,7 @@ pub fn get_results_by_run(
     test_run_id: &str,
 ) -> Result<Vec<PersonaTestResult>, AppError> {
     timed_query!("test_runs", "test_runs::get_results_by_run", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_runs::get_results_by_run")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_test_results WHERE test_run_id = ?1
              ORDER BY scenario_name, model_id",

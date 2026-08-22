@@ -18,6 +18,7 @@ use crate::models::{
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // -- Row mapper ---------------------------------------------------------------
@@ -170,7 +171,7 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
         let severity = normalize_severity(&input.severity).to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::promote")?;
 
         // OPEN-DUPLICATE guard (beyond the per-source dedup_key): the same
         // underlying problem re-raised from a DIFFERENT execution/run must not
@@ -277,7 +278,7 @@ pub fn list_open_by_personas(
             qb.limit(limit);
 
             let sql = qb.build_select("SELECT * FROM audit_incidents");
-            let conn = pool.get()?;
+            let conn = pool.conn("audit_incidents::list_open_by_personas")?;
             let mut stmt = conn.prepare(&sql)?;
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
             Ok(collect_rows(rows, "audit_incidents::list_open_by_personas"))
@@ -287,7 +288,7 @@ pub fn list_open_by_personas(
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<AuditIncident, AppError> {
     timed_query!("audit_incidents", "audit_incidents::get_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::get_by_id")?;
         let mut stmt = conn.prepare("SELECT * FROM audit_incidents WHERE id = ?1")?;
         let row = stmt
             .query_row(params![id], row_to_incident)
@@ -333,7 +334,7 @@ pub fn list(
         qb.offset(offset);
 
         let sql = qb.build_select("SELECT * FROM audit_incidents");
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::list")?;
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
         Ok(collect_rows(rows, "audit_incidents::list"))
@@ -344,7 +345,7 @@ pub fn list(
 /// `status='open'` so the chips reflect "what still needs attention."
 pub fn summary(pool: &DbPool) -> Result<AuditIncidentSummary, AppError> {
     timed_query!("audit_incidents", "audit_incidents::summary", {
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::summary")?;
 
         let mut open = 0i64;
         let mut acknowledged = 0i64;
@@ -456,7 +457,7 @@ fn apply_transition(
     }
 
     let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    let conn = pool.conn("audit_incidents::apply_transition")?;
     let rows = match target {
         IncidentStatus::Acknowledged => conn.execute(
             "UPDATE audit_incidents
@@ -545,7 +546,7 @@ pub fn find_continuation_candidates(
         "audit_incidents",
         "audit_incidents::find_continuation_candidates",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("audit_incidents::find_continuation_candidates")?;
             let mut stmt = conn.prepare(
             "SELECT * FROM audit_incidents \
              WHERE status = 'resolved' \n             AND source_table IN ('persona_blocker', 'team_assignments') \
@@ -572,7 +573,7 @@ pub fn find_continuation_candidates(
 pub fn claim_continuation(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("audit_incidents", "audit_incidents::claim_continuation", {
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::claim_continuation")?;
         let rows = conn.execute(
             "UPDATE audit_incidents SET continued_at = ?1
              WHERE id = ?2 AND continued_at IS NULL",
@@ -658,7 +659,7 @@ pub fn list_handled_autonomously(
         "audit_incidents",
         "audit_incidents::list_handled_autonomously",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("audit_incidents::list_handled_autonomously")?;
             let mut stmt = conn.prepare(
                 "SELECT * FROM audit_incidents
                  WHERE continued_at IS NOT NULL

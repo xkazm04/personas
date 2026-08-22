@@ -97,7 +97,6 @@ const POOL_ACQUIRE_TIMEOUT: Duration = Duration::from_secs(5);
 /// Tuned to catch the "vector_kb search holding a connection while concurrent
 /// IPC reads pile up" scenario without spamming on the occasional WAL
 /// checkpoint stall.
-#[allow(dead_code)]
 const POOL_STARVATION_WARN_MS: u128 = 250;
 
 /// Acquire a pooled connection with wait-time instrumentation. Logs a warning
@@ -107,9 +106,10 @@ const POOL_STARVATION_WARN_MS: u128 = 250;
 ///
 /// Functionally identical to `pool.get()`; safe to swap in at hot paths
 /// without other changes. Cold paths can keep using `pool.get()` directly.
-/// `dead_code` allow handles default-feature builds where the only caller
-/// (vector_store) is gated behind `cfg(feature = "ml")`.
-#[allow(dead_code)]
+///
+/// Prefer the [`PoolExt::conn`] extension method at call sites — it is the
+/// same function with a shorter spelling, which is what makes adopting it a
+/// one-token change rather than a wrapping rewrite.
 pub fn acquire_logged(
     pool: &DbPool,
     label: &'static str,
@@ -138,6 +138,39 @@ pub fn acquire_logged(
         _ => {}
     }
     result
+}
+
+/// Extension trait that puts [`acquire_logged`] one token away from a bare
+/// `pool.get()`.
+///
+/// `acquire_logged` has existed since the pool was built and had exactly one
+/// caller — behind `cfg(feature = "ml")`, so dead in a default build — while
+/// ~1,350 sites called `pool.get()` directly. The instrumentation was not
+/// rejected; it was never reachable cheaply. `pool.conn("label")?` is the same
+/// edit distance as `pool.get()?`, so adoption costs a call site nothing.
+///
+/// The `label` is the whole point and must name the caller (`"executions::
+/// insert"`, `"events::list"`). A blank or generic label produces a warning
+/// line nobody can act on, which is worse than the bare `get()` it replaced.
+pub trait PoolExt {
+    /// Check out a connection, logging a warning when the acquire exceeds
+    /// [`POOL_STARVATION_WARN_MS`] and an error when it fails outright.
+    ///
+    /// Identical in type and behaviour to `Pool::get`, so `?` propagates the
+    /// same `r2d2::Error` (which [`AppError`] converts via `#[from]`).
+    fn conn(
+        &self,
+        label: &'static str,
+    ) -> Result<PooledConnection<SqliteConnectionManager>, r2d2::Error>;
+}
+
+impl PoolExt for DbPool {
+    fn conn(
+        &self,
+        label: &'static str,
+    ) -> Result<PooledConnection<SqliteConnectionManager>, r2d2::Error> {
+        acquire_logged(self, label)
+    }
 }
 
 /// Cached filesystem path of the primary `personas.db` file, set once by

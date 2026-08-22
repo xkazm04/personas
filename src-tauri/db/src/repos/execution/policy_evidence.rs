@@ -16,6 +16,7 @@ use crate::policy_tuning::{EvidenceCell, PolicyEvidenceSnapshot};
 use crate::repos::execution::healing;
 use crate::settings_keys::MONTHLY_COST_CEILING_USD;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Aggregate the evidence snapshot over a trailing window (days; `None` = 30,
@@ -27,7 +28,7 @@ pub fn gather(pool: &DbPool, window_days: Option<i64>) -> Result<PolicyEvidenceS
     // Healing effectiveness rides the same window (context evidence).
     let healing_report = healing::get_healing_effectiveness(pool, Some(window_days))?;
 
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_evidence::gather")?;
 
     // -- Per-(category, model) execution cells -----------------------------
     let mut cells: Vec<EvidenceCell>;

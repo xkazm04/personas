@@ -1,6 +1,7 @@
 use rusqlite::params;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 use personas_core::trace::ExecutionTrace;
 
@@ -11,7 +12,7 @@ pub fn save(pool: &DbPool, trace: &ExecutionTrace) -> Result<(), AppError> {
         let spans_json =
             serde_json::to_string(&trace.spans).map_err(|e| AppError::Internal(e.to_string()))?;
 
-        let conn = pool.get()?;
+        let conn = pool.conn("traces::save")?;
         conn.execute(
             "INSERT INTO execution_traces (id, execution_id, trace_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
@@ -41,7 +42,7 @@ pub fn get_by_execution_id(
         "execution_traces",
         "execution_traces::get_by_execution_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("traces::get_by_execution_id")?;
             let result = conn.query_row(
         "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
          FROM execution_traces WHERE execution_id = ?1 ORDER BY created_at DESC LIMIT 1",
@@ -89,7 +90,7 @@ pub fn set_chain_trace_id(
         "execution_traces",
         "execution_traces::set_chain_trace_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("traces::set_chain_trace_id")?;
             conn.execute(
                 "UPDATE execution_traces SET chain_trace_id = ?1 WHERE execution_id = ?2",
                 params![chain_trace_id, execution_id],
@@ -108,7 +109,7 @@ pub fn get_by_chain_trace_id(
         "execution_traces",
         "execution_traces::get_by_chain_trace_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("traces::get_by_chain_trace_id")?;
             let mut stmt = conn.prepare(
         "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
          FROM execution_traces WHERE chain_trace_id = ?1 ORDER BY created_at ASC",
@@ -151,7 +152,7 @@ pub fn count_by_chain_trace_id(pool: &DbPool, chain_trace_id: &str) -> Result<u3
         "execution_traces",
         "execution_traces::count_by_chain_trace_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("traces::count_by_chain_trace_id")?;
             let count: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM execution_traces WHERE chain_trace_id = ?1",
                 params![chain_trace_id],

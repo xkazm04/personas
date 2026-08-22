@@ -2,6 +2,7 @@ use rusqlite::params;
 
 use crate::models::FrontendCrashRow;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Insert a single frontend crash report.
@@ -17,7 +18,7 @@ pub fn insert(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("frontend_crashes::insert")?;
         conn.execute(
             "INSERT INTO frontend_crashes (id, component, message, stack, component_stack, app_version, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
@@ -47,7 +48,7 @@ pub fn insert(
 /// List recent frontend crashes, newest first.
 pub fn list_recent(pool: &DbPool, limit: u32) -> Result<Vec<FrontendCrashRow>, AppError> {
     timed_query!("frontend_crashes", "frontend_crashes::list_recent", {
-        let conn = pool.get()?;
+        let conn = pool.conn("frontend_crashes::list_recent")?;
         let mut stmt = conn.prepare(
             "SELECT id, component, message, stack, component_stack, app_version, created_at
              FROM frontend_crashes
@@ -76,7 +77,7 @@ pub fn list_recent(pool: &DbPool, limit: u32) -> Result<Vec<FrontendCrashRow>, A
 /// Count crashes in the last N hours.
 pub fn count_since(pool: &DbPool, hours: u32) -> Result<u32, AppError> {
     timed_query!("frontend_crashes", "frontend_crashes::count_since", {
-        let conn = pool.get()?;
+        let conn = pool.conn("frontend_crashes::count_since")?;
         let cutoff = (chrono::Utc::now() - chrono::Duration::hours(i64::from(hours))).to_rfc3339();
         let count: u32 = conn.query_row(
             "SELECT COUNT(*) FROM frontend_crashes WHERE created_at >= ?1",
@@ -90,7 +91,7 @@ pub fn count_since(pool: &DbPool, hours: u32) -> Result<u32, AppError> {
 /// Delete all frontend crash records.
 pub fn clear_all(pool: &DbPool) -> Result<(), AppError> {
     timed_query!("frontend_crashes", "frontend_crashes::clear_all", {
-        let conn = pool.get()?;
+        let conn = pool.conn("frontend_crashes::clear_all")?;
         conn.execute("DELETE FROM frontend_crashes", [])?;
         Ok(())
     })
