@@ -193,8 +193,14 @@ learnings outrank generic doctrine when they disagree). Source:
   omitted rather than rendered empty.
 - **Read the run log.** `[KNOWLEDGE] …` reports how many picks came from real
   `use_when` triggers versus the weaker name fallback. A run dominated by the
-  fallback means that bundle has no triggers authored yet, not that selection is
-  broken.
+  fallback means the task's wording did not hit any technique's stated situation
+  — not that selection is broken. As of 2026-08-22 every technique in the
+  registry publishes triggers, so a persistent all-fallback run is worth a look
+  at how the capability is described.
+- **Technique paths come from the index, never from the directory convention.**
+  The registry re-shelves its subjects as it grows; a reader that constructs
+  `knowledge/<bundle>/<subject>/…` will hand out dead links the first time that
+  happens, and will do it silently.
 
 ## Relation to other pillars
 

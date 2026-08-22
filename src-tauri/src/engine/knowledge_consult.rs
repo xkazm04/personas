@@ -65,8 +65,9 @@ const SECTION_BUDGET_CHARS: usize = 2200;
 /// Weight of a subject- or technique-name token hit in the slug fallback.
 const SLUG_TOKEN_WEIGHT: u32 = 4;
 
-/// Relevance floor for the slug fallback: at least one subject-or-technique
-/// name token must match. A bare category hit does not qualify.
+/// Relevance floor for a technique that publishes NO triggers: at least one
+/// subject-or-technique name token must match. A bare category hit does not
+/// qualify.
 ///
 /// **Measured against the real corpus, and the reason this constant exists.**
 /// Without a floor, the probe "reviewing a backend port for gaps" returned one
@@ -77,6 +78,25 @@ const SLUG_TOKEN_WEIGHT: u32 = 4;
 /// files learns to ignore the section. Filling the twelve slots was never the
 /// goal; a menu is allowed to be short, and often should be.
 const SLUG_SCORE_FLOOR: u32 = SLUG_TOKEN_WEIGHT;
+
+/// Relevance floor for a technique that DOES publish triggers and matched none
+/// of them: two name tokens, not one.
+///
+/// **This bar exists because the corpus changed under the first design.** That
+/// version refused name matching outright for any technique with triggers — "it
+/// has stated the situations it is for, and this is not one of them" — which was
+/// defensible while most of the corpus had no triggers at all. At 1,557/1,557 it
+/// silently disabled name matching everywhere, and the measured result was that
+/// a persona working on agent-memory recall was offered NOTHING: every
+/// `agent-memory` technique states its situation in deliberately different
+/// vocabulary ("an oversized memory blocks everything behind it"), which a
+/// capability description will never reproduce.
+///
+/// Triggers are a precision instrument, not an exhaustive index of phrasings.
+/// So they still dominate the ranking by an order of magnitude, and a technique
+/// that answered the question about itself simply needs a stronger name signal
+/// to be admitted anyway.
+const DECLARED_TRIGGER_SLUG_FLOOR: u32 = SLUG_TOKEN_WEIGHT * 2;
 
 /// How a technique earned its place. Carried so the runner can log the split
 /// rather than let a weak selector pass for a strong one.
@@ -178,8 +198,35 @@ struct RawMeta {
 struct RawSubject {
     #[serde(default)]
     category: String,
+    /// Path of the subject's own doc, from which the techniques directory is
+    /// derived. **Read rather than constructed, and that distinction is the
+    /// whole point of this field** — see `subject_dir`.
+    #[serde(default)]
+    file: String,
     #[serde(default)]
     techniques: Vec<RawTechnique>,
+}
+
+/// Where a subject's files live, taken from the index rather than guessed.
+///
+/// The first version of this reader built `knowledge/<bundle>/<subject>/…` from
+/// the naming convention, which was true of the corpus on the day it was
+/// written and false eight days later: the `software-engineering` bundle moved
+/// to `knowledge/<bundle>/<category>/<subcategory>/<subject>/` and every path
+/// this module handed a persona became a dead link. Nothing failed loudly —
+/// the menu still rendered, the agent just could not open anything on it.
+///
+/// The index has always carried the real location in `file`. Deriving from it
+/// means a future re-shelving costs nothing here.
+///
+/// The constructed form survives only as the fallback for an index too old to
+/// carry `file`, where a guess is the only option available.
+fn subject_dir(subject_file: &str, bundle: &str, subject: &str) -> String {
+    let trimmed = subject_file.trim().replace('\\', "/");
+    match trimmed.rsplit_once('/') {
+        Some((dir, _)) if !dir.is_empty() => dir.to_string(),
+        _ => format!("knowledge/{bundle}/{subject}"),
+    }
 }
 
 #[derive(Deserialize)]
@@ -225,6 +272,7 @@ pub fn load_catalog(root: &Path) -> Vec<Technique> {
         };
 
         for (subject, s) in idx.subjects {
+            let dir = subject_dir(&s.file, &bundle, &subject);
             for t in s.techniques {
                 // `forged` is the only status that means "this is finished
                 // doctrine". Offering a stub to an agent as though it were
@@ -233,10 +281,7 @@ pub fn load_catalog(root: &Path) -> Vec<Technique> {
                     continue;
                 }
                 out.push(Technique {
-                    file: format!(
-                        "knowledge/{bundle}/{subject}/techniques/{slug}.md",
-                        slug = t.slug
-                    ),
+                    file: format!("{dir}/techniques/{slug}.md", slug = t.slug),
                     bundle: bundle.clone(),
                     subject: subject.clone(),
                     slug: t.slug,
@@ -303,13 +348,14 @@ pub fn select(catalog: &[Technique], signals: &Signals, limit: usize) -> Vec<Sel
                 });
             }
 
-            // Fallback ONLY for techniques with no triggers at all. A technique
-            // that has `use_when` and did not match has answered the question:
-            // it is not for this situation. Letting it back in through its slug
-            // would override its own statement about itself.
-            if !t.use_when.is_empty() {
-                return None;
-            }
+            // Name matching, for every technique — but held to a higher bar
+            // when the technique publishes triggers that did not fire (see
+            // DECLARED_TRIGGER_SLUG_FLOOR for the measurement that set this).
+            let floor = if t.use_when.is_empty() {
+                SLUG_SCORE_FLOOR
+            } else {
+                DECLARED_TRIGGER_SLUG_FLOOR
+            };
             let mut score = 0u32;
             for w in tokens(&t.subject).iter().chain(tokens(&t.slug).iter()) {
                 if hay_tokens.contains(w) {
@@ -321,7 +367,7 @@ pub fn select(catalog: &[Technique], signals: &Signals, limit: usize) -> Vec<Sel
                     score += 1;
                 }
             }
-            (score >= SLUG_SCORE_FLOOR).then(|| Selected {
+            (score >= floor).then(|| Selected {
                 technique: t.clone(),
                 score,
                 selector: Selector::Slug,
@@ -484,6 +530,25 @@ mod tests {
       }
     }"#;
 
+    /// The shape `build-index.mjs` emits TODAY: subjects shelved under
+    /// category/subcategory, with `file` carrying the real location. Added
+    /// after the flat fixtures stayed green through a restructure that had
+    /// broken every path the reader produced.
+    const NESTED: &str = r#"{
+      "meta": {"bundle": "software-engineering", "layout": "nested"},
+      "subjects": {
+        "agent-memory": {
+          "category": "llm-agent",
+          "subcategory": "prompt-and-context",
+          "file": "knowledge/software-engineering/llm-agent/prompt-and-context/agent-memory/agent-memory.md",
+          "techniques": [
+            {"slug": "recall-injection", "status": "forged",
+             "use_when": ["deciding what earns a seat in the prompt"]}
+          ]
+        }
+      }
+    }"#;
+
     fn sig(text: &str) -> Signals {
         Signals {
             use_case_description: text.into(),
@@ -544,25 +609,74 @@ mod tests {
     }
 
     #[test]
-    fn a_technique_that_declares_its_triggers_is_not_readmitted_by_its_slug() {
-        // The rule that keeps `use_when` meaningful. `backend-parity-as-contract`
-        // shares the word "backend" with the signal, but its own trigger says it
-        // is for reviewing a port — so it must stay out. Without this, declaring
-        // triggers would make a technique MORE likely to be mis-selected than
-        // declaring none.
+    fn a_declared_trigger_technique_needs_a_stronger_name_signal_not_an_impossible_one() {
+        // Replaces an assertion that a trigger-publishing technique can NEVER be
+        // reached by name. That held while most of the corpus had no triggers;
+        // at 1,557/1,557 it meant name matching was off everywhere, and a
+        // persona working on agent-memory recall was offered nothing at all,
+        // because every trigger there is phrased in deliberately different
+        // vocabulary from the names.
         let dir = tempfile::tempdir().unwrap();
         bundle(dir.path(), "llm-observability", WITH_TRIGGERS);
-        let picked = select(
-            &load_catalog(dir.path()),
-            &sig("backend contract parity work"),
-            10,
-        );
+        let cat = load_catalog(dir.path());
+
+        // ONE name token is not enough to override a technique's own triggers.
+        let weak = select(&cat, &sig("some backend work"), 10);
         assert!(
-            !picked
+            !weak
                 .iter()
                 .any(|p| p.technique.slug == "backend-parity-as-contract"),
-            "a declared-trigger technique must not be selected on its slug"
+            "one shared word must not override declared triggers"
         );
+
+        // TWO is: at that point the execution is plainly about this technique.
+        let strong = select(&cat, &sig("backend parity across stores"), 10);
+        assert!(
+            strong
+                .iter()
+                .any(|p| p.technique.slug == "backend-parity-as-contract"),
+            "a technique must stay reachable when the task clearly names it"
+        );
+
+        // And a trigger match still outranks every name match by far.
+        let both = select(
+            &cat,
+            &sig("reviewing a backend port for gaps, parity across stores"),
+            10,
+        );
+        assert_eq!(both[0].selector, Selector::UseWhen);
+        assert!(both[0].score > 100);
+    }
+
+    #[test]
+    fn a_subjects_path_is_read_from_the_index_not_rebuilt_from_its_name() {
+        // The regression that shipped. The reader built
+        // `knowledge/<bundle>/<subject>/techniques/…` from the naming
+        // convention; the bundle was then re-shelved under
+        // category/subcategory and every path handed to a persona became a
+        // dead link — while all twelve fixture tests stayed green, because the
+        // fixtures were flat too.
+        let dir = tempfile::tempdir().unwrap();
+        bundle(dir.path(), "software-engineering", NESTED);
+        let cat = load_catalog(dir.path());
+        assert_eq!(cat.len(), 1);
+        assert_eq!(
+            cat[0].file,
+            "knowledge/software-engineering/llm-agent/prompt-and-context/agent-memory/techniques/recall-injection.md",
+            "the technique path must be derived from the subject's own `file`"
+        );
+    }
+
+    #[test]
+    fn an_index_without_a_subject_file_still_resolves() {
+        // Older indexes predate the field; a guess is the only option there, and
+        // it is the layout those indexes actually had.
+        let dir = tempfile::tempdir().unwrap();
+        bundle(dir.path(), "software-engineering", NO_TRIGGERS);
+        let cat = load_catalog(dir.path());
+        assert!(cat.iter().all(|t| t
+            .file
+            .starts_with("knowledge/software-engineering/agent-memory/techniques/")));
     }
 
     #[test]
