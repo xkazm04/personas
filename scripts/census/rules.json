@@ -647,8 +647,8 @@
         "description": "a #[tauri::command] whose success type is serde_json::Value, directly or wrapped in Option/Vec. PROXY FOR the stack-free condition \"an operation's success payload is an untyped document, so the type generator emits nothing and the caller hand-authors the contract\". The [^{]{0,900} span cannot cross a function body, so the attribute and the return arrow are guaranteed to belong to the same signature. Measured consequence in this repo: 104 such commands; 55 production call sites in src/api/** hit them; 51 of those declare a concrete TypeScript type anyway; and 19 of those types are ORPHAN bindings whose Rust source no longer exists (src/lib/bindings/VaultStatus.ts, MigrationResult.ts, DesignStartResult.ts, ...). CI's binding-drift job cannot see them (ts-rs never deletes a file, so there is no diff) and check-unused-bindings.sh cannot see them (it asks whether a binding is USED, not whether it is still GENERATED). PRECONDITION: this repo spells its untyped escape hatch serde_json::Value; a repo using Box<dyn Serialize>, an un-schema'd JSON response, or `any` has the same condition wearing different markup and must re-derive the proxy. Legal destination: a named struct or enum carrying #[derive(TS)] #[ts(export)], imported on the frontend from @/lib/bindings/<Name>."
       },
       "baseline": {
-        "files": 39,
-        "matches": 102
+        "files": 36,
+        "matches": 92
       },
       "floor": 500
     },
@@ -976,7 +976,7 @@
       },
       "baseline": {
         "files": 12,
-        "matches": 52
+        "matches": 51
       },
       "floor": 4000
     },
@@ -1041,8 +1041,8 @@
         "description": "a pub fn in the repository layer whose text reaches a rusqlite statement call (query_row / query_map / execute / execute_batch / prepare / prepare_cached) without passing through timed_query! first, and with no intervening pub fn. PROXY FOR the stack-free condition: a persistence operation executes with no record of how long it took, so its cost can never be observed, compared across releases, or attributed when a surface gets slow. Measured 2026-08-14 at HEAD: 245 matches across 36 of 116 files. Two independent implementations reconcile EXACTLY - a brace-matching Rust parser counts 234 pub fns that hold SQL in their own body with no timed_query!, and the 11-match difference is precisely the 11 spans where the SQL belongs to a private helper declared immediately after the matched pub fn (llm_spend.rs:30 pub fn record -> the untimed INSERT is in fn try_record at :40). So precision on the CONDITION is 245/245 and precision on the ATTRIBUTED FUNCTION NAME is 234/245; every match is a real untimed statement either way. Median matched span is 197 chars and only 1 of 245 approaches the 2500 cap, so the bound loses almost nothing and makes the count a floor rather than an estimate. Every match is a distinct (file, fn) pair - no function is double-counted. Zero matches sit inside a #[cfg(test)] module (a naive after-the-marker heuristic flags 8, and all 8 are production functions declared below a mid-file test mod). The gap is FILE-shaped, not function-shaped, which is why a per-function lint would read as noise: twin.rs is 38/39 uninstrumented, research_lab.rs 25/25, orchestration/team_assignments.rs 24/24, while executions.rs, events.rs and triggers.rs are near 100 percent covered - a module either adopted the macro or never heard of it. It does not correlate with age (the three oldest repo files, 2026-02-19, are covered; 2026-07-31 arrivals are not) and it does not correlate with hotness. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite method calls spelled query_row / query_map / execute / prepare inside functions declared pub fn, and its timing wrapper is a macro named timed_query! that must be written by hand. A repo whose driver is sqlx (.fetch_one(&pool).await), an ORM, or a query builder has the SAME condition wearing different markup and this pattern scores zero against it - brainiac is exactly that repo, and 0 of its 176 store functions are timed. A repo that times structurally at a chokepoint has the condition designed out and needs no rule at all: this repo's own frontend is that case, since src/lib/tauriInvoke.ts:513,:517 calls recordIpcCall on BOTH the success and the failure path of every IPC call, so its coverage is 100 percent by construction and cannot regress. LEGAL FIX, in order: (1) wrap the body in timed_query!(TABLE, TABLE::op, { ... }) - alert_rules.rs:35-59 is the shape to copy; (2) if the function is a thin wrapper over a private helper, wrap the helper, not the wrapper; (3) if the function genuinely runs no SQL of its own and only composes other repo functions, it needs no wrapper and the match is telling you a private sibling below it does - wrap that one. Do NOT silence a match by moving SQL out of the repo layer; that trades this condition for the one persistence-handle-in-command-tree counts."
       },
       "baseline": {
-        "files": 44,
-        "matches": 244
+        "files": 45,
+        "matches": 245
       },
       "floor": 100
     },
@@ -1737,8 +1737,8 @@
         "description": "an identifier naming a monetary quantity (cost/Cost/spend/Spend) collapsed to the literal 0 by a zero-default operator (`unwrap_or(0`, `unwrap_or_default()`, `?? 0`, `|| 0`). PROXY FOR the stack-free condition: *unknown* and *free* are rendered as the same value, so a total that omits a call is indistinguishable from one that includes a free call, and any ceiling computed from that total silently rises. Precision measured 25/25 on a full read of every match. The two highest-severity are engine/background.rs:2510 and engine/mod.rs:2778, both `get_monthly_spend(...).unwrap_or(0.0)` — a database error there reads as '$0 spent this month' and OPENS the monthly budget cap, so the failure mode of the measurement becomes a bypass of the control. Seven more are DB row-mappers (`row.get::<_, Option<f64>>(\"cost_usd\")?.unwrap_or(0.0)`) that destroy a NULL the nullable column was holding correctly; the remainder are TS reducers and adapters where a span, day-bucket or dashboard field of unknown cost contributes 0 to a displayed or gated total (ChainSpanRow/useChainTrace feed the chain-cost accumulator that CHAIN_MAX_COST_USD gates). CASE-SENSITIVITY IS LOAD-BEARING: an `i` flag matches `haSPENDing`, admitting six `hasPending = (x?.length ?? 0)` false positives in src/features/agents/sub_glyph — do not add it. PRECONDITION (measured, must be re-derived per repo): this repo names money with the tokens cost/spend, expresses absence as Rust `Option` or TS `null|undefined`, and spells the collapse with `unwrap_or`/`??`/`||`. A repo naming money `amount`/`price`/`charge`, or using a Money newtype with a total function, scores zero while the condition is present — and the sibling `personas-cloud` has the identical defect spelled `costUsd: msg.totalCostUsd ?? 0` (dispatcher.ts:461) feeding its own budget gate, while `brainiac` refuses it in a comment (providers/openai.rs:196) and has no dollar field to falsify. LEGAL FIX: keep the money `Option<f64>` / `number | null` from the parse site to the column (both ends already are — it is the carrier struct in between that destroys it), and make the consumer handle absence explicitly. For a spend read that gates a budget, fail CLOSED: propagate the error rather than substituting 0."
       },
       "baseline": {
-        "files": 21,
-        "matches": 25
+        "files": 22,
+        "matches": 26
       },
       "floor": 4000
     },
@@ -3198,8 +3198,8 @@
         }
       ],
       "baseline": {
-        "files": 6,
-        "matches": 16
+        "files": 7,
+        "matches": 19
       },
       "floor": 900
     },
@@ -5357,8 +5357,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 107,
-        "matches": 1115
+        "files": 100,
+        "matches": 881
       },
       "floor": 100
     },
@@ -5380,8 +5380,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 76,
-        "matches": 346
+        "files": 72,
+        "matches": 293
       },
       "floor": 100
     },
@@ -5402,8 +5402,8 @@
         "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
       },
       "baseline": {
-        "files": 98,
-        "matches": 324
+        "files": 100,
+        "matches": 332
       },
       "floor": 900
     }
