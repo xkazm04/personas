@@ -72,11 +72,18 @@ const TASKS = {
   // `tauri dev` failed with "resource path `resources\skills` doesn't exist".
   // Listing it here makes predev create it too, not just prebuild.
   "system-skills": "scripts/sync-system-skills.mjs",
+  // Regenerates src/lib/bindings/index.ts, the barrel re-exporting every ts-rs
+  // binding. It was hand-maintained with no generator and no gate until
+  // 2026-08-22, so every binding add/remove rotted it silently -- a removal
+  // leaves a dangling `export type ... from "./Gone"` that breaks tsc, which is
+  // how it was finally noticed. Deterministic output, so a no-op run rewrites
+  // the same bytes and leaves the tree clean.
+  "bindings-index": "scripts/generate-bindings-index.mjs",
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index", "bindings-index"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills", "gp-index", "bindings-index"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

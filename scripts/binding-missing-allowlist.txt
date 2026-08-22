@@ -1,0 +1,20 @@
+# Baseline: Rust types carrying `#[derive(TS)] #[ts(export)]` that have NO
+# committed file in src/lib/bindings/. The mirror image of the orphan list, and
+# the direction CI's binding-drift job was extended to cover in 2026-08-14 --
+# but only for a type whose binding regeneration WRITES. These four never had
+# one written, so there is nothing for a diff to see either.
+#
+# scripts/check-binding-orphans.mjs fails on any new one, and ALSO when a listed
+# name stops being missing (same two-sided convention as the orphan list).
+#
+# None of the four is feature-gated; all four sit in personas-core and would
+# appear the moment someone runs
+#   cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings
+# That needs cargo, which the lane that found them could not run.
+#
+# One bare type name per line. `#` starts a comment.
+
+CompositionWorkflow             # src-tauri/core/src/models/composition_workflow.rs:11
+CreateCompositionWorkflowInput  # src-tauri/core/src/models/composition_workflow.rs:30
+KbIngestRequest                 # src-tauri/core/src/models/knowledge_base.rs:143
+UpdateCompositionWorkflowInput  # src-tauri/core/src/models/composition_workflow.rs:43

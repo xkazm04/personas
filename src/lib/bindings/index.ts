@@ -1,6 +1,7 @@
-// Auto-generated barrel index for ts-rs bindings.
-// Regenerate: ls *.ts | grep -v index.ts | sed 's/\.ts$//' | sort | awk '{print "export type { " $1 " } from \"./" $1 "\";"}'
-// Do not edit manually — regenerate after adding new bindings.
+// Auto-generated barrel index for ts-rs bindings. DO NOT EDIT.
+// Regenerate: node scripts/generate-bindings-index.mjs
+// Runs automatically in predev/prebuild (scripts/run-codegen.mjs, task `bindings-index`).
+// Verified by: node scripts/generate-bindings-index.mjs --check (npm run check).
 
 export type { AccessLevel } from "./AccessLevel";
 export type { ActiveChain } from "./ActiveChain";
