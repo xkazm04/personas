@@ -186,6 +186,21 @@ impl DevicePairing {
             })
     }
 
+    /// The channel binding of the live session to `peer_id`, mixed into the
+    /// fingerprint so the human comparison independently detects a relay: two
+    /// TLS sessions export two different values, so the two screens show two
+    /// different codes.
+    async fn channel_binding(&self, peer_id: &str) -> Result<String, AppError> {
+        self.connections
+            .channel_binding(peer_id)
+            .await
+            .ok_or_else(|| {
+                AppError::Validation(format!(
+                    "Not connected to peer {peer_id}; pairing requires an authenticated connection"
+                ))
+            })
+    }
+
     // -- Initiator ------------------------------------------------------
 
     /// Start a pairing with a connected peer. Returns the fingerprint to show.
@@ -203,7 +218,12 @@ impl DevicePairing {
         let devices_at_stake = owned_devices_repo::count_devices_at_stake(&self.pool, peer_id)?;
 
         let session_nonce = protocol::generate_nonce();
-        let fingerprint = protocol::pairing_fingerprint(&local.peer_id, peer_id, &session_nonce);
+        let fingerprint = protocol::pairing_fingerprint(
+            &local.peer_id,
+            peer_id,
+            &session_nonce,
+            &self.channel_binding(peer_id).await?,
+        );
         let remote_name = self
             .connections
             .get_remote_display_name(peer_id)
@@ -339,7 +359,12 @@ impl DevicePairing {
         protocol::validate_nonce(&session_nonce, "pairing session")?;
         let local = crate::identity::get_or_create_identity(&self.pool)?;
         let public_key_b64 = self.proven_key(peer_id).await?;
-        let fingerprint = protocol::pairing_fingerprint(&local.peer_id, peer_id, &session_nonce);
+        let fingerprint = protocol::pairing_fingerprint(
+            &local.peer_id,
+            peer_id,
+            &session_nonce,
+            &self.channel_binding(peer_id).await?,
+        );
 
         {
             let mut map = self.pending.write().await;
@@ -503,19 +528,21 @@ mod tests {
         );
     }
 
-    /// Both sides derive the fingerprint from the SAME session nonce but from
-    /// mirrored peer-id arguments. Pin that the ceremony's two call sites agree
-    /// (the initiator's `request` and the responder's `handle_request` differ
-    /// only in argument order).
+    /// Both sides derive the fingerprint from the SAME session nonce and the
+    /// SAME channel binding, but from mirrored peer-id arguments. Pin that the
+    /// ceremony's two call sites agree (the initiator's `request` and the
+    /// responder's `handle_request` differ only in argument order).
     #[test]
     fn ceremony_call_sites_agree_on_the_code() {
         let initiator = "AAAApeer";
         let responder = "ZZZZpeer";
         let session = protocol::generate_nonce();
-        // request(): pairing_fingerprint(local=initiator, remote=responder, n)
-        let shown_by_initiator = protocol::pairing_fingerprint(initiator, responder, &session);
-        // handle_request(): pairing_fingerprint(local=responder, remote=initiator, n)
-        let shown_by_responder = protocol::pairing_fingerprint(responder, initiator, &session);
+        // One honest QUIC session: both ends export the same binding.
+        let cb = protocol::generate_nonce();
+        // request(): pairing_fingerprint(local=initiator, remote=responder, n, cb)
+        let shown_by_initiator = protocol::pairing_fingerprint(initiator, responder, &session, &cb);
+        // handle_request(): pairing_fingerprint(local=responder, remote=initiator, n, cb)
+        let shown_by_responder = protocol::pairing_fingerprint(responder, initiator, &session, &cb);
         assert_eq!(shown_by_initiator, shown_by_responder);
     }
 }
