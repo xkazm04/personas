@@ -224,8 +224,8 @@ mod tests {
         let path = dir.path().join("a.zip");
         let file = std::fs::File::create(&path).unwrap();
         let mut w = zip::ZipWriter::new(file);
-        let opts: zip::write::SimpleFileOptions =
-            zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let opts: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
         for (name, body) in entries {
             w.start_file(*name, opts).unwrap();
             w.write_all(body).unwrap();

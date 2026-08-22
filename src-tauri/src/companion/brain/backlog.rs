@@ -56,7 +56,6 @@ pub struct BacklogItem {
     pub reminded_count: i32,
     pub created_at: String,
     pub resolved_at: Option<String>,
-    pub file_path: String,
 }
 
 #[derive(Debug)]
@@ -155,9 +154,8 @@ pub fn list_items(
     };
     let sql = format!(
         "SELECT b.id, b.kind, b.summary, b.status, b.source_episode_id, b.reminded_count,
-                b.created_at, b.resolved_at, n.file_path
+                b.created_at, b.resolved_at
          FROM companion_backlog_item b
-         JOIN companion_node n ON n.id = b.id
          {where_clause}
          ORDER BY
            CASE b.status WHEN 'pending' THEN 0 WHEN 'done' THEN 1 ELSE 2 END,
@@ -181,9 +179,8 @@ pub fn get_item(pool: &UserDbPool, id: &str) -> Result<Option<BacklogItem>, AppE
     let row = conn
         .query_row(
             "SELECT b.id, b.kind, b.summary, b.status, b.source_episode_id, b.reminded_count,
-                    b.created_at, b.resolved_at, n.file_path
+                    b.created_at, b.resolved_at
              FROM companion_backlog_item b
-             JOIN companion_node n ON n.id = b.id
              WHERE b.id = ?1",
             params![id],
             map_row,
@@ -221,7 +218,6 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<BacklogItem> {
         reminded_count: row.get(5)?,
         created_at: row.get(6)?,
         resolved_at: row.get(7)?,
-        file_path: row.get(8)?,
     })
 }
 

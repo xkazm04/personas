@@ -97,10 +97,7 @@ pub fn save_cockpit_preserving_pinned(
 /// the merged JSON. Returns `None` if no merge was needed (no current
 /// spec, no pinned widgets, or new spec malformed — falls back to plain
 /// save with the new spec as-is).
-fn merge_with_pinned(
-    pool: &UserDbPool,
-    new_spec_json: &str,
-) -> Result<Option<String>, AppError> {
+fn merge_with_pinned(pool: &UserDbPool, new_spec_json: &str) -> Result<Option<String>, AppError> {
     let prior = match load_cockpit(pool)? {
         Some(c) => c,
         None => return Ok(None),
@@ -126,10 +123,7 @@ fn merge_with_pinned(
         Ok(v) => v,
         Err(_) => return Ok(None),
     };
-    let new_widgets = match new_spec
-        .get_mut("widgets")
-        .and_then(|v| v.as_array_mut())
-    {
+    let new_widgets = match new_spec.get_mut("widgets").and_then(|v| v.as_array_mut()) {
         Some(arr) => arr,
         None => return Ok(None),
     };

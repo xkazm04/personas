@@ -15,8 +15,8 @@
 use rusqlite::{params, OptionalExtension};
 use serde_json::Value as JsonValue;
 
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 /// Pull the user-facing reply text out of a persona execution's `output_data`.
 ///
@@ -203,8 +203,7 @@ mod tests {
     #[test]
     fn extract_reply_handles_braces_inside_strings() {
         // A `}` inside the content string must not end the object early.
-        let output =
-            r#"{"user_message": {"content": "use {curly} braces like {this}"}}"#;
+        let output = r#"{"user_message": {"content": "use {curly} braces like {this}"}}"#;
         assert_eq!(
             extract_reply_from_output(output),
             "use {curly} braces like {this}",

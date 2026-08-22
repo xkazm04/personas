@@ -221,11 +221,7 @@ fn error_result(text: impl Into<String>) -> Value {
     json!({ "content": [ { "type": "text", "text": text.into() } ], "isError": true })
 }
 
-async fn call_tool(
-    origin: &str,
-    target_url: &str,
-    params: Value,
-) -> Result<Value, (i32, String)> {
+async fn call_tool(origin: &str, target_url: &str, params: Value) -> Result<Value, (i32, String)> {
     let name = params
         .get("name")
         .and_then(|v| v.as_str())
@@ -346,10 +342,7 @@ fn unwrap_relay(envelope: Value) -> Value {
     if let Some(err) = envelope.get("__relay_err").and_then(|v| v.as_str()) {
         return error_result(format!("Browser command failed: {err}"));
     }
-    let payload = envelope
-        .get("__relay_ok")
-        .cloned()
-        .unwrap_or(Value::Null);
+    let payload = envelope.get("__relay_ok").cloned().unwrap_or(Value::Null);
     let text = match payload {
         Value::String(s) => s,
         other => serde_json::to_string_pretty(&other).unwrap_or_else(|_| other.to_string()),

@@ -564,9 +564,11 @@ mod tests {
         assert!(c.finished_at.is_some(), "failing is a way of finishing");
         assert!(c.stats_json.contains("timed out"));
         assert_eq!(c.report_node_id.as_deref(), Some(node.as_str()));
-        assert!(!keyword::search_kind(&pool, "aborted compress", CYCLE_REPORT_KIND, 5)
-            .unwrap()
-            .is_empty());
+        assert!(
+            !keyword::search_kind(&pool, "aborted compress", CYCLE_REPORT_KIND, 5)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     /// A cycle with nothing to say writes no node — an empty report would be a

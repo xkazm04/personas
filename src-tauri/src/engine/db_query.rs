@@ -327,10 +327,7 @@ fn strip_sql_literals(sql: &str) -> String {
 /// sees statement one, while Neon/PlanetScale forward the raw payload verbatim.
 fn has_multiple_statements(query_text: &str) -> bool {
     let stripped = strip_sql_literals(query_text);
-    stripped
-        .trim()
-        .trim_end_matches(';')
-        .contains(';')
+    stripped.trim().trim_end_matches(';').contains(';')
 }
 
 /// True if a `WITH`-led statement embeds a data-modifying verb in its body.
@@ -426,8 +423,8 @@ fn validate_ddl_only(sql: &str) -> Result<(), AppError> {
     }
 
     // Allow only CREATE TABLE / INDEX / UNIQUE INDEX / VIEW / TRIGGER
-    if upper.starts_with("CREATE ") {
-        let after = upper["CREATE ".len()..].trim_start();
+    if let Some(after_create) = upper.strip_prefix("CREATE ") {
+        let after = after_create.trim_start();
         // Handle optional "IF NOT EXISTS" and similar noise after the object type
         if after.starts_with("TABLE")
             || after.starts_with("INDEX")
@@ -1178,7 +1175,10 @@ fn find_ci(haystack: &str, needle: &str) -> Option<usize> {
 /// Supports: SELECT [cols] FROM table [WHERE simple_conds] [ORDER BY cols] [LIMIT n]
 /// Does NOT support: JOINs, subqueries, GROUP BY, HAVING, UNION, CTEs, aggregates.
 fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
-    if !sql.get(0..6).is_some_and(|s| s.eq_ignore_ascii_case("SELECT")) {
+    if !sql
+        .get(0..6)
+        .is_some_and(|s| s.eq_ignore_ascii_case("SELECT"))
+    {
         return None;
     }
 
@@ -1262,8 +1262,7 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
             // `&str` -- slicing by `part.len() - N` directly is only safe
             // once we know those last N bytes are themselves ASCII.
             let pb = part.as_bytes();
-            let (col, dir) = if pb.len() >= 5 && pb[pb.len() - 5..].eq_ignore_ascii_case(b" DESC")
-            {
+            let (col, dir) = if pb.len() >= 5 && pb[pb.len() - 5..].eq_ignore_ascii_case(b" DESC") {
                 (
                     part[..part.len() - 5]
                         .trim()
@@ -3089,7 +3088,9 @@ mod tests {
         assert!(!has_multiple_statements("SELECT * FROM users;"));
         assert!(!has_multiple_statements("SELECT * FROM users;  \n"));
         // Semicolon INSIDE a string literal is data, not a separator.
-        assert!(!has_multiple_statements("SELECT * FROM t WHERE note = 'a;b'"));
+        assert!(!has_multiple_statements(
+            "SELECT * FROM t WHERE note = 'a;b'"
+        ));
         assert!(!has_multiple_statements("SELECT ';' AS sep FROM t;"));
     }
 
@@ -3098,8 +3099,14 @@ mod tests {
     #[test]
     fn test_data_modifying_cte_is_mutation() {
         let cte = "WITH deleted AS (DELETE FROM kb_documents RETURNING *) SELECT * FROM deleted";
-        assert!(is_mutation(cte), "WITH ... DELETE must classify as a mutation");
-        assert!(!is_sqlite_read(cte), "WITH ... DELETE must not classify as a read");
+        assert!(
+            is_mutation(cte),
+            "WITH ... DELETE must classify as a mutation"
+        );
+        assert!(
+            !is_sqlite_read(cte),
+            "WITH ... DELETE must not classify as a read"
+        );
     }
 
     #[test]
@@ -3112,7 +3119,10 @@ mod tests {
     #[test]
     fn test_cte_mutation_verb_in_string_literal_is_not_a_mutation() {
         let q = "WITH t AS (SELECT * FROM logs WHERE msg = 'DELETE failed') SELECT * FROM t";
-        assert!(!is_mutation(q), "a verb inside a string literal must not trip the classifier");
+        assert!(
+            !is_mutation(q),
+            "a verb inside a string literal must not trip the classifier"
+        );
     }
 
     // -- extract_pg_host ---------------------------------------------
@@ -3267,7 +3277,10 @@ mod tests {
         let out = inject_row_limit("WITH t AS (SELECT 1) SELECT * FROM t");
         assert_eq!(
             out,
-            format!("WITH t AS (SELECT 1) SELECT * FROM t LIMIT {}", MAX_ROWS + 1)
+            format!(
+                "WITH t AS (SELECT 1) SELECT * FROM t LIMIT {}",
+                MAX_ROWS + 1
+            )
         );
     }
 

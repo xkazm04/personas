@@ -1,8 +1,8 @@
+pub mod alert_evaluator;
 #[cfg(feature = "desktop")]
 pub mod ambient;
 pub mod annotations;
 pub mod assertions;
-pub mod alert_evaluator;
 pub mod audit_incidents;
 #[cfg(all(feature = "desktop", feature = "ml"))]
 pub mod clipboard_intel;

@@ -102,7 +102,10 @@ fn enqueue(app: &AppHandle, job: Job) {
 /// emit points — cheap (one map lookup + a channel send), never blocking.
 pub fn note_changed(app: &AppHandle, session_id: &str) {
     let row = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.get(session_id).and_then(row_from_inner)
     };
     let Some(row) = row else { return };
@@ -232,7 +235,10 @@ pub fn rehydrate(app: &AppHandle) -> usize {
         restored += 1;
     }
     if restored > 0 {
-        tracing::info!(restored, "fleet: rehydrated sessions from the durable registry");
+        tracing::info!(
+            restored,
+            "fleet: rehydrated sessions from the durable registry"
+        );
         super::pty::emit_registry_changed(app, "rehydrated", "");
     }
     restored
@@ -267,7 +273,10 @@ pub fn recover_after_restart(app: &AppHandle) {
     }
     // Snapshot Athena-owned mid-task orphan ids under the lock; act outside it.
     let strays: Vec<String> = {
-        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Nothing to inspect yet (rehydrate no-ops until the DB pool is
         // managed) — don't burn the one-shot; retry on the next tick.
         if map.is_empty() {
@@ -300,8 +309,8 @@ pub fn recover_after_restart(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::types::FleetSessionMode;
+    use super::*;
 
     fn sample_inner() -> FleetSessionInner {
         FleetSessionInner {

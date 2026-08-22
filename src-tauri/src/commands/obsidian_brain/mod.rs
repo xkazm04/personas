@@ -4,7 +4,6 @@ pub mod graph;
 pub mod lint;
 pub mod markdown;
 pub mod revitalize;
-pub mod semantic_lint;
 pub mod vault_fs;
 
 #[cfg(test)]
@@ -19,17 +18,15 @@ use uuid::Uuid;
 
 use crate::db::models::{
     DetectedVault, ExecutionKnowledge, ObsidianAvailability, ObsidianMirrorConfig,
-    ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport, SyncConflict,
-    SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
+    ObsidianVaultConfig, PullSyncResult, PushSyncResult, SyncConflict, SyncLogEntry, SyncState,
+    VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
 use crate::db::repos::core::memories as mem_repo;
-use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::repos::core::personas as persona_repo;
-use crate::db::repos::core::settings;
 use crate::db::repos::core::settings as settings_repo;
 use crate::db::repos::dev_tools as dev_tools_repo;
+use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::repos::resources::{connectors as connector_repo, obsidian_brain as sync_repo};
-use crate::db::settings_keys;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::ipc_auth::require_auth_sync;
@@ -141,17 +138,11 @@ fn count_vault_md_files(dir: &std::path::Path, depth: usize) -> i64 {
     for entry in entries.flatten() {
         let Ok(ft) = entry.file_type() else { continue };
         if ft.is_dir() {
-            if entry
-                .file_name()
-                .to_string_lossy()
-                .starts_with('.')
-            {
+            if entry.file_name().to_string_lossy().starts_with('.') {
                 continue;
             }
             count += count_vault_md_files(&entry.path(), depth - 1);
-        } else if ft.is_file()
-            && entry.path().extension().map(|e| e == "md").unwrap_or(false)
-        {
+        } else if ft.is_file() && entry.path().extension().map(|e| e == "md").unwrap_or(false) {
             count += 1;
         }
     }
@@ -351,7 +342,11 @@ pub(crate) fn mirror_write_note(
 ) -> Result<bool, AppError> {
     let hash = compute_content_hash(content);
     let prev = sync_repo::get_sync_state(pool, entity_type, entity_id)?;
-    if prev.as_ref().map(|s| s.content_hash == hash).unwrap_or(false) {
+    if prev
+        .as_ref()
+        .map(|s| s.content_hash == hash)
+        .unwrap_or(false)
+    {
         return Ok(false);
     }
     let full = Path::new(vault_path).join(rel_path);
@@ -611,16 +606,33 @@ pub fn obsidian_brain_push_sync(
                 // Before overwriting, re-read the on-disk note and refuse to
                 // clobber a divergent vault edit (symmetry with the pull path).
                 if is_update {
-                    let base_hash =
-                        existing.as_ref().map(|e| e.content_hash.as_str()).unwrap_or("");
-                    match classify_push("memory", &memory.id, &file_path, &rel_path, base_hash, &md_content) {
+                    let base_hash = existing
+                        .as_ref()
+                        .map(|e| e.content_hash.as_str())
+                        .unwrap_or("");
+                    match classify_push(
+                        "memory",
+                        &memory.id,
+                        &file_path,
+                        &rel_path,
+                        base_hash,
+                        &md_content,
+                    ) {
                         ThreeWayResult::Conflict(_) | ThreeWayResult::VaultChanged => {
                             // Vault note diverged from what we last pushed — the
                             // user edited it directly in Obsidian. Skip + record
                             // instead of overwriting their edit (the data loss
                             // this guard fixes); they can resolve via pull.
                             result.skipped += 1;
-                            log_sync(&state.db, "push", "memory", Some(&memory.id), Some(&rel_path), "skipped_vault_conflict", Some(&memory.title));
+                            log_sync(
+                                &state.db,
+                                "push",
+                                "memory",
+                                Some(&memory.id),
+                                Some(&rel_path),
+                                "skipped_vault_conflict",
+                                Some(&memory.title),
+                            );
                             continue;
                         }
                         _ => {}
@@ -708,14 +720,31 @@ pub fn obsidian_brain_push_sync(
             }
 
             if is_update {
-                let base_hash =
-                    existing.as_ref().map(|e| e.content_hash.as_str()).unwrap_or("");
-                match classify_push("persona", &persona.id, &file_path, &rel_path, base_hash, &md_content) {
+                let base_hash = existing
+                    .as_ref()
+                    .map(|e| e.content_hash.as_str())
+                    .unwrap_or("");
+                match classify_push(
+                    "persona",
+                    &persona.id,
+                    &file_path,
+                    &rel_path,
+                    base_hash,
+                    &md_content,
+                ) {
                     ThreeWayResult::Conflict(_) | ThreeWayResult::VaultChanged => {
                         // Vault profile diverged from our last push — skip rather
                         // than overwrite the user's direct edit.
                         result.skipped += 1;
-                        log_sync(&state.db, "push", "persona", Some(&persona.id), Some(&rel_path), "skipped_vault_conflict", Some(&persona.name));
+                        log_sync(
+                            &state.db,
+                            "push",
+                            "persona",
+                            Some(&persona.id),
+                            Some(&rel_path),
+                            "skipped_vault_conflict",
+                            Some(&persona.name),
+                        );
                         continue;
                     }
                     _ => {}
@@ -785,14 +814,31 @@ pub fn obsidian_brain_push_sync(
             }
 
             if is_update {
-                let base_hash =
-                    existing.as_ref().map(|e| e.content_hash.as_str()).unwrap_or("");
-                match classify_push("connector", &connector.id, &file_path, &rel_path, base_hash, &md_content) {
+                let base_hash = existing
+                    .as_ref()
+                    .map(|e| e.content_hash.as_str())
+                    .unwrap_or("");
+                match classify_push(
+                    "connector",
+                    &connector.id,
+                    &file_path,
+                    &rel_path,
+                    base_hash,
+                    &md_content,
+                ) {
                     ThreeWayResult::Conflict(_) | ThreeWayResult::VaultChanged => {
                         // Vault note diverged from our last push — skip rather
                         // than overwrite the user's direct edit.
                         result.skipped += 1;
-                        log_sync(&state.db, "push", "connector", Some(&connector.id), Some(&rel_path), "skipped_vault_conflict", Some(&connector.label));
+                        log_sync(
+                            &state.db,
+                            "push",
+                            "connector",
+                            Some(&connector.id),
+                            Some(&rel_path),
+                            "skipped_vault_conflict",
+                            Some(&connector.label),
+                        );
                         continue;
                     }
                     _ => {}
@@ -845,9 +891,14 @@ fn classify_push(
     app_md: &str,
 ) -> ThreeWayResult {
     match std::fs::read_to_string(file_path) {
-        Ok(current) => {
-            three_way_compare(entity_type, entity_id, rel_path, base_hash, app_md, &current)
-        }
+        Ok(current) => three_way_compare(
+            entity_type,
+            entity_id,
+            rel_path,
+            base_hash,
+            app_md,
+            &current,
+        ),
         Err(_) => ThreeWayResult::AppChanged,
     }
 }
@@ -1280,7 +1331,8 @@ pub fn obsidian_brain_resolve_conflict(
                     if compute_content_hash(&current) != conflict.vault_hash {
                         return Err(AppError::Validation(
                             "The vault file changed since this conflict was detected; \
-                             re-sync and resolve again.".into(),
+                             re-sync and resolve again."
+                                .into(),
                         ));
                     }
                 }
@@ -1423,7 +1475,10 @@ pub fn obsidian_brain_resolve_conflict(
 /// join/reject-`..` step — use `graph::ensure_within_vault` instead of
 /// re-deriving a third variant of this check; the two together are this
 /// plugin's complete set of vault-root resolvers.
-fn resolve_vault_subpath(vault_base: &Path, rel: Option<&str>) -> Result<std::path::PathBuf, AppError> {
+fn resolve_vault_subpath(
+    vault_base: &Path,
+    rel: Option<&str>,
+) -> Result<std::path::PathBuf, AppError> {
     let vault_canon = vault_base
         .canonicalize()
         .map_err(|e| AppError::Validation(format!("Vault path is not accessible: {e}")))?;
@@ -1517,10 +1572,7 @@ pub fn obsidian_brain_list_vault_files(
 
                 // Never descend into symlinked directories — a symlink inside
                 // the vault can still point outside it.
-                let is_symlink = entry
-                    .file_type()
-                    .map(|t| t.is_symlink())
-                    .unwrap_or(false);
+                let is_symlink = entry.file_type().map(|t| t.is_symlink()).unwrap_or(false);
                 if is_symlink {
                     continue;
                 }
@@ -1594,7 +1646,7 @@ fn goal_to_markdown(
     if let Some(ref td) = goal.target_date {
         md.push_str(&format!("target_date: \"{}\"\n", td));
     }
-    md.push_str(&format!("type: \"dev-goal\"\n"));
+    md.push_str("type: \"dev-goal\"\n");
     md.push_str(&format!("created: \"{}\"\n", goal.created_at));
     md.push_str(&format!("updated: \"{}\"\n", goal.updated_at));
     md.push_str("---\n\n");
@@ -1626,7 +1678,7 @@ fn goal_to_markdown(
                 child.progress
             ));
         }
-        md.push_str("\n");
+        md.push('\n');
     }
 
     md
@@ -1766,27 +1818,6 @@ pub fn obsidian_brain_lint_vault(
 // Karpathy's LLM knowledge base walkthrough (research run 2026-04-08,
 // youtube.com/watch?v=sboNwYmH3AY).
 
-#[tauri::command]
-pub async fn obsidian_brain_semantic_lint_vault(
-    state: State<'_, Arc<AppState>>,
-    vault_path: Option<String>,
-) -> Result<SemanticLintReport, AppError> {
-    require_auth(&state).await?;
-
-    // If the caller didn't supply a path, fall back to the configured vault.
-    let path = match vault_path {
-        Some(p) if !p.trim().is_empty() => p,
-        _ => get_config_or_err(&state.db)?.vault_path,
-    };
-
-    // Resolve the model: per-app override, else the module default.
-    let model = settings::get(&state.db, settings_keys::SEMANTIC_LINT_MODEL)?
-        .filter(|m| !m.trim().is_empty())
-        .unwrap_or_else(|| self::semantic_lint::DEFAULT_SEMANTIC_LINT_MODEL.to_string());
-
-    self::semantic_lint::run_semantic_lint(Path::new(&path), model).await
-}
-
 // ── Phase 6: Google Drive Cloud Sync ────────────────────────────────────
 // pending: companion of `drive.rs`. These commands need to be registered in
 // `lib.rs`'s `invoke_handler` once the Drive sync UI ships.
@@ -1800,11 +1831,11 @@ pub async fn obsidian_drive_status(
 
     let token = get_google_provider_token(&state).await?;
     let config = get_config_or_err(&state.db)?;
-    let vault_name = config
-        .vault_name
-        .is_empty()
-        .then(|| "default".to_string())
-        .unwrap_or(config.vault_name);
+    let vault_name = if config.vault_name.is_empty() {
+        "default".to_string()
+    } else {
+        config.vault_name
+    };
 
     drive::get_drive_status(&token, &vault_name).await
 }

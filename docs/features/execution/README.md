@@ -165,6 +165,37 @@ existing Compare mode:
   {failed, cancelled, timeout}`; a recovery is the inverse direction.
   Both lists render their own row strip in the report.
 
+### Organizational knowledge — the consult lane
+
+A run's prompt can carry a short menu of techniques from the shared knowledge
+registry, appended **after** the agent-memory section (so the agent's own
+learnings outrank generic doctrine when they disagree). Source:
+`engine::knowledge_consult`.
+
+- **Off unless a registry is wired.** The runner reads the clone path from
+  `app_settings['knowledge_registry_root']`, written by the workspace registry
+  section. No setting, a path that no longer exists, or an unbuilt/malformed
+  `index.json` all leave the prompt exactly as it was — the registry is an
+  enrichment, never a dependency.
+- **Pointers, not bodies.** Each entry is subject · technique · when-to-use ·
+  file path, capped at 12 entries / ~2,200 chars and packed whole. The agent is
+  told it may open the ones that apply, and that registry doctrine does **not**
+  override its instructions or the user's.
+- **The entries are fenced as untrusted content.** They come from a shared
+  repository, so whoever can merge there controls text that reaches every
+  persona's prompt — the body sits inside the same nonce'd `<untrusted_*>`
+  boundary as input data, covered by the runtime canary. The app's own framing
+  around it is not fenced.
+- **Selection** matches the execution's persona name/description, template
+  category and capability title/description against each technique's `use_when`
+  triggers; techniques that publish no triggers fall back to subject/technique
+  name matching. Nothing is selected when nothing matches — the section is
+  omitted rather than rendered empty.
+- **Read the run log.** `[KNOWLEDGE] …` reports how many picks came from real
+  `use_when` triggers versus the weaker name fallback. A run dominated by the
+  fallback means that bundle has no triggers authored yet, not that selection is
+  broken.
+
 ## Relation to other pillars
 
 ```

@@ -8,8 +8,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 use personas_core::error_taxonomy::ErrorCategory as FailureCategory;
 use personas_core::types::ExecutionResult;
@@ -918,7 +918,11 @@ mod tests {
   }
 }"#;
         let (fixes, _diagnosis, _should_retry) = parse_healing_output(output);
-        assert_eq!(fixes.len(), 1, "payload braces must not truncate the object");
+        assert_eq!(
+            fixes.len(),
+            1,
+            "payload braces must not truncate the object"
+        );
         assert_eq!(fixes[0].target, "src/config.json");
         assert!(
             fixes[0].payload.contains("\"retries\": 3"),
@@ -1051,7 +1055,10 @@ mod tests {
             payload: "HEALED".into(),
         }];
         let (_applied, prompt_changed) = apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
-        assert!(prompt_changed, "a modify_prompt fix must report prompt_changed");
+        assert!(
+            prompt_changed,
+            "a modify_prompt fix must report prompt_changed"
+        );
 
         // The live persona row now holds the healed prompt...
         let persona = personas::get_by_id(&pool, &persona_id).unwrap();
@@ -1089,7 +1096,10 @@ mod tests {
         // Exactly one production version (promote demoted the prior one).
         let versions = metrics::get_prompt_versions(&pool, &persona_id, Some(10)).unwrap();
         let production_count = versions.iter().filter(|v| v.tag == "production").count();
-        assert_eq!(production_count, 1, "never two production rows for one persona");
+        assert_eq!(
+            production_count, 1,
+            "never two production rows for one persona"
+        );
     }
 
     /// Config-only heals (timeout / max_turns) must NOT snapshot a prompt

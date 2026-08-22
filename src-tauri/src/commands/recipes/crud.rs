@@ -361,15 +361,6 @@ pub async fn cancel_recipe_generation(
 }
 
 #[tauri::command]
-pub fn get_use_case_recipes(
-    state: State<'_, Arc<AppState>>,
-    use_case_id: String,
-) -> Result<Vec<RecipeDefinition>, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_for_use_case(&state.db, &use_case_id)
-}
-
-#[tauri::command]
 pub fn promote_use_case_to_recipe(
     state: State<'_, Arc<AppState>>,
     credential_id: Option<String>,
@@ -508,6 +499,12 @@ pub async fn cancel_recipe_versioning(
 }
 
 #[tauri::command]
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn accept_recipe_version(
     state: State<'_, Arc<AppState>>,
     recipe_id: String,
@@ -714,9 +711,7 @@ mod tests {
     fn validate_required_inputs_present_ignores_invalid_token_shapes() {
         // `{{ name }}` and `{{user.name}}` aren't valid placeholders, so they don't
         // trigger missing-key errors.
-        assert!(
-            validate_required_inputs_present("{{ name }} {{user.name}}", &data(&[])).is_ok()
-        );
+        assert!(validate_required_inputs_present("{{ name }} {{user.name}}", &data(&[])).is_ok());
     }
 
     #[test]

@@ -2,23 +2,12 @@ use std::panic::AssertUnwindSafe;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use crate::utils::extract_panic_message;
 use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateChannelMessageInput, CreateDesignReviewInput,
@@ -32,8 +21,8 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine::design;
 use crate::engine::event_registry::{emit_event_bus, event_name};
-use crate::engine::prompt;
 use crate::engine::inflight_guard::InflightGuard;
+use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -957,7 +946,12 @@ pub async fn rebuild_design_review(
         if let Err(panic) = work {
             let msg = extract_panic_message(panic);
             tracing::error!(rebuild_id = %rebuild_id_for_panic, panic = %msg, "design review rebuild task panicked — marking job as failed");
-            n8n_job_state::set_n8n_transform_status(&app_for_panic, &rebuild_id_for_panic, "failed", Some(msg));
+            n8n_job_state::set_n8n_transform_status(
+                &app_for_panic,
+                &rebuild_id_for_panic,
+                "failed",
+                Some(msg),
+            );
         }
     });
 
@@ -1271,8 +1265,7 @@ pub(crate) fn react_to_review_decision(
 
     let pool = Arc::new(state.db.clone());
     let engine = state.engine.clone();
-    let embedding_manager =
-        crate::commands::teams::assignments::embedding_manager_for_state(state);
+    let embedding_manager = crate::commands::teams::assignments::embedding_manager_for_state(state);
     if failed_steps.is_empty() {
         // Held but no failed step (a soft-pause / gate hold) — re-spawn the tick
         // loop so the assignment advances from its current step states.
@@ -1387,18 +1380,14 @@ pub async fn dispatch_review_action(
                     review_id = %review.id, error = %e,
                     "Could not dispatch follow-up run from review action — surfacing to user"
                 );
-                let persona_name: Option<String> = state
-                    .db
-                    .get()
+                let persona_name: Option<String> = state.db.get().ok().and_then(|conn| {
+                    conn.query_row(
+                        "SELECT name FROM personas WHERE id = ?1",
+                        rusqlite::params![review.persona_id],
+                        |r| r.get::<_, String>(0),
+                    )
                     .ok()
-                    .and_then(|conn| {
-                        conn.query_row(
-                            "SELECT name FROM personas WHERE id = ?1",
-                            rusqlite::params![review.persona_id],
-                            |r| r.get::<_, String>(0),
-                        )
-                        .ok()
-                    });
+                });
                 // A real blocker → an INCIDENT (not a transient toast). Lands in
                 // the Incidents inbox AND — because it's attributed to the
                 // persona — gets surfaced in that persona's run context under
@@ -1749,98 +1738,6 @@ pub fn seed_mock_manual_review(
         result?;
 
         manual_repo::get_by_id(&state.db, &id)
-    }
-}
-
-/// Test-only seed: insert a fake `persona_messages` + `persona_manual_reviews`
-/// pair that share the same `execution_id` so the Message-detail modal can
-/// drive its "Pending decisions" section against a deterministic fixture.
-///
-/// Returns `(message_id, review_id, persona_id, execution_id)` so the
-/// caller (Playwright spec) can navigate the UI to the right message and
-/// assert the review row by id.
-#[derive(Debug, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
-pub struct SeededLinkedArtifacts {
-    pub message_id: String,
-    pub review_id: String,
-    pub persona_id: String,
-    pub execution_id: String,
-}
-
-#[tauri::command]
-pub fn seed_linked_message_and_review(
-    state: State<'_, Arc<AppState>>,
-) -> Result<SeededLinkedArtifacts, AppError> {
-    require_auth_sync(&state)?;
-
-    #[cfg(not(debug_assertions))]
-    {
-        return Err(AppError::Validation(
-            "seed_linked_message_and_review is only available in debug builds".into(),
-        ));
-    }
-
-    #[cfg(debug_assertions)]
-    {
-        // Reuse the first persona, or fall back to a synthetic id (FK guard
-        // disables the persona_id check on insert).
-        let personas = persona_repo::get_all(&state.db)?;
-        let persona_id = personas
-            .first()
-            .map(|p| p.id.clone())
-            .unwrap_or_else(|| "mock-persona".to_string());
-
-        let execution_id = format!("test-exec-{}", &uuid::Uuid::new_v4().to_string()[..8]);
-        let message_id = uuid::Uuid::new_v4().to_string();
-        let review_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-
-        let conn = state.db.get()?;
-        let result = {
-            let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
-            conn.execute(
-                "INSERT INTO persona_messages
-                 (id, persona_id, execution_id, title, content, content_type, priority,
-                  is_read, metadata, created_at, thread_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, 'markdown', 'normal', 0, NULL, ?6, ?1)",
-                rusqlite::params![
-                    message_id,
-                    persona_id,
-                    execution_id,
-                    "E2E linked-artifacts test message",
-                    "# Linked test message\n\nThis message is paired with a pending manual review for the same execution. Used by the Playwright spec for the Overview > Messages detail modal features (rating, pending decisions, content actions).",
-                    now
-                ],
-            )?;
-
-            conn.execute(
-                "INSERT INTO persona_manual_reviews
-                 (id, execution_id, persona_id, title, description, severity, status,
-                  context_data, suggested_actions, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, 'warning', 'pending',
-                         ?6, ?7, ?8, ?8)",
-                rusqlite::params![
-                    review_id,
-                    execution_id,
-                    persona_id,
-                    "Approve linked output before delivery",
-                    "Generated content needs human sign-off before it ships. Linked to the same execution as the message.",
-                    r#"{"linked_message_id":"test","reason":"e2e fixture"}"#,
-                    r#"["Approve","Reject"]"#,
-                    now
-                ],
-            )?;
-            Ok::<(), AppError>(())
-        };
-        result?;
-
-        Ok(SeededLinkedArtifacts {
-            message_id,
-            review_id,
-            persona_id,
-            execution_id,
-        })
     }
 }
 

@@ -100,16 +100,21 @@ struct TickReport {
     replied: usize,
 }
 
-async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<TickReport, AppError> {
+async fn tick(
+    pool: &DbPool,
+    app: &AppHandle,
+    state: &Arc<AppState>,
+) -> Result<TickReport, AppError> {
     let mut report = TickReport::default();
 
     // ── Pass 1: find personas with inbound Discord channels ───────────────
     let personas = persona_repo::get_enabled(pool)?;
     for persona in personas {
-        let channels = match notifications::parse_channels_v2(persona.notification_channels.as_deref()) {
-            Some(c) => c,
-            None => continue,
-        };
+        let channels =
+            match notifications::parse_channels_v2(persona.notification_channels.as_deref()) {
+                Some(c) => c,
+                None => continue,
+            };
 
         for channel in channels {
             if !channel.enabled {
@@ -121,7 +126,9 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
             ) {
                 continue;
             }
-            let Some(config) = channel.config.as_ref() else { continue };
+            let Some(config) = channel.config.as_ref() else {
+                continue;
+            };
             let poll_inbound = config
                 .get("pollInbound")
                 .and_then(JsonValue::as_bool)
@@ -135,8 +142,12 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
                 .or_else(|| config.get("channel_id"))
                 .and_then(JsonValue::as_str)
                 .map(str::to_owned)
-            else { continue };
-            let Some(credential_id) = channel.credential_id.as_deref() else { continue };
+            else {
+                continue;
+            };
+            let Some(credential_id) = channel.credential_id.as_deref() else {
+                continue;
+            };
 
             match poll_channel(pool, app, state, &persona.id, &channel_id, credential_id).await {
                 Ok(n) => report.picked += n,
@@ -411,7 +422,9 @@ async fn fetch_new_messages(
 
     let mut out = Vec::with_capacity(raw.len());
     for v in raw {
-        let Some(id) = v.get("id").and_then(JsonValue::as_str) else { continue };
+        let Some(id) = v.get("id").and_then(JsonValue::as_str) else {
+            continue;
+        };
         let content = v
             .get("content")
             .and_then(JsonValue::as_str)
@@ -530,7 +543,11 @@ fn truncate_for_discord(text: &str) -> String {
 // Cursor + log persistence
 // ---------------------------------------------------------------------------
 
-fn read_cursor(pool: &DbPool, persona_id: &str, channel_id: &str) -> Result<Option<String>, AppError> {
+fn read_cursor(
+    pool: &DbPool,
+    persona_id: &str,
+    channel_id: &str,
+) -> Result<Option<String>, AppError> {
     let conn = pool.get()?;
     let row = conn
         .query_row(
@@ -672,7 +689,8 @@ fn mark_reply_error(pool: &DbPool, message_id: &str, error: &str) -> Result<(), 
 
 fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
     let cred = credential_repo::get_by_id(pool, credential_id).ok()?;
-    let fields: HashMap<String, String> = credential_repo::get_decrypted_fields(pool, &cred).ok()?;
+    let fields: HashMap<String, String> =
+        credential_repo::get_decrypted_fields(pool, &cred).ok()?;
     fields
         .get("bot_token")
         .or_else(|| fields.get("botToken"))

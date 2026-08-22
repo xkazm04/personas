@@ -23,11 +23,7 @@ use crate::error::AppError;
 
 /// Subdirectories of the vault we read. Each one is optional — missing
 /// dirs are quietly skipped.
-const WATCH_SUBDIRS: &[&str] = &[
-    "Lessons",
-    "Explorer/sweeps",
-    "Architect/scans",
-];
+const WATCH_SUBDIRS: &[&str] = &["Lessons", "Explorer/sweeps", "Architect/scans"];
 
 /// Hard ceiling on notes returned per poll. A multi-day backfill could
 /// surface hundreds; we cap so the consolidator's prompt stays bounded.
@@ -37,10 +33,7 @@ const MAX_NOTES_PER_POLL: usize = 50;
 /// consolidator prompt without dominating it".
 const SUMMARY_BYTE_CAP: usize = 600;
 
-pub async fn poll(
-    vault_path: &Path,
-    since: DateTime<Utc>,
-) -> Result<Vec<EventPayload>, AppError> {
+pub async fn poll(vault_path: &Path, since: DateTime<Utc>) -> Result<Vec<EventPayload>, AppError> {
     let mut events = Vec::new();
     for sub in WATCH_SUBDIRS {
         let dir = vault_path.join(sub);

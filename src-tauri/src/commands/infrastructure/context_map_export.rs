@@ -165,8 +165,11 @@ fn build_map(
     let use_cases_json: Vec<Value> = use_cases
         .iter()
         .map(|u| {
-            let slice: Vec<String> =
-                u.context_ids.iter().filter_map(|id| context_name(id)).collect();
+            let slice: Vec<String> = u
+                .context_ids
+                .iter()
+                .filter_map(|id| context_name(id))
+                .collect();
             json!({
                 "id": u.id,
                 "name": u.name,
@@ -398,12 +401,18 @@ mod tests {
     #[test]
     fn splice_inserts_when_absent_and_replaces_when_present() {
         let body = "# My Project\n\nUse 2-space indent.\n";
-        let v1 = splice_section(body, "<!-- personas:context-map:start -->\nA\n<!-- personas:context-map:end -->");
+        let v1 = splice_section(
+            body,
+            "<!-- personas:context-map:start -->\nA\n<!-- personas:context-map:end -->",
+        );
         assert!(v1.contains("Use 2-space indent"), "user content preserved");
         assert!(v1.contains("\nA\n"));
 
         // Second pass replaces the block, does not duplicate it.
-        let v2 = splice_section(&v1, "<!-- personas:context-map:start -->\nB\n<!-- personas:context-map:end -->");
+        let v2 = splice_section(
+            &v1,
+            "<!-- personas:context-map:start -->\nB\n<!-- personas:context-map:end -->",
+        );
         assert!(v2.contains("Use 2-space indent"));
         assert!(v2.contains("\nB\n"));
         assert!(!v2.contains("\nA\n"), "old block replaced");
@@ -414,7 +423,11 @@ mod tests {
     fn parse_json_array_tolerates_garbage() {
         assert_eq!(parse_json_array(None), json!([]));
         assert_eq!(parse_json_array(Some("not json")), json!([]));
-        assert_eq!(parse_json_array(Some("{\"a\":1}")), json!([]), "object → empty");
+        assert_eq!(
+            parse_json_array(Some("{\"a\":1}")),
+            json!([]),
+            "object → empty"
+        );
         assert_eq!(parse_json_array(Some("[\"a\",\"b\"]")), json!(["a", "b"]));
     }
 }

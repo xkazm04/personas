@@ -63,17 +63,13 @@ pub fn validate(text: &str, pinned_connectors: &[String]) -> Result<serde_json::
 
     // Machine grammar surviving into display text is a format-contract
     // violation the frontend would render verbatim.
-    let leak = d
-        .cleaned_text
-        .lines()
-        .map(str::trim_start)
-        .any(|l| {
-            l.starts_with("OP:")
-                || l.starts_with("{\"op\"")
-                || l.starts_with("QR:")
-                || l.starts_with("TTS:")
-                || l.starts_with("PROGRESS:")
-        });
+    let leak = d.cleaned_text.lines().map(str::trim_start).any(|l| {
+        l.starts_with("OP:")
+            || l.starts_with("{\"op\"")
+            || l.starts_with("QR:")
+            || l.starts_with("TTS:")
+            || l.starts_with("PROGRESS:")
+    });
 
     Ok(serde_json::json!({
         "cleanedText": d.cleaned_text,

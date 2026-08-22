@@ -168,10 +168,7 @@ fn validate_input(input: &CreateTeamAssignmentInput) -> Result<(), AppError> {
 // Create — single transaction for assignment + steps + initial event
 // ----------------------------------------------------------------------------
 
-pub fn create(
-    pool: &DbPool,
-    input: CreateTeamAssignmentInput,
-) -> Result<TeamAssignment, AppError> {
+pub fn create(pool: &DbPool, input: CreateTeamAssignmentInput) -> Result<TeamAssignment, AppError> {
     validate_input(&input)?;
 
     let mut conn = pool.get()?;
@@ -205,16 +202,13 @@ pub fn create(
         .collect();
 
     for (idx, step) in input.steps.iter().enumerate() {
-        let depends_on_json = step
-            .depends_on_indices
-            .as_ref()
-            .map(|indices| {
-                let ids: Vec<&str> = indices
-                    .iter()
-                    .filter_map(|i| step_ids.get(*i as usize).map(|s| s.as_str()))
-                    .collect();
-                serde_json::to_string(&ids).unwrap_or_else(|_| "[]".into())
-            });
+        let depends_on_json = step.depends_on_indices.as_ref().map(|indices| {
+            let ids: Vec<&str> = indices
+                .iter()
+                .filter_map(|i| step_ids.get(*i as usize).map(|s| s.as_str()))
+                .collect();
+            serde_json::to_string(&ids).unwrap_or_else(|_| "[]".into())
+        });
 
         tx.execute(
             "INSERT INTO team_assignment_steps
@@ -261,12 +255,13 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<TeamAssignment, AppError> {
                 source, companion_op_id, goal_id, created_at, started_at, completed_at, error_message
          FROM team_assignments WHERE id = ?1",
     )?;
-    stmt.query_row([id], row_to_assignment).map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Assignment '{id}' not found"))
-        }
-        other => AppError::Database(other),
-    })
+    stmt.query_row([id], row_to_assignment)
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("Assignment '{id}' not found"))
+            }
+            other => AppError::Database(other),
+        })
 }
 
 pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamAssignment>, AppError> {
@@ -279,7 +274,8 @@ pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamAssignment>
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map([team_id], row_to_assignment)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Assignments whose orchestrator tick task should be alive: `running` or
@@ -295,7 +291,8 @@ pub fn list_active(pool: &DbPool) -> Result<Vec<TeamAssignment>, AppError> {
          ORDER BY created_at ASC",
     )?;
     let rows = stmt.query_map([], row_to_assignment)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Goals hub: every assignment linked to a `dev_goals` row, any status.
@@ -310,7 +307,8 @@ pub fn list_for_goal(pool: &DbPool, goal_id: &str) -> Result<Vec<TeamAssignment>
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map([goal_id], row_to_assignment)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Goals hub: (re)link or unlink an assignment to a `dev_goals` row.
@@ -345,7 +343,8 @@ pub fn list_steps(pool: &DbPool, assignment_id: &str) -> Result<Vec<TeamAssignme
          ORDER BY step_order",
     )?;
     let rows = stmt.query_map([assignment_id], row_to_step)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn list_events(
@@ -363,7 +362,8 @@ pub fn list_events(
          LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![assignment_id, limit], row_to_event)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Oldest-first page of a TEAM's assignment events strictly after a
@@ -393,7 +393,8 @@ pub fn list_events_for_team_after(
          LIMIT ?4",
     )?;
     let rows = stmt.query_map(params![team_id, at, id, limit], row_to_event)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Newest `(created_at, id)` among a team's assignment events, or `None` when
@@ -601,7 +602,8 @@ pub fn set_step_match_result(
                 "use_case_id": use_case_id,
                 "confidence": confidence,
                 "rationale": rationale,
-            }).to_string(),
+            })
+            .to_string(),
         ],
     )?;
 
@@ -648,7 +650,8 @@ pub fn override_step_assignment(
             serde_json::json!({
                 "persona_id": persona_id,
                 "use_case_id": use_case_id,
-            }).to_string(),
+            })
+            .to_string(),
         ],
     )?;
 
@@ -749,7 +752,9 @@ pub fn create_template(
 ) -> Result<TeamAssignmentTemplate, AppError> {
     let title = input.title.trim();
     if title.is_empty() {
-        return Err(AppError::Validation("Template title cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Template title cannot be empty".into(),
+        ));
     }
     if title.len() > MAX_TITLE_LEN {
         return Err(AppError::Validation(format!(
@@ -765,7 +770,10 @@ pub fn create_template(
         ));
     }
     let strategy = input.match_strategy.as_deref().unwrap_or("manual");
-    let max_parallel = input.max_parallel_steps.unwrap_or(3).clamp(MIN_PARALLEL, MAX_PARALLEL);
+    let max_parallel = input
+        .max_parallel_steps
+        .unwrap_or(3)
+        .clamp(MIN_PARALLEL, MAX_PARALLEL);
     let steps_json = serde_json::to_string(&input.steps)
         .map_err(|e| AppError::Internal(format!("Failed to serialize template steps: {e}")))?;
 
@@ -816,7 +824,8 @@ pub fn list_templates(
          ORDER BY updated_at DESC",
     )?;
     let rows = stmt.query_map([team_id], row_to_template)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn delete_template(pool: &DbPool, id: &str) -> Result<bool, AppError> {

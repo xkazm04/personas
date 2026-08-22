@@ -95,7 +95,9 @@ pub async fn companion_send_message(
     #[cfg(feature = "ml")]
     let embedder = state.embedding_manager.clone();
     let origin = match system_source.as_deref().map(str::trim) {
-        Some(s) if !s.is_empty() => session::TurnOrigin::External { source: s.to_string() },
+        Some(s) if !s.is_empty() => session::TurnOrigin::External {
+            source: s.to_string(),
+        },
         _ => session::TurnOrigin::User,
     };
     let conversation_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
@@ -135,9 +137,7 @@ pub async fn companion_send_message(
 /// scheduled. Does NOT interrupt an in-flight stream — use
 /// `companion_interrupt_turn` for that.
 #[tauri::command]
-pub async fn companion_cancel_autonomy(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn companion_cancel_autonomy(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
     session::cancel_all_pending_autonomy();
     Ok(())
@@ -226,7 +226,9 @@ pub fn fleet_boldness(db: &crate::db::DbPool) -> FleetBoldness {
         crate::db::settings_keys::COMPANION_FLEET_BOLDNESS,
     ) {
         Ok(Some(v)) => FleetBoldness::from_setting(&v),
-        _ => FleetBoldness::from_setting(crate::db::settings_keys::COMPANION_FLEET_BOLDNESS_DEFAULT),
+        _ => {
+            FleetBoldness::from_setting(crate::db::settings_keys::COMPANION_FLEET_BOLDNESS_DEFAULT)
+        }
     }
 }
 
@@ -325,29 +327,6 @@ pub fn companion_dev_op_set_verdict(
         ));
     }
     crate::companion::dev_mode::set_verdict(&state.user_db, &op_id, verdict.as_deref())
-}
-
-/// Run the execution-review pass on demand, bypassing the 5-min scheduler
-/// cadence. Runs the batched headless triage over qualifying recent
-/// executions (digest card + at most one deep-dive `TurnOrigin::Proactive`
-/// turn) and returns how many findings it surfaced. Used by the test
-/// harness to drive a deterministic review, and usable as a "review my
-/// recent runs now" affordance. Async: the triage awaits one headless CLI
-/// decision before returning the count.
-#[tauri::command]
-pub async fn companion_review_recent_executions_now(
-    state: State<'_, Arc<AppState>>,
-    app: AppHandle,
-) -> Result<usize, AppError> {
-    crate::ipc_auth::require_auth(&state).await?;
-    crate::companion::proactive::execution_review::review_recent_executions(
-        &state.user_db,
-        &state.db,
-        &app,
-        #[cfg(feature = "ml")]
-        state.embedding_manager.as_ref(),
-    )
-    .await
 }
 
 /// Read the most recent N messages oldest-first for the panel transcript.

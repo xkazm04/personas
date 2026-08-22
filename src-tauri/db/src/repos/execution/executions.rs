@@ -5,8 +5,9 @@ use crate::models::{
     PersonaExecution, UpdateExecutionStatus,
 };
 use crate::DbPool;
-use personas_core::types::ExecutionState;
+use crate::PoolExt;
 use personas_core::error::AppError;
+use personas_core::types::ExecutionState;
 
 /// Recipe provenance stamped onto an execution at insert time:
 /// `(source_recipe_id, source_recipe_version)`.
@@ -153,7 +154,7 @@ pub fn set_director_review(
     score: i64,
     review_md: &str,
 ) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("executions::set_director_review")?;
     conn.execute(
         "UPDATE persona_executions SET director_score = ?1, director_review_md = ?2 WHERE id = ?3",
         rusqlite::params![score, review_md, execution_id],
@@ -172,7 +173,7 @@ pub fn set_director_review_unscored(
     execution_id: &str,
     review_md: &str,
 ) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("executions::set_director_review_unscored")?;
     conn.execute(
         "UPDATE persona_executions SET director_review_md = ?1 WHERE id = ?2",
         rusqlite::params![review_md, execution_id],
@@ -200,7 +201,7 @@ pub fn get_by_persona_id(
         "persona_executions::get_by_persona_id",
         {
             let limit = limit.unwrap_or(50);
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_by_persona_id")?;
             // Exclude ops chat executions (input_data contains "_ops") — those are
             // conversational queries from the Chat tab, not real agent executions.
             let mut stmt = conn.prepare_cached(
@@ -230,7 +231,7 @@ pub fn list_items_by_persona_id(
             // Default offset 0 preserves the original single-page behavior for
             // existing callers that don't paginate.
             let offset = offset.unwrap_or(0).max(0);
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::list_items_by_persona_id")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT
                  id,
@@ -283,7 +284,7 @@ pub fn get_all_global(
         "persona_executions::get_all_global",
         {
             let limit = limit.unwrap_or(200);
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_all_global")?;
 
             let base = "SELECT e.*, \
                 COALESCE(p.name, 'Unknown') as persona_name, \
@@ -342,7 +343,7 @@ pub fn count_all_global(
         "persona_executions",
         "persona_executions::count_all_global",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::count_all_global")?;
             let mut sql = String::from(
                 "SELECT status, COUNT(*) AS n FROM persona_executions \
              WHERE (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
@@ -401,7 +402,7 @@ pub fn search(
         }
 
         let limit = limit.unwrap_or(50).clamp(1, 200);
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::search")?;
         let mut sql = String::from(
             "SELECT e.id,
                     e.persona_id,
@@ -454,7 +455,7 @@ pub fn search(
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaExecution, AppError> {
     timed_query!("persona_executions", "persona_executions::get_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::get_by_id")?;
         let mut stmt = conn.prepare_cached("SELECT * FROM persona_executions WHERE id = ?1")?;
         stmt.query_row(params![id], row_to_execution)
             .map_err(|e| match e {
@@ -571,7 +572,7 @@ pub fn create_with_idempotency_reporting(
             // (preserving the no-dedup path's behavior). Scope the connection so
             // it is released before any re-select below.
             let rows_changed = {
-                let conn = pool.get()?;
+                let conn = pool.conn("executions::create_with_idempotency_reporting")?;
                 // Stamp which recipe this run came from, if any. Read from the
                 // persona's existing use-case provenance; NULL when there is no
                 // recipe behind the run.
@@ -631,7 +632,7 @@ pub fn get_by_idempotency_key(
         "persona_executions",
         "persona_executions::get_by_idempotency_key",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_by_idempotency_key")?;
             let mut stmt =
                 conn.prepare_cached("SELECT * FROM persona_executions WHERE idempotency_key = ?1")?;
             match stmt.query_row(params![key], row_to_execution) {
@@ -653,7 +654,7 @@ pub fn get_by_trigger_id(
         "persona_executions::get_by_trigger_id",
         {
             let limit = limit.unwrap_or(10);
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_by_trigger_id")?;
             let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE trigger_id = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
@@ -675,7 +676,7 @@ pub fn get_by_use_case_id(
         "persona_executions::get_by_use_case_id",
         {
             let limit = limit.unwrap_or(20);
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_by_use_case_id")?;
             let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE persona_id = ?1 AND use_case_id = ?2 ORDER BY created_at DESC LIMIT ?3",
         )?;
@@ -706,7 +707,7 @@ pub fn set_launch_model_info(
         "persona_executions",
         "persona_executions::set_launch_model_info",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::set_launch_model_info")?;
             if let Some(m) = model {
                 conn.execute(
                     "UPDATE persona_executions SET model_used = ?1, thinking_level = ?2
@@ -733,7 +734,7 @@ pub fn set_model_used_actual(pool: &DbPool, id: &str, model: &str) -> Result<(),
         "persona_executions",
         "persona_executions::set_model_used_actual",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::set_model_used_actual")?;
             conn.execute(
                 "UPDATE persona_executions SET model_used = ?1 WHERE id = ?2 AND status = 'running'",
                 params![model, id],
@@ -748,7 +749,7 @@ pub fn set_claude_session_id(pool: &DbPool, id: &str, session_id: &str) -> Resul
         "persona_executions",
         "persona_executions::set_claude_session_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::set_claude_session_id")?;
             conn.execute(
                 "UPDATE persona_executions SET claude_session_id = ?1 WHERE id = ?2 AND status = 'running'",
                 params![session_id, id],
@@ -772,7 +773,7 @@ pub fn set_cache_tokens(
         "persona_executions",
         "persona_executions::set_cache_tokens",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::set_cache_tokens")?;
             conn.execute(
                 "UPDATE persona_executions SET cache_read_tokens = ?1, cache_creation_tokens = ?2 WHERE id = ?3",
                 params![cache_read_tokens, cache_creation_tokens, id],
@@ -938,7 +939,7 @@ pub fn update_status(
 ) -> Result<(), AppError> {
     redact_execution_fields(&mut input);
     timed_query!("persona_executions", "persona_executions::update_status", {
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::update_status")?;
         exec_status_update(&conn, id, &input, "WHERE id = ?12")?;
         Ok(())
     })
@@ -960,13 +961,9 @@ pub fn update_status_if_running(
         "persona_executions",
         "persona_executions::update_status_if_running",
         {
-            let conn = pool.get()?;
-            let rows_changed = exec_status_update(
-                &conn,
-                id,
-                &input,
-                "WHERE id = ?12 AND status = 'running'",
-            )?;
+            let conn = pool.conn("executions::update_status_if_running")?;
+            let rows_changed =
+                exec_status_update(&conn, id, &input, "WHERE id = ?12 AND status = 'running'")?;
             Ok(rows_changed > 0)
         }
     )
@@ -1001,7 +998,7 @@ pub fn claim_for_instance(
             let now = chrono::Utc::now();
             let now_str = now.to_rfc3339();
             let expires_at = (now + chrono::Duration::seconds(ttl_secs)).to_rfc3339();
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::claim_for_instance")?;
             let mut stmt = conn.prepare_cached(
                 // started_at is stamped UNCONDITIONALLY: a claim IS the start of a
                 // run attempt. Previously `COALESCE(started_at, ?4)` preserved the
@@ -1043,7 +1040,7 @@ pub fn update_status_if_not_final(
         "persona_executions",
         "persona_executions::update_status_if_not_final",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::update_status_if_not_final")?;
             let status_str = input.status.as_str();
 
             // Cancellation is a terminal sink: a completion/failure must NEVER
@@ -1067,7 +1064,7 @@ pub fn update_status_if_not_final(
 pub fn get_recent(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_recent", {
         let limit = limit.unwrap_or(20);
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::get_recent")?;
         let mut stmt = conn
             .prepare_cached("SELECT * FROM persona_executions ORDER BY created_at DESC LIMIT ?1")?;
         let rows = stmt.query_map(params![limit], row_to_execution)?;
@@ -1085,7 +1082,7 @@ pub fn get_recent_failures(
         "persona_executions",
         "persona_executions::get_recent_failures",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_recent_failures")?;
             let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE persona_id = ?1 AND status = 'failed' ORDER BY created_at DESC LIMIT ?2",
         )?;
@@ -1103,15 +1100,12 @@ pub fn get_recent_failures(
 /// "N consecutive"), EXCLUDING environmental failures that say nothing about
 /// the persona itself: provider session/usage/rate limits and app-restart
 /// kills. One quota storm must not trip the breaker.
-pub fn count_consecutive_real_failures(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<u32, AppError> {
+pub fn count_consecutive_real_failures(pool: &DbPool, persona_id: &str) -> Result<u32, AppError> {
     timed_query!(
         "persona_executions",
         "persona_executions::count_consecutive_real_failures",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::count_consecutive_real_failures")?;
             let n: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM persona_executions
                  WHERE persona_id = ?1 AND status = 'failed'
@@ -1161,7 +1155,7 @@ pub fn count_environmental_failures_in_window(
         "persona_executions",
         "persona_executions::count_environmental_failures_in_window",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::count_environmental_failures_in_window")?;
             let n: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM persona_executions
                  WHERE persona_id = ?1 AND status = 'failed'
@@ -1189,7 +1183,7 @@ pub fn count_environmental_failures_in_window(
 
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_running", {
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::get_running")?;
         let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
         )?;
@@ -1355,15 +1349,19 @@ pub fn list_active_chains(pool: &DbPool) -> Result<Vec<ActiveChain>, AppError> {
 /// `queued` rows (which are re-admitted instead). See
 /// `ExecutionEngine::recover_stale_executions`.
 pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_running_only", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
-        )?;
-        let rows = stmt.query_map([], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_running_only",
+        {
+            let conn = pool.conn("executions::get_running_only")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
+            )?;
+            let rows = stmt.query_map([], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Only executions persisted as `queued` (waiting for a slot, never started).
@@ -1371,15 +1369,19 @@ pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError
 /// startup by `ExecutionEngine::requeue_persisted_executions` so scheduled /
 /// event-triggered work is not lost across a restart.
 pub fn get_queued_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_queued_only", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
-        )?;
-        let rows = stmt.query_map([], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_queued_only",
+        {
+            let conn = pool.conn("executions::get_queued_only")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
+            )?;
+            let rows = stmt.query_map([], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Lightweight check: are any executions currently in-flight?
@@ -1389,7 +1391,7 @@ pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {
         "persona_executions",
         "persona_executions::has_running_executions",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::has_running_executions")?;
             let exists: bool = conn.query_row(
             "SELECT EXISTS(SELECT 1 FROM persona_executions WHERE status IN ('queued', 'running'))",
             [],
@@ -1405,7 +1407,7 @@ pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<
         "persona_executions",
         "persona_executions::get_running_count_for_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_running_count_for_persona")?;
             let count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND status IN ('queued', 'running')",
             params![persona_id],
@@ -1425,7 +1427,7 @@ pub fn count_for_persona_since(
         "persona_executions",
         "persona_executions::count_for_persona_since",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::count_for_persona_since")?;
             let count: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND created_at >= ?2",
                 params![persona_id, since_rfc3339],
@@ -1449,7 +1451,7 @@ pub fn get_running_count_for_persona_use_case(
         "persona_executions",
         "persona_executions::get_running_count_for_persona_use_case",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_running_count_for_persona_use_case")?;
             let count: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM persona_executions \
              WHERE persona_id = ?1 AND use_case_id = ?2 AND status IN ('queued', 'running')",
@@ -1463,7 +1465,7 @@ pub fn get_running_count_for_persona_use_case(
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_executions", "persona_executions::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::delete")?;
         let rows = conn.execute("DELETE FROM persona_executions WHERE id = ?1", params![id])?;
         Ok(rows > 0)
     })
@@ -1481,7 +1483,7 @@ pub fn set_traceparent(
         "persona_executions",
         "persona_executions::set_traceparent",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::set_traceparent")?;
             conn.execute(
                 "UPDATE persona_executions SET traceparent = ?1 WHERE id = ?2",
                 params![traceparent, execution_id],
@@ -1500,7 +1502,7 @@ pub fn touch_last_heartbeat(pool: &DbPool, execution_id: &str) -> Result<(), App
         "persona_executions",
         "persona_executions::touch_last_heartbeat",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::touch_last_heartbeat")?;
             let now = chrono::Utc::now().to_rfc3339();
             let mut stmt = conn.prepare_cached(
                 "UPDATE persona_executions SET last_heartbeat_at = ?1 WHERE id = ?2",
@@ -1524,7 +1526,7 @@ pub fn find_silent_running(
         "persona_executions",
         "persona_executions::find_silent_running",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::find_silent_running")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT id FROM persona_executions
              WHERE status = 'running'
@@ -1565,7 +1567,7 @@ pub fn create_retry(
         // in input_data, which lets the post-retry chain-trigger fix from
         // engine/mod.rs:spawn_delayed_retry read from the retry exec
         // directly instead of falling back to the original.
-        let conn = pool.get()?;
+        let conn = pool.conn("executions::create_retry")?;
         // Recipe provenance is inherited from the original rather than
         // re-resolved: a retry re-attempts the same work, and the capability may
         // since have been detached. Copying keeps the retry attributed to the
@@ -1591,7 +1593,7 @@ pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<
         "persona_executions",
         "persona_executions::get_consecutive_failure_count",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_consecutive_failure_count")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT status FROM persona_executions
              WHERE persona_id = ?1
@@ -1628,7 +1630,7 @@ pub fn get_retry_chain(
                 .as_deref()
                 .unwrap_or(execution_id);
 
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_retry_chain")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_executions
              WHERE id = ?1 OR retry_of_execution_id = ?1
@@ -1657,11 +1659,10 @@ pub fn get_retry_chains_batch(
                 return Ok(std::collections::HashMap::new());
             }
 
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_retry_chains_batch")?;
 
             // Step 1: resolve root IDs for all requested execution_ids
-            let placeholders: String =
-                crate::repos::utils::in_placeholders(execution_ids.len());
+            let placeholders: String = crate::repos::utils::in_placeholders(execution_ids.len());
 
             let root_sql = format!(
         "SELECT id, retry_of_execution_id FROM persona_executions WHERE id IN ({placeholders})"
@@ -1773,7 +1774,7 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
         "persona_executions",
         "persona_executions::get_monthly_spend",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::get_monthly_spend")?;
             // Spend predicate is the shared MONTHLY_SPEND_PREDICATE so this server
             // gate and the budget UI feed (get_all_monthly_spend_with_conn) can
             // never drift on status set, month boundary, or ops-chat exclusion.
@@ -1812,7 +1813,7 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
         "persona_executions",
         "persona_executions::sweep_zombie_executions",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::sweep_zombie_executions")?;
             let now = chrono::Utc::now();
             let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
 
@@ -1952,7 +1953,7 @@ pub fn cleanup_old_executions(
         "persona_executions",
         "persona_executions::cleanup_old_executions",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("executions::cleanup_old_executions")?;
 
             // Two-phase approach:
             // 1. Find all persona_ids that have terminal executions older than the cutoff.
@@ -2047,9 +2048,12 @@ pub struct RecipeRunTally {
 /// a recipe with no runs has none. Executions predating provenance stamping
 /// have a NULL `source_recipe_id` and are excluded, not guessed at.
 pub fn recipe_run_tallies(pool: &DbPool, limit: i64) -> Result<Vec<RecipeRunTally>, AppError> {
-    timed_query!("persona_executions", "persona_executions::recipe_run_tallies", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::recipe_run_tallies",
+        {
+            let conn = pool.conn("executions::recipe_run_tallies")?;
+            let mut stmt = conn.prepare_cached(
             "SELECT e.source_recipe_id                                            AS recipe_id,
                     r.name                                                        AS recipe_name,
                     COUNT(*)                                                      AS runs,
@@ -2065,23 +2069,24 @@ pub fn recipe_run_tallies(pool: &DbPool, limit: i64) -> Result<Vec<RecipeRunTall
              ORDER BY runs DESC, last_run_at DESC
              LIMIT ?1",
         )?;
-        let rows = stmt.query_map(params![limit], |row| {
-            Ok(RecipeRunTally {
-                recipe_id: row.get("recipe_id")?,
-                recipe_name: row.get("recipe_name")?,
-                runs: row.get("runs")?,
-                terminal: row.get("terminal")?,
-                completed: row.get("completed")?,
-                failed: row.get("failed")?,
-                value_delivered: row.get("value_delivered")?,
-                last_run_at: row.get("last_run_at")?,
-            })
-        })?;
-        Ok(crate::repos::utils::collect_rows(
-            rows,
-            "persona_executions::recipe_run_tallies",
-        ))
-    })
+            let rows = stmt.query_map(params![limit], |row| {
+                Ok(RecipeRunTally {
+                    recipe_id: row.get("recipe_id")?,
+                    recipe_name: row.get("recipe_name")?,
+                    runs: row.get("runs")?,
+                    terminal: row.get("terminal")?,
+                    completed: row.get("completed")?,
+                    failed: row.get("failed")?,
+                    value_delivered: row.get("value_delivered")?,
+                    last_run_at: row.get("last_run_at")?,
+                })
+            })?;
+            Ok(crate::repos::utils::collect_rows(
+                rows,
+                "persona_executions::recipe_run_tallies",
+            ))
+        }
+    )
 }
 
 #[cfg(test)]
@@ -2128,7 +2133,10 @@ mod tests {
         let a = claim_for_instance(&pool, &exec.id, "instance-A", 300).unwrap();
         let b = claim_for_instance(&pool, &exec.id, "instance-B", 300).unwrap();
         assert!(a, "first claimant must win");
-        assert!(!b, "second claimant must lose — row no longer queued + unexpired");
+        assert!(
+            !b,
+            "second claimant must lose — row no longer queued + unexpired"
+        );
 
         // The row is now running and stamped with the winner.
         let claimed = get_by_id(&pool, &exec.id).unwrap();
@@ -2346,8 +2354,14 @@ mod tests {
 
         let chain = chains.get(&root.id).expect("root must map to its chain");
         let found: Vec<&str> = chain.iter().map(|e| e.id.as_str()).collect();
-        assert!(found.contains(&root.id.as_str()), "root is part of its chain");
-        assert!(found.contains(&retry.id.as_str()), "retry is part of the chain");
+        assert!(
+            found.contains(&root.id.as_str()),
+            "root is part of its chain"
+        );
+        assert!(
+            found.contains(&retry.id.as_str()),
+            "retry is part of the chain"
+        );
         assert_eq!(chain.len(), 2);
 
         // Empty input short-circuits without touching the DB.
@@ -2647,7 +2661,15 @@ mod tests {
         mk("failed", None);
         mk("running", None);
         // A run with no recipe behind it must not pollute any recipe's tally.
-        create(&pool, &persona_id, None, None, None, Some("uc-manual".into())).unwrap();
+        create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            None,
+            Some("uc-manual".into()),
+        )
+        .unwrap();
 
         let tallies = recipe_run_tallies(&pool, 50).unwrap();
         assert_eq!(tallies.len(), 1, "only recipe-attributed runs are tallied");

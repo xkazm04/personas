@@ -48,10 +48,7 @@ fn subagent_message(
             }
             "tool_use" => {
                 if tool_name.is_none() {
-                    tool_name = block
-                        .get("name")
-                        .and_then(|n| n.as_str())
-                        .map(String::from);
+                    tool_name = block.get("name").and_then(|n| n.as_str()).map(String::from);
                 }
             }
             "tool_result" => {
@@ -64,9 +61,14 @@ fn subagent_message(
     }
 
     let display = if !text.is_empty() {
-        Some(format!("  subagent: {}", truncate_field(&text, MAX_TOOL_RESULT_DISPLAY)))
+        Some(format!(
+            "  subagent: {}",
+            truncate_field(&text, MAX_TOOL_RESULT_DISPLAY)
+        ))
     } else {
-        tool_name.as_ref().map(|n| format!("  subagent using tool: {n}"))
+        tool_name
+            .as_ref()
+            .map(|n| format!("  subagent using tool: {n}"))
     };
 
     (
@@ -164,7 +166,13 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
             } else if subtype == "task_started" {
                 // P4: a Task/Workflow subagent launched. `tool_use_id` links it
                 // to the parent Task tool call (fan-out tree reconstruction).
-                let s = |k: &str| value.get(k).and_then(|v| v.as_str()).unwrap_or_default().to_string();
+                let s = |k: &str| {
+                    value
+                        .get(k)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string()
+                };
                 let subagent_type = s("subagent_type");
                 let description = s("description");
                 let display = format!("  subagent started: {description} ({subagent_type})");
@@ -179,9 +187,19 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                 )
             } else if subtype == "task_notification" {
                 // P4: subagent progress / completion + its own usage.
-                let s = |k: &str| value.get(k).and_then(|v| v.as_str()).unwrap_or_default().to_string();
+                let s = |k: &str| {
+                    value
+                        .get(k)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string()
+                };
                 let usage = value.get("usage");
-                let u = |k: &str| usage.and_then(|o| o.get(k)).and_then(serde_json::Value::as_u64);
+                let u = |k: &str| {
+                    usage
+                        .and_then(|o| o.get(k))
+                        .and_then(serde_json::Value::as_u64)
+                };
                 let status = s("status");
                 (
                     StreamLineType::TaskNotification {
@@ -822,9 +840,7 @@ pub fn parse_usage_limit(text: &str) -> Option<personas_core::error_taxonomy::Us
     // wording, and indexing `text` with an index from `lower` would be
     // unsound (lowercasing can shift byte offsets).
     let from_rfc3339 = text.find("resets at ").and_then(|idx| {
-        let token = text[idx + "resets at ".len()..]
-            .split_whitespace()
-            .next()?;
+        let token = text[idx + "resets at ".len()..].split_whitespace().next()?;
         chrono::DateTime::parse_from_rfc3339(token)
             .ok()
             .map(|ts| ts.timestamp())
@@ -1278,7 +1294,10 @@ mod tests {
                 kind,
             } => {
                 assert_eq!(title, "Stripe key missing");
-                assert_eq!(detail.as_deref(), Some("STRIPE_API_KEY unset; cannot charge"));
+                assert_eq!(
+                    detail.as_deref(),
+                    Some("STRIPE_API_KEY unset; cannot charge")
+                );
                 assert_eq!(severity.as_deref(), Some("high"));
                 assert_eq!(kind.as_deref(), Some("missing_credential"));
             }
@@ -1361,7 +1380,9 @@ Finished."#;
         // Transient 429s are NOT session limits — they take the retryable
         // RateLimit path via error_taxonomy::classify_error.
         assert!(!is_session_limit_error("rate limit exceeded"));
-        assert!(!is_session_limit_error("Too many requests, please slow down"));
+        assert!(!is_session_limit_error(
+            "Too many requests, please slow down"
+        ));
 
         // Should not match
         assert!(!is_session_limit_error("Command not found"));
@@ -1380,10 +1401,7 @@ Finished."#;
         let msg = format!("Claude AI usage limit reached|{future}");
         let parsed = parse_usage_limit(&msg).expect("should parse");
         assert_eq!(parsed.scope, UsageLimitScope::Window);
-        assert_eq!(
-            parsed.resets_at.expect("ts").timestamp(),
-            future,
-        );
+        assert_eq!(parsed.resets_at.expect("ts").timestamp(), future,);
 
         // Stale/garbage timestamps are discarded but the limit still parses.
         let parsed = parse_usage_limit("usage limit reached|1000000000").expect("should parse");
@@ -1422,7 +1440,11 @@ Finished."#;
         let sub = r#"{"type":"assistant","parent_tool_use_id":"toolu_01","message":{"content":[{"type":"text","text":"ALPHA"}]}}"#;
         let (line_type, display) = parse_stream_line(sub);
         match line_type {
-            StreamLineType::SubagentMessage { parent_tool_use_id, text, tool_name } => {
+            StreamLineType::SubagentMessage {
+                parent_tool_use_id,
+                text,
+                tool_name,
+            } => {
                 assert_eq!(parent_tool_use_id, "toolu_01");
                 assert_eq!(text, "ALPHA");
                 assert_eq!(tool_name, None);
@@ -1436,7 +1458,9 @@ Finished."#;
         // A subagent's tool call carries the name, not the root tool timeline.
         let sub_tool = r#"{"type":"assistant","parent_tool_use_id":"toolu_01","message":{"content":[{"type":"tool_use","name":"Grep","input":{}}]}}"#;
         match parse_stream_line(sub_tool).0 {
-            StreamLineType::SubagentMessage { text, tool_name, .. } => {
+            StreamLineType::SubagentMessage {
+                text, tool_name, ..
+            } => {
                 assert!(text.is_empty());
                 assert_eq!(tool_name.as_deref(), Some("Grep"));
             }
@@ -1446,7 +1470,9 @@ Finished."#;
         // A subagent's tool_result must NOT surface as the root agent's ToolResult.
         let sub_result = r#"{"type":"user","parent_tool_use_id":"toolu_01","message":{"content":[{"type":"tool_result","content":"42 matches"}]}}"#;
         match parse_stream_line(sub_result).0 {
-            StreamLineType::SubagentMessage { parent_tool_use_id, .. } => {
+            StreamLineType::SubagentMessage {
+                parent_tool_use_id, ..
+            } => {
                 assert_eq!(parent_tool_use_id, "toolu_01");
             }
             other => panic!("expected SubagentMessage, got {other:?}"),
@@ -1465,7 +1491,12 @@ Finished."#;
         // Fixtures captured from a real Task fan-out (p4_fanout_DESIGN.md Phase 0).
         let started = r#"{"type":"system","subtype":"task_started","task_id":"a036","tool_use_id":"toolu_01","description":"Reply ALPHA","subagent_type":"claude","task_type":"local_agent"}"#;
         match parse_stream_line(started).0 {
-            StreamLineType::TaskStarted { task_id, tool_use_id, subagent_type, description } => {
+            StreamLineType::TaskStarted {
+                task_id,
+                tool_use_id,
+                subagent_type,
+                description,
+            } => {
                 assert_eq!(task_id, "a036");
                 assert_eq!(tool_use_id, "toolu_01");
                 assert_eq!(subagent_type, "claude");
@@ -1475,7 +1506,13 @@ Finished."#;
         }
         let notif = r#"{"type":"system","subtype":"task_notification","task_id":"a036","tool_use_id":"toolu_01","status":"completed","usage":{"total_tokens":14235,"tool_uses":0,"duration_ms":1598}}"#;
         match parse_stream_line(notif).0 {
-            StreamLineType::TaskNotification { task_id, status, total_tokens, duration_ms, .. } => {
+            StreamLineType::TaskNotification {
+                task_id,
+                status,
+                total_tokens,
+                duration_ms,
+                ..
+            } => {
                 assert_eq!(task_id, "a036");
                 assert_eq!(status, "completed");
                 assert_eq!(total_tokens, Some(14235));

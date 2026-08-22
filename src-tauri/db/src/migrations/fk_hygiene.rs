@@ -350,11 +350,9 @@ fn migrate_persona_events(conn: &Connection) -> Result<(), AppError> {
         conn,
         "persona_events",
         1,
-        &[
-            "UPDATE persona_events SET target_persona_id = NULL \
+        &["UPDATE persona_events SET target_persona_id = NULL \
              WHERE target_persona_id IS NOT NULL \
-               AND target_persona_id NOT IN (SELECT id FROM personas);",
-        ],
+               AND target_persona_id NOT IN (SELECT id FROM personas);"],
         "CREATE TABLE persona_events_new (
             id                 TEXT PRIMARY KEY,
             project_id         TEXT NOT NULL DEFAULT 'default',
@@ -447,10 +445,8 @@ fn migrate_persona_metrics_snapshots(conn: &Connection) -> Result<(), AppError> 
         conn,
         "persona_metrics_snapshots",
         1,
-        &[
-            "DELETE FROM persona_metrics_snapshots \
-             WHERE persona_id NOT IN (SELECT id FROM personas);",
-        ],
+        &["DELETE FROM persona_metrics_snapshots \
+             WHERE persona_id NOT IN (SELECT id FROM personas);"],
         "CREATE TABLE persona_metrics_snapshots_new (
             id                      TEXT PRIMARY KEY,
             persona_id              TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -535,10 +531,8 @@ fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError>
         conn,
         "persona_message_deliveries",
         1,
-        &[
-            "DELETE FROM persona_message_deliveries \
-             WHERE message_id NOT IN (SELECT id FROM persona_messages);",
-        ],
+        &["DELETE FROM persona_message_deliveries \
+             WHERE message_id NOT IN (SELECT id FROM persona_messages);"],
         "CREATE TABLE persona_message_deliveries_new (
             id            TEXT PRIMARY KEY,
             message_id    TEXT NOT NULL REFERENCES persona_messages(id) ON DELETE CASCADE,
@@ -550,9 +544,7 @@ fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError>
             created_at    TEXT NOT NULL
         );",
         None,
-        &[
-            "CREATE INDEX IF NOT EXISTS idx_pmd_message ON persona_message_deliveries(message_id);",
-        ],
+        &["CREATE INDEX IF NOT EXISTS idx_pmd_message ON persona_message_deliveries(message_id);"],
     )
 }
 
@@ -566,10 +558,8 @@ fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
         conn,
         "persona_messages",
         1,
-        &[
-            "DELETE FROM persona_messages \
-             WHERE persona_id NOT IN (SELECT id FROM personas);",
-        ],
+        &["DELETE FROM persona_messages \
+             WHERE persona_id NOT IN (SELECT id FROM personas);"],
         "CREATE TABLE persona_messages_new (
             id           TEXT PRIMARY KEY,
             persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -638,10 +628,8 @@ fn migrate_team_memories(conn: &Connection) -> Result<(), AppError> {
         conn,
         "team_memories",
         1,
-        &[
-            "DELETE FROM team_memories \
-             WHERE team_id NOT IN (SELECT id FROM persona_teams);",
-        ],
+        &["DELETE FROM team_memories \
+             WHERE team_id NOT IN (SELECT id FROM persona_teams);"],
         "CREATE TABLE team_memories_new (
             id          TEXT PRIMARY KEY,
             team_id     TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
@@ -1027,7 +1015,10 @@ mod tests {
                 |r| r.get(0),
             )
             .unwrap();
-        assert_eq!(idx_persona, 1, "the hand-written index list must still apply");
+        assert_eq!(
+            idx_persona, 1,
+            "the hand-written index list must still apply"
+        );
 
         // 5. The trigger survived — it still refuses an out-of-range importance.
         assert!(

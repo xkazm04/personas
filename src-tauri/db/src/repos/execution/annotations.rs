@@ -2,6 +2,7 @@ use rusqlite::{params, Row};
 
 use crate::models::ExecutionAnnotation;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 fn row_to_annotation(row: &Row) -> rusqlite::Result<ExecutionAnnotation> {
@@ -43,7 +44,7 @@ pub fn upsert(
             let tags_json = serde_json::to_string(tags).unwrap_or_else(|_| "[]".to_string());
             let starred_int = if starred { 1i32 } else { 0i32 };
 
-            let conn = pool.get()?;
+            let conn = pool.conn("annotations::upsert")?;
             conn.execute(
                 "INSERT INTO persona_execution_annotations
                     (id, execution_id, persona_id, author, tags, note, starred, created_at, updated_at)
@@ -65,9 +66,8 @@ pub fn upsert(
                 ],
             )?;
 
-            get_by_execution_and_author(pool, execution_id, author)?.ok_or_else(|| {
-                AppError::Database(rusqlite::Error::QueryReturnedNoRows)
-            })
+            get_by_execution_and_author(pool, execution_id, author)?
+                .ok_or_else(|| AppError::Database(rusqlite::Error::QueryReturnedNoRows))
         }
     )
 }
@@ -81,7 +81,7 @@ pub fn get_by_execution_and_author(
         "persona_execution_annotations",
         "persona_execution_annotations::get_by_execution_and_author",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("annotations::get_by_execution_and_author")?;
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_execution_annotations
                  WHERE execution_id = ?1 AND author = ?2 LIMIT 1",
@@ -104,7 +104,7 @@ pub fn list_by_execution(
         "persona_execution_annotations",
         "persona_execution_annotations::list_by_execution",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("annotations::list_by_execution")?;
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_execution_annotations
                  WHERE execution_id = ?1 ORDER BY created_at ASC",
@@ -126,7 +126,7 @@ pub fn list_by_persona(
         "persona_execution_annotations",
         "persona_execution_annotations::list_by_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("annotations::list_by_persona")?;
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_execution_annotations
                  WHERE persona_id = ?1 ORDER BY updated_at DESC",
@@ -143,7 +143,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
         "persona_execution_annotations",
         "persona_execution_annotations::delete",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("annotations::delete")?;
             conn.execute(
                 "DELETE FROM persona_execution_annotations WHERE id = ?1",
                 params![id],

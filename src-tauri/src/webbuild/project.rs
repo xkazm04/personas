@@ -53,12 +53,10 @@ pub fn slugify(name: &str) -> Result<String, AppError> {
 /// Absolute directory for a project slug. Guards against path traversal: the
 /// slug must be a single path segment (no separators, no `..`).
 pub fn project_dir(slug: &str) -> Result<PathBuf, AppError> {
-    if slug.is_empty()
-        || slug.contains('/')
-        || slug.contains('\\')
-        || slug.contains("..")
-    {
-        return Err(AppError::Validation(format!("unsafe project slug `{slug}`")));
+    if slug.is_empty() || slug.contains('/') || slug.contains('\\') || slug.contains("..") {
+        return Err(AppError::Validation(format!(
+            "unsafe project slug `{slug}`"
+        )));
     }
     Ok(projects_root()?.join(slug))
 }
@@ -68,7 +66,12 @@ pub fn project_dir(slug: &str) -> Result<PathBuf, AppError> {
 /// Used to flag incompatible Dev Tools projects in the Studio import picker
 /// before they fail to start a `next dev` server.
 pub fn is_next_app(dir: &Path) -> bool {
-    for cfg in ["next.config.js", "next.config.ts", "next.config.mjs", "next.config.cjs"] {
+    for cfg in [
+        "next.config.js",
+        "next.config.ts",
+        "next.config.mjs",
+        "next.config.cjs",
+    ] {
         if dir.join(cfg).is_file() {
             return true;
         }
@@ -129,7 +132,11 @@ pub async fn scaffold_next_app(slug: &str) -> Result<PathBuf, AppError> {
             crate::utils::text::truncate_on_char_boundary(&out.stderr, 400)
         )));
     }
-    tracing::debug!(slug, output_bytes = out.stdout.len(), "scaffolded Next.js app");
+    tracing::debug!(
+        slug,
+        output_bytes = out.stdout.len(),
+        "scaffolded Next.js app"
+    );
     pin_turbopack_root(&dir).await?;
     Ok(dir)
 }

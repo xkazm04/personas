@@ -93,9 +93,7 @@ pub fn project_tracking_get_obsidian_vault(
          ORDER BY created_at DESC
          LIMIT 1",
     )?;
-    let row: Option<String> = stmt
-        .query_row([], |r| r.get(0))
-        .ok();
+    let row: Option<String> = stmt.query_row([], |r| r.get(0)).ok();
     let Some(config_data) = row else {
         return Ok(None);
     };

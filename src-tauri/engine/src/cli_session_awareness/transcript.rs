@@ -271,9 +271,7 @@ mod tests {
     #[test]
     fn truncates_oversized_content_with_ellipsis() {
         let big = "x".repeat(TURN_MAX_CHARS + 100);
-        let line = format!(
-            r#"{{"type":"user","message":{{"role":"user","content":"{big}"}}}}"#
-        );
+        let line = format!(r#"{{"type":"user","message":{{"role":"user","content":"{big}"}}}}"#);
         let f = scratch_file(&format!("{line}\n"));
         let turns = read_recent_turns(&f, 1);
         assert_eq!(turns.len(), 1);
@@ -299,9 +297,7 @@ mod tests {
         // Build a string where chars and bytes diverge — emoji + cjk.
         let unit = "🌟漢字"; // 3 chars
         let big = unit.repeat(TURN_MAX_CHARS); // way more chars than the cap
-        let line = format!(
-            r#"{{"type":"user","message":{{"role":"user","content":"{big}"}}}}"#
-        );
+        let line = format!(r#"{{"type":"user","message":{{"role":"user","content":"{big}"}}}}"#);
         let f = scratch_file(&format!("{line}\n"));
         let turns = read_recent_turns(&f, 1);
         assert_eq!(turns.len(), 1);

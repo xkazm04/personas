@@ -37,7 +37,7 @@ use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth};
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 use personas_macros::requires;
 
@@ -521,7 +521,6 @@ pub async fn get_simulation_artefacts(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<SimulationArtefacts, AppError> {
-
     // Propagate read failures instead of masking them as an empty bundle. A
     // locked DB / pool exhaustion / malformed row must NOT render as a clean
     // dry-run: this panel is exactly where a user decides a capability is safe

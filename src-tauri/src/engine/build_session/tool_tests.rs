@@ -209,11 +209,7 @@ pub(super) fn classify_test_entry(entry: &serde_json::Value) -> EntryClass {
 
 /// One line of "we counted this but never called it", carried in the report so
 /// the hold the promote gate raises names something the user can act on.
-fn unverified_reason(
-    tool_name: &str,
-    connector: Option<&str>,
-    reason: &str,
-) -> serde_json::Value {
+fn unverified_reason(tool_name: &str, connector: Option<&str>, reason: &str) -> serde_json::Value {
     serde_json::json!({
         "tool_name": tool_name,
         "connector": connector,
@@ -321,10 +317,7 @@ pub async fn run_tool_tests(
         // matches the user-visible name) but fall back to direct
         // service_type credential lookup when the connector isn't in the
         // catalog yet.
-        let connectors = match crate::db::repos::resources::connectors::get_all(pool) {
-            Ok(c) => c,
-            Err(_) => Vec::new(),
-        };
+        let connectors = crate::db::repos::resources::connectors::get_all(pool).unwrap_or_default();
         let conn_def = connectors
             .iter()
             .find(|c| c.name.eq_ignore_ascii_case(name));
@@ -411,7 +404,11 @@ pub async fn run_tool_tests(
     // the LLM path when disabled, so the default is untouched.
     // NOTE: win-verification is deferred to a connector fixture (web-research-desk
     // with Airtable/Notion) — native-only builds have no connectors to script.
-    if std::env::var("PERSONAS_SCRIPTED_TOOL_TESTS").ok().as_deref() == Some("1") {
+    if std::env::var("PERSONAS_SCRIPTED_TOOL_TESTS")
+        .ok()
+        .as_deref()
+        == Some("1")
+    {
         return run_scripted_connector_tests(pool, agent_ir).await;
     }
 
@@ -968,15 +965,21 @@ async fn run_scripted_connector_tests(
                     let started = std::time::Instant::now();
                     let (status, error, preview) =
                         match super::super::healthcheck::run_healthcheck(&pool_c, &cid).await {
-                            Ok(hr) if hr.success => {
-                                ("passed", serde_json::Value::Null, serde_json::Value::String(hr.message))
-                            }
-                            Ok(hr) => {
-                                ("failed", serde_json::Value::String(hr.message), serde_json::Value::Null)
-                            }
-                            Err(e) => {
-                                ("failed", serde_json::Value::String(e.to_string()), serde_json::Value::Null)
-                            }
+                            Ok(hr) if hr.success => (
+                                "passed",
+                                serde_json::Value::Null,
+                                serde_json::Value::String(hr.message),
+                            ),
+                            Ok(hr) => (
+                                "failed",
+                                serde_json::Value::String(hr.message),
+                                serde_json::Value::Null,
+                            ),
+                            Err(e) => (
+                                "failed",
+                                serde_json::Value::String(e.to_string()),
+                                serde_json::Value::Null,
+                            ),
                         };
                     serde_json::json!({
                         "tool_name": name, "status": status, "http_status": null,

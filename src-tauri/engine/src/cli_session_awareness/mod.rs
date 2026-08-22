@@ -85,7 +85,8 @@ mod integration_tests {
     }
 
     fn make_persona(system_prompt: &str) -> personas_db::models::Persona {
-        personas_db::models::Persona { lifecycle: "active".to_string(),
+        personas_db::models::Persona {
+            lifecycle: "active".to_string(),
             id: "p_e2e".into(),
             project_id: "proj_e2e".into(),
             name: "CLI E2E".into(),
@@ -185,7 +186,9 @@ mod integration_tests {
 
         let mut persona = make_persona("You are a SQL teacher.");
         prepend_ambient_to_system_prompt(&mut persona, &md);
-        assert!(persona.system_prompt.starts_with("## Active Claude CLI Session"));
+        assert!(persona
+            .system_prompt
+            .starts_with("## Active Claude CLI Session"));
         assert!(persona.system_prompt.ends_with("You are a SQL teacher."));
         assert!(
             persona.system_prompt.contains("\n\nYou are a SQL teacher."),

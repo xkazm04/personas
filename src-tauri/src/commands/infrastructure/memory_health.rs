@@ -120,7 +120,14 @@ fn roster_metrics(
         |r| Ok((r.get(0)?, r.get(1)?)),
     )?;
 
-    Ok(RosterMetrics { total, stale, disputed, open_claims, pending_proposals, oldest_pending_days })
+    Ok(RosterMetrics {
+        total,
+        stale,
+        disputed,
+        open_claims,
+        pending_proposals,
+        oldest_pending_days,
+    })
 }
 
 /// Computes the three pillars + composite score, or `None` when the roster
@@ -142,8 +149,8 @@ fn pillars(m: &RosterMetrics) -> Option<(i64, i64, i64, i64)> {
     let age_over = (m.oldest_pending_days - GOVERNANCE_SLO_DAYS).max(0.0);
     let governance =
         (100 - (10 * m.pending_proposals).min(50) - ((age_over * 5.0) as i64).min(50)).max(0);
-    let mut score =
-        (0.4 * currency as f64 + 0.35 * consistency as f64 + 0.25 * governance as f64).round() as i64;
+    let mut score = (0.4 * currency as f64 + 0.35 * consistency as f64 + 0.25 * governance as f64)
+        .round() as i64;
     if m.disputed >= DISPUTE_CAP_THRESHOLD {
         score = score.min(DISPUTE_CAP_SCORE);
     }
@@ -168,7 +175,9 @@ pub fn memory_health_scan(
             .prepare("SELECT id, team_id FROM dev_projects")
             .map_err(|e| AppError::Internal(format!("prepare failed: {e}")))?;
         let rows = stmt
-            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?)))
+            .query_map([], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+            })
             .map_err(|e| AppError::Internal(format!("query failed: {e}")))?;
         rows.flatten().collect()
     };

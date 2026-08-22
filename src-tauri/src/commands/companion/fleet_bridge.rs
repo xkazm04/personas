@@ -68,10 +68,9 @@ pub async fn companion_record_fleet_event(
             exit_code: input.exit_code,
         },
         "state_changed" => {
-            let st = parse_state_token(input.state.as_deref().unwrap_or(""))
-                .ok_or_else(|| AppError::Validation(format!(
-                    "unknown fleet state token: {:?}", input.state,
-                )))?;
+            let st = parse_state_token(input.state.as_deref().unwrap_or("")).ok_or_else(|| {
+                AppError::Validation(format!("unknown fleet state token: {:?}", input.state,))
+            })?;
             FleetEventKind::StateChanged {
                 state: st,
                 reason: input.reason.as_deref(),
@@ -98,7 +97,9 @@ pub async fn companion_record_fleet_event(
     // happening now" view consistent with her "what happened" memory.
     let mem = crate::companion::orchestration::operative_memory::memory();
     match &kind {
-        FleetEventKind::StateChanged { state: fs_state, .. } => {
+        FleetEventKind::StateChanged {
+            state: fs_state, ..
+        } => {
             mem.record_session_event(
                 &input.session_id,
                 input.claude_session_id.as_deref(),
@@ -215,12 +216,12 @@ impl FleetSituation {
     }
 }
 
-/// Active fleet orchestration (autonomous mode only): when a session enters
-/// `AwaitingInput` — it finished its turn / is paused waiting for the next
-/// instruction — wake Athena with the live fleet digest so she decides the
-/// next step. She either proposes a `fleet_send_input` (auto-applied via the
-/// autonomous allowlist) or surfaces a decision to the user via the orb. Thin
-/// wrapper over [`orchestrate_session`]; see there for the shared machinery.
+// Active fleet orchestration (autonomous mode only): when a session enters
+// `AwaitingInput` — it finished its turn / is paused waiting for the next
+// instruction — wake Athena with the live fleet digest so she decides the
+// next step. She either proposes a `fleet_send_input` (auto-applied via the
+// autonomous allowlist) or surfaces a decision to the user via the orb. Thin
+// wrapper over `orchestrate_session`; see there for the shared machinery.
 // ---------------------------------------------------------------------------
 // Batched assessment (2026-07-24, the 30x throughput fix).
 //
@@ -286,13 +287,16 @@ static ASSESSMENT_TURN_STARTED_MS: std::sync::atomic::AtomicI64 =
 static NEXT_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 static ACTIVE_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
+/// FIFO of `(generation, session_ids)` for in-flight assessment batches.
+type BatchQueue = std::collections::VecDeque<(u64, Vec<String>)>;
+
 /// FIFO of `(generation, session_ids)` for batches whose turn has been
 /// spawned but not yet finished. Pushed in `drain_assessment_batch`, popped
 /// in `finish_assessment_turn` — never mutated by the wedge-recovery path
 /// (it only peeks), so a poisoned generation's entry stays in place for its
 /// eventual, now-inert, real completion to consume.
-fn batch_queue() -> &'static Mutex<std::collections::VecDeque<(u64, Vec<String>)>> {
-    static Q: OnceLock<Mutex<std::collections::VecDeque<(u64, Vec<String>)>>> = OnceLock::new();
+fn batch_queue() -> &'static Mutex<BatchQueue> {
+    static Q: OnceLock<Mutex<BatchQueue>> = OnceLock::new();
     Q.get_or_init(|| Mutex::new(std::collections::VecDeque::new()))
 }
 
@@ -333,7 +337,9 @@ fn pop_own_generation() -> Option<(u64, Vec<String>, bool)> {
     };
     let (generation, ids) = popped?;
     let is_poisoned = {
-        let mut poisoned = poisoned_generations().lock().unwrap_or_else(|e| e.into_inner());
+        let mut poisoned = poisoned_generations()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         poisoned.remove(&generation)
     };
     Some((generation, ids, is_poisoned))
@@ -354,7 +360,9 @@ static DRAIN_SCHEDULED: std::sync::atomic::AtomicBool = std::sync::atomic::Atomi
 fn enqueue_assessment(app: &tauri::AppHandle, state: &AppState, session_id: &str, situation: &str) {
     use std::sync::atomic::Ordering;
     let qlen = {
-        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        let mut q = assessment_pending()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if q.iter().any(|e| e.session_id == session_id) {
             return;
         }
@@ -413,7 +421,9 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
                     .unwrap_or_default()
             };
             if stranded_gen != 0 {
-                let mut poisoned = poisoned_generations().lock().unwrap_or_else(|e| e.into_inner());
+                let mut poisoned = poisoned_generations()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 poisoned.insert(stranded_gen);
             }
             for sid in stranded {
@@ -431,7 +441,9 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
         }
     }
     let batch: Vec<QueuedAssessment> = {
-        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        let mut q = assessment_pending()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let n = q.len().min(BATCH_MAX);
         q.drain(..n).collect()
     };
@@ -462,7 +474,9 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
                 // screen the dedupe would wrongly suppress the next wake
                 // (observed on the smoke probe: a dropped wake cost the
                 // follow-up question ~6 min of sweep latency).
-                let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                let mut sigs = decision_signatures()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 sigs.remove(&e.session_id);
             }
             parked
@@ -473,7 +487,9 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
     }
     if ASSESSMENT_TURN_ACTIVE.swap(true, Ordering::SeqCst) {
         // Lost the race to another drainer — requeue and let it handle them.
-        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        let mut q = assessment_pending()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         for e in batch {
             if !q.iter().any(|x| x.session_id == e.session_id) {
                 q.push(e);
@@ -502,7 +518,9 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
             use std::hash::{Hash, Hasher};
             let mut h = DefaultHasher::new();
             screen_text.hash(&mut h);
-            let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+            let mut sigs = decision_signatures()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             sigs.insert(sid.clone(), h.finish());
         }
         let label = crate::commands::fleet::registry::registry()
@@ -573,7 +591,10 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
          its prompt's language (usually English). No preamble, no fleet-wide recap."
     );
 
-    tracing::info!(batch = n, "fleet orchestration: spawning batched assessment turn");
+    tracing::info!(
+        batch = n,
+        "fleet orchestration: spawning batched assessment turn"
+    );
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
         Arc::new(state.user_db.clone()),
@@ -629,7 +650,9 @@ pub fn finish_assessment_turn(
     let mut verdicts: HashMap<String, String> = HashMap::new();
     for line in reply_text.lines() {
         let t = line.trim();
-        let Some((prefix, rest)) = t.split_once(':') else { continue };
+        let Some((prefix, rest)) = t.split_once(':') else {
+            continue;
+        };
         let prefix = prefix.trim().trim_start_matches('`').trim_end_matches('`');
         if prefix.len() < 6 || !prefix.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
             continue;
@@ -645,7 +668,12 @@ pub fn finish_assessment_turn(
             clear_pending_assessment(sid);
         } else if let Some(note) = verdicts.get(sid) {
             if let Some(clean) = handle_fleet_defer(app, sid, note) {
-                surface_fleet_orb_note(app, pool, &format!("{turn_ref}:{}", &sid[..8.min(sid.len())]), &clean);
+                surface_fleet_orb_note(
+                    app,
+                    pool,
+                    &format!("{turn_ref}:{}", &sid[..8.min(sid.len())]),
+                    &clean,
+                );
             }
             clear_pending_assessment(sid);
         } else {
@@ -662,12 +690,16 @@ pub fn finish_assessment_turn(
             // sessions parked on questions decayed to Stale and were never
             // re-assessed.
             {
-                let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                let mut sigs = decision_signatures()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 sigs.remove(sid);
             }
             // Keep the doze guard armed and put the session back in line.
             {
-                let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+                let mut map = pending_assessments()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 map.insert(sid.clone(), crate::commands::fleet::registry::now_ms());
             }
             unanswered.push(sid.clone());
@@ -675,7 +707,9 @@ pub fn finish_assessment_turn(
     }
     let all_unanswered = !batch.is_empty() && unanswered.len() == batch.len();
     {
-        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        let mut q = assessment_pending()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         for sid in unanswered {
             if !q.iter().any(|e| e.session_id == sid) {
                 q.push(QueuedAssessment {
@@ -758,6 +792,13 @@ enum MechanicalCue {
 /// protocol ("FLEET:DONE marks a fully-complete task…") have none, and
 /// template echoes (`FLEET:DONE — <one-line summary>`) are rejected by the
 /// leading `<`.
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
     // Blank vt100 rows and the composer chrome eat most of the raw bottom-15
     // window (probe 3: the recap sat just above it and fell through to a full
@@ -786,7 +827,14 @@ fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
         .or_else(|| after.strip_prefix(':'))?;
     // The payload runs to the end of the visual row; a wrapped continuation on
     // the next row is fine to lose — this is a cue, not a transcript.
-    let text: String = payload.trim_start().lines().next()?.trim().chars().take(200).collect();
+    let text: String = payload
+        .trim_start()
+        .lines()
+        .next()?
+        .trim()
+        .chars()
+        .take(200)
+        .collect();
     if text.is_empty() || text.starts_with('<') {
         return None;
     }
@@ -809,7 +857,8 @@ fn mechanical_next_signatures() -> &'static Mutex<HashMap<String, u64>> {
 /// free: no Athena turn). Returns `true` when the cue was consumed and normal
 /// orchestration should not run for this wake.
 fn handle_mechanical_cue(app: &tauri::AppHandle, session_id: &str) -> bool {
-    let Some((_, lines)) = crate::commands::fleet::registry::registry().render_screen_for(session_id)
+    let Some((_, lines)) =
+        crate::commands::fleet::registry::registry().render_screen_for(session_id)
     else {
         return false;
     };
@@ -861,7 +910,9 @@ fn handle_mechanical_cue(app: &tauri::AppHandle, session_id: &str) -> bool {
             lines.join("\n").hash(&mut h);
             let sig = h.finish();
             {
-                let mut m = mechanical_next_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                let mut m = mechanical_next_signatures()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 if m.insert(session_id.to_string(), sig) == Some(sig) {
                     // Same screen as the last mechanical drive — it didn't
                     // move the session; let Athena reason about it instead.
@@ -873,10 +924,8 @@ fn handle_mechanical_cue(app: &tauri::AppHandle, session_id: &str) -> bool {
                 "MECHANICAL next-step",
                 &format!("FLEET:NEXT — driving: {step}"),
             );
-            let _ = crate::commands::fleet::registry::registry().write_text_line(
-                session_id,
-                "Proceed with your recommended next step.",
-            );
+            let _ = crate::commands::fleet::registry::registry()
+                .write_text_line(session_id, "Proceed with your recommended next step.");
             true
         }
         None => false,
@@ -908,12 +957,15 @@ fn orchestrate_session(
     }
     // Mechanical protocol first — a FLEET:DONE / FLEET:NEXT recap cue resolves
     // this wake without an Athena turn (and without consuming the throttle).
-    if matches!(situation, FleetSituation::AwaitingInput) && handle_mechanical_cue(app, session_id) {
+    if matches!(situation, FleetSituation::AwaitingInput) && handle_mechanical_cue(app, session_id)
+    {
         return;
     }
     let now = crate::commands::fleet::registry::now_ms();
     {
-        let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
+        let mut t = attention_throttle()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(&last) = t.get(session_id) {
             if now - last < ATTENTION_MIN_INTERVAL_MS {
                 // Log only MEANINGFUL throttle skips. The hook path and the
@@ -945,13 +997,15 @@ fn orchestrate_session(
                 // The queue dedupes twin wakes; the drain drops sessions that
                 // resolved themselves meanwhile.
                 {
-                    let mut map =
-                        pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+                    let mut map = pending_assessments()
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     map.insert(session_id.to_string(), now);
                 }
                 let queued_new = {
-                    let mut q =
-                        assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+                    let mut q = assessment_pending()
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     if q.iter().any(|e| e.session_id == session_id) {
                         false
                     } else {
@@ -963,15 +1017,12 @@ fn orchestrate_session(
                     }
                 };
                 if queued_new {
-                    let delay_ms =
-                        (ATTENTION_MIN_INTERVAL_MS - (now - last)).max(0) as u64 + 1_500;
+                    let delay_ms = (ATTENTION_MIN_INTERVAL_MS - (now - last)).max(0) as u64 + 1_500;
                     let app = app.clone();
                     tauri::async_runtime::spawn(async move {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         use tauri::Manager;
-                        if let Some(state) =
-                            app.try_state::<std::sync::Arc<AppState>>()
-                        {
+                        if let Some(state) = app.try_state::<std::sync::Arc<AppState>>() {
                             drain_assessment_batch(&app, &state);
                         }
                     });
@@ -1027,12 +1078,16 @@ fn orchestrate_session(
                 debug_log::athena(
                     session_id,
                     "skipped",
-                    &format!("already auto-fired on this exact screen (hash {hex}) — durable dedupe"),
+                    &format!(
+                        "already auto-fired on this exact screen (hash {hex}) — durable dedupe"
+                    ),
                 );
                 return;
             }
         }
-        let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        let mut sigs = decision_signatures()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if sigs.insert(session_id.to_string(), sig) == Some(sig) {
             debug_log::athena(
                 session_id,
@@ -1193,7 +1248,9 @@ fn orchestrate_session(
     }
 
     {
-        let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+        let mut map = pending_assessments()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.insert(session_id.to_string(), now);
     }
     // Batched lane: the wake joins the queue and the drainer decides when it
@@ -1217,7 +1274,9 @@ pub fn screen_matches_last_decision(session_id: &str) -> Option<bool> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     let recorded = {
-        let sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        let sigs = decision_signatures()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *sigs.get(session_id)?
     };
     // Re-render the same way orchestrate_on_awaiting captured it, so the hashes
@@ -1236,7 +1295,9 @@ pub fn screen_matches_last_decision(session_id: &str) -> Option<bool> {
 /// with the exact screen a decision was made on. `None` if she hasn't been woken
 /// for this session yet.
 pub fn recorded_decision_hash_hex(session_id: &str) -> Option<String> {
-    let sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+    let sigs = decision_signatures()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     sigs.get(session_id).map(|h| format!("{h:016x}"))
 }
 
@@ -1455,7 +1516,10 @@ fn session_objective(session_id: &str) -> Option<String> {
         .find(|s| s.fleet_session_id == session_id)
         .and_then(|s| s.intent.clone().or_else(|| s.role.clone()));
     match session_goal {
-        Some(goal) => Some(format!("{goal} — part of the operation: {}", op.user_intent)),
+        Some(goal) => Some(format!(
+            "{goal} — part of the operation: {}",
+            op.user_intent
+        )),
         None => Some(op.user_intent.clone()),
     }
 }
@@ -1553,8 +1617,11 @@ fn pending_assessments() -> &'static Mutex<HashMap<String, i64>> {
 /// "wedged forever").
 pub fn has_pending_assessment(session_id: &str) -> bool {
     let now = crate::commands::fleet::registry::now_ms();
-    let map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
-    map.get(session_id).is_some_and(|&t| now - t < 6 * 60 * 1000)
+    let map = pending_assessments()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    map.get(session_id)
+        .is_some_and(|&t| now - t < 6 * 60 * 1000)
 }
 
 /// Called by `send_turn` when a fleet_orchestration turn completes (any
@@ -1563,7 +1630,9 @@ pub fn has_pending_assessment(session_id: &str) -> bool {
 /// by the mechanical limit-retry lane to keep a parked process alive across
 /// its retry window.
 pub fn stamp_pending_assessment(session_id: &str) {
-    let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+    let mut map = pending_assessments()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     map.insert(
         session_id.to_string(),
         crate::commands::fleet::registry::now_ms(),
@@ -1571,7 +1640,9 @@ pub fn stamp_pending_assessment(session_id: &str) {
 }
 
 pub fn clear_pending_assessment(session_id: &str) {
-    let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+    let mut map = pending_assessments()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     map.remove(session_id);
     map.retain(|_, &mut t| crate::commands::fleet::registry::now_ms() - t < 30 * 60 * 1000);
 }
@@ -1587,7 +1658,10 @@ pub fn validate_fleet_session_ids(
     allowed: &[String],
 ) {
     approvals.retain_mut(|approval| {
-        if !matches!(approval.action.as_str(), "fleet_send_input" | "fleet_intervene") {
+        if !matches!(
+            approval.action.as_str(),
+            "fleet_send_input" | "fleet_intervene"
+        ) {
             return true;
         }
         let Ok(mut params) = serde_json::from_str::<serde_json::Value>(&approval.params_json)
@@ -1600,7 +1674,7 @@ pub fn validate_fleet_session_ids(
             .unwrap_or("")
             .trim()
             .to_string();
-        let resolved = if allowed.iter().any(|id| *id == given) {
+        let resolved = if allowed.contains(&given) {
             Some(given.clone())
         } else if given.len() >= 6 {
             allowed.iter().find(|id| id.starts_with(&given)).cloned()
@@ -1661,11 +1735,15 @@ pub fn validate_fleet_session_ids(
 /// screen and decide again.
 pub fn force_reassess(app: &tauri::AppHandle, state: &AppState, session_id: &str) {
     {
-        let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
+        let mut t = attention_throttle()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         t.remove(session_id);
     }
     {
-        let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        let mut sigs = decision_signatures()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         sigs.remove(session_id);
     }
     let label = crate::commands::fleet::registry::registry()
@@ -1688,7 +1766,9 @@ pub fn force_reassess(app: &tauri::AppHandle, state: &AppState, session_id: &str
 /// "Athena is asking me things she should have handled".
 pub fn gc_stale_fleet_approvals(app: &tauri::AppHandle, state: &AppState) {
     let rows: Vec<(String, String)> = {
-        let Ok(conn) = state.user_db.get() else { return };
+        let Ok(conn) = state.user_db.get() else {
+            return;
+        };
         let Ok(mut stmt) = conn.prepare(
             "SELECT id, payload FROM companion_approval
              WHERE status = 'pending'
@@ -1696,9 +1776,9 @@ pub fn gc_stale_fleet_approvals(app: &tauri::AppHandle, state: &AppState) {
         ) else {
             return;
         };
-        let Ok(mapped) = stmt.query_map([], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-        }) else {
+        let Ok(mapped) =
+            stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+        else {
             return;
         };
         mapped.flatten().collect()
@@ -1708,7 +1788,9 @@ pub fn gc_stale_fleet_approvals(app: &tauri::AppHandle, state: &AppState) {
     }
     let mut expired = 0u32;
     for (id, payload) in rows {
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(&payload) else { continue };
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&payload) else {
+            continue;
+        };
         let action = v.get("action").and_then(|a| a.as_str()).unwrap_or("");
         if !action.starts_with("fleet_") {
             continue;
@@ -1718,13 +1800,17 @@ pub fn gc_stale_fleet_approvals(app: &tauri::AppHandle, state: &AppState) {
             .and_then(|p| p.get("session_id"))
             .and_then(|x| x.as_str())
             .unwrap_or("");
-        let target_gone =
-            !sid.is_empty() && crate::commands::fleet::registry::registry().lookup_meta(sid).is_none();
+        let target_gone = !sid.is_empty()
+            && crate::commands::fleet::registry::registry()
+                .lookup_meta(sid)
+                .is_none();
         // Age-based expiry for the rest is enforced in SQL below (30 min);
         // dead-target expiry applies immediately (2-min SQL floor avoids
         // racing an approval created moments ago for a session mid-spawn).
         let too_old = {
-            let Ok(conn) = state.user_db.get() else { continue };
+            let Ok(conn) = state.user_db.get() else {
+                continue;
+            };
             conn.query_row(
                 "SELECT 1 FROM companion_approval
                  WHERE id = ?1 AND created_at < datetime('now', '-30 minutes')",
@@ -1736,8 +1822,14 @@ pub fn gc_stale_fleet_approvals(app: &tauri::AppHandle, state: &AppState) {
         if !target_gone && !too_old {
             continue;
         }
-        let Ok(conn) = state.user_db.get() else { continue };
-        let reason = if target_gone { "target session gone" } else { "older than 30 min" };
+        let Ok(conn) = state.user_db.get() else {
+            continue;
+        };
+        let reason = if target_gone {
+            "target session gone"
+        } else {
+            "older than 30 min"
+        };
         if conn
             .execute(
                 "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1 AND status = 'pending'",
@@ -1807,12 +1899,20 @@ pub fn resolve_athena_assessment(
 
 /// First line of a defer note, capped for a `state_reason` / banner chip.
 fn defer_reason_line(note: &str) -> String {
-    let first = note.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim();
+    let first = note
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .trim();
     let capped: String = first.chars().take(140).collect();
     format!(
         "Athena left this to you: {}{}",
         capped,
-        if first.chars().count() > 140 { "…" } else { "" }
+        if first.chars().count() > 140 {
+            "…"
+        } else {
+            ""
+        }
     )
 }
 
@@ -1842,7 +1942,10 @@ pub fn classify_fleet_note(note: &str) -> (FleetNoteKind, String) {
     let upper = trimmed.to_uppercase();
     for tag in ["OK:", "OK —", "OK-"] {
         if upper.starts_with(tag) {
-            return (FleetNoteKind::AllFine, trimmed[tag.len()..].trim().to_string());
+            return (
+                FleetNoteKind::AllFine,
+                trimmed[tag.len()..].trim().to_string(),
+            );
         }
     }
     if upper == "OK" {
@@ -1850,7 +1953,10 @@ pub fn classify_fleet_note(note: &str) -> (FleetNoteKind, String) {
     }
     for tag in ["NEEDS-YOU:", "NEEDS YOU:", "NEEDSYOU:"] {
         if upper.starts_with(tag) {
-            return (FleetNoteKind::NeedsYou, trimmed[tag.len()..].trim().to_string());
+            return (
+                FleetNoteKind::NeedsYou,
+                trimmed[tag.len()..].trim().to_string(),
+            );
         }
     }
     (FleetNoteKind::NeedsYou, trimmed.to_string())
@@ -1865,11 +1971,7 @@ pub fn classify_fleet_note(note: &str) -> (FleetNoteKind, String) {
 /// you: …", guarded so a session that moved back to Running is left alone) and
 /// surface the full note as an orb card. Returns the cleaned note when the
 /// caller should still show the orb card, `None` when everything stays silent.
-pub fn handle_fleet_defer(
-    app: &tauri::AppHandle,
-    session_id: &str,
-    note: &str,
-) -> Option<String> {
+pub fn handle_fleet_defer(app: &tauri::AppHandle, session_id: &str, note: &str) -> Option<String> {
     let (kind, cleaned) = classify_fleet_note(note);
     match kind {
         FleetNoteKind::AllFine => {
@@ -1967,7 +2069,10 @@ fn reconcile_if_dispatched(
     if !op.dispatched_by_athena {
         return; // ad-hoc ops don't get cross-session wrap-ups
     }
-    if !matches!(op.status, OperationStatus::Completed | OperationStatus::Failed) {
+    if !matches!(
+        op.status,
+        OperationStatus::Completed | OperationStatus::Failed
+    ) {
         return; // sessions still running
     }
     // Idempotency: only synthesize once. The summary field is set by
@@ -2142,7 +2247,9 @@ pub(crate) fn completion_policy(
 /// classifier when a session's transcript reads as done.
 pub fn notify_completion(app: &tauri::AppHandle, session_id: &str, summary: &str) {
     {
-        let mut seen = completion_notified().lock().unwrap_or_else(|e| e.into_inner());
+        let mut seen = completion_notified()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if !seen.insert(session_id.to_string()) {
             return;
         }
@@ -2215,11 +2322,7 @@ pub fn notify_completion(app: &tauri::AppHandle, session_id: &str, summary: &str
 /// short — the proactive card shows it in a constrained surface; the
 /// full synthesized summary lives in the episode body for Athena to
 /// retrieve when the user asks for details.
-fn format_proactive_wrap_up(
-    intent: &str,
-    status_token: &'static str,
-    summary: &str,
-) -> String {
+fn format_proactive_wrap_up(intent: &str, status_token: &'static str, summary: &str) -> String {
     let outcome = match status_token {
         "op_completed" => "completed",
         "op_failed" => "failed",
@@ -2240,9 +2343,7 @@ fn format_proactive_wrap_up(
     } else {
         headline.to_string()
     };
-    format!(
-        "Operation \"{intent}\" {outcome}. {headline}"
-    )
+    format!("Operation \"{intent}\" {outcome}. {headline}")
 }
 
 #[derive(serde::Serialize, Clone)]
@@ -2284,13 +2385,13 @@ fn write_episode_with_summary(
 
 fn parse_state_token(s: &str) -> Option<FleetSessionState> {
     match s {
-        "spawning"       => Some(FleetSessionState::Spawning),
-        "running"        => Some(FleetSessionState::Running),
+        "spawning" => Some(FleetSessionState::Spawning),
+        "running" => Some(FleetSessionState::Running),
         "awaiting_input" => Some(FleetSessionState::AwaitingInput),
-        "idle"           => Some(FleetSessionState::Idle),
-        "stale"          => Some(FleetSessionState::Stale),
-        "hibernated"     => Some(FleetSessionState::Hibernated),
-        "exited"         => Some(FleetSessionState::Exited),
+        "idle" => Some(FleetSessionState::Idle),
+        "stale" => Some(FleetSessionState::Stale),
+        "hibernated" => Some(FleetSessionState::Hibernated),
+        "exited" => Some(FleetSessionState::Exited),
         _ => None,
     }
 }
@@ -2307,29 +2408,14 @@ pub async fn companion_get_operative_memory_digest(
     Ok(crate::companion::orchestration::operative_memory::memory().digest_for_prompt())
 }
 
-/// D10 — run the rule-based fleet pattern extractor on demand. Reads
-/// recent dispatched-op episodes from episodic memory, aggregates by
-/// role combination, and writes one low-confidence procedural per
-/// combo that has at least the minimum-sample threshold of runs.
-/// Returns the ids of any procedurals written this pass.
-///
-/// Not auto-scheduled in v1 — Athena (or the user via the brain
-/// viewer) invokes it when fresh patterns would be useful.
-#[tauri::command]
-pub async fn companion_extract_fleet_patterns(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<String>, AppError> {
-    crate::ipc_auth::require_auth(&state).await?;
-    crate::companion::brain::fleet_patterns::extract_patterns(&state.user_db)
-}
-
 #[cfg(test)]
 mod fleet_note_tests {
     use super::{classify_fleet_note, FleetNoteKind};
 
     #[test]
     fn ok_tag_is_all_fine_and_stripped() {
-        let (kind, note) = classify_fleet_note("OK: three scan agents still running, nothing blocked.");
+        let (kind, note) =
+            classify_fleet_note("OK: three scan agents still running, nothing blocked.");
         assert_eq!(kind, FleetNoteKind::AllFine);
         assert_eq!(note, "three scan agents still running, nothing blocked.");
         // Case-insensitive + bare OK.
@@ -2409,10 +2495,14 @@ mod assessment_generation_tests {
         // slow). It must pop ITS OWN (A's) entry — not B's — and be reported
         // as poisoned so the caller discards it instead of applying its
         // verdicts to session-b.
-        let (generation, ids, is_poisoned) = pop_own_generation().expect("A's entry is still queued");
+        let (generation, ids, is_poisoned) =
+            pop_own_generation().expect("A's entry is still queued");
         assert_eq!(generation, gen_a);
         assert_eq!(ids, vec!["session-a".to_string()]);
-        assert!(is_poisoned, "A's generation was force-released and must be reported poisoned");
+        assert!(
+            is_poisoned,
+            "A's generation was force-released and must be reported poisoned"
+        );
 
         // B is untouched: still the active generation, its batch still
         // resolvable — proving A's stale completion did not steal B's slot.
@@ -2421,10 +2511,14 @@ mod assessment_generation_tests {
 
         // B's own (non-poisoned) completion pops cleanly and is not flagged
         // as stale.
-        let (generation2, ids2, is_poisoned2) = pop_own_generation().expect("B's entry is still queued");
+        let (generation2, ids2, is_poisoned2) =
+            pop_own_generation().expect("B's entry is still queued");
         assert_eq!(generation2, gen_b);
         assert_eq!(ids2, vec!["session-b".to_string()]);
-        assert!(!is_poisoned2, "B's own completion must not be treated as stale");
+        assert!(
+            !is_poisoned2,
+            "B's own completion must not be treated as stale"
+        );
 
         // Queue is now empty; a further pop reflects "no queued batch".
         assert!(pop_own_generation().is_none());

@@ -38,8 +38,19 @@ const MAX_PAYLOAD_BYTES: usize = 4096;
 
 /// Key substrings (case-insensitive) whose values are always redacted.
 const SECRET_KEY_NEEDLES: &[&str] = &[
-    "token", "secret", "password", "passwd", "api_key", "apikey", "authorization",
-    "credential", "cookie", "private_key", "access_key", "client_secret", "bearer",
+    "token",
+    "secret",
+    "password",
+    "passwd",
+    "api_key",
+    "apikey",
+    "authorization",
+    "credential",
+    "cookie",
+    "private_key",
+    "access_key",
+    "client_secret",
+    "bearer",
 ];
 
 fn key_is_secret(key: &str) -> bool {
@@ -51,8 +62,19 @@ fn key_is_secret(key: &str) -> bool {
 /// known token prefixes, or a long whitespace-free high-base64/hex-density run.
 fn value_looks_secret(s: &str) -> bool {
     const PREFIXES: &[&str] = &[
-        "sk-", "sk_", "ghp_", "gho_", "ghs_", "github_pat_", "glpat-", "xox", "AKIA",
-        "ASIA", "eyJ", "Bearer ", "-----BEGIN",
+        "sk-",
+        "sk_",
+        "ghp_",
+        "gho_",
+        "ghs_",
+        "github_pat_",
+        "glpat-",
+        "xox",
+        "AKIA",
+        "ASIA",
+        "eyJ",
+        "Bearer ",
+        "-----BEGIN",
     ];
     if PREFIXES.iter().any(|p| s.starts_with(p)) {
         return true;
@@ -85,10 +107,8 @@ fn redact_secrets(value: &mut serde_json::Value) {
                 redact_secrets(val);
             }
         }
-        serde_json::Value::String(s) => {
-            if value_looks_secret(s) {
-                *s = "[redacted]".into();
-            }
+        serde_json::Value::String(s) if value_looks_secret(s) => {
+            *s = "[redacted]".into();
         }
         _ => {}
     }
@@ -471,11 +491,13 @@ const REVIEW_COLS: &str = "id, execution_id, persona_id, title, description, sev
 const MESSAGE_COLS: &str = "id, persona_id, execution_id, title, content, content_type, priority, \
     is_read, metadata, thread_id, created_at, read_at";
 
-const METRICS_COLS: &str = "id, persona_id, snapshot_date, total_executions, successful_executions, \
+const METRICS_COLS: &str =
+    "id, persona_id, snapshot_date, total_executions, successful_executions, \
     failed_executions, total_cost_usd, total_input_tokens, total_output_tokens, avg_duration_ms, \
     events_emitted, events_consumed, messages_sent, created_at";
 
-const TOOL_USAGE_COLS: &str = "id, execution_id, persona_id, tool_name, invocation_count, created_at";
+const TOOL_USAGE_COLS: &str =
+    "id, execution_id, persona_id, tool_name, invocation_count, created_at";
 
 /// Run the changed-since query and stamp `device_id` on every row. `cursor_col`
 /// is the watermark column; when `resync_floor` is set, rows whose `created_at`
@@ -548,7 +570,15 @@ pub fn fetch_personas(
     _resync_floor: Option<String>,
     device_id: String,
 ) -> Result<(Vec<SyncedPersonaRow>, Option<String>), AppError> {
-    let (rows, max_cursor) = fetch(pool, "personas", PERSONA_COLS, "updated_at", &cursor_prev, None, row_to_persona)?;
+    let (rows, max_cursor) = fetch(
+        pool,
+        "personas",
+        PERSONA_COLS,
+        "updated_at",
+        &cursor_prev,
+        None,
+        row_to_persona,
+    )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
 
@@ -559,8 +589,13 @@ pub fn fetch_executions(
     device_id: String,
 ) -> Result<(Vec<SyncedExecutionRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_executions", EXECUTION_COLS, "created_at", &cursor_prev,
-        resync_floor.as_deref(), row_to_execution,
+        pool,
+        "persona_executions",
+        EXECUTION_COLS,
+        "created_at",
+        &cursor_prev,
+        resync_floor.as_deref(),
+        row_to_execution,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -572,8 +607,13 @@ pub fn fetch_events(
     device_id: String,
 ) -> Result<(Vec<SyncedEventRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_events", EVENT_COLS, "created_at", &cursor_prev,
-        resync_floor.as_deref(), row_to_event,
+        pool,
+        "persona_events",
+        EVENT_COLS,
+        "created_at",
+        &cursor_prev,
+        resync_floor.as_deref(),
+        row_to_event,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -585,7 +625,13 @@ pub fn fetch_reviews(
     device_id: String,
 ) -> Result<(Vec<SyncedReviewRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_manual_reviews", REVIEW_COLS, "updated_at", &cursor_prev, None, row_to_review,
+        pool,
+        "persona_manual_reviews",
+        REVIEW_COLS,
+        "updated_at",
+        &cursor_prev,
+        None,
+        row_to_review,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -597,8 +643,13 @@ pub fn fetch_messages(
     device_id: String,
 ) -> Result<(Vec<SyncedMessageRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_messages", MESSAGE_COLS, "created_at", &cursor_prev,
-        resync_floor.as_deref(), row_to_message,
+        pool,
+        "persona_messages",
+        MESSAGE_COLS,
+        "created_at",
+        &cursor_prev,
+        resync_floor.as_deref(),
+        row_to_message,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -610,8 +661,13 @@ pub fn fetch_metrics(
     device_id: String,
 ) -> Result<(Vec<SyncedMetricsRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_metrics_snapshots", METRICS_COLS, "created_at", &cursor_prev,
-        resync_floor.as_deref(), row_to_metrics,
+        pool,
+        "persona_metrics_snapshots",
+        METRICS_COLS,
+        "created_at",
+        &cursor_prev,
+        resync_floor.as_deref(),
+        row_to_metrics,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -623,7 +679,13 @@ pub fn fetch_tool_usage(
     device_id: String,
 ) -> Result<(Vec<SyncedToolUsageRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_tool_usage", TOOL_USAGE_COLS, "created_at", &cursor_prev, None, row_to_tool_usage,
+        pool,
+        "persona_tool_usage",
+        TOOL_USAGE_COLS,
+        "created_at",
+        &cursor_prev,
+        None,
+        row_to_tool_usage,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -716,7 +778,13 @@ pub fn fetch_memories(
     device_id: String,
 ) -> Result<(Vec<SyncedMemoryRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_memories", MEMORY_COLS, "updated_at", &cursor_prev, None, row_to_memory,
+        pool,
+        "persona_memories",
+        MEMORY_COLS,
+        "updated_at",
+        &cursor_prev,
+        None,
+        row_to_memory,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -728,7 +796,13 @@ pub fn fetch_knowledge_patterns(
     device_id: String,
 ) -> Result<(Vec<SyncedKnowledgePatternRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "execution_knowledge", KNOWLEDGE_COLS, "updated_at", &cursor_prev, None, row_to_knowledge,
+        pool,
+        "execution_knowledge",
+        KNOWLEDGE_COLS,
+        "updated_at",
+        &cursor_prev,
+        None,
+        row_to_knowledge,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -788,8 +862,13 @@ pub fn fetch_healing_issues(
     // created_at watermark + resync window: healing issues mutate in place
     // (status open→resolved, auto_fixed flips), so re-pull recent rows.
     let (rows, max_cursor) = fetch(
-        pool, "persona_healing_issues", HEALING_COLS, "created_at", &cursor_prev,
-        resync_floor.as_deref(), row_to_healing,
+        pool,
+        "persona_healing_issues",
+        HEALING_COLS,
+        "created_at",
+        &cursor_prev,
+        resync_floor.as_deref(),
+        row_to_healing,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -801,7 +880,13 @@ pub fn fetch_triggers(
     device_id: String,
 ) -> Result<(Vec<SyncedTriggerRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
-        pool, "persona_triggers", TRIGGER_COLS, "updated_at", &cursor_prev, None, row_to_trigger,
+        pool,
+        "persona_triggers",
+        TRIGGER_COLS,
+        "updated_at",
+        &cursor_prev,
+        None,
+        row_to_trigger,
     )?;
     Ok((stamp!(rows, device_id), max_cursor))
 }
@@ -814,7 +899,6 @@ pub fn fetch_triggers(
 #[derive(Debug, Clone)]
 pub struct Tombstone {
     pub persona_id: String,
-    pub deleted_at: String,
 }
 
 /// Persona deletions recorded after `cursor_prev` (RFC3339), oldest first.
@@ -823,13 +907,16 @@ pub struct Tombstone {
 pub fn fetch_tombstones(pool: &DbPool, cursor_prev: &str) -> Result<Vec<Tombstone>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT persona_id, deleted_at FROM persona_tombstones \
+        "SELECT persona_id FROM persona_tombstones \
          WHERE datetime(deleted_at) > datetime(?1) ORDER BY deleted_at ASC",
     )?;
     let it = stmt.query_map(params![cursor_prev], |r| {
-        Ok(Tombstone { persona_id: r.get(0)?, deleted_at: r.get(1)? })
+        Ok(Tombstone {
+            persona_id: r.get(0)?,
+        })
     })?;
-    it.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    it.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 #[cfg(test)]
@@ -860,7 +947,10 @@ mod tests {
     fn sanitizer_redacts_tokenish_values_under_innocuous_keys() {
         let out = sanitize_event_payload(r#"{"note":"sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"}"#)
             .expect("structured json sanitizes");
-        assert!(!out.contains("sk-ABCDEF"), "token-prefixed value redacted even under a benign key");
+        assert!(
+            !out.contains("sk-ABCDEF"),
+            "token-prefixed value redacted even under a benign key"
+        );
         assert!(out.contains("[redacted]"));
     }
 
@@ -876,7 +966,10 @@ mod tests {
         let big = format!(r#"{{"blob":"{}"}}"#, "x ".repeat(5000)); // spaces → not "secret"
         let out = sanitize_event_payload(&big).expect("valid json");
         assert!(out.len() <= MAX_PAYLOAD_BYTES + 64);
-        assert!(out.contains("_truncated"), "oversized payload replaced with bounded marker");
+        assert!(
+            out.contains("_truncated"),
+            "oversized payload replaced with bounded marker"
+        );
     }
 
     #[test]
@@ -924,7 +1017,10 @@ mod tests {
             "last_design_result",
             "last_test_report",
         ] {
-            assert!(!k.contains(&forbidden.to_string()), "persona row leaked `{forbidden}`");
+            assert!(
+                !k.contains(&forbidden.to_string()),
+                "persona row leaked `{forbidden}`"
+            );
         }
     }
 
@@ -951,8 +1047,14 @@ mod tests {
         // v2: a *sanitized* payload IS synced (decrypted + secret-scrubbed in
         // project_event_payload). The raw IV must NEVER ride along — syncing it
         // would let the cloud reconstruct ciphertext context.
-        assert!(k.contains(&"payload".to_string()), "v2 syncs a sanitized payload");
-        assert!(!k.contains(&"payload_iv".to_string()), "event row must never carry payload_iv");
+        assert!(
+            k.contains(&"payload".to_string()),
+            "v2 syncs a sanitized payload"
+        );
+        assert!(
+            !k.contains(&"payload_iv".to_string()),
+            "event row must never carry payload_iv"
+        );
     }
 
     /// user_id is never sent on the wire — Supabase fills it from auth.uid()
@@ -980,10 +1082,21 @@ mod tests {
             created_at: "t".into(),
         };
         let k = keys(&serde_json::to_value(&exec).unwrap());
-        assert!(!k.contains(&"user_id".to_string()), "exec row should not send user_id");
+        assert!(
+            !k.contains(&"user_id".to_string()),
+            "exec row should not send user_id"
+        );
         // Spot-check the execution projection also omits device-local plumbing.
-        for forbidden in ["log_file_path", "execution_flows", "claimed_by_instance", "claim_expires_at"] {
-            assert!(!k.contains(&forbidden.to_string()), "exec row leaked `{forbidden}`");
+        for forbidden in [
+            "log_file_path",
+            "execution_flows",
+            "claimed_by_instance",
+            "claim_expires_at",
+        ] {
+            assert!(
+                !k.contains(&forbidden.to_string()),
+                "exec row leaked `{forbidden}`"
+            );
         }
     }
 }

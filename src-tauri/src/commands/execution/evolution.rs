@@ -11,19 +11,8 @@ use crate::engine::evolution::EvolutionCycleStatus;
 use crate::engine::genome::FitnessObjective;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::utils::extract_panic_message;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // ============================================================================
 // Policy management
@@ -165,20 +154,6 @@ pub fn get_run_budget_state(
     Ok(crate::engine::run_budget::ledger().state(&run_id))
 }
 
-/// Recent persisted run budgets for cost-trend dashboards. `kind` optionally
-/// filters to `"evolution"` / `"lab"` / `"pipeline"`; `limit` defaults to 50
-/// (clamped 1..=500). Reads the durable `run_budgets` table (survives restarts),
-/// unlike `get_run_budget_state` which reads the live in-memory ledger.
-#[tauri::command]
-pub fn list_run_budgets(
-    state: State<'_, Arc<AppState>>,
-    kind: Option<String>,
-    limit: Option<i64>,
-) -> Result<Vec<crate::engine::run_budget::RunBudgetRecord>, AppError> {
-    require_auth_sync(&state)?;
-    crate::db::repos::run_budget::list_recent(&state.db, kind.as_deref(), limit.unwrap_or(50))
-}
-
 /// Probe the Claude Code CLI's exposed capabilities (P4 fan-out gate). Spawns a
 /// bounded `claude -p` and reads its tool/agent registry from the init event;
 /// result is cached unless `force`. Surfaces whether `Workflow`/`Task` fan-out is
@@ -297,9 +272,8 @@ pub fn evolution_resolve_promotion_proposal(
 
     if approve {
         let winner: crate::engine::genome::PersonaGenome =
-            serde_json::from_str(&proposal.winner_genome_json).map_err(|e| {
-                AppError::Internal(format!("Failed to parse winner genome: {e}"))
-            })?;
+            serde_json::from_str(&proposal.winner_genome_json)
+                .map_err(|e| AppError::Internal(format!("Failed to parse winner genome: {e}")))?;
         if proposal.new_prompt.trim().is_empty() {
             return Err(AppError::Validation(
                 "Cannot promote: the winner's prompt reassembles to an empty system prompt".into(),

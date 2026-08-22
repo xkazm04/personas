@@ -86,7 +86,9 @@ pub(super) async fn run_streaming(
             content: prompt_text.to_string(),
         }],
         stream: true,
-        stream_options: Some(StreamOptions { include_usage: true }),
+        stream_options: Some(StreamOptions {
+            include_usage: true,
+        }),
     };
 
     let client = match Client::builder()
@@ -94,10 +96,23 @@ pub(super) async fn run_streaming(
         .build()
     {
         Ok(c) => c,
-        Err(e) => return fail(emitter, execution_id, &format!("HTTP client init failed: {e}"), start_time),
+        Err(e) => {
+            return fail(
+                emitter,
+                execution_id,
+                &format!("HTTP client init failed: {e}"),
+                start_time,
+            )
+        }
     };
 
-    let response = match client.post(&url).bearer_auth(api_key).json(&body).send().await {
+    let response = match client
+        .post(&url)
+        .bearer_auth(api_key)
+        .json(&body)
+        .send()
+        .await
+    {
         Ok(resp) if resp.status().is_success() => resp,
         Ok(resp) => {
             let status = resp.status();
@@ -113,7 +128,12 @@ pub(super) async fn run_streaming(
             );
         }
         Err(e) => {
-            return fail(emitter, execution_id, &format!("Cannot reach {provider} at {url}: {e}"), start_time);
+            return fail(
+                emitter,
+                execution_id,
+                &format!("Cannot reach {provider} at {url}: {e}"),
+                start_time,
+            );
         }
     };
 
@@ -127,7 +147,14 @@ pub(super) async fn run_streaming(
     while let Some(chunk_result) = stream.next().await {
         if cancelled.load(Ordering::Relaxed) {
             let duration_ms = start_time.elapsed().as_millis() as u64;
-            emit_status(emitter, execution_id, ExecutionState::Cancelled, Some("Cancelled"), duration_ms, None);
+            emit_status(
+                emitter,
+                execution_id,
+                ExecutionState::Cancelled,
+                Some("Cancelled"),
+                duration_ms,
+                None,
+            );
             return ExecutionResult {
                 success: false,
                 error: Some("Cancelled".into()),
@@ -140,7 +167,14 @@ pub(super) async fn run_streaming(
 
         let bytes = match chunk_result {
             Ok(b) => b,
-            Err(e) => return fail(emitter, execution_id, &format!("Stream error: {e}"), start_time),
+            Err(e) => {
+                return fail(
+                    emitter,
+                    execution_id,
+                    &format!("Stream error: {e}"),
+                    start_time,
+                )
+            }
         };
         byte_buf.extend_from_slice(&bytes);
 
@@ -148,7 +182,9 @@ pub(super) async fn run_streaming(
             let line: Vec<u8> = byte_buf.drain(..=nl).collect();
             let line = String::from_utf8_lossy(&line);
             let line = line.trim();
-            let Some(data) = line.strip_prefix("data:") else { continue };
+            let Some(data) = line.strip_prefix("data:") else {
+                continue;
+            };
             let data = data.trim();
             if data.is_empty() || data == "[DONE]" {
                 continue;
@@ -172,11 +208,20 @@ pub(super) async fn run_streaming(
 
     let duration_ms = start_time.elapsed().as_millis() as u64;
     let cost_usd = match price_per_million(model) {
-        Some((pin, pout)) => (prompt_tokens as f64 / 1e6) * pin + (completion_tokens as f64 / 1e6) * pout,
+        Some((pin, pout)) => {
+            (prompt_tokens as f64 / 1e6) * pin + (completion_tokens as f64 / 1e6) * pout
+        }
         None => 0.0,
     };
 
-    emit_status(emitter, execution_id, ExecutionState::Completed, None, duration_ms, Some(cost_usd));
+    emit_status(
+        emitter,
+        execution_id,
+        ExecutionState::Completed,
+        None,
+        duration_ms,
+        Some(cost_usd),
+    );
     tracing::info!(
         execution_id,
         provider,

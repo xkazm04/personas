@@ -56,9 +56,9 @@ inventory deliberately stays a naming layer.
 
 | slug | Subject | Canonical exemplar |
 |---|---|---|
-| `prompt-assembly` | Prompt assembly & context budgeting | `src-tauri/engine/src/prompt/mod.rs` + `src-tauri/src/companion/prompt.rs` |
+| `prompt-assembly` | Prompt assembly & context budgeting | `src-tauri/engine/src/prompt/mod.rs` + `src-tauri/src/companion/prompt/` |
 | `prompt-safety` | Input sanitization & prompt safety | `src-tauri/engine/src/prompt/runtime_safety.rs` |
-| `streaming-output` | Streaming model output | `src/lib/execution/executionSink.ts` + `src-tauri/src/companion/session.rs` |
+| `streaming-output` | Streaming model output | `src/lib/execution/executionSink.ts` + `src-tauri/src/companion/session/` |
 | `structured-output` | Structured model output & artifact extraction | `src-tauri/src/commands/credentials/ai_artifact_flow.rs` + companion `dispatcher.rs` |
 | `model-routing` | Model routing & provider policy | `src-tauri/src/companion/model_routing.rs` + BYOM policy |
 | `cost-metering` | Cost metering & budgets | `src-tauri/engine/src/cost.rs` + tier/spend ledgers |
@@ -73,15 +73,15 @@ inventory deliberately stays a naming layer.
 | `proactive-nudges` | Proactive nudges & attention budgeting | `src-tauri/src/companion/proactive/mod.rs` |
 | `voice-io` | Voice I/O | `src-tauri/src/companion/tts/mod.rs` |
 | `mcp-tools` | Tool protocols (MCP) | `src-tauri/src/companion/orchestration/mcp/mod.rs` |
-| `eval-harness` | Evaluation & benchmarking | `src-tauri/engine/src/test_runner.rs` + `evals/` |
+| `eval-harness` | Evaluation & benchmarking | `src-tauri/engine/src/test_runner/` + `evals/` |
 | `tracing` | Tracing & span inspection | `src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx` |
 
 ## D. Backend platform (18)
 
 | slug | Subject | Canonical exemplar |
 |---|---|---|
-| `scheduling` | **Scheduling & triggers** *(pilot, forged this session)* | `src-tauri/core/src/cron.rs` + `src-tauri/src/engine/background.rs` |
-| `background-jobs` | Background jobs & supervised loops | `src-tauri/src/engine/background.rs` |
+| `scheduling` | **Scheduling & triggers** *(pilot, forged this session)* | `src-tauri/core/src/cron.rs` + `src-tauri/src/engine/background/` |
+| `background-jobs` | Background jobs & supervised loops | `src-tauri/src/engine/background/` |
 | `webhook-ingestion` | Webhook ingestion | `src-tauri/src/engine/webhook.rs` |
 | `delivery-guarantees` | Delivery guarantees & dead-letter | stuck-event reaper + `EventGateReason` ledger |
 | `retry-backoff` | Retry, backoff & circuit breaking | `src-tauri/src/engine/failover.rs` |

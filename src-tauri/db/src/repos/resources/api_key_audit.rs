@@ -90,8 +90,8 @@ mod tests {
     /// test binary).
     fn test_pool() -> crate::DbPool {
         use std::time::Duration;
-        let tmp = std::env::temp_dir()
-            .join(format!("apikeyaudit_test_{}.db", uuid::Uuid::new_v4()));
+        let tmp =
+            std::env::temp_dir().join(format!("apikeyaudit_test_{}.db", uuid::Uuid::new_v4()));
         let manager = r2d2_sqlite::SqliteConnectionManager::file(&tmp);
         let pool = r2d2::Pool::builder()
             .max_size(2)
@@ -149,7 +149,16 @@ mod tests {
     fn history_is_capped_per_key() {
         let pool = test_pool();
         for i in 0..(RETAIN_PER_KEY + 20) {
-            insert(&pool, "key-1", "GET", &format!("/api/x/{i}"), 200, None, None).unwrap();
+            insert(
+                &pool,
+                "key-1",
+                "GET",
+                &format!("/api/x/{i}"),
+                200,
+                None,
+                None,
+            )
+            .unwrap();
         }
         let rows = list_for_key(&pool, "key-1", 1000).unwrap();
         assert!(

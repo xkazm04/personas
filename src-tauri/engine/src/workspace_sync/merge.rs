@@ -300,7 +300,10 @@ mod tests {
         let r = tomb("p", "2026-05-24T11:00:00Z", "B");
         let outcome = merge_entity(Some(&base), &l, &r);
         assert_eq!(outcome, WorkspaceMergeOutcome::AdoptRemote);
-        assert!(r.is_tombstone(), "adopting remote here means deleting locally");
+        assert!(
+            r.is_tombstone(),
+            "adopting remote here means deleting locally"
+        );
     }
 
     #[test]

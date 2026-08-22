@@ -31,9 +31,8 @@ pub fn list_all(pool: &DbPool) -> Result<Vec<NotificationSubscription>, AppError
         "notification_subscriptions::list_all",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT * FROM notification_subscriptions ORDER BY created_at DESC",
-            )?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM notification_subscriptions ORDER BY created_at DESC")?;
             let rows = stmt.query_map([], row_to_subscription)?;
             let items = rows
                 .collect::<Result<Vec<_>, _>>()

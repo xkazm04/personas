@@ -392,11 +392,7 @@ mod tests {
         let pool = test_pool();
         assert!(create_set(&pool, &[]).is_err());
         assert!(create_set(&pool, &["  ".into()]).is_err());
-        assert!(create_set(
-            &pool,
-            &["a".into(), "b".into(), "c".into(), "d".into()]
-        )
-        .is_err());
+        assert!(create_set(&pool, &["a".into(), "b".into(), "c".into(), "d".into()]).is_err());
         let snap = create_set(&pool, &["Ship the fix".into(), "Test Athena".into()]).unwrap();
         assert_eq!(snap.goals.len(), 2);
         assert!(create_set(&pool, &["another".into()]).is_err());
@@ -464,7 +460,11 @@ mod tests {
         let id = snap.goals[0].id.clone();
         let after = update_set(
             &pool,
-            &[edit(Some(&id), "one"), edit(None, "added"), edit(None, "   ")],
+            &[
+                edit(Some(&id), "one"),
+                edit(None, "added"),
+                edit(None, "   "),
+            ],
         )
         .unwrap();
         assert_eq!(after.goals.len(), 2);

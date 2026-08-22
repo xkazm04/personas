@@ -134,7 +134,8 @@ pub fn setting_key(project_id: &str) -> String {
 /// that bypassed validation.
 pub fn load_modes(pool: &DbPool) -> HashMap<String, AutopilotMode> {
     let mut map = HashMap::new();
-    if let Ok(rows) = personas_db::repos::core::settings::get_by_prefix(pool, AUTOPILOT_MODE_PREFIX) {
+    if let Ok(rows) = personas_db::repos::core::settings::get_by_prefix(pool, AUTOPILOT_MODE_PREFIX)
+    {
         for (key, val) in rows {
             if let Some(pid) = key.strip_prefix(AUTOPILOT_MODE_PREFIX) {
                 let mode = AutopilotMode::parse(&val).unwrap_or(AutopilotMode::Off);

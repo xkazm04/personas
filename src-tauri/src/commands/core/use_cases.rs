@@ -104,14 +104,14 @@ pub(crate) mod testable {
              SET enabled = ?1, status = ?2, updated_at = ?3
              WHERE persona_id = ?4 AND use_case_id = ?5",
             rusqlite::params![enabled as i64, trigger_status, now, persona_id, use_case_id],
-        )? as usize;
+        )?;
 
         let subscriptions_updated = tx.execute(
             "UPDATE persona_event_subscriptions
              SET enabled = ?1, updated_at = ?2
              WHERE persona_id = ?3 AND use_case_id = ?4",
             rusqlite::params![enabled as i64, now, persona_id, use_case_id],
-        )? as usize;
+        )?;
 
         // Pause runnable automations on disable; leave them paused on re-enable
         // so the user must explicitly reactivate (avoids accidentally restarting
@@ -125,7 +125,7 @@ pub(crate) mod testable {
                  WHERE persona_id = ?2 AND use_case_id = ?3
                    AND deployment_status IN ('running', 'active')",
                 rusqlite::params![now, persona_id, use_case_id],
-            )? as usize
+            )?
         };
 
         tx.commit().map_err(AppError::Database)?;
@@ -281,7 +281,6 @@ pub async fn get_use_case_cascade(
     persona_id: String,
     use_case_id: String,
 ) -> Result<UseCaseToggleResult, AppError> {
-
     let conn = state.db.get()?;
     let triggers_updated: i64 = conn
         .prepare(
@@ -330,7 +329,6 @@ pub async fn set_use_case_enabled(
     use_case_id: String,
     enabled: bool,
 ) -> Result<UseCaseToggleResult, AppError> {
-
     // Run cascade in a scoped block so the Connection (+ inner transaction) drops
     // **before** we await on `session_pool.invalidate`. Transactions are `!Send`
     // and holding one across an await makes the Tauri-command future non-Send.
@@ -388,7 +386,6 @@ pub async fn set_use_case_generation_settings(
     use_case_id: String,
     settings: UseCaseGenerationSettings,
 ) -> Result<UseCaseGenerationSettings, AppError> {
-
     let result = {
         let conn = state.db.get()?;
         testable::patch_generation_settings(&conn, &persona_id, &use_case_id, &settings)?
@@ -430,7 +427,6 @@ pub async fn count_event_listeners(
     event_type: String,
     exclude_persona_id: Option<String>,
 ) -> Result<EventListenerCounts, AppError> {
-
     let conn = state.db.get()?;
     let exclude = exclude_persona_id.as_deref().unwrap_or("");
 
@@ -508,7 +504,6 @@ pub async fn rename_event_listeners(
     action: RenameConsumerAction,
     exclude_persona_id: Option<String>,
 ) -> Result<RenameEventListenersResult, AppError> {
-
     if from_event.trim().is_empty() || to_event.trim().is_empty() {
         return Err(AppError::Validation(
             "from_event and to_event must be non-empty".into(),
@@ -533,7 +528,7 @@ pub async fn rename_event_listeners(
                  SET event_type = ?1, updated_at = ?2
                  WHERE event_type = ?3 AND (?4 = '' OR persona_id <> ?4)",
                 rusqlite::params![to_event, now, from_event, exclude],
-            )? as usize;
+            )?;
             // Rewrite each trigger's config.event_type via JSON1 json_set,
             // scoped to rows whose PARSED event_type equals from_event. This
             // avoids the raw-text REPLACE hazards: partial-name LIKE matches
@@ -549,7 +544,7 @@ pub async fn rename_event_listeners(
                    AND json_valid(config)
                    AND json_extract(config, '$.event_type') = ?4",
                 rusqlite::params![to_event, now, exclude, from_event],
-            )? as usize;
+            )?;
             (subs, trigs)
         }
         RenameConsumerAction::Delete => {
@@ -557,7 +552,7 @@ pub async fn rename_event_listeners(
                 "DELETE FROM persona_event_subscriptions
                  WHERE event_type = ?1 AND (?2 = '' OR persona_id <> ?2)",
                 rusqlite::params![from_event, exclude],
-            )? as usize;
+            )?;
             let trigs = tx.execute(
                 "DELETE FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
@@ -565,7 +560,7 @@ pub async fn rename_event_listeners(
                    AND json_valid(config)
                    AND json_extract(config, '$.event_type') = ?2",
                 rusqlite::params![exclude, from_event],
-            )? as usize;
+            )?;
             (subs, trigs)
         }
         RenameConsumerAction::Leave => (0, 0),
@@ -608,7 +603,6 @@ pub async fn simulate_use_case(
     use_case_id: String,
     input_override: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
-
     // Resolve sample_input from the use case when no override is given.
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let dc_str = persona.design_context.clone().ok_or_else(|| {

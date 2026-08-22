@@ -143,8 +143,7 @@ pub fn ensure(project_dir: &Path) {
 /// Returns None when the anchors aren't found (caller leaves the file untouched).
 fn patch_layout(src: &str) -> Option<String> {
     let import_line = "import { AthenaPreviewAgent } from \"./_athena-preview-agent\";\n";
-    let render =
-        "\n        {process.env.NODE_ENV === \"development\" && <AthenaPreviewAgent />}";
+    let render = "\n        {process.env.NODE_ENV === \"development\" && <AthenaPreviewAgent />}";
     let mut out = src.to_string();
 
     // Import: after the globals.css import line, else before the first `export`.

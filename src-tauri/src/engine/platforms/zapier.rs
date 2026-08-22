@@ -90,10 +90,7 @@ impl ZapierClient {
                 "Zapier catch hook URL did not resolve".into(),
             ));
         }
-        if addrs
-            .iter()
-            .any(crate::engine::http_engine::is_blocked_ip)
-        {
+        if addrs.iter().any(crate::engine::http_engine::is_blocked_ip) {
             return Err(AppError::Validation(
                 "Zapier catch hook URL resolves to a private/internal address (blocked)".into(),
             ));

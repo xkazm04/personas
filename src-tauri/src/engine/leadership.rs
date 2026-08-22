@@ -97,7 +97,9 @@ impl EngineLeadership {
             })
             .unwrap_or(false);
         if forced_follower {
-            tracing::info!("PERSONAS_FOLLOWER=1 — engine pinned as follower; all leader-only loops will idle");
+            tracing::info!(
+                "PERSONAS_FOLLOWER=1 — engine pinned as follower; all leader-only loops will idle"
+            );
         }
         Self {
             instance_id: uuid::Uuid::new_v4().to_string(),
@@ -128,7 +130,8 @@ impl EngineLeadership {
         if guard.is_some() {
             return true;
         }
-        match DaemonLock::acquire_named(&self.app_data_dir, LEADER_LOCK_FILENAME, all_owned_kinds()) {
+        match DaemonLock::acquire_named(&self.app_data_dir, LEADER_LOCK_FILENAME, all_owned_kinds())
+        {
             Ok(lock) => {
                 tracing::info!(
                     instance_id = %self.instance_id,
@@ -155,10 +158,7 @@ impl EngineLeadership {
 
     /// Whether this instance currently holds leadership.
     pub fn is_leader(&self) -> bool {
-        self.lock
-            .lock()
-            .map(|g| g.is_some())
-            .unwrap_or(false)
+        self.lock.lock().map(|g| g.is_some()).unwrap_or(false)
     }
 
     /// Heartbeat tick. If leader, refresh the lease (relinquishing on write
@@ -243,7 +243,10 @@ mod tests {
         // Leader relinquishes; follower's tick takes over.
         leader.release();
         follower.tick();
-        assert!(follower.is_leader(), "follower must take over a released lease");
+        assert!(
+            follower.is_leader(),
+            "follower must take over a released lease"
+        );
     }
 
     #[test]

@@ -22,21 +22,10 @@ use crate::db::repos::execution::executions;
 use crate::db::repos::resources::{deployment_history, tools};
 use crate::engine;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth};
+use crate::ipc_auth::require_auth;
+use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -133,7 +122,6 @@ pub async fn cloud_connect(
     url: String,
     api_key: String,
 ) -> Result<u64, AppError> {
-
     // Reject concurrent connect attempts. The health check can take up to 30s
     // and without this guard two calls could race through health, keyring write,
     // and mutex set — potentially interleaving URL from one call with the API
@@ -754,12 +742,17 @@ pub async fn cloud_execute_persona(
             );
             let update = UpdateExecutionStatus {
                 status: crate::engine::types::ExecutionState::Failed,
-                error_message: Some(format!("Internal error: cloud execution task panicked: {msg}")),
+                error_message: Some(format!(
+                    "Internal error: cloud execution task panicked: {msg}"
+                )),
                 ..Default::default()
             };
             let _ =
                 executions::update_status_if_not_final(&pool_for_panic, &exec_id_for_panic, update);
-            exec_ids_map_for_panic.lock().await.remove(&exec_id_for_panic);
+            exec_ids_map_for_panic
+                .lock()
+                .await
+                .remove(&exec_id_for_panic);
         }
     });
 

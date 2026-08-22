@@ -12,16 +12,16 @@
 //! episodes) that classifies every message:
 //!
 //!   - **done**      — routine, no decision content: marked read, with an
-//!                     `athena_triage` audit annotation in the message's
-//!                     metadata so "why is this read?" is answerable.
+//!     `athena_triage` audit annotation in the message's
+//!     metadata so "why is this read?" is answerable.
 //!   - **digest**    — business value worth knowing but not worth a full
-//!                     read: its essence is folded into one aggregated
-//!                     `message_digest` proactive card, then marked read
-//!                     (same audit annotation).
+//!     read: its essence is folded into one aggregated
+//!     `message_digest` proactive card, then marked read
+//!     (same audit annotation).
 //!   - **attention** — the user should read this personally (decisions,
-//!                     questions, money/security/credentials): stays
-//!                     UNREAD, is listed on the card, and fires a desktop
-//!                     notification (quiet-hours guarded).
+//!     questions, money/security/credentials): stays
+//!     UNREAD, is listed on the card, and fires a desktop
+//!     notification (quiet-hours guarded).
 //!
 //! Safety floor in code, not just prompt: messages with high/urgent/
 //! critical priority are forced to `attention` regardless of the model's
@@ -79,7 +79,8 @@ fn read_cursor(sys_db: &DbPool) -> Option<String> {
 }
 
 fn advance_cursor(sys_db: &DbPool, newest: &str) {
-    if let Err(e) = crate::db::repos::core::settings::set(sys_db, COMPANION_MSG_TRIAGE_CURSOR, newest)
+    if let Err(e) =
+        crate::db::repos::core::settings::set(sys_db, COMPANION_MSG_TRIAGE_CURSOR, newest)
     {
         tracing::warn!(error = %e, "message_triage: failed to advance cursor");
     }
@@ -219,7 +220,10 @@ fn compose_card(
             msg.push_str(&format!("\n• {persona}: {title}{why}"));
         }
         if attention.len() > MAX_CARD_LINES {
-            msg.push_str(&format!("\n• …and {} more", attention.len() - MAX_CARD_LINES));
+            msg.push_str(&format!(
+                "\n• …and {} more",
+                attention.len() - MAX_CARD_LINES
+            ));
         }
     }
     if done + digested > 0 {
@@ -282,12 +286,8 @@ pub async fn triage_unread_messages(
     let has_priority = batch
         .iter()
         .any(|m| matches!(m.priority.as_str(), "high" | "urgent" | "critical"));
-    let wake = crate::companion::wake_window::gate(
-        sys_db,
-        "message_triage",
-        batch.len(),
-        has_priority,
-    );
+    let wake =
+        crate::companion::wake_window::gate(sys_db, "message_triage", batch.len(), has_priority);
     if !wake.due {
         return Ok(0); // cursor untouched — the batch keeps accumulating
     }
@@ -300,7 +300,10 @@ pub async fn triage_unread_messages(
         .map(|m| m.created_at.clone())
         .unwrap_or_else(|| cursor.clone());
 
-    tracing::info!(batch = batch.len(), "message_triage: running batched triage decision");
+    tracing::info!(
+        batch = batch.len(),
+        "message_triage: running batched triage decision"
+    );
     let prompt = build_triage_prompt(&batch);
     let (blob, turn_id) =
         crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "msg_triage").await?;
@@ -323,7 +326,12 @@ pub async fn triage_unread_messages(
     };
 
     crate::companion::wake_window::log_wake(
-        sys_db, "message_triage", wake.reason, wake_pending, 1, decision.items.len(),
+        sys_db,
+        "message_triage",
+        wake.reason,
+        wake_pending,
+        1,
+        decision.items.len(),
         wake_started.elapsed().as_millis() as u64,
     );
     let mut done = 0usize;
@@ -378,12 +386,7 @@ pub async fn triage_unread_messages(
             _ => {
                 let title = m.title.clone().unwrap_or_else(|| "(untitled)".into());
                 attention.push((m.persona_name.clone(), title.clone(), v.note.clone()));
-                attention_refs.push((
-                    m.id.clone(),
-                    m.persona_name.clone(),
-                    title,
-                    v.note.clone(),
-                ));
+                attention_refs.push((m.id.clone(), m.persona_name.clone(), title, v.note.clone()));
             }
         }
     }
@@ -391,7 +394,10 @@ pub async fn triage_unread_messages(
     if untouched > 0 {
         // Verdict-less messages stay unread with no annotation — the
         // user keeps them; the cursor still moves on (no livelock).
-        tracing::info!(untouched, "message_triage: messages left untouched (no verdict)");
+        tracing::info!(
+            untouched,
+            "message_triage: messages left untouched (no verdict)"
+        );
     }
 
     // Record the triage verdict distribution on the ledger row (A4 funnel).

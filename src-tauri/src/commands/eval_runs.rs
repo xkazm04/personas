@@ -683,11 +683,7 @@ pub fn cert_status() -> Vec<TeamCertStatus> {
 /// Full detail for one run id. `run_id` is a bare directory name — reject any
 /// path-separator / traversal attempt.
 pub fn eval_run_detail(run_id: &str) -> Result<EvalRunDetail, AppError> {
-    if run_id.is_empty()
-        || run_id.contains('/')
-        || run_id.contains('\\')
-        || run_id.contains("..")
-    {
+    if run_id.is_empty() || run_id.contains('/') || run_id.contains('\\') || run_id.contains("..") {
         return Err(AppError::Validation(format!("invalid run id: {run_id}")));
     }
 
@@ -792,7 +788,10 @@ mod tests {
             bk.held_out_runs
         );
         // master certified this team: cert-4/5/6 = PRODUCTION → trailing streak 3.
-        assert_eq!(bk.streak, 3, "SDLC2 ai-bookkeeper streak should be 3 (certified)");
+        assert_eq!(
+            bk.streak, 3,
+            "SDLC2 ai-bookkeeper streak should be 3 (certified)"
+        );
         assert!(bk.certified, "SDLC2 ai-bookkeeper should be CERTIFIED");
         assert_eq!(bk.latest_verdict.as_deref(), Some("PRODUCTION"));
     }

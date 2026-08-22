@@ -225,8 +225,13 @@ silent failure would be invisible.** Concretely:
   and `:508-509` are the shape: name the workload that forced the number.
 - **(f) Always set `connection_timeout`.** Without it a pool exhaustion is a
   hang; with it, it is an error the IPC layer can surface. `POOL_ACQUIRE_TIMEOUT`
-  is 5 s and `pool_get_logged` (`lib.rs:~120-141`) already logs the slow and
-  failed acquires.
+  is 5 s and `acquire_logged` (`db/src/lib.rs:113-142`) already logs the slow
+  and failed acquires. **Corrected 2026-08-21: this clause called that function
+  `pool_get_logged`, and no such symbol exists in 963 `.rs` files.** It also has
+  exactly one caller (`db/src/vector_store.rs:127`, behind the `ml` feature) and
+  carries `#[allow(dead_code)]` because of it — so the timeout this clause wins
+  is then discarded by 323 unwrapped checkouts. See §9's
+  `pool-get-unwrapped`, which is the ratchet on that second half.
 - **(g) If a caller only reads, give it a pool opened with
   `SQLITE_OPEN_READ_ONLY`** — not `PRAGMA query_only`, which the caller's own
   next statement can switch off. Executed above. Note that `ATTACH` remains
@@ -429,6 +434,77 @@ the last site and **delete the rule** rather than baselining it at 0.
   "floor": 900
 }
 ```
+
+### The second census rule — `pool-get-unwrapped`
+
+§2 (f) is the clause that says a checkout can fail: *"Without it a pool
+exhaustion is a hang; with it, it is an error the IPC layer can surface."*
+Setting `connection_timeout` is only the first half of that sentence. The second
+half is whether the **call site** does anything with the error the timeout now
+produces — and 323 of them convert it straight back into a hang's louder cousin,
+a panic, which is how the clause is defeated without touching the pool
+configuration it prescribes.
+
+**Three numbers make this a gate rather than an opinion.** The compliant shape
+is present and dominant: **1,650 checkouts across 246 files propagate** (`?`,
+`.map_err(`, `.await`) against **323 across 92** that `.unwrap()`/`.expect(`.
+The *named* primitive, on the other hand, is a ghost. **§2 (f) above called it
+`pool_get_logged`; there is no such symbol in 963 `.rs` files.** The real one is
+`acquire_logged` (`db/src/lib.rs:113`), it carries `#[allow(dead_code)]`, and it
+has exactly **one** caller — `db/src/vector_store.rs:127`, behind the `ml`
+feature, so in a default build it is dead. A prescription that names its
+primitive wrongly and whose primitive has one feature-gated caller is not a
+convention anyone could have followed. (The `pool_get_logged` name is corrected
+in §2 (f) as of this composition; it was wrong from the document's first draft.)
+
+**Precision, hand-measured, 27/27.** The receiver vocabulary was enumerated
+exhaustively rather than sampled — exactly **seven** identifiers ever carry a
+no-argument `.get()` followed by an unwrap in this tree (`pool` 293, `target`
+17, `target_user` 5, `user_db` 3, `sys` 2, `p` 2, `source` 1) — and **all 13
+non-`pool` sites were opened individually**, plus a 14-site systematic sample of
+the `pool` population. All 27 are `let conn = X.get().unwrap()` on a database
+pool. The empty argument list is the whole discriminator: `Map::get` and
+`Vec::get` always take a key.
+
+**Two independent implementations agree at 92 files / 323 matches** — the census
+engine, and a hand-written walker with its own directory recursion, its own
+comment filter and its own line mapping, sharing no code with
+`scripts/census/lib/`. The recovered-from-history figure was **327**; the
+difference is real and is attributed exactly — `6c54af125` fixed two sites and
+`4bf1845d7` (the 72-command deletion) removed two more, which also took the walk
+from 969 files to 963. **The earlier description's own receiver breakdown did
+not sum** (244 + 28 = 272, against a stated total of 327); it is recorded here
+rather than reconciled, and the seven-identifier enumeration above is the one
+that adds up.
+
+```json
+{
+  "id": "pool-get-unwrapped",
+  "goldenPath": "docs/concepts/golden-paths/connection-pool-pragmas.md",
+  "title": "A connection-pool checkout is unwrapped, so pool exhaustion or an acquire timeout aborts the thread instead of surfacing as an error the caller can report",
+  "roots": ["src-tauri"],
+  "extensions": [".rs"],
+  "signal": {
+    "pattern": "\\b[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*\\.get\\(\\)\\s*\\.\\s*(?:unwrap\\(\\)|expect\\()",
+    "flags": "g",
+    "ignoreCommentLines": true,
+    "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
+  },
+  "baseline": { "files": 92, "matches": 323 },
+  "floor": 900
+}
+```
+
+**Floor rationale, and why it is 900 again.** The walk reports **963** `.rs`
+files, matching `rust.files` in [`shared-facts.json`](../shared-facts.json).
+`floor: 900` is what all the other `src-tauri`-rooted rules use, including
+`uncustomized-connection-pool` directly above; two rules over one root must not
+hold two opinions about what "the Rust tree is intact" means.
+
+**Deletion condition — unlike its neighbour, this rule cannot reach zero and
+should not be expected to.** A test that deliberately asserts a panic, and a
+`main`-adjacent site where there is genuinely no caller to report to, are
+legitimate. It is a ratchet on the 323, not a march to nothing.
 
 **A second instrument, which the census cannot host.** D2's condition — *no
 code reads back a pragma it set* — is an absence, and a census rule that

@@ -9,24 +9,13 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::process::Command as TokioCommand;
 
+use crate::utils::extract_panic_message;
 use chrono::Utc;
 use futures_util::FutureExt;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio_util::sync::CancellationToken;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
@@ -445,7 +434,9 @@ pub fn artist_read_image_base64(file_path: String) -> Result<String, AppError> {
         .map(|e| e.to_lowercase())
         .unwrap_or_default();
     if !ALLOWED_EXTS.contains(&ext.as_str()) {
-        return Err(AppError::Validation(format!("Unsupported image type: .{ext}")));
+        return Err(AppError::Validation(format!(
+            "Unsupported image type: .{ext}"
+        )));
     }
 
     // 3. Confine to the managed app-data root (resolving symlinks).

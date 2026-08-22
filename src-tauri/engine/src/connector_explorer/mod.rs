@@ -390,9 +390,7 @@ use regex::Regex;
 
 fn href_re() -> &'static Regex {
     static R: OnceLock<Regex> = OnceLock::new();
-    R.get_or_init(|| {
-        Regex::new(r#"(?i)href\s*=\s*["']([^"']+)["']"#).expect("href_re compile")
-    })
+    R.get_or_init(|| Regex::new(r#"(?i)href\s*=\s*["']([^"']+)["']"#).expect("href_re compile"))
 }
 fn form_re() -> &'static Regex {
     static R: OnceLock<Regex> = OnceLock::new();
@@ -408,9 +406,7 @@ fn input_re() -> &'static Regex {
 }
 fn title_re() -> &'static Regex {
     static R: OnceLock<Regex> = OnceLock::new();
-    R.get_or_init(|| {
-        Regex::new(r#"(?is)<title[^>]*>([^<]*)</title>"#).expect("title_re compile")
-    })
+    R.get_or_init(|| Regex::new(r#"(?is)<title[^>]*>([^<]*)</title>"#).expect("title_re compile"))
 }
 
 fn capture_attr(attrs: &str, name: &str) -> Option<String> {

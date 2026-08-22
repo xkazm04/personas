@@ -45,7 +45,11 @@ pub async fn fleet_spawn_session(
         "spawned",
         &format!(
             "interactive · {}",
-            if args.iter().any(|a| !a.starts_with('-')) { "with task" } else { "bare prompt" }
+            if args.iter().any(|a| !a.starts_with('-')) {
+                "with task"
+            } else {
+                "bare prompt"
+            }
         ),
     );
     Ok(id)
@@ -122,11 +126,7 @@ pub async fn fleet_unsubscribe_terminal(session_id: String) -> Result<(), String
 /// Resize the PTY for `session_id` to `cols × rows`. Called by xterm.js
 /// after the fit-addon recalculates on layout changes.
 #[tauri::command]
-pub async fn fleet_resize_session(
-    session_id: String,
-    cols: u16,
-    rows: u16,
-) -> Result<(), String> {
+pub async fn fleet_resize_session(session_id: String, cols: u16, rows: u16) -> Result<(), String> {
     registry().resize(&session_id, cols, rows)
 }
 
@@ -227,7 +227,10 @@ pub async fn fleet_wake_session(
     super::debug_log::sleep_event(
         &new_id,
         "woken",
-        &format!("resumed sleeping (dozed/hibernated) session {}", &session_id[..session_id.len().min(6)]),
+        &format!(
+            "resumed sleeping (dozed/hibernated) session {}",
+            &session_id[..session_id.len().min(6)]
+        ),
     );
     if registry().remove(&session_id) {
         pty::emit_registry_changed(&app, "removed", &session_id);
@@ -380,8 +383,9 @@ pub async fn fleet_list_runs(
     limit: Option<u32>,
 ) -> Result<Vec<super::run::FleetRunSummary>, String> {
     let pool = run_pool(&app)?;
-    let rows = crate::db::repos::fleet_sessions::list_runs(&pool, limit.unwrap_or(25).clamp(1, 200))
-        .map_err(|e| e.to_string())?;
+    let rows =
+        crate::db::repos::fleet_sessions::list_runs(&pool, limit.unwrap_or(25).clamp(1, 200))
+            .map_err(|e| e.to_string())?;
     Ok(rows
         .into_iter()
         .map(
@@ -409,8 +413,8 @@ pub async fn fleet_run_report(
     run_id: String,
 ) -> Result<super::run::FleetRunReport, String> {
     let pool = run_pool(&app)?;
-    let rows = crate::db::repos::fleet_sessions::list_by_run(&pool, &run_id)
-        .map_err(|e| e.to_string())?;
+    let rows =
+        crate::db::repos::fleet_sessions::list_by_run(&pool, &run_id).map_err(|e| e.to_string())?;
     let label = rows.iter().find_map(|r| r.run_label.clone());
     let ids: Vec<String> = rows.iter().map(|r| r.claude_session_id.clone()).collect();
     let summaries = tokio::task::spawn_blocking(move || {

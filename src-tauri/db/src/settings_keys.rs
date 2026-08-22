@@ -62,6 +62,16 @@ pub const DELEGATE_BASE_URL: &str = "delegate_base_url";
 /// Active CLI engine: `"claude_code"` or `"codex_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
 
+/// Absolute path of the knowledge-registry working copy this installation is
+/// paired with (P6 consult lane, `engine::knowledge_consult`).
+///
+/// The workspace registry section keeps its richer link state in its own store;
+/// this key exists because the RUNNER needs the path and runs with no frontend
+/// — a background or scheduled execution has no other way to learn it. Unset,
+/// blank, or pointing at a directory that no longer exists all mean the same
+/// thing: the consult lane is off and executions run exactly as before.
+pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
+
 /// Browser-bridge pairing token — the secret the Athena Browser Bridge
 /// extension presents on its WebSocket handshake. Persisted so the extension
 /// pairs once and survives app restarts; regenerated from the Companion
@@ -727,6 +737,7 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_MODEL,
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
+    KNOWLEDGE_REGISTRY_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,
@@ -1465,7 +1476,11 @@ mod tests {
             r#"{"memoryRules":[],"memoryRejectCategories":[],"reviewRules":[]}"#
         )
         .is_ok());
-        assert!(validate_value(PERFORMANCE_DIGEST, r#"{"enabled":false,"cadence":"weekly"}"#).is_ok());
+        assert!(validate_value(
+            PERFORMANCE_DIGEST,
+            r#"{"enabled":false,"cadence":"weekly"}"#
+        )
+        .is_ok());
         // All-optional-field structs accept an empty object.
         assert!(validate_value(GLOBAL_MODEL_PROFILE, "{}").is_ok());
         assert!(validate_value(OBSIDIAN_MIRROR_CONFIG, "{}").is_ok());
@@ -1499,11 +1514,9 @@ mod tests {
         )
         .is_ok());
         // Unknown theme id is ACCEPTED (frontend-owned catalog; coerced on read).
-        assert!(validate_value(
-            APPEARANCE_PREFERENCES,
-            r#"{"themeId":"some-future-theme"}"#
-        )
-        .is_ok());
+        assert!(
+            validate_value(APPEARANCE_PREFERENCES, r#"{"themeId":"some-future-theme"}"#).is_ok()
+        );
         // Stable enum fields ARE validated when present.
         assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"textScale":"gigantic"}"#).is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"brightness":"ultra"}"#).is_err());
@@ -1550,7 +1563,10 @@ mod tests {
         // Prefix families.
         assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
         assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
-        assert_eq!(audit_category("health_watch:persona-2"), Some("notifications"));
+        assert_eq!(
+            audit_category("health_watch:persona-2"),
+            Some("notifications")
+        );
         assert_eq!(
             audit_category("execution_retention_months:persona-3"),
             Some("retention")

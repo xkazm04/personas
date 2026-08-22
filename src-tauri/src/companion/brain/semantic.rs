@@ -6,7 +6,7 @@
 //!   2. `companion_node` row (kind='fact') — drives generic listing/retrieval.
 //!   3. `companion_fact` sidecar — typed metadata for queries (scope, key,
 //!      confidence, supersedes/contradicts, last_seen).
-//! Plus `companion_provenance` rows linking the fact to source episode IDs.
+//!      Plus `companion_provenance` rows linking the fact to source episode IDs.
 //!
 //! **Provenance contract**: every fact write requires ≥1 source episode id.
 //! Writes without sources are rejected at this layer — Athena can't bury a
@@ -72,10 +72,7 @@ pub struct Fact {
     pub sources: Vec<String>,
     pub supersedes_id: Option<String>,
     pub contradicts_id: Option<String>,
-    pub created_at: String,
     pub updated_at: String,
-    pub last_seen_at: String,
-    pub file_path: String,
 }
 
 /// Input for writing a fact. `sources` non-empty is mandatory — caller
@@ -289,6 +286,7 @@ pub async fn find_near_duplicate(
 /// strengthens the existing entry instead of producing a redundant row.
 /// The provenance contract is preserved: every reinforce path adds at
 /// least one source (caller passes the proposal's sources).
+#[cfg(feature = "ml")]
 pub fn reinforce_fact(
     pool: &UserDbPool,
     fact_id: &str,
@@ -348,7 +346,7 @@ pub fn list_facts(
     let sql = format!(
         "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                 f.confidence, f.supersedes_id, f.contradicts_id,
-                n.created_at, n.updated_at, f.last_seen_at, n.file_path
+                n.updated_at
          FROM companion_fact f
          JOIN companion_node n ON n.id = f.id
          WHERE n.kind = 'fact' {scope_filter} {imp_filter}
@@ -384,7 +382,7 @@ pub fn get_fact(pool: &UserDbPool, id: &str) -> Result<Option<Fact>, AppError> {
         .query_row(
             "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                     f.confidence, f.supersedes_id, f.contradicts_id,
-                    n.created_at, n.updated_at, f.last_seen_at, n.file_path
+                    n.updated_at
              FROM companion_fact f
              JOIN companion_node n ON n.id = f.id
              WHERE n.id = ?1",
@@ -478,10 +476,7 @@ fn map_fact_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Fact> {
         confidence: row.get(5)?,
         supersedes_id: row.get(6)?,
         contradicts_id: row.get(7)?,
-        created_at: row.get(8)?,
-        updated_at: row.get(9)?,
-        last_seen_at: row.get(10)?,
-        file_path: row.get(11)?,
+        updated_at: row.get(8)?,
         sources: Vec::new(),
     })
 }

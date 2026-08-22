@@ -82,9 +82,9 @@ pub fn companion_set_voice_hotkey(
         return Ok(false);
     };
 
-    let shortcut: Shortcut = accelerator.parse().map_err(|_| {
-        AppError::Validation(format!("Not a valid shortcut: '{accelerator}'"))
-    })?;
+    let shortcut: Shortcut = accelerator
+        .parse()
+        .map_err(|_| AppError::Validation(format!("Not a valid shortcut: '{accelerator}'")))?;
 
     app.global_shortcut()
         .on_shortcut(shortcut, move |app, _shortcut, event| {

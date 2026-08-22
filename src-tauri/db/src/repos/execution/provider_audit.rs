@@ -1,14 +1,15 @@
 use rusqlite::params;
 use ts_rs::TS;
 
-use crate::DbPool;
 use crate::byom::ProviderAuditEntry;
+use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Insert a provider audit log entry (append-only).
 pub fn insert(pool: &DbPool, entry: &ProviderAuditEntry) -> Result<(), AppError> {
     timed_query!("provider_audit", "provider_audit::insert", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::insert")?;
         conn.execute(
             "INSERT INTO provider_audit_log
              (id, execution_id, persona_id, persona_name, engine_kind, model_used,
@@ -42,7 +43,7 @@ pub fn insert(pool: &DbPool, entry: &ProviderAuditEntry) -> Result<(), AppError>
 /// List provider audit log entries, newest first. Optional limit (default 100).
 pub fn list(pool: &DbPool, limit: Option<i64>) -> Result<Vec<ProviderAuditEntry>, AppError> {
     timed_query!("provider_audit", "provider_audit::list", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::list")?;
         let limit = limit.unwrap_or(100);
         let mut stmt = conn.prepare(
             "SELECT id, execution_id, persona_id, persona_name, engine_kind, model_used,
@@ -83,7 +84,7 @@ pub fn list_by_persona(
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, AppError> {
     timed_query!("provider_audit", "provider_audit::list_by_persona", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::list_by_persona")?;
         let limit = limit.unwrap_or(100);
         let mut stmt = conn.prepare(
             "SELECT id, execution_id, persona_id, persona_name, engine_kind, model_used,
@@ -146,7 +147,7 @@ pub fn get_usage_timeseries(
     days: i64,
 ) -> Result<Vec<ProviderUsageTimeseries>, AppError> {
     timed_query!("provider_audit", "provider_audit::get_usage_timeseries", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::get_usage_timeseries")?;
         let mut stmt = conn.prepare(
             "SELECT engine_kind,
                 DATE(created_at) as day,
@@ -177,7 +178,7 @@ pub fn get_usage_timeseries(
 
 pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppError> {
     timed_query!("provider_audit", "provider_audit::get_usage_stats", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::get_usage_stats")?;
         let mut stmt = conn.prepare(
             "SELECT engine_kind,
                 COUNT(*) as execution_count,

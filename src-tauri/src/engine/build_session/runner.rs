@@ -194,8 +194,7 @@ fn extract_early_behavior_core(buf: &str, session_id: &str) -> Option<Vec<BuildE
     let mut in_str = false;
     let mut esc = false;
     let mut end = None;
-    for i in open..buf.len() {
-        let c = bytes[i];
+    for (i, &c) in bytes.iter().enumerate().take(buf.len()).skip(open) {
         if in_str {
             if esc {
                 esc = false;
@@ -288,9 +287,8 @@ async fn wait_for_driver_or_cancel(
         if tokio::time::Instant::now() >= deadline {
             return Ok(DriverWait::TimedOut);
         }
-        match tokio::time::timeout(CANCEL_POLL_INTERVAL, driver.wait()).await {
-            Ok(result) => return result.map(|_| DriverWait::Exited),
-            Err(_) => {}
+        if let Ok(result) = tokio::time::timeout(CANCEL_POLL_INTERVAL, driver.wait()).await {
+            return result.map(|_| DriverWait::Exited);
         }
     }
 }
@@ -420,7 +418,7 @@ pub(super) async fn run_session(
     let initial_prompt: Arc<str> =
         if let (Some(ref wf_json), Some(ref parser_json)) = (&workflow_json, &parser_result_json) {
             let wf_preview = if wf_json.len() > 8000 {
-                crate::utils::text::truncate_on_char_boundary(&wf_json, 8000)
+                crate::utils::text::truncate_on_char_boundary(wf_json, 8000)
             } else {
                 wf_json.as_str()
             };
@@ -906,7 +904,9 @@ pub(super) async fn run_session(
         if multiagent {
             for ev in turn_events.iter_mut() {
                 if let BuildEvent::CapabilityResolutionUpdate {
-                    lane, capability_id, ..
+                    lane,
+                    capability_id,
+                    ..
                 } = ev
                 {
                     if lane.is_none() {
@@ -1964,10 +1964,7 @@ mod hang_tests {
         // so the pipe stays open and silent -- exactly the wedged shape.
         let (command, args) = (
             "cmd".to_string(),
-            vec![
-                "/C".to_string(),
-                "ping 127.0.0.1 -n 300 > nul".to_string(),
-            ],
+            vec!["/C".to_string(), "ping 127.0.0.1 -n 300 > nul".to_string()],
         );
         #[cfg(not(windows))]
         let (command, args) = (
@@ -2006,8 +2003,9 @@ mod hang_tests {
 
     #[tokio::test]
     async fn a_silent_but_exiting_process_is_not_killed() {
-        let mut driver = CliProcessDriver::spawn(&quiet_then_exiting_child_args(), std::env::temp_dir())
-            .expect("failed to spawn the quiet child");
+        let mut driver =
+            CliProcessDriver::spawn(&quiet_then_exiting_child_args(), std::env::temp_dir())
+                .expect("failed to spawn the quiet child");
         driver.close_stdin().await;
         let cancel = Arc::new(AtomicBool::new(false));
 
@@ -2065,7 +2063,10 @@ mod hang_tests {
 
         // 3. The session terminates with a reason a user can act on.
         let reason = stalled_turn_reason(0);
-        assert!(reason.contains("turn 1"), "reason must name the turn: {reason}");
+        assert!(
+            reason.contains("turn 1"),
+            "reason must name the turn: {reason}"
+        );
         assert!(
             reason.contains(&CLI_SILENCE_KILL_TIMEOUT.as_secs().to_string()),
             "reason must name the bound it hit: {reason}"

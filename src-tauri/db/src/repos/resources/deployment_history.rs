@@ -1,8 +1,8 @@
 use rusqlite::params;
 
+use crate::models::GitLabDeploymentRecord;
 use crate::DbPool;
 use personas_core::error::AppError;
-use crate::models::GitLabDeploymentRecord;
 
 /// Insert a deployment history record.
 #[allow(clippy::too_many_arguments)]

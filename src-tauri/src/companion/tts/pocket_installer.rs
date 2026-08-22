@@ -83,9 +83,9 @@ async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
     let model_dir = pocket::model_dir()?;
     let voices_dir = pocket::voices_dir()?;
     for d in [&bin_dir, &model_dir, &voices_dir] {
-        tokio::fs::create_dir_all(d)
-            .await
-            .map_err(|e| AppError::Internal(format!("pocket install: mkdir {}: {e}", d.display())))?;
+        tokio::fs::create_dir_all(d).await.map_err(|e| {
+            AppError::Internal(format!("pocket install: mkdir {}: {e}", d.display()))
+        })?;
     }
 
     let client = reqwest::Client::builder()
@@ -170,7 +170,9 @@ fn extract_model(archive: &std::path::Path, model_dir: &std::path::Path) -> Resu
         model_dir,
         // Flat package: keep the 7 model files + license/readme, skip test_wavs/.
         |first| {
-            first.ends_with(".onnx") || first.ends_with(".json") || matches!(first, "LICENSE" | "README.md")
+            first.ends_with(".onnx")
+                || first.ends_with(".json")
+                || matches!(first, "LICENSE" | "README.md")
         },
         "lm_main",
     )

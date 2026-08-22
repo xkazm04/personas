@@ -4,10 +4,10 @@ use serde::Deserialize;
 
 use crate::db::models::{Persona, PersonaDesignReview};
 
-use crate::utils::text::truncate_on_char_boundary as truncate_str;
 use super::topology_types::{
     compute_dag_layout, BlueprintConnection, BlueprintMember, TopologyBlueprint,
 };
+use crate::utils::text::truncate_on_char_boundary as truncate_str;
 
 // ============================================================================
 // LLM response types (internal -- parsed from Claude output)

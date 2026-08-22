@@ -21,9 +21,7 @@ pub fn get_device_group_id(state: State<'_, Arc<AppState>>) -> Result<String, Ap
 
 /// List the user's own paired devices.
 #[tauri::command]
-pub fn list_owned_devices(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<OwnedDevice>, AppError> {
+pub fn list_owned_devices(state: State<'_, Arc<AppState>>) -> Result<Vec<OwnedDevice>, AppError> {
     require_auth_sync(&state)?;
     owned_devices_repo::list_owned_devices(&state.db)
 }

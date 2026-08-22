@@ -17,8 +17,8 @@ use crate::validation::open_log_file_safely;
 // Both log-reading commands below mask on READ. The historical files predate
 // the sink fix in engine/src/logger.rs and still contain plaintext credentials;
 // `[STDOUT]` lines are precisely where they landed.
-use personas_core::utils::sanitization::sanitize_secrets;
 use crate::AppState;
+use personas_core::utils::sanitization::sanitize_secrets;
 use personas_macros::requires;
 
 /// Verify that the execution belongs to the expected persona.
@@ -70,8 +70,8 @@ pub fn list_all_executions(
     persona_id: Option<String>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     require_auth_sync(&state)?;
-    let cutoff = (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS))
-        .to_rfc3339();
+    let cutoff =
+        (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS)).to_rfc3339();
     repo::get_all_global(
         &state.db,
         limit,
@@ -115,26 +115,6 @@ pub fn get_execution(
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     Ok(execution)
-}
-
-#[tauri::command]
-#[requires(privileged)]
-pub fn create_execution(
-    state: State<'_, Arc<AppState>>,
-    persona_id: String,
-    trigger_id: Option<String>,
-    input_data: Option<String>,
-    model_used: Option<String>,
-    use_case_id: Option<String>,
-) -> Result<PersonaExecution, AppError> {
-    repo::create(
-        &state.db,
-        &persona_id,
-        trigger_id,
-        input_data,
-        model_used,
-        use_case_id,
-    )
 }
 
 /// Start a persona execution: create record, spawn Claude CLI, stream output.
@@ -221,9 +201,9 @@ pub(crate) async fn execute_persona_inner(
     // (fail-safe: never run blind because the DB was momentarily unavailable).
     if !is_simulation {
         let live_missing = match state.db.get() {
-            Ok(conn) => crate::commands::design::connector_readiness::persona_live_blockers(
-                &conn, &persona,
-            ),
+            Ok(conn) => {
+                crate::commands::design::connector_readiness::persona_live_blockers(&conn, &persona)
+            }
             Err(_) if persona.setup_status == "needs_credentials" => vec![
                 crate::commands::design::connector_readiness::Readiness::NeedsSetup {
                     connector: String::new(),
@@ -319,10 +299,9 @@ pub(crate) async fn execute_persona_inner(
         if let Some(tf) = use_case.get("time_filter").cloned() {
             merged.entry("_time_filter".to_string()).or_insert(tf);
         }
-        input_data = Some(
-            serde_json::to_string(&merged)
-                .map_err(|e| AppError::Internal(format!("Failed to serialize merged input_data: {e}")))?,
-        );
+        input_data = Some(serde_json::to_string(&merged).map_err(|e| {
+            AppError::Internal(format!("Failed to serialize merged input_data: {e}"))
+        })?);
 
         // Apply model_override (if any) by mutating the persona's model_profile
         // for this execution. Engine reads persona.model_profile at spawn time.
@@ -697,7 +676,7 @@ pub fn get_execution_log_lines(
             // Forward pagination: skip `offset` matching lines, take `limit`
             let lines: Vec<String> = reader
                 .lines()
-                .filter_map(|l| l.ok())
+                .map_while(Result::ok)
                 .filter_map(|line| {
                     line.find("[STDOUT] ")
                         .map(|pos| sanitize_secrets(&line[pos + 9..]))
@@ -711,7 +690,7 @@ pub fn get_execution_log_lines(
             // using a ring buffer to keep memory bounded.
             use std::collections::VecDeque;
             let mut ring = VecDeque::with_capacity(max_lines + 1);
-            for line in reader.lines().filter_map(|l| l.ok()) {
+            for line in reader.lines().map_while(Result::ok) {
                 if let Some(pos) = line.find("[STDOUT] ") {
                     ring.push_back(sanitize_secrets(&line[pos + 9..]));
                     if ring.len() > max_lines {
@@ -960,7 +939,7 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
                 if let Some(ref err) = e.error_message {
                     // Truncate error to keep context compact
                     let truncated = if err.len() > 200 {
-                        crate::utils::text::truncate_on_char_boundary(&err, 200)
+                        crate::utils::text::truncate_on_char_boundary(err, 200)
                     } else {
                         err.as_str()
                     };

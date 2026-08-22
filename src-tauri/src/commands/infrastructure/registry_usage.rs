@@ -119,7 +119,10 @@ pub fn dev_tools_write_registry_usage(
         // SQLite's `datetime()` yields `YYYY-MM-DD HH:MM:SS`; the lane wants
         // ISO-8601, and the gate checks it.
         if let Some(ts) = last_used {
-            entry.insert("lastUsed".into(), json!(format!("{}Z", ts.trim().replace(' ', "T"))));
+            entry.insert(
+                "lastUsed".into(),
+                json!(format!("{}Z", ts.trim().replace(' ', "T"))),
+            );
         }
         skills.insert(name, serde_json::Value::Object(entry));
     }
@@ -143,12 +146,6 @@ pub fn dev_tools_write_registry_usage(
         .map_err(|e| AppError::Internal(format!("write usage file: {e}")))?;
 
     Ok(count)
-}
-
-/// Repo-relative path of the file `dev_tools_write_registry_usage` writes, so the
-/// share task can name it in its commit without re-deriving the slug.
-pub fn usage_file_rel(contributor: &str) -> Option<String> {
-    slugify(contributor).map(|s| format!("usage/{s}.json"))
 }
 
 #[cfg(test)]
@@ -175,24 +172,5 @@ mod tests {
         assert_eq!(slugify(""), None);
         assert_eq!(slugify("///"), None);
         assert_eq!(slugify("日本語"), None);
-    }
-
-    #[test]
-    fn usage_file_rel_matches_the_slug_the_writer_uses() {
-        assert_eq!(usage_file_rel("Dev Box").as_deref(), Some("usage/dev-box.json"));
-        assert_eq!(usage_file_rel("!!!"), None);
-    }
-
-    #[test]
-    fn the_relative_path_never_escapes_the_lane() {
-        // The slug is the only caller-controlled part of the filename, and it
-        // cannot contain a separator or a dot by construction.
-        for probe in ["../../etc/passwd", "a/../b", "..", "./x"] {
-            if let Some(rel) = usage_file_rel(probe) {
-                assert!(rel.starts_with("usage/"), "{rel}");
-                assert_eq!(Path::new(&rel).components().count(), 2, "{rel}");
-                assert!(!rel.contains(".."), "{rel}");
-            }
-        }
     }
 }

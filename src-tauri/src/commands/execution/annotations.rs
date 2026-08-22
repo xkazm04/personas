@@ -70,10 +70,7 @@ pub fn list_persona_annotations(
 }
 
 #[tauri::command]
-pub fn delete_annotation(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn delete_annotation(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }

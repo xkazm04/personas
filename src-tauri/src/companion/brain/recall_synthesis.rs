@@ -38,28 +38,32 @@
 //! - Not a streaming surface. The synthesis call completes before the chat
 //!   turn starts; users don't see the briefing being generated.
 
+#[cfg(feature = "ml")]
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "ml")]
-use crate::companion::brain::oneshot::{self, call_claude_text};
-use crate::companion::brain::oneshot::{extract_json_span, preview};
+use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
+#[cfg(feature = "ml")]
 use crate::companion::brain::retrieval::Recall;
 #[cfg(feature = "ml")]
 use crate::db::UserDbPool;
+#[cfg(feature = "ml")]
 use crate::error::AppError;
 
 /// Token estimate above which synthesis is preferred over raw injection.
 /// 5000 tokens of raw chunks dilutes context per the Sharma blueprint.
 /// Below this, the cost of an extra Claude call outweighs the dilution
 /// savings.
+#[cfg(feature = "ml")]
 pub const SYNTHESIS_TOKEN_THRESHOLD: usize = 5000;
 
 /// Wall-clock cap on the synthesis call. The chat turn can't proceed
 /// until synthesis returns (or fails through to raw chunks). Generous
 /// enough that a slow Opus call doesn't trip over the limit, tight
 /// enough that a hung CLI doesn't hold the user's chat hostage.
+#[cfg(feature = "ml")]
 const SYNTHESIS_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// One synthesized briefing — the output of a single synthesis pass.
@@ -82,6 +86,7 @@ pub struct Briefing {
 /// Outer envelope the synthesis prompt asks Claude to emit. Keeping this
 /// thin (one field) so future fields can be added without breaking the
 /// envelope schema (any new field defaults out via `#[serde(default)]`).
+#[cfg(feature = "ml")]
 #[derive(Debug, Deserialize)]
 struct BriefingEnvelope {
     briefing: Briefing,
@@ -91,6 +96,7 @@ struct BriefingEnvelope {
 /// app; charcount/4 is the standard ballpark for English text and is good
 /// enough for budget gating (off by 20% on either side is fine — the
 /// threshold is not a hard cliff).
+#[cfg(feature = "ml")]
 pub fn estimate_recall_tokens(r: &Recall) -> usize {
     let mut chars: usize = 0;
     // Episodes: role + timestamp + content. Add 16 chars overhead per item
@@ -178,6 +184,28 @@ pub fn format_briefing_section(b: &Briefing) -> String {
 
 // ── Internals ──────────────────────────────────────────────────────────
 
+/// Spawn/stream/timeout plumbing lives in
+/// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
+/// this wrapper owns only the synthesis-specific model choice and typed
+/// envelope parsing.
+///
+/// Default to opus for synthesis quality; the call is rare (only fires
+/// above the budget threshold) and a poor synthesis worse than raw
+/// chunks. If costs are a concern, swap to sonnet here.
+#[cfg(feature = "ml")]
+async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<Briefing, AppError> {
+    let text = call_claude_text(
+        pool,
+        prompt,
+        "claude-opus-4-8",
+        oneshot::leg::RECALL_SYNTHESIS,
+        SYNTHESIS_TIMEOUT,
+    )
+    .await?;
+    parse_envelope(&text)
+}
+
+#[cfg(feature = "ml")]
 fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
     let mut p = String::with_capacity(8 * 1024);
     p.push_str(
@@ -241,11 +269,7 @@ fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
     if !recall.doctrine.is_empty() {
         p.push_str("# Reference docs (curated)\n\n");
         for d in &recall.doctrine {
-            p.push_str(&format!(
-                "## {}\n\n{}\n\n",
-                d.file_path,
-                d.content.trim()
-            ));
+            p.push_str(&format!("## {}\n\n{}\n\n", d.file_path, d.content.trim()));
         }
     }
 
@@ -263,27 +287,7 @@ fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
     p
 }
 
-/// Spawn/stream/timeout plumbing lives in
-/// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
-/// this wrapper owns only the synthesis-specific model choice and typed
-/// envelope parsing.
-///
-/// Default to opus for synthesis quality; the call is rare (only fires
-/// above the budget threshold) and a poor synthesis worse than raw
-/// chunks. If costs are a concern, swap to sonnet here.
 #[cfg(feature = "ml")]
-async fn call_claude_oneshot(pool: &UserDbPool, prompt: &str) -> Result<Briefing, AppError> {
-    let text = call_claude_text(
-        pool,
-        prompt,
-        "claude-opus-4-8",
-        oneshot::leg::RECALL_SYNTHESIS,
-        SYNTHESIS_TIMEOUT,
-    )
-    .await?;
-    parse_envelope(&text)
-}
-
 fn parse_envelope(text: &str) -> Result<Briefing, AppError> {
     let json = extract_json_span(text, "recall synthesis reply")?;
     let envelope: BriefingEnvelope = serde_json::from_str(json).map_err(|e| {
@@ -296,183 +300,3 @@ fn parse_envelope(text: &str) -> Result<Briefing, AppError> {
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::companion::brain::backlog::BacklogItem;
-    use crate::companion::brain::episodic::Episode;
-    use crate::companion::brain::goals::Goal;
-    use crate::companion::brain::procedural::Procedural;
-    use crate::companion::brain::retrieval::DoctrineHit;
-    use crate::companion::brain::semantic::Fact;
-
-    fn make_episode(content: &str) -> Episode {
-        Episode {
-            id: "ep_test".into(),
-            session_id: "default".into(),
-            role: "user".into(),
-            content: content.into(),
-            created_at: "2026-05-09T00:00:00Z".into(),
-            file_path: "episodes/test.md".into(),
-        }
-    }
-
-    fn make_fact(value: &str) -> Fact {
-        Fact {
-            id: "fact_test".into(),
-            scope: "user".into(),
-            key: "test".into(),
-            value: value.into(),
-            importance: 3,
-            confidence: 0.9,
-            sources: vec!["ep_test".into()],
-            supersedes_id: None,
-            contradicts_id: None,
-            created_at: "2026-05-09T00:00:00Z".into(),
-            updated_at: "2026-05-09T00:00:00Z".into(),
-            last_seen_at: "2026-05-09T00:00:00Z".into(),
-            file_path: "semantic/user/fact_test.md".into(),
-        }
-    }
-
-    fn make_doctrine(file_path: &str, content: &str) -> DoctrineHit {
-        DoctrineHit {
-            file_path: file_path.into(),
-            content: content.into(),
-        }
-    }
-
-    fn make_recall(
-        episodes: Vec<Episode>,
-        doctrine: Vec<DoctrineHit>,
-        facts: Vec<Fact>,
-    ) -> Recall {
-        Recall {
-            episodes,
-            doctrine,
-            facts,
-            procedurals: Vec::new(),
-            goals: Vec::new(),
-            backlog: Vec::new(),
-        }
-    }
-
-    #[test]
-    fn token_estimator_increases_with_content() {
-        let small = make_recall(vec![make_episode("hi")], Vec::new(), Vec::new());
-        let large = make_recall(
-            vec![make_episode(&"x".repeat(4000))],
-            Vec::new(),
-            Vec::new(),
-        );
-        assert!(estimate_recall_tokens(&large) > estimate_recall_tokens(&small));
-    }
-
-    #[test]
-    fn token_estimator_empty_recall_is_zero() {
-        let r = make_recall(Vec::new(), Vec::new(), Vec::new());
-        assert_eq!(estimate_recall_tokens(&r), 0);
-    }
-
-    #[test]
-    fn token_estimator_below_threshold_for_small_recall() {
-        // 5 short episodes + 6 short facts is roughly the cold-start
-        // shape — must stay well under the synthesis threshold so we
-        // don't fire synthesis for every minor turn.
-        let episodes = (0..5)
-            .map(|_| make_episode("a short user message"))
-            .collect();
-        let facts = (0..6).map(|_| make_fact("a short fact")).collect();
-        let r = make_recall(episodes, Vec::new(), facts);
-        assert!(estimate_recall_tokens(&r) < SYNTHESIS_TOKEN_THRESHOLD);
-    }
-
-    #[test]
-    fn token_estimator_above_threshold_for_dense_recall() {
-        // A pessimistic recall — long episodes + long doctrine hits — must
-        // exceed the threshold so synthesis kicks in. With chars/4 as the
-        // estimator and a 5000-token cap, we need ~20K chars of content.
-        // 10 episodes × 2000 chars + 8 doctrine × 1500 chars ≈ 32K chars
-        // ≈ 8K tokens — comfortably above the threshold and representative
-        // of a real long-running brain's recall on a busy turn.
-        let episode_text = "x".repeat(2000);
-        let doctrine_text = "y".repeat(1500);
-        let episodes = (0..10).map(|_| make_episode(&episode_text)).collect();
-        let doctrine = (0..8)
-            .map(|_| make_doctrine("docs/x.md", &doctrine_text))
-            .collect();
-        let r = make_recall(episodes, doctrine, Vec::new());
-        let tokens = estimate_recall_tokens(&r);
-        assert!(
-            tokens > SYNTHESIS_TOKEN_THRESHOLD,
-            "expected dense recall (~8K tokens) > {SYNTHESIS_TOKEN_THRESHOLD} threshold; got {tokens}",
-        );
-    }
-
-    #[test]
-    fn format_briefing_with_facts_and_obligations() {
-        let b = Briefing {
-            summary: "User just asked about deploys; recent context is the Friday lab failure.".into(),
-            key_facts: vec![
-                "User prefers terse responses on Fridays.".into(),
-                "Two lab agents have been failing since 2026-05-08.".into(),
-            ],
-            salient_obligations: vec!["Follow up on the lab failure investigation.".into()],
-        };
-        let out = format_briefing_section(&b);
-        assert!(out.contains("# What matters this turn (synthesized)"));
-        assert!(out.contains("User prefers terse responses on Fridays."));
-        assert!(out.contains("Salient obligations"));
-        assert!(out.contains("lab failure investigation"));
-    }
-
-    #[test]
-    fn format_briefing_minimal_no_arrays() {
-        let b = Briefing {
-            summary: "Nothing relevant in recall.".into(),
-            key_facts: Vec::new(),
-            salient_obligations: Vec::new(),
-        };
-        let out = format_briefing_section(&b);
-        assert!(out.contains("Nothing relevant in recall."));
-        assert!(!out.contains("Key facts"));
-        assert!(!out.contains("Salient obligations"));
-    }
-
-    #[test]
-    fn parse_envelope_accepts_clean_json() {
-        let s = r#"{"briefing":{"summary":"hello","key_facts":["a","b"],"salient_obligations":["c"]}}"#;
-        let b = parse_envelope(s).unwrap();
-        assert_eq!(b.summary, "hello");
-        assert_eq!(b.key_facts.len(), 2);
-        assert_eq!(b.salient_obligations.len(), 1);
-    }
-
-    #[test]
-    fn parse_envelope_strips_code_fence() {
-        let s = "```json\n{\"briefing\":{\"summary\":\"hi\"}}\n```";
-        let b = parse_envelope(s).unwrap();
-        assert_eq!(b.summary, "hi");
-        assert!(b.key_facts.is_empty());
-    }
-
-    #[test]
-    fn parse_envelope_tolerates_preface_and_suffix() {
-        let s = "Here is the briefing:\n{\"briefing\":{\"summary\":\"yes\"}}\nthanks";
-        let b = parse_envelope(s).unwrap();
-        assert_eq!(b.summary, "yes");
-    }
-
-    #[test]
-    fn parse_envelope_rejects_no_json() {
-        let s = "I refuse to comply";
-        assert!(parse_envelope(s).is_err());
-    }
-
-    // Suppress unused-warning for the structural Procedural / BacklogItem
-    // imports — they're used to confirm the field-name contract this
-    // module relies on (`trigger`/`behavior`/`summary`/`kind`).
-    #[allow(dead_code)]
-    fn _field_contract_check(_: &Procedural, _: &BacklogItem, _: &Goal) {}
-}

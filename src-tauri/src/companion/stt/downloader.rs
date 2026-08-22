@@ -132,7 +132,14 @@ pub async fn download_model(model_id: &str, app: &AppHandle) -> Result<(), AppEr
         // two models can stream concurrently — sweeping every `*.partial` in the
         // shared dir destroyed the other download's in-flight file.
         cleanup_partial(&final_path);
-        emit(app, model_id, DownloadState::Failed, 0, None, Some(e.to_string()));
+        emit(
+            app,
+            model_id,
+            DownloadState::Failed,
+            0,
+            None,
+            Some(e.to_string()),
+        );
         return Err(e);
     }
 

@@ -449,9 +449,7 @@ const PERSONA_EVENT_COLUMNS: &str = "id, project_id, event_type, source_type, so
 /// read path decrypts; the CDC delivery path must too, or the event bus shows
 /// unreadable payloads. On decrypt failure we drop the payload (never leak
 /// ciphertext) and surface the reason in `error_message`.
-fn map_persona_event_row(
-    row: &rusqlite::Row,
-) -> rusqlite::Result<crate::models::PersonaEvent> {
+fn map_persona_event_row(row: &rusqlite::Row) -> rusqlite::Result<crate::models::PersonaEvent> {
     let raw_payload: Option<String> = row.get(6)?;
     let payload_iv: Option<String> = row.get(7).unwrap_or(None);
     let raw_error: Option<String> = row.get(9)?;
@@ -642,8 +640,8 @@ mod tests {
         // A capacity-1 channel with no drain: after the buffer fills, every
         // further tracked INSERT must be counted as a drop (previously silent).
         let (sender, _receiver) = create_cdc_channel(1);
-        let tmp = std::env::temp_dir()
-            .join(format!("personas_cdc_drop_{}.db", uuid::Uuid::new_v4()));
+        let tmp =
+            std::env::temp_dir().join(format!("personas_cdc_drop_{}.db", uuid::Uuid::new_v4()));
         let manager = SqliteConnectionManager::file(&tmp);
         let pool: DbPool = Pool::builder()
             .max_size(1)
@@ -673,8 +671,8 @@ mod tests {
     #[test]
     fn fetch_by_rowid_roundtrips_and_reflects_updates() {
         let pool = crate::init_test_db().expect("init test db");
-        let event = event_repo::publish(&pool, sample_input("fetch.roundtrip", None))
-            .expect("publish");
+        let event =
+            event_repo::publish(&pool, sample_input("fetch.roundtrip", None)).expect("publish");
         let rowid = rowid_of(&pool, &event.id);
 
         // INSERT visible: fetch returns the row, status pending.
@@ -728,7 +726,11 @@ mod tests {
         let e1 = event_repo::publish(&pool, sample_input("pre.1", None)).unwrap();
         let _e2 = event_repo::publish(&pool, sample_input("pre.2", None)).unwrap();
         let watermark = max_persona_event_rowid(&pool);
-        assert_eq!(watermark, rowid_of(&pool, &e1.id) + 1, "watermark = max rowid");
+        assert_eq!(
+            watermark,
+            rowid_of(&pool, &e1.id) + 1,
+            "watermark = max rowid"
+        );
 
         // Blackout-window rows.
         let e3 = event_repo::publish(&pool, sample_input("gap.1", None)).unwrap();
@@ -736,7 +738,11 @@ mod tests {
 
         let replayed = fetch_persona_events_after_rowid(&pool, watermark).expect("replay query");
         let ids: Vec<&str> = replayed.iter().map(|e| e.id.as_str()).collect();
-        assert_eq!(ids, vec![e3.id.as_str(), e4.id.as_str()], "only gap rows, in order");
+        assert_eq!(
+            ids,
+            vec![e3.id.as_str(), e4.id.as_str()],
+            "only gap rows, in order"
+        );
     }
 
     #[test]

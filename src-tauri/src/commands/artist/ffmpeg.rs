@@ -8,6 +8,7 @@ use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::utils::extract_panic_message;
 use futures_util::FutureExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -16,18 +17,6 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 use crate::background_job::BackgroundJobManager;
 use crate::engine::event_registry::event_name;
@@ -108,7 +97,11 @@ static MEDIA_EXPORT_JOBS: BackgroundJobManager<MediaExportExtra> = BackgroundJob
 static FFMPEG_PATH_CACHE: std::sync::Mutex<Option<Option<PathBuf>>> = std::sync::Mutex::new(None);
 
 async fn find_ffmpeg_path() -> Option<PathBuf> {
-    if let Some(cached) = FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned").clone() {
+    if let Some(cached) = FFMPEG_PATH_CACHE
+        .lock()
+        .expect("ffmpeg cache poisoned")
+        .clone()
+    {
         return cached;
     }
     let discovered = discover_ffmpeg_path().await;
@@ -151,8 +144,7 @@ async fn discover_ffmpeg_path() -> Option<PathBuf> {
         //    Walk any package whose name contains "ffmpeg" and look for the
         //    binary at depth 1 or 2.
         if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
-            let packages_dir =
-                PathBuf::from(&localappdata).join(r"Microsoft\WinGet\Packages");
+            let packages_dir = PathBuf::from(&localappdata).join(r"Microsoft\WinGet\Packages");
             if let Ok(mut entries) = tokio::fs::read_dir(&packages_dir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
                     let pkg_path = entry.path();
@@ -534,8 +526,8 @@ async fn find_ffprobe_path() -> Option<PathBuf> {
 /// Compile a Composition JSON blob to a RenderPlan IR.
 ///
 /// Exposed so the browser preview can share the Rust compiler instead of
-/// maintaining a parallel TypeScript port. Preview mode uses Fold + frame-snap
-/// + !for_export; export still calls `render_plan::compile` directly in its
+/// maintaining a parallel TypeScript port. Preview mode uses Fold + frame-snap +
+/// !for_export; export still calls `render_plan::compile` directly in its
 /// own command. Auth-gated because the parser is reachable from any IPC
 /// caller and unbounded composition_json size is a CPU-DoS vector.
 #[tauri::command]
@@ -567,7 +559,6 @@ pub async fn artist_export_composition(
     composition_json: String,
     output_path: String,
 ) -> Result<serde_json::Value, AppError> {
-
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -595,40 +586,44 @@ pub async fn artist_export_composition(
 
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => {
-                Err(AppError::Internal("Export cancelled".into()))
-            }
-            res = run_ffmpeg_export(
-                &app_handle,
-                &job_id_clone,
-                &ffmpeg,
-                &plan,
-                &output_path,
-            ) => res
-        };
-
-        match result {
-            Ok(()) => {
-                MEDIA_EXPORT_JOBS.set_status(&app_handle, &job_id_clone, "completed", None);
-                let _ = app_handle.emit(
-                    event_name::MEDIA_EXPORT_COMPLETE,
-                    json!({ "job_id": job_id_clone, "output_path": output_path }),
-                );
-            }
-            Err(e) => {
-                let msg = format!("{e}");
-                MEDIA_EXPORT_JOBS.set_status(
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => {
+                    Err(AppError::Internal("Export cancelled".into()))
+                }
+                res = run_ffmpeg_export(
                     &app_handle,
                     &job_id_clone,
-                    "failed",
-                    Some(msg.clone()),
-                );
-                MEDIA_EXPORT_JOBS.emit_line(&app_handle, &job_id_clone, format!("[Error] {msg}"));
-            }
-        }
+                    &ffmpeg,
+                    &plan,
+                    &output_path,
+                ) => res
+            };
 
-        let _ = MEDIA_EXPORT_JOBS.remove(&job_id_clone);
+            match result {
+                Ok(()) => {
+                    MEDIA_EXPORT_JOBS.set_status(&app_handle, &job_id_clone, "completed", None);
+                    let _ = app_handle.emit(
+                        event_name::MEDIA_EXPORT_COMPLETE,
+                        json!({ "job_id": job_id_clone, "output_path": output_path }),
+                    );
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    MEDIA_EXPORT_JOBS.set_status(
+                        &app_handle,
+                        &job_id_clone,
+                        "failed",
+                        Some(msg.clone()),
+                    );
+                    MEDIA_EXPORT_JOBS.emit_line(
+                        &app_handle,
+                        &job_id_clone,
+                        format!("[Error] {msg}"),
+                    );
+                }
+            }
+
+            let _ = MEDIA_EXPORT_JOBS.remove(&job_id_clone);
         })
         .catch_unwind()
         .await;
@@ -636,8 +631,17 @@ pub async fn artist_export_composition(
         if let Err(panic) = work {
             let msg = extract_panic_message(panic);
             tracing::error!(job_id = %job_id_for_panic, panic = %msg, "media export task panicked — marking job as failed");
-            MEDIA_EXPORT_JOBS.set_status(&app_handle_for_panic, &job_id_for_panic, "failed", Some(msg.clone()));
-            MEDIA_EXPORT_JOBS.emit_line(&app_handle_for_panic, &job_id_for_panic, format!("[Error] {msg}"));
+            MEDIA_EXPORT_JOBS.set_status(
+                &app_handle_for_panic,
+                &job_id_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            MEDIA_EXPORT_JOBS.emit_line(
+                &app_handle_for_panic,
+                &job_id_for_panic,
+                format!("[Error] {msg}"),
+            );
             let _ = MEDIA_EXPORT_JOBS.remove(&job_id_for_panic);
         }
     });
@@ -1667,6 +1671,7 @@ fn bg_source_hex(plan: &RenderPlan) -> String {
 /// - `speed = 0.0` → `0.0 / 0.5 == 0.0` → `while remaining < 0.5` infinite loop.
 /// - `speed = +∞` → `inf / 2.0 == inf` → `while remaining > 2.0` infinite loop.
 /// - `speed < 0`  → `−x / 0.5 == −2x`, diverges → `while remaining < 0.5` infinite loop.
+///
 /// The cancel token is only checked at await points, so this hang is
 /// unrecoverable from the UI; the user must kill the app.
 fn atempo_chain(speed: f64) -> Vec<String> {
@@ -1732,7 +1737,10 @@ mod tests {
         };
         let e = overlay_pos_expr("main_h", "overlay_h", 0.5, 0.15, Some(&enter), 1.0);
         // References the timeline clock, the clamp window, and the base+offset.
-        assert!(e.contains("clip((t-1.000)/0.400"), "has progress window: {e}");
+        assert!(
+            e.contains("clip((t-1.000)/0.400"),
+            "has progress window: {e}"
+        );
         assert!(e.contains("pow(1-"), "easeOut uses a power curve: {e}");
         assert!(e.contains("0.5000"), "carries the base fraction: {e}");
         assert!(e.contains("0.1500"), "carries the offset: {e}");

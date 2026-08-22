@@ -7,7 +7,7 @@ stack: rust
 
 # Context budgeting in the companion prompt (Rust)
 
-`src-tauri/src/companion/prompt.rs` implements most of the technique's
+`src-tauri/src/companion/prompt/` implements most of the technique's
 vocabulary literally — allocations, honest truncation, a summarization
 threshold, and a per-turn spend ledger — while the persona engine side
 supplies the measured counter-example for the "total needs an owner" rule.

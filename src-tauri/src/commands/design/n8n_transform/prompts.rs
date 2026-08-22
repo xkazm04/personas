@@ -1,9 +1,9 @@
-use crate::utils::text::truncate_on_char_boundary as truncate_utf8;
 use super::prompt_sanitizer::{
     canary_instruction, sanitize_free_text, sanitize_json_payload, sanitize_workflow_name,
     wrap_xml_boundary,
 };
 use crate::engine::platform_rules;
+use crate::utils::text::truncate_on_char_boundary as truncate_utf8;
 
 /// Wraps a persona-generation prompt with section-delimited output instructions.
 pub fn wrap_prompt_with_sections(base_prompt: &str) -> String {

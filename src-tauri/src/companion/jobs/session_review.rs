@@ -73,7 +73,8 @@ pub async fn run(
         sid = &session_id[..session_id.len().min(8)],
         verdict = verdict.as_str(),
     );
-    if let Err(e) = episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, &episode)
+    if let Err(e) =
+        episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, &episode)
     {
         tracing::warn!(error = %e, "session_review: episode write failed");
     }

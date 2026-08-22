@@ -173,8 +173,7 @@ pub async fn cleanup_persona_memories(
             Ok(spawned) => {
                 if let Some(exec) = await_execution_terminal(&state.db, &spawned.id).await {
                     let output = exec.output_data.unwrap_or_default();
-                    let valid: HashSet<String> =
-                        llm_input.iter().map(|m| m.id.clone()).collect();
+                    let valid: HashSet<String> = llm_input.iter().map(|m| m.id.clone()).collect();
                     llm_ids = parse_memory_archives(&output, &valid);
                 } else {
                     tracing::warn!(persona_id = %persona_id, "Director memory cleanup: run did not reach terminal state");

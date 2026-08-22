@@ -65,7 +65,11 @@ fn search_and_write_when_athena_enabled() {
     let (db_path, pool) = setup_db(&vault, true);
 
     // Search finds the note.
-    let res = call_tool("obsidian_vault_search", &json!({ "query": "stoicism" }), &pool);
+    let res = call_tool(
+        "obsidian_vault_search",
+        &json!({ "query": "stoicism" }),
+        &pool,
+    );
     assert!(!is_error(&res), "search errored: {}", text(&res));
     assert!(
         text(&res).contains("Stoicism"),
@@ -96,14 +100,20 @@ fn tools_are_gated_off_when_toggle_disabled() {
     let (db_path, pool) = setup_db(&vault, false);
 
     let res = call_tool("obsidian_vault_search", &json!({ "query": "x" }), &pool);
-    assert!(is_error(&res), "search should be gated off when athena=false");
+    assert!(
+        is_error(&res),
+        "search should be gated off when athena=false"
+    );
 
     let res = call_tool(
         "obsidian_vault_write_note",
         &json!({ "title": "T", "content": "C" }),
         &pool,
     );
-    assert!(is_error(&res), "write should be gated off when athena=false");
+    assert!(
+        is_error(&res),
+        "write should be gated off when athena=false"
+    );
 
     let _ = std::fs::remove_dir_all(&vault);
     let _ = std::fs::remove_file(&db_path);

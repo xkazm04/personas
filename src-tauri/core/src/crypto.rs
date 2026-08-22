@@ -14,8 +14,8 @@ use rsa::{
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use crate::pool::DbPool;
 use crate::error::AppError;
+use crate::pool::DbPool;
 
 // ---------------------------------------------------------------------------
 // Session Key Management (Asymmetric IPC Protection)

@@ -2,7 +2,7 @@
 //! row per project per day; upserted across the day's ticks. The
 //! consolidator (see `consolidator.rs`) writes these.
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
@@ -31,10 +31,7 @@ pub struct PulseRow {
 /// Read today's pulse for one project. Returns None when no pulse has
 /// been written for the (project, today) pair yet (the consolidator's
 /// "first tick of the day" path).
-pub fn load_today(
-    pool: &UserDbPool,
-    project_id: &str,
-) -> Result<Option<PulseRow>, AppError> {
+pub fn load_today(pool: &UserDbPool, project_id: &str) -> Result<Option<PulseRow>, AppError> {
     let day = today_iso();
     load_for_day(pool, project_id, &day)
 }
@@ -173,10 +170,4 @@ fn parse_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PulseRow> {
 /// shape (`YYYY-MM-DD`).
 pub fn today_iso() -> String {
     Utc::now().date_naive().format("%Y-%m-%d").to_string()
-}
-
-/// Convenience for the consolidator: returns `now` for the
-/// `last_pulse_at` stamping after a successful pulse write.
-pub fn now() -> DateTime<Utc> {
-    Utc::now()
 }

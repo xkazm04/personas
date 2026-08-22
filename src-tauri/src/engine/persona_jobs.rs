@@ -133,71 +133,6 @@ pub fn get(pool: &DbPool, id: &str) -> Result<Option<BackgroundJob>, AppError> {
     Ok(row)
 }
 
-pub fn list(
-    pool: &DbPool,
-    persona_id: Option<&str>,
-    only_unresolved: bool,
-    limit: u32,
-) -> Result<Vec<BackgroundJob>, AppError> {
-    let conn = pool.get()?;
-    let mut clauses: Vec<&str> = Vec::new();
-    if persona_id.is_some() {
-        clauses.push("persona_id = ?1");
-    }
-    if only_unresolved {
-        clauses.push("status IN ('queued', 'running')");
-    }
-    let where_clause = if clauses.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", clauses.join(" AND "))
-    };
-    let limit_idx = if persona_id.is_some() { "?2" } else { "?1" };
-    let sql = format!(
-        "SELECT {SELECT_COLUMNS}
-         FROM persona_background_job
-         {where_clause}
-         ORDER BY created_at DESC
-         LIMIT {limit_idx}"
-    );
-    let mut stmt = conn.prepare(&sql)?;
-    let rows: Vec<BackgroundJob> = if let Some(pid) = persona_id {
-        stmt.query_map(params![pid, limit], map_row)?
-            .collect::<Result<Vec<_>, _>>()?
-    } else {
-        stmt.query_map(params![limit], map_row)?
-            .collect::<Result<Vec<_>, _>>()?
-    };
-    Ok(rows)
-}
-
-/// Request cancellation of a job. Behavior depends on current status:
-/// - `queued` → transitions immediately to `canceled`, returns true
-/// - `running` → sets `cancel_requested = 1`; the worker checks this
-///   between cooperative-cancel points (v1: only at job start since
-///   the LLM call itself is a one-shot blocking spawn). Returns true.
-/// - `completed` | `failed` | `canceled` → no-op, returns false
-pub fn request_cancel(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    let queued_canceled = conn.execute(
-        "UPDATE persona_background_job
-         SET status = 'canceled', completed_at = ?1
-         WHERE id = ?2 AND status = 'queued'",
-        params![now, id],
-    )?;
-    if queued_canceled > 0 {
-        return Ok(true);
-    }
-    let running_flagged = conn.execute(
-        "UPDATE persona_background_job
-         SET cancel_requested = 1
-         WHERE id = ?1 AND status = 'running'",
-        params![id],
-    )?;
-    Ok(running_flagged > 0)
-}
-
 fn pop_next_queued(pool: &DbPool) -> Result<Option<BackgroundJob>, AppError> {
     let conn = pool.get()?;
     let now = Utc::now().to_rfc3339();
@@ -266,7 +201,10 @@ pub fn recover_orphans(pool: &DbPool) -> Result<usize, AppError> {
         params![now],
     )?;
     if n > 0 {
-        tracing::info!(orphans = n, "persona-jobs worker: recovered orphaned running jobs");
+        tracing::info!(
+            orphans = n,
+            "persona-jobs worker: recovered orphaned running jobs"
+        );
     }
     Ok(n)
 }
@@ -424,9 +362,7 @@ async fn memory_reflection_run(
     let persona_id = params
         .get("persona_id")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            AppError::Validation("memory_reflection_run requires persona_id".into())
-        })?;
+        .ok_or_else(|| AppError::Validation("memory_reflection_run requires persona_id".into()))?;
     let instructions = params.get("instructions").and_then(|v| v.as_str());
     if let Some(s) = instructions {
         if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
@@ -481,9 +417,7 @@ async fn memory_curation_run(
     pool: &DbPool,
     params: &serde_json::Value,
 ) -> Result<String, AppError> {
-    use crate::commands::core::memories::{
-        run_memory_review_pipeline, MemoryReviewPipelineOpts,
-    };
+    use crate::commands::core::memories::{run_memory_review_pipeline, MemoryReviewPipelineOpts};
     use crate::db::repos::core::memory_review_proposal::{
         self as proposal_repo, CreateProposalInput,
     };
@@ -523,7 +457,11 @@ async fn memory_curation_run(
         None => return Ok("No memories to review (empty pool).".to_string()),
     };
 
-    let proposed_changes = pipeline.entries.iter().filter(|e| e.action != "keep").count();
+    let proposed_changes = pipeline
+        .entries
+        .iter()
+        .filter(|e| e.action != "keep")
+        .count();
     let summary = format!(
         "Reviewed {n} memories; proposed {p} change(s) for review.",
         n = pipeline.reviews_count,

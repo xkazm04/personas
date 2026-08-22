@@ -898,9 +898,9 @@ pub async fn execute_api_request(
     // the same per-credential lock (re-entrant acquire would deadlock).
     if resp.status() == reqwest::StatusCode::UNAUTHORIZED && strategy.is_oauth(&fields) {
         drop(lock_holder.take()); // release before force_refresh re-acquires the same lock
-        // force=true: bypass the freshness short-circuit. The provider just
-        // rejected the token, so we must exchange even if oauth_token_expires_at
-        // still looks valid locally (that staleness is the whole reason we 401'd).
+                                  // force=true: bypass the freshness short-circuit. The provider just
+                                  // rejected the token, so we must exchange even if oauth_token_expires_at
+                                  // still looks valid locally (that staleness is the whole reason we 401'd).
         match super::oauth_refresh::force_refresh_single_credential(pool, &credential).await {
             Ok(msg) => {
                 tracing::info!(
@@ -919,7 +919,9 @@ pub async fn execute_api_request(
                     // Same URL-stripping as the main send above: the retry URL can
                     // embed a secret in its path, which reqwest::Error's Display
                     // would otherwise leak.
-                    .map_err(|e| AppError::Internal(format!("API request retry failed: {}", e.without_url())))?;
+                    .map_err(|e| {
+                        AppError::Internal(format!("API request retry failed: {}", e.without_url()))
+                    })?;
             }
             Err(e) => {
                 // Refresh genuinely failed (e.g. invalid_grant / revoked grant) —
@@ -1002,7 +1004,9 @@ mod allow_private_tests {
         assert!(!connector_allows_private_network(Some(
             r#"{"allow_private_network":false}"#
         )));
-        assert!(!connector_allows_private_network(Some(r#"{"summary":"github"}"#)));
+        assert!(!connector_allows_private_network(Some(
+            r#"{"summary":"github"}"#
+        )));
         assert!(!connector_allows_private_network(Some("not json")));
         assert!(!connector_allows_private_network(None));
     }

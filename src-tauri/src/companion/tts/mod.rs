@@ -24,7 +24,6 @@ pub mod pocket_installer;
 pub mod sherpa_engine;
 
 use std::path::PathBuf;
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -51,17 +50,19 @@ pub fn engine_dir() -> Result<PathBuf, AppError> {
 /// route a giant string at a local model that would take 30s to render.
 pub const TTS_MAX_CHARS: usize = 1200;
 
-/// Cap on remote TTS round-trip (used by the Pocket HTTP-service backend).
-pub const TTS_REMOTE_TIMEOUT: Duration = Duration::from_secs(30);
-
 /// Identifier for which engine should fulfill a TTS request. Serializes as
 /// a snake_case string — matches the wire format the frontend already uses
 /// for every other token-based identifier in the app.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum TtsEngineId {
     /// Local Kokoro TTS via the sherpa-onnx sidecar (primary engine).
     /// Requires the engine binary + the (shared) Kokoro model package.
+    ///
+    /// The default since the 2026-07-10 descope of ElevenLabs/Piper: callers
+    /// that do not pass `engine` (legacy persisted state) get the curated
+    /// local voices.
+    #[default]
     Kokoro,
     /// Local Pocket TTS (kyutai) — experimental. The only engine with
     /// zero-shot voice cloning; packaged sherpa-onnx sidecar or optional
@@ -69,23 +70,7 @@ pub enum TtsEngineId {
     PocketTts,
 }
 
-impl TtsEngineId {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            TtsEngineId::Kokoro => "kokoro",
-            TtsEngineId::PocketTts => "pocket_tts",
-        }
-    }
-}
-
-impl Default for TtsEngineId {
-    fn default() -> Self {
-        // Kokoro is the primary engine since the 2026-07-10 descope of
-        // ElevenLabs/Piper. Callers that don't pass `engine` (legacy
-        // persisted state) get the curated local voices.
-        TtsEngineId::Kokoro
-    }
-}
+impl TtsEngineId {}
 
 /// Optional per-call voice tuning. The frontend bundles whichever fields
 /// the user has customized; missing fields fall back to per-engine defaults.

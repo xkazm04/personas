@@ -393,8 +393,11 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     // persona's most recent REAL workload inputs (challenger harness) — every
     // candidate and the incumbent are measured on the SAME set. Replay outputs
     // are discarded; only measurements survive.
-    let workload =
-        fitness_driver::workload_replay_scenarios(&pool, &persona_id, fitness_driver::WORKLOAD_REPLAY_COUNT);
+    let workload = fitness_driver::workload_replay_scenarios(
+        &pool,
+        &persona_id,
+        fitness_driver::WORKLOAD_REPLAY_COUNT,
+    );
     let workload_count = workload.len() as i32;
     let mut replay_set: Vec<super::test_runner::TestScenario> =
         scenarios.iter().take(2).cloned().collect();
@@ -403,7 +406,13 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     // Measure the incumbent first (baseline) — assertion pass-rate + cost +
     // latency folded by the pure scorer.
     let incumbent_samples: Vec<ReplaySample> = replay_candidate(
-        &pool, &persona, &tools, &replay_set, &eval_model, &cycle_id, &persona_id,
+        &pool,
+        &persona,
+        &tools,
+        &replay_set,
+        &eval_model,
+        &cycle_id,
+        &persona_id,
     )
     .await;
     let incumbent_measured = match score_measured_fitness(&incumbent_samples, &objective) {
@@ -446,7 +455,13 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         let variant_persona = fitness_driver::candidate_from_genome(&persona, variant);
 
         let samples = replay_candidate(
-            &pool, &variant_persona, &tools, &replay_set, &eval_model, &cycle_id, &persona_id,
+            &pool,
+            &variant_persona,
+            &tools,
+            &replay_set,
+            &eval_model,
+            &cycle_id,
+            &persona_id,
         )
         .await;
         let measured = score_measured_fitness(&samples, &objective);
@@ -461,7 +476,10 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
                 "Evolution: variant {} measured {:.3} (incumbent: {:.3})",
                 i, m.overall, incumbent_measured.overall,
             );
-            if best_measured.as_ref().map_or(true, |b| m.overall > b.overall) {
+            if best_measured
+                .as_ref()
+                .map_or(true, |b| m.overall > b.overall)
+            {
                 best_measured = Some(m);
                 best_variant_idx = Some(i);
             }

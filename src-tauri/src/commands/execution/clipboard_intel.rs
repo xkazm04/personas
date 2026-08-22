@@ -8,10 +8,6 @@
 //! subscription (`engine::subscription`), which previously carried a drifted
 //! copy of the same logic.
 
-use std::sync::Arc;
-
-use tauri::State;
-
 use crate::error::AppError;
 use crate::AppState;
 
@@ -45,15 +41,4 @@ pub fn search_kb_for_error(
         query,
         limit,
     )
-}
-
-/// Tauri command wrapper for manual KB error search from the frontend.
-#[tauri::command]
-pub async fn search_kb_for_clipboard_error(
-    state: State<'_, Arc<AppState>>,
-    query: String,
-    limit: Option<usize>,
-) -> Result<Vec<KbMatch>, AppError> {
-    let limit = limit.unwrap_or(3);
-    search_kb_for_error(&state, &query, limit)
 }

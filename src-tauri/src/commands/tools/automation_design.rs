@@ -188,21 +188,19 @@ fn extract_automation_design_result(text: &str) -> Option<serde_json::Value> {
                 }
                 depth += 1;
             }
-            '}' => {
-                // Guard: only decrement when depth > 0 to handle stray closing braces
-                if depth > 0 {
-                    depth -= 1;
-                    if depth == 0 {
-                        if let Some(s) = start {
-                            let candidate = &trimmed[s..=i];
-                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(candidate) {
-                                if val.is_object() && val.get("name").is_some() {
-                                    return Some(val);
-                                }
+            // Guard: only decrement when depth > 0 to handle stray closing braces
+            '}' if depth > 0 => {
+                depth -= 1;
+                if depth == 0 {
+                    if let Some(s) = start {
+                        let candidate = &trimmed[s..=i];
+                        if let Ok(val) = serde_json::from_str::<serde_json::Value>(candidate) {
+                            if val.is_object() && val.get("name").is_some() {
+                                return Some(val);
                             }
                         }
-                        start = None;
                     }
+                    start = None;
                 }
             }
             _ => {}

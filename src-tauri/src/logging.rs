@@ -291,7 +291,14 @@ pub fn install_crash_hook(app_data_dir: &std::path::Path) {
             ));
 
             let _ = std::fs::write(&path, &report);
-            eprintln!("[CRASH] Report written to: {}", path.display());
+            // Inside the panic hook. Re-entering `tracing` from here can
+            // deadlock on a subscriber whose own lock the panicking thread may
+            // already hold, and the process is about to die either way — so
+            // this one line stays on stderr on purpose.
+            #[allow(clippy::print_stderr)]
+            {
+                eprintln!("[CRASH] Report written to: {}", path.display());
+            }
         }
 
         // Call the previous hook (Sentry, default, etc.)

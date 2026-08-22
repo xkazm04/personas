@@ -159,15 +159,13 @@ pub(super) async fn run_post_draft(
                     reason = %reason,
                     "OneShot: promotion HELD — refusing to promote an unverified build"
                 );
-                emit_progress(&app_handle, &session_id, "Promotion held", Some(reason.clone()));
-                finalize_failed(
-                    &state,
+                emit_progress(
                     &app_handle,
                     &session_id,
-                    &persona_id,
-                    Some(reason),
-                )
-                .await;
+                    "Promotion held",
+                    Some(reason.clone()),
+                );
+                finalize_failed(&state, &app_handle, &session_id, &persona_id, Some(reason)).await;
                 return;
             }
             Ok(TestPassOutcome::Failed { summary }) => {
@@ -1118,7 +1116,8 @@ mod tests {
     #[test]
     fn float_and_negative_tools_failed_hold_instead_of_promoting() {
         for bad in [json!(0.0), json!(-1), json!(1.5)] {
-            let gate = evaluate_promote_gate(&json!({ "tools_failed": bad, "tools_unverified": 0 }));
+            let gate =
+                evaluate_promote_gate(&json!({ "tools_failed": bad, "tools_unverified": 0 }));
             assert!(
                 matches!(gate, PromoteGate::Held { .. }),
                 "expected a hold for tools_failed={bad}"

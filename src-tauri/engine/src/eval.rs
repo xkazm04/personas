@@ -1006,7 +1006,11 @@ mod tests {
         assert_eq!(result.output_quality, 0);
         assert_eq!(result.protocol_compliance, 0);
         assert!(result.rationale.contains("confusion"));
-        assert!(result.verdict.as_deref().unwrap_or("").contains("confusion"));
+        assert!(result
+            .verdict
+            .as_deref()
+            .unwrap_or("")
+            .contains("confusion"));
     }
 
     #[test]

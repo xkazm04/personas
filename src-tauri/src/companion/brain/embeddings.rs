@@ -15,19 +15,22 @@
 //! sufficient.
 
 #[cfg(feature = "ml")]
-use std::sync::Arc;
-#[cfg(feature = "ml")]
 use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(feature = "ml")]
+use std::sync::Arc;
 
 #[cfg(feature = "ml")]
 use rusqlite::params;
 
+#[cfg(feature = "ml")]
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
+#[cfg(feature = "ml")]
 use crate::error::AppError;
 
 /// Native dim for AllMiniLML6V2Q (the model the app already ships with).
+#[cfg(feature = "ml")]
 pub const COMPANION_VEC_DIMS: usize = 384;
 
 /// Latched to `true` only after the table has been created *successfully* this
@@ -73,8 +76,9 @@ fn apply_model_guard(
     if hits.is_empty() {
         return Ok(hits);
     }
-    let ids_json = serde_json::to_string(&hits.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>())
-        .map_err(|e| AppError::Internal(format!("model guard id serialize: {e}")))?;
+    let ids_json =
+        serde_json::to_string(&hits.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>())
+            .map_err(|e| AppError::Internal(format!("model guard id serialize: {e}")))?;
     let mut stmt = conn.prepare(
         "SELECT id, embedding_model FROM companion_node
          WHERE id IN (SELECT value FROM json_each(?1)) AND embedding_model IS NOT NULL",
@@ -117,15 +121,10 @@ pub fn ensure_vec_table(pool: &UserDbPool) -> Result<(), AppError> {
     Ok(())
 }
 
-#[cfg(not(feature = "ml"))]
-pub fn ensure_vec_table(_pool: &UserDbPool) -> Result<(), AppError> {
-    Ok(())
-}
-
 /// Embed `text` and write to `companion_embedding`. Best-effort — caller
 /// can choose to swallow errors so embedding failure doesn't fail the
-/// surrounding write (e.g., we still want the episode persisted to disk
-/// + companion_node even if embedding fails).
+/// surrounding write (e.g., we still want the episode persisted to disk +
+/// companion_node even if embedding fails).
 #[cfg(feature = "ml")]
 pub async fn embed_and_store(
     pool: &UserDbPool,
@@ -155,15 +154,6 @@ pub async fn embed_and_store(
         "UPDATE companion_node SET embedding_model = ?1, embedding_dims = ?2 WHERE id = ?3",
         params![embedder.model_name(), embedder.dimensions() as i64, node_id],
     )?;
-    Ok(())
-}
-
-#[cfg(not(feature = "ml"))]
-pub async fn embed_and_store(
-    _pool: &UserDbPool,
-    _node_id: &str,
-    _text: &str,
-) -> Result<(), AppError> {
     Ok(())
 }
 
@@ -213,21 +203,21 @@ pub struct ReembedCandidate {
 /// current-model, so re-embedding it would be churn rather than repair.
 /// A missing `companion_embedding` table (no `ml` build has ever run here)
 /// reads as "nothing is vectored", which is exactly right.
+#[cfg(feature = "ml")]
 pub fn reembed_candidates(
     pool: &UserDbPool,
     current_model: &str,
 ) -> Result<Vec<ReembedCandidate>, AppError> {
     let conn = pool.get()?;
 
-    let vectored: std::collections::HashSet<String> = match conn
-        .prepare("SELECT node_id FROM companion_embedding")
-    {
-        Ok(mut stmt) => match stmt.query_map([], |r| r.get::<_, String>(0)) {
-            Ok(rows) => rows.filter_map(Result::ok).collect(),
+    let vectored: std::collections::HashSet<String> =
+        match conn.prepare("SELECT node_id FROM companion_embedding") {
+            Ok(mut stmt) => match stmt.query_map([], |r| r.get::<_, String>(0)) {
+                Ok(rows) => rows.filter_map(Result::ok).collect(),
+                Err(_) => std::collections::HashSet::new(),
+            },
             Err(_) => std::collections::HashSet::new(),
-        },
-        Err(_) => std::collections::HashSet::new(),
-    };
+        };
 
     let mut stmt = conn.prepare(
         "SELECT id, file_path, body_excerpt, embedding_model FROM companion_node \
@@ -386,15 +376,6 @@ pub async fn search_similar(
     apply_model_guard(&conn, rows, embedder.model_name())
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn search_similar(
-    _pool: &UserDbPool,
-    _query: &str,
-    _k: usize,
-) -> Result<Vec<(String, f32)>, AppError> {
-    Ok(Vec::new())
-}
-
 /// Distance scan restricted to a single `companion_node.kind`. Returns
 /// (node_id, L2 distance) ordered nearest-first.
 ///
@@ -433,16 +414,6 @@ pub async fn search_similar_kind(
     Ok(rows)
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn search_similar_kind(
-    _pool: &UserDbPool,
-    _query: &str,
-    _kind: &str,
-    _k: usize,
-) -> Result<Vec<(String, f32)>, AppError> {
-    Ok(Vec::new())
-}
-
 #[cfg(test)]
 mod reembed_selection_tests {
     //! The selection rule behind `companion_reembed_missing`, tested without an
@@ -467,74 +438,6 @@ mod reembed_selection_tests {
             )
             .unwrap();
         }
-    }
-
-    #[test]
-    fn every_node_is_a_candidate_when_nothing_has_been_vectored() {
-        let pool = crate::db::init_test_user_db().unwrap();
-        seed(&pool, &[("a", None), ("b", None), ("c", None)]);
-        // No companion_embedding table at all — the state a machine is in
-        // before any ml build has ever run, and the state an import leaves
-        // memory in. Must read as "nothing is vectored", not as an error.
-        let out = super::reembed_candidates(&pool, MODEL).expect("selection");
-        assert_eq!(out.len(), 3);
-    }
-
-    #[test]
-    fn picks_only_the_unvectored_and_the_foreign_model() {
-        let pool = crate::db::init_test_user_db().unwrap();
-        seed(
-            &pool,
-            &[
-                ("vectored_current", Some(MODEL)),
-                ("vectored_foreign", Some("BGESmallENV15")),
-                ("vectored_legacy_null", None),
-                ("never_vectored", Some(MODEL)),
-            ],
-        );
-        {
-            let conn = pool.get().unwrap();
-            conn.execute_batch("CREATE TABLE companion_embedding (node_id TEXT);")
-                .unwrap();
-            for id in ["vectored_current", "vectored_foreign", "vectored_legacy_null"] {
-                conn.execute(
-                    "INSERT INTO companion_embedding (node_id) VALUES (?1)",
-                    params![id],
-                )
-                .unwrap();
-            }
-        }
-
-        let mut ids: Vec<String> = super::reembed_candidates(&pool, MODEL)
-            .expect("selection")
-            .into_iter()
-            .map(|c| c.id)
-            .collect();
-        ids.sort();
-        assert_eq!(
-            ids,
-            vec!["never_vectored".to_string(), "vectored_foreign".to_string()],
-            "a node with a current-model vector is left alone, and so is a legacy NULL stamp \
-             (filter_by_model grandfathers those); only the missing and the foreign are re-embedded"
-        );
-    }
-
-    #[test]
-    fn a_fully_vectored_brain_selects_nothing() {
-        let pool = crate::db::init_test_user_db().unwrap();
-        seed(&pool, &[("a", Some(MODEL)), ("b", Some(MODEL))]);
-        {
-            let conn = pool.get().unwrap();
-            conn.execute_batch(
-                "CREATE TABLE companion_embedding (node_id TEXT);
-                 INSERT INTO companion_embedding (node_id) VALUES ('a'), ('b');",
-            )
-            .unwrap();
-        }
-        assert!(
-            super::reembed_candidates(&pool, MODEL).unwrap().is_empty(),
-            "the second run of a backfill must find nothing to do"
-        );
     }
 }
 

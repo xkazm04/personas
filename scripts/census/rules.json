@@ -216,8 +216,8 @@
         }
       ],
       "baseline": {
-        "files": 10,
-        "matches": 12
+        "files": 9,
+        "matches": 11
       },
       "floor": 900
     },
@@ -238,7 +238,7 @@
         "description": "a rusqlite query_map row iterator reduced by filter_map(|r| r.ok()) / filter_map(Result::ok) / .flatten() — the row and the evidence both disappear and the caller still gets Ok. Anchored to query_map because all three are generic Rust idioms; unanchored, .flatten() alone matches hundreds of Option chains. PROXY FOR the stack-free condition \"a row-set read discards a per-row mapping failure without recording it\" — an adopting repo must re-derive its own proxy (see the golden path §9). PRECONDITION: this repo reduces row iterators with iterator adapters within ~700 chars of the query_map( call and does not wrap them in helpers. 8/8 sampled matches were true positives; 4 of the 148 sit in #[cfg(test)] modules and are carried in the baseline rather than excluded, because excluding them means excluding three whole production files. The two legal policies are `collect::<Result<Vec<_>,_>>()` (propagate) and `collect_rows(rows, \"table::op\")` (skip AND log)."
       },
       "baseline": {
-        "files": 64,
+        "files": 70,
         "matches": 148
       },
       "floor": 900
@@ -380,7 +380,7 @@
         }
       ],
       "baseline": {
-        "files": 32,
+        "files": 33,
         "matches": 72
       },
       "floor": 900
@@ -647,8 +647,8 @@
         "description": "a #[tauri::command] whose success type is serde_json::Value, directly or wrapped in Option/Vec. PROXY FOR the stack-free condition \"an operation's success payload is an untyped document, so the type generator emits nothing and the caller hand-authors the contract\". The [^{]{0,900} span cannot cross a function body, so the attribute and the return arrow are guaranteed to belong to the same signature. Measured consequence in this repo: 104 such commands; 55 production call sites in src/api/** hit them; 51 of those declare a concrete TypeScript type anyway; and 19 of those types are ORPHAN bindings whose Rust source no longer exists (src/lib/bindings/VaultStatus.ts, MigrationResult.ts, DesignStartResult.ts, ...). CI's binding-drift job cannot see them (ts-rs never deletes a file, so there is no diff) and check-unused-bindings.sh cannot see them (it asks whether a binding is USED, not whether it is still GENERATED). PRECONDITION: this repo spells its untyped escape hatch serde_json::Value; a repo using Box<dyn Serialize>, an un-schema'd JSON response, or `any` has the same condition wearing different markup and must re-derive the proxy. Legal destination: a named struct or enum carrying #[derive(TS)] #[ts(export)], imported on the frontend from @/lib/bindings/<Name>."
       },
       "baseline": {
-        "files": 40,
-        "matches": 104
+        "files": 39,
+        "matches": 102
       },
       "floor": 500
     },
@@ -736,8 +736,8 @@
         "description": "a connection-pool checkout (`state.db.get()`, `state.user_db.get()`, `user_db.get()`) inside src-tauri/src/commands/**. PROXY FOR the stack-free condition \"the transport/adapter layer acquires a persistence handle directly instead of delegating to the layer that owns data access\". The compliant shape is one line -- `repo::get_all_lean(&state.db)` (commands/core/personas.rs:44) -- which passes the POOL to the repository and never checks a connection out; the violating shape is `let conn = state.user_db.get()?;` followed by inline SQL (commands/companion/observability.rs:84-88). Measured in this repo: 134 checkouts across 46 of 299 command files; 88.1% are followed by a SQL literal or a rusqlite call within 900 chars; only 13.4% sit inside a #[cfg(test)] module; and 1,096 compliant repo:: delegations exist across 86 files, so the correct alternative is present and dominant. Convergence: all four repos in this fleet independently built this boundary and all four leak it (personas-web 6/11 routes, brainiac 20/42 SQL files outside its store crate, personas-cloud 1/8 routers) -- the condition is physics, not local taste. PRECONDITION: this proxy works because Personas' persistence handle is an r2d2 pool whose checkout is spelled `.get()` on a field ending in `db`. A repo using sqlx (`&pool` passed everywhere), an ORM session, or a DI-injected repository interface has the same condition wearing different markup and must re-derive its own proxy -- key on whatever the layer-crossing token is there, not on `.get()`. Legal destination: a function in src-tauri/db/ (the personas-db crate, 117 of 143 files already carry the SQL) called with `&state.db`."
       },
       "baseline": {
-        "files": 47,
-        "matches": 135
+        "files": 51,
+        "matches": 128
       },
       "floor": 200
     },
@@ -758,8 +758,8 @@
         "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/CORRECTED 2026-08-14 (this sentence previously claimed usize/isize also map to bigint, which is FALSE and would rewrite correct fields): ts-rs maps i64 and u64 to bigint, but usize maps to number (verified: LedgerAnomalyScore.sample_count is `number`) and isize does not appear in any exported type.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
       },
       "baseline": {
-        "files": 142,
-        "matches": 294
+        "files": 139,
+        "matches": 290
       },
       "floor": 900
     },
@@ -780,7 +780,7 @@
         "description": "a DDL column definition carrying DEFAULT with no NOT NULL, in both spellings this repo uses: a column line inside a CREATE TABLE body, and an ALTER TABLE ... ADD COLUMN clause. PROXY FOR the stack-free condition \"a column's declaration promises the writer something and the reader nothing, so the reader's type is a guess\". A DEFAULT fires only when the column is omitted from an INSERT; both `INSERT ... (col) VALUES (NULL)` and `UPDATE ... SET col = NULL` still write NULL, so the column is nullable and any non-Option Rust field over it is false. Measured consequence in this repo: 43 persisted read-model fields typed T over a nullable column, and 181 row-mapper sites carrying a defensive row.get(...).unwrap_or(...) - 23 of which sit over columns that are NOT NULL everywhere they are declared, because once the mapper compensates by habit the schema's decisions stop being observable. The ADD COLUMN half of the alternation is load-bearing, not thoroughness: per docs/concepts/golden-paths/schema-change.md every future column arrives through ALTER TABLE ... ADD COLUMN at incremental.rs, so a CREATE-TABLE-only rule would be blind to every new violation while reporting a stable count. Precision measured by reading all 27 matches: 27/27 true positives, 0 false positives; an independent DDL parser over all 308 tables agrees on the same set. For scale, this repo already declares 874 columns as NOT NULL DEFAULT - the correct form is the overwhelming majority and this is a closable backlog, not a systemic failure. PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust, one column per line, with the type keyword adjacent to the column name. A repo using an ORM schema DSL, a .sql migration directory, or a schema-builder API has the same condition in a syntax this pattern cannot see. LEGAL FIX: write NOT NULL DEFAULT together. That is the type-level fix - it makes the wrong struct field unrepresentable rather than counted - and it is one word."
       },
       "baseline": {
-        "files": 4,
+        "files": 5,
         "matches": 27
       },
       "floor": 900
@@ -825,7 +825,7 @@
       },
       "baseline": {
         "files": 1,
-        "matches": 128
+        "matches": 129
       },
       "floor": 500
     },
@@ -884,7 +884,7 @@
           "reason": "the production schema itself — the frozen legacy fresh-install table set applied by migrations::run"
         },
         {
-          "path": "src-tauri/db/src/migrations/incremental.rs",
+          "path": "src-tauri/db/src/migrations/incremental/",
           "reason": "the production migration chain — run_incremental's ddl_step/run_step bodies, replayed verbatim by the fixture"
         },
         {
@@ -902,7 +902,7 @@
       ],
       "baseline": {
         "files": 37,
-        "matches": 93
+        "matches": 91
       },
       "floor": 900
     },
@@ -923,7 +923,7 @@
         "description": "a non-partial, single-column CREATE INDEX whose only key is a boolean-shaped column. PROXY FOR the stack-free condition \"an index is declared over a key whose distinct-value count cannot narrow a scan, so it costs a write on every row change and returns no read\". Measured against the live 347MB personas.db with planner statistics present (PRAGMA analysis_limit=1000 on every connection plus PRAGMA optimize in the idle maintenance loop, db/src/lib.rs:207,:237, and sqlite_stat1+sqlite_stat4 are both populated): the query each index exists to serve, WHERE enabled = 1, matches 76 of 78 personas rows (97%), 325 of 351 persona_triggers rows (93%), and 95 of 102 persona_event_subscriptions rows (93%) - the predicate is a synonym for \"all rows\", not a filter. EXPLAIN QUERY PLAN confirms SQLite still CHOOSES them (SEARCH personas USING INDEX idx_personas_enabled) because sqlite_stat1 stores only the AVERAGE rows-per-distinct-key (39 of 78, 176 of 351) and never sees the skew, so these are not dead indexes the planner ignores - they are live indexes that add a b-tree hop to a near-full scan and a write to every INSERT and UPDATE of the table. The negative lookahead on WHERE is load-bearing: a PARTIAL index (CREATE INDEX ... ON t(enabled) WHERE enabled = 1) over the same column is the CORRECT construction, indexing only the rows a query wants, and must not be reported - incremental.rs:4726 is the one instance in this tree and it is the positive control that proves the lookahead works. Convergence: brainiac has ZERO single-column boolean indexes and 12 partial indexes (21% of its total) where this repo has 20 and 17 (2.9%, and 14 of those 17 are UNIQUE constraints rather than read optimizations), so the sibling reached the correct construction independently and uses it seven times as often. PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names boolean columns with an is_/enabled/active vocabulary. A repo whose booleans are typed BOOLEAN in an ORM schema DSL, or named differently, has the same condition wearing markup this pattern cannot see. LEGAL FIX, in order: (1) delete the index - the column is almost always read together with another predicate that already has one; (2) make it PARTIAL over the selective branch (WHERE enabled = 1) when the query only ever wants one value; (3) fold it into a COMPOSITE with the column actually filtered alongside it, leading with the selective column - incremental.rs:1466-1512 is the band that does this correctly and states each served query as a -- comment above its index."
       },
       "baseline": {
-        "files": 4,
+        "files": 10,
         "matches": 20
       },
       "floor": 900
@@ -994,10 +994,10 @@
         "pattern": "Uuid::new_v4\\(\\)\\s*(?:\\.\\s*simple\\(\\))?\\s*\\.\\s*to_string\\(\\)\\s*\\.\\s*chars\\(\\)\\s*\\.\\s*take\\(\\s*\\d+\\s*\\)|(?:^|[^_A-Za-z0-9])short_id\\(\\s*\\d+\\s*\\)",
         "flags": "gm",
         "ignoreCommentLines": true,
-        "description": "a UUIDv4 truncated to a fixed number of hex characters and used as an identifier, in either spelling this repo uses: the inline `.simple().to_string().chars().take(N)` chain, and a call to one of the two `short_id(N)` helpers. PROXY FOR the stack-free condition \"an identifier is minted with less entropy than its collision domain requires\". A full v4 UUID carries 122 random bits; take(8) keeps 32, take(10) keeps 40, take(12) keeps 48. Measured against the operator's live personas_data.db: the `ep_` (episode) namespace already holds 1,067 rows at 32 bits, where the birthday bound puts P(collision) at 1% by 9,291 rows and 50% by ~77,000 - and companion episodes are the one table this product is explicitly designed to grow without bound (docs/plans/athena-longevity.md). The same database shows the width has ALREADY drifted inside one namespace: `appr_` ids exist at both 10 hex (55 rows, minted by the pre-2026-07-17 `short_random()`) and 12 hex (65 rows, minted by today's `short_id(12)`), so one primary-key column holds two different entropy classes and nothing can tell them apart. The failure mode is a PRIMARY KEY constraint violation on INSERT - the write fails loudly rather than corrupting, which is the honest severity - but the write that fails is a memory the companion has already formed. Widths in the tree today: 8 hex x13, 10 hex x9, 12 hex x12. PRECISION measured by reading all 34 matches: 31 true positives (mint sites plus the eleven `fn short_uuid()` / `fn short_random()` wrappers that exist only to mint), 3 false positives - two are length assertions in the helper's own unit test (src-tauri/src/companion/brain/util.rs:104,105) and one names a scratch file rather than a row (src-tauri/src/companion/session.rs:2684). An independent enumeration by prefix over the live database agrees: 15 distinct truncated-id namespaces, all of them primary keys. PRECONDITION (must be re-derived per repo): this repo mints ids in Rust with the `uuid` crate and shortens them with a `.chars().take(N)` chain or a local `short_id(N)` helper. A repo using nanoid's length argument, a base62 encoder, or a database sequence has the same condition wearing markup this pattern cannot see. LEGAL FIX: store the full identifier and truncate only at DISPLAY time. `Uuid::new_v4().to_string()` is already what 302 other sites in this tree do; a short form for a log line or a UI chip is `&id[..8]` at the point of rendering, which costs nothing and keeps the stored key at 122 bits. If a short stored id is genuinely required (a QR payload, a user-typed code), say so in a comment and size it against the table's growth curve rather than by habit."
+        "description": "a UUIDv4 truncated to a fixed number of hex characters and used as an identifier, in either spelling this repo uses: the inline `.simple().to_string().chars().take(N)` chain, and a call to one of the two `short_id(N)` helpers. PROXY FOR the stack-free condition \"an identifier is minted with less entropy than its collision domain requires\". A full v4 UUID carries 122 random bits; take(8) keeps 32, take(10) keeps 40, take(12) keeps 48. Measured against the operator's live personas_data.db: the `ep_` (episode) namespace already holds 1,067 rows at 32 bits, where the birthday bound puts P(collision) at 1% by 9,291 rows and 50% by ~77,000 - and companion episodes are the one table this product is explicitly designed to grow without bound (docs/plans/athena-longevity.md). The same database shows the width has ALREADY drifted inside one namespace: `appr_` ids exist at both 10 hex (55 rows, minted by the pre-2026-07-17 `short_random()`) and 12 hex (65 rows, minted by today's `short_id(12)`), so one primary-key column holds two different entropy classes and nothing can tell them apart. The failure mode is a PRIMARY KEY constraint violation on INSERT - the write fails loudly rather than corrupting, which is the honest severity - but the write that fails is a memory the companion has already formed. Widths in the tree today: 8 hex x13, 10 hex x9, 12 hex x12. PRECISION measured by reading all 34 matches: 31 true positives (mint sites plus the eleven `fn short_uuid()` / `fn short_random()` wrappers that exist only to mint), 3 false positives - two are length assertions in the helper's own unit test (src-tauri/src/companion/brain/util.rs:104,105) and one names a scratch file rather than a row (src-tauri/src/companion/session/interrupts.rs:2684). An independent enumeration by prefix over the live database agrees: 15 distinct truncated-id namespaces, all of them primary keys. PRECONDITION (must be re-derived per repo): this repo mints ids in Rust with the `uuid` crate and shortens them with a `.chars().take(N)` chain or a local `short_id(N)` helper. A repo using nanoid's length argument, a base62 encoder, or a database sequence has the same condition wearing markup this pattern cannot see. LEGAL FIX: store the full identifier and truncate only at DISPLAY time. `Uuid::new_v4().to_string()` is already what 302 other sites in this tree do; a short form for a log line or a UI chip is `&id[..8]` at the point of rendering, which costs nothing and keeps the stored key at 122 bits. If a short stored id is genuinely required (a QR payload, a user-typed code), say so in a comment and size it against the table's growth curve rather than by habit."
       },
       "baseline": {
-        "files": 28,
+        "files": 29,
         "matches": 34
       },
       "floor": 900
@@ -1019,7 +1019,7 @@
         "description": "a column named `id` declared TEXT PRIMARY KEY with no NOT NULL in the same column clause. PROXY FOR the stack-free condition \"a row's identity column can be absent\". This is a SQLite-specific manifestation of a universal condition, and the reason it exists is a documented SQLite bug preserved for backwards compatibility: unless the column is INTEGER PRIMARY KEY, or the table is WITHOUT ROWID, or NOT NULL is written explicitly, SQLite ALLOWS NULLs in a PRIMARY KEY column - and allows MANY of them, because the PK index treats each NULL as distinct. VERIFIED BEHAVIOURALLY, not inferred: against a copy of the operator's real 347MB personas.db, `INSERT INTO t (id) VALUES (NULL)` into a fresh `id TEXT PRIMARY KEY` table was accepted three times and left three rows with a NULL id; the same insert into `id TEXT PRIMARY KEY NOT NULL` was rejected with `NOT NULL constraint failed`. The consequence three layers up is the one docs/concepts/golden-paths/persisted-model-struct.md measures: every Rust read model types `pub id: String` (1,039 of them, non-Option), so a NULL id makes the row read fail with InvalidColumnType and, per docs/concepts/golden-paths/row-to-struct-mapping.md, take the whole list with it or make the row silently vanish. This tree has NO `WITHOUT ROWID` and NO `STRICT` table, so nothing else closes the hole. WHAT THIS DOES NOT SAY: no NULL or empty id exists in the live database - 77,763 rows across 198 tables with an `id` column were scanned and the count is zero. The class is reachable by construction and has never been reached. This is a preventive ratchet on a clean surface, not a fix backlog. PRECISION: 299 matches across 29 files, and an independent balanced-paren DDL parser over all 398 CREATE TABLE statements in the tree reaches the same 299 by a different route (parse the statement, split its top-level clauses, take the one that carries PRIMARY KEY, test its text for NOT NULL) - 299/299 true positives, 0 declared NOT NULL anywhere. The lookahead is scoped to the next comma or close-paren rather than to end-of-line, which is load-bearing: several fixtures write a whole CREATE TABLE on one line, and a line-scoped lookahead lets a LATER column's NOT NULL suppress the match (measured: 271 instead of 299, hiding 28 real declarations in 9 files). PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names the identity column `id`. A Postgres sibling cannot have this condition at all - the SQL standard makes PRIMARY KEY imply NOT NULL, and brainiac's 30 `uuid PRIMARY KEY` columns are non-nullable for free. LEGAL FIX: write `id TEXT PRIMARY KEY NOT NULL`. It is two words, it makes `pub id: String` a true statement about the column instead of a hopeful one, and it is the type-level fix this golden path prefers over the gate."
       },
       "baseline": {
-        "files": 29,
+        "files": 43,
         "matches": 299
       },
       "floor": 900
@@ -1041,8 +1041,8 @@
         "description": "a pub fn in the repository layer whose text reaches a rusqlite statement call (query_row / query_map / execute / execute_batch / prepare / prepare_cached) without passing through timed_query! first, and with no intervening pub fn. PROXY FOR the stack-free condition: a persistence operation executes with no record of how long it took, so its cost can never be observed, compared across releases, or attributed when a surface gets slow. Measured 2026-08-14 at HEAD: 245 matches across 36 of 116 files. Two independent implementations reconcile EXACTLY - a brace-matching Rust parser counts 234 pub fns that hold SQL in their own body with no timed_query!, and the 11-match difference is precisely the 11 spans where the SQL belongs to a private helper declared immediately after the matched pub fn (llm_spend.rs:30 pub fn record -> the untimed INSERT is in fn try_record at :40). So precision on the CONDITION is 245/245 and precision on the ATTRIBUTED FUNCTION NAME is 234/245; every match is a real untimed statement either way. Median matched span is 197 chars and only 1 of 245 approaches the 2500 cap, so the bound loses almost nothing and makes the count a floor rather than an estimate. Every match is a distinct (file, fn) pair - no function is double-counted. Zero matches sit inside a #[cfg(test)] module (a naive after-the-marker heuristic flags 8, and all 8 are production functions declared below a mid-file test mod). The gap is FILE-shaped, not function-shaped, which is why a per-function lint would read as noise: twin.rs is 38/39 uninstrumented, research_lab.rs 25/25, orchestration/team_assignments.rs 24/24, while executions.rs, events.rs and triggers.rs are near 100 percent covered - a module either adopted the macro or never heard of it. It does not correlate with age (the three oldest repo files, 2026-02-19, are covered; 2026-07-31 arrivals are not) and it does not correlate with hotness. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite method calls spelled query_row / query_map / execute / prepare inside functions declared pub fn, and its timing wrapper is a macro named timed_query! that must be written by hand. A repo whose driver is sqlx (.fetch_one(&pool).await), an ORM, or a query builder has the SAME condition wearing different markup and this pattern scores zero against it - brainiac is exactly that repo, and 0 of its 176 store functions are timed. A repo that times structurally at a chokepoint has the condition designed out and needs no rule at all: this repo's own frontend is that case, since src/lib/tauriInvoke.ts:513,:517 calls recordIpcCall on BOTH the success and the failure path of every IPC call, so its coverage is 100 percent by construction and cannot regress. LEGAL FIX, in order: (1) wrap the body in timed_query!(TABLE, TABLE::op, { ... }) - alert_rules.rs:35-59 is the shape to copy; (2) if the function is a thin wrapper over a private helper, wrap the helper, not the wrapper; (3) if the function genuinely runs no SQL of its own and only composes other repo functions, it needs no wrapper and the match is telling you a private sibling below it does - wrap that one. Do NOT silence a match by moving SQL out of the repo layer; that trades this condition for the one persistence-handle-in-command-tree counts."
       },
       "baseline": {
-        "files": 36,
-        "matches": 245
+        "files": 44,
+        "matches": 244
       },
       "floor": 100
     },
@@ -1116,8 +1116,8 @@
         "description": "a tracing macro whose FIRST argument is the message string (so no structured field precedes it) and whose message contains a format placeholder, meaning the record's variable content is interpolated into the message text rather than attached as a field. PROXY FOR the stack-free condition: a log record's whole identifying content is baked into a per-occurrence string, so N occurrences of one event become N distinct messages that can be neither grouped by event nor filtered by value. Measured 2026-08-14 at HEAD: 288 matches across 67 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE EXACTLY - this regex and a paren-matching argument splitter that tokenizes strings/comments and classifies each call's arguments both report 288 matches in the same 67 files with ZERO disagreeing files, so precision on the condition is 288/288. The compliant sibling form is used 2,118 times in the same tree (1,724 with a constant message plus fields, 394 with fields but a still-interpolated message), so this is a minority deviation from an established in-repo convention, not a migration. The optional (target|name|parent): prefix is load-bearing: without it the pattern misses exactly 5 sites, all of them tracing's pseudo-arguments (src/lib.rs:514-516 is the WebView console bridge re-emitting every frontend console line as a fully opaque \"{}\" passthrough; src/engine/mcp_tools.rs:2108 does the same for MCP server stderr). The fill class excludes the double-quote and the newline so a match can never run past the end of its own string literal into surrounding code - the cost is a false NEGATIVE for a placeholder sitting on a backslash-continued second line, which makes the count a floor rather than an estimate. {{ is excluded by the negative lookahead because an escaped literal brace is not interpolation. Zero matches sit in a test or build.rs file, so no exclude entry exists and no stale exemption can accumulate. PRECONDITION (must be re-derived per repo): this repo logs through the tracing crate, whose macros take structured key-value fields BEFORE the message, so 'field or no field' is a positional property a regex can see. A repo using a logger whose call is log.warn({persona_id}, 'msg') or logger.warn('msg', {ctx}) has the SAME condition wearing markup where position carries no meaning, and this pattern scores ZERO against it while the condition is present - personas-cloud is exactly that repo (194 pino-style logger.<level>( calls, zero tracing macros). A repo whose logger accepts only a formatted string has the condition designed in and needs a different instrument entirely. LEGAL FIX: move each interpolated value out of the message and into a field, leaving the message a constant - tracing::warn!(\"Failed to store master key: {}\", e) becomes tracing::warn!(error = %e, \"Failed to store master key\"). Use % for Display and ? for Debug. src-tauri/db/src/backup.rs:107 is the shape to copy. Do NOT silence a match by deleting the log call, and do NOT silence it by moving the interpolation into a format! argument - both trade this condition for a worse one."
       },
       "baseline": {
-        "files": 67,
-        "matches": 288
+        "files": 84,
+        "matches": 286
       },
       "floor": 700
     },
@@ -1138,7 +1138,7 @@
         "description": "a pub repository fn returning Result<(), AppError> that reaches an UPDATE or DELETE whose entire WHERE clause is `id = ?N` - a primary-key-targeted, exactly-one-row write - without ever binding the usize that .execute() returns and without any existence probe. PROXY FOR the stack-free condition: a write addressed at one identified row completes without reporting whether that row existed, so 'nothing happened' and 'it worked' are the same value. rusqlite's execute() returns the affected-row count; on a PK-targeted statement 0 means exactly one thing - no such row - and the unit return type physically cannot carry it. Measured 2026-08-14 at HEAD: 82 matches across 35 of 116 files, every match a distinct (file, fn) pair, median matched span 377 chars and max 2355 against a 4000 bound, zero matches inside a #[cfg(test)] module. 22 matches were opened and read during the pattern's refinement: the final pattern's set contains 20 verified true positives and the 2 verified false positives found on the way are excluded BY CONSTRUCTION rather than by an allowlist - a scope-keyed bulk DELETE (dev_workspaces.rs:1067 sync_harvest_scopes, WHERE project_id = ?1, where 0 rows is normal) is excluded by requiring the bare column `id`, and a function that probes existence first (rotation.rs:257 mark_rotated calls get_policy_by_id) is excluded by the `\\w*by_id\\s*\\(` guard. The other guards do the same work: a fn that already binds the count, maps QueryReturnedNoRows, constructs AppError::NotFound, or calls .optional() has made the no-op observable and does not match; INSERT/ON CONFLICT are excluded because an upsert can never affect zero rows. Live consequences in this tree: persona_triggers::set_enabled (triggers.rs:1856) flips a trigger that may not exist and the UI renders the new state; deliberation::finalize (deliberation.rs:306) finalizes a vanished deliberation; dev_goals::reorder_goals (dev_tools.rs:861) reorders stale ids one blind UPDATE at a time. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite's `.execute(sql, params)` inside functions declared `pub fn`, returns a unit-typed Result on writes, and spells its primary key `id`. A repo whose driver returns a result object the caller must destructure (better-sqlite3's {changes}), whose ORM raises on a zero-row update, or which returns the updated row via RETURNING has the SAME condition wearing different markup and this pattern scores zero against it. LEGAL FIX, in order: (1) bind the count and turn 0 into AppError::NotFound - resources/notification_subscriptions.rs:215 is the shape to copy, six lines; (2) return the refreshed entity instead of unit, which makes the absent row a NotFound from the re-read - resources/notification_subscriptions.rs:135 update is that shape; (3) reach for crud_delete! (macros.rs:196), which returns Ok(rows > 0) and cannot be written blind. Do NOT silence a match by widening the WHERE clause or by dropping the id predicate - that trades this condition for a worse one."
       },
       "baseline": {
-        "files": 35,
+        "files": 40,
         "matches": 82
       },
       "floor": 100
@@ -1258,7 +1258,7 @@
       },
       "baseline": {
         "files": 6,
-        "matches": 69
+        "matches": 68
       },
       "floor": 500
     },
@@ -1362,7 +1362,7 @@
         "description": "an INSERT that resolves conflicts with SQLite's statement-wide `OR IGNORE` / `OR REPLACE` clause (or a bare `REPLACE INTO`) rather than with a targeted `ON CONFLICT(<uniqueness key>) DO UPDATE|NOTHING`. PROXY FOR the stack-free condition: an insert-or-update declares WHAT TO DO on conflict without declaring WHICH conflict, so the store applies behaviours the author never asked for and no machine can check that the author's intent matches the schema. VERIFIED BEHAVIOURALLY against SQLite (node:sqlite, 2026-08-14), not inferred - each claim was run: (1) `INSERT OR IGNORE` silently swallows NOT NULL and CHECK violations as well as the uniqueness one (changes=0, no error, row gone), where the SAME statement written `ON CONFLICT(pk) DO NOTHING` dedups the duplicate but still RAISES `NOT NULL constraint failed` and `CHECK constraint failed` - the targeted form is strictly narrower; (2) `INSERT OR REPLACE` DELETEs the conflicting row before inserting, so with `PRAGMA foreign_keys = ON` (this repo's every pooled connection, db/src/lib.rs:201 STANDARD_PRAGMAS) it fires ON DELETE CASCADE and takes child rows with it (child count 1 -> 0), and it resets every column the statement does not list to that column's DEFAULT (`note` 'important' -> 'kept'), while `ON CONFLICT(id) DO UPDATE` preserved both; (3) `INSERT OR REPLACE` also churns identity - replacing on a UNIQUE(a,b) with a freshly minted primary key rewrote id-A to id-B and reset created_at, which is exactly the shape of src/commands/core/data_portability.rs:9471; (4) by contrast SQLite REJECTS `ON CONFLICT(<not-a-unique-key>)` at prepare time with `ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint`, which is why all 72 targeted conflict clauses in this tree resolve to a real uniqueness constraint - that is the engine checking, not the authors being careful. Measured 2026-08-14 at HEAD: 71 matches across 40 of 963 .rs files (68 `INSERT OR IGNORE`, 3 `INSERT OR REPLACE`, 0 bare `REPLACE INTO`), reconciled EXACTLY with an independent Rust string-literal + SQL-statement parser that classified all 143 conflict-handling INSERTs in src-tauri. commentMatchesSkipped 0 - and the `INTO\\s+<table>` requirement is what makes prose unmatchable, so the 29 comment lines in this tree that discuss `INSERT OR IGNORE` / `INSERT OR REPLACE` without an INTO are excluded BY CONSTRUCTION rather than by the comment filter or an allowlist. NOT EVERY MATCH IS A LIVE BUG and the rule does not claim so: `OR IGNORE` is a defensible spelling of \"ensure this row exists\" (11 of the 68 carry only key columns). It is a RATCHET on an unverifiable construction - every one of the 71 has an exact targeted equivalent that is strictly narrower and schema-checked, which is what makes them migratable rather than noise. Live consequences in this tree: db/src/repos/resources/mcp_gateways.rs:48 add_member runs `INSERT OR IGNORE` and then returns the freshly minted uuid unconditionally, so a duplicate add hands the IPC caller an id that is not in the database and silently drops the new display_name and sort_order; src/commands/infrastructure/skill_usage.rs:459 inserts into skill_usage_events, whose `event` and `source` columns carry CHECK constraints, and counts `events_added` from a statement that reports 0 for a rejected row and a duplicate row alike; src/engine/slack_poller.rs:1114 drops an inbound message whose NOT NULL persona_id/credential_id is missing and reports success. PRECONDITION (must be re-derived per repo): this repo speaks SQLite and writes its SQL as Rust string literals, so both the legacy and the targeted form are visible as text. Postgres has no `INSERT OR IGNORE`/`INSERT OR REPLACE` at all - the whole condition is unrepresentable there and this pattern scores a structural zero, as it does against brainiac. A repo whose ORM emits the statement (Prisma `upsert`, Drizzle `onConflictDoUpdate`) has the same decision wearing markup this pattern cannot see. LEGAL FIX: replace with `ON CONFLICT(<the exact columns of the uniqueness constraint>) DO NOTHING` when the intent is \"skip if present\", or `DO UPDATE SET <only the columns that should move>` when the intent is \"insert or update\" - db/src/repos/resources/credential_recipes.rs:63 is the shape to copy (targeted conflict, COALESCE/NULLIF merge guards so a stub cannot clobber a richer row, RETURNING * so the caller gets the row either way), and db/src/repos/lab/ratings.rs:39 is the shape for preserving id and created_at across a conflict. Do NOT silence a match by widening the uniqueness constraint or by dropping the conflict handling - that trades this condition for a duplicate-row condition."
       },
       "baseline": {
-        "files": 40,
+        "files": 50,
         "matches": 71
       },
       "floor": 900
@@ -1429,7 +1429,7 @@
         "description": "a REFERENCES clause, in a column definition or a FOREIGN KEY table constraint, with no ON DELETE action after it. PROXY FOR the stack-free condition: a child row declares which parent it belongs to without declaring what becomes of it when that parent is destroyed, so the store picks a behaviour the author never chose. VERIFIED BEHAVIOURALLY against SQLite (node:sqlite, 2026-08-14), not inferred: with a parent row and one child row present, DELETE FROM parent under an omitted ON DELETE is REJECTED with `FOREIGN KEY constraint failed`, and pragma_foreign_key_list reports the clause as `NO ACTION`. The omission does not mean 'do nothing to the child' - it means 'refuse the delete', which is the opposite of what the two live instances' authors intended. Confirmed against the operator's real 347 MB personas.db: DELETE FROM dev_workspaces on the one workspace that has projects is refused outright, and the app only works because delete_workspace (db/src/repos/dev_workspaces.rs:386-405) hand-NULLs dev_projects.workspace_id first - under a doc comment whose stated reason ('SQLite FK cascade only fires with PRAGMA foreign_keys=ON, which we do not rely on here') is false, since STANDARD_PRAGMAS sets it on every pooled acquire (db/src/lib.rs:201, :216-224). The live schema carries exactly 2 NO ACTION constraints out of 172 total (149 CASCADE, 21 SET NULL); this pattern finds those 2 plus 1 inside a #[cfg(test)] fixture that recreates the retired persona_groups shape, which a live-schema check cannot see - that complementarity is why this is a static rule beside a runtime test rather than instead of one. PRECISION: 3 of 3 matches opened and confirmed. The forward-anchored preceding-token class is load-bearing and removes the tree's only two false positives, incremental.rs:211-212, where the bare string literals \"REFERENCES credentials(id)\" and \"REFERENCES persona_credentials(id)\" are the arguments of the .replace() that REPAIRED the mcp_gateway_members phantom-parent bug - without the anchor the fix is reported as the defect. POSITIVE CONTROL: the identical head with the compliant tail (ON DELETE) matches 209 times across 6 files and the token-only form (REFERENCES <name>, no shape) matches 254 across 29 files including English prose in prompt strings, so the rule discriminates on the trailing shape rather than on the word REFERENCES. Multi-column REFERENCES t(a,b) does not occur in this tree (measured: 0), so the single-column form has full coverage. No variable-length lookbehind - one forward scan, 308 ms over 963 files. CONVERGENCE (2026-08-14, brainiac / personas-cloud / vibeman): stating ON DELETE explicitly is physics ON SQLITE and only there - the three SQLite codebases measured sit at 97.5% / 100% / 97.1% explicit, while Postgres brainiac sits at 57.6% and its migrations/0034_projects_onboarding.sql:46-49 argues FOR the omission ('Default NO ACTION means a project with live keys cannot be dropped - revoke first'). That is a reasoned counter-example and it is why this rule is scoped to a SQLite tree: on Postgres the implicit default is enforced from birth, whereas on SQLite the constraint is opt-in per connection and un-ALTER-able, so an unstated fate is a full table rebuild away from being fixable. Also universal across all four repos: ON UPDATE = 0 and explicit RESTRICT = 0, so the only real choices are CASCADE, SET NULL, or a documented refusal. LEGAL FIX, in order: (1) ON DELETE CASCADE when the child is owned by the parent; (2) ON DELETE SET NULL when the child records something that happened TO the parent and should outlive it, with the column nullable; (3) keep the omission ONLY when refusing the parent delete is the intent, and then write that reason in a comment on the line above - brainiac 0034:46-49 is the exemplar. Dropping the FK entirely and relying on a hand-written DELETE is what produced this repo's 1,030 live orphan rows; see the golden path. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero-matches, by design - DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 1,
+        "files": 3,
         "matches": 3
       },
       "floor": 900
@@ -1792,7 +1792,7 @@
       ],
       "baseline": {
         "files": 6,
-        "matches": 15
+        "matches": 13
       },
       "floor": 900
     },
@@ -1874,7 +1874,7 @@
       },
       "baseline": {
         "files": 9,
-        "matches": 15
+        "matches": 14
       },
       "floor": 900
     },
@@ -1898,8 +1898,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 138,
-        "matches": 309
+        "files": 147,
+        "matches": 299
       },
       "floor": 400
     },
@@ -1965,8 +1965,8 @@
         "description": "a `let _ =` binding whose right-hand side reaches a Tauri emit on the SAME statement (the fill class excludes `;` and newline, so a match can never run past its own statement into the next one). PROXY FOR the stack-free condition: a post-write notification is dispatched with no path by which a permanent delivery failure could ever be observed. Tauri's `emit` returns Err when the payload cannot be serialised — a PERMANENT, per-call-site failure, not a transient one — so `let _ =` makes 'this event has never once been delivered' look exactly like 'delivered'. Measured 2026-08-15 at HEAD a385c159d: 162 matches across 60 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE TO ONE DISAGREEMENT, AND THE DISAGREEMENT IS A FALSE POSITIVE IN THE LOOSER ONE: a line-oriented grep (`let _ = .*emit_event`) reports 163 because it matches src/engine/webhook_notifier.rs:601, `let _ = app; // reserved for future per-delivery emit_event` — a discard of an unrelated binding whose trailing COMMENT contains the token. This pattern excludes it by construction because `[^;\\n]` cannot cross the `;` after `app`; that is why the fill class is punctuation-bounded rather than a plain `.{0,140}?`. The COMPLIANT sibling form is used 39 times in 20 files (`if let Err(e) = app.emit(...) { tracing::warn!(...) }` — see the paired positive control), so this is a majority deviation from an in-repo convention that already exists and works, not a migration with no destination. NO EXCLUDE ENTRY EXISTS, DELIBERATELY: the shared helper's own body at engine/src/event_registry.rs:37 is the single most valuable match in the set, because it is `let _ = app.emit(event, payload.clone())` inside `emit_event`, and 20 further call sites inherit the discard through it — excluding the primitive would be the allowlist hiding the finding. PRECONDITION (must be re-derived per repo): this repo dispatches frontend notifications through a fallible `emit` whose Result is discardable with Rust's `let _ =` idiom, and its compliant form spells the check `if let Err`. A repo whose emitter returns void (personas-cloud's in-memory dispatcher.submit returns a bool; vibeman's eventBus.emit returns void) has the SAME condition wearing markup where there is no result to discard, and this pattern scores ZERO against it while the condition is present — there, the proxy has to become 'the emitter cannot report failure AT ALL', which is a signature property, not a call-site one. LEGAL FIX, in order: (1) change the shared helper's body to the `emit_event_bus` shape at engine/src/event_registry.rs:44-47 — return (), log the Err with tracing::warn! — which corrects 20 call sites in one edit and is the fix this rule most wants; (2) at a direct call site, `if let Err(e) = app.emit(name, &payload) { tracing::warn!(event = name, error = %e, \"...\"); }`. Do NOT silence a match by switching to try_emit_event and adding `?` — a failed notification must never fail the write that caused it (Principle 6), which is why try_emit_event has zero callers and should stay that way. Do NOT silence a match by deleting the emit."
       },
       "baseline": {
-        "files": 60,
-        "matches": 162
+        "files": 62,
+        "matches": 161
       },
       "floor": 700
     },
@@ -2347,7 +2347,7 @@
         "description": "a `for` loop whose body reaches `conn.execute(\"UPDATE <table> SET <ordering column> = ...\")` — an N-row sequence rewrite issued as N independent statements on a POOLED connection rather than through a transaction handle. PROXY FOR the stack-free condition: the new order of a list is written as N separate atomic writes, so any failure, cancellation or crash after the first one leaves the persisted sequence in a state that is neither the old order nor the new one. EXECUTED, not argued: reproducing dev_tools.rs::reorder_goals' exact shape on SQLite with row 3 of 5 failing leaves a:0 e:0 b:1 d:1 c:2 — two duplicate order_index values, an invariant break the caller cannot detect because the command returned Err and the frontend showed a toast. The same loop wrapped in a transaction leaves the list untouched. And a duplicate is not cosmetic: the same three rows tied at the same order_index came back 'zyx' under a table scan and 'xyz' the moment an index existed, so ORDER BY <col> over a broken sequence is an unstable order, not merely a wrong one. PRECONDITION (re-derive per repo): this repo executes SQL through rusqlite, spells the pooled handle `conn` and the transaction handle `tx`, and stores list order in an integer column. A repo using a fractional/lexicographic rank rewrites ONE row per reorder and has the condition designed out — it needs no rule. A repo whose driver auto-wraps (sqlx `&mut tx`), or which sends the whole sequence as one statement (a CTE, a VALUES join, json_each), also scores zero here while being correct. DISCRIMINATION IS ON `conn` VS `tx`, NOT ON THE LOOP: the same anchors pointed at `tx.execute` inside a loop match 21 spans across 9 files in this repo (crypto.rs, personas.rs, dev_workspaces.rs, team_assignments.rs, research_lab.rs, credentials.rs, data_portability.rs, context_consolidate.rs, daily_goals.rs) — see the -positive-control rule, which exists to prove exactly that. Measured 2026-08-15 at HEAD: 3 matches in 1 file, matched spans 117/122/131 chars against a 600 bound, and the ONLY other ordering write in the tree (dev_tools.rs:7936, a single-row UPDATE inside update_milestone) is correctly not matched because it is not a sequence rewrite. LEGAL FIX: take one transaction and rewrite the whole sequence inside it — `let mut conn = pool.get()?; let tx = conn.transaction()?; for ... { tx.execute(...) } tx.commit()?;` — or better, make the rewrite unnecessary by giving new rows a fractional rank so a move touches one row. Do NOT silence a match by moving the loop into the command layer; that trades this condition for the one persistence-handle-in-command-tree counts."
       },
       "baseline": {
-        "files": 1,
+        "files": 2,
         "matches": 3
       },
       "floor": 900
@@ -2369,7 +2369,7 @@
         "description": "a named binding (fn parameter or struct field) whose type is Option<[&]Pool> for either of this app's two SQLite stores. PROXY FOR the stack-free condition: a handle to one of the system's persistent stores is made optional at a boundary, so an operation can run with that store absent and report its contents as EMPTY rather than as UNKNOWN. This app opens two SQLite files - personas.db (primary, DbPool, core/src/pool.rs:14) and personas_data.db (UserDbPool, db/src/lib.rs:157) - and both aliases resolve to the same Pool<SqliteConnectionManager>, so nothing at the type level distinguishes them. MEASURED 2026-08-15 at 5108ff978: 17 matches in 5 files, ALL SEVENTEEN OPENED AND CONFIRMED (precision 17/17) - data_portability.rs 9, db_query.rs 4, dispatcher.rs 2, ai_helpers.rs 1, capability.rs 1. Fifteen of the 17 make the SECOND store optional and two make the first. Against 2,454 required (ident: &Pool) bindings that is 0.69% overall, but it is not evenly spread: normalised against each store's own borrowed-handle population (408 for the second store, 2,072 for the first) the second store's handle is optional 3.4% of the time and the primary store's 0.10%, a ~35x difference in discipline between two stores under the same team, the same driver and the same pool library. WHY IT IS A DEFECT AND NOT A DEGRADED MODE: the None arm does not report absence, it reports emptiness. athena_tier_counts (data_portability.rs:1707) returns (core, 0) when the store is missing; describe_skill (dispatcher.rs:2944) returns Vec::new(). A caller cannot distinguish 'this store holds nothing' from 'this store was not passed'. WHY THE OPTION EXISTS: every instance serves a test or bench harness that builds only one of the two databases - dispatcher.rs:589 says so outright ('sys_db: None keeps every other arm working ... the bench harness path, which builds only a user DB'). The cost is paid in coverage: import_bundle is invoked with None 33 times and Some 6 times, build_export_bundle 7 vs 5, twin_bundle 12 vs 1 - so 55 of 71 test invocations of the portability surface validate a bundle that structurally cannot contain the second store. PRECISION ANCHOR: the leading [A-Za-z_]\\w*\\s*:\\s* restricts the match to a BINDING and removes the tree's one true false positive, commands/fleet/persist.rs:63 `fn pool_of(app: &AppHandle) -> Option<DbPool>`, where the Option encodes a genuinely unknowable state (AppState is not yet managed during early boot) and is correct content; without the head the count is 18 and that function is reported as a defect. Path-qualified forms (Option<&crate::db::DbPool>, Option<crate::db::UserDbPool>) are covered - omitting the (?:ident::)* segment undercounts this family by 4 of 17, and undercounts the bare-handle census by 47%. POSITIVE CONTROL: the identical binding head pointed at the REQUIRED form (`ident: &[path::]DbPool`) matches 2,454 times across 368 files, so the rule discriminates on the Option wrapper rather than on the token DbPool - 0.7% of pool bindings are optional and 99.3% are not. LEGAL FIX, in order: (1) make the parameter required (&UserDbPool) and give the test init_test_user_db() (db/src/lib.rs:1994, 57 sites in 8 files) instead of None; (2) if the operation genuinely cannot reach the store, return Result and let the caller decide, never a zero count; (3) the durable fix is a repository layer for the second store so feature code never holds either pool - see the golden path. DO NOT 'fix' this by widening to Option<T> generally: the condition is about a STORE handle, and a store the code cannot see is a store the code will silently under-report. END OF LIFE: this rule is designed to reach zero. When it does the runner fails structurally on zero-matches, by design - DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 5,
+        "files": 13,
         "matches": 17
       },
       "floor": 900
@@ -2527,7 +2527,7 @@
         "$measured": "2026-08-15 @ e611c326d — 963 .rs files walked; two independent implementations (a standalone string/comment-aware Rust lexer and the census engine) returned 7/7 identically; the rule was validated in a composer-private scratch registry, then re-extracted from this document and re-run with the same result."
       },
       "baseline": {
-        "files": 1,
+        "files": 6,
         "matches": 7
       },
       "floor": 900
@@ -2547,7 +2547,7 @@
         "description": "A boot migration step whose already_applied probe observes ONE object while its body commits two or more independent DDL transactions. A crash between them leaves the later objects missing and the step recorded as applied, so it never runs again. Precision 15/15, every match hand-read; in all 15 the guarded object is the FIRST created. Control (same head, exactly one ddl_step before Ok(())) = 88; 15 + 88 = 103 of a 105 anchor, with the 2 residuals named in the golden path rather than excluded. Fix: guard on the LAST object created, or fold the body into a single ddl_step, or use the conjunction-guard shape at incremental.rs:4703."
       },
       "baseline": {
-        "files": 1,
+        "files": 3,
         "matches": 15
       },
       "floor": 900
@@ -3041,7 +3041,7 @@
       },
       "baseline": {
         "files": 34,
-        "matches": 105
+        "matches": 103
       },
       "floor": 500
     },
@@ -3090,8 +3090,8 @@
         }
       ],
       "baseline": {
-        "files": 14,
-        "matches": 28
+        "files": 13,
+        "matches": 26
       },
       "floor": 900
     },
@@ -3243,7 +3243,7 @@
         "$measured": "2026-08-16 @ cd9d094d9 — 963 .rs files walked; two independent implementations agreeing at 45/8 and 5/5 with identical line numbers; every match hand-read; 11 fault-injection cases; 0 overlap across 236 neighbour match sites; live consequences replayed against read-only copies of personas.db (244 tables) and personas_data.db (71 tables)."
       },
       "baseline": {
-        "files": 8,
+        "files": 17,
         "matches": 45
       },
       "floor": 900
@@ -3314,8 +3314,8 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/db/src/migrations/incremental.rs",
-          "reason": "A schema-migration data correction, not a recovery pass. incremental.rs:4497-4505 rewrites dev_tasks rows whose status is the literal 'pending' — a value that was never part of that table's vocabulary (queued|running|completed|failed|cancelled) and was written only by a legacy writer that no longer exists, as its own comment states. It therefore cannot match work any live process owns, and unlike the six real recovery passes there is no owner it could ever be scoped to, so leaving it in would pin this ratchet permanently above zero and break the rule's designed end of life."
+          "path": "src-tauri/db/src/migrations/incremental/e08_sla_and_dev_tools.rs",
+          "reason": "A schema-migration data correction, not a recovery pass. incremental/e08_sla_and_dev_tools.rs:476 rewrites dev_tasks rows whose status is the literal 'pending' — a value that was never part of that table's vocabulary (queued|running|completed|failed|cancelled) and was written only by a legacy writer that no longer exists, as its own comment states. It therefore cannot match work any live process owns, and unlike the six real recovery passes there is no owner it could ever be scoped to, so leaving it in would pin this ratchet permanently above zero and break the rule's designed end of life."
         }
       ],
       "baseline": {
@@ -3411,7 +3411,7 @@
         "description": "A spawn-family call in STATEMENT POSITION (preceded by ; { or }, so its JoinHandle is created and destroyed in the same statement) whose body is an INLINE async block or closure, and which contains no panic boundary (AssertUnwindSafe / catch_unwind / is_panic) within 2500 characters. PROXY FOR the stack-free condition: the only object that can report a task's abrupt death is discarded at the moment the task is created, so 'finished', 'crashed' and 'cancelled' become one observable — nothing. MEASURED 2026-08-16 at 17d059b1f over 963 .rs files: 169 matches across 86 files, commentMatchesSkipped 0. TWO INDEPENDENT IMPLEMENTATIONS — a comment/string-blanking Rust scanner with paren matching and brace-matched #[cfg(test)] exclusion, and the census engine — agree on 211 of 211 sites (ZERO membership disagreement) and on 210 of 211 classifications. AUDIT OF THE 169: 159 true production violations, 9 #[cfg(test)] sites the engine cannot exclude by range (subscription.rs:3325,3379,3393,3407 / cli_process.rs:852,882,902 / test_runner.rs:3042 / deliberation.rs:471 — carried in the baseline exactly as outcomeless-tick carries 2 and silent-row-skip carries 4), and 1 false positive (engine/mod.rs:3461, genuinely guarded 4619 chars into a 16324-char body, past the window; left in rather than excluded because an exclusion would be a claim about a body length, not about a file). PRECISION 159/169 = 94.1%; against the population the engine can reach, 159/160 = 99.4%. TWO FALSE NEGATIVES where the window spilled past a short body: db/src/embedder.rs:92, and companion/remote_jobs.rs:109 where the spill is SEMANTICALLY CORRECT — that dispatcher's callee holds the boundary (a call-graph fact no textual signal can follow; see the path's Gap 7, so any count here over-counts by however many sites push the boundary into a helper). test_automation.rs:1488 is counted as PRODUCTION (pub mod at lib.rs:43, shipped behind a cargo feature) — the first scanner's /(^|\\/)test_/ filename heuristic mis-filed it, the mirror image of the dev_tools_backlog_tests.rs hazard. CONSEQUENCE, MEASURED AGAINST THE OPERATOR'S OWN crash_logs/ DIRECTORY AND READ-ONLY COPIES OF THE LIVE DATABASES: 274 production spawn sites, 210 statement-position, 165 carrying no boundary at all (the [;{}] anchor reaches 161 of the 165 — the other 4 are spelled `let _ = spawn(..)`, listed in the path's Section 9); JoinError::is_panic() appears 3 times in 963 files and only ONE of those converts the panic into a value a caller can act on (companion/remote_jobs.rs:145, whose comment says 'instead of a task that vanishes and a job that never finishes'); 40 sites flatten the JoinError with .map_err and 7 with .ok(); ZERO use .await.unwrap(), .await.expect() or .await?. 20 persona_executions rows carry 'Internal error (panic):' — 7.8% of all 258 failed+incomplete — all with 0 tokens, 0 cost, 0 duration, 0 output. All 20 crash reports on disk are on a tokio-rt-worker thread and all 20 are panics the app SURVIVED, despite lib.rs:804 describing the hook as writing 'before aborting' (Cargo.toml:316 is panic = \"unwind\"). The 20 executions map to only 12 crash files — 8 reports (40%) lost to a one-second-resolution filename plus a truncating fs::write — and 17 of the 20 files contain zero application frames. commands/fleet/wait.rs:176 slices a String at a computed byte index and panicked 3 times inside the DETACHED task at commands/fleet/registry.rs:753, silently skipping the Enter-submit confirmation; the same defect class was closed in eval.rs by 6734382bf seven weeks earlier and this site was never enumerated. POSITIVE CONTROL: unobservable-detached-task-positive-control, the IDENTICAL anchor with the negative lookahead inverted, matches 30 files / 42 sites with ZERO overlap; 169 + 42 = 211 accounts for EVERY statement-position spawn with an inline body in the tree, so the partition is exact rather than a ratio. FAULT-INJECTED 18 WAYS, all correct, including a bound handle, handles.push(...), a `fn spawn(` definition, Command::new(..).spawn(), a function-call body, spawn_local, async { without move, CRLF, an interposed // comment, and a guard placed 3000 chars in (correctly NOT excluded). BACKTRACKING: the fill is a bounded [\\s\\S]{0,2500}? inside a ZERO-WIDTH lookahead — no nesting, no variable-length lookbehind; full 963-file run of rule + control 319 ms. OVERLAP-CHECKED against 469 match sites of the ten nearest rules (unraced-loop-wait, outcomeless-tick, unbound-child-lifetime, unpinned-billing-account-spawn, unowned-inflight-state-sweep, unverified-effect-dispatch, anonymous-deadline, silent-row-skip, unswept-job-registry-read, start-marker-before-admission): ONE collision, test_automation.rs:1486, shared with unverified-effect-dispatch (an app.emit on the line above the spawn); outcomeless-tick shares 4 files and 0 lines. LEGAL FIX: bind the handle and match on JoinError::is_panic(); or wrap the body in AssertUnwindSafe(..).catch_unwind() with a DURABLE Err arm; or move a periodic task into the subscription registry (background.rs::start_loops) and inherit run_single's boundary. Do NOT silence a match with `let _ = tokio::spawn(..)` (same discard, anchor still fires), by hoisting the body into a helper async fn so the call site has no inline block (the match disappears, the defect does not), or by adding an unused AssertUnwindSafe import near the top of the body. PRECONDITION (must be re-derived per repo): this repo spells detached work as tokio::spawn / tauri::async_runtime::spawn with an inline `async move {`. A TypeScript repo spells the identical condition as an unawaited promise, and all four TS siblings score a structural ZERO against this pattern while the condition is present at scale (vibeman 114 detached units vs 27 observed; ascent 50 vs 9). END OF LIFE: this rule is expected to FALL, not to reach zero — a population of deliberately detached tasks is correct (principle P8). If it ever does reach zero the runner fails structurally, BY DESIGN — DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 87,
+        "files": 94,
         "matches": 170
       },
       "floor": 900
@@ -3833,7 +3833,7 @@
         "$measured": "2026-08-16 @ c47cd36fa — 963 .rs files walked; two independent implementations (a standalone brace-matched Rust scanner and the census engine) returned 3/3 identically and disagreed on the ANCHOR by exactly 2 (61 vs 63), traced to fk_hygiene.rs:959,960 sitting inside a #[cfg(test)] module the census engine cannot exclude. Validated in a composer-private scratch registry, then re-extracted from the published document and re-run with the same result. Rule + control together: 1.6 s."
       },
       "baseline": {
-        "files": 1,
+        "files": 2,
         "matches": 3
       },
       "floor": 900
@@ -3959,7 +3959,7 @@
       "exclude": [],
       "baseline": {
         "files": 78,
-        "matches": 141
+        "matches": 139
       },
       "floor": 900
     },
@@ -4284,7 +4284,7 @@
       },
       "baseline": {
         "files": 3,
-        "matches": 8
+        "matches": 9
       },
       "floor": 800
     },
@@ -4418,7 +4418,7 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/db/src/repos/dev_tools_page_tests.rs",
+          "path": "src-tauri/db/src/repos/dev/tasks_page_tests.rs",
           "reason": "a test-fixture module carrying NO #[cfg(test)] attribute, so only a filename rule can see it — the doctrine's named case."
         }
       ],
@@ -4522,7 +4522,7 @@
       },
       "exclude": [
         {
-          "path": "src-tauri/src/companion/session.rs",
+          "path": "src-tauri/src/companion/session/interrupts.rs",
           "reason": "INTERRUPTED_TURNS is a cancellation flag the streaming loop polls to kill a child process, not a ledger of what has already been emitted - hand-verified 2026-08-17"
         },
         {
@@ -4660,7 +4660,7 @@
         "note": "Disclosed imprecision: 6 of 130 sites are DDL inside test fixtures, which the runner cannot exclude. Site-level overlap against all 87 registered src-tauri/.rs rules: unresumable-migration-step 3 lines (2.3%), default-contradicted-by-backfill 2 lines (1.5%); no merge warranted."
       },
       "baseline": {
-        "files": 11,
+        "files": 24,
         "matches": 130
       },
       "floor": 900
@@ -4683,7 +4683,7 @@
         "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
       },
       "baseline": {
-        "files": 12,
+        "files": 14,
         "matches": 15
       },
       "floor": 900
@@ -4979,7 +4979,7 @@
         "description": "A per-parent monotonic sequence column (version_number, order_index, rev, seq, ordinal, position, sequence, run_number, step_index) declared in a CREATE TABLE whose remaining body contains no UNIQUE(...) and no table-level PRIMARY KEY(...). Readers resolve 'the latest' with ORDER BY <col> DESC LIMIT 1, which is not merely wrong on a duplicate but plan-dependent, so it reproduces on one machine and not another. Enforce the sequence in the schema and allocate it inside the INSERT (skill_usage.rs:200-201 is the reference)."
       },
       "baseline": {
-        "files": 4,
+        "files": 8,
         "matches": 12
       },
       "floor": 6
@@ -5044,8 +5044,8 @@
         "description": "A collection is truncated to an integer literal. PROXY FOR the stack-free condition: a bound on how much work or data flows on is written as an unnamed number, so nothing can relate it to the ceiling it must respect and nothing reports what was dropped. The iter()-family receiver is what buys precision — it excludes .chars().take(N) display truncations (id-generation.md's leaf, 0 site overlap with truncated-uuid-id) at the cost of missing .filter(..).take(N) chains: it finds 53 of the 65 literal collection ceilings two independent scanners agree exist. Precision hand-verified 10/10. LEGAL FIX: name the bound as a const with a doc comment stating what it must be smaller than, and apply it through personas_core::limits::cap_with_log(label, requested, cap) so the clip is attributable — that helper exists, is unit-tested, and has ONE caller in 963 files (background.rs:2607). PRECONDITION (re-derive per repo): this repo bounds work with Rust iterator .take(); a repo using slicing, a paginator or a query builder has the same condition wearing markup this pattern cannot see."
       },
       "baseline": {
-        "files": 34,
-        "matches": 53
+        "files": 33,
+        "matches": 51
       },
       "floor": 700
     },
@@ -5310,6 +5310,102 @@
         "matches": 55
       },
       "floor": 500
+    },
+    {
+      "id": "process-spawn-outside-chokepoint",
+      "goldenPath": "docs/concepts/golden-paths/spawning-a-cli-subprocess.md",
+      "title": "A child process is spawned outside the one module that owns argv separation, env scrubbing, stdio, timeouts and kill-on-drop",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:[A-Za-z_][A-Za-z0-9_]*)?Command::new\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Command::new( in any of its four spellings -- bare, std::process::, tokio::process::, or the TokioCommand alias -- anywhere outside engine/src/cli_process.rs. PROXY FOR the stack-free condition: a process is created by code that has not agreed to any of the guarantees the application makes about child processes, so whatever the chokepoint does for spawns that go through it simply does not happen for this one. CONCRETELY HERE cli_process.rs:576 build_and_spawn_core is where a child gets its argv as an ARRAY, its stdio decided on all three streams with the deadlock reason written down (:565-567), its .kill_on_drop(true) with the billing reason written down (:584-589), its current_dir, its CREATE_NO_WINDOW and its env_removals -> env_overrides -> force_subscription_auth sequence. COMPLIANT SHAPE: build a CliArgs (core/src/types.rs:287) and hand it to the driver -- 9 files / 16 call sites. VIOLATING SHAPE: commands/fleet/external.rs:156 `let mut cmd = std::process::Command::new(&program);`. The 138 outside inherit the app's whole environment (97 of 125 production sites), its cwd (71), configure no stdio at all (75), have NEITHER a timeout NOR kill_on_drop (87), and never read the exit status (42) -- the itemised population table is in this path's Deviations section. RELATIONSHIP TO TWO REGISTERED SIBLINGS, declared: unbound-child-lifetime (12/13) and wholesale-inherited-child-env (10/13) each gate ONE property of a spawn -- a missing kill_on_drop, a missing env_clear -- and each goes to zero when that one property is added WITHOUT THE SPAWN EVER MOVING. Both are subsets of this population. This rule asks the prior question and is the only one of the three that falls when a call site adopts the driver and inherits all the properties at once. NOT THE REFUSED RULE: this path refuses to gate child LIFETIME (job objects / process groups) because that fix is one change in one helper correcting 125 sites at once, so a ratchet would read 125 -> 125 -> 0 and never cause the fix. That argument does not transfer here: a spawn that never reaches the chokepoint is repaired per-site, one count at a time. MEASURED 2026-08-21 at b7fba447f: 138 matches across 58 of 963 files, plus 5 inside the excluded chokepoint (143 total) and 4 on comment-only lines correctly skipped. PRECISION 13/13 on a systematic hand-opened sample (every 11th site), all real process spawns. The SPELLING vocabulary was enumerated EXHAUSTIVELY rather than sampled: exactly four forms exist -- std::process::Command::new 46, tokio::process::Command::new 39, bare Command::new 38, TokioCommand::new 15. RECALL, and the number that punishes a careless matcher: an anchor with a lookbehind forbidding a preceding colon scores 43, missing every qualified call -- a 3.2x undercount that reads as 'mostly clean'. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: the alias arm accepts ANY identifier ending in Command, so a future clap::Command::new (an argument parser, not a process) would count. No such type exists in this tree today; if one arrives, tighten the alternation to the aliases actually in use rather than baselining the noise. PRECONDITION (must be re-derived per repo): this repo spawns children through std/tokio Command and has ONE module that owns the policy. A repo that shells out through a library wrapper, or that has no chokepoint at all, has the same condition wearing different syntax. LEGAL FIX: build a CliArgs and route the spawn through cli_process.rs. If it needs a shape the chokepoint does not offer, WIDEN THE CHOKEPOINT rather than opening a second door -- and do not silence a match by wrapping Command::new in a local helper, which moves the match without moving the guarantees."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/engine/src/cli_process.rs",
+          "reason": "the chokepoint itself — this file IS where argv separation, env scrubbing, stdio, timeouts, PID recording and kill-on-drop live, so it must call Command::new"
+        }
+      ],
+      "baseline": {
+        "files": 58,
+        "matches": 138
+      },
+      "floor": 900
+    },
+    {
+      "id": "positional-row-get",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "A result row is read by column POSITION, so any mid-table column addition silently shifts every index below it",
+      "roots": [
+        "src-tauri/db/src"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:row|r)\\.get(?:::<[^()]{0,40}?>)?\\s*\\(\\s*\\d+\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "row.get(N) / r.get(N) with an integer index, in every turbofish spelling (row.get::<_, String>(N), row.get::<_, Option<String>>(N)), anywhere under src-tauri/db/src. PROXY FOR the stack-free condition: a persistence read is bound to the ORDER of a schema rather than to its NAMES, so a schema edit that is legal, additive and reviewed can still corrupt every read below it -- and it does so SILENTLY, because a positional read of the wrong column usually still type-checks (column 7 and column 8 are both TEXT). CONCRETELY HERE it compounds with select-star-in-repo: 379 projections are SELECT *, so the index-to-column mapping is not even visible at the call site, and db/src/migrations/incremental.rs adds columns routinely. COMPLIANT SHAPE, present at parity: named reads score 1440 matches across 51 files against these 1479, i.e. this repo is almost exactly half migrated -- the correct alternative is not hypothetical. VIOLATING SHAPE: repos/lab/versions.rs:100 `model_profile: row.get(7)?`, repos/resources/broker_edges.rs:113 `row.get::<_, Option<i64>>(5)?`, cdc.rs:479. MEASURED 2026-08-21 at b7fba447f: 1479 matches across 84 of 143 files. PRECISION 12/12 on a systematic hand-opened sample (every 123rd site), all real rusqlite positional reads inside a query_map/query_row closure. The RECEIVER vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly two identifiers ever carry a positional get in this tree, `row` and `r` -- and that anchoring is what keeps collection indexing out: args.get(0) and map.get(k) are a different concept wearing the same method name. DECLARED FALSE-POSITIVE SURFACE, stated rather than papered over: 22 of the 1479 (1.5%) are single-column AGGREGATE reads -- conn.query_row(\"SELECT COUNT(*) ...\", [], |r| r.get(0)) -- where no column name exists and get(0) is the only available spelling. They are COUNTED, not excluded, because an exclusion would have to name whole files and a stale exemption is how an allowlist becomes the bug; the honest number is 1457 + 22. TWO INDEPENDENT IMPLEMENTATIONS agree exactly at 84/1479 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A matcher that reads only the bare `row.get(N)` form scores 847, a 1.75x undercount that reads as 'mostly clean'; the gap is the turbofish spellings plus the `r` receiver. PRECONDITION (must be re-derived per repo): this repo reads rows through rusqlite's positional get. A repo on sqlx with compile-time-checked queries, or on an ORM that maps by name, has the condition designed out and scores zero. LEGAL FIX: read by name -- row.get(\"column_name\") -- which costs one string lookup and makes the read survive any additive migration. Do it TOGETHER with replacing the SELECT * that feeds it: a named read against a wildcard projection is only half the fix and still over-fetches every BLOB on the table."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 117,
+        "matches": 1479
+      },
+      "floor": 100
+    },
+    {
+      "id": "select-star-in-repo",
+      "goldenPath": "docs/concepts/golden-paths/row-to-struct-mapping.md",
+      "title": "A repository query projects SELECT *, so the column set the code depends on is invisible at the call site and changes under it",
+      "roots": [
+        "src-tauri/db/src/repos"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "SELECT\\s+\\*",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A wildcard projection (SELECT followed by whitespace and *) in the repository layer. PROXY FOR the stack-free condition: a query declares no contract with the schema, so the shape of what comes back is decided by the table definition at runtime rather than by the code at review time -- an additive migration changes the result shape of a query nobody edited, and the diff that caused it touches no query file. CONCRETELY HERE it is the other half of positional-row-get: SELECT * fixes the ordinal mapping to CREATE TABLE order, 1479 positional reads consume that mapping, and migrations/incremental.rs adds columns as a matter of routine -- so the two together describe a schema change that can rewrite a read without touching it. It also over-fetches: every BLOB and long TEXT column crosses the driver boundary whether or not the caller wanted it. COMPLIANT SHAPE, present at parity: named projections score 391 matches across 83 files against these 379. MEASURED 2026-08-21 at b7fba447f: 379 matches across 56 of 116 files; 2 further matches sit on comment-only lines and are correctly not counted. PRECISION 12/12 on a systematic hand-opened sample (every 31st site), all real wildcard projections -- repos/communication/chat.rs:220, repos/dev_tools.rs:606, repos/execution/audit_incidents.rs:291, repos/twin.rs:1117 in its line-continuation form. The MANDATORY WHITESPACE is the discriminator that keeps aggregates out: 110 SELECT COUNT(*) sites in the same tree, 0 of them matched. TWO INDEPENDENT IMPLEMENTATIONS agree exactly at 56/379 -- the census engine and a hand-written walker sharing no code with it -- and a third, case-insensitive raw grep returns 381, which is 379 plus exactly the 2 comment lines, and finds no lowercase spelling anywhere. DISAGREEMENT RECORDED RATHER THAN RECONCILED: this document's own Gap 7 says '~176' explicit column lists; the measurement here is 391. The 381 in the same sentence reconciles (379 + 2 comment lines) but the ~176 does not, and the likely cause -- distinct query FUNCTIONS versus occurrences -- was not re-derived, so it is a lead and not a finding. PRECONDITION (must be re-derived per repo): this repo writes SQL as string literals inside repository functions. A repo using a query builder or a typed query macro has the condition designed out. LEGAL FIX: name the columns. Where a struct maps a whole row, generate or hand-write the column list once NEXT TO the struct, so the projection and the mapping live together and drift becomes a compile error rather than a silent shift."
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 78,
+        "matches": 379
+      },
+      "floor": 100
+    },
+    {
+      "id": "pool-get-unwrapped",
+      "goldenPath": "docs/concepts/golden-paths/connection-pool-pragmas.md",
+      "title": "A connection-pool checkout is unwrapped, so pool exhaustion or an acquire timeout aborts the thread instead of surfacing as an error the caller can report",
+      "roots": [
+        "src-tauri"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*\\.get\\(\\)\\s*\\.\\s*(?:unwrap\\(\\)|expect\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
+      },
+      "baseline": {
+        "files": 97,
+        "matches": 323
+      },
+      "floor": 900
     }
   ]
 }

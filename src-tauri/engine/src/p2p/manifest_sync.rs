@@ -14,10 +14,10 @@ use ts_rs::TS;
 use super::connection::ConnectionManager;
 use super::protocol::{self, ManifestEntry, Message};
 use super::types::PeerManifestEntry;
-use personas_db::repos::resources::exposure as exposure_repo;
-use personas_db::DbPool;
 use crate::event_registry::event_name;
 use personas_core::error::AppError;
+use personas_db::repos::resources::exposure as exposure_repo;
+use personas_db::DbPool;
 
 /// Maximum manifest entries accepted from a single peer.
 /// Prevents a malicious or misconfigured peer from causing unbounded DB inserts.

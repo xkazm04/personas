@@ -106,7 +106,9 @@ mod tests {
 
     #[tokio::test]
     async fn preserves_input_order() {
-        let tasks: Vec<LaneTask<i32>> = (0..5).map(|i| lane(format!("lane-{i}"), async move { i * 10 })).collect();
+        let tasks: Vec<LaneTask<i32>> = (0..5)
+            .map(|i| lane(format!("lane-{i}"), async move { i * 10 }))
+            .collect();
         let out = run_lanes(3, tasks).await;
         let values: Vec<i32> = out.iter().map(|o| *o.result.as_ref().unwrap()).collect();
         assert_eq!(values, vec![0, 10, 20, 30, 40]);

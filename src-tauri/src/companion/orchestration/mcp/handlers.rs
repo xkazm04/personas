@@ -107,8 +107,8 @@ pub async fn call_tool(
     fleet_session_id: &str,
     params: Value,
 ) -> Result<Value, JsonRpcError> {
-    let call: ToolsCallParams =
-        serde_json::from_value(params).map_err(|e| invalid_params(format!("invalid params: {e}")))?;
+    let call: ToolsCallParams = serde_json::from_value(params)
+        .map_err(|e| invalid_params(format!("invalid params: {e}")))?;
 
     match call.name.as_str() {
         "athena.report_intent" => report_intent(app, fleet_session_id, call.arguments).await,
@@ -192,13 +192,18 @@ async fn checkpoint(
     let recorded = crate::companion::orchestration::operative_memory::memory().record_checkpoint(
         fleet_session_id,
         a.progress.trim(),
-        a.blockers.as_deref().map(str::trim).filter(|s| !s.is_empty()),
+        a.blockers
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty()),
     );
     if !recorded {
         // Race: session unknown to operative memory yet. Treat as
         // soft success — the next state-change event will register
         // the session and Athena can re-query for checkpoints later.
-        return Ok(text_result("checkpoint deferred (session not yet registered)"));
+        return Ok(text_result(
+            "checkpoint deferred (session not yet registered)",
+        ));
     }
     crate::companion::orchestration::emit_digest_changed(app);
     Ok(text_result("checkpoint recorded"))
@@ -283,7 +288,9 @@ async fn request_guidance(
         Ok(Err(_)) => Err(internal_error("guidance channel closed unexpectedly")),
         Err(_) => {
             pending::resolve(&request_id, Err("request expired".to_string()));
-            Err(internal_error("guidance request expired waiting for a response"))
+            Err(internal_error(
+                "guidance request expired waiting for a response",
+            ))
         }
     }
 }
@@ -349,10 +356,7 @@ async fn request_approval(
                 .get("approved")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
-            let note = response
-                .get("note")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let note = response.get("note").and_then(|v| v.as_str()).unwrap_or("");
             let label = if approved { "APPROVED" } else { "DENIED" };
             let body = if note.is_empty() {
                 label.to_string()
@@ -368,7 +372,9 @@ async fn request_approval(
         Ok(Err(_)) => Err(internal_error("approval channel closed unexpectedly")),
         Err(_) => {
             pending::resolve(&request_id, Err("request expired".to_string()));
-            Err(internal_error("approval request expired waiting for a response"))
+            Err(internal_error(
+                "approval request expired waiting for a response",
+            ))
         }
     }
 }
@@ -409,11 +415,20 @@ mod tests {
         let arr = descriptors.as_array().unwrap();
         for tool in arr {
             assert!(tool["name"].as_str().is_some(), "name required");
-            assert!(tool["description"].as_str().is_some(), "description required");
+            assert!(
+                tool["description"].as_str().is_some(),
+                "description required"
+            );
             let schema = &tool["inputSchema"];
-            assert_eq!(schema["type"], "object", "inputSchema must be an object schema");
+            assert_eq!(
+                schema["type"], "object",
+                "inputSchema must be an object schema"
+            );
             assert!(schema["properties"].is_object(), "properties required");
-            assert!(schema["required"].is_array(), "required[] is mandatory in our schemas");
+            assert!(
+                schema["required"].is_array(),
+                "required[] is mandatory in our schemas"
+            );
         }
     }
 

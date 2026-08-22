@@ -50,7 +50,10 @@ const DEFAULT_ENABLED: bool = personas_db::settings_keys::SKILLS_SIDECAR_ENABLED
 
 /// Seed the process-global enable cache from an explicit bool.
 pub fn seed_enabled(enabled: bool) {
-    ENABLED_CACHE.store(if enabled { CACHE_ON } else { CACHE_OFF }, Ordering::Relaxed);
+    ENABLED_CACHE.store(
+        if enabled { CACHE_ON } else { CACHE_OFF },
+        Ordering::Relaxed,
+    );
 }
 
 /// Read the `skills_sidecar_enabled` setting from the DB and seed the cache.
@@ -339,7 +342,10 @@ mod tests {
     #[test]
     fn slug_for_connector_name_handles_simple_cases() {
         assert_eq!(slug_for_connector_name("github"), "github");
-        assert_eq!(slug_for_connector_name("Google_Calendar"), "google-calendar");
+        assert_eq!(
+            slug_for_connector_name("Google_Calendar"),
+            "google-calendar"
+        );
         assert_eq!(slug_for_connector_name("aws cloud"), "aws-cloud");
         assert_eq!(slug_for_connector_name("x_twitter"), "x-twitter");
         // Drops symbols, collapses repeats, trims edges
@@ -359,7 +365,10 @@ mod tests {
     #[test]
     fn build_skill_md_renders_full_body() {
         let body = build_skill_md(&sample_hint());
-        assert!(body.starts_with("---\n"), "body must open with YAML frontmatter");
+        assert!(
+            body.starts_with("---\n"),
+            "body must open with YAML frontmatter"
+        );
         assert!(body.contains("\n# GitHub\n"));
         assert!(body.contains("## Overview"));
         assert!(body.contains("GitHub REST API v3"));
@@ -413,8 +422,15 @@ mod tests {
         h.hint.overview =
             "X".repeat(400) + ". A trailing sentence that should be cut off entirely.";
         let desc = build_skill_description(&h);
-        assert!(desc.chars().count() <= 140, "description must cap at 140 chars; got {} chars", desc.chars().count());
-        assert!(desc.ends_with("..."), "long descriptions get a truncation marker");
+        assert!(
+            desc.chars().count() <= 140,
+            "description must cap at 140 chars; got {} chars",
+            desc.chars().count()
+        );
+        assert!(
+            desc.ends_with("..."),
+            "long descriptions get a truncation marker"
+        );
     }
 
     #[test]
@@ -457,7 +473,10 @@ mod tests {
         // Cross-module constant-equality discipline (round-10 P1): the key this
         // module reads MUST equal the registered allowlist key, or the seeded
         // read misses and set() rejects the toggle.
-        assert_eq!(SETTING_KEY, personas_db::settings_keys::SKILLS_SIDECAR_ENABLED);
+        assert_eq!(
+            SETTING_KEY,
+            personas_db::settings_keys::SKILLS_SIDECAR_ENABLED
+        );
     }
 
     #[test]

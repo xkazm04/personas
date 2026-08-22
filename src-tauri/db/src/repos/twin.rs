@@ -585,7 +585,8 @@ pub fn list_communications_by_contact(
              ORDER BY occurred_at DESC LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![twin_id, handle, limit], row_to_communication)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     } else {
         list_communications(pool, twin_id, None, limit)
     }
@@ -903,7 +904,8 @@ pub fn list_contacts_with_activity(
          ORDER BY COALESCE(agg.last_seen_at, c.created_at) DESC",
     )?;
     let rows = stmt.query_map(params![twin_id], row_to_contact)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn update_contact(
@@ -960,11 +962,11 @@ fn row_to_reflection(row: &Row) -> rusqlite::Result<TwinReflection> {
 
 pub fn list_reflections(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinReflection>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT * FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC")?;
     let rows = stmt.query_map(params![twin_id], row_to_reflection)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn create_reflection(
@@ -1025,7 +1027,8 @@ pub fn list_distilled_facts(
              ORDER BY importance DESC, last_seen_at DESC",
         )?;
         let rows = stmt.query_map(params![twin_id, handle], row_to_distilled_fact)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     } else {
         let mut stmt = conn.prepare(
             "SELECT * FROM twin_distilled_facts \
@@ -1033,7 +1036,8 @@ pub fn list_distilled_facts(
              ORDER BY importance DESC, last_seen_at DESC",
         )?;
         let rows = stmt.query_map(params![twin_id], row_to_distilled_fact)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     }
 }
 
@@ -1090,7 +1094,10 @@ pub fn create_distilled_fact(
 
 pub fn delete_distilled_fact(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM twin_distilled_facts WHERE id = ?1", params![id])?;
+    let rows = conn.execute(
+        "DELETE FROM twin_distilled_facts WHERE id = ?1",
+        params![id],
+    )?;
     Ok(rows > 0)
 }
 
@@ -1152,7 +1159,8 @@ pub fn top_contacts_by_activity(
          LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![twin_id, limit], row_to_contact)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn get_tone_optional(
@@ -1202,7 +1210,10 @@ mod tests {
         // A channel with no tone row must resolve to Ok(None), not a Database error.
         let missing = get_tone_optional(&pool, &twin.id, "slack")
             .expect("missing tone must be Ok(None), not a Database error");
-        assert!(missing.is_none(), "expected None for a channel with no tone row");
+        assert!(
+            missing.is_none(),
+            "expected None for a channel with no tone row"
+        );
 
         // After upserting a tone, the same optional lookup must recall it.
         upsert_tone(

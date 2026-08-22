@@ -64,6 +64,10 @@ struct IncidentLine {
     desc: String,
 }
 
+/// One roster member as the alignment query reads it:
+/// `(persona_id, name, role, design_context, description)`.
+type RosterRow = (String, String, String, Option<String>, Option<String>);
+
 /// Build the team-alignment block for `persona` executing under `team_id`.
 ///
 /// Returns `None` when there's nothing meaningful to inject (the persona has no
@@ -86,7 +90,7 @@ pub fn build_team_alignment_block(
     // `persona_team_semantic_role` in the assignment orchestrator does.
     // Reading the raw `role` here is what made `render_channel_post_capability`
     // below unreachable for every team.
-    let roster_rows: Vec<(String, String, String, Option<String>, Option<String>)> = {
+    let roster_rows: Vec<RosterRow> = {
         let conn = pool.get().ok()?;
         let mut stmt = conn
             .prepare(
@@ -232,8 +236,11 @@ These messages were posted into the team channel for you. They are BINDING guida
         if line.chars().count() > 240 {
             line = line.chars().take(240).collect::<String>() + "…";
         }
-        out.push_str(&format!("- [{}] {}: {}
-", m.created_at, who, line));
+        out.push_str(&format!(
+            "- [{}] {}: {}
+",
+            m.created_at, who, line
+        ));
     }
     Some(out)
 }
@@ -752,7 +759,11 @@ mod tests {
     #[test]
     fn renders_incidents_only() {
         let incidents = vec![
-            inc("critical", "OAuth refresh storms 401s", "Daily token expiry under GCP testing mode"),
+            inc(
+                "critical",
+                "OAuth refresh storms 401s",
+                "Daily token expiry under GCP testing mode",
+            ),
             inc("high", "Adoption modal freeze", ""),
         ];
         let block = render_alignment_block("Solo", None, "AI Bookkeeper", &[], &[], &incidents)
@@ -770,7 +781,11 @@ mod tests {
     fn incidents_appended_after_goals_and_roster() {
         let teammates = vec![tm("QA Guardian", "reviewer", "Reviews PRs")];
         let goals = vec![goal("in-progress", 40, "Ship the bookkeeper", true)];
-        let incidents = vec![inc("critical", "Race in goal-advance", "Double-counted progress")];
+        let incidents = vec![inc(
+            "critical",
+            "Race in goal-advance",
+            "Double-counted progress",
+        )];
         let block = render_alignment_block(
             "Account Classifier",
             Some("worker"),
@@ -846,7 +861,8 @@ mod tests {
     #[test]
     fn renders_with_goals_but_no_teammates() {
         let goals = vec![goal("open", 10, "Lone goal", false)];
-        let block = render_alignment_block("Solo", None, "Team", &[], &goals, &[]).expect("renders");
+        let block =
+            render_alignment_block("Solo", None, "Team", &[], &goals, &[]).expect("renders");
         assert!(block.contains("Lone goal"));
         assert!(!block.contains("Your teammates"));
     }
@@ -854,7 +870,8 @@ mod tests {
     #[test]
     fn renders_no_active_goals_note_when_roster_present() {
         let teammates = vec![tm("Peer", "worker", "Does things")];
-        let block = render_alignment_block("Me", None, "Team", &teammates, &[], &[]).expect("renders");
+        let block =
+            render_alignment_block("Me", None, "Team", &teammates, &[], &[]).expect("renders");
         assert!(block.contains("none set yet"));
         assert!(block.contains("Peer"));
     }
@@ -871,7 +888,8 @@ mod tests {
     #[test]
     fn role_clause_present_for_named_role() {
         let goals = vec![goal("open", 0, "G", false)];
-        let block = render_alignment_block("O", Some("orchestrator"), "T", &[], &goals, &[]).unwrap();
+        let block =
+            render_alignment_block("O", Some("orchestrator"), "T", &[], &goals, &[]).unwrap();
         assert!(block.contains("the team's **orchestrator**"));
     }
 

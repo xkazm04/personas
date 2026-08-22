@@ -116,9 +116,7 @@ pub fn install_hooks(port: u16) -> Result<FleetHookStatus, String> {
         .ok_or("settings.json root is not an object")?;
 
     // Ensure root.hooks is an object.
-    let hooks = root
-        .entry("hooks".to_string())
-        .or_insert_with(|| json!({}));
+    let hooks = root.entry("hooks".to_string()).or_insert_with(|| json!({}));
     if !hooks.is_object() {
         return Err("settings.json `hooks` must be an object".into());
     }
@@ -161,8 +159,8 @@ pub fn install_hooks(port: u16) -> Result<FleetHookStatus, String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("create ~/.claude: {e}"))?;
     }
-    let pretty = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("serialize settings: {e}"))?;
+    let pretty =
+        serde_json::to_string_pretty(&settings).map_err(|e| format!("serialize settings: {e}"))?;
     fs::write(&path, pretty).map_err(|e| format!("write settings: {e}"))?;
 
     check_hooks_inner(&settings, port)
@@ -182,23 +180,18 @@ pub fn uninstall_hooks() -> Result<FleetHookStatus, String> {
     }
 
     let mut settings = read_settings(&path)?;
-    if let Some(hooks_map) = settings
-        .get_mut("hooks")
-        .and_then(|h| h.as_object_mut())
-    {
+    if let Some(hooks_map) = settings.get_mut("hooks").and_then(|h| h.as_object_mut()) {
         for arr_value in hooks_map.values_mut() {
             if let Some(arr) = arr_value.as_array_mut() {
                 arr.retain(|item| !is_fleet_tagged(item));
             }
         }
         // Drop empty arrays so the settings file doesn't accumulate cruft.
-        hooks_map.retain(|_, v| {
-            !v.as_array().map(|a| a.is_empty()).unwrap_or(false)
-        });
+        hooks_map.retain(|_, v| !v.as_array().map(|a| a.is_empty()).unwrap_or(false));
     }
 
-    let pretty = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("serialize settings: {e}"))?;
+    let pretty =
+        serde_json::to_string_pretty(&settings).map_err(|e| format!("serialize settings: {e}"))?;
     fs::write(&path, pretty).map_err(|e| format!("write settings: {e}"))?;
 
     Ok(FleetHookStatus {
@@ -308,7 +301,10 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
 /// install left behind, instead of duplicating hooks (which caused real hooks
 /// to be split across a live + a dead port).
 fn is_fleet_tagged(v: &Value) -> bool {
-    if v.get(FLEET_MARKER).and_then(|m| m.as_bool()).unwrap_or(false) {
+    if v.get(FLEET_MARKER)
+        .and_then(|m| m.as_bool())
+        .unwrap_or(false)
+    {
         return true;
     }
     if let Some(cmd) = v.get("command").and_then(|c| c.as_str()) {

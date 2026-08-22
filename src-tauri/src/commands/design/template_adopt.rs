@@ -15,19 +15,8 @@ use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::utils::extract_panic_message;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 use super::n8n_transform::{extract_first_json_object, run_claude_prompt_text_inner};
 
@@ -170,8 +159,6 @@ pub(super) fn validate_json_field(name: &str, value: &str) -> Result<(), AppErro
 
 // -- Commands ----------------------------------------------------
 
-
-
 #[tauri::command]
 pub fn get_template_adopt_snapshot(
     state: State<'_, Arc<AppState>>,
@@ -182,9 +169,6 @@ pub fn get_template_adopt_snapshot(
         .ok_or_else(|| AppError::NotFound("Template adoption not found".into()))?;
     Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| json!({})))
 }
-
-
-
 
 // -- Instant Adopt (no AI transform -- creates persona directly from design) --
 
@@ -336,8 +320,7 @@ pub fn instant_adopt_template_inner(
         .and_then(|v| v.as_array())
         .map(|ucs| crate::engine::recipe_parameters::derive_capability_params_from_values(ucs))
         .unwrap_or_default();
-    let recipe_param_values =
-        crate::engine::recipe_parameters::to_parameter_values(&recipe_caps);
+    let recipe_param_values = crate::engine::recipe_parameters::to_parameter_values(&recipe_caps);
 
     // Normalize structured_prompt, injecting the capability-parameters section.
     let structured_prompt = {
@@ -501,11 +484,16 @@ pub fn instant_adopt_template_inner(
         .get("use_cases")
         .and_then(|v| v.as_array())
         .cloned()
-        .or_else(|| design.get("use_case_flows").and_then(|v| v.as_array()).cloned())
+        .or_else(|| {
+            design
+                .get("use_case_flows")
+                .and_then(|v| v.as_array())
+                .cloned()
+        })
         .unwrap_or_default();
     let mapped_use_cases: Vec<serde_json::Value> = raw_use_cases
         .iter()
-        .map(|uc| map_template_use_case_to_design_use_case(uc))
+        .map(map_template_use_case_to_design_use_case)
         .collect();
     let design_context_summary = design
         .get("summary")
@@ -684,7 +672,11 @@ pub fn instant_adopt_template_inner(
                             serde_json::Value::String(s) => s.clone(),
                             serde_json::Value::Null => String::new(),
                             serde_json::Value::Bool(b) => {
-                                if *b { "true".to_string() } else { "false".to_string() }
+                                if *b {
+                                    "true".to_string()
+                                } else {
+                                    "false".to_string()
+                                }
                             }
                             serde_json::Value::Number(n) => n.to_string(),
                             other => serde_json::to_string(other).unwrap_or_default(),
@@ -835,10 +827,7 @@ fn lookup_connector_auth_type<'a>(
     design: Option<&'a serde_json::Value>,
     connector_name: &str,
 ) -> Option<&'a str> {
-    let arr = design?
-        .get("persona")?
-        .get("connectors")?
-        .as_array()?;
+    let arr = design?.get("persona")?.get("connectors")?.as_array()?;
     for c in arr {
         let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("");
         if name.eq_ignore_ascii_case(connector_name) {
@@ -1074,9 +1063,11 @@ pub(super) fn apply_codebase_pin_from_design(
             continue;
         }
         let q_id = q.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let val = answers
-            .and_then(|a| a.get(q_id).cloned())
-            .or_else(|| q.get("default").and_then(|v| v.as_str()).map(|s| s.to_string()));
+        let val = answers.and_then(|a| a.get(q_id).cloned()).or_else(|| {
+            q.get("default")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
         if let Some(v) = val {
             let v = v.trim().to_string();
             // Skip blanks and the placeholder connector-name default — those mean
@@ -1180,7 +1171,10 @@ pub(super) fn populate_persona_parameters_from_design(
         }
     }
 
-    if let Some(arr) = design.get("suggested_parameters").and_then(|v| v.as_array()) {
+    if let Some(arr) = design
+        .get("suggested_parameters")
+        .and_then(|v| v.as_array())
+    {
         for p in arr {
             if let Some(k) = p.get("key").and_then(|v| v.as_str()) {
                 params_by_key.insert(k.to_string(), p.clone());
@@ -1219,18 +1213,21 @@ pub(super) fn populate_persona_parameters_from_design(
             .unwrap_or("string")
             .to_string();
         let default = q.get("default").cloned().unwrap_or(serde_json::Value::Null);
-        let description = q.get("context").and_then(|v| v.as_str()).map(|s| s.to_string());
-        let options: Option<Vec<String>> = q
-            .get("options")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect()
-            });
+        let description = q
+            .get("context")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let options: Option<Vec<String>> = q.get("options").and_then(|v| v.as_array()).map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect()
+        });
         let min = q.get("min").and_then(|v| v.as_f64());
         let max = q.get("max").and_then(|v| v.as_f64());
-        let unit = q.get("unit").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let unit = q
+            .get("unit")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         let raw_answer = answers.and_then(|a| a.get(q_id));
         let value = match raw_answer {
@@ -1309,8 +1306,6 @@ fn coerce_answer_to_param_value(
         _ => serde_json::Value::String(trimmed.to_string()),
     }
 }
-
-
 
 // ==================================================================
 // Template Generation (create new templates from user description)
@@ -1395,7 +1390,12 @@ pub async fn generate_template_background(
         if let Err(panic) = work {
             let msg = extract_panic_message(panic);
             tracing::error!(gen_id = %gen_id_for_panic, panic = %msg, "template generation task panicked — marking job as failed");
-            GEN_JOBS.set_status(&app_handle_for_panic, &gen_id_for_panic, "failed", Some(msg));
+            GEN_JOBS.set_status(
+                &app_handle_for_panic,
+                &gen_id_for_panic,
+                "failed",
+                Some(msg),
+            );
         }
     });
 
@@ -1661,7 +1661,6 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     Ok(json_str)
 }
 
-
 // -- Always-on adoption adjustment (Approach 1) ----------------------
 //
 // The pre-built base `agent_ir` seeded by `create_adoption_session` is
@@ -1731,7 +1730,9 @@ fn assess_adjustment(
     answers: Option<&crate::engine::adoption_answers::AdoptionAnswers>,
 ) -> AdjustmentBrief {
     let has_answers = answers.map(|a| !a.answers.is_empty()).unwrap_or(false);
-    let has_bindings = answers.map(|a| !a.credential_bindings.is_empty()).unwrap_or(false);
+    let has_bindings = answers
+        .map(|a| !a.credential_bindings.is_empty())
+        .unwrap_or(false);
 
     let user_answers_json = answers
         .filter(|a| !a.answers.is_empty())
@@ -1863,7 +1864,11 @@ fn build_adoption_adjust_prompt(
 ) -> String {
     let answers = user_answers_json
         .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
-        .map(|a| format!("\n## User configuration answers (embed concrete values, not placeholders)\n{a}\n"))
+        .map(|a| {
+            format!(
+                "\n## User configuration answers (embed concrete values, not placeholders)\n{a}\n"
+            )
+        })
         .unwrap_or_default();
     let swaps = connector_swaps_json
         .filter(|s| !s.trim().is_empty() && s.trim() != "{}")
@@ -2059,7 +2064,11 @@ pub async fn adjust_adoption_draft(
         });
     }
 
-    let merged = match merge_adjusted_prose(&base_ir, &prose.system_prompt, prose.structured_prompt.as_ref()) {
+    let merged = match merge_adjusted_prose(
+        &base_ir,
+        &prose.system_prompt,
+        prose.structured_prompt.as_ref(),
+    ) {
         Some(m) => m,
         None => {
             return Ok(AdoptionAdjustResult {
@@ -2109,20 +2118,6 @@ pub async fn adjust_adoption_draft(
 // below are additionally NOT registered in `lib.rs`, so they are unreachable
 // over IPC today.
 
-/// Verify a single template's content integrity against the embedded Rust
-/// manifest, and return the verdict. Reports only — nothing acts on it.
-#[tauri::command]
-pub fn verify_template_integrity(
-    state: State<'_, Arc<AppState>>,
-    path: String,
-    content: String,
-) -> Result<crate::engine::template_checksums::TemplateIntegrityResult, AppError> {
-    require_auth_sync(&state)?;
-    Ok(crate::engine::template_checksums::verify_template(
-        &path, &content,
-    ))
-}
-
 /// Input for batch template verification.
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2146,14 +2141,6 @@ pub fn verify_template_integrity_batch(
     Ok(crate::engine::template_checksums::verify_templates_batch(
         &pairs,
     ))
-}
-
-/// Get the count of templates in the backend's embedded checksum manifest.
-/// Useful for the frontend to detect manifest staleness.
-#[tauri::command]
-pub fn get_template_manifest_count(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
-    require_auth_sync(&state)?;
-    Ok(crate::engine::template_checksums::manifest_entry_count())
 }
 
 /// Synthesize a readable `system_prompt` markdown body from a v3 template's
@@ -2301,10 +2288,7 @@ fn map_template_use_case_to_design_use_case(uc: &serde_json::Value) -> serde_jso
         out.insert("category".into(), serde_json::Value::String(cat.into()));
     }
 
-    let enabled = obj
-        .get("enabled")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(true);
+    let enabled = obj.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     out.insert("enabled".into(), serde_json::Value::Bool(enabled));
 
     if let Some(cs) = obj.get("capability_summary").and_then(|v| v.as_str()) {
@@ -2415,7 +2399,10 @@ mod model_tier_mapping_tests {
             "model_rationale": "mechanical label triage, fixed buckets",
         });
         let out = map_template_use_case_to_design_use_case(&uc);
-        assert_eq!(out.get("model_override").and_then(|v| v.as_str()), Some("haiku"));
+        assert_eq!(
+            out.get("model_override").and_then(|v| v.as_str()),
+            Some("haiku")
+        );
         assert_eq!(
             out.get("model_rationale").and_then(|v| v.as_str()),
             Some("mechanical label triage, fixed buckets"),
@@ -2432,7 +2419,10 @@ mod model_tier_mapping_tests {
             "model_override": serde_json::Value::Null,
         });
         let out = map_template_use_case_to_design_use_case(&uc);
-        assert!(out.get("model_override").is_none(), "null override is not propagated");
+        assert!(
+            out.get("model_override").is_none(),
+            "null override is not propagated"
+        );
         assert!(out.get("model_rationale").is_none());
 
         let bare = json!({ "id": "uc_bare", "title": "Bare" });
@@ -2465,7 +2455,10 @@ mod adoption_adjust_tests {
         let a = empty_answers();
         let brief = assess_adjustment("{}", Some(&a));
         assert_eq!(brief.divergence, "default");
-        assert_eq!(brief.model, "haiku", "absolute-default → light Haiku wire pass");
+        assert_eq!(
+            brief.model, "haiku",
+            "absolute-default → light Haiku wire pass"
+        );
         // None answers also → default
         assert_eq!(assess_adjustment("{}", None).divergence, "default");
     }
@@ -2476,14 +2469,20 @@ mod adoption_adjust_tests {
         a.answers.insert("q1".into(), "value".into());
         let brief = assess_adjustment("{}", Some(&a));
         assert_eq!(brief.divergence, "configured");
-        assert_eq!(brief.model, "sonnet", "configured + non-opus persona → Sonnet");
+        assert_eq!(
+            brief.model, "sonnet",
+            "configured + non-opus persona → Sonnet"
+        );
         assert!(brief.user_answers_json.is_some());
 
         let mut b = empty_answers();
         b.credential_bindings.insert("email".into(), "gmail".into());
         let brief_b = assess_adjustment("{}", Some(&b));
         assert_eq!(brief_b.divergence, "configured");
-        assert!(brief_b.connector_swaps_json.is_some(), "bindings feed connector_swaps");
+        assert!(
+            brief_b.connector_swaps_json.is_some(),
+            "bindings feed connector_swaps"
+        );
     }
 
     #[test]
@@ -2500,7 +2499,10 @@ mod adoption_adjust_tests {
         a.answers.insert("q1".into(), "v".into());
         let brief = assess_adjustment(&base, Some(&a));
         assert_eq!(brief.divergence, "configured");
-        assert_eq!(brief.model, "opus", "opus-tier persona + divergence → Opus adjustment");
+        assert_eq!(
+            brief.model, "opus",
+            "opus-tier persona + divergence → Opus adjustment"
+        );
 
         // No opus capability → stays Sonnet
         let base2 = json!({"use_cases": [{"id": "uc_a", "model_override": "haiku"}]}).to_string();
@@ -2535,11 +2537,15 @@ mod adoption_adjust_tests {
         })
         .to_string();
         let structured = json!({"identity": "new", "instructions": "do x"});
-        let merged = merge_adjusted_prose(&base, "NEW PROMPT", Some(&structured)).expect("merge ok");
+        let merged =
+            merge_adjusted_prose(&base, "NEW PROMPT", Some(&structured)).expect("merge ok");
         let v: serde_json::Value = serde_json::from_str(&merged).unwrap();
         // prose specialized
         assert_eq!(v["system_prompt"], "NEW PROMPT");
-        assert_eq!(v["full_prompt_markdown"], "NEW PROMPT", "full_prompt_markdown synced");
+        assert_eq!(
+            v["full_prompt_markdown"], "NEW PROMPT",
+            "full_prompt_markdown synced"
+        );
         assert_eq!(v["structured_prompt"]["identity"], "new");
         assert_eq!(v["structured_prompt"]["instructions"], "do x");
         // deterministic structure preserved untouched
@@ -2553,6 +2559,9 @@ mod adoption_adjust_tests {
         let base = json!({"system_prompt": "OLD", "use_cases": []}).to_string();
         let merged = merge_adjusted_prose(&base, "   ", None).expect("merge ok");
         let v: serde_json::Value = serde_json::from_str(&merged).unwrap();
-        assert_eq!(v["system_prompt"], "OLD", "blank draft prompt must not clobber base");
+        assert_eq!(
+            v["system_prompt"], "OLD",
+            "blank draft prompt must not clobber base"
+        );
     }
 }

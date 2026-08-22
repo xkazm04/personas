@@ -246,9 +246,10 @@ pub async fn create_adoption_session(
         Ok(mut payload) => {
             // Phase 2 hydration: recipe_ref → inline UC. No-op when no
             // recipe_refs present.
-            let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, crate::error::AppError> {
-                crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
-            };
+            let lookup =
+                |id: &str| -> Result<crate::db::models::RecipeDefinition, crate::error::AppError> {
+                    crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
+                };
             if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut payload, lookup) {
                 // Don't seed an adoption-test session with an un-hydrated payload
                 // — it would test (and later promote) a structurally broken
@@ -522,25 +523,6 @@ pub async fn answer_build_question(
         .send_answer(&session_id, user_answer)
 }
 
-/// Reset a build session to draft_ready phase (e.g., after test rejection for retry).
-#[tauri::command]
-pub async fn reset_build_session_phase(
-    state: State<'_, Arc<AppState>>,
-    session_id: String,
-) -> Result<(), AppError> {
-    require_auth(&state).await?;
-
-    build_session_repo::update(
-        &state.db,
-        &session_id,
-        &UpdateBuildSession {
-            phase: Some(BuildPhase::DraftReady.as_str().to_string()),
-            ..Default::default()
-        },
-    )?;
-    Ok(())
-}
-
 /// Cancel an active build session.
 #[tauri::command]
 pub async fn cancel_build_session(
@@ -568,36 +550,17 @@ pub async fn cancel_build_session(
     // cancel the user asked for.
     if let Some(pid) = persona_id {
         match crate::db::repos::core::personas::delete_draft_if_safe(&state.db, &pid) {
-            Ok(true) => tracing::info!(persona_id = %pid, "cancel_build_session: removed orphaned draft persona"),
+            Ok(true) => {
+                tracing::info!(persona_id = %pid, "cancel_build_session: removed orphaned draft persona")
+            }
             Ok(false) => {}
-            Err(e) => tracing::warn!(persona_id = %pid, error = %e, "cancel_build_session: draft cleanup failed"),
+            Err(e) => {
+                tracing::warn!(persona_id = %pid, error = %e, "cancel_build_session: draft cleanup failed")
+            }
         }
     }
 
     Ok(())
-}
-
-/// Read the currently pending clarifying question on a build session, if any.
-///
-/// Returns the parsed JSON question payload (a `clarifying_question` shape —
-/// scope, question text, options, optional connector_category, etc.) or
-/// `None` when the session has no question pending. Used by the in-app
-/// Companion chat (and the future external MCP wrapper) to inspect the
-/// session state without subscribing to the event stream.
-#[tauri::command]
-pub async fn list_pending_build_questions(
-    state: State<'_, Arc<AppState>>,
-    session_id: String,
-) -> Result<Option<serde_json::Value>, AppError> {
-    require_auth(&state).await?;
-
-    let session = build_session_repo::get_by_id(&state.db, &session_id)?
-        .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
-
-    Ok(session
-        .pending_question
-        .as_deref()
-        .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok()))
 }
 
 /// Aggregated read-only snapshot of a build session for headless / Companion
@@ -2228,10 +2191,8 @@ fn create_triggers_in_tx(
         // guard, so a `None` here is an unresolvable timezone/cron or a polling
         // trigger with no interval. Either way the build refuses rather than
         // persisting a row that can never become due.
-        let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
-            &trigger_type,
-            config.as_deref(),
-        );
+        let parsed_cfg =
+            crate::db::models::TriggerConfig::from_raw(&trigger_type, config.as_deref());
         let next_trigger_at = personas_core::scheduler::compute_next_from_config(
             &parsed_cfg,
             chrono::Utc::now(),
@@ -2242,11 +2203,8 @@ fn create_triggers_in_tx(
                 .is_some_and(|k| k.is_time_based())
         {
             return Err(AppError::Validation(
-                crate::validation::trigger::unschedulable_error(
-                    &trigger_type,
-                    config.as_deref(),
-                )
-                .message,
+                crate::validation::trigger::unschedulable_error(&trigger_type, config.as_deref())
+                    .message,
             ));
         }
 
@@ -2286,10 +2244,7 @@ fn create_event_subscriptions_in_tx(
     // signals). Accept both "subscribe" (legacy v1/v2) and "listen" (v3.1) as
     // synonyms — the v3 build prompt emits "listen" explicitly.
     fn is_listen(d: Option<&str>) -> bool {
-        match d.unwrap_or("subscribe") {
-            "subscribe" | "listen" => true,
-            _ => false,
-        }
+        matches!(d.unwrap_or("subscribe"), "subscribe" | "listen")
     }
 
     // Track (event_type, source_filter) pairs we've already inserted so the
@@ -2900,10 +2855,9 @@ pub async fn promote_build_draft_inner(
             .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
         match state.db.get() {
-            Ok(conn) => super::connector_readiness::resolve_credential_links(
-                &conn,
-                connector_names.iter(),
-            ),
+            Ok(conn) => {
+                super::connector_readiness::resolve_credential_links(&conn, connector_names.iter())
+            }
             Err(_) => std::collections::HashMap::new(),
         }
     };
@@ -2988,7 +2942,11 @@ pub async fn promote_build_draft_inner(
         if let Ok(conn) = state.db.get() {
             let _ = conn.execute(
                 "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
-                rusqlite::params!["needs_credentials", chrono::Utc::now().to_rfc3339(), persona_id],
+                rusqlite::params![
+                    "needs_credentials",
+                    chrono::Utc::now().to_rfc3339(),
+                    persona_id
+                ],
             );
             tracing::info!(
                 persona_id = %persona_id,
@@ -3027,7 +2985,9 @@ pub async fn promote_build_draft_inner(
                     );
                 }
             }
-            Err(e) => tracing::warn!(persona_id = %persona_id, error = %e, "promote: failed to serialize setup_detail"),
+            Err(e) => {
+                tracing::warn!(persona_id = %persona_id, error = %e, "promote: failed to serialize setup_detail")
+            }
         }
     }
 

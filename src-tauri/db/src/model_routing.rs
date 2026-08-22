@@ -176,7 +176,12 @@ pub fn resolve_for_persona(db: &DbPool, persona: &crate::models::Persona) -> Opt
 mod tests {
     use super::*;
 
-    fn rule(persona_id: Option<&str>, category: Option<&str>, model: &str, effort: Option<&str>) -> ModelRoutingRule {
+    fn rule(
+        persona_id: Option<&str>,
+        category: Option<&str>,
+        model: &str,
+        effort: Option<&str>,
+    ) -> ModelRoutingRule {
         ModelRoutingRule {
             r#match: RoutingMatch {
                 persona_id: persona_id.map(str::to_string),
@@ -191,16 +196,19 @@ mod tests {
     #[test]
     fn persona_id_beats_category_beats_universal() {
         let rules = vec![
-            rule(None, None, "haiku", Some("low")),          // universal
-            rule(None, Some("research"), "sonnet", None),    // category
-            rule(Some("p1"), None, "opus", Some("high")),    // specific
+            rule(None, None, "haiku", Some("low")),       // universal
+            rule(None, Some("research"), "sonnet", None), // category
+            rule(Some("p1"), None, "opus", Some("high")), // specific
         ];
         // p1 in research → most specific wins.
         let r = resolve(&rules, "p1", Some("research")).unwrap();
         assert_eq!(r.model, "opus");
         assert_eq!(r.effort.as_deref(), Some("high"));
         // p2 in research → category wins.
-        assert_eq!(resolve(&rules, "p2", Some("research")).unwrap().model, "sonnet");
+        assert_eq!(
+            resolve(&rules, "p2", Some("research")).unwrap().model,
+            "sonnet"
+        );
         // p3 uncategorized → universal.
         assert_eq!(resolve(&rules, "p3", None).unwrap().model, "haiku");
     }

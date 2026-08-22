@@ -106,7 +106,8 @@ pub async fn advance_team_deliberation(
     if delib.status == "resolved" || delib.status == "aborted" {
         return Ok(delib); // terminal — nothing to advance
     }
-    crate::engine::deliberation::advance_one_deliberation(&state.db, &state.user_db, &delib).await?;
+    crate::engine::deliberation::advance_one_deliberation(&state.db, &state.user_db, &delib)
+        .await?;
     repo::get(&state.db, &deliberation_id)
 }
 
@@ -205,7 +206,11 @@ pub async fn approve_deliberation_action(
     // Approval-time group de-dup: if this capability already ran/failed or is
     // running in a sibling track, don't spawn a duplicate — resume on the existing
     // result. Closes the parallel-track race the turn-time de-dup can't catch.
-    if crate::engine::deliberation::capability_active_in_group(&pool, &delib, &action.use_case_title) {
+    if crate::engine::deliberation::capability_active_in_group(
+        &pool,
+        &delib,
+        &action.use_case_title,
+    ) {
         let _ = channel_repo::post_deliberation_turn(
             &pool,
             &deliberation_id,
@@ -399,8 +404,17 @@ pub async fn resolve_deliberation_escalation(
                 "proposal": proposal,
             })
             .to_string();
-            repo::finalize(&pool, &deliberation_id, "resolved", Some(&resolution_json), None)?;
-            let title = proposal.as_ref().map(|p| p.title.clone()).unwrap_or_default();
+            repo::finalize(
+                &pool,
+                &deliberation_id,
+                "resolved",
+                Some(&resolution_json),
+                None,
+            )?;
+            let title = proposal
+                .as_ref()
+                .map(|p| p.title.clone())
+                .unwrap_or_default();
             let _ = channel_repo::post_deliberation_turn(
                 &pool,
                 &deliberation_id,
@@ -451,7 +465,9 @@ pub async fn split_team_deliberation(
     let pool = state.db.clone();
     let delib = repo::get(&pool, &deliberation_id)?;
     if delib.parent_id.is_some() {
-        return Err(AppError::Validation("A track can't be split further".into()));
+        return Err(AppError::Validation(
+            "A track can't be split further".into(),
+        ));
     }
     let open: Vec<_> = repo::list_agenda(&pool, &deliberation_id)?
         .into_iter()
@@ -474,7 +490,9 @@ pub async fn split_team_deliberation(
     }
 
     // Share the parent's budget across tracks (if one was set).
-    let per_track_budget = delib.cost_budget_usd.map(|b| (b / plans.len() as f64).max(0.0));
+    let per_track_budget = delib
+        .cost_budget_usd
+        .map(|b| (b / plans.len() as f64).max(0.0));
     let open_ids: std::collections::HashSet<&str> = open.iter().map(|a| a.id.as_str()).collect();
     let mut assigned: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut first_track_id: Option<String> = None;
@@ -568,7 +586,9 @@ pub async fn merge_deliberation_tracks(
     let parent = repo::get(&pool, &deliberation_id)?;
     let tracks = repo::list_tracks(&pool, &deliberation_id)?;
     if tracks.is_empty() {
-        return Err(AppError::Validation("This deliberation has no tracks to merge".into()));
+        return Err(AppError::Validation(
+            "This deliberation has no tracks to merge".into(),
+        ));
     }
     let unresolved = tracks
         .iter()
@@ -579,9 +599,13 @@ pub async fn merge_deliberation_tracks(
             "{unresolved} track(s) still running — finish them before merging"
         )));
     }
-    let proposal =
-        crate::engine::deliberation::synthesize_merged_proposal(&pool, &state.user_db, &parent, &tracks)
-            .await;
+    let proposal = crate::engine::deliberation::synthesize_merged_proposal(
+        &pool,
+        &state.user_db,
+        &parent,
+        &tracks,
+    )
+    .await;
     let resolution_json = serde_json::json!({
         "kind": "proposal",
         "status": "pending",
@@ -589,8 +613,17 @@ pub async fn merge_deliberation_tracks(
         "proposal": proposal,
     })
     .to_string();
-    repo::finalize(&pool, &deliberation_id, "resolved", Some(&resolution_json), None)?;
-    let title = proposal.as_ref().map(|p| p.title.clone()).unwrap_or_default();
+    repo::finalize(
+        &pool,
+        &deliberation_id,
+        "resolved",
+        Some(&resolution_json),
+        None,
+    )?;
+    let title = proposal
+        .as_ref()
+        .map(|p| p.title.clone())
+        .unwrap_or_default();
     let _ = channel_repo::post_deliberation_turn(
         &pool,
         &deliberation_id,
@@ -600,7 +633,10 @@ pub async fn merge_deliberation_tracks(
         &if title.is_empty() {
             "Merged tracks — awaiting proposal review.".to_string()
         } else {
-            format!("Merged {} tracks — proposed: “{title}” (awaiting approval).", tracks.len())
+            format!(
+                "Merged {} tracks — proposed: “{title}” (awaiting approval).",
+                tracks.len()
+            )
         },
     );
     repo::get(&pool, &deliberation_id)
@@ -615,7 +651,13 @@ pub fn dismiss_deliberation_proposal(
     require_auth_sync(&state)?;
     let delib = repo::get(&state.db, &deliberation_id)?;
     let dismissed = serde_json::json!({"kind": "proposal", "status": "dismissed"}).to_string();
-    repo::finalize(&state.db, &deliberation_id, "aborted", Some(&dismissed), None)?;
+    repo::finalize(
+        &state.db,
+        &deliberation_id,
+        "aborted",
+        Some(&dismissed),
+        None,
+    )?;
     let _ = channel_repo::post_deliberation_turn(
         &state.db,
         &deliberation_id,

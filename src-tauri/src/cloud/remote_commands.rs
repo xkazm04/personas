@@ -89,12 +89,7 @@ fn persona_name(pool: &DbPool, id: &str) -> Option<String> {
 }
 
 /// PATCH a command row's status (+ optional extra fields), best-effort.
-async fn set_command_status(
-    client: &SyncClient,
-    id: &str,
-    status: &str,
-    extra: serde_json::Value,
-) {
+async fn set_command_status(client: &SyncClient, id: &str, status: &str, extra: serde_json::Value) {
     let mut body = json!({ "status": status, "updated_at": now() });
     if let (Some(obj), Some(extra_obj)) = (body.as_object_mut(), extra.as_object()) {
         for (k, v) in extra_obj {
@@ -373,9 +368,7 @@ pub async fn remote_command_reject(
     let device = cursor::resolve_device_id(&state.db);
     let rejected = client
         .patch_returning_count(
-            &format!(
-                "pending_commands?id=eq.{id}&target_device_id=eq.{device}&status=eq.pending"
-            ),
+            &format!("pending_commands?id=eq.{id}&target_device_id=eq.{device}&status=eq.pending"),
             &json!({ "status": "rejected", "resolved_at": now(), "updated_at": now() }),
         )
         .await?;
@@ -396,7 +389,10 @@ mod tests {
         let old = (chrono::Utc::now() - chrono::Duration::hours(2)).to_rfc3339();
         let recent = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
         assert!(is_expired(&old), "a 2h-old request should be expired");
-        assert!(!is_expired(&recent), "a 5m-old request should not be expired");
+        assert!(
+            !is_expired(&recent),
+            "a 5m-old request should not be expired"
+        );
         // Unparseable timestamps must NOT be treated as expired (fail-safe:
         // a malformed requested_at shouldn't silently drop a real request).
         assert!(!is_expired("not-a-timestamp"));

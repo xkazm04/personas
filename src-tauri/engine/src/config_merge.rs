@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::prompt;
+use personas_core::types::ModelProfile;
 use personas_db::models::Persona;
 use personas_db::models::PersonaTeam;
 use personas_db::repos::core::settings;
 use personas_db::settings_keys;
 use personas_db::DbPool;
-use crate::prompt;
-use personas_core::types::ModelProfile;
 
 /// Where a configuration value was inherited from.
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]

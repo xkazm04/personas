@@ -336,9 +336,7 @@ pub fn classify_error_str(error: &str) -> ErrorCategory {
 pub fn is_auto_fixable(category: &ErrorCategory) -> bool {
     matches!(
         category,
-        ErrorCategory::RateLimit
-            | ErrorCategory::Timeout
-            | ErrorCategory::TransientProcessFailure
+        ErrorCategory::RateLimit | ErrorCategory::Timeout | ErrorCategory::TransientProcessFailure
     )
 }
 
@@ -668,10 +666,7 @@ mod tests {
             classify_error_str("read ECONNRESET"),
             ErrorCategory::Network
         );
-        assert_eq!(
-            classify_error_str("socket hang up"),
-            ErrorCategory::Network
-        );
+        assert_eq!(classify_error_str("socket hang up"), ErrorCategory::Network);
 
         // A real fleet failure end-to-end: the runner wrapper carrying an
         // overloaded stderr now classifies instead of burying as Unknown.
@@ -787,8 +782,14 @@ mod tests {
         ("connect ETIMEDOUT 10.0.0.1:443", ErrorCategory::Timeout),
         ("Claude CLI not found", ErrorCategory::ProviderNotFound),
         ("spawn ENOENT", ErrorCategory::ProviderNotFound),
-        ("'claude' is not recognized", ErrorCategory::ProviderNotFound),
-        ("Failed to decrypt credential", ErrorCategory::CredentialError),
+        (
+            "'claude' is not recognized",
+            ErrorCategory::ProviderNotFound,
+        ),
+        (
+            "Failed to decrypt credential",
+            ErrorCategory::CredentialError,
+        ),
         ("Invalid API key provided", ErrorCategory::CredentialError),
         ("HTTP 401 Unauthorized", ErrorCategory::CredentialError),
         ("403 returned", ErrorCategory::CredentialError),
@@ -800,19 +801,37 @@ mod tests {
         ("Tool call failed", ErrorCategory::ToolError),
         ("HTTP 500 internal server error", ErrorCategory::ApiError),
         ("502 Bad Gateway", ErrorCategory::ApiError),
-        ("validation failed: missing field", ErrorCategory::Validation),
+        (
+            "validation failed: missing field",
+            ErrorCategory::Validation,
+        ),
         ("malformed JSON in body", ErrorCategory::Validation),
         // Real fleet shapes — Claude Code CLI / Anthropic API stderr as it lands
         // inside `Execution failed (exit code N): <stderr>`. These are the
         // templates the failures-by-category dashboard was burying under Unknown.
-        ("API Error: 529 {\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}", ErrorCategory::ApiError),
+        (
+            "API Error: 529 {\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}",
+            ErrorCategory::ApiError,
+        ),
         ("Overloaded", ErrorCategory::ApiError),
-        ("API Error: 404 not_found_error: model: claude-sonnet-4-20250514", ErrorCategory::ProviderNotFound),
+        (
+            "API Error: 404 not_found_error: model: claude-sonnet-4-20250514",
+            ErrorCategory::ProviderNotFound,
+        ),
         ("model not found", ErrorCategory::ProviderNotFound),
         ("Credit balance is too low", ErrorCategory::CredentialError),
-        ("API Error: 403 permission_error", ErrorCategory::CredentialError),
-        ("authentication_error: invalid x-api-key", ErrorCategory::CredentialError),
-        ("prompt is too long: exceeds the model maximum", ErrorCategory::Validation),
+        (
+            "API Error: 403 permission_error",
+            ErrorCategory::CredentialError,
+        ),
+        (
+            "authentication_error: invalid x-api-key",
+            ErrorCategory::CredentialError,
+        ),
+        (
+            "prompt is too long: exceeds the model maximum",
+            ErrorCategory::Validation,
+        ),
         ("Request too large (413)", ErrorCategory::Validation),
         ("read ECONNRESET", ErrorCategory::Network),
         (
@@ -820,8 +839,14 @@ mod tests {
             ErrorCategory::TransientProcessFailure,
         ),
         ("socket hang up", ErrorCategory::Network),
-        ("Execution failed (exit code 137): Killed", ErrorCategory::TransientProcessFailure),
-        ("Execution failed (exit code 1): ", ErrorCategory::TransientProcessFailure),
+        (
+            "Execution failed (exit code 137): Killed",
+            ErrorCategory::TransientProcessFailure,
+        ),
+        (
+            "Execution failed (exit code 1): ",
+            ErrorCategory::TransientProcessFailure,
+        ),
         ("some entirely novel failure", ErrorCategory::Unknown),
     ];
 

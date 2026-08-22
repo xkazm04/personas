@@ -121,16 +121,20 @@ pub fn list(pool: &DbPool) -> Result<Vec<ExternalApiKey>, AppError> {
 /// NOT filtered here: an expired key's origin lingering in the CORS allowlist is
 /// harmless (the key itself still fails `find_by_token`, so the request 401s).
 pub fn list_paired_origins(pool: &DbPool) -> Result<Vec<String>, AppError> {
-    timed_query!("external_api_keys", "external_api_keys::list_paired_origins", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT DISTINCT bound_origin FROM external_api_keys
+    timed_query!(
+        "external_api_keys",
+        "external_api_keys::list_paired_origins",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT DISTINCT bound_origin FROM external_api_keys
              WHERE bound_origin IS NOT NULL AND enabled = 1 AND revoked_at IS NULL",
-        )?;
-        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Look up a key by its plaintext token. Hashes the input, queries the indexed
@@ -226,8 +230,7 @@ mod tests {
     /// repo logic (token hashing, expiry enforcement, origin binding).
     fn test_pool() -> crate::DbPool {
         use std::time::Duration;
-        let tmp =
-            std::env::temp_dir().join(format!("eapikey_test_{}.db", uuid::Uuid::new_v4()));
+        let tmp = std::env::temp_dir().join(format!("eapikey_test_{}.db", uuid::Uuid::new_v4()));
         let manager = r2d2_sqlite::SqliteConnectionManager::file(&tmp);
         let pool = r2d2::Pool::builder()
             .max_size(2)
@@ -259,9 +262,15 @@ mod tests {
     #[test]
     fn create_then_find_by_token_roundtrip() {
         let pool = test_pool();
-        let resp =
-            create(&pool, "test-key", vec!["personas:read".into()], None, None, None)
-                .expect("create should succeed");
+        let resp = create(
+            &pool,
+            "test-key",
+            vec!["personas:read".into()],
+            None,
+            None,
+            None,
+        )
+        .expect("create should succeed");
 
         // Plaintext is returned once and starts with the expected prefix.
         assert!(resp.plaintext_token.starts_with("pk_"));
@@ -415,12 +424,25 @@ mod tests {
     #[test]
     fn list_paired_origins_only_active_with_origin() {
         let pool = test_pool();
-        create(&pool, "paired-a", vec![], None, Some("https://a.example".into()), None)
-            .expect("create a");
+        create(
+            &pool,
+            "paired-a",
+            vec![],
+            None,
+            Some("https://a.example".into()),
+            None,
+        )
+        .expect("create a");
         // A revoked paired key — its origin must NOT appear.
-        let revoked =
-            create(&pool, "paired-b", vec![], None, Some("https://b.example".into()), None)
-                .expect("create b");
+        let revoked = create(
+            &pool,
+            "paired-b",
+            vec![],
+            None,
+            Some("https://b.example".into()),
+            None,
+        )
+        .expect("create b");
         revoke(&pool, &revoked.record.id).expect("revoke");
         // A non-paired key (no origin) — must not appear.
         create(&pool, "cli", vec![], None, None, None).expect("create cli");

@@ -3,15 +3,49 @@
     "Fixture registry for scripts/census/self-test.mjs. Mirrors the shape of",
     "../rules.json and is scanned by the SAME engine, so the self-test exercises",
     "the real code path rather than a re-implementation of it.",
-    "Expected counts live in self-test.mjs and are asserted exactly."
+    "Expected counts live in self-test.mjs and are asserted exactly — including,",
+    "as of 2026-08-21, the seven rust-tree rules, which carried baselines here but",
+    "no named assertion for four months. A baseline in a data file and an assertion",
+    "in a test both fail on drift; only the second says WHICH matcher moved.",
+    "",
+    "Four rust rules twin a rule registered in ../rules.json with a BYTE-IDENTICAL",
+    "pattern, which is what makes this a regression guard for the real gate rather",
+    "than a test of a copy: fx-process-spawn (process-spawn-outside-chokepoint),",
+    "fx-positional-row-get (positional-row-get), fx-select-star (select-star-in-repo),",
+    "fx-pool-get-unwrapped (pool-get-unwrapped).",
+    "",
+    "THREE ARE FIXTURE-ONLY, and are kept deliberately rather than deleted. Their",
+    "conditions were measured and then WITHHELD from ../rules.json — not because the",
+    "matchers are wrong (all three measure cleanly) but because each is already",
+    "adjudicated elsewhere in the repo, and shipping them would have put two",
+    "instruments with different opinions over one population:",
+    "  fx-adhoc-http — outbound-http-call.md §9 REFUSES this signal with published",
+    "    numbers; re-measured 2026-08-21, 8/12 hand-opened sites at best, with three",
+    "    that already install SsrfSafeDnsResolver and one that IS a process-wide",
+    "    static. A gate that fires on correct content is worse than no gate.",
+    "  fx-sync-command-pool — a strict site-subset of the registered",
+    "    persistence-handle-in-command-tree (0 files outside its 46), and its primary",
+    "    legal fix contradicts new-ipc-command.md §2 step 4, which PRESCRIBES pub fn",
+    "    over pub async fn for privileged commands.",
+    "  fx-bare-result-string — already gated, and more strongly, by",
+    "    src/__tests__/structural/tauri-command-error-envelope.test.ts: a shrink-only",
+    "    allowlist with per-entry reasons, stale-entry detection and a >=400-command",
+    "    self-check, covering exactly the same 32 sites in the same 3 files.",
+    "They stay because the fixture corpus that exercises them is the engine test, not",
+    "the gate, and deleting a working regression corpus makes the next attempt at",
+    "these conditions start from nothing."
   ],
   "rules": [
     {
       "id": "fx-storage",
       "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
       "title": "fixture: web storage",
-      "roots": ["tree"],
-      "extensions": [".tsx"],
+      "roots": [
+        "tree"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
       "signal": {
         "pattern": "(?:\\bwindow\\s*\\.\\s*)?\\b(?:localStorage|sessionStorage)\\b",
         "flags": "g",
@@ -24,15 +58,22 @@
           "reason": "fixture stand-in for a primitive that legitimately owns the construct"
         }
       ],
-      "baseline": { "files": 2, "matches": 4 },
+      "baseline": {
+        "files": 2,
+        "matches": 4
+      },
       "floor": 4
     },
     {
       "id": "fx-spinner",
       "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
       "title": "fixture: spinner",
-      "roots": ["tree"],
-      "extensions": [".tsx"],
+      "roots": [
+        "tree"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
       "signal": {
         "pattern": "animate-spin",
         "flags": "g",
@@ -40,15 +81,22 @@
         "description": "fixture twin of the real hand-rolled-spinner signal"
       },
       "exclude": [],
-      "baseline": { "files": 3, "matches": 4 },
+      "baseline": {
+        "files": 3,
+        "matches": 4
+      },
       "floor": 4
     },
     {
       "id": "fx-select",
       "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
       "title": "fixture: raw select",
-      "roots": ["tree"],
-      "extensions": [".tsx"],
+      "roots": [
+        "tree"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
       "signal": {
         "pattern": "<select(?![A-Za-z0-9_$-])",
         "flags": "g",
@@ -56,8 +104,182 @@
         "description": "fixture twin of the real raw-select signal, incl. an end-of-line occurrence"
       },
       "exclude": [],
-      "baseline": { "files": 3, "matches": 4 },
+      "baseline": {
+        "files": 3,
+        "matches": 4
+      },
       "floor": 4
+    },
+    {
+      "id": "fx-adhoc-http",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: ad-hoc HTTP client",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "(?:\\breqwest::Client|(?<![A-Za-z0-9_:])Client)::(?:new\\(\\)|builder\\(\\))",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real adhoc-http-client signal; the negatives are a vendor type whose name merely ends in Client, and the compliant shared-static call"
+      },
+      "exclude": [
+        {
+          "path": "rust-tree/excluded/http_clients.rs",
+          "reason": "fixture stand-in for the client-construction chokepoint the rule routes callers to"
+        }
+      ],
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 8
+    },
+    {
+      "id": "fx-process-spawn",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: process spawn outside the chokepoint",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:[A-Za-z_][A-Za-z0-9_]*)?Command::new\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real process-spawn-outside-chokepoint signal; covers all four spellings (bare, std::process::, tokio::process::, TokioCommand alias) and negatives that reuse an existing child"
+      },
+      "exclude": [
+        {
+          "path": "rust-tree/excluded/cli_process.rs",
+          "reason": "fixture stand-in for the spawn chokepoint that owns env scrubbing and cancellation"
+        }
+      ],
+      "baseline": {
+        "files": 1,
+        "matches": 4
+      },
+      "floor": 8
+    },
+    {
+      "id": "fx-positional-row-get",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: positional row read",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b(?:row|r)\\.get(?:::<[^()]{0,40}?>)?\\s*\\(\\s*\\d+\\s*\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real positional-row-get signal; negatives are named-column reads and collection indexing, which wear the same method name"
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 2,
+        "matches": 6
+      },
+      "floor": 8
+    },
+    {
+      "id": "fx-select-star",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: wildcard projection",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "SELECT\\s+\\*",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real select-star-in-repo signal; negatives are an explicit column list and SELECT COUNT(*), which must not count"
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 8
+    },
+    {
+      "id": "fx-pool-get-unwrapped",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: unwrapped pool checkout",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "\\b[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*\\.get\\(\\)\\s*\\.\\s*(?:unwrap\\(\\)|expect\\()",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real pool-get-unwrapped signal; includes a chain split across two lines (invisible to any line-oriented matcher) and negatives that propagate or index a map"
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 1,
+        "matches": 4
+      },
+      "floor": 8
+    },
+    {
+      "id": "fx-sync-command-pool",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: sync IPC command checking out a connection",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "#\\[tauri::command[^\\]]*\\]\\s*(?:#\\[[^\\n]*\\]\\s*)*(?:pub\\s+)?fn\\b(?:(?!#\\[tauri::command)[\\s\\S]){0,2500}?(?:[A-Za-z_][A-Za-z0-9_]*\\.)?[A-Za-z_0-9]*db\\.get\\(\\)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real sync-command-touching-pool signal. THREE matches by design: two genuine sync commands, plus the deliberate MIS-ATTRIBUTION case at the bottom of commands.rs (a clean sync command followed by a private helper that checks out) which encodes the measured 42/44 attribution precision as a regression guard"
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 1,
+        "matches": 3
+      },
+      "floor": 8
+    },
+    {
+      "id": "fx-bare-result-string",
+      "goldenPath": "(fixture rule — owns no real golden path; see scripts/census/self-test.mjs)",
+      "title": "fixture: IPC command returning Result<_, String>",
+      "roots": [
+        "rust-tree"
+      ],
+      "extensions": [
+        ".rs"
+      ],
+      "signal": {
+        "pattern": "#\\[tauri::command[^{]{0,900}?->\\s*Result<(?:[^<>]|<[^<>]*>){0,120}?,\\s*String\\s*>",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "fixture twin of the real bare-result-string-command signal; negatives are the typed-error command and a plain helper that may keep a String error"
+      },
+      "exclude": [],
+      "baseline": {
+        "files": 1,
+        "matches": 2
+      },
+      "floor": 8
     }
   ]
 }

@@ -16,7 +16,9 @@ use crate::AppState;
 /// error. Every discovery command needs this right after `require_auth` —
 /// centralizing it means the error string and the `Option::None` handling
 /// only need to be maintained in one place.
-fn network(state: &AppState) -> Result<&std::sync::Arc<crate::engine::p2p::NetworkService>, AppError> {
+fn network(
+    state: &AppState,
+) -> Result<&std::sync::Arc<crate::engine::p2p::NetworkService>, AppError> {
     state
         .network
         .as_ref()

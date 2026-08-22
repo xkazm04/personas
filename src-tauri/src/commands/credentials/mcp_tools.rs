@@ -42,7 +42,9 @@ pub async fn probe_mcp_server(
         .timeout(Duration::from_secs(2))
         .build()
     {
-        Ok(client) => matches!(client.get(&url).send().await, Ok(resp) if resp.status().is_success()),
+        Ok(client) => {
+            matches!(client.get(&url).send().await, Ok(resp) if resp.status().is_success())
+        }
         Err(_) => false,
     };
 

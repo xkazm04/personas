@@ -207,7 +207,11 @@ pub fn update_credential(
         // refresh_token). Otherwise the stale expiry keeps the proactive engine
         // skipping this credential — the reconnect "works" but 401s within ~1h.
         if crate::engine::rotation::is_oauth_credential(&state.db, &cred) {
-            crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone(), Some(app));
+            crate::engine::oauth_refresh::spawn_connect_seed(
+                state.db.clone(),
+                cred.clone(),
+                Some(app),
+            );
         }
     }
 

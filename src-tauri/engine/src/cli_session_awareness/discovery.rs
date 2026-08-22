@@ -105,10 +105,7 @@ pub fn discover_active_session(
             }
 
             // Best-so-far tracking: keep the newest mtime overall.
-            let beats_current = best
-                .as_ref()
-                .map(|b| mtime > b.mtime)
-                .unwrap_or(true);
+            let beats_current = best.as_ref().map(|b| mtime > b.mtime).unwrap_or(true);
             if beats_current {
                 best = Some(ActiveSession {
                     path,
@@ -166,11 +163,7 @@ mod tests {
     fn returns_none_when_projects_root_missing() {
         let home = scratch_home();
         // No .claude/projects/ created at all.
-        let result = discover_active_session(
-            &home,
-            SystemTime::now(),
-            DEFAULT_FRESHNESS_CUTOFF,
-        );
+        let result = discover_active_session(&home, SystemTime::now(), DEFAULT_FRESHNESS_CUTOFF);
         assert!(result.is_none());
     }
 
@@ -182,11 +175,7 @@ mod tests {
         let stale = SystemTime::now() - Duration::from_secs(60 * 60 * 24);
         set_mtime(&path, stale);
 
-        let result = discover_active_session(
-            &home,
-            SystemTime::now(),
-            DEFAULT_FRESHNESS_CUTOFF,
-        );
+        let result = discover_active_session(&home, SystemTime::now(), DEFAULT_FRESHNESS_CUTOFF);
         assert!(result.is_none(), "stale file should be filtered out");
     }
 

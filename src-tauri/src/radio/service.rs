@@ -44,8 +44,8 @@ pub struct RadioServiceHandle(pub Arc<Mutex<RadioService>>);
 
 impl RadioService {
     pub fn new(persistence_path: PathBuf) -> Self {
-        let parsed: StationsFile = serde_json::from_str(EMBEDDED_STATIONS_JSON)
-            .unwrap_or_else(|e| {
+        let parsed: StationsFile =
+            serde_json::from_str(EMBEDDED_STATIONS_JSON).unwrap_or_else(|e| {
                 tracing::error!("Failed to parse embedded radio stations JSON: {}", e);
                 StationsFile {
                     version: default_version(),
@@ -96,7 +96,8 @@ impl RadioService {
     }
 
     pub fn default_station_id(&self) -> Option<&str> {
-        self.default_station_id.as_deref()
+        self.default_station_id
+            .as_deref()
             .or_else(|| self.stations.first().map(|s| s.id.as_str()))
     }
 
@@ -138,7 +139,10 @@ impl RadioService {
     }
 
     pub fn pause(&mut self) {
-        if matches!(self.state.status, PlayStatus::Playing | PlayStatus::Buffering) {
+        if matches!(
+            self.state.status,
+            PlayStatus::Playing | PlayStatus::Buffering
+        ) {
             self.state.status = PlayStatus::Paused;
         }
     }
@@ -216,7 +220,9 @@ impl RadioService {
         let (track, track_index_in_station) = match &station.source {
             StationSource::YoutubeTracks { tracks } => {
                 let cursor = self.state.station_cursors.get(station_id)?;
-                let track_idx = *cursor.shuffle_order.get(cursor.current_track_index as usize)?;
+                let track_idx = *cursor
+                    .shuffle_order
+                    .get(cursor.current_track_index as usize)?;
                 let track = tracks.get(track_idx as usize)?.clone();
                 (Some(track), Some(track_idx))
             }
@@ -265,17 +271,13 @@ mod tests {
     use std::env::temp_dir;
 
     fn fresh() -> RadioService {
-        let path = temp_dir().join(format!(
-            "radio_test_{}.json",
-            uuid::Uuid::new_v4().simple()
-        ));
+        let path = temp_dir().join(format!("radio_test_{}.json", uuid::Uuid::new_v4().simple()));
         RadioService::new(path)
     }
 
     #[test]
     fn embedded_json_parses_cleanly() {
-        let parsed: Result<StationsFile, _> =
-            serde_json::from_str(EMBEDDED_STATIONS_JSON);
+        let parsed: Result<StationsFile, _> = serde_json::from_str(EMBEDDED_STATIONS_JSON);
         if let Err(e) = &parsed {
             panic!("embedded radio stations JSON failed to parse: {e}");
         }
@@ -286,11 +288,15 @@ mod tests {
         let svc = fresh();
         // Seed has at least one of each engine kind.
         assert!(
-            svc.stations().iter().any(|s| matches!(s.source, StationSource::YoutubeTracks { .. })),
+            svc.stations()
+                .iter()
+                .any(|s| matches!(s.source, StationSource::YoutubeTracks { .. })),
             "seed must include at least one youtubeTracks station"
         );
         assert!(
-            svc.stations().iter().any(|s| matches!(s.source, StationSource::Stream { .. })),
+            svc.stations()
+                .iter()
+                .any(|s| matches!(s.source, StationSource::Stream { .. })),
             "seed must include at least one stream station"
         );
     }
@@ -308,9 +314,17 @@ mod tests {
                     );
                 }
                 StationSource::YoutubeTracks { tracks } => {
-                    assert!(!tracks.is_empty(), "youtubeTracks station {} has no tracks", station.id);
+                    assert!(
+                        !tracks.is_empty(),
+                        "youtubeTracks station {} has no tracks",
+                        station.id
+                    );
                     for track in tracks {
-                        assert!(!track.video_id.is_empty(), "track in {} has empty video_id", station.id);
+                        assert!(
+                            !track.video_id.is_empty(),
+                            "track in {} has empty video_id",
+                            station.id
+                        );
                     }
                 }
             }
@@ -387,7 +401,10 @@ mod tests {
             .expect("seed has a stream station");
         svc.set_station(&stream_station_id).unwrap();
         let np = svc.now_playing().expect("now_playing resolves");
-        assert!(np.track.is_none(), "stream station now_playing has no track");
+        assert!(
+            np.track.is_none(),
+            "stream station now_playing has no track"
+        );
         assert!(np.track_index_in_station.is_none());
     }
 
@@ -417,10 +434,7 @@ mod tests {
 
     #[test]
     fn unknown_persisted_station_is_discarded_at_boot() {
-        let path = temp_dir().join(format!(
-            "radio_test_{}.json",
-            uuid::Uuid::new_v4().simple()
-        ));
+        let path = temp_dir().join(format!("radio_test_{}.json", uuid::Uuid::new_v4().simple()));
         std::fs::write(
             &path,
             serde_json::to_vec(&serde_json::json!({
@@ -434,10 +448,15 @@ mod tests {
                         "shuffleOrder": [0]
                     }
                 }
-            })).unwrap(),
-        ).unwrap();
+            }))
+            .unwrap(),
+        )
+        .unwrap();
         let svc = RadioService::new(path);
         assert_eq!(svc.state.current_station_id, None);
-        assert!(svc.state.station_cursors.is_empty(), "stale cursor should be evicted");
+        assert!(
+            svc.state.station_cursors.is_empty(),
+            "stale cursor should be evicted"
+        );
     }
 }

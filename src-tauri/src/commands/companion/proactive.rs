@@ -46,13 +46,19 @@ pub async fn companion_evaluate_proactive_now(
     // C3: emit the once-daily end-of-day rollup if it's due (gated, no budget).
     proactive::rollup::maybe_emit_daily_rollup(&state.user_db, &state.db, &app);
     // F3: run the weekly behavioral profile-synthesis pass if due (gated).
-    crate::companion::brain::profile_synthesis::maybe_run_synthesis(&state.user_db, &state.db, &app)
-        .await;
+    crate::companion::brain::profile_synthesis::maybe_run_synthesis(
+        &state.user_db,
+        &state.db,
+        &app,
+    )
+    .await;
     // Extra candidates sourced from the main app DB (not the companion
     // user_db): project-goal nudges + OPEN high/critical incident nudges.
     // Same guards (quiet hours / budget / dedupe) apply via the evaluator.
     let mut extra = proactive::triggers::dev_goal_nudges(&state.db);
-    extra.extend(proactive::incident_triggers::incident_blocker_nudges(&state.db));
+    extra.extend(proactive::incident_triggers::incident_blocker_nudges(
+        &state.db,
+    ));
     // Fleet triggers only fire with autonomous mode on (see collect_all).
     let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
     // Noticing. Inserts `queued` rows; spends no budget and delivers nothing.

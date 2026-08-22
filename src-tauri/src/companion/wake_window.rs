@@ -74,22 +74,43 @@ fn minutes_since_last_wake(pool: &DbPool, surface: &str) -> Option<i64> {
 /// messages) that must not wait out the window.
 pub fn gate(pool: &DbPool, surface: &str, pending: usize, has_priority: bool) -> WakeGate {
     if pending == 0 {
-        return WakeGate { due: false, reason: "waiting" };
+        return WakeGate {
+            due: false,
+            reason: "waiting",
+        };
     }
     let window = window_minutes(pool);
     if window == 0 {
-        return WakeGate { due: true, reason: "reactive" };
+        return WakeGate {
+            due: true,
+            reason: "reactive",
+        };
     }
     if has_priority {
-        return WakeGate { due: true, reason: "priority" };
+        return WakeGate {
+            due: true,
+            reason: "priority",
+        };
     }
     if pending >= QUEUE_CAP {
-        return WakeGate { due: true, reason: "queue_size" };
+        return WakeGate {
+            due: true,
+            reason: "queue_size",
+        };
     }
     match minutes_since_last_wake(pool, surface) {
-        None => WakeGate { due: true, reason: "window" }, // first wake ever
-        Some(age) if age >= window as i64 => WakeGate { due: true, reason: "window" },
-        Some(_) => WakeGate { due: false, reason: "waiting" },
+        None => WakeGate {
+            due: true,
+            reason: "window",
+        }, // first wake ever
+        Some(age) if age >= window as i64 => WakeGate {
+            due: true,
+            reason: "window",
+        },
+        Some(_) => WakeGate {
+            due: false,
+            reason: "waiting",
+        },
     }
 }
 

@@ -11,7 +11,7 @@ techniques:
   - continuation-prompts
 evidence:
   - src-tauri/engine/src/prompt/mod.rs                    # one assembler for the persona prompt family: owned sections, ordering, capability rendering, fingerprint
-  - src-tauri/src/companion/prompt.rs                     # layered companion prompt: constitution / identity / digest / recall / doctrine, with digest bounding
+  - src-tauri/src/companion/prompt/                     # layered companion prompt: constitution / identity / digest / recall / doctrine, with digest bounding
   - src-tauri/engine/src/skills_sidecar/mod.rs            # lazy expansion: heavy capability material moved out of the inline prompt into an on-demand sidecar
   - src-tauri/engine/src/prompt/resume_prompt.rs          # continuation prompt: delta-only re-send for a preserved session (credentials + connector roster re-derived)
   - src-tauri/engine/src/prompt/variables.rs              # interpolation with trust classes: magic vars + persona params trusted, execution input sanitized

@@ -56,7 +56,9 @@ fn icon_id_for_category(category: &str) -> &'static str {
 pub fn export_safe_icon(icon: Option<&str>, template_category: Option<&str>) -> Option<String> {
     match icon {
         Some(value) if value.starts_with(CUSTOM_ICON_PREFIX) => {
-            let id = template_category.map(icon_id_for_category).unwrap_or("assistant");
+            let id = template_category
+                .map(icon_id_for_category)
+                .unwrap_or("assistant");
             Some(format!("{AGENT_ICON_PREFIX}{id}"))
         }
         other => other.map(str::to_string),

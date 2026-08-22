@@ -52,10 +52,7 @@ fn digest(request: &str, max: usize) -> String {
 /// Pure and deterministic — the unit test pins the exact shape, because a
 /// self-review whose evidence silently changes format is a self-review
 /// whose conclusions can't be compared across runs.
-pub fn format_self_review_evidence(
-    entries: &[DevOpLedgerEntry],
-    metrics: &DevOpMetrics,
-) -> String {
+pub fn format_self_review_evidence(entries: &[DevOpLedgerEntry], metrics: &DevOpMetrics) -> String {
     let mut s = String::new();
     s.push_str(&format!(
         "Scoreboard (all time): {total} dispatched · {landed} landed a commit · \
@@ -203,7 +200,14 @@ mod tests {
                 Some("abc1234"),
                 true,
             ),
-            entry("op_b", "Rewrite the whole panel", "interrupted", Some("down"), None, false),
+            entry(
+                "op_b",
+                "Rewrite the whole panel",
+                "interrupted",
+                Some("down"),
+                None,
+                false,
+            ),
         ];
         let metrics = DevOpMetrics {
             total: 2,
@@ -228,10 +232,20 @@ mod tests {
 
     #[test]
     fn unrated_and_unfinished_rows_render_without_placeholders_that_look_like_data() {
-        let mut e = entry("op_c", "Something in flight", "dispatched", None, None, false);
+        let mut e = entry(
+            "op_c",
+            "Something in flight",
+            "dispatched",
+            None,
+            None,
+            false,
+        );
         e.finished_at = None;
         let out = format_self_review_evidence(&[e], &DevOpMetrics::default());
-        assert!(out.contains("op_c [dispatched] unrated · frontend · no commit · unfinished"), "{out}");
+        assert!(
+            out.contains("op_c [dispatched] unrated · frontend · no commit · unfinished"),
+            "{out}"
+        );
         // A zeroed scoreboard must still read as zeros, never as blanks.
         assert!(out.contains("0 dispatched · 0 landed a commit"), "{out}");
     }
@@ -241,7 +255,11 @@ mod tests {
         // Multi-byte input: a byte slice at 90 would panic here.
         let long = "díky".repeat(60);
         let d = digest(&long, REQUEST_DIGEST_CHARS);
-        assert_eq!(d.chars().count(), REQUEST_DIGEST_CHARS + 1, "digest + ellipsis");
+        assert_eq!(
+            d.chars().count(),
+            REQUEST_DIGEST_CHARS + 1,
+            "digest + ellipsis"
+        );
         assert!(d.ends_with('…'));
         // Newlines collapse so one row stays one row.
         assert_eq!(digest("a\nb\r\nc", 90), "a b  c");

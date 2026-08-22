@@ -150,7 +150,10 @@ pub fn allocate_attention_budget(
     total_usd: f64,
     roster: &[(String, Option<i64>)],
 ) -> HashMap<String, f64> {
-    if roster.is_empty() || !(total_usd > 0.0) {
+    // NaN must take the empty-map branch, so it is tested explicitly rather
+    // than relying on a negated `>` (which clippy rejects, and which reads as if
+    // NaN had been overlooked).
+    if roster.is_empty() || total_usd.is_nan() || total_usd <= 0.0 {
         return HashMap::new();
     }
     let weight = |score: &Option<i64>| -> f64 {
@@ -324,8 +327,7 @@ pub async fn commission_experiment(
         let shares = allocate_attention_budget(ledger.budget_usd, &roster);
         match shares.get(&verdict.persona_id) {
             Some(share) => {
-                let spent =
-                    weekly_spend_usd(pool, &ledger.week_start, Some(&verdict.persona_id));
+                let spent = weekly_spend_usd(pool, &ledger.week_start, Some(&verdict.persona_id));
                 if spent >= *share {
                     Some(format!(
                         "This persona's attention share is exhausted: ${spent:.2} spent of a ${share:.2} weekly share"
@@ -540,7 +542,10 @@ mod tests {
         ];
         let shares = allocate_attention_budget(2.4, &roster);
         let sum: f64 = shares.values().sum();
-        assert!((sum - 2.4).abs() < 1e-9, "shares sum to the total, got {sum}");
+        assert!(
+            (sum - 2.4).abs() < 1e-9,
+            "shares sum to the total, got {sum}"
+        );
         assert!(
             shares["struggling"] > shares["healthy"],
             "lower score ⇒ larger share"
@@ -649,9 +654,13 @@ mod tests {
         .unwrap();
         assert_eq!(created.status, STATUS_AWAITING_VARIANT);
 
-        let by_review = ab::get_experiment_by_review(&pool, "rev-1").unwrap().unwrap();
+        let by_review = ab::get_experiment_by_review(&pool, "rev-1")
+            .unwrap()
+            .unwrap();
         assert_eq!(by_review.id, created.id);
-        assert!(ab::get_experiment_by_review(&pool, "rev-missing").unwrap().is_none());
+        assert!(ab::get_experiment_by_review(&pool, "rev-missing")
+            .unwrap()
+            .is_none());
 
         let updated = ab::update_experiment_outcome(
             &pool,
@@ -671,7 +680,9 @@ mod tests {
 
         let listed = ab::list_experiments(&pool, Some("p-1"), 10).unwrap();
         assert_eq!(listed.len(), 1);
-        assert!(ab::list_experiments(&pool, Some("p-other"), 10).unwrap().is_empty());
+        assert!(ab::list_experiments(&pool, Some("p-other"), 10)
+            .unwrap()
+            .is_empty());
     }
 
     // -- commission gates (no LLM spawned in any of these) -------------------
@@ -750,12 +761,18 @@ mod tests {
         // Pending (not approved) → refused: proposed, not imposed.
         let pending = mk_director_review(&pool, &pid, true, ManualReviewStatus::Pending);
         let err = load_approved_verdict(&pool, &pending).unwrap_err();
-        assert!(matches!(err, AppError::Validation(_)), "pending must not compile");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "pending must not compile"
+        );
 
         // Approved but no hypothesis → refused (plain coaching).
         let plain = mk_director_review(&pool, &pid, false, ManualReviewStatus::Approved);
         let err = load_approved_verdict(&pool, &plain).unwrap_err();
-        assert!(matches!(err, AppError::Validation(_)), "no hypothesis, no experiment");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "no hypothesis, no experiment"
+        );
 
         // Approved + hypothesis → loads with provenance fields intact.
         let good = mk_director_review(&pool, &pid, true, ManualReviewStatus::Approved);

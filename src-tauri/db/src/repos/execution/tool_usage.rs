@@ -1,10 +1,9 @@
 use rusqlite::params;
 
-use crate::models::{
-    PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary,
-};
+use crate::models::{PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary};
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Internal CLI tools that should be excluded from usage analytics charts.
@@ -63,7 +62,7 @@ pub fn record(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("tool_usage::record")?;
         conn.execute(
             "INSERT INTO persona_tool_usage
              (id, execution_id, persona_id, tool_name, invocation_count, created_at)
@@ -87,7 +86,7 @@ pub fn get_by_execution(
     execution_id: &str,
 ) -> Result<Vec<PersonaToolUsage>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_by_execution", {
-        let conn = pool.get()?;
+        let conn = pool.conn("tool_usage::get_by_execution")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_tool_usage
              WHERE execution_id = ?1
@@ -107,7 +106,7 @@ pub fn get_usage_summary(
     persona_id: Option<&str>,
 ) -> Result<Vec<ToolUsageSummary>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_summary", {
-        let conn = pool.get()?;
+        let conn = pool.conn("tool_usage::get_usage_summary")?;
         let mut qb = QueryBuilder::new();
         qb.where_gte("created_at", since.to_string());
         if let Some(pid) = persona_id {
@@ -147,7 +146,7 @@ pub fn get_usage_over_time(
     persona_id: Option<&str>,
 ) -> Result<Vec<ToolUsageOverTime>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_over_time", {
-        let conn = pool.get()?;
+        let conn = pool.conn("tool_usage::get_usage_over_time")?;
         let mut qb = QueryBuilder::new();
         qb.where_gte("created_at", since.to_string());
         if let Some(pid) = persona_id {
@@ -184,7 +183,7 @@ pub fn get_usage_by_persona(
     since: &str,
 ) -> Result<Vec<PersonaUsageSummary>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_by_persona", {
-        let conn = pool.get()?;
+        let conn = pool.conn("tool_usage::get_usage_by_persona")?;
         let sql = format!(
             "SELECT u.persona_id,
                 p.name as persona_name,

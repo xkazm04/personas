@@ -226,7 +226,11 @@ pub fn finalize_run(
     entity_count: i32,
     error: Option<&str>,
 ) -> Result<(), AppError> {
-    let status = if error.is_some() { "failed" } else { "completed" };
+    let status = if error.is_some() {
+        "failed"
+    } else {
+        "completed"
+    };
     let conn = user_db.get()?;
     conn.execute(
         "UPDATE kb_extraction_runs

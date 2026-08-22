@@ -38,7 +38,7 @@ drifting from the total is exactly what a single declared budget prevents.
 
 ## Labeled, not smuggled
 
-`format_facts` (`src-tauri/src/companion/prompt.rs:376-413`) renders each
+`format_facts` (`src-tauri/src/companion/prompt/:376-413`) renders each
 recalled fact as `**key** (importance N, conf NN%) — value [from sources]`
 under a header that names the epistemic status: "facts you've distilled —
 every entry is cited". Procedurals carry the same annotation

@@ -13,20 +13,9 @@ use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
+use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // -- Debug output sanitization -----------------------------------------
 //
@@ -316,10 +305,10 @@ async fn run_query_debug(params: RunParams) {
         error_context.as_deref(),
     );
 
-    emit_line(
+    QUERY_DEBUG_JOBS.emit_line(
         &app,
         &debug_id,
-        &format!("> Analyzing query for {connector_family} ({service_type})..."),
+        format!("> Analyzing query for {connector_family} ({service_type})..."),
     );
 
     // Build CLI args (no persona, default provider, fast model, single turn --
@@ -340,7 +329,7 @@ async fn run_query_debug(params: RunParams) {
         Ok((text, sid)) => (text, sid),
         Err(e) => {
             tracing::warn!(debug_id = %debug_id, "Claude CLI failed: {}", e);
-            emit_line(
+            QUERY_DEBUG_JOBS.emit_line(
                 &app,
                 &debug_id,
                 "[ERROR] AI analysis failed. See application logs for details.",
@@ -358,7 +347,7 @@ async fn run_query_debug(params: RunParams) {
     // Retry loop: extract query, execute, retry on failure
     for attempt in 0..MAX_RETRIES {
         if cancel_token.is_cancelled() {
-            emit_line(&app, &debug_id, "> Cancelled.");
+            QUERY_DEBUG_JOBS.emit_line(&app, &debug_id, "> Cancelled.");
             return;
         }
 
@@ -366,7 +355,7 @@ async fn run_query_debug(params: RunParams) {
         let query_to_run = match extracted {
             Some(q) => q,
             None => {
-                emit_line(
+                QUERY_DEBUG_JOBS.emit_line(
                     &app,
                     &debug_id,
                     "[ERROR] Could not extract a query from AI response.",
@@ -381,10 +370,10 @@ async fn run_query_debug(params: RunParams) {
             }
         };
 
-        emit_line(
+        QUERY_DEBUG_JOBS.emit_line(
             &app,
             &debug_id,
-            &format!("> Attempt {} -- executing extracted query...", attempt + 1),
+            format!("> Attempt {} -- executing extracted query...", attempt + 1),
         );
 
         // Audit log the query execution (log a length fingerprint, not raw query text)
@@ -401,7 +390,7 @@ async fn run_query_debug(params: RunParams) {
 
         // Block mutations unless the user explicitly opted in
         if is_mutation && !allow_mutations {
-            emit_line(&app, &debug_id, "[ERROR] AI suggested a mutation query (INSERT/UPDATE/DELETE/DROP) but mutations are not allowed. Enable 'Allow mutations' to permit this.");
+            QUERY_DEBUG_JOBS.emit_line(&app, &debug_id, "[ERROR] AI suggested a mutation query (INSERT/UPDATE/DELETE/DROP) but mutations are not allowed. Enable 'Allow mutations' to permit this.");
             QUERY_DEBUG_JOBS.set_status(
                 &app,
                 &debug_id,
@@ -429,7 +418,7 @@ async fn run_query_debug(params: RunParams) {
                     if result.row_count != 1 { "s" } else { "" },
                     result.duration_ms,
                 );
-                emit_line(&app, &debug_id, &summary);
+                QUERY_DEBUG_JOBS.emit_line(&app, &debug_id, &summary);
 
                 // Emit sanitized result -- redact sensitive columns, cap rows
                 let sanitized_result = sanitize_query_result(&result);
@@ -456,13 +445,13 @@ async fn run_query_debug(params: RunParams) {
                 let safe_msg = sanitize_db_error(&err_msg);
                 // Log full error server-side only
                 tracing::warn!(debug_id = %debug_id, "Query debug execution failed: {}", err_msg);
-                emit_line(&app, &debug_id, &format!("[ERROR] {}", safe_msg));
+                QUERY_DEBUG_JOBS.emit_line(&app, &debug_id, format!("[ERROR] {}", safe_msg));
 
                 if attempt + 1 >= MAX_RETRIES {
-                    emit_line(
+                    QUERY_DEBUG_JOBS.emit_line(
                         &app,
                         &debug_id,
-                        &format!("> Max retries ({MAX_RETRIES}) reached."),
+                        format!("> Max retries ({MAX_RETRIES}) reached."),
                     );
                     QUERY_DEBUG_JOBS.set_status(
                         &app,
@@ -477,7 +466,7 @@ async fn run_query_debug(params: RunParams) {
                 }
 
                 // Resume Claude session with the error for another attempt
-                emit_line(
+                QUERY_DEBUG_JOBS.emit_line(
                     &app,
                     &debug_id,
                     "> Resuming AI session with error context...",
@@ -534,7 +523,7 @@ async fn run_query_debug(params: RunParams) {
                     }
                     Err(e) => {
                         tracing::warn!(debug_id = %debug_id, "AI retry failed: {}", e);
-                        emit_line(
+                        QUERY_DEBUG_JOBS.emit_line(
                             &app,
                             &debug_id,
                             "[ERROR] AI retry failed. See application logs for details.",
@@ -554,10 +543,6 @@ async fn run_query_debug(params: RunParams) {
 }
 
 // -- Helpers --------------------------------------------------------------
-
-fn emit_line(app: &tauri::AppHandle, debug_id: &str, line: &str) {
-    QUERY_DEBUG_JOBS.emit_line(app, debug_id, line);
-}
 
 fn build_prompt(
     connector_family: &str,

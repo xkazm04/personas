@@ -9,8 +9,8 @@
 use rusqlite::params;
 
 use crate::DbPool;
-use personas_core::run_budget::{enforce_enabled, RunBudgetRecord, RunBudgetState};
 use personas_core::error::AppError;
+use personas_core::run_budget::{enforce_enabled, RunBudgetRecord, RunBudgetState};
 
 /// Upsert the persisted budget row for a run. Captures the global enforce-mode
 /// flag at write time. Idempotent on `run_id` (a re-run overwrites its row).
@@ -76,8 +76,8 @@ pub fn list_recent(
             mapped.collect::<rusqlite::Result<Vec<_>>>()?
         }
         None => {
-            let mut stmt = conn
-                .prepare("SELECT * FROM run_budgets ORDER BY updated_at DESC LIMIT ?1")?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM run_budgets ORDER BY updated_at DESC LIMIT ?1")?;
             let mapped = stmt.query_map(params![limit], row_to_record)?;
             mapped.collect::<rusqlite::Result<Vec<_>>>()?
         }

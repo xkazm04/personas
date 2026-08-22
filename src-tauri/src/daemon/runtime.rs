@@ -289,20 +289,17 @@ fn inject_ambient_for_daemon(pool: &DbPool, persona: &mut crate::db::models::Per
         .unwrap_or(0);
     let since_secs = now_secs.saturating_sub(policy.max_age_secs);
 
-    let signals = match ambient_signal_repo::recent_signals(
-        pool,
-        since_secs,
-        policy.max_window_size,
-    ) {
-        Ok(s) => s,
-        Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "daemon: failed to load ambient signals; running without ambient context"
-            );
-            return;
-        }
-    };
+    let signals =
+        match ambient_signal_repo::recent_signals(pool, since_secs, policy.max_window_size) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "daemon: failed to load ambient signals; running without ambient context"
+                );
+                return;
+            }
+        };
 
     // Mirror the per-source policy filter that AmbientContextFusion
     // applies for in-memory signals. Age + window-size were already
@@ -381,14 +378,11 @@ fn inject_cli_session_for_daemon(pool: &DbPool, persona: &mut crate::db::models:
     };
 
     let now = std::time::SystemTime::now();
-    let active = match discovery::discover_active_session(
-        &home,
-        now,
-        discovery::DEFAULT_FRESHNESS_CUTOFF,
-    ) {
-        Some(a) => a,
-        None => return,
-    };
+    let active =
+        match discovery::discover_active_session(&home, now, discovery::DEFAULT_FRESHNESS_CUTOFF) {
+            Some(a) => a,
+            None => return,
+        };
 
     let turns = transcript::read_recent_turns(&active.path, 8);
     if let Some(md) = render::render_cli_session_for_prompt(&active, &turns, now) {

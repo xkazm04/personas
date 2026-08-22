@@ -19,8 +19,9 @@ static UUID_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
         .expect("valid uuid regex")
 });
-static HEX_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\b0x[0-9a-fA-F]+\b|\b[0-9a-fA-F]{8,}\b").expect("valid hex regex"));
+static HEX_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\b0x[0-9a-fA-F]+\b|\b[0-9a-fA-F]{8,}\b").expect("valid hex regex")
+});
 static NUM_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+").expect("valid num regex"));
 static WS_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+").expect("valid ws regex"));
 
@@ -49,7 +50,10 @@ impl FailureBreaker {
     /// `limit` = occurrences of the *same* signature that trip the breaker.
     #[must_use]
     pub fn new(limit: u32) -> Self {
-        Self { counts: HashMap::new(), limit: limit.max(1) }
+        Self {
+            counts: HashMap::new(),
+            limit: limit.max(1),
+        }
     }
 
     fn signature(persona_id: &str, category: &str, reason: &str) -> String {
@@ -80,7 +84,10 @@ mod tests {
     fn normalize_collapses_volatile_parts() {
         let a = normalize("Error at line 42 in file deadbeefcafe1234: timeout after 3000ms");
         let b = normalize("Error at line 7 in file 00112233aabbccdd: timeout after 500ms");
-        assert_eq!(a, b, "same failure should normalize identically:\n  a={a}\n  b={b}");
+        assert_eq!(
+            a, b,
+            "same failure should normalize identically:\n  a={a}\n  b={b}"
+        );
     }
 
     #[test]

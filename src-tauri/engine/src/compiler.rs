@@ -29,11 +29,11 @@
 //!   (`use_cases`, `model_recommendation`, `test_scenarios`). **Do not bolt
 //!   intent-only fields onto this compiler** — extend `IntentCompiler` instead.
 
+use crate::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
+use crate::design;
 use personas_db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 #[cfg(test)]
 use personas_db::models::{PersonaTrustLevel, PersonaTrustOrigin};
-use crate::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
-use crate::design;
 
 // ============================================================================
 // Compilation Input
@@ -194,7 +194,8 @@ mod tests {
     use crate::compilation_pipeline::CompilationStage;
 
     fn test_persona() -> Persona {
-        Persona { lifecycle: "active".to_string(),
+        Persona {
+            lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "proj-1".into(),
             name: "Email Monitor".into(),

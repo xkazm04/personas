@@ -127,14 +127,6 @@ pub async fn get_n8n_session(
 }
 
 #[tauri::command]
-pub async fn list_n8n_sessions(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<N8nSessionResponse>, AppError> {
-    require_auth(&state).await?;
-    repo::list(&state.db).map(|v| v.into_iter().map(N8nSessionResponse::from).collect())
-}
-
-#[tauri::command]
 pub async fn list_n8n_session_summaries(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<N8nSessionSummary>, AppError> {

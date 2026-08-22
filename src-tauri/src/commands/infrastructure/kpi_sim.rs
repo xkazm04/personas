@@ -19,7 +19,7 @@
 //! values cannot claim `production`; every measurement needs evidence; caps
 //! mirror the KPI scan's; an ingested run dir is marked and refused twice.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde::Deserialize;
@@ -217,8 +217,11 @@ pub(crate) fn prepare_kpi_sim(
     std::fs::create_dir_all(&dir)
         .map_err(|e| AppError::Internal(format!("Cannot create kpi-sim/: {e}")))?;
     let path = dir.join("snapshot.json");
-    std::fs::write(&path, serde_json::to_vec_pretty(&snapshot).unwrap_or_default())
-        .map_err(|e| AppError::Internal(format!("Cannot write snapshot: {e}")))?;
+    std::fs::write(
+        &path,
+        serde_json::to_vec_pretty(&snapshot).unwrap_or_default(),
+    )
+    .map_err(|e| AppError::Internal(format!("Cannot write snapshot: {e}")))?;
 
     Ok(KpiSimPrepared {
         snapshot_path: path.to_string_lossy().into_owned(),
@@ -228,27 +231,6 @@ pub(crate) fn prepare_kpi_sim(
 }
 
 // ── ingest ─────────────────────────────────────────────────────────────────
-
-/// Newest run dir under `<root>/kpi-sim/runs/` that has a result.json and no
-/// ingested marker.
-fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
-    let runs = root.join("kpi-sim").join("runs");
-    let mut candidates: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(&runs)
-        .ok()?
-        .flatten()
-        .filter_map(|e| {
-            let p = e.path();
-            if !p.is_dir() || !p.join("result.json").is_file() || p.join("ingested.json").is_file()
-            {
-                return None;
-            }
-            let t = e.metadata().and_then(|m| m.modified()).ok()?;
-            Some((t, p))
-        })
-        .collect();
-    candidates.sort_by(|a, b| b.0.cmp(&a.0));
-    candidates.into_iter().map(|(_, p)| p).next()
-}
 
 /// Ingest a finished simulation run. `run_dir` optional — defaults to the
 /// newest un-ingested run. Idempotent: a run dir is marked after ingest and
@@ -280,12 +262,12 @@ pub(crate) fn ingest_kpi_sim(
             // The run dir must live under THIS project's kpi-sim/runs — an
             // arbitrary path would let a crafted call ingest foreign files.
             let runs_root = root.join("kpi-sim").join("runs");
-            let canon = p.canonicalize().map_err(|e| {
-                AppError::Validation(format!("Run dir not readable: {e}"))
-            })?;
-            let canon_root = runs_root
+            let canon = p
                 .canonicalize()
-                .map_err(|_| AppError::Validation("No kpi-sim/runs directory in this repo yet".into()))?;
+                .map_err(|e| AppError::Validation(format!("Run dir not readable: {e}")))?;
+            let canon_root = runs_root.canonicalize().map_err(|_| {
+                AppError::Validation("No kpi-sim/runs directory in this repo yet".into())
+            })?;
             if !canon.starts_with(&canon_root) {
                 return Err(AppError::Validation(
                     "Run dir must be inside the project's kpi-sim/runs/".into(),
@@ -293,7 +275,10 @@ pub(crate) fn ingest_kpi_sim(
             }
             canon
         }
-        None => find_ingestable_run(&root).ok_or_else(|| {
+        None => crate::commands::infrastructure::skill_runs::newest_ingestable_run(
+            &root.join("kpi-sim").join("runs"),
+        )
+        .ok_or_else(|| {
             AppError::Validation(
                 "No un-ingested simulation run found under kpi-sim/runs/ — run the simulation first"
                     .into(),
@@ -320,10 +305,11 @@ pub(crate) fn ingest_kpi_sim(
         .map_err(|e| AppError::Validation(format!("result.json not readable: {e}")))?;
     let result: SimResult = serde_json::from_str(&raw)
         .map_err(|e| AppError::Validation(format!("result.json is not valid: {e}")))?;
-    let sim_run_id = result
-        .sim_run_id
-        .clone()
-        .unwrap_or_else(|| dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default());
+    let sim_run_id = result.sim_run_id.clone().unwrap_or_else(|| {
+        dir.file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    });
 
     let mut summary = KpiSimIngestSummary {
         run_dir: dir.to_string_lossy().into_owned(),
@@ -343,13 +329,16 @@ pub(crate) fn ingest_kpi_sim(
             break;
         }
         let Some(name) = kpi_name(&m.kpi_id) else {
-            summary
-                .skipped
-                .push(format!("measurement[{i}]: kpi {} not in this project", m.kpi_id));
+            summary.skipped.push(format!(
+                "measurement[{i}]: kpi {} not in this project",
+                m.kpi_id
+            ));
             continue;
         };
         if !m.value.is_finite() {
-            summary.skipped.push(format!("measurement[{i}] ({name}): non-finite value"));
+            summary
+                .skipped
+                .push(format!("measurement[{i}] ({name}): non-finite value"));
             continue;
         }
         if m.evidence.is_none() {
@@ -374,7 +363,9 @@ pub(crate) fn ingest_kpi_sim(
             m.note.as_deref(),
         ) {
             Ok(_) => summary.measurements_recorded += 1,
-            Err(e) => summary.skipped.push(format!("measurement[{i}] ({name}): {e}")),
+            Err(e) => summary
+                .skipped
+                .push(format!("measurement[{i}] ({name}): {e}")),
         }
     }
 
@@ -388,33 +379,40 @@ pub(crate) fn ingest_kpi_sim(
         )
         .unwrap_or(0)
     };
-    let mut new_kpi_budget = (MAX_PROPOSALS_PER_RUN as i64)
-        .min((MAX_PENDING_PROPOSALS - pending).max(0)) as usize;
+    let mut new_kpi_budget =
+        (MAX_PROPOSALS_PER_RUN as i64).min((MAX_PENDING_PROPOSALS - pending).max(0)) as usize;
 
     for (i, p) in result.proposals.iter().enumerate() {
         match p.kind.as_str() {
             "new_kpi" => {
                 if new_kpi_budget == 0 {
-                    summary
-                        .skipped
-                        .push(format!("proposal[{i}]: new-KPI budget exhausted (queue cap)"));
+                    summary.skipped.push(format!(
+                        "proposal[{i}]: new-KPI budget exhausted (queue cap)"
+                    ));
                     continue;
                 }
                 let Some(payload) = p.payload.clone() else {
-                    summary.skipped.push(format!("proposal[{i}]: new_kpi without payload"));
+                    summary
+                        .skipped
+                        .push(format!("proposal[{i}]: new_kpi without payload"));
                     continue;
                 };
                 let np: NewKpiPayload = match serde_json::from_value(payload) {
                     Ok(v) => v,
                     Err(e) => {
-                        summary.skipped.push(format!("proposal[{i}]: bad new_kpi payload: {e}"));
+                        summary
+                            .skipped
+                            .push(format!("proposal[{i}]: bad new_kpi payload: {e}"));
                         continue;
                     }
                 };
                 // Name-level dedup across runs — the queue must never collect
                 // the same proposal twice (any status counts: a proposed twin
                 // is pending, an archived twin was rejected).
-                if kpis.iter().any(|k| k.name.trim().eq_ignore_ascii_case(np.name.trim())) {
+                if kpis
+                    .iter()
+                    .any(|k| k.name.trim().eq_ignore_ascii_case(np.name.trim()))
+                {
                     summary.skipped.push(format!(
                         "proposal[{i}]: a KPI named '{}' already exists in this project",
                         np.name.trim()
@@ -438,7 +436,9 @@ pub(crate) fn ingest_kpi_sim(
                     None,
                     &np.category,
                     &np.measure_kind,
-                    &np.measure_config.map(|v| v.to_string()).unwrap_or_else(|| "{}".into()),
+                    &np.measure_config
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "{}".into()),
                     np.unit.as_deref().unwrap_or(""),
                     &np.direction,
                     np.baseline_value,
@@ -465,7 +465,9 @@ pub(crate) fn ingest_kpi_sim(
                 // land as findings in the triage spine, evidence carrying the
                 // exact suggested payload.
                 let Some(kpi_id) = p.kpi_id.as_deref() else {
-                    summary.skipped.push(format!("proposal[{i}]: {kind} without kpi_id"));
+                    summary
+                        .skipped
+                        .push(format!("proposal[{i}]: {kind} without kpi_id"));
                     continue;
                 };
                 let Some(name) = kpi_name(kpi_id) else {
@@ -503,9 +505,9 @@ pub(crate) fn ingest_kpi_sim(
                     None,
                 ) {
                     Ok(Some(_)) => summary.findings_created += 1,
-                    Ok(None) => summary
-                        .skipped
-                        .push(format!("proposal[{i}]: duplicate ({kind} for {name} already raised)")),
+                    Ok(None) => summary.skipped.push(format!(
+                        "proposal[{i}]: duplicate ({kind} for {name} already raised)"
+                    )),
                     Err(e) => summary.skipped.push(format!("proposal[{i}]: {e}")),
                 }
             }
@@ -517,9 +519,10 @@ pub(crate) fn ingest_kpi_sim(
 
     // ── findings ──
     for (i, f) in result.findings.iter().enumerate() {
-        let evidence = f.evidence.as_ref().map(|v| {
-            json!({ "sim_run_id": sim_run_id, "detail": v }).to_string()
-        });
+        let evidence = f
+            .evidence
+            .as_ref()
+            .map(|v| json!({ "sim_run_id": sim_run_id, "detail": v }).to_string());
         let slug: String = f
             .title
             .to_lowercase()
@@ -539,7 +542,10 @@ pub(crate) fn ingest_kpi_sim(
             None,
             None,
             evidence.as_deref(),
-            &format!("kpi_sim:finding:{}:{slug}", f.kpi_id.clone().unwrap_or_default()),
+            &format!(
+                "kpi_sim:finding:{}:{slug}",
+                f.kpi_id.clone().unwrap_or_default()
+            ),
             Some(2),
             None,
             None,
@@ -561,9 +567,9 @@ pub(crate) fn ingest_kpi_sim(
         dir.join("ingested.json"),
         serde_json::to_vec_pretty(&marker).unwrap_or_default(),
     ) {
-        summary
-            .skipped
-            .push(format!("could not write ingested marker (re-ingest will duplicate findings-safe rows): {e}"));
+        summary.skipped.push(format!(
+            "could not write ingested marker (re-ingest will duplicate findings-safe rows): {e}"
+        ));
     }
 
     Ok(summary)

@@ -10,8 +10,8 @@
 //! table. What we offer instead is TTL eviction (24h, mirrors the
 //! ambient_signal table) so the audit footprint stays bounded.
 
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 use rusqlite::params;
 
 /// One audit row representing a single CLI session read.
@@ -130,7 +130,9 @@ mod tests {
 
         let rows = list_recent(&pool, 10).unwrap();
         assert_eq!(rows.len(), 2);
-        assert!(rows.iter().any(|r| r.persona_name == "Helper" && r.turn_count == 5));
+        assert!(rows
+            .iter()
+            .any(|r| r.persona_name == "Helper" && r.turn_count == 5));
         assert!(rows.iter().any(|r| r.project == "proj-b"));
     }
 
@@ -151,16 +153,7 @@ mod tests {
         let pool = test_pool();
         let now = now_secs();
         for i in 0..5 {
-            insert_audit(
-                &pool,
-                &format!("a_{i}"),
-                "p",
-                "P",
-                "proj",
-                1,
-                now - i,
-            )
-            .unwrap();
+            insert_audit(&pool, &format!("a_{i}"), "p", "P", "proj", 1, now - i).unwrap();
         }
         let rows = list_recent(&pool, 3).unwrap();
         assert_eq!(rows.len(), 3);

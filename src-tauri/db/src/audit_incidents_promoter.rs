@@ -28,13 +28,13 @@
 //! is the v1 mitigation; a finer-grained context-aware guard lands when
 //! the lab/eval team verifies which streams need exclusion.
 
+use crate::byom::ProviderAuditEntry;
 use crate::models::{
     CreateAuditIncidentInput, CredentialAuditEntry, FiredAlert, HealingAuditEntry,
     PersonaHealingIssue, PolicyEvent, ToolExecutionAuditEntry,
 };
 use crate::repos::execution::audit_incidents as repo;
 use crate::DbPool;
-use crate::byom::ProviderAuditEntry;
 
 /// Env var that gates incident promotion. Unset → every promoter is a no-op.
 pub const PROMOTION_ENV: &str = "PERSONAS_INCIDENTS_PROMOTION";
@@ -109,9 +109,10 @@ pub fn promote_tool_audit(pool: &DbPool, entry: &ToolExecutionAuditEntry) {
         return;
     }
     let title = format!("Tool '{}' returned an error", entry.tool_name);
-    let base_detail = entry.error_message.clone().unwrap_or_else(|| {
-        format!("tool_id={}, type={}", entry.tool_id, entry.tool_type)
-    });
+    let base_detail = entry
+        .error_message
+        .clone()
+        .unwrap_or_else(|| format!("tool_id={}, type={}", entry.tool_id, entry.tool_type));
     // Prefix the typed failure category so the inbox reads the machine token
     // (auth/timeout/http/…) instead of only the opaque message.
     let detail = Some(match &entry.error_kind {

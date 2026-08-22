@@ -88,9 +88,11 @@ pub fn cap_output(output: String) -> (String, bool) {
     if output.len() <= DIRECT_TOOL_OUTPUT_CAP_BYTES {
         return (output, false);
     }
-    let capped =
-        personas_core::utils::text::truncate_on_char_boundary(&output, DIRECT_TOOL_OUTPUT_CAP_BYTES)
-            .to_string();
+    let capped = personas_core::utils::text::truncate_on_char_boundary(
+        &output,
+        DIRECT_TOOL_OUTPUT_CAP_BYTES,
+    )
+    .to_string();
     (capped, true)
 }
 
@@ -110,7 +112,9 @@ pub fn classify_app_error(err: &AppError) -> (ToolErrorKind, Option<u16>, bool) 
         | AppError::OAuthRevoked(_)
         | AppError::Auth(_)
         | AppError::Forbidden(_) => (ToolErrorKind::Auth, None, false),
-        AppError::Validation(_) | AppError::NotFound(_) => (ToolErrorKind::Misconfigured, None, false),
+        AppError::Validation(_) | AppError::NotFound(_) => {
+            (ToolErrorKind::Misconfigured, None, false)
+        }
         AppError::NetworkOffline(_) => (ToolErrorKind::Transport, None, true),
         AppError::ProcessSpawn(_) => (ToolErrorKind::Transport, None, false),
         AppError::RetryExhausted(_) => (ToolErrorKind::Transport, None, true),
@@ -243,20 +247,23 @@ mod tests {
             classify_app_error(&AppError::Execution("Tool 'x' timed out after 120s".into()));
         assert_eq!(k, ToolErrorKind::Timeout);
         assert!(retry);
-        let (k, _, retry) =
-            classify_app_error(&AppError::Execution("Failed to connect to webhook: http://x".into()));
+        let (k, _, retry) = classify_app_error(&AppError::Execution(
+            "Failed to connect to webhook: http://x".into(),
+        ));
         assert_eq!(k, ToolErrorKind::Transport);
         assert!(retry);
     }
 
     #[test]
     fn message_auth_and_http_status_classify() {
-        let (k, code, _) =
-            classify_app_error(&AppError::Execution("Webhook returned HTTP 401: nope".into()));
+        let (k, code, _) = classify_app_error(&AppError::Execution(
+            "Webhook returned HTTP 401: nope".into(),
+        ));
         assert_eq!(k, ToolErrorKind::Auth);
         assert_eq!(code, Some(401));
-        let (k, code, retry) =
-            classify_app_error(&AppError::Execution("Webhook returned HTTP 503: down".into()));
+        let (k, code, retry) = classify_app_error(&AppError::Execution(
+            "Webhook returned HTTP 503: down".into(),
+        ));
         assert_eq!(k, ToolErrorKind::Http);
         assert_eq!(code, Some(503));
         assert!(retry);
@@ -264,8 +271,9 @@ mod tests {
 
     #[test]
     fn script_nonzero_exit_is_tool_error() {
-        let (k, _, retry) =
-            classify_app_error(&AppError::Execution("Script exited with exit status: 1: boom".into()));
+        let (k, _, retry) = classify_app_error(&AppError::Execution(
+            "Script exited with exit status: 1: boom".into(),
+        ));
         assert_eq!(k, ToolErrorKind::ToolError);
         assert!(!retry);
     }

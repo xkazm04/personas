@@ -109,16 +109,26 @@ pub async fn gather_facts(cwd: &str) -> Result<RepoFacts, AppError> {
     }
     let current_branch = git(cwd, &["rev-parse", "--abbrev-ref", "HEAD"]).await?;
     let default_branch = detect_default_branch(cwd).await;
-    let dirty = !git(cwd, &["status", "--porcelain"]).await?.trim().is_empty();
+    let dirty = !git(cwd, &["status", "--porcelain"])
+        .await?
+        .trim()
+        .is_empty();
     let on_default_branch = current_branch == default_branch;
     let range = format!("{default_branch}..HEAD");
     let commits_ahead = if on_default_branch {
         // Ahead of the remote default if one exists; otherwise 0-vs-self.
-        git(cwd, &["rev-list", "--count", &format!("origin/{default_branch}..HEAD")])
-            .await
-            .ok()
-            .and_then(|s| s.trim().parse::<u32>().ok())
-            .unwrap_or(0)
+        git(
+            cwd,
+            &[
+                "rev-list",
+                "--count",
+                &format!("origin/{default_branch}..HEAD"),
+            ],
+        )
+        .await
+        .ok()
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .unwrap_or(0)
     } else {
         git(cwd, &["rev-list", "--count", &range])
             .await
@@ -129,11 +139,14 @@ pub async fn gather_facts(cwd: &str) -> Result<RepoFacts, AppError> {
     let diffstat = if on_default_branch {
         String::new()
     } else {
-        git(cwd, &["diff", "--shortstat", &format!("{default_branch}...HEAD")])
-            .await
-            .unwrap_or_default()
-            .trim()
-            .to_string()
+        git(
+            cwd,
+            &["diff", "--shortstat", &format!("{default_branch}...HEAD")],
+        )
+        .await
+        .unwrap_or_default()
+        .trim()
+        .to_string()
     };
     Ok(RepoFacts {
         current_branch,
@@ -147,7 +160,12 @@ pub async fn gather_facts(cwd: &str) -> Result<RepoFacts, AppError> {
 
 async fn detect_default_branch(cwd: &str) -> String {
     // origin/HEAD when set, else main if it exists, else master.
-    if let Ok(sym) = git(cwd, &["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]).await {
+    if let Ok(sym) = git(
+        cwd,
+        &["symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+    )
+    .await
+    {
         if let Some(name) = sym.trim().strip_prefix("origin/") {
             if !name.is_empty() {
                 return name.to_string();
@@ -182,7 +200,10 @@ async fn git(cwd: &str, args: &[&str]) -> Result<String, AppError> {
             "git {:?} in `{}` exited {}: {}",
             args,
             cwd,
-            out.status.code().map(|c| c.to_string()).unwrap_or("?".into()),
+            out.status
+                .code()
+                .map(|c| c.to_string())
+                .unwrap_or("?".into()),
             String::from_utf8_lossy(&out.stderr).trim()
         )));
     }
@@ -225,7 +246,10 @@ mod tests {
 
     #[test]
     fn dirty_tree_retries_with_feedback() {
-        let f = RepoFacts { dirty: true, ..facts() };
+        let f = RepoFacts {
+            dirty: true,
+            ..facts()
+        };
         let (v, _) = classify(&f);
         assert_eq!(v, Verdict::RetryWithFeedback);
     }
@@ -233,14 +257,21 @@ mod tests {
     #[test]
     fn dirty_tree_on_branch_with_commits_still_retries_not_ships() {
         // Commits exist but the tree is dirty — not shippable as-is.
-        let f = RepoFacts { dirty: true, commits_ahead: 2, ..facts() };
+        let f = RepoFacts {
+            dirty: true,
+            commits_ahead: 2,
+            ..facts()
+        };
         let (v, _) = classify(&f);
         assert_eq!(v, Verdict::RetryWithFeedback);
     }
 
     #[test]
     fn nothing_done_parks() {
-        let f = RepoFacts { commits_ahead: 0, ..facts() };
+        let f = RepoFacts {
+            commits_ahead: 0,
+            ..facts()
+        };
         let (v, why) = classify(&f);
         assert_eq!(v, Verdict::ParkForHuman);
         assert!(why.contains("nothing shippable"));

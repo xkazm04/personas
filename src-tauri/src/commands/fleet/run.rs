@@ -298,14 +298,22 @@ mod tests {
             row("c", "stale", Some("No log growth"), 50),
         ];
         let mut summaries = HashMap::new();
-        for (id, files, inp, out) in [("cc-a", vec!["x.rs", "y.rs"], 10, 5), ("cc-b", vec!["y.rs"], 3, 1)] {
+        for (id, files, inp, out) in [
+            ("cc-a", vec!["x.rs", "y.rs"], 10, 5),
+            ("cc-b", vec!["y.rs"], 3, 1),
+        ] {
             let mut s = FleetTranscriptSummary {
                 claude_session_id: id.into(),
                 path: String::new(),
                 cwd: None,
                 user_messages: 1,
                 assistant_messages: 2,
-                tokens: FleetTokenTotals { input: inp, output: out, cache_creation: 0, cache_read: 0 },
+                tokens: FleetTokenTotals {
+                    input: inp,
+                    output: out,
+                    cache_creation: 0,
+                    cache_read: 0,
+                },
                 last_context_tokens: 0,
                 models: vec![],
                 tools: vec![],
@@ -331,7 +339,10 @@ mod tests {
         assert_eq!(rep.totals.files_touched, 2);
         // Chronological, so the report reads in dispatch order.
         assert_eq!(
-            rep.sessions.iter().map(|s| s.session_id.as_str()).collect::<Vec<_>>(),
+            rep.sessions
+                .iter()
+                .map(|s| s.session_id.as_str())
+                .collect::<Vec<_>>(),
             vec!["c", "a", "b"]
         );
         assert_eq!(rep.started_at_ms, 50);

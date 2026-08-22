@@ -3,6 +3,7 @@ use rusqlite::params;
 use crate::models::{AppendMessageResult, DesignConversation};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 row_mapper!(row_to_conversation -> DesignConversation {
@@ -25,7 +26,7 @@ pub fn list_by_persona(
         "design_conversations",
         "design_conversations::list_by_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("design_conversations::list_by_persona")?;
             let mut stmt = conn.prepare(
                 "SELECT id, persona_id, title, status, '[]' AS messages, NULL AS last_result,
                         created_at, updated_at
@@ -50,7 +51,7 @@ pub fn get_active(pool: &DbPool, persona_id: &str) -> Result<Option<DesignConver
         "design_conversations",
         "design_conversations::get_active",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("design_conversations::get_active")?;
             let result = conn.query_row(
             "SELECT * FROM design_conversations WHERE persona_id = ?1 AND status = 'active' ORDER BY updated_at DESC LIMIT 1",
             params![persona_id],
@@ -74,7 +75,7 @@ pub fn create(
     messages: &str,
 ) -> Result<DesignConversation, AppError> {
     timed_query!("design_conversations", "design_conversations::create", {
-        let conn = pool.get()?;
+        let conn = pool.conn("design_conversations::create")?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "INSERT INTO design_conversations (id, persona_id, title, status, messages, created_at, updated_at)
@@ -96,7 +97,7 @@ pub fn append_message(
         "design_conversations",
         "design_conversations::append_message",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("design_conversations::append_message")?;
             let now = chrono::Utc::now().to_rfc3339();
             let rows = conn.execute(
             "UPDATE design_conversations SET messages = ?2, last_result = COALESCE(?3, last_result), updated_at = ?4 WHERE id = ?1",
@@ -124,7 +125,7 @@ pub fn append_single_message(
         "design_conversations",
         "design_conversations::append_single_message",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("design_conversations::append_single_message")?;
 
             let count_before: u32 = conn
                 .query_row(
@@ -189,7 +190,7 @@ pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppErr
         "design_conversations",
         "design_conversations::update_status",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("design_conversations::update_status")?;
             let now = chrono::Utc::now().to_rfc3339();
             let rows = conn.execute(
                 "UPDATE design_conversations SET status = ?2, updated_at = ?3 WHERE id = ?1",
@@ -206,7 +207,7 @@ pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppErr
 /// Delete a conversation by ID.
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("design_conversations", "design_conversations::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("design_conversations::delete")?;
         conn.execute(
             "DELETE FROM design_conversations WHERE id = ?1",
             params![id],

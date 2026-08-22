@@ -258,10 +258,7 @@ pub async fn execute_db_query(
 /// No-op if the query already settled or the id is unknown.
 #[tauri::command]
 #[requires(privileged)]
-pub fn cancel_db_query(
-    state: State<'_, Arc<AppState>>,
-    query_id: String,
-) -> Result<(), AppError> {
+pub fn cancel_db_query(state: State<'_, Arc<AppState>>, query_id: String) -> Result<(), AppError> {
     let _ = &state; // required by #[requires(privileged)] session guard
     if let Ok(mut map) = IN_FLIGHT_QUERIES.lock() {
         if let Some(token) = map.remove(&query_id) {

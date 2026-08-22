@@ -13,6 +13,7 @@
 use rusqlite::params;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// A persisted pending retry row.
@@ -33,7 +34,7 @@ pub fn upsert(
     retry_at: &str,
     reason: &str,
 ) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("scheduled_retries::upsert")?;
     conn.execute(
         "INSERT INTO scheduled_retries (execution_id, persona_id, retry_at, reason)
          VALUES (?1, ?2, ?3, ?4)
@@ -47,7 +48,7 @@ pub fn upsert(
 
 /// Return all rows whose `retry_at` is due (≤ `now_iso`), oldest first.
 pub fn get_due(pool: &DbPool, now_iso: &str) -> Result<Vec<ScheduledRetry>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("scheduled_retries::get_due")?;
     let mut stmt = conn.prepare_cached(
         "SELECT execution_id, persona_id, retry_at, reason
          FROM scheduled_retries
@@ -67,7 +68,7 @@ pub fn get_due(pool: &DbPool, now_iso: &str) -> Result<Vec<ScheduledRetry>, AppE
 
 /// Remove a pending retry (called on dispatch, or to cancel).
 pub fn delete(pool: &DbPool, execution_id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("scheduled_retries::delete")?;
     conn.execute(
         "DELETE FROM scheduled_retries WHERE execution_id = ?1",
         params![execution_id],

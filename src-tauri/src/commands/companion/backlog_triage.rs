@@ -233,10 +233,8 @@ pub async fn dev_tools_apply_triage_verdicts(
     }
 
     let verdicts = parse_items(&params)?;
-    let override_by_id: HashMap<&str, &TriageOverride> = overrides
-        .iter()
-        .map(|o| (o.idea_id.as_str(), o))
-        .collect();
+    let override_by_id: HashMap<&str, &TriageOverride> =
+        overrides.iter().map(|o| (o.idea_id.as_str(), o)).collect();
 
     let mut applied = AppliedTriage {
         accepted: 0,
@@ -330,7 +328,12 @@ pub(crate) fn parse_items(params: &serde_json::Value) -> Result<Vec<BacklogVerdi
                 .and_then(|x| x.as_str())
                 .unwrap_or_default()
                 .to_string(),
-            verdict: if verdict == "accept" { "accept" } else { "reject" }.to_string(),
+            verdict: if verdict == "accept" {
+                "accept"
+            } else {
+                "reject"
+            }
+            .to_string(),
             reason: v
                 .get("reason")
                 .and_then(|x| x.as_str())
@@ -401,7 +404,10 @@ mod tests {
     fn parse_items_defaults_unknown_verdict_to_reject() {
         let v = serde_json::json!({"items": [{"ideaId": "a", "verdict": "probably"}]});
         let items = parse_items(&v).expect("parses");
-        assert_eq!(items[0].verdict, "reject", "an ambiguous token is not consent");
+        assert_eq!(
+            items[0].verdict, "reject",
+            "an ambiguous token is not consent"
+        );
     }
 
     /// The payload `insert_triage_approval` writes must round-trip through

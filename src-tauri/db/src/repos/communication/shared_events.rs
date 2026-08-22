@@ -414,7 +414,9 @@ mod tests {
 
         // Nothing to deliver right after subscribe (all firings are historical).
         let cursor: i64 = sub.last_cursor.as_deref().unwrap().parse().unwrap();
-        assert!(list_firings_after(&pool, slug, cursor, 50).unwrap().is_empty());
+        assert!(list_firings_after(&pool, slug, cursor, 50)
+            .unwrap()
+            .is_empty());
 
         // A future-release firing (seq 3) IS delivered.
         insert_firing(&pool, slug, 3);

@@ -8,11 +8,11 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
+use crate::ambient_context::AmbientContextHandle;
 use personas_db::models::{CreatePersonaEventInput, TriggerConfig};
 use personas_db::repos::communication::events as event_repo;
 use personas_db::repos::resources::triggers as trigger_repo;
 use personas_db::DbPool;
-use crate::ambient_context::AmbientContextHandle;
 
 /// Shared state: stores the hash of the last known clipboard content to detect changes.
 pub struct ClipboardState {

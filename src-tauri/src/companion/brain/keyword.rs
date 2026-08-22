@@ -212,10 +212,16 @@ mod tests {
         let conn = test_conn();
         seed_doctrine(&conn);
 
-        let about_memory = search_conn(&conn, "memory decay and forgetting", "doctrine", None, 8)
-            .unwrap();
-        let about_creds =
-            search_conn(&conn, "where are credentials encrypted", "doctrine", None, 8).unwrap();
+        let about_memory =
+            search_conn(&conn, "memory decay and forgetting", "doctrine", None, 8).unwrap();
+        let about_creds = search_conn(
+            &conn,
+            "where are credentials encrypted",
+            "doctrine",
+            None,
+            8,
+        )
+        .unwrap();
 
         assert_ne!(
             about_memory, about_creds,
@@ -275,8 +281,7 @@ mod tests {
         insert(&conn, "ep_a", "episode", "default", "the kpi dashboard", 3);
         insert(&conn, "ep_b", "episode", "other", "the kpi dashboard", 3);
 
-        let hits =
-            search_conn(&conn, "kpi dashboard", "episode", Some("default"), 8).unwrap();
+        let hits = search_conn(&conn, "kpi dashboard", "episode", Some("default"), 8).unwrap();
         assert_eq!(hits, vec!["ep_a".to_string()], "no cross-session bleed");
     }
 
@@ -285,8 +290,22 @@ mod tests {
     #[test]
     fn demoted_rows_are_excluded() {
         let conn = test_conn();
-        insert(&conn, "fact_live", "fact", "", "operator prefers terse replies", 4);
-        insert(&conn, "fact_dead", "fact", "", "operator prefers verbose replies", 0);
+        insert(
+            &conn,
+            "fact_live",
+            "fact",
+            "",
+            "operator prefers terse replies",
+            4,
+        );
+        insert(
+            &conn,
+            "fact_dead",
+            "fact",
+            "",
+            "operator prefers verbose replies",
+            0,
+        );
 
         let hits = search_conn(&conn, "operator prefers replies", "fact", None, 8).unwrap();
         assert_eq!(hits, vec!["fact_live".to_string()]);

@@ -23,10 +23,10 @@ use std::sync::OnceLock;
 
 use rusqlite::params;
 
-use personas_db::repos::utils::collect_rows;
-use personas_db::DbPool;
 use crate::bus::canonical_event_type;
 use personas_core::error::AppError;
+use personas_db::repos::utils::collect_rows;
+use personas_db::DbPool;
 
 /// Provenance token: shipped in the curated seed.
 pub const SOURCE_BUILTIN: &str = "builtin";

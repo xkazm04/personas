@@ -35,11 +35,11 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use personas_db::models::{PersonaTeam, PersonaTeamConnection, PersonaTeamMember};
-use personas_db::DbPool;
 use crate::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
 use crate::topology_types::TopologyBlueprint;
 use personas_core::error::AppError;
+use personas_db::models::{PersonaTeam, PersonaTeamConnection, PersonaTeamMember};
+use personas_db::DbPool;
 
 // ============================================================================
 // Public result type (returned to frontend)
@@ -478,7 +478,11 @@ mod tests {
         };
         let result = WorkflowCompiler.validate(&mut bp);
         assert!(result.is_ok());
-        assert_eq!(bp.connections.len(), 1, "out-of-bounds edge should be dropped");
+        assert_eq!(
+            bp.connections.len(),
+            1,
+            "out-of-bounds edge should be dropped"
+        );
         assert_eq!(bp.connections[0].source_index, 0);
         assert_eq!(bp.connections[0].target_index, 1);
     }

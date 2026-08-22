@@ -779,9 +779,7 @@ pub fn kb_corpus_map(user_db: &UserDbPool, kb_id: &str) -> Result<String, AppErr
 
     if !failed.is_empty() {
         out.push_str("## Not indexed\n\n");
-        out.push_str(
-            "These documents failed to index, so **nothing in them is searchable**:\n\n",
-        );
+        out.push_str("These documents failed to index, so **nothing in them is searchable**:\n\n");
         for d in &failed {
             let why = d.error_message.as_deref().unwrap_or("unknown error");
             out.push_str(&format!(
@@ -963,10 +961,9 @@ mod supersede_tests {
 
         // Re-ingest of the SAME path with a DIFFERENT hash supersedes the old
         // document: delete it end-to-end before the new content is indexed.
-        let (found_id, found_hash) =
-            find_indexed_document_by_path(&pool, KB_ID, "/tmp/report.md")
-                .unwrap()
-                .expect("old document should be found by path");
+        let (found_id, found_hash) = find_indexed_document_by_path(&pool, KB_ID, "/tmp/report.md")
+            .unwrap()
+            .expect("old document should be found by path");
         assert_eq!(found_id, old_id);
         assert_ne!(found_hash, "hashB"); // hash differs → supersede path
         delete_document_cascade(&pool, KB_ID, &old_id).unwrap();

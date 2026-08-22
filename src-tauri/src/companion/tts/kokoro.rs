@@ -37,8 +37,8 @@ use std::time::Duration;
 use base64::Engine;
 use tauri::State;
 
-use crate::companion::tts::kokoro_catalog::find_voice_by_id;
 use crate::companion::tts::engine_dir;
+use crate::companion::tts::kokoro_catalog::find_voice_by_id;
 use crate::companion::tts::{TtsAudio, TtsSynthesisRequest};
 use crate::error::AppError;
 use crate::AppState;
@@ -234,7 +234,10 @@ pub async fn synthesize(
         let inv = 1.0 / speed.clamp(0.5, 2.0);
         cmd.arg(format!("--kokoro-length-scale={inv}"));
     } else if let Some(length_scale) = request.settings.length_scale {
-        cmd.arg(format!("--kokoro-length-scale={}", length_scale.clamp(0.5, 2.0)));
+        cmd.arg(format!(
+            "--kokoro-length-scale={}",
+            length_scale.clamp(0.5, 2.0)
+        ));
     }
     cmd.arg("--num-threads=2")
         .arg(format!("--sid={}", voice.sid))
@@ -308,10 +311,8 @@ mod tests {
 
     #[test]
     fn is_model_installed_false_for_empty_dir() {
-        let tmp = std::env::temp_dir().join(format!(
-            "personas-kokoro-model-test-{}",
-            std::process::id()
-        ));
+        let tmp =
+            std::env::temp_dir().join(format!("personas-kokoro-model-test-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&tmp);
         std::env::set_var("PERSONAS_HOME", &tmp);
         assert!(!is_model_installed());

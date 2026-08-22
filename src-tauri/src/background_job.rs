@@ -348,12 +348,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     /// via [`record_line`] would leave that `app` capture unused (a
     /// `-D warnings` clippy break). This sibling keeps the `(app, id, line)`
     /// shape so the switch is a one-token rename with no closure reshaping.
-    pub fn record_streamed(
-        &self,
-        _app: &tauri::AppHandle,
-        job_id: &str,
-        line: impl Into<String>,
-    ) {
+    pub fn record_streamed(&self, _app: &tauri::AppHandle, job_id: &str, line: impl Into<String>) {
         self.push_ring(job_id, line.into());
     }
 
@@ -401,7 +396,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             if let Some(existing) = jobs.get(job_id) {
                 if existing.status == "running" {
                     // Capacity refusal, not caller error — see the note in `ensure_not_running`.
-                return Err(AppError::RateLimited("Job is already running".into()));
+                    return Err(AppError::RateLimited("Job is already running".into()));
                 }
             }
             let entry = jobs.entry(job_id.to_string()).or_default();

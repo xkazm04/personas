@@ -354,7 +354,6 @@ pub fn get_builtin(platform_id: &str) -> Option<&'static PlatformDefinition> {
     BUILTIN_DEFS.iter().find(|d| d.id == platform_id)
 }
 
-
 // ============================================================================
 // Helper constructors
 // ============================================================================

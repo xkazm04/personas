@@ -6,6 +6,12 @@ authors = ["Personas"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.80.0"
+# Never published to crates.io — the app ships as a Tauri bundle. This is a
+# statement of fact, but it is also load-bearing for `cargo deny check`: the
+# bans/wildcard rule treats a crate with no `publish` key as publishable, and
+# refuses to apply `allow-wildcard-paths` to a publishable crate, so our own
+# intra-workspace path dependencies were reported as wildcard errors.
+publish = false
 
 [lib]
 name = "personas_db"
@@ -69,3 +75,6 @@ tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
 
 sqlite-vec = { version = "0.1", optional = true }
 fastembed = { version = "4", optional = true }
+
+[lints]
+workspace = true

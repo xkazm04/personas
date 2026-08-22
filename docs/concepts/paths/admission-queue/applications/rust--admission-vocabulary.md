@@ -79,7 +79,7 @@ variant) as a deferred fix.
 through at least seven other doors — background-job mutual exclusion
 returning `Result<(), AppError>` (where `Err` also means a poisoned lock),
 raw semaphore permits with no verdict at all
-(`LAB_CELL_CONCURRENCY`, `src-tauri/engine/src/test_runner.rs:37`,
+(`LAB_CELL_CONCURRENCY`, `src-tauri/engine/src/test_runner/:37`,
 `:1613` — admission by waiting, refusal inexpressible), a rate limiter
 returning `Result<(), u64>`, boolean healing-session gates, and
 backlog-producer caps refusing via validation errors. Each lane re-invents

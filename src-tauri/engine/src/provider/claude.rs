@@ -1,7 +1,7 @@
-use personas_db::models::Persona;
 use crate::parser;
 use crate::prompt;
 use personas_core::types::{CliArgs, ModelProfile, StreamLineType};
+use personas_db::models::Persona;
 
 use super::{CliProvider, PromptDelivery};
 

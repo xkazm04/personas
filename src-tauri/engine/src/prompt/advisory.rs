@@ -48,7 +48,11 @@ pub(super) fn build_advisory_prompt(
                     let is_key_section = *section == "identity" || *section == "instructions";
                     let max_len = if is_key_section { 2000 } else { 500 };
                     let display = if val.len() > max_len {
-                        format!("{}... ({} chars total)", personas_core::utils::text::truncate_on_char_boundary(val, max_len), val.len())
+                        format!(
+                            "{}... ({} chars total)",
+                            personas_core::utils::text::truncate_on_char_boundary(val, max_len),
+                            val.len()
+                        )
                     } else {
                         val.to_string()
                     };
@@ -67,7 +71,10 @@ pub(super) fn build_advisory_prompt(
         let display = if persona.system_prompt.len() > max_len {
             format!(
                 "{}... ({} total)",
-                personas_core::utils::text::truncate_on_char_boundary(&persona.system_prompt, max_len),
+                personas_core::utils::text::truncate_on_char_boundary(
+                    &persona.system_prompt,
+                    max_len
+                ),
                 persona.system_prompt.len()
             )
         } else {

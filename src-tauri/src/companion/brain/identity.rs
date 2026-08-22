@@ -14,6 +14,12 @@
 use crate::error::AppError;
 
 /// The anchored edit operations Athena may propose.
+//
+// `enum_variant_names` fires on the shared `Bullet` postfix. It stays: the
+// postfix names what these ops act on (a bullet inside a section), it is not
+// redundant with the enum's own name (`DiffOp`), and dropping it would make
+// `DiffOp::Append` ambiguous at the 25 call sites outside this module.
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiffOp {
     /// Add a new bullet to the end of the named section.
@@ -48,7 +54,6 @@ pub struct IdentityDiff {
     /// The bullet text to add (Append) or swap in (Replace). Should end with the
     /// source episode ids in parens, e.g. `"prefers terse replies (ep_ab12)"`.
     pub new_text: Option<String>,
-    pub rationale: String,
 }
 
 /// Max length of a single identity bullet — keeps the profile skimmable and
@@ -89,12 +94,6 @@ impl IdentityDiff {
             .and_then(|x| x.as_str())
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
-        let rationale = v
-            .get("rationale")
-            .and_then(|x| x.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
 
         // Field requirements per op.
         match op {
@@ -114,7 +113,6 @@ impl IdentityDiff {
             op,
             anchor_text,
             new_text,
-            rationale,
         })
     }
 
@@ -221,30 +219,14 @@ fn find_bullet(lines: &[String], start: usize, end: usize, anchor: &str) -> Opti
     prefix_match
 }
 
-/// Validate a diff against the current doc lines without mutating — used for a
-/// dry-run before the approval card is built. Returns the same errors `apply_to`
-/// would.
-pub fn validate_against(lines: &[String], diff: &IdentityDiff) -> Result<(), AppError> {
-    let (hidx, end) = section_range(lines, &diff.section).ok_or_else(|| {
-        AppError::Validation(format!("identity: section `{}` does not exist", diff.section))
-    })?;
-    if matches!(diff.op, DiffOp::ReplaceBullet | DiffOp::RemoveBullet) {
-        let anchor = diff.anchor_text.as_deref().unwrap_or("");
-        find_bullet(lines, hidx + 1, end, anchor).ok_or_else(|| {
-            AppError::Validation(format!(
-                "identity: bullet `{anchor}` not found in `{}`",
-                diff.section
-            ))
-        })?;
-    }
-    Ok(())
-}
-
 /// Apply one diff to the doc lines in place. Validates as it goes (section +
 /// anchor must exist); on any failure the lines are left untouched.
 pub fn apply_to(lines: &mut Vec<String>, diff: &IdentityDiff) -> Result<(), AppError> {
     let (hidx, end) = section_range(lines, &diff.section).ok_or_else(|| {
-        AppError::Validation(format!("identity: section `{}` does not exist", diff.section))
+        AppError::Validation(format!(
+            "identity: section `{}` does not exist",
+            diff.section
+        ))
     })?;
     match diff.op {
         DiffOp::AppendBullet => {
@@ -252,8 +234,8 @@ pub fn apply_to(lines: &mut Vec<String>, diff: &IdentityDiff) -> Result<(), AppE
             // Insert after the section's last existing bullet, else right under
             // the heading.
             let mut insert_at = hidx + 1;
-            for i in (hidx + 1)..end {
-                if lines[i].trim_start().starts_with("- ") {
+            for (i, line) in lines.iter().enumerate().take(end).skip(hidx + 1) {
+                if line.trim_start().starts_with("- ") {
                     insert_at = i + 1;
                 }
             }
@@ -381,8 +363,12 @@ mod tests {
 
     #[test]
     fn parse_requires_fields_per_op() {
-        assert!(IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"append"})).is_err());
-        assert!(IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"remove"})).is_err());
+        assert!(
+            IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"append"})).is_err()
+        );
+        assert!(
+            IdentityDiff::from_json(&serde_json::json!({"section":"x","op":"remove"})).is_err()
+        );
         assert!(IdentityDiff::from_json(
             &serde_json::json!({"section":"x","op":"append","new_text":"y","rationale":"z"})
         )
@@ -403,7 +389,6 @@ mod tests {
             op: DiffOp::AppendBullet,
             anchor_text: None,
             new_text: Some("prefers mornings (ep_bb22)".into()),
-            rationale: "he said so".into(),
         };
         apply_to(&mut lines, &diff).unwrap();
         let joined = lines.join("\n");
@@ -423,7 +408,6 @@ mod tests {
             op: DiffOp::ReplaceBullet,
             anchor_text: Some("likes terse replies".into()), // prefix of the stored bullet w/ (ep_aa11)
             new_text: Some("strongly prefers terse replies (ep_aa11, ep_cc33)".into()),
-            rationale: "reinforced".into(),
         };
         apply_to(&mut lines, &diff).unwrap();
         let joined = lines.join("\n");
@@ -439,7 +423,6 @@ mod tests {
             op: DiffOp::RemoveBullet,
             anchor_text: Some("(rhythms, patterns)".into()),
             new_text: None,
-            rationale: "stale".into(),
         };
         apply_to(&mut lines, &ok).unwrap();
         assert!(!lines.join("\n").contains("rhythms, patterns"));
@@ -449,22 +432,8 @@ mod tests {
             op: DiffOp::RemoveBullet,
             anchor_text: Some("nonexistent bullet".into()),
             new_text: None,
-            rationale: "x".into(),
         };
         assert!(apply_to(&mut lines.clone(), &bad).is_err());
-    }
-
-    #[test]
-    fn unknown_section_errors() {
-        let lines = doc();
-        let diff = IdentityDiff {
-            section: "About Michal / Nope".into(),
-            op: DiffOp::AppendBullet,
-            anchor_text: None,
-            new_text: Some("x".into()),
-            rationale: "y".into(),
-        };
-        assert!(validate_against(&lines, &diff).is_err());
     }
 
     #[test]

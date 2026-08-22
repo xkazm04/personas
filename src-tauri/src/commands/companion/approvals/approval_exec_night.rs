@@ -34,8 +34,9 @@ pub(crate) fn execute_night_shift_execute_plan(
             plan.status
         )));
     }
-    let draft: planner::DraftPlan = serde_json::from_str(&plan.plan_json)
-        .map_err(|e| AppError::Internal(format!("night plan `{plan_id}` payload unreadable: {e}")))?;
+    let draft: planner::DraftPlan = serde_json::from_str(&plan.plan_json).map_err(|e| {
+        AppError::Internal(format!("night plan `{plan_id}` payload unreadable: {e}"))
+    })?;
     if draft.items.is_empty() {
         return Err(AppError::Internal(format!(
             "night plan `{plan_id}` has no sessions to dispatch"

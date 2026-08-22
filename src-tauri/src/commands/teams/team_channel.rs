@@ -97,7 +97,14 @@ impl Lenses {
         match kinds {
             // No filter → today's blend, minus the deliberation leak. Slack
             // rows are part of the conversation, so they ride the default.
-            None => Lenses { steps: true, events: true, memories: true, messages: true, deliberations: false, slack: true },
+            None => Lenses {
+                steps: true,
+                events: true,
+                memories: true,
+                messages: true,
+                deliberations: false,
+                slack: true,
+            },
             Some(k) => Lenses {
                 steps: k.iter().any(|s| s == "step"),
                 events: k.iter().any(|s| s == "event"),
@@ -135,7 +142,14 @@ pub fn list_team_channel(
 ) -> Result<Vec<TeamChannelItem>, AppError> {
     require_auth_sync(&state)?;
     let conn = state.db.get()?;
-    read_channel(&conn, &team_id, limit, before.as_deref(), before_id.as_deref(), kinds.as_deref())
+    read_channel(
+        &conn,
+        &team_id,
+        limit,
+        before.as_deref(),
+        before_id.as_deref(),
+        kinds.as_deref(),
+    )
 }
 
 /// The read-model itself, over a bare connection — the command is auth + this.
@@ -192,7 +206,10 @@ pub(crate) fn read_channel(
             // review/done gates (payload is NULL) synthesize the review context
             // from the assignment so the detail modal isn't empty.
             let extra = raw_payload.or_else(|| {
-                if matches!(kind.as_str(), "status_awaiting_review" | "status_done" | "created") {
+                if matches!(
+                    kind.as_str(),
+                    "status_awaiting_review" | "status_done" | "created"
+                ) {
                     Some(
                         serde_json::json!({
                             "task": asg_goal.clone().or_else(|| asg_title.clone()),
@@ -220,7 +237,10 @@ pub(crate) fn read_channel(
                 consumers: None,
             })
         })?;
-        items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
+        items.extend(
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?,
+        );
     }
 
     // --- 2. Bus traffic from team members ---
@@ -270,11 +290,18 @@ pub(crate) fn read_channel(
                 reply_to: None,
                 deliberation_id: None,
                 importance: None,
-                consumers: consumers
-                    .map(|c| c.split(',').filter(|s| !s.is_empty()).map(String::from).collect()),
+                consumers: consumers.map(|c| {
+                    c.split(',')
+                        .filter(|s| !s.is_empty())
+                        .map(String::from)
+                        .collect()
+                }),
             })
         })?;
-        items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
+        items.extend(
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?,
+        );
     }
 
     // --- 3. Shared memory (directives now live in the channel table; legacy
@@ -308,10 +335,18 @@ pub(crate) fn read_channel(
             let content: String = r.get(4)?;
             Ok(TeamChannelItem {
                 id: format!("tm-{}", r.get::<_, String>(0)?),
-                kind: if category == "directive" { "directive".into() } else { "memory".into() },
+                kind: if category == "directive" {
+                    "directive".into()
+                } else {
+                    "memory".into()
+                },
                 at: r.get(1)?,
                 label: category,
-                body: Some(if title == content { content } else { format!("{title} — {content}") }),
+                body: Some(if title == content {
+                    content
+                } else {
+                    format!("{title} — {content}")
+                }),
                 persona_id: r.get(5)?,
                 extra: r.get(6)?,
                 assignment_id: None,
@@ -322,7 +357,10 @@ pub(crate) fn read_channel(
                 consumers: None,
             })
         })?;
-        items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
+        items.extend(
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?,
+        );
     }
 
     // --- 4. Channel messages (C1 — multi-author table; authoritative store
@@ -374,7 +412,11 @@ pub(crate) fn read_channel(
             // author_kind → the UI's item kind. 'user' is a directive; the
             // other kinds ('persona' | 'athena' | 'director' | 'slack') render
             // via the multi-author path (C1c).
-            let kind = if author_kind == "user" { "directive".to_string() } else { author_kind.clone() };
+            let kind = if author_kind == "user" {
+                "directive".to_string()
+            } else {
+                author_kind.clone()
+            };
             // `label` for a channel row is otherwise a redundant copy of
             // author_kind, so an EXTERNAL author's resolved display name rides
             // it (the bridge's hard contract with the renderer). NULL for every
@@ -399,7 +441,10 @@ pub(crate) fn read_channel(
                 consumers: None,
             })
         })?;
-        items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
+        items.extend(
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?,
+        );
     }
 
     // Must mirror the per-query ORDER BY exactly — the composite cursor above
@@ -591,7 +636,7 @@ pub fn post_team_directive(
             author_id: None, // NULL author = the user
             body: content,
             addressed_to: None, // whole team
-            reply_to, // threading: the channel message this replies to
+            reply_to,           // threading: the channel message this replies to
             assignment_id: None,
             consumer: Some("inject".into()),
         },
@@ -645,7 +690,13 @@ mod tests {
     }
 
     /// One channel message at an exact second.
-    fn msg(conn: &Connection, id: &str, at: &str, author_kind: &str, deliberation_id: Option<&str>) {
+    fn msg(
+        conn: &Connection,
+        id: &str,
+        at: &str,
+        author_kind: &str,
+        deliberation_id: Option<&str>,
+    ) {
         conn.execute(
             "INSERT INTO team_channel_messages (id, team_id, author_kind, body, consumer, created_at, deliberation_id)
              VALUES (?1, ?2, ?3, 'b', 'inject', ?4, ?5)",
@@ -692,7 +743,13 @@ mod tests {
 
         // Five messages in the SAME second, plus one older.
         for i in 0..5 {
-            msg(&conn, &format!("m{i}"), "2026-07-13 10:00:00", "persona", None);
+            msg(
+                &conn,
+                &format!("m{i}"),
+                "2026-07-13 10:00:00",
+                "persona",
+                None,
+            );
         }
         msg(&conn, "older", "2026-07-13 09:00:00", "persona", None);
 
@@ -703,7 +760,11 @@ mod tests {
         // Page 2 resumes from the last item's (at, id).
         let last = p1.last().unwrap();
         let p2 = read_channel(&conn, TEAM, Some(2), Some(&last.at), Some(&last.id), None).unwrap();
-        assert_eq!(ids(&p2), vec!["m2", "m1"], "siblings in the boundary second must survive");
+        assert_eq!(
+            ids(&p2),
+            vec!["m2", "m1"],
+            "siblings in the boundary second must survive"
+        );
 
         let last = p2.last().unwrap();
         let p3 = read_channel(&conn, TEAM, Some(2), Some(&last.at), Some(&last.id), None).unwrap();
@@ -726,8 +787,20 @@ mod tests {
         msg(&conn, "b", "2026-07-13 10:00:00", "persona", None);
         msg(&conn, "old", "2026-07-13 09:00:00", "persona", None);
 
-        let page = read_channel(&conn, TEAM, Some(10), Some("2026-07-13T10:00:00Z"), None, None).unwrap();
-        assert_eq!(ids(&page), vec!["old"], "strict at < cursor — the same-second siblings are skipped");
+        let page = read_channel(
+            &conn,
+            TEAM,
+            Some(10),
+            Some("2026-07-13T10:00:00Z"),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            ids(&page),
+            vec!["old"],
+            "strict at < cursor — the same-second siblings are skipped"
+        );
     }
 
     /// The starvation fix: filtering to one lens must spend the page budget on
@@ -742,7 +815,13 @@ mod tests {
 
         // 30 newer messages that would otherwise crowd out the memories.
         for i in 0..30 {
-            msg(&conn, &format!("chatty{i:02}"), "2026-07-13 12:00:00", "persona", None);
+            msg(
+                &conn,
+                &format!("chatty{i:02}"),
+                "2026-07-13 12:00:00",
+                "persona",
+                None,
+            );
         }
         memory(&conn, "mem1", "2026-07-13 08:00:00", "observation", 7);
         memory(&conn, "mem2", "2026-07-13 07:00:00", "decision", 2);
@@ -791,18 +870,47 @@ mod tests {
         .unwrap();
 
         for i in 0..3 {
-            msg(&conn, &format!("talk{i}"), "2026-07-13 10:00:00", "persona", None);
+            msg(
+                &conn,
+                &format!("talk{i}"),
+                "2026-07-13 10:00:00",
+                "persona",
+                None,
+            );
         }
         for i in 0..5 {
-            msg(&conn, &format!("turn{i}"), "2026-07-13 10:00:00", "persona", Some("d1"));
+            msg(
+                &conn,
+                &format!("turn{i}"),
+                "2026-07-13 10:00:00",
+                "persona",
+                Some("d1"),
+            );
         }
         memory(&conn, "m1", "2026-07-13 09:00:00", "observation", 5);
         memory(&conn, "m2", "2026-07-13 09:00:00", "decision", 5);
 
         // What the lens returns…
-        let msgs = read_channel(&conn, TEAM, Some(200), None, None, Some(&["message".into()])).unwrap();
-        let turns = read_channel(&conn, TEAM, Some(200), None, None, Some(&["deliberation".into()])).unwrap();
-        let mems = read_channel(&conn, TEAM, Some(200), None, None, Some(&["memory".into()])).unwrap();
+        let msgs = read_channel(
+            &conn,
+            TEAM,
+            Some(200),
+            None,
+            None,
+            Some(&["message".into()]),
+        )
+        .unwrap();
+        let turns = read_channel(
+            &conn,
+            TEAM,
+            Some(200),
+            None,
+            None,
+            Some(&["deliberation".into()]),
+        )
+        .unwrap();
+        let mems =
+            read_channel(&conn, TEAM, Some(200), None, None, Some(&["memory".into()])).unwrap();
 
         // …must be what the rail promises.
         assert_eq!(msgs.len(), 3);
@@ -819,17 +927,27 @@ mod tests {
         let pool = init_test_db().unwrap();
         let conn = pool.get().unwrap();
         seed_team(&conn);
-        slack_msg(&conn, "s1", "2026-08-04 10:00:00", "U123", Some("Ada Lovelace"));
+        slack_msg(
+            &conn,
+            "s1",
+            "2026-08-04 10:00:00",
+            "U123",
+            Some("Ada Lovelace"),
+        );
         // Unresolvable name → the column stays NULL and label degrades to the
         // author kind, which is exactly what the renderer's fallback expects.
         slack_msg(&conn, "s0", "2026-08-04 09:00:00", "U456", None);
 
-        let items = read_channel(&conn, TEAM, Some(10), None, None, Some(&["slack".into()])).unwrap();
+        let items =
+            read_channel(&conn, TEAM, Some(10), None, None, Some(&["slack".into()])).unwrap();
         assert_eq!(ids(&items), vec!["s1", "s0"]);
         assert!(items.iter().all(|i| i.kind == "slack"));
         assert_eq!(items[0].label, "Ada Lovelace");
         assert_eq!(items[0].persona_id.as_deref(), Some("U123"));
-        assert_eq!(items[1].label, "slack", "no name → the raw kind, never NULL");
+        assert_eq!(
+            items[1].label, "slack",
+            "no name → the raw kind, never NULL"
+        );
     }
 
     /// The `slack` lens exists, blends into the unfiltered conversation (a
@@ -849,18 +967,25 @@ mod tests {
         assert_eq!(ids(&all), vec!["p1", "s1", "u1"]);
 
         // Internal voices only.
-        let internal = read_channel(&conn, TEAM, Some(10), None, None, Some(&["message".into()])).unwrap();
+        let internal =
+            read_channel(&conn, TEAM, Some(10), None, None, Some(&["message".into()])).unwrap();
         assert_eq!(ids(&internal), vec!["p1", "u1"]);
 
         // External voices only.
-        let external = read_channel(&conn, TEAM, Some(10), None, None, Some(&["slack".into()])).unwrap();
+        let external =
+            read_channel(&conn, TEAM, Some(10), None, None, Some(&["slack".into()])).unwrap();
         assert_eq!(ids(&external), vec!["s1"]);
 
         // Both, explicitly.
         let both = read_channel(
-            &conn, TEAM, Some(10), None, None,
+            &conn,
+            TEAM,
+            Some(10),
+            None,
+            None,
             Some(&["message".into(), "slack".into()]),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(ids(&both), vec!["p1", "s1", "u1"]);
     }
 
@@ -873,15 +998,36 @@ mod tests {
         let conn = pool.get().unwrap();
         seed_team(&conn);
         for i in 0..2 {
-            msg(&conn, &format!("p{i}"), "2026-08-04 10:00:00", "persona", None);
+            msg(
+                &conn,
+                &format!("p{i}"),
+                "2026-08-04 10:00:00",
+                "persona",
+                None,
+            );
         }
         for i in 0..3 {
-            slack_msg(&conn, &format!("s{i}"), "2026-08-04 10:00:00", "U1", Some("Ada"));
+            slack_msg(
+                &conn,
+                &format!("s{i}"),
+                "2026-08-04 10:00:00",
+                "U1",
+                Some("Ada"),
+            );
         }
 
         let counts = count_kinds(&conn, TEAM).unwrap();
-        let slack_rows = read_channel(&conn, TEAM, Some(200), None, None, Some(&["slack".into()])).unwrap();
-        let internal = read_channel(&conn, TEAM, Some(200), None, None, Some(&["message".into()])).unwrap();
+        let slack_rows =
+            read_channel(&conn, TEAM, Some(200), None, None, Some(&["slack".into()])).unwrap();
+        let internal = read_channel(
+            &conn,
+            TEAM,
+            Some(200),
+            None,
+            None,
+            Some(&["message".into()]),
+        )
+        .unwrap();
 
         assert_eq!(counts.slack, 3);
         assert_eq!(counts.slack as usize, slack_rows.len());

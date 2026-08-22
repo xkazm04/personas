@@ -20,7 +20,6 @@ use tauri::State;
 use crate::companion::brain::{
     cockpit, consolidation, cycle_report, dashboard, reflection, sleep_cycle,
 };
-use crate::companion::jobs::{self, curation_run};
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
@@ -228,17 +227,6 @@ pub fn companion_decay_unused_facts(state: State<'_, Arc<AppState>>) -> Result<i
     consolidation::decay_unused_facts(&state.user_db)
 }
 
-/// Demote facts above the per-scope cap (importance → 0), lowest-value
-/// first. Pairs with `companion_decay_unused_facts`: decay shrinks the
-/// importance distribution; prune enforces a hard size budget so the
-/// brain doesn't grow unboundedly even when every fact gets touched
-/// periodically. Returns the number demoted; callers can report it.
-#[tauri::command]
-pub fn companion_prune_low_value_facts(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
-    ipc_auth::require_auth_sync(&state)?;
-    consolidation::prune_low_value_facts(&state.user_db)
-}
-
 // ── Reflection ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize)]
@@ -304,61 +292,7 @@ pub fn companion_get_reflection(
     })
 }
 
-/// Discard an entire consolidation run: reject every still-pending
-/// item and mark the run as `discarded`. Already-applied items keep
-/// their applied facts. Returns the number of items newly rejected.
-///
-/// Pairs with the per-item `companion_reject_consolidation_item` to
-/// give users a batch-level discard for runs they decide aren't worth
-/// walking item-by-item — same gesture as Anthropic Managed Agents'
-/// "discard the dream output store" at the batch granularity personas
-/// already supports per-item.
-#[tauri::command]
-pub fn companion_discard_consolidation_run(
-    state: State<'_, Arc<AppState>>,
-    run_id: String,
-) -> Result<i64, AppError> {
-    ipc_auth::require_auth_sync(&state)?;
-    consolidation::discard_run(&state.user_db, &run_id)
-}
-
 // ── Curation runs (job-shaped async curation) ──────────────────────────
-
-/// Enqueue a memory-curation run as a `BackgroundJob`. Returns the job
-/// id immediately; the worker picks it up on the next ~3s tick, runs
-/// the inner curator (`consolidate` or `reflect`), and emits status
-/// transitions on the `companion://job` event channel.
-///
-/// Concept borrowed from Anthropic Managed Agents' dream pipeline —
-/// async lifecycle (queued → running → completed | failed), optional
-/// `instructions` steering. Personas's existing `BackgroundJob`
-/// framework (`companion::jobs`) provides the lifecycle; the existing
-/// `consolidation`/`reflection` curators provide the work.
-///
-/// For synchronous (blocking) execution use the existing
-/// `companion_run_consolidation` / `companion_run_reflection` shims —
-/// both remain available for back-compat with existing UI paths.
-#[tauri::command]
-pub fn companion_enqueue_curation_run(
-    state: State<'_, Arc<AppState>>,
-    scope: String,
-    instructions: Option<String>,
-) -> Result<String, AppError> {
-    ipc_auth::require_auth_sync(&state)?;
-    validate_instructions(instructions.as_deref())?;
-    if !matches!(scope.as_str(), "consolidate" | "reflect") {
-        return Err(AppError::Validation(format!(
-            "scope must be `consolidate` or `reflect`, got `{scope}`"
-        )));
-    }
-    let mut params = serde_json::Map::new();
-    params.insert("scope".to_string(), serde_json::Value::String(scope));
-    if let Some(s) = instructions {
-        params.insert("instructions".to_string(), serde_json::Value::String(s));
-    }
-    let params_value = serde_json::Value::Object(params);
-    jobs::enqueue(&state.user_db, curation_run::KIND, &params_value, None)
-}
 
 // ── Dashboard (Phase F) ─────────────────────────────────────────────────
 
@@ -433,9 +367,8 @@ pub fn companion_pin_widget_to_cockpit(
         .unwrap_or_else(|e| e.into_inner());
     let now = chrono::Utc::now().to_rfc3339();
     let mut spec: serde_json::Value = match cockpit::load_cockpit(&state.user_db)? {
-        Some(c) => serde_json::from_str(&c.spec_json).unwrap_or_else(|_| {
-            serde_json::json!({ "title": "Cockpit", "widgets": [] })
-        }),
+        Some(c) => serde_json::from_str(&c.spec_json)
+            .unwrap_or_else(|_| serde_json::json!({ "title": "Cockpit", "widgets": [] })),
         None => serde_json::json!({ "title": "Cockpit", "widgets": [] }),
     };
     let widgets = spec
@@ -458,15 +391,10 @@ pub fn companion_pin_widget_to_cockpit(
     // are normalized by serde_json's PartialEq.
     let mut promoted = false;
     for w in widgets.iter_mut() {
-        let kind_match =
-            w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str());
-        let config_match =
-            w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config;
+        let kind_match = w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str());
+        let config_match = w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config;
         if kind_match && config_match {
-            let already_pinned = w
-                .get("pinned")
-                .and_then(|p| p.as_bool())
-                .unwrap_or(false);
+            let already_pinned = w.get("pinned").and_then(|p| p.as_bool()).unwrap_or(false);
             if already_pinned {
                 return Ok(());
             }

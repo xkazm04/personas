@@ -16,6 +16,13 @@
 //! how `daemon_bin.rs` uses `app_lib::daemon`), so the server has direct access
 //! to the app's repository + auth layer instead of a forked lightweight copy.
 
+// This binary talks to a terminal, not to a log sink. Its output is either
+// CLI UX (usage, results, install confirmation) or a diagnostic emitted before
+// `tracing` is initialised — in both cases a `tracing` event would go nowhere a
+// user could see. `print_stdout`/`print_stderr` are enabled workspace-wide to
+// keep the *library* honest; the entry points are the deliberate exception.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
+
 use app_lib::mcp_server;
 
 // The standalone `personas-mcp` binary is a separate crate root from the main

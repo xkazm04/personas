@@ -1,8 +1,6 @@
 use serde::Serialize;
 
-use crate::error_taxonomy::{
-    classify_error, is_auto_fixable, is_failover_eligible, ErrorCategory,
-};
+use crate::error_taxonomy::{classify_error, is_auto_fixable, is_failover_eligible, ErrorCategory};
 
 /// App-wide error type. Every fallible function returns `Result<T, AppError>`.
 /// Serializes cleanly for Tauri IPC so the frontend gets structured error messages.
@@ -120,9 +118,9 @@ impl AppError {
             | AppError::KeyringLost(_)
             | AppError::AuthorizationRequired { .. } => C::CredentialError,
             AppError::NetworkOffline(_) => C::Network,
-            AppError::Validation(_)
-            | AppError::Serde(_)
-            | AppError::DeviceGroupConflict(_) => C::Validation,
+            AppError::Validation(_) | AppError::Serde(_) | AppError::DeviceGroupConflict(_) => {
+                C::Validation
+            }
             AppError::Cloud(_)
             | AppError::GitLab(_)
             | AppError::Database(_)

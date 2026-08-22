@@ -196,14 +196,18 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
     // can be narrowed before matches are silently missed.
     let since = (Utc::now() - Duration::seconds(max_window as i64)).to_rfc3339();
     let until = Utc::now().to_rfc3339();
-    let (recent_events, events_capped) =
-        match event_repo::get_in_range(pool, &since, &until, Some(COMPOSITE_EVENT_SCAN_LIMIT)) {
-            Ok(res) => res,
-            Err(e) => {
-                tracing::error!("Failed to load recent events for composite evaluation: {e} — composite evaluation skipped this tick");
-                return;
-            }
-        };
+    let (recent_events, events_capped) = match event_repo::get_in_range(
+        pool,
+        &since,
+        &until,
+        Some(COMPOSITE_EVENT_SCAN_LIMIT),
+    ) {
+        Ok(res) => res,
+        Err(e) => {
+            tracing::error!("Failed to load recent events for composite evaluation: {e} — composite evaluation skipped this tick");
+            return;
+        }
+    };
     if events_capped {
         tracing::warn!(
             scan_limit = COMPOSITE_EVENT_SCAN_LIMIT,

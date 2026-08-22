@@ -5,6 +5,7 @@ use crate::models::{
     OutputAssertion,
 };
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // -- Row mappers -----------------------------------------------
@@ -77,7 +78,7 @@ pub fn create(
         let severity = severity.unwrap_or("warning");
         let on_failure = on_failure.unwrap_or("log");
 
-        let conn = pool.get()?;
+        let conn = pool.conn("assertions::create")?;
         conn.execute(
             "INSERT INTO output_assertions
              (id, persona_id, name, description, assertion_type, config, severity, on_failure, created_at, updated_at)
@@ -98,7 +99,7 @@ crud_get_by_id!(
 
 pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<OutputAssertion>, AppError> {
     timed_query!("output_assertions", "output_assertions::list_by_persona", {
-        let conn = pool.get()?;
+        let conn = pool.conn("assertions::list_by_persona")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM output_assertions WHERE persona_id = ?1 ORDER BY created_at DESC",
         )?;
@@ -116,7 +117,7 @@ pub fn list_enabled_by_persona(
         "output_assertions",
         "output_assertions::list_enabled_by_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("assertions::list_enabled_by_persona")?;
             let mut stmt = conn.prepare(
             "SELECT * FROM output_assertions WHERE persona_id = ?1 AND enabled = 1 ORDER BY created_at DESC",
         )?;
@@ -142,7 +143,7 @@ pub fn update(
         let now = chrono::Utc::now().to_rfc3339();
         let enabled_int = enabled.map(|e| if e { 1i32 } else { 0i32 });
 
-        let conn = pool.get()?;
+        let conn = pool.conn("assertions::update")?;
         conn.execute(
             "UPDATE output_assertions SET
                 name = COALESCE(?1, name),
@@ -175,7 +176,7 @@ crud_delete!("output_assertions");
 
 pub fn insert_result(pool: &DbPool, result: &AssertionResult) -> Result<(), AppError> {
     timed_query!("output_assertions", "output_assertions::insert_result", {
-        let conn = pool.get()?;
+        let conn = pool.conn("assertions::insert_result")?;
         conn.execute(
             "INSERT INTO assertion_results
              (id, assertion_id, execution_id, persona_id, passed, explanation, matched_value, evaluation_ms, created_at)
@@ -204,7 +205,7 @@ pub fn get_results_by_execution(
         "output_assertions",
         "output_assertions::get_results_by_execution",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("assertions::get_results_by_execution")?;
             let mut stmt = conn.prepare(
                 "SELECT * FROM assertion_results WHERE execution_id = ?1 ORDER BY created_at ASC",
             )?;
@@ -255,7 +256,7 @@ pub fn get_results_by_assertion(
         "output_assertions::get_results_by_assertion",
         {
             let limit = limit.unwrap_or(50);
-            let conn = pool.get()?;
+            let conn = pool.conn("assertions::get_results_by_assertion")?;
             let mut stmt = conn.prepare(
             "SELECT * FROM assertion_results WHERE assertion_id = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
@@ -273,7 +274,7 @@ pub fn increment_counter(pool: &DbPool, assertion_id: &str, passed: bool) -> Res
         "output_assertions::increment_counter",
         {
             let now = chrono::Utc::now().to_rfc3339();
-            let conn = pool.get()?;
+            let conn = pool.conn("assertions::increment_counter")?;
             let col = if passed { "pass_count" } else { "fail_count" };
             conn.execute(
             &format!(

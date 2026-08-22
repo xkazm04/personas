@@ -125,7 +125,7 @@ pub fn auto_rollback_tick(
         // number but is tagged "experimental", so sorting by number alone would
         // re-select the demoted version every tick, causing an infinite loop.
         let mut versions = versions;
-        versions.sort_by(|a, b| b.version_number.cmp(&a.version_number));
+        versions.sort_by_key(|b| std::cmp::Reverse(b.version_number));
 
         let current_idx = match versions.iter().position(|v| v.tag == "production") {
             Some(i) => i,

@@ -15,7 +15,10 @@ use app_lib::eval_runs::{cert_status, eval_run_detail, list_summaries};
 fn summaries_sorted_newest_first() {
     let runs = list_summaries();
     for w in runs.windows(2) {
-        assert!(w[0].started_at >= w[1].started_at, "summaries not sorted newest-first");
+        assert!(
+            w[0].started_at >= w[1].started_at,
+            "summaries not sorted newest-first"
+        );
     }
 }
 

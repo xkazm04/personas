@@ -11,7 +11,7 @@ techniques:
   - policy-governance
 evidence:
   - src-tauri/src/companion/model_routing.rs            # TurnTier { model, effort } — MAIN/ASIDE/MICRO, each constant carrying its bench measurement (incl. a negative result)
-  - src-tauri/src/companion/session.rs                  # bench env overrides applied at the main-turn consumer, not the router; validated levels; override feeds flag AND ledger column
+  - src-tauri/src/companion/session/                  # bench env overrides applied at the main-turn consumer, not the router; validated levels; override feeds flag AND ledger column
   - src/features/settings/sub_byom/libs/byomHelpers.ts  # policy-as-data validation: blocked-list typo = blocking error (evaluator silently drops unparseable entries), block-beats-allow warnings
   - src/features/settings/sub_byom/libs/useByomSettings.ts  # one policy surface: save gated on blocking errors; refuses save after failed load to prevent silent policy wipe
   - src-tauri/db/src/repos/execution/provider_audit.rs  # append-only decision record (model_used, was_failover, routing_rule_name, compliance_rule_name) + per-provider usage timeseries

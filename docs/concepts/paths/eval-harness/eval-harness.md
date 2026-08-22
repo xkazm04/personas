@@ -10,7 +10,7 @@ techniques:
   - eval-economics
   - certification-levels
 evidence:
-  - src-tauri/engine/src/test_runner.rs       # the canonical manifestation: deliberately-scoped scenario cache key (excludes prompt text — UAT 2026-07-20 exam-drift incident at :57-74), LAB_CELL_CONCURRENCY=4 fan-out semaphore, pinned LAB_MODEL, never-cache-empty guard (:412-415), one run_lab_loop behind arena/A-B/eval/matrix/consensus modes
+  - src-tauri/engine/src/test_runner/       # the canonical manifestation: deliberately-scoped scenario cache key (excludes prompt text — UAT 2026-07-20 exam-drift incident at :57-74), LAB_CELL_CONCURRENCY=4 fan-out semaphore, pinned LAB_MODEL, never-cache-empty guard (:412-415), one run_lab_loop behind arena/A-B/eval/matrix/consensus modes
   - src-tauri/engine/src/output_assertions.rs # the deterministic band (contains/regex/json-path/json-schema) + evaluate_assertions_dry: challenger scoring writes no evidence rows
   - src/features/agents/sub_lab/libs/evalAggregation.ts # version×model grid, null scores excluded from averages, composite formula pinned by a golden test, declared winner = top of pre-declared sort
   - src/stores/slices/agents/labSlice.ts      # LabMode = arena|ab|matrix|eval|versions|breed|evolve|regression; per-mode run lifecycles

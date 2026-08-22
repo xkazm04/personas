@@ -66,10 +66,7 @@ pub fn list_enabled(pool: &UserDbPool) -> Result<Vec<Subscription>, AppError> {
 
 /// Read one subscription by project_id (returns None if not yet
 /// subscribed). Used by Phase 5 for chat-context preflight.
-pub fn get(
-    pool: &UserDbPool,
-    project_id: &str,
-) -> Result<Option<Subscription>, AppError> {
+pub fn get(pool: &UserDbPool, project_id: &str) -> Result<Option<Subscription>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT s.project_id, p.path, s.watch_git, s.watch_active_runs,
@@ -131,9 +128,7 @@ pub fn watch_since(sub: &Subscription) -> DateTime<Utc> {
 /// Read all subscriptions joined to project name + path. Phase 4's
 /// editor lists all projects and their subscription state, including
 /// disabled ones (so the user can flip them on).
-pub fn list_with_projects(
-    pool: &UserDbPool,
-) -> Result<Vec<SubscriptionWithProject>, AppError> {
+pub fn list_with_projects(pool: &UserDbPool) -> Result<Vec<SubscriptionWithProject>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT p.id, p.name, p.path,
@@ -192,10 +187,7 @@ pub struct SubscriptionWithProject {
 /// Upsert the subscription for one project. Insert-on-missing,
 /// update-on-existing. The engine scheduler picks up the change on its
 /// next tick (no signal needed — list_enabled re-reads each tick).
-pub fn upsert(
-    pool: &UserDbPool,
-    update: &SubscriptionUpdate,
-) -> Result<(), AppError> {
+pub fn upsert(pool: &UserDbPool, update: &SubscriptionUpdate) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO dev_tools_project_subscription

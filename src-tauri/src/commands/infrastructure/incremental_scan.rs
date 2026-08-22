@@ -13,18 +13,13 @@
 //! (cache.py:32-194) for the prior art.
 
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::State;
 use ts_rs::TS;
 
-use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth;
-use crate::AppState;
 
 /// Directory names skipped during the walk. Kept inline (not user-configurable)
 /// because these are universal build/cache directories that never carry source
@@ -101,10 +96,6 @@ pub struct ScanDelta {
 impl ScanDelta {
     pub fn is_empty(&self) -> bool {
         self.added.is_empty() && self.modified.is_empty() && self.deleted.is_empty()
-    }
-
-    pub fn changed_count(&self) -> i32 {
-        (self.added.len() + self.modified.len() + self.deleted.len()) as i32
     }
 }
 
@@ -236,27 +227,6 @@ pub fn compute_delta(cached: &HashMap<String, String>, current: &[ScanFileEntry]
         total_files: current.len() as i32,
         cache_empty,
     }
-}
-
-/// Tauri command: preview a delta without running a scan. Lets the UI render
-/// "12 files changed since last scan — rescan?" without spending tokens.
-#[tauri::command]
-pub async fn dev_tools_compute_scan_delta(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-) -> Result<ScanDelta, AppError> {
-    require_auth(&state).await?;
-    let project = repo::get_project_by_id(&state.db, &project_id)?;
-    let root = PathBuf::from(&project.root_path);
-    let cached = repo::get_file_hashes(&state.db, &project_id)?;
-
-    // Walking is sync I/O; offload to a blocking task so the IPC handler
-    // doesn't park a Tokio worker for the duration.
-    let current = tokio::task::spawn_blocking(move || walk_project_files(&root))
-        .await
-        .map_err(|e| AppError::Internal(format!("scan delta join error: {e}")))??;
-
-    Ok(compute_delta(&cached, &current))
 }
 
 #[cfg(test)]

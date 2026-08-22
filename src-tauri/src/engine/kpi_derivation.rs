@@ -49,8 +49,8 @@ const TOLERANCE_FRAC: f64 = 0.1;
 ///      Factory console lever, honored independently of pace;
 ///   3. pace lag — with a target_date + baseline, current lags the linearly-
 ///      paced expectation by more than the tolerance.
-/// Without any of these (e.g. a missed target but no date to pace against and
-/// no crit line drawn) the verdict is on-track, matching the UI.
+///      Without any of these (e.g. a missed target but no date to pace against and
+///      no crit line drawn) the verdict is on-track, matching the UI.
 pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     if kpi_floor_breached(kpi) {
         return true;
@@ -58,7 +58,11 @@ pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     let (Some(cur), Some(target)) = (kpi.current_value, kpi.target_value) else {
         return false; // unmeasured or target-less — nothing to steer against
     };
-    let met = if kpi.direction == "down" { cur <= target } else { cur >= target };
+    let met = if kpi.direction == "down" {
+        cur <= target
+    } else {
+        cur >= target
+    };
     if met {
         return false; // a met target wins over any threshold or pace verdict
     }
@@ -67,7 +71,11 @@ pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     // independent of, the pace math below. This is the lever the Factory console
     // exposes; until the user draws it, crit_at is NULL and we fall through.
     if let Some(crit) = kpi.crit_at {
-        let breached = if kpi.direction == "down" { cur >= crit } else { cur <= crit };
+        let breached = if kpi.direction == "down" {
+            cur >= crit
+        } else {
+            cur <= crit
+        };
         if breached {
             return true;
         }
@@ -77,13 +85,15 @@ pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     };
     let start = parse_ts(&kpi.created_at);
     let end = parse_ts(date);
-    let (Some(start), Some(end)) = (start, end) else { return false };
+    let (Some(start), Some(end)) = (start, end) else {
+        return false;
+    };
     if end <= start {
         return false;
     }
     let now = chrono::Utc::now();
-    let frac = ((now - start).num_seconds() as f64 / (end - start).num_seconds() as f64)
-        .clamp(0.0, 1.0);
+    let frac =
+        ((now - start).num_seconds() as f64 / (end - start).num_seconds() as f64).clamp(0.0, 1.0);
     let span = target - baseline;
     let expected = baseline + span * frac;
     let tolerance = span.abs() * TOLERANCE_FRAC;
@@ -224,7 +234,19 @@ fn build_derivation_prompt(pool: &DbPool, kpi: &DevKpi) -> String {
             (None, None) => kpi.context_group_id.is_none() || c.group_id == kpi.context_group_id,
         })
         .take(20)
-        .map(|c| format!("- id={} {}: {}", c.id, c.name, c.description.as_deref().unwrap_or("").chars().take(120).collect::<String>()))
+        .map(|c| {
+            format!(
+                "- id={} {}: {}",
+                c.id,
+                c.name,
+                c.description
+                    .as_deref()
+                    .unwrap_or("")
+                    .chars()
+                    .take(120)
+                    .collect::<String>()
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n");
     let recent_goals: String = pool
@@ -238,7 +260,11 @@ fn build_derivation_prompt(pool: &DbPool, kpi: &DevKpi) -> String {
             .ok()
             .and_then(|mut stmt| {
                 stmt.query_map(rusqlite::params![kpi.project_id], |r| {
-                    Ok(format!("- [{}] {}", r.get::<_, String>(1)?, r.get::<_, String>(0)?))
+                    Ok(format!(
+                        "- [{}] {}",
+                        r.get::<_, String>(1)?,
+                        r.get::<_, String>(0)?
+                    ))
                 })
                 .ok()
                 .map(|rows| rows.filter_map(Result::ok).collect::<Vec<_>>().join("\n"))
@@ -310,10 +336,7 @@ Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON
 
 /// Derive a goal from one off-track KPI. Returns the goal title when created,
 /// `None` on a (legitimate) skip.
-pub async fn derive_goal_from_kpi(
-    pool: &DbPool,
-    kpi: &DevKpi,
-) -> Result<Option<String>, AppError> {
+pub async fn derive_goal_from_kpi(pool: &DbPool, kpi: &DevKpi) -> Result<Option<String>, AppError> {
     let prompt = build_derivation_prompt(pool, kpi);
     let (blob, usage) = crate::companion::athena_reaction::cli_text_with_usage(prompt).await?;
     // tiger #1: record headless spend in the dev_llm_spend ledger (best-effort).
@@ -369,7 +392,10 @@ pub async fn derive_goal_from_kpi(
         kpi.unit,
         kpi.target_value.unwrap_or(0.0),
         kpi.unit,
-        kpi.target_date.as_deref().map(|d| format!(" by {d}")).unwrap_or_default(),
+        kpi.target_date
+            .as_deref()
+            .map(|d| format!(" by {d}"))
+            .unwrap_or_default(),
         decision.rationale.trim(),
     );
     let description = format!("{}{}", decision.description.trim(), provenance);
@@ -388,7 +414,10 @@ pub async fn derive_goal_from_kpi(
         Some(&description),
         context_id,
         Some("open"),
-        decision.target_date.as_deref().or(kpi.target_date.as_deref()),
+        decision
+            .target_date
+            .as_deref()
+            .or(kpi.target_date.as_deref()),
         None,
     )?;
     // Soft link (column added in P0; create_goal predates it).
@@ -420,7 +449,14 @@ pub async fn derive_goal_from_kpi(
 mod tests {
     use super::*;
 
-    fn kpi(cur: Option<f64>, target: Option<f64>, baseline: Option<f64>, date: Option<&str>, dir: &str, created: &str) -> DevKpi {
+    fn kpi(
+        cur: Option<f64>,
+        target: Option<f64>,
+        baseline: Option<f64>,
+        date: Option<&str>,
+        dir: &str,
+        created: &str,
+    ) -> DevKpi {
         DevKpi {
             id: "k".into(),
             project_id: "p".into(),
@@ -460,20 +496,55 @@ mod tests {
 
     #[test]
     fn unmeasured_or_targetless_is_not_off_track() {
-        assert!(!kpi_is_off_track(&kpi(None, Some(70.0), Some(50.0), None, "up", "2026-01-01 00:00:00")));
-        assert!(!kpi_is_off_track(&kpi(Some(50.0), None, Some(50.0), None, "up", "2026-01-01 00:00:00")));
+        assert!(!kpi_is_off_track(&kpi(
+            None,
+            Some(70.0),
+            Some(50.0),
+            None,
+            "up",
+            "2026-01-01 00:00:00"
+        )));
+        assert!(!kpi_is_off_track(&kpi(
+            Some(50.0),
+            None,
+            Some(50.0),
+            None,
+            "up",
+            "2026-01-01 00:00:00"
+        )));
     }
 
     #[test]
     fn met_target_is_not_off_track() {
-        assert!(!kpi_is_off_track(&kpi(Some(75.0), Some(70.0), Some(50.0), Some("2030-01-01"), "up", "2026-01-01 00:00:00")));
-        assert!(!kpi_is_off_track(&kpi(Some(3.0), Some(5.0), Some(10.0), Some("2030-01-01"), "down", "2026-01-01 00:00:00")));
+        assert!(!kpi_is_off_track(&kpi(
+            Some(75.0),
+            Some(70.0),
+            Some(50.0),
+            Some("2030-01-01"),
+            "up",
+            "2026-01-01 00:00:00"
+        )));
+        assert!(!kpi_is_off_track(&kpi(
+            Some(3.0),
+            Some(5.0),
+            Some(10.0),
+            Some("2030-01-01"),
+            "down",
+            "2026-01-01 00:00:00"
+        )));
     }
 
     #[test]
     fn lagging_pace_is_off_track() {
         // Window long past: expected ≈ target; current far below → off-track.
-        assert!(kpi_is_off_track(&kpi(Some(51.0), Some(70.0), Some(50.0), Some("2026-01-10"), "up", "2026-01-01 00:00:00")));
+        assert!(kpi_is_off_track(&kpi(
+            Some(51.0),
+            Some(70.0),
+            Some(50.0),
+            Some("2026-01-10"),
+            "up",
+            "2026-01-01 00:00:00"
+        )));
     }
 
     #[test]
@@ -482,8 +553,12 @@ mod tests {
         let far = chrono::Utc::now() + chrono::Duration::days(60);
         let created = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
         assert!(!kpi_is_off_track(&kpi(
-            Some(50.0), Some(70.0), Some(50.0),
-            Some(&far.format("%Y-%m-%d").to_string()), "up", &created
+            Some(50.0),
+            Some(70.0),
+            Some(50.0),
+            Some(&far.format("%Y-%m-%d").to_string()),
+            "up",
+            &created
         )));
     }
 
@@ -495,11 +570,24 @@ mod tests {
         let far = chrono::Utc::now() + chrono::Duration::days(60);
         let created = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
         let date = far.format("%Y-%m-%d").to_string();
-        let mut k = kpi(Some(50.0), Some(70.0), Some(50.0), Some(&date), "up", &created);
-        assert!(!kpi_is_off_track(&k), "no crit line + fresh window → on-track");
+        let mut k = kpi(
+            Some(50.0),
+            Some(70.0),
+            Some(50.0),
+            Some(&date),
+            "up",
+            &created,
+        );
+        assert!(
+            !kpi_is_off_track(&k),
+            "no crit line + fresh window → on-track"
+        );
         // up KPI: breached when current <= crit. 50 <= 55 → breached.
         k.crit_at = Some(55.0);
-        assert!(kpi_is_off_track(&k), "current crossed the user's crit line → off-track");
+        assert!(
+            kpi_is_off_track(&k),
+            "current crossed the user's crit line → off-track"
+        );
     }
 
     #[test]
@@ -507,7 +595,14 @@ mod tests {
         let far = chrono::Utc::now() + chrono::Duration::days(60);
         let created = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
         let date = far.format("%Y-%m-%d").to_string();
-        let mut k = kpi(Some(60.0), Some(70.0), Some(50.0), Some(&date), "up", &created);
+        let mut k = kpi(
+            Some(60.0),
+            Some(70.0),
+            Some(50.0),
+            Some(&date),
+            "up",
+            &created,
+        );
         k.crit_at = Some(55.0); // up: 60 <= 55? no → not breached, pace fresh → on-track
         assert!(!kpi_is_off_track(&k));
     }
@@ -516,14 +611,22 @@ mod tests {
     fn met_target_beats_a_crossed_crit_line() {
         // direction down, target met (3 <= 5); even a crit line above current
         // must not flip a met KPI to off-track — met short-circuits first.
-        let mut k = kpi(Some(3.0), Some(5.0), Some(10.0), Some("2030-01-01"), "down", "2026-01-01 00:00:00");
+        let mut k = kpi(
+            Some(3.0),
+            Some(5.0),
+            Some(10.0),
+            Some("2030-01-01"),
+            "down",
+            "2026-01-01 00:00:00",
+        );
         k.crit_at = Some(2.0); // down: breached when cur >= crit; 3 >= 2 is true, but met wins
         assert!(!kpi_is_off_track(&k));
     }
 
     #[test]
     fn parses_skip_decision() {
-        let d = parse_kpi_goal(r#"{"kpi_goal":{"skip":true,"rationale":"needs marketing"}}"#).unwrap();
+        let d =
+            parse_kpi_goal(r#"{"kpi_goal":{"skip":true,"rationale":"needs marketing"}}"#).unwrap();
         assert!(d.skip);
     }
 

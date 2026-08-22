@@ -187,14 +187,20 @@ mod osc_title_tests {
     #[test]
     fn captures_bel_terminated_title() {
         let mut s = OscTitleScanner::default();
-        assert_eq!(s.feed(b"\x1b]0;Fixing the auth bug\x07"), Some("Fixing the auth bug".into()));
+        assert_eq!(
+            s.feed(b"\x1b]0;Fixing the auth bug\x07"),
+            Some("Fixing the auth bug".into())
+        );
     }
 
     #[test]
     fn captures_st_terminated_window_title() {
         let mut s = OscTitleScanner::default();
         // OSC 2 (window title) terminated by ST (ESC \).
-        assert_eq!(s.feed(b"\x1b]2;Running tests\x1b\\"), Some("Running tests".into()));
+        assert_eq!(
+            s.feed(b"\x1b]2;Running tests\x1b\\"),
+            Some("Running tests".into())
+        );
     }
 
     #[test]
@@ -540,9 +546,7 @@ pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
     let port = match crate::local_http::port() {
         Some(p) => p,
         None => {
-            tracing::warn!(
-                "fleet spawn: local_http port not yet bound — MCP wiring skipped"
-            );
+            tracing::warn!("fleet spawn: local_http port not yet bound — MCP wiring skipped");
             return McpSpawn { config_path: None };
         }
     };
@@ -590,7 +594,9 @@ pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
         path = %config_path.display(),
         "fleet spawn: MCP config wired"
     );
-    McpSpawn { config_path: Some(config_path) }
+    McpSpawn {
+        config_path: Some(config_path),
+    }
 }
 
 /// Reader loop — blocks on `reader.read`, buffers every chunk into the ring,
@@ -602,6 +608,13 @@ pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
 /// the bounded ring (so claude never blocks on a full pipe and memory stays
 /// flat regardless of a 1M-token run), they just don't pay the
 /// serialize→IPC→xterm-parse cost for output nobody is looking at.
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 fn reader_loop(
     app: AppHandle,
     session_id: String,

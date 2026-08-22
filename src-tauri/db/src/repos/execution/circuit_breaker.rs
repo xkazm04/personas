@@ -1,6 +1,7 @@
 use rusqlite::params;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// A persisted circuit breaker state row.
@@ -19,7 +20,7 @@ pub fn upsert(
     is_open: bool,
     opened_at_iso: Option<&str>,
 ) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("circuit_breaker::upsert")?;
     conn.execute(
         "INSERT INTO circuit_breaker_state (provider, consecutive_failures, is_open, opened_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, datetime('now'))
@@ -38,7 +39,7 @@ pub fn load_active(
     pool: &DbPool,
     ttl_minutes: i64,
 ) -> Result<Vec<PersistedCircuitState>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("circuit_breaker::load_active")?;
     let mut stmt = conn.prepare(
         "SELECT provider, consecutive_failures, is_open, opened_at
          FROM circuit_breaker_state
@@ -62,7 +63,7 @@ pub fn load_active(
 
 /// Delete expired rows (older than `ttl_minutes`).
 pub fn purge_expired(pool: &DbPool, ttl_minutes: i64) -> Result<u64, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("circuit_breaker::purge_expired")?;
     let ttl_param = format!("-{} minutes", ttl_minutes);
     let deleted = conn.execute(
         "DELETE FROM circuit_breaker_state WHERE updated_at <= datetime('now', ?1)",

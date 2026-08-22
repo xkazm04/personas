@@ -62,14 +62,15 @@ pub async fn open_local_path(target: String) -> Result<(), AppError> {
         // as an arbitrary-scheme launcher (mailto:, file:, http(s):, ...).
         let path = std::path::Path::new(trimmed);
         if !path.exists() {
-            return Err(AppError::NotFound(format!("Path does not exist: {trimmed}")));
+            return Err(AppError::NotFound(format!(
+                "Path does not exist: {trimmed}"
+            )));
         }
     }
 
     tracing::info!(target = %trimmed, "open_local_path requested");
 
-    open::that(trimmed)
-        .map_err(|e| AppError::Internal(format!("Failed to open path: {e}")))?;
+    open::that(trimmed).map_err(|e| AppError::Internal(format!("Failed to open path: {e}")))?;
 
     Ok(())
 }

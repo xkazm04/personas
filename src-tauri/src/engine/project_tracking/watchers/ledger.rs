@@ -58,26 +58,44 @@ pub async fn poll(
     for line in body.lines() {
         // Section transitions.
         if line.starts_with("## Active") {
-            flush_entry(&mut current, &mut events, since, /* assume_started */ true);
+            flush_entry(
+                &mut current,
+                &mut events,
+                since,
+                /* assume_started */ true,
+            );
             section = Section::Active;
             continue;
         }
-        if line.starts_with("## Recently completed")
-            || line.starts_with("## Recent")
-        {
-            flush_entry(&mut current, &mut events, since, /* assume_started */ true);
+        if line.starts_with("## Recently completed") || line.starts_with("## Recent") {
+            flush_entry(
+                &mut current,
+                &mut events,
+                since,
+                /* assume_started */ true,
+            );
             section = Section::Completed;
             continue;
         }
         if line.starts_with("## ") {
-            flush_entry(&mut current, &mut events, since, /* assume_started */ true);
+            flush_entry(
+                &mut current,
+                &mut events,
+                since,
+                /* assume_started */ true,
+            );
             section = Section::Other;
             continue;
         }
 
         // Entry header line — starts a new accumulator.
         if line.starts_with("- **[") {
-            flush_entry(&mut current, &mut events, since, /* assume_started */ section == Section::Active);
+            flush_entry(
+                &mut current,
+                &mut events,
+                since,
+                /* assume_started */ section == Section::Active,
+            );
             current = parse_header(line, section);
             continue;
         }
@@ -89,7 +107,12 @@ pub async fn poll(
             }
         }
     }
-    flush_entry(&mut current, &mut events, since, /* assume_started */ section == Section::Active);
+    flush_entry(
+        &mut current,
+        &mut events,
+        since,
+        /* assume_started */ section == Section::Active,
+    );
 
     Ok(events)
 }
@@ -115,7 +138,8 @@ fn parse_header(line: &str, section: Section) -> Option<EntryAccumulator> {
     // `- **[YYYY-MM-DD HH:MM] something else** ...`. Tolerant of `~`
     // prefix on the time (`~17:35`) used informally for approximate
     // start times.
-    let after_open = line.trim_start_matches("- **[")
+    let after_open = line
+        .trim_start_matches("- **[")
         .splitn(2, ']')
         .collect::<Vec<_>>();
     if after_open.len() != 2 {
@@ -196,7 +220,9 @@ fn parse_status(status_line: Option<&str>) -> (String, Option<String>) {
     // Look for `commit: <sha>` token.
     if let Some(idx) = line.find("commit:") {
         let rest = &line[idx + "commit:".len()..];
-        let sha = rest.trim().split(|c: char| !c.is_ascii_alphanumeric())
+        let sha = rest
+            .trim()
+            .split(|c: char| !c.is_ascii_alphanumeric())
             .next()
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string());

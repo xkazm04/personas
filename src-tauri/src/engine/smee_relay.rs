@@ -758,7 +758,16 @@ pub async fn run_smee_relay(
                         webhook_secret: webhook_secret2.clone(),
                     };
                     let connected_at = Instant::now();
-                    match relay_sse_core(&params, &pool2, &app2, &state2, &cancel_for_task, &mut dedup).await {
+                    match relay_sse_core(
+                        &params,
+                        &pool2,
+                        &app2,
+                        &state2,
+                        &cancel_for_task,
+                        &mut dedup,
+                    )
+                    .await
+                    {
                         Ok(()) => {
                             if cancel_for_task.is_cancelled() {
                                 tracing::info!(relay_id = %relay_id2, "Smee relay disconnected for cancellation");

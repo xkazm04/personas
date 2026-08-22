@@ -34,14 +34,37 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
+      - name: Install cargo-deny and cargo-audit
+        run: |
+          cargo install cargo-deny --locked
+          cargo install cargo-audit --locked
+
+      # cargo-audit has run against this lockfile for some time — in the
+      # GitLab pipeline (.gitlab-ci.yml), which is a second forge nobody
+      # watches. Advisory coverage for the Rust dependency graph should not
+      # depend on which CI provider happens to be configured, so it runs here
+      # too. cargo-deny reads the same advisory database but through a policy
+      # file; cargo-audit is the unfiltered second opinion, which is why both
+      # are worth having.
+      - name: Run cargo-audit
+        # `set -o pipefail` is load-bearing. Piping into tee hands the step
+        # tee's exit status, not the tool's, so without it a report full of
+        # advisories exits 0 and the job goes green — the same
+        # gate-that-cannot-fail shape that let deny.toml sit unparseable for
+        # months. The sibling deny step below had exactly this bug and is
+        # fixed in the same commit.
+        run: |
+          set -o pipefail
+          mkdir -p security-results
+          cargo audit --file src-tauri/Cargo.lock 2>&1 | tee security-results/cargo-audit.txt
 
       - name: Run security audit
         run: bash scripts/security-audit.sh
 
       - name: Check dependency policies (cargo-deny)
-        run: cd src-tauri && cargo deny check 2>&1 | tee security-results/cargo-deny.txt
+        run: |
+          set -o pipefail
+          cd src-tauri && cargo deny check 2>&1 | tee ../security-results/cargo-deny.txt
 
       - name: Upload audit results
         if: always()

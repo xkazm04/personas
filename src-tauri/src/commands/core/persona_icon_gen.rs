@@ -245,11 +245,9 @@ async fn leonardo_generate(
         .map(|credits| credits * LEONARDO_USD_PER_CREDIT)
         .unwrap_or(LEONARDO_ESTIMATED_COST_USD);
 
-    let generation_id = find_string(&json, &["generationId", "id"]).ok_or_else(|| {
-        AppError::Internal("Leonardo did not return a generation id".into())
-    })?;
-    let status_url =
-        format!("https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}");
+    let generation_id = find_string(&json, &["generationId", "id"])
+        .ok_or_else(|| AppError::Internal("Leonardo did not return a generation id".into()))?;
+    let status_url = format!("https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}");
     let image_url = poll_for_image(client, &status_url, &auth, "Leonardo").await?;
     let bytes = download_image(client, &image_url).await?;
     Ok((bytes, cost_usd))
@@ -285,12 +283,9 @@ async fn higgsfield_generate(
     // per-image estimate for this premium Flux tier.
     let cost_usd = HIGGSFIELD_ESTIMATED_COST_USD;
 
-    let request_id =
-        find_string(&json, &["request_id", "requestId", "id"]).ok_or_else(|| {
-            AppError::Internal("Higgsfield did not return a request id".into())
-        })?;
-    let status_url =
-        format!("https://platform.higgsfield.ai/requests/{request_id}/status");
+    let request_id = find_string(&json, &["request_id", "requestId", "id"])
+        .ok_or_else(|| AppError::Internal("Higgsfield did not return a request id".into()))?;
+    let status_url = format!("https://platform.higgsfield.ai/requests/{request_id}/status");
     let image_url = poll_for_image(client, &status_url, &auth, "Higgsfield").await?;
     let bytes = download_image(client, &image_url).await?;
     Ok((bytes, cost_usd))
@@ -299,17 +294,12 @@ async fn higgsfield_generate(
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 /// Read a required (non-empty) credential field.
-fn require_field<'a>(
-    fields: &'a HashMap<String, String>,
-    key: &str,
-) -> Result<&'a str, AppError> {
+fn require_field<'a>(fields: &'a HashMap<String, String>, key: &str) -> Result<&'a str, AppError> {
     fields
         .get(key)
         .map(String::as_str)
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            AppError::Validation(format!("Credential is missing the '{key}' field"))
-        })
+        .ok_or_else(|| AppError::Validation(format!("Credential is missing the '{key}' field")))
 }
 
 /// Treat a non-2xx response as an error, surfacing a snippet of the body so
@@ -425,8 +415,8 @@ async fn download_image(client: &reqwest::Client, url: &str) -> Result<Vec<u8>, 
     let mut buf: Vec<u8> = Vec::new();
     let mut stream = resp.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk
-            .map_err(|e| AppError::Internal(format!("Image download read failed: {e}")))?;
+        let chunk =
+            chunk.map_err(|e| AppError::Internal(format!("Image download read failed: {e}")))?;
         push_capped(&mut buf, &chunk)?;
     }
     Ok(buf)
@@ -528,7 +518,10 @@ mod tests {
     #[test]
     fn find_string_walks_nested_objects() {
         let v = serde_json::json!({ "sdGenerationJob": { "generationId": "gen-123" } });
-        assert_eq!(find_string(&v, &["generationId"]).as_deref(), Some("gen-123"));
+        assert_eq!(
+            find_string(&v, &["generationId"]).as_deref(),
+            Some("gen-123")
+        );
     }
 
     #[test]

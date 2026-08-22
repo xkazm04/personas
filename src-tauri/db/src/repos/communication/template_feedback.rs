@@ -175,14 +175,14 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             .filter(|(_, (p, _))| *p > 0)
             .map(|(k, (p, _))| (k.clone(), *p))
             .collect();
-        top_positive.sort_by(|a, b| b.1.cmp(&a.1));
+        top_positive.sort_by_key(|e| std::cmp::Reverse(e.1));
 
         let mut top_negative: Vec<(String, i64)> = label_counts
             .iter()
             .filter(|(_, (_, n))| *n > 0)
             .map(|(k, (_, n))| (k.clone(), *n))
             .collect();
-        top_negative.sort_by(|a, b| b.1.cmp(&a.1));
+        top_negative.sort_by_key(|e| std::cmp::Reverse(e.1));
 
         // Derived quality: 40% semantic + 30% structural + 30% success rate (all normalized to 0-100)
         let derived_quality_score =

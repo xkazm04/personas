@@ -25,19 +25,8 @@ use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
+use crate::utils::extract_panic_message;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 /// Per-project single-flight guard for context-map scans. Two concurrent
 /// rescans of one project interleave `clear_project_context_map` (a full DELETE
@@ -194,8 +183,10 @@ To update an existing context, use:
             .iter()
             .map(|g| format!("- {g}"))
             .collect::<Vec<_>>()
-            .join("
-")
+            .join(
+                "
+",
+            )
     };
     let subtree_section = match subtree {
         Some(st) => format!(
@@ -351,6 +342,12 @@ Begin by exploring the codebase structure."#
 // Protocol message parsing
 // =============================================================================
 
+// `large_enum_variant`: `Group` is ~312 bytes larger than the smallest
+// variant. This enum is a short-lived parse target for one JSON protocol
+// message and is never held in a collection, so the size difference costs
+// nothing; boxing a field would restructure every construction and match
+// site to buy back stack space nobody is short of.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 enum ContextMapProtocol {
     Group {
@@ -590,7 +587,14 @@ pub async fn dev_tools_scan_codebase(
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    launch_context_scan(app, &state.db, &project, &root_path, delta_mode.unwrap_or(false), subtree.as_deref())
+    launch_context_scan(
+        app,
+        &state.db,
+        &project,
+        &root_path,
+        delta_mode.unwrap_or(false),
+        subtree.as_deref(),
+    )
 }
 
 /// Launch a context-map scan for `project` as a background task. Shared by the
@@ -796,8 +800,17 @@ pub(crate) fn launch_context_scan(
                 panic = %msg,
                 "context-map generation task panicked — marking scan as failed"
             );
-            CONTEXT_GEN_JOBS.set_status(&app_handle_for_panic, &scan_id_for_panic, "failed", Some(msg.clone()));
-            CONTEXT_GEN_JOBS.emit_line(&app_handle_for_panic, &scan_id_for_panic, format!("[Error] {msg}"));
+            CONTEXT_GEN_JOBS.set_status(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            CONTEXT_GEN_JOBS.emit_line(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                format!("[Error] {msg}"),
+            );
             crate::engine::system_ops::publish_context_scan_event(
                 &pool_for_panic,
                 "completed",
@@ -857,10 +870,14 @@ pub fn dev_tools_get_scan_codebase_status(
 pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
     match CONTEXT_GEN_JOBS.lock() {
         Ok(jobs) => match jobs.get(scan_id) {
-            Some(job) => json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines }),
+            Some(job) => {
+                json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines })
+            }
             None => json!({ "scan_id": scan_id, "status": "not_found" }),
         },
-        Err(_) => json!({ "scan_id": scan_id, "status": "error", "error": "scan registry lock poisoned" }),
+        Err(_) => {
+            json!({ "scan_id": scan_id, "status": "error", "error": "scan registry lock poisoned" })
+        }
     }
 }
 
@@ -914,13 +931,27 @@ pub(crate) fn list_scans_json(project_id: &str) -> serde_json::Value {
 /// JSON files into 15 contexts named `section-locales-ar`, `-bn`, … and the
 /// coverage line read 5871%. One list, one meaning, both sides.
 pub(crate) const NON_SOURCE_DIRS: &[&str] = &[
-    "node_modules", "target", ".git", "dist", "build",
-    "bindings", "section-locales", "locales", ".claude", "coverage",
+    "node_modules",
+    "target",
+    ".git",
+    "dist",
+    "build",
+    "bindings",
+    "section-locales",
+    "locales",
+    ".claude",
+    "coverage",
     // Python build/vendor trees. Added with `py` below: before Python was
     // mappable these could not appear, so their absence was harmless. Now that a
     // context may own `.py`, a vendored virtualenv or a __pycache__ tree would
     // otherwise become mappable for the first time.
-    "__pycache__", ".venv", "venv", ".tox", ".pytest_cache", "site-packages", ".mypy_cache",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".tox",
+    ".pytest_cache",
+    "site-packages",
+    ".mypy_cache",
 ];
 
 /// Extensions a context may legitimately own — hand-written CODE only.
@@ -963,10 +994,9 @@ pub(crate) fn is_mappable_path(path: &str) -> bool {
     // The rule deliberately does NOT apply to the filename: a dotfile like
     // `.eslintrc.js` is a real hand-written file, and the counter accepts it too
     // (it only tests `starts_with('.')` on directory entries).
-    if segments
-        .iter()
-        .any(|seg| (seg.starts_with('.') && *seg != "." && *seg != "..") || NON_SOURCE_DIRS.contains(seg))
-    {
+    if segments.iter().any(|seg| {
+        (seg.starts_with('.') && *seg != "." && *seg != "..") || NON_SOURCE_DIRS.contains(seg)
+    }) {
         return false;
     }
     let norm = file_name;
@@ -989,7 +1019,6 @@ pub(crate) fn is_mappable_path(path: &str) -> bool {
 /// percentage and make the warning meaningless. Returns `None` if the tree
 /// cannot be walked; a missing figure is better than a wrong one.
 fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
-
     let base = match subtree {
         Some(st) => std::path::Path::new(root).join(st),
         None => std::path::PathBuf::from(root),
@@ -1090,6 +1119,12 @@ fn is_coverage_regression(prior: usize, written: usize) -> bool {
     (written as f64) < (prior as f64) * COVERAGE_REGRESSION_RATIO
 }
 
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 async fn run_context_generation(
     app: &tauri::AppHandle,
     scan_id: &str,
@@ -1578,7 +1613,12 @@ async fn run_context_generation(
             // validation — and it needs it more: the contexts a timed-out scan
             // wrote reference siblings it never got to emit.
             let (db_tables_dropped, cross_refs_dropped) = prune_unresolvable_references(
-                app, scan_id, pool, project_id, root_path, &written_context_ids,
+                app,
+                scan_id,
+                pool,
+                project_id,
+                root_path,
+                &written_context_ids,
             )
             .await;
             reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
@@ -1646,10 +1686,14 @@ async fn run_context_generation(
     // (not).
     if !subtree_stale_ids.is_empty() {
         if contexts_created == 0 {
-            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
-                "[Kept] Scan produced no contexts — left all {} existing context(s) in place.",
-                subtree_stale_ids.len()
-            ));
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Kept] Scan produced no contexts — left all {} existing context(s) in place.",
+                    subtree_stale_ids.len()
+                ),
+            );
         } else {
             let mut retired = 0usize;
             for id in &subtree_stale_ids {
@@ -1747,9 +1791,15 @@ async fn run_context_generation(
     // does not exist. Deliberately AFTER the retire step and after every
     // context is written — a context may reference a sibling the same scan
     // emits later, so this is only decidable once the scan's writes are in.
-    let (db_tables_dropped, cross_refs_dropped) =
-        prune_unresolvable_references(app, scan_id, pool, project_id, root_path, &written_context_ids)
-            .await;
+    let (db_tables_dropped, cross_refs_dropped) = prune_unresolvable_references(
+        app,
+        scan_id,
+        pool,
+        project_id,
+        root_path,
+        &written_context_ids,
+    )
+    .await;
 
     // Coverage guard: did this rescan replace the map with a materially poorer
     // one? Runs BEFORE reconcile_links so a rollback is relinked, not the
@@ -2158,8 +2208,7 @@ async fn prune_unresolvable_references(
     // contexts this scan never touched.
     let known_names: std::collections::HashSet<String> =
         contexts.iter().map(|c| c.name.trim().to_string()).collect();
-    let written: std::collections::HashSet<&str> =
-        written_ids.iter().map(String::as_str).collect();
+    let written: std::collections::HashSet<&str> = written_ids.iter().map(String::as_str).collect();
 
     // The project's own schema, read from the project's own source. An
     // incomplete vocabulary must never drop a name, so an unusable one skips
@@ -2256,19 +2305,7 @@ async fn prune_unresolvable_references(
         let tables_arg = new_tables.as_ref().map(|o| o.as_deref());
         let refs_arg = new_refs.as_ref().map(|o| o.as_deref());
         if let Err(e) = repo::update_context(
-            pool,
-            &c.id,
-            None,
-            None,
-            None,
-            None,
-            tables_arg,
-            None,
-            None,
-            refs_arg,
-            None,
-            None,
-            None,
+            pool, &c.id, None, None, None, None, tables_arg, None, None, refs_arg, None, None, None,
         ) {
             tracing::warn!(error = %e, context = %c.name, "reference validation: update failed");
         }
@@ -2321,7 +2358,11 @@ fn report_context_audit(
                 scan_id,
                 format!(
                     "[{}] {line}",
-                    if report.balanced { "Audit" } else { "Audit — attention" }
+                    if report.balanced {
+                        "Audit"
+                    } else {
+                        "Audit — attention"
+                    }
                 ),
             );
             if report.totals.unresolved_cross_refs > 0 {
@@ -2339,7 +2380,11 @@ fn report_context_audit(
         }
         Err(e) => {
             tracing::warn!(error = %e, "post-scan context audit failed");
-            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Warning] Context audit skipped: {e}"));
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warning] Context audit skipped: {e}"),
+            );
         }
     }
 }
@@ -2381,7 +2426,9 @@ fn write_harness_docs(
     }
     // Offline skill registry for the reflection contract's sync ritual —
     // same best-effort contract (docs/skill-standard.md).
-    if let Err(e) = super::skill_registry_export::write_skill_registry(pool, project_id, root_path, None) {
+    if let Err(e) =
+        super::skill_registry_export::write_skill_registry(pool, project_id, root_path, None)
+    {
         CONTEXT_GEN_JOBS.emit_line(
             app,
             scan_id,
@@ -2436,7 +2483,7 @@ mod tests {
         assert!(!is_coverage_regression(117, 110));
         assert!(!is_coverage_regression(117, 71)); // 60.7%, just inside
         assert!(is_coverage_regression(117, 70)); // 59.8%, just outside
-        // Growth is never a regression.
+                                                  // Growth is never a regression.
         assert!(!is_coverage_regression(50, 90));
         assert!(!is_coverage_regression(50, 50));
         // Small maps are unguarded: the ratio is noise down there, and a young
@@ -2516,7 +2563,11 @@ mod tests {
     fn hidden_directories_are_rejected_on_both_sides() {
         // The counter skips every hidden dir; this side used to skip only the
         // named ones, which let paths in and pushed coverage above 100%.
-        for p in [".next/server/page.js", ".github/scripts/release.mjs", ".turbo/out.js"] {
+        for p in [
+            ".next/server/page.js",
+            ".github/scripts/release.mjs",
+            ".turbo/out.js",
+        ] {
             assert!(!is_mappable_path(p), "{p} must not be mappable");
         }
     }
@@ -2577,7 +2628,10 @@ mod tests {
             super::super::schema_vocabulary::normalize_table_ref(s)
         });
         assert_eq!(kept, owned(&["dev_standards", "doc_status"]));
-        assert_eq!(dropped, owned(&["standards_violations", "doc_rot_findings"]));
+        assert_eq!(
+            dropped,
+            owned(&["standards_violations", "doc_rot_findings"])
+        );
     }
 
     #[test]
@@ -2587,14 +2641,21 @@ mod tests {
         let (kept, dropped) = split_known(&claimed, &schema, |s| {
             super::super::schema_vocabulary::normalize_table_ref(s)
         });
-        assert_eq!(kept.len(), 3, "the same table written three ways is one table");
+        assert_eq!(
+            kept.len(),
+            3,
+            "the same table written three ways is one table"
+        );
         assert!(dropped.is_empty());
     }
 
     #[test]
     fn prose_in_a_table_list_is_dropped_not_kept_as_decoration() {
         let schema = set(&["dev_contexts"]);
-        let claimed = owned(&["(all tables — this context owns the schema)", "dev_contexts"]);
+        let claimed = owned(&[
+            "(all tables — this context owns the schema)",
+            "dev_contexts",
+        ]);
         let (kept, dropped) = split_known(&claimed, &schema, |s| {
             super::super::schema_vocabulary::normalize_table_ref(s)
         });
@@ -2612,7 +2673,8 @@ mod tests {
         let refs = owned(&["omega"]);
 
         let mid_stream_names = set(&["alpha"]); // what a write-time check would see
-        let (_, dropped_if_checked_early) = split_known(&refs, &mid_stream_names, normalize_cross_ref);
+        let (_, dropped_if_checked_early) =
+            split_known(&refs, &mid_stream_names, normalize_cross_ref);
         assert_eq!(
             dropped_if_checked_early,
             owned(&["omega"]),
@@ -2654,11 +2716,17 @@ mod tests {
     fn the_report_names_examples_and_admits_what_it_elided() {
         let samples = owned(&["ghost in alpha", "phantom in beta"]);
         let line = format_drop_examples(&samples, 2);
-        assert!(line.contains("ghost in alpha") && line.contains("phantom in beta"), "{line}");
+        assert!(
+            line.contains("ghost in alpha") && line.contains("phantom in beta"),
+            "{line}"
+        );
         assert!(!line.contains("more"), "nothing was elided: {line}");
 
         let elided = format_drop_examples(&samples, 40);
-        assert!(elided.contains("+38 more"), "a cap that hides its size is not a report: {elided}");
+        assert!(
+            elided.contains("+38 more"),
+            "a cap that hides its size is not a report: {elided}"
+        );
     }
 
     #[test]
@@ -2677,6 +2745,9 @@ mod tests {
             truncated: true,
             first_unreadable: Some("C:/locked".into()),
         };
-        assert!(!truncated.is_usable(), "a partial vocabulary would delete true names");
+        assert!(
+            !truncated.is_usable(),
+            "a partial vocabulary would delete true names"
+        );
     }
 }

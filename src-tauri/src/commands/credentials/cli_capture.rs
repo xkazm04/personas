@@ -30,7 +30,7 @@ use crate::db::models::{CreateCredentialInput, PersonaCredential};
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth};
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 use personas_macros::requires;
 
@@ -1018,7 +1018,6 @@ pub async fn cli_capture_save(
     service_type: String,
     credential_name: String,
 ) -> Result<PersonaCredential, AppError> {
-
     let spec = find_spec(&service_type).ok_or(CliCaptureError::UnknownService)?;
     let result = run_spec(spec).await.map_err(AppError::from)?;
 
@@ -1135,7 +1134,10 @@ mod tests {
             Ok(res) => {
                 let mut keys: Vec<&str> = res.fields.keys().map(|s| s.as_str()).collect();
                 keys.sort_unstable();
-                eprintln!("capture OK: fields={:?} expires_at={:?}", keys, res.expires_at);
+                eprintln!(
+                    "capture OK: fields={:?} expires_at={:?}",
+                    keys, res.expires_at
+                );
                 assert!(res.fields.contains_key("service_account_json"));
                 assert!(res.fields.contains_key("project_id"));
             }

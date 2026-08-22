@@ -101,7 +101,11 @@ fn fetcher() -> Fetcher {
     let http = Arc::new(SsrfSafeHttpClient {
         client: personas_core::url_safety::build_ssrf_safe_client(Duration::from_secs(30)),
     });
-    Fetcher::new(http, Arc::new(DisabledBrowser), Arc::new(DisabledResearcher))
+    Fetcher::new(
+        http,
+        Arc::new(DisabledBrowser),
+        Arc::new(DisabledResearcher),
+    )
 }
 
 /// Fetch a URL and return its main content as clean Markdown.
@@ -320,7 +324,12 @@ pub async fn preview_extract(
             Ok(o) => {
                 let doc = o.html.unwrap_or_default();
                 let record = extract_one(&compiled, &doc);
-                out.push(PreviewRow { url: url.clone(), record, error: None, bytes: doc.len() });
+                out.push(PreviewRow {
+                    url: url.clone(),
+                    record,
+                    error: None,
+                    bytes: doc.len(),
+                });
             }
             Err(e) => out.push(PreviewRow {
                 url: url.clone(),
@@ -460,33 +469,60 @@ fn compute_next_run(cron: &str, id: &str) -> Option<String> {
 /// Create or update a saved scrape config (upsert by `id`; generates one if
 /// absent). Validates the cron + rules before persisting.
 pub fn config_save(pool: &DbPool, input: &Value) -> Result<ScraperConfig, String> {
-    let name = input.get("name").and_then(Value::as_str).ok_or("missing 'name'")?.to_string();
+    let name = input
+        .get("name")
+        .and_then(Value::as_str)
+        .ok_or("missing 'name'")?
+        .to_string();
     let description = input
         .get("description")
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(String::from);
-    let urls = input.get("urls").cloned().filter(Value::is_array).ok_or("missing 'urls' array")?;
-    let rules = input.get("rules").cloned().filter(Value::is_object).ok_or("missing 'rules' object")?;
-    let dataset = input.get("dataset").and_then(Value::as_str).ok_or("missing 'dataset'")?.to_string();
-    let key_field = input.get("key_field").and_then(Value::as_str).map(String::from);
+    let urls = input
+        .get("urls")
+        .cloned()
+        .filter(Value::is_array)
+        .ok_or("missing 'urls' array")?;
+    let rules = input
+        .get("rules")
+        .cloned()
+        .filter(Value::is_object)
+        .ok_or("missing 'rules' object")?;
+    let dataset = input
+        .get("dataset")
+        .and_then(Value::as_str)
+        .ok_or("missing 'dataset'")?
+        .to_string();
+    let key_field = input
+        .get("key_field")
+        .and_then(Value::as_str)
+        .map(String::from);
     let cron = input
         .get("cron")
         .and_then(Value::as_str)
         .filter(|s| !s.trim().is_empty())
         .map(String::from);
-    let enabled = input.get("enabled").and_then(Value::as_bool).unwrap_or(true);
+    let enabled = input
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     if let Some(c) = &cron {
         personas_core::cron::parse_cron(c).map_err(|e| format!("invalid cron: {e}"))?;
     }
-    let _: RuleSet = serde_json::from_value(rules.clone()).map_err(|e| format!("invalid rules: {e}"))?;
+    let _: RuleSet =
+        serde_json::from_value(rules.clone()).map_err(|e| format!("invalid rules: {e}"))?;
     let id = input
         .get("id")
         .and_then(Value::as_str)
         .map(String::from)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-    let next_run = if enabled { cron.as_deref().and_then(|c| compute_next_run(c, &id)) } else { None };
+    let next_run = if enabled {
+        cron.as_deref().and_then(|c| compute_next_run(c, &id))
+    } else {
+        None
+    };
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get().map_err(|e| e.to_string())?;
     conn.execute(
@@ -535,8 +571,11 @@ pub fn config_list(pool: &DbPool) -> Result<Vec<ScraperConfig>, String> {
 pub fn config_delete(pool: &DbPool, id: &str) -> Result<(), String> {
     {
         let conn = pool.get().map_err(|e| e.to_string())?;
-        conn.execute("DELETE FROM scraper_configs WHERE id = ?1", rusqlite::params![id])
-            .map_err(|e| e.to_string())?;
+        conn.execute(
+            "DELETE FROM scraper_configs WHERE id = ?1",
+            rusqlite::params![id],
+        )
+        .map_err(|e| e.to_string())?;
     }
     // Remove the pipeline's Signal feeds so they drop out of Chain Studio.
     if let Err(e) = deregister_signal_feeds(pool, id) {
@@ -571,7 +610,9 @@ pub async fn config_run(pool: &DbPool, id: &str) -> Result<ExtractSummary, Strin
     let result = run_extract(pool, ecfg).await;
     emit_run_signal(pool, &cfg, &result);
     let next = if cfg.enabled {
-        cfg.cron.as_deref().and_then(|c| compute_next_run(c, &cfg.id))
+        cfg.cron
+            .as_deref()
+            .and_then(|c| compute_next_run(c, &cfg.id))
     } else {
         None
     };
@@ -743,7 +784,9 @@ fn register_signal_feeds(pool: &DbPool, cfg: &ScraperConfig) -> Result<(), Strin
         if !subscribed.contains(&e.slug) {
             let _ = shared_events::subscribe(
                 pool,
-                CreateSharedEventSubscriptionInput { catalog_entry_id: e.id.clone() },
+                CreateSharedEventSubscriptionInput {
+                    catalog_entry_id: e.id.clone(),
+                },
             );
         }
     }
@@ -862,7 +905,10 @@ mod tests {
         .unwrap();
         assert!(!saved.id.is_empty());
         assert!(saved.enabled);
-        assert!(saved.next_run_at.is_some(), "cron should compute a next run");
+        assert!(
+            saved.next_run_at.is_some(),
+            "cron should compute a next run"
+        );
         assert_eq!(config_list(&pool).unwrap().len(), 1);
 
         // Upsert by id → disable clears the schedule.
@@ -902,8 +948,9 @@ mod tests {
     fn compute_next_run_seeds_h_tokens_by_owning_id() {
         let seed = personas_core::cron::seed_hash("cfg-fixed-id");
         let expected_sched = personas_core::cron::parse_cron_seeded("H * * * *", seed).unwrap();
-        let expected = personas_core::cron::next_fire_time_local(&expected_sched, chrono::Utc::now())
-            .map(|t| t.to_rfc3339());
+        let expected =
+            personas_core::cron::next_fire_time_local(&expected_sched, chrono::Utc::now())
+                .map(|t| t.to_rfc3339());
 
         let actual = compute_next_run("H * * * *", "cfg-fixed-id");
 

@@ -24,19 +24,8 @@ use crate::db::repos::dev_tools as repo;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
+use crate::utils::extract_panic_message;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 /// Tauri frontend event channel for standards-scan lifecycle updates.
 const STANDARDS_SCAN_STATUS: &str = "dev_tools_standards_scan_status";
@@ -198,7 +187,16 @@ pub async fn dev_tools_run_standards_scan(
                 panic = %msg,
                 "standards scan task panicked — marking scan as failed"
             );
-            let _ = repo::update_scan(&pool_for_panic, &scan_id_for_panic, Some("error"), None, None, None, None, Some(Some(&msg)));
+            let _ = repo::update_scan(
+                &pool_for_panic,
+                &scan_id_for_panic,
+                Some("error"),
+                None,
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
+            );
             let _ = app_handle_for_panic.emit(
                 STANDARDS_SCAN_STATUS,
                 json!({ "scan_id": scan_id_for_panic, "project_id": project_id_for_panic, "status": "error", "error": msg }),
@@ -258,7 +256,8 @@ async fn run_standards_scan(
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
             AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code".into(),
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
             )
         } else {
             AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
@@ -318,7 +317,11 @@ async fn run_standards_scan(
                     if let Some(f) = parse_finding(proto) {
                         let category = norm(&f.category, ALLOWED_CATEGORIES, "code_quality");
                         let status = norm(&f.status, ALLOWED_STATUS, "missing");
-                        let severity = norm(f.severity.as_deref().unwrap_or("info"), ALLOWED_SEVERITY, "info");
+                        let severity = norm(
+                            f.severity.as_deref().unwrap_or("info"),
+                            ALLOWED_SEVERITY,
+                            "info",
+                        );
                         match repo::create_standard(
                             pool,
                             project_id,
@@ -332,7 +335,9 @@ async fn run_standards_scan(
                             f.recommendation.as_deref(),
                         ) {
                             Ok(_) => count += 1,
-                            Err(e) => tracing::warn!(error = %e, "failed to persist standards finding"),
+                            Err(e) => {
+                                tracing::warn!(error = %e, "failed to persist standards finding")
+                            }
                         }
                     }
                 }

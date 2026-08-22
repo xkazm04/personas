@@ -30,6 +30,4 @@ pub mod snapshot;
 
 pub use crypto::{open_snapshot, seal_snapshot, SealedPayload, SyncKey};
 pub use merge::{merge_entity, SyncWinner, WorkspaceEntity, WorkspaceMergeOutcome};
-pub use snapshot::{
-    MemorySnapshot, PersonaWorkspaceSnapshot, SyncSnapshot, TriggerSnapshot,
-};
+pub use snapshot::{MemorySnapshot, PersonaWorkspaceSnapshot, SyncSnapshot, TriggerSnapshot};

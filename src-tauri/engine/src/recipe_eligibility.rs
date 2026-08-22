@@ -122,10 +122,8 @@ pub fn score_recipe_eligibility(
             };
         }
     };
-    let persona_names: HashSet<&str> =
-        persona_tools.iter().map(|t| t.name.as_str()).collect();
-    let catalog_names: HashSet<&str> =
-        catalog.iter().map(|t| t.name.as_str()).collect();
+    let persona_names: HashSet<&str> = persona_tools.iter().map(|t| t.name.as_str()).collect();
+    let catalog_names: HashSet<&str> = catalog.iter().map(|t| t.name.as_str()).collect();
 
     let mut satisfied: Vec<String> = Vec::new();
     let mut missing_addable: Vec<String> = Vec::new();
@@ -352,7 +350,11 @@ mod tests {
         }
     }
 
-    fn recipe(id: &str, prompt_template: &str, tool_requirements: Option<&str>) -> RecipeDefinition {
+    fn recipe(
+        id: &str,
+        prompt_template: &str,
+        tool_requirements: Option<&str>,
+    ) -> RecipeDefinition {
         RecipeDefinition {
             id: id.to_string(),
             project_id: "default".to_string(),
@@ -497,7 +499,11 @@ mod tests {
         // tool_requirements is declared but is not parseable JSON (truncated).
         // Previously this silently returned no requirements → Eligible → the
         // recipe could auto-adopt with incomplete tool wiring. Now it blocks.
-        let r = recipe("r1", "a plain-text prompt, not a UC", Some(r#"["file_read""#));
+        let r = recipe(
+            "r1",
+            "a plain-text prompt, not a UC",
+            Some(r#"["file_read""#),
+        );
         let result = score_recipe_eligibility(&r, "p1", &[], &[]);
         assert_eq!(result.state, RecipeEligibilityState::Incompatible);
         assert!(result.required_tools.is_empty());

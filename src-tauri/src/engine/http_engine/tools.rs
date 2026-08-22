@@ -35,15 +35,28 @@ pub(super) async fn run_tool_loop(
     start_time: Instant,
 ) -> ExecutionResult {
     let url = format!("{base_url}/chat/completions");
-    let client = match Client::builder().timeout(Duration::from_secs(HTTP_TIMEOUT_SECS)).build() {
+    let client = match Client::builder()
+        .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
+        .build()
+    {
         Ok(c) => c,
-        Err(e) => return fail(emitter, execution_id, &format!("HTTP client init failed: {e}"), start_time),
+        Err(e) => {
+            return fail(
+                emitter,
+                execution_id,
+                &format!("HTTP client init failed: {e}"),
+                start_time,
+            )
+        }
     };
 
     // Tool catalog = safe built-ins + the remote-safe MCP tools (run in-process
     // via mcp_server::tools::call_tool against a read connection to the same DB).
     let mcp_pool = mcp_server::db::open_pool(&default_data_dir().join("personas.db")).ok();
-    let connectors_on = mcp_pool.as_ref().map(connector_tools_enabled).unwrap_or(false);
+    let connectors_on = mcp_pool
+        .as_ref()
+        .map(connector_tools_enabled)
+        .unwrap_or(false);
     let mut schemas = builtin_tool_schemas();
     if let Some(mcp_pool) = mcp_pool.as_ref() {
         for t in mcp_server::tools::list_tools(mcp_pool) {
@@ -68,12 +81,31 @@ pub(super) async fn run_tool_loop(
     for iter in 0..MAX_TOOL_ITERS {
         if cancelled.load(Ordering::Relaxed) {
             let duration_ms = start_time.elapsed().as_millis() as u64;
-            emit_status(emitter, execution_id, ExecutionState::Cancelled, Some("Cancelled"), duration_ms, None);
-            return ExecutionResult { success: false, error: Some("Cancelled".into()), duration_ms, model_used: Some(model.to_string()), ..Default::default() };
+            emit_status(
+                emitter,
+                execution_id,
+                ExecutionState::Cancelled,
+                Some("Cancelled"),
+                duration_ms,
+                None,
+            );
+            return ExecutionResult {
+                success: false,
+                error: Some("Cancelled".into()),
+                duration_ms,
+                model_used: Some(model.to_string()),
+                ..Default::default()
+            };
         }
 
         let body = json!({ "model": model, "messages": messages, "tools": tools_value, "tool_choice": "auto" });
-        let resp = match client.post(&url).bearer_auth(api_key).json(&body).send().await {
+        let resp = match client
+            .post(&url)
+            .bearer_auth(api_key)
+            .json(&body)
+            .send()
+            .await
+        {
             Ok(r) if r.status().is_success() => r,
             Ok(r) => {
                 let status = r.status();
@@ -88,29 +120,70 @@ pub(super) async fn run_tool_loop(
                     start_time,
                 );
             }
-            Err(e) => return fail(emitter, execution_id, &format!("Cannot reach {provider}: {e}"), start_time),
+            Err(e) => {
+                return fail(
+                    emitter,
+                    execution_id,
+                    &format!("Cannot reach {provider}: {e}"),
+                    start_time,
+                )
+            }
         };
         let data: Value = match resp.json().await {
             Ok(v) => v,
-            Err(e) => return fail(emitter, execution_id, &format!("Invalid JSON from {provider}: {e}"), start_time),
+            Err(e) => {
+                return fail(
+                    emitter,
+                    execution_id,
+                    &format!("Invalid JSON from {provider}: {e}"),
+                    start_time,
+                )
+            }
         };
         if let Some(u) = data.get("usage") {
             in_tok += u.get("prompt_tokens").and_then(Value::as_u64).unwrap_or(0);
-            out_tok += u.get("completion_tokens").and_then(Value::as_u64).unwrap_or(0);
+            out_tok += u
+                .get("completion_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(0);
         }
 
         let msg = data["choices"][0]["message"].clone();
-        let tool_calls = msg.get("tool_calls").and_then(Value::as_array).cloned().unwrap_or_default();
+        let tool_calls = msg
+            .get("tool_calls")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
 
         if tool_calls.is_empty() {
-            let content = msg.get("content").and_then(Value::as_str).unwrap_or("").to_string();
+            let content = msg
+                .get("content")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
             for line in content.split('\n') {
                 emit_output(emitter, execution_id, line);
             }
             let duration_ms = start_time.elapsed().as_millis() as u64;
             let cost_usd = cost_of(model, in_tok, out_tok);
-            emit_status(emitter, execution_id, ExecutionState::Completed, None, duration_ms, Some(cost_usd));
-            tracing::info!(execution_id, provider, model, iters = iter + 1, in_tok, out_tok, cost_usd, "[http_engine] tool loop completed");
+            emit_status(
+                emitter,
+                execution_id,
+                ExecutionState::Completed,
+                None,
+                duration_ms,
+                Some(cost_usd),
+            );
+            tracing::info!(
+                execution_id,
+                provider,
+                model,
+                iters = iter + 1,
+                in_tok,
+                out_tok,
+                cost_usd,
+                "[http_engine] tool loop completed"
+            );
             return ExecutionResult {
                 success: true,
                 output: (!content.is_empty()).then_some(content),
@@ -127,11 +200,22 @@ pub(super) async fn run_tool_loop(
         // tool locally and feed the result back as a `tool` message.
         messages.push(msg.clone());
         for call in &tool_calls {
-            let id = call.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+            let id = call
+                .get("id")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
             let name = call["function"]["name"].as_str().unwrap_or("").to_string();
             let args_str = call["function"]["arguments"].as_str().unwrap_or("{}");
             let args: Value = serde_json::from_str(args_str).unwrap_or_else(|_| json!({}));
-            emit_output(emitter, execution_id, &format!("🔧 {name}({})", args.to_string().chars().take(120).collect::<String>()));
+            emit_output(
+                emitter,
+                execution_id,
+                &format!(
+                    "🔧 {name}({})",
+                    args.to_string().chars().take(120).collect::<String>()
+                ),
+            );
             let result = if name == "get_current_time" || name == "http_get" {
                 execute_builtin_tool(&client, &name, &args).await
             } else if tool_allowed(&name, connectors_on) {
@@ -142,12 +226,21 @@ pub(super) async fn run_tool_loop(
             } else {
                 format!("error: tool '{name}' is not available to the remote engine")
             };
-            emit_output(emitter, execution_id, &format!("   ↳ {}", result.chars().take(200).collect::<String>()));
+            emit_output(
+                emitter,
+                execution_id,
+                &format!("   ↳ {}", result.chars().take(200).collect::<String>()),
+            );
             messages.push(json!({ "role": "tool", "tool_call_id": id, "content": result }));
         }
     }
 
-    fail(emitter, execution_id, &format!("Tool loop exceeded {MAX_TOOL_ITERS} iterations without a final answer"), start_time)
+    fail(
+        emitter,
+        execution_id,
+        &format!("Tool loop exceeded {MAX_TOOL_ITERS} iterations without a final answer"),
+        start_time,
+    )
 }
 
 /// Read the connector opt-in (default false) from app_settings via the MCP pool.
@@ -191,7 +284,14 @@ fn mcp_call_text(name: &str, args: &Value, pool: &mcp_server::db::McpDbPool) -> 
     let res = mcp_server::tools::call_tool(name, args, pool);
     let text = res["content"][0]["text"].as_str().unwrap_or("").to_string();
     if res["isError"].as_bool().unwrap_or(false) {
-        format!("error: {}", if text.is_empty() { "tool failed" } else { text.as_str() })
+        format!(
+            "error: {}",
+            if text.is_empty() {
+                "tool failed"
+            } else {
+                text.as_str()
+            }
+        )
     } else if text.is_empty() {
         "(empty result)".to_string()
     } else {
@@ -222,7 +322,10 @@ async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> 
     if url.scheme() != "https" {
         return Err("only https:// URLs are allowed".into());
     }
-    let host = url.host_str().ok_or_else(|| "missing host".to_string())?.to_string();
+    let host = url
+        .host_str()
+        .ok_or_else(|| "missing host".to_string())?
+        .to_string();
     let port = url.port_or_known_default().unwrap_or(443);
 
     // Resolve off the async runtime and reject internal targets.
@@ -251,16 +354,30 @@ async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> 
         .await
         .map_err(|e| format!("request failed: {e}"))?;
     let status = resp.status();
-    let bytes = resp.bytes().await.map_err(|e| format!("read failed: {e}"))?;
+    let bytes = resp
+        .bytes()
+        .await
+        .map_err(|e| format!("read failed: {e}"))?;
     let slice = &bytes[..bytes.len().min(HTTP_GET_MAX_BYTES)];
-    let truncated = if bytes.len() > HTTP_GET_MAX_BYTES { " …[truncated]" } else { "" };
-    Ok(format!("HTTP {status}\n{}{truncated}", String::from_utf8_lossy(slice)))
+    let truncated = if bytes.len() > HTTP_GET_MAX_BYTES {
+        " …[truncated]"
+    } else {
+        ""
+    };
+    Ok(format!(
+        "HTTP {status}\n{}{truncated}",
+        String::from_utf8_lossy(slice)
+    ))
 }
 
 pub(crate) fn is_blocked_ip(ip: &std::net::IpAddr) -> bool {
     match ip {
         std::net::IpAddr::V4(v4) => {
-            v4.is_loopback() || v4.is_private() || v4.is_link_local() || v4.is_unspecified() || v4.is_broadcast()
+            v4.is_loopback()
+                || v4.is_private()
+                || v4.is_link_local()
+                || v4.is_unspecified()
+                || v4.is_broadcast()
         }
         std::net::IpAddr::V6(v6) => {
             if let Some(v4) = v6.to_ipv4_mapped() {

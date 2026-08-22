@@ -286,7 +286,10 @@ fn run_context_scan(
         .get("projectId")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Validation("context_scan requires a projectId param".into()))?;
-    let delta = params.get("deltaMode").and_then(|v| v.as_bool()).unwrap_or(true);
+    let delta = params
+        .get("deltaMode")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
     let project = dev_repo::get_project_by_id(pool, project_id)?;
     let res = crate::commands::infrastructure::context_generation::launch_context_scan(
         app.clone(),
@@ -322,7 +325,8 @@ pub fn publish_context_scan_event(
         "completed" => event_name::DEV_TOOLS_CONTEXT_SCAN_COMPLETED,
         _ => event_name::DEV_TOOLS_CONTEXT_SCAN_STARTED,
     };
-    let mut payload = json!({ "project_id": project_id, "project_name": project_name, "phase": phase });
+    let mut payload =
+        json!({ "project_id": project_id, "project_name": project_name, "phase": phase });
     if let (Some(obj), Some(ext)) = (payload.as_object_mut(), extra.as_object()) {
         for (k, v) in ext {
             obj.insert(k.clone(), v.clone());
@@ -407,7 +411,8 @@ pub fn dispatch_event_automations(app: &AppHandle, pool: &DbPool, events: &[Pers
                     continue;
                 }
             }
-            let mut params: Value = serde_json::from_str(&a.params_json).unwrap_or_else(|_| json!({}));
+            let mut params: Value =
+                serde_json::from_str(&a.params_json).unwrap_or_else(|_| json!({}));
             // Thread the TRIGGERING EVENT into the op's params under `_event`.
             // Without this an event-fired op knows only its static config — a
             // dispatch op bound to `signal.raised` would have no idea WHICH finding

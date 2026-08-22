@@ -150,7 +150,10 @@ pub fn get_director_brain_history(
         return Ok(None);
     }
     let persona = crate::db::repos::core::personas::get_by_id(&state.db, &persona_id)?;
-    Ok(crate::engine::director_brain::read_brain_history(&state.db, &persona.name))
+    Ok(crate::engine::director_brain::read_brain_history(
+        &state.db,
+        &persona.name,
+    ))
 }
 
 // ---------------------------------------------------------------------------

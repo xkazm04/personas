@@ -65,7 +65,9 @@ pub fn storage_usage(
     let conn = state.db.get()?;
 
     let total_executions: u64 = conn
-        .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get::<_, i64>(0))
+        .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| {
+            r.get::<_, i64>(0)
+        })
         .unwrap_or(0)
         .max(0) as u64;
 
@@ -92,7 +94,11 @@ pub fn storage_usage(
         .map(|m| m.len())
         .unwrap_or(0);
 
-    Ok(StorageReport { database_bytes, total_executions, prunable_executions })
+    Ok(StorageReport {
+        database_bytes,
+        total_executions,
+        prunable_executions,
+    })
 }
 
 /// Prune terminal executions older than `older_than_hours` (default + floor 24h).
@@ -105,13 +111,14 @@ pub fn prune_storage(
 ) -> Result<PruneResult, AppError> {
     require_auth_sync(&state)?;
     let dry_run = dry_run.unwrap_or(true);
-    let age_hours = older_than_hours.unwrap_or(MIN_PRUNE_AGE_HOURS).max(MIN_PRUNE_AGE_HOURS);
+    let age_hours = older_than_hours
+        .unwrap_or(MIN_PRUNE_AGE_HOURS)
+        .max(MIN_PRUNE_AGE_HOURS);
     let cutoff = cutoff_rfc3339(age_hours);
     let conn = state.db.get()?;
 
-    let where_clause = format!(
-        "status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1"
-    );
+    let where_clause =
+        format!("status IN ({TERMINAL_STATES}) AND completed_at IS NOT NULL AND completed_at < ?1");
 
     let pruned_executions: u64 = conn
         .query_row(
@@ -129,5 +136,9 @@ pub fn prune_storage(
         )?;
     }
 
-    Ok(PruneResult { dry_run, pruned_executions, age_hours })
+    Ok(PruneResult {
+        dry_run,
+        pruned_executions,
+        age_hours,
+    })
 }

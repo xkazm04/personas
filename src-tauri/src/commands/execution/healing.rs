@@ -2,12 +2,10 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    HealingAuditEntry, HealingKnowledge, HealingTimelineEvent, PersonaExecution,
-    PersonaHealingIssue,
+    HealingAuditEntry, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue,
 };
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
-use crate::engine::healing;
 use crate::engine::healing_timeline;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -91,75 +89,6 @@ pub fn get_retry_chain(
         ));
     }
     exec_repo::get_retry_chain(&state.db, &execution_id)
-}
-
-#[tauri::command]
-pub fn list_healing_knowledge(
-    state: State<'_, Arc<AppState>>,
-    service_type: Option<String>,
-) -> Result<Vec<HealingKnowledge>, AppError> {
-    require_auth_sync(&state)?;
-    match service_type {
-        Some(st) => repo::get_knowledge_by_service(&state.db, &st),
-        None => repo::get_all_knowledge(&state.db),
-    }
-}
-
-#[tauri::command]
-pub async fn trigger_ai_healing(
-    state: State<'_, Arc<AppState>>,
-    app: tauri::AppHandle,
-    execution_id: String,
-) -> Result<serde_json::Value, AppError> {
-    require_auth(&state).await?;
-    if !cfg!(debug_assertions) && std::env::var("VITE_DEVELOPMENT").as_deref() != Ok("true") {
-        return Err(AppError::Internal(
-            "AI healing is only available in development mode".into(),
-        ));
-    }
-
-    let pool = &state.db;
-    let execution = exec_repo::get_by_id(pool, &execution_id)?;
-
-    // Validate everything fallible BEFORE acquiring the healing slot. The slot is
-    // an in-memory Arc<Mutex<HashSet>> released only by the spawned healing chain;
-    // any early `?`-return AFTER acquiring it (this session_id check formerly sat
-    // below the acquire) leaks the slot permanently, locking the persona out of
-    // both AI healing AND auto-rollback until app restart.
-    let session_id = execution.claude_session_id.clone().ok_or_else(|| {
-        AppError::Internal("Cannot heal: no Claude session ID on this execution".into())
-    })?;
-
-    // Per-persona concurrency guard: atomically acquire the healing slot before
-    // returning "started" to avoid TOCTOU where two callers both see is_healing=false.
-    if !state.engine.try_start_healing(&execution.persona_id).await {
-        return Err(AppError::Internal(
-            "A healing session is already in progress for this persona".into(),
-        ));
-    }
-
-    let error_str = execution
-        .error_message
-        .as_deref()
-        .unwrap_or("Unknown error");
-    let timed_out = error_str.contains("timed out");
-    let session_limit = error_str.contains("Session limit");
-    let category = healing::classify_error(error_str, timed_out, session_limit);
-
-    state.engine.start_healing_chain(
-        &app,
-        pool,
-        &execution_id,
-        &execution.persona_id,
-        &session_id,
-        error_str,
-        &format!("{category:?}"),
-    );
-
-    Ok(serde_json::json!({
-        "status": "started",
-        "message": "AI healing chain started -- watch ai-healing-status events for progress",
-    }))
 }
 
 #[tauri::command]

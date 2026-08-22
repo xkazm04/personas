@@ -70,7 +70,11 @@ pub async fn fleet_detect_processes() -> Result<Vec<FleetDetectedProcess>, Strin
         let mut out: Vec<FleetDetectedProcess> = Vec::new();
         for (pid, proc_) in sys.processes() {
             let name = proc_.name().to_string_lossy().to_string();
-            let args: Vec<String> = proc_.cmd().iter().map(|s| s.to_string_lossy().into_owned()).collect();
+            let args: Vec<String> = proc_
+                .cmd()
+                .iter()
+                .map(|s| s.to_string_lossy().into_owned())
+                .collect();
             let cmd_joined = args.join(" ");
             if !is_claude_process(&name, &cmd_joined) {
                 continue;
@@ -88,7 +92,11 @@ pub async fn fleet_detect_processes() -> Result<Vec<FleetDetectedProcess>, Strin
             });
         }
         // Orphans (untracked) first, then by memory desc — the cleanup targets.
-        out.sort_by(|a, b| a.tracked.cmp(&b.tracked).then(b.memory_bytes.cmp(&a.memory_bytes)));
+        out.sort_by(|a, b| {
+            a.tracked
+                .cmp(&b.tracked)
+                .then(b.memory_bytes.cmp(&a.memory_bytes))
+        });
         Ok(out)
     })
     .await
@@ -191,8 +199,14 @@ mod tests {
 
     #[test]
     fn ignores_unrelated_processes() {
-        assert!(!is_claude_process("node.exe", "node some-other-app/server.js"));
-        assert!(!is_claude_process("chrome.exe", "chrome --profile claude-notes"));
+        assert!(!is_claude_process(
+            "node.exe",
+            "node some-other-app/server.js"
+        ));
+        assert!(!is_claude_process(
+            "chrome.exe",
+            "chrome --profile claude-notes"
+        ));
         assert!(!is_claude_process("explorer.exe", ""));
     }
 }

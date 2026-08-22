@@ -18,6 +18,15 @@
 //!   mid-work in a directory several sessions and both apps share, and moving it
 //!   under them is exactly the class of damage this system exists to avoid.
 //!
+//! ## Also here: pointing the runner at the clone
+//!
+//! [`dev_tools_set_knowledge_root`] is the other half of registry plumbing the
+//! frontend drives. It exists so the settings KEY NAME never has to be spelled
+//! in TypeScript: the workspace store passes a path, Rust decides where it
+//! goes. A key mirrored across two languages and held together by a comment is
+//! a key that can drift, and this one going stale means executions silently
+//! consult a registry the operator thinks they disconnected.
+//!
 //! ## Fast-forward only
 //!
 //! Never merge, never rebase, never stash. A fast-forward cannot lose work and
@@ -33,6 +42,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use ts_rs::TS;
 
+use crate::db::repos::core::settings as settings_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::validation::require_non_empty;
@@ -188,6 +198,34 @@ fn sync_clone(clone_path: &str) -> Result<RegistrySync, AppError> {
     })
 }
 
+/// Point the consult lane at a knowledge-registry working copy, or turn it off.
+///
+/// `Some(path)` records it; `None` (or a blank string) clears the key, which is
+/// what unwiring the last knowledge-publishing registry must do — a stale
+/// pointer means executions keep reading a repo the operator believes they
+/// disconnected, and nothing in the UI would show it.
+///
+/// The path is NOT validated here. It is checked at every read
+/// (`knowledge_consult::wired_root`), because a clone can be moved or deleted
+/// long after it was wired and a check at write time would prove nothing about
+/// the moment that matters.
+#[tauri::command]
+pub fn dev_tools_set_knowledge_root(
+    state: State<'_, Arc<AppState>>,
+    clone_path: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let key = crate::db::settings_keys::KNOWLEDGE_REGISTRY_ROOT;
+    match clone_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+    {
+        Some(path) => settings_repo::set(&state.db, key, path),
+        None => settings_repo::delete(&state.db, key).map(|_| ()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,14 +269,21 @@ mod tests {
         g(&seed, &["config", "user.email", "t@example.invalid"]);
         g(&seed, &["config", "user.name", "T"]);
         commit(&seed, "a.md", "one\n");
-        g(&seed, &["remote", "add", "origin", origin.to_str().unwrap()]);
+        g(
+            &seed,
+            &["remote", "add", "origin", origin.to_str().unwrap()],
+        );
         g(&seed, &["push", "origin", "main"]);
 
         let out = Command::new("git")
             .args(["clone", origin.to_str().unwrap(), clone.to_str().unwrap()])
             .output()
             .unwrap();
-        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
         g(&clone, &["config", "user.email", "t@example.invalid"]);
         g(&clone, &["config", "user.name", "T"]);
 
@@ -268,13 +313,19 @@ mod tests {
         // library the remote has, not the one it had at clone time.
         let (_root, seed, clone) = remote_and_clone();
         advance_remote(&seed);
-        assert!(!clone.join("b.md").exists(), "precondition: the clone is behind");
+        assert!(
+            !clone.join("b.md").exists(),
+            "precondition: the clone is behind"
+        );
 
         let r = sync_clone(clone.to_str().unwrap()).expect("a behind clone must fast-forward");
         assert_eq!(r.state, "fast_forwarded");
         assert_eq!(r.commits, 1);
         assert_ne!(r.local_before, r.head);
-        assert!(clone.join("b.md").exists(), "the fetched commit must be checked out");
+        assert!(
+            clone.join("b.md").exists(),
+            "the fetched commit must be checked out"
+        );
     }
 
     #[test]
@@ -282,7 +333,15 @@ mod tests {
         // The user's rule: a scan must never quietly proceed against a clone we
         // could not confirm is current.
         let (_root, _seed, clone) = remote_and_clone();
-        g(&clone, &["remote", "set-url", "origin", "https://127.0.0.1:1/nope.git"]);
+        g(
+            &clone,
+            &[
+                "remote",
+                "set-url",
+                "origin",
+                "https://127.0.0.1:1/nope.git",
+            ],
+        );
         let err = sync_clone(clone.to_str().unwrap()).expect_err("unreachable must fail");
         let msg = err.to_string();
         assert!(
@@ -313,19 +372,35 @@ mod tests {
         advance_remote(&seed);
         commit(&clone, "mine.md", "local work\n");
         let head_before = {
-            let out = Command::new("git").arg("-C").arg(&clone).args(["rev-parse", "HEAD"]).output().unwrap();
+            let out = Command::new("git")
+                .arg("-C")
+                .arg(&clone)
+                .args(["rev-parse", "HEAD"])
+                .output()
+                .unwrap();
             String::from_utf8_lossy(&out.stdout).trim().to_string()
         };
 
         let err = sync_clone(clone.to_str().unwrap()).expect_err("diverged must fail");
-        assert!(err.to_string().contains("cannot be fast-forwarded"), "got: {err}");
+        assert!(
+            err.to_string().contains("cannot be fast-forwarded"),
+            "got: {err}"
+        );
 
         let head_after = {
-            let out = Command::new("git").arg("-C").arg(&clone).args(["rev-parse", "HEAD"]).output().unwrap();
+            let out = Command::new("git")
+                .arg("-C")
+                .arg(&clone)
+                .args(["rev-parse", "HEAD"])
+                .output()
+                .unwrap();
             String::from_utf8_lossy(&out.stdout).trim().to_string()
         };
         assert_eq!(head_before, head_after, "a refusal must not move HEAD");
-        assert!(clone.join("mine.md").exists(), "local work must survive the refusal");
+        assert!(
+            clone.join("mine.md").exists(),
+            "local work must survive the refusal"
+        );
     }
 
     #[test]
@@ -340,7 +415,10 @@ mod tests {
     fn a_plain_directory_is_not_a_registry_working_copy() {
         let dir = tempfile::tempdir().unwrap();
         let err = sync_clone(dir.path().to_str().unwrap()).expect_err("a non-repo must fail");
-        assert!(err.to_string().contains("not a git working copy"), "got: {err}");
+        assert!(
+            err.to_string().contains("not a git working copy"),
+            "got: {err}"
+        );
     }
 
     #[test]
@@ -348,8 +426,14 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let gone = dir.path().join("no-such-clone");
         let err = sync_clone(gone.to_str().unwrap()).expect_err("a missing path must fail");
-        assert!(err.to_string().contains("No registry working copy"), "got: {err}");
+        assert!(
+            err.to_string().contains("No registry working copy"),
+            "got: {err}"
+        );
         // An empty path is the "never paired" case and must not read as cwd.
-        assert!(sync_clone("   ").is_err(), "an empty path must never resolve");
+        assert!(
+            sync_clone("   ").is_err(),
+            "an empty path must never resolve"
+        );
     }
 }

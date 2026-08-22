@@ -14,7 +14,7 @@ answers "may this act unattended at all".
 
 ## Allowlist first: what may become a question
 
-`src-tauri/src/companion/dispatcher.rs` scans assistant output for op JSON
+`src-tauri/src/companion/dispatcher/` scans assistant output for op JSON
 blocks and persists them as approval rows in `companion_approval` — but only
 ops on `ALLOWED_ACTIONS` (`dispatcher.rs:239`) ever become approval cards; an
 unknown action is dropped, not asked about. The read-only exemption is by

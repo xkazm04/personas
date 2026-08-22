@@ -119,7 +119,14 @@ mod tests {
             assert!(!a.tagline.is_empty() && !a.icon.is_empty() && !a.color.is_empty());
             // Every persona payload must carry the v3 mentality spine the
             // adoption pipeline + core_profile stamp consume.
-            for key in ["core", "goal", "identity", "voice", "principles", "constraints"] {
+            for key in [
+                "core",
+                "goal",
+                "identity",
+                "voice",
+                "principles",
+                "constraints",
+            ] {
                 assert!(
                     a.persona.get(key).is_some(),
                     "archetype {} persona missing `{key}`",
@@ -170,7 +177,10 @@ mod tests {
             assert!(matches!(m.config.memories.as_str(), "on" | "off"));
             for r in &m.requires {
                 assert!(
-                    matches!(r.as_str(), "home_team" | "knowledge_base" | "obsidian_vault"),
+                    matches!(
+                        r.as_str(),
+                        "home_team" | "knowledge_base" | "obsidian_vault"
+                    ),
                     "strategy {} unknown requirement `{r}`",
                     m.id
                 );

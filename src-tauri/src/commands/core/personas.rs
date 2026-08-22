@@ -21,9 +21,9 @@ use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
 use crate::validation::contract::check;
-use personas_macros::requires;
 use crate::validation::persona as pv;
 use crate::AppState;
+use personas_macros::requires;
 
 /// List personas, optionally filtered to a set of lifecycle stages. `None`
 /// (the default, back-compat) returns every persona; the roster's Archived view
@@ -259,7 +259,6 @@ pub fn update_persona_parameters(
     id: String,
     parameters: Option<String>,
 ) -> Result<Persona, AppError> {
-
     // Validate the parameters JSON before storing
     if let Some(ref params_json) = parameters {
         if params_json.len() > MAX_PARAMETERS_JSON_SIZE {
@@ -423,14 +422,13 @@ pub fn sync_capability_parameters(
     // Re-inject the section into structured_prompt.instructions (idempotent).
     let structured_prompt_json = match persona.structured_prompt.as_deref() {
         Some(s) if !s.is_empty() => {
-            let mut sp: serde_json::Value = serde_json::from_str(s)
-                .map_err(|e| AppError::Validation(format!("invalid structured_prompt JSON: {e}")))?;
+            let mut sp: serde_json::Value = serde_json::from_str(s).map_err(|e| {
+                AppError::Validation(format!("invalid structured_prompt JSON: {e}"))
+            })?;
             rp::inject_into_structured_prompt(&mut sp, &caps);
-            Some(
-                serde_json::to_string(&sp).map_err(|e| {
-                    AppError::Validation(format!("failed to serialize structured_prompt: {e}"))
-                })?,
-            )
+            Some(serde_json::to_string(&sp).map_err(|e| {
+                AppError::Validation(format!("failed to serialize structured_prompt: {e}"))
+            })?)
         }
         // No structured prompt to inject into — params still seeded so the
         // parameters editor surfaces them; the section lands if a structured
@@ -675,7 +673,6 @@ pub async fn delete_persona(
     app: AppHandle,
     id: String,
 ) -> Result<DeletePersonaResult, AppError> {
-
     // ── Phase 1: Mark persona as "deleting" to block new executions ──
     state.engine.mark_deleting(&id).await;
 
@@ -1112,7 +1109,10 @@ mod drain_tests {
         }
 
         assert!(repo::delete(&pool, &victim.id).unwrap());
-        assert!(repo::get_by_id(&pool, &victim.id).is_err(), "persona row gone");
+        assert!(
+            repo::get_by_id(&pool, &victim.id).is_err(),
+            "persona row gone"
+        );
 
         let conn = pool.get().unwrap();
         let memories: i64 = conn

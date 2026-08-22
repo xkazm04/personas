@@ -99,7 +99,14 @@ pub fn spawn_approval_watchdog(
         let Some(plan) = super::active_plan(&state.user_db).ok().flatten() else {
             return;
         };
-        park_approval(&state, &plan.id, &request_id, &fleet_session_id, &action, &rationale);
+        park_approval(
+            &state,
+            &plan.id,
+            &request_id,
+            &fleet_session_id,
+            &action,
+            &rationale,
+        );
     });
 }
 
@@ -135,8 +142,16 @@ async fn answer_guidance(
         context_block = context
             .map(|c| format!("WORKER CONTEXT: {c}\n"))
             .unwrap_or_default(),
-        memories = if memories_block.is_empty() { "(none)" } else { memories_block.as_str() },
-        decisions = if decisions_block.is_empty() { "(none)" } else { decisions_block.as_str() },
+        memories = if memories_block.is_empty() {
+            "(none)"
+        } else {
+            memories_block.as_str()
+        },
+        decisions = if decisions_block.is_empty() {
+            "(none)"
+        } else {
+            decisions_block.as_str()
+        },
     );
 
     let answer = call_claude_text(
@@ -176,7 +191,12 @@ async fn answer_guidance(
     let episode = format!(
         "[Night shift] A worker in `{project_label}` asked while you slept:\n> {question}\n\nI answered unattended:\n{answer}"
     );
-    if let Err(e) = episodic::append_episode(&state.user_db, DEFAULT_SESSION_ID, EpisodeRole::System, &episode) {
+    if let Err(e) = episodic::append_episode(
+        &state.user_db,
+        DEFAULT_SESSION_ID,
+        EpisodeRole::System,
+        &episode,
+    ) {
         tracing::warn!(error = %e, "night_shift: guidance episode write failed");
     }
     // Decision log — the judgment is retraceable next to human decisions.
@@ -231,7 +251,12 @@ fn park_approval(
          while you slept. I parked it (denied unattended): it's listed in the morning \
          report.\nWorker's rationale: {rationale}"
     );
-    if let Err(e) = episodic::append_episode(&state.user_db, DEFAULT_SESSION_ID, EpisodeRole::System, &episode) {
+    if let Err(e) = episodic::append_episode(
+        &state.user_db,
+        DEFAULT_SESSION_ID,
+        EpisodeRole::System,
+        &episode,
+    ) {
         tracing::warn!(error = %e, "night_shift: park episode write failed");
     }
     let _ = super::record_event(
@@ -256,7 +281,12 @@ fn project_memories_block(sys_db: &crate::db::DbPool, cwd: &str) -> String {
         return String::new();
     };
     let Some(project) = projects.iter().find(|p| {
-        let root = p.root_path.trim().replace('\\', "/").trim_end_matches('/').to_ascii_lowercase();
+        let root = p
+            .root_path
+            .trim()
+            .replace('\\', "/")
+            .trim_end_matches('/')
+            .to_ascii_lowercase();
         !root.is_empty() && (norm == root || norm.starts_with(&format!("{root}/")))
     }) else {
         return String::new();

@@ -275,7 +275,7 @@ pub(crate) fn is_system_skill(name: &str) -> bool {
 ///      global copy of passport-onboard).
 ///   3. The user-global library — last resort so a hand-installed copy still
 ///      works.
-/// Returns the first candidate that actually contains files.
+///      Returns the first candidate that actually contains files.
 fn system_skills_dir(app: &AppHandle) -> Option<PathBuf> {
     // 1. Bundled resource dir — the packaged installer (and dev, when the sync
     //    script has populated `src-tauri/resources/skills`).
@@ -492,7 +492,8 @@ pub(crate) fn hash_skill_dir(dir: &Path) -> Option<String> {
     let files = collect_skill_files(dir);
     let mut hasher = Sha256::new();
     for rel in files.keys() {
-        let bytes = std::fs::read(dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR))).ok()?;
+        let bytes =
+            std::fs::read(dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR))).ok()?;
         hasher.update(rel.as_bytes());
         hasher.update([0u8]);
         hasher.update((bytes.len() as u64).to_le_bytes());
@@ -526,7 +527,12 @@ fn git_head_of(dir: &Path) -> Option<String> {
 /// Best-effort — an I/O failure is logged and swallowed (the copy already
 /// succeeded; provenance is a nice-to-have that degrades the skill to
 /// `local_only` if absent).
-fn write_provenance(target_dir: &Path, source_dir: &Path, source_kind: &str, source_project_id: Option<&str>) {
+fn write_provenance(
+    target_dir: &Path,
+    source_dir: &Path,
+    source_kind: &str,
+    source_project_id: Option<&str>,
+) {
     let Some(content_hash) = hash_skill_dir(source_dir) else {
         return;
     };
@@ -1081,8 +1087,8 @@ pub fn skill_files_install_system(
 /// fails the install — the context scan and the pre-dispatch export are the
 /// other refresh points.
 pub(crate) fn refresh_skill_registry_file(state: &AppState, project_id: &str) {
-    let root = crate::db::repos::dev_tools::get_project_by_id(&state.db, project_id)
-        .map(|p| p.root_path);
+    let root =
+        crate::db::repos::dev_tools::get_project_by_id(&state.db, project_id).map(|p| p.root_path);
     if let Ok(root) = root {
         if let Err(e) =
             super::skill_registry_export::write_skill_registry(&state.db, project_id, &root, None)
@@ -1538,16 +1544,25 @@ mod tests {
         let quoted = "---\ncategory: \"Testing\"\n---\nBody";
         assert_eq!(extract_skill_category(quoted).as_deref(), Some("Testing"));
         // Unknown value, missing key, and no frontmatter all → None.
-        assert_eq!(extract_skill_category("---\ncategory: Gardening\n---\n"), None);
+        assert_eq!(
+            extract_skill_category("---\ncategory: Gardening\n---\n"),
+            None
+        );
         assert_eq!(extract_skill_category("---\nname: x\n---\n"), None);
-        assert_eq!(extract_skill_category("# Just a heading\ncategory: Data"), None);
+        assert_eq!(
+            extract_skill_category("# Just a heading\ncategory: Data"),
+            None
+        );
     }
 
     #[test]
     fn extract_skill_memory_normalizes_and_rejects() {
         let md = "---\nname: x\nmemory: Project\n---\nBody";
         assert_eq!(extract_skill_memory(md).as_deref(), Some("project"));
-        assert_eq!(extract_skill_memory("---\nmemory: vault\n---\n").as_deref(), Some("vault"));
+        assert_eq!(
+            extract_skill_memory("---\nmemory: vault\n---\n").as_deref(),
+            Some("vault")
+        );
         assert_eq!(extract_skill_memory("---\nmemory: cloud\n---\n"), None);
         assert_eq!(extract_skill_memory("---\nname: x\n---\n"), None);
     }
@@ -1572,19 +1587,28 @@ mod tests {
     #[test]
     fn extract_description_prefers_frontmatter() {
         let md = "---\nname: scan-security-auditor\ndescription: \"Find security holes.\"\n---\n# Security Auditor\nbody text\n";
-        assert_eq!(extract_skill_description(md).as_deref(), Some("Find security holes."));
+        assert_eq!(
+            extract_skill_description(md).as_deref(),
+            Some("Find security holes.")
+        );
     }
 
     #[test]
     fn extract_description_frontmatter_without_desc_uses_body() {
         let md = "---\nname: x\n---\n# Heading\nFirst real line.\n";
-        assert_eq!(extract_skill_description(md).as_deref(), Some("First real line."));
+        assert_eq!(
+            extract_skill_description(md).as_deref(),
+            Some("First real line.")
+        );
     }
 
     #[test]
     fn extract_description_no_frontmatter_uses_first_line() {
         let md = "# Title\nDo the thing.\n";
-        assert_eq!(extract_skill_description(md).as_deref(), Some("Do the thing."));
+        assert_eq!(
+            extract_skill_description(md).as_deref(),
+            Some("Do the thing.")
+        );
     }
 
     fn write_skill(dir: &Path, body: &str) {
@@ -1614,15 +1638,24 @@ mod tests {
         install_from(lib.path(), proj.path(), "beta");
 
         // Untouched on both sides.
-        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_IN_SYNC);
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_IN_SYNC
+        );
 
         // The LIBRARY moves; the copy is untouched → stale, and updating is safe.
         write_skill(&lib.path().join("alpha"), "# Alpha\n\nlibrary moved on\n");
-        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_STALE);
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_STALE
+        );
 
         // The COPY is edited; the library has not moved → diverged.
         write_skill(&proj.path().join("beta"), "# Beta\n\nedited here\n");
-        assert_eq!(classify_sync_state(&proj.path().join("beta")).0, SYNC_DIVERGED);
+        assert_eq!(
+            classify_sync_state(&proj.path().join("beta")).0,
+            SYNC_DIVERGED
+        );
     }
 
     #[test]
@@ -1636,7 +1669,10 @@ mod tests {
 
         write_skill(&lib.path().join("alpha"), "# Alpha\n\nlibrary moved\n");
         write_skill(&proj.path().join("alpha"), "# Alpha\n\nedited here\n");
-        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_DIVERGED);
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_DIVERGED
+        );
     }
 
     #[test]
@@ -1647,7 +1683,10 @@ mod tests {
         write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
         install_from(lib.path(), proj.path(), "alpha");
         std::fs::remove_dir_all(lib.path().join("alpha")).unwrap();
-        assert_eq!(classify_sync_state(&proj.path().join("alpha")).0, SYNC_DIVERGED);
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_DIVERGED
+        );
     }
 
     #[test]
@@ -1728,16 +1767,28 @@ mod tests {
         write_skill(&a, "---\nname: x\nversion: 1.0\n---\n# X\n");
         write_skill(&b, "---\nname: x\nversion: 1.0\n---\n# X\n");
         // Dirs differing ONLY in LESSONS.md (any casing) hash equal.
-        std::fs::write(a.join("LESSONS.md"), "# Lessons — x\n\n## 1.0 — 2026-08-07 — personas\n- note\n").unwrap();
+        std::fs::write(
+            a.join("LESSONS.md"),
+            "# Lessons — x\n\n## 1.0 — 2026-08-07 — personas\n- note\n",
+        )
+        .unwrap();
         std::fs::write(b.join("lessons.md"), "different lessons entirely\n").unwrap();
-        assert_eq!(hash_skill_dir(&a), hash_skill_dir(&b), "LESSONS.md excluded from hash");
+        assert_eq!(
+            hash_skill_dir(&a),
+            hash_skill_dir(&b),
+            "LESSONS.md excluded from hash"
+        );
         // And a lessons append never flips sync_state.
         let source = tmp.path().join("src");
         let target = tmp.path().join("dst");
         write_skill(&source, "---\nname: x\n---\n# X\n");
         copy_dir_recursive(&source, &target).unwrap();
         write_provenance(&target, &source, "global", None);
-        std::fs::write(target.join("LESSONS.md"), "## 1.0 — 2026-08-07 — personas\n- lesson\n").unwrap();
+        std::fs::write(
+            target.join("LESSONS.md"),
+            "## 1.0 — 2026-08-07 — personas\n- lesson\n",
+        )
+        .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_IN_SYNC);
     }
 
@@ -1774,9 +1825,17 @@ mod tests {
         assert_eq!(classify_sync_state(&target).0, SYNC_STALE);
 
         // Bring target in line again, then locally edit the target → diverged.
-        std::fs::write(target.join("SKILL.md"), "---\nname: x\n---\n# X v2\nnew body\n").unwrap();
+        std::fs::write(
+            target.join("SKILL.md"),
+            "---\nname: x\n---\n# X v2\nnew body\n",
+        )
+        .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_IN_SYNC);
-        std::fs::write(target.join("SKILL.md"), "---\nname: x\n---\n# locally hacked\n").unwrap();
+        std::fs::write(
+            target.join("SKILL.md"),
+            "---\nname: x\n---\n# locally hacked\n",
+        )
+        .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_DIVERGED);
     }
 }

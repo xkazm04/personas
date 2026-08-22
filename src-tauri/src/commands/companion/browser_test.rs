@@ -159,7 +159,10 @@ pub fn companion_file_browser_defects(
         if let Some(fix) = d.fix.as_deref().filter(|f| !f.trim().is_empty()) {
             description = format!("{description}\n\nSuggested fix: {fix}");
         }
-        description = format!("{}\n\n(Found by Athena's live browser test of {url})", description.trim());
+        description = format!(
+            "{}\n\n(Found by Athena's live browser test of {url})",
+            description.trim()
+        );
         conn.execute(
             "INSERT INTO dev_ideas (id, project_id, scan_type, category, title, description, status, impact, created_at, updated_at)
              VALUES (?1, ?2, 'browser_test', 'technical', ?3, ?4, 'pending', ?5, datetime('now'), datetime('now'))",

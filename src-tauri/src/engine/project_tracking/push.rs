@@ -17,8 +17,8 @@ use std::sync::{Arc, OnceLock, RwLock};
 use std::time::{Duration, Instant};
 
 use axum::{
-    extract::Json as JsonExtractor, http::StatusCode, response::IntoResponse,
-    response::Json, routing::post, Router,
+    extract::Json as JsonExtractor, http::StatusCode, response::IntoResponse, response::Json,
+    routing::post, Router,
 };
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
@@ -64,19 +64,6 @@ pub fn init(pool: UserDbPool, app_handle: AppHandle) {
         debounce: RwLock::new(HashMap::new()),
     });
     let _ = PUSH_HANDLE.set(handle);
-}
-
-/// In-process helper for skill/CLI hooks that already run inside the
-/// Tauri process and don't want to round-trip through HTTP. Same
-/// behavior: optional event insert + debounced consolidator trigger.
-/// Returns the resolved project_id (None if unknown).
-pub async fn push_cli_event(
-    project_path: &str,
-    summary: Option<&str>,
-    title: Option<&str>,
-) -> Option<String> {
-    let handle = PUSH_HANDLE.get()?;
-    do_push(handle, project_path, summary, title).await.ok()?
 }
 
 #[derive(Debug, Deserialize)]
@@ -276,10 +263,9 @@ async fn run_out_of_cadence_for_project(
              ORDER BY created_at",
         )?;
         let rows: Vec<String> = stmt
-            .query_map(
-                params![project_id, since.to_rfc3339()],
-                |row| row.get::<_, String>(0),
-            )?
+            .query_map(params![project_id, since.to_rfc3339()], |row| {
+                row.get::<_, String>(0)
+            })?
             .collect::<Result<Vec<_>, _>>()?;
         rows.into_iter()
             .filter_map(|json| serde_json::from_str(&json).ok())
@@ -290,13 +276,7 @@ async fn run_out_of_cadence_for_project(
         return Ok(());
     }
 
-    let project_name = sub
-        .project_path
-        .rsplit(['/', '\\'])
-        .next()
-        .unwrap_or(&sub.project_path)
-        .to_string();
-    let snapshot = TickSnapshot::from_events(project_name, &events);
+    let snapshot = TickSnapshot::from_events(&events);
 
     // Stamp the watermark BEFORE the await, not after.
     //
@@ -314,8 +294,7 @@ async fn run_out_of_cadence_for_project(
     // sync-reconciliation-and-conflicts.md.
     let consumed_through = chrono::Utc::now();
 
-    consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle))
-        .await?;
+    consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle)).await?;
 
     // Advance the watermark (mirrors scheduler::run_project) so the next
     // push/tick consolidates only the NEW slice instead of overlapping ranges.

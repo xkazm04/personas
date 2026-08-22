@@ -28,7 +28,11 @@ pub async fn companion_list_design_decisions(
 ) -> Result<Vec<DesignDecision>, AppError> {
     ipc_auth::require_auth(&state).await?;
     let cap = limit.unwrap_or(100).clamp(1, 500);
-    match persona_context.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    match persona_context
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         Some(ctx) => decisions::list_by_context(&state.user_db, ctx, cap),
         None => decisions::list_recent(&state.user_db, cap),
     }

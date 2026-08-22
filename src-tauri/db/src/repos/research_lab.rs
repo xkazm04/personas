@@ -425,7 +425,10 @@ pub fn delete_experiment(pool: &DbPool, id: &str) -> Result<(), AppError> {
     let mut conn = pool.get()?;
     let tx = conn.transaction()?;
     strip_id_from_finding_lists(&tx, "source_experiment_ids", id)?;
-    tx.execute("DELETE FROM research_experiments WHERE id = ?1", params![id])?;
+    tx.execute(
+        "DELETE FROM research_experiments WHERE id = ?1",
+        params![id],
+    )?;
     tx.commit()?;
     Ok(())
 }

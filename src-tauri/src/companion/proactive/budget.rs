@@ -101,7 +101,14 @@ fn effective_kind_cap(conn: &rusqlite::Connection, kind: &str) -> u32 {
     let (engaged, dismissed) = engagement_30d(conn, kind);
     let adj = adjustment(engaged, dismissed);
     if adj != 0 {
-        tracing::debug!(kind, base, adj, engaged, dismissed, "budget: engagement-modulated cap");
+        tracing::debug!(
+            kind,
+            base,
+            adj,
+            engaged,
+            dismissed,
+            "budget: engagement-modulated cap"
+        );
     }
     ((base as i64 + adj).clamp(1, base as i64 + 2)) as u32
 }
@@ -135,7 +142,11 @@ pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
     };
     let rows = stmt
         .query_map([], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?))
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
         })
         .map(|it| it.filter_map(Result::ok).collect::<Vec<_>>())
         .unwrap_or_default();

@@ -238,7 +238,7 @@ pub fn sanitize_filename(title: &str) -> String {
         .collect();
     let trimmed = sanitized.trim().trim_matches('-');
     let truncated = if trimmed.len() > 100 {
-        crate::utils::text::truncate_on_char_boundary(&trimmed, 100)
+        crate::utils::text::truncate_on_char_boundary(trimmed, 100)
     } else {
         trimmed
     };
@@ -301,8 +301,8 @@ pub fn extract_yaml_tags(yaml: &str) -> Vec<String> {
     let mut in_tags = false;
     for line in yaml.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("tags:") {
-            let inline = trimmed["tags:".len()..].trim();
+        if let Some(after_tags) = trimmed.strip_prefix("tags:") {
+            let inline = after_tags.trim();
             // Handle inline array: tags: ["a", "b"]
             if inline.starts_with('[') {
                 let inner = inline.trim_start_matches('[').trim_end_matches(']');
@@ -322,8 +322,8 @@ pub fn extract_yaml_tags(yaml: &str) -> Vec<String> {
             continue;
         }
         if in_tags {
-            if trimmed.starts_with("- ") {
-                let item = unquote_yaml_scalar(trimmed[2..].trim());
+            if let Some(bullet) = trimmed.strip_prefix("- ") {
+                let item = unquote_yaml_scalar(bullet.trim());
                 if !item.is_empty() {
                     tags.push(item);
                 }

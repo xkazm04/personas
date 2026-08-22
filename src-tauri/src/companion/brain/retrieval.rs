@@ -202,12 +202,13 @@ pub async fn retrieve(
         embeddings::search_similar_kind(pool, embedder, query, "doctrine", VECTOR_DOCTRINE_FETCH)
             .await
             .unwrap_or_default();
-    let mut doctrine_ids: Vec<String> = filter_by_distance_floor(&doctrine_hits, MAX_VECTOR_DISTANCE)
-        .0
-        .into_iter()
-        .take(VECTOR_DOCTRINE_TOPK)
-        .map(|(id, _)| id)
-        .collect();
+    let mut doctrine_ids: Vec<String> =
+        filter_by_distance_floor(&doctrine_hits, MAX_VECTOR_DISTANCE)
+            .0
+            .into_iter()
+            .take(VECTOR_DOCTRINE_TOPK)
+            .map(|(id, _)| id)
+            .collect();
 
     // Keyword floor. The vector lane can only reach nodes that have a vector,
     // and today essentially none of the episode corpus does; the keyword lane
@@ -329,9 +330,8 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
     let mut facts =
         semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS).unwrap_or_default();
     let fact_ids_in_recall: HashSet<String> = facts.iter().map(|f| f.id.clone()).collect();
-    let mut procedurals =
-        procedural::list_rules(pool, None, false, ALWAYS_INCLUDE_TOP_PROCEDURALS)
-            .unwrap_or_default();
+    let mut procedurals = procedural::list_rules(pool, None, false, ALWAYS_INCLUDE_TOP_PROCEDURALS)
+        .unwrap_or_default();
     let procedural_ids_in_recall: HashSet<String> =
         procedurals.iter().map(|p| p.id.clone()).collect();
     let goals = goals::list_goals(

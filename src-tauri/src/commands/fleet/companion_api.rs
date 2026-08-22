@@ -92,7 +92,8 @@ pub fn ensure_started(app: &AppHandle) -> Result<u16, String> {
         return Ok(*p);
     }
     let port = pick_free_port()?;
-    PORT.set(port).map_err(|_| "companion port already set".to_string())?;
+    PORT.set(port)
+        .map_err(|_| "companion port already set".to_string())?;
 
     let router = build_router(app.clone());
     tauri::async_runtime::spawn(async move {
@@ -215,7 +216,10 @@ fn bearer_token(headers: &HeaderMap) -> Option<String> {
 type ApiErr = (StatusCode, Json<serde_json::Value>);
 
 fn err(status: StatusCode, code: &str) -> ApiErr {
-    (status, Json(serde_json::json!({ "ok": false, "code": code })))
+    (
+        status,
+        Json(serde_json::json!({ "ok": false, "code": code })),
+    )
 }
 
 /// Full request gate: LAN peer → bearer token → constant-time device match.
@@ -298,7 +302,11 @@ struct RemoteState {
 }
 
 /// Rust mirror of `sessionAttention` (fleetAttention.ts) — keep in sync.
-fn attention_of(state: FleetSessionState, exit_code: Option<i32>, athena_active: bool) -> &'static str {
+fn attention_of(
+    state: FleetSessionState,
+    exit_code: Option<i32>,
+    athena_active: bool,
+) -> &'static str {
     if athena_active {
         return "athena";
     }
@@ -477,7 +485,13 @@ fn sanitize_reply(text: &str) -> String {
 
 /// Append one row to the `fleet_decisions` ledger for a remote act. Rule #4:
 /// every act is audited, success or failure, with the device id.
-fn audit(app: &AppHandle, device_id: &str, act_name: &str, target: &str, result: &Result<String, String>) {
+fn audit(
+    app: &AppHandle,
+    device_id: &str,
+    act_name: &str,
+    target: &str,
+    result: &Result<String, String>,
+) {
     let Some(state) = app.try_state::<Arc<AppState>>() else {
         return;
     };
@@ -539,7 +553,10 @@ async fn execute_act(app: &AppHandle, act: &CompanionAct) -> Result<String, Stri
             .map(|o| o.message)
             .map_err(|e| e.to_string())
         }
-        CompanionAct::Reject { approval_id, reason } => {
+        CompanionAct::Reject {
+            approval_id,
+            reason,
+        } => {
             require_remote_approval(app, approval_id)?;
             let state = app
                 .try_state::<Arc<AppState>>()
@@ -560,10 +577,9 @@ async fn execute_act(app: &AppHandle, act: &CompanionAct) -> Result<String, Stri
             }
             // Only a session that is actually waiting accepts a remote reply —
             // typing into a working terminal from a phone is never right.
-            let waiting = registry()
-                .list_dto()
-                .into_iter()
-                .any(|s| s.id == *session_id && matches!(s.state, FleetSessionState::AwaitingInput));
+            let waiting = registry().list_dto().into_iter().any(|s| {
+                s.id == *session_id && matches!(s.state, FleetSessionState::AwaitingInput)
+            });
             if !waiting {
                 return Err("session is not awaiting input".to_string());
             }
@@ -595,7 +611,10 @@ fn require_remote_approval(app: &AppHandle, approval_id: &str) -> Result<(), Str
     if allowed {
         Ok(())
     } else {
-        Err("approval is not remote-answerable (unknown, resolved, or not a fleet proposal)".to_string())
+        Err(
+            "approval is not remote-answerable (unknown, resolved, or not a fleet proposal)"
+                .to_string(),
+        )
     }
 }
 
@@ -605,11 +624,20 @@ mod tests {
 
     #[test]
     fn lan_gate_accepts_private_rejects_public() {
-        for ok in ["127.0.0.1", "10.1.2.3", "172.16.0.9", "192.168.1.44", "169.254.7.7"] {
+        for ok in [
+            "127.0.0.1",
+            "10.1.2.3",
+            "172.16.0.9",
+            "192.168.1.44",
+            "169.254.7.7",
+        ] {
             assert!(is_lan_peer(ok.parse().unwrap()), "{ok} should pass");
         }
         for bad in ["8.8.8.8", "1.1.1.1", "203.0.113.5", "2001:4860:4860::8888"] {
-            assert!(!is_lan_peer(bad.parse().unwrap()), "{bad} should be refused");
+            assert!(
+                !is_lan_peer(bad.parse().unwrap()),
+                "{bad} should be refused"
+            );
         }
         assert!(is_lan_peer("::1".parse().unwrap()));
     }
@@ -642,17 +670,35 @@ mod tests {
             r#"{"action":"broadcast","text":"hi"}"#,
             r#"{"action":"write_raw","session_id":"s","bytes":"\u001b[A"}"#,
         ] {
-            assert!(serde_json::from_str::<CompanionAct>(body).is_err(), "{body}");
+            assert!(
+                serde_json::from_str::<CompanionAct>(body).is_err(),
+                "{body}"
+            );
         }
     }
 
     #[test]
     fn attention_mirrors_frontend_rules() {
-        assert_eq!(attention_of(FleetSessionState::AwaitingInput, None, true), "athena");
-        assert_eq!(attention_of(FleetSessionState::AwaitingInput, None, false), "waiting");
+        assert_eq!(
+            attention_of(FleetSessionState::AwaitingInput, None, true),
+            "athena"
+        );
+        assert_eq!(
+            attention_of(FleetSessionState::AwaitingInput, None, false),
+            "waiting"
+        );
         assert_eq!(attention_of(FleetSessionState::Stale, None, false), "stale");
-        assert_eq!(attention_of(FleetSessionState::Exited, Some(1), false), "failed");
-        assert_eq!(attention_of(FleetSessionState::Exited, Some(0), false), "none");
-        assert_eq!(attention_of(FleetSessionState::Running, None, false), "none");
+        assert_eq!(
+            attention_of(FleetSessionState::Exited, Some(1), false),
+            "failed"
+        );
+        assert_eq!(
+            attention_of(FleetSessionState::Exited, Some(0), false),
+            "none"
+        );
+        assert_eq!(
+            attention_of(FleetSessionState::Running, None, false),
+            "none"
+        );
     }
 }

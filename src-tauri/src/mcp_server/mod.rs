@@ -18,9 +18,9 @@ pub mod tools;
 mod vault;
 
 #[cfg(test)]
-mod obsidian_vault_tests;
-#[cfg(test)]
 mod auth_tests;
+#[cfg(test)]
+mod obsidian_vault_tests;
 
 use serde_json::{json, Value};
 

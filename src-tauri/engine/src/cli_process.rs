@@ -415,9 +415,15 @@ pub async fn run_claude_cli(
 
     let (command, mut args) = claude_cli_invocation();
     args.extend(
-        ["-p", "-", "--max-turns", "1", "--dangerously-skip-permissions"]
-            .iter()
-            .map(|s| s.to_string()),
+        [
+            "-p",
+            "-",
+            "--max-turns",
+            "1",
+            "--dangerously-skip-permissions",
+        ]
+        .iter()
+        .map(|s| s.to_string()),
     );
 
     let mut cmd = Command::new(&command);
@@ -824,7 +830,9 @@ mod tests {
 
         // Control var proves overrides reach the child and output was captured.
         assert!(
-            lines.iter().any(|l| l.starts_with("PERSONAS_TEST_CONTROL=")),
+            lines
+                .iter()
+                .any(|l| l.starts_with("PERSONAS_TEST_CONTROL=")),
             "control env var missing — env dump not captured (lines: {})",
             lines.len()
         );

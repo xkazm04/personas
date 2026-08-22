@@ -12,20 +12,9 @@ use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
+use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -125,7 +114,6 @@ pub async fn get_nl_query_snapshot(
     state: State<'_, Arc<AppState>>,
     query_id: String,
 ) -> Result<serde_json::Value, AppError> {
-
     let snapshot = NL_QUERY_JOBS.get_task_snapshot(&query_id, |extra| NlQuerySnapshotExtras {
         generated_sql: extra.generated_sql.clone(),
         explanation: extra.explanation.clone(),
@@ -189,19 +177,19 @@ async fn run_nl_query(params: RunParams) {
         cancel_token,
     } = params;
 
-    emit_line(&app, &query_id, "> Analyzing your question...");
+    NL_QUERY_JOBS.emit_line(&app, &query_id, "> Analyzing your question...");
 
     // 1. Introspect the database schema for context
     let schema_context = build_db_schema_context(&pool, &user_db, &credential_id).await;
 
     if cancel_token.is_cancelled() {
-        emit_line(&app, &query_id, "> Cancelled.");
+        NL_QUERY_JOBS.emit_line(&app, &query_id, "> Cancelled.");
         return;
     }
 
     let db_type = database_type.as_deref().unwrap_or("sql");
 
-    emit_line(
+    NL_QUERY_JOBS.emit_line(
         &app,
         &query_id,
         "> Generating query from your description...",
@@ -220,7 +208,7 @@ async fn run_nl_query(params: RunParams) {
     let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
 
     if cancel_token.is_cancelled() {
-        emit_line(&app, &query_id, "> Cancelled.");
+        NL_QUERY_JOBS.emit_line(&app, &query_id, "> Cancelled.");
         return;
     }
 
@@ -231,7 +219,7 @@ async fn run_nl_query(params: RunParams) {
 
             match sql {
                 Some(generated_sql) => {
-                    emit_line(&app, &query_id, "> Query generated successfully.");
+                    NL_QUERY_JOBS.emit_line(&app, &query_id, "> Query generated successfully.");
 
                     NL_QUERY_JOBS.update_extra(&query_id, |extra| {
                         extra.generated_sql = Some(generated_sql.clone());
@@ -256,7 +244,7 @@ async fn run_nl_query(params: RunParams) {
                     }
                 }
                 None => {
-                    emit_line(
+                    NL_QUERY_JOBS.emit_line(
                         &app,
                         &query_id,
                         "[ERROR] Could not extract a query from the AI response.",
@@ -272,7 +260,7 @@ async fn run_nl_query(params: RunParams) {
         }
         Err(e) => {
             tracing::warn!(query_id = %query_id, "NL query CLI failed: {}", e);
-            emit_line(
+            NL_QUERY_JOBS.emit_line(
                 &app,
                 &query_id,
                 "[ERROR] AI query generation failed. See application logs.",
@@ -288,10 +276,6 @@ async fn run_nl_query(params: RunParams) {
 }
 
 // -- Helpers --------------------------------------------------------------
-
-fn emit_line(app: &tauri::AppHandle, query_id: &str, line: &str) {
-    NL_QUERY_JOBS.emit_line(app, query_id, line);
-}
 
 fn build_nl_prompt(
     question: &str,
@@ -413,4 +397,3 @@ async fn build_db_schema_context(
 
     ctx
 }
-

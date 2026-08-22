@@ -39,11 +39,11 @@ pub use personas_core;
 
 #[macro_use]
 pub mod macros;
+pub mod attribution;
 mod backup;
 pub mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
-pub mod attribution;
 pub mod journal;
 // Relocated from `engine/` in crate-split step 4c. Each of these six is
 // data-layer code that happened to live in the engine directory: they depend
@@ -53,17 +53,17 @@ pub mod journal;
 pub mod audit_incidents_promoter;
 pub mod byom;
 pub mod chain;
+pub mod credential_fields;
 #[cfg(feature = "ml")]
 pub mod embedder;
 pub mod memory_recall;
+#[allow(dead_code)] // Functions used by Tauri commands in Phase 3
+pub mod migrations;
 pub mod model_routing;
 pub mod policy_tuning;
 pub mod quality_gate;
 #[cfg(feature = "ml")]
 pub mod vector_store;
-pub mod credential_fields;
-#[allow(dead_code)] // Functions used by Tauri commands in Phase 3
-pub mod migrations;
 // Moved to `personas-core` (crate-split step 3): 14k LOC of pure data structs
 // that `engine::types` / `validation` also need. Re-exported so every
 // `crate::models::…` path resolves unchanged.
@@ -97,7 +97,6 @@ const POOL_ACQUIRE_TIMEOUT: Duration = Duration::from_secs(5);
 /// Tuned to catch the "vector_kb search holding a connection while concurrent
 /// IPC reads pile up" scenario without spamming on the occasional WAL
 /// checkpoint stall.
-#[allow(dead_code)]
 const POOL_STARVATION_WARN_MS: u128 = 250;
 
 /// Acquire a pooled connection with wait-time instrumentation. Logs a warning
@@ -107,9 +106,10 @@ const POOL_STARVATION_WARN_MS: u128 = 250;
 ///
 /// Functionally identical to `pool.get()`; safe to swap in at hot paths
 /// without other changes. Cold paths can keep using `pool.get()` directly.
-/// `dead_code` allow handles default-feature builds where the only caller
-/// (vector_store) is gated behind `cfg(feature = "ml")`.
-#[allow(dead_code)]
+///
+/// Prefer the [`PoolExt::conn`] extension method at call sites — it is the
+/// same function with a shorter spelling, which is what makes adopting it a
+/// one-token change rather than a wrapping rewrite.
 pub fn acquire_logged(
     pool: &DbPool,
     label: &'static str,
@@ -138,6 +138,39 @@ pub fn acquire_logged(
         _ => {}
     }
     result
+}
+
+/// Extension trait that puts [`acquire_logged`] one token away from a bare
+/// `pool.get()`.
+///
+/// `acquire_logged` has existed since the pool was built and had exactly one
+/// caller — behind `cfg(feature = "ml")`, so dead in a default build — while
+/// ~1,350 sites called `pool.get()` directly. The instrumentation was not
+/// rejected; it was never reachable cheaply. `pool.conn("label")?` is the same
+/// edit distance as `pool.get()?`, so adoption costs a call site nothing.
+///
+/// The `label` is the whole point and must name the caller (`"executions::
+/// insert"`, `"events::list"`). A blank or generic label produces a warning
+/// line nobody can act on, which is worse than the bare `get()` it replaced.
+pub trait PoolExt {
+    /// Check out a connection, logging a warning when the acquire exceeds
+    /// [`POOL_STARVATION_WARN_MS`] and an error when it fails outright.
+    ///
+    /// Identical in type and behaviour to `Pool::get`, so `?` propagates the
+    /// same `r2d2::Error` (which [`AppError`] converts via `#[from]`).
+    fn conn(
+        &self,
+        label: &'static str,
+    ) -> Result<PooledConnection<SqliteConnectionManager>, r2d2::Error>;
+}
+
+impl PoolExt for DbPool {
+    fn conn(
+        &self,
+        label: &'static str,
+    ) -> Result<PooledConnection<SqliteConnectionManager>, r2d2::Error> {
+        acquire_logged(self, label)
+    }
 }
 
 /// Cached filesystem path of the primary `personas.db` file, set once by
@@ -410,20 +443,19 @@ fn executions_fts_drift(conn: &rusqlite::Connection) -> Option<(i64, i64)> {
     let execution_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))
         .unwrap_or(0);
-    let indexed_count: i64 = match conn.query_row(
-        "SELECT COUNT(*) FROM executions_fts_docsize",
-        [],
-        |r| r.get(0),
-    ) {
-        Ok(count) => count,
-        Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "executions_fts index size is unreadable — skipping the FTS drift check",
-            );
-            return None;
-        }
-    };
+    let indexed_count: i64 =
+        match conn.query_row("SELECT COUNT(*) FROM executions_fts_docsize", [], |r| {
+            r.get(0)
+        }) {
+            Ok(count) => count,
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "executions_fts index size is unreadable — skipping the FTS drift check",
+                );
+                return None;
+            }
+        };
     (indexed_count != execution_count).then_some((execution_count, indexed_count))
 }
 
@@ -1857,8 +1889,17 @@ fn seed_builtin_shared_events(conn: &rusqlite::Connection) -> Result<(), AppErro
               sample_payload, event_schema, subscriber_count, is_featured, status, cached_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, 0, 'active', ?11)",
             params![
-                e.id, e.slug, e.name, e.description, e.category, e.publisher,
-                e.icon, e.color, e.sample_payload, e.event_schema, now,
+                e.id,
+                e.slug,
+                e.name,
+                e.description,
+                e.category,
+                e.publisher,
+                e.icon,
+                e.color,
+                e.sample_payload,
+                e.event_schema,
+                now,
             ],
         )?;
         // Refresh presentation fields on upgrade; preserve subscriber_count/status.
@@ -1868,8 +1909,16 @@ fn seed_builtin_shared_events(conn: &rusqlite::Connection) -> Result<(), AppErro
                  icon = ?5, color = ?6, sample_payload = ?7, event_schema = ?8, cached_at = ?9
              WHERE id = ?10",
             params![
-                e.name, e.description, e.category, e.publisher, e.icon, e.color,
-                e.sample_payload, e.event_schema, now, e.id,
+                e.name,
+                e.description,
+                e.category,
+                e.publisher,
+                e.icon,
+                e.color,
+                e.sample_payload,
+                e.event_schema,
+                now,
+                e.id,
             ],
         )?;
     }
@@ -1881,7 +1930,14 @@ fn seed_builtin_shared_events(conn: &rusqlite::Connection) -> Result<(), AppErro
              (id, slug, seq, title, fired_at, payload, release_version, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
-                f.id, f.slug, f.seq, f.title, f.fired_at, f.payload, f.release_version, now,
+                f.id,
+                f.slug,
+                f.seq,
+                f.title,
+                f.fired_at,
+                f.payload,
+                f.release_version,
+                now,
             ],
         )?;
     }
@@ -2178,7 +2234,11 @@ mod boot_tests {
             1,
             "second launch must create exactly one backup, found: {backups:?}"
         );
-        let name = backups[0].file_name().unwrap().to_string_lossy().into_owned();
+        let name = backups[0]
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
         assert!(
             name.starts_with("personas-") && name.ends_with(".db"),
             "unexpected backup file name: {name}"
@@ -2347,7 +2407,10 @@ mod executions_fts_tests {
     fn ensure_executions_fts_backfills_rows_the_index_never_saw() {
         let pool = init_test_db().expect("init_test_db");
         let conn = pool.get().expect("pool.get");
-        seed_unindexed_executions(&conn, &[("e1", "deploy the widget"), ("e2", "widget teardown")]);
+        seed_unindexed_executions(
+            &conn,
+            &[("e1", "deploy the widget"), ("e2", "widget teardown")],
+        );
 
         assert_eq!(
             matches(&conn, "widget"),
@@ -2375,11 +2438,17 @@ mod executions_fts_tests {
     fn ensure_executions_fts_re_run_does_not_duplicate_index_entries() {
         let pool = init_test_db().expect("init_test_db");
         let conn = pool.get().expect("pool.get");
-        seed_unindexed_executions(&conn, &[("e1", "deploy the widget"), ("e2", "widget teardown")]);
+        seed_unindexed_executions(
+            &conn,
+            &[("e1", "deploy the widget"), ("e2", "widget teardown")],
+        );
 
         ensure_executions_fts(&conn).expect("first backfill");
         let after_first = matches(&conn, "widget");
-        assert_eq!(after_first, 2, "precondition: the backfill indexed both rows");
+        assert_eq!(
+            after_first, 2,
+            "precondition: the backfill indexed both rows"
+        );
 
         // The real boot path calls this on every launch.
         ensure_executions_fts(&conn).expect("second call");

@@ -304,7 +304,7 @@ fn format_report(root: &Path, r: &ScanReport) -> String {
     if !r.by_language.is_empty() {
         s.push_str("- **By language** (top 8 by file count):\n");
         let mut langs: Vec<(&&str, &(usize, u64))> = r.by_language.iter().collect();
-        langs.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
+        langs.sort_by_key(|b| std::cmp::Reverse(b.1 .0));
         for (lang, (count, bytes)) in langs.into_iter().take(8) {
             s.push_str(&format!(
                 "  - {lang}: {count} files (~{kb:.1} KB)\n",

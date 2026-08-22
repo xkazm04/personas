@@ -381,7 +381,11 @@ pub fn state_change(session_id: &str, from: Option<&str>, to: &str, reason: &str
     // Hibernations are the operator's most-asked question ("who slept my
     // session and why?"), so they get their own column value instead of
     // hiding inside the state stream.
-    let kind = if to == "hibernated" { Kind::Sleep } else { Kind::State };
+    let kind = if to == "hibernated" {
+        Kind::Sleep
+    } else {
+        Kind::State
+    };
     let headline = match from {
         Some(f) if f != to => format!("{f} → {to}"),
         _ => to.to_string(),
@@ -407,7 +411,13 @@ pub fn athena_with(
     detail: &str,
     continuation: &[(&str, String)],
 ) {
-    record_with(Kind::Athena, Some(session_id), headline, detail, continuation);
+    record_with(
+        Kind::Athena,
+        Some(session_id),
+        headline,
+        detail,
+        continuation,
+    );
 }
 
 #[cfg(test)]

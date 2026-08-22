@@ -11,18 +11,18 @@
 //!      `instant_adopt_template_inner` returns.
 //!   2. `repos::resources::teams::create` for the parent PersonaTeam.
 //!   3. For each member in the manifest, in declaration order:
-//!        a. `team_preset_loader::load_template_design_by_id` reads the
-//!           canonical template JSON from disk.
-//!        b. `commands::design::template_adopt::instant_adopt_template_inner`
-//!           creates the persona atomically (persona + tools + triggers
-//!           in one tx) — same path the existing "Dev Clone" shortcut
-//!           uses, so the integrity check still runs.
-//!        c. If a group was created in step 1, `UPDATE personas SET
+//!      a. `team_preset_loader::load_template_design_by_id` reads the
+//!      canonical template JSON from disk.
+//!      b. `commands::design::template_adopt::instant_adopt_template_inner`
+//!      creates the persona atomically (persona + tools + triggers
+//!      in one tx) — same path the existing "Dev Clone" shortcut
+//!      uses, so the integrity check still runs.
+//!      c. If a group was created in step 1, `UPDATE personas SET
 //!           group_id = ?` is issued for the new persona.
-//!        d. `repos::resources::teams::add_member` adds the persona to
-//!           the team at the manifest's `(x, y)` with the role label.
-//!        e. Emit a `team-preset-adopt-progress` event with the
-//!           per-member status (queued → adopting → done/failed).
+//!      d. `repos::resources::teams::add_member` adds the persona to
+//!      the team at the manifest's `(x, y)` with the role label.
+//!      e. Emit a `team-preset-adopt-progress` event with the
+//!      per-member status (queued → adopting → done/failed).
 //!   4. For each connection in the manifest, if BOTH endpoint roles
 //!      adopted successfully: `repos::resources::teams::create_connection`
 //!      maps the role strings to the freshly-created member ids and
@@ -47,8 +47,8 @@ use tauri::{AppHandle, Emitter};
 
 use crate::commands::design::template_adopt::instant_adopt_template_inner;
 use crate::db::models::{
-    AdoptedTeamPresetFailure, AdoptedTeamPresetMember, AdoptedTeamPresetResult,
-    CreateTeamInput, TeamPreset, TeamPresetAdoptProgress, UpdateTeamInput,
+    AdoptedTeamPresetFailure, AdoptedTeamPresetMember, AdoptedTeamPresetResult, CreateTeamInput,
+    TeamPreset, TeamPresetAdoptProgress, UpdateTeamInput,
 };
 use crate::db::repos::resources::teams as team_repo;
 use crate::engine::event_registry::event_name;
@@ -217,10 +217,7 @@ pub fn adopt_preset(
     preset_id: &str,
     language: Option<&str>,
     parameter_overrides: Option<
-        &std::collections::HashMap<
-            String,
-            std::collections::HashMap<String, serde_json::Value>,
-        >,
+        &std::collections::HashMap<String, std::collections::HashMap<String, serde_json::Value>>,
     >,
     // When `Some`, adopt only the members whose `role` is in this set
     // (the preview modal lets the user deselect members before adopting).
@@ -275,7 +272,11 @@ pub fn adopt_preset(
             canvas_data: None,
             team_config: None,
             icon: preset.icon.clone(),
-            color: preset.team.color.clone().or_else(|| Some(preset.color.clone())),
+            color: preset
+                .team
+                .color
+                .clone()
+                .or_else(|| Some(preset.color.clone())),
             enabled: Some(true),
         },
     )?;
@@ -362,32 +363,31 @@ pub fn adopt_preset(
         //    receives only the overrides relevant to ONE template).
         //    Pass the template's DESIGN (payload), not the whole file.
         let member_overrides = parameter_overrides.and_then(|all| all.get(&m.role));
-        let adopt_value =
-            match instant_adopt_template_inner(
-                state,
-                m.template_id.clone(),
-                design_payload_json(&design_json),
-                member_overrides,
-            ) {
-                Ok(v) => v,
-                Err(err) => {
-                    let reason = err.to_string();
-                    failures.push(AdoptedTeamPresetFailure {
-                        role: m.role.clone(),
-                        template_id: m.template_id.clone(),
-                        reason: reason.clone(),
-                    });
-                    emit_progress(
-                        &app,
-                        &preset.id,
-                        &m.role,
-                        &m.template_id,
-                        PROGRESS_FAILED,
-                        Some(reason),
-                    );
-                    continue;
-                }
-            };
+        let adopt_value = match instant_adopt_template_inner(
+            state,
+            m.template_id.clone(),
+            design_payload_json(&design_json),
+            member_overrides,
+        ) {
+            Ok(v) => v,
+            Err(err) => {
+                let reason = err.to_string();
+                failures.push(AdoptedTeamPresetFailure {
+                    role: m.role.clone(),
+                    template_id: m.template_id.clone(),
+                    reason: reason.clone(),
+                });
+                emit_progress(
+                    &app,
+                    &preset.id,
+                    &m.role,
+                    &m.template_id,
+                    PROGRESS_FAILED,
+                    Some(reason),
+                );
+                continue;
+            }
+        };
 
         let persona_id = match persona_id_from_adopt_value(&adopt_value) {
             Ok(id) => id,
@@ -569,14 +569,15 @@ pub fn adopt_preset(
     //    and one that stalls after the entry member — so capture the outcome
     //    on the result (`handoff_wired`/`handoff_error`) instead of swallowing
     //    it, letting the UI surface a "Repair handoff" affordance.
-    let (handoff_wired, handoff_error) =
-        match crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
-            Ok(_) => (true, None),
-            Err(e) => {
-                tracing::warn!(team_id = %team.id, error = %e, "adopt_team_preset: handoff wiring failed (continuing)");
-                (false, Some(e.to_string()))
-            }
-        };
+    let (handoff_wired, handoff_error) = match crate::engine::team_handoff::wire_team_handoff(
+        &state.db, &team.id,
+    ) {
+        Ok(_) => (true, None),
+        Err(e) => {
+            tracing::warn!(team_id = %team.id, error = %e, "adopt_team_preset: handoff wiring failed (continuing)");
+            (false, Some(e.to_string()))
+        }
+    };
 
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
@@ -606,6 +607,12 @@ pub fn adopt_preset(
 /// Connections from the original adoption that survived are left
 /// untouched (the existing-edge guard in `teams::create_connection`
 /// rejects duplicates with an error, which we catch + log + skip).
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn retry_failed_members(
     state: &Arc<AppState>,
     app: Option<AppHandle>,
@@ -615,10 +622,7 @@ pub fn retry_failed_members(
     roles_to_retry: &[String],
     language: Option<&str>,
     parameter_overrides: Option<
-        &std::collections::HashMap<
-            String,
-            std::collections::HashMap<String, serde_json::Value>,
-        >,
+        &std::collections::HashMap<String, std::collections::HashMap<String, serde_json::Value>>,
     >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     // Refuse a concurrent/double retry of the same team's failed members —
@@ -850,7 +854,9 @@ pub fn retry_failed_members(
             c.label.clone(),
         ) {
             Ok(_) => created_connections += 1,
-            Err(AppError::Validation(msg)) if msg.contains("already exists") || msg.contains("Duplicate") => {
+            Err(AppError::Validation(msg))
+                if msg.contains("already exists") || msg.contains("Duplicate") =>
+            {
                 // Pre-existing edge from the original adoption — fine.
             }
             Err(e) => {
@@ -875,14 +881,15 @@ pub fn retry_failed_members(
     // Surface the outcome on the result (same contract as adopt_preset) so a
     // retry that lands members but fails to wire them still tells the UI the
     // team isn't cascading yet.
-    let (handoff_wired, handoff_error) =
-        match crate::engine::team_handoff::wire_team_handoff(&state.db, team_id) {
-            Ok(_) => (true, None),
-            Err(e) => {
-                tracing::warn!(team_id, error = %e, "retry_failed_members: handoff wiring failed (continuing)");
-                (false, Some(e.to_string()))
-            }
-        };
+    let (handoff_wired, handoff_error) = match crate::engine::team_handoff::wire_team_handoff(
+        &state.db, team_id,
+    ) {
+        Ok(_) => (true, None),
+        Err(e) => {
+            tracing::warn!(team_id, error = %e, "retry_failed_members: handoff wiring failed (continuing)");
+            (false, Some(e.to_string()))
+        }
+    };
 
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
@@ -913,7 +920,10 @@ mod tests {
     fn semantic_role_falls_back_to_role_column_when_no_preset_stash() {
         // Non-preset member (no config / no preset_role key) → use the raw role.
         assert_eq!(member_semantic_role(None, "reviewer"), "reviewer");
-        assert_eq!(member_semantic_role(Some("{}"), "orchestrator"), "orchestrator");
+        assert_eq!(
+            member_semantic_role(Some("{}"), "orchestrator"),
+            "orchestrator"
+        );
         assert_eq!(member_semantic_role(Some("not json"), "worker"), "worker");
         assert_eq!(
             member_semantic_role(Some(r#"{"other":"x"}"#), "worker"),

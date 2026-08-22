@@ -43,6 +43,12 @@ pub const MAX_MEMORIES: usize = 500;
 /// Callers that need an "empty name" distinct from a length error (e.g. to
 /// reject a blank raw name before applying a suffix) should keep their own
 /// `require_non_empty` on the raw value in addition to this call.
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn validate_persona_import_fields(
     name: &str,
     system_prompt: &str,
@@ -58,10 +64,18 @@ pub fn validate_persona_import_fields(
     crate::validation::require_max_len("persona name", name, MAX_NAME_LEN)?;
     crate::validation::require_max_len("system_prompt", system_prompt, MAX_SYSTEM_PROMPT_LEN)?;
     require_opt("description", description, MAX_DESCRIPTION_LEN)?;
-    require_opt("structured_prompt", structured_prompt, MAX_STRUCTURED_PROMPT_LEN)?;
+    require_opt(
+        "structured_prompt",
+        structured_prompt,
+        MAX_STRUCTURED_PROMPT_LEN,
+    )?;
     require_opt("icon", icon, MAX_SHORT_FIELD_LEN)?;
     require_opt("color", color, MAX_SHORT_FIELD_LEN)?;
-    require_opt("notification_channels", notification_channels, MAX_SHORT_FIELD_LEN)?;
+    require_opt(
+        "notification_channels",
+        notification_channels,
+        MAX_SHORT_FIELD_LEN,
+    )?;
     require_opt("model_profile", model_profile, MAX_SHORT_FIELD_LEN)?;
     require_opt("design_context", design_context, MAX_DESIGN_CONTEXT_LEN)?;
     Ok(())
