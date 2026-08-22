@@ -4,10 +4,7 @@ use tauri::State;
 use tokio_util::sync::CancellationToken;
 
 use std::collections::HashSet;
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-
-use futures_util::FutureExt;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::communication::reviews as reviews_repo;
@@ -15,7 +12,6 @@ use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 use super::n8n_transform::{extract_first_json_object, run_claude_prompt_text_inner};
@@ -1356,8 +1352,11 @@ pub async fn generate_template_background(
     let app_handle_for_panic = app_handle.clone();
     let gen_id_for_panic = gen_id_for_task.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    GEN_JOBS.spawn_job(
+        app_handle_for_panic,
+        gen_id_for_panic,
+        "template generation",
+        async move {
         let result = tokio::select! {
             _ = token_for_task.cancelled() => {
                 Err(AppError::Internal("Template generation cancelled by user".into()))
@@ -1383,21 +1382,8 @@ pub async fn generate_template_background(
                 GEN_JOBS.set_status(&app_handle, &gen_id_for_task, "failed", Some(msg));
             }
         }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(gen_id = %gen_id_for_panic, panic = %msg, "template generation task panicked — marking job as failed");
-            GEN_JOBS.set_status(
-                &app_handle_for_panic,
-                &gen_id_for_panic,
-                "failed",
-                Some(msg),
-            );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "gen_id": gen_id }))
 }

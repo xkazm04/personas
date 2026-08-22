@@ -1,6 +1,7 @@
 use super::*;
 use crate::engine::background::{SchedulerState, SubscriptionCrashEvent};
 use crate::engine::event_registry::event_name;
+use crate::utils::extract_panic_message;
 use futures_util::FutureExt;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
@@ -155,13 +156,7 @@ async fn run_single(
         let elapsed = tick_start.elapsed();
 
         if let Err(panic_payload) = tick_result {
-            let msg = if let Some(s) = panic_payload.downcast_ref::<&str>() {
-                (*s).to_string()
-            } else if let Some(s) = panic_payload.downcast_ref::<String>() {
-                s.clone()
-            } else {
-                "unknown panic".to_string()
-            };
+            let msg = extract_panic_message(panic_payload);
             consecutive_panics = consecutive_panics.saturating_add(1);
             tracing::error!(
                 subscription = name,

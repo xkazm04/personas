@@ -1,13 +1,12 @@
 //! Tauri commands for vector knowledge base CRUD, ingestion, and search.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use rusqlite::params;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
+use crate::background_job::spawn_guarded;
 use crate::db::models::{
     KbDocument, KbEntity, KbExtractionRun, KbExtractionSchema, KbSearchQuery, KbSearchResponse,
     KnowledgeBase, VectorSearchResult,
@@ -19,7 +18,6 @@ use crate::engine::vector_store::SqliteVectorStore;
 use crate::engine::{kb_extract, kb_ingest};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 /// Maximum recursion depth when scanning directories.
@@ -446,8 +444,10 @@ async fn spawn_ingest_job(
     let kb_name_for_panic = kb_name.clone();
     let job_id_for_panic = job_id_clone.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "KB ingest",
+        job_id_for_panic.clone(),
+        async move {
             let result = kb_ingest::ingest_files(
                 app.clone(),
                 user_db,
@@ -496,17 +496,8 @@ async fn spawn_ingest_job(
                     );
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %job_id_for_panic,
-                panic = %msg,
-                "KB ingest task panicked — cleaning up job and marking as failed"
-            );
+        },
+        move |msg| async move {
             {
                 let mut jobs = ingest_jobs_for_panic.lock().await;
                 jobs.remove(&kb_id_for_panic);
@@ -527,8 +518,8 @@ async fn spawn_ingest_job(
                     "error": msg
                 }),
             );
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }
@@ -755,8 +746,10 @@ pub async fn reindex_kb_internal(
     let kb_name_for_panic = kb_name.clone();
     let job_id_for_panic = job_id_clone.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "KB reindex",
+        job_id_for_panic.clone(),
+        async move {
             let result = kb_ingest::reindex_kb(
                 app_task.clone(),
                 user_db,
@@ -804,17 +797,8 @@ pub async fn reindex_kb_internal(
                     );
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %job_id_for_panic,
-                panic = %msg,
-                "KB reindex task panicked — cleaning up job and marking as failed"
-            );
+        },
+        move |msg| async move {
             {
                 let mut jobs = ingest_jobs_for_panic.lock().await;
                 jobs.remove(&kb_id_for_panic);
@@ -835,8 +819,8 @@ pub async fn reindex_kb_internal(
                     "error": msg
                 }),
             );
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }

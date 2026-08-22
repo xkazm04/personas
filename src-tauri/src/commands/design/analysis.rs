@@ -1,13 +1,11 @@
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use crate::utils::extract_panic_message;
-use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
 
+use crate::background_job::spawn_guarded;
 use crate::db::repos::core::design_conversations as conv_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
@@ -75,8 +73,10 @@ fn spawn_design_run(
     let app_for_panic = app.clone();
     let design_id_for_panic = design_id_clone.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(run_design_analysis(DesignRunParams {
+    spawn_guarded(
+        "design analysis",
+        design_id_for_panic.clone(),
+        run_design_analysis(DesignRunParams {
             app,
             pool,
             persona_id: persona_id_owned,
@@ -87,13 +87,8 @@ fn spawn_design_run(
             connector_names,
             registry,
             cancelled,
-        }))
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(design_id = %design_id_for_panic, panic = %msg, "design analysis task panicked — marking design as failed");
+        }),
+        move |msg| async move {
             let _ = app_for_panic.emit(
                 event_name::DESIGN_STATUS,
                 DesignStatusEvent {
@@ -104,8 +99,8 @@ fn spawn_design_run(
                     question: None,
                 },
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "design_id": design_id }))
 }

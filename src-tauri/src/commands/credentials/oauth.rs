@@ -1,12 +1,10 @@
 use std::collections::HashMap;
-use std::panic::AssertUnwindSafe;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine as _;
-use futures_util::FutureExt;
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -18,12 +16,12 @@ use ts_rs::TS;
 use url::Url;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+use crate::background_job::spawn_guarded;
 use crate::db::repos::resources::audit_log;
 use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
 
-use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
 use std::sync::Arc;
@@ -642,19 +640,21 @@ pub async fn start_google_credential_oauth(
     let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_connector = connector_name.clone();
     // Separate clones for the panic-recovery arm below -- the ones above are
-    // moved into the AssertUnwindSafe future.
+    // moved into the guarded future.
     let session_id_for_panic = session_id.clone();
     let db_pool_for_panic = state.db.clone();
     let audit_connector_for_panic = connector_name.clone();
 
-    tokio::spawn(async move {
-        // Without panic-capture, a panic anywhere in `run_oauth_callback_server`
-        // or the token-exchange closure would unwind the whole task before
-        // `apply_oauth_outcome` runs, leaving the session status stuck at
-        // "pending" forever -- the OAuth callback UI polls this status and
-        // would wedge indefinitely. Mirrors the pattern in
-        // `commands/execution/tests.rs::start_test_run`.
-        let work = AssertUnwindSafe(async move {
+    // Without panic-capture, a panic anywhere in `run_oauth_callback_server`
+    // or the token-exchange closure would unwind the whole task before
+    // `apply_oauth_outcome` runs, leaving the session status stuck at
+    // "pending" forever -- the OAuth callback UI polls this status and
+    // would wedge indefinitely. Mirrors the pattern in
+    // `commands/execution/tests.rs::start_test_run`.
+    spawn_guarded(
+        "Google OAuth callback",
+        session_id_for_panic.clone(),
+        async move {
             let outcome = run_oauth_callback_server(
                 listener,
                 OAUTH_SESSION_TTL_SECS,
@@ -690,25 +690,16 @@ pub async fn start_google_credential_oauth(
             if is_success {
                 *auth_detect_cache.lock().await = None;
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                session_id = %session_id_for_panic,
-                panic = %msg,
-                "Google OAuth callback task panicked -- marking session as failed"
-            );
+        },
+        move |msg| async move {
             apply_oauth_outcome(
                 &session_id_for_panic,
                 OAuthCallbackOutcome::Error(format!("Internal error: {msg}")),
                 &db_pool_for_panic,
                 &audit_connector_for_panic,
             );
-        }
-    });
+        },
+    );
 
     Ok(GoogleCredentialOAuthStartResult {
         session_id,
@@ -1906,16 +1897,18 @@ pub async fn start_oauth(
     let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_provider = provider_id.clone();
     // Separate clones for the panic-recovery arm below -- the ones above are
-    // moved into the AssertUnwindSafe future.
+    // moved into the guarded future.
     let sid_for_panic = session_id.clone();
     let db_pool_for_panic = state.db.clone();
     let audit_provider_for_panic = provider_id.clone();
 
-    tokio::spawn(async move {
-        // See the matching comment in `start_google_credential_oauth` -- without
-        // panic-capture a panic here leaves the session status stuck at
-        // "pending" forever, wedging the callback UI.
-        let work = AssertUnwindSafe(async move {
+    // See the matching comment in `start_google_credential_oauth` -- without
+    // panic-capture a panic here leaves the session status stuck at
+    // "pending" forever, wedging the callback UI.
+    spawn_guarded(
+        "universal OAuth callback",
+        sid_for_panic.clone(),
+        async move {
             let outcome = run_oauth_callback_server(
                 listener,
                 OAUTH_SESSION_TTL_SECS,
@@ -1948,25 +1941,16 @@ pub async fn start_oauth(
             if is_success {
                 *auth_detect_cache.lock().await = None;
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                session_id = %sid_for_panic,
-                panic = %msg,
-                "Universal OAuth callback task panicked -- marking session as failed"
-            );
+        },
+        move |msg| async move {
             apply_oauth_outcome(
                 &sid_for_panic,
                 OAuthCallbackOutcome::Error(format!("Internal error: {msg}")),
                 &db_pool_for_panic,
                 &audit_provider_for_panic,
             );
-        }
-    });
+        },
+    );
 
     Ok(OAuthStartResult {
         session_id,

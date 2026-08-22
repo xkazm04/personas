@@ -18,16 +18,15 @@
 //! reproduce identifiers verbatim is a well-known failure mode, and a mismatched
 //! id would silently mark the wrong practice.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::db::models::WorkspaceKnowledge;
 use crate::db::repos::dev_tools as dev_repo;
@@ -35,7 +34,6 @@ use crate::db::repos::dev_workspaces as repo;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 const VERIFY_MODEL: &str = "claude-sonnet-4-6";
@@ -268,8 +266,10 @@ pub async fn dev_tools_workspace_verify_adoptions(
     let wid = workspace_id.clone();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
-    tauri::async_runtime::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "workspace adoption-verify",
+        jid_for_panic.clone(),
+        async move {
             match run_verify(
                 &app, &jid, &db, &wid, &pid, &ids, &titles, &priors, prompt, root, token,
             )
@@ -288,21 +288,12 @@ pub async fn dev_tools_workspace_verify_adoptions(
                     VERIFY_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %jid_for_panic,
-                panic = %msg,
-                "workspace adoption-verify task panicked — marking job as failed"
-            );
+        },
+        move |msg| async move {
             VERIFY_JOBS.emit_line(&app_for_panic, &jid_for_panic, format!("[Failed] {msg}"));
             VERIFY_JOBS.set_status(&app_for_panic, &jid_for_panic, "failed", Some(msg));
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }

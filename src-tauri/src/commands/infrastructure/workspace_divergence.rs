@@ -32,23 +32,21 @@
 //! existing one. W2 therefore lives in `workspace_verify.rs` — the lane that
 //! stands inside one member repo and is already contracted to cite `file:line`.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex};
 
-use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::dev_workspaces as repo;
 use crate::db::repos::dev_workspaces::KnowledgeCandidate;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 /// Model for the synthesis pass. Clustering + adjudication over a digest is a
@@ -272,8 +270,10 @@ pub async fn dev_tools_workspace_run_divergence(
     let valid_projects: Vec<String> = members.iter().map(|p| p.name.clone()).collect();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
-    tauri::async_runtime::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "workspace divergence",
+        jid_for_panic.clone(),
+        async move {
             let result = run_divergence(
                 &app,
                 &jid,
@@ -302,21 +302,12 @@ pub async fn dev_tools_workspace_run_divergence(
                     DIVERGENCE_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %jid_for_panic,
-                panic = %msg,
-                "workspace divergence task panicked — marking job as failed"
-            );
+        },
+        move |msg| async move {
             DIVERGENCE_JOBS.emit_line(&app_for_panic, &jid_for_panic, format!("[Failed] {msg}"));
             DIVERGENCE_JOBS.set_status(&app_for_panic, &jid_for_panic, "failed", Some(msg));
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }

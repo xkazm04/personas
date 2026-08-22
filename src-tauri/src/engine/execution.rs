@@ -16,6 +16,7 @@ use super::healing_retry::{
     evaluate_healing_and_retry, retry_reason_for, spawn_delayed_retry, spawn_healing_chain,
 };
 use super::*;
+use crate::utils::extract_panic_message;
 
 /// Run an execution with a hard engine-level timeout ceiling.
 ///
@@ -935,13 +936,7 @@ impl ExecutionEngine {
             });
 
             if let Err(panic_info) = work.catch_unwind().await {
-                let panic_msg = match panic_info.downcast_ref::<&str>() {
-                    Some(s) => s.to_string(),
-                    None => match panic_info.downcast_ref::<String>() {
-                        Some(s) => s.clone(),
-                        None => "unknown panic".to_string(),
-                    },
-                };
+                let panic_msg = extract_panic_message(panic_info);
                 tracing::error!(
                     execution_id = %exec_id_cleanup,
                     persona_id = %persona_id_cleanup,
@@ -1715,13 +1710,7 @@ fn drain_and_start_next(
                     });
 
                     if let Err(panic_info) = work.catch_unwind().await {
-                        let panic_msg = match panic_info.downcast_ref::<&str>() {
-                            Some(s) => s.to_string(),
-                            None => match panic_info.downcast_ref::<String>() {
-                                Some(s) => s.clone(),
-                                None => "unknown panic".to_string(),
-                            },
-                        };
+                        let panic_msg = extract_panic_message(panic_info);
                         tracing::error!(
                             execution_id = %exec_id_cleanup,
                             persona_id = %persona_id_cleanup,

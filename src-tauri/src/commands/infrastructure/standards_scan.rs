@@ -8,23 +8,21 @@
 //! Progress/completion is surfaced via a raw Tauri event (no event-bus registry
 //! entry needed); findings + the `dev_scans` row are the durable record.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
+use crate::background_job::spawn_guarded;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::models::DevStandard;
 use crate::db::repos::dev_tools as repo;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 /// Tauri frontend event channel for standards-scan lifecycle updates.
@@ -151,42 +149,60 @@ pub async fn dev_tools_run_standards_scan(
     let scan_id_for_panic = scan_id_task.clone();
     let project_id_for_panic = project_id_task.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let result = run_standards_scan(&pool, &scan_id_task, &project_id_task, &root_path, prompt_text).await;
-        match result {
-            Ok(count) => {
-                let _ = repo::update_scan(&pool, &scan_id_task, Some("complete"), Some(count), None, None, None, None);
-                let _ = app_handle.emit(
+    spawn_guarded(
+        "standards scan",
+        scan_id_for_panic.clone(),
+        async move {
+            let result = run_standards_scan(
+                &pool,
+                &scan_id_task,
+                &project_id_task,
+                &root_path,
+                prompt_text,
+            )
+            .await;
+            match result {
+                Ok(count) => {
+                    let _ = repo::update_scan(
+                        &pool,
+                        &scan_id_task,
+                        Some("complete"),
+                        Some(count),
+                        None,
+                        None,
+                        None,
+                        None,
+                    );
+                    let _ = app_handle.emit(
                     STANDARDS_SCAN_STATUS,
                     json!({ "scan_id": scan_id_task, "project_id": project_id_task, "status": "complete", "count": count }),
                 );
-                crate::notifications::send(
-                    &app_handle,
-                    "Standards Scan Complete",
-                    &format!("{project_name}: {count} rules assessed."),
-                );
-            }
-            Err(e) => {
-                let msg = format!("{e}");
-                let _ = repo::update_scan(&pool, &scan_id_task, Some("error"), None, None, None, None, Some(Some(&msg)));
-                let _ = app_handle.emit(
+                    crate::notifications::send(
+                        &app_handle,
+                        "Standards Scan Complete",
+                        &format!("{project_name}: {count} rules assessed."),
+                    );
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    let _ = repo::update_scan(
+                        &pool,
+                        &scan_id_task,
+                        Some("error"),
+                        None,
+                        None,
+                        None,
+                        None,
+                        Some(Some(&msg)),
+                    );
+                    let _ = app_handle.emit(
                     STANDARDS_SCAN_STATUS,
                     json!({ "scan_id": scan_id_task, "project_id": project_id_task, "status": "error", "error": msg }),
                 );
+                }
             }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                scan_id = %scan_id_for_panic,
-                panic = %msg,
-                "standards scan task panicked — marking scan as failed"
-            );
+        },
+        move |msg| async move {
             let _ = repo::update_scan(
                 &pool_for_panic,
                 &scan_id_for_panic,
@@ -201,8 +217,8 @@ pub async fn dev_tools_run_standards_scan(
                 STANDARDS_SCAN_STATUS,
                 json!({ "scan_id": scan_id_for_panic, "project_id": project_id_for_panic, "status": "error", "error": msg }),
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "scan_id": scan_id }))
 }

@@ -3,15 +3,14 @@
 //! Follows the same BackgroundJobManager pattern as idea_scanner.rs:
 //! spawns CLI process, streams output via Tauri events, updates DB.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
@@ -20,7 +19,6 @@ use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 // =============================================================================
@@ -579,8 +577,10 @@ pub async fn dev_tools_execute_task(
     let pool_for_panic = pool.clone();
     let task_id_for_panic = task_id_for_spawn.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "dev-tools task execution",
+        task_id_for_panic.clone(),
+        async move {
             for w in &context_warnings {
                 TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Warning] {w}"));
             }
@@ -613,17 +613,8 @@ pub async fn dev_tools_execute_task(
                     outcome_quotes_line_count: true,
                 },
             );
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                task_id = %task_id_for_panic,
-                panic = %msg,
-                "dev-tools task execution panicked — marking task as failed"
-            );
+        },
+        move |msg| async move {
             let completed_now = chrono::Utc::now().to_rfc3339();
             let _ = repo::update_task(
                 &pool_for_panic,
@@ -649,8 +640,8 @@ pub async fn dev_tools_execute_task(
                 &task_id_for_panic,
                 format!("[Error] {msg}"),
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "task_id": task_id }))
 }
@@ -677,8 +668,10 @@ pub async fn dev_tools_start_batch(
         let pool_for_panic = pool.clone();
         let tid_for_panic = tid.clone();
 
-        tokio::spawn(async move {
-            let work = AssertUnwindSafe(async move {
+        spawn_guarded(
+            "dev-tools batch task execution",
+            tid_for_panic.clone(),
+            async move {
                 let _permit = sem.acquire().await;
 
                 // Read task to get project info
@@ -796,17 +789,8 @@ pub async fn dev_tools_start_batch(
                         outcome_quotes_line_count: false,
                     },
                 );
-            })
-            .catch_unwind()
-            .await;
-
-            if let Err(panic) = work {
-                let msg = extract_panic_message(panic);
-                tracing::error!(
-                    task_id = %tid_for_panic,
-                    panic = %msg,
-                    "dev-tools batch task execution panicked — marking task as failed"
-                );
+            },
+            move |msg| async move {
                 let completed_now = chrono::Utc::now().to_rfc3339();
                 let _ = repo::update_task(
                     &pool_for_panic,
@@ -832,8 +816,8 @@ pub async fn dev_tools_start_batch(
                     &tid_for_panic,
                     format!("[Error] {msg}"),
                 );
-            }
-        });
+            },
+        );
     }
 
     Ok(json!({ "batch_id": batch_id, "started": started }))
@@ -1527,120 +1511,113 @@ pub async fn dev_tools_start_auto_run(
     let run_id_for_panic = run_id_for_spawn.clone();
     let pool_for_panic = pool.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let mut iterations: u32 = 0;
-        let mut termination_reason = "exhausted".to_string();
+    spawn_guarded(
+        "dev-tools auto-run",
+        run_id_for_panic.clone(),
+        async move {
+            let mut iterations: u32 = 0;
+            let mut termination_reason = "exhausted".to_string();
 
-        if snapshot_size == 0 {
-            // Nothing to do — emit complete immediately.
-        } else {
-            'outer: while iterations < max_iterations {
-                if cancel_for_spawn.is_cancelled() {
-                    termination_reason = "cancelled".to_string();
-                    break;
-                }
-
-                let ready = match repo::list_ready_tasks(&pool, &project_id_for_spawn, max_parallel)
-                {
-                    Ok(v) => v
-                        .into_iter()
-                        .filter(|t| snapshot_ids.contains(&t.id))
-                        .collect::<Vec<_>>(),
-                    Err(e) => {
-                        tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
+            if snapshot_size == 0 {
+                // Nothing to do — emit complete immediately.
+            } else {
+                'outer: while iterations < max_iterations {
+                    if cancel_for_spawn.is_cancelled() {
+                        termination_reason = "cancelled".to_string();
                         break;
                     }
-                };
 
-                if ready.is_empty() {
-                    break 'outer;
+                    let ready =
+                        match repo::list_ready_tasks(&pool, &project_id_for_spawn, max_parallel) {
+                            Ok(v) => v
+                                .into_iter()
+                                .filter(|t| snapshot_ids.contains(&t.id))
+                                .collect::<Vec<_>>(),
+                            Err(e) => {
+                                tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
+                                break;
+                            }
+                        };
+
+                    if ready.is_empty() {
+                        break 'outer;
+                    }
+
+                    let mut join_set: tokio::task::JoinSet<String> = tokio::task::JoinSet::new();
+                    for task in ready {
+                        let app_inner = app_handle.clone();
+                        let pool_inner = pool.clone();
+                        let tid = task.id.clone();
+                        join_set.spawn(async move {
+                            run_one_task_for_auto(app_inner, pool_inner, tid).await
+                        });
+                    }
+                    while let Some(_res) = join_set.join_next().await {
+                        // Per-task signals are already emitted inside run_one_task_for_auto.
+                    }
+
+                    iterations += 1;
                 }
 
-                let mut join_set: tokio::task::JoinSet<String> = tokio::task::JoinSet::new();
-                for task in ready {
-                    let app_inner = app_handle.clone();
-                    let pool_inner = pool.clone();
-                    let tid = task.id.clone();
-                    join_set.spawn(async move {
-                        run_one_task_for_auto(app_inner, pool_inner, tid).await
-                    });
+                if iterations >= max_iterations && !cancel_for_spawn.is_cancelled() {
+                    termination_reason = "max_iterations".to_string();
                 }
-                while let Some(_res) = join_set.join_next().await {
-                    // Per-task signals are already emitted inside run_one_task_for_auto.
-                }
-
-                iterations += 1;
-            }
-
-            if iterations >= max_iterations && !cancel_for_spawn.is_cancelled() {
-                termination_reason = "max_iterations".to_string();
-            }
-            if cancel_for_spawn.is_cancelled() {
-                termination_reason = "cancelled".to_string();
-            }
-        }
-
-        // Tally final state by re-reading task statuses for the snapshot set.
-        let mut completed = 0u32;
-        let mut failed = 0u32;
-        let mut skipped = 0u32;
-        for tid in &snapshot_ids {
-            if let Ok(t) = repo::get_task_by_id(&pool, tid) {
-                match t.status.as_str() {
-                    "completed" => completed += 1,
-                    "failed" => failed += 1,
-                    _ => skipped += 1,
+                if cancel_for_spawn.is_cancelled() {
+                    termination_reason = "cancelled".to_string();
                 }
             }
-        }
 
-        let payload = AutoRunCompletePayload {
-            run_id: run_id_for_spawn.clone(),
-            completed,
-            failed,
-            skipped,
-            iterations,
-            snapshot_size: snapshot_size as u32,
-            termination_reason: termination_reason.clone(),
-        };
-        let _ = app_handle.emit(event_name::AUTO_RUN_COMPLETE, &payload);
-        let terminal_status = if termination_reason == "cancelled" {
-            "cancelled"
-        } else {
-            "completed"
-        };
-        if let Err(e) = repo::finish_auto_run(
-            &pool,
-            &run_id_for_spawn,
-            terminal_status,
-            completed,
-            failed,
-            skipped,
-            iterations,
-            &termination_reason,
-        ) {
-            tracing::warn!(run_id = %run_id_for_spawn, error = %e, "auto-run: failed to record completion row");
-        }
-        AUTO_RUN_JOBS.set_status(&app_handle, &run_id_for_spawn, terminal_status, None);
-        crate::notifications::send(
-            &app_handle,
-            "Auto-Run Complete",
-            &format!(
+            // Tally final state by re-reading task statuses for the snapshot set.
+            let mut completed = 0u32;
+            let mut failed = 0u32;
+            let mut skipped = 0u32;
+            for tid in &snapshot_ids {
+                if let Ok(t) = repo::get_task_by_id(&pool, tid) {
+                    match t.status.as_str() {
+                        "completed" => completed += 1,
+                        "failed" => failed += 1,
+                        _ => skipped += 1,
+                    }
+                }
+            }
+
+            let payload = AutoRunCompletePayload {
+                run_id: run_id_for_spawn.clone(),
+                completed,
+                failed,
+                skipped,
+                iterations,
+                snapshot_size: snapshot_size as u32,
+                termination_reason: termination_reason.clone(),
+            };
+            let _ = app_handle.emit(event_name::AUTO_RUN_COMPLETE, &payload);
+            let terminal_status = if termination_reason == "cancelled" {
+                "cancelled"
+            } else {
+                "completed"
+            };
+            if let Err(e) = repo::finish_auto_run(
+                &pool,
+                &run_id_for_spawn,
+                terminal_status,
+                completed,
+                failed,
+                skipped,
+                iterations,
+                &termination_reason,
+            ) {
+                tracing::warn!(run_id = %run_id_for_spawn, error = %e, "auto-run: failed to record completion row");
+            }
+            AUTO_RUN_JOBS.set_status(&app_handle, &run_id_for_spawn, terminal_status, None);
+            crate::notifications::send(
+                &app_handle,
+                "Auto-Run Complete",
+                &format!(
                 "{completed} completed, {failed} failed, {skipped} skipped — {termination_reason}"
             ),
-        );
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                run_id = %run_id_for_panic,
-                panic = %msg,
-                "dev-tools auto-run task panicked — marking run as failed"
             );
+        },
+        move |msg| async move {
             AUTO_RUN_JOBS.set_status(
                 &app_handle_for_panic,
                 &run_id_for_panic,
@@ -1653,8 +1630,8 @@ pub async fn dev_tools_start_auto_run(
             {
                 tracing::warn!(run_id = %run_id_for_panic, error = %e, "auto-run: failed to mark panicked run");
             }
-        }
-    });
+        },
+    );
 
     Ok(json!({
         "run_id": run_id,

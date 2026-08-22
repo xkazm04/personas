@@ -5,14 +5,19 @@
 //! cancel) for any job state type `S: BackgroundJobState`.
 
 use std::collections::HashMap;
+use std::future::Future;
+use std::panic::AssertUnwindSafe;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::{Duration, Instant};
 
+use futures_util::FutureExt;
 use serde::Serialize;
 use tauri::Emitter;
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 use crate::error::AppError;
+use crate::utils::extract_panic_message;
 
 /// 30-minute TTL for completed/failed jobs before eviction.
 const JOB_TTL_SECS: u64 = 30 * 60;
@@ -48,6 +53,55 @@ fn clamp_line(line: String) -> String {
     let kept = crate::utils::text::truncate_on_char_boundary(&line, MAX_LINE_BYTES);
     let dropped = line.len() - kept.len();
     format!("{kept}…[+{dropped} bytes truncated]")
+}
+
+// -- Panic-guarded spawn ----------------------------------------
+
+/// Spawn `fut` as a detached background task behind a panic boundary, running
+/// `on_panic` with the extracted panic message if it unwinds.
+///
+/// Every long-running background job in this backend hand-rolled the same five
+/// steps: `tokio::spawn` → `AssertUnwindSafe(..).catch_unwind()` →
+/// `extract_panic_message` → `tracing::error!` → *some* recovery. The first four
+/// were byte-identical modulo the tracing field NAME (`job_id` / `run_id` /
+/// `scan_id` / `debug_id` — all the same concept); only the fifth genuinely
+/// differed, and that is exactly what `on_panic` is for.
+///
+/// The panic log is now uniform and greppable: `task=<kind> entity_id=<id>`.
+/// That is a deliberate, small telemetry change — the per-site field names were
+/// nine spellings of one idea and could not be unified any other way, because
+/// `tracing` field names must be literals.
+///
+/// **This preserves what the call sites do today, including dropping the
+/// `JoinHandle`.** The returned handle is `#[must_use]`-free on purpose: a
+/// caller that wants to register or await it can, and the ~20 callers that
+/// discard it keep discarding it. Making these tasks abortable is a separate,
+/// behaviour-changing piece of work.
+pub fn spawn_guarded<F, R, Fut>(
+    task: &'static str,
+    entity_id: impl Into<String>,
+    fut: F,
+    on_panic: R,
+) -> JoinHandle<()>
+where
+    F: Future + Send + 'static,
+    F::Output: Send,
+    R: FnOnce(String) -> Fut + Send + 'static,
+    Fut: Future<Output = ()> + Send,
+{
+    let entity_id = entity_id.into();
+    tokio::spawn(async move {
+        if let Err(panic) = AssertUnwindSafe(fut).catch_unwind().await {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                task = %task,
+                entity_id = %entity_id,
+                panic = %msg,
+                "background task panicked — running its recovery arm"
+            );
+            on_panic(msg).await;
+        }
+    })
 }
 
 // -- Core job fields shared by every background job -------------
@@ -550,6 +604,34 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         })
     }
 
+    /// Spawn a job's worker behind a panic boundary that marks THIS job
+    /// `failed` with the panic message if the worker unwinds.
+    ///
+    /// The single most common background-job shape in this backend: a
+    /// fire-and-forget worker whose entire panic recovery is
+    /// `set_status(app, job_id, "failed", Some(msg))`. Callers whose recovery
+    /// arm does more (emit a line, write a repo row, clear an ad-hoc registry)
+    /// use [`spawn_guarded`] directly with their own closure rather than
+    /// growing this method an `Option` parameter.
+    ///
+    /// Takes `&'static self` because every manager in the tree is a `static`.
+    pub fn spawn_job<F>(
+        &'static self,
+        app: tauri::AppHandle,
+        job_id: String,
+        task: &'static str,
+        fut: F,
+    ) -> JoinHandle<()>
+    where
+        F: Future + Send + 'static,
+        F::Output: Send,
+    {
+        let job_id_for_panic = job_id.clone();
+        spawn_guarded(task, job_id, fut, move |msg| async move {
+            self.set_status(&app, &job_id_for_panic, "failed", Some(msg));
+        })
+    }
+
     /// Update the status field directly on a locked job (no event emission).
     pub fn set_status_quiet(
         &self,
@@ -597,6 +679,106 @@ mod tests {
 
     fn mgr() -> BackgroundJobManager<()> {
         BackgroundJobManager::new("test lock poisoned", "test-status", "test-output")
+    }
+
+    // -- spawn_guarded panic boundary ---------------------------------
+    //
+    // The normal suite never executes a panic path, so the ~20 call sites that
+    // now route their panic recovery through this helper would otherwise be
+    // moved onto completely unexercised code. These four tests are the only
+    // thing standing behind that move.
+
+    // NOTE: these tests print real panic backtraces. That is deliberate — a
+    // custom silencing panic hook defeats libtest's own panic capture and turns
+    // a FAILING assertion into a harness that dies with no output at all
+    // (observed while proving these tests can fail).
+
+    #[tokio::test]
+    async fn spawn_guarded_runs_recovery_with_the_panic_message() {
+        let seen = std::sync::Arc::new(Mutex::new(None::<String>));
+        let sink = seen.clone();
+
+        spawn_guarded(
+            "unit-test",
+            "entity-1",
+            async {
+                panic!("boom from inside the worker");
+            },
+            move |msg| async move {
+                *sink.lock().unwrap() = Some(msg);
+            },
+        )
+        .await
+        .expect("guarded task must NOT propagate the panic to its JoinHandle");
+
+        assert_eq!(
+            seen.lock().unwrap().as_deref(),
+            Some("boom from inside the worker"),
+            "recovery arm must receive the extracted panic message"
+        );
+    }
+
+    #[tokio::test]
+    async fn spawn_guarded_skips_recovery_when_the_worker_returns() {
+        let ran = std::sync::Arc::new(Mutex::new(false));
+        let sink = ran.clone();
+
+        spawn_guarded("unit-test", "entity-2", async { 42 }, move |_| async move {
+            *sink.lock().unwrap() = true;
+        })
+        .await
+        .unwrap();
+
+        assert!(
+            !*ran.lock().unwrap(),
+            "a worker that completes must never run the panic arm"
+        );
+    }
+
+    /// The outcome that actually matters at the call sites: a panicking worker
+    /// leaves its job `failed` with the panic message as the error, instead of
+    /// stuck at `running` forever. This is `spawn_job`'s recovery arm with
+    /// `set_status_quiet` standing in for `set_status` (which needs an
+    /// `AppHandle` no unit test can build); both write the same two fields.
+    #[tokio::test]
+    async fn panicking_worker_leaves_its_job_failed_not_running() {
+        static JOBS: BackgroundJobManager<()> =
+            BackgroundJobManager::new("test lock poisoned", "test-status", "test-output");
+        let job = "job-panic".to_string();
+        JOBS.insert_running(job.clone(), CancellationToken::new(), ())
+            .unwrap();
+        assert_eq!(JOBS.get_snapshot(&job).unwrap().status, "running");
+
+        let jid = job.clone();
+        spawn_guarded(
+            "unit-test",
+            job.clone(),
+            async {
+                panic!("worker died");
+            },
+            move |msg| async move {
+                let _ = JOBS.set_status_quiet(&jid, "failed", Some(msg));
+            },
+        )
+        .await
+        .unwrap();
+
+        let snap = JOBS.get_snapshot(&job).expect("job still present");
+        assert_eq!(
+            snap.status, "failed",
+            "panic must be a FAILED job, not a stuck running one"
+        );
+        assert_eq!(snap.error.as_deref(), Some("worker died"));
+    }
+
+    /// A panic in one guarded task must not take down the runtime or its
+    /// siblings — the property the 20+ adopting call sites rely on.
+    #[tokio::test]
+    async fn a_panicking_task_does_not_poison_its_siblings() {
+        let a = spawn_guarded("unit-test", "sib-a", async { panic!("a") }, |_| async {});
+        let b = spawn_guarded("unit-test", "sib-b", async { "fine" }, |_| async {});
+        a.await.unwrap();
+        b.await.unwrap();
     }
 
     #[test]

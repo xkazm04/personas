@@ -59,6 +59,7 @@ use crate::error::AppError;
 use crate::engine::embedder::EmbeddingManager;
 #[cfg(not(feature = "ml"))]
 use crate::engine::team_assignment_matching::EmbeddingManager;
+use crate::utils::extract_panic_message;
 
 /// Bundle of dependencies the orchestrator threads down to per-step work.
 /// Phase B added the optional embedding manager (only present in builds
@@ -763,11 +764,7 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                         Ok(Err(e)) => Some(e.to_string()),
                         Err(panic) => Some(format!(
                             "step worker panicked: {}",
-                            panic
-                                .downcast_ref::<&str>()
-                                .map(|s| (*s).to_string())
-                                .or_else(|| panic.downcast_ref::<String>().cloned())
-                                .unwrap_or_else(|| "unknown panic".to_string())
+                            extract_panic_message(panic)
                         )),
                     };
                     if let Some(msg) = failure {

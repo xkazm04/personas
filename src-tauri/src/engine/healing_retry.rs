@@ -12,6 +12,7 @@
 
 use super::execution::run_execution_with_ceiling;
 use super::*;
+use crate::utils::extract_panic_message;
 
 /// Per-capability "Errors" sigil routing, resolved from the persona's
 /// `design_context.use_cases[i].error_policy` (set during adoption). Returns
@@ -999,13 +1000,7 @@ pub(super) fn spawn_healing_chain(
         });
 
         if let Err(panic_info) = work.catch_unwind().await {
-            let panic_msg = match panic_info.downcast_ref::<&str>() {
-                Some(s) => s.to_string(),
-                None => match panic_info.downcast_ref::<String>() {
-                    Some(s) => s.clone(),
-                    None => "unknown panic".to_string(),
-                },
-            };
+            let panic_msg = extract_panic_message(panic_info);
             tracing::error!(
                 execution_id = %exec_id_cleanup,
                 persona_id = %persona_id_cleanup,

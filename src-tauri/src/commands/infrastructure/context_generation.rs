@@ -5,10 +5,8 @@
 //! and creates DevContextGroup + DevContext entries via protocol messages.
 //! Progress is streamed to the frontend via Tauri events.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, LazyLock, Mutex};
 
-use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
@@ -16,6 +14,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
 use super::cli_stderr::{push_stderr_line, snapshot_stderr};
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
@@ -25,7 +24,6 @@ use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 /// Per-project single-flight guard for context-map scans. Two concurrent
@@ -691,115 +689,108 @@ pub(crate) fn launch_context_scan(
     let project_id_for_panic = project_id.clone();
     let project_name_for_panic = project_name.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        // Hold the per-project single-flight guard for the task's whole life;
-        // it releases on drop when this task ends (success, error, or cancel).
-        let _scan_guard = scan_guard;
-        let result = tokio::select! {
-            _ = token_for_task.cancelled() => {
-                Err(AppError::Internal("Context generation cancelled by user".into()))
-            }
-            res = run_context_generation(
-                &app_handle,
-                &scan_id_for_task,
-                &pool,
-                &project_id,
-                &project_name,
-                &resolved_root,
-                existing_summary.as_deref(),
-                delta_mode,
-                subtree_owned.as_deref(),
-            ) => res
-        };
-
-        match result {
-            Ok(summary) => {
-                let is_warning = summary.status == "completed_with_warning";
-                let status_str = if is_warning {
-                    "completed_with_warning"
-                } else {
-                    "completed"
-                };
-                CONTEXT_GEN_JOBS.set_status(
+    spawn_guarded(
+        "context-map generation",
+        scan_id_for_panic.clone(),
+        async move {
+            // Hold the per-project single-flight guard for the task's whole life;
+            // it releases on drop when this task ends (success, error, or cancel).
+            let _scan_guard = scan_guard;
+            let result = tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(AppError::Internal("Context generation cancelled by user".into()))
+                }
+                res = run_context_generation(
                     &app_handle,
                     &scan_id_for_task,
-                    status_str,
-                    summary.error.clone(),
-                );
-                let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
-                crate::engine::system_ops::publish_context_scan_event(
                     &pool,
-                    "completed",
                     &project_id,
                     &project_name,
-                    json!({
-                        "status": status_str,
-                        "groups_created": summary.groups_created,
-                        "contexts_created": summary.contexts_created,
-                        "files_mapped": summary.files_mapped,
-                        "db_tables_dropped": summary.db_tables_dropped,
-                        "cross_refs_dropped": summary.cross_refs_dropped,
-                        "scan_id": scan_id_for_task,
-                    }),
-                );
-                // OS notification
-                let title = if is_warning {
-                    "Context Map Ready (with warning)"
-                } else {
-                    "Context Map Ready"
-                };
-                let body = if is_warning {
-                    format!(
+                    &resolved_root,
+                    existing_summary.as_deref(),
+                    delta_mode,
+                    subtree_owned.as_deref(),
+                ) => res
+            };
+
+            match result {
+                Ok(summary) => {
+                    let is_warning = summary.status == "completed_with_warning";
+                    let status_str = if is_warning {
+                        "completed_with_warning"
+                    } else {
+                        "completed"
+                    };
+                    CONTEXT_GEN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        status_str,
+                        summary.error.clone(),
+                    );
+                    let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
+                    crate::engine::system_ops::publish_context_scan_event(
+                        &pool,
+                        "completed",
+                        &project_id,
+                        &project_name,
+                        json!({
+                            "status": status_str,
+                            "groups_created": summary.groups_created,
+                            "contexts_created": summary.contexts_created,
+                            "files_mapped": summary.files_mapped,
+                            "db_tables_dropped": summary.db_tables_dropped,
+                            "cross_refs_dropped": summary.cross_refs_dropped,
+                            "scan_id": scan_id_for_task,
+                        }),
+                    );
+                    // OS notification
+                    let title = if is_warning {
+                        "Context Map Ready (with warning)"
+                    } else {
+                        "Context Map Ready"
+                    };
+                    let body = if is_warning {
+                        format!(
                         "{}: {} groups, {} contexts mapped (scan exceeded timeout — partial results saved).",
                         project_name, summary.groups_created, summary.contexts_created,
                     )
-                } else {
-                    format!(
-                        "{}: {} groups, {} contexts mapped.",
-                        project_name, summary.groups_created, summary.contexts_created,
-                    )
-                };
-                crate::notifications::send(&app_handle, title, &body);
+                    } else {
+                        format!(
+                            "{}: {} groups, {} contexts mapped.",
+                            project_name, summary.groups_created, summary.contexts_created,
+                        )
+                    };
+                    crate::notifications::send(&app_handle, title, &body);
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    CONTEXT_GEN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        "failed",
+                        Some(msg.clone()),
+                    );
+                    CONTEXT_GEN_JOBS.emit_line(
+                        &app_handle,
+                        &scan_id_for_task,
+                        format!("[Error] {msg}"),
+                    );
+                    crate::engine::system_ops::publish_context_scan_event(
+                        &pool,
+                        "completed",
+                        &project_id,
+                        &project_name,
+                        json!({ "status": "failed", "error": msg, "scan_id": scan_id_for_task }),
+                    );
+                    crate::notifications::send(
+                        &app_handle,
+                        "Context Scan Failed",
+                        &format!("{project_name}: {msg}"),
+                    );
+                }
             }
-            Err(e) => {
-                let msg = format!("{e}");
-                CONTEXT_GEN_JOBS.set_status(
-                    &app_handle,
-                    &scan_id_for_task,
-                    "failed",
-                    Some(msg.clone()),
-                );
-                CONTEXT_GEN_JOBS.emit_line(
-                    &app_handle,
-                    &scan_id_for_task,
-                    format!("[Error] {msg}"),
-                );
-                crate::engine::system_ops::publish_context_scan_event(
-                    &pool,
-                    "completed",
-                    &project_id,
-                    &project_name,
-                    json!({ "status": "failed", "error": msg, "scan_id": scan_id_for_task }),
-                );
-                crate::notifications::send(
-                    &app_handle,
-                    "Context Scan Failed",
-                    &format!("{project_name}: {msg}"),
-                );
-            }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                scan_id = %scan_id_for_panic,
-                panic = %msg,
-                "context-map generation task panicked — marking scan as failed"
-            );
+        },
+        move |msg| async move {
             CONTEXT_GEN_JOBS.set_status(
                 &app_handle_for_panic,
                 &scan_id_for_panic,
@@ -823,8 +814,8 @@ pub(crate) fn launch_context_scan(
                 "Context Scan Failed",
                 &format!("{project_name_for_panic}: internal error during scan"),
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "scan_id": scan_id, "is_rescan": is_rescan, "delta_mode": delta_mode }))
 }

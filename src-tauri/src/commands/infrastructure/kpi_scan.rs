@@ -18,19 +18,17 @@
 //! pattern): dev_scans record + BackgroundJobManager (cancel/status/lines) +
 //! line-streamed protocol parse.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
-use crate::utils::extract_panic_message;
 
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
@@ -572,8 +570,10 @@ pub(crate) fn launch_kpi_scan(
     let app_handle_for_panic = app_handle.clone();
     let pool_for_panic = pool_task.clone();
     let scan_id_for_panic = scan_id_for_task.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "KPI scan",
+        scan_id_for_panic.clone(),
+        async move {
             let result = tokio::select! {
                 _ = cancel_token.cancelled() => {
                     Err(AppError::Internal("KPI scan cancelled".into()))
@@ -635,17 +635,8 @@ pub(crate) fn launch_kpi_scan(
                     );
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                scan_id = %scan_id_for_panic,
-                panic = %msg,
-                "KPI scan task panicked — marking scan as failed"
-            );
+        },
+        move |msg| async move {
             let _ = repo::update_scan(
                 &pool_for_panic,
                 &scan_id_for_panic,
@@ -667,8 +658,8 @@ pub(crate) fn launch_kpi_scan(
                 &scan_id_for_panic,
                 format!("[Error] {msg}"),
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "scan_id": scan_id }))
 }

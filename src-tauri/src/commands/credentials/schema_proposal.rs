@@ -1,7 +1,5 @@
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use tauri::{Emitter, State};
 use tokio_util::sync::CancellationToken;
 
@@ -14,7 +12,6 @@ use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
-use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
 
@@ -85,8 +82,11 @@ pub async fn start_schema_proposal(
     let app_for_panic = app.clone();
     let proposal_id_for_panic = proposal_id.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(run_schema_proposal(RunParams {
+    SCHEMA_PROPOSAL_JOBS.spawn_job(
+        app_for_panic,
+        proposal_id_for_panic,
+        "schema proposal",
+        run_schema_proposal(RunParams {
             app,
             pool,
             user_db,
@@ -97,25 +97,8 @@ pub async fn start_schema_proposal(
             existing_tables,
             database_type,
             cancel_token,
-        }))
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                proposal_id = %proposal_id_for_panic,
-                panic = %msg,
-                "schema proposal task panicked — marking job as failed"
-            );
-            SCHEMA_PROPOSAL_JOBS.set_status(
-                &app_for_panic,
-                &proposal_id_for_panic,
-                "failed",
-                Some(msg),
-            );
-        }
-    });
+        }),
+    );
 
     Ok(())
 }

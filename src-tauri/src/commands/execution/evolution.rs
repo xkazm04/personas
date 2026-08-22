@@ -1,9 +1,8 @@
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use tauri::State;
 
+use crate::background_job::spawn_guarded;
 use crate::db::models::*;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::engine::evolution;
@@ -11,7 +10,6 @@ use crate::engine::evolution::EvolutionCycleStatus;
 use crate::engine::genome::FitnessObjective;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 // ============================================================================
@@ -203,22 +201,19 @@ pub async fn evolution_trigger_cycle(
     let pool = state.db.clone();
     let pool_for_panic = pool.clone();
     let cycle_id_for_panic = cycle_id.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(evolution::run_evolution_cycle(pool, policy, cycle_id))
-            .catch_unwind()
-            .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(cycle_id = %cycle_id_for_panic, panic = %msg, "evolution cycle task panicked — marking cycle as failed");
+    spawn_guarded(
+        "evolution cycle",
+        cycle_id_for_panic.clone(),
+        evolution::run_evolution_cycle(pool, policy, cycle_id),
+        move |msg| async move {
             let _ = evolution_repo::update_cycle_status(
                 &pool_for_panic,
                 &cycle_id_for_panic,
                 EvolutionCycleStatus::Failed,
                 Some(&msg),
             );
-        }
-    });
+        },
+    );
 
     Ok(cycle)
 }

@@ -39,22 +39,20 @@
 //!
 //! Spawn/stream boilerplate is cloned from `kpi_scan.rs`.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde_json::{json, Value};
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
-use crate::utils::extract_panic_message;
 use crate::AppState;
 
 /// Job extra: the single composed result envelope (`{"kpi_measure"|"kpi_proposal": …}`).
@@ -355,33 +353,36 @@ fn launch_compose(
     let task_for_run = task_id.clone();
     let app_handle_for_panic = app_handle.clone();
     let task_for_panic = task_for_run.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
-            res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text, spend) => res,
-        };
-        match result {
-            Ok(true) => KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "completed", None),
-            Ok(false) => KPI_COMPOSE_JOBS.set_status(
-                &app_handle,
-                &task_for_run,
-                "failed",
-                Some("The model returned no measurement.".into()),
-            ),
-            Err(e) => {
-                let msg = format!("{e}");
-                KPI_COMPOSE_JOBS.emit_line(&app_handle, &task_for_run, format!("[Error] {msg}"));
-                KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "failed", Some(msg));
+    spawn_guarded(
+        "KPI compose",
+        task_for_panic.clone(),
+        async move {
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
+                res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text, spend) => res,
+            };
+            match result {
+                Ok(true) => {
+                    KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "completed", None)
+                }
+                Ok(false) => KPI_COMPOSE_JOBS.set_status(
+                    &app_handle,
+                    &task_for_run,
+                    "failed",
+                    Some("The model returned no measurement.".into()),
+                ),
+                Err(e) => {
+                    let msg = format!("{e}");
+                    KPI_COMPOSE_JOBS.emit_line(
+                        &app_handle,
+                        &task_for_run,
+                        format!("[Error] {msg}"),
+                    );
+                    KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "failed", Some(msg));
+                }
             }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(task_id = %task_for_panic, panic = %msg, "KPI compose task panicked — marking job as failed");
+        },
+        move |msg| async move {
             KPI_COMPOSE_JOBS.emit_line(
                 &app_handle_for_panic,
                 &task_for_panic,
@@ -393,8 +394,8 @@ fn launch_compose(
                 "failed",
                 Some(msg),
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "task_id": task_id }))
 }
@@ -424,8 +425,10 @@ fn launch_compose_apply(
     let task = task_id.clone();
     let app_handle_for_panic = app_handle.clone();
     let task_for_panic = task.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "KPI compose-apply",
+        task_for_panic.clone(),
+        async move {
             let spend = Some(ComposeSpend {
                 pool: pool.clone(),
                 trigger_kind: "kpi_compose",
@@ -457,13 +460,8 @@ fn launch_compose_apply(
                     KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "failed", Some(msg));
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(task_id = %task_for_panic, panic = %msg, "KPI compose-apply task panicked — marking job as failed");
+        },
+        move |msg| async move {
             KPI_COMPOSE_JOBS.emit_line(
                 &app_handle_for_panic,
                 &task_for_panic,
@@ -475,8 +473,8 @@ fn launch_compose_apply(
                 "failed",
                 Some(msg),
             );
-        }
-    });
+        },
+    );
     task_id
 }
 
