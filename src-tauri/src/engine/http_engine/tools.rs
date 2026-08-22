@@ -15,7 +15,10 @@ use crate::engine::events::ExecutionEventEmitter;
 use crate::engine::types::{ExecutionResult, ExecutionState};
 use crate::mcp_server;
 
-use super::config::{cost_of, tool_allowed, HTTP_GET_MAX_BYTES, HTTP_TIMEOUT_SECS, MAX_TOOL_ITERS};
+use super::config::{
+    cost_of, tool_allowed, HTTP_GET_MAX_BYTES, HTTP_GET_TIMEOUT_SECS, HTTP_TIMEOUT_SECS,
+    MAX_TOOL_ITERS,
+};
 use super::events::{emit_output, emit_status, fail};
 
 /// Multi-turn tool loop: send prompt + the allowed tool schemas; when the model
@@ -35,11 +38,17 @@ pub(super) async fn run_tool_loop(
     start_time: Instant,
 ) -> ExecutionResult {
     let url = format!("{base_url}/chat/completions");
-    // Same deliberate choice as `openai.rs`: `base_url` is the user's BYOM
-    // endpoint and is expected to be able to be a LOCAL inference server, so
-    // the SSRF-safe resolver is not applicable here; 600 s is the tool loop's
-    // real deadline.
-    let client = match Client::builder()
+    // TWO clients, because there are two trust contexts and they must not share
+    // one. Until 2026-08-22 this function built one client for the chat endpoint
+    // and then handed the same client to `execute_builtin_tool` — so the
+    // model-supplied `http_get` URL inherited a client with the system resolver
+    // and reqwest's default ten-hop redirect follow.
+    //
+    // 1. `chat_client` — talks to `base_url`, the user's BYOM endpoint. Same
+    //    deliberate choice as `openai.rs`: it must be able to reach a LOCAL
+    //    inference server, so no SSRF-safe resolver, and 600 s is the tool
+    //    loop's real deadline.
+    let chat_client = match Client::builder()
         .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
         .build()
     {
@@ -53,6 +62,16 @@ pub(super) async fn run_tool_loop(
             )
         }
     };
+    // 2. `tool_client` — executes `http_get`, whose URL comes from the MODEL
+    //    (scheme + host + path), which in turn reads third-party text through
+    //    its own tools. That is an untrusted target and the response body is fed
+    //    back into the conversation, so it egresses to the provider on the next
+    //    iteration. SSRF-safe resolver (blocks DNS rebinding at connect time)
+    //    plus per-hop redirect re-validation (blocks a `Location:` carrying a
+    //    raw private IP, which skips DNS entirely).
+    let tool_client = crate::engine::url_safety::build_ssrf_safe_client(Duration::from_secs(
+        HTTP_GET_TIMEOUT_SECS,
+    ));
 
     // Tool catalog = safe built-ins + the remote-safe MCP tools (run in-process
     // via mcp_server::tools::call_tool against a read connection to the same DB).
@@ -103,7 +122,7 @@ pub(super) async fn run_tool_loop(
         }
 
         let body = json!({ "model": model, "messages": messages, "tools": tools_value, "tool_choice": "auto" });
-        let resp = match client
+        let resp = match chat_client
             .post(&url)
             .bearer_auth(api_key)
             .json(&body)
@@ -221,7 +240,7 @@ pub(super) async fn run_tool_loop(
                 ),
             );
             let result = if name == "get_current_time" || name == "http_get" {
-                execute_builtin_tool(&client, &name, &args).await
+                execute_builtin_tool(&tool_client, &name, &args).await
             } else if tool_allowed(&name, connectors_on) {
                 match &mcp_pool {
                     Some(pool) => mcp_call_text(&name, &args, pool),
@@ -317,43 +336,41 @@ async fn execute_builtin_tool(client: &Client, name: &str, args: &Value) -> Stri
     }
 }
 
-/// GET a public URL with SSRF egress guards: https-only, and the resolved host
-/// must not map to a loopback / private / link-local / unspecified address.
-/// Pragmatic guard (not full DNS-rebinding protection, since reqwest re-resolves)
-/// — it enforces and documents the egress boundary.
+/// GET a public URL with SSRF egress guards.
+///
+/// Three layers, because no one of them covers the others:
+///
+/// 1. **https-only** here — stricter than `validate_url_safety`, which permits
+///    plain http. The tool's contract says public https.
+/// 2. **`validate_url_safety`** — the pre-flight check covering everything DNS
+///    never sees: an IP literal (no lookup happens, so no resolver can veto it),
+///    a non-http scheme, a cloud-metadata hostname that fails to resolve locally
+///    but resolves inside a cloud network, and fail-closed on DNS error.
+/// 3. **the client itself** (`build_ssrf_safe_client`, built by the caller) —
+///    a connect-time resolver that closes the DNS-rebinding window between this
+///    check and the request, plus a redirect policy that re-validates EVERY hop.
+///    Layer 3 is what this function was missing: it checked hop 1, threw the
+///    resolved addresses away without pinning them, and then issued the request
+///    through a client that would follow ten redirects with the system resolver.
 async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> {
     let url = reqwest::Url::parse(raw).map_err(|e| format!("invalid url: {e}"))?;
     if url.scheme() != "https" {
         return Err("only https:// URLs are allowed".into());
     }
-    let host = url
-        .host_str()
-        .ok_or_else(|| "missing host".to_string())?
-        .to_string();
-    let port = url.port_or_known_default().unwrap_or(443);
 
-    // Resolve off the async runtime and reject internal targets.
-    let host_for_resolve = host.clone();
-    let addrs = tokio::task::spawn_blocking(move || {
-        use std::net::ToSocketAddrs;
-        (host_for_resolve.as_str(), port)
-            .to_socket_addrs()
-            .map(|it| it.map(|s| s.ip()).collect::<Vec<_>>())
+    // Blocking DNS inside; keep it off the async runtime. The handle is bound
+    // and its outcome inspected — a detached validation task would report
+    // neither a panic nor a verdict.
+    let raw_owned = raw.to_string();
+    let verdict = tokio::task::spawn_blocking(move || {
+        crate::engine::url_safety::validate_url_safety(&raw_owned)
     })
     .await
-    .map_err(|e| format!("resolve task failed: {e}"))?
-    .map_err(|e| format!("dns resolution failed: {e}"))?;
-
-    if addrs.is_empty() {
-        return Err("host did not resolve".into());
-    }
-    if addrs.iter().any(is_blocked_ip) {
-        return Err("destination resolves to a private/internal address (blocked)".into());
-    }
+    .map_err(|e| format!("url validation task failed: {e}"))?;
+    verdict?;
 
     let resp = client
         .get(url)
-        .timeout(Duration::from_secs(10))
         .send()
         .await
         .map_err(|e| format!("request failed: {e}"))?;
@@ -374,23 +391,223 @@ async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> 
     ))
 }
 
-pub(crate) fn is_blocked_ip(ip: &std::net::IpAddr) -> bool {
-    match ip {
-        std::net::IpAddr::V4(v4) => {
-            v4.is_loopback()
-                || v4.is_private()
-                || v4.is_link_local()
-                || v4.is_unspecified()
-                || v4.is_broadcast()
+// The private-IP predicate that used to live here (`is_blocked_ip`) was deleted
+// on 2026-08-22. It was a third, weaker fork of the same idea: it omitted CGNAT
+// (`100.64.0.0/10`), the RFC 5737 documentation ranges, and the cloud-metadata
+// hostname list, all of which `personas_core::url_safety::is_private_ip` covers.
+// Its two call sites (here and `engine::platforms::zapier`) now go through
+// `url_safety` directly.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The client the tool loop hands to `http_get`. Same construction as
+    /// production — this IS `build_ssrf_safe_client`, not a re-typed copy.
+    /// The falsification arm's deadline. Named so it is not a bare literal at
+    /// the site that applies it.
+    const FALSIFICATION_DEADLINE: Duration = Duration::from_secs(3);
+
+    fn tool_client() -> Client {
+        crate::engine::url_safety::build_ssrf_safe_client(Duration::from_secs(
+            HTTP_GET_TIMEOUT_SECS,
+        ))
+    }
+
+    /// An IP literal never reaches a DNS resolver, so the client's resolver
+    /// cannot veto it. `validate_url_safety` is the only layer that sees it.
+    #[tokio::test]
+    async fn blocks_ip_literal_targets() {
+        let client = tool_client();
+        for url in [
+            "https://127.0.0.1:9420/webhook",
+            "https://169.254.169.254/latest/meta-data/",
+            "https://10.0.0.1/admin",
+            "https://192.168.1.1/",
+            "https://[::1]/admin",
+            "https://0.0.0.0/",
+            // CGNAT + documentation ranges — the deleted local fork missed both.
+            "https://100.64.0.1/",
+            "https://192.0.2.1/",
+        ] {
+            let err = match http_get_guarded(&client, url).await {
+                Ok(body) => panic!("{url} must be blocked, but it returned: {body}"),
+                Err(e) => e,
+            };
+            assert!(
+                err.contains("Blocked") || err.contains("blocked"),
+                "{url} rejected for the wrong reason: {err}"
+            );
         }
-        std::net::IpAddr::V6(v6) => {
-            if let Some(v4) = v6.to_ipv4_mapped() {
-                return is_blocked_ip(&std::net::IpAddr::V4(v4));
+    }
+
+    /// Cloud-metadata + internal hostnames are blocked by NAME, before any
+    /// lookup — they may fail to resolve on a dev box and resolve fine inside a
+    /// cloud network, which is the whole bypass.
+    #[tokio::test]
+    async fn blocks_internal_hostnames_without_resolving() {
+        let client = tool_client();
+        for url in [
+            "https://metadata.google.internal/computeMetadata/v1/",
+            "https://metadata.goog/computeMetadata/v1/",
+            "https://anything.internal/secret",
+            "https://service.local/api",
+        ] {
+            assert!(
+                http_get_guarded(&client, url).await.is_err(),
+                "{url} must be blocked"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn enforces_https_only() {
+        let client = tool_client();
+        for url in [
+            "http://example.com/",
+            "file:///etc/passwd",
+            "gopher://evil.tld/",
+        ] {
+            assert!(
+                http_get_guarded(&client, url).await.is_err(),
+                "{url} must be blocked"
+            );
+        }
+    }
+
+    /// A redirect whose `Location` is a private address must be refused.
+    ///
+    /// Driven through the PRODUCTION policy (`ssrf_redirect_policy`) paired with
+    /// a `resolve` override so the first hop can be a local test server — the
+    /// SSRF-safe resolver would otherwise refuse to reach it, and there is no
+    /// public address to bind to in a hermetic test.
+    #[tokio::test]
+    async fn redirect_to_a_private_address_is_refused() {
+        let (addr, _srv) =
+            redirect_server(|_| "http://169.254.169.254/latest/meta-data/".to_string()).await;
+
+        let guarded = Client::builder()
+            .redirect(crate::engine::url_safety::ssrf_redirect_policy())
+            .resolve("first-hop.test", addr)
+            .build()
+            .expect("client");
+        let err = guarded
+            .get(format!("http://first-hop.test:{}/start", addr.port()))
+            .send()
+            .await
+            .expect_err("the redirect hop must be refused");
+        assert!(
+            error_chain(&err).contains("private/internal address"),
+            "refused for the wrong reason: {}",
+            error_chain(&err)
+        );
+
+        // Falsification, in-test: the PRE-FIX client — no redirect policy, which
+        // is exactly what `tools.rs` built and handed to `http_get` — does NOT
+        // refuse this hop. It will still fail on a dev box (nothing answers at
+        // 169.254.169.254), but it fails while FOLLOWING, which is the whole
+        // difference.
+        let unguarded = Client::builder()
+            .resolve("first-hop.test", addr)
+            .build()
+            .expect("client");
+        let followed = unguarded
+            .get(format!("http://first-hop.test:{}/start", addr.port()))
+            .timeout(FALSIFICATION_DEADLINE)
+            .send()
+            .await;
+        if let Err(e) = followed {
+            assert!(
+                !error_chain(&e).contains("private/internal address"),
+                "the unguarded client must not refuse the hop; it must follow it: {}",
+                error_chain(&e)
+            );
+        }
+    }
+
+    /// Flatten an error and its `source` chain — a reqwest redirect refusal
+    /// carries the policy's message one level down, not in its own `Display`.
+    fn error_chain(err: &(dyn std::error::Error + 'static)) -> String {
+        let mut out = err.to_string();
+        let mut src = err.source();
+        while let Some(e) = src {
+            out.push_str(" | ");
+            out.push_str(&e.to_string());
+            src = e.source();
+        }
+        out
+    }
+
+    /// The other half of the same policy: a PUBLIC redirect target is still
+    /// followed. A guard that blocks everything is not a fix.
+    #[tokio::test]
+    async fn redirect_to_a_public_address_is_followed() {
+        // The port must be in the `Location` itself: reqwest's `.resolve()`
+        // override supplies an IP only and ignores the port it is given, so a
+        // portless second hop would be dialled on 80.
+        let (addr, _srv) =
+            redirect_server(|port| format!("http://public-hop.test:{port}/ok")).await;
+
+        let guarded = Client::builder()
+            .redirect(crate::engine::url_safety::ssrf_redirect_policy())
+            .resolve("first-hop.test", addr)
+            .resolve("public-hop.test", addr)
+            .build()
+            .expect("client");
+        let resp = guarded
+            .get(format!("http://first-hop.test:{}/start", addr.port()))
+            .send()
+            .await
+            .expect("a public redirect target must still be followed");
+        assert!(resp.status().is_success(), "status: {}", resp.status());
+        assert_eq!(resp.text().await.unwrap_or_default(), "ok");
+    }
+
+    /// Minimal HTTP/1.1 server: `/start` 302s to the `Location` built from its
+    /// own bound port, anything else 200s with `ok`. Returns its address and the
+    /// task handle (dropping it stops it).
+    ///
+    /// Deliberately ONE task serving connections sequentially: a redirect chain
+    /// is sequential anyway, and spawning per connection would detach tasks
+    /// whose panics nothing could report.
+    async fn redirect_server(
+        make_location: impl FnOnce(u16) -> String,
+    ) -> (std::net::SocketAddr, tokio::task::JoinHandle<()>) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
+        let addr = listener.local_addr().expect("addr");
+        let location = make_location(addr.port());
+        let handle = tokio::spawn(async move {
+            loop {
+                let Ok((mut sock, _)) = listener.accept().await else {
+                    return;
+                };
+                let mut buf = [0u8; 2048];
+                let n = sock.read(&mut buf).await.unwrap_or(0);
+                let req = String::from_utf8_lossy(&buf[..n]).to_string();
+                let resp = if req.starts_with("GET /start") {
+                    format!(
+                        "HTTP/1.1 302 Found
+Location: {location}
+                         Content-Length: 0
+Connection: close
+
+"
+                    )
+                } else {
+                    "HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+ok"
+                    .to_string()
+                };
+                let _ = sock.write_all(resp.as_bytes()).await;
+                let _ = sock.flush().await;
             }
-            v6.is_loopback()
-                || v6.is_unspecified()
-                || (v6.segments()[0] & 0xfe00) == 0xfc00 // fc00::/7 unique-local
-                || (v6.segments()[0] & 0xffc0) == 0xfe80 // fe80::/10 link-local
-        }
+        });
+        (addr, handle)
     }
 }

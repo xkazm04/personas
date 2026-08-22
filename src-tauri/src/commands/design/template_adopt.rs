@@ -336,10 +336,11 @@ pub fn instant_adopt_template_inner(
         .and_then(|m| m.get("color"))
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // Untrusted door: see `super::sanitized_model_profile`.
     let model_profile = persona_meta
         .and_then(|m| m.get("model_profile"))
         .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+        .and_then(|s| super::sanitized_model_profile(s, "template_adopt"));
     // Phase 2 / cert: bake `timeout_ms` + `max_concurrent` from persona_meta so
     // adoptions don't regress to the create-defaults (300s/1) — autonomous code
     // work needs longer timeouts + concurrent capacity. Sane bounds applied so

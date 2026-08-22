@@ -92,13 +92,23 @@ pub(super) async fn run_streaming(
     };
 
     // Deliberately NOT `SSRF_SAFE_HTTP`. `base_url` comes from the persona's
-    // model profile — a user-supplied BYOM endpoint — and pointing it at a
-    // LOCAL inference server (`http://127.0.0.1:11434`, LM Studio, vLLM) is the
-    // headline use case, which an SSRF-safe resolver would refuse outright.
-    // The 600 s deadline is likewise load-bearing: a local reasoning model can
-    // burn minutes before the first byte. What this client accepts as the price
-    // is the system resolver and reqwest's ten-hop redirect follow; the API key
-    // travels in `Authorization`, which is stripped on a host change.
+    // model profile — a BYOM endpoint — and pointing it at a LOCAL inference
+    // server (`http://127.0.0.1:11434`, LM Studio, vLLM) is the headline use
+    // case, which an SSRF-safe resolver would refuse outright. The 600 s
+    // deadline is likewise load-bearing: a local reasoning model can burn
+    // minutes before the first byte.
+    //
+    // What protects the API key here is NOT this client, and this comment used
+    // to claim otherwise — "the API key travels in `Authorization`, which is
+    // stripped on a host change" describes reqwest's REDIRECT behaviour, and no
+    // redirect is involved when `base_url` itself is the attacker's host. And
+    // `base_url` is not always the user's: it is copied verbatim out of imported
+    // bundles and adopted templates. The protection is provenance-based and
+    // sits two layers up: `secrets::resolve_api_key` refuses to attach the
+    // stored keyring/env key to an endpoint that is neither the provider's own
+    // host nor a private/loopback one, and the import/adopt doors strip any
+    // `auth_token` smuggled in beside the endpoint. By the time execution
+    // reaches this line, the endpoint has been vouched for.
     let client = match Client::builder()
         .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
         .build()

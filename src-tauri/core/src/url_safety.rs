@@ -270,17 +270,30 @@ pub fn build_ssrf_safe_client(timeout: std::time::Duration) -> reqwest::Client {
         .timeout(timeout)
         .user_agent("Personas-Polling/1.0")
         .dns_resolver(Arc::new(SsrfSafeDnsResolver))
-        .redirect(reqwest::redirect::Policy::custom(|attempt| {
-            if is_url_target_private(attempt.url()) {
-                attempt.error("redirect target is a private/internal address")
-            } else if attempt.previous().len() >= 5 {
-                attempt.stop()
-            } else {
-                attempt.follow()
-            }
-        }))
+        .redirect(ssrf_redirect_policy())
         .build()
         .expect("Failed to build SSRF-safe HTTP client")
+}
+
+/// The redirect policy installed by [`build_ssrf_safe_client`]: refuse any hop
+/// whose target is private/internal, and stop after five hops.
+///
+/// Extracted from the builder so a test can drive the *production* policy
+/// through a real redirect chain. The DNS resolver blocks loopback by design,
+/// which makes an end-to-end redirect test against a local listener impossible
+/// through the full client — a test can pair this policy with a
+/// `ClientBuilder::resolve` override instead and exercise the real thing rather
+/// than a re-typed copy of it.
+pub fn ssrf_redirect_policy() -> reqwest::redirect::Policy {
+    reqwest::redirect::Policy::custom(|attempt| {
+        if is_url_target_private(attempt.url()) {
+            attempt.error("redirect target is a private/internal address")
+        } else if attempt.previous().len() >= 5 {
+            attempt.stop()
+        } else {
+            attempt.follow()
+        }
+    })
 }
 
 #[cfg(test)]

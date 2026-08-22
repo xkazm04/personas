@@ -580,7 +580,7 @@ async fn run_crew_synthesis(
             let model_profile = persona_meta
                 .and_then(|m| m.get("model_profile"))
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .and_then(|s| super::sanitized_model_profile(s, "team_synthesis"));
             let persona_name = persona_meta
                 .and_then(|m| m.get("name"))
                 .and_then(|v| v.as_str())

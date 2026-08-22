@@ -12,6 +12,11 @@ pub(super) const HTTP_TIMEOUT_SECS: u64 = 600;
 pub(super) const MAX_TOOL_ITERS: usize = 6;
 /// Cap on a single http_get response fed back to the model.
 pub(super) const HTTP_GET_MAX_BYTES: usize = 16 * 1024;
+/// Deadline for the built-in `http_get` tool. Deliberately short and separate
+/// from `HTTP_TIMEOUT_SECS`: that 600 s budget is the LLM's, and the tool client
+/// is a different trust context that must not inherit it. Was applied per-request
+/// via `.timeout(10)`; it is now the client's own timeout.
+pub(super) const HTTP_GET_TIMEOUT_SECS: u64 = 10;
 
 /// Whether a `ModelProfile.provider` string selects this remote HTTP path.
 /// Phase 1: Qwen / DashScope only. Adding OpenAI/Gemini later is a one-line
