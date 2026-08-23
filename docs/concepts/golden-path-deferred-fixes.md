@@ -1565,14 +1565,33 @@ router mounted into it — no auth, no CORS, no body limit, no timeout, no audit
 There is no single place a fix could be applied.
 
 **The finding that changes how this surface can ever be audited:** which of two
-route tables port 9420 serves **is decided by a startup race**.
-`background.rs:869-888` calls `start_webhook_server_with_management` when
-`try_state::<Arc<AppState>>()` resolves and silently falls back to
-`start_webhook_server` — **3 routes instead of 34** — when it does not. Nothing
-logs which one you got; the only observable difference is that `/api/personas`
-answers **404 instead of 401**. **The route table is not a property of the
-source, it is a property of a particular boot.** No static artifact can be
+route tables port 9420 serves **was decided by a startup race**.
+`background.rs:869-888` called `start_webhook_server_with_management` when
+`try_state::<Arc<AppState>>()` resolved and silently fell back to
+`start_webhook_server` — **3 routes instead of 34** — when it did not. Nothing
+logged which one you got; the only observable difference was that `/api/personas`
+answered **404 instead of 401**. **The route table was not a property of the
+source, it was a property of a particular boot.** No static artifact could be
 correct about this port.
+
+> **FIXED 2026-08-23** (the KP bridge needs `/api/kp/*` to be reachable, and
+> `/api/kp/*` lives only on the 34-route table). Two changes, both in the
+> smallest place that holds them:
+>
+> - The call site — now `engine/background/lifecycle.rs`, after `background.rs`
+>   was split — **polls** for `AppState` (50 × 100 ms) instead of reading once.
+>   `AppState` is managed at `boot/mod.rs:196`, before all three `start_loops`
+>   callers, so a miss was a startup-ordering accident, not a state the app
+>   wants. If it never arrives, the degraded fallback logs at **error** naming
+>   what is lost (`/api/*`, `/pair/*`); the full table logs at info.
+> - `/health` answers `{"status":"ok","service":"personas-webhook","management":bool}`.
+>   The route table is now a property of the boot **that the boot reports**, so a
+>   static artifact can at least say which of two tables to expect and a caller
+>   can check. `webhook::management_routes_live()` is the in-process reader.
+>
+> Unchanged, still deferred: the 82 credential-free routes, the single body-size
+> limit, the empty audit table, and `local_http`'s zero `.layer(` calls. This fix
+> makes the surface *observable*, not smaller.
 
 **A version that is wrong by a major release:** `test_automation.rs:939` answers
 `"version":"0.2.0"` while the app is **1.1.0** in `tauri.conf.json`,
@@ -1583,7 +1602,8 @@ whose whole job is identity type it in by hand.
 
 **Why held:** adding auth or a body cap to a live loopback transport the operator
 drives from a terminal is the runbook's named class. The version constant is a
-one-line fix and is the safest thing here.
+one-line fix and is the safest thing here. (The route-table race above is no
+longer held — see the 2026-08-23 note.)
 
 ---
 

@@ -369,3 +369,83 @@ loss is specific to the `init_test_db` chain in the test binary.
 **Follow-up (not in this session):** root-cause and fix the `run_incremental` table
 loss in the test harness — likely restores several of the pre-existing failures. Track
 separately from the cloud-integration work.
+
+---
+
+## 10. The KP hiring bridge (`/api/kp/*`) — merged 2026-08-23
+
+> **Status: implemented and on `master`.** Built 2026-08-04 on the worktree branch
+> `worktree-spark-agent-candidate-bridge` (WP3 `449861d61`, WP4 `25bde5428`) and held
+> unmerged for nineteen days behind a dirty `executions.rs` on master. Merged with
+> `--no-ff` on 2026-08-23; the branch text that said "READY TO MERGE" in
+> `.claude/active-runs.md` is now history.
+
+The second consumer of the management server, after the MCP/A2A clients of §1: **kp**
+(CandiDate), a recruiting studio that hires *agents* as well as people. kp composes a
+persona spec from a job and dispatches it here; a human in the Personas desktop app
+approves or rejects the hire; Personas then reports the persona's running counters
+back to kp.
+
+### 10.1 Routes
+
+| Route | Scope | What it does |
+| --- | --- | --- |
+| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox, returns `{requestId, status: "pending_approval"}`. Builds nothing. |
+| `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them. 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
+| `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
+
+Authorization is one arm in `authorize()` (`management_api.rs:377`): mutating KP calls
+sit at the `/api/build` trust tier because approving one creates a draft persona plus a
+build session. Wire schemas are in
+[`docs/api/management-api.openapi.yaml`](../api/management-api.openapi.yaml)
+(`KpPersonaRequest`); kp authors the same contract at
+`app/_lib/agent-hire/bridge-client.ts`.
+
+### 10.2 Approval → persona
+
+`kp_hire_request` is an action in the approvals catalog
+(`commands/companion/approvals/approval_lifecycle.rs`), executed by
+`execute_kp_hire_request` (`approval_exec_core.rs`). It is modeled on `build_oneshot`
+and is deliberately **not autopilot-eligible** — an external app must never be able to
+create a persona without a human click. It reaches Personas through the management API,
+not through Athena's grammar. Rejection calls `notify_kp_lifecycle(..., "rejected", ...)`
+so the recruiter learns the outcome; the notify is best-effort and a dead kp app never
+blocks the reject.
+
+The kp origin is persisted on the persona as a typed
+`design_context.kp_link` (`core/src/models/persona.rs`, `KpLink` binding).
+
+### 10.3 Reporting back
+
+`engine/kp_reporter.rs` pushes counters to kp on two paths:
+
+- **per execution** — `push_execution_event`, called from `handle_execution_result`
+  (`engine/execution.rs`) for terminal `Completed`/`Failed`/`Incomplete` runs.
+  Fire-and-forget; a persona with no `kp_link` returns after one row read.
+- **monthly rollup** — `KpReporterSubscription`, registered in
+  `engine/background/lifecycle.rs`. It shares `MONTHLY_SPEND_PREDICATE`'s three axes
+  exactly (terminal statuses only, UTC start-of-month boundary, `_ops` chat excluded)
+  or kp's numbers drift from the Personas budget UI. It also covers the cancel / cloud /
+  daemon / zombie terminal writes that never reach `handle_execution_result`.
+
+### 10.4 Which route table :9420 serves
+
+`/api/kp/*` and `/pair/*` exist **only** on the full route table.
+`golden-path-deferred-fixes.md` §39 recorded that the choice between the full table
+(34 routes) and a webhook-only fallback (3 routes) was decided by a startup race: one
+`try_state::<Arc<AppState>>()` poll in `start_loops`, silently falling back on a miss,
+with nothing logged — "the route table is not a property of the source, it is a property
+of a particular boot", observable only as `/api/personas` answering 404 instead of 401.
+
+Two changes make it deterministic and observable (2026-08-23):
+
+- `engine/background/lifecycle.rs` polls for `AppState` (50 × 100 ms) instead of reading
+  once. `AppState` is managed at `boot/mod.rs:196`, well before any of the three
+  `start_loops` callers, so a miss was a startup-ordering accident rather than a state
+  the app wants. If it never resolves, the degraded fallback logs at **error** naming
+  exactly what is lost.
+- `/health` now answers `{"status":"ok","service":"personas-webhook","management":bool}`.
+  A caller that needs `/api/kp/*` or `/pair/*` probes that flag instead of inferring a
+  missing route from a 404. `webhook::management_routes_live()` is the in-process reader.
+
+The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).

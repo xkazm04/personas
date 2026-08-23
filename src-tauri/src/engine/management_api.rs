@@ -130,6 +130,16 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/build/{session_id}/test", post(build_test))
         .route("/api/build/{session_id}/promote", post(build_promote))
         .route("/api/build/{session_id}/cancel", post(build_cancel))
+        // KP bridge (WP3, intake only) -- the external KP hiring app dispatches
+        // a "persona hire request" derived from a job posting. The POST inserts
+        // a pending `companion_approval` row (action `kp_hire_request`); a
+        // human approves it in the companion approval inbox, which creates the
+        // draft persona + build session. POSTs require `personas:build` (same
+        // trust tier as /api/build -- see `authorize`); GETs follow the
+        // any-valid-key read rule.
+        .route("/api/kp/persona-requests", post(kp_create_persona_request))
+        .route("/api/kp/persona-requests/{id}", get(kp_get_persona_request))
+        .route("/api/kp/connector-catalog", get(kp_connector_catalog))
         .with_state(state_arc.clone())
         // Auth middleware runs INSIDE the CORS layer so OPTIONS preflight
         // requests do not require an API key.
@@ -362,6 +372,17 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
             Ok(())
         } else {
             Err("api key lacks proxy scope for this credential")
+        };
+    }
+    if path.starts_with("/api/kp/") {
+        // KP bridge: a mutating intake call queues a request whose approval
+        // creates a draft persona + build session -- the same trust tier as
+        // /api/build, so POSTs demand the build scope. Reads (status polling,
+        // connector catalog) follow the generic any-valid-key GET rule.
+        return match *method {
+            Method::GET | Method::HEAD | Method::OPTIONS => Ok(()),
+            _ if has(SCOPE_BUILD) => Ok(()),
+            _ => Err("api key lacks the personas:build scope"),
         };
     }
     if let Some(persona_id) = path.strip_prefix("/api/execute/") {
@@ -2409,6 +2430,356 @@ async fn build_cancel(
 }
 
 // =============================================================================
+// KP bridge endpoints (WP3, intake only) — the external KP hiring app posts a
+// "persona hire request"; a pending `companion_approval` row (action
+// `kp_hire_request`) lands in the companion approval inbox, and the human's
+// Approve there creates the draft persona + headless build session (see
+// `commands::companion::approvals::approval_exec_core::execute_kp_hire_request`).
+// This surface never creates a persona directly.
+// =============================================================================
+
+/// Where the request came from — the KP app instance + job.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpRequestOrigin {
+    base_url: String,
+    job_id: String,
+    job_title: String,
+    #[serde(default)]
+    workspace: Option<String>,
+}
+
+/// One success metric KP attaches to the hire ("time-to-fill < 14 days").
+/// `target` stays a raw JSON value — KP sends numbers for count metrics and
+/// strings for banded ones; both are recorded verbatim for the WP4 reporter.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpSuccessMetric {
+    key: String,
+    label: String,
+    #[serde(default)]
+    target: serde_json::Value,
+    #[serde(default)]
+    unit: Option<String>,
+    #[serde(default)]
+    direction: Option<String>,
+}
+
+/// The requested persona spec, as drafted by the KP app.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpPersonaSpec {
+    name: String,
+    mission: String,
+    #[serde(default)]
+    system_prompt_draft: Option<String>,
+    #[serde(default)]
+    connectors: Vec<String>,
+    #[serde(default)]
+    max_budget_usd: Option<f64>,
+    #[serde(default)]
+    max_turns: Option<i64>,
+    #[serde(default)]
+    success_metrics: Vec<KpSuccessMetric>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpPersonaRequestBody {
+    kp: KpRequestOrigin,
+    spec: KpPersonaSpec,
+    report_token: String,
+}
+
+const KP_MAX_CONNECTORS: usize = 32;
+const KP_MAX_METRICS: usize = 32;
+
+/// Validate an intake body. Pure — unit-tested below. Limits are deliberately
+/// generous (this is a paired localhost bridge, not a public API) but bounded,
+/// so a buggy KP client cannot park megabytes in the approval inbox.
+fn validate_kp_persona_request(body: &KpPersonaRequestBody) -> Result<(), String> {
+    fn req(field: &str, v: &str, max: usize) -> Result<(), String> {
+        let t = v.trim();
+        if t.is_empty() {
+            return Err(format!("`{field}` must not be empty"));
+        }
+        if t.chars().count() > max {
+            return Err(format!("`{field}` exceeds {max} characters"));
+        }
+        Ok(())
+    }
+    fn opt(field: &str, v: Option<&str>, max: usize) -> Result<(), String> {
+        match v {
+            Some(s) if s.chars().count() > max => {
+                Err(format!("`{field}` exceeds {max} characters"))
+            }
+            _ => Ok(()),
+        }
+    }
+
+    let base = body.kp.base_url.trim();
+    if !(base.starts_with("http://") || base.starts_with("https://")) {
+        return Err("`kp.baseUrl` must be an http(s) URL".into());
+    }
+    if base.chars().count() > 500 || base.chars().any(char::is_whitespace) {
+        return Err("`kp.baseUrl` is not a sane URL".into());
+    }
+    req("kp.jobId", &body.kp.job_id, 128)?;
+    req("kp.jobTitle", &body.kp.job_title, 300)?;
+    opt("kp.workspace", body.kp.workspace.as_deref(), 200)?;
+    req("reportToken", &body.report_token, 500)?;
+
+    req("spec.name", &body.spec.name, 120)?;
+    req("spec.mission", &body.spec.mission, 4000)?;
+    opt(
+        "spec.systemPromptDraft",
+        body.spec.system_prompt_draft.as_deref(),
+        20_000,
+    )?;
+    if body.spec.connectors.len() > KP_MAX_CONNECTORS {
+        return Err(format!(
+            "`spec.connectors` exceeds {KP_MAX_CONNECTORS} entries"
+        ));
+    }
+    for c in &body.spec.connectors {
+        req("spec.connectors[]", c, 64)?;
+    }
+    if let Some(b) = body.spec.max_budget_usd {
+        if !b.is_finite() || b < 0.0 {
+            return Err("`spec.maxBudgetUsd` must be a finite number >= 0".into());
+        }
+    }
+    if let Some(t) = body.spec.max_turns {
+        if !(1..=100_000).contains(&t) {
+            return Err("`spec.maxTurns` must be between 1 and 100000".into());
+        }
+    }
+    if body.spec.success_metrics.len() > KP_MAX_METRICS {
+        return Err(format!(
+            "`spec.successMetrics` exceeds {KP_MAX_METRICS} entries"
+        ));
+    }
+    for m in &body.spec.success_metrics {
+        req("spec.successMetrics[].key", &m.key, 120)?;
+        req("spec.successMetrics[].label", &m.label, 300)?;
+        opt("spec.successMetrics[].unit", m.unit.as_deref(), 60)?;
+        opt(
+            "spec.successMetrics[].direction",
+            m.direction.as_deref(),
+            30,
+        )?;
+    }
+    Ok(())
+}
+
+/// One-line rationale for the approval card — this is the sentence the human
+/// reads before deciding, so it names the job, the hire, and the budget.
+fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
+    let budget = match body.spec.max_budget_usd {
+        Some(b) => format!(", budget ${b:.0}/mo"),
+        None => String::new(),
+    };
+    format!(
+        "KP job '{}' requests an AI hire: {} — {} connector(s){}",
+        body.kp.job_title.trim(),
+        body.spec.name.trim(),
+        body.spec.connectors.len(),
+        budget
+    )
+}
+
+/// Insert the pending `companion_approval` row. Payload shape mirrors
+/// `dispatcher::insert_approval` / `backlog_triage::insert_triage_approval`
+/// exactly (`{action, params, rationale}` under kind `op_execute`), so
+/// `companion_list_pending_approvals` and `companion_approve_action` read it
+/// without a special case. Takes the pool directly so tests need no AppHandle.
+pub(crate) fn insert_kp_hire_approval(
+    user_db: &crate::db::UserDbPool,
+    request_id: &str,
+    params: &serde_json::Value,
+    rationale: &str,
+) -> Result<(), AppError> {
+    let payload = serde_json::json!({
+        "action": "kp_hire_request",
+        "params": params,
+        "rationale": rationale,
+    })
+    .to_string();
+    let conn = user_db.get()?;
+    conn.execute(
+        "INSERT INTO companion_approval (id, session_id, kind, payload, status, human_review_id, created_at)
+         VALUES (?1, ?2, 'op_execute', ?3, 'pending', NULL, datetime('now'))",
+        rusqlite::params![
+            request_id,
+            crate::companion::session::DEFAULT_SESSION_ID,
+            payload
+        ],
+    )?;
+    Ok(())
+}
+
+/// `POST /api/kp/persona-requests` — queue a hire request for human approval.
+async fn kp_create_persona_request(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Json(body): Json<KpPersonaRequestBody>,
+) -> Response {
+    if let Err(msg) = validate_kp_persona_request(&body) {
+        return err_json(StatusCode::BAD_REQUEST, &msg).into_response();
+    }
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+        Some(s) => s,
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response();
+        }
+    };
+    let request_id = format!("appr_{}", crate::companion::util::short_id(12));
+    // Params = the full validated request body PLUS the approval row's own id
+    // (`requestId`) so the approval executor can stamp the created persona /
+    // build session back onto this row for the status GET below.
+    let mut params = match serde_json::to_value(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
+    };
+    params["requestId"] = serde_json::Value::String(request_id.clone());
+    match insert_kp_hire_approval(
+        &app_state.user_db,
+        &request_id,
+        &params,
+        &kp_hire_rationale(&body),
+    ) {
+        Ok(()) => ok_json(serde_json::json!({
+            "requestId": request_id,
+            "status": "pending_approval",
+        }))
+        .into_response(),
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
+}
+
+/// `GET /api/kp/persona-requests/{id}` — poll a hire request's fate.
+async fn kp_get_persona_request(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(id): Path<String>,
+) -> Response {
+    use rusqlite::OptionalExtension;
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+        Some(s) => s,
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response();
+        }
+    };
+    let conn = match app_state.user_db.get() {
+        Ok(c) => c,
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
+    };
+    // Freshness window matches the approvals module's consent window: a hire
+    // request still pending past it can no longer be acted on → "expired".
+    let row: Option<(String, String, bool)> = match conn
+        .query_row(
+            "SELECT status, payload, created_at >= datetime('now', '-24 hours')
+             FROM companion_approval WHERE id = ?1",
+            rusqlite::params![id],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, i64>(2)? != 0,
+                ))
+            },
+        )
+        .optional()
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
+    };
+    let Some((db_status, payload, fresh)) = row else {
+        return err_json(StatusCode::NOT_FOUND, "persona request not found").into_response();
+    };
+    let payload: serde_json::Value = serde_json::from_str(&payload).unwrap_or_default();
+    // This GET is reachable by any valid key — refuse to leak the state of
+    // approval rows that are not KP hire requests.
+    if payload.get("action").and_then(|a| a.as_str()) != Some("kp_hire_request") {
+        return err_json(StatusCode::NOT_FOUND, "persona request not found").into_response();
+    }
+    let status = match (db_status.as_str(), fresh) {
+        ("pending", false) => "expired",
+        // `running` = the human clicked Approve and the executor is in flight.
+        ("pending", true) | ("running", _) => "pending",
+        ("approved", _) => "approved",
+        // Approved by the human but the executor failed — surfaced distinctly
+        // so KP does not tell the recruiter the request was turned down.
+        ("approved_failed", _) => "failed",
+        ("rejected", _) => "rejected",
+        (other, _) => other,
+    };
+    // Stamped by the approval executor on success (see `execute_kp_hire_request`).
+    let result = payload.get("result").cloned().unwrap_or_default();
+    let persona_id = result.get("personaId").and_then(|v| v.as_str());
+    let persona_name = result.get("personaName").and_then(|v| v.as_str());
+    let build_phase = result
+        .get("buildSessionId")
+        .and_then(|v| v.as_str())
+        .and_then(|sid| {
+            crate::db::repos::core::build_sessions::get_by_id(&state.pool, sid)
+                .ok()
+                .flatten()
+        })
+        .map(|s| s.phase.as_str().to_string());
+    ok_json(serde_json::json!({
+        "requestId": id,
+        "status": status,
+        "personaId": persona_id,
+        "personaName": persona_name,
+        "buildPhase": build_phase,
+    }))
+    .into_response()
+}
+
+/// Static catalog entries derived from the compiled-in builtin connector
+/// definitions — authoritative (the DB seed is generated FROM this constant)
+/// and free of any DB read. Descriptions come from metadata `summary`,
+/// trimmed so the whole catalog stays a lightweight picker payload.
+fn builtin_connector_catalog() -> Vec<serde_json::Value> {
+    const MAX_DESCRIPTION_CHARS: usize = 200;
+    crate::db::builtin_connectors::BUILTIN_CONNECTORS
+        .iter()
+        .map(|c| {
+            let mut description = c
+                .metadata
+                .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+                .and_then(|v| {
+                    v.get("summary")
+                        .and_then(|s| s.as_str())
+                        .map(|s| s.trim().to_string())
+                })
+                .unwrap_or_default();
+            if description.chars().count() > MAX_DESCRIPTION_CHARS {
+                description = description.chars().take(MAX_DESCRIPTION_CHARS).collect();
+                description.push('…');
+            }
+            serde_json::json!({
+                "key": c.name,
+                "name": c.label,
+                "description": description,
+            })
+        })
+        .collect()
+}
+
+/// `GET /api/kp/connector-catalog` — what the KP app's hire form can offer.
+async fn kp_connector_catalog() -> Response {
+    ok_json(builtin_connector_catalog()).into_response()
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -2482,6 +2853,182 @@ mod tests {
             &scopes(&["personas:build"])
         )
         .is_ok());
+    }
+
+    #[test]
+    fn authorize_kp_posts_need_build_scope_reads_need_only_auth() {
+        // Mutating intake = same trust tier as /api/build.
+        assert!(authorize(&Method::POST, "/api/kp/persona-requests", &[]).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/kp/persona-requests",
+            &scopes(&["personas:execute"])
+        )
+        .is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/kp/persona-requests",
+            &scopes(&["personas:build"])
+        )
+        .is_ok());
+        // Reads follow the any-valid-key GET rule.
+        assert!(authorize(&Method::GET, "/api/kp/persona-requests/appr_x", &[]).is_ok());
+        assert!(authorize(&Method::GET, "/api/kp/connector-catalog", &[]).is_ok());
+    }
+
+    // ---- KP bridge: validation + approval-row insertion ---------------------
+
+    fn kp_body() -> KpPersonaRequestBody {
+        serde_json::from_value(serde_json::json!({
+            "kp": {
+                "baseUrl": "http://localhost:3001",
+                "jobId": "job-42",
+                "jobTitle": "Senior Rust Engineer",
+                "workspace": "acme"
+            },
+            "spec": {
+                "name": "Rust Sourcing Scout",
+                "mission": "Source and pre-screen Rust candidates for job-42.",
+                "systemPromptDraft": "You are a sourcing scout.",
+                "connectors": ["github", "slack"],
+                "maxBudgetUsd": 25.0,
+                "maxTurns": 40,
+                "successMetrics": [
+                    {"key": "sourced", "label": "Candidates sourced", "target": 20, "unit": "count", "direction": "up"}
+                ]
+            },
+            "reportToken": "tok_abc123"
+        }))
+        .expect("fixture body")
+    }
+
+    #[test]
+    fn kp_validation_accepts_a_sane_request() {
+        assert_eq!(validate_kp_persona_request(&kp_body()), Ok(()));
+        // Minimal: no optional fields at all.
+        let minimal: KpPersonaRequestBody = serde_json::from_value(serde_json::json!({
+            "kp": {"baseUrl": "https://kp.example", "jobId": "j", "jobTitle": "t"},
+            "spec": {"name": "n", "mission": "m"},
+            "reportToken": "tok"
+        }))
+        .expect("minimal body");
+        assert_eq!(validate_kp_persona_request(&minimal), Ok(()));
+    }
+
+    #[test]
+    fn kp_validation_rejects_bad_fields() {
+        let mut b = kp_body();
+        b.spec.name = "   ".into();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("spec.name"));
+
+        let mut b = kp_body();
+        b.spec.mission = String::new();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("spec.mission"));
+
+        let mut b = kp_body();
+        b.kp.base_url = "ftp://nope".into();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("baseUrl"));
+
+        let mut b = kp_body();
+        b.spec.max_budget_usd = Some(-1.0);
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("maxBudgetUsd"));
+
+        let mut b = kp_body();
+        b.spec.max_turns = Some(0);
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("maxTurns"));
+
+        let mut b = kp_body();
+        b.spec.connectors = (0..33).map(|i| format!("c{i}")).collect();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("connectors"));
+
+        let mut b = kp_body();
+        b.report_token = String::new();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("reportToken"));
+    }
+
+    /// In-memory user-db pool with just the `companion_approval` table (schema
+    /// copied from db/src/lib.rs), mirroring the rollup.rs test pattern.
+    fn kp_test_user_pool() -> crate::db::UserDbPool {
+        let manager = r2d2_sqlite::SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("user pool");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE companion_approval (
+                    id               TEXT PRIMARY KEY,
+                    session_id       TEXT NOT NULL,
+                    kind             TEXT NOT NULL,
+                    payload          TEXT NOT NULL,
+                    status           TEXT NOT NULL DEFAULT 'pending',
+                    human_review_id  TEXT,
+                    created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+                    resolved_at      TEXT
+                );",
+            )
+            .unwrap();
+        pool
+    }
+
+    #[test]
+    fn kp_insert_creates_a_pending_approval_row_the_inbox_can_read() {
+        let pool = kp_test_user_pool();
+        let body = kp_body();
+        let mut params = serde_json::to_value(&body).unwrap();
+        params["requestId"] = serde_json::Value::String("appr_test1".into());
+        insert_kp_hire_approval(&pool, "appr_test1", &params, &kp_hire_rationale(&body))
+            .expect("insert");
+
+        let conn = pool.get().unwrap();
+        let (kind, status, payload): (String, String, String) = conn
+            .query_row(
+                "SELECT kind, status, payload FROM companion_approval WHERE id = 'appr_test1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .expect("row");
+        assert_eq!(kind, "op_execute");
+        assert_eq!(status, "pending");
+        // Payload carries the {action, params, rationale} shape the approvals
+        // lifecycle reads without a special case.
+        let v: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(v["action"], "kp_hire_request");
+        assert_eq!(v["params"]["kp"]["jobId"], "job-42");
+        assert_eq!(v["params"]["requestId"], "appr_test1");
+        assert_eq!(v["params"]["reportToken"], "tok_abc123");
+        let rationale = v["rationale"].as_str().unwrap();
+        assert!(rationale.contains("Senior Rust Engineer"));
+        assert!(rationale.contains("Rust Sourcing Scout"));
+        assert!(rationale.contains("2 connector(s)"));
+        assert!(rationale.contains("$25/mo"));
+    }
+
+    #[test]
+    fn kp_connector_catalog_has_key_name_description() {
+        let catalog = builtin_connector_catalog();
+        assert!(!catalog.is_empty(), "builtin catalog must not be empty");
+        for entry in &catalog {
+            assert!(entry["key"].as_str().is_some_and(|s| !s.is_empty()));
+            assert!(entry["name"].as_str().is_some_and(|s| !s.is_empty()));
+            // Descriptions are trimmed to a picker-friendly size.
+            assert!(entry["description"].as_str().unwrap().chars().count() <= 201);
+        }
     }
 
     #[test]

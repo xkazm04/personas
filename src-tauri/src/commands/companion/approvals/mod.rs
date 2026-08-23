@@ -14,6 +14,11 @@
 //!      after approval.
 //!   5. User clicks Reject → `companion_reject_action` → status='rejected'
 //!      and an episode is logged with the rejection reason.
+//!
+//! Pending rows are also inserted by non-Athena producers (backlog_triage,
+//! incident_diagnosis, night_plan, and the management API's KP bridge —
+//! `POST /api/kp/persona-requests` → action `kp_hire_request`); they reuse
+//! the same `{action, params, rationale}` payload shape and flow above.
 
 use std::sync::Arc;
 

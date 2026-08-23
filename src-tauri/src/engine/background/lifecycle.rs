@@ -282,6 +282,11 @@ pub fn start_loops(
                 engine: engine.clone(),
             },
         ),
+        // KP bridge (WP4) — periodic monthly-rollup push to the external KP
+        // hiring app for personas carrying design_context.kpLink. Free when no
+        // persona is KP-linked (one LIKE-prefiltered scan per tick); leadership
+        // default keeps multi-instance setups from double-reporting.
+        Box::new(crate::engine::kp_reporter::KpReporterSubscription { pool: pool.clone() }),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context
@@ -456,10 +461,38 @@ pub fn start_loops(
         async move {
             scheduler.webhook_alive.store(true, Ordering::Relaxed);
 
-            // Try to start with management API (needs AppState for process_registry)
-            let process_registry = app_for_mgmt
-                .try_state::<std::sync::Arc<crate::AppState>>()
-                .map(|s| s.process_registry.clone());
+            // Which route table :9420 serves used to be decided by a single
+            // `try_state` poll at this instant: resolve → 34 routes (webhook +
+            // management API + pairing), miss → 3 webhook-only routes, with
+            // nothing logged either way (deferred-fix #39). A miss made the KP
+            // bridge (`/api/kp/*`) and device pairing (`/pair/*`) silently
+            // 404 for the life of the process. AppState is managed in
+            // `boot::mod` well before any caller reaches here, so the miss is
+            // a startup-ordering accident, not a state the app wants: poll for
+            // it instead of giving up on the first read, and shout if it never
+            // arrives. `/health` reports the table that actually bound.
+            const MGMT_STATE_POLLS: u32 = 50;
+            const MGMT_STATE_POLL_INTERVAL: Duration = Duration::from_millis(100);
+            let mut process_registry = None;
+            for attempt in 0..MGMT_STATE_POLLS {
+                if let Some(state) = app_for_mgmt.try_state::<std::sync::Arc<crate::AppState>>() {
+                    process_registry = Some(state.process_registry.clone());
+                    if attempt > 0 {
+                        tracing::info!(
+                            attempt,
+                            "AppState resolved after waiting — :9420 serves the full route table"
+                        );
+                    }
+                    break;
+                }
+                tokio::time::sleep(MGMT_STATE_POLL_INTERVAL).await;
+            }
+            if process_registry.is_none() {
+                tracing::error!(
+                    waited_ms = MGMT_STATE_POLLS as u64 * MGMT_STATE_POLL_INTERVAL.as_millis() as u64,
+                    "AppState never resolved — :9420 degrades to the webhook-only route                      table; /api/* (management API, KP bridge) and /pair/* will 404 for                      the life of this process"
+                );
+            }
             let result = if let Some(registry) = process_registry {
                 crate::engine::webhook::start_webhook_server_with_management(
                     pool,
