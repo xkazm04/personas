@@ -1555,7 +1555,9 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
             let mut acc = PathBuf::new();
             let mut to: Option<&str> = None;
             for c in comps.by_ref() {
-                let std::path::Component::Normal(_) = c else { break };
+                let std::path::Component::Normal(_) = c else {
+                    break;
+                };
                 acc.push(c);
                 if let Some(slug) = dir_to_slug.get(&acc) {
                     to = Some(slug);
@@ -2483,7 +2485,10 @@ Sort it.
             .path()
             .join(BUNDLE_LANE_REL)
             .join("software-engineering");
-        let table = bundle.join("ui-surfaces").join("data-display").join("table");
+        let table = bundle
+            .join("ui-surfaces")
+            .join("data-display")
+            .join("table");
         let feed = bundle.join("client-architecture").join("feed");
         write(
             &bundle.join("_laws.md"),
@@ -2536,7 +2541,10 @@ Sort it.
         // Categories come from taxonomy.json, in order; a subject under a
         // subcategory maps to its top-level category.
         assert_eq!(
-            g.categories.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
+            g.categories
+                .iter()
+                .map(|c| c.id.as_str())
+                .collect::<Vec<_>>(),
             vec!["ui-surfaces", "client-architecture"]
         );
         let table_s = g.subjects.iter().find(|s| s.slug == "table").unwrap();
@@ -2565,7 +2573,9 @@ Sort it.
         );
         assert_eq!(feed_s.shared_techniques[0].owner, "table");
         assert!(
-            !g.warnings.iter().any(|w| w.message.contains("does not resolve")),
+            !g.warnings
+                .iter()
+                .any(|w| w.message.contains("does not resolve")),
             "{:#?}",
             g.warnings
         );
