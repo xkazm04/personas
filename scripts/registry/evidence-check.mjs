@@ -94,15 +94,32 @@ const mdFiles = (dir) =>
     ? fs.readdirSync(dir).filter((f) => f.endsWith('.md') && !f.startsWith('.')).sort()
     : [];
 
-const subjectsOf = (base) =>
-  fs.existsSync(base)
-    ? fs
-        .readdirSync(base, { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => e.name)
-        .filter((slug) => fs.existsSync(path.join(base, slug, `${slug}.md`)))
-        .sort()
-    : [];
+/**
+ * slug → absolute subject directory, discovered recursively.
+ *
+ * A subject directory is one carrying its own `<name>.md`. The personas corpus
+ * keeps subjects directly under the root; the registry bundle nests them inside
+ * category/subcategory rings since the 2026-08 restructure (`taxonomy.json`,
+ * layout: "nested"). One discovery serves both — a flat tree simply recurses
+ * zero times. Depth-capped at 3 rings so a stray deep tree cannot stall the gate.
+ */
+const subjectDirsOf = (base) => {
+  const found = new Map();
+  if (!fs.existsSync(base)) return found;
+  const walk = (dir, depth) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory() || e.name.startsWith('.') || e.name.startsWith('_')) continue;
+      const child = path.join(dir, e.name);
+      if (fs.existsSync(path.join(child, `${e.name}.md`))) {
+        found.set(e.name, child);
+      } else if (depth < 3 && e.name !== 'techniques' && e.name !== 'applications') {
+        walk(child, depth + 1);
+      }
+    }
+  };
+  walk(base, 0);
+  return found;
+};
 
 // ---------------------------------------------------------------------------
 // 0. Assert the inputs. A checker that walks zero files and exits 0 reports
@@ -116,7 +133,8 @@ if (!fs.existsSync(CORPUS)) {
       `not deleting.`,
   );
 }
-const corpusSubjects = subjectsOf(CORPUS);
+const corpusSubjectDirs = subjectDirsOf(CORPUS);
+const corpusSubjects = [...corpusSubjectDirs.keys()].sort();
 if (corpusSubjects.length === 0) {
   fatal(`${path.relative(ROOT, CORPUS)} contains no subject folders.`);
 }
@@ -131,8 +149,9 @@ const corpusTechniques = new Set();
 const corpusApplications = new Set();
 
 for (const slug of corpusSubjects) {
-  const rel = `docs/concepts/paths/${slug}/${slug}.md`;
-  const fm = readFm(path.join(CORPUS, slug, `${slug}.md`));
+  const subjectDir = corpusSubjectDirs.get(slug);
+  const rel = `${path.relative(ROOT, subjectDir).replace(/\\/g, '/')}/${slug}.md`;
+  const fm = readFm(path.join(subjectDir, `${slug}.md`));
   if (!fm) {
     fail(`${rel}: no frontmatter block`);
     continue;
@@ -159,10 +178,10 @@ for (const slug of corpusSubjects) {
     }
   }
 
-  for (const f of mdFiles(path.join(CORPUS, slug, 'techniques'))) {
+  for (const f of mdFiles(path.join(subjectDir, 'techniques'))) {
     corpusTechniques.add(`${slug}/${f}`);
   }
-  for (const f of mdFiles(path.join(CORPUS, slug, 'applications'))) {
+  for (const f of mdFiles(path.join(subjectDir, 'applications'))) {
     corpusApplications.add(`${slug}/${f}`);
   }
 }
@@ -186,13 +205,15 @@ if (!fs.existsSync(BUNDLE)) {
   note(`SKIPPED: ${msg}`);
 } else {
   paired = true;
-  bundleSubjects = subjectsOf(BUNDLE);
+  const bundleSubjectDirs = subjectDirsOf(BUNDLE);
+  bundleSubjects = [...bundleSubjectDirs.keys()].sort();
 
   for (const slug of bundleSubjects) {
-    for (const f of mdFiles(path.join(BUNDLE, slug, 'techniques'))) {
+    const subjectDir = bundleSubjectDirs.get(slug);
+    for (const f of mdFiles(path.join(subjectDir, 'techniques'))) {
       bundleTechniques.add(`${slug}/${f}`);
     }
-    for (const f of mdFiles(path.join(BUNDLE, slug, 'applications'))) {
+    for (const f of mdFiles(path.join(subjectDir, 'applications'))) {
       bundleApplications.add(`${slug}/${f}`);
     }
 
@@ -200,12 +221,12 @@ if (!fs.existsSync(BUNDLE)) {
     //     keys. Registry CI checks this too — cheaply repeated here so a bad
     //     mirror is caught BEFORE it is pushed rather than after.
     const files = [
-      path.join(BUNDLE, slug, `${slug}.md`),
-      ...mdFiles(path.join(BUNDLE, slug, 'techniques')).map((f) =>
-        path.join(BUNDLE, slug, 'techniques', f),
+      path.join(subjectDir, `${slug}.md`),
+      ...mdFiles(path.join(subjectDir, 'techniques')).map((f) =>
+        path.join(subjectDir, 'techniques', f),
       ),
-      ...mdFiles(path.join(BUNDLE, slug, 'applications')).map((f) =>
-        path.join(BUNDLE, slug, 'applications', f),
+      ...mdFiles(path.join(subjectDir, 'applications')).map((f) =>
+        path.join(subjectDir, 'applications', f),
       ),
     ];
     for (const abs of files) {
@@ -215,7 +236,7 @@ if (!fs.existsSync(BUNDLE)) {
       for (const key of LOCAL_ONLY_KEYS) {
         if (hasKey(fm, key)) {
           fail(
-            `LEAK: knowledge/${DOMAIN}/${path.relative(path.join(BUNDLE), abs).replace(/\\/g, '/')} ` +
+            `LEAK: knowledge/${DOMAIN}/${path.relative(BUNDLE, abs).replace(/\\/g, '/')} ` +
               `declares "${key}:" — evidence is consumer-side (rkb-profile §5) and must not publish`,
           );
         }
@@ -225,7 +246,7 @@ if (!fs.existsSync(BUNDLE)) {
     // 2b. Sidecar completeness. The overlays are gitignored, so a fresh clone
     //     has none and that is correct — but a PARTIAL set means the mirror
     //     stopped halfway, which is worth catching on the machine that mirrors.
-    if (fs.existsSync(path.join(BUNDLE, slug, '.evidence.local.md'))) sidecarsFound += 1;
+    if (fs.existsSync(path.join(subjectDir, '.evidence.local.md'))) sidecarsFound += 1;
     else sidecarsMissing.push(slug);
   }
 

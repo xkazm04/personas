@@ -293,6 +293,33 @@ registry clone as from local docs.
 (merge = adopt, per CODEOWNERS); personas' `paths/` is frozen with a README pointer;
 the mirror script reverses (registry → personas) or is retired outright.
 
+> ✅ **P3 EXECUTED 2026-08-23**, forced by upstream reality: the registry had advanced 45
+> commits past the mirror (143 subjects / 898 techniques / 386 applications / 12 laws from
+> adamant · onecli · personas-web · game-production harvests) and **restructured the bundle
+> into nested taxonomy rings** (`taxonomy.json` rkb-taxonomy/1, layout: "nested") that the
+> P2 reader could not walk — pointed at the clone it parsed **0 subjects**, and so did the
+> evidence-check parity half. Landed here:
+> (a) `hierarchy_read.rs` discovers subjects recursively (a dir carrying `<name>.md` at any
+> ring depth), reads `taxonomy.json` for categories when `categories.json` is absent,
+> resolves shared-technique owners and cross-links through the taxonomy, and prefers the
+> `software-engineering` bundle when a registry hosts several domains (7 today; the choice
+> still surfaces as a warning). 46/46 tests green against BOTH the frozen personas layout
+> and the live clone.
+> (b) `evidence-check.mjs` discovers both sides nested-aware; directional parity confirmed
+> live: corpus ⊆ bundle (105/624/236 all present), registry ahead by 38 subjects / 274
+> techniques / 150 applications — reported as notes, not failures, per the post-flip
+> contract already written above.
+> (c) `mirror-paths.mjs` now REFUSES a bundle whose taxonomy declares layout "nested" —
+> the flat whole-corpus mirror is retired; content flows registry-first.
+> (d) The byte-pin half of `fixture_tracks_the_live_subject` now applies only to the frozen
+> personas layout; against a bundle it pins the parser (frontmatter contract), not prose the
+> registry legitimately owns.
+> **`docs/concepts/paths/` is hereby FROZEN**: still tracked, still the home of the evidence
+> layer and the corpus-integrity gate, no longer where knowledge lands. The runtime flip is
+> per-workspace: pairing a registry in the app makes `corpusRootFor` hand the clone to the
+> reader (that seam shipped in P2/patterns-v2). P4's six gates remain open — notably
+> evidence still needs its tracked home here before `paths/` may be deleted.
+
 **P4 — Verification gates, then delete.** The operator's "verified… without harm
 (adoption, improvements, new items)" made checkable — ALL of:
   1. Registry CI green for the whole observation window (no structural drift).

@@ -49,6 +49,13 @@ const DOC_ROOT_REL: &str = "docs/concepts";
 /// Where a Reference Knowledge Bundle lives in a registry clone. One directory
 /// per domain beneath it (`knowledge/software-engineering`, `knowledge/media-craft`).
 const BUNDLE_LANE_REL: &str = "knowledge";
+/// The domain this app reads when a registry hosts several. Personas is a
+/// software-development product, so its Patterns surface shows the
+/// software-engineering bundle; the choice is still reported as a warning so
+/// nobody has to guess which of seven bundles won. Threading a per-project
+/// domain through the command is deliberately deferred until a second domain
+/// matters in-app.
+const PREFERRED_DOMAIN: &str = "software-engineering";
 /// Summary clamp. Long enough for a real first paragraph, short enough that a
 /// subject row in the rail stays a row.
 const SUMMARY_MAX: usize = 280;
@@ -819,6 +826,32 @@ struct CorpusMapFile {
     entries: BTreeMap<String, serde_json::Value>,
 }
 
+/// `taxonomy.json` (`rkb-taxonomy/1`) — how a registry bundle declares its
+/// category rings once the tree is nested. Read only when `categories.json`
+/// is absent; the personas layout keeps using `categories.json` untouched.
+#[derive(Deserialize)]
+struct TaxonomyFile {
+    #[serde(default)]
+    categories: Vec<TaxonomyCategory>,
+}
+
+#[derive(Deserialize)]
+struct TaxonomyCategory {
+    id: String,
+    #[serde(default)]
+    title: Option<String>,
+    #[serde(default)]
+    order: i32,
+    #[serde(default)]
+    subcategories: Vec<TaxonomySubcategory>,
+}
+
+#[derive(Deserialize)]
+struct TaxonomySubcategory {
+    #[serde(default)]
+    subjects: Vec<String>,
+}
+
 /// Read a file, converting an I/O failure into a warning rather than an error.
 fn read_tolerant(path: &Path, rel: &str, warnings: &mut Vec<HierarchyWarning>) -> Option<String> {
     match std::fs::read_to_string(path) {
@@ -962,13 +995,19 @@ fn discover_corpus(root: &Path) -> Option<CorpusLayout> {
         .filter_map(|e| e.file_name().into_string().ok())
         .collect();
     bundles.sort();
-    let first = bundles.first()?.clone();
+    // Prefer this app's home domain when the registry hosts several; fall back
+    // to the alphabetical first so a registry without it still reads.
+    let chosen = bundles
+        .iter()
+        .find(|b| b.as_str() == PREFERRED_DOMAIN)
+        .or_else(|| bundles.first())?
+        .clone();
 
     // More than one bundle is not an error, but it IS a choice — and a choice a
     // reader makes silently is a choice nobody can audit. Say which one won.
     let note = (bundles.len() > 1).then(|| {
         format!(
-            "{} bundles are present ({}); read \"{first}\". \
+            "{} bundles are present ({}); read \"{chosen}\". \
              One project root shows one bundle.",
             bundles.len(),
             bundles.join(", ")
@@ -976,7 +1015,7 @@ fn discover_corpus(root: &Path) -> Option<CorpusLayout> {
     });
 
     Some(CorpusLayout {
-        rel: format!("{BUNDLE_LANE_REL}/{first}"),
+        rel: format!("{BUNDLE_LANE_REL}/{chosen}"),
         doc_root: BUNDLE_LANE_REL.to_string(),
         note,
     })
@@ -1036,10 +1075,38 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                 message: format!("could not be parsed: {e} — subjects will render uncategorised"),
             }),
         }
+    } else if paths_dir.join("taxonomy.json").is_file() {
+        // Registry bundle: `taxonomy.json` is the category authority there.
+        let tax_path = paths_dir.join("taxonomy.json");
+        match std::fs::read_to_string(&tax_path)
+            .map_err(|e| e.to_string())
+            .and_then(|s| serde_json::from_str::<TaxonomyFile>(&s).map_err(|e| e.to_string()))
+        {
+            Ok(parsed) => {
+                for c in parsed.categories {
+                    for sub in &c.subcategories {
+                        for s in &sub.subjects {
+                            subject_category.insert(s.clone(), c.id.clone());
+                        }
+                    }
+                    categories.push(HierarchyCategory {
+                        title: c.title.unwrap_or_else(|| c.id.clone()),
+                        id: c.id,
+                        order: c.order,
+                    });
+                }
+                categories.sort_by_key(|c| c.order);
+            }
+            Err(e) => warnings.push(HierarchyWarning {
+                path: format!("{corpus_rel}/taxonomy.json"),
+                message: format!("could not be parsed: {e} — subjects will render uncategorised"),
+            }),
+        }
     } else {
         warnings.push(HierarchyWarning {
             path: format!("{corpus_rel}/categories.json"),
-            message: "missing — subjects will render uncategorised".to_string(),
+            message: "missing (and no taxonomy.json) — subjects will render uncategorised"
+                .to_string(),
         });
     }
 
@@ -1099,22 +1166,70 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
     };
 
     // -- subject folders ----------------------------------------------------
-    let subject_dirs = {
-        let mut v: Vec<String> = std::fs::read_dir(&paths_dir)
-            .map_err(|e| {
-                AppError::Io(std::io::Error::new(
-                    e.kind(),
-                    format!("reading {corpus_rel}/: {e}"),
-                ))
-            })?
-            .flatten()
-            .filter(|e| e.path().is_dir())
-            .filter_map(|e| e.file_name().into_string().ok())
-            .filter(|n| !n.starts_with('.') && !n.starts_with('_'))
-            .collect();
-        v.sort();
-        v
+    // A subject directory is one carrying its own `<name>.md`. The personas
+    // layout keeps subjects directly under the corpus root; a nested registry
+    // bundle (`taxonomy.json` layout: "nested") files them inside
+    // category/subcategory rings. Discovery recurses: a directory with a golden
+    // path is a subject; one shaped like a subject but missing it (it has
+    // techniques/ or applications/) keeps the long-standing warning; anything
+    // else is a grouping ring to walk through, three levels deep at most.
+    std::fs::read_dir(&paths_dir).map_err(|e| {
+        AppError::Io(std::io::Error::new(
+            e.kind(),
+            format!("reading {corpus_rel}/: {e}"),
+        ))
+    })?;
+    let subject_entries: Vec<(String, String)> = {
+        let mut found: Vec<(String, String)> = Vec::new();
+        let mut stack: Vec<(PathBuf, String, usize)> = vec![(paths_dir.clone(), String::new(), 0)];
+        while let Some((dir, rel, depth)) = stack.pop() {
+            let Ok(rd) = std::fs::read_dir(&dir) else {
+                continue;
+            };
+            let mut names: Vec<String> = rd
+                .flatten()
+                .filter(|e| e.path().is_dir())
+                .filter_map(|e| e.file_name().into_string().ok())
+                .filter(|n| !n.starts_with('.') && !n.starts_with('_'))
+                .collect();
+            names.sort();
+            for name in names {
+                let child = dir.join(&name);
+                let child_rel = if rel.is_empty() {
+                    name.clone()
+                } else {
+                    format!("{rel}/{name}")
+                };
+                if child.join(format!("{name}.md")).is_file() {
+                    found.push((name, child_rel));
+                } else if child.join("techniques").is_dir() || child.join("applications").is_dir() {
+                    warnings.push(HierarchyWarning {
+                        path: format!("{corpus_rel}/{child_rel}/"),
+                        message: format!("no {name}.md golden path — subject skipped"),
+                    });
+                } else if depth < 3 {
+                    stack.push((child, child_rel, depth + 1));
+                }
+            }
+        }
+        found.sort();
+        found
     };
+
+    // slug → corpus-relative dir: shared-technique owners and cross-link
+    // targets must resolve wherever the taxonomy filed the subject.
+    let mut subject_dir_of: BTreeMap<String, String> = BTreeMap::new();
+    for (slug, rel) in &subject_entries {
+        if let Some(prev) = subject_dir_of.insert(slug.clone(), rel.clone()) {
+            warnings.push(HierarchyWarning {
+                path: format!("{corpus_rel}/{rel}/"),
+                message: format!(
+                    "subject \"{slug}\" also exists at {corpus_rel}/{prev}/ — both read; \
+                     links resolve to this one"
+                ),
+            });
+        }
+    }
 
     let mut subjects: Vec<HierarchySubject> = Vec::new();
     let mut techniques: Vec<HierarchyTechnique> = Vec::new();
@@ -1127,14 +1242,14 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
     // and the directory they live in (link targets resolve relative to it).
     let mut link_sources: Vec<(String, PathBuf, String)> = Vec::new();
 
-    for slug in &subject_dirs {
-        let dir = paths_dir.join(slug);
-        let gp_rel = format!("{corpus_rel}/{slug}/{slug}.md");
+    for (slug, sub_rel) in &subject_entries {
+        let dir = paths_dir.join(sub_rel);
+        let gp_rel = format!("{corpus_rel}/{sub_rel}/{slug}.md");
         let gp_path = dir.join(format!("{slug}.md"));
 
         if !gp_path.is_file() {
             warnings.push(HierarchyWarning {
-                path: format!("{corpus_rel}/{slug}/"),
+                path: format!("{corpus_rel}/{sub_rel}/"),
                 message: format!("no {slug}.md golden path — subject skipped"),
             });
             continue;
@@ -1168,8 +1283,12 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                     });
                     continue;
                 }
+                let owner_rel = subject_dir_of
+                    .get(owner)
+                    .cloned()
+                    .unwrap_or_else(|| owner.to_string());
                 if !paths_dir
-                    .join(owner)
+                    .join(&owner_rel)
                     .join("techniques")
                     .join(format!("{tech}.md"))
                     .is_file()
@@ -1177,7 +1296,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
                     warnings.push(HierarchyWarning {
                         path: gp_rel.clone(),
                         message: format!(
-                            "shared technique \"{entry}\" does not resolve to {corpus_rel}/{owner}/techniques/{tech}.md"
+                            "shared technique \"{entry}\" does not resolve to {corpus_rel}/{owner_rel}/techniques/{tech}.md"
                         ),
                     });
                     continue;
@@ -1206,7 +1325,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
         for t in &on_disk {
             if !local.contains(t) {
                 warnings.push(HierarchyWarning {
-                    path: format!("{corpus_rel}/{slug}/techniques/{t}.md"),
+                    path: format!("{corpus_rel}/{sub_rel}/techniques/{t}.md"),
                     message: format!("exists but {slug}.md does not declare it"),
                 });
                 local.push(t.clone());
@@ -1214,7 +1333,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
         }
 
         for t in &local {
-            let t_rel = format!("{corpus_rel}/{slug}/techniques/{t}.md");
+            let t_rel = format!("{corpus_rel}/{sub_rel}/techniques/{t}.md");
             let t_path = dir.join("techniques").join(format!("{t}.md"));
             let Some(t_raw) = read_tolerant(&t_path, &t_rel, &mut warnings) else {
                 continue;
@@ -1246,7 +1365,7 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
         let mut applications: Vec<HierarchyApplication> = Vec::new();
         let app_dir = dir.join("applications");
         for f in md_files(&app_dir) {
-            let a_rel = format!("{corpus_rel}/{slug}/applications/{f}");
+            let a_rel = format!("{corpus_rel}/{sub_rel}/applications/{f}");
             let Some(a_raw) = read_tolerant(&app_dir.join(&f), &a_rel, &mut warnings) else {
                 continue;
             };
@@ -1291,6 +1410,14 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
     // Only edges between subjects the reader actually parsed: a link into a
     // folder that was skipped would draw an edge to a node that is not there.
     let known: BTreeSet<&str> = subjects.iter().map(|s| s.slug.as_str()).collect();
+    // Longest-prefix match against subject dirs: in a nested bundle the first
+    // path component is a category ring, not a subject, so the target is
+    // whichever subject directory the resolved path lands inside.
+    let mut dirs_by_len: Vec<(&str, &str)> = subject_entries
+        .iter()
+        .map(|(s, r)| (r.as_str(), s.as_str()))
+        .collect();
+    dirs_by_len.sort_by_key(|(r, _)| std::cmp::Reverse(r.len()));
     let canonical_paths = std::fs::canonicalize(&paths_dir).unwrap_or_else(|_| paths_dir.clone());
     for (from, base, body) in &link_sources {
         for target in relative_links(body) {
@@ -1301,19 +1428,28 @@ fn build_graph(root: &Path) -> Result<HierarchyGraph, AppError> {
             else {
                 continue;
             };
-            let mut comps = rel.components();
-            let Some(std::path::Component::Normal(first)) = comps.next() else {
+            let rel_str = rel.to_string_lossy().replace('\\', "/");
+            let Some((dir_rel, to)) = dirs_by_len
+                .iter()
+                .find(|(r, _)| {
+                    rel_str
+                        .strip_prefix(r)
+                        .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
+                })
+                .map(|&(r, s)| (r, s))
+            else {
                 continue;
             };
-            let to = first.to_string_lossy().to_string();
-            if &to == from || !known.contains(to.as_str()) {
+            if to == from || !known.contains(to) {
                 continue;
             }
-            let kind = match comps.next() {
-                Some(std::path::Component::Normal(seg)) if seg == "techniques" => "technique",
-                _ => "subject",
+            let rest = rel_str[dir_rel.len()..].trim_start_matches('/');
+            let kind = if rest.starts_with("techniques/") {
+                "technique"
+            } else {
+                "subject"
             };
-            links.insert((from.clone(), to, kind.to_string()));
+            links.insert((from.clone(), to.to_string(), kind.to_string()));
         }
     }
 
@@ -2099,10 +2235,17 @@ mod tests {
         let Some((root, layout)) = require_corpus() else {
             return;
         };
-        let live = root.join(&layout.rel).join("table").join("table.md");
-        if !live.is_file() {
+        // Locate the subject through the reader rather than a literal path: a
+        // nested registry bundle files `table/` inside taxonomy rings, and the
+        // reader is the one authority on where.
+        let graph = build_graph(&root).expect("corpus must read");
+        let Some(table) = graph.subjects.iter().find(|s| s.slug == "table") else {
             // A bundle without this subject is a legitimate corpus; the pin
             // simply has nothing to compare against here.
+            return;
+        };
+        let live = root.join(&table.file);
+        if !live.is_file() {
             return;
         }
         let live_raw = std::fs::read_to_string(&live).expect("table.md must read");
@@ -2123,17 +2266,20 @@ mod tests {
                 live.display()
             );
         } else {
-            let (_, live_body) = parse_frontmatter(&live_raw).expect("live table.md frontmatter");
-            let (_, fixture_body) = parse_frontmatter(TABLE_MD).expect("fixture frontmatter");
-            assert_eq!(
-                live_body.replace("
-", "
-"),
-                fixture_body.replace("
-", "
-"),
-                "the published bundle's table.md body differs from the vendored                  fixture — the mirror changed prose, which it must never do."
+            // P3 (2026-08-23): the registry is the authority and its prose
+            // legitimately evolves ahead of the frozen personas archive, so a
+            // byte-pin against a bundle would fail on every upstream amendment.
+            // What this branch still guards is the PARSER against a live
+            // published artifact: the frontmatter contract must keep parsing.
+            let (live_fm, live_body) =
+                parse_frontmatter(&live_raw).expect("live table.md frontmatter");
+            assert_eq!(live_fm.scalar("subject"), Some("table"));
+            assert_eq!(live_fm.scalar("layer"), Some("golden-path"));
+            assert!(
+                !live_fm.list("techniques").is_empty(),
+                "the published subject declares its techniques"
             );
+            assert_eq!(extract_title(live_body).as_deref(), Some("Table"));
         }
     }
 
@@ -2209,6 +2355,87 @@ Sort it.
         );
     }
 
+    /// The NESTED registry layout reads: subjects filed inside
+    /// category/subcategory rings declared by `taxonomy.json` (rkb-taxonomy/1).
+    /// This is what the live registry publishes since the 2026-08 restructure.
+    #[test]
+    fn hierarchy_reads_a_nested_registry_bundle_layout() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let bundle = dir
+            .path()
+            .join(BUNDLE_LANE_REL)
+            .join("software-engineering");
+        let table = bundle
+            .join("ui-surfaces")
+            .join("data-display")
+            .join("table");
+        let feed = bundle.join("ui-surfaces").join("data-display").join("feed");
+        std::fs::create_dir_all(table.join("techniques")).unwrap();
+        std::fs::create_dir_all(&feed).unwrap();
+        std::fs::write(bundle.join("_laws.md"), "## one-law\nOne.\n").unwrap();
+        std::fs::write(
+            bundle.join("taxonomy.json"),
+            r#"{"schema":"rkb-taxonomy/1","layout":"nested","categories":[{"id":"ui-surfaces","title":"UI surfaces","order":1,"subcategories":[{"id":"data-display","title":"Data display","subjects":["table","feed"]}]}]}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            table.join("table.md"),
+            "---\nlayer: golden-path\nsubject: table\nstatus: forged\ntechniques:\n  - sorting\n---\n# Table\n\nA table. See [feed](../feed/feed.md).\n",
+        )
+        .unwrap();
+        std::fs::write(
+            table.join("techniques").join("sorting.md"),
+            "---\nlayer: technique\nsubject: table\ntechnique: sorting\n---\n# Sorting\n\nSort it.\n",
+        )
+        .unwrap();
+        std::fs::write(
+            feed.join("feed.md"),
+            "---\nlayer: golden-path\nsubject: feed\nstatus: forged\ntechniques:\n  - sorting@table\n---\n# Feed\n\nA feed.\n",
+        )
+        .unwrap();
+
+        let g = build_graph(dir.path()).expect("a nested bundle must read");
+        assert!(g.source.present, "reason: {:?}", g.source.reason);
+        assert_eq!(g.counts.subjects, 2, "warnings: {:#?}", g.warnings);
+        assert_eq!(g.counts.techniques, 1);
+
+        // Emitted paths carry the FULL nested location — the doc fetch and the
+        // UI resolve whatever the graph hands out, never a reconstructed twin.
+        let table_subject = g.subjects.iter().find(|s| s.slug == "table").unwrap();
+        assert_eq!(
+            table_subject.file,
+            "knowledge/software-engineering/ui-surfaces/data-display/table/table.md"
+        );
+        assert_eq!(
+            g.techniques[0].file,
+            "knowledge/software-engineering/ui-surfaces/data-display/table/techniques/sorting.md"
+        );
+
+        // Categories come from taxonomy.json when categories.json is absent.
+        assert_eq!(g.categories.len(), 1);
+        assert_eq!(g.categories[0].id, "ui-surfaces");
+        assert_eq!(table_subject.category.as_deref(), Some("ui-surfaces"));
+
+        // The shared reference resolved through the taxonomy, and both the
+        // shared edge and the body link classify against the nested dirs.
+        let feed_subject = g.subjects.iter().find(|s| s.slug == "feed").unwrap();
+        assert_eq!(feed_subject.shared_techniques.len(), 1);
+        assert!(
+            g.cross_links
+                .iter()
+                .any(|l| l.from == "table" && l.to == "feed" && l.kind == "subject"),
+            "body link must resolve inside the nested layout: {:#?}",
+            g.cross_links
+        );
+        assert!(
+            g.cross_links
+                .iter()
+                .any(|l| l.from == "feed" && l.to == "table" && l.kind == "technique"),
+            "shared technique must draw its edge: {:#?}",
+            g.cross_links
+        );
+    }
+
     /// Two bundles is a choice, and the reader must not make it silently.
     #[test]
     fn hierarchy_names_the_bundle_it_picked_when_several_exist() {
@@ -2225,7 +2452,10 @@ L.
             .unwrap();
         }
         let layout = discover_corpus(dir.path()).expect("a bundle lane resolves");
-        assert_eq!(layout.rel, "knowledge/media-craft", "first alphabetically");
+        assert_eq!(
+            layout.rel, "knowledge/software-engineering",
+            "the app's home domain wins when present"
+        );
         let note = layout.note.expect("an ambiguous choice must be reported");
         assert!(
             note.contains("media-craft") && note.contains("software-engineering"),
@@ -2566,7 +2796,14 @@ L.
                 "every subject declares ≥1 evidence path"
             );
         }
-        assert_eq!(g.categories.len(), 8, "the eight inventory categories");
+        // Floor, not a snapshot: personas' frozen archive declares 8
+        // categories; the registry bundle grew a ninth (engineering-assessment)
+        // and may grow more.
+        assert!(
+            g.categories.len() >= 8,
+            "only {} categories — the taxonomy read is probably broken",
+            g.categories.len()
+        );
         assert!(g.laws.len() >= 9, "nine cross-cutting laws");
         if layout.rel == PATHS_REL {
             // `corpus-map.json` maps the LEGACY golden-paths corpus onto this

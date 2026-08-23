@@ -78,6 +78,30 @@ if (!fs.existsSync(path.join(TARGET_REPO, 'registry.yaml'))) {
   process.exit(2);
 }
 
+// P3 flip guard (2026-08-23). This mirror writes the FLAT layout
+// (`knowledge/<domain>/<subject>/`). The registry restructured the bundle into
+// nested taxonomy rings (`taxonomy.json`, layout: "nested") and became the
+// authority; running the flat mirror against it would scatter duplicate
+// subjects beside the nested ones and corrupt the tree that every other
+// consumer reads. Whole-corpus mirroring is retired — improvements now travel
+// registry-first, and anything personas needs locally is mirrored back by hand
+// or by a nested-aware tool that does not exist yet.
+try {
+  const tax = JSON.parse(
+    fs.readFileSync(path.join(TARGET_REPO, 'knowledge', DOMAIN, 'taxonomy.json'), 'utf8'),
+  );
+  if (tax.layout === 'nested') {
+    console.error(
+      `FATAL: the ${DOMAIN} bundle declares layout "nested" (taxonomy.json) — this mirror ` +
+        'only writes the retired flat layout and would corrupt the bundle. The registry is ' +
+        'the authority now (migration plan P3); do not mirror the corpus into it.',
+    );
+    process.exit(2);
+  }
+} catch {
+  // No taxonomy.json → the pre-restructure flat bundle this mirror was built for.
+}
+
 const subjectDirs = fs.readdirSync(SOURCE, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => e.name)
