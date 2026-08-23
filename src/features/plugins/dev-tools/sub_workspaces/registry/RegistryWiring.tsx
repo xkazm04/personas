@@ -9,9 +9,10 @@
 // through the Vault credential rather than a fixture.
 
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { FolderGit2, RefreshCw } from 'lucide-react';
 
 import { githubListRepos } from '@/api/agents/automations';
+import { probeRegistry } from '@/api/devTools/registryCoverage';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -19,9 +20,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import type { GitHubRepo } from '@/lib/bindings/GitHubRepo';
 import type { CredentialMetadata } from '@/lib/types/types';
+import { useToastStore } from '@/stores/toastStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
-import { dispatchPairing, linkRegistry, type Registry } from './registryLinkStore';
+import { dispatchPairing, linkLocalRegistry, linkRegistry, type Registry } from './registryLinkStore';
 
 // The clone path is CHOSEN, not derived — see `Registry.clonePath`. A scan skill
 // reads the registry working copy and the project repos side by side, so a URL
@@ -33,6 +35,65 @@ export function useGithubCredentials(): CredentialMetadata[] {
   return useMemo(
     () => credentials.filter((c: CredentialMetadata) => c.service_type === 'github'),
     [credentials],
+  );
+}
+
+/**
+ * The second path (plan D1): link a registry working copy that ALREADY exists
+ * on this machine. No credential, no pairing session, no clone — the folder is
+ * probed (`registry.yaml` + catalog + git HEAD, read-only) and, when valid,
+ * linked directly in state `paired`. Deliberately available even when the
+ * Vault holds no GitHub credential: the local checkout needs none.
+ */
+function LocalFolderLink({
+  workspaceId,
+  onLinked,
+}: {
+  workspaceId: string;
+  onLinked?: (registry: Registry) => void;
+}) {
+  const { t, tx } = useTranslation();
+  const tr = t.plugins.dev_tools.registry;
+  const addToast = useToastStore((s) => s.addToast);
+  const [localPath, setLocalPath] = useState<string>('');
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="typo-caption text-foreground">{tr.local_hint}</p>
+      <DirectoryPickerInput
+        value={localPath}
+        onChange={(v) => {
+          setLocalPath(v);
+          setLocalError(null);
+        }}
+        placeholder={tr.local_placeholder}
+      />
+      {localError && <p className="typo-caption text-status-error">{localError}</p>}
+      <div>
+        <AsyncButton
+          size="sm"
+          disabled={!localPath.trim()}
+          icon={<FolderGit2 className="w-3.5 h-3.5" />}
+          onClick={async () => {
+            const path = localPath.trim();
+            if (!path) return;
+            const probe = await probeRegistry(path);
+            if (!probe.valid) {
+              setLocalError(
+                tx(tr.local_invalid, { reason: probe.reason ?? path }),
+              );
+              return;
+            }
+            const registry = linkLocalRegistry(workspaceId, path, probe);
+            addToast(tx(tr.local_linked, { name: registry.fullName }), 'success');
+            onLinked?.(registry);
+          }}
+        >
+          {tr.local_link}
+        </AsyncButton>
+      </div>
+    </div>
   );
 }
 
@@ -86,8 +147,17 @@ export function RegistryWiring({
   const ready = Boolean(repo && credentialId && dispatchCwd && clonePath.trim());
 
   if (credentials.length === 0) {
+    // The GitHub path needs a credential; the local-folder path (plan D1)
+    // deliberately does not — a working copy already on this machine is
+    // linkable with zero ceremony.
     return (
-      <p className="typo-body text-foreground">{tr.no_credential}</p>
+      <div className="flex flex-col gap-3">
+        <p className="typo-body text-foreground">{tr.no_credential}</p>
+        <div className="border-t border-border pt-3">
+          <p className="typo-caption font-medium text-foreground mb-2">{tr.local_heading}</p>
+          <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />
+        </div>
+      </div>
     );
   }
 
@@ -132,7 +202,7 @@ export function RegistryWiring({
           onChange={setClonePath}
           placeholder={tr.path_placeholder}
         />
-        <p className="typo-caption text-foreground/70">{tr.path_hint}</p>
+        <p className="typo-caption text-foreground">{tr.path_hint}</p>
       </div>
 
       {!dispatchCwd && (
@@ -158,6 +228,11 @@ export function RegistryWiring({
         >
           {tr.pair}
         </AsyncButton>
+      </div>
+
+      <div className="border-t border-border pt-3">
+        <p className="typo-caption font-medium text-foreground mb-2">{tr.local_heading}</p>
+        <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />
       </div>
     </div>
   );

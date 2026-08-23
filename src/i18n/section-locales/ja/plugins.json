@@ -1682,7 +1682,13 @@
       "sync_current": "レジストリの作業コピーは最新です",
       "sync_failed": "レジストリを同期できませんでした:",
       "sync_pulled_one": "レジストリの作業コピーに {count} 件のコミットを取得しました",
-      "sync_pulled_other": "レジストリの作業コピーに {count} 件のコミットを取得しました"
+      "sync_pulled_other": "レジストリの作業コピーに {count} 件のコミットを取得しました",
+      "local_heading": "またはローカルフォルダをリンク",
+      "local_hint": "このマシンに既にあるレジストリの作業コピーは直接リンクできます — 認証情報もペアリング作業も不要です。フォルダは検証され、そのまま読み込まれます。",
+      "local_invalid": "レジストリの作業コピーではありません: {reason}",
+      "local_link": "ローカルフォルダをリンク",
+      "local_linked": "ローカルフォルダから{name}をリンクしました",
+      "local_placeholder": "レジストリの作業コピーへのパス"
     },
     "skills_library_unwired_body": "作成したスキルは、このワークスペースが保持するナレッジレジストリから取得されます。Dev Tools → Workspaces で、このプロジェクトが属するワークスペースに接続してください。",
     "skills_library_unwired_title": "レジストリが接続されていません",

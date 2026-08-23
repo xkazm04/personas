@@ -1682,7 +1682,13 @@
       "sync_current": "注册表工作副本已是最新",
       "sync_failed": "未同步注册表：",
       "sync_pulled_one": "已将 {count} 个提交拉取到注册表工作副本",
-      "sync_pulled_other": "已将 {count} 个提交拉取到注册表工作副本"
+      "sync_pulled_other": "已将 {count} 个提交拉取到注册表工作副本",
+      "local_heading": "或链接本地文件夹",
+      "local_hint": "此设备上已有的注册表工作副本可直接链接——无需凭据，也无需配对操作。系统会验证该文件夹并按原样读取。",
+      "local_invalid": "不是注册表工作副本：{reason}",
+      "local_link": "链接本地文件夹",
+      "local_linked": "已从本地文件夹链接 {name}",
+      "local_placeholder": "注册表工作副本的路径"
     },
     "skills_library_unwired_body": "自建技能来自该工作区持有的知识注册表。请在 Dev Tools → Workspaces 中，为此项目所属的工作区连接一个注册表。",
     "skills_library_unwired_title": "未连接注册表",

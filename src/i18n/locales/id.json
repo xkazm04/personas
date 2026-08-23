@@ -14399,7 +14399,13 @@
         "sync_current": "Salinan kerja registry sudah terkini",
         "sync_failed": "Registry tidak tersinkron:",
         "sync_pulled_one": "{count} commit ditarik ke salinan kerja registry",
-        "sync_pulled_other": "{count} commit ditarik ke salinan kerja registry"
+        "sync_pulled_other": "{count} commit ditarik ke salinan kerja registry",
+        "local_heading": "Atau tautkan folder lokal",
+        "local_hint": "Salinan kerja registry yang sudah ada di perangkat ini ditautkan langsung — tanpa kredensial dan tanpa tugas pemasangan. Folder akan divalidasi dan dibaca apa adanya.",
+        "local_invalid": "Bukan salinan kerja registry: {reason}",
+        "local_link": "Tautkan folder lokal",
+        "local_linked": "{name} berhasil ditautkan dari folder lokal",
+        "local_placeholder": "Jalur ke salinan kerja registry"
       },
       "skills_library_unwired_body": "Skill buatan sendiri berasal dari registry pengetahuan yang dipegang ruang kerja ini. Hubungkan satu di Dev Tools → Workspaces, pada ruang kerja tempat proyek ini berada.",
       "skills_library_unwired_title": "Tidak ada registry yang terhubung",

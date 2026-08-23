@@ -236,6 +236,73 @@ export function linkRegistry(
   return registry;
 }
 
+/**
+ * Wire an already-existing LOCAL working copy to a workspace (plan D1: the
+ * local checkout IS the registry). No credential, no pairing session, no
+ * clone step — the folder was probed (`dev_tools_registry_probe`) and found
+ * to carry a `registry.yaml`, so the link lands directly in state `paired`
+ * with the lanes/domains/sha the probe read.
+ *
+ * A separate function rather than a `linkRegistry` variant on purpose: that
+ * signature is the GitHub path's contract (credential + repo + later pairing
+ * dispatch) and other sessions own it; a credential-less local link is a
+ * different act, not a parameter default.
+ *
+ * Identity: the catalog's `fullName` when the folder carries one (so linking
+ * the local checkout of a repo another workspace paired via GitHub resolves
+ * to the SAME registry), else the registry.yaml `name`, else the folder path.
+ */
+export function linkLocalRegistry(
+  workspaceId: string,
+  folderPath: string,
+  probe: {
+    name: string | null;
+    fullName: string | null;
+    lanes: string[];
+    domains: string[];
+    headSha: string | null;
+  },
+): Registry {
+  const s = registryLinkSnapshot();
+  const path = folderPath.trim();
+  const id = probe.fullName ?? probe.name ?? path;
+  const existing = s.registries[id];
+
+  const registry: Registry = {
+    ...(existing ?? {
+      id,
+      fullName: probe.fullName ?? probe.name ?? path,
+      url: probe.fullName ? `https://github.com/${probe.fullName}` : '',
+      defaultBranch: 'main',
+      credentialId: '',
+      clonePath: path,
+      state: 'unlinked',
+      sessionId: null,
+      lanes: [],
+      domains: [],
+      sha: null,
+      pairedAt: null,
+      error: null,
+    }),
+    clonePath: path,
+    state: 'paired',
+    // The probe reports whatever lanes the registry declares; the store's
+    // vocabulary is the LANES it understands, so unknown lanes are dropped
+    // rather than smuggled into a union type they are not part of.
+    lanes: probe.lanes.filter((l): l is Lane => (LANES as readonly string[]).includes(l)),
+    domains: probe.domains,
+    sha: probe.headSha,
+    pairedAt: new Date().toISOString(),
+    error: null,
+  };
+
+  commit({
+    registries: { ...s.registries, [id]: registry },
+    workspaceRegistry: { ...s.workspaceRegistry, [workspaceId]: id },
+  });
+  return registry;
+}
+
 /** Detach a workspace. The registry survives while any other workspace holds it. */
 export function unlinkRegistry(workspaceId: string): void {
   const s = registryLinkSnapshot();

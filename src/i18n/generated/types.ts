@@ -14700,6 +14700,12 @@ export type Translations = {
         path_hint: string;
         no_project: string;
         pair: string;
+        local_heading: string;
+        local_hint: string;
+        local_placeholder: string;
+        local_link: string;
+        local_invalid: string;
+        local_linked: string;
       };
       skills_library_unwired_title: string;
       skills_library_unwired_body: string;

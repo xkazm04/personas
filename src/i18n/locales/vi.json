@@ -14399,7 +14399,13 @@
         "sync_current": "Bản sao làm việc của registry đã là mới nhất",
         "sync_failed": "Chưa đồng bộ registry:",
         "sync_pulled_one": "Đã kéo {count} commit vào bản sao làm việc của registry",
-        "sync_pulled_other": "Đã kéo {count} commit vào bản sao làm việc của registry"
+        "sync_pulled_other": "Đã kéo {count} commit vào bản sao làm việc của registry",
+        "local_heading": "Hoặc liên kết một thư mục cục bộ",
+        "local_hint": "Một bản sao làm việc của registry đã có sẵn trên máy này sẽ được liên kết trực tiếp — không cần thông tin xác thực và không cần tác vụ ghép nối. Thư mục sẽ được xác thực và đọc nguyên trạng.",
+        "local_invalid": "Không phải bản sao làm việc của registry: {reason}",
+        "local_link": "Liên kết thư mục cục bộ",
+        "local_linked": "Đã liên kết {name} từ thư mục cục bộ",
+        "local_placeholder": "Đường dẫn đến bản sao làm việc của registry"
       },
       "skills_library_unwired_body": "Các skill tự soạn đến từ registry tri thức mà không gian làm việc này đang giữ. Hãy kết nối một registry trong Dev Tools → Workspaces, ở không gian làm việc chứa dự án này.",
       "skills_library_unwired_title": "Chưa kết nối registry nào",

@@ -14399,7 +14399,13 @@
         "sync_current": "La copie de travail du registre est déjà à jour",
         "sync_failed": "Registre non synchronisé :",
         "sync_pulled_one": "{count} commit récupéré dans la copie de travail du registre",
-        "sync_pulled_other": "{count} commits récupérés dans la copie de travail du registre"
+        "sync_pulled_other": "{count} commits récupérés dans la copie de travail du registre",
+        "local_heading": "Ou lier un dossier local",
+        "local_hint": "Une copie de travail du registre déjà présente sur cette machine se lie directement — sans identifiants ni tâche d'appairage. Le dossier est validé et lu tel quel.",
+        "local_invalid": "Ce n'est pas une copie de travail du registre : {reason}",
+        "local_link": "Lier le dossier local",
+        "local_linked": "{name} lié depuis le dossier local",
+        "local_placeholder": "Chemin d'une copie de travail du registre"
       },
       "skills_library_unwired_body": "Les skills rédigés proviennent du registre de connaissances détenu par cet espace de travail. Connectez-en un dans Dev Tools → Workspaces, sur l’espace de travail auquel appartient ce projet.",
       "skills_library_unwired_title": "Aucun registre connecté",

@@ -1682,7 +1682,13 @@
       "sync_current": "Pracovní kopie registru je již aktuální",
       "sync_failed": "Registr nebyl synchronizován:",
       "sync_pulled_one": "Do pracovní kopie registru staženo {count} commit",
-      "sync_pulled_other": "Do pracovní kopie registru staženo {count} commitů"
+      "sync_pulled_other": "Do pracovní kopie registru staženo {count} commitů",
+      "local_heading": "Nebo propojit místní složku",
+      "local_hint": "Pracovní kopie registru, která už na tomto počítači existuje, se propojí přímo — bez přihlašovacích údajů a bez párovací úlohy. Složka se ověří a načte tak, jak je.",
+      "local_invalid": "Není pracovní kopií registru: {reason}",
+      "local_link": "Propojit místní složku",
+      "local_linked": "Propojeno {name} z místní složky",
+      "local_placeholder": "Cesta k pracovní kopii registru"
     },
     "skills_library_unwired_body": "Vlastní skilly pocházejí ze znalostního registru, který drží tento pracovní prostor. Připojte jej v Dev Tools → Workspaces, u pracovního prostoru, do něhož projekt patří.",
     "skills_library_unwired_title": "Není připojen žádný registr",
