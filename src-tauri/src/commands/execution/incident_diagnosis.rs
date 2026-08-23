@@ -132,13 +132,21 @@ fn clip(s: &str, max: usize) -> String {
 
 /// Compose the first-person, operational summary from the gathered evidence.
 /// Pure — unit-tested below.
-pub fn compose_summary(incident: &AuditIncident, evidence: &[String], has_known_fix: bool) -> String {
+pub fn compose_summary(
+    incident: &AuditIncident,
+    evidence: &[String],
+    has_known_fix: bool,
+) -> String {
     let subject = incident
         .persona_name
         .as_deref()
         .or(incident.persona_id.as_deref());
     let mut out = match subject {
-        Some(name) => format!("I looked into \"{}\" on {}.", clip(&incident.title, 90), name),
+        Some(name) => format!(
+            "I looked into \"{}\" on {}.",
+            clip(&incident.title, 90),
+            name
+        ),
         None => format!("I looked into \"{}\".", clip(&incident.title, 90)),
     };
     if evidence.is_empty() {
@@ -210,7 +218,11 @@ pub fn diagnose(
                     evidence.push(format!(
                         "Healing pass analyzed {} recent failure{} and recorded {} issue{}.",
                         result.failures_analyzed,
-                        if result.failures_analyzed == 1 { "" } else { "s" },
+                        if result.failures_analyzed == 1 {
+                            ""
+                        } else {
+                            "s"
+                        },
                         result.issues_created,
                         if result.issues_created == 1 { "" } else { "s" },
                     ));
@@ -383,7 +395,10 @@ mod tests {
     fn summary_is_honest_when_no_evidence() {
         let s = compose_summary(&incident("high", Some("p-1")), &[], false);
         assert!(s.contains("no correlated failures"), "{s}");
-        assert!(s.starts_with("I looked into"), "Athena speaks first person: {s}");
+        assert!(
+            s.starts_with("I looked into"),
+            "Athena speaks first person: {s}"
+        );
     }
 
     #[test]

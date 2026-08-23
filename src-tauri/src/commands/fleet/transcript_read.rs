@@ -166,14 +166,19 @@ impl RollupAcc {
             "assistant" => {
                 self.assistant_messages += 1;
 
-                if let Some(m) = message.and_then(|m| m.get("model")).and_then(|x| x.as_str()) {
+                if let Some(m) = message
+                    .and_then(|m| m.get("model"))
+                    .and_then(|x| x.as_str())
+                {
                     if !m.is_empty() && !self.models.iter().any(|x| x == m) {
                         self.models.push(m.to_string());
                     }
                 }
 
                 // usage lives under message.usage; fall back to a top-level usage.
-                let usage = message.and_then(|m| m.get("usage")).or_else(|| v.get("usage"));
+                let usage = message
+                    .and_then(|m| m.get("usage"))
+                    .or_else(|| v.get("usage"));
                 if let Some(u) = usage {
                     let get = |k: &str| u.get(k).and_then(|x| x.as_i64()).unwrap_or(0);
                     self.tokens.input += get("input_tokens");
@@ -220,10 +225,8 @@ impl RollupAcc {
                     }
                 }
             }
-            "user" => {
-                if is_real_user_prompt(message) {
-                    self.user_messages += 1;
-                }
+            "user" if is_real_user_prompt(message) => {
+                self.user_messages += 1;
             }
             _ => {}
         }
@@ -233,7 +236,10 @@ impl RollupAcc {
         let mut tools: Vec<FleetToolCount> = self
             .tool_counts
             .iter()
-            .map(|(name, count)| FleetToolCount { name: name.clone(), count: *count })
+            .map(|(name, count)| FleetToolCount {
+                name: name.clone(),
+                count: *count,
+            })
             .collect();
         tools.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.name.cmp(&b.name)));
 
@@ -404,7 +410,10 @@ pub fn ingest_delta(claude_session_id: &str, path: &Path) {
     let mut map = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
     let st = map
         .entry(claude_session_id.to_string())
-        .or_insert_with(|| IngestState { offset: 0, acc: RollupAcc::default() });
+        .or_insert_with(|| IngestState {
+            offset: 0,
+            acc: RollupAcc::default(),
+        });
     if size <= st.offset {
         return; // no growth (or truncated/rotated — leave the rollup as-is)
     }
@@ -513,7 +522,9 @@ pub fn read_transcript_cwd(path: &Path) -> Option<String> {
 /// Normalize a path for tolerant comparison: forward slashes, no trailing
 /// separator, lowercased (Windows cwds are case-insensitive).
 pub fn normalize_cwd(p: &str) -> String {
-    p.replace('\\', "/").trim_end_matches('/').to_ascii_lowercase()
+    p.replace('\\', "/")
+        .trim_end_matches('/')
+        .to_ascii_lowercase()
 }
 
 /// The most-recently-active `claude_session_id` whose transcript records the
@@ -525,9 +536,13 @@ pub fn latest_session_for_cwd(cwd: &str) -> Option<String> {
     let projects = projects_dir()?;
     let target = normalize_cwd(cwd);
     let mut files = collect_transcript_files(&projects);
-    files.sort_by(|a, b| b.0.cmp(&a.0)); // newest first
+    files.sort_by_key(|b| std::cmp::Reverse(b.0)); // newest first
     for (_mtime, path) in files {
-        if read_transcript_cwd(&path).map(|c| normalize_cwd(&c)).as_deref() == Some(target.as_str()) {
+        if read_transcript_cwd(&path)
+            .map(|c| normalize_cwd(&c))
+            .as_deref()
+            == Some(target.as_str())
+        {
             return path.file_stem().map(|s| s.to_string_lossy().into_owned());
         }
     }
@@ -558,7 +573,7 @@ pub async fn fleet_recent_transcripts(
         let cutoff = SystemTime::now().checked_sub(Duration::from_secs(within * 86_400));
         let mut files = collect_transcript_files(&projects);
         // Newest first so the cutoff + limit can short-circuit cleanly.
-        files.sort_by(|a, b| b.0.cmp(&a.0));
+        files.sort_by_key(|b| std::cmp::Reverse(b.0));
 
         let mut summaries = Vec::new();
         for (mtime, path) in files {
@@ -733,13 +748,21 @@ mod tests {
     #[test]
     fn aggregate_sums_tokens_and_flags_bloated() {
         // Session A: small context (100 input + 2000 cache_read = 2100).
-        let a = summarize_lines("a", "/a.jsonl", &lines(&[
-            r#"{"type":"assistant","message":{"model":"m","content":[],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
-        ]));
+        let a = summarize_lines(
+            "a",
+            "/a.jsonl",
+            &lines(&[
+                r#"{"type":"assistant","message":{"model":"m","content":[],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
+            ]),
+        );
         // Session B: bloated context (200000 input, > CONTEXT_BLOAT_TOKENS).
-        let b = summarize_lines("b", "/b.jsonl", &lines(&[
-            r#"{"type":"assistant","message":{"model":"m","content":[],"usage":{"input_tokens":200000,"output_tokens":50}}}"#,
-        ]));
+        let b = summarize_lines(
+            "b",
+            "/b.jsonl",
+            &lines(&[
+                r#"{"type":"assistant","message":{"model":"m","content":[],"usage":{"input_tokens":200000,"output_tokens":50}}}"#,
+            ]),
+        );
 
         let agg = aggregate_summaries(&[a, b]);
         assert_eq!(agg.session_count, 2);

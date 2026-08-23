@@ -1680,7 +1680,12 @@
       "repo_pick_credential_first": "请先选择凭据",
       "repo_private": "{name}（私有）",
       "section_title": "知识注册表",
-      "this_workspace": "此工作区"
+      "this_workspace": "此工作区",
+      "sync": "同步",
+      "sync_current": "注册表工作副本已是最新",
+      "sync_failed": "未同步注册表：",
+      "sync_pulled_one": "已将 {count} 个提交拉取到注册表工作副本",
+      "sync_pulled_other": "已将 {count} 个提交拉取到注册表工作副本"
     },
     "skills_library_unwired_body": "自建技能来自该工作区持有的知识注册表。请在 Dev Tools → Workspaces 中，为此项目所属的工作区连接一个注册表。",
     "skills_library_unwired_title": "未连接注册表",

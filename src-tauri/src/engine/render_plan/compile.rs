@@ -357,13 +357,19 @@ pub struct ProxyRef {
     pub has_video: bool,
 }
 
+/// Looks up a proxy for an original media path.
+pub type ProxyLookup<'a> = &'a dyn Fn(&str) -> Option<ProxyRef>;
+
+/// Probes a media file for the facts the compiler needs about it.
+pub type MediaProbeFn<'a> = &'a dyn Fn(&str) -> Option<MediaProbe>;
+
 /// Compiler dependencies. All callbacks are optional; None means the
 /// compiler falls back to conservative behavior (no proxies, only bundled
 /// fonts assumed available).
 pub struct CompileDeps<'a> {
     /// None => no proxies. Returns Some(ProxyRef) when a proxy exists on disk
     /// for the given original path.
-    pub proxy_lookup: Option<&'a dyn Fn(&str) -> Option<ProxyRef>>,
+    pub proxy_lookup: Option<ProxyLookup<'a>>,
 
     /// None => assume only the bundled font is available.
     /// Some(f) => f(familyName) returns true if the font is installed.
@@ -372,7 +378,7 @@ pub struct CompileDeps<'a> {
     /// Callback consulted for `FileSource.media_duration_seconds` when the
     /// composition doesn't carry a `mediaDuration`. None => compiler uses the
     /// clip's trimStart + (duration × speed) as a floor.
-    pub media_probe: Option<&'a dyn Fn(&str) -> Option<MediaProbe>>,
+    pub media_probe: Option<MediaProbeFn<'a>>,
 }
 
 impl<'a> CompileDeps<'a> {

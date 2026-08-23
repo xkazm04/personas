@@ -136,7 +136,11 @@ pub async fn scraper_preview_extract(
         let urls: Vec<String> = config
             .get("urls")
             .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
         if urls.is_empty() {
             return Err(AppError::Validation(
@@ -194,7 +198,9 @@ pub async fn scraper_generate_rules(
             #[cfg(feature = "scraper")]
             {
                 match &url {
-                    Some(u) => crate::engine::scraper::fetch_html_snippet(u, 8000).await.ok(),
+                    Some(u) => crate::engine::scraper::fetch_html_snippet(u, 8000)
+                        .await
+                        .ok(),
                     None => None,
                 }
             }
@@ -238,13 +244,17 @@ pub async fn scraper_generate_rules(
     .await
     .map_err(AppError::ProcessSpawn)?;
 
-    let json_str = crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching(
-        &res.text_output,
-        |v| v.is_object(),
-    )
-    .ok_or_else(|| AppError::Execution(
-        "Claude did not return a JSON ruleset — try a more specific description.".to_string(),
-    ))?;
+    let json_str =
+        crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching(
+            &res.text_output,
+            |v| v.is_object(),
+        )
+        .ok_or_else(|| {
+            AppError::Execution(
+                "Claude did not return a JSON ruleset — try a more specific description."
+                    .to_string(),
+            )
+        })?;
 
     Ok(serde_json::from_str::<Value>(&json_str)?)
 }

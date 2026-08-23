@@ -88,7 +88,7 @@ pub const NIGHT_DIGEST_EVENT_TYPE: &str = "autopilot.night_digest";
 
 /// True when `hour` (local, 0-23) falls inside the night window.
 pub fn in_night_window(hour: u32) -> bool {
-    hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR
+    !(NIGHT_END_HOUR..NIGHT_START_HOUR).contains(&hour)
 }
 
 /// The identity of the night a local timestamp belongs to (`YYYY-MM-DD` of the
@@ -122,13 +122,19 @@ pub enum BudgetVerdict {
 /// Hard pre-dispatch check: refuse when `month_spend + projected` crosses the
 /// ceiling. `ceiling = None` (unset or `<= 0`) means no ceiling is configured
 /// — dispatch is allowed (matching the app-wide "0 = no ceiling" convention).
-pub fn budget_verdict(month_spend_usd: f64, ceiling_usd: Option<f64>, projected_usd: f64) -> BudgetVerdict {
+pub fn budget_verdict(
+    month_spend_usd: f64,
+    ceiling_usd: Option<f64>,
+    projected_usd: f64,
+) -> BudgetVerdict {
     match ceiling_usd {
         None => BudgetVerdict::Allow,
         Some(ceiling) => {
             let after = month_spend_usd + projected_usd;
             if after > ceiling {
-                BudgetVerdict::Block { overshoot_usd: after - ceiling }
+                BudgetVerdict::Block {
+                    overshoot_usd: after - ceiling,
+                }
             } else {
                 BudgetVerdict::Allow
             }
@@ -140,7 +146,11 @@ pub fn budget_verdict(month_spend_usd: f64, ceiling_usd: Option<f64>, projected_
 /// slots (cap − live, with the unattended fallback when the cap is unset)
 /// AND the per-project nightly maximum AND how many ideas want dispatching.
 pub fn dispatch_capacity(live_slot_cap: u64, live_sessions: u64, want: usize) -> usize {
-    let cap = if live_slot_cap == 0 { FALLBACK_NIGHT_LIVE_CAP } else { live_slot_cap };
+    let cap = if live_slot_cap == 0 {
+        FALLBACK_NIGHT_LIVE_CAP
+    } else {
+        live_slot_cap
+    };
     let free = cap.saturating_sub(live_sessions) as usize;
     want.min(free).min(MAX_DISPATCH_PER_PROJECT_PER_NIGHT)
 }
@@ -293,7 +303,7 @@ fn get_night_run(pool: &DbPool, run_id: &str) -> Result<NightRun, AppError> {
     conn.query_row(
         "SELECT * FROM autopilot_night_runs WHERE id = ?1",
         rusqlite::params![run_id],
-        |r| row_to_night_run(r),
+        row_to_night_run,
     )
     .map_err(|_| AppError::NotFound(format!("NightRun {run_id}")))
 }
@@ -397,8 +407,11 @@ async fn run_project_night(
                 triage.accepted_idea_ids.len()
             ));
         } else {
-            let capacity =
-                dispatch_capacity(crate::commands::fleet::stale::live_slot_cap(), live_fleet_sessions(), triage.accepted_idea_ids.len());
+            let capacity = dispatch_capacity(
+                crate::commands::fleet::stale::live_slot_cap(),
+                live_fleet_sessions(),
+                triage.accepted_idea_ids.len(),
+            );
             if capacity == 0 {
                 blocked_reason = Some("no free fleet live slots tonight".into());
             } else {
@@ -428,8 +441,12 @@ async fn run_project_night(
                         blocked_reason = Some(msg);
                     }
                     BudgetVerdict::Allow => {
-                        let ids: Vec<String> =
-                            triage.accepted_idea_ids.iter().take(capacity).cloned().collect();
+                        let ids: Vec<String> = triage
+                            .accepted_idea_ids
+                            .iter()
+                            .take(capacity)
+                            .cloned()
+                            .collect();
                         match dispatch_ideas_core(pool, app, ids, "fleet", None, true).await {
                             Ok(result) => {
                                 skipped = result.skipped.len();
@@ -510,7 +527,11 @@ async fn run_project_night(
             dispatched,
             triage.accepted_idea_ids.len(),
             triage.rejected_count,
-            if blocked_reason.is_some() { " — dispatch blocked (see digest)" } else { "" },
+            if blocked_reason.is_some() {
+                " — dispatch blocked (see digest)"
+            } else {
+                ""
+            },
         ),
     );
 
@@ -628,16 +649,15 @@ pub fn dev_tools_list_night_runs(
                 "SELECT * FROM autopilot_night_runs WHERE project_id = ?1
                  ORDER BY started_at DESC LIMIT ?2",
             )?;
-            let rows = stmt.query_map(rusqlite::params![pid, limit], |r| row_to_night_run(r))?;
+            let rows = stmt.query_map(rusqlite::params![pid, limit], row_to_night_run)?;
             for r in rows {
                 out.push(r?);
             }
         }
         None => {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM autopilot_night_runs ORDER BY started_at DESC LIMIT ?1",
-            )?;
-            let rows = stmt.query_map(rusqlite::params![limit], |r| row_to_night_run(r))?;
+            let mut stmt = conn
+                .prepare("SELECT * FROM autopilot_night_runs ORDER BY started_at DESC LIMIT ?1")?;
+            let rows = stmt.query_map(rusqlite::params![limit], row_to_night_run)?;
             for r in rows {
                 out.push(r?);
             }
@@ -658,7 +678,10 @@ pub async fn dev_tools_run_overnight_now(
 ) -> Result<NightRun, AppError> {
     require_auth(&state).await?;
     let modes = autopilot::load_modes(&state.db);
-    let mode = modes.get(project_id.as_str()).copied().unwrap_or(AutopilotMode::Off);
+    let mode = modes
+        .get(project_id.as_str())
+        .copied()
+        .unwrap_or(AutopilotMode::Off);
     if !mode.allows(Capability::ScanAndTriage) {
         return Err(AppError::Validation(format!(
             "project autopilot mode `{}` does not grant ScanAndTriage — set it to suggest or full first",
@@ -679,7 +702,10 @@ mod tests {
     use chrono::NaiveDate;
 
     fn at(y: i32, m: u32, d: u32, h: u32, min: u32) -> chrono::NaiveDateTime {
-        NaiveDate::from_ymd_opt(y, m, d).unwrap().and_hms_opt(h, min, 0).unwrap()
+        NaiveDate::from_ymd_opt(y, m, d)
+            .unwrap()
+            .and_hms_opt(h, min, 0)
+            .unwrap()
     }
 
     #[test]
@@ -696,12 +722,21 @@ mod tests {
     #[test]
     fn night_key_is_stable_across_midnight() {
         // 23:00 on the 15th and 02:00 on the 16th are the SAME night.
-        assert_eq!(night_key(at(2026, 7, 15, 23, 0)).as_deref(), Some("2026-07-15"));
-        assert_eq!(night_key(at(2026, 7, 16, 2, 0)).as_deref(), Some("2026-07-15"));
+        assert_eq!(
+            night_key(at(2026, 7, 15, 23, 0)).as_deref(),
+            Some("2026-07-15")
+        );
+        assert_eq!(
+            night_key(at(2026, 7, 16, 2, 0)).as_deref(),
+            Some("2026-07-15")
+        );
         // Daytime → no night.
         assert_eq!(night_key(at(2026, 7, 16, 12, 0)), None);
         // The next evening is a NEW night.
-        assert_eq!(night_key(at(2026, 7, 16, 22, 30)).as_deref(), Some("2026-07-16"));
+        assert_eq!(
+            night_key(at(2026, 7, 16, 22, 30)).as_deref(),
+            Some("2026-07-16")
+        );
     }
 
     #[test]
@@ -734,7 +769,10 @@ mod tests {
         assert_eq!(dispatch_capacity(4, 4, 5), 0);
         assert_eq!(dispatch_capacity(4, 9, 5), 0);
         // The per-night cap bounds it even with a huge fleet.
-        assert_eq!(dispatch_capacity(100, 0, 50), MAX_DISPATCH_PER_PROJECT_PER_NIGHT);
+        assert_eq!(
+            dispatch_capacity(100, 0, 50),
+            MAX_DISPATCH_PER_PROJECT_PER_NIGHT
+        );
         // Want bounds it.
         assert_eq!(dispatch_capacity(100, 0, 1), 1);
         // Cap 0 = frontend "uncapped" → unattended fallback applies.

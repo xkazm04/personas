@@ -111,6 +111,13 @@ fn parse_ts(s: &str) -> Option<DateTime<Utc>> {
 ///
 /// Inputs may arrive unsorted; both sides are sorted internally. Rows with
 /// unparseable timestamps are skipped (never guessed).
+// `Option::is_none_or` is stable since 1.82.0 and the manifests declare
+// `rust-version = "1.80.0"`. Nothing in this workspace actually requires
+// 1.80 — all five crates are `publish = false` and CI pins no toolchain — so
+// the honest fix is to correct the manifest, which is a policy call for the
+// Director rather than this lane's to make. Allowed here, narrowly, until
+// that decision lands. See the W0 clippy lane report.
+#[allow(clippy::incompatible_msrv)]
 pub fn mine_co_occurrences(
     events: &[MinedEvent],
     executions: &[MinedExecution],
@@ -277,14 +284,14 @@ pub fn pattern_miner_tick(pool: &DbPool) {
             return;
         }
     };
-    let executions = match suggestion_repo::mining_manual_executions(pool, &since, EXECUTION_SCAN_CAP)
-    {
-        Ok(v) => v,
-        Err(e) => {
-            tracing::warn!("pattern_miner: execution query failed: {e} — skipping tick");
-            return;
-        }
-    };
+    let executions =
+        match suggestion_repo::mining_manual_executions(pool, &since, EXECUTION_SCAN_CAP) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!("pattern_miner: execution query failed: {e} — skipping tick");
+                return;
+            }
+        };
 
     let candidates = mine_co_occurrences(
         &events,
@@ -524,7 +531,10 @@ mod tests {
         // Identical shape WITHOUT the exclusions fires — proving the empties
         // above come from the tag, not from the data shape.
         let (events, execs) = habit(5, "deploy_completed", "p1");
-        assert_eq!(mine_co_occurrences(&events, &execs, 600, 5, &mined).len(), 1);
+        assert_eq!(
+            mine_co_occurrences(&events, &execs, 600, 5, &mined).len(),
+            1
+        );
     }
 
     #[test]

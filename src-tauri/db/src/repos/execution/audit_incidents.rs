@@ -18,6 +18,7 @@ use crate::models::{
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // -- Row mapper ---------------------------------------------------------------
@@ -97,7 +98,14 @@ const CONTINUABLE_SOURCE_TABLES: &[&str] = &["persona_blocker", "team_assignment
 /// pair is left intact.
 fn strip_counter_suffix(s: &str) -> &str {
     const LABELS: &[&str] = &[
-        "cycle", "attempt", "retry", "run", "iteration", "try", "pass", "round",
+        "cycle",
+        "attempt",
+        "retry",
+        "run",
+        "iteration",
+        "try",
+        "pass",
+        "round",
     ];
     let trimmed = s.trim_end();
     if !trimmed.ends_with(')') {
@@ -163,7 +171,7 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
         let severity = normalize_severity(&input.severity).to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::promote")?;
 
         // OPEN-DUPLICATE guard (beyond the per-source dedup_key): the same
         // underlying problem re-raised from a DIFFERENT execution/run must not
@@ -253,27 +261,34 @@ pub fn list_open_by_personas(
     persona_ids: &[String],
     limit: i64,
 ) -> Result<Vec<AuditIncident>, AppError> {
-    timed_query!("audit_incidents", "audit_incidents::list_open_by_personas", {
-        if persona_ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        let mut qb = QueryBuilder::new();
-        qb.where_in("status", vec!["open".to_string(), "acknowledged".to_string()]);
-        qb.where_in("persona_id", persona_ids.to_vec());
-        qb.order_by("created_at", "DESC");
-        qb.limit(limit);
+    timed_query!(
+        "audit_incidents",
+        "audit_incidents::list_open_by_personas",
+        {
+            if persona_ids.is_empty() {
+                return Ok(Vec::new());
+            }
+            let mut qb = QueryBuilder::new();
+            qb.where_in(
+                "status",
+                vec!["open".to_string(), "acknowledged".to_string()],
+            );
+            qb.where_in("persona_id", persona_ids.to_vec());
+            qb.order_by("created_at", "DESC");
+            qb.limit(limit);
 
-        let sql = qb.build_select("SELECT * FROM audit_incidents");
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
-        Ok(collect_rows(rows, "audit_incidents::list_open_by_personas"))
-    })
+            let sql = qb.build_select("SELECT * FROM audit_incidents");
+            let conn = pool.conn("audit_incidents::list_open_by_personas")?;
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
+            Ok(collect_rows(rows, "audit_incidents::list_open_by_personas"))
+        }
+    )
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<AuditIncident, AppError> {
     timed_query!("audit_incidents", "audit_incidents::get_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::get_by_id")?;
         let mut stmt = conn.prepare("SELECT * FROM audit_incidents WHERE id = ?1")?;
         let row = stmt
             .query_row(params![id], row_to_incident)
@@ -319,7 +334,7 @@ pub fn list(
         qb.offset(offset);
 
         let sql = qb.build_select("SELECT * FROM audit_incidents");
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::list")?;
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
         Ok(collect_rows(rows, "audit_incidents::list"))
@@ -330,7 +345,7 @@ pub fn list(
 /// `status='open'` so the chips reflect "what still needs attention."
 pub fn summary(pool: &DbPool) -> Result<AuditIncidentSummary, AppError> {
     timed_query!("audit_incidents", "audit_incidents::summary", {
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::summary")?;
 
         let mut open = 0i64;
         let mut acknowledged = 0i64;
@@ -442,7 +457,7 @@ fn apply_transition(
     }
 
     let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    let conn = pool.conn("audit_incidents::apply_transition")?;
     let rows = match target {
         IncidentStatus::Acknowledged => conn.execute(
             "UPDATE audit_incidents
@@ -523,19 +538,28 @@ pub fn resolve(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppE
 /// `continued_at IS NULL` (not yet claimed). Oldest-resolved first so the
 /// backlog drains FIFO. The caller still atomically `claim_continuation`s each
 /// one before acting, so this query may safely over-return under races.
-pub fn find_continuation_candidates(pool: &DbPool, limit: i64) -> Result<Vec<AuditIncident>, AppError> {
-    timed_query!("audit_incidents", "audit_incidents::find_continuation_candidates", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+pub fn find_continuation_candidates(
+    pool: &DbPool,
+    limit: i64,
+) -> Result<Vec<AuditIncident>, AppError> {
+    timed_query!(
+        "audit_incidents",
+        "audit_incidents::find_continuation_candidates",
+        {
+            let conn = pool.conn("audit_incidents::find_continuation_candidates")?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM audit_incidents \
              WHERE status = 'resolved' \n             AND source_table IN ('persona_blocker', 'team_assignments') \
              AND continued_at IS NULL \
              ORDER BY resolved_at ASC LIMIT ?1",
         )?;
-        let rows = stmt.query_map([limit], row_to_incident)?;
-        let out = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-        Ok(out)
-    })
+            let rows = stmt.query_map([limit], row_to_incident)?;
+            let out = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            Ok(out)
+        }
+    )
 }
 
 /// Atomically claim a resolved incident for auto-continuation (P2.3b).
@@ -549,7 +573,7 @@ pub fn find_continuation_candidates(pool: &DbPool, limit: i64) -> Result<Vec<Aud
 pub fn claim_continuation(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("audit_incidents", "audit_incidents::claim_continuation", {
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("audit_incidents::claim_continuation")?;
         let rows = conn.execute(
             "UPDATE audit_incidents SET continued_at = ?1
              WHERE id = ?2 AND continued_at IS NULL",
@@ -635,7 +659,7 @@ pub fn list_handled_autonomously(
         "audit_incidents",
         "audit_incidents::list_handled_autonomously",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("audit_incidents::list_handled_autonomously")?;
             let mut stmt = conn.prepare(
                 "SELECT * FROM audit_incidents
                  WHERE continued_at IS NOT NULL
@@ -740,12 +764,22 @@ mod tests {
         // E1 and E2 are two distinct blocked executions with the SAME title.
         let e1 = promote(
             &pool,
-            make_input("persona_blocker", "exec-1", "high", "Missing API credential for Stripe"),
+            make_input(
+                "persona_blocker",
+                "exec-1",
+                "high",
+                "Missing API credential for Stripe",
+            ),
         )
         .unwrap();
         let e2 = promote(
             &pool,
-            make_input("persona_blocker", "exec-2", "high", "Missing API credential for Stripe"),
+            make_input(
+                "persona_blocker",
+                "exec-2",
+                "high",
+                "Missing API credential for Stripe",
+            ),
         )
         .unwrap();
         assert!(e1.is_some(), "first blocked execution gets an incident");
@@ -758,7 +792,12 @@ mod tests {
         // Re-promoting the SAME source row is still a no-op (per-source dedup_key).
         let e2_again = promote(
             &pool,
-            make_input("persona_blocker", "exec-2", "high", "Missing API credential for Stripe"),
+            make_input(
+                "persona_blocker",
+                "exec-2",
+                "high",
+                "Missing API credential for Stripe",
+            ),
         )
         .unwrap();
         assert!(
@@ -770,14 +809,29 @@ mod tests {
         resolve(&pool, e1.as_ref().unwrap(), Some("creds added")).unwrap();
         resolve(&pool, e2.as_ref().unwrap(), Some("creds added")).unwrap();
         let candidates = find_continuation_candidates(&pool, 50).unwrap();
-        assert_eq!(candidates.len(), 2, "each blocked execution is its own continuation candidate");
+        assert_eq!(
+            candidates.len(),
+            2,
+            "each blocked execution is its own continuation candidate"
+        );
 
         // Non-continuable sources still collapse same-title duplicates: a second
         // DISTINCT source row with the same open title is dropped.
-        let a1 = promote(&pool, make_input("fired_alerts", "alert-1", "high", "Latency spike")).unwrap();
-        let a2 = promote(&pool, make_input("fired_alerts", "alert-2", "high", "Latency spike")).unwrap();
+        let a1 = promote(
+            &pool,
+            make_input("fired_alerts", "alert-1", "high", "Latency spike"),
+        )
+        .unwrap();
+        let a2 = promote(
+            &pool,
+            make_input("fired_alerts", "alert-2", "high", "Latency spike"),
+        )
+        .unwrap();
         assert!(a1.is_some());
-        assert!(a2.is_none(), "non-continuable sources keep the title-based open-dup guard");
+        assert!(
+            a2.is_none(),
+            "non-continuable sources keep the title-based open-dup guard"
+        );
     }
 
     #[test]
@@ -815,9 +869,12 @@ mod tests {
     #[test]
     fn in_progress_lifecycle() {
         let pool = init_test_db().unwrap();
-        let id = promote(&pool, make_input("fired_alerts", "ip-1", "critical", "Build broken"))
-            .unwrap()
-            .unwrap();
+        let id = promote(
+            &pool,
+            make_input("fired_alerts", "ip-1", "critical", "Build broken"),
+        )
+        .unwrap()
+        .unwrap();
 
         // open -> in_progress (stamps acknowledged_at, no resolution yet)
         assert!(start_progress(&pool, &id).unwrap());
@@ -842,20 +899,32 @@ mod tests {
     #[test]
     fn claim_continuation_fires_at_most_once() {
         let pool = init_test_db().unwrap();
-        let id = promote(&pool, make_input("persona_blocker", "ex-1", "high", "Blocked"))
-            .unwrap()
-            .unwrap();
+        let id = promote(
+            &pool,
+            make_input("persona_blocker", "ex-1", "high", "Blocked"),
+        )
+        .unwrap()
+        .unwrap();
 
         // Not yet claimed.
         assert!(get_by_id(&pool, &id).unwrap().continued_at.is_none());
 
         // First claim wins + stamps continued_at.
-        assert!(claim_continuation(&pool, &id).unwrap(), "first claim must win");
+        assert!(
+            claim_continuation(&pool, &id).unwrap(),
+            "first claim must win"
+        );
         assert!(get_by_id(&pool, &id).unwrap().continued_at.is_some());
 
         // Second + third claims lose (already continued) — no double re-run.
-        assert!(!claim_continuation(&pool, &id).unwrap(), "second claim must lose");
-        assert!(!claim_continuation(&pool, &id).unwrap(), "third claim must lose");
+        assert!(
+            !claim_continuation(&pool, &id).unwrap(),
+            "second claim must lose"
+        );
+        assert!(
+            !claim_continuation(&pool, &id).unwrap(),
+            "third claim must lose"
+        );
     }
 
     /// find_continuation_candidates returns only resolved persona_blocker
@@ -866,24 +935,37 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         // (a) resolved persona_blocker, unclaimed → candidate.
-        let blocked = promote(&pool, make_input("persona_blocker", "exec-blocked", "high", "Blocked"))
-            .unwrap()
-            .unwrap();
+        let blocked = promote(
+            &pool,
+            make_input("persona_blocker", "exec-blocked", "high", "Blocked"),
+        )
+        .unwrap()
+        .unwrap();
         resolve(&pool, &blocked, Some("fixed the creds")).unwrap();
 
         // (b) persona_blocker but still OPEN → not a candidate.
-        promote(&pool, make_input("persona_blocker", "exec-open", "high", "Still blocked"))
-            .unwrap()
-            .unwrap();
+        promote(
+            &pool,
+            make_input("persona_blocker", "exec-open", "high", "Still blocked"),
+        )
+        .unwrap()
+        .unwrap();
 
         // (c) resolved but NOT persona_blocker (an audit-stream incident) → not a candidate.
-        let alert = promote(&pool, make_input("fired_alerts", "alert-1", "high", "Latency"))
-            .unwrap()
-            .unwrap();
+        let alert = promote(
+            &pool,
+            make_input("fired_alerts", "alert-1", "high", "Latency"),
+        )
+        .unwrap()
+        .unwrap();
         resolve(&pool, &alert, None).unwrap();
 
         let candidates = find_continuation_candidates(&pool, 50).unwrap();
-        assert_eq!(candidates.len(), 1, "only the resolved persona_blocker qualifies");
+        assert_eq!(
+            candidates.len(),
+            1,
+            "only the resolved persona_blocker qualifies"
+        );
         assert_eq!(candidates[0].id, blocked);
         assert_eq!(candidates[0].source_id, "exec-blocked");
 

@@ -734,6 +734,13 @@ async fn list_tools_guarded(
 /// Validates arguments against structural limits (depth, size) and the tool's
 /// declared `input_schema` before forwarding to the MCP server.
 /// Applies per-tool rate limiting and logs execution to the audit trail.
+///
+/// `execution_id`: the `persona_executions` row this call belongs to, when the
+/// caller runs inside one — it feeds the per-execution `persona_tool_usage`
+/// connector counter (KP bridge WP4). `None` for manual/UI invocations, which
+/// have no execution row (the counter's `execution_id` FK is NOT NULL, so
+/// recording is skipped).
+#[allow(clippy::too_many_arguments)]
 pub async fn execute_tool(
     pool: &DbPool,
     credential_id: &str,
@@ -742,6 +749,7 @@ pub async fn execute_tool(
     rate_limiter: Option<&RateLimiter>,
     persona_id: Option<&str>,
     persona_name: Option<&str>,
+    execution_id: Option<&str>,
 ) -> Result<McpToolResult, AppError> {
     execute_tool_guarded(
         pool,
@@ -751,6 +759,7 @@ pub async fn execute_tool(
         rate_limiter,
         persona_id,
         persona_name,
+        execution_id,
         0,
     )
     .await
@@ -769,6 +778,7 @@ async fn execute_tool_guarded(
     rate_limiter: Option<&RateLimiter>,
     persona_id: Option<&str>,
     persona_name: Option<&str>,
+    execution_id: Option<&str>,
     depth: usize,
 ) -> Result<McpToolResult, AppError> {
     // Per-tool rate limiting. Scope the key to the credential id, NOT the bare
@@ -845,6 +855,7 @@ async fn execute_tool_guarded(
             rate_limiter,
             persona_id,
             persona_name,
+            execution_id,
             depth + 1,
         ))
         .await;
@@ -918,6 +929,24 @@ async fn execute_tool_guarded(
         error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write tool audit log: {log_err}");
+    }
+
+    // KP bridge (WP4) — per-execution connector counter (persona_tool_usage).
+    // Best-effort like the audit write above: a counter failure must NEVER
+    // fail the tool call. Only recordable when the call runs inside a real
+    // execution (NOT NULL FKs on execution_id + persona_id); hot path, so no
+    // extra queries — one insert.
+    if let (Some(exec_id), Some(pid)) = (execution_id, persona_id) {
+        if let Err(e) =
+            crate::db::repos::execution::tool_usage::record(pool, exec_id, pid, tool_name, 1)
+        {
+            tracing::debug!(
+                tool_name = %tool_name,
+                execution_id = %exec_id,
+                error = %e,
+                "Failed to record persona_tool_usage counter"
+            );
+        }
     }
 
     match result {
@@ -1314,9 +1343,7 @@ fn with_modern_meta(mut params: serde_json::Value) -> serde_json::Value {
     if let Some(obj) = params.as_object_mut() {
         // tools/call params already carry a `_meta.traceparent`; merge rather
         // than clobber.
-        let meta = obj
-            .entry("_meta")
-            .or_insert_with(|| serde_json::json!({}));
+        let meta = obj.entry("_meta").or_insert_with(|| serde_json::json!({}));
         if let (Some(dst), Some(src)) = (meta.as_object_mut(), modern_request_meta().as_object()) {
             for (k, v) in src {
                 dst.insert(k.clone(), v.clone());
@@ -1371,9 +1398,12 @@ async fn fetch_tools_paginated_sse(
         let result = list_resp.get("result").ok_or_else(|| {
             AppError::Internal("Invalid tools/list response from SSE server".into())
         })?;
-        let page_tools = result.get("tools").and_then(|t| t.as_array()).ok_or_else(|| {
-            AppError::Internal("Invalid tools/list response from SSE server".into())
-        })?;
+        let page_tools = result
+            .get("tools")
+            .and_then(|t| t.as_array())
+            .ok_or_else(|| {
+                AppError::Internal("Invalid tools/list response from SSE server".into())
+            })?;
         all_tools.extend(page_tools.iter().cloned());
         min_ttl_ms = fold_min_ttl(min_ttl_ms, extract_ttl_ms(result));
 
@@ -1433,7 +1463,10 @@ async fn list_tools_sse(
         Some(HttpServerEra::Legacy) => list_tools_sse_legacy(&client, url, auth_token).await,
         None => match list_tools_sse_modern(&client, url, auth_token).await {
             Ok(r) => {
-                tracing::debug!(url, "MCP origin probed as MODERN (2026-07-28, handshake-less)");
+                tracing::debug!(
+                    url,
+                    "MCP origin probed as MODERN (2026-07-28, handshake-less)"
+                );
                 set_http_era(url, HttpServerEra::Modern);
                 Ok(r)
             }

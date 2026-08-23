@@ -44,20 +44,64 @@ struct Dep {
 
 /// Fixed order → deterministic `imports` output.
 const DEPS: &[Dep] = &[
-    Dep { name: "react", ts: Some("react"), rust: None },
-    Dep { name: "zustand", ts: Some("zustand"), rust: None },
-    Dep { name: "framer-motion", ts: Some("framer-motion"), rust: None },
-    Dep { name: "rusqlite", ts: None, rust: Some("rusqlite::") },
-    Dep { name: "reqwest", ts: None, rust: Some("reqwest::") },
-    Dep { name: "tokio", ts: None, rust: Some("tokio::") },
-    Dep { name: "serde", ts: None, rust: Some("serde::") },
-    Dep { name: "ts-rs", ts: None, rust: Some("ts_rs::") },
+    Dep {
+        name: "react",
+        ts: Some("react"),
+        rust: None,
+    },
+    Dep {
+        name: "zustand",
+        ts: Some("zustand"),
+        rust: None,
+    },
+    Dep {
+        name: "framer-motion",
+        ts: Some("framer-motion"),
+        rust: None,
+    },
+    Dep {
+        name: "rusqlite",
+        ts: None,
+        rust: Some("rusqlite::"),
+    },
+    Dep {
+        name: "reqwest",
+        ts: None,
+        rust: Some("reqwest::"),
+    },
+    Dep {
+        name: "tokio",
+        ts: None,
+        rust: Some("tokio::"),
+    },
+    Dep {
+        name: "serde",
+        ts: None,
+        rust: Some("serde::"),
+    },
+    Dep {
+        name: "ts-rs",
+        ts: None,
+        rust: Some("ts_rs::"),
+    },
     // Cheap extensions beyond the original six-technique list: `tauri::` is the
     // load-bearing IPC marker for this repo, and `sha2::`/`chrono::` separate
     // hashing/time-handling contexts from the rest of the Rust surface.
-    Dep { name: "tauri", ts: None, rust: Some("tauri::") },
-    Dep { name: "sha2", ts: None, rust: Some("sha2::") },
-    Dep { name: "chrono", ts: None, rust: Some("chrono::") },
+    Dep {
+        name: "tauri",
+        ts: None,
+        rust: Some("tauri::"),
+    },
+    Dep {
+        name: "sha2",
+        ts: None,
+        rust: Some("sha2::"),
+    },
+    Dep {
+        name: "chrono",
+        ts: None,
+        rust: Some("chrono::"),
+    },
 ];
 
 /// In-repo primitives, matched as exact identifier substrings. Presence of one
@@ -369,7 +413,11 @@ fn exports_component(content: &str) -> bool {
 fn exported_symbol_starts_uppercase(content: &str, anchor: &str) -> bool {
     for (idx, _) in content.match_indices(anchor) {
         let rest = &content[idx + anchor.len()..];
-        if rest.as_bytes().first().is_some_and(|c| c.is_ascii_uppercase()) {
+        if rest
+            .as_bytes()
+            .first()
+            .is_some_and(|c| c.is_ascii_uppercase())
+        {
             return true;
         }
     }
@@ -382,7 +430,11 @@ fn exports_hook(content: &str) -> bool {
     for anchor in ["export function use", "export const use"] {
         for (idx, _) in content.match_indices(anchor) {
             let rest = &content[idx + anchor.len()..];
-            if rest.as_bytes().first().is_some_and(|c| c.is_ascii_uppercase()) {
+            if rest
+                .as_bytes()
+                .first()
+                .is_some_and(|c| c.is_ascii_uppercase())
+            {
                 return true;
             }
         }
@@ -448,8 +500,14 @@ mod tests {
         // Files deliberately in reverse table order.
         let files = vec![
             ("b.rs".to_string(), "use tokio::time;\n".to_string()),
-            ("a.tsx".to_string(), "import 'x';\nimport React from 'react';\n".to_string()),
-            ("c.ts".to_string(), "silentCatch(e);\ninvokeWithTimeout(x);\n".to_string()),
+            (
+                "a.tsx".to_string(),
+                "import 'x';\nimport React from 'react';\n".to_string(),
+            ),
+            (
+                "c.ts".to_string(),
+                "silentCatch(e);\ninvokeWithTimeout(x);\n".to_string(),
+            ),
         ];
         let fp = fingerprint_files(&files);
         assert_eq!(fp.imports, vec!["react", "tokio"]);
@@ -462,7 +520,10 @@ mod tests {
             "src/lib/x.ts",
             "const run = createLatestWins();\nawait mapWithConcurrency(items, 4, fn);\n",
         ));
-        assert_eq!(fp.primitives, vec!["createLatestWins", "mapWithConcurrency"]);
+        assert_eq!(
+            fp.primitives,
+            vec!["createLatestWins", "mapWithConcurrency"]
+        );
     }
 
     #[test]
@@ -522,10 +583,7 @@ mod tests {
 
     #[test]
     fn set_state_after_await_fires_on_the_shape() {
-        let fp = fingerprint_files(&f(
-            "x.tsx",
-            "const data = await load();\nsetRows(data);\n",
-        ));
+        let fp = fingerprint_files(&f("x.tsx", "const data = await load();\nsetRows(data);\n"));
         assert_eq!(fp.set_state_after_await_count, 1);
     }
 
@@ -581,16 +639,25 @@ mod tests {
 
     #[test]
     fn surface_flag_components_needs_a_tsx_file() {
-        let tsx = fingerprint_files(&f("src/x/Panel.tsx", "export default function Panel() {}\n"));
+        let tsx = fingerprint_files(&f(
+            "src/x/Panel.tsx",
+            "export default function Panel() {}\n",
+        ));
         assert!(tsx.exports_components);
 
         let ts = fingerprint_files(&f("src/x/panel.ts", "export default function Panel() {}\n"));
-        assert!(!ts.exports_components, "a .ts module is not a component surface");
+        assert!(
+            !ts.exports_components,
+            "a .ts module is not a component surface"
+        );
     }
 
     #[test]
     fn surface_flag_components_on_exported_capitalized_symbol() {
-        let fp = fingerprint_files(&f("src/x/Panel.tsx", "export function Panel() { return null; }\n"));
+        let fp = fingerprint_files(&f(
+            "src/x/Panel.tsx",
+            "export function Panel() { return null; }\n",
+        ));
         assert!(fp.exports_components);
 
         let lower = fingerprint_files(&f("src/x/util.tsx", "export function helper() {}\n"));
@@ -599,7 +666,10 @@ mod tests {
 
     #[test]
     fn surface_flag_hooks() {
-        let fp = fingerprint_files(&f("src/hooks/useThing.ts", "export function useThing() {}\n"));
+        let fp = fingerprint_files(&f(
+            "src/hooks/useThing.ts",
+            "export function useThing() {}\n",
+        ));
         assert!(fp.exports_hooks);
         assert!(!fp.exports_components, ".ts file, no component flag");
 
@@ -625,15 +695,22 @@ mod tests {
         ));
         assert!(inside.exports_repo_fns);
 
-        let outside = fingerprint_files(&f("src-tauri/src/engine/x.rs", "pub fn list_things() {}\n"));
+        let outside =
+            fingerprint_files(&f("src-tauri/src/engine/x.rs", "pub fn list_things() {}\n"));
         assert!(!outside.exports_repo_fns);
     }
 
     #[test]
     fn counters_accumulate_across_files_and_flags_are_sticky() {
         let files = vec![
-            ("a.tsx".to_string(), "export default function A() {}\nuseEffect(() => {}, []);\n".to_string()),
-            ("b.ts".to_string(), "export function useB() {}\nuseEffect(() => {}, []);\n".to_string()),
+            (
+                "a.tsx".to_string(),
+                "export default function A() {}\nuseEffect(() => {}, []);\n".to_string(),
+            ),
+            (
+                "b.ts".to_string(),
+                "export function useB() {}\nuseEffect(() => {}, []);\n".to_string(),
+            ),
         ];
         let fp = fingerprint_files(&files);
         assert_eq!(fp.use_effect_count, 2);
@@ -644,8 +721,14 @@ mod tests {
     #[test]
     fn fingerprinting_is_deterministic_for_identical_input() {
         let files = vec![
-            ("a.tsx".to_string(), "import React from 'react';\nawait x();\nsetY(1);\n".to_string()),
-            ("b.rs".to_string(), "use rusqlite::params;\nconn.execute(\"UPDATE t SET a = 1\", [])?;\n".to_string()),
+            (
+                "a.tsx".to_string(),
+                "import React from 'react';\nawait x();\nsetY(1);\n".to_string(),
+            ),
+            (
+                "b.rs".to_string(),
+                "use rusqlite::params;\nconn.execute(\"UPDATE t SET a = 1\", [])?;\n".to_string(),
+            ),
         ];
         assert_eq!(fingerprint_files(&files), fingerprint_files(&files));
     }

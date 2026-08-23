@@ -91,7 +91,6 @@ pub async fn gitlab_connect_from_vault(
     credential_id: String,
     instance_url: Option<String>,
 ) -> Result<GitLabUser, AppError> {
-
     let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
     if let Err(e) = audit_log::log_decrypt(
@@ -450,8 +449,8 @@ pub async fn gitlab_deployment_status(
     let client = get_gitlab_client(&state).await?;
 
     // History is the local audit trail; safe to read even if GitLab is down.
-    let history = deployment_history::list_by_project(&state.db, project_id, 200)
-        .unwrap_or_default();
+    let history =
+        deployment_history::list_by_project(&state.db, project_id, 200).unwrap_or_default();
 
     // Real probe: fetch the live Duo Agent registry from GitLab.
     match client.list_duo_agents(project_id).await {
@@ -472,9 +471,10 @@ pub async fn gitlab_deployment_status(
                     method: "api".to_string(),
                     web_url: a.web_url.clone(),
                     status: "active".to_string(),
-                    created_at: a.created_at.clone().or_else(|| {
-                        hist.map(|h| h.created_at.clone())
-                    }),
+                    created_at: a
+                        .created_at
+                        .clone()
+                        .or_else(|| hist.map(|h| h.created_at.clone())),
                 });
             }
 
@@ -1409,7 +1409,10 @@ mod tests {
         assert_eq!(slugify_persona_name("My Bot!"), "my-bot");
         assert_eq!(slugify_persona_name("Order #2 Bot!"), "order-2-bot");
         assert_eq!(slugify_persona_name("already-clean"), "already-clean");
-        assert_eq!(slugify_persona_name("Spaces  And   Tabs"), "spaces--and---tabs");
+        assert_eq!(
+            slugify_persona_name("Spaces  And   Tabs"),
+            "spaces--and---tabs"
+        );
     }
 
     /// The rollback bug regression: the tag a persona deploys under (build side)

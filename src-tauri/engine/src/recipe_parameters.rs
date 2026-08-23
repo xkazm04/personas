@@ -90,9 +90,7 @@ fn humanize(name: &str) -> String {
 /// the supported-type list never has to be mirrored (and drift) in TypeScript.
 /// Shared by the typed (promote) and raw-JSON (instant_adopt / catalog sync)
 /// derive entrypoints.
-pub fn params_from_schema(
-    schema: &[serde_json::Value],
-) -> (Vec<DerivedParam>, Vec<SkippedParam>) {
+pub fn params_from_schema(schema: &[serde_json::Value]) -> (Vec<DerivedParam>, Vec<SkippedParam>) {
     let mut params = Vec::new();
     let mut skipped = Vec::new();
     for f in schema {
@@ -382,10 +380,20 @@ pub fn inject_capability_parameters_section(ir: &mut AgentIr, caps: &[Capability
     if caps.iter().all(|c| c.params.is_empty()) {
         return;
     }
-    if let Some(obj) = ir.structured_prompt.as_mut().and_then(|v| v.as_object_mut()) {
-        let existing = obj.get("instructions").and_then(|v| v.as_str()).unwrap_or("");
+    if let Some(obj) = ir
+        .structured_prompt
+        .as_mut()
+        .and_then(|v| v.as_object_mut())
+    {
+        let existing = obj
+            .get("instructions")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let updated = apply_to_instructions(existing, caps);
-        obj.insert("instructions".to_string(), serde_json::Value::String(updated));
+        obj.insert(
+            "instructions".to_string(),
+            serde_json::Value::String(updated),
+        );
         return;
     }
     let existing = ir.system_prompt.as_deref().unwrap_or("");
@@ -402,14 +410,20 @@ pub fn inject_into_structured_prompt(sp: &mut serde_json::Value, caps: &[Capabil
     let Some(obj) = sp.as_object_mut() else {
         return;
     };
-    let existing = obj.get("instructions").and_then(|v| v.as_str()).unwrap_or("");
+    let existing = obj
+        .get("instructions")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     // Skip a pure no-op (no params and nothing to strip) so we don't add an
     // empty `instructions` key to a structured prompt that lacked one.
     if caps.iter().all(|c| c.params.is_empty()) && !existing.contains(SECTION_MARKER) {
         return;
     }
     let updated = apply_to_instructions(existing, caps);
-    obj.insert("instructions".to_string(), serde_json::Value::String(updated));
+    obj.insert(
+        "instructions".to_string(),
+        serde_json::Value::String(updated),
+    );
 }
 
 #[cfg(test)]
@@ -446,10 +460,23 @@ mod tests {
         // source_definition + connector_ref skipped; 5 supported remain.
         assert_eq!(
             keys,
-            vec!["timeout_hours", "approval_levels", "require_review", "access_scheme", "dimensions"]
+            vec![
+                "timeout_hours",
+                "approval_levels",
+                "require_review",
+                "access_scheme",
+                "dimensions"
+            ]
         );
-        let types: Vec<_> = caps[0].params.iter().map(|p| p.param_type.as_str()).collect();
-        assert_eq!(types, vec!["number", "select", "boolean", "string", "string"]);
+        let types: Vec<_> = caps[0]
+            .params
+            .iter()
+            .map(|p| p.param_type.as_str())
+            .collect();
+        assert_eq!(
+            types,
+            vec!["number", "select", "boolean", "string", "string"]
+        );
     }
 
     #[test]
@@ -496,7 +523,11 @@ mod tests {
             "title": "Repo Watcher",
             "input_schema": [{"name": "repo", "type": "connector_ref"}]
         })]);
-        assert_eq!(caps.len(), 1, "must not be dropped just because params is empty");
+        assert_eq!(
+            caps.len(),
+            1,
+            "must not be dropped just because params is empty"
+        );
         assert!(caps[0].params.is_empty());
         assert_eq!(caps[0].skipped.len(), 1);
         // ...but it must not perturb the prompt section or the wire params.
@@ -528,9 +559,36 @@ mod tests {
         let caps = vec![CapabilityParams {
             capability_title: "C".into(),
             params: vec![
-                DerivedParam { key: "a".into(), label: "A".into(), param_type: "number".into(), default: json!(48), description: None, options: None, min: Some(4.0), max: Some(168.0) },
-                DerivedParam { key: "b".into(), label: "B".into(), param_type: "string".into(), default: serde_json::Value::Null, description: Some("d".into()), options: None, min: None, max: None },
-                DerivedParam { key: "c".into(), label: "C".into(), param_type: "string".into(), default: json!(["x", "y"]), description: None, options: None, min: None, max: None },
+                DerivedParam {
+                    key: "a".into(),
+                    label: "A".into(),
+                    param_type: "number".into(),
+                    default: json!(48),
+                    description: None,
+                    options: None,
+                    min: Some(4.0),
+                    max: Some(168.0),
+                },
+                DerivedParam {
+                    key: "b".into(),
+                    label: "B".into(),
+                    param_type: "string".into(),
+                    default: serde_json::Value::Null,
+                    description: Some("d".into()),
+                    options: None,
+                    min: None,
+                    max: None,
+                },
+                DerivedParam {
+                    key: "c".into(),
+                    label: "C".into(),
+                    param_type: "string".into(),
+                    default: json!(["x", "y"]),
+                    description: None,
+                    options: None,
+                    min: None,
+                    max: None,
+                },
             ],
             skipped: Vec::new(),
         }];
@@ -548,8 +606,34 @@ mod tests {
     #[test]
     fn dedupes_keys_first_wins() {
         let caps = vec![
-            CapabilityParams { capability_title: "C1".into(), params: vec![DerivedParam { key: "shared".into(), label: "First".into(), param_type: "string".into(), default: json!("one"), description: None, options: None, min: None, max: None }], skipped: Vec::new() },
-            CapabilityParams { capability_title: "C2".into(), params: vec![DerivedParam { key: "shared".into(), label: "Second".into(), param_type: "string".into(), default: json!("two"), description: None, options: None, min: None, max: None }], skipped: Vec::new() },
+            CapabilityParams {
+                capability_title: "C1".into(),
+                params: vec![DerivedParam {
+                    key: "shared".into(),
+                    label: "First".into(),
+                    param_type: "string".into(),
+                    default: json!("one"),
+                    description: None,
+                    options: None,
+                    min: None,
+                    max: None,
+                }],
+                skipped: Vec::new(),
+            },
+            CapabilityParams {
+                capability_title: "C2".into(),
+                params: vec![DerivedParam {
+                    key: "shared".into(),
+                    label: "Second".into(),
+                    param_type: "string".into(),
+                    default: json!("two"),
+                    description: None,
+                    options: None,
+                    min: None,
+                    max: None,
+                }],
+                skipped: Vec::new(),
+            },
         ];
         let vals = to_parameter_values(&caps);
         assert_eq!(vals.len(), 1);
@@ -643,7 +727,9 @@ mod tests {
 
     #[test]
     fn merge_existing_wins_and_appends_new() {
-        let existing = vec![json!({"key": "risk_tolerance", "label": "Template Risk", "type": "string", "value": "high"})];
+        let existing = vec![
+            json!({"key": "risk_tolerance", "label": "Template Risk", "type": "string", "value": "high"}),
+        ];
         let derived = vec![
             json!({"key": "risk_tolerance", "label": "Derived Risk", "type": "select", "value": "low"}),
             json!({"key": "contract_types", "label": "Contract types", "type": "string", "value": ""}),
@@ -670,6 +756,9 @@ mod tests {
         assert!(instr.starts_with("Do the thing."));
         // Empty caps strips it back out.
         inject_into_structured_prompt(&mut sp, &[]);
-        assert!(!sp["instructions"].as_str().unwrap().contains(SECTION_MARKER));
+        assert!(!sp["instructions"]
+            .as_str()
+            .unwrap()
+            .contains(SECTION_MARKER));
     }
 }

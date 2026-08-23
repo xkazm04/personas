@@ -50,7 +50,7 @@ const HIGGSFIELD_MODEL: &str = "flux-pro/kontext/max";
 
 /// Async-job polling budget: at most `POLL_ATTEMPTS` polls, `POLL_INTERVAL`
 /// apart. This bounds the *number* of polls but not wall-clock time — each poll
-/// request can itself take up to `HTTP_TIMEOUT`, so 40 slow polls could run far
+/// request can itself take up to `SHARED_HTTP`'s 30 s, so 40 slow polls could run far
 /// past 2 minutes. `POLL_DEADLINE` is the real bound: the loop aborts with a
 /// clean "timed out" error once total elapsed wall-clock crosses it, whichever
 /// comes first. Kept below the 150s frontend IPC timeout so the backend, not the
@@ -58,9 +58,6 @@ const HIGGSFIELD_MODEL: &str = "flux-pro/kontext/max";
 const POLL_ATTEMPTS: u32 = 40;
 const POLL_INTERVAL: Duration = Duration::from_secs(3);
 const POLL_DEADLINE: Duration = Duration::from_secs(120);
-
-/// Per-request HTTP timeout.
-const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Spend-ledger coordinates for persona-icon generations. Rows land in the
 /// shared `dev_llm_spend` ledger under this `source`/`trigger_kind` (token
@@ -178,10 +175,11 @@ pub async fn generate_persona_icon(
     }
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
 
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client: {e}")))?;
+    // `SHARED_HTTP` — 30 s, which is exactly what the hand-rolled client here
+    // asked for. Both image hosts are compile-time literals inside
+    // `leonardo_generate` / `higgsfield_generate`; the credential supplies only
+    // the API key, never the host, so the SSRF-safe resolver would buy nothing.
+    let client = crate::SHARED_HTTP.clone();
 
     let (image_bytes, cost_usd) = match credential.service_type.as_str() {
         "leonardo_ai" => leonardo_generate(&client, &fields, prompt).await?,
@@ -245,11 +243,9 @@ async fn leonardo_generate(
         .map(|credits| credits * LEONARDO_USD_PER_CREDIT)
         .unwrap_or(LEONARDO_ESTIMATED_COST_USD);
 
-    let generation_id = find_string(&json, &["generationId", "id"]).ok_or_else(|| {
-        AppError::Internal("Leonardo did not return a generation id".into())
-    })?;
-    let status_url =
-        format!("https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}");
+    let generation_id = find_string(&json, &["generationId", "id"])
+        .ok_or_else(|| AppError::Internal("Leonardo did not return a generation id".into()))?;
+    let status_url = format!("https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}");
     let image_url = poll_for_image(client, &status_url, &auth, "Leonardo").await?;
     let bytes = download_image(client, &image_url).await?;
     Ok((bytes, cost_usd))
@@ -285,12 +281,9 @@ async fn higgsfield_generate(
     // per-image estimate for this premium Flux tier.
     let cost_usd = HIGGSFIELD_ESTIMATED_COST_USD;
 
-    let request_id =
-        find_string(&json, &["request_id", "requestId", "id"]).ok_or_else(|| {
-            AppError::Internal("Higgsfield did not return a request id".into())
-        })?;
-    let status_url =
-        format!("https://platform.higgsfield.ai/requests/{request_id}/status");
+    let request_id = find_string(&json, &["request_id", "requestId", "id"])
+        .ok_or_else(|| AppError::Internal("Higgsfield did not return a request id".into()))?;
+    let status_url = format!("https://platform.higgsfield.ai/requests/{request_id}/status");
     let image_url = poll_for_image(client, &status_url, &auth, "Higgsfield").await?;
     let bytes = download_image(client, &image_url).await?;
     Ok((bytes, cost_usd))
@@ -299,17 +292,12 @@ async fn higgsfield_generate(
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 /// Read a required (non-empty) credential field.
-fn require_field<'a>(
-    fields: &'a HashMap<String, String>,
-    key: &str,
-) -> Result<&'a str, AppError> {
+fn require_field<'a>(fields: &'a HashMap<String, String>, key: &str) -> Result<&'a str, AppError> {
     fields
         .get(key)
         .map(String::as_str)
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            AppError::Validation(format!("Credential is missing the '{key}' field"))
-        })
+        .ok_or_else(|| AppError::Validation(format!("Credential is missing the '{key}' field")))
 }
 
 /// Treat a non-2xx response as an error, surfacing a snippet of the body so
@@ -425,8 +413,8 @@ async fn download_image(client: &reqwest::Client, url: &str) -> Result<Vec<u8>, 
     let mut buf: Vec<u8> = Vec::new();
     let mut stream = resp.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk
-            .map_err(|e| AppError::Internal(format!("Image download read failed: {e}")))?;
+        let chunk =
+            chunk.map_err(|e| AppError::Internal(format!("Image download read failed: {e}")))?;
         push_capped(&mut buf, &chunk)?;
     }
     Ok(buf)
@@ -528,7 +516,10 @@ mod tests {
     #[test]
     fn find_string_walks_nested_objects() {
         let v = serde_json::json!({ "sdGenerationJob": { "generationId": "gen-123" } });
-        assert_eq!(find_string(&v, &["generationId"]).as_deref(), Some("gen-123"));
+        assert_eq!(
+            find_string(&v, &["generationId"]).as_deref(),
+            Some("gen-123")
+        );
     }
 
     #[test]

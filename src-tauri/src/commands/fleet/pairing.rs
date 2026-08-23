@@ -273,7 +273,7 @@ pub async fn fleet_pair_device(
     let device_name = name
         .map(|n| n.trim().to_string())
         .filter(|n| !n.is_empty())
-        .unwrap_or_else(|| format!("Phone {}", devices.iter().count() + 1));
+        .unwrap_or_else(|| format!("Phone {}", devices.len() + 1));
 
     devices.push(PairedDevice {
         id: device_id.clone(),
@@ -348,7 +348,10 @@ pub async fn fleet_companion_revoke(
 // Compile-time surface check, mirroring the pattern in `commands.rs`.
 #[allow(dead_code)]
 fn _assert_commands_exist(app: AppHandle, state: State<'_, Arc<AppState>>) {
-    let _ = fleet_pair_device(app, state, None);
+    // Type-checked only, never polled — binding it (rather than `let _ =`)
+    // says so, and keeps `let_underscore_future` from reading it as a
+    // dropped future somebody meant to await.
+    let _unpolled = fleet_pair_device(app, state, None);
 }
 
 #[cfg(test)]

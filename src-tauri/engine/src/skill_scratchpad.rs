@@ -83,7 +83,10 @@ const DEFAULT_ENABLED: bool = personas_db::settings_keys::SCRATCHPAD_ENABLED_DEF
 /// Seed the process-global enable cache from an explicit bool. Called by
 /// [`seed_enabled_from_settings`]; exposed for tests.
 pub fn seed_enabled(enabled: bool) {
-    ENABLED_CACHE.store(if enabled { CACHE_ON } else { CACHE_OFF }, Ordering::Relaxed);
+    ENABLED_CACHE.store(
+        if enabled { CACHE_ON } else { CACHE_OFF },
+        Ordering::Relaxed,
+    );
 }
 
 /// Read the `scratchpad_enabled` setting from the DB and seed the cache. Called
@@ -284,9 +287,18 @@ mod tests {
         rotate_if_needed(&path);
 
         let after = std::fs::read_to_string(&path).expect("read");
-        assert!(after.len() <= MAX_FILE_BYTES + 128, "rotated file within bound + marker");
-        assert!(after.starts_with("_(scratchpad rotated"), "rotation marker present");
-        assert!(after.contains("UNIQUE_TAIL_MARKER"), "most-recent tail preserved");
+        assert!(
+            after.len() <= MAX_FILE_BYTES + 128,
+            "rotated file within bound + marker"
+        );
+        assert!(
+            after.starts_with("_(scratchpad rotated"),
+            "rotation marker present"
+        );
+        assert!(
+            after.contains("UNIQUE_TAIL_MARKER"),
+            "most-recent tail preserved"
+        );
     }
 
     #[test]

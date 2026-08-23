@@ -616,6 +616,126 @@ to write down whose string it is and why they are trusted — the artifact
 [`command-input-validation.md`](./command-input-validation.md) §7.C observed was
 missing everywhere else.
 
+### A third census rule — `process-spawn-outside-chokepoint`
+
+**Read the refusal above before this one, because they are adjacent and only one
+of them is refused.** Condition 2 — *a child's lifetime is not bounded by
+anything that survives the parent's death* — stays refused, for the reason given:
+its fix is **one** change in **one** helper that corrects all 125 sites at once,
+so a count-the-callers ratchet would read 125 → 125 → 0 and never once have
+caused the fix. That argument is about a defect whose repair lives entirely
+inside the chokepoint. **It does not transfer to the population that never
+reaches the chokepoint at all**, whose repair is per-site by construction: you
+route this spawn through `CliProcessDriver`, and the count moves by one. A
+ratchet is the right instrument for exactly that shape.
+
+> **Condition 3 — a child process is created by code that has not agreed to any
+> of the guarantees the application makes about child processes.**
+
+This is "The one way" restated as a count. `build_and_spawn_core`
+(`cli_process.rs:576`) is where a child gets its argv as an array, its stdio
+decided on all three streams with the deadlock reason written down, its
+`kill_on_drop(true)` with the billing reason written down, its `current_dir`,
+its `CREATE_NO_WINDOW`, and its `env_removals` → `env_overrides` →
+`force_subscription_auth` sequence. **The driver has 9 files / 16 call sites.
+138 spawns across 58 files do not go through it**, and each of those 138
+independently re-decides — usually by omission — every one of those properties.
+The population table above is the itemised bill: 97 inherit the whole
+environment, 71 inherit the cwd, 75 configure no stdio at all, 87 have neither a
+timeout nor `kill_on_drop`, 42 never read the exit status.
+
+**This rule is the parent of two already registered, and the relationship is
+worth stating so nobody thinks it is a duplicate.** `unbound-child-lifetime`
+(12 files / 13 matches, owned by
+[`cancelling-in-flight-work.md`](./cancelling-in-flight-work.md)) and
+`wholesale-inherited-child-env` (10 / 13, owned by
+[`credential-injection-into-child.md`](./credential-injection-into-child.md))
+each gate **one property** of a spawn — a missing `kill_on_drop`, a missing
+`env_clear`. Both are subsets of this population, and both go to zero the moment
+their one property is added *without the spawn ever moving*. This rule asks the
+prior question, and it is the only one of the three that falls when a call site
+adopts the driver and therefore inherits all of the properties at once.
+
+**Precision 13/13**, on a systematic sample opened by hand (every 11th site):
+`db/src/lib.rs:1667` (`icacls`), `commands/artist/mod.rs:124`
+(`TokioCommand::new("blender")`), `commands/fleet/external.rs:156`
+(`std::process::Command::new(&program)`), `commands/ocr/mod.rs:580`,
+`engine/build_session/fix_pass.rs:205`, `webbuild/versions.rs:26` — every one a
+real process spawn. **The spelling vocabulary was enumerated exhaustively rather
+than sampled**: exactly four spellings exist in this tree —
+`std::process::Command::new` (46), `tokio::process::Command::new` (39), bare
+`Command::new` (38) and the `TokioCommand::new` alias (15) — summing to 138.
+This is the number that punishes a careless matcher: **an anchor with a
+lookbehind forbidding a preceding colon scores 43**, missing every qualified
+call, a 3.2× undercount that reads as "mostly clean".
+
+**Two independent implementations agree at 58 files / 138 matches** — the census
+engine and a hand-written walker sharing no code with it. Four further matches
+sit on comment-only lines and are correctly not counted, and five more sit inside
+the excluded chokepoint itself (143 total).
+
+```json
+{
+  "rules": [
+    {
+      "id": "process-spawn-outside-chokepoint",
+      "goldenPath": "docs/concepts/golden-paths/spawning-a-cli-subprocess.md",
+      "title": "A child process is spawned outside the one module that owns argv separation, env scrubbing, stdio, timeouts and kill-on-drop",
+      "roots": ["src-tauri"],
+      "extensions": [".rs"],
+      "signal": {
+        "pattern": "\\b(?:[A-Za-z_][A-Za-z0-9_]*)?Command::new\\s*\\(",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "Command::new( in any of its four spellings -- bare, std::process::, tokio::process::, or the TokioCommand alias -- anywhere outside engine/src/cli_process.rs. PROXY FOR the stack-free condition: a process is created by code that has not agreed to any of the guarantees the application makes about child processes, so whatever the chokepoint does for spawns that go through it simply does not happen for this one. CONCRETELY HERE cli_process.rs:576 build_and_spawn_core is where a child gets its argv as an ARRAY, its stdio decided on all three streams with the deadlock reason written down (:565-567), its .kill_on_drop(true) with the billing reason written down (:584-589), its current_dir, its CREATE_NO_WINDOW and its env_removals -> env_overrides -> force_subscription_auth sequence. COMPLIANT SHAPE: build a CliArgs (core/src/types.rs:287) and hand it to the driver -- 9 files / 16 call sites. VIOLATING SHAPE: commands/fleet/external.rs:156 `let mut cmd = std::process::Command::new(&program);`. The 138 outside inherit the app's whole environment (97 of 125 production sites), its cwd (71), configure no stdio at all (75), have NEITHER a timeout NOR kill_on_drop (87), and never read the exit status (42) -- the itemised population table is in this path's Deviations section. RELATIONSHIP TO TWO REGISTERED SIBLINGS, declared: unbound-child-lifetime (12/13) and wholesale-inherited-child-env (10/13) each gate ONE property of a spawn -- a missing kill_on_drop, a missing env_clear -- and each goes to zero when that one property is added WITHOUT THE SPAWN EVER MOVING. Both are subsets of this population. This rule asks the prior question and is the only one of the three that falls when a call site adopts the driver and inherits all the properties at once. NOT THE REFUSED RULE: this path refuses to gate child LIFETIME (job objects / process groups) because that fix is one change in one helper correcting 125 sites at once, so a ratchet would read 125 -> 125 -> 0 and never cause the fix. That argument does not transfer here: a spawn that never reaches the chokepoint is repaired per-site, one count at a time. MEASURED 2026-08-21 at b7fba447f: 138 matches across 58 of 963 files, plus 5 inside the excluded chokepoint (143 total) and 4 on comment-only lines correctly skipped. PRECISION 13/13 on a systematic hand-opened sample (every 11th site), all real process spawns. The SPELLING vocabulary was enumerated EXHAUSTIVELY rather than sampled: exactly four forms exist -- std::process::Command::new 46, tokio::process::Command::new 39, bare Command::new 38, TokioCommand::new 15. RECALL, and the number that punishes a careless matcher: an anchor with a lookbehind forbidding a preceding colon scores 43, missing every qualified call -- a 3.2x undercount that reads as 'mostly clean'. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: the alias arm accepts ANY identifier ending in Command, so a future clap::Command::new (an argument parser, not a process) would count. No such type exists in this tree today; if one arrives, tighten the alternation to the aliases actually in use rather than baselining the noise. PRECONDITION (must be re-derived per repo): this repo spawns children through std/tokio Command and has ONE module that owns the policy. A repo that shells out through a library wrapper, or that has no chokepoint at all, has the same condition wearing different syntax. LEGAL FIX: build a CliArgs and route the spawn through cli_process.rs. If it needs a shape the chokepoint does not offer, WIDEN THE CHOKEPOINT rather than opening a second door -- and do not silence a match by wrapping Command::new in a local helper, which moves the match without moving the guarantees."
+      },
+      "exclude": [
+        {
+          "path": "src-tauri/engine/src/cli_process.rs",
+          "reason": "the chokepoint itself — this file IS where argv separation, env scrubbing, stdio, timeouts, PID recording and kill-on-drop live, so it must call Command::new"
+        }
+      ],
+      "baseline": { "files": 58, "matches": 137 },
+      "floor": 900
+    }
+  ]
+}
+```
+
+> **Ratcheted 138 -> 137 on 2026-08-22, and the file count deliberately did NOT move.**
+> `personas-core` had two `icacls` spawns — `crypto.rs`'s `restrict_file_permissions`
+> and its `repair_key_file_permissions`. Both now go through a single private
+> `run_icacls` in the new `core/src/fs_private.rs`, so `crypto.rs` leaves the
+> violating set and `fs_private.rs` enters it: **58 files either way, one fewer
+> spawn site.**
+>
+> **This is the move this rule explicitly warns against ("do not silence a match by
+> wrapping `Command::new` in a local helper"), so it needs the distinction stated.**
+> The warning is about relocating a spawn to make a counter drop while the
+> guarantees stay absent. Here two spawn sites became one — the count fell because
+> a call to `Command::new` genuinely stopped existing, not because it moved.
+>
+> **What it is NOT: routing through the chokepoint.** `personas-core` is the
+> dependency-free foundation crate and `cli_process` lives in `personas-engine`, so
+> core structurally cannot reach it; the legal fix this path prescribes is
+> unavailable here without inverting the crate graph. `fs_private::run_icacls` is
+> therefore core's own one-function chokepoint, with fixed argv, no env, no stdin
+> and no caller-supplied program name. The remaining 137 are unaffected.
+
+
+**One `exclude`, and it is the chokepoint.** Nothing else is exempt: the two
+sites this path *does* trust with a shell — `verification_command.rs`, whose
+module doc declares its trust boundary in prose — are trusted about the
+*interpreter*, not about argv, stdio or teardown, so they belong in this count
+like everything else. **`floor: 900`** against 963 walked `.rs` files, matching
+every other `src-tauri`-rooted rule including `shell-vehicle-nonliteral-arg`
+above.
+
+**End of life: this rule falls, it does not reach zero.** `db/src/lib.rs:1667`
+runs `icacls` on a database file at init; `webbuild/versions.rs:26` shells out
+to `git` at build time. Neither wants a CLI-session driver. A residue is correct
+here, and the ratchet's job is the 138, not the last one.
+
 ### What the census cannot cover, and what should carry it instead
 
 | Condition | Instrument |

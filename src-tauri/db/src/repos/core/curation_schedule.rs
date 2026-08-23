@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// One row in `persona_curation_schedule`. Public type returned to the
@@ -35,7 +36,7 @@ pub fn upsert(
     persona_id: &str,
     cron_expr: &str,
 ) -> Result<PersonaCurationSchedule, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("curation_schedule::upsert")?;
     conn.execute(
         "INSERT INTO persona_curation_schedule (persona_id, cron_expr, created_at, updated_at)
          VALUES (?1, ?2, datetime('now'), datetime('now'))
@@ -45,12 +46,14 @@ pub fn upsert(
         params![persona_id, cron_expr],
     )?;
     get(pool, persona_id)?.ok_or_else(|| {
-        AppError::Internal(format!("upsert succeeded but row not found for `{persona_id}`"))
+        AppError::Internal(format!(
+            "upsert succeeded but row not found for `{persona_id}`"
+        ))
     })
 }
 
 pub fn delete(pool: &DbPool, persona_id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("curation_schedule::delete")?;
     let n = conn.execute(
         "DELETE FROM persona_curation_schedule WHERE persona_id = ?1",
         params![persona_id],
@@ -58,11 +61,8 @@ pub fn delete(pool: &DbPool, persona_id: &str) -> Result<bool, AppError> {
     Ok(n > 0)
 }
 
-pub fn get(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<Option<PersonaCurationSchedule>, AppError> {
-    let conn = pool.get()?;
+pub fn get(pool: &DbPool, persona_id: &str) -> Result<Option<PersonaCurationSchedule>, AppError> {
+    let conn = pool.conn("curation_schedule::get")?;
     let row = conn
         .query_row(
             "SELECT persona_id, cron_expr, last_curation_at, created_at, updated_at
@@ -76,7 +76,7 @@ pub fn get(
 
 /// List ALL schedules. Used by the scheduler tick.
 pub fn list(pool: &DbPool) -> Result<Vec<PersonaCurationSchedule>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("curation_schedule::list")?;
     let mut stmt = conn.prepare(
         "SELECT persona_id, cron_expr, last_curation_at, created_at, updated_at
          FROM persona_curation_schedule
@@ -91,7 +91,7 @@ pub fn list(pool: &DbPool) -> Result<Vec<PersonaCurationSchedule>, AppError> {
 /// Mark a persona's curation as having run now. Called by the scheduler
 /// after enqueueing a job.
 pub fn mark_run_now(pool: &DbPool, persona_id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("curation_schedule::mark_run_now")?;
     conn.execute(
         "UPDATE persona_curation_schedule
          SET last_curation_at = datetime('now'), updated_at = datetime('now')

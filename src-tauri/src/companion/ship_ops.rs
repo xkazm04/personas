@@ -52,6 +52,27 @@ struct Resolved {
     shipped_at: Option<String>,
 }
 
+/// One scope member of the milestone, as the answer needs it.
+///
+/// A named struct rather than the 7-tuple this used to be: clippy's
+/// `type_complexity` is right that nobody can read `f.1` and know it means the
+/// bucket, and the render loop below filters on exactly that field.
+struct Member {
+    /// The use case's name, or a `(deleted use case …)` marker for an orphan.
+    name: String,
+    bucket: String,
+    /// The operator's 1..5 opinion. `None` is UNRATED — never a zero.
+    rating: Option<i64>,
+    /// The operator's note on why this member sits in this bucket.
+    description: Option<String>,
+    /// Joined after `cut_at` was stamped — scope creep awaiting triage.
+    after_cut: bool,
+    /// Active KPIs measuring it, directly or through one of its contexts.
+    kpis: i64,
+    /// Comma-joined context names, empty when the feature slices none.
+    contexts: String,
+}
+
 /// Resolve a query to ONE milestone.
 ///
 /// Three ways in, in order, because Athena reaches this op from three
@@ -137,11 +158,23 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
         format!(
             "Status: {}{}{}{}",
             m.status,
-            m.target_date.as_deref().map(|d| format!(" · target {d}")).unwrap_or_default(),
-            m.cut_at.as_deref().map(|d| format!(" · cut {}", &d[..10.min(d.len())])).unwrap_or_else(|| " · NOT CUT YET".into()),
-            m.shipped_at.as_deref().map(|d| format!(" · shipped {}", &d[..10.min(d.len())])).unwrap_or_default(),
+            m.target_date
+                .as_deref()
+                .map(|d| format!(" · target {d}"))
+                .unwrap_or_default(),
+            m.cut_at
+                .as_deref()
+                .map(|d| format!(" · cut {}", &d[..10.min(d.len())]))
+                .unwrap_or_else(|| " · NOT CUT YET".into()),
+            m.shipped_at
+                .as_deref()
+                .map(|d| format!(" · shipped {}", &d[..10.min(d.len())]))
+                .unwrap_or_default(),
         ),
-        format!("Objective: {}", m.goal.as_deref().unwrap_or("(not written)")),
+        format!(
+            "Objective: {}",
+            m.goal.as_deref().unwrap_or("(not written)")
+        ),
     ];
 
     // ── scope members, by bucket ──────────────────────────────────────────
@@ -154,7 +187,7 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
     // from the answer with no trace, and Athena would then reason — confidently
     // — about a smaller milestone than the real one. A read that cannot be
     // trusted to be complete is worse than one that says it failed.
-    let mut features: Vec<(String, String, Option<i64>, Option<String>, bool, i64, String)> = Vec::new();
+    let mut features: Vec<Member> = Vec::new();
     let mut read_error: Option<String> = None;
     if let Ok(mut stmt) = conn.prepare(
         "SELECT COALESCE(u.name, '(deleted use case ' || i.item_id || ')'),
@@ -173,15 +206,15 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
           ORDER BY i.bucket, i.order_index, i.created_at",
     ) {
         if let Ok(rows) = stmt.query_map(params![m.id], |r| {
-            Ok((
-                r.get::<_, String>(0)?,
-                r.get::<_, String>(1)?,
-                r.get::<_, Option<i64>>(2)?,
-                r.get::<_, Option<String>>(3)?,
-                r.get::<_, i64>(4)? != 0,
-                r.get::<_, i64>(5)?,
-                r.get::<_, String>(6)?,
-            ))
+            Ok(Member {
+                name: r.get(0)?,
+                bucket: r.get(1)?,
+                rating: r.get(2)?,
+                description: r.get(3)?,
+                after_cut: r.get::<_, i64>(4)? != 0,
+                kpis: r.get(5)?,
+                contexts: r.get(6)?,
+            })
         }) {
             for row in rows {
                 match row {
@@ -203,7 +236,7 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
     }
 
     for bucket in ["core", "later", "never"] {
-        let rows: Vec<_> = features.iter().filter(|f| f.1 == bucket).collect();
+        let rows: Vec<&Member> = features.iter().filter(|f| f.bucket == bucket).collect();
         if rows.is_empty() && bucket != "core" {
             continue;
         }
@@ -221,20 +254,24 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
         let lines: Vec<String> = rows
             .iter()
             .take(LIST_CAP)
-            .map(|(name, _, rating, desc, after_cut, kpis, ctxs)| {
-                let mut bits = vec![format!("  - {name}")];
-                bits.push(if ctxs.is_empty() { "no context".into() } else { format!("contexts: {ctxs}") });
-                bits.push(format!("{kpis} active KPI(s)"));
+            .map(|f| {
+                let mut bits = vec![format!("  - {}", f.name)];
+                bits.push(if f.contexts.is_empty() {
+                    "no context".into()
+                } else {
+                    format!("contexts: {}", f.contexts)
+                });
+                bits.push(format!("{} active KPI(s)", f.kpis));
                 // Say what a rating IS every time it appears. It is the
                 // operator's second opinion and it gates nothing (shipDuality)
                 // — without the note she reads a 2/5 as a blocker.
-                if let Some(r) = rating {
+                if let Some(r) = f.rating {
                     bits.push(format!("operator rates it {r}/5 (opinion, not a gate)"));
                 }
-                if *after_cut {
+                if f.after_cut {
                     bits.push("JOINED AFTER THE CUT".into());
                 }
-                if let Some(d) = desc {
+                if let Some(d) = &f.description {
                     bits.push(format!("note: \"{d}\""));
                 }
                 bits.join(" · ")
@@ -284,7 +321,9 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
     out.push(String::new());
     out.push(format!("BOUND GOALS — {} ", goals.len()));
     if goals.is_empty() {
-        out.push("  (none — the `objective` exit criterion is unmet until one is bound)".to_string());
+        out.push(
+            "  (none — the `objective` exit criterion is unmet until one is bound)".to_string(),
+        );
     } else {
         let n = goals.len();
         out.extend(cap(goals.into_iter().take(LIST_CAP).collect(), n));

@@ -71,8 +71,7 @@ pub struct ThreadAttributionGuard {
 
 impl ThreadAttributionGuard {
     pub fn enter(execution_id: impl Into<String>) -> Self {
-        let prev = THREAD_EXECUTION_ID
-            .with(|cell| cell.borrow_mut().replace(execution_id.into()));
+        let prev = THREAD_EXECUTION_ID.with(|cell| cell.borrow_mut().replace(execution_id.into()));
         Self { prev }
     }
 }
@@ -111,10 +110,7 @@ mod tests {
 
     #[tokio::test]
     async fn task_scope_wins_and_clears() {
-        let inside = with_execution("exec-task".into(), async {
-            current_execution_id()
-        })
-        .await;
+        let inside = with_execution("exec-task".into(), async { current_execution_id() }).await;
         assert_eq!(inside.as_deref(), Some("exec-task"));
         assert_eq!(current_execution_id(), None);
     }

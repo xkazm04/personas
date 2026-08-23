@@ -14,11 +14,11 @@ use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
 use ts_rs::TS;
 
-use personas_db::repos::core::personas as persona_repo;
-use personas_db::DbPool;
 use crate::desktop_security::DesktopCapability;
 use crate::identity;
 use personas_core::error::AppError;
+use personas_db::repos::core::personas as persona_repo;
+use personas_db::DbPool;
 
 // -- Enclave policy types ---------------------------------------------------
 
@@ -223,10 +223,9 @@ pub fn verify(pool: &DbPool, enclave_bytes: &[u8]) -> Result<EnclaveVerifyResult
     // own key but claim a trusted peer's id and read as signed-and-trusted. The
     // sibling `bundle.rs::verify_against_trusted_key` already binds key↔peer;
     // parse_identity_card does the same check for cards.
-    let key_binds_to_peer_id =
-        identity::peer_id_from_public_key_b64(&sig.signer_public_key_b64)
-            .map(|derived| derived == sig.signer_peer_id)
-            .unwrap_or(false);
+    let key_binds_to_peer_id = identity::peer_id_from_public_key_b64(&sig.signer_public_key_b64)
+        .map(|derived| derived == sig.signer_peer_id)
+        .unwrap_or(false);
 
     let signature_valid = key_binds_to_peer_id
         && identity::verify_signature(
@@ -245,9 +244,7 @@ pub fn verify(pool: &DbPool, enclave_bytes: &[u8]) -> Result<EnclaveVerifyResult
     // the embedded key (belt-and-braces if peer_id derivation ever changes).
     let creator_trusted = signature_valid
         && personas_db::repos::resources::identity::get_trusted_peer(pool, &sig.signer_peer_id)
-            .map(|p| {
-                !p.trust_level.is_revoked() && p.public_key_b64 == sig.signer_public_key_b64
-            })
+            .map(|p| !p.trust_level.is_revoked() && p.public_key_b64 == sig.signer_public_key_b64)
             .unwrap_or(false);
 
     Ok(EnclaveVerifyResult {

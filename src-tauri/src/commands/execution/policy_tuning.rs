@@ -184,8 +184,8 @@ pub fn policy_tuning_apply(
             if !diags.is_empty() {
                 return Err(AppError::Validation(diags.join("; ")));
             }
-            let json = serde_json::to_string(&rules)
-                .map_err(|e| AppError::Internal(e.to_string()))?;
+            let json =
+                serde_json::to_string(&rules).map_err(|e| AppError::Internal(e.to_string()))?;
             settings_repo::set(&state.db, model_routing::MODEL_ROUTING_RULES_KEY, &json)?;
         }
         "budget_ceiling" => {
@@ -211,8 +211,7 @@ pub fn policy_tuning_apply(
             "proposal {id} was decided concurrently"
         )));
     }
-    repo::get(&state.db, &id)?
-        .ok_or_else(|| AppError::Internal("applied proposal vanished".into()))
+    repo::get(&state.db, &id)?.ok_or_else(|| AppError::Internal("applied proposal vanished".into()))
 }
 
 /// Decline one proposal, recording the operator's reason as feedback. The
@@ -224,15 +223,11 @@ pub fn policy_tuning_decline(
     reason: Option<String>,
 ) -> Result<repo::PolicyProposal, AppError> {
     require_auth_sync(&state)?;
-    let trimmed = reason
-        .as_deref()
-        .map(str::trim)
-        .filter(|r| !r.is_empty());
+    let trimmed = reason.as_deref().map(str::trim).filter(|r| !r.is_empty());
     if !repo::mark_declined(&state.db, &id, trimmed)? {
         return Err(AppError::Validation(format!(
             "proposal {id} is not pending"
         )));
     }
-    repo::get(&state.db, &id)?
-        .ok_or_else(|| AppError::NotFound(format!("policy proposal {id}")))
+    repo::get(&state.db, &id)?.ok_or_else(|| AppError::NotFound(format!("policy proposal {id}")))
 }

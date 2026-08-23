@@ -122,7 +122,12 @@ function ErrorFallback({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-8">
+    // `data-testid` is the ONLY way an automated smoke run can see this card:
+    // the boundary renders inside the same content slot as a healthy section,
+    // so "navigation succeeded" and "the crash card is showing" are otherwise
+    // indistinguishable over the test bridge. Keep this attribute stable —
+    // `tests/playwright/module-smoke.spec.ts` asserts its absence per section.
+    <div data-testid="error-boundary-fallback" className="flex flex-col items-center justify-center h-full p-8">
       <div className="max-w-md w-full">
         <div className="p-6 rounded-xl bg-amber-500/5 border border-amber-500/15">
           {/* Header */}

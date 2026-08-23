@@ -36,8 +36,8 @@
 //!      the DESIGN.md sitting beside the feature it describes;
 //!   3. the rest of `docs/**`, breadth-first with a per-directory cap so one
 //!      generated tree cannot crowd out the maintained pages.
-//! Everything is sorted, so the truncated set is stable run to run (the scan
-//! deletes rows for docs it no longer lists — an unstable order would thrash).
+//!      Everything is sorted, so the truncated set is stable run to run (the scan
+//!      deletes rows for docs it no longer lists — an unstable order would thrash).
 //!
 //! NOT in scope, by decision: Rust `//!` module headers (and doc comments
 //! generally). They have no git history independent of the source file they
@@ -91,7 +91,15 @@ const SOURCE_EXTS: &[&str] = &[
 /// Never walked, and never treated as a broken reference: build output and
 /// vendored deps are gitignored, so their absence is normal, not rot.
 const SKIP_DIRS: &[&str] = &[
-    "node_modules", "target", "dist", "build", "out", "coverage", "vendor", "test-results", "tmp",
+    "node_modules",
+    "target",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "vendor",
+    "test-results",
+    "tmp",
 ];
 /// Re-scan throttle: a project scanned more recently than this is skipped
 /// unless `force` — the wall remounts far more often than docs rot.
@@ -346,18 +354,37 @@ fn glob_prefix(glob: &str) -> String {
 /// Doc-map manifest → doc path → coupled source prefixes.
 fn parse_doc_map(root: &Path) -> HashMap<String, Vec<String>> {
     let mut out = HashMap::new();
-    for rel in ["scripts/docs/feature-doc-map.json", "docs/feature-doc-map.json", "feature-doc-map.json"] {
-        let Ok(txt) = std::fs::read_to_string(root.join(rel)) else { continue };
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) else { continue };
-        let entries = v.get("entries").and_then(|e| e.as_array()).cloned()
+    for rel in [
+        "scripts/docs/feature-doc-map.json",
+        "docs/feature-doc-map.json",
+        "feature-doc-map.json",
+    ] {
+        let Ok(txt) = std::fs::read_to_string(root.join(rel)) else {
+            continue;
+        };
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) else {
+            continue;
+        };
+        let entries = v
+            .get("entries")
+            .and_then(|e| e.as_array())
+            .cloned()
             .or_else(|| v.as_array().cloned())
             .unwrap_or_default();
         for e in entries {
-            let Some(doc) = e.get("doc").and_then(|d| d.as_str()) else { continue };
+            let Some(doc) = e.get("doc").and_then(|d| d.as_str()) else {
+                continue;
+            };
             let globs: Vec<String> = e
                 .get("sourceGlobs")
                 .and_then(|g| g.as_array())
-                .map(|a| a.iter().filter_map(|s| s.as_str()).map(glob_prefix).filter(|p| !p.is_empty()).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|s| s.as_str())
+                        .map(glob_prefix)
+                        .filter(|p| !p.is_empty())
+                        .collect()
+                })
                 .unwrap_or_default();
             if !globs.is_empty() {
                 out.insert(doc.to_string(), globs);
@@ -382,8 +409,9 @@ struct DocRefs {
 /// CUT SHORT rather than ended: a glob, a template hole, a shell variable.
 /// `public/illustrations/explore/domain-*-{dark,light}.svg` tokenizes to
 /// `.../domain-`, which of course does not exist — and is not rot.
-const TRUNCATING_NEXT: &[char] =
-    &['*', '{', '<', '[', '(', '$', '%', '?', '+', '=', '~', '#', '@', '!', '\\'];
+const TRUNCATING_NEXT: &[char] = &[
+    '*', '{', '<', '[', '(', '$', '%', '?', '+', '=', '~', '#', '@', '!', '\\',
+];
 
 /// A missing token is only reported when its PARENT DIRECTORY still exists.
 /// That is the renamed/deleted-target shape, and it is what keeps this from
@@ -434,7 +462,9 @@ fn is_broken_ref(root: &Path, token: &str) -> bool {
 /// broken (does not). A token must start with a real top-level dir.
 fn scan_references(root: &Path, doc_rel: &str, top_dirs: &[String]) -> DocRefs {
     let mut refs = DocRefs::default();
-    let Ok(text) = std::fs::read_to_string(root.join(doc_rel)) else { return refs };
+    let Ok(text) = std::fs::read_to_string(root.join(doc_rel)) else {
+        return refs;
+    };
     // Slicing straight to 131_072 panics when that byte lands mid-codepoint —
     // one em-dash in the wrong place would take down the whole scan.
     let mut cut = 131_072.min(text.len());
@@ -486,7 +516,9 @@ fn scan_references(root: &Path, doc_rel: &str, top_dirs: &[String]) -> DocRefs {
                 }
                 None
             };
-            let (Some(target), true) = (target, couples) else { continue };
+            let (Some(target), true) = (target, couples) else {
+                continue;
+            };
             if refs.scope.len() >= MAX_SCOPE_PREFIXES {
                 continue;
             }
@@ -512,11 +544,7 @@ struct DocVerdict {
     changed: Vec<String>,
 }
 
-fn judge_doc(
-    doc: &str,
-    scope: Option<&Vec<String>>,
-    path_ts: &HashMap<String, i64>,
-) -> DocVerdict {
+fn judge_doc(doc: &str, scope: Option<&Vec<String>>, path_ts: &HashMap<String, i64>) -> DocVerdict {
     let doc_ts = *path_ts.get(doc).unwrap_or(&0);
     let mut source_ts = 0i64;
     let mut changed: Vec<(i64, String)> = Vec::new();
@@ -624,7 +652,10 @@ pub fn doc_rot_scan(
                 None => Some(refs.scope.clone()),
             };
             let v = judge_doc(doc, scope.as_ref(), &path_ts);
-            let scope_json = v.scope.as_ref().map(|s| serde_json::to_string(s).unwrap_or_default());
+            let scope_json = v
+                .scope
+                .as_ref()
+                .map(|s| serde_json::to_string(s).unwrap_or_default());
             let changed_json = serde_json::to_string(&v.changed).unwrap_or_else(|_| "[]".into());
             let broken_json = serde_json::to_string(&refs.broken).unwrap_or_else(|_| "[]".into());
             let dirty_since = v.dirty_since_ts.map(fmt_unix);
@@ -683,7 +714,10 @@ pub fn doc_rot_scan(
         for d in &docs {
             params.push(Box::new(d.clone()));
         }
-        conn.execute(&sql, rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())))?;
+        conn.execute(
+            &sql,
+            rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
+        )?;
 
         summary.projects_scanned += 1;
     }
@@ -799,7 +833,10 @@ mod tests {
     #[test]
     fn glob_prefix_cuts_at_first_wildcard_to_dir() {
         assert_eq!(glob_prefix("src/features/teams/**"), "src/features/teams/");
-        assert_eq!(glob_prefix("src-tauri/src/engine/director.rs"), "src-tauri/src/engine/");
+        assert_eq!(
+            glob_prefix("src-tauri/src/engine/director.rs"),
+            "src-tauri/src/engine/"
+        );
         assert_eq!(glob_prefix("docs/*.md"), "docs/");
     }
 
@@ -816,7 +853,10 @@ mod tests {
         assert_eq!(v.source_ts, 200);
         // stale since the OLDEST un-absorbed change (150), newest first as evidence
         assert_eq!(v.dirty_since_ts, Some(150));
-        assert_eq!(v.changed, vec!["src/x/one.rs".to_string(), "src/x/two.rs".to_string()]);
+        assert_eq!(
+            v.changed,
+            vec!["src/x/one.rs".to_string(), "src/x/two.rs".to_string()]
+        );
     }
 
     /// Still true, and still deliberate — the GIT signal cannot speak about a
@@ -875,7 +915,10 @@ mod tests {
         ]);
         let root = dir.path();
         let refs = scan_references(root, "docs/a.md", &top_dirs(root));
-        assert!(refs.scope.is_empty(), "nothing it names exists → no coupling");
+        assert!(
+            refs.scope.is_empty(),
+            "nothing it names exists → no coupling"
+        );
         assert_eq!(refs.broken, vec!["src/x/OldPanel.tsx".to_string()]);
         assert_eq!(doc_status_label(true, false, &refs.broken), "broken");
     }
@@ -933,11 +976,17 @@ mod tests {
         let dir = tree(&[
             ("src/x/one.rs", "fn main() {}"),
             ("docs/guides/live.md", "hi"),
-            ("docs/a.md", "see docs/guides/live.md and docs/guides/deleted.md"),
+            (
+                "docs/a.md",
+                "see docs/guides/live.md and docs/guides/deleted.md",
+            ),
         ]);
         let root = dir.path();
         let refs = scan_references(root, "docs/a.md", &top_dirs(root));
-        assert!(refs.scope.is_empty(), "docs→docs is navigation, not coupling");
+        assert!(
+            refs.scope.is_empty(),
+            "docs→docs is navigation, not coupling"
+        );
         assert_eq!(refs.broken, vec!["docs/guides/deleted.md".to_string()]);
     }
 
@@ -978,11 +1027,17 @@ mod tests {
         let mut files: Vec<(String, String)> = Vec::new();
         for run in 0..40 {
             for i in 0..25 {
-                files.push((format!("docs/harness/run{run:02}/r{i:04}.md"), "generated".into()));
+                files.push((
+                    format!("docs/harness/run{run:02}/r{i:04}.md"),
+                    "generated".into(),
+                ));
             }
         }
         files.push(("docs/features/api/README.md".into(), "managed".into()));
-        let refs: Vec<(&str, &str)> = files.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+        let refs: Vec<(&str, &str)> = files
+            .iter()
+            .map(|(a, b)| (a.as_str(), b.as_str()))
+            .collect();
         let dir = tree(&refs);
         let managed = vec!["docs/features/api/README.md".to_string()];
         let (docs, truncated) = list_docs(dir.path(), &managed);
@@ -992,8 +1047,14 @@ mod tests {
             "the managed doc must survive truncation — it is the highest-authority coupling there is"
         );
         // ...and no single directory may spend more than its share.
-        let from_one = docs.iter().filter(|d| d.starts_with("docs/harness/run00/")).count();
-        assert!(from_one <= MAX_DOCS_PER_DIR, "per-directory cap not applied: {from_one}");
+        let from_one = docs
+            .iter()
+            .filter(|d| d.starts_with("docs/harness/run00/"))
+            .count();
+        assert!(
+            from_one <= MAX_DOCS_PER_DIR,
+            "per-directory cap not applied: {from_one}"
+        );
     }
 
     #[test]
@@ -1002,7 +1063,10 @@ mod tests {
         for i in 0..40 {
             files.push((format!("docs/area{}/p{i:03}.md", i % 5), "x".into()));
         }
-        let refs: Vec<(&str, &str)> = files.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+        let refs: Vec<(&str, &str)> = files
+            .iter()
+            .map(|(a, b)| (a.as_str(), b.as_str()))
+            .collect();
         let dir = tree(&refs);
         // An unstable order would thrash doc_status: the scan DELETEs rows for
         // docs it no longer lists.
@@ -1087,17 +1151,36 @@ mod tests {
             }
         }
         let judged = mapped + heuristic;
-        let pct = |n: u32| if docs.is_empty() { 0.0 } else { n as f64 * 100.0 / docs.len() as f64 };
+        let pct = |n: u32| {
+            if docs.is_empty() {
+                0.0
+            } else {
+                n as f64 * 100.0 / docs.len() as f64
+            }
+        };
         println!("=== doc-rot measurement: {} ===", root.display());
-        println!("  docs found      : {} (truncated: {truncated})", docs.len());
+        println!(
+            "  docs found      : {} (truncated: {truncated})",
+            docs.len()
+        );
         println!("    co-located    : {colocated}");
         println!("  judged (scoped) : {judged}  [doc-map {mapped} / heuristic {heuristic}]");
-        println!("  UNVERIFIABLE    : {unverifiable}  ({:.1}%)", pct(unverifiable));
-        println!("  broken refs     : {broken_docs}  ({:.1}%)", pct(broken_docs));
+        println!(
+            "  UNVERIFIABLE    : {unverifiable}  ({:.1}%)",
+            pct(unverifiable)
+        );
+        println!(
+            "  broken refs     : {broken_docs}  ({:.1}%)",
+            pct(broken_docs)
+        );
         println!("  dirty (stale)   : {dirty}  ({:.1}% of found)", pct(dirty));
         println!(
             "  dirty-rate among judged: {:.1}%",
-            if judged == 0 { 0.0 } else { dirty as f64 * 100.0 / judged as f64 }
+            if judged == 0 {
+                0.0
+            } else {
+                dirty as f64 * 100.0 / judged as f64
+            }
         );
         println!("  --- broken-ref sample (precision eyeball) ---");
         for s in &samples {

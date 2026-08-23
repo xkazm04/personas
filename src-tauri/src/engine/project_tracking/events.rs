@@ -2,7 +2,6 @@
 //! scheduler. Reads happen via the consolidator (Phase 2) and chat
 //! drill-in (Phase 5).
 
-use chrono::{DateTime, Utc};
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -88,22 +87,4 @@ pub fn prune_old_events(pool: &UserDbPool) -> Result<usize, AppError> {
         params![format!("-{} days", RETENTION_DAYS)],
     )?;
     Ok(removed)
-}
-
-/// Count events for a given project since a cutoff. Used by the
-/// scheduler to decide whether a tick has anything to consolidate
-/// (Phase 2 short-circuits empty ticks).
-pub fn count_events_since(
-    pool: &UserDbPool,
-    project_id: &str,
-    since: DateTime<Utc>,
-) -> Result<usize, AppError> {
-    let conn = pool.get()?;
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM engine_cli_event
-         WHERE project_id = ?1 AND created_at >= ?2",
-        params![project_id, since.to_rfc3339()],
-        |row| row.get(0),
-    )?;
-    Ok(count as usize)
 }

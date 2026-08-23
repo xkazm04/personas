@@ -192,34 +192,38 @@ pub fn create_experiment(
     pool: &DbPool,
     input: &CreateExperimentInput,
 ) -> Result<LabAbExperiment, AppError> {
-    timed_query!("lab_ab_experiments", "lab_ab_experiments::create_experiment", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.query_row(
-            "INSERT INTO lab_ab_experiments
+    timed_query!(
+        "lab_ab_experiments",
+        "lab_ab_experiments::create_experiment",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.query_row(
+                "INSERT INTO lab_ab_experiments
                 (id, persona_id, review_id, hypothesis_json, provenance_json,
                  status, status_detail, variant_prompt, variant_source, spend_usd,
                  created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)
              RETURNING *",
-            params![
-                id,
-                input.persona_id,
-                input.review_id,
-                input.hypothesis_json,
-                input.provenance_json,
-                input.status,
-                input.status_detail,
-                input.variant_prompt,
-                input.variant_source,
-                input.spend_usd,
-                now,
-            ],
-            row_to_experiment,
-        )
-        .map_err(AppError::Database)
-    })
+                params![
+                    id,
+                    input.persona_id,
+                    input.review_id,
+                    input.hypothesis_json,
+                    input.provenance_json,
+                    input.status,
+                    input.status_detail,
+                    input.variant_prompt,
+                    input.variant_source,
+                    input.spend_usd,
+                    now,
+                ],
+                row_to_experiment,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Re-resolve an experiment (e.g. a `declined_budget` row retried once the
@@ -233,20 +237,32 @@ pub fn update_experiment_outcome(
     variant_source: Option<&str>,
     spend_usd: f64,
 ) -> Result<LabAbExperiment, AppError> {
-    timed_query!("lab_ab_experiments", "lab_ab_experiments::update_experiment_outcome", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.query_row(
-            "UPDATE lab_ab_experiments
+    timed_query!(
+        "lab_ab_experiments",
+        "lab_ab_experiments::update_experiment_outcome",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.query_row(
+                "UPDATE lab_ab_experiments
                 SET status = ?2, status_detail = ?3, variant_prompt = ?4,
                     variant_source = ?5, spend_usd = ?6, updated_at = ?7
               WHERE id = ?1
               RETURNING *",
-            params![id, status, status_detail, variant_prompt, variant_source, spend_usd, now],
-            row_to_experiment,
-        )
-        .map_err(AppError::Database)
-    })
+                params![
+                    id,
+                    status,
+                    status_detail,
+                    variant_prompt,
+                    variant_source,
+                    spend_usd,
+                    now
+                ],
+                row_to_experiment,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 /// The experiment commissioned from a given Director verdict, if any (the
@@ -255,18 +271,22 @@ pub fn get_experiment_by_review(
     pool: &DbPool,
     review_id: &str,
 ) -> Result<Option<LabAbExperiment>, AppError> {
-    timed_query!("lab_ab_experiments", "lab_ab_experiments::get_experiment_by_review", {
-        let conn = pool.get()?;
-        match conn.query_row(
-            "SELECT * FROM lab_ab_experiments WHERE review_id = ?1",
-            params![review_id],
-            row_to_experiment,
-        ) {
-            Ok(e) => Ok(Some(e)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(AppError::Database(e)),
+    timed_query!(
+        "lab_ab_experiments",
+        "lab_ab_experiments::get_experiment_by_review",
+        {
+            let conn = pool.get()?;
+            match conn.query_row(
+                "SELECT * FROM lab_ab_experiments WHERE review_id = ?1",
+                params![review_id],
+                row_to_experiment,
+            ) {
+                Ok(e) => Ok(Some(e)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
         }
-    })
+    )
 }
 
 /// Newest-first experiment list, optionally scoped to one persona.
@@ -275,39 +295,54 @@ pub fn list_experiments(
     persona_id: Option<&str>,
     limit: i64,
 ) -> Result<Vec<LabAbExperiment>, AppError> {
-    timed_query!("lab_ab_experiments", "lab_ab_experiments::list_experiments", {
-        let conn = pool.get()?;
-        let limit = limit.clamp(1, 500);
-        let rows: Vec<LabAbExperiment> = match persona_id {
-            Some(pid) => {
-                let mut stmt = conn.prepare(
-                    "SELECT * FROM lab_ab_experiments WHERE persona_id = ?1
+    timed_query!(
+        "lab_ab_experiments",
+        "lab_ab_experiments::list_experiments",
+        {
+            let conn = pool.get()?;
+            let limit = limit.clamp(1, 500);
+            let rows: Vec<LabAbExperiment> = match persona_id {
+                Some(pid) => {
+                    let mut stmt = conn.prepare(
+                        "SELECT * FROM lab_ab_experiments WHERE persona_id = ?1
                      ORDER BY created_at DESC LIMIT ?2",
-                )?;
-                let mapped = stmt.query_map(params![pid, limit], row_to_experiment)?;
-                mapped.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?
-            }
-            None => {
-                let mut stmt = conn.prepare(
-                    "SELECT * FROM lab_ab_experiments
+                    )?;
+                    let mapped = stmt.query_map(params![pid, limit], row_to_experiment)?;
+                    mapped
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(AppError::Database)?
+                }
+                None => {
+                    let mut stmt = conn.prepare(
+                        "SELECT * FROM lab_ab_experiments
                      ORDER BY created_at DESC LIMIT ?1",
-                )?;
-                let mapped = stmt.query_map(params![limit], row_to_experiment)?;
-                mapped.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?
-            }
-        };
-        Ok(rows)
-    })
+                    )?;
+                    let mapped = stmt.query_map(params![limit], row_to_experiment)?;
+                    mapped
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(AppError::Database)?
+                }
+            };
+            Ok(rows)
+        }
+    )
 }
 
 /// `(status, count)` pairs across all experiments — the campaign report's
 /// headline numbers. Statuses with zero rows are absent (caller defaults 0).
 pub fn experiment_status_counts(pool: &DbPool) -> Result<Vec<(String, i64)>, AppError> {
-    timed_query!("lab_ab_experiments", "lab_ab_experiments::experiment_status_counts", {
-        let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare("SELECT status, COUNT(*) FROM lab_ab_experiments GROUP BY status")?;
-        let mapped = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
-        mapped.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+    timed_query!(
+        "lab_ab_experiments",
+        "lab_ab_experiments::experiment_status_counts",
+        {
+            let conn = pool.get()?;
+            let mut stmt =
+                conn.prepare("SELECT status, COUNT(*) FROM lab_ab_experiments GROUP BY status")?;
+            let mapped =
+                stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+            mapped
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }

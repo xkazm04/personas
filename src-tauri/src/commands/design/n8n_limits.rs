@@ -37,9 +37,30 @@ pub const MAX_WORKFLOW_JSON_BYTES: usize = 5 * 1024 * 1024;
 /// `start_n8n_transform_background`. See module docs for rationale.
 pub const MAX_TRANSFORM_PAYLOAD_BYTES: usize = 10 * 1024 * 1024;
 
+// NOTE (deliberately a `//` comment, not a doc comment: ts-rs copies doc
+// comments into `src/lib/bindings/N8nPayloadLimits.ts`, and this note is
+// about the Rust side only).
+//
+// NOTHING CONSTRUCTS `N8nPayloadLimits` AT RUNTIME ANY MORE. Its only runtime
+// consumer was the `get_n8n_payload_limits` IPC command, removed in `4bf1845d7`
+// along with 71 other unreachable commands. What still depends on the type is
+// purely compile-time and one hop wide: ts-rs emits
+// `src/lib/bindings/N8nPayloadLimits.ts`, which the generated
+// `n8nLimits.generated.ts` imports solely to annotate its `N8N_PAYLOAD_LIMITS`
+// const — a const that no `.ts`/`.tsx` file imports. knip cannot see that,
+// because `n8nLimits.generated.ts` sits in its `ignore` list.
+//
+// The two `pub const`s above are the live half and must stay: Rust reads them
+// at `n8n_sessions.rs:94` and `n8n_transform/cli_runner.rs:57`, and the
+// generated TS re-exports `MAX_WORKFLOW_JSON_BYTES` to two frontend modules.
+//
+// Deleting the struct is a frontend-coupled change (binding + generator
+// template + `bindings/index.ts`), so it is annotated here and raised as a
+// recommendation rather than taken unilaterally.
 /// Wire-format struct mirroring the n8n payload-size limits, exported to
 /// TypeScript via ts-rs. The numeric values themselves are emitted to
 /// `src/lib/n8nLimits.generated.ts` by `scripts/generate-n8n-limits.mjs`.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -51,20 +72,14 @@ pub struct N8nPayloadLimits {
 }
 
 impl N8nPayloadLimits {
+    /// Only caller is `current_matches_consts` below; see the struct docs.
+    #[allow(dead_code)]
     pub const fn current() -> Self {
         Self {
             max_workflow_json_bytes: MAX_WORKFLOW_JSON_BYTES as u64,
             max_transform_payload_bytes: MAX_TRANSFORM_PAYLOAD_BYTES as u64,
         }
     }
-}
-
-/// Tauri command exposing the canonical limits to the frontend at runtime.
-/// Static-import callers should prefer `src/lib/n8nLimits.generated.ts`;
-/// this command exists for tests, diagnostics, and future dynamic surfaces.
-#[tauri::command]
-pub fn get_n8n_payload_limits() -> N8nPayloadLimits {
-    N8nPayloadLimits::current()
 }
 
 #[cfg(test)]

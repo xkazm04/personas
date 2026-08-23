@@ -23,12 +23,12 @@ use serde::Serialize;
 use tauri::AppHandle;
 use ts_rs::TS;
 
+use crate::event_registry::emit_event_bus;
 use personas_db::models::CreatePersonaEventInput;
 use personas_db::repos::communication::events as event_repo;
 use personas_db::repos::communication::sla;
 use personas_db::repos::core::personas as persona_repo;
 use personas_db::DbPool;
-use crate::event_registry::emit_event_bus;
 
 /// Bus event type published when a persona crosses INTO a reliability breach.
 pub const EVENT_SLA_BREACH_OPENED: &str = "sla.breach.opened";

@@ -22,6 +22,7 @@
  * db/mod.rs::seed_builtin_shared_events. See docs/plans/curated-connector-events.md.
  */
 import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -41,6 +42,37 @@ const PUBLISHER = 'Personas';
 // CLI args
 // ---------------------------------------------------------------------------
 const args = process.argv.slice(2);
+
+/**
+ * Run rustfmt over a generated .rs file, in place.
+ *
+ * WHY. This generator emits Rust by string concatenation, and its output was
+ * committed unformatted for as long as the repo had no formatting policy. The
+ * 2026-08-20 workspace `cargo fmt` reformatted the committed copy — correctly,
+ * it is a tracked .rs file and a `rust-fmt` CI job now enforces it — but the
+ * generator kept emitting the raw shape. Every `npm run dev` therefore rewrote
+ * the file into a state that fails the format gate, and the only thing standing
+ * between that and a red CI was a human noticing a dirty tree and reverting it.
+ *
+ * Formatting here rather than exempting generated files from the gate: the
+ * output is source that people read and diff, and "generated" is not a reason
+ * for it to look different from everything around it.
+ *
+ * Best-effort by design. If rustfmt is unavailable the generated file is still
+ * correct Rust and the build proceeds; the format gate will catch the shape
+ * later, which is a louder and better-placed failure than aborting codegen.
+ */
+function rustfmtInPlace(file) {
+  try {
+    execFileSync('rustfmt', ['--edition', '2021', file], { stdio: 'pipe' });
+  } catch (err) {
+    console.warn(
+      `[${file}] rustfmt did not run (${err.code ?? err.message}); ` +
+        'the file is valid Rust but may not match the format gate.',
+    );
+  }
+}
+
 function argVal(flag) {
   const i = args.indexOf(flag);
   return i >= 0 && i + 1 < args.length ? args[i + 1] : undefined;
@@ -333,6 +365,7 @@ function main() {
 
   // 3. codegen
   writeFileSync(OUTPUT_RS, generateRs(connectors, ledger));
+  rustfmtInPlace(OUTPUT_RS);
   console.log(
     `Wrote ${OUTPUT_RS} — ${connectors.length} catalog feed(s), ${ledger.firings.length} firing(s)`,
   );

@@ -11,7 +11,7 @@ use crate::db::repos::resources::tool_audit_log;
 use crate::db::repos::resources::tools as repo;
 use crate::engine::tool_runner::{self, ToolInvocationResult};
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth_sync};
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 use personas_macros::requires;
 
@@ -180,6 +180,9 @@ pub async fn invoke_tool_direct(
         &persona.name,
         &input_json,
         Some(&state.rate_limiter),
+        // Manual Tool Runner invocation — no persona_executions row exists, so
+        // there is nothing for the per-execution usage counter to attach to.
+        None,
     )
     .await
 }

@@ -190,6 +190,23 @@ jobs:
         run: npm run test -- --run
 
   # ─── Job B: Rust tests on all 3 platforms ───────────────────
+  # ─── Job B0: Rust formatting ────────────────────────────────────────
+  # Deliberately NOT a step inside rust-tests. Formatting needs no dependency
+  # graph, no features and no target directory, so it answers in seconds on a
+  # cold runner while rust-tests takes up to an hour — and a formatting nit
+  # should never wait on a compile to be reported. It also means a red format
+  # cannot be mistaken for a red build.
+  rust-fmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        run: cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+
   rust-tests:
     strategy:
       fail-fast: false
@@ -295,7 +312,23 @@ jobs:
         # tests in personas-db alone, including every migration and
         # boot-safety assertion. Three independent reviews of this repo
         # arrived at this same missing word.
-        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop
+        #
+        # --no-fail-fast is the third word this line was missing, and it is the
+        # one that decides how much of the tree a red build can hide. Cargo
+        # stops the whole run at the first crate whose test binary fails, and
+        # the crate order is the dependency order, so personas-db failing takes
+        # personas-engine and personas-desktop down with it unrun. On CI run
+        # 32025966929 that was literally the outcome: core passed 760/760, db
+        # reported 808 passed / 10 failed, and the root crate's 331,560 lines
+        # compiled and never executed a single test. The layering makes the
+        # bottom crate a global circuit breaker, and one flag turns that back
+        # into four independent verdicts in one job.
+        #
+        # This is deliberately NOT a split into per-crate jobs. Every crate
+        # here depends on personas-core, and personas-desktop depends on all of
+        # them, so four runners would each rebuild most of the same dependency
+        # closure to report what one runner can report for free.
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop --no-fail-fast
 
       - name: Run Clippy
         # if: always() so a failing test step does not hide a lint regression.
@@ -305,16 +338,133 @@ jobs:
         if: always()
         run: cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings
 
-      - name: Install cargo-deny
-        if: always()
-        run: cargo install cargo-deny --locked
-      - name: Check dependency policies
-        if: always()
-        run: cd src-tauri && cargo deny check
 
       - name: Show sccache stats
         if: always()
         run: sccache --show-stats
+
+  # ─── Job B1: Supply-chain policy ────────────────────────────────────
+  # Split out of rust-tests deliberately. cargo-deny answers a different
+  # question from "does this build and pass its tests", it needs no target
+  # directory, and it runs on one platform rather than three — but the reason
+  # that matters is legibility: as a step inside rust-tests, an unaddressed
+  # advisory turned the build job red and was indistinguishable from a
+  # compilation failure or a broken test.
+  #
+  # STATUS 2026-08-22: this job is RED, honestly. Licences, sources and bans
+  # pass; advisories report seven entries. Four ride rustls 0.22.4 under
+  # sentry 0.34.0 and need a sentry major bump, two arrive through tauri's own
+  # notification and plist paths, and RUSTSEC-2023-0071 (the Marvin timing
+  # side-channel in rsa) has no fixed release at all. No `ignore` entries were
+  # written for any of them: an advisory nobody has read, silently ignored, is
+  # exactly the state deny.toml was in before 2026-08-20, when a stale config
+  # key meant the tool exited on a parse error and checked nothing for months.
+  rust-deny:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: Check dependency policies
+        run: cd src-tauri && cargo deny check
+
+  # ─── Job B2: Feature-shape compile matrix ───────────────────────────
+  # WHY THIS EXISTS. On 2026-08-21 a wave deleted 72 unreachable IPC commands
+  # and everything clippy said they held up. That verification ran under
+  # `--features desktop`, so ~23 symbols whose ONLY consumers sit behind
+  # `#[cfg(feature = "ml")]` looked dead and were removed. The result was 56
+  # compile errors under `desktop-full` — which is the feature set CI and
+  # production actually ship — while every gate in the repository stayed green.
+  #
+  # The hole was known and written down before it was walked into: 643 of the
+  # 701 `#[cfg(feature = …)]` mentions in this workspace are never compiled by
+  # CI, because the only Rust job builds one shape. A lint cannot see code it
+  # does not compile, and neither can a person reading the lint's output.
+  #
+  # `cargo check` rather than build or test: the failure class is "this feature
+  # shape no longer compiles", and check catches all of it for a fraction of the
+  # cost. Widening to `--all-targets` would also cover feature-gated test code
+  # and is the obvious next step once the wall-clock here is known.
+  #
+  # Runs on Linux only. The shapes are about cfg resolution, not about
+  # platform, and the three-OS matrix already lives in rust-tests.
+  rust-features:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # What ships. ml + p2p on top of desktop; pulls ORT and fastembed.
+          - features: desktop-full
+            label: desktop-full
+          # Embedded scraper (pumper-core, a git dependency).
+          - features: desktop,scraper
+            label: scraper
+          # The :17320 automation server the Playwright suite drives.
+          - features: desktop,test-automation
+            label: test-automation
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      PERSONAS_ALLOW_FALLBACK_KEY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mozilla-actions/sccache-action@v0.0.7
+      - name: Enable sccache only if it actually works
+        shell: bash
+        run: |
+          if sccache --start-server >/dev/null 2>&1 && sccache --show-stats >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=sccache unavailable::Compiling without sccache."
+          fi
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: features-${{ matrix.label }}
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libpipewire-0.3-dev \
+            libgbm-dev \
+            libwayland-dev \
+            libdbus-1-dev
+      - name: cargo check --features ${{ matrix.features }}
+        run: cargo check --workspace --manifest-path src-tauri/Cargo.toml --features ${{ matrix.features }}
+
+  # ─── Job B3: the featureless shape ──────────────────────────────────
+  # The root crate cannot build without `desktop` — capabilities/default.json
+  # references `updater:default`, whose plugin is an optional dependency that
+  # only `desktop` enables, so the tauri build script aborts before compiling.
+  # The three library crates have no such constraint, and their no-feature
+  # shape is what a mobile target compiles: personas-core swaps the OS-keychain
+  # path for a stub, and both db and engine gate their ml/p2p surfaces off.
+  # Nothing else in CI ever compiles that.
+  rust-no-features:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: no-features
+      - name: cargo check (library crates, no features)
+        run: |
+          cargo check --manifest-path src-tauri/Cargo.toml \
+            -p personas-core -p personas-db -p personas-engine --all-targets
 
   # ─── Job C: Check generated command names are fresh ─────────
   command-name-drift:

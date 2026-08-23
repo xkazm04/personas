@@ -146,7 +146,10 @@ pub fn list_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<FleetSessionRow>, 
 /// Run index for the harvest picker: one entry per `run_id`, newest run first.
 /// Rows with no `run_id` (spawned before the run lane existed) are skipped —
 /// there is no run to report on.
-pub fn list_runs(pool: &DbPool, limit: u32) -> Result<Vec<(String, Option<String>, i64, i32, i32)>, AppError> {
+pub fn list_runs(
+    pool: &DbPool,
+    limit: u32,
+) -> Result<Vec<(String, Option<String>, i64, i32, i32)>, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::list_runs", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(

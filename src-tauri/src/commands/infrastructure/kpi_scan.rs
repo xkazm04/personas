@@ -18,30 +18,18 @@
 //! pattern): dev_scans record + BackgroundJobManager (cancel/status/lines) +
 //! line-streamed protocol parse.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
@@ -257,7 +245,12 @@ fn use_cases_block(pool: &crate::db::DbPool, project_id: &str) -> String {
         return "(no use cases defined — scope KPIs to groups/contexts instead)".into();
     }
     let contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
-    let name_of = |id: &str| contexts.iter().find(|c| c.id == id).map(|c| c.name.as_str());
+    let name_of = |id: &str| {
+        contexts
+            .iter()
+            .find(|c| c.id == id)
+            .map(|c| c.name.as_str())
+    };
     use_cases
         .iter()
         .map(|u| {
@@ -266,7 +259,11 @@ fn use_cases_block(pool: &crate::db::DbPool, project_id: &str) -> String {
                 "- {} [{}] — spans: {}{}",
                 u.name,
                 u.kind,
-                if slice.is_empty() { "(no contexts linked)".to_string() } else { slice.join(", ") },
+                if slice.is_empty() {
+                    "(no contexts linked)".to_string()
+                } else {
+                    slice.join(", ")
+                },
                 u.description
                     .as_deref()
                     .map(|d| format!("\n    {}", d.chars().take(160).collect::<String>()))
@@ -319,10 +316,7 @@ fn scoped_context_block(
             .filter(|d| !d.trim().is_empty())
             .unwrap_or("(no description recorded)"),
         total = files.len(),
-        file_list = shown
-            .iter()
-            .map(|f| format!("- {f}\n"))
-            .collect::<String>(),
+        file_list = shown.iter().map(|f| format!("- {f}\n")).collect::<String>(),
         more_line = if more > 0 {
             format!("- …and {more} more\n")
         } else {
@@ -410,7 +404,10 @@ fn context_map_block(pool: &crate::db::DbPool, project_id: &str) -> String {
     let mut out = String::new();
     for g in &groups {
         out.push_str(&format!("### {}\n", g.name));
-        for c in contexts.iter().filter(|c| c.group_id.as_deref() == Some(g.id.as_str())) {
+        for c in contexts
+            .iter()
+            .filter(|c| c.group_id.as_deref() == Some(g.id.as_str()))
+        {
             let files = serde_json::from_str::<Vec<String>>(&c.file_paths)
                 .map(|v| v.len())
                 .unwrap_or(0);
@@ -418,7 +415,12 @@ fn context_map_block(pool: &crate::db::DbPool, project_id: &str) -> String {
                 "- {} ({} files): {}\n",
                 c.name,
                 files,
-                c.description.as_deref().unwrap_or("").chars().take(160).collect::<String>()
+                c.description
+                    .as_deref()
+                    .unwrap_or("")
+                    .chars()
+                    .take(160)
+                    .collect::<String>()
             ));
         }
     }
@@ -568,67 +570,96 @@ pub(crate) fn launch_kpi_scan(
     let app_handle_for_panic = app_handle.clone();
     let pool_for_panic = pool_task.clone();
     let scan_id_for_panic = scan_id_for_task.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => {
-                Err(AppError::Internal("KPI scan cancelled".into()))
-            }
-            res = run_kpi_scan(
-                &app_handle,
-                &scan_id_for_task,
-                &pool_task,
-                &project_id,
-                &root_path,
-                prompt_text,
-            ) => res
-        };
-        match result {
-            Ok(created) => {
-                let _ = repo::update_scan(
-                    &pool_task, &scan_id_for_task, Some("complete"), Some(created),
-                    None, None, None, None,
-                );
-                KPI_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
-                let _ = app_handle.emit(
-                    event_name::KPI_SCAN_COMPLETE,
-                    json!({ "scan_id": scan_id_for_task, "proposals": created }),
-                );
-                crate::notifications::send(
+    spawn_guarded(
+        "KPI scan",
+        scan_id_for_panic.clone(),
+        async move {
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => {
+                    Err(AppError::Internal("KPI scan cancelled".into()))
+                }
+                res = run_kpi_scan(
                     &app_handle,
-                    "KPI scan complete",
-                    &format!("{project_name}: {created} KPI proposal(s) await your review."),
-                );
+                    &scan_id_for_task,
+                    &pool_task,
+                    &project_id,
+                    &root_path,
+                    prompt_text,
+                ) => res
+            };
+            match result {
+                Ok(created) => {
+                    let _ = repo::update_scan(
+                        &pool_task,
+                        &scan_id_for_task,
+                        Some("complete"),
+                        Some(created),
+                        None,
+                        None,
+                        None,
+                        None,
+                    );
+                    KPI_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
+                    let _ = app_handle.emit(
+                        event_name::KPI_SCAN_COMPLETE,
+                        json!({ "scan_id": scan_id_for_task, "proposals": created }),
+                    );
+                    crate::notifications::send(
+                        &app_handle,
+                        "KPI scan complete",
+                        &format!("{project_name}: {created} KPI proposal(s) await your review."),
+                    );
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    let _ = repo::update_scan(
+                        &pool_task,
+                        &scan_id_for_task,
+                        Some("error"),
+                        None,
+                        None,
+                        None,
+                        None,
+                        Some(Some(&msg)),
+                    );
+                    KPI_SCAN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        "failed",
+                        Some(msg.clone()),
+                    );
+                    KPI_SCAN_JOBS.emit_line(
+                        &app_handle,
+                        &scan_id_for_task,
+                        format!("[Error] {msg}"),
+                    );
+                }
             }
-            Err(e) => {
-                let msg = format!("{e}");
-                let _ = repo::update_scan(
-                    &pool_task, &scan_id_for_task, Some("error"), None,
-                    None, None, None, Some(Some(&msg)),
-                );
-                KPI_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "failed", Some(msg.clone()));
-                KPI_SCAN_JOBS.emit_line(&app_handle, &scan_id_for_task, format!("[Error] {msg}"));
-            }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                scan_id = %scan_id_for_panic,
-                panic = %msg,
-                "KPI scan task panicked — marking scan as failed"
-            );
+        },
+        move |msg| async move {
             let _ = repo::update_scan(
-                &pool_for_panic, &scan_id_for_panic, Some("error"), None,
-                None, None, None, Some(Some(&msg)),
+                &pool_for_panic,
+                &scan_id_for_panic,
+                Some("error"),
+                None,
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
             );
-            KPI_SCAN_JOBS.set_status(&app_handle_for_panic, &scan_id_for_panic, "failed", Some(msg.clone()));
-            KPI_SCAN_JOBS.emit_line(&app_handle_for_panic, &scan_id_for_panic, format!("[Error] {msg}"));
-        }
-    });
+            KPI_SCAN_JOBS.set_status(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                "failed",
+                Some(msg.clone()),
+            );
+            KPI_SCAN_JOBS.emit_line(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                format!("[Error] {msg}"),
+            );
+        },
+    );
 
     Ok(json!({ "scan_id": scan_id }))
 }
@@ -644,7 +675,13 @@ pub async fn dev_tools_cancel_kpi_scan(
         token.cancel();
         KPI_SCAN_JOBS.set_status(&app, &scan_id, "cancelled", None);
         let _ = repo::update_scan(
-            &state.db, &scan_id, Some("error"), None, None, None, None,
+            &state.db,
+            &scan_id,
+            Some("error"),
+            None,
+            None,
+            None,
+            None,
             Some(Some("Cancelled by user")),
         );
         Ok(true)
@@ -678,17 +715,24 @@ pub fn dev_tools_get_kpi_scan_status(
 pub(crate) fn kpi_scan_status_json(scan_id: &str) -> serde_json::Value {
     match KPI_SCAN_JOBS.lock() {
         Ok(jobs) => match jobs.get(scan_id) {
-            Some(job) => json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines }),
+            Some(job) => {
+                json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines })
+            }
             None => json!({ "scan_id": scan_id, "status": "not_found" }),
         },
-        Err(_) => json!({ "scan_id": scan_id, "status": "error", "error": "kpi scan registry lock poisoned" }),
+        Err(_) => {
+            json!({ "scan_id": scan_id, "status": "error", "error": "kpi scan registry lock poisoned" })
+        }
     }
 }
 
 /// Build the exact KPI-scan prompt for a project, so it can be run MANUALLY
 /// (paste into a Claude CLI from the repo root) with zero app dependency — the
 /// `/dev-tools/kpi-scan-prompt/{project_id}` route returns this verbatim.
-pub(crate) fn kpi_scan_prompt(pool: &crate::db::DbPool, project_id: &str) -> Result<String, AppError> {
+pub(crate) fn kpi_scan_prompt(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+) -> Result<String, AppError> {
     let project = repo::get_project_by_id(pool, project_id)?;
     Ok(build_kpi_scan_prompt(
         &project.name,

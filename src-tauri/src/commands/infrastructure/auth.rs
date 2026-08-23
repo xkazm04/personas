@@ -490,7 +490,9 @@ pub async fn login_with_google(
         Ok(win) => win,
         Err(e) => {
             clear_pending_oauth_state(state.inner()).await;
-            return Err(AppError::Auth(format!("Failed to open sign-in window: {e}")));
+            return Err(AppError::Auth(format!(
+                "Failed to open sign-in window: {e}"
+            )));
         }
     };
     // If the user closes the popup before the callback fires, the CSRF

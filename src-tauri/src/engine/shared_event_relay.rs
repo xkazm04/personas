@@ -298,10 +298,7 @@ mod tests {
 
     #[test]
     fn first_firing_failure_leaves_cursor_untouched() {
-        let outcomes = [
-            (FiringRelay::Failed, "t1"),
-            (FiringRelay::Published, "t2"),
-        ];
+        let outcomes = [(FiringRelay::Failed, "t1"), (FiringRelay::Published, "t2")];
         // Never reached t2; cursor stays put so t1 is retried.
         assert_eq!(resolve_published_prefix(&outcomes), (None, 0));
     }

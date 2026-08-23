@@ -83,11 +83,20 @@ async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
     let model_dir = pocket::model_dir()?;
     let voices_dir = pocket::voices_dir()?;
     for d in [&bin_dir, &model_dir, &voices_dir] {
-        tokio::fs::create_dir_all(d)
-            .await
-            .map_err(|e| AppError::Internal(format!("pocket install: mkdir {}: {e}", d.display())))?;
+        tokio::fs::create_dir_all(d).await.map_err(|e| {
+            AppError::Internal(format!("pocket install: mkdir {}: {e}", d.display()))
+        })?;
     }
 
+    // Not `SHARED_HTTP`: a model/engine archive needs the 20-minute
+    // `DOWNLOAD_TIMEOUT`, not 30 s. The URL is built from compile-time literals
+    // (`ENGINE_ARCHIVE_URL` / `MODEL_ARCHIVE_URL`) plus a curated id, so nothing user-supplied reaches the
+    // authority and the SSRF-safe resolver would add nothing. This is one of
+    // FOUR byte-for-byte identical download clients (stt/downloader.rs,
+    // stt/installer.rs, tts/kokoro_installer.rs, tts/pocket_installer.rs) — the
+    // right home for them is the `ClientProfile` factory named in
+    // `outbound-http-call.md` §8 Gap 1, not a fifth fixed constant beside
+    // `SHARED_HTTP`.
     let client = reqwest::Client::builder()
         .timeout(DOWNLOAD_TIMEOUT)
         .build()
@@ -170,7 +179,9 @@ fn extract_model(archive: &std::path::Path, model_dir: &std::path::Path) -> Resu
         model_dir,
         // Flat package: keep the 7 model files + license/readme, skip test_wavs/.
         |first| {
-            first.ends_with(".onnx") || first.ends_with(".json") || matches!(first, "LICENSE" | "README.md")
+            first.ends_with(".onnx")
+                || first.ends_with(".json")
+                || matches!(first, "LICENSE" | "README.md")
         },
         "lm_main",
     )

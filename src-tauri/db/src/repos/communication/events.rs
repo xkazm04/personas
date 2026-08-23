@@ -8,6 +8,7 @@ use crate::query_builder::QueryBuilder;
 use crate::repos::resources::triggers::encrypt_config;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::crypto;
 use personas_core::error::AppError;
 
@@ -108,6 +109,30 @@ fn encrypt_optional_payload(payload: &Option<String>) -> (Option<String>, Option
 // Row Mappers
 // ============================================================================
 
+/// One projection for every full-row read of `persona_events`.
+///
+/// The column set is the fresh-install DDL at `migrations/schema.rs:316` plus
+/// the three columns that only ever arrive by ALTER TABLE — `retry_count`
+/// (`migrations/initial.rs:285`), `use_case_id`
+/// (`incremental/e01_execution_and_use_cases.rs:395`) and `payload_iv`
+/// (`incremental/e02_credentials_and_audit_trails.rs:265`).
+///
+/// `payload_iv` is the reason this const exists rather than a `SELECT *`. It
+/// is in the fresh-install DDL between `payload` and `status`, AND it is added
+/// by ALTER on any database created before that DDL learned about it — where
+/// ALTER appends it last. So a wildcard returns a DIFFERENT column ORDER on a
+/// fresh install than on an upgraded one, for the same query. Reading by name
+/// makes that difference invisible; reading by ordinal made it a live hazard.
+const EVENT_COLUMNS: &str = "id, project_id, event_type, source_type, source_id, \
+     target_persona_id, payload, payload_iv, status, error_message, processed_at, \
+     created_at, use_case_id, retry_count";
+
+/// One projection for every full-row read of `persona_event_subscriptions`.
+/// `migrations/schema.rs:342` plus `use_case_id`, added by ALTER at
+/// `incremental/e01_execution_and_use_cases.rs:378`.
+const SUBSCRIPTION_COLUMNS: &str = "id, persona_id, event_type, source_filter, enabled, \
+     created_at, updated_at, use_case_id";
+
 fn row_to_event(row: &rusqlite::Row) -> rusqlite::Result<PersonaEvent> {
     let raw_payload: Option<String> = row.get("payload")?;
     let payload_iv: Option<String> = row.get("payload_iv").unwrap_or(None);
@@ -176,7 +201,7 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
         // Encrypt payload at rest if present
         let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
 
-        let conn = pool.get()?;
+        let conn = pool.conn("events::publish")?;
         let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_events
              (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
@@ -199,7 +224,30 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
     })
 }
 
-crud_get_by_id!(PersonaEvent, "persona_events", "PersonaEvent", row_to_event);
+/// Hand-written rather than `crud_get_by_id!`, which would project `SELECT *`.
+/// Same shape as the macro — cached statement, `QueryReturnedNoRows` mapped to
+/// `NotFound`, the same perf sample — over an explicit column list.
+pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
+    let _start = std::time::Instant::now();
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare_cached(&format!(
+        "SELECT {EVENT_COLUMNS} FROM persona_events WHERE id = ?1"
+    ))?;
+    let result = stmt
+        .query_row(rusqlite::params![id], row_to_event)
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("PersonaEvent {id}"))
+            }
+            other => AppError::Database(other),
+        });
+    crate::perf::record_query(
+        "persona_events",
+        "persona_events::get_by_id",
+        _start.elapsed(),
+    );
+    result
+}
 
 pub fn get_pending(
     pool: &DbPool,
@@ -208,24 +256,24 @@ pub fn get_pending(
 ) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::get_pending", {
         let limit = limit.unwrap_or(100);
-        let conn = pool.get()?;
+        let conn = pool.conn("events::get_pending")?;
 
         if let Some(pid) = project_id {
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {EVENT_COLUMNS} FROM persona_events
                  WHERE status = 'pending' AND project_id = ?1
                  ORDER BY created_at ASC, id ASC
                  LIMIT ?2",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![pid, limit], row_to_event)?;
             Ok(collect_rows(rows, "get_pending"))
         } else {
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {EVENT_COLUMNS} FROM persona_events
                  WHERE status = 'pending'
                  ORDER BY created_at ASC, id ASC
                  LIMIT ?1",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![limit], row_to_event)?;
             Ok(collect_rows(rows, "get_pending"))
         }
@@ -238,8 +286,8 @@ pub fn get_pending(
 /// been claimed by a previous tick).
 pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::claim_pending", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
+        let conn = pool.conn("events::claim_pending")?;
+        let mut stmt = conn.prepare_cached(&format!(
             "UPDATE persona_events
              SET status = 'processing'
              WHERE id IN (
@@ -248,8 +296,8 @@ pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, App
                  ORDER BY created_at ASC, id ASC
                  LIMIT ?1
              )
-             RETURNING *",
-        )?;
+             RETURNING {EVENT_COLUMNS}",
+        ))?;
         let rows = stmt.query_map(params![limit], row_to_event)?;
         Ok(collect_rows(rows, "claim_pending"))
     })
@@ -264,10 +312,13 @@ pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, App
 /// and the starvation where a full window of non-headless events blocked
 /// headless ones indefinitely while the windowed app was closed.
 pub fn claim_pending_headless(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
-    timed_query!("persona_events", "persona_events::claim_pending_headless", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "UPDATE persona_events
+    timed_query!(
+        "persona_events",
+        "persona_events::claim_pending_headless",
+        {
+            let conn = pool.conn("events::claim_pending_headless")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "UPDATE persona_events
              SET status = 'processing'
              WHERE id IN (
                  SELECT e.id FROM persona_events e
@@ -277,11 +328,12 @@ pub fn claim_pending_headless(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEv
                  ORDER BY e.created_at ASC, e.id ASC
                  LIMIT ?1
              )
-             RETURNING *",
-        )?;
-        let rows = stmt.query_map(params![limit], row_to_event)?;
-        Ok(collect_rows(rows, "claim_pending_headless"))
-    })
+             RETURNING {EVENT_COLUMNS}",
+            ))?;
+            let rows = stmt.query_map(params![limit], row_to_event)?;
+            Ok(collect_rows(rows, "claim_pending_headless"))
+        }
+    )
 }
 
 pub fn update_status(
@@ -291,13 +343,13 @@ pub fn update_status(
     error_message: Option<String>,
 ) -> Result<(), AppError> {
     timed_query!("persona_events", "persona_events::update_status", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::update_status")?;
 
         // Validate transition: read current status and check legality.
         let mut select_stmt =
             conn.prepare_cached("SELECT status FROM persona_events WHERE id = ?1")?;
         let current_str: String = select_stmt
-            .query_row(params![id], |row| row.get(0))
+            .query_row(params![id], |row| row.get("status"))
             .map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
         let current = PersonaEventStatus::from_db(&current_str);
 
@@ -348,23 +400,23 @@ pub fn get_recent(
 ) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::get_recent", {
         let limit = limit.unwrap_or(100);
-        let conn = pool.get()?;
+        let conn = pool.conn("events::get_recent")?;
 
         if let Some(pid) = project_id {
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {EVENT_COLUMNS} FROM persona_events
                  WHERE project_id = ?1
                  ORDER BY created_at DESC, id DESC
                  LIMIT ?2",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![pid, limit], row_to_event)?;
             Ok(collect_rows(rows, "get_recent"))
         } else {
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {EVENT_COLUMNS} FROM persona_events
                  ORDER BY created_at DESC, id DESC
                  LIMIT ?1",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![limit], row_to_event)?;
             Ok(collect_rows(rows, "get_recent"))
         }
@@ -390,13 +442,13 @@ pub fn get_in_range(
     timed_query!("persona_events", "persona_events::get_in_range", {
         let limit = limit.unwrap_or(1000).max(1);
         let fetch = limit + 1; // fetch one extra to detect has_more
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_events
+        let conn = pool.conn("events::get_in_range")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {EVENT_COLUMNS} FROM persona_events
              WHERE created_at >= ?1 AND created_at <= ?2
              ORDER BY created_at ASC, id ASC
              LIMIT ?3",
-        )?;
+        ))?;
         let rows = stmt.query_map(params![since, until, fetch], row_to_event)?;
         let mut events = collect_rows(rows, "get_in_range");
         let has_more = events.len() as i64 > limit;
@@ -431,35 +483,35 @@ pub fn get_recent_after(
     limit: i64,
 ) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::get_recent_after", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::get_recent_after")?;
         match (after_created_at, after_id) {
             (Some(cursor_at), Some(cursor_id)) => {
-                let mut stmt = conn.prepare_cached(
-                    "SELECT * FROM persona_events
+                let mut stmt = conn.prepare_cached(&format!(
+                    "SELECT {EVENT_COLUMNS} FROM persona_events
                      WHERE created_at > ?1 OR (created_at = ?1 AND id > ?2)
                      ORDER BY created_at ASC, id ASC
                      LIMIT ?3",
-                )?;
+                ))?;
                 let rows = stmt.query_map(params![cursor_at, cursor_id, limit], row_to_event)?;
                 Ok(collect_rows(rows, "get_recent_after"))
             }
             (Some(cursor_at), None) => {
                 // Legacy bare-timestamp watermark — no id tiebreaker available yet.
-                let mut stmt = conn.prepare_cached(
-                    "SELECT * FROM persona_events
+                let mut stmt = conn.prepare_cached(&format!(
+                    "SELECT {EVENT_COLUMNS} FROM persona_events
                      WHERE created_at > ?1
                      ORDER BY created_at ASC, id ASC
                      LIMIT ?2",
-                )?;
+                ))?;
                 let rows = stmt.query_map(params![cursor_at, limit], row_to_event)?;
                 Ok(collect_rows(rows, "get_recent_after"))
             }
             _ => {
-                let mut stmt = conn.prepare_cached(
-                    "SELECT * FROM persona_events
+                let mut stmt = conn.prepare_cached(&format!(
+                    "SELECT {EVENT_COLUMNS} FROM persona_events
                      ORDER BY created_at ASC, id ASC
                      LIMIT ?1",
-                )?;
+                ))?;
                 let rows = stmt.query_map(params![limit], row_to_event)?;
                 Ok(collect_rows(rows, "get_recent_after"))
             }
@@ -470,10 +522,10 @@ pub fn get_recent_after(
 /// Count events by source persona ID (used for post-mortem dedup check).
 pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::count_by_source", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::count_by_source")?;
         let mut stmt =
-            conn.prepare_cached("SELECT COUNT(*) FROM persona_events WHERE source_id = ?1")?;
-        let count: i64 = stmt.query_row(params![persona_id], |row| row.get(0))?;
+            conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1")?;
+        let count: i64 = stmt.query_row(params![persona_id], |row| row.get("n"))?;
         Ok(count)
     })
 }
@@ -484,10 +536,11 @@ pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError>
 /// boundary timestamp can be re-sent and would otherwise be re-published.
 pub fn exists_by_source_id(pool: &DbPool, source_id: &str) -> Result<bool, AppError> {
     timed_query!("persona_events", "persona_events::exists_by_source_id", {
-        let conn = pool.get()?;
-        let mut stmt = conn
-            .prepare_cached("SELECT EXISTS(SELECT 1 FROM persona_events WHERE source_id = ?1)")?;
-        let exists: i64 = stmt.query_row(params![source_id], |row| row.get(0))?;
+        let conn = pool.conn("events::exists_by_source_id")?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT EXISTS(SELECT 1 FROM persona_events WHERE source_id = ?1) AS present",
+        )?;
+        let exists: i64 = stmt.query_row(params![source_id], |row| row.get("present"))?;
         Ok(exists != 0)
     })
 }
@@ -512,14 +565,16 @@ pub fn backfill_slot_times_for_source(
         "persona_events",
         "persona_events::backfill_slot_times_for_source",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::backfill_slot_times_for_source")?;
             let mut stmt = conn.prepare_cached(
                 "SELECT payload, payload_iv FROM persona_events
                  WHERE source_id = ?1 AND source_type = 'trigger'",
             )?;
             let rows = stmt.query_map(params![source_id], |row| {
-                let raw_payload: Option<String> = row.get(0)?;
-                let payload_iv: Option<String> = row.get(1).unwrap_or(None);
+                let raw_payload: Option<String> = row.get("payload")?;
+                // `payload_iv` arrives by ALTER on upgraded databases, so keep
+                // the tolerant read the plaintext fallback below depends on.
+                let payload_iv: Option<String> = row.get("payload_iv").unwrap_or(None);
                 Ok((raw_payload, payload_iv))
             })?;
 
@@ -569,14 +624,14 @@ pub fn count_by_type_and_source_since(
         "persona_events",
         "persona_events::count_by_type_and_source_since",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::count_by_type_and_source_since")?;
             let mut stmt = conn.prepare_cached(
-                "SELECT COUNT(*) FROM persona_events
+                "SELECT COUNT(*) AS n FROM persona_events
                  WHERE event_type = ?1 AND source_id = ?2 AND created_at >= ?3",
             )?;
-            let count: i64 =
-                stmt.query_row(params![event_type, source_persona_id, since], |row| {
-                    row.get(0)
+            let count: i64 = stmt
+                .query_row(params![event_type, source_persona_id, since], |row| {
+                    row.get("n")
                 })?;
             Ok(count)
         }
@@ -586,7 +641,7 @@ pub fn count_by_type_and_source_since(
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::cleanup", {
         let days = older_than_days.unwrap_or(30);
-        let conn = pool.get()?;
+        let conn = pool.conn("events::cleanup")?;
 
         // Use chrono for the cutoff date to match the timestamp format used in publish().
         let cutoff = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
@@ -612,7 +667,7 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
 pub fn enforce_count_cap(pool: &DbPool, max_keep: i64) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::enforce_count_cap", {
         let max_keep = max_keep.max(0);
-        let conn = pool.get()?;
+        let conn = pool.conn("events::enforce_count_cap")?;
         // Delete terminal rows that are NOT among the newest `max_keep` terminal
         // rows. The subquery is scoped to the same terminal status set so the
         // ordering/limit is computed over eligible rows only — exempt rows never
@@ -644,7 +699,7 @@ pub fn skipped_rate_by_type(
 ) -> Result<Vec<SkippedRateRow>, AppError> {
     timed_query!("persona_events", "persona_events::skipped_rate_by_type", {
         let since = (chrono::Utc::now() - chrono::Duration::days(since_days.max(0))).to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("events::skipped_rate_by_type")?;
         let mut stmt = conn.prepare_cached(
             "SELECT event_type,
                     COUNT(*) AS total,
@@ -674,7 +729,7 @@ pub fn skipped_rate_by_type(
 pub fn skipped_totals(pool: &DbPool, since_days: i64) -> Result<(i64, i64), AppError> {
     timed_query!("persona_events", "persona_events::skipped_totals", {
         let since = (chrono::Utc::now() - chrono::Duration::days(since_days.max(0))).to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("events::skipped_totals")?;
         let mut stmt = conn.prepare_cached(
             "SELECT COUNT(*) AS total,
                     SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END) AS skipped
@@ -710,7 +765,7 @@ pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32,
         "persona_events",
         "persona_events::delete_events_by_source_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::delete_events_by_source_id")?;
             let mut stmt =
                 conn.prepare_cached("DELETE FROM persona_events WHERE source_id = ?1")?;
             let rows = stmt.execute(params![source_id])?;
@@ -728,7 +783,7 @@ pub fn delete_orphaned_trigger_events(pool: &DbPool) -> Result<u32, AppError> {
         "persona_events",
         "persona_events::delete_orphaned_trigger_events",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::delete_orphaned_trigger_events")?;
             // Events where source_type == 'trigger' but source_id no longer exists
             // in persona_triggers. Left-join would be cleaner but sqlite's DELETE
             // doesn't allow JOIN syntax — use NOT EXISTS instead.
@@ -763,13 +818,13 @@ pub fn get_dead_letter_events(
         "persona_events::get_dead_letter_events",
         {
             let limit = limit.unwrap_or(100);
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
+            let conn = pool.conn("events::get_dead_letter_events")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {EVENT_COLUMNS} FROM persona_events
              WHERE status = 'dead_letter'
              ORDER BY processed_at DESC, created_at DESC, id DESC
              LIMIT ?1",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![limit], row_to_event)?;
             Ok(collect_rows(rows, "get_dead_letter_events"))
         }
@@ -779,11 +834,11 @@ pub fn get_dead_letter_events(
 /// Count of events currently in dead_letter status.
 pub fn count_dead_letter(pool: &DbPool) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::count_dead_letter", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::count_dead_letter")?;
         let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_events WHERE status = 'dead_letter'",
+            "SELECT COUNT(*) AS n FROM persona_events WHERE status = 'dead_letter'",
             [],
-            |row| row.get(0),
+            |row| row.get("n"),
         )?;
         Ok(count)
     })
@@ -807,7 +862,7 @@ pub fn publish_dead_letter(
 
         let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
 
-        let conn = pool.get()?;
+        let conn = pool.conn("events::publish_dead_letter")?;
         conn.execute(
             "INSERT INTO persona_events
              (id, project_id, event_type, source_type, source_id, target_persona_id,
@@ -842,7 +897,7 @@ pub fn move_to_dead_letter(
     error_message: Option<String>,
 ) -> Result<(), AppError> {
     timed_query!("persona_events", "persona_events::move_to_dead_letter", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::move_to_dead_letter")?;
         let now = chrono::Utc::now().to_rfc3339();
         let rows = conn.execute(
             "UPDATE persona_events
@@ -856,7 +911,7 @@ pub fn move_to_dead_letter(
                 .query_row(
                     "SELECT status FROM persona_events WHERE id = ?1",
                     params![id],
-                    |row| row.get(0),
+                    |row| row.get("status"),
                 )
                 .map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
             return Err(AppError::Validation(format!(
@@ -891,7 +946,7 @@ pub fn dead_letter_from_processing(
         "persona_events",
         "persona_events::dead_letter_from_processing",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::dead_letter_from_processing")?;
             let now = chrono::Utc::now().to_rfc3339();
             let rows = conn.execute(
                 "UPDATE persona_events
@@ -935,14 +990,14 @@ pub enum StuckReapOutcome {
 /// carries no claim timestamp to lean on (`claim_pending` sets only `status`).
 pub fn list_processing_ids(pool: &DbPool, limit: i64) -> Result<Vec<String>, AppError> {
     timed_query!("persona_events", "persona_events::list_processing_ids", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::list_processing_ids")?;
         let mut stmt = conn.prepare_cached(
             "SELECT id FROM persona_events
              WHERE status = 'processing'
              ORDER BY created_at ASC, id ASC
              LIMIT ?1",
         )?;
-        let rows = stmt.query_map(params![limit], |row| row.get::<_, String>(0))?;
+        let rows = stmt.query_map(params![limit], |row| row.get::<_, String>("id"))?;
         Ok(rows.flatten().collect())
     })
 }
@@ -966,7 +1021,7 @@ pub fn reap_stuck_processing(
     exhausted_reason: &str,
 ) -> Result<Option<StuckReapOutcome>, AppError> {
     timed_query!("persona_events", "persona_events::reap_stuck_processing", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::reap_stuck_processing")?;
         let now = chrono::Utc::now().to_rfc3339();
         let mut stmt = conn.prepare_cached(
             "UPDATE persona_events
@@ -980,7 +1035,7 @@ pub fn reap_stuck_processing(
         let status: Option<String> = stmt
             .query_row(
                 params![max_retries, exhausted_reason, reclaimed_reason, now, id],
-                |row| row.get::<_, String>(0),
+                |row| row.get::<_, String>("status"),
             )
             .optional()?;
 
@@ -1026,7 +1081,7 @@ const DISCARD_DLQ_SQL: &str = "UPDATE persona_events
 
 pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
     timed_query!("persona_events", "persona_events::retry_dead_letter", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::retry_dead_letter")?;
 
         // Single atomic UPDATE: flip status to 'pending', bump retry_count, and
         // preserve the prior error message — all guarded by the dead_letter +
@@ -1041,7 +1096,7 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
                 .query_row(
                     "SELECT status, retry_count FROM persona_events WHERE id = ?1",
                     params![id],
-                    |row| Ok((row.get(0)?, row.get(1)?)),
+                    |row| Ok((row.get("status")?, row.get("retry_count")?)),
                 )
                 .optional()?;
 
@@ -1072,7 +1127,7 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
 /// Discard a dead-lettered event by marking it as 'discarded'.
 pub fn discard_dead_letter(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("persona_events", "persona_events::discard_dead_letter", {
-        let conn = pool.get()?;
+        let conn = pool.conn("events::discard_dead_letter")?;
         let now = chrono::Utc::now().to_rfc3339();
         let rows = conn.execute(DISCARD_DLQ_SQL, params![now, id])?;
         if rows == 0 {
@@ -1115,51 +1170,55 @@ pub fn bulk_retry_dead_letter(
     pool: &DbPool,
     ids: &[String],
 ) -> Result<BulkDeadLetterOutcome, AppError> {
-    timed_query!("persona_events", "persona_events::bulk_retry_dead_letter", {
-        if ids.is_empty() {
-            return Ok(BulkDeadLetterOutcome {
-                succeeded: Vec::new(),
-                failed: Vec::new(),
-            });
-        }
-
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
-
-        let mut succeeded: Vec<String> = Vec::new();
-        let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
-
-        for id in ids {
-            let rows = tx.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
-
-            if rows == 1 {
-                succeeded.push(id.clone());
-            } else {
-                let current: Option<(String, i32)> = tx
-                    .query_row(
-                        "SELECT status, retry_count FROM persona_events WHERE id = ?1",
-                        params![id],
-                        |row| Ok((row.get(0)?, row.get(1)?)),
-                    )
-                    .optional()?;
-
-                let reason = match current {
-                    None => "not_found",
-                    Some((status, _)) if status != "dead_letter" => "wrong_status",
-                    Some((_, rc)) if rc >= MAX_MANUAL_RETRIES => "retry_exhausted",
-                    Some(_) => "wrong_status",
-                };
-                failed.push(BulkDeadLetterFailure {
-                    id: id.clone(),
-                    reason: reason.into(),
+    timed_query!(
+        "persona_events",
+        "persona_events::bulk_retry_dead_letter",
+        {
+            if ids.is_empty() {
+                return Ok(BulkDeadLetterOutcome {
+                    succeeded: Vec::new(),
+                    failed: Vec::new(),
                 });
             }
+
+            let mut conn = pool.conn("events::bulk_retry_dead_letter")?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+
+            let mut succeeded: Vec<String> = Vec::new();
+            let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
+
+            for id in ids {
+                let rows = tx.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
+
+                if rows == 1 {
+                    succeeded.push(id.clone());
+                } else {
+                    let current: Option<(String, i32)> = tx
+                        .query_row(
+                            "SELECT status, retry_count FROM persona_events WHERE id = ?1",
+                            params![id],
+                            |row| Ok((row.get("status")?, row.get("retry_count")?)),
+                        )
+                        .optional()?;
+
+                    let reason = match current {
+                        None => "not_found",
+                        Some((status, _)) if status != "dead_letter" => "wrong_status",
+                        Some((_, rc)) if rc >= MAX_MANUAL_RETRIES => "retry_exhausted",
+                        Some(_) => "wrong_status",
+                    };
+                    failed.push(BulkDeadLetterFailure {
+                        id: id.clone(),
+                        reason: reason.into(),
+                    });
+                }
+            }
+
+            tx.commit().map_err(AppError::Database)?;
+
+            Ok(BulkDeadLetterOutcome { succeeded, failed })
         }
-
-        tx.commit().map_err(AppError::Database)?;
-
-        Ok(BulkDeadLetterOutcome { succeeded, failed })
-    })
+    )
 }
 
 /// Discard many dead-lettered events in a single transaction. Same
@@ -1179,7 +1238,7 @@ pub fn bulk_discard_dead_letter(
                 });
             }
 
-            let mut conn = pool.get()?;
+            let mut conn = pool.conn("events::bulk_discard_dead_letter")?;
             let tx = conn.transaction().map_err(AppError::Database)?;
 
             let now = chrono::Utc::now().to_rfc3339();
@@ -1196,7 +1255,7 @@ pub fn bulk_discard_dead_letter(
                         .query_row(
                             "SELECT status FROM persona_events WHERE id = ?1",
                             params![id],
-                            |row| row.get(0),
+                            |row| row.get("status"),
                         )
                         .optional()?;
                     let reason = match status {
@@ -1229,7 +1288,7 @@ pub fn increment_retry_or_dead_letter(
         "persona_events",
         "persona_events::increment_retry_or_dead_letter",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::increment_retry_or_dead_letter")?;
 
             // Atomically increment retry_count and conditionally set status in a
             // single UPDATE to avoid TOCTOU races with concurrent retry attempts.
@@ -1256,7 +1315,7 @@ pub fn increment_retry_or_dead_letter(
                 .query_row(
                     "SELECT status FROM persona_events WHERE id = ?1",
                     params![id],
-                    |row| row.get(0),
+                    |row| row.get("status"),
                 )
                 .map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
 
@@ -1272,14 +1331,14 @@ pub fn get_retry_eligible(
     limit: i64,
 ) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::get_retry_eligible", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_events
+        let conn = pool.conn("events::get_retry_eligible")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {EVENT_COLUMNS} FROM persona_events
              WHERE status = 'failed'
                AND retry_count < ?1
              ORDER BY created_at ASC, id ASC
              LIMIT ?2",
-        )?;
+        ))?;
         let rows = stmt.query_map(params![max_retries, limit], row_to_event)?;
         Ok(collect_rows(rows, "get_retry_eligible"))
     })
@@ -1296,7 +1355,7 @@ pub fn search(
     timed_query!("persona_events", "persona_events::search", {
         let limit = filter.limit.unwrap_or(100).max(1);
         let fetch = limit + 1;
-        let conn = pool.get()?;
+        let conn = pool.conn("events::search")?;
 
         let mut qb = crate::query_builder::QueryBuilder::new();
 
@@ -1335,7 +1394,7 @@ pub fn search(
         qb.order_by_multiple(&[("created_at", "DESC"), ("id", "DESC")]);
         qb.limit(fetch);
 
-        let sql = qb.build_select("SELECT * FROM persona_events");
+        let sql = qb.build_select(&format!("SELECT {EVENT_COLUMNS} FROM persona_events"));
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_event)?;
         let mut events = collect_rows(rows, "search_events");
@@ -1359,9 +1418,10 @@ pub fn get_subscription_by_id(
         "event_subscriptions",
         "event_subscriptions::get_subscription_by_id",
         {
-            let conn = pool.get()?;
-            let mut stmt =
-                conn.prepare_cached("SELECT * FROM persona_event_subscriptions WHERE id = ?1")?;
+            let conn = pool.conn("events::get_subscription_by_id")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions WHERE id = ?1",
+            ))?;
             stmt.query_row(params![id], row_to_subscription)
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
@@ -1381,12 +1441,12 @@ pub fn get_subscriptions_by_persona(
         "event_subscriptions",
         "event_subscriptions::get_subscriptions_by_persona",
         {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_event_subscriptions
+            let conn = pool.conn("events::get_subscriptions_by_persona")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions
              WHERE persona_id = ?1
              ORDER BY created_at DESC",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id], row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_persona"))
         }
@@ -1405,11 +1465,13 @@ pub fn get_subscriptions_by_persona_ids(
         "event_subscriptions",
         "event_subscriptions::get_subscriptions_by_persona_ids",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::get_subscriptions_by_persona_ids")?;
             let mut qb = QueryBuilder::new();
             qb.where_in("persona_id", persona_ids.to_vec());
             qb.order_by("created_at", "DESC");
-            let sql = qb.build_select("SELECT * FROM persona_event_subscriptions");
+            let sql = qb.build_select(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions"
+            ));
             let mut stmt = conn.prepare(&sql)?;
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_persona_ids"))
@@ -1422,10 +1484,10 @@ pub fn get_all_subscriptions(pool: &DbPool) -> Result<Vec<PersonaEventSubscripti
         "event_subscriptions",
         "event_subscriptions::get_all_subscriptions",
         {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_event_subscriptions ORDER BY created_at DESC",
-            )?;
+            let conn = pool.conn("events::get_all_subscriptions")?;
+            let mut stmt = conn.prepare_cached(&format!(
+"SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions ORDER BY created_at DESC",
+))?;
             let rows = stmt.query_map([], row_to_subscription)?;
             Ok(collect_rows(rows, "get_all_subscriptions"))
         }
@@ -1447,11 +1509,11 @@ pub fn get_all_enabled_subscriptions(
         "event_subscriptions",
         "event_subscriptions::get_all_enabled_subscriptions",
         {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_event_subscriptions WHERE enabled = 1
+            let conn = pool.conn("events::get_all_enabled_subscriptions")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions WHERE enabled = 1
                  ORDER BY created_at DESC",
-            )?;
+            ))?;
             let rows = stmt.query_map([], row_to_subscription)?;
             Ok(collect_rows(rows, "get_all_enabled_subscriptions"))
         }
@@ -1466,12 +1528,12 @@ pub fn get_subscriptions_by_event_type(
         "event_subscriptions",
         "event_subscriptions::get_subscriptions_by_event_type",
         {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_event_subscriptions
+            let conn = pool.conn("events::get_subscriptions_by_event_type")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions
              WHERE event_type = ?1 AND enabled = 1
              ORDER BY created_at DESC",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![event_type], row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_event_type"))
         }
@@ -1490,12 +1552,14 @@ pub fn get_subscriptions_by_event_types(
         "event_subscriptions",
         "event_subscriptions::get_subscriptions_by_event_types",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("events::get_subscriptions_by_event_types")?;
             let mut qb = QueryBuilder::new();
             qb.where_in("event_type", event_types.to_vec());
             qb.where_raw(|_| "enabled = 1".to_string(), vec![]);
             qb.order_by("created_at", "DESC");
-            let sql = qb.build_select("SELECT * FROM persona_event_subscriptions");
+            let sql = qb.build_select(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions"
+            ));
             let mut stmt = conn.prepare(&sql)?;
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
@@ -1515,7 +1579,7 @@ pub fn create_subscription(
             let now = chrono::Utc::now().to_rfc3339();
             let enabled = input.enabled.unwrap_or(true) as i32;
 
-            let conn = pool.get()?;
+            let conn = pool.conn("events::create_subscription")?;
             // Use INSERT OR IGNORE to silently skip if an identical subscription exists
             // (unique index on persona_id, event_type, COALESCE(source_filter, '')).
             let rows = conn.execute(
@@ -1537,9 +1601,11 @@ pub fn create_subscription(
                 // Duplicate exists -- return the existing subscription
                 let existing = conn
                     .query_row(
-                        "SELECT * FROM persona_event_subscriptions
+                        &format!(
+                            "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions
                  WHERE persona_id = ?1 AND event_type = ?2
-                   AND COALESCE(source_filter, '') = COALESCE(?3, '')",
+                   AND COALESCE(source_filter, '') = COALESCE(?3, '')"
+                        ),
                         params![input.persona_id, input.event_type, input.source_filter],
                         row_to_subscription,
                     )
@@ -1563,7 +1629,7 @@ pub fn create_subscription_with_trigger(
         "event_subscriptions",
         "event_subscriptions::create_subscription_with_trigger",
         {
-            let mut conn = pool.get()?;
+            let mut conn = pool.conn("events::create_subscription_with_trigger")?;
             let tx = conn.transaction().map_err(AppError::Database)?;
 
             // 1) Insert the event_listener trigger
@@ -1623,12 +1689,14 @@ pub fn create_subscription_with_trigger(
             // Return the subscription (existing or newly created)
             if sub_rows == 0 {
                 // Duplicate existed -- find and return it
-                let conn = pool.get()?;
+                let conn = pool.conn("events::create_subscription_with_trigger")?;
                 let existing = conn
                     .query_row(
-                        "SELECT * FROM persona_event_subscriptions
+                        &format!(
+                            "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions
                  WHERE persona_id = ?1 AND event_type = ?2
-                   AND COALESCE(source_filter, '') = COALESCE(?3, '')",
+                   AND COALESCE(source_filter, '') = COALESCE(?3, '')"
+                        ),
                         params![input.persona_id, input.event_type, input.source_filter],
                         row_to_subscription,
                     )
@@ -1654,7 +1722,7 @@ pub fn update_subscription(
             let existing = get_subscription_by_id(pool, id)?;
 
             let now = chrono::Utc::now().to_rfc3339();
-            let mut conn = pool.get()?;
+            let mut conn = pool.conn("events::update_subscription")?;
             let tx = conn.transaction().map_err(AppError::Database)?;
 
             // 1) Update the subscription row
@@ -1764,7 +1832,7 @@ pub fn delete_subscription(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         "event_subscriptions",
         "event_subscriptions::delete_subscription",
         {
-            let mut conn = pool.get()?;
+            let mut conn = pool.conn("events::delete_subscription")?;
 
             // Read the subscription first so we can find the paired trigger
             let sub = conn.query_row(
@@ -1773,10 +1841,10 @@ pub fn delete_subscription(pool: &DbPool, id: &str) -> Result<bool, AppError> {
                 params![id],
                 |row| {
                     Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, String>(1)?,
-                        row.get::<_, Option<String>>(2)?,
-                        row.get::<_, Option<String>>(3)?,
+                        row.get::<_, String>("persona_id")?,
+                        row.get::<_, String>("event_type")?,
+                        row.get::<_, Option<String>>("source_filter")?,
+                        row.get::<_, Option<String>>("use_case_id")?,
                     ))
                 },
             );
@@ -1820,6 +1888,25 @@ pub fn delete_subscription(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 
 #[cfg(test)]
 mod tests {
+    /// Both projection consts must prepare against the real migrated schema.
+    /// A by-name read of a column the table does not have compiles fine and
+    /// fails at runtime on the first row; this is the only gate that sees it.
+    /// It also pins the ALTER-added columns — `payload_iv`, `use_case_id`,
+    /// `retry_count` — which no fresh-install DDL alone would prove present.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for (columns, table) in [
+            (super::EVENT_COLUMNS, "persona_events"),
+            (super::SUBSCRIPTION_COLUMNS, "persona_event_subscriptions"),
+        ] {
+            let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
+            conn.prepare(&sql)
+                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
+        }
+    }
+
     use super::*;
     use crate::init_test_db;
     use crate::models::CreateEventSubscriptionInput;
@@ -2305,7 +2392,7 @@ mod tests {
                 "SELECT enabled FROM persona_triggers
                  WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
                 params![persona_id],
-                |row| row.get(0),
+                |row| row.get("enabled"),
             )
             .unwrap();
         assert_eq!(enabled_before, 1);
@@ -2330,7 +2417,7 @@ mod tests {
                 "SELECT enabled, status FROM persona_triggers
                  WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
                 params![persona_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get("enabled")?, row.get("status")?)),
             )
             .unwrap();
         assert_eq!(enabled_after, 0);
@@ -2363,10 +2450,10 @@ mod tests {
         let conn = pool.get().unwrap();
         let count_before: i32 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_triggers
+                "SELECT COUNT(*) AS n FROM persona_triggers
                  WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
                 params![persona_id],
-                |row| row.get(0),
+                |row| row.get("n"),
             )
             .unwrap();
         assert_eq!(count_before, 1);
@@ -2378,10 +2465,10 @@ mod tests {
         // Verify trigger was also deleted
         let count_after: i32 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_triggers
+                "SELECT COUNT(*) AS n FROM persona_triggers
                  WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
                 params![persona_id],
-                |row| row.get(0),
+                |row| row.get("n"),
             )
             .unwrap();
         assert_eq!(count_after, 0);
@@ -2835,9 +2922,9 @@ mod tests {
         let conn = pool.get().unwrap();
         let beta_count: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1",
                 params!["trigger-beta"],
-                |row| row.get(0),
+                |row| row.get("n"),
             )
             .unwrap();
         assert_eq!(beta_count, 2);
@@ -2915,7 +3002,9 @@ mod tests {
 
         let conn = pool.get().unwrap();
         let remaining: i64 = conn
-            .query_row("SELECT COUNT(*) FROM persona_events", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) AS n FROM persona_events", [], |row| {
+                row.get("n")
+            })
             .unwrap();
         assert_eq!(remaining, 2, "live + webhook events should survive");
     }
@@ -3060,7 +3149,10 @@ mod tests {
 
         let row = get_by_id(&pool, &evt.id).unwrap();
         assert_eq!(row.status, PersonaEventStatus::DeadLetter);
-        assert_eq!(row.error_message.as_deref(), Some("handoff_target_disabled"));
+        assert_eq!(
+            row.error_message.as_deref(),
+            Some("handoff_target_disabled")
+        );
         assert!(row.processed_at.is_some());
     }
 
@@ -3223,7 +3315,10 @@ mod tests {
         .unwrap();
 
         let moved = dead_letter_from_processing(&pool, &evt.id, Some("x".into())).unwrap();
-        assert!(!moved, "a pending row must not be dead-lettered by this path");
+        assert!(
+            !moved,
+            "a pending row must not be dead-lettered by this path"
+        );
         let row = get_by_id(&pool, &evt.id).unwrap();
         assert_eq!(row.status, PersonaEventStatus::Pending);
         assert!(row.error_message.is_none());

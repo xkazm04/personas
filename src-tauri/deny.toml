@@ -15,8 +15,24 @@ targets = [
 # Advisory database — block known vulnerabilities
 # --------------------------------------------------------------------------
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
+# cargo-deny 0.17 removed the per-severity keys this section used to carry.
+# `vulnerability = "deny"` is gone because every security advisory is now an
+# error unconditionally — you opt out per-advisory via `ignore`, not by
+# lowering a severity. `unmaintained` survived the rename but changed KIND:
+# it is no longer a severity ("warn") but a SCOPE, one of
+# all | workspace | transitive | none.
+#
+# This mattered more than a config nit. With the old keys in place cargo-deny
+# refused to deserialize this file at all and exited before running a single
+# check — so `cargo deny check` in ci.yml and audit.yml was reporting a config
+# error, not a supply-chain verdict. A gate that cannot parse its own policy
+# is indistinguishable from a gate that passes, which is the failure shape
+# this repository keeps finding.
+#
+# Scope is `workspace`: unmaintained crates we depend on directly are
+# actionable, transitive ones usually are not and would turn a security gate
+# into noise nobody reads.
+unmaintained = "workspace"
 yanked = "warn"
 ignore = []
 
@@ -38,6 +54,16 @@ allow = [
     "BSL-1.0",
     "CC0-1.0",
     "MPL-2.0",
+    # MIT-0 is MIT with the attribution clause removed — strictly more
+    # permissive than the MIT already allowed above. Carried by
+    # `borrow-or-share`, a transitive dep of the URI parsing stack.
+    "MIT-0",
+    # CDLA-Permissive-2.0 is the Linux Foundation's permissive data licence,
+    # no copyleft and no attribution obligation on redistribution. It reaches
+    # us only through `webpki-roots` (0.26 and 1.0 both in the graph), which
+    # ships Mozilla's CA set — the licence is on the DATA, which is the whole
+    # reason a data licence appears in a Rust dependency graph at all.
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.8
 
@@ -52,6 +78,14 @@ license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Every "wildcard dependency" cargo-deny found here was one of our own
+# workspace crates — `personas-core = { path = "../core" }` and its eight
+# siblings — because a path dependency carries no version requirement and the
+# wildcard check cannot tell that apart from `version = "*"` off crates.io.
+# An intra-workspace path dep is not a supply-chain surface: it resolves to a
+# directory in this repository, not to whatever the registry serves next.
+# There are no real wildcards; there were nine false ones.
+allow-wildcard-paths = true
 deny = []
 skip = []
 
@@ -61,4 +95,8 @@ skip = []
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-git = []
+# pumper-core is the embedded scraper engine, pinned to an exact rev of a
+# repository this project owns. It is optional and only enters the graph under
+# the `scraper` feature, but it is present in Cargo.lock unconditionally — so
+# with an empty allow-git this policy denies the lockfile as it stands today.
+allow-git = ["https://github.com/xkazm04/pumper.git"]

@@ -60,7 +60,10 @@ mod tests {
 
     #[test]
     fn sanitize_strips_path_escapes_and_unicode() {
-        assert_eq!(sanitize_stem("2026-08-05_10-00-00-default"), "2026-08-05_10-00-00-default");
+        assert_eq!(
+            sanitize_stem("2026-08-05_10-00-00-default"),
+            "2026-08-05_10-00-00-default"
+        );
         assert_eq!(sanitize_stem("../../etc/passwd"), "etcpasswd");
         assert_eq!(sanitize_stem("a\\b/c:d"), "abcd");
         assert_eq!(sanitize_stem("čeština✨"), "etina");

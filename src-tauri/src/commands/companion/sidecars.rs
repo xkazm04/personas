@@ -194,7 +194,10 @@ mod tests {
     }
 
     fn fetch_one(pool: &UserDbPool, id: &str) -> Option<CompanionTurnSidecar> {
-        get_sidecars(pool, &[id.to_string()]).unwrap().into_iter().next()
+        get_sidecars(pool, &[id.to_string()])
+            .unwrap()
+            .into_iter()
+            .next()
     }
 
     #[test]
@@ -246,14 +249,20 @@ mod tests {
 
         // A later non-null value DOES replace (a re-emitted trail wins).
         save_sidecar(&pool, "ep_2", Some("N2".into()), None, None, None).unwrap();
-        assert_eq!(fetch_one(&pool, "ep_2").unwrap().narration_json.as_deref(), Some("N2"));
+        assert_eq!(
+            fetch_one(&pool, "ep_2").unwrap().narration_json.as_deref(),
+            Some("N2")
+        );
     }
 
     #[test]
     fn empty_write_is_a_noop_and_batch_read_skips_unknown_ids() {
         let pool = test_pool();
         save_sidecar(&pool, "ep_3", None, None, None, None).unwrap();
-        assert!(fetch_one(&pool, "ep_3").is_none(), "no row for an empty write");
+        assert!(
+            fetch_one(&pool, "ep_3").is_none(),
+            "no row for an empty write"
+        );
 
         save_sidecar(&pool, "ep_4", Some("N".into()), None, None, None).unwrap();
         let got = get_sidecars(
@@ -275,7 +284,10 @@ mod tests {
         let huge = "x".repeat(MAX_JSON_CHARS + 1);
         save_sidecar(&pool, "ep_5", Some(huge), Some("S".into()), None, None).unwrap();
         let got = fetch_one(&pool, "ep_5").unwrap();
-        assert!(got.narration_json.is_none(), "oversized blob dropped, not truncated");
+        assert!(
+            got.narration_json.is_none(),
+            "oversized blob dropped, not truncated"
+        );
         assert_eq!(got.steps_json.as_deref(), Some("S"));
     }
 }

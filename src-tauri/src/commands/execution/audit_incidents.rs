@@ -5,11 +5,13 @@
 //! per-source promoters are wired at each existing audit-INSERT site (see
 //! `engine/audit_incidents_promoter.rs`).
 
-use std::sync::Arc;
 use serde_json::json;
+use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{AuditIncident, AuditIncidentSummary, CreatePersonaEventInput, IncidentFilters};
+use crate::db::models::{
+    AuditIncident, AuditIncidentSummary, CreatePersonaEventInput, IncidentFilters,
+};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::execution::audit_incidents as repo;
 use crate::engine::event_registry::emit_event_bus;

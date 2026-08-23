@@ -31,10 +31,11 @@ use tauri::{AppHandle, Emitter};
 use uuid::Uuid;
 
 /// Where a job-status event lands. The desktop binary wires this to a
-/// Tauri `AppHandle.emit(...)` so the chat panel updates its
-/// indicator; the headless daemon binary wires it to `Noop` because
-/// it has no UI listener. Extending to a Tokio channel for in-process
-/// IPC (desktop ↔ daemon) is a future variant that slots in here.
+/// Tauri `AppHandle.emit(...)` so the chat panel updates its indicator —
+/// that is `JobEventSink::App`, constructed once at
+/// `commands/companion/mod.rs:124`, and it is the only sink anything
+/// constructs today. Extending to a Tokio channel for in-process IPC
+/// (desktop ↔ daemon) is a future variant that slots in here.
 ///
 /// Kept as an enum (not `dyn Trait`) so worker_tick can stay non-
 /// generic and the `JOB_EVENT` const has a single point-of-truth for
@@ -44,6 +45,21 @@ pub enum JobEventSink {
     /// Desktop: emit to the Tauri webview.
     App(AppHandle),
     /// Daemon or test: drop the event on the floor.
+    ///
+    /// NOT CONSTRUCTED ANYWHERE TODAY — this doc used to claim "the
+    /// headless daemon binary wires it to `Noop`", and it does not:
+    /// `src/daemon_bin.rs` (the `daemon`-gated Phase-0 scaffold) never
+    /// touches the job system, and a whole-tree search finds no
+    /// `JobEventSink::Noop` outside this file. Both match arms that
+    /// handle it (`emit`, `app_handle`) are therefore unreachable.
+    ///
+    /// Retained rather than deleted because it is the reason
+    /// `JobEventSink` is an enum at all: removing it collapses the type
+    /// to a single-variant newtype over `AppHandle` and deletes the
+    /// headless affordance the daemon scaffold was built to grow into.
+    /// If the daemon lane is abandoned, delete the variant, both arms,
+    /// and flatten the enum together.
+    #[allow(dead_code)]
     Noop,
 }
 
@@ -149,17 +165,6 @@ impl JobProgress {
             JobEventSink::Noop => None,
         }
     }
-
-    /// Report determinate progress (current/total) plus a note, so the task
-    /// tag can render a progress bar (e.g. files scanned). Event-only.
-    pub fn report_progress(&self, current: u32, total: u32, message: impl Into<String>) {
-        let mut snapshot = self.job.clone();
-        snapshot.status = "running".into();
-        snapshot.progress_text = Some(message.into());
-        snapshot.progress_current = Some(current);
-        snapshot.progress_total = Some(total);
-        self.sink.emit(&snapshot);
-    }
 }
 
 /// Recover orphaned `running` jobs on startup. A job in `running`
@@ -238,7 +243,9 @@ pub fn enqueue_task(
     let id = format!("job_{}", short_uuid());
     let now = Utc::now().to_rfc3339();
     let params_str = params.to_string();
-    let title = short_title.map(|s| s.to_string()).unwrap_or_else(|| default_title(kind));
+    let title = short_title
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| default_title(kind));
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_background_job

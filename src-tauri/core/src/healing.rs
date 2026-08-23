@@ -64,8 +64,12 @@ pub use super::error_taxonomy::{UsageLimitInfo, UsageLimitScope};
 /// Recommended action for a diagnosed failure.
 #[derive(Debug, Clone, PartialEq)]
 pub enum HealingAction {
-    RetryWithBackoff { delay_secs: u64 },
-    RetryWithTimeout { new_timeout_ms: u64 },
+    RetryWithBackoff {
+        delay_secs: u64,
+    },
+    RetryWithTimeout {
+        new_timeout_ms: u64,
+    },
     /// Durable retry at an absolute time — used for provider usage-limit
     /// windows that reset on their own (e.g. Claude's rolling ~5h window).
     /// Unlike the backoff variants this is persisted to `scheduled_retries`
@@ -564,9 +568,7 @@ pub fn diagnose(
                     ),
                     severity: "low".into(),
                     db_category: "external".into(),
-                    suggested_fix: Some(format!(
-                        "Automatic retry with {delay}s backoff."
-                    )),
+                    suggested_fix: Some(format!("Automatic retry with {delay}s backoff.")),
                 }
             }
         }

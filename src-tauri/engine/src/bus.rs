@@ -62,7 +62,8 @@ impl MatchableSubscription for PersonaEventSubscription {
         // whose separator style differed from the subscription's, starving
         // downstream steps. Canonicalizing separators unifies the stylistic
         // variants without merging semantically-distinct events.
-        self.enabled && canonical_event_type(&self.event_type) == canonical_event_type(&event.event_type)
+        self.enabled
+            && canonical_event_type(&self.event_type) == canonical_event_type(&event.event_type)
     }
 }
 
@@ -326,16 +327,40 @@ mod tests {
     #[test]
     fn cross_team_wildcard_bleed_guard() {
         // Wildcard across a team boundary → suppress (the bug).
-        assert!(is_cross_team_wildcard_bleed(Some("*"), Some("teamA"), Some("teamB")));
+        assert!(is_cross_team_wildcard_bleed(
+            Some("*"),
+            Some("teamA"),
+            Some("teamB")
+        ));
         // Wildcard within the same team → deliver (intra-team chain).
-        assert!(!is_cross_team_wildcard_bleed(Some("*"), Some("teamA"), Some("teamA")));
+        assert!(!is_cross_team_wildcard_bleed(
+            Some("*"),
+            Some("teamA"),
+            Some("teamA")
+        ));
         // Explicit specific source_filter → never our concern (intentional routing).
-        assert!(!is_cross_team_wildcard_bleed(Some("persona-x"), Some("teamA"), Some("teamB")));
+        assert!(!is_cross_team_wildcard_bleed(
+            Some("persona-x"),
+            Some("teamA"),
+            Some("teamB")
+        ));
         // Self-scoped (no filter) → not handled here.
-        assert!(!is_cross_team_wildcard_bleed(None, Some("teamA"), Some("teamB")));
+        assert!(!is_cross_team_wildcard_bleed(
+            None,
+            Some("teamA"),
+            Some("teamB")
+        ));
         // A teamless side (global persona or non-persona source) → don't over-filter.
-        assert!(!is_cross_team_wildcard_bleed(Some("*"), None, Some("teamB")));
-        assert!(!is_cross_team_wildcard_bleed(Some("*"), Some("teamA"), None));
+        assert!(!is_cross_team_wildcard_bleed(
+            Some("*"),
+            None,
+            Some("teamB")
+        ));
+        assert!(!is_cross_team_wildcard_bleed(
+            Some("*"),
+            Some("teamA"),
+            None
+        ));
     }
 
     fn make_event(event_type: &str) -> PersonaEvent {
@@ -389,11 +414,26 @@ mod tests {
 
     #[test]
     fn test_canonical_event_type_unifies_separators() {
-        assert_eq!(canonical_event_type("code_review.completed"), "code.review.completed");
-        assert_eq!(canonical_event_type("code-review.completed"), "code.review.completed");
-        assert_eq!(canonical_event_type("code.review.completed"), "code.review.completed");
-        assert_eq!(canonical_event_type("ux_review.completed"), "ux.review.completed");
-        assert_eq!(canonical_event_type("ux.review.completed"), "ux.review.completed");
+        assert_eq!(
+            canonical_event_type("code_review.completed"),
+            "code.review.completed"
+        );
+        assert_eq!(
+            canonical_event_type("code-review.completed"),
+            "code.review.completed"
+        );
+        assert_eq!(
+            canonical_event_type("code.review.completed"),
+            "code.review.completed"
+        );
+        assert_eq!(
+            canonical_event_type("ux_review.completed"),
+            "ux.review.completed"
+        );
+        assert_eq!(
+            canonical_event_type("ux.review.completed"),
+            "ux.review.completed"
+        );
         assert_eq!(canonical_event_type("Goal_Progress"), "goal.progress");
         // semantically-distinct names stay distinct (different words, not separators)
         assert_ne!(
@@ -408,7 +448,11 @@ mod tests {
         let event = make_event("ux.review.completed");
         let subs = vec![make_sub("p1", "ux_review.completed")];
         let matches = match_event(&event, &subs);
-        assert_eq!(matches.len(), 1, "separator variants must match canonically");
+        assert_eq!(
+            matches.len(),
+            1,
+            "separator variants must match canonically"
+        );
         // And the reverse direction + hyphen form.
         let event2 = make_event("code-review.completed");
         let subs2 = vec![make_sub("p2", "code_review.completed")];

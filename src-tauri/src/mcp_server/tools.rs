@@ -109,7 +109,6 @@ fn rel_of(root: &Path, abs: &Path) -> String {
         .unwrap_or_else(|_| abs.to_string_lossy().to_string())
 }
 
-
 /// Offload a simple, self-contained subtask to the local delegate model
 /// (mixed engine — docs/plans/mixed-engine-byom.md). The delegate sees only
 /// the provided input: no tools, no files, no conversation context. Errors
@@ -152,7 +151,10 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
         .ok_or("'input' is required (the self-contained content to process)")?;
-    let format = args.get("format").and_then(|v| v.as_str()).unwrap_or("plain");
+    let format = args
+        .get("format")
+        .and_then(|v| v.as_str())
+        .unwrap_or("plain");
     let base_url = std::env::var("PERSONAS_DELEGATE_BASE_URL")
         .unwrap_or_else(|_| "http://localhost:11434".to_string());
     let model_pref =
@@ -180,6 +182,10 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         // 300s: reasoning models (LFM2.5-class) burn minutes thinking before
         // the first byte of a non-streamed response; with stream:false the
         // headers arrive only after the FULL generation.
+        // Deliberately NOT an SSRF-safe client: `base` is the configured local
+        // delegate (an Ollama/LM-Studio-shaped server, normally on loopback),
+        // so a private-IP-rejecting resolver would reject every call this tool
+        // exists to make.
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(300))
             .build()
@@ -240,8 +246,8 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
             let excerpt: String = text.chars().take(300).collect();
             return Err(format!("delegate returned {status}: {excerpt}"));
         }
-        let v: Value = serde_json::from_str(&text)
-            .map_err(|_| "delegate response is not JSON".to_string())?;
+        let v: Value =
+            serde_json::from_str(&text).map_err(|_| "delegate response is not JSON".to_string())?;
         let raw = v
             .get("message")
             .and_then(|m| m.get("content"))
@@ -255,7 +261,10 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
                 "delegate returned an empty response (or thinking-only output)".to_string(),
             );
         }
-        let prompt_tokens = v.get("prompt_eval_count").and_then(|x| x.as_u64()).unwrap_or(0);
+        let prompt_tokens = v
+            .get("prompt_eval_count")
+            .and_then(|x| x.as_u64())
+            .unwrap_or(0);
         let eval_tokens = v.get("eval_count").and_then(|x| x.as_u64()).unwrap_or(0);
         Ok((model, content, prompt_tokens, eval_tokens))
     });
@@ -278,7 +287,11 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
             let _ = std::fs::create_dir_all(parent);
         }
         use std::io::Write as _;
-        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&audit_path) {
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&audit_path)
+        {
             let _ = writeln!(f, "{line}");
         }
     }
@@ -656,11 +669,11 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
         }
     }
 
-    Ok(serde_json::to_string_pretty(&json!({
+    serde_json::to_string_pretty(&json!({
         "self": { "id": src_id, "name": src_name },
         "neighbors": neighbors,
     }))
-    .map_err(|e| format!("Serialize error: {e}"))?)
+    .map_err(|e| format!("Serialize error: {e}"))
 }
 
 /// Return the list of available MCP tools with their schemas.
@@ -670,10 +683,11 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
 /// Mirrors how the vault tools use the credential proxy.
 #[cfg(feature = "scraper")]
 fn scrape_bridge(path: &str, body: &Value) -> Result<String, String> {
-    let bridge =
-        std::env::var("PERSONAS_BRIDGE_URL").unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
-    let api_key = std::env::var("PERSONAS_API_KEY")
-        .map_err(|_| "Scraper bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string())?;
+    let bridge = std::env::var("PERSONAS_BRIDGE_URL")
+        .unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
+    let api_key = std::env::var("PERSONAS_API_KEY").map_err(|_| {
+        "Scraper bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string()
+    })?;
     let endpoint = format!("{}/api/scrape/{}", bridge.trim_end_matches('/'), path);
     let body = body.clone();
     let rt = tokio::runtime::Builder::new_current_thread()
@@ -681,7 +695,15 @@ fn scrape_bridge(path: &str, body: &Value) -> Result<String, String> {
         .build()
         .map_err(|e| format!("runtime build failed: {e}"))?;
     rt.block_on(async move {
-        let client = reqwest::Client::new();
+        // `SHARED_HTTP`: the host is this process's own management server
+        // (`PERSONAS_BRIDGE_URL`, default `http://127.0.0.1:9420`), so the
+        // SSRF-safe resolver would reject the very loopback target this call
+        // needs. What the bare `reqwest::Client::new()` here dropped was the
+        // TIME BOUND: this runs inside `rt.block_on` on a CURRENT-THREAD
+        // runtime, so a hung bridge blocked this MCP tool forever with no
+        // cancel. `SHARED_HTTP`'s 30 s deadline ends it. The credential rides
+        // in `Authorization`, which the client strips across a host change.
+        let client = crate::SHARED_HTTP.clone();
         let resp = client
             .post(&endpoint)
             .bearer_auth(&api_key)
@@ -718,8 +740,11 @@ fn handle_query_dataset(args: &Value, _pool: &McpDbPool) -> Result<String, Strin
     scrape_bridge("query", &body)
 }
 
-#[cfg_attr(not(feature = "scraper"), allow(unused_variables))]
-pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
+// `pool` is unused in EVERY feature shape — it exists for signature symmetry
+// with `call_tool`, which does take one. The attribute here used to read
+// `cfg_attr(not(feature = "scraper"), ...)`, which suppressed the warning in
+// the one shape that never emits it and left it live in the shape that does.
+pub fn list_tools(_pool: &McpDbPool) -> Vec<Value> {
     let mut tools = vec![
         json!({
             "name": "personas_list",
@@ -1184,7 +1209,10 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
 // ── Persona create / configure + Messages (driver tools) ───────────────────
 
 fn handle_personas_create(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let name = args.get("name").and_then(|v| v.as_str()).ok_or("name is required")?;
+    let name = args
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("name is required")?;
     let system_prompt = args
         .get("system_prompt")
         .and_then(|v| v.as_str())
@@ -1192,8 +1220,14 @@ fn handle_personas_create(args: &Value, pool: &McpDbPool) -> Result<String, Stri
     let description = args.get("description").and_then(|v| v.as_str());
     let provider = args.get("provider").and_then(|v| v.as_str());
     let model = args.get("model").and_then(|v| v.as_str());
-    let enabled = args.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let project_id = args.get("project_id").and_then(|v| v.as_str()).unwrap_or("default");
+    let enabled = args
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let project_id = args
+        .get("project_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
 
     // Assemble the model_profile from provider/model, then let the shared repo
     // own storage (encrypt_input_profile no-ops without an auth_token; here
@@ -1246,8 +1280,14 @@ fn handle_personas_create(args: &Value, pool: &McpDbPool) -> Result<String, Stri
 }
 
 fn handle_personas_set_model(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let persona_id = args.get("persona_id").and_then(|v| v.as_str()).ok_or("persona_id is required")?;
-    let provider = args.get("provider").and_then(|v| v.as_str()).ok_or("provider is required")?;
+    let persona_id = args
+        .get("persona_id")
+        .and_then(|v| v.as_str())
+        .ok_or("persona_id is required")?;
+    let provider = args
+        .get("provider")
+        .and_then(|v| v.as_str())
+        .ok_or("provider is required")?;
     let model = args.get("model").and_then(|v| v.as_str());
 
     let mut obj = serde_json::Map::new();
@@ -1271,17 +1311,25 @@ fn handle_personas_set_model(args: &Value, pool: &McpDbPool) -> Result<String, S
 }
 
 fn handle_post_message(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let content = args.get("content").and_then(|v| v.as_str()).ok_or("content is required")?;
+    let content = args
+        .get("content")
+        .and_then(|v| v.as_str())
+        .ok_or("content is required")?;
     let title = args.get("title").and_then(|v| v.as_str());
-    let priority = args.get("priority").and_then(|v| v.as_str()).unwrap_or("normal");
+    let priority = args
+        .get("priority")
+        .and_then(|v| v.as_str())
+        .unwrap_or("normal");
     let execution_id = args.get("execution_id").and_then(|v| v.as_str());
 
     let conn = pool.get()?;
     let persona_id = if let Some(pid) = args.get("persona_id").and_then(|v| v.as_str()) {
         pid.to_string()
     } else {
-        conn.query_row("SELECT id FROM personas LIMIT 1", [], |row| row.get::<_, String>(0))
-            .map_err(|_| "No personas available for attribution")?
+        conn.query_row("SELECT id FROM personas LIMIT 1", [], |row| {
+            row.get::<_, String>(0)
+        })
+        .map_err(|_| "No personas available for attribution")?
     };
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1319,7 +1367,11 @@ fn obsidian_athena_target(conn: &rusqlite::Connection) -> Option<(String, String
         .and_then(|s| serde_json::from_str::<Value>(&s).ok())
     };
     let mirror = read_json("obsidian_mirror_config")?;
-    if !mirror.get("athena").and_then(|v| v.as_bool()).unwrap_or(false) {
+    if !mirror
+        .get("athena")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
         return None;
     }
     let cfg = read_json("obsidian_brain_config")?;
@@ -1350,7 +1402,11 @@ fn handle_obsidian_vault_search(args: &Value, pool: &McpDbPool) -> Result<String
     if query.is_empty() {
         return Err("query is required".into());
     }
-    let limit = args.get("limit").and_then(|v| v.as_u64()).unwrap_or(10).min(50) as usize;
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(10)
+        .min(50) as usize;
     let query_lc = query.to_lowercase();
     let terms = tokenize(&query_lc);
     if terms.is_empty() {
@@ -1389,7 +1445,11 @@ fn handle_obsidian_vault_write_note(args: &Value, pool: &McpDbPool) -> Result<St
         obsidian_athena_target(&conn)
     };
     let (vault_path, athena_folder) = target.ok_or_else(|| VAULT_DISABLED.to_string())?;
-    let title = args.get("title").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let title = args
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
     let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
     if title.is_empty() || content.is_empty() {
         return Err("title and content are required".into());
@@ -1455,26 +1515,37 @@ fn vault_credential_id(
         |r| r.get::<_, String>(0),
     )
     .map_err(|_| {
-        format!("No {label} credential found in the vault. Connect {label} in Settings → Connectors.")
+        format!(
+            "No {label} credential found in the vault. Connect {label} in Settings → Connectors."
+        )
     })
 }
 
 /// Forward an HTTP request through the desktop app's credential proxy, which
 /// resolves the credential's auth (OAuth refresh included) and calls the API.
 fn bridge_proxy(credential_id: &str, method: &str, path: &str) -> Result<String, String> {
-    let bridge =
-        std::env::var("PERSONAS_BRIDGE_URL").unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
+    let bridge = std::env::var("PERSONAS_BRIDGE_URL")
+        .unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
     let api_key = std::env::var("PERSONAS_API_KEY").map_err(|_| {
         "Connector bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string()
     })?;
-    let url = format!("{}/api/proxy/{}", bridge.trim_end_matches('/'), credential_id);
+    let url = format!(
+        "{}/api/proxy/{}",
+        bridge.trim_end_matches('/'),
+        credential_id
+    );
     let payload = json!({ "method": method, "path": path, "headers": {}, "body": null });
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .map_err(|e| format!("runtime build failed: {e}"))?;
     rt.block_on(async move {
-        let client = reqwest::Client::new();
+        // `SHARED_HTTP`: same reasoning as `scrape_bridge` above — the host is
+        // this process's own management server on loopback, so an SSRF-safe
+        // resolver would reject it; the bare `reqwest::Client::new()` this
+        // replaced had NO time bound at all inside a current-thread
+        // `block_on`, which is the actual defect.
+        let client = crate::SHARED_HTTP.clone();
         let resp = client
             .post(&url)
             .bearer_auth(&api_key)
@@ -1572,7 +1643,11 @@ fn handle_gdrive_get_file(args: &Value, pool: &McpDbPool) -> Result<String, Stri
         .and_then(|v| v.as_str())
         .ok_or_else(|| "file_id is required".to_string())?;
     // alt=media downloads content; default returns file metadata.
-    let path = if args.get("download").and_then(|v| v.as_bool()).unwrap_or(false) {
+    let path = if args
+        .get("download")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
         format!("files/{file_id}?alt=media")
     } else {
         format!("files/{file_id}?fields=id,name,mimeType,modifiedTime,size,webViewLink")
@@ -1738,16 +1813,15 @@ fn handle_personas_execute(args: &Value, pool: &McpDbPool) -> Result<String, Str
     // token/tokens/cost defaults as every other execution source), then publish
     // the pickup event through the shared events repo so the main app's
     // background loop consumes it exactly like any other pending event.
-    let execution =
-        crate::db::repos::execution::executions::create(
-            pool.pool(),
-            persona_id,
-            None,
-            Some(input_json),
-            None,
-            None,
-        )
-        .map_err(|e| format!("Failed to queue execution: {e}"))?;
+    let execution = crate::db::repos::execution::executions::create(
+        pool.pool(),
+        persona_id,
+        None,
+        Some(input_json),
+        None,
+        None,
+    )
+    .map_err(|e| format!("Failed to queue execution: {e}"))?;
 
     crate::db::repos::communication::events::publish(
         pool.pool(),
@@ -2049,8 +2123,7 @@ fn handle_arena_list_runs(args: &Value, pool: &McpDbPool) -> Result<String, Stri
         .get("limit")
         .and_then(|v| v.as_i64())
         .unwrap_or(10)
-        .max(1)
-        .min(100);
+        .clamp(1, 100);
 
     let conn = pool.get()?;
     let mut stmt = conn
@@ -2250,7 +2323,9 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
     );
 
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(&sql).map_err(|e| format!("Query error: {e}"))?;
+    let mut stmt = conn
+        .prepare(&sql)
+        .map_err(|e| format!("Query error: {e}"))?;
     let param_refs: Vec<&dyn rusqlite::types::ToSql> = bound.iter().map(|p| p.as_ref()).collect();
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
@@ -2319,14 +2394,21 @@ mod driver_tool_tests {
                 |r| r.get(0),
             )
             .unwrap();
-        assert!(stored.contains("\"provider\":\"qwen\""), "model_profile not set: {stored}");
+        assert!(
+            stored.contains("\"provider\":\"qwen\""),
+            "model_profile not set: {stored}"
+        );
 
         let posted = call_tool(
             "post_message",
             &json!({ "persona_id": pid, "title": "Summary", "content": "Last email: ..." }),
             &pool,
         );
-        assert_eq!(posted["isError"], json!(false), "post_message failed: {posted}");
+        assert_eq!(
+            posted["isError"],
+            json!(false),
+            "post_message failed: {posted}"
+        );
         let count: i64 = pool
             .get()
             .unwrap()
@@ -2350,7 +2432,11 @@ mod driver_tool_tests {
             &json!({ "name": "X", "system_prompt": "" }),
             &pool,
         );
-        assert_eq!(out["isError"], json!(true), "empty system_prompt must be rejected: {out}");
+        assert_eq!(
+            out["isError"],
+            json!(true),
+            "empty system_prompt must be rejected: {out}"
+        );
     }
 
     /// execute routes through `executions::create` + `events::publish`: the row

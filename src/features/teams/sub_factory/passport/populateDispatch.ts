@@ -177,7 +177,7 @@ export function buildPopulateBrief(
     '## Bridge',
     '',
     gates.bridgePort
-      ? `- Try \`http://127.0.0.1:${gates.bridgePort}/dev-tools\` first. If it stops answering, probe 17400-17415 — the port is chosen at startup and moves when it is taken.`
+      ? `- Try \`http://127.0.0.1:${gates.bridgePort}/dev-tools\` first. If it stops answering, probe 17400-17415 — the port is chosen at startup and moves when it is taken. EVERY request needs the local token: read \`{port, token}\` from \`~/.personas/local-http.json\` and send \`X-Personas-Local-Token: <token>\`; a bare request is a 401, not a down app.`
       : '- The bridge was NOT bound when this brief was written. Probe 17400-17415; if nothing answers, Personas is not running and this run cannot proceed.',
     '',
     '## Scope',

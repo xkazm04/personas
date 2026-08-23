@@ -14715,6 +14715,11 @@ export type Translations = {
         held_by_other: string;
         this_workspace: string;
         leave: string;
+        sync: string;
+        sync_current: string;
+        sync_pulled_one: string;
+        sync_pulled_other: string;
+        sync_failed: string;
         others_keep_one: string;
         others_keep_other: string;
         no_other_holder: string;

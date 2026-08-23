@@ -98,7 +98,9 @@ fn insert(
     status: RemoteJobStatus,
 ) -> Result<RemoteJob, AppError> {
     if id.trim().is_empty() {
-        return Err(AppError::Validation("remote job id must not be empty".into()));
+        return Err(AppError::Validation(
+            "remote job id must not be empty".into(),
+        ));
     }
     if peer_id.trim().is_empty() {
         return Err(AppError::Validation("peer_id must not be empty".into()));
@@ -222,8 +224,8 @@ pub fn finish(
             status.as_str()
         )));
     }
-    let existing = get(pool, id)?
-        .ok_or_else(|| AppError::NotFound(format!("No remote job with id {id}")))?;
+    let existing =
+        get(pool, id)?.ok_or_else(|| AppError::NotFound(format!("No remote job with id {id}")))?;
     if existing.status.is_terminal() {
         return Ok(false);
     }
@@ -254,7 +256,14 @@ fn set_status(
                 updated_at = ?5,
                 completed_at = COALESCE(?6, completed_at)
           WHERE id = ?1",
-        rusqlite::params![id, status.as_str(), summary, refusal_reason, now, completed_at],
+        rusqlite::params![
+            id,
+            status.as_str(),
+            summary,
+            refusal_reason,
+            now,
+            completed_at
+        ],
     )?;
     if affected == 0 {
         return Err(AppError::NotFound(format!("No remote job with id {id}")));
@@ -421,16 +430,30 @@ mod tests {
     }
 
     fn outbound(pool: &DbPool, id: &str) -> RemoteJob {
-        create_outbound(pool, id, "peerA", "Laptop", "instruction", "summarize inbox")
-            .expect("create outbound")
+        create_outbound(
+            pool,
+            id,
+            "peerA",
+            "Laptop",
+            "instruction",
+            "summarize inbox",
+        )
+        .expect("create outbound")
     }
 
     #[test]
     fn outbound_and_inbound_share_a_table_and_are_told_apart_by_direction() {
         let pool = test_pool();
         outbound(&pool, "job-out");
-        create_inbound(&pool, "job-in", "peerB", "Desktop", "instruction", "run tests")
-            .expect("create inbound");
+        create_inbound(
+            &pool,
+            "job-in",
+            "peerB",
+            "Desktop",
+            "instruction",
+            "run tests",
+        )
+        .expect("create inbound");
 
         assert_eq!(list(&pool, None, 50).expect("all").len(), 2);
         let outs = list(&pool, Some(RemoteJobDirection::Outbound), 50).expect("out");
@@ -456,7 +479,8 @@ mod tests {
             create_inbound(&pool, "job-1", "peerB", "Desktop", "instruction", "go").expect("first");
         assert!(was_new);
         let (second, was_new) =
-            create_inbound(&pool, "job-1", "peerB", "Desktop", "instruction", "go").expect("second");
+            create_inbound(&pool, "job-1", "peerB", "Desktop", "instruction", "go")
+                .expect("second");
         assert!(!was_new, "a repeat request must not look new");
         assert_eq!(first.id, second.id);
         assert_eq!(list(&pool, None, 50).expect("list").len(), 1);
@@ -599,8 +623,7 @@ mod tests {
         let runner = test_pool();
         let origin = test_pool();
         create_inbound(&runner, "job-1", "peerA", "Laptop", "instruction", "go").expect("runner");
-        create_outbound(&origin, "job-1", "peerB", "Desktop", "instruction", "go")
-            .expect("origin");
+        create_outbound(&origin, "job-1", "peerB", "Desktop", "instruction", "go").expect("origin");
 
         // Runner emits three notes.
         for text in ["one", "two", "three"] {

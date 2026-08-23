@@ -67,7 +67,10 @@ pub async fn checkpoint_stage(
     let branch = branch_name(run_id);
 
     // Switch to (or create) the run branch without disturbing the working tree.
-    if git(dir, &["rev-parse", "--verify", "--quiet", &branch]).await.is_ok() {
+    if git(dir, &["rev-parse", "--verify", "--quiet", &branch])
+        .await
+        .is_ok()
+    {
         git(dir, &["checkout", &branch]).await?;
     } else {
         git(dir, &["checkout", "-B", &branch]).await?;
@@ -82,7 +85,11 @@ pub async fn checkpoint_stage(
 
     let subject = format!("personas({run_id}): {stage} ({status})");
     let trailer = format!("Personas-Run: {run_id}\nPersonas-Stage: {stage}");
-    git(dir, &["commit", "--no-verify", "-m", &subject, "-m", &trailer]).await?;
+    git(
+        dir,
+        &["commit", "--no-verify", "-m", &subject, "-m", &trailer],
+    )
+    .await?;
 
     let sha = git(dir, &["rev-parse", "HEAD"]).await?;
     Ok(Some(sha))
@@ -103,7 +110,11 @@ pub async fn snapshot_stage(
     run_id: &str,
     checkpoint_id: &str,
 ) -> Result<Option<String>, String> {
-    let sha = git(dir, &["stash", "create", &format!("personas checkpoint {run_id}")]).await?;
+    let sha = git(
+        dir,
+        &["stash", "create", &format!("personas checkpoint {run_id}")],
+    )
+    .await?;
     if sha.is_empty() {
         return Ok(None); // clean tree — nothing to snapshot
     }
@@ -114,11 +125,7 @@ pub async fn snapshot_stage(
 
 /// Create a fresh run branch from a checkpoint SHA (fork-a-new-attempt). Verifies
 /// the SHA is an ancestor of the current branch tip before forking.
-pub async fn fork_from_checkpoint(
-    dir: &Path,
-    sha: &str,
-    new_run_id: &str,
-) -> Result<(), String> {
+pub async fn fork_from_checkpoint(dir: &Path, sha: &str, new_run_id: &str) -> Result<(), String> {
     // Ancestry guard: refuse to fork from a SHA not reachable from HEAD.
     git(dir, &["merge-base", "--is-ancestor", sha, "HEAD"])
         .await
@@ -139,11 +146,17 @@ mod tests {
 
     async fn init_repo(dir: &Path) {
         git(dir, &["init", "-q"]).await.unwrap();
-        git(dir, &["config", "user.email", "t@t.test"]).await.unwrap();
+        git(dir, &["config", "user.email", "t@t.test"])
+            .await
+            .unwrap();
         git(dir, &["config", "user.name", "test"]).await.unwrap();
-        tokio::fs::write(dir.join("seed.txt"), "seed").await.unwrap();
+        tokio::fs::write(dir.join("seed.txt"), "seed")
+            .await
+            .unwrap();
         git(dir, &["add", "-A"]).await.unwrap();
-        git(dir, &["commit", "--no-verify", "-m", "seed"]).await.unwrap();
+        git(dir, &["commit", "--no-verify", "-m", "seed"])
+            .await
+            .unwrap();
     }
 
     fn temp_dir(tag: &str) -> std::path::PathBuf {
@@ -166,20 +179,31 @@ mod tests {
             .expect("expected a checkpoint commit");
         assert_eq!(sha1.len(), 40, "expected a full SHA: {sha1}");
 
-        tokio::fs::write(dir.join("work.txt"), "v2-broken").await.unwrap();
-        checkpoint_stage(&dir, "run1", "verify", "failed").await.unwrap();
+        tokio::fs::write(dir.join("work.txt"), "v2-broken")
+            .await
+            .unwrap();
+        checkpoint_stage(&dir, "run1", "verify", "failed")
+            .await
+            .unwrap();
 
         // Roll back to the good checkpoint.
         rollback_to(&dir, &sha1).await.unwrap();
-        let restored = tokio::fs::read_to_string(dir.join("work.txt")).await.unwrap();
-        assert_eq!(restored, "v1", "rollback should restore the checkpointed content");
+        let restored = tokio::fs::read_to_string(dir.join("work.txt"))
+            .await
+            .unwrap();
+        assert_eq!(
+            restored, "v1",
+            "rollback should restore the checkpointed content"
+        );
     }
 
     #[tokio::test]
     async fn clean_tree_yields_no_checkpoint() {
         let dir = temp_dir("clean");
         init_repo(&dir).await;
-        let r = checkpoint_stage(&dir, "run2", "noop", "succeeded").await.unwrap();
+        let r = checkpoint_stage(&dir, "run2", "noop", "succeeded")
+            .await
+            .unwrap();
         assert!(r.is_none(), "clean tree should produce no checkpoint");
     }
 
@@ -188,7 +212,8 @@ mod tests {
         let dir = temp_dir("fork");
         init_repo(&dir).await;
         // A bogus all-zero SHA is not an ancestor.
-        let err = fork_from_checkpoint(&dir, "0000000000000000000000000000000000000000", "run3").await;
+        let err =
+            fork_from_checkpoint(&dir, "0000000000000000000000000000000000000000", "run3").await;
         assert!(err.is_err(), "fork from non-ancestor should fail");
     }
 
@@ -196,20 +221,42 @@ mod tests {
     async fn snapshot_is_non_disruptive() {
         let dir = temp_dir("snap");
         init_repo(&dir).await;
-        let branch_before = git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"]).await.unwrap();
+        let branch_before = git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"])
+            .await
+            .unwrap();
         let head_before = git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
 
-        tokio::fs::write(dir.join("seed.txt"), "modified").await.unwrap();
-        let sha = snapshot_stage(&dir, "run9", "ckpt9").await.unwrap().expect("snapshot of dirty tree");
+        tokio::fs::write(dir.join("seed.txt"), "modified")
+            .await
+            .unwrap();
+        let sha = snapshot_stage(&dir, "run9", "ckpt9")
+            .await
+            .unwrap()
+            .expect("snapshot of dirty tree");
         assert_eq!(sha.len(), 40);
 
         // HEAD, branch, and working tree must all be untouched.
-        assert_eq!(git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"]).await.unwrap(), branch_before);
-        assert_eq!(git(&dir, &["rev-parse", "HEAD"]).await.unwrap(), head_before);
-        assert_eq!(tokio::fs::read_to_string(dir.join("seed.txt")).await.unwrap(), "modified");
+        assert_eq!(
+            git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"])
+                .await
+                .unwrap(),
+            branch_before
+        );
+        assert_eq!(
+            git(&dir, &["rev-parse", "HEAD"]).await.unwrap(),
+            head_before
+        );
+        assert_eq!(
+            tokio::fs::read_to_string(dir.join("seed.txt"))
+                .await
+                .unwrap(),
+            "modified"
+        );
 
         // The hidden ref keeps the snapshot reachable.
-        let refsha = git(&dir, &["rev-parse", "refs/personas/checkpoints/run9/ckpt9"]).await.unwrap();
+        let refsha = git(&dir, &["rev-parse", "refs/personas/checkpoints/run9/ckpt9"])
+            .await
+            .unwrap();
         assert_eq!(refsha, sha);
     }
 
@@ -217,6 +264,9 @@ mod tests {
     async fn snapshot_clean_tree_is_none() {
         let dir = temp_dir("snapclean");
         init_repo(&dir).await;
-        assert!(snapshot_stage(&dir, "run10", "c10").await.unwrap().is_none());
+        assert!(snapshot_stage(&dir, "run10", "c10")
+            .await
+            .unwrap()
+            .is_none());
     }
 }

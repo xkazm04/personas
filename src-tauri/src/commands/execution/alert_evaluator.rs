@@ -456,7 +456,8 @@ mod tests {
     /// server- and client-fired alerts read identically in history.
     #[test]
     fn message_format_mirrors_frontend() {
-        let msg = format_alert_message(&rule(AlertMetric::ErrorRate, AlertOperator::Gt, 20.0), 25.0);
+        let msg =
+            format_alert_message(&rule(AlertMetric::ErrorRate, AlertOperator::Gt, 20.0), 25.0);
         assert_eq!(msg, "Error rate is 25.0% (threshold: > 20%)");
         let msg = format_alert_message(&rule(AlertMetric::Cost, AlertOperator::Gte, 5.0), 7.25);
         assert_eq!(msg, "Cost is $7.25 (threshold: >= $5)");

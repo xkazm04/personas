@@ -29,7 +29,9 @@ use crate::AppState;
 use notify::{event::EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
 use super::get_config_or_err;
-use super::vault_fs::{extract_wikilinks, strip_alias_and_section, walk_markdown_files, WalkOptions};
+use super::vault_fs::{
+    extract_wikilinks, strip_alias_and_section, walk_markdown_files, WalkOptions,
+};
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -95,11 +97,12 @@ struct NoteEntry {
 /// disk I/O each time. The file watcher (obsidian_graph_start_watcher) clears
 /// the cache on any .md change; the 30s TTL bounds staleness for vaults
 /// edited outside the app while the watcher isn't running.
-static VAULT_INDEX_CACHE: OnceLock<Mutex<HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>>> =
-    OnceLock::new();
+type VaultIndexCache = HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>;
+
+static VAULT_INDEX_CACHE: OnceLock<Mutex<VaultIndexCache>> = OnceLock::new();
 const VAULT_INDEX_TTL: Duration = Duration::from_secs(30);
 
-fn vault_index_cache() -> &'static Mutex<HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>> {
+fn vault_index_cache() -> &'static Mutex<VaultIndexCache> {
     VAULT_INDEX_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
@@ -242,7 +245,7 @@ fn snippet_for(body: &str, query_lc: &str) -> String {
     let end = (pos + query_lc.len() + 100).min(body.len());
     let mut s = body[start..end].replace('\n', " ");
     if start > 0 {
-        s.insert_str(0, "…");
+        s.insert(0, '…');
     }
     if end < body.len() {
         s.push('…');
@@ -462,7 +465,7 @@ pub fn obsidian_graph_list_mocs(
             outgoing_link_count: n.outgoing.len() as u32,
         })
         .collect();
-    entries.sort_by(|a, b| b.outgoing_link_count.cmp(&a.outgoing_link_count));
+    entries.sort_by_key(|b| std::cmp::Reverse(b.outgoing_link_count));
     entries.truncate(limit);
     Ok(entries)
 }
@@ -511,10 +514,7 @@ fn resolve_daily_note_path(vault_root: &Path, date: &NaiveDate) -> (PathBuf, Str
 /// (A concurrent read-modify-write on the same note can still last-writer-wins
 /// the merge; a per-path lock is the further fix.)
 fn atomic_write(path: &Path, contents: &[u8]) -> std::io::Result<()> {
-    let file_name = path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("note");
+    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("note");
     let tmp = path.with_file_name(format!(".{}.{}.tmp", file_name, uuid::Uuid::new_v4()));
     std::fs::write(&tmp, contents)?;
     match std::fs::rename(&tmp, path) {

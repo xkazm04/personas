@@ -707,7 +707,10 @@ mod tests {
             retry_count: MAX_RETRY_COUNT,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     #[test]

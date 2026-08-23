@@ -146,7 +146,10 @@ mod tests {
 
         let rows = list_env_connectors(&pool, &pid).unwrap();
         assert_eq!(rows.len(), 3);
-        let logs = rows.iter().find(|r| r.dimension == "monitoring.logs").unwrap();
+        let logs = rows
+            .iter()
+            .find(|r| r.dimension == "monitoring.logs")
+            .unwrap();
         assert_eq!(logs.credential_id, "axiom");
     }
 }

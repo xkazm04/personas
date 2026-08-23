@@ -244,7 +244,10 @@ pub fn companion_get_health(
             let Ok(v) = serde_json::from_str::<serde_json::Value>(&oj) else {
                 continue;
             };
-            if v.get("parse_failure").and_then(|x| x.as_bool()).unwrap_or(false) {
+            if v.get("parse_failure")
+                .and_then(|x| x.as_bool())
+                .unwrap_or(false)
+            {
                 triage.parse_failures += 1.0;
             }
             let n = |key: &str| v.get(key).and_then(|x| x.as_i64()).unwrap_or(0) as f64;
@@ -670,9 +673,30 @@ mod spend_rollup_tests {
     fn foreign_dev_spend_sources_are_excluded() {
         let user = user_db();
         let app = app_db();
-        spend(&app, "s1", "scanner", "idea_scan", 9.99, &sql_now("-0 days"));
-        spend(&app, "s2", "evaluator", "eval_judge", 5.00, &sql_now("-0 days"));
-        spend(&app, "s3", "athena_test", "cycle", 0.10, &sql_now("-0 days"));
+        spend(
+            &app,
+            "s1",
+            "scanner",
+            "idea_scan",
+            9.99,
+            &sql_now("-0 days"),
+        );
+        spend(
+            &app,
+            "s2",
+            "evaluator",
+            "eval_judge",
+            5.00,
+            &sql_now("-0 days"),
+        );
+        spend(
+            &app,
+            "s3",
+            "athena_test",
+            "cycle",
+            0.10,
+            &sql_now("-0 days"),
+        );
 
         let rows = spend_rollup_rows(&user, &app, 30, &["athena_test"]).unwrap();
         assert_eq!(rows.len(), 1, "only the allowlisted source may cross over");
@@ -688,7 +712,14 @@ mod spend_rollup_tests {
         let user = user_db();
         let app = app_db();
         turn(&user, "t1", "chat", Some(1.0), &sql_now("-0 days"));
-        spend(&app, "s1", "scanner", "idea_scan", 9.99, &sql_now("-0 days"));
+        spend(
+            &app,
+            "s1",
+            "scanner",
+            "idea_scan",
+            9.99,
+            &sql_now("-0 days"),
+        );
 
         let rows = spend_rollup_rows(&user, &app, 30, ATHENA_DEV_SPEND_SOURCES).unwrap();
         assert_eq!(rows.len(), 1);
@@ -761,7 +792,11 @@ mod spend_rollup_tests {
         turn(&user, "t3", "chat", Some(4.0), &sql_now("-90 days"));
 
         let rows = spend_rollup_rows(&user, &app, 7, &[]).unwrap();
-        assert_eq!(rows.len(), 2, "the 90-day-old turn is outside a 7-day window");
+        assert_eq!(
+            rows.len(),
+            2,
+            "the 90-day-old turn is outside a 7-day window"
+        );
         assert!(rows[0].day >= rows[1].day, "newest day first");
     }
 
@@ -854,7 +889,10 @@ fn churn_from_turns(samples: &[ChurnSample]) -> Vec<AthenaPromptChurnBlock> {
 
         for (name, chars) in &sizes {
             let chars = chars.as_u64().unwrap_or(0);
-            let hash = hashes.get(name).and_then(|v| v.as_str()).map(str::to_string);
+            let hash = hashes
+                .get(name)
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
             let entry = acc.entry(name.clone()).or_insert_with(|| Acc {
                 observed: 0,
                 changes: 0,

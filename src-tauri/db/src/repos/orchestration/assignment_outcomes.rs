@@ -119,7 +119,8 @@ pub fn list_for_team(
          ORDER BY created_at DESC LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![team_id, limit.clamp(1, 200)], row_to_outcome)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 /// Stamp the retrospective linkage (or the honest skip reason) onto an
@@ -178,11 +179,11 @@ pub fn get_trust(
 
 pub fn list_trust_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamMemberTrust>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM team_member_trust WHERE team_id = ?1 ORDER BY trust DESC",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT * FROM team_member_trust WHERE team_id = ?1 ORDER BY trust DESC")?;
     let rows = stmt.query_map(params![team_id], row_to_trust)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn upsert_trust(
@@ -241,5 +242,6 @@ pub fn list_team_lessons(
             updated_at: row.get("updated_at")?,
         })
     })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }

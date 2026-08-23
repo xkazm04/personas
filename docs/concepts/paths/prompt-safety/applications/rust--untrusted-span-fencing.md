@@ -37,7 +37,7 @@ for persona executions:
 
 ## The companion brain's door
 
-`src-tauri/src/companion/brain/sleep_cycle.rs` fences consolidation evidence —
+`src-tauri/src/companion/brain/sleep_cycle/` fences consolidation evidence —
 transcripts and synced distillates, the classic "yesterday's untrusted input
 laundered into today's context":
 

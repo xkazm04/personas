@@ -1,10 +1,9 @@
 use std::collections::{HashMap, HashSet};
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use tauri::State;
 
+use crate::background_job::spawn_guarded;
 use crate::db::models::*;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::lab::genome as genome_repo;
@@ -15,18 +14,6 @@ use crate::engine::genome::{
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // ============================================================================
 // Genome extraction
@@ -128,21 +115,18 @@ pub async fn genome_start_breeding(
     let pool_for_panic = pool.clone();
     let run_id_for_panic = run_id.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(run_breeding_pipeline(
+    spawn_guarded(
+        "genome breeding",
+        run_id_for_panic.clone(),
+        run_breeding_pipeline(
             pool,
             run_id,
             parent_ids,
             fitness_objective,
             mutation_rate,
             generations,
-        ))
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(run_id = %run_id_for_panic, panic = %msg, "genome breeding task panicked — marking run as failed");
+        ),
+        move |msg| async move {
             let _ = genome_repo::update_run_status(
                 &pool_for_panic,
                 &run_id_for_panic,
@@ -152,8 +136,8 @@ pub async fn genome_start_breeding(
                 Some(&msg),
                 Some(&chrono::Utc::now().to_rfc3339()),
             );
-        }
-    });
+        },
+    );
 
     Ok(run)
 }
@@ -304,8 +288,7 @@ async fn run_breeding_pipeline(
     // (mid-parent) prediction with a measured evaluation — assertion pass-rate
     // + cost + latency, `fitness_source = 'measured'`. Budget-capped with a
     // hard stop; offspring not reached stay honestly marked `inherited`.
-    let measured_count =
-        measure_top_offspring(&pool, &run_id, &parent_ids[0], &objective).await;
+    let measured_count = measure_top_offspring(&pool, &run_id, &parent_ids[0], &objective).await;
 
     let summary = if measured_count > 0 {
         format!(

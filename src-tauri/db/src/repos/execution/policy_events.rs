@@ -2,6 +2,7 @@ use rusqlite::params;
 
 use crate::models::PolicyEvent;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // -- Row mapper -----------------------------------------------
@@ -31,7 +32,7 @@ pub fn insert(
     timed_query!("policy_events", "policy_events::insert", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("policy_events::insert")?;
         conn.execute(
             "INSERT INTO policy_events
              (id, execution_id, persona_id, use_case_id, policy_kind, action, payload_title, reason, created_at)
@@ -61,7 +62,7 @@ pub fn insert(
 
 pub fn list_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<PolicyEvent>, AppError> {
     timed_query!("policy_events", "policy_events::list_by_execution", {
-        let conn = pool.get()?;
+        let conn = pool.conn("policy_events::list_by_execution")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM policy_events WHERE execution_id = ?1 ORDER BY created_at ASC",
         )?;

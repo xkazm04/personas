@@ -30,10 +30,10 @@
 
 use std::path::{Path, PathBuf};
 
+use personas_core::error::AppError;
 use personas_db::models::CreatePersonaMemoryInput;
 use personas_db::repos::core::memories as mem_repo;
 use personas_db::DbPool;
-use personas_core::error::AppError;
 
 /// Env var that gates the sidecar write. Unset → no-op.
 pub const SIDECAR_ENV: &str = "PERSONAS_HOOKS_SIDECAR";

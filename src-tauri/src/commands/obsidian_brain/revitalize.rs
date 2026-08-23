@@ -7,29 +7,15 @@
 //! pattern (`BackgroundJobManager` + status/output Tauri events), see
 //! `commands::design::n8n_transform` for the reference implementation.
 
-use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 use chrono::Utc;
 
@@ -434,8 +420,11 @@ pub async fn obsidian_revitalize_start(
     let app_for_panic = app_for_task.clone();
     let job_for_panic = job_for_task.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    REVITALIZE_JOBS.spawn_job(
+        app_for_panic,
+        job_for_panic,
+        "obsidian revitalize",
+        async move {
         let started = std::time::Instant::now();
         let before = scan_vault_notes(&vault_dir);
         REVITALIZE_JOBS.emit_line(
@@ -538,16 +527,8 @@ pub async fn obsidian_revitalize_start(
         if let Err(e) = history_repo::insert_revitalize_run(&app_state.db, &record) {
             tracing::warn!(job_id = %record.id, error = %e, "failed to persist revitalize run record");
         }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(job_id = %job_for_panic, panic = %msg, "obsidian revitalize task panicked — marking job as failed");
-            REVITALIZE_JOBS.set_status(&app_for_panic, &job_for_panic, "failed", Some(msg));
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }

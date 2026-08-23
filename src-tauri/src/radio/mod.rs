@@ -47,7 +47,11 @@ pub struct Track {
 /// inner field names (so `stream_url` → `streamUrl` in JSON).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum StationSource {
     /// Curated YouTube video list. Played through a hidden IFrame Player
     /// in the renderer; track-level prev/next + shuffle cursor.

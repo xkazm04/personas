@@ -4,7 +4,7 @@
 //! Generic shape: `(kind, id?)` dispatches to the right backing store.
 //! - episode      → `companion_node` rows + on-disk markdown body
 //! - doctrine     → `companion_node` rows + on-disk source doc, re-extract
-//!                  the matching H2 section by anchor
+//!   the matching H2 section by anchor
 //! - identity     → `~/.personas/companion-brain/identity.md`
 //! - constitution → `~/.personas/companion-brain/constitution.md`
 //!
@@ -222,9 +222,9 @@ pub fn companion_delete_brain_item(
     }
     match kind.as_str() {
         "episode" => delete_episode(&state, &id),
-        "doctrine" | "identity" | "constitution" | "design_decision" => Err(AppError::Internal(format!(
-            "`{kind}` items are not deletable from the viewer"
-        ))),
+        "doctrine" | "identity" | "constitution" | "design_decision" => Err(AppError::Internal(
+            format!("`{kind}` items are not deletable from the viewer"),
+        )),
         other => Err(AppError::Internal(format!(
             "brain kind `{other}` not yet supported"
         ))),
@@ -477,7 +477,6 @@ fn get_doctrine(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetai
     // content, not just the 500-char excerpt.
     let (rel_path, anchor) = file_path
         .split_once('#')
-        .map(|(p, a)| (p, a))
         .unwrap_or((file_path.as_str(), "intro"));
 
     let docs_root = doctrine::find_docs_root();
@@ -1025,9 +1024,7 @@ fn extract_section(md: &str, anchor: &str) -> Option<String> {
 
 // ── design decisions ────────────────────────────────────────────────────
 
-fn list_design_decisions(
-    state: &State<'_, Arc<AppState>>,
-) -> Result<Vec<BrainListItem>, AppError> {
+fn list_design_decisions(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
     // Reuse the brain::decisions list path — same caps as the
     // standalone Decisions panel (cap-200 for the viewer pane).
     let rows = decisions::list_recent(&state.user_db, 200)?;
@@ -1102,9 +1099,7 @@ fn get_design_decision(
         (None, Some(ts)) => format!("{ts} · session {session_id}"),
         (None, None) => format!("{created_at} · session {session_id}"),
     };
-    let content = format!(
-        "## Choice\n\n{choice}\n\n## Rationale\n\n{rationale}\n"
-    );
+    let content = format!("## Choice\n\n{choice}\n\n## Rationale\n\n{rationale}\n");
     Ok(BrainDetail {
         id: row_id,
         kind: "design_decision".into(),

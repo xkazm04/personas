@@ -118,6 +118,73 @@ test('excluded file is credited to its exclude entry and not counted', () => {
   ok(select.hits.some((h) => h.file.includes('Primitive')), 'fx-select still sees Primitive.tsx');
 });
 
+// The Rust half of the fixture tree. These seven were merged into
+// rules.fixture.json without ever being asserted by name, so the registry's own
+// `$comment` — "expected counts live in self-test.mjs and are asserted exactly"
+// — was false for seven of its ten rules. It was not *un*checked: the green
+// `--check` run above would fail on any drift from their baselines. But a
+// baseline in a data file and an assertion in a test fail differently, and only
+// the second one tells you WHICH matcher moved. Named here so it does.
+//
+// Four of the seven twin a rule registered in rules.json with a BYTE-IDENTICAL
+// pattern, which is what makes this file a regression guard for the real gate
+// rather than a test of a copy. Three (fx-adhoc-http, fx-sync-command-pool,
+// fx-bare-result-string) twin conditions that were deliberately NOT registered —
+// see the registry's `$comment` for which, and why.
+test('rust fixture tree produces exact counts for all seven rust rules', () => {
+  const { results } = runCensus({ rulesFile: FIXTURE_RULES, root: FIXTURES, check: true });
+  const by = Object.fromEntries(results.map(({ rule, result }) => [rule.id, result]));
+
+  const expected = {
+    'fx-adhoc-http': [1, 3],
+    'fx-process-spawn': [1, 4],
+    'fx-positional-row-get': [2, 6],
+    'fx-select-star': [1, 3],
+    'fx-pool-get-unwrapped': [1, 4],
+    'fx-sync-command-pool': [1, 3],
+    'fx-bare-result-string': [1, 2],
+  };
+  for (const [id, [files, matches]] of Object.entries(expected)) {
+    ok(by[id], `${id} present in the fixture registry`);
+    eq(by[id].files, files, `${id} files`);
+    eq(by[id].matches, matches, `${id} matches`);
+    // Every rust rule walks the same 8-file tree — 6 under rust-tree/ plus the
+    // 2 under rust-tree/excluded/, which are WALKED and then credited to an
+    // exclude entry rather than skipped by the walk.
+    eq(by[id].walked, 8, `${id} walked`);
+  }
+});
+
+test('the excluded chokepoint files are credited to an exclude, not silently missed', () => {
+  const { results } = runCensus({ rulesFile: FIXTURE_RULES, root: FIXTURES });
+  const by = Object.fromEntries(results.map(({ rule, result }) => [rule.id, result]));
+
+  // Both rules that name a chokepoint must SEE it (hits > 0 on the exclude
+  // entry). A stale exclude — one matching no file — is a structural failure in
+  // the engine, and these two are the only fixture rules that carry one.
+  for (const id of ['fx-adhoc-http', 'fx-process-spawn']) {
+    eq(by[id].excludes.length, 1, `${id} exclude count`);
+    ok(by[id].excludes[0].hits >= 1, `${id} exclude actually matched a file`);
+    ok(
+      !by[id].hits.some((h) => h.file.includes('excluded/')),
+      `${id} does not count the chokepoint's own constructions`,
+    );
+  }
+});
+
+test('the sync-command fixture pins the KNOWN misattribution case', () => {
+  // rust-tree/commands.rs deliberately encodes the shape the matcher gets
+  // wrong: a clean #[tauri::command] immediately followed by a private helper
+  // that checks a connection out. The matcher credits the COMMAND, not the
+  // helper. Two such cases exist in the real tree
+  // (companion/approvals/approval_exec_fleet.rs and companion/brain.rs), so the
+  // fixture makes that limitation a pinned number rather than a footnote —
+  // if a future matcher fixes it, this count moves and someone has to say so.
+  const { results } = runCensus({ rulesFile: FIXTURE_RULES, root: FIXTURES });
+  const sync = results.find(({ rule }) => rule.id === 'fx-sync-command-pool').result;
+  eq(sync.matches, 3, 'fx-sync-command-pool matches (2 direct + 1 misattributed)');
+});
+
 // ------------------------------------- 2. the two real matcher bugs, killed ---
 
 test('REGRESSION: a token at end of line is still found (whole-file matching)', () => {

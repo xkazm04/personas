@@ -5,10 +5,8 @@
 //! and creates DevContextGroup + DevContext entries via protocol messages.
 //! Progress is streamed to the frontend via Tauri events.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, LazyLock, Mutex};
 
-use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
@@ -16,6 +14,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
 use super::cli_stderr::{push_stderr_line, snapshot_stderr};
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
@@ -26,18 +25,6 @@ use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 /// Per-project single-flight guard for context-map scans. Two concurrent
 /// rescans of one project interleave `clear_project_context_map` (a full DELETE
@@ -194,8 +181,10 @@ To update an existing context, use:
             .iter()
             .map(|g| format!("- {g}"))
             .collect::<Vec<_>>()
-            .join("
-")
+            .join(
+                "
+",
+            )
     };
     let subtree_section = match subtree {
         Some(st) => format!(
@@ -351,6 +340,12 @@ Begin by exploring the codebase structure."#
 // Protocol message parsing
 // =============================================================================
 
+// `large_enum_variant`: `Group` is ~312 bytes larger than the smallest
+// variant. This enum is a short-lived parse target for one JSON protocol
+// message and is never held in a collection, so the size difference costs
+// nothing; boxing a field would restructure every construction and match
+// site to buy back stack space nobody is short of.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 enum ContextMapProtocol {
     Group {
@@ -590,7 +585,62 @@ pub async fn dev_tools_scan_codebase(
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    launch_context_scan(app, &state.db, &project, &root_path, delta_mode.unwrap_or(false), subtree.as_deref())
+    launch_context_scan(
+        app,
+        &state.db,
+        &project,
+        &root_path,
+        delta_mode.unwrap_or(false),
+        subtree.as_deref(),
+    )
+}
+
+/// Resolve a caller-supplied scan root against the project's REGISTERED root,
+/// refusing anything outside it.
+///
+/// Why this is a security boundary and not tidiness: the resolved value
+/// becomes the `current_dir` of a `claude` child spawned with
+/// `--dangerously-skip-permissions` (see `spawn_headless_claude`). Whoever
+/// picks that directory picks the `CLAUDE.md` and the `.claude/settings.json`
+/// hooks the agent will read and obey. The only check this path had was
+/// `is_dir()` — "the attacker's directory exists" — so any caller who could
+/// reach `launch_context_scan` could aim a permission-disabled agent at any
+/// directory on the machine.
+///
+/// `""` and `"."` keep their documented meaning (the project's own root).
+/// Anything else must canonicalize to the project root or a descendant of it.
+/// On success the ORIGINAL string is returned, so a passing call behaves
+/// byte-identically to before.
+pub(crate) fn confine_to_project_root(
+    project_root: &str,
+    requested: &str,
+) -> Result<String, AppError> {
+    if requested.is_empty() || requested == "." {
+        return Ok(project_root.to_string());
+    }
+    let base = std::path::Path::new(project_root)
+        .canonicalize()
+        .map_err(|e| {
+            AppError::Validation(format!(
+                "Project root is not a readable directory ({project_root}): {e}"
+            ))
+        })?;
+    let want = std::path::Path::new(requested)
+        .canonicalize()
+        .map_err(|e| AppError::Validation(format!("Path is not a directory: {requested} ({e})")))?;
+    if !want.is_dir() {
+        return Err(AppError::Validation(format!(
+            "Path is not a directory: {requested}"
+        )));
+    }
+    // Component-wise, never `starts_with` on the string: `C:/repo-evil` has
+    // the string prefix `C:/repo` but is a different tree.
+    if !want.starts_with(&base) {
+        return Err(AppError::Validation(format!(
+            "Scan root must be inside the project's registered root ({project_root}); refused: {requested}"
+        )));
+    }
+    Ok(requested.to_string())
 }
 
 /// Launch a context-map scan for `project` as a background task. Shared by the
@@ -607,6 +657,10 @@ pub(crate) fn launch_context_scan(
     subtree: Option<&str>,
 ) -> Result<serde_json::Value, AppError> {
     let project_id = project.id.clone();
+
+    // Confine BEFORE taking the single-flight guard or registering a job, so a
+    // refused root leaves no state behind.
+    let resolved_root = confine_to_project_root(&project.root_path, root_path)?;
 
     // Subtree scans must be able to run CONCURRENTLY — that is the entire point
     // of the mode. One session cannot emit a map for a large codebase: it runs
@@ -638,14 +692,9 @@ pub(crate) fn launch_context_scan(
     )?;
     CONTEXT_GEN_JOBS.set_status(&app, &scan_id, "running", None);
 
-    // Resolve root path
-    let resolved_root = if root_path == "." || root_path.is_empty() {
-        project.root_path.clone()
-    } else {
-        root_path.to_string()
-    };
-
-    // Validate directory
+    // Directory check. `confine_to_project_root` already proved the requested
+    // root is a directory inside the project; this still catches the case it
+    // short-circuits — a project whose own stored root no longer exists.
     let root_dir = std::path::Path::new(&resolved_root);
     if !root_dir.is_dir() {
         CONTEXT_GEN_JOBS.set_status(
@@ -687,117 +736,119 @@ pub(crate) fn launch_context_scan(
     let project_id_for_panic = project_id.clone();
     let project_name_for_panic = project_name.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        // Hold the per-project single-flight guard for the task's whole life;
-        // it releases on drop when this task ends (success, error, or cancel).
-        let _scan_guard = scan_guard;
-        let result = tokio::select! {
-            _ = token_for_task.cancelled() => {
-                Err(AppError::Internal("Context generation cancelled by user".into()))
-            }
-            res = run_context_generation(
-                &app_handle,
-                &scan_id_for_task,
-                &pool,
-                &project_id,
-                &project_name,
-                &resolved_root,
-                existing_summary.as_deref(),
-                delta_mode,
-                subtree_owned.as_deref(),
-            ) => res
-        };
-
-        match result {
-            Ok(summary) => {
-                let is_warning = summary.status == "completed_with_warning";
-                let status_str = if is_warning {
-                    "completed_with_warning"
-                } else {
-                    "completed"
-                };
-                CONTEXT_GEN_JOBS.set_status(
+    spawn_guarded(
+        "context-map generation",
+        scan_id_for_panic.clone(),
+        async move {
+            // Hold the per-project single-flight guard for the task's whole life;
+            // it releases on drop when this task ends (success, error, or cancel).
+            let _scan_guard = scan_guard;
+            let result = tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(AppError::Internal("Context generation cancelled by user".into()))
+                }
+                res = run_context_generation(
                     &app_handle,
                     &scan_id_for_task,
-                    status_str,
-                    summary.error.clone(),
-                );
-                let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
-                crate::engine::system_ops::publish_context_scan_event(
                     &pool,
-                    "completed",
                     &project_id,
                     &project_name,
-                    json!({
-                        "status": status_str,
-                        "groups_created": summary.groups_created,
-                        "contexts_created": summary.contexts_created,
-                        "files_mapped": summary.files_mapped,
-                        "db_tables_dropped": summary.db_tables_dropped,
-                        "cross_refs_dropped": summary.cross_refs_dropped,
-                        "scan_id": scan_id_for_task,
-                    }),
-                );
-                // OS notification
-                let title = if is_warning {
-                    "Context Map Ready (with warning)"
-                } else {
-                    "Context Map Ready"
-                };
-                let body = if is_warning {
-                    format!(
+                    &resolved_root,
+                    existing_summary.as_deref(),
+                    delta_mode,
+                    subtree_owned.as_deref(),
+                ) => res
+            };
+
+            match result {
+                Ok(summary) => {
+                    let is_warning = summary.status == "completed_with_warning";
+                    let status_str = if is_warning {
+                        "completed_with_warning"
+                    } else {
+                        "completed"
+                    };
+                    CONTEXT_GEN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        status_str,
+                        summary.error.clone(),
+                    );
+                    let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
+                    crate::engine::system_ops::publish_context_scan_event(
+                        &pool,
+                        "completed",
+                        &project_id,
+                        &project_name,
+                        json!({
+                            "status": status_str,
+                            "groups_created": summary.groups_created,
+                            "contexts_created": summary.contexts_created,
+                            "files_mapped": summary.files_mapped,
+                            "db_tables_dropped": summary.db_tables_dropped,
+                            "cross_refs_dropped": summary.cross_refs_dropped,
+                            "scan_id": scan_id_for_task,
+                        }),
+                    );
+                    // OS notification
+                    let title = if is_warning {
+                        "Context Map Ready (with warning)"
+                    } else {
+                        "Context Map Ready"
+                    };
+                    let body = if is_warning {
+                        format!(
                         "{}: {} groups, {} contexts mapped (scan exceeded timeout — partial results saved).",
                         project_name, summary.groups_created, summary.contexts_created,
                     )
-                } else {
-                    format!(
-                        "{}: {} groups, {} contexts mapped.",
-                        project_name, summary.groups_created, summary.contexts_created,
-                    )
-                };
-                crate::notifications::send(&app_handle, title, &body);
+                    } else {
+                        format!(
+                            "{}: {} groups, {} contexts mapped.",
+                            project_name, summary.groups_created, summary.contexts_created,
+                        )
+                    };
+                    crate::notifications::send(&app_handle, title, &body);
+                }
+                Err(e) => {
+                    let msg = format!("{e}");
+                    CONTEXT_GEN_JOBS.set_status(
+                        &app_handle,
+                        &scan_id_for_task,
+                        "failed",
+                        Some(msg.clone()),
+                    );
+                    CONTEXT_GEN_JOBS.emit_line(
+                        &app_handle,
+                        &scan_id_for_task,
+                        format!("[Error] {msg}"),
+                    );
+                    crate::engine::system_ops::publish_context_scan_event(
+                        &pool,
+                        "completed",
+                        &project_id,
+                        &project_name,
+                        json!({ "status": "failed", "error": msg, "scan_id": scan_id_for_task }),
+                    );
+                    crate::notifications::send(
+                        &app_handle,
+                        "Context Scan Failed",
+                        &format!("{project_name}: {msg}"),
+                    );
+                }
             }
-            Err(e) => {
-                let msg = format!("{e}");
-                CONTEXT_GEN_JOBS.set_status(
-                    &app_handle,
-                    &scan_id_for_task,
-                    "failed",
-                    Some(msg.clone()),
-                );
-                CONTEXT_GEN_JOBS.emit_line(
-                    &app_handle,
-                    &scan_id_for_task,
-                    format!("[Error] {msg}"),
-                );
-                crate::engine::system_ops::publish_context_scan_event(
-                    &pool,
-                    "completed",
-                    &project_id,
-                    &project_name,
-                    json!({ "status": "failed", "error": msg, "scan_id": scan_id_for_task }),
-                );
-                crate::notifications::send(
-                    &app_handle,
-                    "Context Scan Failed",
-                    &format!("{project_name}: {msg}"),
-                );
-            }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                scan_id = %scan_id_for_panic,
-                panic = %msg,
-                "context-map generation task panicked — marking scan as failed"
+        },
+        move |msg| async move {
+            CONTEXT_GEN_JOBS.set_status(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                "failed",
+                Some(msg.clone()),
             );
-            CONTEXT_GEN_JOBS.set_status(&app_handle_for_panic, &scan_id_for_panic, "failed", Some(msg.clone()));
-            CONTEXT_GEN_JOBS.emit_line(&app_handle_for_panic, &scan_id_for_panic, format!("[Error] {msg}"));
+            CONTEXT_GEN_JOBS.emit_line(
+                &app_handle_for_panic,
+                &scan_id_for_panic,
+                format!("[Error] {msg}"),
+            );
             crate::engine::system_ops::publish_context_scan_event(
                 &pool_for_panic,
                 "completed",
@@ -810,8 +861,8 @@ pub(crate) fn launch_context_scan(
                 "Context Scan Failed",
                 &format!("{project_name_for_panic}: internal error during scan"),
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "scan_id": scan_id, "is_rescan": is_rescan, "delta_mode": delta_mode }))
 }
@@ -857,10 +908,14 @@ pub fn dev_tools_get_scan_codebase_status(
 pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
     match CONTEXT_GEN_JOBS.lock() {
         Ok(jobs) => match jobs.get(scan_id) {
-            Some(job) => json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines }),
+            Some(job) => {
+                json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines })
+            }
             None => json!({ "scan_id": scan_id, "status": "not_found" }),
         },
-        Err(_) => json!({ "scan_id": scan_id, "status": "error", "error": "scan registry lock poisoned" }),
+        Err(_) => {
+            json!({ "scan_id": scan_id, "status": "error", "error": "scan registry lock poisoned" })
+        }
     }
 }
 
@@ -914,13 +969,27 @@ pub(crate) fn list_scans_json(project_id: &str) -> serde_json::Value {
 /// JSON files into 15 contexts named `section-locales-ar`, `-bn`, … and the
 /// coverage line read 5871%. One list, one meaning, both sides.
 pub(crate) const NON_SOURCE_DIRS: &[&str] = &[
-    "node_modules", "target", ".git", "dist", "build",
-    "bindings", "section-locales", "locales", ".claude", "coverage",
+    "node_modules",
+    "target",
+    ".git",
+    "dist",
+    "build",
+    "bindings",
+    "section-locales",
+    "locales",
+    ".claude",
+    "coverage",
     // Python build/vendor trees. Added with `py` below: before Python was
     // mappable these could not appear, so their absence was harmless. Now that a
     // context may own `.py`, a vendored virtualenv or a __pycache__ tree would
     // otherwise become mappable for the first time.
-    "__pycache__", ".venv", "venv", ".tox", ".pytest_cache", "site-packages", ".mypy_cache",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".tox",
+    ".pytest_cache",
+    "site-packages",
+    ".mypy_cache",
 ];
 
 /// Extensions a context may legitimately own — hand-written CODE only.
@@ -963,10 +1032,9 @@ pub(crate) fn is_mappable_path(path: &str) -> bool {
     // The rule deliberately does NOT apply to the filename: a dotfile like
     // `.eslintrc.js` is a real hand-written file, and the counter accepts it too
     // (it only tests `starts_with('.')` on directory entries).
-    if segments
-        .iter()
-        .any(|seg| (seg.starts_with('.') && *seg != "." && *seg != "..") || NON_SOURCE_DIRS.contains(seg))
-    {
+    if segments.iter().any(|seg| {
+        (seg.starts_with('.') && *seg != "." && *seg != "..") || NON_SOURCE_DIRS.contains(seg)
+    }) {
         return false;
     }
     let norm = file_name;
@@ -989,7 +1057,6 @@ pub(crate) fn is_mappable_path(path: &str) -> bool {
 /// percentage and make the warning meaningless. Returns `None` if the tree
 /// cannot be walked; a missing figure is better than a wrong one.
 fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
-
     let base = match subtree {
         Some(st) => std::path::Path::new(root).join(st),
         None => std::path::PathBuf::from(root),
@@ -1090,6 +1157,12 @@ fn is_coverage_regression(prior: usize, written: usize) -> bool {
     (written as f64) < (prior as f64) * COVERAGE_REGRESSION_RATIO
 }
 
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 async fn run_context_generation(
     app: &tauri::AppHandle,
     scan_id: &str,
@@ -1578,7 +1651,12 @@ async fn run_context_generation(
             // validation — and it needs it more: the contexts a timed-out scan
             // wrote reference siblings it never got to emit.
             let (db_tables_dropped, cross_refs_dropped) = prune_unresolvable_references(
-                app, scan_id, pool, project_id, root_path, &written_context_ids,
+                app,
+                scan_id,
+                pool,
+                project_id,
+                root_path,
+                &written_context_ids,
             )
             .await;
             reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
@@ -1646,10 +1724,14 @@ async fn run_context_generation(
     // (not).
     if !subtree_stale_ids.is_empty() {
         if contexts_created == 0 {
-            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
-                "[Kept] Scan produced no contexts — left all {} existing context(s) in place.",
-                subtree_stale_ids.len()
-            ));
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Kept] Scan produced no contexts — left all {} existing context(s) in place.",
+                    subtree_stale_ids.len()
+                ),
+            );
         } else {
             let mut retired = 0usize;
             for id in &subtree_stale_ids {
@@ -1747,9 +1829,15 @@ async fn run_context_generation(
     // does not exist. Deliberately AFTER the retire step and after every
     // context is written — a context may reference a sibling the same scan
     // emits later, so this is only decidable once the scan's writes are in.
-    let (db_tables_dropped, cross_refs_dropped) =
-        prune_unresolvable_references(app, scan_id, pool, project_id, root_path, &written_context_ids)
-            .await;
+    let (db_tables_dropped, cross_refs_dropped) = prune_unresolvable_references(
+        app,
+        scan_id,
+        pool,
+        project_id,
+        root_path,
+        &written_context_ids,
+    )
+    .await;
 
     // Coverage guard: did this rescan replace the map with a materially poorer
     // one? Runs BEFORE reconcile_links so a rollback is relinked, not the
@@ -2158,8 +2246,7 @@ async fn prune_unresolvable_references(
     // contexts this scan never touched.
     let known_names: std::collections::HashSet<String> =
         contexts.iter().map(|c| c.name.trim().to_string()).collect();
-    let written: std::collections::HashSet<&str> =
-        written_ids.iter().map(String::as_str).collect();
+    let written: std::collections::HashSet<&str> = written_ids.iter().map(String::as_str).collect();
 
     // The project's own schema, read from the project's own source. An
     // incomplete vocabulary must never drop a name, so an unusable one skips
@@ -2256,19 +2343,7 @@ async fn prune_unresolvable_references(
         let tables_arg = new_tables.as_ref().map(|o| o.as_deref());
         let refs_arg = new_refs.as_ref().map(|o| o.as_deref());
         if let Err(e) = repo::update_context(
-            pool,
-            &c.id,
-            None,
-            None,
-            None,
-            None,
-            tables_arg,
-            None,
-            None,
-            refs_arg,
-            None,
-            None,
-            None,
+            pool, &c.id, None, None, None, None, tables_arg, None, None, refs_arg, None, None, None,
         ) {
             tracing::warn!(error = %e, context = %c.name, "reference validation: update failed");
         }
@@ -2321,7 +2396,11 @@ fn report_context_audit(
                 scan_id,
                 format!(
                     "[{}] {line}",
-                    if report.balanced { "Audit" } else { "Audit — attention" }
+                    if report.balanced {
+                        "Audit"
+                    } else {
+                        "Audit — attention"
+                    }
                 ),
             );
             if report.totals.unresolved_cross_refs > 0 {
@@ -2339,7 +2418,11 @@ fn report_context_audit(
         }
         Err(e) => {
             tracing::warn!(error = %e, "post-scan context audit failed");
-            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Warning] Context audit skipped: {e}"));
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warning] Context audit skipped: {e}"),
+            );
         }
     }
 }
@@ -2381,7 +2464,9 @@ fn write_harness_docs(
     }
     // Offline skill registry for the reflection contract's sync ritual —
     // same best-effort contract (docs/skill-standard.md).
-    if let Err(e) = super::skill_registry_export::write_skill_registry(pool, project_id, root_path, None) {
+    if let Err(e) =
+        super::skill_registry_export::write_skill_registry(pool, project_id, root_path, None)
+    {
         CONTEXT_GEN_JOBS.emit_line(
             app,
             scan_id,
@@ -2436,7 +2521,7 @@ mod tests {
         assert!(!is_coverage_regression(117, 110));
         assert!(!is_coverage_regression(117, 71)); // 60.7%, just inside
         assert!(is_coverage_regression(117, 70)); // 59.8%, just outside
-        // Growth is never a regression.
+                                                  // Growth is never a regression.
         assert!(!is_coverage_regression(50, 90));
         assert!(!is_coverage_regression(50, 50));
         // Small maps are unguarded: the ratio is noise down there, and a young
@@ -2516,7 +2601,11 @@ mod tests {
     fn hidden_directories_are_rejected_on_both_sides() {
         // The counter skips every hidden dir; this side used to skip only the
         // named ones, which let paths in and pushed coverage above 100%.
-        for p in [".next/server/page.js", ".github/scripts/release.mjs", ".turbo/out.js"] {
+        for p in [
+            ".next/server/page.js",
+            ".github/scripts/release.mjs",
+            ".turbo/out.js",
+        ] {
             assert!(!is_mappable_path(p), "{p} must not be mappable");
         }
     }
@@ -2577,7 +2666,10 @@ mod tests {
             super::super::schema_vocabulary::normalize_table_ref(s)
         });
         assert_eq!(kept, owned(&["dev_standards", "doc_status"]));
-        assert_eq!(dropped, owned(&["standards_violations", "doc_rot_findings"]));
+        assert_eq!(
+            dropped,
+            owned(&["standards_violations", "doc_rot_findings"])
+        );
     }
 
     #[test]
@@ -2587,14 +2679,21 @@ mod tests {
         let (kept, dropped) = split_known(&claimed, &schema, |s| {
             super::super::schema_vocabulary::normalize_table_ref(s)
         });
-        assert_eq!(kept.len(), 3, "the same table written three ways is one table");
+        assert_eq!(
+            kept.len(),
+            3,
+            "the same table written three ways is one table"
+        );
         assert!(dropped.is_empty());
     }
 
     #[test]
     fn prose_in_a_table_list_is_dropped_not_kept_as_decoration() {
         let schema = set(&["dev_contexts"]);
-        let claimed = owned(&["(all tables — this context owns the schema)", "dev_contexts"]);
+        let claimed = owned(&[
+            "(all tables — this context owns the schema)",
+            "dev_contexts",
+        ]);
         let (kept, dropped) = split_known(&claimed, &schema, |s| {
             super::super::schema_vocabulary::normalize_table_ref(s)
         });
@@ -2612,7 +2711,8 @@ mod tests {
         let refs = owned(&["omega"]);
 
         let mid_stream_names = set(&["alpha"]); // what a write-time check would see
-        let (_, dropped_if_checked_early) = split_known(&refs, &mid_stream_names, normalize_cross_ref);
+        let (_, dropped_if_checked_early) =
+            split_known(&refs, &mid_stream_names, normalize_cross_ref);
         assert_eq!(
             dropped_if_checked_early,
             owned(&["omega"]),
@@ -2654,11 +2754,17 @@ mod tests {
     fn the_report_names_examples_and_admits_what_it_elided() {
         let samples = owned(&["ghost in alpha", "phantom in beta"]);
         let line = format_drop_examples(&samples, 2);
-        assert!(line.contains("ghost in alpha") && line.contains("phantom in beta"), "{line}");
+        assert!(
+            line.contains("ghost in alpha") && line.contains("phantom in beta"),
+            "{line}"
+        );
         assert!(!line.contains("more"), "nothing was elided: {line}");
 
         let elided = format_drop_examples(&samples, 40);
-        assert!(elided.contains("+38 more"), "a cap that hides its size is not a report: {elided}");
+        assert!(
+            elided.contains("+38 more"),
+            "a cap that hides its size is not a report: {elided}"
+        );
     }
 
     #[test]
@@ -2677,6 +2783,72 @@ mod tests {
             truncated: true,
             first_unreadable: Some("C:/locked".into()),
         };
-        assert!(!truncated.is_usable(), "a partial vocabulary would delete true names");
+        assert!(
+            !truncated.is_usable(),
+            "a partial vocabulary would delete true names"
+        );
+    }
+    /// The Vuln-4 chain in one assertion: a caller who names a directory
+    /// outside the project must not be able to choose the cwd of a
+    /// `--dangerously-skip-permissions` agent.
+    #[test]
+    fn scan_root_outside_the_project_is_refused() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let elsewhere = tmp.path().join("attacker");
+        std::fs::create_dir_all(&project).expect("mkdir repo");
+        std::fs::create_dir_all(&elsewhere).expect("mkdir attacker");
+
+        let err = confine_to_project_root(&project.to_string_lossy(), &elsewhere.to_string_lossy())
+            .expect_err("a sibling directory must be refused");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "expected a validation error, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn scan_root_defaults_and_descendants_are_allowed() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let child = project.join("src").join("features");
+        std::fs::create_dir_all(&child).expect("mkdir child");
+        let root = project.to_string_lossy().to_string();
+
+        assert_eq!(confine_to_project_root(&root, "").unwrap(), root);
+        assert_eq!(confine_to_project_root(&root, ".").unwrap(), root);
+        assert_eq!(confine_to_project_root(&root, &root).unwrap(), root);
+        let child_s = child.to_string_lossy().to_string();
+        assert_eq!(confine_to_project_root(&root, &child_s).unwrap(), child_s);
+    }
+
+    /// A sibling whose name merely EXTENDS the project's is a different tree.
+    /// A `starts_with` on the string would let this through.
+    #[test]
+    fn sibling_with_a_prefix_name_is_refused() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let sibling = tmp.path().join("repo-evil");
+        std::fs::create_dir_all(&project).expect("mkdir repo");
+        std::fs::create_dir_all(&sibling).expect("mkdir repo-evil");
+        assert!(
+            confine_to_project_root(&project.to_string_lossy(), &sibling.to_string_lossy())
+                .is_err()
+        );
+    }
+
+    /// Traversal out of the tree must not survive canonicalisation.
+    #[test]
+    fn dot_dot_traversal_is_refused() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let project = tmp.path().join("repo");
+        let outside = tmp.path().join("outside");
+        std::fs::create_dir_all(&project).expect("mkdir repo");
+        std::fs::create_dir_all(&outside).expect("mkdir outside");
+        let traversal = project.join("..").join("outside");
+        assert!(
+            confine_to_project_root(&project.to_string_lossy(), &traversal.to_string_lossy())
+                .is_err()
+        );
     }
 }

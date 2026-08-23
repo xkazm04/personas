@@ -107,6 +107,15 @@ async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
         .await
         .map_err(|e| AppError::Internal(format!("whisper install: mkdir bin: {e}")))?;
 
+    // Not `SHARED_HTTP`: a model/engine archive needs the 20-minute
+    // `DOWNLOAD_TIMEOUT`, not 30 s. The URL is built from compile-time literals
+    // (`ENGINE_ARCHIVE_URL`) plus a curated id, so nothing user-supplied reaches the
+    // authority and the SSRF-safe resolver would add nothing. This is one of
+    // FOUR byte-for-byte identical download clients (stt/downloader.rs,
+    // stt/installer.rs, tts/kokoro_installer.rs, tts/pocket_installer.rs) — the
+    // right home for them is the `ClientProfile` factory named in
+    // `outbound-http-call.md` §8 Gap 1, not a fifth fixed constant beside
+    // `SHARED_HTTP`.
     let client = reqwest::Client::builder()
         .timeout(DOWNLOAD_TIMEOUT)
         .build()
@@ -224,8 +233,8 @@ mod tests {
         let path = dir.path().join("a.zip");
         let file = std::fs::File::create(&path).unwrap();
         let mut w = zip::ZipWriter::new(file);
-        let opts: zip::write::SimpleFileOptions =
-            zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let opts: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
         for (name, body) in entries {
             w.start_file(*name, opts).unwrap();
             w.write_all(body).unwrap();

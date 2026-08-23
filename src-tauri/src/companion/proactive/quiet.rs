@@ -4,7 +4,7 @@
 //!
 //! Schedule DSL (interpreted here, opaque elsewhere):
 //!   - `quiet_hours` and `focus_window`:
-//!       { "days": ["mon","tue",...], "from": "22:00", "to": "07:00" }
+//!     { "days": ["mon","tue",...], "from": "22:00", "to": "07:00" }
 //!     `days` is optional (defaults to all). `to < from` means the
 //!     window crosses midnight (the canonical sleep case).
 //!   - `cadence`: not a quiet window — ignored here (it's a *trigger*

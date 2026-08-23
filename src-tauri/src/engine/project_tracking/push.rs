@@ -7,9 +7,17 @@
 //! caps out-of-cadence runs at one per 5 minutes so a hot session can't
 //! starve the LLM budget.
 //!
-//! Loopback-only by virtue of `local_http` binding to 127.0.0.1; no
-//! nonce gate in v1 because no remote actor can reach the endpoint.
-//! A future hardening pass can layer per-app tokens on top.
+//! Authentication: `local_http`'s admission layer (`local_http::auth`) gates
+//! this route like every other — a `Host` allowlist plus the shared local
+//! token. It is NOT gated by "loopback is enough", which is what the header
+//! here claimed until 2026-08-22 ("no nonce gate in v1 because no remote actor
+//! can reach the endpoint"). That reasoning was wrong twice over: a DNS-rebound
+//! page IS a remote actor with same-origin access to 127.0.0.1, and 127.0.0.1
+//! is machine-scoped rather than user-scoped, so any other local principal
+//! qualifies too. It mattered here specifically because `title`/`summary` are
+//! interpolated into a prompt piped to a CLI spawned with
+//! `--dangerously-skip-permissions` (see `consolidator::build_prompt`, which
+//! now delimits and caps them).
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -17,8 +25,8 @@ use std::sync::{Arc, OnceLock, RwLock};
 use std::time::{Duration, Instant};
 
 use axum::{
-    extract::Json as JsonExtractor, http::StatusCode, response::IntoResponse,
-    response::Json, routing::post, Router,
+    extract::Json as JsonExtractor, http::StatusCode, response::IntoResponse, response::Json,
+    routing::post, Router,
 };
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
@@ -64,19 +72,6 @@ pub fn init(pool: UserDbPool, app_handle: AppHandle) {
         debounce: RwLock::new(HashMap::new()),
     });
     let _ = PUSH_HANDLE.set(handle);
-}
-
-/// In-process helper for skill/CLI hooks that already run inside the
-/// Tauri process and don't want to round-trip through HTTP. Same
-/// behavior: optional event insert + debounced consolidator trigger.
-/// Returns the resolved project_id (None if unknown).
-pub async fn push_cli_event(
-    project_path: &str,
-    summary: Option<&str>,
-    title: Option<&str>,
-) -> Option<String> {
-    let handle = PUSH_HANDLE.get()?;
-    do_push(handle, project_path, summary, title).await.ok()?
 }
 
 #[derive(Debug, Deserialize)]
@@ -276,10 +271,9 @@ async fn run_out_of_cadence_for_project(
              ORDER BY created_at",
         )?;
         let rows: Vec<String> = stmt
-            .query_map(
-                params![project_id, since.to_rfc3339()],
-                |row| row.get::<_, String>(0),
-            )?
+            .query_map(params![project_id, since.to_rfc3339()], |row| {
+                row.get::<_, String>(0)
+            })?
             .collect::<Result<Vec<_>, _>>()?;
         rows.into_iter()
             .filter_map(|json| serde_json::from_str(&json).ok())
@@ -290,13 +284,7 @@ async fn run_out_of_cadence_for_project(
         return Ok(());
     }
 
-    let project_name = sub
-        .project_path
-        .rsplit(['/', '\\'])
-        .next()
-        .unwrap_or(&sub.project_path)
-        .to_string();
-    let snapshot = TickSnapshot::from_events(project_name, &events);
+    let snapshot = TickSnapshot::from_events(&events);
 
     // Stamp the watermark BEFORE the await, not after.
     //
@@ -314,8 +302,7 @@ async fn run_out_of_cadence_for_project(
     // sync-reconciliation-and-conflicts.md.
     let consumed_through = chrono::Utc::now();
 
-    consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle))
-        .await?;
+    consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle)).await?;
 
     // Advance the watermark (mirrors scheduler::run_project) so the next
     // push/tick consolidates only the NEW slice instead of overlapping ranges.

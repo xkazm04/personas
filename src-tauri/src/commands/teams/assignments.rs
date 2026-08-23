@@ -110,7 +110,10 @@ pub fn companion_record_assignment_outcome(
     };
     let steps = repo::list_steps(&state.db, &assignment_id)?;
 
-    let mut lines = vec![format!("Team assignment \"{}\" — {}", assignment.title, assignment.status)];
+    let mut lines = vec![format!(
+        "Team assignment \"{}\" — {}",
+        assignment.title, assignment.status
+    )];
     lines.push(format!("Goal: {}", assignment.goal));
     for (i, s) in steps.iter().enumerate() {
         lines.push(format!("{}. [{}] {}", i + 1, s.status, s.title));
@@ -219,7 +222,14 @@ pub async fn resolve_team_assignment_review(
     let embedding_manager = embedding_manager_for_state(&state);
     match action {
         ResolveStepReviewAction::EditRequirement { description } => {
-            orchestrator::resolve_review_edit(pool, app, engine, embedding_manager, step_id, description)
+            orchestrator::resolve_review_edit(
+                pool,
+                app,
+                engine,
+                embedding_manager,
+                step_id,
+                description,
+            )
         }
         ResolveStepReviewAction::Reassign {
             persona_id,
@@ -377,7 +387,8 @@ pub async fn companion_assign_team_inner(
     let candidates = matching::extract_candidates(&personas);
 
     // Decompose via Sonnet.
-    let proposed = matching::decompose_goal(&goal_trimmed, &candidates, DECOMPOSE_TIMEOUT_SECS).await?;
+    let proposed =
+        matching::decompose_goal(&goal_trimmed, &candidates, DECOMPOSE_TIMEOUT_SECS).await?;
     if proposed.is_empty() {
         return Err(AppError::Internal(
             "Auto-decompose returned zero steps".into(),
@@ -452,7 +463,7 @@ pub struct CompanionAssignTeamResult {
 fn derive_title_from_goal(goal: &str) -> String {
     let trimmed = goal.trim();
     let first_clause = trimmed
-        .split(|c: char| c == '.' || c == '\n' || c == ';')
+        .split(['.', '\n', ';'])
         .next()
         .unwrap_or(trimmed)
         .trim();
@@ -611,7 +622,11 @@ mod tests {
     use super::*;
     use crate::db::models::PersonaTrustOrigin;
 
-    fn base_persona(setup_status: &str, enabled: bool, trust_level: crate::db::models::PersonaTrustLevel) -> Persona {
+    fn base_persona(
+        setup_status: &str,
+        enabled: bool,
+        trust_level: crate::db::models::PersonaTrustLevel,
+    ) -> Persona {
         Persona {
             lifecycle: "active".to_string(),
             id: "p-1".into(),
@@ -665,20 +680,44 @@ mod tests {
     #[test]
     fn decompose_candidate_admits_ready_and_needs_credentials() {
         use crate::db::models::PersonaTrustLevel;
-        assert!(is_decompose_candidate(&base_persona("ready", true, PersonaTrustLevel::Manual)));
-        assert!(is_decompose_candidate(&base_persona("needs_credentials", true, PersonaTrustLevel::Manual)));
+        assert!(is_decompose_candidate(&base_persona(
+            "ready",
+            true,
+            PersonaTrustLevel::Manual
+        )));
+        assert!(is_decompose_candidate(&base_persona(
+            "needs_credentials",
+            true,
+            PersonaTrustLevel::Manual
+        )));
     }
 
     #[test]
     fn decompose_candidate_rejects_genuinely_broken_states() {
         use crate::db::models::PersonaTrustLevel;
         // Disabled.
-        assert!(!is_decompose_candidate(&base_persona("ready", false, PersonaTrustLevel::Manual)));
+        assert!(!is_decompose_candidate(&base_persona(
+            "ready",
+            false,
+            PersonaTrustLevel::Manual
+        )));
         // Revoked trust, even if otherwise ready.
-        assert!(!is_decompose_candidate(&base_persona("ready", true, PersonaTrustLevel::Revoked)));
+        assert!(!is_decompose_candidate(&base_persona(
+            "ready",
+            true,
+            PersonaTrustLevel::Revoked
+        )));
         // needs_credentials does NOT rescue a revoked persona.
-        assert!(!is_decompose_candidate(&base_persona("needs_credentials", true, PersonaTrustLevel::Revoked)));
+        assert!(!is_decompose_candidate(&base_persona(
+            "needs_credentials",
+            true,
+            PersonaTrustLevel::Revoked
+        )));
         // Any other setup_status (e.g. "pending", "failed") is excluded.
-        assert!(!is_decompose_candidate(&base_persona("pending", true, PersonaTrustLevel::Manual)));
+        assert!(!is_decompose_candidate(&base_persona(
+            "pending",
+            true,
+            PersonaTrustLevel::Manual
+        )));
     }
 }

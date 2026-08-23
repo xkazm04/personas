@@ -316,7 +316,8 @@ mod classification_tests {
 
     #[test]
     fn obsidian_memory_is_global_probe() {
-        let meta = r#"{"is_builtin":true,"always_active":false,"connection_mode":"desktop_bridge"}"#;
+        let meta =
+            r#"{"is_builtin":true,"always_active":false,"connection_mode":"desktop_bridge"}"#;
         assert_eq!(
             classify_connector("obsidian_memory", Some(meta)),
             ConnectorClass::GlobalProbe
@@ -365,8 +366,14 @@ mod classification_tests {
 
     #[test]
     fn cli_probe_spec_lookup_is_case_insensitive() {
-        assert_eq!(cli_probe_spec("Vercel").map(|s| s.login_cmd), Some("vercel login"));
-        assert_eq!(cli_probe_spec("  GitHub ").map(|s| s.probe_program), Some("gh"));
+        assert_eq!(
+            cli_probe_spec("Vercel").map(|s| s.login_cmd),
+            Some("vercel login")
+        );
+        assert_eq!(
+            cli_probe_spec("  GitHub ").map(|s| s.probe_program),
+            Some("gh")
+        );
         assert!(cli_probe_spec("notion").is_none());
     }
 
@@ -375,7 +382,11 @@ mod classification_tests {
         for spec in CLI_PROBE_CONNECTORS {
             assert!(!spec.name.trim().is_empty());
             assert!(!spec.probe_program.trim().is_empty());
-            assert!(!spec.probe_args.is_empty(), "`{}` needs probe args", spec.name);
+            assert!(
+                !spec.probe_args.is_empty(),
+                "`{}` needs probe args",
+                spec.name
+            );
             assert!(!spec.login_cmd.trim().is_empty());
         }
     }

@@ -9,7 +9,7 @@ stack: rust
 
 The event pipeline's claim discipline lives in two files:
 `src-tauri/db/src/repos/communication/events.rs` (the conditional writes) and
-`src-tauri/src/engine/background.rs` (the tick that orders everything around
+`src-tauri/src/engine/background/` (the tick that orders everything around
 them). It demonstrates the technique's core move exactly — and its one
 omission is the repo's cleanest illustration of why the technique demands
 claim evidence.

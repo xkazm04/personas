@@ -30,6 +30,24 @@ use crate::error::AppError;
 
 type HmacSha256 = Hmac<Sha256>;
 
+/// Which route table :9420 is actually serving, published for observers.
+///
+/// Deferred-fix #39 recorded that the port serves one of two route tables
+/// (34 routes with the management API + pairing, or 3 webhook-only routes)
+/// and that "nothing logs which one you got" — the only observable
+/// difference was `/api/personas` answering 404 instead of 401. That made
+/// the KP bridge (`/api/kp/*`) and device pairing (`/pair/*`) silently
+/// unreachable on a degraded boot. The flag is set once, immediately before
+/// `axum::serve`, and reported by `/health` so a caller can tell the two
+/// tables apart without guessing from a 404.
+static MANAGEMENT_ROUTES_LIVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// True when :9420 is serving the full table (management API + pairing).
+pub fn management_routes_live() -> bool {
+    MANAGEMENT_ROUTES_LIVE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// Shared state for the webhook HTTP server.
 #[derive(Clone)]
 pub struct WebhookState {
@@ -79,7 +97,12 @@ pub async fn start_webhook_server(
 
     let addr = SocketAddr::from(([127, 0, 0, 1], webhook_port()));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("Webhook server listening on http://{}", addr);
+    MANAGEMENT_ROUTES_LIVE.store(false, std::sync::atomic::Ordering::Relaxed);
+    tracing::warn!(
+        management = false,
+        "Webhook server listening on http://{} — WEBHOOK-ONLY route table:          /api/* (management API, KP bridge) and /pair/* are NOT served on this boot",
+        addr
+    );
 
     axum::serve(listener, app)
         .with_graceful_shutdown(async move {
@@ -139,7 +162,12 @@ pub async fn start_webhook_server_with_management(
 
     let addr = SocketAddr::from(([127, 0, 0, 1], webhook_port()));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("Webhook server listening on http://{}", addr);
+    MANAGEMENT_ROUTES_LIVE.store(true, std::sync::atomic::Ordering::Relaxed);
+    tracing::info!(
+        management = true,
+        "Webhook server listening on http://{} — full route table          (webhook + management API incl. /api/kp/*, + /pair/*)",
+        addr
+    );
 
     axum::serve(listener, app)
         .with_graceful_shutdown(async move {
@@ -154,7 +182,15 @@ pub async fn start_webhook_server_with_management(
 
 /// Health check endpoint.
 async fn health() -> impl IntoResponse {
-    Json(serde_json::json!({ "status": "ok", "service": "personas-webhook" }))
+    // `management` names the route table this boot actually bound (see
+    // MANAGEMENT_ROUTES_LIVE). `/api/kp/*` and `/pair/*` exist only when it
+    // is true; a caller that needs them probes here instead of inferring a
+    // missing route from a 404.
+    Json(serde_json::json!({
+        "status": "ok",
+        "service": "personas-webhook",
+        "management": management_routes_live(),
+    }))
 }
 
 /// GET /webhook/{trigger_id} -- confirms the webhook endpoint exists and

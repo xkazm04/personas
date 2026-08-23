@@ -11,10 +11,10 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
 
+use personas_core::error::AppError;
 use personas_db::models::{IdentityCard, PeerIdentity};
 use personas_db::repos::resources::identity as identity_repo;
 use personas_db::DbPool;
-use personas_core::error::AppError;
 
 /// Keyring service identifier for the Ed25519 private key.
 const KEYRING_SERVICE: &str = "personas-desktop";

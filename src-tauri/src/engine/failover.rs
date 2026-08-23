@@ -1017,7 +1017,9 @@ mod tests {
             }
         }
         // The ladder must still yield at least one real downgrade candidate.
-        assert!(chain.iter().any(|c| c.model.as_deref() == Some("claude-sonnet-4-6")));
+        assert!(chain
+            .iter()
+            .any(|c| c.model.as_deref() == Some("claude-sonnet-4-6")));
     }
 
     #[test]

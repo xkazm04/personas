@@ -88,7 +88,10 @@ pub fn resolve_pipeline_fidelity(db: &DbPool) -> ContextFidelity {
 /// Returns `None` when there is nothing to inject (no upstream, or `Truncate`
 /// with no statuses worth listing).
 #[must_use]
-pub fn build_upstream_preamble(upstream: &[UpstreamOutput], fidelity: ContextFidelity) -> Option<String> {
+pub fn build_upstream_preamble(
+    upstream: &[UpstreamOutput],
+    fidelity: ContextFidelity,
+) -> Option<String> {
     if upstream.is_empty() {
         return None;
     }
@@ -115,7 +118,7 @@ pub fn build_upstream_preamble(upstream: &[UpstreamOutput], fidelity: ContextFid
             continue;
         };
         let lines: Vec<&str> = body.lines().filter(|l| !l.trim().is_empty()).collect();
-        let take = per_node.min(total_budget.saturating_sub(used)).max(0);
+        let take = per_node.min(total_budget.saturating_sub(used));
         if take == 0 {
             out.push_str("- …(truncated)\n");
             break;
@@ -192,18 +195,30 @@ mod tests {
 
     #[test]
     fn compact_respects_line_budget() {
-        let big = (0..200).map(|i| format!("line{i}")).collect::<Vec<_>>().join("\n");
+        let big = (0..200)
+            .map(|i| format!("line{i}"))
+            .collect::<Vec<_>>()
+            .join("\n");
         let u = vec![up("noisy", "succeeded", Some(&big))];
         let p = build_upstream_preamble(&u, ContextFidelity::Compact).unwrap();
         let body_lines = p.lines().filter(|l| l.starts_with("- ")).count();
-        assert!(body_lines <= 26, "compact exceeded budget: {body_lines} lines");
+        assert!(
+            body_lines <= 26,
+            "compact exceeded budget: {body_lines} lines"
+        );
         assert!(p.contains("more lines"), "no truncation marker: {p}");
     }
 
     #[test]
     fn fidelity_parses_aliases() {
-        assert_eq!(ContextFidelity::from_str("summary:high"), Ok(ContextFidelity::SummaryHigh));
-        assert_eq!(ContextFidelity::from_str("COMPACT"), Ok(ContextFidelity::Compact));
+        assert_eq!(
+            ContextFidelity::from_str("summary:high"),
+            Ok(ContextFidelity::SummaryHigh)
+        );
+        assert_eq!(
+            ContextFidelity::from_str("COMPACT"),
+            Ok(ContextFidelity::Compact)
+        );
         assert_eq!(ContextFidelity::from_str("garbage"), Err(()));
     }
 }

@@ -29,7 +29,9 @@ fn real_fixture_path(logical: &str) -> String {
         .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("fixture.bin");
-    let p = std::env::temp_dir().join("personas_export_parity").join(file_name);
+    let p = std::env::temp_dir()
+        .join("personas_export_parity")
+        .join(file_name);
     if let Some(parent) = p.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
@@ -415,8 +417,7 @@ fn overlap_mode_emits_xfade_filter_not_concat() {
         &CompileDeps::none(),
     )
     .expect("overlap compile");
-    let args =
-        build_ffmpeg_args(&plan, std::path::Path::new("/tmp/out.mp4")).expect("build args");
+    let args = build_ffmpeg_args(&plan, std::path::Path::new("/tmp/out.mp4")).expect("build args");
     let fc = joined_filters(&args).expect("filter complex present");
 
     // xfade present, concat absent on the video chain.

@@ -164,13 +164,14 @@ fn evaluate_condition(condition_json: &str, predecessor_output: Option<&str>) ->
     };
 
     // Try JSON field lookup first
-    let parsed_output = predecessor_output.and_then(|o| serde_json::from_str::<serde_json::Value>(o).ok());
+    let parsed_output =
+        predecessor_output.and_then(|o| serde_json::from_str::<serde_json::Value>(o).ok());
     let json_value = parsed_output
         .as_ref()
         .and_then(|v| v.get(&spec.field).cloned())
-        .and_then(|v| match v {
-            serde_json::Value::String(s) => Some(s),
-            other => Some(other.to_string()),
+        .map(|v| match v {
+            serde_json::Value::String(s) => s,
+            other => other.to_string(),
         });
 
     // Raw-output fallback applies when the output isn't valid JSON at all,
@@ -330,6 +331,12 @@ enum NodeOutcome {
 
 /// Execute a single node — dispatches to persona (LLM) or command (deterministic).
 #[allow(clippy::ptr_arg)]
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 async fn run_node(
     db: &DbPool,
     engine: &ExecutionEngine,
@@ -363,6 +370,12 @@ async fn run_node(
 }
 
 /// Run a persona (LLM) node — the original execution path.
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 async fn run_persona_node(
     db: &DbPool,
     engine: &ExecutionEngine,
@@ -372,7 +385,7 @@ async fn run_persona_node(
     node_config: &NodeConfig,
     resolved_input: Option<serde_json::Value>,
     cancelled: &Arc<AtomicBool>,
-    statuses: &mut Vec<serde_json::Value>,
+    statuses: &mut [serde_json::Value],
 ) -> NodeOutcome {
     // Load persona + tools
     let persona = match persona_repo::get_by_id(db, &member.persona_id) {
@@ -490,8 +503,8 @@ async fn run_persona_node(
                 "completed" => {
                     // P2: record this node's execution cost against the pipeline
                     // run budget (warn-only — the pipeline is not aborted).
-                    let outcome = crate::engine::run_budget::ledger()
-                        .record(run_id, execution.cost_usd);
+                    let outcome =
+                        crate::engine::run_budget::ledger().record(run_id, execution.cost_usd);
                     if outcome.exceeded_now {
                         tracing::warn!(
                             run_id = %run_id,
@@ -561,7 +574,7 @@ async fn run_command_node(
     member: &PersonaTeamMember,
     input: Option<serde_json::Value>,
     cancelled: &Arc<AtomicBool>,
-    statuses: &mut Vec<serde_json::Value>,
+    statuses: &mut [serde_json::Value],
 ) -> NodeOutcome {
     let cmd = match &config.command {
         Some(c) => c.clone(),
@@ -737,12 +750,12 @@ async fn poll_for_approval(
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
         if cancelled.load(Ordering::Relaxed) {
-            registry.unregister_run("pipeline_approval", &approval_key);
+            registry.unregister_run("pipeline_approval", approval_key);
             return ApprovalOutcome::Cancelled;
         }
 
         if flag.load(Ordering::Relaxed) {
-            registry.unregister_run("pipeline_approval", &approval_key);
+            registry.unregister_run("pipeline_approval", approval_key);
             return ApprovalOutcome::Approved;
         }
     }
@@ -975,12 +988,8 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         // F3: graded summary of ALL predecessors' outputs (the latest one is also
         // passed verbatim as pipeline_input above; fan-in nodes would otherwise lose
         // every predecessor but one).
-        let upstream = collect_upstream_outputs(
-            &predecessor_map,
-            member_id,
-            &node_outputs,
-            &member_names,
-        );
+        let upstream =
+            collect_upstream_outputs(&predecessor_map, member_id, &node_outputs, &member_names);
         let upstream_context =
             crate::engine::context_fidelity::build_upstream_preamble(&upstream, fidelity);
 
@@ -1120,7 +1129,12 @@ fn resolve_node_input(
     // Collect every predecessor that produced output, preserving wiring order.
     let present: Vec<(&String, String)> = preds
         .iter()
-        .filter_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()).map(|out| (pid, out)))
+        .filter_map(|pid| {
+            node_outputs
+                .get(pid)
+                .and_then(|o| o.clone())
+                .map(|out| (pid, out))
+        })
         .collect();
     match present.len() {
         0 => pipeline_input.clone(),
@@ -1167,13 +1181,20 @@ fn collect_upstream_outputs(
     preds
         .iter()
         .map(|pid| {
-            let label = member_names.get(pid).cloned().unwrap_or_else(|| pid.clone());
+            let label = member_names
+                .get(pid)
+                .cloned()
+                .unwrap_or_else(|| pid.clone());
             let (status, output) = match node_outputs.get(pid) {
                 Some(Some(o)) => ("succeeded".to_string(), Some(o.clone())),
                 Some(None) => ("succeeded".to_string(), None),
                 None => ("did not run".to_string(), None),
             };
-            crate::engine::context_fidelity::UpstreamOutput { label, status, output }
+            crate::engine::context_fidelity::UpstreamOutput {
+                label,
+                status,
+                output,
+            }
         })
         .collect()
 }

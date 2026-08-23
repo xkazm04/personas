@@ -11,6 +11,7 @@ use crate::models::{
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::crypto;
 use personas_core::crypto::CryptoError;
 use personas_core::error::AppError;
@@ -343,6 +344,31 @@ enum ProfileMode {
     Redact,
 }
 
+/// The full-fidelity projection: exactly the columns `row_to_persona_with_mode`
+/// below reads, and nothing else. The companion to `LEAN_LIST_COLUMNS` further
+/// down — that one is the roster's narrow projection, this one is the editor's.
+///
+/// The base table (`migrations/schema.rs:12`) declares twenty-four columns;
+/// the rest arrive by `ALTER TABLE personas ADD COLUMN`, and five of the
+/// twenty-four ALSO arrive that way (`sensitive`, `last_test_report`,
+/// `home_team_id`, `template_category`, `notification_channels`). On a database
+/// created before the base DDL learned about them, ALTER appends them last —
+/// so `SELECT *` returns a different column ORDER on a fresh install than on
+/// an upgraded one, for the same query. Reading by name is what makes that
+/// difference stop mattering.
+///
+/// Five ALTER-added columns are deliberately excluded because this mapper does
+/// not read them: `content_hash`, `core_profile`, `group_id`,
+/// `langfuse_export_enabled`, `last_modified_device`.
+const FULL_COLUMNS: &str = "id, project_id, name, description, system_prompt, \
+     structured_prompt, icon, color, enabled, sensitive, headless, starred, \
+     max_concurrent, timeout_ms, notification_channels, last_design_result, \
+     last_test_report, model_profile, max_budget_usd, max_turns, design_context, \
+     home_team_id, source_review_id, trust_level, trust_origin, trust_verified_at, \
+     trust_score, parameters, gateway_exposure, template_category, \
+     cli_awareness_enabled, setup_status, setup_detail, disabled_dims_json, \
+     lifecycle, created_at, updated_at";
+
 fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Persona> {
     let id: String = row.get("id")?;
     let raw_profile: Option<String> = row.get("model_profile")?;
@@ -414,10 +440,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .ok()
             .flatten()
             .unwrap_or_else(|| "ready".to_string()),
-        setup_detail: row
-            .get::<_, Option<String>>("setup_detail")
-            .ok()
-            .flatten(),
+        setup_detail: row.get::<_, Option<String>>("setup_detail").ok().flatten(),
         disabled_dims_json: row
             .get::<_, Option<String>>("disabled_dims_json")
             .ok()
@@ -444,8 +467,10 @@ fn row_to_persona_redacted(row: &Row) -> rusqlite::Result<Persona> {
 pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_all", {
         let start = Instant::now();
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached("SELECT * FROM personas ORDER BY created_at DESC")?;
+        let conn = pool.conn("personas::get_all")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas ORDER BY created_at DESC"
+        ))?;
         let rows = stmt.query_map([], row_to_persona_redacted)?;
         let result = collect_rows(rows, "personas::get_all");
         let elapsed_ms = start.elapsed().as_millis() as u64;
@@ -467,14 +492,14 @@ pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Person
         return get_all(pool);
     }
     timed_query!("personas", "personas::get_all_by_lifecycle", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all_by_lifecycle")?;
         let mut qb = QueryBuilder::new();
         qb.where_in(
             "COALESCE(lifecycle, 'active')",
             stages.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
         );
         qb.order_by("created_at", "DESC");
-        let sql = qb.build_select("SELECT * FROM personas");
+        let sql = qb.build_select(&format!("SELECT {FULL_COLUMNS} FROM personas"));
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona_redacted)?;
         Ok(collect_rows(rows, "personas::get_all_by_lifecycle"))
@@ -583,10 +608,7 @@ fn row_to_persona_lean(row: &Row) -> rusqlite::Result<Persona> {
             .ok()
             .flatten()
             .unwrap_or_else(|| "ready".to_string()),
-        setup_detail: row
-            .get::<_, Option<String>>("setup_detail")
-            .ok()
-            .flatten(),
+        setup_detail: row.get::<_, Option<String>>("setup_detail").ok().flatten(),
         disabled_dims_json: row
             .get::<_, Option<String>>("disabled_dims_json")
             .ok()
@@ -606,7 +628,7 @@ fn row_to_persona_lean(row: &Row) -> rusqlite::Result<Persona> {
 #[instrument(skip(pool))]
 pub fn get_all_lean(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_all_lean", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all_lean")?;
         let sql = format!("SELECT {LEAN_LIST_COLUMNS} FROM personas ORDER BY created_at DESC");
         let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map([], row_to_persona_lean)?;
@@ -617,15 +639,12 @@ pub fn get_all_lean(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 /// Lean roster list filtered to a set of lifecycle stages (server-side).
 /// Empty `stages` == `get_all_lean`. The lean twin of `get_all_by_lifecycle`.
 #[instrument(skip(pool))]
-pub fn get_all_by_lifecycle_lean(
-    pool: &DbPool,
-    stages: &[&str],
-) -> Result<Vec<Persona>, AppError> {
+pub fn get_all_by_lifecycle_lean(pool: &DbPool, stages: &[&str]) -> Result<Vec<Persona>, AppError> {
     if stages.is_empty() {
         return get_all_lean(pool);
     }
     timed_query!("personas", "personas::get_all_by_lifecycle_lean", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_all_by_lifecycle_lean")?;
         let mut qb = QueryBuilder::new();
         qb.where_in(
             "COALESCE(lifecycle, 'active')",
@@ -643,8 +662,10 @@ pub fn get_all_by_lifecycle_lean(
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::get_by_id", {
         let start = Instant::now();
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached("SELECT * FROM personas WHERE id = ?1")?;
+        let conn = pool.conn("personas::get_by_id")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas WHERE id = ?1"
+        ))?;
         let result = stmt
             .query_row(params![id], row_to_persona)
             .map_err(|e| match e {
@@ -665,8 +686,10 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
 /// avoid leaking the existence of personas not opted in to gateway visibility.
 pub fn find_by_id_if_exposed(pool: &DbPool, id: &str) -> Result<Option<Persona>, AppError> {
     timed_query!("personas", "personas::find_by_id_if_exposed", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached("SELECT * FROM personas WHERE id = ?1")?;
+        let conn = pool.conn("personas::find_by_id_if_exposed")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas WHERE id = ?1"
+        ))?;
         let result = stmt
             .query_row(params![id], row_to_persona)
             .optional()
@@ -681,10 +704,10 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
         return Ok(Vec::new());
     }
     timed_query!("personas", "personas::get_by_ids", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_by_ids")?;
         let mut qb = QueryBuilder::new();
         qb.where_in("id", ids.to_vec());
-        let sql = qb.build_select("SELECT * FROM personas");
+        let sql = qb.build_select(&format!("SELECT {FULL_COLUMNS} FROM personas"));
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona)?;
         Ok(collect_rows(rows, "personas::get_by_ids"))
@@ -695,9 +718,10 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
 pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_enabled", {
         let start = Instant::now();
-        let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare_cached("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
+        let conn = pool.conn("personas::get_enabled")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas WHERE enabled = 1 ORDER BY name"
+        ))?;
         let rows = stmt.query_map([], row_to_persona)?;
         let result = collect_rows(rows, "personas::get_enabled");
         let elapsed_ms = start.elapsed().as_millis() as u64;
@@ -714,9 +738,10 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 #[instrument(skip(pool))]
 pub fn get_starred(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_starred", {
-        let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare_cached("SELECT * FROM personas WHERE starred = 1 ORDER BY name")?;
+        let conn = pool.conn("personas::get_starred")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas WHERE starred = 1 ORDER BY name"
+        ))?;
         let rows = stmt.query_map([], row_to_persona)?;
         Ok(collect_rows(rows, "personas::get_starred"))
     })
@@ -724,7 +749,7 @@ pub fn get_starred(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 
 /// Toggle a persona's starred flag (Director scope). Returns the new value.
 pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("personas::set_starred")?;
     let updated = conn.execute(
         "UPDATE personas SET starred = ?1, updated_at = datetime('now') WHERE id = ?2",
         rusqlite::params![if starred { 1 } else { 0 }, id],
@@ -739,12 +764,8 @@ pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppEr
 /// `PersonaLifecycle` enum. Used by the build promote path (→ `active`) and the
 /// build cancel/fail cleanup guard. Does NOT touch `enabled` — lifecycle and
 /// the runtime-pause switch are orthogonal.
-pub fn set_lifecycle(
-    pool: &DbPool,
-    id: &str,
-    lifecycle: PersonaLifecycle,
-) -> Result<(), AppError> {
-    let conn = pool.get()?;
+pub fn set_lifecycle(pool: &DbPool, id: &str, lifecycle: PersonaLifecycle) -> Result<(), AppError> {
+    let conn = pool.conn("personas::set_lifecycle")?;
     let updated = conn.execute(
         "UPDATE personas SET lifecycle = ?1, updated_at = datetime('now') WHERE id = ?2",
         params![lifecycle.as_str(), id],
@@ -815,7 +836,7 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
         // collision so the user can tell them apart in lists/sidebar
         // without changing intent semantics. Only mutates `input.name`
         // when needed; original name is preserved when unique.
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("personas::create")?;
         // Serialize the name-uniqueness check + INSERT under one IMMEDIATE
         // transaction. Previously the check and the INSERT used two separate
         // pooled connections, so two concurrent creates of the same name both
@@ -981,7 +1002,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         };
 
         let now = chrono::Utc::now().to_rfc3339();
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("personas::update")?;
 
         // Build dynamic SET clause and params in a single pass
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
@@ -1208,7 +1229,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
     timed_query!("personas", "personas::update_name", {
         validate_name(name)?;
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("personas::update_name")?;
         // IMMEDIATE transaction so the collision check + UPDATE are atomic vs.
         // other writers — otherwise two concurrent renames (or a rename racing
         // a create) both pass the "does another row have this name?" probe and
@@ -1221,7 +1242,7 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
             .query_row(
                 "SELECT project_id FROM personas WHERE id = ?1",
                 params![id],
-                |row| row.get(0),
+                |row| row.get("project_id"),
             )
             .unwrap_or_else(|_| "default".to_string());
 
@@ -1269,7 +1290,7 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     timed_query!("personas", "personas::get_summaries", {
         let start = Instant::now();
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::get_summaries")?;
 
         let today_start = chrono::Utc::now()
             .date_naive()
@@ -1337,13 +1358,16 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
          UNION ALL
          SELECT 'S' AS kind, persona_id, NULL AS val, day, cnt FROM sparkline",
         )?;
+        // Every branch of the UNION names the same five columns —
+        // kind / persona_id / val / day / cnt — which is what makes a by-name
+        // read work across all three.
         let combined_rows = combined_stmt.query_map(params![today_start, week_ago], |row| {
             Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, Option<String>>(2)?,
-                row.get::<_, Option<String>>(3)?,
-                row.get::<_, i64>(4)?,
+                row.get::<_, String>("kind")?,
+                row.get::<_, String>("persona_id")?,
+                row.get::<_, Option<String>>("val")?,
+                row.get::<_, Option<String>>("day")?,
+                row.get::<_, i64>("cnt")?,
             ))
         })?;
 
@@ -1462,7 +1486,7 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
 /// - **Volume bonus** (weight 0.15): more executions = more confidence in the score
 pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     timed_query!("personas", "personas::compute_trust_score", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::compute_trust_score")?;
 
         // Last 50 terminal executions
         let mut stmt = conn.prepare(
@@ -1473,8 +1497,8 @@ pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
         let rows: Vec<(String, f64)> = stmt
             .query_map(params![persona_id], |row| {
                 Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, Option<f64>>(1)?.unwrap_or(0.0),
+                    row.get::<_, String>("status")?,
+                    row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
                 ))
             })?
             .filter_map(|r| r.ok())
@@ -1493,16 +1517,16 @@ pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
             .query_row(
                 "SELECT max_budget_usd FROM personas WHERE id = ?1",
                 params![persona_id],
-                |row| row.get(0),
+                |row| row.get("max_budget_usd"),
             )
             .unwrap_or(None);
         let monthly_spend: f64 = conn
             .query_row(
-                "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
+                "SELECT COALESCE(SUM(cost_usd), 0.0) AS spend FROM persona_executions
                  WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
                  AND created_at >= datetime('now', 'start of month')",
                 params![persona_id],
-                |row| row.get(0),
+                |row| row.get("spend"),
             )
             .unwrap_or(0.0);
         let cost_score = match budget {
@@ -1517,7 +1541,7 @@ pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
                  WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT 20",
             )?;
             let statuses: Vec<String> = stmt2
-                .query_map(params![persona_id], |row| row.get::<_, String>(0))?
+                .query_map(params![persona_id], |row| row.get::<_, String>("status"))?
                 .filter_map(|r| r.ok())
                 .collect();
             statuses
@@ -1546,7 +1570,7 @@ pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
 pub fn refresh_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     timed_query!("personas", "personas::refresh_trust_score", {
         let score = compute_trust_score(pool, persona_id)?;
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::refresh_trust_score")?;
         conn.execute(
             "UPDATE personas SET trust_score = ?1, updated_at = datetime('now') WHERE id = ?2",
             params![score, persona_id],
@@ -1581,9 +1605,12 @@ pub struct DuplicationSummary {
 /// [`DuplicationSummary`]) but not cloned. Runs in a single transaction so a
 /// mid-copy failure never leaves a half-wired duplicate.
 #[instrument(skip(pool))]
-pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, DuplicationSummary), AppError> {
+pub fn duplicate(
+    pool: &DbPool,
+    source_id: &str,
+) -> Result<(Persona, DuplicationSummary), AppError> {
     timed_query!("personas", "personas::duplicate", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::duplicate")?;
         let new_id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -1623,7 +1650,7 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
         let (project_id, base_name): (String, String) = tx.query_row(
             "SELECT project_id, name FROM personas WHERE id = ?1",
             params![new_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
+            |row| Ok((row.get("project_id")?, row.get("name")?)),
         )?;
         let mut final_name = base_name.clone();
         let mut suffix = 2u32;
@@ -1660,7 +1687,10 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
                 "SELECT trigger_type, config FROM persona_triggers WHERE persona_id = ?1",
             )?;
             let rows = stmt.query_map(params![source_id], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+                Ok((
+                    row.get::<_, String>("trigger_type")?,
+                    row.get::<_, Option<String>>("config")?,
+                ))
             })?;
             rows.filter_map(|r| r.ok()).collect()
         };
@@ -1687,7 +1717,10 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
                 "SELECT event_type, source_filter FROM persona_event_subscriptions WHERE persona_id = ?1",
             )?;
             let rows = stmt.query_map(params![source_id], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+                Ok((
+                    row.get::<_, String>("event_type")?,
+                    row.get::<_, Option<String>>("source_filter")?,
+                ))
             })?;
             rows.filter_map(|r| r.ok()).collect()
         };
@@ -1696,7 +1729,13 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
                 "INSERT INTO persona_event_subscriptions
                  (id, persona_id, event_type, source_filter, enabled, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)",
-                params![uuid::Uuid::new_v4().to_string(), new_id, event_type, source_filter, now],
+                params![
+                    uuid::Uuid::new_v4().to_string(),
+                    new_id,
+                    event_type,
+                    source_filter,
+                    now
+                ],
             )?;
             summary.subscriptions_copied += 1;
         }
@@ -1704,16 +1743,16 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
         // ── Report (don't clone) automations + shared tool/credential references ──
         summary.automations_skipped = tx
             .query_row(
-                "SELECT COUNT(*) FROM persona_automations WHERE persona_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_automations WHERE persona_id = ?1",
                 params![source_id],
-                |r| r.get::<_, i64>(0),
+                |r| r.get::<_, i64>("n"),
             )
             .unwrap_or(0) as usize;
         summary.tools_shared = tx
             .query_row(
-                "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_tools WHERE persona_id = ?1",
                 params![source_id],
-                |r| r.get::<_, i64>(0),
+                |r| r.get::<_, i64>("n"),
             )
             .unwrap_or(0) as usize;
         summary.credential_links_shared = count_credential_links(&tx, source_id);
@@ -1735,7 +1774,7 @@ fn count_credential_links(conn: &rusqlite::Connection, persona_id: &str) -> usiz
         .query_row(
             "SELECT design_context FROM personas WHERE id = ?1",
             params![persona_id],
-            |r| r.get::<_, Option<String>>(0),
+            |r| r.get::<_, Option<String>>("design_context"),
         )
         .ok()
         .flatten()
@@ -1749,12 +1788,12 @@ fn count_credential_links(conn: &rusqlite::Connection, persona_id: &str) -> usiz
 
     let tool_creds: usize = conn
         .query_row(
-            "SELECT COUNT(DISTINCT ptd.requires_credential_type)
+            "SELECT COUNT(DISTINCT ptd.requires_credential_type) AS n
              FROM persona_tools pt
              INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
              WHERE pt.persona_id = ?1 AND ptd.requires_credential_type IS NOT NULL",
             params![persona_id],
-            |r| r.get::<_, i64>(0),
+            |r| r.get::<_, i64>("n"),
         )
         .unwrap_or(0) as usize;
 
@@ -1764,7 +1803,7 @@ fn count_credential_links(conn: &rusqlite::Connection, persona_id: &str) -> usiz
 #[instrument(skip(pool))]
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("personas", "personas::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::delete")?;
 
         let tx = conn.unchecked_transaction()?;
 
@@ -1789,12 +1828,12 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// paths (build cancel/fail, TTL sweep) so a draft that already produced work
 /// is never silently swept.
 pub fn has_executions(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("personas::has_executions")?;
     let count: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1",
+            "SELECT COUNT(*) AS n FROM persona_executions WHERE persona_id = ?1",
             params![id],
-            |r| r.get(0),
+            |r| r.get("n"),
         )
         .unwrap_or(0);
     Ok(count > 0)
@@ -1894,7 +1933,7 @@ pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, A
         return Ok(0);
     }
     let candidate_ids: Vec<String> = {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::sweep_stale_drafts")?;
         let cutoff = (chrono::Utc::now() - chrono::Duration::days(retention_days)).to_rfc3339();
         let mut stmt = conn.prepare(
             "SELECT id FROM personas
@@ -1902,7 +1941,7 @@ pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, A
                AND created_at < ?1
                AND COALESCE(trust_origin, 'builtin') != 'system'",
         )?;
-        let rows = stmt.query_map(params![cutoff], |r| r.get::<_, String>(0))?;
+        let rows = stmt.query_map(params![cutoff], |r| r.get::<_, String>("id"))?;
         rows.filter_map(|r| r.ok()).collect()
     };
     let mut deleted = 0usize;
@@ -1910,7 +1949,9 @@ pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, A
         match delete_draft_if_safe(pool, &id) {
             Ok(true) => deleted += 1,
             Ok(false) => {}
-            Err(e) => tracing::warn!(persona_id = %id, error = %e, "sweep_stale_drafts: delete failed"),
+            Err(e) => {
+                tracing::warn!(persona_id = %id, error = %e, "sweep_stale_drafts: delete failed")
+            }
         }
     }
     Ok(deleted)
@@ -1920,15 +1961,15 @@ pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, A
 #[instrument(skip(pool))]
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("personas", "personas::blast_radius", {
-        let conn = pool.get()?;
+        let conn = pool.conn("personas::blast_radius")?;
         let mut impacts: Vec<(String, String)> = Vec::new();
 
         // Active automations
         let active_automations: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM persona_automations WHERE persona_id = ?1 AND deployment_status = 'active'",
+            "SELECT COUNT(*) AS n FROM persona_automations WHERE persona_id = ?1 AND deployment_status = 'active'",
             params![id],
-            |r| r.get(0),
+            |r| r.get("n"),
         )
         .unwrap_or(0);
         if active_automations > 0 {
@@ -1945,9 +1986,9 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         // showed an empty blast radius. The fetched `name` was never used
         // anyway (impacts are bucketed by type), so dropping it fixes the bug.
         let triggers: Vec<String> = {
-            let mut stmt = conn
-                .prepare("SELECT trigger_type FROM persona_triggers WHERE persona_id = ?1")?;
-            let rows = stmt.query_map(params![id], |row| row.get::<_, String>(0))?;
+            let mut stmt =
+                conn.prepare("SELECT trigger_type FROM persona_triggers WHERE persona_id = ?1")?;
+            let rows = stmt.query_map(params![id], |row| row.get::<_, String>("trigger_type"))?;
             rows.filter_map(|r| r.ok()).collect()
         };
         let scheduled = triggers.iter().filter(|t| t.as_str() == "schedule").count();
@@ -1975,9 +2016,9 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         // Event subscriptions
         let subs: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_event_subscriptions WHERE persona_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_event_subscriptions WHERE persona_id = ?1",
                 params![id],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .unwrap_or(0);
         if subs > 0 {
@@ -1990,9 +2031,9 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         // Running executions
         let running: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND status IN ('running', 'queued')",
+            "SELECT COUNT(*) AS n FROM persona_executions WHERE persona_id = ?1 AND status IN ('running', 'queued')",
             params![id],
-            |r| r.get(0),
+            |r| r.get("n"),
         )
         .unwrap_or(0);
         if running > 0 {
@@ -2005,9 +2046,9 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         // Learned memories — permanently destroyed by the cascade delete.
         let memories: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_memories WHERE persona_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_memories WHERE persona_id = ?1",
                 params![id],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .unwrap_or(0);
         if memories > 0 {
@@ -2022,9 +2063,9 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         // persona are FK-set-null and survive, so only source events are lost.
         let events: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1",
                 params![id],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .unwrap_or(0);
         if events > 0 {
@@ -2053,7 +2094,7 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
              WHERE pt.trigger_type = 'chain' AND pt.config LIKE ?1 AND pt.persona_id != ?2",
             )?;
             let pattern = format!("%{}%", id);
-            let rows = stmt.query_map(params![pattern, id], |row| row.get::<_, String>(0))?;
+            let rows = stmt.query_map(params![pattern, id], |row| row.get::<_, String>("name"))?;
             rows.filter_map(|r| r.ok()).collect()
         };
         if !chain_dependents.is_empty() {
@@ -2076,7 +2117,7 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
                  WHERE ptm.persona_id = ?1
                  ORDER BY t.name",
             )?;
-            let rows = stmt.query_map(params![id], |row| row.get::<_, String>(0))?;
+            let rows = stmt.query_map(params![id], |row| row.get::<_, String>("name"))?;
             rows.filter_map(|r| r.ok()).collect()
         };
         if !teams.is_empty() {
@@ -2097,6 +2138,37 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
 mod tests {
     use super::*;
     use crate::init_test_db;
+
+    /// Both projection consts must prepare against the real migrated schema.
+    /// Most of this table's columns exist only by ALTER TABLE, so no single
+    /// DDL block proves the shape either list depends on.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for columns in [FULL_COLUMNS, LEAN_LIST_COLUMNS] {
+            let sql = format!("SELECT {columns} FROM personas LIMIT 0");
+            conn.prepare(&sql)
+                .unwrap_or_else(|e| panic!("personas projection does not match schema: {e}"));
+        }
+    }
+
+    /// The lean roster projection must be a SUBSET of the full one — its
+    /// mapper is documented as mirroring the light-field reads of
+    /// `row_to_persona_with_mode`, and nothing enforced that. A column added
+    /// to the roster but not to the editor read would pass the probe above and
+    /// still be a divergence between two mappers that are meant to agree.
+    #[test]
+    fn the_lean_roster_projection_is_a_subset_of_the_full_one() {
+        let full: std::collections::HashSet<&str> =
+            FULL_COLUMNS.split(',').map(str::trim).collect();
+        for col in LEAN_LIST_COLUMNS.split(',').map(str::trim) {
+            assert!(
+                full.contains(col),
+                "LEAN_LIST_COLUMNS names `{col}`, which FULL_COLUMNS does not"
+            );
+        }
+    }
 
     // NOTE (updated 2026-07-13): `blast_radius` IS unit-tested now — see
     // `test_blast_radius_reports_all_categories`. The old blocker was a bug, not
@@ -2764,7 +2836,11 @@ mod tests {
             Some(None),
             "explicit null → Some(None) (clear)"
         );
-        assert_eq!(input.max_budget_usd, Some(None), "explicit null → Some(None)");
+        assert_eq!(
+            input.max_budget_usd,
+            Some(None),
+            "explicit null → Some(None)"
+        );
         assert_eq!(input.icon, Some(None), "explicit null → Some(None)");
 
         // Case 3: the field ABSENT is the only way to say "leave it alone".
@@ -2793,7 +2869,10 @@ mod tests {
                  update silently clears the column"
             );
         }
-        assert!(input.max_budget_usd.is_none(), "absent max_budget_usd → None");
+        assert!(
+            input.max_budget_usd.is_none(),
+            "absent max_budget_usd → None"
+        );
         assert!(input.max_turns.is_none(), "absent max_turns → None");
     }
 
@@ -2938,7 +3017,8 @@ mod tests {
             .unwrap();
             // Reset both to 'active' then run the SAME backfill UPDATE the
             // migration performs.
-            conn.execute("UPDATE personas SET lifecycle = 'active'", []).unwrap();
+            conn.execute("UPDATE personas SET lifecycle = 'active'", [])
+                .unwrap();
             conn.execute(
                 "UPDATE personas SET lifecycle = 'draft'
                  WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
@@ -3078,9 +3158,9 @@ mod tests {
         // Copied triggers carry the new persona_id and are DISABLED.
         let (trig_count, enabled_count): (i64, i64) = conn
             .query_row(
-                "SELECT COUNT(*), COALESCE(SUM(enabled), 0) FROM persona_triggers WHERE persona_id = ?1",
+                "SELECT COUNT(*) AS n, COALESCE(SUM(enabled), 0) AS enabled_count FROM persona_triggers WHERE persona_id = ?1",
                 params![copy.id],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("n")?, r.get("enabled_count")?)),
             )
             .unwrap();
         assert_eq!(trig_count, 2, "both triggers copied");
@@ -3088,9 +3168,9 @@ mod tests {
 
         let (sub_count, sub_enabled): (i64, i64) = conn
             .query_row(
-                "SELECT COUNT(*), COALESCE(SUM(enabled), 0) FROM persona_event_subscriptions WHERE persona_id = ?1",
+                "SELECT COUNT(*) AS n, COALESCE(SUM(enabled), 0) AS enabled_count FROM persona_event_subscriptions WHERE persona_id = ?1",
                 params![copy.id],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("n")?, r.get("enabled_count")?)),
             )
             .unwrap();
         assert_eq!(sub_count, 1, "subscription copied");
@@ -3099,9 +3179,9 @@ mod tests {
         // Source rows are untouched (still enabled).
         let src_enabled: i64 = conn
             .query_row(
-                "SELECT COALESCE(SUM(enabled), 0) FROM persona_triggers WHERE persona_id = ?1",
+                "SELECT COALESCE(SUM(enabled), 0) AS enabled_count FROM persona_triggers WHERE persona_id = ?1",
                 params![src.id],
-                |r| r.get(0),
+                |r| r.get("enabled_count"),
             )
             .unwrap();
         assert_eq!(src_enabled, 2, "source triggers stay enabled");
@@ -3120,9 +3200,8 @@ mod tests {
     fn test_blast_radius_reports_all_categories() {
         let pool = init_test_db().unwrap();
         let mut p_in = lifecycle_input("Blast", "You are blast-tested.");
-        p_in.design_context = Some(
-            r#"{"credentialLinks":{"gmail":"cred-1","slack":"cred-2"}}"#.into(),
-        );
+        p_in.design_context =
+            Some(r#"{"credentialLinks":{"gmail":"cred-1","slack":"cred-2"}}"#.into());
         let p = create(&pool, p_in).unwrap();
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -3165,10 +3244,16 @@ mod tests {
             impacts.iter().map(|(c, _)| c.as_str()).collect();
         assert!(cats.contains("trigger"), "trigger impact present");
         assert!(cats.contains("subscription"), "subscription impact present");
-        assert!(cats.contains("execution"), "running execution impact present");
+        assert!(
+            cats.contains("execution"),
+            "running execution impact present"
+        );
         assert!(cats.contains("memory"), "NEW: memory impact present");
         assert!(cats.contains("event"), "NEW: event impact present");
-        assert!(cats.contains("credential"), "NEW: credential impact present");
+        assert!(
+            cats.contains("credential"),
+            "NEW: credential impact present"
+        );
 
         // The credential count = 2 design_context links (+0 tool creds here).
         let cred = impacts
@@ -3192,15 +3277,20 @@ mod tests {
         let test_report = format!(
             r#"{{"tools":[{}]}}"#,
             (0..30)
-                .map(|i| format!(r#"{{"tool":"t{i}","passed":true,"log":"{}"}}"#, "x".repeat(80)))
+                .map(|i| format!(
+                    r#"{{"tool":"t{i}","passed":true,"log":"{}"}}"#,
+                    "x".repeat(80)
+                ))
                 .collect::<Vec<_>>()
                 .join(",")
         );
         let notif = r#"[{"type":"email","config":{"to":"ops@example.com","template":"long-body-here-repeated-many-times"}}]"#;
-        let params = r#"[{"id":"threshold","type":"number","default":42,"label":"Alert threshold"}]"#;
+        let params =
+            r#"[{"id":"threshold","type":"number","default":42,"label":"Alert threshold"}]"#;
         // Kept-on-roster blobs (connector chips / widgets read these).
         let design_ctx = r#"{"summary":"kept","use_cases":[{"id":"u1","title":"Triage"}]}"#;
-        let design_result = r#"{"suggested_connectors":["gmail","slack"],"capabilities":["triage"]}"#;
+        let design_result =
+            r#"{"suggested_connectors":["gmail","slack"],"capabilities":["triage"]}"#;
 
         let mut input = lifecycle_input("Heavy Persona", &big_prompt);
         input.structured_prompt = Some(structured.clone());
@@ -3230,7 +3320,10 @@ mod tests {
         assert_eq!(lean.system_prompt, "", "system_prompt blanked");
         assert_eq!(lean.structured_prompt, None, "structured_prompt blanked");
         assert_eq!(lean.last_test_report, None, "last_test_report blanked");
-        assert_eq!(lean.notification_channels, None, "notification_channels blanked");
+        assert_eq!(
+            lean.notification_channels, None,
+            "notification_channels blanked"
+        );
         assert_eq!(lean.parameters, None, "parameters blanked");
 
         // Kept fields survive on the lean row (roster consumers depend on them).
@@ -3349,7 +3442,10 @@ mod tests {
         }
         // retention 0 = disabled → no sweep.
         assert_eq!(sweep_stale_drafts(&pool, 0).unwrap(), 0);
-        assert!(get_by_id(&pool, &d.id).is_ok(), "off-by-default must not sweep");
+        assert!(
+            get_by_id(&pool, &d.id).is_ok(),
+            "off-by-default must not sweep"
+        );
 
         // With a positive retention the old clean draft IS swept.
         assert_eq!(sweep_stale_drafts(&pool, 7).unwrap(), 1);

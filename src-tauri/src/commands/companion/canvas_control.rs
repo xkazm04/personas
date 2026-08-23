@@ -40,7 +40,9 @@ pub async fn companion_canvas_control_result(
 
     let session_id = input.session_id.trim();
     if session_id.is_empty() || session_id.len() > 128 {
-        return Err(AppError::Validation("sessionId must be a session id".into()));
+        return Err(AppError::Validation(
+            "sessionId must be a session id".into(),
+        ));
     }
     let mut result = input.result;
     if result.len() > CANVAS_CONTROL_RESULT_CHARS {

@@ -2,6 +2,33 @@ use crate::models::lab::PersonaVersion;
 use crate::DbPool;
 use personas_core::error::AppError;
 
+/// One projection for every read of `persona_versions`, so the SELECT and the
+/// mapper cannot disagree. Mirrors `CREATE TABLE persona_versions` at
+/// `migrations/incremental/e03_p2p_and_telemetry.rs:307`.
+const COLUMNS: &str = "id, persona_id, version_number, name, description, system_prompt, \
+                       structured_prompt, model_profile, max_budget_usd, max_turns, \
+                       timeout_ms, design_context, change_summary, tag, \
+                       parent_version_id, created_at";
+
+row_mapper!(row_to_version -> PersonaVersion {
+    id,
+    persona_id,
+    version_number,
+    name,
+    description,
+    system_prompt,
+    structured_prompt,
+    model_profile,
+    max_budget_usd,
+    max_turns,
+    timeout_ms,
+    design_context,
+    change_summary,
+    tag,
+    parent_version_id,
+    created_at,
+});
+
 pub fn create_version(pool: &DbPool, persona_id: &str) -> Result<PersonaVersion, AppError> {
     timed_query!("persona_versions", "persona_versions::create_version", {
         let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
@@ -9,9 +36,10 @@ pub fn create_version(pool: &DbPool, persona_id: &str) -> Result<PersonaVersion,
         // Get next version number
         let next_num: i32 = conn
             .query_row(
-                "SELECT COALESCE(MAX(version_number), 0) + 1 FROM persona_versions WHERE persona_id = ?1",
+                "SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version_number
+                 FROM persona_versions WHERE persona_id = ?1",
                 rusqlite::params![persona_id],
-                |row| row.get(0),
+                |row| row.get("next_version_number"),
             )
             .unwrap_or(1);
 
@@ -36,12 +64,13 @@ pub fn create_version(pool: &DbPool, persona_id: &str) -> Result<PersonaVersion,
         ).map_err(|e| AppError::Internal(e.to_string()))?;
 
         // Read back
-        let version = conn.query_row(
-            "SELECT id, persona_id, version_number, name, description, system_prompt, structured_prompt, model_profile, max_budget_usd, max_turns, timeout_ms, design_context, change_summary, tag, parent_version_id, created_at
-             FROM persona_versions WHERE id = ?1",
-            rusqlite::params![id],
-            row_to_version,
-        ).map_err(|e| AppError::Internal(e.to_string()))?;
+        let version = conn
+            .query_row(
+                &format!("SELECT {COLUMNS} FROM persona_versions WHERE id = ?1"),
+                rusqlite::params![id],
+                row_to_version,
+            )
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
         Ok(version)
     })
@@ -54,11 +83,12 @@ pub fn get_versions(
 ) -> Result<Vec<PersonaVersion>, AppError> {
     timed_query!("persona_versions", "persona_versions::get_versions", {
         let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
-        let mut stmt = conn.prepare(
-            "SELECT id, persona_id, version_number, name, description, system_prompt, structured_prompt, model_profile, max_budget_usd, max_turns, timeout_ms, design_context, change_summary, tag, parent_version_id, created_at
-             FROM persona_versions WHERE persona_id = ?1
+        let mut stmt = conn
+            .prepare(&format!(
+                "SELECT {COLUMNS} FROM persona_versions WHERE persona_id = ?1
              ORDER BY version_number DESC LIMIT ?2"
-        ).map_err(|e| AppError::Internal(e.to_string()))?;
+            ))
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
         let versions = stmt
             .query_map(rusqlite::params![persona_id, limit], row_to_version)
@@ -78,33 +108,12 @@ pub fn get_version_tool_count(pool: &DbPool, version_id: &str) -> Result<i32, Ap
             let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
             let count: i32 = conn
                 .query_row(
-                    "SELECT COUNT(*) FROM persona_version_tools WHERE version_id = ?1",
+                    "SELECT COUNT(*) AS n FROM persona_version_tools WHERE version_id = ?1",
                     rusqlite::params![version_id],
-                    |row| row.get(0),
+                    |row| row.get("n"),
                 )
                 .unwrap_or(0);
             Ok(count)
         }
     )
-}
-
-fn row_to_version(row: &rusqlite::Row<'_>) -> rusqlite::Result<PersonaVersion> {
-    Ok(PersonaVersion {
-        id: row.get(0)?,
-        persona_id: row.get(1)?,
-        version_number: row.get(2)?,
-        name: row.get(3)?,
-        description: row.get(4)?,
-        system_prompt: row.get(5)?,
-        structured_prompt: row.get(6)?,
-        model_profile: row.get(7)?,
-        max_budget_usd: row.get(8)?,
-        max_turns: row.get(9)?,
-        timeout_ms: row.get(10)?,
-        design_context: row.get(11)?,
-        change_summary: row.get(12)?,
-        tag: row.get(13)?,
-        parent_version_id: row.get(14)?,
-        created_at: row.get(15)?,
-    })
 }

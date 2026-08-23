@@ -134,8 +134,7 @@ pub async fn invoke_automation(
     } else {
         ("error", completed_run.error_message.as_deref())
     };
-    let error_kind =
-        err_msg.map(|m| classify_app_error(&AppError::Execution(m.to_string())).0);
+    let error_kind = err_msg.map(|m| classify_app_error(&AppError::Execution(m.to_string())).0);
     if let Err(log_err) = tool_audit_log::insert(
         pool,
         &automation.id,
@@ -420,8 +419,7 @@ fn classify_failure_parts(
     let raw_msg = error_message
         .map(|m| m.to_string())
         .unwrap_or_else(|| "Unknown error".into());
-    let (kind, http_status, retryable) =
-        classify_app_error(&AppError::Execution(raw_msg.clone()));
+    let (kind, http_status, retryable) = classify_app_error(&AppError::Execution(raw_msg.clone()));
     let attempts_used = parse_attempts_used(warnings_json)
         .unwrap_or(1)
         .clamp(1, max_attempts);
@@ -496,7 +494,8 @@ mod automation_failure_tests {
 
     #[test]
     fn http_401_run_is_auth_not_retryable() {
-        let info = classify_failure_parts("notify", 1, Some("Webhook returned HTTP 401: nope"), None);
+        let info =
+            classify_failure_parts("notify", 1, Some("Webhook returned HTTP 401: nope"), None);
         assert_eq!(info.kind, ToolErrorKind::Auth);
         assert_eq!(info.http_status, Some(401));
         assert!(!info.retryable);
@@ -506,7 +505,8 @@ mod automation_failure_tests {
 
     #[test]
     fn http_503_run_is_retryable_http() {
-        let info = classify_failure_parts("notify", 2, Some("Webhook returned HTTP 503: down"), None);
+        let info =
+            classify_failure_parts("notify", 2, Some("Webhook returned HTTP 503: down"), None);
         assert_eq!(info.kind, ToolErrorKind::Http);
         assert_eq!(info.http_status, Some(503));
         assert!(info.retryable);

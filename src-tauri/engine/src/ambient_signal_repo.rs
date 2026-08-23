@@ -29,9 +29,9 @@
 //! in-memory or via SQL identically. Eviction is the durability
 //! bound; see `evict_older_than`.
 
-use personas_db::DbPool;
 use crate::ambient_context::AmbientSignalEntry;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 use rusqlite::params;
 
 /// Insert one signal row. `INSERT OR IGNORE` makes duplicate inserts
@@ -91,22 +91,19 @@ pub fn recent_signals(
         .map(|d| d.as_secs())
         .unwrap_or(0);
     let rows = stmt
-        .query_map(
-            params![since_secs as i64, max_count as i64],
-            |row| {
-                let captured_at_signed: i64 = row.get(3)?;
-                let captured_at = captured_at_signed.max(0) as u64;
-                let age_secs = now_secs.saturating_sub(captured_at);
-                Ok(AmbientSignalEntry {
-                    id: row.get(0)?,
-                    source: row.get(1)?,
-                    summary: row.get(2)?,
-                    captured_at,
-                    age_secs,
-                    redacted_content: row.get(4)?,
-                })
-            },
-        )?
+        .query_map(params![since_secs as i64, max_count as i64], |row| {
+            let captured_at_signed: i64 = row.get(3)?;
+            let captured_at = captured_at_signed.max(0) as u64;
+            let age_secs = now_secs.saturating_sub(captured_at);
+            Ok(AmbientSignalEntry {
+                id: row.get(0)?,
+                source: row.get(1)?,
+                summary: row.get(2)?,
+                captured_at,
+                age_secs,
+                redacted_content: row.get(4)?,
+            })
+        })?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
 }
@@ -164,7 +161,15 @@ mod tests {
     fn insert_and_recent_round_trip() {
         let pool = test_pool();
         let now = now_secs();
-        insert_signal(&pool, "sig_1", "clipboard", "copied snippet", now, Some("hello world")).unwrap();
+        insert_signal(
+            &pool,
+            "sig_1",
+            "clipboard",
+            "copied snippet",
+            now,
+            Some("hello world"),
+        )
+        .unwrap();
         insert_signal(&pool, "sig_2", "app_focus", "VS Code — main.rs", now, None).unwrap();
 
         let rows = recent_signals(&pool, now - 60, 10).unwrap();
@@ -172,8 +177,12 @@ mod tests {
         // Newest-first ordering: same captured_at, but PRIMARY KEY
         // tiebreaker is implementation-defined in SQLite — both rows
         // present is what matters for the contract.
-        assert!(rows.iter().any(|r| r.id == "sig_1" && r.redacted_content.as_deref() == Some("hello world")));
-        assert!(rows.iter().any(|r| r.id == "sig_2" && r.redacted_content.is_none()));
+        assert!(rows
+            .iter()
+            .any(|r| r.id == "sig_1" && r.redacted_content.as_deref() == Some("hello world")));
+        assert!(rows
+            .iter()
+            .any(|r| r.id == "sig_2" && r.redacted_content.is_none()));
     }
 
     #[test]
@@ -267,9 +276,7 @@ mod tests {
     /// silently leaves daemon-fired personas blind to user activity.
     #[test]
     fn daemon_path_round_trip_renders_ambient_into_persona_prompt() {
-        use crate::ambient_context::{
-            format_signals_for_prompt, prepend_ambient_to_system_prompt,
-        };
+        use crate::ambient_context::{format_signals_for_prompt, prepend_ambient_to_system_prompt};
 
         let pool = test_pool();
         let now = now_secs();
@@ -298,8 +305,8 @@ mod tests {
         // Daemon-side: load + render + prepend.
         let signals = recent_signals(&pool, now - 60, 30).unwrap();
         assert_eq!(signals.len(), 2, "both inserts should be visible");
-        let md = format_signals_for_prompt(&signals, None)
-            .expect("non-empty signal list should render");
+        let md =
+            format_signals_for_prompt(&signals, None).expect("non-empty signal list should render");
 
         // Sanity-check the rendered shape — same contract the
         // windowed runner relies on.
@@ -309,7 +316,8 @@ mod tests {
 
         // Build a minimal persona and inject. Mirrors what
         // daemon::runtime::inject_ambient_for_daemon does.
-        let mut persona = personas_db::models::Persona { lifecycle: "active".to_string(),
+        let mut persona = personas_db::models::Persona {
+            lifecycle: "active".to_string(),
             id: "p_e2e".into(),
             project_id: "proj_e2e".into(),
             name: "E2E".into(),
@@ -349,10 +357,16 @@ mod tests {
         };
 
         prepend_ambient_to_system_prompt(&mut persona, &md);
-        assert!(persona.system_prompt.starts_with("## Ambient Desktop Context"));
-        assert!(persona.system_prompt.ends_with("You are a helpful assistant."));
+        assert!(persona
+            .system_prompt
+            .starts_with("## Ambient Desktop Context"));
+        assert!(persona
+            .system_prompt
+            .ends_with("You are a helpful assistant."));
         assert!(
-            persona.system_prompt.contains("\n\nYou are a helpful assistant."),
+            persona
+                .system_prompt
+                .contains("\n\nYou are a helpful assistant."),
             "ambient block separated from existing prompt by a blank line"
         );
     }

@@ -7,7 +7,7 @@ stack: rust
 
 # The companion op dispatcher — a closed grammar with a cleaned display channel
 
-`src-tauri/src/companion/dispatcher.rs` (4,467 lines) is the repo's
+`src-tauri/src/companion/dispatcher/` (4,467 lines) is the repo's
 fullest rendition of the technique: it scans the assistant's **finalized**
 reply text for `OP: {"op": …}` proposals, validates them against closed
 vocabularies, creates approval rows or auto-fire events, and returns

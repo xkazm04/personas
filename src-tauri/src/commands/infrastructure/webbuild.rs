@@ -29,11 +29,11 @@ pub async fn webbuild_scaffold(
         &state.db,
         &name,
         &root_path,
-        None,                                 // description
-        Some("active"),                       // status
-        Some("Next.js/TypeScript/Tailwind"),  // tech_stack
-        None,                                 // github_url
-        None,                                 // team_id
+        None,                                // description
+        Some("active"),                      // status
+        Some("Next.js/TypeScript/Tailwind"), // tech_stack
+        None,                                // github_url
+        None,                                // team_id
     )
 }
 
@@ -112,13 +112,13 @@ pub fn webbuild_session_stop(
     project_id: String,
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
-    Ok(crate::companion::session::request_build_interrupt(&format!(
-        "webbuild:{project_id}"
-    )))
+    Ok(crate::companion::session::request_build_interrupt(
+        &format!("webbuild:{project_id}"),
+    ))
 }
 
-/// Of the given projects, return the ids that are Next.js apps Studio can build
-/// + preview (checked against each project's files on disk). Lets the import
+/// Of the given projects, return the ids that are Next.js apps Studio can build +
+/// preview (checked against each project's files on disk). Lets the import
 /// picker flag incompatible Dev Tools projects before they fail to start.
 #[tauri::command]
 pub fn webbuild_next_ready(

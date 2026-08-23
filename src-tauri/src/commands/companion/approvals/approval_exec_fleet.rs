@@ -8,8 +8,8 @@ use super::*;
 
 /// Spawn a proactive Athena turn that reviews the whole fleet (or one team)
 /// against the certification rubric — the post-certification "are the teams on
-/// track?" analysis. Athena gathers current state from her observability digest
-/// + connectors, recalls her prior per-team note (timeline continuity), writes
+/// track?" analysis. Athena gathers current state from her observability digest +
+/// connectors, recalls her prior per-team note (timeline continuity), writes
 /// an updated note, and proposes improvements via her normal approval-gated ops.
 pub(crate) async fn execute_analyze_fleet(
     state: &State<'_, Arc<AppState>>,
@@ -175,8 +175,14 @@ pub(crate) fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, da
         let goal_state = if goal_summ.is_empty() {
             "goal: NONE".to_string()
         } else {
-            let mode = if advancing { "ADVANCING" } else { "has-goal/NOT-advancing" };
-            let sig = last_signal.map(|s| format!(" · last-goal-signal {s}")).unwrap_or_default();
+            let mode = if advancing {
+                "ADVANCING"
+            } else {
+                "has-goal/NOT-advancing"
+            };
+            let sig = last_signal
+                .map(|s| format!(" · last-goal-signal {s}"))
+                .unwrap_or_default();
             format!("goal [{mode}]: {}{sig}", goal_summ.join("; "))
         };
         match agg {
@@ -201,7 +207,9 @@ pub(crate) fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, da
                     "- **{name}** (`{short}`): {total} exec · {failed} failed · vd {vd} · partial {partial} · precond {pf} · ${cost:.2} · director {dir_s} · {goal_state}\n",
                 ));
             }
-            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data) · {goal_state}\n")),
+            Err(_) => out.push_str(&format!(
+                "- **{name}** (`{short}`): (no execution data) · {goal_state}\n"
+            )),
         }
     }
     out
@@ -307,9 +315,8 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
     // compare would be wrong for the RFC3339 columns (the `T`/`Z` break ordering).
     let win_days = (hours as f64) / 24.0;
 
-    let mut out = format!(
-        "## Operational inboxes — last {hours}h (operational store, personas.db)\n"
-    );
+    let mut out =
+        format!("## Operational inboxes — last {hours}h (operational store, personas.db)\n");
 
     // 1) Messages — agent output the user reads.
     {
@@ -389,9 +396,9 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
                          FROM persona_manual_reviews
                          WHERE status='pending' ORDER BY created_at ASC LIMIT 5",
                     ) {
-                        if let Ok(rows) = stmt.query_map([], |r| {
-                            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-                        }) {
+                        if let Ok(rows) = stmt
+                            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+                        {
                             for (title, sev) in rows.flatten() {
                                 let t: String = title.chars().take(70).collect();
                                 out.push_str(&format!("  - {t} ({sev})\n"));
@@ -548,7 +555,10 @@ mod multiselect_tests {
         let keys = multiselect_keystrokes(&menu(), "1,2,3,4").expect("a multi-select plan");
         // Per option: SP then DN (last option no trailing DN); DN past option4,
         // DN past 'Type something' to Submit; CR (confirm), CR (finalize).
-        assert_eq!(flat(&keys), "<Space><Down><Space><Down><Space><Down><Space><Down><Down><CR><CR>");
+        assert_eq!(
+            flat(&keys),
+            "<Space><Down><Space><Down><Space><Down><Space><Down><Down><CR><CR>"
+        );
     }
 
     #[test]
@@ -680,7 +690,9 @@ pub(crate) fn execute_fleet_send_input(
     // screen (vt100) to recognize the menu and compute the toggle plan, then fire
     // the keys on a timed task. Single-select / free-text falls through to the
     // plain typed answer below.
-    if let Some((_, lines)) = crate::commands::fleet::registry::registry().render_screen_for(session_id) {
+    if let Some((_, lines)) =
+        crate::commands::fleet::registry::registry().render_screen_for(session_id)
+    {
         if let Some(keys) = multiselect_keystrokes(&lines, text) {
             let sid = session_id.to_string();
             let count = keys.len();
@@ -753,10 +765,11 @@ pub(crate) fn execute_fleet_send_input(
                         // Recovery: if the plan left us anywhere in the question
                         // TUI, → jumps to the Submit tab (harmless elsewhere) and
                         // Enter confirms "Submit answers".
-                        let _ =
-                            crate::commands::fleet::registry::registry().write_input(&sid, b"\x1b[C");
+                        let _ = crate::commands::fleet::registry::registry()
+                            .write_input(&sid, b"\x1b[C");
                         tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-                        let _ = crate::commands::fleet::registry::registry().write_input(&sid, b"\r");
+                        let _ =
+                            crate::commands::fleet::registry::registry().write_input(&sid, b"\r");
                     }
                 }
                 crate::commands::fleet::debug_log::athena(
@@ -804,7 +817,11 @@ pub(crate) fn execute_fleet_send_input(
             .try_lookup_label(session_id)
             .map(|l| format!(" ({l})"))
             .unwrap_or_default(),
-        if press_enter { " (submit confirmed asynchronously)" } else { "" },
+        if press_enter {
+            " (submit confirmed asynchronously)"
+        } else {
+            ""
+        },
     )))
 }
 
@@ -845,10 +862,14 @@ pub(crate) fn multiselect_keystrokes(lines: &[String], text: &str) -> Option<Vec
     for l in lines {
         let t = l.trim_start().trim_start_matches('❯').trim_start();
         let Some(dot) = t.find(". ") else { continue };
-        let Ok(num) = t[..dot].trim().parse::<usize>() else { continue };
+        let Ok(num) = t[..dot].trim().parse::<usize>() else {
+            continue;
+        };
         let rest = &t[dot + 2..];
         let Some(ob) = rest.find('[') else { continue };
-        let Some(cb_rel) = rest[ob..].find(']') else { continue };
+        let Some(cb_rel) = rest[ob..].find(']') else {
+            continue;
+        };
         let inside = &rest[ob + 1..ob + cb_rel];
         let checked = inside.contains('✔') || inside.to_lowercase().contains('x');
         let label = rest[ob + cb_rel + 1..].trim();
@@ -905,7 +926,9 @@ pub(crate) fn multiselect_keystrokes(lines: &[String], text: &str) -> Option<Vec
     Some(keys)
 }
 
-pub(crate) fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+pub(crate) fn execute_fleet_broadcast(
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
     let target = params
         .get("target")
         .and_then(|v| v.as_str())
@@ -939,7 +962,11 @@ pub(crate) fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<Exec
         "ids" => params
             .get("ids")
             .and_then(|v| v.as_array())
-            .map(|arr| arr.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|x| x.as_str().map(str::to_string))
+                    .collect()
+            })
             .unwrap_or_default(),
         other => {
             return Err(AppError::Internal(format!(
@@ -1096,7 +1123,11 @@ pub(crate) fn execute_fleet_spawn(
     let args: Vec<String> = params
         .get("args")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
     let cols = params.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
     let rows = params.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
@@ -1243,14 +1274,22 @@ pub(crate) fn execute_fleet_dispatch(
         let cols = spec.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
         let rows = spec.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
 
-        let id = match crate::commands::fleet::pty::spawn_session(
+        // CLI-safe form of the role name (`athena-<role>`, lowercase-kebab,
+        // ≤ 24 chars) rides down into the spawn as `--name` so the process
+        // itself carries the identity; the spawn returns the collision-resolved
+        // name so the registry display name below is built around the same
+        // string. The sentinel prefix comes from `cli_safe_label`, which reads
+        // `ATHENA_SESSION_NAME_SENTINEL` — see the guard note below.
+        let cli_label = crate::commands::fleet::naming::cli_safe_label(&role);
+        let (id, cli_name) = match crate::commands::fleet::pty::spawn_session_named(
             app.clone(),
             std::path::PathBuf::from(cwd),
             args,
             cols,
             rows,
+            Some(cli_label),
         ) {
-            Ok(id) => id,
+            Ok(spawned) => spawned,
             Err(e) => {
                 failures.push(format!("role `{role}`: spawn failed: {e}"));
                 continue;
@@ -1268,12 +1307,17 @@ pub(crate) fn execute_fleet_dispatch(
         // falls back to `project_label` while `name` is unset). Sourced from
         // the shared `ATHENA_SESSION_NAME_SENTINEL` so the autonomous
         // `fleet_send_input`/`fleet_kill` guard (`is_athena_owned`) recognizes
-        // these dispatched sessions as Athena-owned (prefix match).
+        // these dispatched sessions as Athena-owned (prefix match). The CLI
+        // part is the name the process was actually spawned with (including
+        // any collision discriminator), so registry and `claude agents --json`
+        // agree; the `·` + project label stay registry-only.
         let dispatch_name = {
-            let base = format!(
-                "{}-{role}",
-                crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
-            );
+            let base = cli_name.unwrap_or_else(|| {
+                format!(
+                    "{}-{role}",
+                    crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+                )
+            });
             match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
                 Some(label) => format!("{base} · {label}"),
                 None => base,
@@ -1376,8 +1420,8 @@ pub(crate) fn execute_fleet_intervene(
             {
                 Ok(new_id) => {
                     tokio::time::sleep(std::time::Duration::from_secs(25)).await;
-                    let _ = crate::commands::fleet::registry::registry()
-                        .write_text_line(&new_id, &msg);
+                    let _ =
+                        crate::commands::fleet::registry::registry().write_text_line(&new_id, &msg);
                 }
                 Err(e) => {
                     tracing::warn!(session_id = %sid, error = %e, "dozed-target wake failed (intervene)");
@@ -1460,10 +1504,13 @@ pub(crate) fn execute_fleet_redirect_op(
         match mem.record_intervention(sid) {
             Ok(()) => {
                 // Confirmed-submit primitive (split text/Enter — see write_text_line).
-                if let Err(e) = crate::commands::fleet::registry::registry()
-                    .write_text_line(sid, &message)
+                if let Err(e) =
+                    crate::commands::fleet::registry::registry().write_text_line(sid, &message)
                 {
-                    skipped.push(format!("`{}` PTY write failed: {e}", &sid[..sid.len().min(8)]));
+                    skipped.push(format!(
+                        "`{}` PTY write failed: {e}",
+                        &sid[..sid.len().min(8)]
+                    ));
                     continue;
                 }
                 delivered.push(format!("`{}`", &sid[..sid.len().min(8)]));
@@ -1541,7 +1588,10 @@ pub(crate) async fn execute_fleet_resume(
 ) -> Result<ExecuteResult, AppError> {
     let pid = params
         .get("pid")
-        .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.trim().parse::<u64>().ok())))
+        .and_then(|v| {
+            v.as_u64()
+                .or_else(|| v.as_str().and_then(|s| s.trim().parse::<u64>().ok()))
+        })
         .and_then(|n| u32::try_from(n).ok())
         .ok_or_else(|| AppError::Internal("fleet_resume: missing/invalid `pid`".into()))?;
     let cwd = params
@@ -1675,11 +1725,7 @@ impl FleetPlanRow {
 /// Read an optional, trimmed, length-bounded string field off a plan row.
 /// `Ok(None)` for absent/blank; the error string is a suffix the caller
 /// prefixes with the field name.
-fn bounded_opt(
-    row: &serde_json::Value,
-    key: &str,
-    max: usize,
-) -> Result<Option<String>, String> {
+fn bounded_opt(row: &serde_json::Value, key: &str, max: usize) -> Result<Option<String>, String> {
     let Some(raw) = row.get(key) else {
         return Ok(None);
     };
@@ -1838,7 +1884,9 @@ pub async fn companion_dispatch_fleet_plan(
 
     // Claim BEFORE the executors run. Validation errors above are safe to
     // retry, so they must not burn the card.
-    let card_id = card_id.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    let card_id = card_id
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
     if let Some(id) = card_id.as_deref() {
         let conn = state.user_db.get()?;
         crate::commands::companion::chat_cards::claim_for_dispatch(&conn, id)?;
@@ -2023,10 +2071,7 @@ mod fleet_plan_tests {
 
     /// A real directory inside a registered project (canonicalize needs one).
     fn fixture_project() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "personas-fleet-plan-{}",
-            std::process::id()
-        ));
+        let dir = std::env::temp_dir().join(format!("personas-fleet-plan-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::canonicalize(&dir).unwrap()
     }
@@ -2111,9 +2156,12 @@ mod fleet_plan_tests {
         let root = fixture_project();
         let pool = pool_with_project(&root);
         let cwd = root.to_string_lossy().to_string();
-        let (intent, plan) =
-            validate_fleet_plan(&pool, "  tidy the repo  ", &[row(&cwd, " write tests ", None)])
-                .expect("plan should validate");
+        let (intent, plan) = validate_fleet_plan(
+            &pool,
+            "  tidy the repo  ",
+            &[row(&cwd, " write tests ", None)],
+        )
+        .expect("plan should validate");
         assert_eq!(intent, "tidy the repo");
         assert_eq!(plan.len(), 1);
         assert_eq!(plan[0].objective, "write tests");
@@ -2179,10 +2227,12 @@ mod fleet_plan_tests {
         let root = fixture_project();
         let pool = pool_with_project(&root);
         let cwd = root.to_string_lossy().to_string();
-        assert!(
-            validate_fleet_plan(&pool, "i", &[row(&cwd, "o", Some("run the scan sweep please"))])
-                .is_err()
-        );
+        assert!(validate_fleet_plan(
+            &pool,
+            "i",
+            &[row(&cwd, "o", Some("run the scan sweep please"))]
+        )
+        .is_err());
         // A real slug passes, with or without a leading slash.
         for s in ["scan-sweep", "/scan-sweep"] {
             let (_, plan) =
@@ -2323,7 +2373,10 @@ mod fleet_plan_tests {
             rationale.contains("/scan-sweep write the missing tests"),
             "{rationale}"
         );
-        assert!(rationale.contains("review the token refresh"), "{rationale}");
+        assert!(
+            rationale.contains("review the token refresh"),
+            "{rationale}"
+        );
     }
 
     #[test]

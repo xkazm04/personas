@@ -22,21 +22,10 @@ use crate::db::repos::execution::executions;
 use crate::db::repos::resources::{deployment_history, tools};
 use crate::engine;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth};
+use crate::ipc_auth::require_auth;
+use crate::utils::extract_panic_message;
 use crate::AppState;
 use personas_macros::requires;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -133,7 +122,6 @@ pub async fn cloud_connect(
     url: String,
     api_key: String,
 ) -> Result<u64, AppError> {
-
     // Reject concurrent connect attempts. The health check can take up to 30s
     // and without this guard two calls could race through health, keyring write,
     // and mutex set — potentially interleaving URL from one call with the API
@@ -382,6 +370,14 @@ pub async fn cloud_diagnose(
     let is_https = parsed.scheme() == "https";
     if is_https {
         let step_start = Instant::now();
+        // Deliberately NOT `SSRF_SAFE_HTTP`. `parsed` IS a user-typed host
+        // (the `url` argument of `cloud_diagnose`), but `validate_cloud_url`
+        // above ADMITS `http://localhost`, `127.0.0.1` and `[::1]` on purpose —
+        // a self-hosted orchestrator on this machine is a supported
+        // deployment. An SSRF-safe resolver would reject exactly that target
+        // and turn the diagnostics panel's most useful case into a hard error.
+        // The scheme gate is the control that remains: anything non-loopback
+        // must be `https`, so the API key below is never sent in clear.
         let tls_client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
@@ -451,6 +447,10 @@ pub async fn cloud_diagnose(
     let normalized = parsed.as_str().trim_end_matches('/').to_string();
     let step_start = Instant::now();
     let health_url = format!("{normalized}/health");
+    // Same deliberate choice as the TLS probe above: a user-typed host that is
+    // ALLOWED to be loopback. The API key rides in `Authorization`
+    // (`bearer_auth` below), which reqwest strips across a host change, so an
+    // attacker-authored `302` cannot carry it off the host the user named.
     let http_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
         .build()
@@ -754,12 +754,17 @@ pub async fn cloud_execute_persona(
             );
             let update = UpdateExecutionStatus {
                 status: crate::engine::types::ExecutionState::Failed,
-                error_message: Some(format!("Internal error: cloud execution task panicked: {msg}")),
+                error_message: Some(format!(
+                    "Internal error: cloud execution task panicked: {msg}"
+                )),
                 ..Default::default()
             };
             let _ =
                 executions::update_status_if_not_final(&pool_for_panic, &exec_id_for_panic, update);
-            exec_ids_map_for_panic.lock().await.remove(&exec_id_for_panic);
+            exec_ids_map_for_panic
+                .lock()
+                .await
+                .remove(&exec_id_for_panic);
         }
     });
 

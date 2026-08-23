@@ -125,10 +125,11 @@ pub fn snippet_for(body: &str, query_lc: &str) -> String {
         return body.chars().take(160).collect();
     };
     let start = crate::utils::text::floor_char_boundary(body, pos.saturating_sub(60));
-    let end = crate::utils::text::ceil_char_boundary(body, (pos + query_lc.len() + 100).min(body.len()));
+    let end =
+        crate::utils::text::ceil_char_boundary(body, (pos + query_lc.len() + 100).min(body.len()));
     let mut s = body[start..end].replace('\n', " ");
     if start > 0 {
-        s.insert_str(0, "…");
+        s.insert(0, '…');
     }
     if end < body.len() {
         s.push('…');

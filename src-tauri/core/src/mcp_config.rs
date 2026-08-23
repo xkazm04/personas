@@ -102,7 +102,10 @@ impl Serialize for HttpTag {
 
 impl McpServer {
     /// A stdio server: `command` plus optional `args`.
-    pub fn stdio(command: impl Into<String>, args: impl IntoIterator<Item = impl Into<String>>) -> Self {
+    pub fn stdio(
+        command: impl Into<String>,
+        args: impl IntoIterator<Item = impl Into<String>>,
+    ) -> Self {
         McpServer::Stdio {
             kind: StdioTag,
             command: command.into(),
@@ -215,7 +218,10 @@ mod tests {
 
     #[test]
     fn config_document_nests_under_mcp_servers() {
-        let doc = mcp_config_json([("personas", McpServer::stdio("personas-mcp", ["--db-path", "x"]))]);
+        let doc = mcp_config_json([(
+            "personas",
+            McpServer::stdio("personas-mcp", ["--db-path", "x"]),
+        )]);
         assert_eq!(doc["mcpServers"]["personas"]["type"], "stdio");
         assert_eq!(doc.as_object().unwrap().len(), 1);
     }

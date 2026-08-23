@@ -1,0 +1,67 @@
+# Baseline: files in src/lib/bindings/ with NO `#[derive(TS)] #[ts(export)]` type
+# behind them. ts-rs never deletes, so each of these is frozen at whatever shape
+# it had the day its Rust type went away -- while the command it types kept moving.
+#
+# scripts/check-binding-orphans.mjs fails on any orphan NOT listed here, and ALSO
+# fails when a listed name stops being an orphan (census convention,
+# scripts/census/rules.json:1-20) -- a silent drop is what a broken matcher looks
+# like, so clearing one costs a deleted line here.
+#
+# MEASURED at the commit that added this file: 1,008 `#[ts(export)]` types across
+# src-tauri/, 1,039 binding files, 35 orphans. Of the 35, **30 are still
+# referenced by app code and 20 are still the declared return type of a live
+# `invoke<T>`** -- which is precisely why scripts/check-unused-bindings.sh
+# protects them: "imported" is its definition of used, so the most dangerous
+# orphans are the ones it certifies as fine.
+#
+# Two sub-classes, both real, distinguished in the reasons below:
+#   * 13 whose Rust type STILL EXISTS but no longer carries the TS derive. The
+#     binding and the struct drift apart with nothing comparing them.
+#   * 22 with no Rust type of that name at all. The command behind most of these
+#     returns `serde_json::Value` today, so the TS type is a claim nobody checks.
+#
+# The recorded figure for this population was 29 (2026-08-17, three independent
+# implementations reporting 48/31/29). This walk finds 35 and resolves the three
+# `declare_lifecycle!`-generated types the loosest of those got wrong.
+#
+# NONE of these is fixed here: every fix is either a Rust edit (restore the
+# derive, or give the command a named return type) or a regeneration run, and
+# both need cargo. They are baselined so the NEXT one costs a line in this file.
+#
+# One bare type name per line. `#` starts a comment.
+
+AuthDetection  # Rust type still exists (src-tauri/src/commands/credentials/auth_detect.rs) but no longer derives TS; 2 app ref(s), invoke<AuthDetection> for "detect_authenticated_services"
+BridgeActionResult  # Rust type still exists (src-tauri/engine/src/desktop_bridges.rs) but no longer derives TS; 0 app ref(s), not invoke-typed
+Continuation  # Rust type still exists (src-tauri/core/src/types.rs) but no longer derives TS; 7 app ref(s), not invoke-typed
+CredentialDesignHealthcheckResult  # no Rust type of this name; 2 app ref(s), invoke<CredentialDesignHealthcheckResult> for "test_credential_design_healthcheck"
+CredentialFieldMeta  # no Rust type of this name; 1 app ref(s), invoke<CredentialFieldMeta> for "list_credential_fields"
+DesignStartResult  # no Rust type of this name; 2 app ref(s), invoke<DesignStartResult> for "start_design_analysis"
+ForageConfidence  # Rust type still exists (src-tauri/src/commands/credentials/foraging.rs) but no longer derives TS; 1 app ref(s), not invoke-typed
+ForageImportResult  # no Rust type of this name; 1 app ref(s), invoke<ForageImportResult> for "import_foraged_credential"
+ForageSource  # Rust type still exists (src-tauri/src/commands/credentials/foraging.rs) but no longer derives TS; 3 app ref(s), not invoke-typed
+ForagedCredential  # Rust type still exists (src-tauri/src/commands/credentials/foraging.rs) but no longer derives TS; 2 app ref(s), not invoke-typed
+ForagingScanResult  # Rust type still exists (src-tauri/src/commands/credentials/foraging.rs) but no longer derives TS; 2 app ref(s), invoke<ForagingScanResult> for "scan_credential_sources"
+GitLabJob  # no Rust type of this name; 3 app ref(s), invoke<GitLabJob> for "gitlab_list_pipeline_jobs"
+GitLabPipeline  # no Rust type of this name; 4 app ref(s), invoke<GitLabPipeline> for "gitlab_trigger_pipeline"
+HealthcheckEntry  # Rust type still exists (src-tauri/core/src/healthcheck_ledger.rs) but no longer derives TS; 1 app ref(s), not invoke-typed
+HealthcheckResult  # Rust type still exists (src-tauri/src/engine/healthcheck.rs) but no longer derives TS; 1 app ref(s), invoke<HealthcheckResult> for "healthcheck_credential"
+ImportResult  # Rust type still exists (src-tauri/src/commands/core/import_export.rs) but no longer derives TS; 1 app ref(s), invoke<ImportResult> for "import_persona"
+McpPingResult  # no Rust type of this name; 1 app ref(s), invoke<McpPingResult> for "healthcheck_mcp_preview"
+ModelTestConfig  # no Rust type of this name; 8 app ref(s), not invoke-typed
+NegotiationStartResult  # no Rust type of this name; 1 app ref(s), invoke<NegotiationStartResult> for "start_credential_negotiation"
+ObservabilityMetrics  # no Rust type of this name; 2 app ref(s), not invoke-typed
+RotationHistoryEntry  # no Rust type of this name; 2 app ref(s), invoke<RotationHistoryEntry> for "get_rotation_history"
+RotationPolicy  # no Rust type of this name; 2 app ref(s), invoke<RotationPolicy> for "list_rotation_policies"
+RuntimeStatus  # Rust type still exists (src-tauri/engine/src/desktop_runtime.rs) but no longer derives TS; 0 app ref(s), not invoke-typed
+SchemaProposalSnapshot  # no Rust type of this name; 1 app ref(s), invoke<SchemaProposalSnapshot> for "get_schema_proposal_snapshot"
+SetupStartResult  # no Rust type of this name; 1 app ref(s), invoke<SetupStartResult> for "start_setup_install"
+StartOAuthParams  # no Rust type of this name; 2 app ref(s), not invoke-typed
+StartPhase  # no Rust type of this name; 0 app ref(s), not invoke-typed
+StepHelpResult  # no Rust type of this name; 1 app ref(s), invoke<StepHelpResult> for "get_negotiation_step_help"
+TemplateAdoptConfirmResult  # no Rust type of this name; 0 app ref(s), not invoke-typed
+TemplateAdoptStartResult  # no Rust type of this name; 0 app ref(s), not invoke-typed
+WorkflowJob  # Rust type still exists (src-tauri/src/commands/infrastructure/workflows.rs) but no longer derives TS; 1 app ref(s), not invoke-typed
+WorkflowsOverview  # Rust type still exists (src-tauri/src/commands/infrastructure/workflows.rs) but no longer derives TS; 1 app ref(s), invoke<WorkflowsOverview> for "get_workflows_overview"
+ZapierStep  # no Rust type of this name; 2 app ref(s), not invoke-typed
+ZapierWebhookResult  # no Rust type of this name; 2 app ref(s), invoke<ZapierWebhookResult> for "zapier_trigger_webhook"
+ZapierZap  # no Rust type of this name; 4 app ref(s), invoke<ZapierZap> for "zapier_list_zaps"

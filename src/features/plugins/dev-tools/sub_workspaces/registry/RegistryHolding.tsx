@@ -13,11 +13,14 @@
 // and it is not. Showing the other holders turns an invisible shared dependency
 // into something the operator can see before acting on it.
 
-import { Boxes, GitBranch, Link2Off, Loader2, TriangleAlert, Users } from 'lucide-react';
+import { Boxes, GitBranch, Link2Off, Loader2, RefreshCw, TriangleAlert, Users } from 'lucide-react';
 
+import { syncRegistryClone } from '@/api/devTools/devTools';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useToastStore } from '@/stores/toastStore';
 
 import { RegistryWiring } from './RegistryWiring';
 import { LANES, unlinkRegistry, workspacesOn, type Registry } from './registryLinkStore';
@@ -36,6 +39,29 @@ export function RegistryHolding({
 }) {
   const { t, tx } = useTranslation();
   const tr = t.plugins.dev_tools.registry;
+  const addToast = useToastStore((s) => s.addToast);
+
+  // Explicit only. The sync is a network call plus a working-tree write against
+  // a directory other sessions and Ascent share — that is an operator gesture,
+  // not something a render should do. Dispatches sync themselves (see
+  // skillsWorkbenchData); this button is for "make it current before I look".
+  const onSync = async () => {
+    if (!registry) return;
+    try {
+      const r = await syncRegistryClone(registry.clonePath);
+      addToast(
+        r.state === 'up_to_date'
+          ? tr.sync_current
+          : tx(r.commits === 1 ? tr.sync_pulled_one : tr.sync_pulled_other, { count: r.commits }),
+        'success',
+      );
+    } catch (e) {
+      // The backend's sentence names which of connectivity / mapping / local
+      // state to look at; a generic failure toast would discard exactly that.
+      const detail = e instanceof Error ? e.message.split('\n')[0] : String(e);
+      addToast(`${tr.sync_failed} ${detail}`, 'error');
+    }
+  };
 
   if (!registry) {
     return (
@@ -130,6 +156,16 @@ export function RegistryHolding({
       </div>
 
       <div className="flex items-center gap-2">
+        {registry.state === 'paired' && (
+          <AsyncButton
+            size="sm"
+            variant="ghost"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={onSync}
+          >
+            {tr.sync}
+          </AsyncButton>
+        )}
         <Button
           size="sm"
           variant="ghost"

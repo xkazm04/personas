@@ -21,7 +21,24 @@ use personas_core::error::AppError;
 /// Ed25519 private key behind the claimed peer_id. The version check at both
 /// ends of the handshake hard-rejects mismatches, so v1 peers cannot connect --
 /// that clean break is deliberate: a v1 peer is by definition unauthenticated.
-pub const PROTOCOL_VERSION: u32 = 2;
+///
+/// **v3 (channel-bound handshake).** v2's proofs were genuine but *portable*:
+/// no field in any of the three transcripts came from the TLS session carrying
+/// them. Combined with the deliberately-unverified QUIC certificates in
+/// [`super::transport`] and no application-layer encryption, an on-path
+/// attacker could terminate TLS to each side and relay all three signed
+/// messages verbatim. Both peers then verified each other's real signatures
+/// and -- worse -- derived the *same* [`pairing_fingerprint`], so the human
+/// comparison the pairing ceremony rests on succeeded under an active MITM.
+/// v3 mixes [`super::transport::channel_binding`] into every transcript and
+/// into the fingerprint, so a relayed proof no longer verifies.
+///
+/// The version check is a hard reject on both sides, so a v2 peer meeting a v3
+/// peer gets a named "incompatible protocol version" error rather than a
+/// baffling signature failure. There is deliberately NO negotiation: an
+/// attacker would simply advertise v2, which is exactly the downgrade this
+/// revision exists to prevent.
+pub const PROTOCOL_VERSION: u32 = 3;
 
 /// Maximum message size (16 MB) to prevent memory exhaustion from malicious peers.
 const MAX_MESSAGE_SIZE: u32 = 16 * 1024 * 1024;
@@ -32,10 +49,10 @@ pub const NONCE_LEN: usize = 32;
 /// Domain separator for every signature in this protocol. Prevents a signature
 /// produced for one purpose (identity card, enclave seal, a future protocol
 /// revision) from being replayed as a handshake proof.
-pub const HANDSHAKE_DOMAIN: &str = "personas-p2p-handshake/v2";
+pub const HANDSHAKE_DOMAIN: &str = "personas-p2p-handshake/v3";
 
 /// Domain separator for the pairing fingerprint derivation.
-pub const PAIRING_DOMAIN: &str = "personas-p2p-pairing/v1";
+pub const PAIRING_DOMAIN: &str = "personas-p2p-pairing/v2";
 
 /// Top-level wire protocol message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -200,9 +217,9 @@ pub struct AgentEnvelope {
 //
 // Three legs, because two are not enough for *mutual* freshness:
 //
-//   A -> B  Hello        sig_a1 = Sign_A( "hello"        | A | nonce_a )
-//   B -> A  HelloAck     sig_b  = Sign_B( "helloack"     | B | nonce_b | nonce_a )
-//   A -> B  HelloConfirm sig_a2 = Sign_A( "helloconfirm" | A | nonce_a | nonce_b )
+//   A -> B  Hello        sig_a1 = Sign_A( "hello"        | A | cb | nonce_a )
+//   B -> A  HelloAck     sig_b  = Sign_B( "helloack"     | B | cb | nonce_b | nonce_a )
+//   A -> B  HelloConfirm sig_a2 = Sign_A( "helloconfirm" | A | cb | nonce_a | nonce_b )
 //
 // `sig_a1` alone proves key possession but not liveness — it contains nothing
 // B chose, so a recorded Hello replays forever. `sig_a2` closes that: it covers
@@ -210,24 +227,35 @@ pub struct AgentEnvelope {
 // covers A's nonce. Each side therefore ends the handshake holding a signature
 // over a value it personally contributed.
 //
-// The QUIC/TLS layer below is unchanged and provides confidentiality only. Its
-// certificates are per-bind self-signed and unrelated to the Ed25519 identity —
-// authentication is exactly this handshake, nothing else.
+// `cb` is the CHANNEL BINDING: [`super::transport::channel_binding`], an RFC
+// 5705 exporter over the QUIC/TLS session actually carrying these bytes. It is
+// what ties the two layers together, and v2 did not have it. The QUIC layer
+// gives confidentiality against a PASSIVE observer, but its certificates are
+// per-bind, self-signed and unrelated to the Ed25519 identity — nothing checks
+// them. So without `cb` the three proofs above are perfectly valid and
+// perfectly PORTABLE: an on-path attacker terminates TLS to each side and
+// forwards every signed message byte for byte, and both ends conclude they are
+// talking to each other. With `cb` the two TLS sessions export different
+// values, A signs over one and B verifies over the other, and the relay is
+// refused at the first signature check.
 
 /// Build a signing transcript.
 ///
-/// Encoding is `domain \n label \n peer_id \n nonce…`, newline-separated. This
-/// is injective because every field is drawn from a newline-free alphabet:
-/// `peer_id` is base58, nonces are base64, and both `domain` and `label` are
-/// compile-time constants. Field counts differ per label, so no two labels can
-/// produce colliding transcripts even before the label itself is compared.
-fn transcript(label: &str, peer_id: &str, nonces: &[&str]) -> Vec<u8> {
-    let mut s = String::with_capacity(128);
+/// Encoding is `domain \n label \n peer_id \n channel_binding \n nonce…`,
+/// newline-separated. This is injective because every field is drawn from a
+/// newline-free alphabet: `peer_id` is base58, the channel binding and the
+/// nonces are base64, and both `domain` and `label` are compile-time constants.
+/// Field counts differ per label, so no two labels can produce colliding
+/// transcripts even before the label itself is compared.
+fn transcript(label: &str, peer_id: &str, channel_binding: &str, nonces: &[&str]) -> Vec<u8> {
+    let mut s = String::with_capacity(160);
     s.push_str(HANDSHAKE_DOMAIN);
     s.push('\n');
     s.push_str(label);
     s.push('\n');
     s.push_str(peer_id);
+    s.push('\n');
+    s.push_str(channel_binding);
     for n in nonces {
         s.push('\n');
         s.push_str(n);
@@ -236,19 +264,43 @@ fn transcript(label: &str, peer_id: &str, nonces: &[&str]) -> Vec<u8> {
 }
 
 /// Transcript the initiator signs in `Hello`.
-pub fn hello_transcript(peer_id: &str, client_nonce: &str) -> Vec<u8> {
-    transcript("hello", peer_id, &[client_nonce])
+///
+/// `channel_binding` comes from [`super::transport::channel_binding`] on the
+/// QUIC connection this message is written to — never from the wire. Taking it
+/// from a peer-supplied field would defeat the entire mechanism.
+pub fn hello_transcript(peer_id: &str, channel_binding: &str, client_nonce: &str) -> Vec<u8> {
+    transcript("hello", peer_id, channel_binding, &[client_nonce])
 }
 
 /// Transcript the responder signs in `HelloAck` (covers the client nonce, so
 /// the responder's proof is bound to this session).
-pub fn hello_ack_transcript(peer_id: &str, server_nonce: &str, client_nonce: &str) -> Vec<u8> {
-    transcript("helloack", peer_id, &[server_nonce, client_nonce])
+pub fn hello_ack_transcript(
+    peer_id: &str,
+    channel_binding: &str,
+    server_nonce: &str,
+    client_nonce: &str,
+) -> Vec<u8> {
+    transcript(
+        "helloack",
+        peer_id,
+        channel_binding,
+        &[server_nonce, client_nonce],
+    )
 }
 
 /// Transcript the initiator signs in `HelloConfirm` (covers the server nonce).
-pub fn hello_confirm_transcript(peer_id: &str, client_nonce: &str, server_nonce: &str) -> Vec<u8> {
-    transcript("helloconfirm", peer_id, &[client_nonce, server_nonce])
+pub fn hello_confirm_transcript(
+    peer_id: &str,
+    channel_binding: &str,
+    client_nonce: &str,
+    server_nonce: &str,
+) -> Vec<u8> {
+    transcript(
+        "helloconfirm",
+        peer_id,
+        channel_binding,
+        &[client_nonce, server_nonce],
+    )
 }
 
 /// Generate a fresh base64 handshake nonce.
@@ -309,7 +361,7 @@ pub fn verify_handshake_proof(
 ///
 /// ```text
 /// (lo, hi) = sort([peer_id_a, peer_id_b])          // lexicographic
-/// digest   = SHA256("personas-p2p-pairing/v1" \n lo \n hi \n session_nonce)
+/// digest   = SHA256("personas-p2p-pairing/v2" \n lo \n hi \n session_nonce \n cb)
 /// n        = u32::from_be_bytes(digest[0..4]) % 1_000_000
 /// code     = format!("{n:06}") with a dash after 3 digits   → "042-917"
 /// ```
@@ -320,11 +372,25 @@ pub fn verify_handshake_proof(
 /// initiator in `PairRequest`) makes the code fresh per ceremony rather than a
 /// fixed function of the two identities.
 ///
+/// `channel_binding` is [`super::transport::channel_binding`] for the QUIC
+/// connection the ceremony runs over, and it is what makes the human check
+/// INDEPENDENTLY able to catch a machine-in-the-middle. In v1 this derivation
+/// was a pure function of two *public* peer_ids and a nonce that travelled on
+/// the wire, so a relaying attacker holding two TLS sessions computed nothing
+/// at all — both screens simply showed the same code and the human confirmed a
+/// MITM. Now the two sessions export different values, so the codes differ and
+/// the comparison fails, even if the handshake binding above were ever weakened.
+///
 /// Six decimal digits (~20 bits) is a comparison code, not a secret — its job
 /// is to let two humans notice that a machine-in-the-middle substituted a
 /// different peer. The modulo bias over a 32-bit draw is ~10^-4 relative and
 /// irrelevant for that purpose.
-pub fn pairing_fingerprint(peer_id_a: &str, peer_id_b: &str, session_nonce: &str) -> String {
+pub fn pairing_fingerprint(
+    peer_id_a: &str,
+    peer_id_b: &str,
+    session_nonce: &str,
+    channel_binding: &str,
+) -> String {
     let (lo, hi) = if peer_id_a <= peer_id_b {
         (peer_id_a, peer_id_b)
     } else {
@@ -338,6 +404,8 @@ pub fn pairing_fingerprint(peer_id_a: &str, peer_id_b: &str, session_nonce: &str
     hasher.update(hi.as_bytes());
     hasher.update(b"\n");
     hasher.update(session_nonce.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(channel_binding.as_bytes());
     let digest = hasher.finalize();
     let n = u32::from_be_bytes([digest[0], digest[1], digest[2], digest[3]]) % 1_000_000;
     let s = format!("{n:06}");
@@ -421,13 +489,24 @@ mod tests {
         B64.encode(key.sign(msg).to_bytes())
     }
 
+    /// A stand-in for [`super::super::transport::channel_binding`]: any two
+    /// distinct TLS sessions export distinct values, which is the only property
+    /// these tests depend on. Real exporter agreement between the two ends of
+    /// ONE session is covered by `transport::tests`, which drives real quinn.
+    fn channel() -> String {
+        generate_nonce()
+    }
+
     /// The pairing messages carry the two facts the counter-offer needs — the
     /// initiator's at-stake count out, the surviving group back — and survive
     /// the positional MessagePack encoding intact. v2 has never shipped, so
     /// adding the field was a clean wire change with no compatibility shim.
     #[test]
     fn pairing_messages_round_trip_the_counter_offer_fields() {
-        assert_eq!(PROTOCOL_VERSION, 2, "the counter-offer ships as part of v2");
+        assert_eq!(
+            PROTOCOL_VERSION, 3,
+            "the counter-offer shipped in v2 and rides along unchanged in v3"
+        );
 
         let req = Message::PairRequest {
             session_nonce: generate_nonce(),
@@ -566,20 +645,20 @@ mod tests {
         }
     }
 
-    /// The remote-job frames ship as part of the unshipped v2, so no
-    /// compatibility shim exists or is wanted. Pin the version the shape is
-    /// bound to, so adding these variants later against a SHIPPED v2 has to be
-    /// a deliberate decision rather than an accident.
+    /// The remote-job frames shipped as part of the never-released v2 and are
+    /// unchanged by the v3 channel-binding revision. Pin the version so a
+    /// future shape change against a SHIPPED protocol has to be a deliberate
+    /// decision rather than an accident.
     #[test]
-    fn remote_job_frames_are_part_of_protocol_v2() {
-        assert_eq!(PROTOCOL_VERSION, 2);
+    fn remote_job_frames_are_part_of_the_current_protocol() {
+        assert_eq!(PROTOCOL_VERSION, 3);
     }
 
     #[test]
     fn a_valid_proof_is_accepted() {
         let (peer_id, pk, key) = identity();
         let nonce = generate_nonce();
-        let t = hello_transcript(&peer_id, &nonce);
+        let t = hello_transcript(&peer_id, &channel(), &nonce);
         verify_handshake_proof(&peer_id, &pk, &t, &sign(&key, &t)).expect("valid proof");
     }
 
@@ -588,7 +667,7 @@ mod tests {
         let (peer_id, pk, _key) = identity();
         let (_, _, attacker) = identity();
         let nonce = generate_nonce();
-        let t = hello_transcript(&peer_id, &nonce);
+        let t = hello_transcript(&peer_id, &channel(), &nonce);
         let err = verify_handshake_proof(&peer_id, &pk, &t, &sign(&attacker, &t))
             .expect_err("a foreign signature must be refused");
         assert!(
@@ -603,9 +682,10 @@ mod tests {
         let (victim_peer_id, _victim_pk, _) = identity();
         let (_, attacker_pk, attacker_key) = identity();
         let nonce = generate_nonce();
-        let t = hello_transcript(&victim_peer_id, &nonce);
-        let err = verify_handshake_proof(&victim_peer_id, &attacker_pk, &t, &sign(&attacker_key, &t))
-            .expect_err("peer_id/public-key mismatch must be refused");
+        let t = hello_transcript(&victim_peer_id, &channel(), &nonce);
+        let err =
+            verify_handshake_proof(&victim_peer_id, &attacker_pk, &t, &sign(&attacker_key, &t))
+                .expect_err("peer_id/public-key mismatch must be refused");
         assert!(
             err.to_string().contains("does not match"),
             "unexpected reason: {err}"
@@ -615,27 +695,29 @@ mod tests {
     #[test]
     fn a_proof_for_a_different_nonce_does_not_verify() {
         let (peer_id, pk, key) = identity();
-        let recorded = hello_transcript(&peer_id, &generate_nonce());
+        let cb = channel();
+        let recorded = hello_transcript(&peer_id, &cb, &generate_nonce());
         let signature = sign(&key, &recorded);
         // Replay the old signature against a fresh session's transcript.
-        let fresh = hello_transcript(&peer_id, &generate_nonce());
+        let fresh = hello_transcript(&peer_id, &cb, &generate_nonce());
         assert!(verify_handshake_proof(&peer_id, &pk, &fresh, &signature).is_err());
     }
 
     #[test]
     fn transcript_labels_are_domain_separated() {
         let (peer_id, _, _) = identity();
+        let cb = channel();
         let a = generate_nonce();
         let b = generate_nonce();
         assert_ne!(
-            hello_ack_transcript(&peer_id, &a, &b),
-            hello_confirm_transcript(&peer_id, &a, &b),
+            hello_ack_transcript(&peer_id, &cb, &a, &b),
+            hello_confirm_transcript(&peer_id, &cb, &a, &b),
             "an ack proof must not be reusable as a confirm proof"
         );
         // Nonce order is load-bearing too.
         assert_ne!(
-            hello_ack_transcript(&peer_id, &a, &b),
-            hello_ack_transcript(&peer_id, &b, &a)
+            hello_ack_transcript(&peer_id, &cb, &a, &b),
+            hello_ack_transcript(&peer_id, &cb, &b, &a)
         );
     }
 
@@ -654,11 +736,16 @@ mod tests {
         let (a, _, _) = identity();
         let (b, _, _) = identity();
         let session = generate_nonce();
+        // One shared TLS session => one shared binding on both ends.
+        let cb = channel();
 
         // Initiator computes (self, remote); responder computes (remote, self).
-        let initiator = pairing_fingerprint(&a, &b, &session);
-        let responder = pairing_fingerprint(&b, &a, &session);
-        assert_eq!(initiator, responder, "fingerprint must be order-independent");
+        let initiator = pairing_fingerprint(&a, &b, &session, &cb);
+        let responder = pairing_fingerprint(&b, &a, &session, &cb);
+        assert_eq!(
+            initiator, responder,
+            "fingerprint must be order-independent"
+        );
         assert_eq!(initiator.len(), 7, "format is NNN-NNN");
         assert_eq!(&initiator[3..4], "-");
         assert!(initiator
@@ -674,14 +761,15 @@ mod tests {
         let (c, _, _) = identity();
         let s1 = generate_nonce();
         let s2 = generate_nonce();
+        let cb = channel();
         assert_ne!(
-            pairing_fingerprint(&a, &b, &s1),
-            pairing_fingerprint(&a, &b, &s2),
+            pairing_fingerprint(&a, &b, &s1, &cb),
+            pairing_fingerprint(&a, &b, &s2, &cb),
             "a new ceremony must produce a new code"
         );
         assert_ne!(
-            pairing_fingerprint(&a, &b, &s1),
-            pairing_fingerprint(&a, &c, &s1),
+            pairing_fingerprint(&a, &b, &s1, &cb),
+            pairing_fingerprint(&a, &c, &s1, &cb),
             "a substituted peer must produce a different code"
         );
     }
@@ -691,9 +779,152 @@ mod tests {
         let (a, _, _) = identity();
         let (b, _, _) = identity();
         let s = generate_nonce();
+        let cb = channel();
         assert_eq!(
-            pairing_fingerprint(&a, &b, &s),
-            pairing_fingerprint(&a, &b, &s)
+            pairing_fingerprint(&a, &b, &s, &cb),
+            pairing_fingerprint(&a, &b, &s, &cb)
+        );
+    }
+
+    // -- Channel binding: the v3 property -------------------------------
+
+    /// **The regression test for the v2 MITM.**
+    ///
+    /// Replays the full three-leg handshake through a relay. `M` terminates TLS
+    /// to each side, so it holds two distinct sessions (`cb_am`, `cb_mb`) and
+    /// two distinct exporter values. It forwards every signed message BYTE FOR
+    /// BYTE — it forges nothing, it does not need either private key, and every
+    /// signature it relays is genuine. In v2 that was enough: nothing in any
+    /// transcript came from the channel, so all three proofs verified at the
+    /// far end and both peers concluded they were talking to each other.
+    ///
+    /// Under v3 each side builds its verification transcript from the binding
+    /// of ITS OWN session, so all three legs must be refused.
+    #[test]
+    fn a_relayed_handshake_is_refused_at_every_leg() {
+        let (a_id, a_pk, a_key) = identity();
+        let (b_id, b_pk, b_key) = identity();
+
+        // Two TLS sessions, because the attacker terminated in the middle.
+        let cb_am = channel();
+        let cb_mb = channel();
+        assert_ne!(cb_am, cb_mb, "a relay cannot hold one session end to end");
+
+        let nonce_a = generate_nonce();
+        let nonce_b = generate_nonce();
+
+        // Leg 1 — A signs on A<->M, M relays it verbatim onto M<->B.
+        let hello_sig = sign(&a_key, &hello_transcript(&a_id, &cb_am, &nonce_a));
+        let err = verify_handshake_proof(
+            &a_id,
+            &a_pk,
+            &hello_transcript(&a_id, &cb_mb, &nonce_a), // B's own channel
+            &hello_sig,
+        )
+        .expect_err("a relayed Hello must not verify at the responder");
+        assert!(
+            err.to_string().contains("did not verify"),
+            "unexpected reason: {err}"
+        );
+
+        // Leg 2 — B signs on M<->B, M relays it verbatim onto A<->M.
+        let ack_sig = sign(
+            &b_key,
+            &hello_ack_transcript(&b_id, &cb_mb, &nonce_b, &nonce_a),
+        );
+        assert!(
+            verify_handshake_proof(
+                &b_id,
+                &b_pk,
+                &hello_ack_transcript(&b_id, &cb_am, &nonce_b, &nonce_a),
+                &ack_sig,
+            )
+            .is_err(),
+            "a relayed HelloAck must not verify at the initiator"
+        );
+
+        // Leg 3 — the confirm, same shape.
+        let confirm_sig = sign(
+            &a_key,
+            &hello_confirm_transcript(&a_id, &cb_am, &nonce_a, &nonce_b),
+        );
+        assert!(
+            verify_handshake_proof(
+                &a_id,
+                &a_pk,
+                &hello_confirm_transcript(&a_id, &cb_mb, &nonce_a, &nonce_b),
+                &confirm_sig,
+            )
+            .is_err(),
+            "a relayed HelloConfirm must not verify at the responder"
+        );
+
+        // Control: on ONE honest end-to-end session all three legs verify, so
+        // the rejections above are the binding at work and not a broken fixture.
+        let cb = channel();
+        for (id, pk, sig_key, t) in [
+            (&a_id, &a_pk, &a_key, hello_transcript(&a_id, &cb, &nonce_a)),
+            (
+                &b_id,
+                &b_pk,
+                &b_key,
+                hello_ack_transcript(&b_id, &cb, &nonce_b, &nonce_a),
+            ),
+            (
+                &a_id,
+                &a_pk,
+                &a_key,
+                hello_confirm_transcript(&a_id, &cb, &nonce_a, &nonce_b),
+            ),
+        ] {
+            verify_handshake_proof(id, pk, &t, &sign(sig_key, &t))
+                .expect("an honest single-channel handshake must still succeed");
+        }
+    }
+
+    /// The property the transcripts gained, stated directly: identical identity
+    /// and identical nonces over two different channels must not produce the
+    /// same bytes to sign. Without it, a signature is portable between sessions.
+    #[test]
+    fn transcripts_differ_across_channels() {
+        let (peer_id, _, _) = identity();
+        let na = generate_nonce();
+        let nb = generate_nonce();
+        let cb1 = channel();
+        let cb2 = channel();
+
+        assert_ne!(
+            hello_transcript(&peer_id, &cb1, &na),
+            hello_transcript(&peer_id, &cb2, &na)
+        );
+        assert_ne!(
+            hello_ack_transcript(&peer_id, &cb1, &nb, &na),
+            hello_ack_transcript(&peer_id, &cb2, &nb, &na)
+        );
+        assert_ne!(
+            hello_confirm_transcript(&peer_id, &cb1, &na, &nb),
+            hello_confirm_transcript(&peer_id, &cb2, &na, &nb)
+        );
+    }
+
+    /// Defense in depth for the human half of pairing. Even if the handshake
+    /// binding above were ever weakened, a relay holding two sessions makes the
+    /// two screens show DIFFERENT six-digit codes — which is exactly what the
+    /// ceremony asks the operator to check, and what v1 of this derivation
+    /// could never deliver.
+    #[test]
+    fn a_relay_cannot_make_both_screens_show_the_same_code() {
+        let (a, _, _) = identity();
+        let (b, _, _) = identity();
+        // The relay chooses the session nonce it forwards, so give it the most
+        // favourable case: the SAME nonce reaches both ends.
+        let session = generate_nonce();
+
+        let shown_to_a = pairing_fingerprint(&a, &b, &session, &channel());
+        let shown_to_b = pairing_fingerprint(&b, &a, &session, &channel());
+        assert_ne!(
+            shown_to_a, shown_to_b,
+            "two TLS sessions must not derive one comparison code"
         );
     }
 }

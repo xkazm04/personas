@@ -37,9 +37,7 @@ fn broadcast(app: &AppHandle, state: &RadioState) {
 }
 
 #[tauri::command]
-pub fn radio_list_stations(
-    state: State<'_, RadioServiceHandle>,
-) -> Result<Vec<Station>, AppError> {
+pub fn radio_list_stations(state: State<'_, RadioServiceHandle>) -> Result<Vec<Station>, AppError> {
     with_service(&state, |svc| svc.stations().to_vec())
 }
 
@@ -220,6 +218,10 @@ pub async fn radio_fetch_somafm_metadata(slug: String) -> Result<Option<StreamMe
         return Ok(None);
     }
     let url = format!("https://somafm.com/songs/{slug}.json");
+    // Not `SHARED_HTTP`: this needs a 5 s deadline (a metadata blip must not
+    // stall the player) and a User-Agent SomaFM expects. The host is the
+    // compile-time literal `somafm.com` and `slug` is checked by
+    // `is_safe_somafm_slug`, so nothing user-supplied reaches the authority.
     let client = match reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .user_agent("Personas/0.1 (radio metadata)")

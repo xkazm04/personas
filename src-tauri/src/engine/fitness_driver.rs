@@ -127,14 +127,13 @@ pub fn score_measured_fitness(
     } else {
         let scored: Vec<f64> = samples
             .iter()
-            .map(|s| {
+            .filter_map(|s| {
                 if !s.success {
                     Some(0.0)
                 } else {
                     s.eval_composite
                 }
             })
-            .flatten()
             .collect();
         if !scored.is_empty() {
             (scored.iter().sum::<f64>() / scored.len() as f64, "eval")
@@ -195,10 +194,9 @@ pub fn workload_replay_scenarios(pool: &DbPool, persona_id: &str, n: usize) -> V
         Ok(s) => s,
         Err(_) => return Vec::new(),
     };
-    let inputs: Vec<String> = match stmt.query_map(
-        rusqlite::params![persona_id, n as i64],
-        |row| row.get::<_, String>(0),
-    ) {
+    let inputs: Vec<String> = match stmt.query_map(rusqlite::params![persona_id, n as i64], |row| {
+        row.get::<_, String>(0)
+    }) {
         Ok(rows) => rows.flatten().collect(),
         Err(_) => return Vec::new(),
     };
@@ -346,9 +344,7 @@ pub fn renorm_composite(
         return None;
     }
     let total_w: f64 = weighted.iter().map(|(_, w)| w).sum();
-    Some(
-        (weighted.iter().map(|(s, w)| s * w).sum::<f64>() / total_w).clamp(0.0, 1.0),
-    )
+    Some((weighted.iter().map(|(s, w)| s * w).sum::<f64>() / total_w).clamp(0.0, 1.0))
 }
 
 /// Materialize an ephemeral candidate persona from a genome for replay. Never
@@ -403,7 +399,11 @@ mod tests {
         let samples = vec![sample(3, 4, 0.0, 0, true), sample(1, 4, 0.0, 0, true)];
         let f = score_measured_fitness(&samples, &objective()).unwrap();
         assert_eq!(f.quality_basis, "assertions");
-        assert!((f.quality - 0.5).abs() < 1e-9, "4/8 assertions = 0.5, got {}", f.quality);
+        assert!(
+            (f.quality - 0.5).abs() < 1e-9,
+            "4/8 assertions = 0.5, got {}",
+            f.quality
+        );
         assert_eq!(f.assertion_total, 8);
         assert_eq!(f.assertion_passed, 4);
         assert_eq!(f.fitness_source, "measured");
@@ -481,7 +481,11 @@ mod tests {
     #[test]
     fn replay_scenarios_are_tagged_and_json_aware() {
         let s = build_replay_scenario(0, r#"{"ticket": 42}"#);
-        assert!(s.name.starts_with(WORKLOAD_REPLAY_TAG), "tag missing: {}", s.name);
+        assert!(
+            s.name.starts_with(WORKLOAD_REPLAY_TAG),
+            "tag missing: {}",
+            s.name
+        );
         assert_eq!(s.input_data, Some(serde_json::json!({"ticket": 42})));
         assert!(s.mock_tools.is_empty());
 

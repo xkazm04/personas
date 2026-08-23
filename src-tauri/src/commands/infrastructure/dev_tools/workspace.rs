@@ -739,7 +739,7 @@ fn git_output(cwd: &Path, args: &[&str]) -> Result<GitOutput, AppError> {
         .args(args)
         .current_dir(cwd)
         .output()
-        .map_err(|e| AppError::Internal(format!("Failed to spawn git: {e}")))?;
+        .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn git: {e}")))?;
     Ok(GitOutput {
         success: output.status.success(),
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),

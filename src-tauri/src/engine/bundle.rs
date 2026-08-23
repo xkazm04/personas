@@ -452,57 +452,57 @@ pub fn apply_import(
         }
 
         let filename = format!("personas/{}.json", entry.resource_id);
-            let persona_json = match read_zip_entry(&mut archive, &filename) {
-                Ok(data) => data,
-                Err(e) => {
-                    errors.push(format!("Failed to read {}: {}", filename, e));
-                    continue;
-                }
-            };
-
-            // Check for name conflicts with existing personas
-            let mut persona_value: serde_json::Value = serde_json::from_str(&persona_json)?;
-
-            // Check if a persona with this exact name already exists
-            let original_name = persona_value
-                .get("name")
-                .and_then(|v| v.as_str())
-                .unwrap_or("Imported Persona")
-                .to_string();
-            let name_exists = existing_names.contains(&original_name);
-
-            if name_exists {
-                if options.skip_conflicts {
-                    skipped += 1;
-                    continue;
-                }
-                // Rename to avoid confusion
-                if let Some(obj) = persona_value.as_object_mut() {
-                    let prefix = options.rename_prefix.as_deref().unwrap_or("Imported");
-                    obj.insert(
-                        "name".into(),
-                        serde_json::Value::String(format!("[{}] {}", prefix, original_name)),
-                    );
-                }
+        let persona_json = match read_zip_entry(&mut archive, &filename) {
+            Ok(data) => data,
+            Err(e) => {
+                errors.push(format!("Failed to read {}: {}", filename, e));
+                continue;
             }
+        };
 
-            match import_persona_from_value(pool, &persona_value) {
-                Ok(new_id) => {
-                    let provenance = CreateProvenanceInput {
-                        resource_type: "persona".into(),
-                        resource_id: new_id.clone(),
-                        source_peer_id: sig.signer_peer_id.clone(),
-                        source_display_name: None,
-                        bundle_hash: Some(bundle_hash.clone()),
-                        signature_verified: sig_valid,
-                    };
-                    if let Err(e) = exposure_repo::upsert_provenance(pool, provenance) {
-                        // Roll back the just-imported persona, but DON'T abort
-                        // the whole loop — the user expects a per-resource
-                        // partial-success report (imported / skipped / errors),
-                        // not a cryptic Internal error mid-batch that hides
-                        // what already succeeded above this entry.
-                        let cleanup_msg = match persona_repo::delete(pool, &new_id) {
+        // Check for name conflicts with existing personas
+        let mut persona_value: serde_json::Value = serde_json::from_str(&persona_json)?;
+
+        // Check if a persona with this exact name already exists
+        let original_name = persona_value
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Imported Persona")
+            .to_string();
+        let name_exists = existing_names.contains(&original_name);
+
+        if name_exists {
+            if options.skip_conflicts {
+                skipped += 1;
+                continue;
+            }
+            // Rename to avoid confusion
+            if let Some(obj) = persona_value.as_object_mut() {
+                let prefix = options.rename_prefix.as_deref().unwrap_or("Imported");
+                obj.insert(
+                    "name".into(),
+                    serde_json::Value::String(format!("[{}] {}", prefix, original_name)),
+                );
+            }
+        }
+
+        match import_persona_from_value(pool, &persona_value) {
+            Ok(new_id) => {
+                let provenance = CreateProvenanceInput {
+                    resource_type: "persona".into(),
+                    resource_id: new_id.clone(),
+                    source_peer_id: sig.signer_peer_id.clone(),
+                    source_display_name: None,
+                    bundle_hash: Some(bundle_hash.clone()),
+                    signature_verified: sig_valid,
+                };
+                if let Err(e) = exposure_repo::upsert_provenance(pool, provenance) {
+                    // Roll back the just-imported persona, but DON'T abort
+                    // the whole loop — the user expects a per-resource
+                    // partial-success report (imported / skipped / errors),
+                    // not a cryptic Internal error mid-batch that hides
+                    // what already succeeded above this entry.
+                    let cleanup_msg = match persona_repo::delete(pool, &new_id) {
                             Ok(_) => format!(
                                 "Failed to record provenance for {} ({}); rolled back: {}",
                                 entry.display_name, new_id, e
@@ -512,14 +512,14 @@ pub fn apply_import(
                                 entry.display_name, new_id, e, cleanup_err
                             ),
                         };
-                        tracing::warn!(persona_id = %new_id, "{}", cleanup_msg);
-                        errors.push(cleanup_msg);
-                        continue;
-                    }
-                    imported += 1;
+                    tracing::warn!(persona_id = %new_id, "{}", cleanup_msg);
+                    errors.push(cleanup_msg);
+                    continue;
                 }
-                Err(e) => errors.push(format!("Import {}: {}", entry.display_name, e)),
+                imported += 1;
             }
+            Err(e) => errors.push(format!("Import {}: {}", entry.display_name, e)),
+        }
     }
 
     Ok(BundleImportResult {

@@ -10,10 +10,10 @@
 //!   - `gates`          — Rule 16/17 enforcement state machine.
 //!   - `session_prompt` — the v3-framework system prompt the LLM is given.
 //!   - `templates`      — keyword similarity matcher for the prompt's
-//!                        "Reference Templates" section.
+//!     "Reference Templates" section.
 //!   - `runner`         — `run_session` async loop body (the spine).
 //!   - `parser`         — stream-json → typed `BuildEvent` parser + legacy
-//!                        mirror helpers.
+//!     mirror helpers.
 //!   - `tool_tests`     — LLM-driven pre-promote test runner.
 //!   - `events`         — Tauri-channel + DB-update glue.
 
@@ -267,7 +267,7 @@ impl BuildSessionManager {
                                 let et = e.get("event_type").and_then(|v| v.as_str())?;
                                 let desc = e.get("description").and_then(|v| v.as_str()).unwrap_or("");
                                 Some(if desc.is_empty() {
-                                    format!("{}", et)
+                                    et.to_string()
                                 } else {
                                     format!("{} — {}", et, desc)
                                 })

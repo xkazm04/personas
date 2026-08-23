@@ -126,7 +126,10 @@ pub fn audit(
         let files = parse_files(&c.file_paths);
         files_mapped += files.len();
         for f in &files {
-            file_owners.entry(f.clone()).or_default().push(c.name.clone());
+            file_owners
+                .entry(f.clone())
+                .or_default()
+                .push(c.name.clone());
         }
 
         // Referential integrity: mapped file no longer exists on disk. Capped
@@ -141,7 +144,10 @@ pub fn audit(
                             "warn",
                             "dangling_file_path",
                             f.as_str(),
-                            format!("Mapped by context \"{}\" but not found on disk. Rescan to prune.", c.name),
+                            format!(
+                                "Mapped by context \"{}\" but not found on disk. Rescan to prune.",
+                                c.name
+                            ),
                         ));
                     }
                 }
@@ -161,7 +167,8 @@ pub fn audit(
                     "info",
                     "stale_context",
                     &c.name,
-                    "Mapped files changed since the last scan — rescan to refresh this context.".to_string(),
+                    "Mapped files changed since the last scan — rescan to refresh this context."
+                        .to_string(),
                 ));
             }
         }
@@ -251,7 +258,9 @@ pub fn audit(
                 "warn",
                 "group_too_many_contexts",
                 &g.name,
-                format!("{count} contexts (> {MAX_CONTEXTS_PER_GROUP}). Consider splitting the group."),
+                format!(
+                    "{count} contexts (> {MAX_CONTEXTS_PER_GROUP}). Consider splitting the group."
+                ),
             ));
         } else if count < MIN_CONTEXTS_PER_GROUP {
             findings.push(finding(
@@ -286,8 +295,10 @@ pub fn audit(
     }
 
     // --- File overlap (deterministic: sort offending files by name) ---
-    let mut overlaps: Vec<(&String, &Vec<String>)> =
-        file_owners.iter().filter(|(_, owners)| owners.len() > 1).collect();
+    let mut overlaps: Vec<(&String, &Vec<String>)> = file_owners
+        .iter()
+        .filter(|(_, owners)| owners.len() > 1)
+        .collect();
     overlaps.sort_by(|a, b| a.0.cmp(b.0));
     let overlapping_files = overlaps.len();
     for (file, owners) in overlaps.iter().take(MAX_OVERLAP_FINDINGS) {
@@ -384,19 +395,31 @@ pub fn summarize(report: &ContextAuditReport) -> String {
     let t = &report.totals;
     let mut parts: Vec<String> = Vec::new();
     if t.unresolved_cross_refs > 0 {
-        parts.push(format!("{} unresolved cross-ref(s)", t.unresolved_cross_refs));
+        parts.push(format!(
+            "{} unresolved cross-ref(s)",
+            t.unresolved_cross_refs
+        ));
     }
     if t.dangling_files > 0 {
         parts.push(format!("{} dangling file path(s)", t.dangling_files));
     }
     if t.overlapping_files > 0 {
-        parts.push(format!("{} file(s) in more than one context", t.overlapping_files));
+        parts.push(format!(
+            "{} file(s) in more than one context",
+            t.overlapping_files
+        ));
     }
     if t.uncategorized_contexts > 0 {
-        parts.push(format!("{} uncategorized context(s)", t.uncategorized_contexts));
+        parts.push(format!(
+            "{} uncategorized context(s)",
+            t.uncategorized_contexts
+        ));
     }
     if t.groups_missing_domain > 0 {
-        parts.push(format!("{} group(s) missing a domain", t.groups_missing_domain));
+        parts.push(format!(
+            "{} group(s) missing a domain",
+            t.groups_missing_domain
+        ));
     }
     let head = format!("{} context(s) in {} group(s)", t.contexts, t.groups);
     if parts.is_empty() {
@@ -414,10 +437,7 @@ fn scan_current_state(root: &std::path::Path) -> (HashSet<String>, HashMap<Strin
     match super::incremental_scan::walk_project_files(root) {
         Ok(entries) => {
             let existing = entries.iter().map(|e| e.path.clone()).collect();
-            let hashes = entries
-                .into_iter()
-                .map(|e| (e.path, e.sha256))
-                .collect();
+            let hashes = entries.into_iter().map(|e| (e.path, e.sha256)).collect();
             (existing, hashes)
         }
         Err(e) => {
@@ -453,9 +473,21 @@ pub async fn dev_tools_audit_contexts(
         Err(_) => (HashSet::new(), HashMap::new()),
     };
 
-    let existing_opt = if existing.is_empty() { None } else { Some(&existing) };
-    let hashes_opt = if current.is_empty() { None } else { Some(&current) };
-    let cached_opt = if cached.is_empty() { None } else { Some(&cached) };
+    let existing_opt = if existing.is_empty() {
+        None
+    } else {
+        Some(&existing)
+    };
+    let hashes_opt = if current.is_empty() {
+        None
+    } else {
+        Some(&current)
+    };
+    let cached_opt = if cached.is_empty() {
+        None
+    } else {
+        Some(&cached)
+    };
 
     Ok(audit(
         &project_id,
@@ -521,7 +553,10 @@ mod tests {
         let b = ctx("beta", &["b.rs"], &[]);
         let r = audit("p", &[], &[a, b], None, None, None);
         assert!(has(&r, "unresolved_cross_ref"));
-        assert_eq!(r.totals.unresolved_cross_refs, 1, "only 'ghost' is unresolved");
+        assert_eq!(
+            r.totals.unresolved_cross_refs, 1,
+            "only 'ghost' is unresolved"
+        );
     }
 
     #[test]
@@ -530,9 +565,15 @@ mod tests {
         let refs: Vec<&str> = ghosts.iter().map(String::as_str).collect();
         let a = ctx("alpha", &["a.rs"], &refs);
         let r = audit("p", &[], &[a], None, None, None);
-        assert_eq!(r.totals.unresolved_cross_refs, 80, "the true total is always reported");
         assert_eq!(
-            r.findings.iter().filter(|f| f.kind == "unresolved_cross_ref").count(),
+            r.totals.unresolved_cross_refs, 80,
+            "the true total is always reported"
+        );
+        assert_eq!(
+            r.findings
+                .iter()
+                .filter(|f| f.kind == "unresolved_cross_ref")
+                .count(),
             MAX_CROSS_REF_FINDINGS,
             "findings are capped like dangling_file_path and file_overlap"
         );
@@ -541,7 +582,11 @@ mod tests {
             .iter()
             .find(|f| f.kind == "unresolved_cross_ref_truncated")
             .expect("a cap that hides its own size is worse than no cap");
-        assert!(note.message.contains("55"), "says how many were withheld: {}", note.message);
+        assert!(
+            note.message.contains("55"),
+            "says how many were withheld: {}",
+            note.message
+        );
     }
 
     #[test]
@@ -555,10 +600,12 @@ mod tests {
     #[test]
     fn stale_context_flagged_on_hash_drift() {
         let c = ctx("alpha", &["a.rs"], &[]);
-        let cur: HashMap<String, String> =
-            [("a.rs".to_string(), "newsha".to_string())].into_iter().collect();
-        let cache: HashMap<String, String> =
-            [("a.rs".to_string(), "oldsha".to_string())].into_iter().collect();
+        let cur: HashMap<String, String> = [("a.rs".to_string(), "newsha".to_string())]
+            .into_iter()
+            .collect();
+        let cache: HashMap<String, String> = [("a.rs".to_string(), "oldsha".to_string())]
+            .into_iter()
+            .collect();
         let r = audit("p", &[], &[c], None, Some(&cur), Some(&cache));
         assert!(has(&r, "stale_context"));
         assert_eq!(r.totals.stale_contexts, 1);
@@ -567,8 +614,9 @@ mod tests {
     #[test]
     fn fresh_context_not_flagged_when_hash_matches() {
         let c = ctx("alpha", &["a.rs"], &[]);
-        let same: HashMap<String, String> =
-            [("a.rs".to_string(), "sha".to_string())].into_iter().collect();
+        let same: HashMap<String, String> = [("a.rs".to_string(), "sha".to_string())]
+            .into_iter()
+            .collect();
         let r = audit("p", &[], &[c], None, Some(&same), Some(&same));
         assert!(!has(&r, "stale_context"));
     }

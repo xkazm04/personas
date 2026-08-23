@@ -40,9 +40,8 @@ pub fn get_test_suite(
 /// client-supplied `scenario_count` is what the suite list renders, so a drifted
 /// value silently mislabels every row.
 fn validate_scenarios(scenarios: &str) -> Result<i32, AppError> {
-    let value: serde_json::Value = serde_json::from_str(scenarios).map_err(|e| {
-        AppError::Validation(format!("scenarios is not valid JSON: {e}"))
-    })?;
+    let value: serde_json::Value = serde_json::from_str(scenarios)
+        .map_err(|e| AppError::Validation(format!("scenarios is not valid JSON: {e}")))?;
     match value.as_array() {
         Some(arr) => Ok(arr.len() as i32),
         None => Err(AppError::Validation(

@@ -68,7 +68,7 @@ fn validate_chain_cycle(
                 use crate::db::models::ChainConditionType;
                 ctype
                     .parse::<ChainConditionType>()
-                    .map_err(|e| AppError::Validation(e))?;
+                    .map_err(AppError::Validation)?;
             }
         }
     }
@@ -451,7 +451,16 @@ pub async fn validate_trigger(
                                         crate::engine::url_safety::SsrfSafeDnsResolver,
                                     ))
                                     .build()
-                                    .unwrap_or_default();
+                                    // Fail CLOSED. `.unwrap_or_default()` here
+                                    // returned `reqwest::Client::default()` ==
+                                    // `Client::new()` on a builder failure: no
+                                    // timeout, the SYSTEM DNS resolver and a
+                                    // ten-hop redirect follow — every guarantee
+                                    // above silently gone, on the one path whose
+                                    // whole job is to safely probe a URL the user
+                                    // just typed. `url_safety.rs:264-267` forbids
+                                    // exactly this in prose.
+                                    .expect("SSRF-safe polling-probe client");
                                 match client.head(endpoint).send().await {
                                     Ok(resp) => {
                                         let status = resp.status().as_u16();
@@ -1150,17 +1159,6 @@ pub fn unlink_persona_from_event(
     Ok(true)
 }
 
-/// Seed a persona's eventHandlers from its existing event_listener triggers.
-/// Returns the number of handler entries created. Idempotent.
-#[tauri::command]
-pub fn initialize_event_handlers_for_persona(
-    state: State<'_, Arc<AppState>>,
-    persona_id: String,
-) -> Result<u32, AppError> {
-    require_auth_sync(&state)?;
-    repo::initialize_event_handlers_for_persona(&state.db, &persona_id)
-}
-
 /// Update a single event handler's text. Used by the "Refine handler" action
 /// in the Builder. Creates the eventHandlers map if it doesn't exist yet.
 #[tauri::command]
@@ -1235,52 +1233,6 @@ pub fn cleanup_dead_trigger_events(
 // =============================================================================
 // Chain Triggers
 // =============================================================================
-
-#[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
-pub struct TriggerChainLink {
-    pub trigger_id: String,
-    pub source_persona_id: String,
-    pub source_persona_name: String,
-    pub target_persona_id: String,
-    pub target_persona_name: String,
-    pub condition_type: String,
-    pub enabled: bool,
-}
-
-/// List all chain trigger links for visualization.
-/// Uses a single SQL query with JOINs instead of N+1 persona lookups.
-#[tauri::command]
-pub fn list_trigger_chains(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<TriggerChainLink>, AppError> {
-    require_auth_sync(&state)?;
-    let rows = repo::get_chain_links(&state.db)?;
-    Ok(rows
-        .into_iter()
-        .map(
-            |(
-                trigger_id,
-                source_persona_id,
-                source_persona_name,
-                target_persona_id,
-                target_persona_name,
-                condition_type,
-                enabled,
-            )| {
-                TriggerChainLink {
-                    trigger_id,
-                    source_persona_id,
-                    source_persona_name,
-                    target_persona_id,
-                    target_persona_name,
-                    condition_type,
-                    enabled,
-                }
-            },
-        )
-        .collect())
-}
 
 // =============================================================================
 // Webhook Info

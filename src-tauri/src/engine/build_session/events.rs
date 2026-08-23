@@ -552,9 +552,13 @@ mod spend_tests {
 
         // …and the ctx pin is used when the CLI omitted the model.
         let no_model = r#"{"type":"result","total_cost_usd":0.01,"usage":{"input_tokens":5,"output_tokens":2}}"#;
-        let entry =
-            build_spend_entry(None, SPEND_TEST_SUMMARY, Some("claude-haiku-4-5-20251001"), no_model)
-                .expect("must book");
+        let entry = build_spend_entry(
+            None,
+            SPEND_TEST_SUMMARY,
+            Some("claude-haiku-4-5-20251001"),
+            no_model,
+        )
+        .expect("must book");
         assert_eq!(entry.model.as_deref(), Some("claude-haiku-4-5-20251001"));
     }
 }

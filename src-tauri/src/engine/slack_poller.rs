@@ -136,16 +136,21 @@ struct TickReport {
     ingested: usize,
 }
 
-async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<TickReport, AppError> {
+async fn tick(
+    pool: &DbPool,
+    app: &AppHandle,
+    state: &Arc<AppState>,
+) -> Result<TickReport, AppError> {
     let mut report = TickReport::default();
 
     // ── Pass 1: find personas with inbound Slack channels ─────────────────
     let personas = persona_repo::get_enabled(pool)?;
     for persona in personas {
-        let channels = match notifications::parse_channels_v2(persona.notification_channels.as_deref()) {
-            Some(c) => c,
-            None => continue,
-        };
+        let channels =
+            match notifications::parse_channels_v2(persona.notification_channels.as_deref()) {
+                Some(c) => c,
+                None => continue,
+            };
 
         for channel in channels {
             if !channel.enabled {
@@ -157,7 +162,9 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
             ) {
                 continue;
             }
-            let Some(config) = channel.config.as_ref() else { continue };
+            let Some(config) = channel.config.as_ref() else {
+                continue;
+            };
             let poll_inbound = config
                 .get("pollInbound")
                 .and_then(JsonValue::as_bool)
@@ -194,8 +201,12 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
                 .or_else(|| config.get("channel_id"))
                 .and_then(JsonValue::as_str)
                 .map(str::to_owned)
-            else { continue };
-            let Some(credential_id) = channel.credential_id.as_deref() else { continue };
+            else {
+                continue;
+            };
+            let Some(credential_id) = channel.credential_id.as_deref() else {
+                continue;
+            };
 
             match poll_channel(pool, app, state, &persona.id, &channel_id, credential_id).await {
                 Ok(n) => report.picked += n,
@@ -419,7 +430,9 @@ fn breaker_record(key: &str, ok: bool) -> bool {
 /// Advance the probe cadence for a broken bridge whose tick we skipped.
 fn breaker_note_skip(key: &str) {
     let mut map = breaker_lock();
-    let count = map.entry(key.to_string()).or_insert(BRIDGE_FAILURE_THRESHOLD);
+    let count = map
+        .entry(key.to_string())
+        .or_insert(BRIDGE_FAILURE_THRESHOLD);
     *count = count.saturating_add(1);
 }
 
@@ -456,7 +469,11 @@ async fn slack_get(bot_token: &str, url: &str) -> Result<JsonValue, AppError> {
         .json()
         .await
         .map_err(|e| AppError::Internal(format!("Slack JSON decode failed: {e}")))?;
-    if !payload.get("ok").and_then(JsonValue::as_bool).unwrap_or(false) {
+    if !payload
+        .get("ok")
+        .and_then(JsonValue::as_bool)
+        .unwrap_or(false)
+    {
         let err = payload
             .get("error")
             .and_then(JsonValue::as_str)
@@ -554,10 +571,7 @@ fn should_ingest(msg: &SlackMessage, bot_user_id: &str) -> bool {
 }
 
 /// Ingest one bridged channel, gated by the per-bridge breaker.
-async fn ingest_bridge_channel(
-    pool: &DbPool,
-    bridge: &TeamBridgeSpec,
-) -> Result<usize, AppError> {
+async fn ingest_bridge_channel(pool: &DbPool, bridge: &TeamBridgeSpec) -> Result<usize, AppError> {
     let key = bridge.key();
     if breaker_decide(&key) == BreakerAction::Skip {
         breaker_note_skip(&key);
@@ -576,10 +590,7 @@ async fn ingest_bridge_channel(
     result
 }
 
-async fn ingest_bridge_inner(
-    pool: &DbPool,
-    bridge: &TeamBridgeSpec,
-) -> Result<usize, AppError> {
+async fn ingest_bridge_inner(pool: &DbPool, bridge: &TeamBridgeSpec) -> Result<usize, AppError> {
     let persona_id = &bridge.persona_id;
     let channel_id = &bridge.slack_channel_id;
 
@@ -840,7 +851,11 @@ async fn fetch_history_page(
 
     // Slack returns HTTP 200 with {"ok":false,"error":"..."} for most failures
     // (not_in_channel, missing_scope, invalid_auth, ...).
-    if !payload.get("ok").and_then(JsonValue::as_bool).unwrap_or(false) {
+    if !payload
+        .get("ok")
+        .and_then(JsonValue::as_bool)
+        .unwrap_or(false)
+    {
         let err = payload
             .get("error")
             .and_then(JsonValue::as_str)
@@ -865,7 +880,9 @@ async fn fetch_history_page(
 
     let mut out = Vec::with_capacity(raw.len());
     for v in raw {
-        let Some(ts) = v.get("ts").and_then(JsonValue::as_str) else { continue };
+        let Some(ts) = v.get("ts").and_then(JsonValue::as_str) else {
+            continue;
+        };
         let text = v
             .get("text")
             .and_then(JsonValue::as_str)
@@ -906,6 +923,10 @@ fn page_min_ts(msgs: &[SlackMessage]) -> Option<String> {
 /// One shared connection-pooled client for the whole poller. Building a fresh
 /// Client per poll/reply (on a 5-second loop) re-established TLS connections
 /// and threw away the pool every tick.
+///
+/// Not `SHARED_HTTP`: a 5-second poll loop wants an 8 s deadline, not 30 s.
+/// The host is the compile-time literal `slack.com` and the bot token rides in
+/// `Authorization`, which reqwest strips across a host change.
 fn shared_http_client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     CLIENT.get_or_init(|| {
@@ -952,7 +973,9 @@ async fn fetch_new_messages(
     let mut pages = 1usize;
     let mut frontier = page_min_ts(&all);
     while has_more && pages < MAX_DRAIN_PAGES {
-        let Some(latest) = frontier.clone() else { break };
+        let Some(latest) = frontier.clone() else {
+            break;
+        };
         let (page, more) =
             fetch_history_page(client, bot_token, channel_id, after_ts, Some(&latest)).await?;
         has_more = more;
@@ -1011,7 +1034,11 @@ async fn post_reply(
     let resp_body = resp.text().await.unwrap_or_default();
     let parsed: JsonValue = serde_json::from_str(&resp_body)
         .map_err(|e| AppError::Internal(format!("Slack chat.postMessage decode failed: {e}")))?;
-    if !parsed.get("ok").and_then(JsonValue::as_bool).unwrap_or(false) {
+    if !parsed
+        .get("ok")
+        .and_then(JsonValue::as_bool)
+        .unwrap_or(false)
+    {
         let err = parsed
             .get("error")
             .and_then(JsonValue::as_str)
@@ -1044,7 +1071,11 @@ fn truncate_for_slack(text: &str) -> String {
 // Cursor + log persistence
 // ---------------------------------------------------------------------------
 
-fn read_cursor(pool: &DbPool, persona_id: &str, channel_id: &str) -> Result<Option<String>, AppError> {
+fn read_cursor(
+    pool: &DbPool,
+    persona_id: &str,
+    channel_id: &str,
+) -> Result<Option<String>, AppError> {
     let conn = pool.get()?;
     let row = conn
         .query_row(
@@ -1087,7 +1118,11 @@ fn touch_cursor(pool: &DbPool, persona_id: &str, channel_id: &str) -> Result<(),
     Ok(())
 }
 
-fn message_already_logged(pool: &DbPool, channel_id: &str, message_ts: &str) -> Result<bool, AppError> {
+fn message_already_logged(
+    pool: &DbPool,
+    channel_id: &str,
+    message_ts: &str,
+) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM slack_inbound_messages WHERE channel_id = ?1 AND message_ts = ?2",
@@ -1200,7 +1235,8 @@ fn mark_reply_error(
 
 fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
     let cred = credential_repo::get_by_id(pool, credential_id).ok()?;
-    let fields: HashMap<String, String> = credential_repo::get_decrypted_fields(pool, &cred).ok()?;
+    let fields: HashMap<String, String> =
+        credential_repo::get_decrypted_fields(pool, &cred).ok()?;
     fields
         .get("bot_token")
         .or_else(|| fields.get("botToken"))
@@ -1321,9 +1357,13 @@ mod tests {
         let almost = spec(json!({ "pollInbound": true, "channel": "C1", "teamId": TEAM }));
         assert!(slack_bridge::parse_bridge("p1", &almost).is_none());
         // The real thing does fork.
-        assert!(slack_bridge::parse_bridge("p1", &spec(json!({
-            "teamBridge": true, "teamId": TEAM, "channel": "C1", "pollInbound": true,
-        }))).is_some());
+        assert!(slack_bridge::parse_bridge(
+            "p1",
+            &spec(json!({
+                "teamBridge": true, "teamId": TEAM, "channel": "C1", "pollInbound": true,
+            }))
+        )
+        .is_some());
     }
 
     /// The echo guard's inbound half. `slack_bridge::is_echo` keeps Slack-authored

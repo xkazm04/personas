@@ -20,7 +20,7 @@ enumeration still has holes.
   machine-distinct (`AppError::Validation`) and human-actionable — it names
   the persona, the spend, and the limit ("Budget limit exceeded for '{}':
   ${:.2} spent this month, limit is ${:.2}").
-- **Scheduled triggers** — `src-tauri/src/engine/background.rs:2475-2530`:
+- **Scheduled triggers** — `src-tauri/src/engine/background/:2475-2530`:
   the cron path re-implements *the same decision*, and its comment is a
   small essay on why gates must share semantics: the old bespoke inline SQL
   got three rules wrong, including treating the legal `0.0 = unlimited`

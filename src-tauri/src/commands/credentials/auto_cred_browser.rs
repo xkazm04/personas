@@ -1843,9 +1843,8 @@ mod tests {
     #[test]
     fn test_scrub_secrets_redacts_held_literal() {
         let seeded = "Zx9Qw7Rt2Vk8Ln4Mp0Bd6Yh3Sf1Gc5".to_string();
-        let procedure = format!(
-            "Step 3: created key and copied {seeded} into the field, then saved."
-        );
+        let procedure =
+            format!("Step 3: created key and copied {seeded} into the field, then saved.");
         let scrubbed = scrub_secrets(&procedure, std::slice::from_ref(&seeded));
         assert!(
             !scrubbed.contains(&seeded),

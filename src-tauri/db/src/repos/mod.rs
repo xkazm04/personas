@@ -1,5 +1,6 @@
 pub mod communication;
 pub mod core;
+pub mod dev;
 pub mod dev_env_connectors;
 pub mod dev_memories;
 pub mod dev_run_checkpoints;
@@ -18,6 +19,7 @@ pub mod system_ops;
 pub mod twin;
 pub mod utils;
 pub mod workspace_taxonomy;
+pub mod workspaces;
 
 #[cfg(test)]
 pub mod test_fixtures;

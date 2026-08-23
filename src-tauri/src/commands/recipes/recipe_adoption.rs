@@ -81,8 +81,7 @@ pub fn adopt_recipe_for_persona_inner(
     let recipe = recipe_repo::get_by_id(pool, recipe_id)?;
     let persona_tools = tool_repo::get_tools_for_persona(pool, persona_id)?;
     let catalog = tool_repo::get_all_definitions(pool)?;
-    let eligibility =
-        score_recipe_eligibility(&recipe, persona_id, &persona_tools, &catalog);
+    let eligibility = score_recipe_eligibility(&recipe, persona_id, &persona_tools, &catalog);
 
     // Hard-stop on Incompatible — no setup path resolves uncatalogued tools.
     if eligibility.state == RecipeEligibilityState::Incompatible {
@@ -194,26 +193,6 @@ pub async fn adopt_recipe_for_persona(
     )
 }
 
-/// Inverse of `adopt_recipe_for_persona`: removes the link. Existing
-/// `unlink_recipe_from_persona` does the same thing — this thin
-/// wrapper exists for symmetry with the adoption surface and to give
-/// the frontend a single import point for both halves of the pair.
-#[tauri::command]
-pub async fn unadopt_recipe_from_persona(
-    state: State<'_, Arc<AppState>>,
-    persona_id: String,
-    recipe_id: String,
-) -> Result<bool, AppError> {
-    require_auth(&state).await?;
-    if persona_id.trim().is_empty() {
-        return Err(AppError::Validation("persona_id cannot be empty".into()));
-    }
-    if recipe_id.trim().is_empty() {
-        return Err(AppError::Validation("recipe_id cannot be empty".into()));
-    }
-    recipe_repo::unlink_from_persona(&state.db, &persona_id, &recipe_id)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,16 +292,16 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "P-B");
         // Tool that's NOT in the catalog → Incompatible → no setup path.
-        let recipe_id = make_recipe_with_tool_hints(
-            &pool,
-            "rec-incompatible",
-            &["uncatalogued_phantom_tool"],
-        );
+        let recipe_id =
+            make_recipe_with_tool_hints(&pool, "rec-incompatible", &["uncatalogued_phantom_tool"]);
 
         let err = adopt_recipe_for_persona_inner(&pool, &persona_id, &recipe_id, true)
             .expect_err("incompatible recipe must hard-fail");
         let msg = err.to_string();
-        assert!(msg.contains("incompatible"), "error must mention incompatibility; got: {msg}");
+        assert!(
+            msg.contains("incompatible"),
+            "error must mention incompatibility; got: {msg}"
+        );
         assert!(
             msg.contains("uncatalogued_phantom_tool"),
             "error must name the missing tool for debugging; got: {msg}"
@@ -334,13 +313,15 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "P-C");
         let tool_name = first_catalogued_tool_name(&pool);
-        let recipe_id =
-            make_recipe_with_tool_hints(&pool, "rec-needs-setup", &[&tool_name]);
+        let recipe_id = make_recipe_with_tool_hints(&pool, "rec-needs-setup", &[&tool_name]);
 
         let err = adopt_recipe_for_persona_inner(&pool, &persona_id, &recipe_id, false)
             .expect_err("AdoptableWithSetup must refuse without auto_setup");
         let msg = err.to_string();
-        assert!(msg.contains("needs setup"), "error must mention setup; got: {msg}");
+        assert!(
+            msg.contains("needs setup"),
+            "error must mention setup; got: {msg}"
+        );
         assert!(
             msg.contains(&tool_name),
             "error must name the tool that needs wiring; got: {msg}"
@@ -352,8 +333,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "P-D");
         let tool_name = first_catalogued_tool_name(&pool);
-        let recipe_id =
-            make_recipe_with_tool_hints(&pool, "rec-auto-setup", &[&tool_name]);
+        let recipe_id = make_recipe_with_tool_hints(&pool, "rec-auto-setup", &[&tool_name]);
 
         let result = adopt_recipe_for_persona_inner(&pool, &persona_id, &recipe_id, true)
             .expect("auto_setup adoption should succeed");
@@ -481,7 +461,10 @@ mod tests {
         let err = adopt_recipe_for_persona_inner(&pool, &persona_id, &recipe.id, true)
             .expect_err("connector-only recipe must not silently adopt");
         let msg = err.to_string();
-        assert!(msg.contains("needs setup"), "error must mention setup; got: {msg}");
+        assert!(
+            msg.contains("needs setup"),
+            "error must mention setup; got: {msg}"
+        );
         assert!(
             msg.contains("gmail"),
             "error must name the connector that needs wiring; got: {msg}"

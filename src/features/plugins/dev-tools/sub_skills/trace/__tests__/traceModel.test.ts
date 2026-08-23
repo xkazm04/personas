@@ -56,6 +56,23 @@ describe('parseVersion / driftOf', () => {
   it('computes drift verdicts by version, tie-broken by syncState', () => {
     expect(driftOf('1.0', '1.1', 'in_sync')).toBe('behind');
     expect(driftOf('2.0', '1.9', 'in_sync')).toBe('ahead');
+  });
+
+  it('at equal versions, the sync state decides WHICH side moved', () => {
+    // The verdict assigns blame, so getting it backwards is worse than being
+    // vague: `stale` is the library moving without a version bump (the copy is
+    // innocent, and updating is safe), `diverged` is a local edit.
+    expect(driftOf('1.2', '1.2', 'stale')).toBe('behind');
+    expect(driftOf('1.2', '1.2', 'diverged')).toBe('customized');
+    expect(driftOf('1.2', '1.2', 'in_sync')).toBe('in_sync');
+  });
+
+  it('version comparison still wins over the sync state', () => {
+    // The hashes only break the equal-version tie. A declared version gap is
+    // intent and outranks a content difference.
+    expect(driftOf('1.0', '1.1', 'stale')).toBe('behind');
+    expect(driftOf('2.0', '1.9', 'stale')).toBe('ahead');
+    expect(driftOf('2.0', '1.9', 'diverged')).toBe('ahead');
     expect(driftOf('1.10', '1.9', 'in_sync')).toBe('ahead'); // numeric, not lexical
     expect(driftOf('1.2', '1.2', 'diverged')).toBe('customized');
     expect(driftOf('1.2', '1.2', 'in_sync')).toBe('in_sync');

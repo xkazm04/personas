@@ -6,6 +6,12 @@
 //! [`crate::db::repos::resources::external_api_keys::create`] and is written ONLY
 //! into the client config — never logged, never persisted elsewhere.
 
+// `personas-mcp install` is a CLI subcommand: this module's prints ARE its user
+// interface, and it runs in the `personas-mcp` binary with no tracing subscriber
+// attached. Scoped to the module so the rest of the library stays under the
+// workspace-wide print lints.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
+
 use std::path::PathBuf;
 
 use super::auth::MCP_REQUIRED_SCOPE;
@@ -78,7 +84,10 @@ pub fn install_mcp_config(target: &str) {
     // builder emits the `"type"` discriminator these clients actually read.
     let server_config = personas_core::mcp_config::McpServer::stdio(
         binary_path,
-        ["--db-path".to_string(), db_path.to_string_lossy().into_owned()],
+        [
+            "--db-path".to_string(),
+            db_path.to_string_lossy().into_owned(),
+        ],
     )
     .with_env("PERSONAS_MCP_TOKEN", token)
     .to_json();

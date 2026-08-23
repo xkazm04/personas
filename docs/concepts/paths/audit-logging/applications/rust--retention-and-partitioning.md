@@ -17,7 +17,7 @@ its own retention shape:
 | `api_key_audit` | `src-tauri/db/src/repos/resources/api_key_audit.rs` | external management-API requests per key | 500-row count cap per key, at insert |
 | `provider_audit_log` | `src-tauri/db/src/repos/execution/provider_audit.rs` | model/provider routing, failover, cost | unbounded (aggregated for dashboards) |
 | `policy_events` | `src-tauri/db/src/repos/execution/policy_events.rs` | policy enforcement outcomes per execution | tied to execution lifetime |
-| CLI session read audit | evicted from `src-tauri/src/engine/subscription.rs:811-825` | CLI transparency footprint | 24h TTL, scheduled tick |
+| CLI session read audit | evicted from `src-tauri/src/engine/subscription/:811-825` | CLI transparency footprint | 24h TTL, scheduled tick |
 
 Obligations genuinely differ — credential access is kept for months, the
 CLI transparency trail for a day — and partitioning is what lets each
@@ -40,7 +40,7 @@ test `history_is_capped_per_key` (`:149-160`).
 The credential ledger's 90-day horizon is *not* enforced at insert: the
 door exposes `cleanup_old_entries(pool, retention_days)`
 (`audit_log.rs:216-226`) and a background maintenance task calls it with
-90 (`src-tauri/src/engine/background.rs:3023-3031`). This is the
+90 (`src-tauri/src/engine/background/:3023-3031`). This is the
 technique's named risk shape — a scheduled reaper whose silent death
 produces no error, only growth — mitigated here by living inside the
 same long-lived maintenance tick as a dozen sibling sweeps, with errors

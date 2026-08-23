@@ -38,7 +38,9 @@ pub enum HungKind {
 pub enum ParkedVerdict {
     /// The task is complete. `summary` is the trailing assistant text,
     /// clipped — it becomes the finished-state reason.
-    Done { summary: String },
+    Done {
+        summary: String,
+    },
     Blocked(BlockedKind),
     Hung(HungKind),
     /// Not enough evidence. The caller keeps whatever the time-based rules
@@ -78,7 +80,12 @@ const PERMISSION_CUES: &[&str] = &[
 
 /// Screen text that means the session cannot proceed without the operator
 /// dealing with an account/session problem.
-const LOGIN_CUES: &[&str] = &["/login", "please run /login", "invalid api key", "sign in to"];
+const LOGIN_CUES: &[&str] = &[
+    "/login",
+    "please run /login",
+    "invalid api key",
+    "sign in to",
+];
 
 /// Classify a parked session from its transcript tail plus what is on screen.
 ///
@@ -86,7 +93,11 @@ const LOGIN_CUES: &[&str] = &["/login", "please run /login", "invalid api key", 
 /// rendered terminal grid. `grew_recently` is the ticker's own transcript-growth
 /// signal — a session whose log is still growing is never called hung, whatever
 /// the tail looks like.
-pub fn classify_parked(tail: &[String], screen: Option<&str>, grew_recently: bool) -> ParkedVerdict {
+pub fn classify_parked(
+    tail: &[String],
+    screen: Option<&str>,
+    grew_recently: bool,
+) -> ParkedVerdict {
     // Screen cues win when present: a permission prompt on the terminal is
     // ground truth about what the session needs, and it is the case a
     // transcript cannot show (the tool call is issued but parked in the CLI).
@@ -213,7 +224,9 @@ fn is_stop_hook(rec: &Value) -> bool {
     }
     let haystack = [
         rec.get("subtype").and_then(Value::as_str).unwrap_or(""),
-        rec.get("hook_event_name").and_then(Value::as_str).unwrap_or(""),
+        rec.get("hook_event_name")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
         rec.get("content").and_then(Value::as_str).unwrap_or(""),
     ]
     .join(" ")
@@ -222,7 +235,10 @@ fn is_stop_hook(rec: &Value) -> bool {
 }
 
 fn clip(text: &str) -> String {
-    let one_line = text.split('\n').find(|l| !l.trim().is_empty()).unwrap_or(text);
+    let one_line = text
+        .split('\n')
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or(text);
     let mut out: String = one_line.trim().chars().take(SUMMARY_MAX).collect();
     if one_line.trim().chars().count() > SUMMARY_MAX {
         out.push('…');
@@ -326,7 +342,9 @@ mod tests {
     #[test]
     fn tokens_are_stable_and_unknown_carries_none() {
         assert_eq!(
-            verdict_token(&ParkedVerdict::Done { summary: String::new() }),
+            verdict_token(&ParkedVerdict::Done {
+                summary: String::new()
+            }),
             Some("done")
         );
         assert_eq!(

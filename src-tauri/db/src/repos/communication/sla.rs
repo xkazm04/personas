@@ -57,7 +57,7 @@ pub fn get_persona_reliability(
         let conn = pool.get()?;
         let date_filter = format!("-{} days", days);
         let mut stmt = conn.prepare(
-            "SELECT e.persona_id,
+            "SELECT e.persona_id AS persona_id,
                     SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS successful,
                     SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed,
                     AVG(CASE WHEN e.duration_ms IS NOT NULL THEN e.duration_ms ELSE NULL END) AS avg_dur
@@ -67,8 +67,8 @@ pub fn get_persona_reliability(
              GROUP BY e.persona_id",
         )?;
         let rows = stmt.query_map(params![date_filter], |row| {
-            let successful: i64 = row.get(1)?;
-            let failed: i64 = row.get(2)?;
+            let successful: i64 = row.get("successful")?;
+            let failed: i64 = row.get("failed")?;
             let decided = successful + failed;
             let success_rate = if decided > 0 {
                 successful as f64 / decided as f64
@@ -76,10 +76,11 @@ pub fn get_persona_reliability(
                 0.0
             };
             Ok(PersonaReliability {
-                persona_id: row.get(0)?,
+                persona_id: row.get("persona_id")?,
                 total_decided: decided,
                 success_rate,
-                avg_duration_ms: row.get::<_, Option<f64>>(3)?.unwrap_or(0.0),
+                // NOTE the alias: `avg_duration_ms` is fed by `avg_dur`.
+                avg_duration_ms: row.get::<_, Option<f64>>("avg_dur")?.unwrap_or(0.0),
             })
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
@@ -102,7 +103,7 @@ pub fn get_persona_daily_reliability(
         let date_filter = format!("-{} days", days);
         let modifier = local_day_modifier(offset_min);
         let mut stmt = conn.prepare(
-            "SELECT e.persona_id,
+            "SELECT e.persona_id AS persona_id,
                     DATE(e.created_at, ?2) AS day,
                     SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS successful,
                     SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed
@@ -113,8 +114,8 @@ pub fn get_persona_daily_reliability(
              ORDER BY e.persona_id, day ASC",
         )?;
         let rows = stmt.query_map(params![date_filter, modifier], |row| {
-            let successful: i64 = row.get(2)?;
-            let failed: i64 = row.get(3)?;
+            let successful: i64 = row.get("successful")?;
+            let failed: i64 = row.get("failed")?;
             let decided = successful + failed;
             let success_rate = if decided > 0 {
                 successful as f64 / decided as f64
@@ -122,8 +123,9 @@ pub fn get_persona_daily_reliability(
                 0.0
             };
             Ok(PersonaDailyReliability {
-                persona_id: row.get(0)?,
-                date: row.get(1)?,
+                persona_id: row.get("persona_id")?,
+                // NOTE the alias: the field is `date`, the column is `day`.
+                date: row.get("day")?,
                 success_rate,
                 decided,
             })
@@ -320,19 +322,19 @@ pub fn get_sla_dashboard_with_offset(
         // the local day `days` days before today: `now → local wall clock →
         // back N days → local midnight → back to UTC`.
         let window_cutoff: String = conn.query_row(
-            "SELECT datetime('now', ?1, ?2, 'start of day', ?3)",
+            "SELECT datetime('now', ?1, ?2, 'start of day', ?3) AS window_cutoff",
             params![
                 local_day_modifier(offset_min),
                 format!("-{} days", days),
                 local_day_modifier(-offset_min),
             ],
-            |r| r.get(0),
+            |r| r.get("window_cutoff"),
         )?;
 
         // -- Per-persona aggregates ------------------------------------------
         let mut stmt = conn.prepare(
             "SELECT
-                e.persona_id,
+                e.persona_id AS persona_id,
                 COALESCE(p.name, 'Unknown') AS persona_name,
                 COUNT(*) AS total,
                 SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS successful,
@@ -352,15 +354,15 @@ pub fn get_sla_dashboard_with_offset(
         let raw_personas: Vec<RawPersona> = stmt
             .query_map(params![window_cutoff], |row| {
                 Ok(RawPersona {
-                    persona_id: row.get(0)?,
-                    persona_name: row.get(1)?,
-                    total: row.get(2)?,
-                    successful: row.get(3)?,
-                    failed: row.get(4)?,
-                    cancelled: row.get(5)?,
-                    avg_dur: row.get::<_, Option<f64>>(6)?.unwrap_or(0.0),
-                    timed: row.get(7)?,
-                    total_cost: row.get(8)?,
+                    persona_id: row.get("persona_id")?,
+                    persona_name: row.get("persona_name")?,
+                    total: row.get("total")?,
+                    successful: row.get("successful")?,
+                    failed: row.get("failed")?,
+                    cancelled: row.get("cancelled")?,
+                    avg_dur: row.get::<_, Option<f64>>("avg_dur")?.unwrap_or(0.0),
+                    timed: row.get("timed")?,
+                    total_cost: row.get("total_cost")?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -381,7 +383,12 @@ pub fn get_sla_dashboard_with_offset(
              ORDER BY persona_id, duration_ms ASC",
             &persona_ids,
             Some(&window_cutoff),
-            |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?)),
+            |row| {
+                Ok((
+                    row.get::<_, String>("persona_id")?,
+                    row.get::<_, f64>("duration_ms")?,
+                ))
+            },
         )?;
 
         // -- Batch MTBF: failure timestamps ----------------------------------
@@ -394,7 +401,12 @@ pub fn get_sla_dashboard_with_offset(
              ORDER BY persona_id, created_at ASC",
             &persona_ids,
             Some(&window_cutoff),
-            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+            |row| {
+                Ok((
+                    row.get::<_, String>("persona_id")?,
+                    row.get::<_, String>("created_at")?,
+                ))
+            },
         )?;
 
         // -- Batch consecutive failures --------------------------------------
@@ -417,10 +429,18 @@ pub fn get_sla_dashboard_with_offset(
                  ORDER BY persona_id, rn ASC",
                 CONSECUTIVE_FAILURE_LOOKBACK,
             );
-            let statuses_map =
-                batch_query_map_vec(&conn, &consec_sql, &persona_ids, Some(&window_cutoff), |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-                })?;
+            let statuses_map = batch_query_map_vec(
+                &conn,
+                &consec_sql,
+                &persona_ids,
+                Some(&window_cutoff),
+                |row| {
+                    Ok((
+                        row.get::<_, String>("persona_id")?,
+                        row.get::<_, String>("status")?,
+                    ))
+                },
+            )?;
             statuses_map
                 .into_iter()
                 .map(|(pid, statuses)| {
@@ -436,12 +456,12 @@ pub fn get_sla_dashboard_with_offset(
         // -- Batch auto-healed count -----------------------------------------
         let healed_map = batch_query_map(
             &conn,
-            "SELECT persona_id, COUNT(*) FROM persona_healing_issues
+            "SELECT persona_id, COUNT(*) AS n FROM persona_healing_issues
              WHERE persona_id IN ({placeholders}) AND auto_fixed = 1
              GROUP BY persona_id",
             &persona_ids,
             None,
-            |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)),
+            |row| Ok((row.get::<_, String>("persona_id")?, row.get::<_, i64>("n")?)),
         )?;
 
         // -- Assemble per-persona stats --------------------------------------
@@ -536,18 +556,23 @@ pub fn get_sla_dashboard_with_offset(
         let healing_summary: HealingSummary = conn
             .query_row(
                 "SELECT
-                    SUM(CASE WHEN h.status = 'open' THEN 1 ELSE 0 END),
-                    SUM(CASE WHEN h.auto_fixed = 1 THEN 1 ELSE 0 END),
-                    SUM(CASE WHEN h.is_circuit_breaker = 1 AND h.status = 'open' THEN 1 ELSE 0 END),
-                    (SELECT COUNT(*) FROM healing_knowledge)
+                    SUM(CASE WHEN h.status = 'open' THEN 1 ELSE 0 END) AS open_issues,
+                    SUM(CASE WHEN h.auto_fixed = 1 THEN 1 ELSE 0 END) AS auto_fixed_count,
+                    SUM(CASE WHEN h.is_circuit_breaker = 1 AND h.status = 'open' THEN 1 ELSE 0 END)
+                        AS circuit_breaker_count,
+                    (SELECT COUNT(*) FROM healing_knowledge) AS knowledge_patterns
                  FROM persona_healing_issues h",
                 [],
                 |row| {
                     Ok(HealingSummary {
-                        open_issues: row.get::<_, Option<i64>>(0)?.unwrap_or(0),
-                        auto_fixed_count: row.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                        circuit_breaker_count: row.get::<_, Option<i64>>(2)?.unwrap_or(0),
-                        knowledge_patterns: row.get(3)?,
+                        open_issues: row.get::<_, Option<i64>>("open_issues")?.unwrap_or(0),
+                        auto_fixed_count: row
+                            .get::<_, Option<i64>>("auto_fixed_count")?
+                            .unwrap_or(0),
+                        circuit_breaker_count: row
+                            .get::<_, Option<i64>>("circuit_breaker_count")?
+                            .unwrap_or(0),
+                        knowledge_patterns: row.get("knowledge_patterns")?,
                     })
                 },
             )
@@ -704,15 +729,15 @@ fn load_daily_trend(
     // filter on `created_at` (index-friendly) while covering exactly the same
     // local days as the rollup tail.
     let start_day: String = conn.query_row(
-        "SELECT DATE('now', ?1, ?2)",
+        "SELECT DATE('now', ?1, ?2) AS start_day",
         params![modifier, date_filter],
-        |r| r.get(0),
+        |r| r.get("start_day"),
     )?;
     let inverse_modifier = local_day_modifier(-offset_min);
     let raw_cutoff_utc: String = conn.query_row(
-        "SELECT datetime(?1, ?2)",
+        "SELECT datetime(?1, ?2) AS raw_cutoff_utc",
         params![start_day, inverse_modifier],
-        |r| r.get(0),
+        |r| r.get("raw_cutoff_utc"),
     )?;
 
     let mut consider = |day: String, acc: DayAcc| match by_day.get(&day) {
@@ -725,18 +750,22 @@ fn load_daily_trend(
     // Durable tail: persisted rollups within the window.
     {
         let mut stmt = conn.prepare(
-            "SELECT day, SUM(total), SUM(successful), SUM(failed), SUM(cancelled)
+            "SELECT day,
+                    SUM(total)      AS total,
+                    SUM(successful) AS successful,
+                    SUM(failed)     AS failed,
+                    SUM(cancelled)  AS cancelled
              FROM sla_daily
              WHERE day >= ?1
              GROUP BY day",
         )?;
         let rows = stmt.query_map(params![start_day], |row| {
             Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, i64>(1)?,
-                row.get::<_, i64>(2)?,
-                row.get::<_, i64>(3)?,
-                row.get::<_, i64>(4)?,
+                row.get::<_, String>("day")?,
+                row.get::<_, i64>("total")?,
+                row.get::<_, i64>("successful")?,
+                row.get::<_, i64>("failed")?,
+                row.get::<_, i64>("cancelled")?,
             ))
         })?;
         for r in rows {
@@ -757,10 +786,10 @@ fn load_daily_trend(
     {
         let mut stmt = conn.prepare(
             "SELECT DATE(created_at, ?1) AS day,
-                    COUNT(*),
-                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END),
-                    SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END),
-                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END)
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS successful,
+                    SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END)    AS failed,
+                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
              FROM persona_executions
              WHERE created_at >= ?2
                AND status IN ('completed', 'failed', 'cancelled')
@@ -768,11 +797,11 @@ fn load_daily_trend(
         )?;
         let rows = stmt.query_map(params![modifier, raw_cutoff_utc], |row| {
             Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, i64>(1)?,
-                row.get::<_, i64>(2)?,
-                row.get::<_, i64>(3)?,
-                row.get::<_, i64>(4)?,
+                row.get::<_, String>("day")?,
+                row.get::<_, i64>("total")?,
+                row.get::<_, i64>("successful")?,
+                row.get::<_, i64>("failed")?,
+                row.get::<_, i64>("cancelled")?,
             ))
         })?;
         for r in rows {
@@ -987,7 +1016,7 @@ pub fn get_persona_breach_signal(
         )?;
         let statuses: Vec<String> = stmt
             .query_map(params![persona_id, BREACH_LOOKBACK], |row| {
-                row.get::<_, String>(0)
+                row.get::<_, String>("status")
             })?
             .filter_map(|r| r.ok())
             .collect();
@@ -996,7 +1025,10 @@ pub fn get_persona_breach_signal(
             .iter()
             .take_while(|s| s.as_str() == "failed")
             .count() as i64;
-        let successful = statuses.iter().filter(|s| s.as_str() == "completed").count() as i64;
+        let successful = statuses
+            .iter()
+            .filter(|s| s.as_str() == "completed")
+            .count() as i64;
         let failed = statuses.iter().filter(|s| s.as_str() == "failed").count() as i64;
         let decided = successful + failed;
         let success_rate = if decided > 0 {
@@ -1089,9 +1121,9 @@ pub fn get_breach_episode(pool: &DbPool, persona_id: &str) -> Result<BreachEpiso
             params![persona_id],
             |r| {
                 Ok(BreachEpisode {
-                    is_open: r.get::<_, i64>(0)? != 0,
-                    reason: r.get(1)?,
-                    opened_at: r.get(2)?,
+                    is_open: r.get::<_, i64>("is_open")? != 0,
+                    reason: r.get("reason")?,
+                    opened_at: r.get("opened_at")?,
                 })
             },
         )
@@ -1166,6 +1198,73 @@ pub fn close_breach_episode(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The by-name reads over the two tables this module owns must resolve
+    /// against the real migrated schema. `sla_daily` and `sla_breach_episodes`
+    /// both arrive from an incremental migration, so a fresh-install DDL does
+    /// not prove their shape; this does.
+    ///
+    /// The rest of this file reads AGGREGATE aliases, which live inside a
+    /// statement and cannot be probed by a column list — those are pinned by
+    /// the behavioural tests below, which run the real queries against seeded
+    /// data and assert the values. A wrong alias fails them on the first row.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for (columns, table) in [
+            (
+                "persona_id, day, total, successful, failed, cancelled",
+                "sla_daily",
+            ),
+            (
+                "persona_id, is_open, reason, opened_at",
+                "sla_breach_episodes",
+            ),
+        ] {
+            let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
+            conn.prepare(&sql)
+                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
+        }
+    }
+
+    /// `get_breach_episode` reads three columns by name off a row the two
+    /// writers below produce. Round-trip them so the read and the write are
+    /// pinned to each other, not just to the schema.
+    #[test]
+    fn breach_episode_round_trips_every_field_it_reads() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "episode-roundtrip");
+
+        // No row yet: the default is a closed episode with nothing set.
+        let fresh = get_breach_episode(&pool, &persona_id).unwrap();
+        assert!(!fresh.is_open);
+        assert!(fresh.reason.is_none());
+        assert!(fresh.opened_at.is_none());
+
+        let sig = BreachSignal {
+            consecutive_failures: 4,
+            decided: 8,
+            successful: 2,
+            success_rate: 0.25,
+        };
+        open_breach_episode(
+            &pool,
+            &persona_id,
+            "consecutive_failures",
+            &sig,
+            "2026-01-02T03:04:05Z",
+        )
+        .unwrap();
+        let open = get_breach_episode(&pool, &persona_id).unwrap();
+        assert!(open.is_open);
+        assert_eq!(open.reason.as_deref(), Some("consecutive_failures"));
+        assert_eq!(open.opened_at.as_deref(), Some("2026-01-02T03:04:05Z"));
+
+        close_breach_episode(&pool, &persona_id, &sig, "2026-01-03T00:00:00Z").unwrap();
+        let closed = get_breach_episode(&pool, &persona_id).unwrap();
+        assert!(!closed.is_open);
+    }
     use crate::init_test_db;
     use crate::models::CreatePersonaInput;
     use crate::repos::core::personas;
@@ -1324,7 +1423,11 @@ mod tests {
         let day = (base + chrono::Duration::minutes(server_offset_minutes()))
             .format("%Y-%m-%d")
             .to_string();
-        let ts = |minute: i64| (base + chrono::Duration::minutes(minute)).format("%Y-%m-%d %H:%M:%S").to_string();
+        let ts = |minute: i64| {
+            (base + chrono::Duration::minutes(minute))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
 
         for i in 0..4 {
             insert_execution(&pool, &persona_id, "completed", &ts(i));
@@ -1541,7 +1644,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let conn = pool.get().unwrap();
         let n: i64 = conn
-            .query_row("SELECT COUNT(*) FROM sla_daily", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) AS n FROM sla_daily", [], |r| r.get("n"))
             .expect("sla_daily table must exist on a fresh schema");
         assert_eq!(n, 0, "fresh backfill of an empty history is empty");
         // Dashboard load must not error on an empty rollup table.
@@ -1557,9 +1660,11 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = create_test_persona(&pool, "rollup-idem");
         let base = chrono::Utc::now() - chrono::Duration::hours(2);
-        let ts = |m: i64| (base + chrono::Duration::minutes(m))
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string();
+        let ts = |m: i64| {
+            (base + chrono::Duration::minutes(m))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
         for i in 0..3 {
             insert_execution(&pool, &persona_id, "completed", &ts(i));
         }
@@ -1571,11 +1676,22 @@ mod tests {
         let snapshot = |pool: &DbPool| -> (i64, i64, i64, i64, i64) {
             let conn = pool.get().unwrap();
             conn.query_row(
-                "SELECT COUNT(*), COALESCE(SUM(total),0), COALESCE(SUM(successful),0),
-                        COALESCE(SUM(failed),0), COALESCE(SUM(cancelled),0)
+                "SELECT COUNT(*) AS n,
+                        COALESCE(SUM(total),0)      AS total,
+                        COALESCE(SUM(successful),0) AS successful,
+                        COALESCE(SUM(failed),0)     AS failed,
+                        COALESCE(SUM(cancelled),0)  AS cancelled
                  FROM sla_daily WHERE persona_id = ?1",
                 params![persona_id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+                |r| {
+                    Ok((
+                        r.get("n")?,
+                        r.get("total")?,
+                        r.get("successful")?,
+                        r.get("failed")?,
+                        r.get("cancelled")?,
+                    ))
+                },
             )
             .unwrap()
         };
@@ -1627,7 +1743,10 @@ mod tests {
             row.consecutive_failures, 2,
             "streak must be bounded to the 30-day window (2 recent), not the 7 total failures",
         );
-        assert_eq!(row.failed, 2, "windowed failure count excludes the 40-day-old rows");
+        assert_eq!(
+            row.failed, 2,
+            "windowed failure count excludes the 40-day-old rows"
+        );
     }
 
     /// The trend read from persisted rollups must match a raw recompute — and
@@ -1640,17 +1759,26 @@ mod tests {
 
         let now = chrono::Utc::now();
         let ins = |offset_days: i64, minute: i64, status: &str| {
-            let ts = (now - chrono::Duration::days(offset_days) + chrono::Duration::minutes(minute))
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string();
+            let ts = (now - chrono::Duration::days(offset_days)
+                + chrono::Duration::minutes(minute))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
             insert_execution(&pool, &persona_id, status, &ts);
         };
         // Spread across three days, all inside a 30-day window.
-        for i in 0..3 { ins(2, i, "completed"); }
+        for i in 0..3 {
+            ins(2, i, "completed");
+        }
         ins(2, 30, "failed");
-        for i in 0..2 { ins(1, i, "completed"); }
-        for i in 0..2 { ins(1, 30 + i, "failed"); }
-        for i in 0..4 { ins(0, -60 + i, "completed"); } // ~1h ago
+        for i in 0..2 {
+            ins(1, i, "completed");
+        }
+        for i in 0..2 {
+            ins(1, 30 + i, "failed");
+        }
+        for i in 0..4 {
+            ins(0, -60 + i, "completed");
+        } // ~1h ago
         ins(0, -30, "failed");
 
         // Raw-path trend (no rollups written yet).
@@ -1674,13 +1802,23 @@ mod tests {
         for (a, b) in raw_trend.iter().zip(rollup_trend.iter()) {
             assert_eq!(a.date, b.date, "day keys must match");
             assert_eq!(a.total, b.total, "total must match for {}", a.date);
-            assert_eq!(a.successful, b.successful, "successful must match for {}", a.date);
+            assert_eq!(
+                a.successful, b.successful,
+                "successful must match for {}",
+                a.date
+            );
             assert_eq!(a.failed, b.failed, "failed must match for {}", a.date);
-            assert_eq!(a.cancelled, b.cancelled, "cancelled must match for {}", a.date);
+            assert_eq!(
+                a.cancelled, b.cancelled,
+                "cancelled must match for {}",
+                a.date
+            );
             assert!(
                 (a.success_rate - b.success_rate).abs() < 1e-9,
                 "success_rate must match for {} ({} vs {})",
-                a.date, a.success_rate, b.success_rate,
+                a.date,
+                a.success_rate,
+                b.success_rate,
             );
         }
     }
@@ -1752,7 +1890,10 @@ mod tests {
             vec![utc_date.as_str()],
             "under UTC both runs fall on the UTC day {utc_date}",
         );
-        assert_ne!(local_date, utc_date, "the offset must actually shift the day");
+        assert_ne!(
+            local_date, utc_date,
+            "the offset must actually shift the day"
+        );
     }
 
     /// Empty timed-execution set surfaces p95 as `None` (→ "N/A"), never 0.0.
@@ -1777,7 +1918,10 @@ mod tests {
             .iter()
             .find(|p| p.persona_id == persona_id)
             .expect("persona row missing");
-        assert_eq!(row.p95_duration_ms, None, "no timed runs ⇒ p95 is N/A, not 0ms");
+        assert_eq!(
+            row.p95_duration_ms, None,
+            "no timed runs ⇒ p95 is N/A, not 0ms"
+        );
     }
 
     // -- Direction 2: per-persona reliability + daily series -----------------
@@ -1824,8 +1968,12 @@ mod tests {
         let pool = init_test_db().unwrap();
         let p1 = create_test_persona(&pool, "alpha");
         let now = chrono::Utc::now();
-        let day_a = (now - chrono::Duration::days(3)).format("%Y-%m-%d").to_string();
-        let day_b = (now - chrono::Duration::days(1)).format("%Y-%m-%d").to_string();
+        let day_a = (now - chrono::Duration::days(3))
+            .format("%Y-%m-%d")
+            .to_string();
+        let day_b = (now - chrono::Duration::days(1))
+            .format("%Y-%m-%d")
+            .to_string();
 
         // Day A: 2 completed → 100%. Day B: 1 completed + 1 failed → 50%.
         insert_execution(&pool, &p1, "completed", &format!("{day_a} 10:00:00"));
@@ -2020,7 +2168,9 @@ mod tests {
         let pool = init_test_db().unwrap();
         let conn = pool.get().unwrap();
         let n: i64 = conn
-            .query_row("SELECT COUNT(*) FROM sla_breach_episodes", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) AS n FROM sla_breach_episodes", [], |r| {
+                r.get("n")
+            })
             .expect("sla_breach_episodes table must exist on a fresh schema");
         assert_eq!(n, 0);
     }

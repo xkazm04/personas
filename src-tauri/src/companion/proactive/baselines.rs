@@ -61,12 +61,16 @@ impl PersonaBaseline {
     /// has enough history — used to annotate digest exemplar lines
     /// ("3.2× this persona's p95"). `None` when on the global fallback.
     pub fn cost_band(&self) -> Option<f64> {
-        self.has_history().then(|| self.declared_cost_usd.or(self.p95_cost)).flatten()
+        self.has_history()
+            .then(|| self.declared_cost_usd.or(self.p95_cost))
+            .flatten()
     }
 
     /// Expected duration band, same shape as [`cost_band`].
     pub fn duration_band(&self) -> Option<i64> {
-        self.has_history().then(|| self.declared_duration_ms.or(self.p95_duration_ms)).flatten()
+        self.has_history()
+            .then(|| self.declared_duration_ms.or(self.p95_duration_ms))
+            .flatten()
     }
 
     /// USD cost above which a run flags `expensive`. Uses `1.5 × p95` (declared
@@ -168,7 +172,10 @@ fn recompute_one(user_db: &UserDbPool, sys_db: &DbPool, persona_id: &str) -> Res
             )?
             .collect::<Result<Vec<_>, _>>()?;
         let costs: Vec<f64> = rows.iter().map(|(c, _)| *c).collect();
-        let durations: Vec<f64> = rows.iter().filter_map(|(_, d)| d.map(|v| v as f64)).collect();
+        let durations: Vec<f64> = rows
+            .iter()
+            .filter_map(|(_, d)| d.map(|v| v as f64))
+            .collect();
         (costs, durations)
     };
     let sample_n = costs.len() as i64;
@@ -208,14 +215,7 @@ fn recompute_one(user_db: &UserDbPool, sys_db: &DbPool, persona_id: &str) -> Res
             p95_duration_ms = excluded.p95_duration_ms,
             sample_n = excluded.sample_n,
             computed_at = excluded.computed_at",
-        params![
-            persona_id,
-            p50_cost,
-            p95_cost,
-            p50_dur,
-            p95_dur,
-            sample_n
-        ],
+        params![persona_id, p50_cost, p95_cost, p50_dur, p95_dur, sample_n],
     )?;
     Ok(())
 }
@@ -270,19 +270,34 @@ mod tests {
         assert_eq!(PersonaBaseline::expensive_threshold(None, 0.50), 0.50);
         assert_eq!(PersonaBaseline::slow_threshold(None, 120_000), 120_000);
         // Too few samples → still global.
-        let thin = PersonaBaseline { sample_n: 3, p95_cost: Some(0.02), ..Default::default() };
-        assert_eq!(PersonaBaseline::expensive_threshold(Some(&thin), 0.50), 0.50);
+        let thin = PersonaBaseline {
+            sample_n: 3,
+            p95_cost: Some(0.02),
+            ..Default::default()
+        };
+        assert_eq!(
+            PersonaBaseline::expensive_threshold(Some(&thin), 0.50),
+            0.50
+        );
     }
 
     #[test]
     fn learned_threshold_uses_p95_with_floor() {
         // Cheap persona: p95 = $0.02 → 1.5× = $0.03, floored to $0.10. A $0.12
         // run now flags where the $0.50 global never would.
-        let cheap = PersonaBaseline { sample_n: 40, p95_cost: Some(0.02), ..Default::default() };
+        let cheap = PersonaBaseline {
+            sample_n: 40,
+            p95_cost: Some(0.02),
+            ..Default::default()
+        };
         assert!((PersonaBaseline::expensive_threshold(Some(&cheap), 0.50) - 0.10).abs() < 1e-9);
         // Expensive-by-design persona: p95 = $1.00 → 1.5× = $1.50. A routine
         // $0.60 run no longer flags (the $0.50 global would have).
-        let heavy = PersonaBaseline { sample_n: 40, p95_cost: Some(1.0), ..Default::default() };
+        let heavy = PersonaBaseline {
+            sample_n: 40,
+            p95_cost: Some(1.0),
+            ..Default::default()
+        };
         assert!((PersonaBaseline::expensive_threshold(Some(&heavy), 0.50) - 1.50).abs() < 1e-9);
         assert!(0.60 < PersonaBaseline::expensive_threshold(Some(&heavy), 0.50));
     }
@@ -325,7 +340,14 @@ mod tests {
     #[test]
     fn slow_threshold_floor() {
         // p95 = 5s → 1.5× = 7.5s, floored to 30s.
-        let fast = PersonaBaseline { sample_n: 40, p95_duration_ms: Some(5_000), ..Default::default() };
-        assert_eq!(PersonaBaseline::slow_threshold(Some(&fast), 120_000), 30_000);
+        let fast = PersonaBaseline {
+            sample_n: 40,
+            p95_duration_ms: Some(5_000),
+            ..Default::default()
+        };
+        assert_eq!(
+            PersonaBaseline::slow_threshold(Some(&fast), 120_000),
+            30_000
+        );
     }
 }

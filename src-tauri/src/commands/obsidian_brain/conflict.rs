@@ -25,7 +25,15 @@ pub enum ThreeWayResult {
     /// state to the converged hash and log the event with full context.
     ConvergedConflict {
         app_hash: String,
+        /// Equal to `app_hash` by construction. The production consumer
+        /// (`obsidian_brain/mod.rs:1078`) destructures `{ app_hash, .. }`;
+        /// only `convergent_edits_yield_converged_conflict_not_no_change`
+        /// reads these two, and it reads them to assert the invariant that
+        /// gives this variant its meaning (both hashes equal, both differ
+        /// from base). Dead outside `cfg(test)`, live inside it.
+        #[cfg_attr(not(test), allow(dead_code))]
         vault_hash: String,
+        #[cfg_attr(not(test), allow(dead_code))]
         base_hash: String,
     },
     /// Both sides changed and diverged — real conflict.

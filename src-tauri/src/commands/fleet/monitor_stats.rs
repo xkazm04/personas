@@ -214,7 +214,11 @@ pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, AppError> {
                 if !alive {
                     reset_subagents(&session_id);
                 }
-                let subagents_active = if alive { subagents_active(&session_id) } else { 0 };
+                let subagents_active = if alive {
+                    subagents_active(&session_id)
+                } else {
+                    0
+                };
                 FleetMonitorStats {
                     session_id,
                     claude_session_id,
@@ -225,10 +229,7 @@ pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, AppError> {
                         .map(|r| tool_count(r, SUBAGENT_TOOL))
                         .unwrap_or(0),
                     subagents_active,
-                    bg_procs_launched: rollup
-                        .as_ref()
-                        .map(|r| r.bg_procs_launched)
-                        .unwrap_or(0),
+                    bg_procs_launched: rollup.as_ref().map(|r| r.bg_procs_launched).unwrap_or(0),
                     mem_mb: child_pid
                         .and_then(|p| mem.get(&p))
                         .map(|bytes| (bytes / BYTES_PER_MB) as i64),

@@ -34,6 +34,7 @@
 // variants on, and wiring it in here by implication would settle it by accident.
 
 import { spawnSession } from '@/api/fleet/fleet';
+import { setKnowledgeRegistryRoot } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 
 /** The lanes a registry can publish. Presence is what pairing reports.
@@ -118,6 +119,39 @@ let snapshot: Snapshot = EMPTY;
 let loaded = false;
 const listeners = new Set<() => void>();
 
+/**
+ * Mirror the knowledge-lane clone path into `app_settings` for the RUNNER.
+ *
+ * This store is localStorage, which the Rust side cannot read — and the consult
+ * lane (`engine::knowledge_consult`) runs inside executions that have no
+ * frontend at all: a schedule firing at 3am has no window to ask. So one scalar
+ * crosses the boundary, and only one: the path.
+ *
+ * Done in `commit` rather than in each mutator so it cannot drift — every
+ * mutation goes through here, so there is no path that changes the wiring
+ * without updating what the backend reads. And it goes through a COMMAND rather
+ * than a settings write, so the key's name is spelled once, in Rust: a name
+ * mirrored in two languages with only a comment holding it together is a name
+ * that drifts, and this one drifting means executions consult a registry the
+ * operator thinks they unwired.
+ *
+ * **One root, deliberately, for now.** A registry can be held by several
+ * workspaces while an execution belongs to a project, so there is no per-run
+ * mapping to consult yet; the knowledge-lane holder with the lowest id wins,
+ * which is at least stable rather than order-of-insertion. Per-project
+ * knowledge roots are the next slice, and this is the seam they replace.
+ */
+function syncKnowledgeRootSetting(next: Snapshot): void {
+  const holder = Object.values(next.registries)
+    .filter((r) => r.lanes.includes('knowledge') && r.clonePath.trim())
+    .sort((a, b) => a.id.localeCompare(b.id))[0];
+  const write = setKnowledgeRegistryRoot(holder ? holder.clonePath : null);
+  // Best-effort: a failed mirror means the consult lane stays off, which is the
+  // same state as no registry — degraded, never broken. Reported because a
+  // silent failure here looks exactly like "the registry has nothing to say".
+  void write.catch(silentCatch('registryLinkStore:knowledgeRoot'));
+}
+
 function commit(next: Snapshot): void {
   snapshot = next;
   try {
@@ -128,6 +162,7 @@ function commit(next: Snapshot): void {
     // be gone next launch" is exactly the kind of failure that must not be silent.
     silentCatch('registryLinkStore:persist')(e);
   }
+  syncKnowledgeRootSetting(next);
   listeners.forEach((l) => l());
 }
 

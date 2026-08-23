@@ -7,6 +7,7 @@ use crate::models::{
 use crate::query_builder::QueryBuilder;
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// Strip HTML/XML tags from a string to prevent stored XSS.
@@ -89,7 +90,10 @@ fn build_memory_filters(
     }
     match tier {
         Some(TIER_NON_ARCHIVED) => {
-            qb.where_raw(|i| format!("tier != ?{i}"), vec![Box::new("archive".to_string())]);
+            qb.where_raw(
+                |i| format!("tier != ?{i}"),
+                vec![Box::new("archive".to_string())],
+            );
         }
         Some(t) if !t.is_empty() => {
             qb.where_eq("tier", t.to_string());
@@ -118,6 +122,24 @@ fn build_memory_filters(
 
     qb
 }
+
+/// One projection for every full-row read of `persona_memories`, listing
+/// exactly the columns `row_to_memory` below consumes and nothing else.
+///
+/// The base table (`migrations/schema.rs:523`) has ten columns; `tier`,
+/// `access_count`, `last_accessed_at`, `use_case_id`, `home_team_id`,
+/// `derived_from` and `open_claim_count` arrive only by ALTER TABLE, each
+/// checked against its migration site. Two more ALTER-added columns —
+/// `deliberation_id` and `group_id` — are deliberately absent: the mapper does
+/// not read them, and the wildcard was fetching both on every injection.
+///
+/// The mapper's `[opt_*]` hatches predate this const and are left alone, but
+/// they are now unreachable as drift-swallowers: a missing column fails the
+/// PREPARE, before any row is mapped. That is the intended direction — loud at
+/// the query, not silently defaulted per row.
+const COLUMNS: &str = "id, persona_id, title, content, category, source_execution_id, \
+     importance, tags, tier, access_count, last_accessed_at, created_at, updated_at, \
+     use_case_id, home_team_id, derived_from, open_claim_count";
 
 row_mapper!(row_to_memory -> PersonaMemory {
     id, persona_id, title, content, category,
@@ -169,14 +191,14 @@ pub fn get_all(
         let order_col = validated_sort_column(sort_column);
         let order_dir = validated_sort_direction(sort_direction);
 
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_all")?;
 
         let mut qb = build_memory_filters(persona_id, category, search, tier);
         qb.order_by(order_col, order_dir);
         qb.limit(limit);
         qb.offset(offset);
 
-        let sql = qb.build_select("SELECT * FROM persona_memories");
+        let sql = qb.build_select(&format!("SELECT {COLUMNS} FROM persona_memories"));
         let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_all");
@@ -196,7 +218,7 @@ pub fn get_all_by_persona_ids(
         "persona_memories",
         "persona_memories::get_all_by_persona_ids",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_all_by_persona_ids")?;
             let mut qb = QueryBuilder::new();
             qb.where_in(
                 "persona_id",
@@ -209,7 +231,7 @@ pub fn get_all_by_persona_ids(
                 vec![Box::new("context".to_string())],
             );
             qb.order_by("created_at", "DESC");
-            let sql = qb.build_select("SELECT * FROM persona_memories");
+            let sql = qb.build_select(&format!("SELECT {COLUMNS} FROM persona_memories"));
             let mut stmt = conn.prepare_cached(&sql)?;
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_all_by_persona_ids"))
@@ -217,12 +239,30 @@ pub fn get_all_by_persona_ids(
     )
 }
 
-crud_get_by_id!(
-    PersonaMemory,
-    "persona_memories",
-    "PersonaMemory",
-    row_to_memory
-);
+/// Hand-written rather than `crud_get_by_id!`, which projects `SELECT *`.
+/// Same shape as the macro — cached statement, `QueryReturnedNoRows` mapped to
+/// `NotFound`, the same perf sample — over an explicit column list.
+pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMemory, AppError> {
+    let _start = std::time::Instant::now();
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare_cached(&format!(
+        "SELECT {COLUMNS} FROM persona_memories WHERE id = ?1"
+    ))?;
+    let result = stmt
+        .query_row(params![id], row_to_memory)
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("PersonaMemory {id}"))
+            }
+            other => AppError::Database(other),
+        });
+    crate::perf::record_query(
+        "persona_memories",
+        "persona_memories::get_by_id",
+        _start.elapsed(),
+    );
+    result
+}
 
 pub fn get_by_persona(
     pool: &DbPool,
@@ -231,11 +271,11 @@ pub fn get_by_persona(
 ) -> Result<Vec<PersonaMemory>, AppError> {
     timed_query!("persona_memories", "persona_memories::get_by_persona", {
         let limit = limit.unwrap_or(50);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories WHERE persona_id = ?1
+        let conn = pool.conn("memories::get_by_persona")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_memories WHERE persona_id = ?1
              ORDER BY importance DESC, created_at DESC LIMIT ?2",
-        )?;
+        ))?;
         let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_by_persona");
         Ok(results)
@@ -244,11 +284,11 @@ pub fn get_by_persona(
 
 pub fn get_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaMemory>, AppError> {
     timed_query!("persona_memories", "persona_memories::get_by_execution", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories WHERE source_execution_id = ?1
+        let conn = pool.conn("memories::get_by_execution")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {COLUMNS} FROM persona_memories WHERE source_execution_id = ?1
              ORDER BY created_at ASC",
-        )?;
+        ))?;
         let rows = stmt.query_map(params![execution_id], row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_by_execution");
         Ok(results)
@@ -261,11 +301,11 @@ pub fn count_by_execution(pool: &DbPool, execution_id: &str) -> Result<i64, AppE
         "persona_memories",
         "persona_memories::count_by_execution",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::count_by_execution")?;
             let count: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM persona_memories WHERE source_execution_id = ?1",
+                "SELECT COUNT(*) AS n FROM persona_memories WHERE source_execution_id = ?1",
                 params![execution_id],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         }
@@ -294,7 +334,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
             None => 3,
         };
 
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::create")?;
 
         // Write-path semantic dedup (2026-07 — supersedes the old 24h
         // exact-content guard). The original guard only skipped BYTE-identical
@@ -384,7 +424,7 @@ pub fn create_synthesized(
     if !derived_from.is_empty() || home_team_id.is_some() {
         let json = serde_json::to_string(derived_from)
             .map_err(|e| AppError::Internal(format!("serialize derived_from: {e}")))?;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::create_synthesized")?;
         conn.execute(
             "UPDATE persona_memories
              SET derived_from = ?1,
@@ -404,15 +444,19 @@ pub fn get_active_for_decay(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<PersonaMemory>, AppError> {
-    timed_query!("persona_memories", "persona_memories::get_active_for_decay", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories
+    timed_query!(
+        "persona_memories",
+        "persona_memories::get_active_for_decay",
+        {
+            let conn = pool.conn("memories::get_active_for_decay")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND tier = 'active'",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
-        Ok(collect_rows(rows, "memories::get_active_for_decay"))
-    })
+            ))?;
+            let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+            Ok(collect_rows(rows, "memories::get_active_for_decay"))
+        }
+    )
 }
 
 /// Why a row was rejected by `batch_create`. Stays a `&'static str` so
@@ -452,7 +496,7 @@ pub fn batch_create(
         return Ok(BatchCreateMemoryResult::default());
     }
     timed_query!("persona_memories", "persona_memories::batch_create", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::batch_create")?;
         let tx = conn.unchecked_transaction()?;
         let now = chrono::Utc::now().to_rfc3339();
         let mut count: i64 = 0;
@@ -482,8 +526,8 @@ pub fn batch_create(
             for pid in &persona_ids {
                 let rows = sel.query_map(params![pid], |row| {
                     Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, Option<String>>(1)?,
+                        row.get::<_, String>("content")?,
+                        row.get::<_, Option<String>>("use_case_id")?,
                     ))
                 })?;
                 for row in rows {
@@ -597,14 +641,14 @@ pub fn get_total_count(
     tier: Option<&str>,
 ) -> Result<i64, AppError> {
     timed_query!("persona_memories", "persona_memories::get_total_count", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_total_count")?;
 
         let qb = build_memory_filters(persona_id, category, search, tier);
         let sql = format!(
-            "SELECT COUNT(*) FROM persona_memories {}",
+            "SELECT COUNT(*) AS n FROM persona_memories {}",
             qb.where_clause()
         );
-        let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get(0))?;
+        let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get("n"))?;
         Ok(count)
     })
 }
@@ -628,17 +672,21 @@ fn compute_memory_stats(
 ) -> Result<MemoryStats, AppError> {
     // Total + avg importance in one query
     let agg_sql = format!(
-        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM persona_memories {where_clause}"
+        "SELECT COUNT(*) AS n, COALESCE(AVG(importance), 0) AS avg_importance \
+         FROM persona_memories {where_clause}"
     );
-    let (total, avg_importance): (i64, f64) =
-        conn.query_row(&agg_sql, params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let (total, avg_importance): (i64, f64) = conn.query_row(&agg_sql, params_ref, |row| {
+        Ok((row.get("n")?, row.get("avg_importance")?))
+    })?;
 
     // Category breakdown
     let cat_sql = format!(
         "SELECT category, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY category ORDER BY cnt DESC"
     );
     let mut cat_stmt = conn.prepare_cached(&cat_sql)?;
-    let category_rows = cat_stmt.query_map(params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let category_rows = cat_stmt.query_map(params_ref, |row| {
+        Ok((row.get("category")?, row.get("cnt")?))
+    })?;
     let category_counts: Vec<(String, i64)> = collect_rows(
         category_rows,
         "memories::compute_memory_stats/category_counts",
@@ -649,7 +697,9 @@ fn compute_memory_stats(
         "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY persona_id ORDER BY cnt DESC"
     );
     let mut agent_stmt = conn.prepare_cached(&agent_sql)?;
-    let agent_rows = agent_stmt.query_map(params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let agent_rows = agent_stmt.query_map(params_ref, |row| {
+        Ok((row.get("persona_id")?, row.get("cnt")?))
+    })?;
     let agent_counts: Vec<(String, i64)> =
         collect_rows(agent_rows, "memories::compute_memory_stats/agent_counts");
 
@@ -670,7 +720,7 @@ pub fn get_stats(
     tier: Option<&str>,
 ) -> Result<MemoryStats, AppError> {
     timed_query!("persona_memories", "persona_memories::get_stats", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::get_stats")?;
         let qb = build_memory_filters(persona_id, category, search, tier);
         compute_memory_stats(&conn, &qb.where_clause(), &qb.params_ref())
     })
@@ -707,7 +757,7 @@ pub fn get_all_with_stats(
             let order_col = validated_sort_column(sort_column);
             let order_dir = validated_sort_direction(sort_direction);
 
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_all_with_stats")?;
             let filter_qb = build_memory_filters(persona_id, category, search, tier);
             let where_clause = filter_qb.where_clause();
             let stats = compute_memory_stats(&conn, &where_clause, &filter_qb.params_ref())?;
@@ -719,7 +769,7 @@ pub fn get_all_with_stats(
             qb.limit(limit_val);
             qb.offset(offset_val);
 
-            let mem_sql = qb.build_select("SELECT * FROM persona_memories");
+            let mem_sql = qb.build_select(&format!("SELECT {COLUMNS} FROM persona_memories"));
             let mut mem_stmt = conn.prepare_cached(&mem_sql)?;
             let mem_rows = mem_stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
             let memories: Vec<PersonaMemory> =
@@ -737,7 +787,7 @@ pub fn get_all_with_stats(
 pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::update_importance", {
         validate_importance(importance)?;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::update_importance")?;
         let now = chrono::Utc::now().to_rfc3339();
         let rows = conn.execute(
             "UPDATE persona_memories SET importance = ?1, updated_at = ?2 WHERE id = ?3",
@@ -765,10 +815,9 @@ pub fn update_content(
 ) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::update_content", {
         validate_importance(importance)?;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::update_content")?;
         let now = chrono::Utc::now().to_rfc3339();
-        let tags_json = tags
-            .map(|t| serde_json::to_string(t).unwrap_or_else(|_| "[]".to_string()));
+        let tags_json = tags.map(|t| serde_json::to_string(t).unwrap_or_else(|_| "[]".to_string()));
         let rows = conn.execute(
             "UPDATE persona_memories
              SET title = ?1, content = ?2, importance = ?3, tags = ?4, updated_at = ?5
@@ -794,7 +843,7 @@ pub fn batch_update_importance(pool: &DbPool, updates: &[(String, i32)]) -> Resu
         "persona_memories",
         "persona_memories::batch_update_importance",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::batch_update_importance")?;
             let tx = conn.unchecked_transaction()?;
             let now = chrono::Utc::now().to_rfc3339();
             let mut total_updated: i64 = 0;
@@ -826,7 +875,7 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
         // Chunk deletes into batches of 500 to stay well under the limit.
         const CHUNK_SIZE: usize = 500;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::batch_delete")?;
         let tx = conn.unchecked_transaction()?;
         let mut total_deleted: i64 = 0;
 
@@ -856,7 +905,11 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 /// [`create`] but spans all time (the 24h guard misses same-content rows from
 /// later runs — the documented Stock-Price-Logger case).
 fn normalize_for_dedup(content: &str) -> String {
-    content.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    content
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 /// Write-path dedup lookup: does `persona_id` already hold a NON-core,
@@ -889,9 +942,9 @@ fn find_normalized_duplicate(
     )?;
     let rows = stmt.query_map(params![persona_id], |row| {
         Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, Option<String>>(2)?,
+            row.get::<_, String>("id")?,
+            row.get::<_, String>("content")?,
+            row.get::<_, Option<String>>("use_case_id")?,
         ))
     })?;
     for row in rows {
@@ -913,7 +966,7 @@ pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
     timed_query!("persona_memories", "persona_memories::archive_by_ids", {
         const CHUNK_SIZE: usize = 400;
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::archive_by_ids")?;
         let tx = conn.unchecked_transaction()?;
         let mut total: i64 = 0;
         for chunk in ids.chunks(CHUNK_SIZE) {
@@ -946,7 +999,7 @@ pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
                 let mut stmt = conn.prepare(&format!(
                     "SELECT id FROM persona_memories WHERE tier = 'archive' AND id IN ({ph})"
                 ))?;
-                let rows = stmt.query_map(ps.as_slice(), |r| r.get::<_, String>(0))?;
+                let rows = stmt.query_map(ps.as_slice(), |r| r.get::<_, String>("id"))?;
                 for r in rows {
                     now_archived.push(r?);
                 }
@@ -965,41 +1018,45 @@ pub fn find_duplicate_groups(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<Vec<PersonaMemory>>, AppError> {
-    timed_query!("persona_memories", "persona_memories::find_duplicate_groups", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories
+    timed_query!(
+        "persona_memories",
+        "persona_memories::find_duplicate_groups",
+        {
+            let conn = pool.conn("memories::find_duplicate_groups")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
-        let all: Vec<PersonaMemory> = collect_rows(rows, "memories::find_duplicate_groups");
+            ))?;
+            let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+            let all: Vec<PersonaMemory> = collect_rows(rows, "memories::find_duplicate_groups");
 
-        let mut buckets: std::collections::HashMap<String, Vec<PersonaMemory>> =
-            std::collections::HashMap::new();
-        for m in all {
-            buckets
-                .entry(normalize_for_dedup(&m.content))
-                .or_default()
-                .push(m);
+            let mut buckets: std::collections::HashMap<String, Vec<PersonaMemory>> =
+                std::collections::HashMap::new();
+            for m in all {
+                buckets
+                    .entry(normalize_for_dedup(&m.content))
+                    .or_default()
+                    .push(m);
+            }
+            let mut groups: Vec<Vec<PersonaMemory>> = buckets
+                .into_values()
+                .filter(|g| g.len() >= 2)
+                .map(|mut g| {
+                    // Keeper first: highest importance, then oldest (stable id tiebreak).
+                    g.sort_by(|a, b| {
+                        b.importance
+                            .cmp(&a.importance)
+                            .then(a.created_at.cmp(&b.created_at))
+                            .then(a.id.cmp(&b.id))
+                    });
+                    g
+                })
+                .collect();
+            // Stable output order (largest groups first) for predictable reporting.
+            groups.sort_by_key(|g| std::cmp::Reverse(g.len()));
+            Ok(groups)
         }
-        let mut groups: Vec<Vec<PersonaMemory>> = buckets
-            .into_values()
-            .filter(|g| g.len() >= 2)
-            .map(|mut g| {
-                // Keeper first: highest importance, then oldest (stable id tiebreak).
-                g.sort_by(|a, b| {
-                    b.importance
-                        .cmp(&a.importance)
-                        .then(a.created_at.cmp(&b.created_at))
-                        .then(a.id.cmp(&b.id))
-                });
-                g
-            })
-            .collect();
-        // Stable output order (largest groups first) for predictable reporting.
-        groups.sort_by_key(|g| std::cmp::Reverse(g.len()));
-        Ok(groups)
-    })
+    )
 }
 
 /// Stale-ranked archival candidates for the LLM "won't-use" pass: `active` +
@@ -1010,17 +1067,21 @@ pub fn get_archivable_candidates(
     persona_id: &str,
     limit: i64,
 ) -> Result<Vec<PersonaMemory>, AppError> {
-    timed_query!("persona_memories", "persona_memories::get_archivable_candidates", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_memories
+    timed_query!(
+        "persona_memories",
+        "persona_memories::get_archivable_candidates",
+        {
+            let conn = pool.conn("memories::get_archivable_candidates")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND tier IN ('active', 'working')
              ORDER BY importance ASC, access_count ASC, created_at ASC
              LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
-        Ok(collect_rows(rows, "memories::get_archivable_candidates"))
-    })
+            ))?;
+            let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
+            Ok(collect_rows(rows, "memories::get_archivable_candidates"))
+        }
+    )
 }
 
 crud_delete!("persona_memories");
@@ -1033,7 +1094,7 @@ crud_delete!("persona_memories");
 /// Returns `Ok(false)` when nothing was deleted (row absent OR core-protected).
 pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_non_core", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::delete_non_core")?;
         let affected = conn.execute(
             "DELETE FROM persona_memories WHERE id = ?1 AND tier != 'core'",
             params![id],
@@ -1051,7 +1112,7 @@ pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// No FK children. Returns the number of rows deleted.
 pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_all", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::delete_all")?;
         let n = conn.execute("DELETE FROM persona_memories WHERE tier != 'core'", [])?;
         Ok(n)
     })
@@ -1180,7 +1241,7 @@ pub fn merge(
             .clone()
             .or_else(|| mem_b.home_team_id.clone());
 
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::merge")?;
         let tx = conn.unchecked_transaction()?;
 
         tx.execute(
@@ -1236,7 +1297,7 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
     }
     timed_query!("persona_memories", "persona_memories::update_tier", {
         use rusqlite::OptionalExtension;
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::update_tier")?;
         // Snapshot the prior tier BEFORE the update so we can detect an
         // unarchive transition (archive → live tier). Archiving drops the KNN
         // vector (see `archive_by_ids`); un-archiving must restore it or the
@@ -1245,7 +1306,7 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
             .query_row(
                 "SELECT tier FROM persona_memories WHERE id = ?1",
                 params![id],
-                |r| r.get::<_, String>(0),
+                |r| r.get::<_, String>("tier"),
             )
             .optional()?;
         let now = chrono::Utc::now().to_rfc3339();
@@ -1260,9 +1321,12 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
             if let Ok((title, content)) = conn.query_row(
                 "SELECT title, content FROM persona_memories WHERE id = ?1",
                 params![id],
-                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+                |r| Ok((r.get::<_, String>("title")?, r.get::<_, String>("content")?)),
             ) {
-                spawn_embed_memory(id.to_string(), memory_embedding_text_parts(&title, &content));
+                spawn_embed_memory(
+                    id.to_string(),
+                    memory_embedding_text_parts(&title, &content),
+                );
             }
         }
         Ok(rows > 0)
@@ -1328,9 +1392,7 @@ impl<'a> InjectionScope<'a> {
 /// The placeholder indices in returned SQL are 1-based and ALREADY account
 /// for the 3-param prefix — `?1` = persona_id, `?2` = core_limit, `?3` =
 /// active_limit, `?4..` = the values in `extra_params`.
-fn build_scope_predicates<'a>(
-    scope: &InjectionScope<'a>,
-) -> (String, String, Vec<&'a str>) {
+fn build_scope_predicates<'a>(scope: &InjectionScope<'a>) -> (String, String, Vec<&'a str>) {
     let mut extra: Vec<&str> = Vec::new();
     let mut next_idx: usize = 4; // ?1..?3 reserved
 
@@ -1370,7 +1432,12 @@ pub fn get_for_injection(
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
-    get_for_injection_v2(pool, InjectionScope::for_persona(persona_id), core_limit, active_limit)
+    get_for_injection_v2(
+        pool,
+        InjectionScope::for_persona(persona_id),
+        core_limit,
+        active_limit,
+    )
 }
 
 /// Capability- and home-team-aware memory fetch for prompt injection.
@@ -1406,21 +1473,20 @@ pub fn get_for_injection_v2(
         "persona_memories",
         "persona_memories::get_for_injection_v2",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::get_for_injection_v2")?;
 
-            let (persona_scope_sql, active_uc_sql, extra_params) =
-                build_scope_predicates(&scope);
+            let (persona_scope_sql, active_uc_sql, extra_params) = build_scope_predicates(&scope);
 
             let sql = format!(
-                "SELECT * FROM (
-                 SELECT * FROM persona_memories
+                "SELECT {COLUMNS} FROM (
+                 SELECT {COLUMNS} FROM persona_memories
                  WHERE {persona_scope_sql} AND tier = 'core'
                  ORDER BY importance DESC, created_at DESC
                  LIMIT ?2
              )
              UNION ALL
-             SELECT * FROM (
-                 SELECT * FROM persona_memories
+             SELECT {COLUMNS} FROM (
+                 SELECT {COLUMNS} FROM persona_memories
                  WHERE {persona_scope_sql} AND tier IN ('active', 'working')
                  {active_uc_sql}
                  ORDER BY (importance * 10.0
@@ -1437,7 +1503,8 @@ pub fn get_for_injection_v2(
             // ?1 = persona_id, ?2 = core_limit, ?3 = active_limit, then the
             // extras the scope builder produced in declaration order
             // (home_team_id before use_case_id).
-            let mut boxed_params: Vec<Box<dyn rusqlite::ToSql>> = Vec::with_capacity(3 + extra_params.len());
+            let mut boxed_params: Vec<Box<dyn rusqlite::ToSql>> =
+                Vec::with_capacity(3 + extra_params.len());
             boxed_params.push(Box::new(scope.persona_id.to_string()));
             boxed_params.push(Box::new(core_limit));
             boxed_params.push(Box::new(active_limit));
@@ -1449,8 +1516,7 @@ pub fn get_for_injection_v2(
 
             let mut stmt = conn.prepare_cached(&sql)?;
             let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
-            let all: Vec<PersonaMemory> =
-                collect_rows(rows, "memories::get_for_injection_v2");
+            let all: Vec<PersonaMemory> = collect_rows(rows, "memories::get_for_injection_v2");
 
             let (core, active) = all.into_iter().partition(|m| m.tier == "core");
 
@@ -1472,13 +1538,13 @@ pub fn get_by_use_case_id(
         "persona_memories::get_by_use_case_id",
         {
             let limit = limit.unwrap_or(100);
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_memories
+            let conn = pool.conn("memories::get_by_use_case_id")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_memories
              WHERE persona_id = ?1 AND use_case_id = ?2
              ORDER BY importance DESC, created_at DESC
              LIMIT ?3",
-            )?;
+            ))?;
             let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_by_use_case_id"))
         }
@@ -1494,7 +1560,7 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
         "persona_memories",
         "persona_memories::increment_access_batch",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("memories::increment_access_batch")?;
             let now = chrono::Utc::now().to_rfc3339();
             let mut qb = QueryBuilder::new();
             let p_now1 = qb.push_param(now.clone());
@@ -1519,7 +1585,7 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
 /// Returns `(promoted, archived)` counts.
 pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppError> {
     timed_query!("persona_memories", "persona_memories::run_lifecycle", {
-        let conn = pool.get()?;
+        let conn = pool.conn("memories::run_lifecycle")?;
         let tx = conn.unchecked_transaction()?;
         let now = chrono::Utc::now();
         let updated_at = now.to_rfc3339();
@@ -1675,7 +1741,7 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::UserDbPool) -> Result<(), AppEr
     if MEMORY_VEC_TABLE_READY.load(Ordering::Acquire) {
         return Ok(());
     }
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::ensure_memory_vec_table")?;
     // The vec0 table cannot carry an auxiliary model-stamp column without a
     // destructive recreate, so the stamp lives in a plain sidecar keyed 1:1 by
     // memory_id. Created at runtime alongside the vec table (mirroring how the
@@ -1693,7 +1759,10 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::UserDbPool) -> Result<(), AppEr
          );"
     ))?;
     if !MEMORY_VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
-        tracing::info!(dims = MEMORY_VEC_DIMS, "persona_memory_embedding table ready");
+        tracing::info!(
+            dims = MEMORY_VEC_DIMS,
+            "persona_memory_embedding table ready"
+        );
     }
     Ok(())
 }
@@ -1719,7 +1788,7 @@ pub async fn embed_and_store_memory(
         )));
     }
     let blob: &[u8] = bytemuck::cast_slice(&vec);
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::embed_and_store_memory")?;
     conn.execute(
         "DELETE FROM persona_memory_embedding WHERE memory_id = ?1",
         params![memory_id],
@@ -1738,7 +1807,11 @@ pub async fn embed_and_store_memory(
     conn.execute(
         "INSERT INTO persona_memory_embedding_meta (memory_id, embedding_model, embedding_dims) \
          VALUES (?1, ?2, ?3)",
-        params![memory_id, embedder.model_name(), embedder.dimensions() as i64],
+        params![
+            memory_id,
+            embedder.model_name(),
+            embedder.dimensions() as i64
+        ],
     )?;
     Ok(())
 }
@@ -1759,11 +1832,13 @@ pub async fn search_similar_memories(
     ensure_memory_vec_table(vec_pool)?;
     let vec = embedder.embed_query(query).await?;
     let blob: &[u8] = bytemuck::cast_slice(&vec);
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::search_similar_memories")?;
     let count: i64 = conn
-        .query_row("SELECT COUNT(*) FROM persona_memory_embedding", [], |r| {
-            r.get(0)
-        })
+        .query_row(
+            "SELECT COUNT(*) AS n FROM persona_memory_embedding",
+            [],
+            |r| r.get("n"),
+        )
         .unwrap_or(0);
     if count == 0 {
         return Ok(Vec::new());
@@ -1774,7 +1849,10 @@ pub async fn search_similar_memories(
     )?;
     let rows = stmt
         .query_map(params![blob, k as i64], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, f32>(1)?))
+            Ok((
+                row.get::<_, String>("memory_id")?,
+                row.get::<_, f32>("distance")?,
+            ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
     apply_memory_model_guard(&conn, rows, embedder.model_name())
@@ -1817,13 +1895,17 @@ fn apply_memory_model_guard(
     )?;
     let mut model_of = std::collections::HashMap::new();
     let rows = stmt.query_map(params![ids_json], |r| {
-        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        Ok((
+            r.get::<_, String>("memory_id")?,
+            r.get::<_, String>("embedding_model")?,
+        ))
     })?;
     for row in rows {
         let (id, model) = row?;
         model_of.insert(id, model);
     }
-    let (kept, excluded) = personas_core::retrieval::filter_by_model(&hits, current_model, &model_of);
+    let (kept, excluded) =
+        personas_core::retrieval::filter_by_model(&hits, current_model, &model_of);
     if excluded > 0 {
         MEMORY_MODEL_GUARD_EXCLUDED
             .fetch_add(excluded as u64, std::sync::atomic::Ordering::Relaxed);
@@ -1871,9 +1953,9 @@ pub fn embedded_memory_ids(
     vec_pool: &crate::UserDbPool,
 ) -> Result<std::collections::HashSet<String>, AppError> {
     ensure_memory_vec_table(vec_pool)?;
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::embedded_memory_ids")?;
     let mut stmt = conn.prepare("SELECT memory_id FROM persona_memory_embedding")?;
-    let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+    let rows = stmt.query_map([], |r| r.get::<_, String>("memory_id"))?;
     let mut set = std::collections::HashSet::new();
     for r in rows {
         set.insert(r?);
@@ -1892,7 +1974,7 @@ pub fn delete_memory_embeddings(
         return Ok(());
     }
     ensure_memory_vec_table(vec_pool)?;
-    let conn = vec_pool.get()?;
+    let conn = vec_pool.conn("memories::delete_memory_embeddings")?;
     const CHUNK: usize = 400;
     for chunk in ids.chunks(CHUNK) {
         let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
@@ -1932,11 +2014,11 @@ pub fn gc_archived_memory_embeddings(
 ) -> Result<usize, AppError> {
     ensure_memory_vec_table(vec_pool)?;
     let archived_ids: Vec<String> = {
-        let conn = main_pool.get()?;
+        let conn = main_pool.conn("memories::gc_archived_memory_embeddings")?;
         let mut stmt =
             conn.prepare("SELECT id FROM persona_memories WHERE tier = 'archive' LIMIT ?1")?;
         let ids = stmt
-            .query_map(params![limit as i64], |r| r.get::<_, String>(0))?
+            .query_map(params![limit as i64], |r| r.get::<_, String>("id"))?
             .collect::<Result<Vec<_>, _>>()?;
         ids
     };
@@ -1949,13 +2031,13 @@ pub fn gc_archived_memory_embeddings(
     let ids_json = serde_json::to_string(&archived_ids)
         .map_err(|e| AppError::Internal(format!("gc archived ids serialize: {e}")))?;
     let present: Vec<String> = {
-        let conn = vec_pool.get()?;
+        let conn = vec_pool.conn("memories::gc_archived_memory_embeddings")?;
         let mut stmt = conn.prepare(
             "SELECT memory_id FROM persona_memory_embedding
              WHERE memory_id IN (SELECT value FROM json_each(?1))",
         )?;
         let ids = stmt
-            .query_map(params![ids_json], |r| r.get::<_, String>(0))?
+            .query_map(params![ids_json], |r| r.get::<_, String>("memory_id"))?
             .collect::<Result<Vec<_>, _>>()?;
         ids
     };
@@ -2014,8 +2096,10 @@ pub async fn backfill_memory_embeddings(
     ensure_memory_vec_table(vec_pool)?;
     let already = embedded_memory_ids(vec_pool)?;
     let candidates: Vec<PersonaMemory> = {
-        let conn = main_pool.get()?;
-        let mut stmt = conn.prepare("SELECT * FROM persona_memories WHERE tier != 'archive'")?;
+        let conn = main_pool.conn("memories::backfill_memory_embeddings")?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM persona_memories WHERE tier != 'archive'"
+        ))?;
         let rows = stmt.query_map([], row_to_memory)?;
         collect_rows(rows, "memories::backfill_memory_embeddings")
     };
@@ -2040,6 +2124,17 @@ pub async fn backfill_memory_embeddings(
 
 #[cfg(test)]
 mod tests {
+    /// The `COLUMNS` projection must prepare against the real migrated schema.
+    /// Seven of its seventeen columns exist only by ALTER TABLE, so no single
+    /// DDL block proves them present; this does.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        let sql = format!("SELECT {} FROM persona_memories LIMIT 0", super::COLUMNS);
+        conn.prepare(&sql)
+            .unwrap_or_else(|e| panic!("persona_memories projection does not match schema: {e}"));
+    }
     use super::*;
     use crate::init_test_db;
     use crate::models::{CreatePersonaInput, CreatePersonaMemoryInput, Json};
@@ -2115,8 +2210,6 @@ mod tests {
                 importance: Some(5),
                 tags: Some(Json(vec!["ui".to_string(), "preference".to_string()])),
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2135,8 +2228,6 @@ mod tests {
                 importance: None, // defaults to 3
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2156,8 +2247,18 @@ mod tests {
         assert_eq!(all.len(), 2);
 
         // Get all filtered by persona_id
-        let by_persona =
-            get_all(&pool, Some(&persona.id), None, None, None, None, None, None, None).unwrap();
+        let by_persona = get_all(
+            &pool,
+            Some(&persona.id),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(by_persona.len(), 2);
 
         // Get all filtered by category
@@ -2230,8 +2331,6 @@ mod tests {
             importance,
             tags: None,
             use_case_id: None,
-        
-        
         };
 
         // Valid boundaries
@@ -2291,8 +2390,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2308,8 +2405,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2427,7 +2522,13 @@ mod tests {
         let active_other =
             insert_scoped_memory(&pool, &persona_id, "active other", "active", Some("uc-b"));
 
-        let tiered = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id).with_use_case(Some("uc-a")), 10, 40).unwrap();
+        let tiered = get_for_injection_v2(
+            &pool,
+            InjectionScope::for_persona(&persona_id).with_use_case(Some("uc-a")),
+            10,
+            40,
+        )
+        .unwrap();
 
         let core_ids: Vec<&str> = tiered.core.iter().map(|m| m.id.as_str()).collect();
         // Both core memories surface regardless of use_case_id (rule: core is
@@ -2461,7 +2562,8 @@ mod tests {
         let active_scoped =
             insert_scoped_memory(&pool, &persona_id, "active scoped", "active", Some("uc-a"));
 
-        let tiered = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
+        let tiered =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
 
         assert_eq!(tiered.core.len(), 1);
         assert_eq!(tiered.core[0].id, core_global);
@@ -2484,7 +2586,8 @@ mod tests {
         insert_scoped_memory(&pool, &persona_id, "scoped", "active", Some("uc-a"));
 
         let v1 = get_for_injection(&pool, &persona_id, 10, 40).unwrap();
-        let v2 = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
+        let v2 =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
         assert_eq!(v1.core.len(), v2.core.len());
         assert_eq!(v1.active.len(), v2.active.len());
     }
@@ -2549,7 +2652,10 @@ mod tests {
         )
         .unwrap();
         let ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
-        assert!(ids.contains(&priv_a.as_str()), "persona's own memory missing");
+        assert!(
+            ids.contains(&priv_a.as_str()),
+            "persona's own memory missing"
+        );
         assert!(
             ids.contains(&shared_in_x.as_str()),
             "team-X shared memory not surfaced for member"
@@ -2591,8 +2697,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: Some("uc-x".into()),
-            
-            
             },
         )
         .unwrap();
@@ -2642,8 +2746,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
             // 1: empty content after strip → empty_title_or_content
             CreatePersonaMemoryInput {
@@ -2655,8 +2757,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
             // 2: bogus category → invalid_category
             CreatePersonaMemoryInput {
@@ -2668,8 +2768,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
             // 3: valid
             CreatePersonaMemoryInput {
@@ -2681,8 +2779,6 @@ mod tests {
                 importance: None,
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         ];
 
@@ -2746,8 +2842,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: Some("uc-deleted-on-purpose".into()),
-            
-            
             },
         )
         .unwrap();
@@ -2762,8 +2856,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
-            
-            
             },
         )
         .unwrap();
@@ -2779,8 +2871,13 @@ mod tests {
         // 2. Capability-scoped injection for a DIFFERENT use_case must not
         //    surface the orphan. The persona-wide memory must surface (it has
         //    use_case_id IS NULL).
-        let scoped =
-            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id).with_use_case(Some("uc-something-else")), 10, 10).unwrap();
+        let scoped = get_for_injection_v2(
+            &pool,
+            InjectionScope::for_persona(&persona.id).with_use_case(Some("uc-something-else")),
+            10,
+            10,
+        )
+        .unwrap();
         let active_ids: Vec<_> = scoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !active_ids.contains(&orphan.id.as_str()),
@@ -2793,7 +2890,8 @@ mod tests {
 
         // 3. Unscoped injection (use_case_id = None) must also exclude the
         //    orphan — see CONTRACT (2): "use_case_id IS NULL only".
-        let unscoped = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id), 10, 10).unwrap();
+        let unscoped =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id), 10, 10).unwrap();
         let unscoped_ids: Vec<_> = unscoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !unscoped_ids.contains(&orphan.id.as_str()),
@@ -2867,7 +2965,11 @@ mod tests {
         assert_eq!(n, 2, "delete_all must hard-delete non-core memories only");
 
         let after = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
-        assert_eq!(after.len(), 1, "the pinned core memory must survive a clear-all");
+        assert_eq!(
+            after.len(),
+            1,
+            "the pinned core memory must survive a clear-all"
+        );
         assert_eq!(after[0].id, all[0].id);
         assert_eq!(after[0].tier, "core");
     }
@@ -3008,7 +3110,11 @@ mod tests {
     fn write_path_dedup_collapses_whitespace_and_case_variants() {
         let pool = init_test_db().unwrap();
         let persona_id = make_persona(&pool, "Dedup Variants");
-        let a = create(&pool, dedup_input(&persona_id, "The user prefers dark mode")).unwrap();
+        let a = create(
+            &pool,
+            dedup_input(&persona_id, "The user prefers dark mode"),
+        )
+        .unwrap();
         let b = create(
             &pool,
             dedup_input(&persona_id, "  the   USER prefers   Dark Mode "),
@@ -3031,10 +3137,7 @@ mod tests {
         update_tier(&pool, &pinned.id, "core").unwrap();
 
         let fresh = create(&pool, dedup_input(&persona_id, "Ship on Fridays")).unwrap();
-        assert_ne!(
-            fresh.id, pinned.id,
-            "must NOT dedup against a core memory"
-        );
+        assert_ne!(fresh.id, pinned.id, "must NOT dedup against a core memory");
         assert_eq!(fresh.tier, "active");
         assert_eq!(
             get_by_persona(&pool, &persona_id, None).unwrap().len(),
@@ -3054,7 +3157,10 @@ mod tests {
         let a = create(&pool, dedup_input(&persona_a, "Deploy target is prod")).unwrap();
         let b = create(&pool, dedup_input(&persona_b, "Deploy target is prod")).unwrap();
 
-        assert_ne!(a.id, b.id, "different personas must not dedup against each other");
+        assert_ne!(
+            a.id, b.id,
+            "different personas must not dedup against each other"
+        );
         assert_eq!(get_by_persona(&pool, &persona_a, None).unwrap().len(), 1);
         assert_eq!(get_by_persona(&pool, &persona_b, None).unwrap().len(), 1);
     }
@@ -3208,10 +3314,12 @@ mod vec_tests {
                  WHERE embedding MATCH ?1 ORDER BY distance LIMIT ?2",
             )
             .expect("vec0 MATCH must prepare (sqlite-vec registered)");
-        stmt.query_map(params![blob, k], |r| Ok((r.get(0)?, r.get(1)?)))
-            .unwrap()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
+        stmt.query_map(params![blob, k], |r| {
+            Ok((r.get("memory_id")?, r.get("distance")?))
+        })
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap()
     }
 
     #[test]
@@ -3264,9 +3372,9 @@ mod vec_tests {
             .get()
             .unwrap()
             .query_row(
-                "SELECT COUNT(*) FROM persona_memory_embedding WHERE memory_id = 'on_topic'",
+                "SELECT COUNT(*) AS n FROM persona_memory_embedding WHERE memory_id = 'on_topic'",
                 [],
-                |r| r.get(0),
+                |r| r.get("n"),
             )
             .unwrap();
         assert_eq!(n, 1);
@@ -3327,7 +3435,10 @@ mod vec_tests {
         ];
         let before = memory_model_guard_excluded_total();
         let kept = apply_memory_model_guard(&conn, hits.clone(), "AllMiniLML6V2Q").unwrap();
-        assert_eq!(kept, hits, "inert when every stamp matches the current model");
+        assert_eq!(
+            kept, hits,
+            "inert when every stamp matches the current model"
+        );
         assert_eq!(memory_model_guard_excluded_total(), before);
     }
 
@@ -3393,7 +3504,10 @@ mod vec_tests {
 
         // Sweep: exactly the archived row's leftover vector is cleaned.
         let cleaned = gc_archived_memory_embeddings(&main, &vp, 100).unwrap();
-        assert_eq!(cleaned, 1, "only the archived row's leftover vector is swept");
+        assert_eq!(
+            cleaned, 1,
+            "only the archived row's leftover vector is swept"
+        );
 
         let remaining = embedded_memory_ids(&vp).unwrap();
         assert!(

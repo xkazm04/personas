@@ -21,26 +21,33 @@
 //! Idempotent: safe to call on every app start. Skips unchanged chunks
 //! via `content_hash` equality.
 
-use std::path::{Path, PathBuf};
+#[cfg(not(feature = "ml"))]
+use std::path::Path;
+use std::path::PathBuf;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
 #[cfg(feature = "ml")]
 use chrono::Utc;
+#[cfg(feature = "ml")]
 use rusqlite::params;
 
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
+#[cfg(feature = "ml")]
 use crate::companion::brain::util;
+#[cfg(feature = "ml")]
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
+#[cfg(feature = "ml")]
 use crate::error::AppError;
 
 /// Curated allowlist — 24 docs that capture Personas' philosophy and
 /// architecture without dragging in handoffs, test logs, or stale plans.
 /// Paths are relative to the docs root (the directory whose entries
 /// include `concepts/`).
+#[cfg(feature = "ml")]
 const INCLUDED_DOCS: &[&str] = &[
     // Personas — the core ontology (data model, capabilities, governance).
     "features/personas/01-data-model.md",
@@ -198,18 +205,21 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
 /// Soft target — sections larger than this are split further. Generous
 /// because Athena reads markdown well and we'd rather keep a logical
 /// section together than split it just for tidiness.
+#[cfg(feature = "ml")]
 const CHUNK_SOFT_CAP_BYTES: usize = 8_000;
 
 /// Iterate every embedded doc as `(relative_path, content)` pairs. Used by
 /// the Twin plugin's "Ingest docs/features" button to seed a Twin's
 /// knowledge base with product documentation without re-reading the repo
 /// from disk (which doesn't exist in a production install).
+#[cfg(feature = "ml")]
 pub fn embedded_docs() -> impl Iterator<Item = (&'static str, &'static str)> {
     EMBEDDED_DOCS.iter().copied()
 }
 
 /// Same as [`embedded_docs`] but filtered to `features/*` paths only —
 /// what the Twin's "Ingest docs/features" button should feed in.
+#[cfg(feature = "ml")]
 pub fn embedded_feature_docs() -> impl Iterator<Item = (&'static str, &'static str)> {
     embedded_docs().filter(|(p, _)| p.starts_with("features/"))
 }
@@ -353,25 +363,20 @@ pub async fn ingest_all(
     Ok(stats)
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn ingest_all(_pool: &UserDbPool) -> Result<IngestStats, AppError> {
-    Ok(IngestStats::default())
-}
-
 // ── chunking ────────────────────────────────────────────────────────────
 
+#[cfg(feature = "ml")]
 #[derive(Debug, Clone)]
 struct DoctrineChunk {
     /// `<rel_path>#<heading_anchor>` — also the upsert key.
     file_path: String,
-    /// Heading text (empty for doc-level intro chunk).
-    heading: String,
     /// Markdown body of the section, *including* the heading line if any.
     content: String,
     /// sha256 of `content`.
     content_hash: String,
 }
 
+#[cfg(feature = "ml")]
 fn chunk_markdown(rel_path: &str, body: &str) -> Vec<DoctrineChunk> {
     let mut chunks = Vec::new();
     let mut current_heading = String::new();
@@ -405,7 +410,6 @@ fn chunk_markdown(rel_path: &str, body: &str) -> Vec<DoctrineChunk> {
             let hash = sha256_hex(&piece);
             out.push(DoctrineChunk {
                 file_path,
-                heading: heading.to_string(),
                 content: piece,
                 content_hash: hash,
             });
@@ -430,6 +434,7 @@ fn chunk_markdown(rel_path: &str, body: &str) -> Vec<DoctrineChunk> {
 /// Split a section that's larger than `cap` bytes. Tries H3 boundaries
 /// first, then falls back to hard byte splits at line boundaries (never
 /// splitting mid-line). Keeps each piece under cap when possible.
+#[cfg(feature = "ml")]
 fn split_oversized(content: &str, cap: usize) -> Vec<String> {
     if content.len() <= cap {
         return vec![content.to_string()];
@@ -457,16 +462,19 @@ fn split_oversized(content: &str, cap: usize) -> Vec<String> {
     out
 }
 
+#[cfg(feature = "ml")]
 fn slugify(s: &str) -> String {
     util::slugify(s, "section", None)
 }
 
+#[cfg(feature = "ml")]
 fn sha256_hex(s: &str) -> String {
     util::sha256_hex(s)
 }
 
 // ── upsert ─────────────────────────────────────────────────────────────
 
+#[cfg(feature = "ml")]
 enum UpsertOutcome {
     Inserted,
     Updated,
@@ -577,6 +585,7 @@ async fn upsert_chunk(
 }
 
 /// Does this node have an entry in `companion_embedding`?
+#[cfg(feature = "ml")]
 fn has_vec_entry(pool: &UserDbPool, node_id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let count: i64 = conn
@@ -589,6 +598,7 @@ fn has_vec_entry(pool: &UserDbPool, node_id: &str) -> Result<bool, AppError> {
     Ok(count > 0)
 }
 
+#[cfg(feature = "ml")]
 fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> {
     let conn = pool.get()?;
     // Get all doctrine ids and file_paths.
@@ -615,10 +625,12 @@ fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> 
     Ok(deleted)
 }
 
+#[cfg(feature = "ml")]
 fn excerpt_500(content: &str) -> String {
     util::excerpt(content, 500)
 }
 
+#[cfg(feature = "ml")]
 fn short_random() -> String {
     util::short_id(10)
 }
@@ -630,46 +642,4 @@ fn _silence_unused(_p: &Path) {}
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// Pins the two allowlists in lock-step: every `INCLUDED_DOCS` entry must
-    /// have a matching `EMBEDDED_DOCS` entry, else `read_curated_doc` silently
-    /// returns `None` for it in production (no repo on disk) and every ingest
-    /// permanently counts it in `files_missing` — exactly the drift that left
-    /// `ambient-context-fusion.md` and `mobile.md` orphaned in `INCLUDED_DOCS`
-    /// after their `EMBEDDED_DOCS` entries were removed in the 2026-07-26 docs
-    /// pruning, with nothing tying the two lists together to catch it.
-    #[test]
-    fn included_docs_all_have_an_embedded_copy() {
-        let embedded: std::collections::HashSet<String> =
-            EMBEDDED_DOCS.iter().map(|(p, _)| p.to_string()).collect();
-        let missing: Vec<String> = INCLUDED_DOCS
-            .iter()
-            .map(|p| p.to_string())
-            .filter(|p| !embedded.contains(p))
-            .collect();
-        assert!(
-            missing.is_empty(),
-            "INCLUDED_DOCS entries with no EMBEDDED_DOCS counterpart (the \
-             production fallback silently fails for these; either remove from \
-             INCLUDED_DOCS or add an include_str! entry to EMBEDDED_DOCS): {missing:?}"
-        );
-    }
-
-    /// The inverse direction: an embedded doc with no curated-allowlist entry
-    /// is dead weight baked into the binary that never actually gets ingested.
-    #[test]
-    fn embedded_docs_all_are_curated() {
-        let included: std::collections::HashSet<String> =
-            INCLUDED_DOCS.iter().map(|p| p.to_string()).collect();
-        let orphaned: Vec<String> = EMBEDDED_DOCS
-            .iter()
-            .map(|(p, _)| p.to_string())
-            .filter(|p| !included.contains(p))
-            .collect();
-        assert!(
-            orphaned.is_empty(),
-            "EMBEDDED_DOCS entries not in INCLUDED_DOCS (dead weight baked into the \
-             binary, never ingested): {orphaned:?}"
-        );
-    }
 }

@@ -314,6 +314,19 @@ writing the home dir, `.personas-skill-meta.json` sidecar with a source *path*. 
   - The registry's `skills/` lane becomes the **org library**; `~/.claude/skills` becomes a
     **working copy of the registry clone** (the app pulls before scan; `global_skills_dir`
     gains a registry-clone tier ahead of the home tier).
+    - ✅ **Sync before scan** — `dev_tools_registry_sync` (`registry_sync.rs`) fast-forwards
+      the paired clone. Error-first by design, because the only reason to call it is to
+      establish the clone is current: an **unreachable remote**, a **dirty tree** or
+      **unpushed local commits** all reject rather than degrading, and the message names
+      which of connectivity / mapping / local state to look at. Fast-forward only — never
+      merge, rebase or stash a working copy other sessions and Ascent share.
+    - Fires on an explicit **Sync** control in the workspace registry section, and
+      automatically **before any share/adopt dispatch** (`syncBeforeDispatch` in
+      `skillsWorkbenchData.ts`), where a rejection aborts the dispatch. Never on a render.
+    - Ordering that is load-bearing: the usage piggyback is written **after** the sync,
+      inside `runShare`. Writing it first (as the call site used to) dirties the tree and
+      the sync would rightly refuse — every registry share would fail on the very check
+      meant to protect it.
   - `publish` becomes **branch + commit + PR** (git CLI; the app proposes, the human
     merges — CODEOWNERS). `adopt`/`sync` stay copy-based from the clone; the provenance
     sidecar gains `source_commit` (SHA) beside `content_hash` — ascent's three-hash
@@ -323,19 +336,106 @@ writing the home dir, `.personas-skill-meta.json` sidecar with a source *path*. 
   - `skill_registry` DB stays a scan cache (it already is); `library_path` in
     `.personas/skill-registry.json` becomes `library_remote` + SHA.
   - Vocabulary: adopt registry categories + semver per §1's table.
-  - ascent's R2/R3 registry slices then land against this same repo — the `catalog.json`
-    skills entries are already its designed contract.
+  - ✅ ascent's R2/R3 registry slices then land against this same repo — the `catalog.json`
+    skills entries are already its designed contract. **Satisfied**: `OrgRegistry`,
+    map/create, the `skills/` indexer, `RegistrySyncStrip`, `origin` (`hosted | registry`)
+    on the mirror rows and the migrate-PR route all exist in ascent today, and this arc
+    pointed its `knowledge/` + `usage/` readers at the same repo. The bullet was about
+    convergence — one registry, two consumers — not about new work here.
 
 **P6 — Persona agents (later stage, per operator).** Generated personas have runtime
 memory but no expert system. Connection design (sketch, to be its own plan):
-  - **Consult lane:** the runner's prompt assembly gains an optional knowledge section —
-    subjects selected by the persona's domain/use-case tags from the registry clone's
-    `index.json`-equivalent, packed under a budget exactly like memory recall (the
-    6000-char greedy-pack discipline already exists in `memory_recall.rs`). Techniques'
-    `use_when` triggers are the selection key — the same field the OKF profile adopted.
-  - **Propose-upward lane:** persona executions that surface generalizable lessons emit
-    candidates through the EXISTING harvest door shape (`result.json` → governed ingest →
-    human adjudication), tagged `source: persona-execution` — nothing auto-adopts.
+  - ✅ **Consult lane — SHIPPED 2026-08-20** (`src-tauri/src/engine/knowledge_consult.rs`,
+    injected in `engine/runner/mod.rs` immediately after the memory block, so the agent's
+    own experience outranks generic doctrine when they disagree).
+    - **A menu of pointers, not bodies.** 1,005 forged techniques is not injectable and a
+      truncated technique reads as a complete one, so the section carries
+      subject · technique · when-to-use · file path and invites the agent to open what
+      applies. Same shrink the connector-usage sidecar already makes.
+    - Budget 2,200 chars / 12 entries, packed whole — a deliberate fraction of memory's
+      6,000, because memory is what *this* agent learned and the registry is speculative.
+    - **The registry body is fenced as untrusted content.** Anyone who can merge into a
+      shared registry writes subject names, technique names and `use_when` strings that
+      this app copies verbatim into every persona's prompt. So the body goes inside the
+      nonce'd `<untrusted_*>` boundary the runtime canary already explains, via a new
+      `prompt::wrap_untrusted_section` — the fence helpers are `pub(super)`, so text
+      appended to a finished prompt could not be fenced even in principle. The app's own
+      framing stays OUTSIDE the fence; fencing the sentence that explains the boundary
+      would tell the model to distrust it. Asserted structurally, because the failure —
+      text appended raw past the canary — looks completely normal in a diff.
+      **The census rule `prompt-extended-outside-its-assembler` is what caught this**, on
+      the first run after the code was written.
+    - Framing is also asserted: registry doctrine does not override the task or the user.
+    - The settings key is spelled **once, in Rust**. The store calls
+      `dev_tools_set_knowledge_root(path | null)` rather than writing
+      `app_settings` directly, so there is no TypeScript copy of the key name to drift —
+      and no second Rust declaration either (`knowledge_consult` re-exports
+      `settings_keys::KNOWLEDGE_REGISTRY_ROOT` rather than restating it). Both were real
+      defects on the first draft, both caught by census rules
+      (`settings-key-declared-outside-registry`, `comment-kept-cross-language-mirror`).
+    - **Graceful absence throughout**: no wiring, a stale path, an unbuilt or malformed
+      `index.json` all leave the prompt byte-for-byte unchanged.
+    - **The runner learns the path from `app_settings['knowledge_registry_root']`**, mirrored
+      from the workspace registry store's single `commit` choke point. localStorage cannot
+      be read from Rust and a 3am schedule has no window to ask. One root for now; the
+      per-project mapping is the next slice.
+  - ✅ **`use_when` coverage: 1557/1557 — the backfill needed no work.** The 2026-08-20
+    reading of 376/1005 (0/629 in `software-engineering`) was taken against a clone 37
+    commits behind. After syncing on 2026-08-22 every bundle is at 100%, and a sixth
+    bundle (`recruiting`, 384 techniques) had appeared. Verified twice: by
+    `build-index.mjs` and by an independent frontmatter walk. **The scoping step is what
+    saved the work** — the highest-value next step turned out to be already done, and
+    only measuring after the sync could show that.
+    - **Three consequences the sync forced, none of them the backfill:**
+      1. The bundle was re-shelved under `<category>/<subcategory>/<subject>/`. The reader
+         BUILT its paths from the old flat convention, so every entry it handed a persona
+         became a dead link — silently: the menu still rendered, nothing could be opened.
+         Now derived from the subject's own `file` field, which the index has always
+         carried. **All 15 fixture tests stayed green through this**; only the `#[ignore]`d
+         real-corpus smoke test caught it, which is exactly the gap it was written for.
+      2. 100% trigger coverage killed the fallback. The rule "a technique that declares
+         triggers is never readmitted by its slug" was defensible when most of the corpus
+         had none; at 1557/1557 it disabled name matching everywhere, and a persona
+         working on agent-memory recall was measurably offered NOTHING — every trigger
+         there is phrased in deliberately different vocabulary from the names. Triggers
+         are a precision instrument, not an index of phrasings, so name matching is back
+         for all techniques at a higher bar (`DECLARED_TRIGGER_SLUG_FLOOR`) when triggers
+         exist and did not fire.
+      3. **105 gitignored `.evidence.local.md` sidecars (238 KB) were orphaned** at the old
+         flat paths — git moves tracked files, never ignored ones. A `git clean -fdx`
+         would have destroyed the whole local evidence layer. Relocated by mapping each
+         subject through `index.json`; 105/105 matched, byte count identical.
+    - A relevance floor came out of the same real-corpus run: without it, one shared
+      *category* word pulled 11 irrelevant techniques in behind a single genuine match.
+  - ✅ **Propose-upward lane — SHIPPED 2026-08-22**
+    (`src-tauri/src/commands/infrastructure/knowledge_promote.rs`,
+    `dev_tools_promote_persona_knowledge`).
+    - **The material already existed.** The Knowledge Annotation Protocol has long asked
+      personas to emit `{"knowledge_annotation": …}` when they learn something "valuable
+      for future executions (by you or other personas)"; those land in
+      `execution_knowledge` scoped `persona` | `tool` | `connector` | `global`. That scope
+      is the persona's own claim about how far its insight travels, so it is the selector:
+      `persona` stays put, the other three are org candidates. **No new protocol, no new
+      prompt text, no new burden on the model.**
+    - **Through the existing door, not beside it.** `ws_repo::ingest_candidates` with
+      `actor_kind = "persona-execution"` — the same governed ingest the practice-harvest
+      uses. That inherits the whole contract: candidates land **`observed`**, never
+      adopted; the dedup key and the 90-day rejected window mean a re-promotion cannot
+      re-propose what a human already declined; the 120-per-run cap holds. A second door
+      would have been a second set of rules to keep honest.
+    - Confidence floor 0.6, deliberately just above the protocol's unstated 0.5 default,
+      so promotion means the persona actively claimed more than the default. Filtered rows
+      are counted in the report, never silently dropped, and `dryRun` shows the exact
+      titles before anything is written.
+    - **Three things it refuses to do**, each because the alternative fabricates
+      confidence: it does not classify (every candidate is `fact` — a keyword guess would
+      put a *confident* wrong label on a row a human then trusts; the adjudicator re-kinds
+      it, and an LLM pass is the legitimate refinement); it does not stamp
+      `origin_project_id` (a persona's `project_id` is not a dev project, and faking that
+      column would read as verified provenance — the persona and execution ids go in
+      `detail_md` as what they are); it does not track what it promoted (the door's dedup
+      already absorbs a re-run, and a tracking column would be a second source of truth
+      about the same fact).
   - Non-coding domains slot in the moment their bundle exists (`knowledge/media-craft/`
     for a gravitone-flavored persona) — the mechanism is domain-blind by construction.
 

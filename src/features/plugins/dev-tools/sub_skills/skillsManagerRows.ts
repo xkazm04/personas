@@ -10,7 +10,6 @@
 // Dev-runner tasks through the improve engine.
 import { useMemo } from 'react';
 
-import { writeRegistryUsage } from '@/api/devTools/devTools';
 import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools/devTools';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
@@ -18,7 +17,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 
-import { usageFileFor, type RegistryLibrary } from '../sub_workspaces/registry/useRegistryLibrary';
+import { type RegistryLibrary } from '../sub_workspaces/registry/useRegistryLibrary';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
@@ -135,7 +134,9 @@ export function useSkillsManagerRows(projectId: string | null): SkillsManagerRow
   const onAdopt = (name: string) => {
     // The rows came from `data.library`; the adopt task must read from the SAME
     // library or it will hunt for a registry skill under the home directory.
-    if (!isPresetSkill(name)) { void data.wb?.runAdopt(name, data.library.libraryRoot); return; }
+    // The clone path (not the lane root) is what gets fast-forwarded first — a
+    // registry adopt reads a working copy that may be behind its remote.
+    if (!isPresetSkill(name)) { void data.wb?.runAdopt(name, data.library.libraryRoot, data.library.registry?.clonePath); return; }
     if (!projectId) return;
     void (async () => {
       try {
@@ -205,25 +206,15 @@ export function useSkillsManagerRows(projectId: string | null): SkillsManagerRow
         void data.wb?.runShare(name, { kind: 'home' });
         return;
       }
-      // Write the usage file FIRST so the share task can include it in the one
-      // commit it was already making. Best-effort: failing to contribute counts
-      // must never block publishing a skill, so a failure drops the piggyback
-      // and the share proceeds without it.
-      const contributor = data.library.workspaceName ?? 'personas';
-      void writeRegistryUsage(reg.clonePath, contributor)
-        .then((n) => (n > 0 ? usageFileFor(contributor) : null))
-        .catch((e: unknown) => {
-          silentCatch('skillsManager registry usage')(e);
-          return null;
-        })
-        .then((usageFile) => {
-          void data.wb?.runShare(name, {
-            kind: 'registry',
-            clonePath: reg.clonePath,
-            registryName: reg.fullName,
-            usageFile,
-          });
-        });
+      // `runShare` owns the ordering from here: sync the clone, THEN write the
+      // usage piggyback into it, then dispatch. Writing the usage file here
+      // would dirty the tree before the sync and every share would be refused.
+      void data.wb?.runShare(name, {
+        kind: 'registry',
+        clonePath: reg.clonePath,
+        registryName: reg.fullName,
+        contributor: data.library.workspaceName ?? 'personas',
+      });
     },
     onUse,
     onSwitchMemory: (skillName, next) => { if (projectId) void data.switchMemory(skillName, projectId, next); },

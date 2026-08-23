@@ -14428,7 +14428,12 @@
         "repo_pick_credential_first": "Elige primero una credencial",
         "repo_private": "{name} (privado)",
         "section_title": "Registro de conocimiento",
-        "this_workspace": "este espacio de trabajo"
+        "this_workspace": "este espacio de trabajo",
+        "sync": "Sincronizar",
+        "sync_current": "La copia de trabajo del registro ya está actualizada",
+        "sync_failed": "Registro no sincronizado:",
+        "sync_pulled_one": "Se incorporó {count} commit a la copia de trabajo del registro",
+        "sync_pulled_other": "Se incorporaron {count} commits a la copia de trabajo del registro"
       },
       "skills_library_unwired_body": "Los skills propios provienen del registro de conocimiento que tiene este espacio de trabajo. Conecta uno en Dev Tools → Workspaces, en el espacio de trabajo al que pertenece este proyecto.",
       "skills_library_unwired_title": "Ningún registro conectado",

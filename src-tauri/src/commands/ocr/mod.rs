@@ -72,7 +72,8 @@ fn register_cancel_token(operation_id: &str) -> (u64, CancellationToken) {
 /// a finished run from deleting a newer same-id run's still-live token.
 fn deregister_cancel_token(operation_id: &str, handle: u64) {
     let mut map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
-    if let std::collections::hash_map::Entry::Occupied(entry) = map.entry(operation_id.to_string()) {
+    if let std::collections::hash_map::Entry::Occupied(entry) = map.entry(operation_id.to_string())
+    {
         if entry.get().0 == handle {
             entry.remove();
         }
@@ -590,7 +591,7 @@ async fn run_claude_ocr(
             .stderr(std::process::Stdio::piped())
             .creation_flags(0x08000000)
             .spawn()
-            .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+            .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn Claude Code: {e}")))?;
 
         #[cfg(not(target_os = "windows"))]
         let mut child = tokio::process::Command::new(&binary)
@@ -599,7 +600,7 @@ async fn run_claude_ocr(
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
-            .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+            .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn Claude Code: {e}")))?;
 
         // Write prompt to stdin then close it
         if let Some(mut stdin) = child.stdin.take() {
@@ -653,24 +654,3 @@ async fn run_claude_ocr(
 // ---------------------------------------------------------------------------
 // CRUD
 // ---------------------------------------------------------------------------
-
-#[tauri::command]
-pub fn list_ocr_documents(state: State<'_, Arc<AppState>>) -> Result<Vec<OcrDocument>, AppError> {
-    require_auth_sync(&state)?;
-    repo::list_documents(&state.db)
-}
-
-#[tauri::command]
-pub fn get_ocr_document(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<OcrDocument, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_document(&state.db, &id)
-}
-
-#[tauri::command]
-pub fn delete_ocr_document(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    repo::delete_document(&state.db, &id)
-}

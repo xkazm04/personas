@@ -160,7 +160,12 @@ pub fn build_step_evidence(steps: &[TeamAssignmentStep], strategy: &str) -> Vec<
 
 /// Fire-and-forget entry point for the orchestrator: record + learn + retro.
 /// Never fails the caller — every error is logged and swallowed.
-pub fn spawn_on_terminal(pool: Arc<DbPool>, app: AppHandle, assignment_id: String, final_status: String) {
+pub fn spawn_on_terminal(
+    pool: Arc<DbPool>,
+    app: AppHandle,
+    assignment_id: String,
+    final_status: String,
+) {
     tokio::spawn(async move {
         if let Err(e) = on_assignment_terminal(&pool, &app, &assignment_id, &final_status).await {
             tracing::warn!(
@@ -187,7 +192,10 @@ async fn on_assignment_terminal(
     let steps_skipped = steps.iter().filter(|s| s.status == "skipped").count();
     let interventions = steps.iter().filter(|s| step_was_reviewed(s)).count();
 
-    let duration_secs = match (assignment.started_at.as_deref(), assignment.completed_at.as_deref()) {
+    let duration_secs = match (
+        assignment.started_at.as_deref(),
+        assignment.completed_at.as_deref(),
+    ) {
         (Some(start), Some(end)) => {
             let parse = |s: &str| {
                 chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
@@ -225,7 +233,10 @@ async fn on_assignment_terminal(
         },
     )?;
     if !inserted {
-        tracing::debug!(assignment_id, "team learning: outcome already recorded — skipping");
+        tracing::debug!(
+            assignment_id,
+            "team learning: outcome already recorded — skipping"
+        );
         return Ok(());
     }
     let _ = assignment_repo::insert_event(
@@ -247,7 +258,9 @@ async fn on_assignment_terminal(
     // 2. Trust feedback — one Brier sample per terminal step with a matched
     // persona. Skipped steps carry no outcome signal.
     for (idx, step) in steps.iter().enumerate() {
-        let Some(pid) = step.assigned_persona_id.as_deref() else { continue };
+        let Some(pid) = step.assigned_persona_id.as_deref() else {
+            continue;
+        };
         let success = match step.status.as_str() {
             "done" => true,
             "failed" => false,
@@ -285,7 +298,15 @@ async fn on_assignment_terminal(
         outcome_repo::set_retro(pool, assignment_id, None, Some("trivial_run"))?;
         return Ok(());
     }
-    run_retrospective(pool, app, &assignment.team_id, assignment_id, &assignment.title, &steps).await
+    run_retrospective(
+        pool,
+        app,
+        &assignment.team_id,
+        assignment_id,
+        &assignment.title,
+        &steps,
+    )
+    .await
 }
 
 async fn run_retrospective(
@@ -329,20 +350,21 @@ async fn run_retrospective(
     outcome_repo::set_retro(pool, assignment_id, Some(&delib.id), None)?;
 
     // Agenda: each failed/reviewed step (capped) + the standing improvement item.
-    let mut problem_steps = 0usize;
-    for s in steps.iter().filter(|s| step_was_reviewed(s)) {
+    for (problem_steps, s) in steps.iter().filter(|s| step_was_reviewed(s)).enumerate() {
         if problem_steps >= RETRO_MAX_AGENDA_STEPS {
             break;
         }
         let label = match s.status.as_str() {
-            "failed" => format!("Step failed: \"{}\" — why, and how do we prevent it?", s.title),
+            "failed" => format!(
+                "Step failed: \"{}\" — why, and how do we prevent it?",
+                s.title
+            ),
             _ => format!(
                 "Step \"{}\" needed {} rework round(s) — what caused the bounce?",
                 s.title, s.retry_count
             ),
         };
         let _ = delib_repo::add_agenda_item(pool, &delib.id, &label, Some("moderator"));
-        problem_steps += 1;
     }
     let _ = delib_repo::add_agenda_item(
         pool,
@@ -378,9 +400,7 @@ async fn run_retrospective(
             },
         ));
     }
-    seed.push_str(
-        "Resolve each agenda item with a concrete lesson the team can apply next time.",
-    );
+    seed.push_str("Resolve each agenda item with a concrete lesson the team can apply next time.");
     let _ = channel_repo::post_deliberation_turn(pool, &delib.id, team_id, "system", None, &seed);
 
     // Drive a bounded number of moderated rounds. The deliberation engine's
@@ -390,12 +410,15 @@ async fn run_retrospective(
         .map(|s| s.user_db.clone());
     if let Some(user_db) = user_db {
         for _ in 0..RETRO_MAX_ROUNDS {
-            let Ok(current) = delib_repo::get(pool, &delib.id) else { break };
+            let Ok(current) = delib_repo::get(pool, &delib.id) else {
+                break;
+            };
             if !matches!(current.status.as_str(), "open" | "converging") {
                 break;
             }
             if let Err(e) =
-                crate::engine::deliberation::advance_one_deliberation(pool, &user_db, &current).await
+                crate::engine::deliberation::advance_one_deliberation(pool, &user_db, &current)
+                    .await
             {
                 tracing::warn!(deliberation_id = %delib.id, error = %e, "retrospective: round failed");
                 break;
@@ -416,7 +439,9 @@ async fn run_retrospective(
                 pool,
                 &delib.id,
                 "resolved",
-                Some(&json!({ "kind": "retrospective", "assignment_id": assignment_id }).to_string()),
+                Some(
+                    &json!({ "kind": "retrospective", "assignment_id": assignment_id }).to_string(),
+                ),
                 None,
             );
         }
@@ -437,7 +462,11 @@ fn distill_lessons(pool: &Arc<DbPool>, team_id: &str, assignment_id: &str, delib
                 .filter(|a| a.status == "resolved")
                 .filter_map(|a| {
                     let res = a.resolution?.trim().to_string();
-                    if res.is_empty() { None } else { Some((a.item, res)) }
+                    if res.is_empty() {
+                        None
+                    } else {
+                        Some((a.item, res))
+                    }
                 })
                 .take(RETRO_MAX_LESSONS)
                 .collect()
@@ -470,11 +499,15 @@ fn distill_lessons(pool: &Arc<DbPool>, team_id: &str, assignment_id: &str, delib
         }
     }
     let note = if written > 0 {
-        format!("Distilled {written} lesson(s) into the team ledger — future matching will read them.")
+        format!(
+            "Distilled {written} lesson(s) into the team ledger — future matching will read them."
+        )
     } else {
-        "No agenda items resolved into lessons this time — nothing was written to the team ledger.".to_string()
+        "No agenda items resolved into lessons this time — nothing was written to the team ledger."
+            .to_string()
     };
-    let _ = channel_repo::post_deliberation_turn(pool, deliberation_id, team_id, "system", None, &note);
+    let _ =
+        channel_repo::post_deliberation_turn(pool, deliberation_id, team_id, "system", None, &note);
     let _ = assignment_repo::insert_event(
         pool,
         assignment_id,
@@ -553,7 +586,10 @@ mod tests {
         let before = 0.9;
         let after = brier_trust_update(before, Some(0.9), false);
         // Max possible drop in one step is alpha * (prev - sample_score).
-        assert!(after >= before - TRUST_ALPHA, "one run moved trust too far: {after}");
+        assert!(
+            after >= before - TRUST_ALPHA,
+            "one run moved trust too far: {after}"
+        );
         assert!(after < before);
     }
 
@@ -588,7 +624,10 @@ mod tests {
     fn retrospective_skips_trivial_runs_only() {
         assert!(!retrospective_needed(2, 0, 0), "short clean run must skip");
         assert!(!retrospective_needed(0, 0, 0));
-        assert!(retrospective_needed(3, 0, 0), "3+ steps retro even when clean");
+        assert!(
+            retrospective_needed(3, 0, 0),
+            "3+ steps retro even when clean"
+        );
         assert!(retrospective_needed(1, 1, 0), "any failure retros");
         assert!(retrospective_needed(2, 0, 1), "any intervention retros");
     }

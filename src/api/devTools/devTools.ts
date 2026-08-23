@@ -1,7 +1,10 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
+import type { GitStatusSummary } from "@/lib/bindings/GitStatusSummary";
 import type { SkillInstallResult } from "@/lib/bindings/SkillInstallResult";
+import type { RegistrySync } from "@/lib/bindings/RegistrySync";
+import type { PromotionReport } from "@/lib/bindings/PromotionReport";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
@@ -1471,15 +1474,7 @@ export const runTests = (projectId: string, testCommand?: string) =>
   );
 
 export const getGitStatus = (projectId: string) =>
-  safeInvoke<{
-    project_id: string;
-    project_name: string;
-    branch: string;
-    is_clean: boolean;
-    changed_files_count: number;
-    changed_files: string[];
-    recent_commits: string[];
-  }>(
+  safeInvoke<GitStatusSummary>(
     { project_id: projectId, project_name: '', branch: '', is_clean: true, changed_files_count: 0, changed_files: [], recent_commits: [] },
     "dev_tools_get_git_status",
     { projectId },
@@ -1558,7 +1553,11 @@ export interface SkillEntry {
   description: string | null;
   referenceFileCount: number;
   referenceFiles: string[];
-  /** Provenance-derived drift state: 'in_sync' | 'diverged' | 'local_only'. */
+  /**
+   * Provenance-derived drift state: 'in_sync' | 'stale' | 'diverged' | 'local_only'.
+   * 'stale' = the library moved and this copy did not (safe to update);
+   * 'diverged' = this copy was edited (updating would overwrite it).
+   */
   syncState: string;
   /** Where the skill was installed from ('global' | 'project'), or null. */
   sourceKind: string | null;
@@ -1769,6 +1768,45 @@ export const listSkillLessons = (skillName?: string | null) =>
  */
 export const writeRegistryUsage = (clonePath: string, contributor: string) =>
   safeInvoke<number>(0, "dev_tools_write_registry_usage", { clonePath, contributor });
+
+/**
+ * Fast-forward a paired registry working copy to its remote — "sync before scan".
+ *
+ * Deliberately NOT `safeInvoke`. Every other reader here degrades to a default
+ * when the backend says no, which is right for a count and wrong for this: the
+ * only reason to call it is to establish that the clone is current, so a
+ * swallowed failure would hand back exactly the false assurance it exists to
+ * prevent. An unreachable remote, a dirty tree or local commits all reject, and
+ * the caller is expected to stop and show the operator why.
+ */
+export const syncRegistryClone = (clonePath: string) =>
+  invoke<RegistrySync>("dev_tools_registry_sync", { clonePath });
+
+/**
+ * Point persona executions at a knowledge-registry working copy, or clear it.
+ *
+ * Deliberately a command rather than `setAppSetting('knowledge_registry_root')`:
+ * the settings KEY NAME then lives only in Rust, so there is no second spelling
+ * of it here to drift out of step with the registry that owns it. Pass `null`
+ * to turn the consult lane off — a stale pointer means executions keep reading
+ * a repo the operator believes they disconnected.
+ */
+export const setKnowledgeRegistryRoot = (clonePath: string | null) =>
+  invoke<void>("dev_tools_set_knowledge_root", { clonePath });
+
+/**
+ * Promote a persona's generalizable `knowledge_annotation` findings into a
+ * workspace's knowledge queue for human adjudication (P6 propose-upward lane).
+ *
+ * Candidates land as `observed` through the same governed ingest the
+ * practice-harvest uses — nothing auto-adopts, and the door's dedup means a
+ * re-run cannot re-propose what a reviewer already declined.
+ *
+ * **Call with `dryRun: true` first.** Every promoted candidate becomes triage
+ * work for a person, and the dry run lists the exact titles without writing.
+ */
+export const promotePersonaKnowledge = (workspaceId: string, dryRun = false) =>
+  invoke<PromotionReport>("dev_tools_promote_persona_knowledge", { workspaceId, dryRun });
 
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });

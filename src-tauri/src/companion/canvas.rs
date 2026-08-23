@@ -103,7 +103,12 @@ impl CanvasDim {
 
     /// `Tests risk (41% cov)` — one cell, one clause.
     fn cell(&self) -> String {
-        match self.detail.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        match self
+            .detail
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
             Some(d) => format!("{} {} ({})", self.label(), self.status, d),
             None => format!("{} {}", self.label(), self.status),
         }
@@ -301,12 +306,10 @@ impl CanvasScene {
 /// Read the published snapshot. `None` when the canvas has never been opened,
 /// the row is unreadable, or the document is not v1.
 pub(crate) fn load_scene(sys_db: &DbPool) -> Option<CanvasScene> {
-    let raw = crate::db::repos::core::settings::get(
-        sys_db,
-        crate::db::settings_keys::MASTERMIND_SCENE,
-    )
-    .ok()
-    .flatten()?;
+    let raw =
+        crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::MASTERMIND_SCENE)
+            .ok()
+            .flatten()?;
     match serde_json::from_str::<CanvasScene>(&raw) {
         Ok(scene) if scene.version == 1 => Some(scene),
         Ok(scene) => {
@@ -524,10 +527,7 @@ pub(crate) fn describe_canvas_freshness(sys_db: &DbPool, query: &str) -> String 
     let triaged = scene.triaged();
     let total = triaged.len();
     if total == 0 {
-        return format!(
-            "The canvas has no projects. _{}_",
-            scene_caveats(&scene)
-        );
+        return format!("The canvas has no projects. _{}_", scene_caveats(&scene));
     }
     // Bounded twice over, exactly like `list_teams`: a row cap AND a character
     // cap, with the footer reserved so the "N of M" honesty line survives.
@@ -610,7 +610,11 @@ pub(crate) fn resolve_canvas_target(
                 .find(|p| p.name.to_ascii_lowercase().contains(&lower))
         });
     let Some(p) = hit else {
-        let known: Vec<String> = projects.iter().take(6).map(|p| format!("`{}`", p.id)).collect();
+        let known: Vec<String> = projects
+            .iter()
+            .take(6)
+            .map(|p| format!("`{}`", p.id))
+            .collect();
         return Err(crate::error::AppError::Validation(format!(
             "no registered project matches the canvas slug `{q}`. Registered \
              project ids include: {}. Do not invent a slug.",
@@ -726,7 +730,10 @@ mod tests {
         assert!(!is_demo_slug("personas"));
         let msg = demo_refusal("demo-codex");
         assert!(msg.contains("demo islands"), "{msg}");
-        assert!(msg.contains("register"), "must say what to do instead: {msg}");
+        assert!(
+            msg.contains("register"),
+            "must say what to do instead: {msg}"
+        );
     }
 
     #[test]
@@ -738,13 +745,20 @@ mod tests {
         let caveats = scene_caveats(&scene);
         assert!(caveats.contains("scans (failed)"), "{caveats}");
         assert!(caveats.contains("sentry (stale)"), "{caveats}");
-        assert!(!caveats.contains("goals"), "healthy families are noise: {caveats}");
+        assert!(
+            !caveats.contains("goals"),
+            "healthy families are noise: {caveats}"
+        );
     }
 
     #[test]
     fn a_demo_scene_says_nothing_on_it_is_dispatchable() {
         let scene = scene_from(r#"{"version":1,"demo":true,"projects":[]}"#);
-        assert!(scene_caveats(&scene).contains("DEMO"), "{:?}", scene_caveats(&scene));
+        assert!(
+            scene_caveats(&scene).contains("DEMO"),
+            "{:?}",
+            scene_caveats(&scene)
+        );
     }
 
     #[test]

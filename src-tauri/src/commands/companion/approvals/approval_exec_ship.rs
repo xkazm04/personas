@@ -87,11 +87,7 @@ pub struct ShipMilestoneCreated {
 use crate::companion::dispatcher::READ_OP_SUGGESTIONS;
 
 /// `name (id)` pairs from one table, for a rejection message.
-fn candidates(
-    conn: &rusqlite::Connection,
-    sql: &str,
-    args: &[&dyn rusqlite::ToSql],
-) -> String {
+fn candidates(conn: &rusqlite::Connection, sql: &str, args: &[&dyn rusqlite::ToSql]) -> String {
     let rows: Vec<String> = match conn.prepare(sql) {
         Ok(mut stmt) => stmt
             .query_map(args, |r| {
@@ -663,11 +659,7 @@ pub(crate) fn ship_lifecycle_target(
             }
             "shipped"
         }
-        other => {
-            return Err(format!(
-                "`transition` was `{other}` — use `cut` or `ship`"
-            ))
-        }
+        other => return Err(format!("`transition` was `{other}` — use `cut` or `ship`")),
     };
     Ok((target, name))
 }
@@ -679,14 +671,16 @@ pub(crate) fn execute_ship_milestone_lifecycle(
     state: &State<'_, Arc<AppState>>,
     params_json: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
+    // Through the shared vocabulary rather than an open-coded emptiness test
+    // with its own English sentence: `require_non_empty` returns the identical
+    // `AppError::Validation` and keeps the FIELD identity, which is what a
+    // hand-written message destroys (see command-input-validation.md).
     let milestone_id = params_json
         .get("milestone_id")
         .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            AppError::Validation("ship_milestone_lifecycle: `milestone_id` is required".into())
-        })?;
+        .unwrap_or("");
+    personas_core::validation::require_non_empty("milestone_id", milestone_id)?;
+    let milestone_id = milestone_id.trim();
     let transition = params_json
         .get("transition")
         .and_then(|v| v.as_str())
@@ -696,7 +690,15 @@ pub(crate) fn execute_ship_milestone_lifecycle(
     let (target, name) = ship_lifecycle_target(&state.db, milestone_id, transition)
         .map_err(|reason| AppError::Validation(format!("ship_milestone_lifecycle: {reason}")))?;
 
-    repo::update_milestone(&state.db, milestone_id, None, None, Some(target), None, None)?;
+    repo::update_milestone(
+        &state.db,
+        milestone_id,
+        None,
+        None,
+        Some(target),
+        None,
+        None,
+    )?;
     tracing::info!(milestone_id = %milestone_id, transition, "companion: ship milestone lifecycle");
 
     Ok(ExecuteResult::message(if target == "active" {
@@ -720,7 +722,12 @@ mod ship_milestone_tests {
     use r2d2_sqlite::SqliteConnectionManager;
 
     /// A system DB carrying just the four tables this path reads and writes.
-    fn pool_with_fixture() -> crate::db::DbPool {
+    ///
+    /// `pub(super)` so `ship_scope_tests` can build on it instead of writing a
+    /// second copy of the same DDL. Two hand-rolled schemas for one production
+    /// structure is the defect `hand-rolled-fixture-ddl` names, and the second
+    /// copy is the one that silently drifts.
+    pub(super) fn pool_with_fixture() -> crate::db::DbPool {
         let manager = SqliteConnectionManager::memory();
         let pool = Pool::builder().max_size(1).build(manager).expect("pool");
         let conn = pool.get().unwrap();
@@ -810,8 +817,14 @@ mod ship_milestone_tests {
         )
         .expect_err("a hallucinated id must be refused");
         assert!(err.contains("uc_does_not_exist"), "{err}");
-        assert!(err.contains("uc_1"), "real candidate ids must be named: {err}");
-        assert!(err.contains("Ship tab"), "candidates carry names too: {err}");
+        assert!(
+            err.contains("uc_1"),
+            "real candidate ids must be named: {err}"
+        );
+        assert!(
+            err.contains("Ship tab"),
+            "candidates carry names too: {err}"
+        );
     }
 
     /// A use case id under `goal` is not "close enough" — the two tables are
@@ -850,16 +863,24 @@ mod ship_milestone_tests {
             let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &[row(kind, "x", None)])
                 .expect_err("only use_case and goal are members");
             assert!(err.contains("item_kind"), "{err}");
-            assert!(err.contains("KPI"), "the reason must state the KPI rule: {err}");
+            assert!(
+                err.contains("KPI"),
+                "the reason must state the KPI rule: {err}"
+            );
         }
     }
 
     #[test]
     fn rejects_an_unknown_project_and_names_the_real_ones() {
         let pool = pool_with_fixture();
-        let err =
-            validate_ship_milestone(&pool, "not-a-project", "M1", "", &[row("goal", "goal_1", None)])
-                .expect_err("an unknown project must be refused");
+        let err = validate_ship_milestone(
+            &pool,
+            "not-a-project",
+            "M1",
+            "",
+            &[row("goal", "goal_1", None)],
+        )
+        .expect_err("an unknown project must be refused");
         assert!(err.contains("Personas"), "{err}");
         assert!(err.contains("proj_1"), "{err}");
     }
@@ -875,7 +896,10 @@ mod ship_milestone_tests {
             .expect_err("the cap must hold");
         assert!(err.contains(&SHIP_MILESTONE_MAX_ROWS.to_string()), "{err}");
 
-        let dup = vec![row("use_case", "uc_1", None), row("use_case", "Ship tab", None)];
+        let dup = vec![
+            row("use_case", "uc_1", None),
+            row("use_case", "Ship tab", None),
+        ];
         let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &dup)
             .expect_err("the same member twice must be refused");
         assert!(err.contains("already in this milestone"), "{err}");
@@ -916,7 +940,10 @@ mod ship_milestone_tests {
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .unwrap();
-        assert_eq!(status, "planned", "a milestone is never born shipped or cut");
+        assert_eq!(
+            status, "planned",
+            "a milestone is never born shipped or cut"
+        );
         assert_eq!(
             goal.as_deref(),
             Some("everything the Ship tab needs to be believable")
@@ -963,52 +990,33 @@ mod ship_scope_tests {
     use r2d2::Pool;
     use r2d2_sqlite::SqliteConnectionManager;
 
-    /// Same shape as `pool_with_fixture` above plus a real milestone, so the
-    /// scope path has something to edit. A second project exists to prove the
-    /// cross-project guard is a guard and not a coincidence.
+    /// The shared fixture plus the rows this path needs: a SECOND project (so
+    /// the cross-project guard is tested against something real rather than
+    /// against absence) and three milestones covering each lifecycle state.
+    ///
+    /// Extends `ship_milestone_tests::pool_with_fixture` rather than restating
+    /// its schema. When that fixture gains a column, this one gets it too —
+    /// which is the whole reason not to hand-roll a second copy.
     fn pool_with_milestone() -> crate::db::DbPool {
-        let manager = SqliteConnectionManager::memory();
-        let pool = Pool::builder().max_size(1).build(manager).expect("pool");
-        let conn = pool.get().unwrap();
-        conn.execute_batch(
-            "CREATE TABLE dev_projects (id TEXT PRIMARY KEY, name TEXT NOT NULL);
-             CREATE TABLE dev_use_cases (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
-                name TEXT NOT NULL);
-             CREATE TABLE dev_goals (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
-                title TEXT NOT NULL);
-             CREATE TABLE dev_milestones (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
-                name TEXT NOT NULL, goal TEXT,
-                status TEXT NOT NULL DEFAULT 'planned'
-                    CHECK(status IN ('planned','active','shipped')),
-                order_index INTEGER NOT NULL DEFAULT 0, target_date TEXT,
-                cut_at TEXT, shipped_at TEXT,
-                created_at TEXT NOT NULL DEFAULT '2026-08-20',
-                updated_at TEXT NOT NULL DEFAULT '2026-08-20');
-             CREATE TABLE dev_milestone_items (milestone_id TEXT NOT NULL,
-                item_kind TEXT NOT NULL CHECK(item_kind IN ('use_case','goal')),
-                item_id TEXT NOT NULL,
-                bucket TEXT NOT NULL DEFAULT 'core'
-                    CHECK(bucket IN ('core','later','never')),
-                added_after_cut INTEGER NOT NULL DEFAULT 0,
-                order_index INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL DEFAULT '2026-08-20',
-                description TEXT, rating INTEGER,
-                PRIMARY KEY (milestone_id, item_kind, item_id));
-
-             INSERT INTO dev_projects VALUES ('proj_1','Personas'), ('proj_2','Other');
-             INSERT INTO dev_use_cases VALUES
-               ('uc_1','proj_1','Ship tab'), ('uc_2','proj_1','Vault catalog'),
-               ('uc_foreign','proj_2','Someone else''s feature');
-             INSERT INTO dev_goals VALUES ('goal_1','proj_1','Cut the first milestone');
-             INSERT INTO dev_milestones (id, project_id, name, status)
-               VALUES ('ms_1','proj_1','M1',  'planned'),
-                      ('ms_cut','proj_1','M2','active'),
-                      ('ms_done','proj_1','M0','shipped');
-             INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket)
-               VALUES ('ms_1','use_case','uc_1','core'),
-                      ('ms_1','use_case','uc_ghost','core');",
-        )
-        .unwrap();
+        let pool = super::ship_milestone_tests::pool_with_fixture();
+        {
+            let conn = pool.get().expect("fixture pool");
+            conn.execute_batch(
+                "INSERT INTO dev_projects VALUES
+                   ('proj_2','Other','C:/other','','active','','2026-08-20','2026-08-20');
+                 INSERT INTO dev_use_cases VALUES
+                   ('uc_foreign','proj_2','Someone else''s feature','foreign','',0,'2026-08-20');
+                 INSERT INTO dev_milestones (id, project_id, name, status, created_at, updated_at)
+                   VALUES ('ms_1','proj_1','M1','planned','2026-08-20','2026-08-20'),
+                          ('ms_cut','proj_1','M2','active','2026-08-20','2026-08-20'),
+                          ('ms_done','proj_1','M0','shipped','2026-08-20','2026-08-20');
+                 INSERT INTO dev_milestone_items
+                   (milestone_id, item_kind, item_id, bucket, created_at)
+                   VALUES ('ms_1','use_case','uc_1','core','2026-08-20'),
+                          ('ms_1','use_case','uc_ghost','core','2026-08-20');",
+            )
+            .expect("scope fixture rows");
+        }
         pool
     }
 
@@ -1044,16 +1052,24 @@ mod ship_scope_tests {
     #[test]
     fn refuses_an_id_that_belongs_to_another_project() {
         let pool = pool_with_milestone();
-        let err = validate_ship_scope(&pool, "ms_1", &[edit("use_case", "uc_foreign", Some("core"))])
-            .expect_err("cross-project add must be refused");
+        let err = validate_ship_scope(
+            &pool,
+            "ms_1",
+            &[edit("use_case", "uc_foreign", Some("core"))],
+        )
+        .expect_err("cross-project add must be refused");
         assert!(err.contains("uc_foreign"), "the reason names the id: {err}");
     }
 
     #[test]
     fn refuses_an_invented_id_rather_than_writing_a_dangling_row() {
         let pool = pool_with_milestone();
-        let err = validate_ship_scope(&pool, "ms_1", &[edit("goal", "goal_that_never_was", Some("core"))])
-            .expect_err("invented id must be refused");
+        let err = validate_ship_scope(
+            &pool,
+            "ms_1",
+            &[edit("goal", "goal_that_never_was", Some("core"))],
+        )
+        .expect_err("invented id must be refused");
         assert!(err.contains("never invent one"), "{err}");
     }
 
@@ -1071,7 +1087,10 @@ mod ship_scope_tests {
         let err = validate_ship_scope(
             &pool,
             "ms_1",
-            &[edit("use_case", "uc_1", Some("core")), edit("use_case", "uc_1", Some("never"))],
+            &[
+                edit("use_case", "uc_1", Some("core")),
+                edit("use_case", "uc_1", Some("never")),
+            ],
         )
         .expect_err("a self-contradicting card must be refused");
         assert!(err.contains("twice"), "{err}");
@@ -1088,10 +1107,15 @@ mod ship_scope_tests {
     #[test]
     fn refuses_an_unknown_milestone_and_an_empty_batch() {
         let pool = pool_with_milestone();
-        assert!(validate_ship_scope(&pool, "ms_nope", &[edit("use_case", "uc_1", Some("core"))])
-            .expect_err("unknown milestone")
-            .contains("describe_ship_milestone"));
-        assert!(validate_ship_scope(&pool, "ms_1", &[]).is_err(), "empty batch");
+        assert!(
+            validate_ship_scope(&pool, "ms_nope", &[edit("use_case", "uc_1", Some("core"))])
+                .expect_err("unknown milestone")
+                .contains("describe_ship_milestone")
+        );
+        assert!(
+            validate_ship_scope(&pool, "ms_1", &[]).is_err(),
+            "empty batch"
+        );
     }
 
     #[test]
@@ -1101,7 +1125,10 @@ mod ship_scope_tests {
             .map(|i| edit("use_case", &format!("uc_{i}"), Some("core")))
             .collect();
         assert!(validate_ship_scope(&pool, "ms_1", &many).is_err());
-        assert_eq!(SHIP_SCOPE_MAX_ROWS, FLEET_PLAN_MAX_ROWS, "borrowed, not copied");
+        assert_eq!(
+            SHIP_SCOPE_MAX_ROWS, FLEET_PLAN_MAX_ROWS,
+            "borrowed, not copied"
+        );
     }
 
     // ── lifecycle preconditions ───────────────────────────────────────────
@@ -1109,7 +1136,10 @@ mod ship_scope_tests {
     #[test]
     fn a_planned_milestone_cuts_and_an_already_cut_one_refuses() {
         let pool = pool_with_milestone();
-        assert_eq!(ship_lifecycle_target(&pool, "ms_1", "cut").unwrap().0, "active");
+        assert_eq!(
+            ship_lifecycle_target(&pool, "ms_1", "cut").unwrap().0,
+            "active"
+        );
         assert!(ship_lifecycle_target(&pool, "ms_cut", "cut")
             .expect_err("already cut")
             .contains("already active"));
@@ -1128,21 +1158,30 @@ mod ship_scope_tests {
     #[test]
     fn shipping_refuses_a_cut_with_no_goal_bound_to_it() {
         let pool = pool_with_milestone();
-        let err = ship_lifecycle_target(&pool, "ms_cut", "ship")
-            .expect_err("no objective bound");
+        let err = ship_lifecycle_target(&pool, "ms_cut", "ship").expect_err("no objective bound");
         assert!(err.contains("objective"), "{err}");
         assert!(err.contains("set_ship_scope"), "names the fix: {err}");
 
         // Bind one, and the same call now passes.
         pool.get()
-            .unwrap()
+            .expect("fixture pool")
             .execute(
-                "INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket)
-                 VALUES ('ms_cut','goal','goal_1','core')",
+                // `created_at` is spelled out: the shared fixture mirrors the
+                // production table, where it is NOT NULL with no default. The
+                // hand-rolled copy this replaced carried a DEFAULT the real
+                // table does not have — an INSERT that passed the test and
+                // would have failed in production. Reusing the fixture is what
+                // surfaced it.
+                "INSERT INTO dev_milestone_items
+                   (milestone_id, item_kind, item_id, bucket, created_at)
+                 VALUES ('ms_cut','goal','goal_1','core','2026-08-20')",
                 [],
             )
-            .unwrap();
-        assert_eq!(ship_lifecycle_target(&pool, "ms_cut", "ship").unwrap().0, "shipped");
+            .expect("bind a goal");
+        assert_eq!(
+            ship_lifecycle_target(&pool, "ms_cut", "ship").unwrap().0,
+            "shipped"
+        );
     }
 
     #[test]

@@ -165,6 +165,67 @@ existing Compare mode:
   {failed, cancelled, timeout}`; a recovery is the inverse direction.
   Both lists render their own row strip in the report.
 
+### Organizational knowledge — the consult lane
+
+A run's prompt can carry a short menu of techniques from the shared knowledge
+registry, appended **after** the agent-memory section (so the agent's own
+learnings outrank generic doctrine when they disagree). Source:
+`engine::knowledge_consult`.
+
+- **Off unless a registry is wired.** The runner reads the clone path from
+  `app_settings['knowledge_registry_root']`, written by the workspace registry
+  section. No setting, a path that no longer exists, or an unbuilt/malformed
+  `index.json` all leave the prompt exactly as it was — the registry is an
+  enrichment, never a dependency.
+- **Pointers, not bodies.** Each entry is subject · technique · when-to-use ·
+  file path, capped at 12 entries / ~2,200 chars and packed whole. The agent is
+  told it may open the ones that apply, and that registry doctrine does **not**
+  override its instructions or the user's.
+- **The entries are fenced as untrusted content.** They come from a shared
+  repository, so whoever can merge there controls text that reaches every
+  persona's prompt — the body sits inside the same nonce'd `<untrusted_*>`
+  boundary as input data, covered by the runtime canary. The app's own framing
+  around it is not fenced.
+- **Selection** matches the execution's persona name/description, template
+  category and capability title/description against each technique's `use_when`
+  triggers; techniques that publish no triggers fall back to subject/technique
+  name matching. Nothing is selected when nothing matches — the section is
+  omitted rather than rendered empty.
+- **Read the run log.** `[KNOWLEDGE] …` reports how many picks came from real
+  `use_when` triggers versus the weaker name fallback. A run dominated by the
+  fallback means the task's wording did not hit any technique's stated situation
+  — not that selection is broken. As of 2026-08-22 every technique in the
+  registry publishes triggers, so a persistent all-fallback run is worth a look
+  at how the capability is described.
+- **Technique paths come from the index, never from the directory convention.**
+  The registry re-shelves its subjects as it grows; a reader that constructs
+  `knowledge/<bundle>/<subject>/…` will hand out dead links the first time that
+  happens, and will do it silently.
+
+### Promoting what a run learned (propose-upward)
+
+The reverse of the consult lane. When a persona emits a
+`knowledge_annotation` scoped `global`, `tool` or `connector`, that insight can
+be promoted into a workspace's knowledge queue for a person to adjudicate —
+`dev_tools_promote_persona_knowledge(workspaceId, dryRun)`.
+
+- **`persona`-scoped annotations are never promoted.** The protocol defines that
+  scope as an insight specific to the current persona, which is the definition
+  of not generalizable.
+- **Nothing auto-adopts.** Candidates land as `observed` through the same
+  governed ingest the practice-harvest uses, so they inherit its dedup key, its
+  90-day rejected window (a re-run cannot re-propose what a human declined) and
+  its per-run cap.
+- **Only above-default confidence travels.** The protocol's default is 0.5; the
+  floor is 0.6, so an annotation must have claimed more than "unspecified".
+  Everything filtered is counted in the report.
+- **Run `dryRun: true` first** — it maps everything and lists the exact titles it
+  would propose without writing, which matters because each one becomes triage
+  work for a person.
+- Candidates arrive unclassified (`kind: "fact"`) on purpose; classifying free
+  text by keyword would put a confident wrong label on a row a reviewer then
+  trusts.
+
 ## Relation to other pillars
 
 ```

@@ -79,24 +79,24 @@ pub(crate) fn execute_calibrate_kpi(
         dt::update_kpi(
             &state.db,
             kpi_id,
-            None,                    // name
-            None,                    // description
-            None,                    // context_group_id
-            None,                    // context_id
-            None,                    // category
-            None,                    // measure_kind
-            None,                    // measure_config
-            None,                    // unit
-            None,                    // direction
-            None,                    // baseline_value
-            target_value.map(Some),  // target_value
-            target_date.map(Some),   // target_date
+            None,                   // name
+            None,                   // description
+            None,                   // context_group_id
+            None,                   // context_id
+            None,                   // category
+            None,                   // measure_kind
+            None,                   // measure_config
+            None,                   // unit
+            None,                   // direction
+            None,                   // baseline_value
+            target_value.map(Some), // target_value
+            target_date.map(Some),  // target_date
             cadence,
             status,
-            None,                    // needed_connector
-            None,                    // metric_type
+            None, // needed_connector
+            None, // metric_type
             tier,
-            None,                    // use_case_id
+            None, // use_case_id
         )?;
     }
     if warn_at.is_some() || crit_at.is_some() {
@@ -172,7 +172,10 @@ pub(crate) fn resolve_dev_project(
     conn: &rusqlite::Connection,
     params: &serde_json::Value,
 ) -> Result<(String, bool), AppError> {
-    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let p = params
+        .get("params")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
     let mut candidates: Vec<String> = Vec::new();
     for v in [
         params.get("project_id").and_then(|v| v.as_str()),
@@ -260,7 +263,12 @@ pub(crate) fn execute_scan_kpis(
     };
     let project = dt::get_project_by_id(&state.db, &project_id)?;
     let stale_note = stale_project_note(matched);
-    crate::commands::infrastructure::kpi_scan::launch_kpi_scan(app.clone(), &state.db, &project, None)?;
+    crate::commands::infrastructure::kpi_scan::launch_kpi_scan(
+        app.clone(),
+        &state.db,
+        &project,
+        None,
+    )?;
     Ok(ExecuteResult::message(format!(
         "KPI proposal scan started for `{}`{stale_note} — Claude is reading its context map and \
          proposing measurable KPIs across technical, quality, traffic, and value. They'll land in \
@@ -292,29 +300,60 @@ pub(crate) fn execute_propose_kpi(
     };
     let stale_note = stale_project_note(matched);
 
-    let category = params.get("category").and_then(|v| v.as_str()).unwrap_or("technical");
+    let category = params
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("technical");
     if !matches!(category, "technical" | "quality" | "traffic" | "value") {
         return Err(AppError::Validation(format!(
             "propose_kpi: category must be technical|quality|traffic|value, got `{category}`"
         )));
     }
-    let measure_kind = params.get("measure_kind").and_then(|v| v.as_str()).unwrap_or("manual");
-    if !matches!(measure_kind, "codebase" | "connector" | "manual" | "derived") {
+    let measure_kind = params
+        .get("measure_kind")
+        .and_then(|v| v.as_str())
+        .unwrap_or("manual");
+    if !matches!(
+        measure_kind,
+        "codebase" | "connector" | "manual" | "derived"
+    ) {
         return Err(AppError::Validation(format!(
             "propose_kpi: measure_kind must be codebase|connector|manual|derived, got `{measure_kind}`"
         )));
     }
-    let tier = params.get("tier").and_then(|v| v.as_str()).unwrap_or("supporting");
-    let direction = params.get("direction").and_then(|v| v.as_str()).unwrap_or("up");
-    let cadence = params.get("cadence").and_then(|v| v.as_str()).unwrap_or("weekly");
+    let tier = params
+        .get("tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("supporting");
+    let direction = params
+        .get("direction")
+        .and_then(|v| v.as_str())
+        .unwrap_or("up");
+    let cadence = params
+        .get("cadence")
+        .and_then(|v| v.as_str())
+        .unwrap_or("weekly");
     let unit = params.get("unit").and_then(|v| v.as_str());
     let description = params.get("description").and_then(|v| v.as_str());
     let needed_connector = params.get("needed_connector").and_then(|v| v.as_str());
     let derived_metric = params.get("derived_metric").and_then(|v| v.as_str());
 
     let kpi = crate::commands::infrastructure::kpi_compose::propose_kpi_auto_inner(
-        &state.db, app.clone(), &project_id, None, None, name, description, category, tier,
-        direction, measure_kind, cadence, unit, needed_connector, derived_metric,
+        &state.db,
+        app.clone(),
+        &project_id,
+        None,
+        None,
+        name,
+        description,
+        category,
+        tier,
+        direction,
+        measure_kind,
+        cadence,
+        unit,
+        needed_connector,
+        derived_metric,
     )?;
     let setup = match measure_kind {
         "codebase" => " Its measurement is being set up in the background.",
@@ -338,7 +377,10 @@ pub(crate) fn execute_run_browser_test(
     app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
-    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let p = params
+        .get("params")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
     let str_param = |key: &str| -> Option<String> {
         [params.get(key), p.get(key)]
             .into_iter()
@@ -361,15 +403,19 @@ pub(crate) fn execute_run_browser_test(
         Some(u) => (u, str_param("project_name"), true),
         None => {
             let conn = state.db.get()?;
-            let (test_env_url, name, matched) =
-                resolve_dev_project_with_test_env(&conn, params).map_err(|_| {
+            let (test_env_url, name, matched) = resolve_dev_project_with_test_env(&conn, params)
+                .map_err(|_| {
                     AppError::Validation(
                         "No Dev Tools projects registered and no explicit `url` given. \
                          Register a project or pass a url."
                             .into(),
                     )
                 })?;
-            match test_env_url.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            match test_env_url
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
                 Some(u) => (u.to_string(), Some(name), matched),
                 None => {
                     return Err(AppError::Validation(format!(
@@ -546,7 +592,10 @@ pub(crate) fn execute_open_test_env(
 
     let stale_note = stale_project_note(matched);
     Ok(ExecuteResult {
-        message: format!("Opening the test environment for {}…{stale_note}", project.name),
+        message: format!(
+            "Opening the test environment for {}…{stale_note}",
+            project.name
+        ),
         client_action: Some(ClientAction::OpenExternalUrl { url }),
     })
 }
@@ -585,8 +634,14 @@ pub(crate) fn execute_enqueue_dev_job(
     };
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
     let stale_id_note = stale_project_note(matched);
-    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
-    let delta = p.get("delta_mode").and_then(|v| v.as_bool()).unwrap_or(false);
+    let p = params
+        .get("params")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
+    let delta = p
+        .get("delta_mode")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     crate::commands::infrastructure::context_generation::launch_context_scan(
         app.clone(),
@@ -830,7 +885,10 @@ pub(crate) fn execute_dev_improve(
         .ok_or_else(|| AppError::Internal("dev_improve: missing `request`".into()))?;
     // Default TRUE — the worktree is the safe side when Athena is unsure
     // whether Rust is involved (a wrong `false` would hot-edit the live app).
-    let backend = params.get("backend").and_then(|v| v.as_bool()).unwrap_or(true);
+    let backend = params
+        .get("backend")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
     let context_slug = params
         .get("context")
         .and_then(|v| v.as_str())
@@ -841,7 +899,12 @@ pub(crate) fn execute_dev_improve(
     let resolved = context_slug.and_then(dev_mode::resolve_context);
     let unknown_context = context_slug.is_some() && resolved.is_none();
 
-    let run_id: String = uuid::Uuid::new_v4().simple().to_string().chars().take(8).collect();
+    let run_id: String = uuid::Uuid::new_v4()
+        .simple()
+        .to_string()
+        .chars()
+        .take(8)
+        .collect();
     let (workspace, branch) = if backend {
         let (path, branch) = dev_mode::create_dev_worktree(&run_id)
             .map_err(|e| AppError::Internal(format!("dev_improve: {e}")))?;
@@ -859,7 +922,13 @@ pub(crate) fn execute_dev_improve(
             // Best-effort cleanup of the just-created (still pristine) worktree.
             let root = dev_mode::repo_root();
             let _ = std::process::Command::new("git")
-                .args(["-C", &root.to_string_lossy(), "worktree", "remove", "--force"])
+                .args([
+                    "-C",
+                    &root.to_string_lossy(),
+                    "worktree",
+                    "remove",
+                    "--force",
+                ])
                 .arg(&workspace)
                 .output();
             let _ = std::process::Command::new("git")
@@ -880,7 +949,7 @@ pub(crate) fn execute_dev_improve(
         140,
         40,
     )
-    .map_err(|e| AppError::Internal(format!("dev_improve: spawn failed: {e}")))?;
+    .map_err(|e| AppError::ProcessSpawn(format!("dev_improve: spawn failed: {e}")))?;
 
     // Operative-memory operation — the reflection reconciler keys off this
     // (fleet_bridge::reconcile_if_dispatched → dev-op registry).
@@ -969,11 +1038,9 @@ fn live_dev_sessions(exclude_session_id: &str) -> Vec<String> {
             )
         })
         .filter(|s| {
-            s.name
-                .as_deref()
-                .is_some_and(|n| {
-                    n.contains(&format!("{}-dev", registry::ATHENA_SESSION_NAME_SENTINEL))
-                })
+            s.name.as_deref().is_some_and(|n| {
+                n.contains(&format!("{}-dev", registry::ATHENA_SESSION_NAME_SENTINEL))
+            })
         })
         .map(|s| s.name.clone().unwrap_or(s.project_label))
         .collect()
@@ -1010,7 +1077,10 @@ pub(crate) fn execute_dev_merge(
     })?;
     // Name the collateral BEFORE merging. `force: true` in the params is the
     // operator's "yes, take them down with it".
-    let force = params.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
+    let force = params
+        .get("force")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let siblings = live_dev_sessions(&meta.fleet_session_id);
     if !siblings.is_empty() && !force {
         return Err(AppError::Internal(format!(
@@ -1044,4 +1114,3 @@ pub(crate) fn execute_dev_merge(
     );
     Ok(ExecuteResult::message(msg))
 }
-

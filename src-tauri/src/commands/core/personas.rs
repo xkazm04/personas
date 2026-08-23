@@ -21,9 +21,9 @@ use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
 use crate::validation::contract::check;
-use personas_macros::requires;
 use crate::validation::persona as pv;
 use crate::AppState;
+use personas_macros::requires;
 
 /// List personas, optionally filtered to a set of lifecycle stages. `None`
 /// (the default, back-compat) returns every persona; the roster's Archived view
@@ -259,7 +259,6 @@ pub fn update_persona_parameters(
     id: String,
     parameters: Option<String>,
 ) -> Result<Persona, AppError> {
-
     // Validate the parameters JSON before storing
     if let Some(ref params_json) = parameters {
         if params_json.len() > MAX_PARAMETERS_JSON_SIZE {
@@ -423,14 +422,13 @@ pub fn sync_capability_parameters(
     // Re-inject the section into structured_prompt.instructions (idempotent).
     let structured_prompt_json = match persona.structured_prompt.as_deref() {
         Some(s) if !s.is_empty() => {
-            let mut sp: serde_json::Value = serde_json::from_str(s)
-                .map_err(|e| AppError::Validation(format!("invalid structured_prompt JSON: {e}")))?;
+            let mut sp: serde_json::Value = serde_json::from_str(s).map_err(|e| {
+                AppError::Validation(format!("invalid structured_prompt JSON: {e}"))
+            })?;
             rp::inject_into_structured_prompt(&mut sp, &caps);
-            Some(
-                serde_json::to_string(&sp).map_err(|e| {
-                    AppError::Validation(format!("failed to serialize structured_prompt: {e}"))
-                })?,
-            )
+            Some(serde_json::to_string(&sp).map_err(|e| {
+                AppError::Validation(format!("failed to serialize structured_prompt: {e}"))
+            })?)
         }
         // No structured prompt to inject into — params still seeded so the
         // parameters editor surfaces them; the section lands if a structured
@@ -675,7 +673,6 @@ pub async fn delete_persona(
     app: AppHandle,
     id: String,
 ) -> Result<DeletePersonaResult, AppError> {
-
     // ── Phase 1: Mark persona as "deleting" to block new executions ──
     state.engine.mark_deleting(&id).await;
 
@@ -700,6 +697,9 @@ async fn delete_persona_inner(
     // Capture the persona's custom-icon asset id (if any) so we can reclaim the
     // orphaned icon file after the row is gone.
     let mut custom_icon_asset: Option<String> = None;
+    // KP bridge (WP4): capture the KP link + name before the row disappears so
+    // the `retired` lifecycle push below can still address the KP app.
+    let mut kp_link: Option<(crate::db::models::KpLink, String)> = None;
     if let Ok(persona) = repo::get_by_id(&state.db, id) {
         if let Some(reason) = deletion_forbidden_reason(&persona) {
             return Err(AppError::Forbidden(reason));
@@ -709,6 +709,10 @@ async fn delete_persona_inner(
             .as_deref()
             .and_then(|i| i.strip_prefix("custom-icon:"))
             .map(|s| s.to_string());
+        kp_link = persona
+            .parsed_design_context()
+            .kp_link
+            .map(|link| (link, persona.name.clone()));
     }
 
     // ── Phase 1b: Cancel all running/queued executions for this persona ──
@@ -830,6 +834,12 @@ async fn delete_persona_inner(
             crate::commands::core::persona_icons::delete_icon_file_if_orphaned(
                 state, app, &asset_id,
             );
+        }
+        // KP bridge (WP4) — a KP-hired persona was deleted: push `retired` to
+        // the KP app. Best-effort fire-and-forget; the link + name were
+        // captured in Phase 1a before the row was removed.
+        if let Some((link, name)) = &kp_link {
+            crate::engine::kp_reporter::push_lifecycle_event(link, "retired", id, name);
         }
     }
 
@@ -1112,7 +1122,10 @@ mod drain_tests {
         }
 
         assert!(repo::delete(&pool, &victim.id).unwrap());
-        assert!(repo::get_by_id(&pool, &victim.id).is_err(), "persona row gone");
+        assert!(
+            repo::get_by_id(&pool, &victim.id).is_err(),
+            "persona row gone"
+        );
 
         let conn = pool.get().unwrap();
         let memories: i64 = conn

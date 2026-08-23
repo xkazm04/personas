@@ -91,14 +91,23 @@ impl Drop for ZeroizingFields {
 ///
 /// Each credential field is mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
 /// For OAuth credentials with a refresh_token, automatically refreshes the access_token.
-/// Returns `(env_vars, hints, decryption_failures)`. If `decryption_failures`
-/// is non-empty, the caller should abort execution and surface the names.
+/// Returns `(env_vars, hints, decryption_failures, injected_connector_names,
+/// injected_credential_ids)`. If `decryption_failures` is non-empty, the
+/// caller should abort execution and surface the names. The credential ids
+/// (deduped, injection order) let audit call sites attribute the invocation to
+/// the concrete vault credential instead of logging `None`.
 pub(crate) async fn resolve_credential_env_vars(
     pool: &DbPool,
     tools: &[PersonaToolDefinition],
     persona_id: &str,
     persona_name: &str,
-) -> (Vec<(String, String)>, Vec<String>, Vec<String>, Vec<String>) {
+) -> (
+    Vec<(String, String)>,
+    Vec<String>,
+    Vec<String>,
+    Vec<String>,
+    Vec<String>,
+) {
     let mut env_vars: Vec<(String, String)> = Vec::new();
     let mut hints: Vec<String> = Vec::new();
     let mut failures: Vec<String> = Vec::new();
@@ -107,13 +116,22 @@ pub(crate) async fn resolve_credential_env_vars(
     // `metadata.llm_usage_hint` for the prompt's Connector Usage Reference
     // section.
     let mut injected_connector_names: Vec<String> = Vec::new();
+    // Vault credential ids actually injected (parallel purpose to the names
+    // above; deduped via seen_connectors / first-credential-wins).
+    let mut injected_credential_ids: Vec<String> = Vec::new();
     let mut seen_connectors: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     let connectors = match connector_repo::get_all(pool) {
         Ok(c) => c,
         Err(e) => {
             tracing::warn!("Failed to load connectors for credential injection: {}", e);
-            return (env_vars, hints, failures, injected_connector_names);
+            return (
+                env_vars,
+                hints,
+                failures,
+                injected_connector_names,
+                injected_credential_ids,
+            );
         }
     };
 
@@ -121,8 +139,7 @@ pub(crate) async fn resolve_credential_env_vars(
         // -- Primary: match tool name in connector services --
         let mut matched_connector = false;
         for connector in &connectors {
-            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
-            {
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services) {
                 Ok(v) => v,
                 Err(e) => {
                     tracing::warn!(
@@ -154,11 +171,12 @@ pub(crate) async fn resolve_credential_env_vars(
             )
             .await
             {
-                Ok(true) => {
+                Ok(Some(cred_id)) => {
                     matched_connector = true;
                     injected_connector_names.push(connector.name.clone());
+                    injected_credential_ids.push(cred_id);
                 }
-                Ok(false) => {}
+                Ok(None) => {}
                 Err(name) => {
                     failures.push(name);
                 }
@@ -197,12 +215,13 @@ pub(crate) async fn resolve_credential_env_vars(
                     )
                     .await
                     {
-                        Ok(true) => {
+                        Ok(Some(cred_id)) => {
                             matched_connector = true;
                             injected_connector_names.push(connector.name.clone());
+                            injected_credential_ids.push(cred_id);
                             break;
                         }
-                        Ok(false) => {}
+                        Ok(None) => {}
                         Err(name) => {
                             failures.push(name);
                         }
@@ -213,7 +232,7 @@ pub(crate) async fn resolve_credential_env_vars(
                 if !matched_connector {
                     if let Ok(creds) = cred_repo::get_by_service_type(pool, cred_type) {
                         if let Some(cred) = creds.first() {
-                            if let Err(name) = inject_credential(
+                            match inject_credential(
                                 pool,
                                 cred,
                                 cred_type,
@@ -225,7 +244,8 @@ pub(crate) async fn resolve_credential_env_vars(
                             )
                             .await
                             {
-                                failures.push(name);
+                                Ok(()) => injected_credential_ids.push(cred.id.clone()),
+                                Err(name) => failures.push(name),
                             }
                         }
                     }
@@ -234,7 +254,13 @@ pub(crate) async fn resolve_credential_env_vars(
         }
     }
 
-    (env_vars, hints, failures, injected_connector_names)
+    (
+        env_vars,
+        hints,
+        failures,
+        injected_connector_names,
+        injected_credential_ids,
+    )
 }
 
 /// Force-refresh OAuth credentials that would be injected for a direct API
@@ -485,7 +511,7 @@ pub(super) async fn inject_design_context_credentials(
             .iter()
             .find(|c| c.name.to_lowercase() == name_lower)
         {
-            if let Ok(true) =
+            if let Ok(Some(_)) =
                 inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name)
                     .await
             {
@@ -514,8 +540,9 @@ pub(super) async fn inject_design_context_credentials(
 }
 
 /// Decrypt and inject all fields from a connector's first credential as env vars.
-/// Returns `Ok(true)` if credentials were found and injected, `Ok(false)` if none
-/// found, or `Err(name)` if decryption failed.
+/// Returns `Ok(Some(credential_id))` if credentials were found and injected,
+/// `Ok(None)` if none found, or `Err(name)` if decryption failed. The id lets
+/// audit call sites attribute the invocation to the concrete vault credential.
 pub(crate) async fn inject_connector_credentials(
     pool: &DbPool,
     connector: &crate::db::models::ConnectorDefinition,
@@ -523,10 +550,10 @@ pub(crate) async fn inject_connector_credentials(
     hints: &mut Vec<String>,
     persona_id: &str,
     persona_name: &str,
-) -> Result<bool, String> {
+) -> Result<Option<String>, String> {
     let creds = match cred_repo::get_by_service_type(pool, &connector.name) {
         Ok(c) => c,
-        Err(_) => return Ok(false),
+        Err(_) => return Ok(None),
     };
 
     if let Some(cred) = creds.first() {
@@ -541,9 +568,9 @@ pub(crate) async fn inject_connector_credentials(
             persona_name,
         )
         .await?;
-        Ok(true)
+        Ok(Some(cred.id.clone()))
     } else {
-        Ok(false)
+        Ok(None)
     }
 }
 
@@ -609,26 +636,26 @@ async fn try_refresh_oauth_token(
                 zeroize::Zeroizing::new(secret.to_string()),
             )
         } else {
-        // Upgraded from `debug!` to `warn!`. This is the most common silent
-        // failure for app-managed Google credentials in dev builds: the
-        // credential stores no client_id (app_managed=true) and the dev
-        // binary wasn't built with GCP_DESKTOP_CLIENT_ID /
-        // GOOGLE_CLIENT_ID env vars set, so refresh has no client
-        // identity to send. The user sees a "healthy" credential
-        // in the catalog (the catalog uses a different refresh path
-        // via run_healthcheck → connector_strategy::resolve_auth_token)
-        // and is then surprised when the build-test gets 401.
-        tracing::warn!(
-            connector = connector_name,
-            "OAuth refresh skipped: no client credentials available. \
+            // Upgraded from `debug!` to `warn!`. This is the most common silent
+            // failure for app-managed Google credentials in dev builds: the
+            // credential stores no client_id (app_managed=true) and the dev
+            // binary wasn't built with GCP_DESKTOP_CLIENT_ID /
+            // GOOGLE_CLIENT_ID env vars set, so refresh has no client
+            // identity to send. The user sees a "healthy" credential
+            // in the catalog (the catalog uses a different refresh path
+            // via run_healthcheck → connector_strategy::resolve_auth_token)
+            // and is then surprised when the build-test gets 401.
+            tracing::warn!(
+                connector = connector_name,
+                "OAuth refresh skipped: no client credentials available. \
              For Google/Microsoft platform OAuth, set GCP_DESKTOP_CLIENT_ID + \
              GCP_DESKTOP_CLIENT_SECRET (or GOOGLE_CLIENT_ID/SECRET, \
              MICROSOFT_CLIENT_ID/SECRET) at build time, or store client \
              credentials per-credential in the vault. Tools will use the \
              stored access_token as-is; expect 401 once it expires."
-        );
-        return None;
-    };
+            );
+            return None;
+        };
     let client_id = &cid;
     let client_secret = &csec;
 
@@ -797,7 +824,8 @@ pub(crate) async fn inject_credential(
                 .unwrap_or(true);
             // Scrub the previous (now-expired) access_token value we're
             // overwriting so it isn't left un-zeroized on the heap.
-            if let Some(mut old) = fields.insert("access_token".to_string(), refresh_ok.access_token.clone())
+            if let Some(mut old) =
+                fields.insert("access_token".to_string(), refresh_ok.access_token.clone())
             {
                 old.zeroize();
             }
@@ -901,9 +929,7 @@ pub(crate) async fn inject_credential(
         // as ANTHROPIC_API_KEY would silently flip the CLI onto the API account
         // and bill credits ("Credit balance is too low"). (User directive
         // 2026-06-11: executions/evaluation route to the .cmd subscription only.)
-        if crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV
-            .contains(&env_key.as_str())
-        {
+        if crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV.contains(&env_key.as_str()) {
             tracing::warn!(
                 env_key = %env_key,
                 credential = %cred.name,
@@ -1067,7 +1093,7 @@ mod tests {
         );
 
         let tools = vec![make_tool("send_testconn_message_qq", None)];
-        let (env, hints, failures, injected) =
+        let (env, hints, failures, injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-1", "Test Persona").await;
 
         assert!(failures.is_empty(), "unexpected failures: {failures:?}");
@@ -1094,10 +1120,15 @@ mod tests {
     async fn requires_credential_type_falls_back_to_connector_name_match() {
         let pool = init_test_db().unwrap();
         seed_connector(&pool, "zetasvc_qq", "[]");
-        seed_credential(&pool, "zetasvc_qq", "Zeta Cred", &[("token", "zeta-token-1")]);
+        seed_credential(
+            &pool,
+            "zetasvc_qq",
+            "Zeta Cred",
+            &[("token", "zeta-token-1")],
+        );
 
         let tools = vec![make_tool("tool_without_services_qq", Some("zetasvc_qq"))];
-        let (env, _hints, failures, injected) =
+        let (env, _hints, failures, injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-2", "Fallback Persona").await;
 
         assert!(failures.is_empty(), "unexpected failures: {failures:?}");
@@ -1119,7 +1150,7 @@ mod tests {
         );
 
         let tools = vec![make_tool("orphan_tool_qq", Some("orphansvc_qq"))];
-        let (env, _hints, failures, _injected) =
+        let (env, _hints, failures, _injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-3", "Orphan Persona").await;
 
         assert!(failures.is_empty(), "unexpected failures: {failures:?}");
@@ -1158,7 +1189,7 @@ mod tests {
         );
 
         let tools = vec![make_tool("anthropic_messages_qq", None)];
-        let (env, hints, failures, injected) =
+        let (env, hints, failures, injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-guard", "Guard Persona").await;
 
         assert!(failures.is_empty(), "unexpected failures: {failures:?}");
@@ -1197,7 +1228,7 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         let tools = vec![make_tool("ghost_tool_qq", Some("ghost_service_qq"))];
-        let (env, hints, failures, injected) =
+        let (env, hints, failures, injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-4", "Ghost Persona").await;
 
         assert!(
@@ -1242,7 +1273,7 @@ mod tests {
         }
 
         let tools = vec![make_tool("corrupt_tool_qq", None)];
-        let (env, _hints, failures, injected) =
+        let (env, _hints, failures, injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-5", "Corrupt Persona").await;
 
         assert_eq!(
@@ -1280,13 +1311,14 @@ mod tests {
         // Force every audit insert to fail.
         {
             let conn = pool.get().unwrap();
-            conn.execute_batch("DROP TABLE credential_audit_log").unwrap();
+            conn.execute_batch("DROP TABLE credential_audit_log")
+                .unwrap();
         }
 
         let before = crate::engine::crypto::credential_audit_write_failures();
 
         let tools = vec![make_tool("audittrail_tool_qq", None)];
-        let (env, _hints, failures, injected) =
+        let (env, _hints, failures, injected, _cred_ids) =
             resolve_credential_env_vars(&pool, &tools, "persona-audit", "Audit Persona").await;
 
         // Availability preserved: the injection succeeded despite the audit gap.

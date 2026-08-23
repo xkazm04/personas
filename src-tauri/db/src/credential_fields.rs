@@ -88,8 +88,7 @@ pub(crate) fn normalize_field_key(key: &str) -> String {
 /// wider of the two rule sets, verbatim.
 pub fn classify_field_type(key: &str) -> &'static str {
     let lower = key.to_lowercase();
-    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server"
-    {
+    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
         "url"
     } else if lower.contains("token")
         || lower.contains("key")

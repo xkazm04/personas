@@ -89,7 +89,7 @@ fn select_failure_patterns(entries: &[ExecutionKnowledge]) -> Vec<&ExecutionKnow
         })
         .collect();
 
-    candidates.sort_by(|a, b| b.failure_count.cmp(&a.failure_count));
+    candidates.sort_by_key(|b| std::cmp::Reverse(b.failure_count));
     candidates.truncate(MAX_FAILURE_PATTERNS_IN_PROMPT);
     candidates
 }

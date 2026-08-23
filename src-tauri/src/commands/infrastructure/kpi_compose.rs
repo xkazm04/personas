@@ -39,15 +39,14 @@
 //!
 //! Spawn/stream boilerplate is cloned from `kpi_scan.rs`.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde_json::{json, Value};
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
@@ -55,18 +54,6 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 /// Job extra: the single composed result envelope (`{"kpi_measure"|"kpi_proposal": …}`).
 #[derive(Clone, Default)]
@@ -132,10 +119,17 @@ pub async fn dev_tools_propose_kpi(
 ) -> Result<Value, AppError> {
     require_auth(&state).await?;
     if intent.trim().is_empty() {
-        return Err(AppError::Validation("Describe what to measure first.".into()));
+        return Err(AppError::Validation(
+            "Describe what to measure first.".into(),
+        ));
     }
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    let scope = scope_block(&state.db, &project_id, context_group_id.as_deref(), context_id.as_deref());
+    let scope = scope_block(
+        &state.db,
+        &project_id,
+        context_group_id.as_deref(),
+        context_id.as_deref(),
+    );
     let prompt_text = build_propose_prompt(&project.name, &scope, intent.trim());
     launch_compose(
         app,
@@ -176,9 +170,21 @@ pub async fn dev_tools_propose_kpi_auto(
 ) -> Result<crate::db::models::DevKpi, AppError> {
     require_auth(&state).await?;
     propose_kpi_auto_inner(
-        &state.db, app, &project_id, context_group_id.as_deref(), context_id.as_deref(),
-        &name, description.as_deref(), &category, &tier, &direction, &measure_kind, &cadence,
-        unit.as_deref(), needed_connector.as_deref(), derived_metric.as_deref(),
+        &state.db,
+        app,
+        &project_id,
+        context_group_id.as_deref(),
+        context_id.as_deref(),
+        &name,
+        description.as_deref(),
+        &category,
+        &tier,
+        &direction,
+        &measure_kind,
+        &cadence,
+        unit.as_deref(),
+        needed_connector.as_deref(),
+        derived_metric.as_deref(),
     )
 }
 
@@ -216,21 +222,62 @@ pub(crate) fn propose_kpi_auto_inner(
         "{}".to_string()
     };
     let kpi = repo::create_kpi(
-        db, project_id, name.trim(), description, context_group_id, category, measure_kind,
-        &measure_config, unit.unwrap_or(""), direction,
-        None, None, None, cadence, Some("proposed"), "user", None, needed_connector, None, context_id,
+        db,
+        project_id,
+        name.trim(),
+        description,
+        context_group_id,
+        category,
+        measure_kind,
+        &measure_config,
+        unit.unwrap_or(""),
+        direction,
+        None,
+        None,
+        None,
+        cadence,
+        Some("proposed"),
+        "user",
+        None,
+        needed_connector,
+        None,
+        context_id,
         /* use_case_id */ None,
     )?;
     if tier != "supporting" {
         let _ = repo::update_kpi(
-            db, &kpi.id, None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, Some(tier), /* use_case_id */ None,
+            db,
+            &kpi.id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(tier),
+            /* use_case_id */ None,
         );
     }
     if measure_kind == "codebase" {
         let project = repo::get_project_by_id(db, project_id)?;
         let prompt_text = build_measure_compose_prompt(&kpi);
-        launch_compose_apply(app, db.clone(), kpi.id.clone(), project.root_path, prompt_text);
+        launch_compose_apply(
+            app,
+            db.clone(),
+            kpi.id.clone(),
+            project.root_path,
+            prompt_text,
+        );
     }
     repo::get_kpi(db, &kpi.id)
 }
@@ -295,44 +342,60 @@ fn launch_compose(
 ) -> Result<Value, AppError> {
     let task_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
-    KPI_COMPOSE_JOBS.insert_running(task_id.clone(), cancel_token.clone(), ComposeExtra::default())?;
+    KPI_COMPOSE_JOBS.insert_running(
+        task_id.clone(),
+        cancel_token.clone(),
+        ComposeExtra::default(),
+    )?;
     KPI_COMPOSE_JOBS.set_status(&app, &task_id, "running", None);
 
     let app_handle = app.clone();
     let task_for_run = task_id.clone();
     let app_handle_for_panic = app_handle.clone();
     let task_for_panic = task_for_run.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
-            res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text, spend) => res,
-        };
-        match result {
-            Ok(true) => KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "completed", None),
-            Ok(false) => KPI_COMPOSE_JOBS.set_status(
-                &app_handle,
-                &task_for_run,
-                "failed",
-                Some("The model returned no measurement.".into()),
-            ),
-            Err(e) => {
-                let msg = format!("{e}");
-                KPI_COMPOSE_JOBS.emit_line(&app_handle, &task_for_run, format!("[Error] {msg}"));
-                KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "failed", Some(msg));
+    spawn_guarded(
+        "KPI compose",
+        task_for_panic.clone(),
+        async move {
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
+                res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text, spend) => res,
+            };
+            match result {
+                Ok(true) => {
+                    KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "completed", None)
+                }
+                Ok(false) => KPI_COMPOSE_JOBS.set_status(
+                    &app_handle,
+                    &task_for_run,
+                    "failed",
+                    Some("The model returned no measurement.".into()),
+                ),
+                Err(e) => {
+                    let msg = format!("{e}");
+                    KPI_COMPOSE_JOBS.emit_line(
+                        &app_handle,
+                        &task_for_run,
+                        format!("[Error] {msg}"),
+                    );
+                    KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "failed", Some(msg));
+                }
             }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(task_id = %task_for_panic, panic = %msg, "KPI compose task panicked — marking job as failed");
-            KPI_COMPOSE_JOBS.emit_line(&app_handle_for_panic, &task_for_panic, format!("[Error] {msg}"));
-            KPI_COMPOSE_JOBS.set_status(&app_handle_for_panic, &task_for_panic, "failed", Some(msg));
-        }
-    });
+        },
+        move |msg| async move {
+            KPI_COMPOSE_JOBS.emit_line(
+                &app_handle_for_panic,
+                &task_for_panic,
+                format!("[Error] {msg}"),
+            );
+            KPI_COMPOSE_JOBS.set_status(
+                &app_handle_for_panic,
+                &task_for_panic,
+                "failed",
+                Some(msg),
+            );
+        },
+    );
 
     Ok(json!({ "task_id": task_id }))
 }
@@ -351,57 +414,67 @@ fn launch_compose_apply(
 ) -> String {
     let task_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
-    let _ = KPI_COMPOSE_JOBS.insert_running(task_id.clone(), cancel_token.clone(), ComposeExtra::default());
+    let _ = KPI_COMPOSE_JOBS.insert_running(
+        task_id.clone(),
+        cancel_token.clone(),
+        ComposeExtra::default(),
+    );
     KPI_COMPOSE_JOBS.set_status(&app, &task_id, "running", None);
 
     let app_handle = app.clone();
     let task = task_id.clone();
     let app_handle_for_panic = app_handle.clone();
     let task_for_panic = task.clone();
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let spend = Some(ComposeSpend {
-            pool: pool.clone(),
-            trigger_kind: "kpi_compose",
-            project_id: None,
-        });
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
-            res = run_compose(&app_handle, &task, &root_path, prompt_text, spend) => res,
-        };
-        match result {
-            Ok(true) => {
-                if let Some(env) = KPI_COMPOSE_JOBS.read_extra(&task, |e| e.result.clone()) {
-                    let _ = tokio::task::spawn_blocking(move || {
-                        apply_composed_measure(&pool, &kpi_id, &env);
-                    })
-                    .await;
+    spawn_guarded(
+        "KPI compose-apply",
+        task_for_panic.clone(),
+        async move {
+            let spend = Some(ComposeSpend {
+                pool: pool.clone(),
+                trigger_kind: "kpi_compose",
+                project_id: None,
+            });
+            let result = tokio::select! {
+                _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
+                res = run_compose(&app_handle, &task, &root_path, prompt_text, spend) => res,
+            };
+            match result {
+                Ok(true) => {
+                    if let Some(env) = KPI_COMPOSE_JOBS.read_extra(&task, |e| e.result.clone()) {
+                        let _ = tokio::task::spawn_blocking(move || {
+                            apply_composed_measure(&pool, &kpi_id, &env);
+                        })
+                        .await;
+                    }
+                    KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "completed", None);
                 }
-                KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "completed", None);
+                Ok(false) => KPI_COMPOSE_JOBS.set_status(
+                    &app_handle,
+                    &task,
+                    "failed",
+                    Some("The model returned no measurement.".into()),
+                ),
+                Err(e) => {
+                    let msg = format!("{e}");
+                    KPI_COMPOSE_JOBS.emit_line(&app_handle, &task, format!("[Error] {msg}"));
+                    KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "failed", Some(msg));
+                }
             }
-            Ok(false) => KPI_COMPOSE_JOBS.set_status(
-                &app_handle,
-                &task,
+        },
+        move |msg| async move {
+            KPI_COMPOSE_JOBS.emit_line(
+                &app_handle_for_panic,
+                &task_for_panic,
+                format!("[Error] {msg}"),
+            );
+            KPI_COMPOSE_JOBS.set_status(
+                &app_handle_for_panic,
+                &task_for_panic,
                 "failed",
-                Some("The model returned no measurement.".into()),
-            ),
-            Err(e) => {
-                let msg = format!("{e}");
-                KPI_COMPOSE_JOBS.emit_line(&app_handle, &task, format!("[Error] {msg}"));
-                KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "failed", Some(msg));
-            }
-        }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(task_id = %task_for_panic, panic = %msg, "KPI compose-apply task panicked — marking job as failed");
-            KPI_COMPOSE_JOBS.emit_line(&app_handle_for_panic, &task_for_panic, format!("[Error] {msg}"));
-            KPI_COMPOSE_JOBS.set_status(&app_handle_for_panic, &task_for_panic, "failed", Some(msg));
-        }
-    });
+                Some(msg),
+            );
+        },
+    );
     task_id
 }
 
@@ -419,7 +492,9 @@ fn launch_compose_apply(
 /// this function passed an unrecorded `source` and every write was rejected by
 /// the column CHECK in silence.
 fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, envelope: &Value) {
-    let Some(m) = envelope.get("kpi_measure") else { return };
+    let Some(m) = envelope.get("kpi_measure") else {
+        return;
+    };
     let cmd = m.get("cmd").and_then(|v| v.as_str()).unwrap_or("");
     let parse = m.get("parse").and_then(|v| v.as_str()).unwrap_or("");
     if cmd.is_empty() || parse.is_empty() {
@@ -427,8 +502,26 @@ fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, envelope: &Val
     }
     let config = json!({ "cmd": cmd, "parse": parse }).to_string();
     let _ = repo::update_kpi(
-        pool, kpi_id, None, None, None, None, None, None, Some(&config), None, None, None,
-        None, None, None, None, None, None, None, /* use_case_id */ None,
+        pool,
+        kpi_id,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(&config),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        /* use_case_id */ None,
     );
     if let Some(value) = m.get("value").and_then(|v| v.as_f64()) {
         // Same evidence SHAPE the evaluator writes (`kpi_eval::measure_codebase`
@@ -446,8 +539,25 @@ fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, envelope: &Val
             Ok(_) => {
                 if matches!(repo::get_kpi(pool, kpi_id), Ok(k) if k.baseline_value.is_none()) {
                     let _ = repo::update_kpi(
-                        pool, kpi_id, None, None, None, None, None, None, None, None, None,
-                        Some(Some(value)), None, None, None, None, None, None, None,
+                        pool,
+                        kpi_id,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        Some(Some(value)),
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
                         /* use_case_id */ None,
                     );
                 }
@@ -531,7 +641,9 @@ async fn run_compose(
                         &line,
                     );
                 }
-                let Some(text) = extract_display_text(&line) else { continue };
+                let Some(text) = extract_display_text(&line) else {
+                    continue;
+                };
                 let trimmed = text.trim();
                 if trimmed.is_empty() {
                     continue;
@@ -544,7 +656,11 @@ async fn run_compose(
                 for proto_line in trimmed.lines() {
                     if let Some(envelope) = extract_result(proto_line) {
                         KPI_COMPOSE_JOBS.update_extra(task_id, |e| e.result = envelope.clone());
-                        KPI_COMPOSE_JOBS.emit_line(app, task_id, "[Milestone] Measurement composed.");
+                        KPI_COMPOSE_JOBS.emit_line(
+                            app,
+                            task_id,
+                            "[Milestone] Measurement composed.",
+                        );
                         found = true;
                         break;
                     }
@@ -579,7 +695,11 @@ fn build_measure_compose_prompt(kpi: &crate::db::models::DevKpi) -> String {
     } else {
         kpi.measure_config.clone()
     };
-    let better = if kpi.direction == "down" { "lower is better" } else { "higher is better" };
+    let better = if kpi.direction == "down" {
+        "lower is better"
+    } else {
+        "higher is better"
+    };
     format!(
         r#"You are composing a deterministic, TESTED measurement for ONE engineering KPI. You are in the repository root and you SHOULD run commands to verify your work.
 
@@ -609,7 +729,11 @@ If this KPI genuinely CANNOT be measured from the codebase (it needs a 3rd-party
         name = kpi.name,
         desc = kpi.description.as_deref().unwrap_or("(no description)"),
         category = kpi.category,
-        unit = if kpi.unit.is_empty() { "(unitless)" } else { &kpi.unit },
+        unit = if kpi.unit.is_empty() {
+            "(unitless)"
+        } else {
+            &kpi.unit
+        },
         better = better,
         current = current,
         shell = RUN_SHELL_HINT,
@@ -641,10 +765,17 @@ fn scope_block(
             } else {
                 format!(
                     "\nRepresentative files:\n{}",
-                    files.iter().map(|f| format!("  - {f}")).collect::<Vec<_>>().join("\n")
+                    files
+                        .iter()
+                        .map(|f| format!("  - {f}"))
+                        .collect::<Vec<_>>()
+                        .join("\n")
                 )
             };
-            return format!("Scope: the \"{}\" context{}.{}", ctx.name, desc, files_block);
+            return format!(
+                "Scope: the \"{}\" context{}.{}",
+                ctx.name, desc, files_block
+            );
         }
     }
     if let Some(gid) = context_group_id {
@@ -697,8 +828,26 @@ mod tests {
     fn seed_kpi(pool: &crate::db::DbPool, root: &str) -> crate::db::models::DevKpi {
         let project = r::create_project(pool, "P", root, None, None, None, None, None).unwrap();
         r::create_kpi(
-            pool, &project.id, "Branch coverage", None, None, "technical", "codebase", "{}", "%",
-            "up", None, None, None, "weekly", Some("proposed"), "user", None, None, None, None,
+            pool,
+            &project.id,
+            "Branch coverage",
+            None,
+            None,
+            "technical",
+            "codebase",
+            "{}",
+            "%",
+            "up",
+            None,
+            None,
+            None,
+            "weekly",
+            Some("proposed"),
+            "user",
+            None,
+            None,
+            None,
+            None,
             None,
         )
         .unwrap()
@@ -789,7 +938,9 @@ mod tests {
 
         apply_composed_measure(&pool, &kpi.id, &json!({ "kpi_measure": Value::Null }));
 
-        assert!(r::list_kpi_measurements(&pool, &kpi.id, None).unwrap().is_empty());
+        assert!(r::list_kpi_measurements(&pool, &kpi.id, None)
+            .unwrap()
+            .is_empty());
         assert_eq!(r::get_kpi(&pool, &kpi.id).unwrap().current_value, None);
     }
 }

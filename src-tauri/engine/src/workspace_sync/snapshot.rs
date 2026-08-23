@@ -63,7 +63,10 @@ pub(crate) fn canonical_content_hash<T: Serialize>(value: &T) -> String {
         obj.remove("updatedAt");
     }
     let canonical = serde_json::to_string(&value).unwrap_or_default();
-    format!("sha256:{}", hex::encode(Sha256::digest(canonical.as_bytes())))
+    format!(
+        "sha256:{}",
+        hex::encode(Sha256::digest(canonical.as_bytes()))
+    )
 }
 
 /// Common behaviour every syncable entity snapshot provides so the merge can be

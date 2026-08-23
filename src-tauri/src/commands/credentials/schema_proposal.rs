@@ -1,11 +1,10 @@
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use tauri::{Emitter, State};
 use tokio_util::sync::CancellationToken;
 
 use serde::Serialize;
+use ts_rs::TS;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::resources::credentials as cred_repo;
@@ -15,18 +14,6 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::AppState;
 use personas_macros::requires;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -95,8 +82,11 @@ pub async fn start_schema_proposal(
     let app_for_panic = app.clone();
     let proposal_id_for_panic = proposal_id.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(run_schema_proposal(RunParams {
+    SCHEMA_PROPOSAL_JOBS.spawn_job(
+        app_for_panic,
+        proposal_id_for_panic,
+        "schema proposal",
+        run_schema_proposal(RunParams {
             app,
             pool,
             user_db,
@@ -107,20 +97,8 @@ pub async fn start_schema_proposal(
             existing_tables,
             database_type,
             cancel_token,
-        }))
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                proposal_id = %proposal_id_for_panic,
-                panic = %msg,
-                "schema proposal task panicked — marking job as failed"
-            );
-            SCHEMA_PROPOSAL_JOBS.set_status(&app_for_panic, &proposal_id_for_panic, "failed", Some(msg));
-        }
-    });
+        }),
+    );
 
     Ok(())
 }
@@ -131,7 +109,6 @@ pub async fn get_schema_proposal_snapshot(
     state: State<'_, Arc<AppState>>,
     proposal_id: String,
 ) -> Result<serde_json::Value, AppError> {
-
     let snapshot = SCHEMA_PROPOSAL_JOBS.get_task_snapshot(&proposal_id, |extra| {
         SchemaProposalSnapshotExtras {
             proposed_sql: extra.proposed_sql.clone(),
@@ -162,14 +139,29 @@ pub async fn cancel_schema_proposal(
     SCHEMA_PROPOSAL_JOBS.cancel_or_preempt(&app, &proposal_id, SchemaProposalExtra::default())
 }
 
+/// Result of checking a live database against the table list a connector
+/// template expects.
+///
+/// snake_case (no `rename_all`) — the connector-setup UI already reads
+/// `result.all_tables` / `result.missing`.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct SchemaValidationResult {
+    /// True when every expected table was found.
+    pub valid: bool,
+    pub found: Vec<String>,
+    pub missing: Vec<String>,
+    /// Every table the introspection query returned, not just the expected ones.
+    pub all_tables: Vec<String>,
+}
+
 #[tauri::command]
 #[requires(privileged)]
 pub async fn validate_db_schema(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     expected_tables: Vec<String>,
-) -> Result<serde_json::Value, AppError> {
-
+) -> Result<SchemaValidationResult, AppError> {
     let tables_result =
         db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await?;
 
@@ -206,12 +198,12 @@ pub async fn validate_db_schema(
         }
     }
 
-    Ok(serde_json::json!({
-        "valid": missing.is_empty(),
-        "found": found,
-        "missing": missing,
-        "all_tables": existing,
-    }))
+    Ok(SchemaValidationResult {
+        valid: missing.is_empty(),
+        found,
+        missing,
+        all_tables: existing,
+    })
 }
 
 // -- Internal logic ------------------------------------------------------
@@ -243,21 +235,21 @@ async fn run_schema_proposal(params: RunParams) {
         cancel_token,
     } = params;
 
-    emit_line(&app, &proposal_id, "> Starting schema proposal...");
+    SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Starting schema proposal...");
 
     // Build schema context from existing tables
     let schema_context =
         ai_helpers::build_schema_context(&pool, &credential_id, Some(&user_db)).await;
 
     if cancel_token.is_cancelled() {
-        emit_line(&app, &proposal_id, "> Cancelled.");
+        SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Cancelled.");
         return;
     }
 
-    emit_line(
+    SCHEMA_PROPOSAL_JOBS.emit_line(
         &app,
         &proposal_id,
-        &format!("> Analyzing template: {template_name}"),
+        format!("> Analyzing template: {template_name}"),
     );
 
     // Build the AI prompt
@@ -275,13 +267,13 @@ async fn run_schema_proposal(params: RunParams) {
         SCHEMA_PROPOSAL_JOBS.emit_line(&app_clone, &id_clone, line);
     };
 
-    emit_line(&app, &proposal_id, "> Generating schema with AI...");
+    SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Generating schema with AI...");
 
     // Run the AI helper (fast model, single turn -- shared scaffold)
     let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
 
     if cancel_token.is_cancelled() {
-        emit_line(&app, &proposal_id, "> Cancelled.");
+        SCHEMA_PROPOSAL_JOBS.emit_line(&app, &proposal_id, "> Cancelled.");
         return;
     }
 
@@ -293,7 +285,7 @@ async fn run_schema_proposal(params: RunParams) {
 
             match sql {
                 Some(proposed_sql) => {
-                    emit_line(
+                    SCHEMA_PROPOSAL_JOBS.emit_line(
                         &app,
                         &proposal_id,
                         "> Schema proposal generated successfully.",
@@ -323,7 +315,7 @@ async fn run_schema_proposal(params: RunParams) {
                     }
                 }
                 None => {
-                    emit_line(
+                    SCHEMA_PROPOSAL_JOBS.emit_line(
                         &app,
                         &proposal_id,
                         "[ERROR] Could not extract SQL from AI response.",
@@ -339,7 +331,7 @@ async fn run_schema_proposal(params: RunParams) {
         }
         Err(e) => {
             tracing::warn!(proposal_id = %proposal_id, "Schema proposal CLI failed: {}", e);
-            emit_line(
+            SCHEMA_PROPOSAL_JOBS.emit_line(
                 &app,
                 &proposal_id,
                 "[ERROR] AI schema proposal failed. See application logs.",
@@ -355,10 +347,6 @@ async fn run_schema_proposal(params: RunParams) {
 }
 
 // -- Helpers --------------------------------------------------------------
-
-fn emit_line(app: &tauri::AppHandle, proposal_id: &str, line: &str) {
-    SCHEMA_PROPOSAL_JOBS.emit_line(app, proposal_id, line);
-}
 
 fn build_prompt(
     template_name: &str,

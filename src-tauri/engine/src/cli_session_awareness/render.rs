@@ -69,10 +69,7 @@ pub fn render_cli_session_for_prompt(
 /// Render `now − mtime` as a human-friendly age. Mirrors the
 /// ambient block's age formatter for consistency.
 fn format_age(now: SystemTime, mtime: SystemTime) -> String {
-    let secs = now
-        .duration_since(mtime)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
+    let secs = now.duration_since(mtime).map(|d| d.as_secs()).unwrap_or(0);
     if secs < 60 {
         format!("{secs}s ago")
     } else if secs < 3600 {
@@ -124,9 +121,18 @@ mod tests {
         let now = SystemTime::now();
         let active = fake_session("p", 5, now);
         let turns = vec![
-            TranscriptTurn { role: "user".into(), text: "first".into() },
-            TranscriptTurn { role: "assistant".into(), text: "second".into() },
-            TranscriptTurn { role: "user".into(), text: "third".into() },
+            TranscriptTurn {
+                role: "user".into(),
+                text: "first".into(),
+            },
+            TranscriptTurn {
+                role: "assistant".into(),
+                text: "second".into(),
+            },
+            TranscriptTurn {
+                role: "user".into(),
+                text: "third".into(),
+            },
         ];
         let doc = render_cli_session_for_prompt(&active, &turns, now).unwrap();
         // First turn in the input must appear before the second, etc.
@@ -142,7 +148,10 @@ mod tests {
         let now = SystemTime::now();
         let s = render_cli_session_for_prompt(
             &fake_session("p", 30, now),
-            &[TranscriptTurn { role: "user".into(), text: "x".into() }],
+            &[TranscriptTurn {
+                role: "user".into(),
+                text: "x".into(),
+            }],
             now,
         )
         .unwrap();
@@ -150,7 +159,10 @@ mod tests {
 
         let m = render_cli_session_for_prompt(
             &fake_session("p", 4 * 60 + 12, now),
-            &[TranscriptTurn { role: "user".into(), text: "x".into() }],
+            &[TranscriptTurn {
+                role: "user".into(),
+                text: "x".into(),
+            }],
             now,
         )
         .unwrap();
@@ -158,7 +170,10 @@ mod tests {
 
         let h = render_cli_session_for_prompt(
             &fake_session("p", 2 * 3600 + 30 * 60, now),
-            &[TranscriptTurn { role: "user".into(), text: "x".into() }],
+            &[TranscriptTurn {
+                role: "user".into(),
+                text: "x".into(),
+            }],
             now,
         )
         .unwrap();

@@ -14,8 +14,8 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// (`open_lab`, `prefill_persona_create`, `run_arena`, `compose_dashboard`).
 /// v3 (Phase F.3 round 2): adds 5 dashboard widget kinds
 /// (`latency_distribution_chart`, `success_rate_gauge`,
-/// `persona_cost_donut`, `activity_heatmap`, `recent_executions_table`)
-/// + composition guidance ("compose by shape, not topic").
+/// `persona_cost_donut`, `activity_heatmap`, `recent_executions_table`) +
+/// composition guidance ("compose by shape, not topic").
 /// v4 (Phase G): adds `use_connector` op + capability registry,
 /// `register_project` + `enqueue_dev_job` ops (project registry +
 /// background-job worker pattern), and a more concrete Dev Tools
@@ -166,8 +166,8 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// asks "what use cases?" / "recap" / "what triggers?", the matching
 /// OP fires. Prose-only on a trigger phrasing is a hallucination of
 /// the card.
-/// (b) enqueue_dev_job grammar line updated to PREFER `project_name`
-/// + `path` over `project_id` (which can rot across sessions when
+/// (b) enqueue_dev_job grammar line updated to PREFER `project_name` +
+/// `path` over `project_id` (which can rot across sessions when
 /// Athena re-emits an ID she saw in a prior session's observability
 /// digest). Pairs with the dispatcher fallback below.
 /// (c) Recap rule made explicit: "recap" / "summarize what we decided"

@@ -13,8 +13,8 @@ use std::sync::Mutex;
 
 use tokio_util::sync::CancellationToken;
 
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 const SERVICE_TYPE: &str = "_personas._tcp.local.";
 

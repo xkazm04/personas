@@ -1,8 +1,8 @@
 //! `night_plan` background job — composes tonight's bounded night-shift plan
 //! and emits it as a `companion_approval` card (`night_shift_execute_plan`).
 //!
-//! The job is judgment-only: it reads goals + backlog + registered projects
-//! + per-project dev memories, makes ONE CLI call, bounds the result
+//! The job is judgment-only: it reads goals + backlog + registered projects +
+//! per-project dev memories, makes ONE CLI call, bounds the result
 //! (`night_shift::planner::bound_plan`), and persists a `proposed` plan. NO
 //! session is spawned here — dispatch happens exclusively in the approval
 //! executor after the user confirms the card (no plan runs unapproved).

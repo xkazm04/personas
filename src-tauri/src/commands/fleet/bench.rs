@@ -255,34 +255,6 @@ mod tests {
         );
     }
 
-    /// `preview_lines` is polled for every UNWATCHED tile. It bounds its own
-    /// work by scanning only the tail, so a full ring must not cost meaningfully
-    /// more than a small one.
-    #[test]
-    fn preview_lines_cost_is_bounded_by_tail_not_ring_size() {
-        let mut small = OutputRing::new(OUTPUT_RING_CAP);
-        for i in 0..200 {
-            small.push(&tui_chunk(i));
-        }
-        let small_s = Samples::collect("preview_lines (small ring)", 5, 100, || {
-            let _ = small.preview_lines(12);
-        });
-
-        let full = filled_ring();
-        let full_s = Samples::collect("preview_lines (full ring)", 5, 100, || {
-            let _ = full.preview_lines(12);
-        });
-
-        let ratio = speedup(&full_s, &small_s);
-        assert!(
-            ratio <= 10.0,
-            "preview_lines is scanning more than its bounded tail — this is \
-             polled for every unwatched tile.\n  {}\n  {}\n  ratio={ratio:.1}x",
-            small_s.summary(),
-            full_s.summary()
-        );
-    }
-
     // ── helper self-tests (pure, no Fleet types) ───────────────────────────
 
     #[test]

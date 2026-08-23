@@ -305,7 +305,13 @@ fn is_process_in_list(connector_name: &str, processes: &std::collections::HashSe
     let process_names: &[&str] = match connector_name {
         "desktop_docker" => &["docker", "docker desktop.exe", "dockerd"],
         "desktop_obsidian" => &["obsidian", "obsidian.exe"],
-        "desktop_browser" => &["chrome", "chrome.exe", "msedge.exe", "lightpanda", "lightpanda.exe"],
+        "desktop_browser" => &[
+            "chrome",
+            "chrome.exe",
+            "msedge.exe",
+            "lightpanda",
+            "lightpanda.exe",
+        ],
         _ => return false,
     };
 

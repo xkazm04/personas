@@ -369,12 +369,11 @@ pub async fn cloud_webhook_relay_tick(
                     DateTime::parse_from_rfc3339(cutoff_ts),
                 ) {
                     (Ok(f), Ok(c)) if f <= c => continue,
-                    (Err(_), _) | (_, Err(_)) => {
+                    (Err(_), _) | (_, Err(_))
                         // Unparseable timestamp — fall back to string comparison
-                        if fired_at <= *cutoff_ts {
+                        if fired_at <= *cutoff_ts => {
                             continue;
                         }
-                    }
                     _ => {} // fired_at > cutoff — process it
                 }
             }

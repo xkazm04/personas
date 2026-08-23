@@ -7,8 +7,8 @@ use crate::models::{
     CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
 };
 use crate::DbPool;
-use personas_core::lifecycle::AutomationDeployStatus;
 use personas_core::error::AppError;
+use personas_core::lifecycle::AutomationDeployStatus;
 
 // row_to_automation uses custom conversions (unwrap_or_default, unwrap_or_else, FromStr), stays manual.
 fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
@@ -521,18 +521,22 @@ pub fn count_active_runs(
     automation_id: &str,
     stale_secs: i64,
 ) -> Result<i64, AppError> {
-    timed_query!("persona_automations", "persona_automations::count_active_runs", {
-        let conn = pool.get()?;
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM automation_runs
+    timed_query!(
+        "persona_automations",
+        "persona_automations::count_active_runs",
+        {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM automation_runs
               WHERE automation_id = ?1
                 AND status IN ('pending', 'running')
                 AND (julianday('now') - julianday(started_at)) * 86400.0 < ?2",
-            params![automation_id, stale_secs as f64],
-            |row| row.get(0),
-        )?;
-        Ok(count)
-    })
+                params![automation_id, stale_secs as f64],
+                |row| row.get(0),
+            )?;
+            Ok(count)
+        }
+    )
 }
 
 /// Additive safety grace (ms) added on top of a run's computed worst-case
@@ -650,7 +654,12 @@ mod reaper_tests {
         .id
     }
 
-    fn make_automation(pool: &DbPool, persona_id: &str, timeout_ms: i64, retry_count: i32) -> String {
+    fn make_automation(
+        pool: &DbPool,
+        persona_id: &str,
+        timeout_ms: i64,
+        retry_count: i32,
+    ) -> String {
         create(
             pool,
             CreateAutomationInput {
@@ -690,7 +699,11 @@ mod reaper_tests {
     }
 
     fn status_of(pool: &DbPool, run_id: &str) -> String {
-        get_run_by_id(pool, run_id).unwrap().status.as_str().to_string()
+        get_run_by_id(pool, run_id)
+            .unwrap()
+            .status
+            .as_str()
+            .to_string()
     }
 
     #[test]
@@ -704,7 +717,10 @@ mod reaper_tests {
         let run_id = running_run_started_secs_ago(&pool, &auto_id, 8);
 
         let reaped = reap_stale_runs(&pool).unwrap();
-        assert_eq!(reaped, 0, "run inside its worst-case budget must not be reaped");
+        assert_eq!(
+            reaped, 0,
+            "run inside its worst-case budget must not be reaped"
+        );
         assert_eq!(status_of(&pool, &run_id), "running");
     }
 
@@ -732,7 +748,10 @@ mod reaper_tests {
         let run_id = running_run_started_secs_ago(&pool, &auto_id, 20);
 
         let reaped = reap_stale_runs(&pool).unwrap();
-        assert_eq!(reaped, 0, "a run still inside its 5-attempt budget must survive");
+        assert_eq!(
+            reaped, 0,
+            "a run still inside its 5-attempt budget must survive"
+        );
         assert_eq!(status_of(&pool, &run_id), "running");
     }
 

@@ -74,15 +74,9 @@ pub fn revoke_external_api_key(
     repo::revoke(&state.db, &id)?;
     tracing::info!(api_key_id = %id, "external_api_key revoked");
     // Settings → History feed; best-effort.
-    if let Err(e) = settings_audit_log::insert(
-        &state.db,
-        "api_keys",
-        &id,
-        "revoke",
-        None,
-        None,
-        Some("ui"),
-    ) {
+    if let Err(e) =
+        settings_audit_log::insert(&state.db, "api_keys", &id, "revoke", None, None, Some("ui"))
+    {
         tracing::warn!(error = %e, "settings_audit_log insert failed for api_key revoke");
     }
     Ok(())
@@ -158,8 +152,9 @@ pub fn approve_pairing(
     scopes: Vec<String>,
     expires_in_days: Option<u32>,
 ) -> Result<(), AppError> {
-    let (origin, app_name) = pairing::pending_origin(&nonce)
-        .ok_or_else(|| AppError::NotFound("pending pairing (expired or already resolved)".into()))?;
+    let (origin, app_name) = pairing::pending_origin(&nonce).ok_or_else(|| {
+        AppError::NotFound("pending pairing (expired or already resolved)".into())
+    })?;
 
     let expires_at = expires_in_days
         .map(|days| (chrono::Utc::now() + chrono::Duration::days(days as i64)).to_rfc3339());

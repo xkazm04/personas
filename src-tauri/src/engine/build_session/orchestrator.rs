@@ -16,6 +16,7 @@
 
 #![allow(dead_code)] // wired into the build runner in Phase 3 (parallel tool tests)
 
+use crate::utils::extract_panic_message;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
@@ -70,7 +71,7 @@ where
             let _permit = budget.acquire_owned().await.ok();
             match AssertUnwindSafe(fut).catch_unwind().await {
                 Ok(value) => Ok(value),
-                Err(panic) => Err(panic_message(panic)),
+                Err(panic) => Err(extract_panic_message(panic)),
             }
         }));
     }
@@ -90,14 +91,6 @@ where
     out
 }
 
-fn panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    panic
-        .downcast_ref::<&str>()
-        .map(|s| (*s).to_string())
-        .or_else(|| panic.downcast_ref::<String>().cloned())
-        .unwrap_or_else(|| "lane worker panicked".to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -106,7 +99,9 @@ mod tests {
 
     #[tokio::test]
     async fn preserves_input_order() {
-        let tasks: Vec<LaneTask<i32>> = (0..5).map(|i| lane(format!("lane-{i}"), async move { i * 10 })).collect();
+        let tasks: Vec<LaneTask<i32>> = (0..5)
+            .map(|i| lane(format!("lane-{i}"), async move { i * 10 }))
+            .collect();
         let out = run_lanes(3, tasks).await;
         let values: Vec<i32> = out.iter().map(|o| *o.result.as_ref().unwrap()).collect();
         assert_eq!(values, vec![0, 10, 20, 30, 40]);

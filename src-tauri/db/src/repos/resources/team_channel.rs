@@ -47,7 +47,11 @@ pub fn create_external(
     author_label: &str,
 ) -> Result<TeamChannelMessage, AppError> {
     let label = author_label.trim();
-    insert(pool, input, if label.is_empty() { None } else { Some(label) })
+    insert(
+        pool,
+        input,
+        if label.is_empty() { None } else { Some(label) },
+    )
 }
 
 fn insert(
@@ -247,25 +251,29 @@ pub fn list_injectable_for_persona(
     persona_id: &str,
     limit: i64,
 ) -> Result<Vec<TeamChannelMessage>, AppError> {
-    timed_query!("team_channel", "team_channel::list_injectable_for_persona", {
-        let conn = pool.get()?;
-        // addressed_to is a JSON array of persona ids; NULL = whole team.
-        // A LIKE on the quoted id is a cheap containment test (ids are uuids,
-        // no false-substring risk).
-        let needle = format!("%\"{persona_id}\"%");
-        let mut stmt = conn.prepare(
-            "SELECT * FROM team_channel_messages
+    timed_query!(
+        "team_channel",
+        "team_channel::list_injectable_for_persona",
+        {
+            let conn = pool.get()?;
+            // addressed_to is a JSON array of persona ids; NULL = whole team.
+            // A LIKE on the quoted id is a cheap containment test (ids are uuids,
+            // no false-substring risk).
+            let needle = format!("%\"{persona_id}\"%");
+            let mut stmt = conn.prepare(
+                "SELECT * FROM team_channel_messages
              WHERE team_id = ?1
                AND consumer = 'inject'
                AND created_at > datetime('now', '-14 days')
                AND (addressed_to IS NULL OR addressed_to LIKE ?2)
              ORDER BY created_at DESC LIMIT ?3",
-        )?;
-        let rows = stmt.query_map(params![team_id, needle, limit], |r| row_to_message(r))?;
-        Ok(rows
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)?)
-    })
+            )?;
+            let rows = stmt.query_map(params![team_id, needle, limit], |r| row_to_message(r))?;
+            Ok(rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?)
+        }
+    )
 }
 
 /// Record a step-boundary delivery receipt on a message (idempotent per

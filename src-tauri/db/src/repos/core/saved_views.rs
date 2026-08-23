@@ -4,6 +4,7 @@ use uuid::Uuid;
 use crate::models::{CreateSavedViewInput, SavedView};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 row_mapper!(row_to_view -> SavedView {
@@ -16,7 +17,7 @@ row_mapper!(row_to_view -> SavedView {
 
 pub fn create(pool: &DbPool, input: CreateSavedViewInput) -> Result<SavedView, AppError> {
     timed_query!("saved_views", "saved_views::create", {
-        let conn = pool.get()?;
+        let conn = pool.conn("saved_views::create")?;
         let id = Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -46,7 +47,7 @@ pub fn create(pool: &DbPool, input: CreateSavedViewInput) -> Result<SavedView, A
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<SavedView>, AppError> {
     timed_query!("saved_views", "saved_views::get_by_id", {
-        let conn = pool.get()?;
+        let conn = pool.conn("saved_views::get_by_id")?;
         let mut stmt = conn.prepare("SELECT * FROM saved_views WHERE id = ?1")?;
 
         let view = stmt.query_row(params![id], row_to_view).optional()?;
@@ -56,7 +57,7 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<SavedView>, AppError>
 
 pub fn list_all(pool: &DbPool) -> Result<Vec<SavedView>, AppError> {
     timed_query!("saved_views", "saved_views::list_all", {
-        let conn = pool.get()?;
+        let conn = pool.conn("saved_views::list_all")?;
         let mut stmt =
             conn.prepare("SELECT * FROM saved_views ORDER BY is_smart DESC, name ASC")?;
 
@@ -67,7 +68,7 @@ pub fn list_all(pool: &DbPool) -> Result<Vec<SavedView>, AppError> {
 
 pub fn list_by_type(pool: &DbPool, view_type: &str) -> Result<Vec<SavedView>, AppError> {
     timed_query!("saved_views", "saved_views::list_by_type", {
-        let conn = pool.get()?;
+        let conn = pool.conn("saved_views::list_by_type")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM saved_views WHERE view_type = ?1 ORDER BY is_smart DESC, name ASC",
         )?;
@@ -79,7 +80,7 @@ pub fn list_by_type(pool: &DbPool, view_type: &str) -> Result<Vec<SavedView>, Ap
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("saved_views", "saved_views::delete", {
-        let conn = pool.get()?;
+        let conn = pool.conn("saved_views::delete")?;
         conn.execute("DELETE FROM saved_views WHERE id = ?1", params![id])?;
         Ok(())
     })

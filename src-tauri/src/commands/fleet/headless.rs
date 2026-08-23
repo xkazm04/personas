@@ -41,7 +41,9 @@ use tauri::{AppHandle, Emitter};
 use crate::engine::event_registry::event_name;
 
 use super::pty::{build_mcp_spawn, emit_registry_changed, finalize_child_exit, CLAUDE_NESTING_ENV};
-use super::registry::{headless_user_message, now_ms, registry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP};
+use super::registry::{
+    headless_user_message, now_ms, registry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP,
+};
 use super::types::{FleetSessionMode, FleetSessionState};
 
 /// `fleet-session-output` payload (mirrors the PTY reader's shape).
@@ -164,9 +166,18 @@ pub fn spawn_headless_session(
         .map_err(|e| format!("spawn headless `claude` failed: {e}"))?;
     let child_pid = child.id();
 
-    let mut stdin = child.stdin.take().ok_or("headless spawn: no stdin handle")?;
-    let stdout = child.stdout.take().ok_or("headless spawn: no stdout handle")?;
-    let stderr = child.stderr.take().ok_or("headless spawn: no stderr handle")?;
+    let mut stdin = child
+        .stdin
+        .take()
+        .ok_or("headless spawn: no stdin handle")?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or("headless spawn: no stdout handle")?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or("headless spawn: no stderr handle")?;
 
     // Seed the first turn BEFORE registry insertion so a write failure fails
     // the spawn cleanly instead of leaving a silent do-nothing session.
@@ -297,13 +308,22 @@ fn push_display_line(app: &AppHandle, session_id: &str, ring: &Arc<Mutex<OutputR
     if subscribed {
         let _ = app.emit(
             event_name::FLEET_SESSION_OUTPUT,
-            OutputPayload { session_id, chunk: framed },
+            OutputPayload {
+                session_id,
+                chunk: framed,
+            },
         );
     }
 }
 
 /// Apply a state transition + emit the same events the other lanes emit.
-fn transition(app: &AppHandle, session_id: &str, state: FleetSessionState, tag: &str, reason: &str) {
+fn transition(
+    app: &AppHandle,
+    session_id: &str,
+    state: FleetSessionState,
+    tag: &str,
+    reason: &str,
+) {
     if registry().set_state_direct(session_id, state, reason) {
         super::pty::emit_session_state(app, session_id, None, tag, Some(reason.to_string()));
         emit_registry_changed(app, "updated", session_id);
@@ -345,10 +365,17 @@ fn render_event_line(event: &serde_json::Value) -> Option<String> {
                     _ => {}
                 }
             }
-            if parts.is_empty() { None } else { Some(parts.join("\r\n")) }
+            if parts.is_empty() {
+                None
+            } else {
+                Some(parts.join("\r\n"))
+            }
         }
         Some("result") => {
-            let subtype = event.get("subtype").and_then(|s| s.as_str()).unwrap_or("done");
+            let subtype = event
+                .get("subtype")
+                .and_then(|s| s.as_str())
+                .unwrap_or("done");
             let turns = event.get("num_turns").and_then(|n| n.as_i64());
             match turns {
                 Some(n) => Some(format!("— turn complete ({subtype}, {n} turns)")),
@@ -421,7 +448,10 @@ mod tests {
     #[test]
     fn renders_init_assistant_and_result_lines() {
         let init = json!({"type":"system","subtype":"init","model":"claude-sonnet-5"});
-        assert_eq!(render_event_line(&init).unwrap(), "· session started (claude-sonnet-5)");
+        assert_eq!(
+            render_event_line(&init).unwrap(),
+            "· session started (claude-sonnet-5)"
+        );
 
         let assistant = json!({"type":"assistant","message":{"content":[
             {"type":"text","text":"Working on it."},
@@ -432,7 +462,10 @@ mod tests {
         assert!(line.contains("● Bash"));
 
         let result = json!({"type":"result","subtype":"success","num_turns":3});
-        assert_eq!(render_event_line(&result).unwrap(), "— turn complete (success, 3 turns)");
+        assert_eq!(
+            render_event_line(&result).unwrap(),
+            "— turn complete (success, 3 turns)"
+        );
     }
 
     #[test]

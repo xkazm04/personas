@@ -145,10 +145,7 @@ pub fn register_preupdate_capture(
     sender: JournalSender,
 ) -> Result<(), rusqlite::Error> {
     conn.preupdate_hook(Some(
-        move |_action: rusqlite::hooks::Action,
-              _db: &str,
-              table: &str,
-              case: &PreUpdateCase| {
+        move |_action: rusqlite::hooks::Action, _db: &str, table: &str, case: &PreUpdateCase| {
             if !is_journaled_table(table) {
                 return;
             }

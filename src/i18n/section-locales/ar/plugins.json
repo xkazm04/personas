@@ -1680,7 +1680,12 @@
       "repo_pick_credential_first": "اختر بيانات الاعتماد أولًا",
       "repo_private": "{name} (خاص)",
       "section_title": "سجل المعرفة",
-      "this_workspace": "مساحة العمل هذه"
+      "this_workspace": "مساحة العمل هذه",
+      "sync": "مزامنة",
+      "sync_current": "نسخة عمل السجل محدَّثة بالفعل",
+      "sync_failed": "تعذّرت مزامنة السجل:",
+      "sync_pulled_one": "تم سحب {count} إيداع إلى نسخة عمل السجل",
+      "sync_pulled_other": "تم سحب {count} إيداعات إلى نسخة عمل السجل"
     },
     "skills_library_unwired_body": "تأتي المهارات المؤلَّفة من سجل المعرفة الذي تحتفظ به مساحة العمل هذه. اربط سجلًا من Dev Tools ← Workspaces، في مساحة العمل التي ينتمي إليها هذا المشروع.",
     "skills_library_unwired_title": "لا يوجد سجل متصل",

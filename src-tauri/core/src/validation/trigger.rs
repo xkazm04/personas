@@ -38,9 +38,7 @@ pub const MIN_AMBIENT_INTERVAL_SECONDS: i64 = 1;
 /// The interval floor that applies to `trigger_type`.
 fn min_interval_for(trigger_type: &str) -> i64 {
     match TriggerKind::from_wire(trigger_type) {
-        Some(TriggerKind::Clipboard) | Some(TriggerKind::AppFocus) => {
-            MIN_AMBIENT_INTERVAL_SECONDS
-        }
+        Some(TriggerKind::Clipboard) | Some(TriggerKind::AppFocus) => MIN_AMBIENT_INTERVAL_SECONDS,
         _ => MIN_INTERVAL_SECONDS,
     }
 }
@@ -116,7 +114,11 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
             match serde_json::from_str::<serde_json::Value>(config_str) {
                 Ok(parsed) => Some(parsed),
                 Err(_) => {
-                    errors.push(ValidationError::new("config", "json", "Invalid config JSON"));
+                    errors.push(ValidationError::new(
+                        "config",
+                        "json",
+                        "Invalid config JSON",
+                    ));
                     return errors;
                 }
             }
@@ -429,8 +431,7 @@ mod tests {
         // `scheduler::compute_next_from_config`, which returns Some(_) for
         // exactly these two.
         for kind in TriggerKind::ALL {
-            let expected =
-                matches!(kind, TriggerKind::Schedule | TriggerKind::Polling);
+            let expected = matches!(kind, TriggerKind::Schedule | TriggerKind::Polling);
             assert_eq!(
                 kind.is_time_based(),
                 expected,
@@ -478,7 +479,9 @@ mod tests {
         assert!(bad_tz.message.contains("IANA"));
 
         let no_timing = unschedulable_error("schedule", Some("{}"));
-        assert!(no_timing.message.contains("neither a cron expression nor an interval"));
+        assert!(no_timing
+            .message
+            .contains("neither a cron expression nor an interval"));
 
         let no_interval = unschedulable_error("polling", Some(r#"{"url": "https://x.test"}"#));
         assert!(no_interval.message.contains("no polling interval"));

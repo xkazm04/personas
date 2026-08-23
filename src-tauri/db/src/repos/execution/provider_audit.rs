@@ -1,14 +1,20 @@
 use rusqlite::params;
 use ts_rs::TS;
 
-use crate::DbPool;
 use crate::byom::ProviderAuditEntry;
+use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
+
+/// One projection for every full-row read of `provider_audit_log`, so the SELECT
+/// and the mapper cannot drift apart. Mirrors `CREATE TABLE provider_audit_log`
+/// (`migrations/incremental/e02_credentials_and_audit_trails.rs:420`).
+const COLUMNS: &str = "id, execution_id, persona_id, persona_name, engine_kind, model_used,                        was_failover, routing_rule_name, compliance_rule_name, cost_usd,                        duration_ms, status, created_at";
 
 /// Insert a provider audit log entry (append-only).
 pub fn insert(pool: &DbPool, entry: &ProviderAuditEntry) -> Result<(), AppError> {
     timed_query!("provider_audit", "provider_audit::insert", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::insert")?;
         conn.execute(
             "INSERT INTO provider_audit_log
              (id, execution_id, persona_id, persona_name, engine_kind, model_used,
@@ -39,37 +45,34 @@ pub fn insert(pool: &DbPool, entry: &ProviderAuditEntry) -> Result<(), AppError>
     })
 }
 
+// `was_failover` is stored as INTEGER and modelled as `bool` — the `[bool]`
+// annotation is what bridges those, not an escape hatch.
+row_mapper!(row_to_entry -> ProviderAuditEntry {
+    id,
+    execution_id,
+    persona_id,
+    persona_name,
+    engine_kind,
+    model_used,
+    was_failover [bool],
+    routing_rule_name,
+    compliance_rule_name,
+    cost_usd,
+    duration_ms,
+    status,
+    created_at,
+});
+
 /// List provider audit log entries, newest first. Optional limit (default 100).
 pub fn list(pool: &DbPool, limit: Option<i64>) -> Result<Vec<ProviderAuditEntry>, AppError> {
     timed_query!("provider_audit", "provider_audit::list", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::list")?;
         let limit = limit.unwrap_or(100);
-        let mut stmt = conn.prepare(
-            "SELECT id, execution_id, persona_id, persona_name, engine_kind, model_used,
-                was_failover, routing_rule_name, compliance_rule_name, cost_usd,
-                duration_ms, status, created_at
-         FROM provider_audit_log
-         ORDER BY created_at DESC
-         LIMIT ?1",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM provider_audit_log ORDER BY created_at DESC LIMIT ?1"
+        ))?;
         let rows = crate::repos::utils::collect_rows(
-            stmt.query_map(params![limit], |row| {
-                Ok(ProviderAuditEntry {
-                    id: row.get(0)?,
-                    execution_id: row.get(1)?,
-                    persona_id: row.get(2)?,
-                    persona_name: row.get(3)?,
-                    engine_kind: row.get(4)?,
-                    model_used: row.get(5)?,
-                    was_failover: row.get::<_, i32>(6)? != 0,
-                    routing_rule_name: row.get(7)?,
-                    compliance_rule_name: row.get(8)?,
-                    cost_usd: row.get(9)?,
-                    duration_ms: row.get(10)?,
-                    status: row.get(11)?,
-                    created_at: row.get(12)?,
-                })
-            })?,
+            stmt.query_map(params![limit], row_to_entry)?,
             "provider_audit::list",
         );
         Ok(rows)
@@ -83,35 +86,13 @@ pub fn list_by_persona(
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, AppError> {
     timed_query!("provider_audit", "provider_audit::list_by_persona", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::list_by_persona")?;
         let limit = limit.unwrap_or(100);
-        let mut stmt = conn.prepare(
-            "SELECT id, execution_id, persona_id, persona_name, engine_kind, model_used,
-                was_failover, routing_rule_name, compliance_rule_name, cost_usd,
-                duration_ms, status, created_at
-         FROM provider_audit_log
-         WHERE persona_id = ?1
-         ORDER BY created_at DESC
-         LIMIT ?2",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM provider_audit_log WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2"
+        ))?;
         let rows = crate::repos::utils::collect_rows(
-            stmt.query_map(params![persona_id, limit], |row| {
-                Ok(ProviderAuditEntry {
-                    id: row.get(0)?,
-                    execution_id: row.get(1)?,
-                    persona_id: row.get(2)?,
-                    persona_name: row.get(3)?,
-                    engine_kind: row.get(4)?,
-                    model_used: row.get(5)?,
-                    was_failover: row.get::<_, i32>(6)? != 0,
-                    routing_rule_name: row.get(7)?,
-                    compliance_rule_name: row.get(8)?,
-                    cost_usd: row.get(9)?,
-                    duration_ms: row.get(10)?,
-                    status: row.get(11)?,
-                    created_at: row.get(12)?,
-                })
-            })?,
+            stmt.query_map(params![persona_id, limit], row_to_entry)?,
             "provider_audit::list_by_persona",
         );
         Ok(rows)
@@ -146,7 +127,7 @@ pub fn get_usage_timeseries(
     days: i64,
 ) -> Result<Vec<ProviderUsageTimeseries>, AppError> {
     timed_query!("provider_audit", "provider_audit::get_usage_timeseries", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::get_usage_timeseries")?;
         let mut stmt = conn.prepare(
             "SELECT engine_kind,
                 DATE(created_at) as day,
@@ -162,11 +143,13 @@ pub fn get_usage_timeseries(
         let rows = crate::repos::utils::collect_rows(
             stmt.query_map(params![offset_str], |row| {
                 Ok(ProviderUsageTimeseries {
-                    engine_kind: row.get(0)?,
-                    date: row.get(1)?,
-                    execution_count: row.get(2)?,
-                    total_cost_usd: row.get(3)?,
-                    avg_duration_ms: row.get(4)?,
+                    engine_kind: row.get("engine_kind")?,
+                    // NOTE the divergence: the struct field is `date`, the SQL
+                    // alias is `day`. Read by the SQL name, never the field name.
+                    date: row.get("day")?,
+                    execution_count: row.get("execution_count")?,
+                    total_cost_usd: row.get("total_cost_usd")?,
+                    avg_duration_ms: row.get("avg_duration_ms")?,
                 })
             })?,
             "provider_audit::get_usage_timeseries",
@@ -177,7 +160,7 @@ pub fn get_usage_timeseries(
 
 pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppError> {
     timed_query!("provider_audit", "provider_audit::get_usage_stats", {
-        let conn = pool.get()?;
+        let conn = pool.conn("provider_audit::get_usage_stats")?;
         let mut stmt = conn.prepare(
             "SELECT engine_kind,
                 COUNT(*) as execution_count,
@@ -191,11 +174,11 @@ pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppErro
         let rows = crate::repos::utils::collect_rows(
             stmt.query_map([], |row| {
                 Ok(ProviderUsageStats {
-                    engine_kind: row.get(0)?,
-                    execution_count: row.get(1)?,
-                    total_cost_usd: row.get(2)?,
-                    avg_duration_ms: row.get(3)?,
-                    failover_count: row.get(4)?,
+                    engine_kind: row.get("engine_kind")?,
+                    execution_count: row.get("execution_count")?,
+                    total_cost_usd: row.get("total_cost_usd")?,
+                    avg_duration_ms: row.get("avg_duration_ms")?,
+                    failover_count: row.get("failover_count")?,
                 })
             })?,
             "provider_audit::get_usage_stats",

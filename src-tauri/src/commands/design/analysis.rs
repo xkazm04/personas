@@ -1,24 +1,11 @@
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
 
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
-
+use crate::background_job::spawn_guarded;
 use crate::db::repos::core::design_conversations as conv_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
@@ -86,8 +73,10 @@ fn spawn_design_run(
     let app_for_panic = app.clone();
     let design_id_for_panic = design_id_clone.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(run_design_analysis(DesignRunParams {
+    spawn_guarded(
+        "design analysis",
+        design_id_for_panic.clone(),
+        run_design_analysis(DesignRunParams {
             app,
             pool,
             persona_id: persona_id_owned,
@@ -98,13 +87,8 @@ fn spawn_design_run(
             connector_names,
             registry,
             cancelled,
-        }))
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(design_id = %design_id_for_panic, panic = %msg, "design analysis task panicked — marking design as failed");
+        }),
+        move |msg| async move {
             let _ = app_for_panic.emit(
                 event_name::DESIGN_STATUS,
                 DesignStatusEvent {
@@ -115,8 +99,8 @@ fn spawn_design_run(
                     question: None,
                 },
             );
-        }
-    });
+        },
+    );
 
     Ok(json!({ "design_id": design_id }))
 }
@@ -539,8 +523,10 @@ pub fn extract_display_text(line: &str) -> Option<String> {
                 .filter(|item| item.get("type").and_then(|t| t.as_str()) == Some("text"))
                 .filter_map(|item| item.get("text").and_then(|t| t.as_str()))
                 .collect::<Vec<_>>()
-                .join("
-");
+                .join(
+                    "
+",
+                );
             if !text.is_empty() {
                 return Some(text);
             }
@@ -634,11 +620,14 @@ mod display_text_tests {
         );
         assert!(extract_display_text(r#"{"type":"system","subtype":"other"}"#).is_none());
         // A tool-only assistant message yields nothing rather than an empty line.
-        assert!(
-            extract_display_text(r#"{"message":{"content":[{"type":"tool_use","name":"Read"}]}}"#)
-                .is_none()
-        );
+        assert!(extract_display_text(
+            r#"{"message":{"content":[{"type":"tool_use","name":"Read"}]}}"#
+        )
+        .is_none());
         // Plain text passes through.
-        assert_eq!(extract_display_text("raw line").as_deref(), Some("raw line"));
+        assert_eq!(
+            extract_display_text("raw line").as_deref(),
+            Some("raw line")
+        );
     }
 }

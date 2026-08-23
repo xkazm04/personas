@@ -27,10 +27,8 @@ pub fn sanitize_secrets(text: &str) -> String {
 
     // a. Authorization: bearer/basic tokens
     let re_auth = AUTH_PATTERN.get_or_init(|| {
-        Regex::new(
-            r"(?i)\b(authorization|auth)\b\s*[:=]\s*(bearer|basic)\s+([a-zA-Z0-9\-_.~+/=]+)",
-        )
-        .unwrap()
+        Regex::new(r"(?i)\b(authorization|auth)\b\s*[:=]\s*(bearer|basic)\s+([a-zA-Z0-9\-_.~+/=]+)")
+            .unwrap()
     });
     sanitized = re_auth.replace_all(&sanitized, "$1: [secret]").to_string();
 
@@ -72,9 +70,8 @@ pub fn sanitize_secrets(text: &str) -> String {
     sanitized = re_prefixes.replace_all(&sanitized, "[secret]").to_string();
 
     // d. Generic bearer/basic not prefixed by "authorization"
-    let re_bearer = BEARER_PATTERN.get_or_init(|| {
-        Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap()
-    });
+    let re_bearer = BEARER_PATTERN
+        .get_or_init(|| Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap());
     sanitized = re_bearer
         .replace_all(&sanitized, |caps: &regex::Captures| {
             // Only replace if not already next to a [secret] tag to avoid double masking

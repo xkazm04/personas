@@ -44,7 +44,7 @@ caller states what it is; the table says what it gets. The consumer-overrides
 seam is spelled out in the same doc comment: "Bench-only env overrides
 (`PERSONAS_ATHENA_MODEL` / `PERSONAS_ATHENA_EFFORT`) are applied by the
 main-turn consumer in `session.rs`, **not here**." The consumer side
-(`src-tauri/src/companion/session.rs:1791-1813`) validates the effort override
+(`src-tauri/src/companion/session/:1791-1813`) validates the effort override
 against the closed level set ("so a typo can't inject an arbitrary flag
 value") and routes the resolved model into *both* the spawn flag and the
 `companion_turn.model` ledger column — "preserving the one-source invariant

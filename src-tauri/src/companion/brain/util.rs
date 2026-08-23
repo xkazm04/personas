@@ -29,7 +29,12 @@ pub fn excerpt(s: &str, n: usize) -> String {
 /// Random lowercase-hex id: the first `n` chars of a UUIDv4 with dashes
 /// stripped.
 pub fn short_id(n: usize) -> String {
-    Uuid::new_v4().simple().to_string().chars().take(n).collect()
+    Uuid::new_v4()
+        .simple()
+        .to_string()
+        .chars()
+        .take(n)
+        .collect()
 }
 
 /// Lowercase-ascii-alphanumeric slug with single-dash separators (leading/
@@ -110,7 +115,11 @@ mod tests {
         assert_eq!(slugify("Hello, World!", "fallback", None), "hello-world");
         assert_eq!(slugify("   ", "fallback", None), "fallback");
         assert_eq!(
-            slugify("a very long title that exceeds forty characters for sure", "goal", Some(10)),
+            slugify(
+                "a very long title that exceeds forty characters for sure",
+                "goal",
+                Some(10)
+            ),
             // Separators are kept and the result is truncated to `max` AFTER
             // slugification — consistent with the "hello-world" case above.
             // The old expectation ("averylongt") assumed hyphens were stripped,

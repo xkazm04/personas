@@ -8,8 +8,8 @@ stack: rust
 # Loop supervision in the Rust engine
 
 The repo's supervisor is the unified subscription model:
-`src-tauri/src/engine/subscription.rs` (the door) plus
-`src-tauri/src/engine/background.rs` (the roster and lifecycle). Every claim
+`src-tauri/src/engine/subscription/` (the door) plus
+`src-tauri/src/engine/background/` (the roster and lifecycle). Every claim
 of the technique has a concrete address here.
 
 ## The registration door

@@ -14428,7 +14428,12 @@
         "repo_pick_credential_first": "Zuerst Zugangsdaten wählen",
         "repo_private": "{name} (privat)",
         "section_title": "Wissens-Registry",
-        "this_workspace": "dieser Arbeitsbereich"
+        "this_workspace": "dieser Arbeitsbereich",
+        "sync": "Synchronisieren",
+        "sync_current": "Arbeitskopie der Registry ist bereits aktuell",
+        "sync_failed": "Registry nicht synchronisiert:",
+        "sync_pulled_one": "{count} Commit in die Arbeitskopie der Registry geholt",
+        "sync_pulled_other": "{count} Commits in die Arbeitskopie der Registry geholt"
       },
       "skills_library_unwired_body": "Selbst verfasste Skills stammen aus der Wissens-Registry dieses Arbeitsbereichs. Verbinden Sie eine unter Dev Tools → Workspaces, im Arbeitsbereich, zu dem dieses Projekt gehört.",
       "skills_library_unwired_title": "Keine Registry verbunden",

@@ -37,6 +37,9 @@ const LESSONS_FILE: &str = "LESSONS.md";
 /// Per-skill sync-state tokens surfaced in [`SkillEntry::sync_state`]. Kept in
 /// lockstep with the frontend token map in `SkillLibraryRow`.
 const SYNC_IN_SYNC: &str = "in_sync";
+/// The library moved and this copy did NOT — safe to update.
+const SYNC_STALE: &str = "stale";
+/// This copy was edited locally — updating would overwrite the edit.
 const SYNC_DIVERGED: &str = "diverged";
 const SYNC_LOCAL_ONLY: &str = "local_only";
 
@@ -103,6 +106,17 @@ struct SkillProvenance {
     source_path: String,
     /// Content hash of the source skill directory at install time.
     content_hash: String,
+    /// Commit the SOURCE was at when this copy was taken, when the source lives
+    /// in a git working copy — which a registry clone always does and a sibling
+    /// project usually does.
+    ///
+    /// `content_hash` answers "has the source changed?"; this answers "changed
+    /// FROM WHAT?", which is the question you need to read a diff or to decide
+    /// whether an update is one commit or six months of them. Optional and
+    /// `serde(default)` so sidecars written before this field still parse as
+    /// themselves rather than failing the whole read.
+    #[serde(default)]
+    source_commit: Option<String>,
     /// RFC3339 timestamp of the install.
     installed_at: String,
 }
@@ -261,7 +275,7 @@ pub(crate) fn is_system_skill(name: &str) -> bool {
 ///      global copy of passport-onboard).
 ///   3. The user-global library — last resort so a hand-installed copy still
 ///      works.
-/// Returns the first candidate that actually contains files.
+///      Returns the first candidate that actually contains files.
 fn system_skills_dir(app: &AppHandle) -> Option<PathBuf> {
     // 1. Bundled resource dir — the packaged installer (and dev, when the sync
     //    script has populated `src-tauri/resources/skills`).
@@ -478,7 +492,8 @@ pub(crate) fn hash_skill_dir(dir: &Path) -> Option<String> {
     let files = collect_skill_files(dir);
     let mut hasher = Sha256::new();
     for rel in files.keys() {
-        let bytes = std::fs::read(dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR))).ok()?;
+        let bytes =
+            std::fs::read(dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR))).ok()?;
         hasher.update(rel.as_bytes());
         hasher.update([0u8]);
         hasher.update((bytes.len() as u64).to_le_bytes());
@@ -487,11 +502,37 @@ pub(crate) fn hash_skill_dir(dir: &Path) -> Option<String> {
     Some(hex::encode(hasher.finalize()))
 }
 
+/// The commit a directory's git working copy is at, or `None` when it is not in
+/// one (or git is unavailable, or the repo has no commits yet).
+///
+/// Deliberately best-effort and silent: provenance is a nice-to-have, and a
+/// skill copied out of a plain directory is a legitimate case, not a defect to
+/// report. Reads only — `rev-parse` cannot modify a repository, which matters
+/// because this runs against a working copy other consumers share.
+fn git_head_of(dir: &Path) -> Option<String> {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let sha = String::from_utf8(out.stdout).ok()?.trim().to_string();
+    (!sha.is_empty()).then_some(sha)
+}
+
 /// Write the [`PROVENANCE_FILE`] sidecar into an installed skill directory.
 /// Best-effort — an I/O failure is logged and swallowed (the copy already
 /// succeeded; provenance is a nice-to-have that degrades the skill to
 /// `local_only` if absent).
-fn write_provenance(target_dir: &Path, source_dir: &Path, source_kind: &str, source_project_id: Option<&str>) {
+fn write_provenance(
+    target_dir: &Path,
+    source_dir: &Path,
+    source_kind: &str,
+    source_project_id: Option<&str>,
+) {
     let Some(content_hash) = hash_skill_dir(source_dir) else {
         return;
     };
@@ -500,6 +541,7 @@ fn write_provenance(target_dir: &Path, source_dir: &Path, source_kind: &str, sou
         source_project_id: source_project_id.map(str::to_string),
         source_path: source_dir.to_string_lossy().into_owned(),
         content_hash,
+        source_commit: git_head_of(source_dir),
         installed_at: chrono::Utc::now().to_rfc3339(),
     };
     match serde_json::to_string_pretty(&prov) {
@@ -522,6 +564,23 @@ fn read_provenance(skill_dir: &Path) -> Option<SkillProvenance> {
 /// installed from. `local_only` when no provenance; `in_sync` when the installed
 /// copy still hashes equal to its current source; `diverged` otherwise
 /// (installed copy edited, source changed upstream, or source now unreadable).
+/// Classify one installed copy against the library it came from.
+///
+/// THREE hashes, not two. The sidecar already recorded the source's hash at
+/// install time and nothing read it back, so "the library moved ahead" and "I
+/// edited my copy" both came out `diverged` — which tells the operator to be
+/// careful in the one case where updating is completely safe.
+///
+///   installed == source-now                      → in_sync
+///   installed == recorded, source-now != recorded → stale     (library moved)
+///   otherwise                                     → diverged  (copy edited)
+///
+/// The provenance sidecar is excluded from `hash_skill_dir` (see its test), so
+/// `installed == recorded` really does hold immediately after an install.
+///
+/// An unreadable source stays `diverged`: we cannot show that nothing changed,
+/// and claiming `in_sync` against a library we could not read would be the
+/// worse of the two errors.
 fn classify_sync_state(skill_dir: &Path) -> (String, Option<String>) {
     let Some(prov) = read_provenance(skill_dir) else {
         return (SYNC_LOCAL_ONLY.to_string(), None);
@@ -529,8 +588,11 @@ fn classify_sync_state(skill_dir: &Path) -> (String, Option<String>) {
     let source_kind = Some(prov.source_kind.clone());
     let installed_hash = hash_skill_dir(skill_dir);
     let source_hash = hash_skill_dir(Path::new(&prov.source_path));
-    let state = match (installed_hash, source_hash) {
+    let state = match (installed_hash.as_deref(), source_hash.as_deref()) {
         (Some(inst), Some(src)) if inst == src => SYNC_IN_SYNC,
+        (Some(inst), Some(src)) if inst == prov.content_hash && src != prov.content_hash => {
+            SYNC_STALE
+        }
         _ => SYNC_DIVERGED,
     };
     (state.to_string(), source_kind)
@@ -713,19 +775,29 @@ fn extract_skill_context_tracked(content: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Frontmatter `version:` normalized to canonical "major.minor" — both
-/// segments must be non-empty and all-digit (`2.1` ✓, `v2`, `1.0.3`, `two.1`
-/// → None). Note `extract_frontmatter_value` matches `version:` at line start
-/// inside the frontmatter block only; keys like `min-version:` cannot
-/// false-match (strip_prefix on the trimmed line), though an indented
-/// `version:` inside a nested YAML block would — acceptable with the shape
-/// check.
+/// Frontmatter `version:` normalized to canonical "major.minor".
+///
+/// Accepts `MAJOR.MINOR` and `MAJOR.MINOR.PATCH`, each part 1–4 ASCII digits
+/// (`2.1` ✓, `1.0.3` ✓ → `"1.0"`; `v2`, `1`, `1.`, `.5`, `12345.0`, `two.1`
+/// → None). The registry's skills lane REQUIRES semver `MAJOR.MINOR.PATCH`
+/// and this app's own share task rewrites versions to that form, so a reader
+/// that rejected three parts could not read back what the app publishes. The
+/// patch digit is accepted and **dropped**: the app's drift comparisons
+/// (`parse_skill_version`, `trace/traceModel.ts::driftOf`) are major.minor
+/// semantics, and a patch bump is by definition not a contract change.
+///
+/// Note `extract_frontmatter_value` matches `version:` at line start inside
+/// the frontmatter block only; keys like `min-version:` cannot false-match
+/// (strip_prefix on the trimmed line), though an indented `version:` inside a
+/// nested YAML block would — acceptable with the shape check.
 fn extract_skill_version(content: &str) -> Option<String> {
     let v = extract_frontmatter_value(content, "version")?;
-    let mut parts = v.splitn(2, '.');
     let is_num = |s: &str| !s.is_empty() && s.len() <= 4 && s.bytes().all(|b| b.is_ascii_digit());
-    match (parts.next(), parts.next()) {
-        (Some(maj), Some(min)) if is_num(maj) && is_num(min) => Some(format!("{maj}.{min}")),
+    let parts: Vec<&str> = v.split('.').collect();
+    match parts.as_slice() {
+        [maj, min] | [maj, min, _] if parts.iter().all(|p| is_num(p)) => {
+            Some(format!("{maj}.{min}"))
+        }
         _ => None,
     }
 }
@@ -1025,8 +1097,8 @@ pub fn skill_files_install_system(
 /// fails the install — the context scan and the pre-dispatch export are the
 /// other refresh points.
 pub(crate) fn refresh_skill_registry_file(state: &AppState, project_id: &str) {
-    let root = crate::db::repos::dev_tools::get_project_by_id(&state.db, project_id)
-        .map(|p| p.root_path);
+    let root =
+        crate::db::repos::dev_tools::get_project_by_id(&state.db, project_id).map(|p| p.root_path);
     if let Ok(root) = root {
         if let Err(e) =
             super::skill_registry_export::write_skill_registry(&state.db, project_id, &root, None)
@@ -1482,16 +1554,25 @@ mod tests {
         let quoted = "---\ncategory: \"Testing\"\n---\nBody";
         assert_eq!(extract_skill_category(quoted).as_deref(), Some("Testing"));
         // Unknown value, missing key, and no frontmatter all → None.
-        assert_eq!(extract_skill_category("---\ncategory: Gardening\n---\n"), None);
+        assert_eq!(
+            extract_skill_category("---\ncategory: Gardening\n---\n"),
+            None
+        );
         assert_eq!(extract_skill_category("---\nname: x\n---\n"), None);
-        assert_eq!(extract_skill_category("# Just a heading\ncategory: Data"), None);
+        assert_eq!(
+            extract_skill_category("# Just a heading\ncategory: Data"),
+            None
+        );
     }
 
     #[test]
     fn extract_skill_memory_normalizes_and_rejects() {
         let md = "---\nname: x\nmemory: Project\n---\nBody";
         assert_eq!(extract_skill_memory(md).as_deref(), Some("project"));
-        assert_eq!(extract_skill_memory("---\nmemory: vault\n---\n").as_deref(), Some("vault"));
+        assert_eq!(
+            extract_skill_memory("---\nmemory: vault\n---\n").as_deref(),
+            Some("vault")
+        );
         assert_eq!(extract_skill_memory("---\nmemory: cloud\n---\n"), None);
         assert_eq!(extract_skill_memory("---\nname: x\n---\n"), None);
     }
@@ -1516,24 +1597,130 @@ mod tests {
     #[test]
     fn extract_description_prefers_frontmatter() {
         let md = "---\nname: scan-security-auditor\ndescription: \"Find security holes.\"\n---\n# Security Auditor\nbody text\n";
-        assert_eq!(extract_skill_description(md).as_deref(), Some("Find security holes."));
+        assert_eq!(
+            extract_skill_description(md).as_deref(),
+            Some("Find security holes.")
+        );
     }
 
     #[test]
     fn extract_description_frontmatter_without_desc_uses_body() {
         let md = "---\nname: x\n---\n# Heading\nFirst real line.\n";
-        assert_eq!(extract_skill_description(md).as_deref(), Some("First real line."));
+        assert_eq!(
+            extract_skill_description(md).as_deref(),
+            Some("First real line.")
+        );
     }
 
     #[test]
     fn extract_description_no_frontmatter_uses_first_line() {
         let md = "# Title\nDo the thing.\n";
-        assert_eq!(extract_skill_description(md).as_deref(), Some("Do the thing."));
+        assert_eq!(
+            extract_skill_description(md).as_deref(),
+            Some("Do the thing.")
+        );
     }
 
     fn write_skill(dir: &Path, body: &str) {
         std::fs::create_dir_all(dir).unwrap();
         std::fs::write(dir.join("SKILL.md"), body).unwrap();
+    }
+
+    /// Install `name` from `source` into `target` the way the app does, so these
+    /// tests exercise the real provenance writer rather than a hand-built sidecar.
+    fn install_from(source_root: &Path, target_root: &Path, name: &str) {
+        let src = source_root.join(name);
+        let dst = target_root.join(name);
+        copy_dir_recursive(&src, &dst).unwrap();
+        write_provenance(&dst, &src, "global", None);
+    }
+
+    #[test]
+    fn sync_state_separates_a_moved_library_from_an_edited_copy() {
+        // The whole point of reading the RECORDED hash back. Before it, both of
+        // these were `diverged`, which warns the operator off the one case where
+        // updating is completely safe.
+        let lib = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
+        write_skill(&lib.path().join("beta"), "# Beta\n\noriginal\n");
+        install_from(lib.path(), proj.path(), "alpha");
+        install_from(lib.path(), proj.path(), "beta");
+
+        // Untouched on both sides.
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_IN_SYNC
+        );
+
+        // The LIBRARY moves; the copy is untouched → stale, and updating is safe.
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\nlibrary moved on\n");
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_STALE
+        );
+
+        // The COPY is edited; the library has not moved → diverged.
+        write_skill(&proj.path().join("beta"), "# Beta\n\nedited here\n");
+        assert_eq!(
+            classify_sync_state(&proj.path().join("beta")).0,
+            SYNC_DIVERGED
+        );
+    }
+
+    #[test]
+    fn both_sides_changed_is_diverged_not_stale() {
+        // `stale` promises the local copy is untouched. When both moved, the
+        // update is NOT safe and must not be labelled as though it were.
+        let lib = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
+        install_from(lib.path(), proj.path(), "alpha");
+
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\nlibrary moved\n");
+        write_skill(&proj.path().join("alpha"), "# Alpha\n\nedited here\n");
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_DIVERGED
+        );
+    }
+
+    #[test]
+    fn an_unreadable_source_is_diverged_never_in_sync() {
+        // We cannot show that nothing changed against a library we cannot read.
+        let lib = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        write_skill(&lib.path().join("alpha"), "# Alpha\n\noriginal\n");
+        install_from(lib.path(), proj.path(), "alpha");
+        std::fs::remove_dir_all(lib.path().join("alpha")).unwrap();
+        assert_eq!(
+            classify_sync_state(&proj.path().join("alpha")).0,
+            SYNC_DIVERGED
+        );
+    }
+
+    #[test]
+    fn provenance_without_a_source_commit_still_parses() {
+        // Sidecars written before `source_commit` existed must read as
+        // themselves; a serde failure here would silently demote every
+        // previously installed skill to `local_only`.
+        let dir = tempfile::tempdir().unwrap();
+        let skill = dir.path().join("alpha");
+        write_skill(&skill, "# Alpha\n");
+        std::fs::write(
+            skill.join(PROVENANCE_FILE),
+            r#"{"source_kind":"global","source_project_id":null,"source_path":"C:/nowhere","content_hash":"abc","installed_at":"2026-01-01T00:00:00Z"}"#,
+        )
+        .unwrap();
+        let prov = read_provenance(&skill).expect("an older sidecar must still parse");
+        assert_eq!(prov.content_hash, "abc");
+        assert_eq!(prov.source_commit, None);
+    }
+
+    #[test]
+    fn git_head_of_is_none_outside_a_repository() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(git_head_of(dir.path()), None);
     }
 
     #[test]
@@ -1561,8 +1748,32 @@ mod tests {
             extract_skill_version("---\nversion: \"10.42\"\n---\n").as_deref(),
             Some("10.42")
         );
-        // Malformed shapes all normalize to None.
-        for bad in ["v2", "1", "1.0.3", "two.one", "1.", ".5", "12345.0", ""] {
+        // Semver MAJOR.MINOR.PATCH — what the registry's skills lane requires
+        // and what this app's share task writes — reads back as major.minor;
+        // the patch digit is accepted and dropped.
+        assert_eq!(
+            extract_skill_version("---\nname: x\nversion: 1.0.3\n---\nBody").as_deref(),
+            Some("1.0")
+        );
+        assert_eq!(
+            extract_skill_version("---\nversion: \"2.14.9999\"\n---\n").as_deref(),
+            Some("2.14")
+        );
+        // Malformed shapes all normalize to None — including four parts and a
+        // patch segment that is not all-digit.
+        for bad in [
+            "v2",
+            "1",
+            "two.one",
+            "1.",
+            ".5",
+            "12345.0",
+            "",
+            "1.0.",
+            "1.0.x",
+            "1.0.3.4",
+            "1.0.12345",
+        ] {
             let md = format!("---\nversion: {bad}\n---\n");
             assert_eq!(extract_skill_version(&md), None, "should reject {bad:?}");
         }
@@ -1590,16 +1801,28 @@ mod tests {
         write_skill(&a, "---\nname: x\nversion: 1.0\n---\n# X\n");
         write_skill(&b, "---\nname: x\nversion: 1.0\n---\n# X\n");
         // Dirs differing ONLY in LESSONS.md (any casing) hash equal.
-        std::fs::write(a.join("LESSONS.md"), "# Lessons — x\n\n## 1.0 — 2026-08-07 — personas\n- note\n").unwrap();
+        std::fs::write(
+            a.join("LESSONS.md"),
+            "# Lessons — x\n\n## 1.0 — 2026-08-07 — personas\n- note\n",
+        )
+        .unwrap();
         std::fs::write(b.join("lessons.md"), "different lessons entirely\n").unwrap();
-        assert_eq!(hash_skill_dir(&a), hash_skill_dir(&b), "LESSONS.md excluded from hash");
+        assert_eq!(
+            hash_skill_dir(&a),
+            hash_skill_dir(&b),
+            "LESSONS.md excluded from hash"
+        );
         // And a lessons append never flips sync_state.
         let source = tmp.path().join("src");
         let target = tmp.path().join("dst");
         write_skill(&source, "---\nname: x\n---\n# X\n");
         copy_dir_recursive(&source, &target).unwrap();
         write_provenance(&target, &source, "global", None);
-        std::fs::write(target.join("LESSONS.md"), "## 1.0 — 2026-08-07 — personas\n- lesson\n").unwrap();
+        std::fs::write(
+            target.join("LESSONS.md"),
+            "## 1.0 — 2026-08-07 — personas\n- lesson\n",
+        )
+        .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_IN_SYNC);
     }
 
@@ -1627,14 +1850,26 @@ mod tests {
         assert_eq!(state, SYNC_IN_SYNC, "fresh install matches its source");
         assert_eq!(kind.as_deref(), Some("global"));
 
-        // Upstream source changes → diverged.
+        // Upstream source changes while the copy is untouched → STALE.
+        // This assertion said `diverged` until the recorded hash was read back,
+        // and the old comment ("Upstream source changes → diverged") named the
+        // conflation exactly: the library moving and the copy being edited are
+        // different events, and only the second makes an update unsafe.
         write_skill(&source, "---\nname: x\n---\n# X v2\nnew body\n");
-        assert_eq!(classify_sync_state(&target).0, SYNC_DIVERGED);
+        assert_eq!(classify_sync_state(&target).0, SYNC_STALE);
 
         // Bring target in line again, then locally edit the target → diverged.
-        std::fs::write(target.join("SKILL.md"), "---\nname: x\n---\n# X v2\nnew body\n").unwrap();
+        std::fs::write(
+            target.join("SKILL.md"),
+            "---\nname: x\n---\n# X v2\nnew body\n",
+        )
+        .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_IN_SYNC);
-        std::fs::write(target.join("SKILL.md"), "---\nname: x\n---\n# locally hacked\n").unwrap();
+        std::fs::write(
+            target.join("SKILL.md"),
+            "---\nname: x\n---\n# locally hacked\n",
+        )
+        .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_DIVERGED);
     }
 }

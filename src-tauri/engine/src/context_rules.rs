@@ -346,7 +346,8 @@ pub async fn context_rule_tick(
                         payload: serde_json::to_string(&m).ok(),
                         use_case_id: None,
                     };
-                    if let Err(e) = personas_db::repos::communication::events::publish(pool, input) {
+                    if let Err(e) = personas_db::repos::communication::events::publish(pool, input)
+                    {
                         tracing::error!(
                             rule_id = %m.rule_id,
                             "Failed to publish context rule event: {}",

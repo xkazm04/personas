@@ -8,6 +8,25 @@ use crate::DbPool;
 use personas_core::error::AppError;
 
 // ============================================================================
+// Projections
+//
+// One `const` per table. `SELECT *` left the fetched column set to whatever
+// `CREATE TABLE` said at runtime -- and `persona_messages` has been extended
+// twice by `ALTER TABLE` since (`thread_id` at `migrations/initial.rs:14`,
+// `use_case_id` at `migrations/incremental/e01_execution_and_use_cases.rs:298`),
+// so the wildcard's result shape genuinely differs between a fresh install and
+// an upgraded one. Both mappers already bound by NAME; these consts pin the
+// FETCH.
+// ============================================================================
+
+const MESSAGE_COLUMNS: &str = "id, persona_id, execution_id, title, content, content_type, \
+                               priority, is_read, metadata, created_at, read_at, \
+                               thread_id, use_case_id";
+
+const DELIVERY_COLUMNS: &str = "id, message_id, channel_type, status, error_message, \
+                                external_id, delivered_at, created_at";
+
+// ============================================================================
 // Row Mappers
 // ============================================================================
 
@@ -56,11 +75,11 @@ pub fn get_all(
         let offset = offset.unwrap_or(0);
         let conn = pool.get()?;
 
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_messages
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {MESSAGE_COLUMNS} FROM persona_messages
              ORDER BY created_at DESC
-             LIMIT ?1 OFFSET ?2",
-        )?;
+             LIMIT ?1 OFFSET ?2"
+        ))?;
         let rows = stmt.query_map(params![limit, offset], row_to_message)?;
         let messages = collect_rows(rows, "messages::get_all");
         Ok(messages)
@@ -70,7 +89,9 @@ pub fn get_all(
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMessage, AppError> {
     timed_query!("persona_messages", "persona_messages::get_by_id", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached("SELECT * FROM persona_messages WHERE id = ?1")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {MESSAGE_COLUMNS} FROM persona_messages WHERE id = ?1"
+        ))?;
         stmt.query_row(params![id], row_to_message)
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => {
@@ -96,12 +117,12 @@ pub fn get_by_use_case_id(
             let limit = limit.unwrap_or(50);
             let conn = pool.get()?;
 
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_messages
-             WHERE persona_id = ?1 AND use_case_id = ?2
-             ORDER BY created_at DESC
-             LIMIT ?3",
-            )?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {MESSAGE_COLUMNS} FROM persona_messages
+                 WHERE persona_id = ?1 AND use_case_id = ?2
+                 ORDER BY created_at DESC
+                 LIMIT ?3"
+            ))?;
             let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_message)?;
             Ok(collect_rows(rows, "messages::get_by_use_case_id"))
         }
@@ -117,12 +138,12 @@ pub fn get_by_persona_id(
         let limit = limit.unwrap_or(50);
         let conn = pool.get()?;
 
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_messages
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {MESSAGE_COLUMNS} FROM persona_messages
              WHERE persona_id = ?1
              ORDER BY created_at DESC
-             LIMIT ?2",
-        )?;
+             LIMIT ?2"
+        ))?;
         let rows = stmt.query_map(params![persona_id, limit], row_to_message)?;
         let messages = collect_rows(rows, "messages::get_by_persona_id");
         Ok(messages)
@@ -133,8 +154,8 @@ pub fn get_unread_count(pool: &DbPool) -> Result<i64, AppError> {
     timed_query!("persona_messages", "persona_messages::get_unread_count", {
         let conn = pool.get()?;
         let mut stmt =
-            conn.prepare_cached("SELECT COUNT(*) FROM persona_messages WHERE is_read = 0")?;
-        let count: i64 = stmt.query_row([], |row| row.get(0))?;
+            conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_messages WHERE is_read = 0")?;
+        let count: i64 = stmt.query_row([], |row| row.get("n"))?;
         Ok(count)
     })
 }
@@ -142,8 +163,8 @@ pub fn get_unread_count(pool: &DbPool) -> Result<i64, AppError> {
 pub fn get_total_count(pool: &DbPool) -> Result<i64, AppError> {
     timed_query!("persona_messages", "persona_messages::get_total_count", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached("SELECT COUNT(*) FROM persona_messages")?;
-        let count: i64 = stmt.query_row([], |row| row.get(0))?;
+        let mut stmt = conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_messages")?;
+        let count: i64 = stmt.query_row([], |row| row.get("n"))?;
         Ok(count)
     })
 }
@@ -186,10 +207,10 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
                        AND date(created_at) = date(?4)
                      ORDER BY created_at DESC LIMIT 1",
                 )?;
-                let dup: Result<String, _> = dup_stmt
-                    .query_row(params![input.persona_id, title, input.content, now], |row| {
-                        row.get(0)
-                    });
+                let dup: Result<String, _> = dup_stmt.query_row(
+                    params![input.persona_id, title, input.content, now],
+                    |row| row.get("id"),
+                );
                 if let Ok(existing_id) = dup {
                     tracing::info!(
                         persona_id = %input.persona_id,
@@ -228,11 +249,11 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
 pub fn get_by_thread(pool: &DbPool, thread_id: &str) -> Result<Vec<PersonaMessage>, AppError> {
     timed_query!("persona_messages", "persona_messages::get_by_thread", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached(
-            "SELECT * FROM persona_messages
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {MESSAGE_COLUMNS} FROM persona_messages
              WHERE thread_id = ?1
-             ORDER BY created_at ASC",
-        )?;
+             ORDER BY created_at ASC"
+        ))?;
         let rows = stmt.query_map(params![thread_id], row_to_message)?;
         Ok(collect_rows(rows, "messages::get_by_thread"))
     })
@@ -332,16 +353,16 @@ pub fn get_thread_count(pool: &DbPool, persona_id: Option<&str>) -> Result<i64, 
         let conn = pool.get()?;
         if let Some(pid) = persona_id {
             let count: i64 = conn.query_row(
-                "SELECT COUNT(DISTINCT thread_id) FROM persona_messages WHERE thread_id IS NOT NULL AND persona_id = ?1",
+                "SELECT COUNT(DISTINCT thread_id) AS n FROM persona_messages WHERE thread_id IS NOT NULL AND persona_id = ?1",
                 params![pid],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         } else {
             let count: i64 = conn.query_row(
-                "SELECT COUNT(DISTINCT thread_id) FROM persona_messages WHERE thread_id IS NOT NULL",
+                "SELECT COUNT(DISTINCT thread_id) AS n FROM persona_messages WHERE thread_id IS NOT NULL",
                 [],
-                |row| row.get(0),
+                |row| row.get("n"),
             )?;
             Ok(count)
         }
@@ -389,8 +410,9 @@ pub fn list_unread_after(
     timed_query!("persona_messages", "persona_messages::list_unread_after", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(
-            "SELECT m.id, COALESCE(p.name, m.persona_id), m.title, m.content,
-                    m.priority, m.created_at
+            "SELECT m.id AS id, COALESCE(p.name, m.persona_id) AS persona_name,
+                    m.title AS title, m.content AS content,
+                    m.priority AS priority, m.created_at AS created_at
              FROM persona_messages m
              LEFT JOIN personas p ON p.id = m.persona_id
              WHERE m.is_read = 0 AND m.created_at > ?1
@@ -399,12 +421,12 @@ pub fn list_unread_after(
         )?;
         let rows = stmt.query_map(params![cursor, limit], |row| {
             Ok(UnreadMessageForTriage {
-                id: row.get(0)?,
-                persona_name: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                priority: row.get(4)?,
-                created_at: row.get(5)?,
+                id: row.get("id")?,
+                persona_name: row.get("persona_name")?,
+                title: row.get("title")?,
+                content: row.get("content")?,
+                priority: row.get("priority")?,
+                created_at: row.get("created_at")?,
             })
         })?;
         Ok(collect_rows(rows, "messages::list_unread_after"))
@@ -431,7 +453,7 @@ pub fn annotate_athena_triage(
                 .query_row(
                     "SELECT metadata FROM persona_messages WHERE id = ?1",
                     params![id],
-                    |row| row.get(0),
+                    |row| row.get("metadata"),
                 )
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
@@ -512,16 +534,20 @@ pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
 /// child `persona_message_deliveries` cascades. Single statement → atomic.
 /// Returns the number of rows deleted.
 pub fn cleanup_old_messages(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
-    timed_query!("persona_messages", "persona_messages::cleanup_old_messages", {
-        let conn = pool.get()?;
-        let cutoff = format!("-{retention_days} days");
-        let n = conn.execute(
-            "DELETE FROM persona_messages
+    timed_query!(
+        "persona_messages",
+        "persona_messages::cleanup_old_messages",
+        {
+            let conn = pool.get()?;
+            let cutoff = format!("-{retention_days} days");
+            let n = conn.execute(
+                "DELETE FROM persona_messages
              WHERE is_read = 1 AND created_at < datetime('now', ?1)",
-            params![cutoff],
-        )?;
-        Ok(n)
-    })
+                params![cutoff],
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 // ============================================================================
@@ -565,10 +591,10 @@ pub fn get_bulk_delivery_summaries(
                     chunk.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
                 let rows = stmt.query_map(params_vec.as_slice(), |row| {
                     Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, i64>(1)?,
-                        row.get::<_, i64>(2)?,
-                        row.get::<_, i64>(3)?,
+                        row.get::<_, String>("message_id")?,
+                        row.get::<_, i64>("delivered")?,
+                        row.get::<_, i64>("pending")?,
+                        row.get::<_, i64>("failed")?,
                     ))
                 })?;
                 all_results.extend(collect_rows(rows, "messages::get_bulk_delivery_summaries"));
@@ -587,11 +613,11 @@ pub fn get_deliveries_by_message(
         "persona_messages::get_deliveries_by_message",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_message_deliveries
-             WHERE message_id = ?1
-             ORDER BY created_at DESC",
-            )?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {DELIVERY_COLUMNS} FROM persona_message_deliveries
+                 WHERE message_id = ?1
+                 ORDER BY created_at DESC"
+            ))?;
             let rows = stmt.query_map(params![message_id], row_to_delivery)?;
             let deliveries = collect_rows(rows, "messages::get_deliveries_by_message");
             Ok(deliveries)

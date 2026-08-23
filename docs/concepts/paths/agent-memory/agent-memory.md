@@ -12,7 +12,7 @@ techniques:
 evidence:
   - src-tauri/src/companion/brain/consolidation.rs        # proposal-gated distillation; provenance-mandatory writes; decay + per-scope caps
   - src-tauri/src/companion/brain/episodic.rs             # append-only evidence layer — facts rebuildable from cited episode ids
-  - src-tauri/src/companion/brain/sleep_cycle.rs          # pressure-triggered batch cycle; drain-forward window; report-only forgetting
+  - src-tauri/src/companion/brain/sleep_cycle/          # pressure-triggered batch cycle; drain-forward window; report-only forgetting
   - src-tauri/src/companion/brain/retrieval.rs            # three-lane budgeted recall: relevance, vector, always-include + recency floor
   - src-tauri/src/companion/orchestration/operative_memory.rs  # in-process working memory: TTL reaper, digest caps, end-of-session synthesis
   - src-tauri/db/src/memory_recall.rs                     # decay-scored budget packing; category half-lives; archive-not-delete

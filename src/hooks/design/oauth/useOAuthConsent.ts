@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { getGoogleCredentialOAuthStatus, startGoogleCredentialOAuth } from "@/api/vault/oauthGatewayApi";
 
-import type { GoogleCredentialOAuthStatusResult } from "@/api/vault/oauthGatewayApi";
+import type { OAuthStatusResult } from "@/api/vault/oauthGatewayApi";
 
 import { useOAuthPolling } from './useOAuthPolling';
 import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
@@ -27,7 +27,7 @@ export function useOAuthConsent(): OAuthConsentState {
   // Track the scope the user typed so extractValues can fall back to it
   const scopeRef = useRef<string | null>(null);
 
-  const polling = useOAuthPolling<[string, string[] | undefined], GoogleCredentialOAuthStatusResult>({
+  const polling = useOAuthPolling<[string, string[] | undefined], OAuthStatusResult>({
     startFn: (connectorName, extraScopes) =>
       startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
     pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),

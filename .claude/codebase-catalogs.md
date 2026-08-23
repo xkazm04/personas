@@ -1,8 +1,8 @@
 # Codebase Catalogs — personas
 
-> Generated: 2026-06-20T08:04:53.028Z
+> Generated: 2026-08-20T15:26:46.720Z
 > Templates: 131 across 15 categories
-> Connectors: 129 across 36 categories
+> Connectors: 134 across 36 categories
 >
 > **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
 > Consumed by `/research` for template/credential bucket dedup and gap analysis.
@@ -111,16 +111,16 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **onboarding-tracker** — Automates new-hire onboarding end-to-end via knowledge base checklists: detects new employees hourly, runs weekday deadline checks with tiered escalation, and produces weekly progress reports with at-risk flagging. — flow: knowledge base -> Local Database -> In-App Messaging
 - **recruiting-pipeline-use-case** — Monitors HR platform for candidate stage transitions, sends personalized emails at each stage (acknowledgment, interview prep, rejection, offer), posts updates to hiring messaging channels, and compiles weekly recruiting funnel metrics. — flow: HR platform -> email -> messaging
 
-### legal (3)
+### legal (2)
 
 - **ai-contract-reviewer** — Analyzes contract documents using AI to extract key terms, financial obligations, risk factors, and red flags, creates structured review reports in knowledge base, alerts on high-risk clauses, and sends deadline reminders for renewals and obligations. — flow: email -> knowledge base -> messaging
 - **contract-lifecycle-use-case** — Tracks legal platform envelope events (sent, viewed, signed, declined), updates spreadsheet contract tracker, posts messaging notifications on status changes, sends reminder emails for unsigned documents, and flags contracts approaching renewal. — flow: legal platform -> spreadsheet -> messaging -> email
-- **editorial-calendar-manager** — Reads the knowledge base editorial calendar, syncs deadlines and assignments to spreadsheet for tracking, sends reminder emails to writers approaching deadlines, posts status reports, and flags content gaps in the schedule. — flow: knowledge base -> spreadsheet -> email
 
-### marketing (6)
+### marketing (7)
 
 - **autonomous-cro-experiment-runner** — Closed-loop conversion rate optimization agent that pulls landing page analytics, identifies underperforming sections, generates A/B headline and copy variants, deploys experiments via your analytics/experimentation tool, tracks statistical lift, and promotes winners. Every variant goes through human review before deployment. Learns from accepted/rejected variants over time. — flow: Analytics Tool -> Experimentation API -> Messages
 - **content-cascade** — Repurposes a published long-form artifact (YouTube video, blog post, podcast transcript) into platform-tuned text variants in your voice — LinkedIn long-form, X/Twitter thread, blog summary, and short-form video ideas. Per-platform voice docs learn from your edits; nothing publishes without explicit approval. — flow: Source Artifact -> Per-Platform Voice Docs -> Platform-Tuned Drafts -> Manual Review -> Publish / Schedule
+- **editorial-calendar-manager** — Reads the knowledge base editorial calendar, syncs deadlines and assignments to spreadsheet for tracking, sends reminder emails to writers approaching deadlines, posts status reports, and flags content gaps in the schedule. — flow: knowledge base -> spreadsheet -> email
 - **reddit-trend-digest** — Polls one or more social feeds (subreddits, social platform lists, social platform groups, social platform channels) on a schedule, fetches top posts over a chosen time window, clusters them into themes with sentiment labels, and posts a markdown digest to your messaging channel. Tracks already-seen posts so each digest only surfaces what's new. — flow: Social Feed -> Trend Synthesis -> Team Messaging
 - **visual-brand-asset-factory** — Generates on-brand visual assets grounded in a structured design.md brief produced once at persona build time. The brief captures empathy, sensory aesthetic language, a four-role color hierarchy, typography, and a physical-metaphor layout direction — stored in the persona's design_files envelope so every generation reads from the same design DNA. Generates via an AI image connector, evaluates with a multimodal AI connector, and presents for human review. — flow: Codebase -> Image AI -> Multimodal AI -> Messages
 - **web-marketing** — Weekly cross-channel marketing intelligence. Pulls paid campaign performance and organic SEO metrics, detects keyword cannibalization between paid and organic, and proposes specific optimizations that persist through human review into a learning memory of what works. — flow: Ad Platform -> Analytics Tool -> Messages
@@ -198,7 +198,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ---
 
-## Connector Catalog (129)
+## Connector Catalog (134)
 
 ### advertising (3)
 
@@ -206,7 +206,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **linkedin_ads** (OAuth, free) — LinkedIn Ads — B2B campaign analytics via the LinkedIn Marketing API. Use for sponsored-content performance, lead-gen-form conversions, and audience insights on LinkedIn's surfaces.
 - **meta_ads** (OAuth, free) — Meta (Facebook/Instagram) Ads — pulls campaign performance via Graph API v19. Use for ad spend, CTR, CPA, ROAS, and conversion tracking across paid social on Meta surfaces.
 
-### ai (7)
+### ai (8)
 
 - **anthropic-admin** (api_key, ?) — Anthropic organization admin API — usage and cost reporting per API key (LLM spend KPIs).
 - **deepgram** (API Key, freemium) — Deepgram speech-to-text, text-to-speech, and audio intelligence API for transcription, diarization, and voice AI.
@@ -214,6 +214,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **gemini_vision** (API Key, freemium) — Google Gemini Vision API for OCR, document understanding, and image analysis. Supports images and PDFs natively with up to 3,600 pages per request.
 - **google_gemini** (API Key, freemium) — Google Gemini text and chat API for general-purpose generation, multi-turn conversations, embeddings, and token counting. Use this for second-opinion LLMs, cross-family consensus, and tasks where a non-Anthropic model helps (e.g. design-direction brainstorming, copywriting refreshes).
 - **higgsfield** (API Key (KEY_ID:KEY_SECRET), freemium) — Higgsfield AI generative image and video platform with hosted models including Soul 2.0, Nano Banana Pro, Sora 2, Veo 3.1, Kling 3.0, and 30+ more. Supports REST API access (programmatic) and a hosted MCP server (account OAuth, no API key).
+- **huggingface** (?, ?) — Hugging Face Hub access token — used for gated model downloads (e.g. the Pocket TTS voice-cloning weights) and Hub API calls.
 - **leonardo_ai** (API Key, freemium) — Leonardo AI generative image and video platform for creative content.
 
 ### analytics (4)
@@ -343,10 +344,14 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **telegram** (Bot Token, free) — Telegram bot for messaging, notifications, and group automation.
 - **twilio_sms** (Account SID, paid) — Twilio SMS, voice, WhatsApp, and communication APIs.
 
-### monitoring (2)
+### monitoring (6)
 
 - **betterstack** (PAT, paid) — Better Stack uptime monitoring, incident management, and status pages.
+- **helicone** (API Key, freemium) — Helicone LLM observability — one-line proxy for logging, cost tracking, caching, and analytics across OpenAI, Anthropic, and more.
+- **langfuse** (Key Pair, freemium) — Langfuse open-source LLM engineering platform — tracing, evals, prompt management, and cost/latency analytics for LLM apps.
+- **langsmith** (API Key, freemium) — LangSmith (by LangChain) LLM tracing, evaluation, and monitoring — inspect runs, datasets, and prompts for LLM and agent apps.
 - **sentry** (PAT, free) — Sentry application monitoring for errors, performance, and session replay.
+- **tracklight** (API Key, free) — LightTrack self-hosted LLM observability + scoring — track calls, cost, and profit across OpenAI/Anthropic/Gemini, with LLM-as-judge benchmarks and per-project limits.
 
 ### notifications (7)
 
@@ -450,24 +455,25 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - productivity: 12  (well-covered)
 - sales: 12  (well-covered)
 - _team_presets: 7
-- marketing: 6
+- marketing: 7
 - project-management: 5
 - support: 5
 - devops: 4
-- legal: 3
 - security: 3
 - hr: 2  ← **sparse, gap candidate**
+- legal: 2  ← **sparse, gap candidate**
 - email: 1  ← **sparse, gap candidate**
 
 ### Connector categories by density
 
 - database: 11  (well-covered)
 - cloud: 9  (well-covered)
-- ai: 7
+- ai: 8  (well-covered)
 - knowledge_base: 7
 - notifications: 7
 - storage: 7
 - messaging: 6
+- monitoring: 6
 - project_management: 5
 - social: 5
 - analytics: 4
@@ -490,7 +496,6 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - ecommerce: 2  ← **sparse, gap candidate**
 - forms: 2  ← **sparse, gap candidate**
 - integration: 2  ← **sparse, gap candidate**
-- monitoring: 2  ← **sparse, gap candidate**
 - scheduling: 2  ← **sparse, gap candidate**
 - browser_automation: 1  ← **sparse, gap candidate**
 - personalization: 1  ← **sparse, gap candidate**
@@ -500,7 +505,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ### Auth type distribution
 
-- API Key: 33
+- API Key: 36
 - PAT: 26
 - OAuth: 17
 - API Token: 9
@@ -516,6 +521,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - Access Token: 2
 - api_key: 1
 - API Key (KEY_ID:KEY_SECRET): 1
+- ?: 1
 - Write Key: 1
 - Local App: 1
 - Client Credentials: 1
@@ -529,6 +535,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - Secret Key: 1
 - Vault: 1
 - Account SID: 1
+- Key Pair: 1
 - Twin: 1
 - None: 1
 - Application Key: 1

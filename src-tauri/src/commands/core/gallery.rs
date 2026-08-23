@@ -43,6 +43,11 @@ fn gallery_base_url() -> String {
         .unwrap_or_else(|| "https://personas.ai".to_string())
 }
 
+/// `SHARED_HTTP` is deliberately not used: 20 s, not 30 s, is the deadline the
+/// publish/unpublish round-trip is tuned to. The host is `gallery_base_url()` —
+/// a compile-time literal unless this process's own `PERSONAS_WEB_URL` env var
+/// overrides it for staging, which is a developer affordance and not a value
+/// any persona, credential or remote payload can reach.
 fn gallery_http_client() -> Result<reqwest::Client, AppError> {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
@@ -157,7 +162,10 @@ pub async fn gallery_import_persona(
 
     // Record the install — best-effort; a failed counter bump must never fail
     // the import the user actually got value from.
-    let _ = client.post(format!("{base}/api/personas/{slug}")).send().await;
+    let _ = client
+        .post(format!("{base}/api/personas/{slug}"))
+        .send()
+        .await;
 
     Ok(result)
 }

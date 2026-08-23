@@ -209,11 +209,7 @@ pub(super) fn classify_test_entry(entry: &serde_json::Value) -> EntryClass {
 
 /// One line of "we counted this but never called it", carried in the report so
 /// the hold the promote gate raises names something the user can act on.
-fn unverified_reason(
-    tool_name: &str,
-    connector: Option<&str>,
-    reason: &str,
-) -> serde_json::Value {
+fn unverified_reason(tool_name: &str, connector: Option<&str>, reason: &str) -> serde_json::Value {
     serde_json::json!({
         "tool_name": tool_name,
         "connector": connector,
@@ -288,7 +284,7 @@ pub async fn run_tool_tests(
         .filter_map(tool_runner::tool_def_from_ir)
         .collect();
 
-    let (mut env_vars, mut hints, cred_failures, mut injected_connectors) =
+    let (mut env_vars, mut hints, cred_failures, mut injected_connectors, _cred_ids) =
         engine_runner::resolve_credential_env_vars(pool, &tool_defs, persona_id, persona_name)
             .await;
 
@@ -321,10 +317,7 @@ pub async fn run_tool_tests(
         // matches the user-visible name) but fall back to direct
         // service_type credential lookup when the connector isn't in the
         // catalog yet.
-        let connectors = match crate::db::repos::resources::connectors::get_all(pool) {
-            Ok(c) => c,
-            Err(_) => Vec::new(),
-        };
+        let connectors = crate::db::repos::resources::connectors::get_all(pool).unwrap_or_default();
         let conn_def = connectors
             .iter()
             .find(|c| c.name.eq_ignore_ascii_case(name));
@@ -338,6 +331,7 @@ pub async fn run_tool_tests(
                 persona_name,
             )
             .await
+            .map(|cred_id| cred_id.is_some())
             .unwrap_or(false)
         } else {
             match crate::db::repos::resources::credentials::get_by_service_type(pool, name) {
@@ -411,7 +405,11 @@ pub async fn run_tool_tests(
     // the LLM path when disabled, so the default is untouched.
     // NOTE: win-verification is deferred to a connector fixture (web-research-desk
     // with Airtable/Notion) — native-only builds have no connectors to script.
-    if std::env::var("PERSONAS_SCRIPTED_TOOL_TESTS").ok().as_deref() == Some("1") {
+    if std::env::var("PERSONAS_SCRIPTED_TOOL_TESTS")
+        .ok()
+        .as_deref()
+        == Some("1")
+    {
         return run_scripted_connector_tests(pool, agent_ir).await;
     }
 
@@ -598,7 +596,14 @@ pub async fn run_tool_tests(
                     .get("connector")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
-                let r = tool_runner::execute_test_curl(curl_cmd, &env_map).await;
+                // Self-hosted connectors (LightTrack, Langfuse, LangSmith)
+                // legitimately point at localhost/LAN; every other connector
+                // gets the SSRF check. Same metadata flag the API proxy reads.
+                let allow_private = tool_runner::connector_allows_private_network_by_name(
+                    pool,
+                    connector.as_deref(),
+                );
+                let r = tool_runner::execute_test_curl(curl_cmd, &env_map, allow_private).await;
                 tally.record_executed(tool_name, connector, r)
             }
         };
@@ -968,15 +973,21 @@ async fn run_scripted_connector_tests(
                     let started = std::time::Instant::now();
                     let (status, error, preview) =
                         match super::super::healthcheck::run_healthcheck(&pool_c, &cid).await {
-                            Ok(hr) if hr.success => {
-                                ("passed", serde_json::Value::Null, serde_json::Value::String(hr.message))
-                            }
-                            Ok(hr) => {
-                                ("failed", serde_json::Value::String(hr.message), serde_json::Value::Null)
-                            }
-                            Err(e) => {
-                                ("failed", serde_json::Value::String(e.to_string()), serde_json::Value::Null)
-                            }
+                            Ok(hr) if hr.success => (
+                                "passed",
+                                serde_json::Value::Null,
+                                serde_json::Value::String(hr.message),
+                            ),
+                            Ok(hr) => (
+                                "failed",
+                                serde_json::Value::String(hr.message),
+                                serde_json::Value::Null,
+                            ),
+                            Err(e) => (
+                                "failed",
+                                serde_json::Value::String(e.to_string()),
+                                serde_json::Value::Null,
+                            ),
                         };
                     serde_json::json!({
                         "tool_name": name, "status": status, "http_status": null,
@@ -1260,6 +1271,7 @@ Tools that only mutate state — emit an entry with empty curl, NO `cli_native` 
 2. Minimal params (limit=1, maxResults=1, per_page=1).
 3. Use $ENV_VAR placeholders for credential values; match the env prefix of the credential from the list above.
 4. Always include `-s` (silent) and `-w '\n%{{http_code}}'` to capture HTTP status.
+5. The runner validates every curl against an ALLOWLIST of flags before executing it. Use only: `-s -S -L -f -i -I -G --compressed -H -X -A -u -m --max-time --connect-timeout --retry -d --data --data-raw --data-urlencode -w --url`, plus exactly ONE http/https URL. Anything else (`-o`, `-O`, `-T`, `-K`, `-D`, `-c`, `-b`, `-k`, `-F`, `--trace`, `--proto`, …) is rejected and the test fails before it runs. A `-d`/`--data` value may NOT begin with `@` — curl would read a local file and POST it.
 
 ## Output Format
 Output EXACTLY one JSON object — a test_plan array. No markdown, no commentary, raw JSON only:

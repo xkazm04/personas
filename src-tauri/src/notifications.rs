@@ -82,7 +82,6 @@ fn parse_channels(json: Option<&str>) -> Vec<ExternalChannel> {
 // unchanged.
 pub use personas_core::models::parse_channels_v2;
 
-
 // ---------------------------------------------------------------------------
 // Shape-v2 delivery types (Phase 19 DELIV-02, D-04, D-07)
 // ---------------------------------------------------------------------------
@@ -405,10 +404,7 @@ async fn resolve_credential_fields(
 /// credential fields layered under `spec.config` (config wins on collision so
 /// the per-channel destination — Slack channel, Discord channel_id, Telegram
 /// chat_id — set in the picker can override anything in the credential).
-async fn merged_channel_config(
-    app: &AppHandle,
-    spec: &ChannelSpecV2,
-) -> HashMap<String, String> {
+async fn merged_channel_config(app: &AppHandle, spec: &ChannelSpecV2) -> HashMap<String, String> {
     let mut merged = if let Some(cred_id) = spec.credential_id.as_deref() {
         resolve_credential_fields(app, cred_id).await
     } else {
@@ -592,6 +588,35 @@ pub(crate) fn deliver_to_channels(
     });
 }
 
+/// Reject a user-supplied webhook URL that points at a private, internal, or
+/// cloud-metadata target.
+///
+/// WHY BOTH THIS AND `SSRF_SAFE_HTTP`, at every call site below: neither is
+/// sufficient alone, and they fail in opposite directions.
+///
+/// * `SSRF_SAFE_HTTP`'s resolver only ever sees a HOSTNAME. A URL whose host is
+///   already an IP literal -- `http://169.254.169.254/`, the cloud-metadata
+///   endpoint -- skips DNS entirely, so the resolver is never consulted and the
+///   request goes straight out. `build_ssrf_safe_client` says so itself, and
+///   closes that hole for REDIRECT hops via its redirect policy; the INITIAL
+///   URL has no such cover. This function is that cover: it parses the host and
+///   checks an IP literal directly.
+/// * This function alone is time-of-check/time-of-use. It resolves the hostname
+///   now; the request resolves it again later, and a DNS-rebinding answer can
+///   differ between the two. The client's resolver is what re-checks at connect
+///   time, on the address actually being dialled.
+///
+/// So: this catches what DNS cannot see, the client catches what a pre-flight
+/// check cannot hold. Dropping either one re-opens a real bypass.
+///
+/// The three channels below take an arbitrary operator-pasted URL. The Telegram,
+/// Discord-bot and Graph paths in this file do NOT -- they `format!` into a fixed
+/// vendor host and are deliberately left on `SHARED_HTTP`.
+fn validate_webhook_target(provider: &str, url: &str) -> Result<(), String> {
+    crate::engine::url_safety::validate_url_safety(url)
+        .map_err(|reason| format!("{provider}: webhook URL blocked -- {reason}"))
+}
+
 /// Deliver to Slack. Two paths:
 ///   - `bot_token` present (vault-resolved) → `chat.postMessage` API to a
 ///     channel set in `channel`/`channel_id`/`selected_channels` (Slice 1).
@@ -662,7 +687,9 @@ async fn deliver_slack(ch: &ExternalChannel, title: &str, body: &str) -> Result<
 
     let payload = serde_json::json!({ "text": text });
 
-    let resp = crate::SHARED_HTTP
+    validate_webhook_target("Slack", webhook_url.expose_secret())?;
+
+    let resp = crate::SSRF_SAFE_HTTP
         .post(webhook_url.expose_secret())
         .json(&payload)
         .timeout(std::time::Duration::from_secs(10))
@@ -825,7 +852,8 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
 
     if let Some(webhook_url) = ch.config.get("webhook_url").filter(|u| !u.is_empty()) {
         let url = SecureString::new(webhook_url.clone());
-        let resp = crate::SHARED_HTTP
+        validate_webhook_target("Discord", url.expose_secret())?;
+        let resp = crate::SSRF_SAFE_HTTP
             .post(url.expose_secret())
             .json(&serde_json::json!({ "content": content }))
             .timeout(std::time::Duration::from_secs(10))
@@ -841,14 +869,10 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
         return Ok(());
     }
 
-    let bot_token = ch
-        .config
-        .get("bot_token")
-        .filter(|t| !t.is_empty())
-        .ok_or(
-            "Discord: configure either webhook_url (inline) or \
+    let bot_token = ch.config.get("bot_token").filter(|t| !t.is_empty()).ok_or(
+        "Discord: configure either webhook_url (inline) or \
              bot_token+channel_id (vault credential + spec.config)",
-        )?;
+    )?;
     let channel_id = ch
         .config
         .get("channel_id")
@@ -866,10 +890,7 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
     );
     let resp = crate::SHARED_HTTP
         .post(&url)
-        .header(
-            "Authorization",
-            format!("Bot {}", token.expose_secret()),
-        )
+        .header("Authorization", format!("Bot {}", token.expose_secret()))
         .json(&serde_json::json!({ "content": content }))
         .timeout(std::time::Duration::from_secs(10))
         .send()
@@ -888,7 +909,7 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
 ///   - `webhook_url` (inline) → Incoming Webhook MessageCard.
 ///   - `access_token` + `team_id` + `channel_id` (vault OAuth credential
 ///     + spec.config or `selected_teams`/`selected_channels` fallback) →
-///     `POST /teams/{team_id}/channels/{channel_id}/messages` on Graph.
+///       `POST /teams/{team_id}/channels/{channel_id}/messages` on Graph.
 ///   - Otherwise → actionable error explaining which fields are missing.
 ///
 /// Slice 4 ships the Graph path WITHOUT proactive token refresh — if the
@@ -906,7 +927,8 @@ async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<
             "title": title,
             "text": body,
         });
-        let resp = crate::SHARED_HTTP
+        validate_webhook_target("Teams", url.expose_secret())?;
+        let resp = crate::SSRF_SAFE_HTTP
             .post(url.expose_secret())
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10))
@@ -926,11 +948,7 @@ async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<
     // team_id and channel_id may come from spec.config (set in the picker)
     // or from the credential's scoped_resources fallback (surfaced as
     // `selected_teams` / `selected_channels` by `merged_channel_config`).
-    if let Some(access_token) = ch
-        .config
-        .get("access_token")
-        .filter(|t| !t.is_empty())
-    {
+    if let Some(access_token) = ch.config.get("access_token").filter(|t| !t.is_empty()) {
         let team_id = ch
             .config
             .get("team_id")
@@ -1056,7 +1074,11 @@ pub fn notify_execution_completed_rich(
     if let Some(err) = error {
         if !err.is_empty() {
             // Truncate error for notification readability
-            let short_err = if err.len() > 200 { crate::utils::text::truncate_on_char_boundary(&err, 200) } else { err };
+            let short_err = if err.len() > 200 {
+                crate::utils::text::truncate_on_char_boundary(err, 200)
+            } else {
+                err
+            };
             body.push_str(&format!("\nError: {}", short_err));
         }
     }
@@ -1353,7 +1375,7 @@ fn test_deliver_titlebar(app: &tauri::AppHandle, spec: &ChannelSpecV2, title: &s
         body: body.to_string(),
         priority: "normal".into(),
     };
-    let _ = emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
+    emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
 }
 
 /// Deliver ONE shape-v2 external channel spec and await the result.
@@ -1549,6 +1571,102 @@ pub(crate) fn send(app: &AppHandle, title: &str, body: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // -- SSRF: operator-pasted webhook URLs -------------------------------
+    //
+    // These three channels post to whatever URL the operator typed. Before this
+    // fix they used SHARED_HTTP with no pre-flight check, so a webhook of
+    // "http://169.254.169.254/..." reached the cloud-metadata endpoint from
+    // inside the app -- an SSRF with the app's own network position.
+    //
+    // The discriminator these tests key on is the ERROR TEXT. A blocked URL
+    // fails with "blocked"; an unblocked one gets as far as the network and
+    // fails with "<provider> request failed". So a regression does not merely
+    // change the message, it flips which of the two appears -- which is what
+    // makes these falsifiable rather than decorative. Confirmed by reverting
+    // the fix: all three then report "request failed" and the asserts fire.
+    //
+    // No test here performs a real request: every case is rejected before the
+    // client is touched, which is also why they run in milliseconds.
+
+    /// The cloud-metadata endpoint: an IP LITERAL, so it never reaches a DNS
+    /// resolver. This is precisely the case `SSRF_SAFE_HTTP` alone cannot see.
+    const METADATA_URL: &str = "http://169.254.169.254/latest/meta-data/";
+
+    fn webhook_channel(kind: &str, url: &str) -> ExternalChannel {
+        let mut config = std::collections::HashMap::new();
+        config.insert("webhook_url".to_string(), url.to_string());
+        ExternalChannel {
+            channel_type: kind.to_string(),
+            enabled: true,
+            credential_id: None,
+            config,
+        }
+    }
+
+    #[tokio::test]
+    async fn slack_webhook_to_cloud_metadata_is_blocked() {
+        let ch = webhook_channel("slack", METADATA_URL);
+        let err = deliver_slack(&ch, "t", "b").await.expect_err("must block");
+        assert!(err.contains("blocked"), "expected a block, got: {err}");
+    }
+
+    #[tokio::test]
+    async fn discord_webhook_to_cloud_metadata_is_blocked() {
+        let ch = webhook_channel("discord", METADATA_URL);
+        let err = deliver_discord(&ch, "t", "b")
+            .await
+            .expect_err("must block");
+        assert!(err.contains("blocked"), "expected a block, got: {err}");
+    }
+
+    #[tokio::test]
+    async fn teams_webhook_to_cloud_metadata_is_blocked() {
+        let ch = webhook_channel("teams", METADATA_URL);
+        let err = deliver_teams(&ch, "t", "b").await.expect_err("must block");
+        assert!(err.contains("blocked"), "expected a block, got: {err}");
+    }
+
+    #[test]
+    fn loopback_and_private_ranges_are_blocked() {
+        for url in [
+            "http://127.0.0.1:8080/hook",
+            "http://localhost:9000/hook",
+            "http://10.0.0.5/hook",
+            "http://192.168.1.10/hook",
+            "http://[::1]:8080/hook",
+        ] {
+            assert!(
+                validate_webhook_target("X", url).is_err(),
+                "should have blocked {url}"
+            );
+        }
+    }
+
+    #[test]
+    fn non_http_schemes_are_blocked() {
+        // file:// and gopher:// are classic SSRF escalations.
+        for url in ["file:///etc/passwd", "gopher://127.0.0.1:11211/"] {
+            assert!(
+                validate_webhook_target("X", url).is_err(),
+                "should have blocked {url}"
+            );
+        }
+    }
+
+    /// NEGATIVE CONTROL. Without this, every assert above would still pass if
+    /// the function simply rejected everything -- a check that always says "no"
+    /// is not a check. A public IP literal takes the same code path as the
+    /// metadata address (parsed as an IP, no DNS) and must be ALLOWED, so this
+    /// isolates the predicate rather than the plumbing, and needs no network.
+    #[test]
+    fn a_public_ip_literal_is_allowed() {
+        assert!(
+            validate_webhook_target("X", "https://1.1.1.1/services/hook").is_ok(),
+            "a public address must not be blocked"
+        );
+    }
+
     use crate::db::models::{ChannelScopeV2, ChannelSpecV2Type};
 
     fn shape_v2_channel_json() -> &'static str {

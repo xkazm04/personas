@@ -11,8 +11,8 @@ use tauri::State;
 
 use crate::db::models::{
     DevProject, DevWorkspace, PracticeContextRollup, WorkspaceConsultStats, WorkspaceImportItem,
-    WorkspaceKnowledge, WorkspaceKnowledgeEvidence, WorkspacePatternEdge, WorkspacePlaybook, WorkspacePlaybookPattern,
-    WorkspacePracticeAdoption,
+    WorkspaceKnowledge, WorkspaceKnowledgeEvidence, WorkspacePatternEdge, WorkspacePlaybook,
+    WorkspacePlaybookPattern, WorkspacePracticeAdoption,
 };
 use crate::db::repos::dev_workspaces as repo;
 use crate::error::AppError;
@@ -97,7 +97,9 @@ pub fn dev_tools_workspace_assign_project(
                 count = n,
                 "workspace join materialized {n} practice idea(s)"
             ),
-            Err(e) => tracing::warn!(project_id = %project_id, error = %e, "practice materialization failed after workspace join"),
+            Err(e) => {
+                tracing::warn!(project_id = %project_id, error = %e, "practice materialization failed after workspace join")
+            }
             _ => {}
         }
         // Fabric F4 "born subscribed": a joining repo gets the pattern bundle
@@ -118,7 +120,9 @@ pub fn dev_tools_workspace_assign_project(
                     }
                 }
             }
-            Err(e) => tracing::warn!(project_id = %project_id, error = %e, "join-time projection failed"),
+            Err(e) => {
+                tracing::warn!(project_id = %project_id, error = %e, "join-time projection failed")
+            }
         }
     }
     Ok(project)
@@ -175,6 +179,12 @@ pub fn dev_tools_workspace_knowledge_create(
 }
 
 #[tauri::command]
+// `too_many_arguments`: this signature is wide and stays wide for now. The
+// workspace already carries 159 site-level allows on functions of the same
+// shape; these were simply the ones that never got one. Converting them to a
+// parameter struct is a later wave's job, and the attribute is the marker
+// that says so.
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_workspace_knowledge_update(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -283,8 +293,8 @@ pub fn dev_tools_workspace_knowledge_decide_bulk(
     repo::decide_knowledge_bulk(&state.db, &ids, &decision, None)
 }
 
-/// Derive `governing_id` across a workspace: within each topic, the macro
-/// doctrine adopts its instances. Runs after ingest and on demand.
+// Derive `governing_id` across a workspace: within each topic, the macro
+// doctrine adopts its instances. Runs after ingest and on demand.
 // ── pattern-fabric v2: evidence + structure doors ───────────────────────
 
 /// Evidence rows for one knowledge item (pattern-fabric v2), newest first.
@@ -585,6 +595,9 @@ pub fn dev_tools_workspace_run_miners(
     let mut candidates = repo::mine_shared_findings(&state.db, &workspace_id)?;
     candidates.extend(repo::mine_shared_skills(&state.db, &workspace_id)?);
     // Miner C — skill-methodic LESSONS.md entries (docs/skill-standard.md).
-    candidates.extend(super::skill_lessons::mine_skill_lessons(&state.db, &workspace_id)?);
+    candidates.extend(super::skill_lessons::mine_skill_lessons(
+        &state.db,
+        &workspace_id,
+    )?);
     repo::ingest_candidates(&state.db, &workspace_id, &candidates, "miner", None)
 }

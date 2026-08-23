@@ -648,7 +648,10 @@ mod tests {
         );
         let msg = err.to_string();
         assert!(msg.contains("Laptop") && msg.contains("Desktop"), "{msg}");
-        assert!(msg.contains("Unpair"), "the remedy must be in the message: {msg}");
+        assert!(
+            msg.contains("Unpair"),
+            "the remedy must be in the message: {msg}"
+        );
 
         assert_eq!(
             ensure_device_group_id(&pool).expect("re-read"),

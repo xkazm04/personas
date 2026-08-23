@@ -2,8 +2,8 @@ use rusqlite::params;
 
 use crate::models::{EvolutionCycle, EvolutionPolicy, UpsertEvolutionPolicyInput};
 use crate::DbPool;
-use personas_core::evolution_status::EvolutionCycleStatus;
 use personas_core::error::AppError;
+use personas_core::evolution_status::EvolutionCycleStatus;
 
 // -- Row mappers ------------------------------------------------
 

@@ -58,11 +58,7 @@ fn reinstall_hint() -> &'static str {
 /// Records a best-effort audit row for outcomes that resolve to a real key
 /// (a scope denial → 403, a success → 200). An unregistered/empty token cannot
 /// be audited per-key (no key row exists) and is simply denied.
-pub fn authorize_tool_call(
-    pool: &McpDbPool,
-    token: Option<&str>,
-    tool_name: &str,
-) -> AuthDecision {
+pub fn authorize_tool_call(pool: &McpDbPool, token: Option<&str>, tool_name: &str) -> AuthDecision {
     let token = match token.map(str::trim).filter(|t| !t.is_empty()) {
         Some(t) => t,
         None => {
@@ -77,10 +73,7 @@ pub fn authorize_tool_call(
         Ok(Some(k)) => k,
         Ok(None) => {
             // Unknown / revoked / expired token. No key row → nothing to audit.
-            return AuthDecision::Deny(format!(
-                "Invalid or expired token. {}",
-                reinstall_hint()
-            ));
+            return AuthDecision::Deny(format!("Invalid or expired token. {}", reinstall_hint()));
         }
         Err(e) => {
             tracing::error!(error = %e, "MCP token lookup failed");

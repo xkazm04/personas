@@ -19,7 +19,7 @@
 //!    `commands::core::memories::apply_persona_memory_review_proposal`:
 //!    synthesize = `create_synthesized` (with `derived_from` provenance)
 //!    + archive sources; archive = reversible tier flip. `core` (user-
-//!    pinned) is read-only context at every step.
+//!      pinned) is read-only context at every step.
 //!
 //! Two extensions on the same pipeline:
 //!
@@ -136,7 +136,7 @@ pub(crate) fn cluster_hints(memories: &[PersonaMemory]) -> Vec<Vec<String>> {
     let sets: Vec<_> = memories.iter().map(word_set).collect();
     // Union-find
     let mut parent: Vec<usize> = (0..n).collect();
-    fn find(parent: &mut Vec<usize>, i: usize) -> usize {
+    fn find(parent: &mut [usize], i: usize) -> usize {
         let mut i = i;
         while parent[i] != i {
             parent[i] = parent[parent[i]];
@@ -156,9 +156,9 @@ pub(crate) fn cluster_hints(memories: &[PersonaMemory]) -> Vec<Vec<String>> {
     }
     let mut groups: std::collections::HashMap<usize, Vec<String>> =
         std::collections::HashMap::new();
-    for i in 0..n {
+    for (i, memory) in memories.iter().enumerate().take(n) {
         let root = find(&mut parent, i);
-        groups.entry(root).or_default().push(memories[i].id.clone());
+        groups.entry(root).or_default().push(memory.id.clone());
     }
     let mut out: Vec<Vec<String>> = groups.into_values().filter(|g| g.len() >= 2).collect();
     out.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a[0].cmp(&b[0])));
@@ -327,9 +327,15 @@ Memories:
 async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
     let (program, mut args) = crate::engine::cli_process::claude_cli_invocation();
     args.extend(
-        ["-p", "-", "--max-turns", "1", "--dangerously-skip-permissions"]
-            .iter()
-            .map(|s| s.to_string()),
+        [
+            "-p",
+            "-",
+            "--max-turns",
+            "1",
+            "--dangerously-skip-permissions",
+        ]
+        .iter()
+        .map(|s| s.to_string()),
     );
     let mut cmd = Command::new(&program);
     cmd.args(&args)
@@ -419,8 +425,7 @@ fn classify_reflection_output(
 ) -> (Vec<ProposalEntry>, String) {
     let by_id: std::collections::HashMap<&str, &PersonaMemory> =
         memories.iter().map(|m| (m.id.as_str(), m)).collect();
-    let is_actionable =
-        |id: &str| by_id.get(id).map(|m| m.tier != "core").unwrap_or(false);
+    let is_actionable = |id: &str| by_id.get(id).map(|m| m.tier != "core").unwrap_or(false);
 
     let mut entries: Vec<ProposalEntry> = Vec::new();
     let mut consumed: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -429,8 +434,7 @@ fn classify_reflection_output(
     // apply small enough to judge; over-budget insights are deferred to a
     // future pass (the memories stay in the pool, so nothing is lost).
     let actionable_total = memories.iter().filter(|m| m.tier != "core").count();
-    let consumption_budget =
-        ((actionable_total as f64) * MAX_CONSUMPTION_RATIO).ceil() as usize;
+    let consumption_budget = ((actionable_total as f64) * MAX_CONSUMPTION_RATIO).ceil() as usize;
     let mut deferred_by_budget = 0usize;
 
     for insight in output.insights.into_iter().take(MAX_INSIGHTS_PER_PASS) {
@@ -532,7 +536,10 @@ fn classify_reflection_output(
 
 /// Normalize a title for soft duplicate detection against existing ideas.
 fn normalize_title(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    s.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 /// Resolve the dev project linked to a team (`dev_projects.team_id`, no FK).
@@ -570,7 +577,14 @@ fn write_product_findings(
 
     // Backlog saturation: mirror the idea scanner's discipline — don't pour
     // findings into a queue nobody is draining.
-    let pending = match dev_repo::list_ideas(pool, project_id, Some("pending"), None, Some(crate::engine::dispatch::IDEA_BACKLOG_CAP + 1), None) {
+    let pending = match dev_repo::list_ideas(
+        pool,
+        project_id,
+        Some("pending"),
+        None,
+        Some(crate::engine::dispatch::IDEA_BACKLOG_CAP + 1),
+        None,
+    ) {
         Ok(rows) => rows,
         Err(e) => {
             tracing::warn!(error = %e, "reflection findings: pending-ideas lookup failed; skipping bridge");
@@ -586,7 +600,9 @@ fn write_product_findings(
     }
     let mut seen_titles: std::collections::HashSet<String> =
         pending.iter().map(|i| normalize_title(&i.title)).collect();
-    if let Ok(accepted) = dev_repo::list_ideas(pool, project_id, Some("accepted"), None, Some(200), None) {
+    if let Ok(accepted) =
+        dev_repo::list_ideas(pool, project_id, Some("accepted"), None, Some(200), None)
+    {
         seen_titles.extend(accepted.iter().map(|i| normalize_title(&i.title)));
     }
 
@@ -728,8 +744,7 @@ async fn run_reflection_core(
         .map_err(|e| AppError::Internal(format!("Invalid JSON in reflection output: {e}")))?;
 
     let findings = std::mem::take(&mut output.product_findings);
-    let (entries, mut summary) =
-        classify_reflection_output(output, memories, team.is_some());
+    let (entries, mut summary) = classify_reflection_output(output, memories, team.is_some());
 
     let proposal_id = proposal_repo::create(
         pool,
@@ -797,9 +812,16 @@ pub async fn run_memory_reflection(
         .and_then(|p| p.home_team_id)
         .and_then(|tid| resolve_project_for_team(pool, &tid));
 
-    run_reflection_core(pool, &memories, instructions, None, project_id, Some(persona_id))
-        .await
-        .map(Some)
+    run_reflection_core(
+        pool,
+        &memories,
+        instructions,
+        None,
+        project_id,
+        Some(persona_id),
+    )
+    .await
+    .map(Some)
 }
 
 /// Team reflection: consolidate lessons held redundantly by ≥2 members of
@@ -891,7 +913,8 @@ mod tests {
 
     #[test]
     fn extract_json_object_handles_fences_and_strings() {
-        let raw = "Here you go:\n```json\n{\"a\": \"br{ace} in \\\" string\", \"b\": {\"c\": 1}}\n```";
+        let raw =
+            "Here you go:\n```json\n{\"a\": \"br{ace} in \\\" string\", \"b\": {\"c\": 1}}\n```";
         let got = extract_json_object(raw).unwrap();
         let v: serde_json::Value = serde_json::from_str(&got).unwrap();
         assert_eq!(v["b"]["c"], 1);
@@ -900,9 +923,24 @@ mod tests {
     #[test]
     fn cluster_hints_groups_similar_memories() {
         let ms = vec![
-            mem("a", "active", "API rate limit hit on GitHub", "GitHub API rate limit 5000 requests per hour exceeded during sync"),
-            mem("b", "active", "GitHub rate limiting again", "Hit the GitHub API rate limit of 5000 requests per hour on repository sync"),
-            mem("c", "active", "User prefers dark theme", "The user always switches the dashboard to dark theme on login"),
+            mem(
+                "a",
+                "active",
+                "API rate limit hit on GitHub",
+                "GitHub API rate limit 5000 requests per hour exceeded during sync",
+            ),
+            mem(
+                "b",
+                "active",
+                "GitHub rate limiting again",
+                "Hit the GitHub API rate limit of 5000 requests per hour on repository sync",
+            ),
+            mem(
+                "c",
+                "active",
+                "User prefers dark theme",
+                "The user always switches the dashboard to dark theme on login",
+            ),
         ];
         let clusters = cluster_hints(&ms);
         assert_eq!(clusters.len(), 1);
@@ -946,8 +984,14 @@ mod tests {
                 },
             ],
             archive: vec![
-                ArchiveSpec { id: "core1".into(), reason: None },
-                ArchiveSpec { id: "a".into(), reason: Some("consumed by synthesis".into()) },
+                ArchiveSpec {
+                    id: "core1".into(),
+                    reason: None,
+                },
+                ArchiveSpec {
+                    id: "a".into(),
+                    reason: Some("consumed by synthesis".into()),
+                },
             ],
             product_findings: vec![],
             summary: None,
@@ -1030,7 +1074,10 @@ mod tests {
         };
         let out = ReflectionOutput {
             insights: vec![insight("first", "a", "b"), insight("second", "c", "d")],
-            archive: vec![ArchiveSpec { id: "c".into(), reason: None }],
+            archive: vec![ArchiveSpec {
+                id: "c".into(),
+                reason: None,
+            }],
             product_findings: vec![],
             summary: Some("s".into()),
         };
@@ -1057,7 +1104,10 @@ mod tests {
 
     #[test]
     fn classify_normalizes_bad_category_and_clamps_importance() {
-        let ms = vec![mem("a", "active", "t1", "c1"), mem("b", "active", "t2", "c2")];
+        let ms = vec![
+            mem("a", "active", "t1", "c1"),
+            mem("b", "active", "t2", "c2"),
+        ];
         let out = ReflectionOutput {
             insights: vec![InsightSpec {
                 title: "T".into(),

@@ -481,7 +481,10 @@ fn zero_offset_entrance_collapses_to_none() {
     let OverlayStage::Text(txt) = &plan.overlays[0] else {
         panic!("expected text overlay");
     };
-    assert!(txt.enter.is_none(), "a zero-offset entrance is nothing to animate");
+    assert!(
+        txt.enter.is_none(),
+        "a zero-offset entrance is nothing to animate"
+    );
 }
 
 #[test]

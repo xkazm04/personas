@@ -76,7 +76,11 @@ fn cell_to_string(v: SqlValue) -> String {
         SqlValue::Real(f) => {
             let s = format!("{f:.4}");
             let trimmed = s.trim_end_matches('0').trim_end_matches('.');
-            if trimmed.is_empty() { "0".to_string() } else { trimmed.to_string() }
+            if trimmed.is_empty() {
+                "0".to_string()
+            } else {
+                trimmed.to_string()
+            }
         }
         SqlValue::Text(s) => s,
         SqlValue::Blob(_) => "<blob>".to_string(),
@@ -154,7 +158,15 @@ fn executions_recent(conn: &Connection, args: &Value) -> Result<String, AppError
         conn,
         &sql,
         &binds,
-        &["id", "persona", "status", "cost_usd", "duration_ms", "created_at", "error"],
+        &[
+            "id",
+            "persona",
+            "status",
+            "cost_usd",
+            "duration_ms",
+            "created_at",
+            "error",
+        ],
     )
 }
 
@@ -185,7 +197,12 @@ fn messages_inbox(conn: &Connection, args: &Value) -> Result<String, AppError> {
     }
     sql.push_str(" ORDER BY created_at DESC LIMIT ?");
     binds.push(SqlValue::Integer(limit));
-    query_to_markdown(conn, &sql, &binds, &["id", "title", "priority", "read", "created_at"])
+    query_to_markdown(
+        conn,
+        &sql,
+        &binds,
+        &["id", "title", "priority", "read", "created_at"],
+    )
 }
 
 fn reviews_pending(conn: &Connection, args: &Value) -> Result<String, AppError> {
@@ -196,7 +213,12 @@ fn reviews_pending(conn: &Connection, args: &Value) -> Result<String, AppError> 
                FROM persona_manual_reviews r LEFT JOIN personas p ON p.id = r.persona_id \
                WHERE r.status = 'pending' ORDER BY r.created_at ASC LIMIT ?";
     let binds = [SqlValue::Integer(limit)];
-    query_to_markdown(conn, sql, &binds, &["id", "persona", "title", "severity", "created_at"])
+    query_to_markdown(
+        conn,
+        sql,
+        &binds,
+        &["id", "persona", "title", "severity", "created_at"],
+    )
 }
 
 fn incidents(conn: &Connection, args: &Value) -> Result<String, AppError> {
@@ -237,7 +259,15 @@ fn goals_active(conn: &Connection, _args: &Value) -> Result<String, AppError> {
         conn,
         sql,
         &[],
-        &["id", "project", "title", "status", "progress", "todos_done", "todos_total"],
+        &[
+            "id",
+            "project",
+            "title",
+            "status",
+            "progress",
+            "todos_done",
+            "todos_total",
+        ],
     )
 }
 
@@ -250,7 +280,15 @@ fn kpis_latest(conn: &Connection, _args: &Value) -> Result<String, AppError> {
         conn,
         sql,
         &[],
-        &["id", "name", "unit", "current", "target", "status", "last_measured_at"],
+        &[
+            "id",
+            "name",
+            "unit",
+            "current",
+            "target",
+            "status",
+            "last_measured_at",
+        ],
     )
 }
 
@@ -261,7 +299,10 @@ mod tests {
 
     fn ops_pool() -> DbPool {
         let manager = SqliteConnectionManager::memory();
-        let pool = r2d2::Pool::builder().max_size(1).build(manager).expect("pool");
+        let pool = r2d2::Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("pool");
         pool.get()
             .unwrap()
             .execute_batch(
@@ -280,7 +321,11 @@ mod tests {
     #[test]
     fn executions_recent_renders_table() {
         let pool = ops_pool();
-        let out = run_view(&pool, &serde_json::json!({"view": "executions_recent", "days": 7})).unwrap();
+        let out = run_view(
+            &pool,
+            &serde_json::json!({"view": "executions_recent", "days": 7}),
+        )
+        .unwrap();
         assert!(out.contains("Dev Clone"));
         assert!(out.contains("completed"));
         assert!(out.contains("0.42"));
@@ -290,8 +335,11 @@ mod tests {
     #[test]
     fn status_filter_and_unknown_view() {
         let pool = ops_pool();
-        let only_failed =
-            run_view(&pool, &serde_json::json!({"view": "executions_recent", "status": "failed"})).unwrap();
+        let only_failed = run_view(
+            &pool,
+            &serde_json::json!({"view": "executions_recent", "status": "failed"}),
+        )
+        .unwrap();
         assert!(only_failed.contains("1 row(s)"));
         assert!(only_failed.contains("failed"));
 

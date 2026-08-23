@@ -10,19 +10,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
+use crate::utils::extract_panic_message;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 // Re-use the PATH probe helpers from system.rs
 use super::system::{command_exists_in_path, command_version};
@@ -263,6 +252,9 @@ async fn download_file(
 ) -> Result<std::path::PathBuf, String> {
     emit_output(app, install_id, target, &format!("Downloading {url}..."));
 
+    // Not `SHARED_HTTP`: an installer download needs 300 s, not 30 s. Both
+    // callers pass a `https://nodejs.org/dist/...` URL built from compile-time
+    // literals plus a version string this module fetched from that same host.
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()
@@ -321,6 +313,8 @@ async fn download_file(
 const FALLBACK_NODE_VERSION: &str = "22.14.0";
 
 async fn get_node_lts_version() -> String {
+    // Literal `nodejs.org` host; 10 s because a slow version lookup falls back
+    // to `FALLBACK_NODE_VERSION` rather than delaying the install.
     let Ok(client) = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
@@ -1098,7 +1092,10 @@ mod setup_install_slot_tests {
         // be a no-op (guards against a stale/late cleanup call stealing a
         // slot a different, newer install already claimed).
         registry.clear_id_if("setup", &install_b); // wrong id: no-op
-        assert_eq!(registry.get_id("setup").as_deref(), Some(install_a.as_str()));
+        assert_eq!(
+            registry.get_id("setup").as_deref(),
+            Some(install_a.as_str())
+        );
         drop(guard_a);
         assert!(!registry.is_run_registered("setup", &install_a));
         registry.clear_id_if("setup", &install_a); // right id: releases

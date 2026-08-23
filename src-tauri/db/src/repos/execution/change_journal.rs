@@ -27,6 +27,7 @@ use personas_core::error::AppError;
 
 use crate::journal::{is_journaled_table, json_to_value};
 use crate::DbPool;
+use crate::PoolExt;
 
 // ---------------------------------------------------------------------------
 // Rows + DTOs
@@ -168,8 +169,8 @@ pub fn plan_entry(
             let Some(image) = entry.before_image.as_deref() else {
                 return Err("before-image missing".into());
             };
-            let parsed: serde_json::Value = serde_json::from_str(image)
-                .map_err(|e| format!("before-image unparsable: {e}"))?;
+            let parsed: serde_json::Value =
+                serde_json::from_str(image).map_err(|e| format!("before-image unparsable: {e}"))?;
             let serde_json::Value::Object(map) = parsed else {
                 return Err("before-image is not a JSON object".into());
             };
@@ -256,7 +257,7 @@ pub fn get_execution_data_diff(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<ExecutionDataDiff, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("change_journal::get_execution_data_diff")?;
     let total: i64 = conn.query_row(
         "SELECT COUNT(*) FROM change_journal WHERE execution_id = ?1",
         [execution_id],
@@ -303,10 +304,7 @@ pub fn get_execution_data_diff(
 
 /// Live column set for `tbl`, used to validate before-image keys before any
 /// SQL is built from them.
-fn live_columns(
-    conn: &rusqlite::Connection,
-    tbl: &str,
-) -> Result<HashSet<String>, AppError> {
+fn live_columns(conn: &rusqlite::Connection, tbl: &str) -> Result<HashSet<String>, AppError> {
     let mut stmt = conn.prepare(&format!(
         "SELECT name FROM pragma_table_info('{}')",
         tbl.replace('\'', "''"),
@@ -321,11 +319,8 @@ fn live_columns(
 /// transaction. Per-entry conflicts are parked (flagged `'conflict'`),
 /// successful reversals are flagged `'undone'`; the transaction commits
 /// with both marks so a re-run is a no-op.
-pub fn undo_execution(
-    pool: &DbPool,
-    execution_id: &str,
-) -> Result<UndoExecutionResult, AppError> {
-    let conn = pool.get()?;
+pub fn undo_execution(pool: &DbPool, execution_id: &str) -> Result<UndoExecutionResult, AppError> {
+    let conn = pool.conn("change_journal::undo_execution")?;
     let tx = conn.unchecked_transaction()?;
 
     // No LIMIT here: undo must see the whole run, not the display cap.
@@ -543,10 +538,20 @@ mod tests {
 
     #[test]
     fn later_foreign_write_parks_the_entry() {
-        let e = row(10, Some("exec-a"), "persona_memories", Some("m1"), "update",
-            Some(r#"{"id":"m1","content":"old"}"#));
+        let e = row(
+            10,
+            Some("exec-a"),
+            "persona_memories",
+            Some("m1"),
+            "update",
+            Some(r#"{"id":"m1","content":"old"}"#),
+        );
         // Foreign write AFTER the entry → conflict.
-        let conflict = plan_entry(&e, &[later("persona_memories", "m1", 11, Some("exec-b"))], "exec-a");
+        let conflict = plan_entry(
+            &e,
+            &[later("persona_memories", "m1", 11, Some("exec-b"))],
+            "exec-a",
+        );
         assert!(conflict.is_err(), "later foreign write must park");
         // Unattributed later write is ALSO foreign (conservative).
         let unattr = plan_entry(&e, &[later("persona_memories", "m1", 12, None)], "exec-a");
@@ -555,16 +560,34 @@ mod tests {
 
     #[test]
     fn later_same_execution_or_earlier_writes_do_not_conflict() {
-        let e = row(10, Some("exec-a"), "persona_memories", Some("m1"), "update",
-            Some(r#"{"id":"m1","content":"old"}"#));
+        let e = row(
+            10,
+            Some("exec-a"),
+            "persona_memories",
+            Some("m1"),
+            "update",
+            Some(r#"{"id":"m1","content":"old"}"#),
+        );
         // Same execution wrote again later — reverse replay handles it.
-        let ok = plan_entry(&e, &[later("persona_memories", "m1", 11, Some("exec-a"))], "exec-a");
+        let ok = plan_entry(
+            &e,
+            &[later("persona_memories", "m1", 11, Some("exec-a"))],
+            "exec-a",
+        );
         assert!(matches!(ok, Ok(UndoOp::RestoreImage(_))));
         // A write with a SMALLER journal id (earlier) never conflicts.
-        let earlier = plan_entry(&e, &[later("persona_memories", "m1", 5, Some("exec-b"))], "exec-a");
+        let earlier = plan_entry(
+            &e,
+            &[later("persona_memories", "m1", 5, Some("exec-b"))],
+            "exec-a",
+        );
         assert!(earlier.is_ok());
         // A foreign write to a DIFFERENT row never conflicts.
-        let other_row = plan_entry(&e, &[later("persona_memories", "m2", 99, Some("exec-b"))], "exec-a");
+        let other_row = plan_entry(
+            &e,
+            &[later("persona_memories", "m2", 99, Some("exec-b"))],
+            "exec-a",
+        );
         assert!(other_row.is_ok());
     }
 
@@ -577,7 +600,10 @@ mod tests {
         assert!(plan_entry(&no_pk, &[], "e").is_err(), "no pk");
 
         let bad_table = row(3, Some("e"), "change_journal", Some("x"), "insert", None);
-        assert!(plan_entry(&bad_table, &[], "e").is_err(), "non-allowlisted table");
+        assert!(
+            plan_entry(&bad_table, &[], "e").is_err(),
+            "non-allowlisted table"
+        );
     }
 
     #[test]
@@ -586,11 +612,31 @@ mod tests {
         assert_eq!(plan_entry(&ins, &[], "e").unwrap(), UndoOp::DeleteInserted);
 
         let img = r#"{"id":"m1","content":"before"}"#;
-        let upd = row(2, Some("e"), "persona_memories", Some("m1"), "update", Some(img));
-        assert!(matches!(plan_entry(&upd, &[], "e").unwrap(), UndoOp::RestoreImage(_)));
+        let upd = row(
+            2,
+            Some("e"),
+            "persona_memories",
+            Some("m1"),
+            "update",
+            Some(img),
+        );
+        assert!(matches!(
+            plan_entry(&upd, &[], "e").unwrap(),
+            UndoOp::RestoreImage(_)
+        ));
 
-        let del = row(3, Some("e"), "persona_memories", Some("m1"), "delete", Some(img));
-        assert!(matches!(plan_entry(&del, &[], "e").unwrap(), UndoOp::ReinsertImage(_)));
+        let del = row(
+            3,
+            Some("e"),
+            "persona_memories",
+            Some("m1"),
+            "delete",
+            Some(img),
+        );
+        assert!(matches!(
+            plan_entry(&del, &[], "e").unwrap(),
+            UndoOp::ReinsertImage(_)
+        ));
     }
 
     // --- end-to-end: capture → journal → diff → undo ------------------------
@@ -599,8 +645,8 @@ mod tests {
     fn journaled_pool() -> (DbPool, journal::JournalReceiver) {
         let (cdc_tx, _cdc_rx) = crate::cdc::create_cdc_channel(4096);
         let (j_tx, j_rx) = journal::create_journal_channel(4096);
-        let tmp = std::env::temp_dir()
-            .join(format!("personas_journal_{}.db", uuid::Uuid::new_v4()));
+        let tmp =
+            std::env::temp_dir().join(format!("personas_journal_{}.db", uuid::Uuid::new_v4()));
         let manager = SqliteConnectionManager::file(&tmp);
         let pool: DbPool = Pool::builder()
             .max_size(1)
@@ -653,7 +699,8 @@ mod tests {
             conn.execute(
                 "UPDATE persona_memories SET content = 'agent-changed' WHERE id = 'm-upd'",
                 [],
-            ).unwrap();
+            )
+            .unwrap();
             conn.execute("DELETE FROM persona_memories WHERE id = 'm-del'", [])
                 .unwrap();
         }
@@ -673,12 +720,25 @@ mod tests {
         assert_eq!(diff.total, 3);
         assert!(diff.undoable);
         assert!(!diff.truncated);
-        let by_pk = |pk: &str| diff.entries.iter().find(|e| e.row_pk.as_deref() == Some(pk)).unwrap();
+        let by_pk = |pk: &str| {
+            diff.entries
+                .iter()
+                .find(|e| e.row_pk.as_deref() == Some(pk))
+                .unwrap()
+        };
         assert_eq!(by_pk("m-new").action, "insert");
         assert_eq!(by_pk("m-upd").action, "update");
-        assert!(by_pk("m-upd").before_image.as_deref().unwrap().contains("original"));
+        assert!(by_pk("m-upd")
+            .before_image
+            .as_deref()
+            .unwrap()
+            .contains("original"));
         assert_eq!(by_pk("m-del").action, "delete");
-        assert!(by_pk("m-del").before_image.as_deref().unwrap().contains("keep-me"));
+        assert!(by_pk("m-del")
+            .before_image
+            .as_deref()
+            .unwrap()
+            .contains("keep-me"));
 
         // Undo: one transaction, all three reversed.
         let result = undo_execution(&pool, "exec-run-1").unwrap();
@@ -686,8 +746,16 @@ mod tests {
         assert!(result.conflicts.is_empty());
 
         assert_eq!(memory_content(&pool, "m-new"), None, "insert reversed");
-        assert_eq!(memory_content(&pool, "m-upd").as_deref(), Some("original"), "update restored");
-        assert_eq!(memory_content(&pool, "m-del").as_deref(), Some("keep-me"), "delete re-inserted");
+        assert_eq!(
+            memory_content(&pool, "m-upd").as_deref(),
+            Some("original"),
+            "update restored"
+        );
+        assert_eq!(
+            memory_content(&pool, "m-del").as_deref(),
+            Some("keep-me"),
+            "delete re-inserted"
+        );
 
         // Re-undo is a no-op (all entries already processed).
         let again = undo_execution(&pool, "exec-run-1").unwrap();
@@ -713,7 +781,8 @@ mod tests {
             conn.execute(
                 "UPDATE persona_memories SET content = 'a-agent' WHERE id = 'm-a'",
                 [],
-            ).unwrap();
+            )
+            .unwrap();
             conn.execute(
                 "INSERT INTO persona_memories (id, persona_id, title, content) VALUES ('m-b', ?1, 'T', 'b-agent')",
                 [&persona_id],
@@ -726,15 +795,23 @@ mod tests {
             conn.execute(
                 "UPDATE persona_memories SET content = 'a-human' WHERE id = 'm-a'",
                 [],
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         journal::drain_and_write(&pool, &rx).expect("drain");
 
         // Diff predicts the conflict before any undo.
         let diff = get_execution_data_diff(&pool, "exec-run-2").unwrap();
-        let m_a = diff.entries.iter().find(|e| e.row_pk.as_deref() == Some("m-a")).unwrap();
-        assert!(m_a.has_later_foreign_write, "diff must warn about the human edit");
+        let m_a = diff
+            .entries
+            .iter()
+            .find(|e| e.row_pk.as_deref() == Some("m-a"))
+            .unwrap();
+        assert!(
+            m_a.has_later_foreign_write,
+            "diff must warn about the human edit"
+        );
 
         let result = undo_execution(&pool, "exec-run-2").unwrap();
         assert_eq!(result.undone, 1, "m-b insert is reversed");

@@ -25,7 +25,6 @@ use std::time::Duration;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::AppHandle;
 
-
 use super::registry::{now_ms, registry};
 use super::types::FleetSessionState;
 
@@ -163,9 +162,15 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
 
     let mut bound: Option<String> = None;
     {
-        let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Don't double-bind if some other session already claimed this id.
-        if map.values().any(|s| s.claude_session_id.as_deref() == Some(claude_session_id)) {
+        if map
+            .values()
+            .any(|s| s.claude_session_id.as_deref() == Some(claude_session_id))
+        {
             return;
         }
         let mut best_created = i64::MIN;
@@ -174,7 +179,10 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
             if s.claude_session_id.is_some() {
                 continue;
             }
-            if matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            if matches!(
+                s.state,
+                FleetSessionState::Exited | FleetSessionState::Hibernated
+            ) {
                 continue;
             }
             if super::transcript_read::normalize_cwd(&s.cwd.to_string_lossy()) != target {
@@ -197,7 +205,8 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
                 // Binding ≠ working: mirror the SessionStart hook (Idle on launch).
                 // Real progress (a tool firing, transcript growth) drives Running.
                 s.state = FleetSessionState::Idle;
-                s.state_reason = Some("Bound to transcript — ready (SessionStart hook missed)".into());
+                s.state_reason =
+                    Some("Bound to transcript — ready (SessionStart hook missed)".into());
                 bound = Some(sid);
             }
         }
@@ -223,7 +232,10 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
     let mut matched = false;
     let mut maybe_emit: Option<(String, FleetSessionState, String)> = None;
     {
-        let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         for session in map.values_mut() {
             if session.claude_session_id.as_deref() != Some(claude_session_id) {
                 continue;

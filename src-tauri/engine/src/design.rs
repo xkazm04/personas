@@ -532,7 +532,8 @@ mod tests {
     use personas_db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 
     fn test_persona() -> Persona {
-        Persona { lifecycle: "active".to_string(),
+        Persona {
+            lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "proj-1".into(),
             name: "Email Monitor".into(),

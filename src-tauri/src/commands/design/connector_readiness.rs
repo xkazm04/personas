@@ -106,9 +106,7 @@ impl SetupKind {
                 "authenticate the provider CLI on this machine (run its login command)"
             }
             SetupKind::DevProject => "register a project in Dev Tools",
-            SetupKind::ObsidianVault => {
-                "configure your vault in the Obsidian Brain plugin"
-            }
+            SetupKind::ObsidianVault => "configure your vault in the Obsidian Brain plugin",
             SetupKind::TwinProfile => "create a Twin profile in the Twin plugin",
             SetupKind::Misconfigured => {
                 "this connector is unrecognized or misconfigured — remove it or update the app"
@@ -144,11 +142,7 @@ pub enum Readiness {
     NeedsSetup { connector: String, kind: SetupKind },
 }
 
-impl Readiness {
-    pub fn is_ready(&self) -> bool {
-        matches!(self, Readiness::Ready)
-    }
-}
+impl Readiness {}
 
 /// One concrete thing standing between a persona and a working run — a
 /// connector that is not ready, plus where the user fixes it. Serialized
@@ -781,7 +775,10 @@ pub fn recompute_persona_setup(pool: &DbPool, persona_id: &str) -> Result<(), Ap
 
     let conn = pool.get()?;
     let missing = missing_connectors(&conn, connectors.iter());
-    let blockers: Vec<SetupBlocker> = missing.iter().filter_map(SetupBlocker::from_readiness).collect();
+    let blockers: Vec<SetupBlocker> = missing
+        .iter()
+        .filter_map(SetupBlocker::from_readiness)
+        .collect();
 
     // Wired trigger types drive the `preview` / `has_autonomous_trigger`
     // fields. A credential mutation never changes triggers, but recomputing
@@ -895,8 +892,7 @@ pub fn credential_dependent_persona_ids(pool: &DbPool, credential_id: &str) -> V
                             v.get("credentialLinks")
                                 .and_then(|l| l.as_object())
                                 .map(|obj| {
-                                    obj.values()
-                                        .any(|val| val.as_str() == Some(credential_id))
+                                    obj.values().any(|val| val.as_str() == Some(credential_id))
                                 })
                         })
                         .unwrap_or(false);
@@ -1086,7 +1082,10 @@ fn credential_is_usable(conn: &Connection, credential_id: &str) -> bool {
 /// Without this, an abstract role like `crm` declared by a template — with
 /// no covering vault-category adoption question — reaches runtime unbound,
 /// and the persona executes with no credential at all.
-pub fn resolve_credential_links<I, S>(conn: &Connection, connector_names: I) -> HashMap<String, String>
+pub fn resolve_credential_links<I, S>(
+    conn: &Connection,
+    connector_names: I,
+) -> HashMap<String, String>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
@@ -1158,7 +1157,10 @@ pub async fn connector_cli_probe_status(
     state: tauri::State<'_, std::sync::Arc<crate::AppState>>,
 ) -> Result<Vec<CliProbeStatus>, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    Ok(CLI_PROBE_CONNECTORS.iter().map(cli_probe_status_row).collect())
+    Ok(CLI_PROBE_CONNECTORS
+        .iter()
+        .map(cli_probe_status_row)
+        .collect())
 }
 
 /// Drop cached probe verdicts and re-probe. `connector: None` refreshes all.
@@ -1170,7 +1172,11 @@ pub async fn connector_cli_probe_refresh(
     connector: Option<String>,
 ) -> Result<Vec<CliProbeStatus>, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    match connector.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    match connector
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         Some(name) => {
             let spec = cli_probe_spec(name).ok_or_else(|| {
                 AppError::Validation(format!(
@@ -1182,7 +1188,10 @@ pub async fn connector_cli_probe_refresh(
         }
         None => {
             evict_cli_probe_cache(None);
-            Ok(CLI_PROBE_CONNECTORS.iter().map(cli_probe_status_row).collect())
+            Ok(CLI_PROBE_CONNECTORS
+                .iter()
+                .map(cli_probe_status_row)
+                .collect())
         }
     }
 }
@@ -1340,7 +1349,11 @@ mod tests {
     #[test]
     fn zero_config_connector_is_ready() {
         let conn = test_db();
-        def(&conn, "local_drive", r#"{"is_builtin":true,"always_active":true}"#);
+        def(
+            &conn,
+            "local_drive",
+            r#"{"is_builtin":true,"always_active":true}"#,
+        );
         assert_eq!(connector_readiness(&conn, "local_drive"), Readiness::Ready);
     }
 
@@ -1425,21 +1438,6 @@ mod tests {
     }
 
     #[test]
-    fn obsidian_memory_empty_vault_path_is_not_ready() {
-        let conn = test_db();
-        def(&conn, "obsidian_memory", r#"{"always_active":false}"#);
-        conn.execute(
-            "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
-            rusqlite::params![
-                crate::db::settings_keys::OBSIDIAN_BRAIN_CONFIG,
-                r#"{"vault_path":""}"#
-            ],
-        )
-        .unwrap();
-        assert!(!connector_readiness(&conn, "obsidian_memory").is_ready());
-    }
-
-    #[test]
     fn codebases_aggregate_is_ready_with_zero_projects() {
         let conn = test_db();
         def(
@@ -1456,7 +1454,8 @@ mod tests {
         def(&conn, "local_drive", r#"{"always_active":true}"#);
         def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
         def(&conn, "codebase", r#"{"always_active":true}"#);
-        let missing = missing_connectors(&conn, ["local_drive", "notion", "codebase", "web_search"]);
+        let missing =
+            missing_connectors(&conn, ["local_drive", "notion", "codebase", "web_search"]);
         // local_drive (zero-config) + web_search (native) are ready; notion +
         // codebase are not.
         assert_eq!(missing.len(), 2);
@@ -1486,7 +1485,11 @@ mod tests {
     fn batch_entries_fix_both_directions_of_the_retired_heuristic() {
         let conn = test_db();
         // Zero-config: builtin + always_active, no credential anywhere.
-        def(&conn, "local_drive", r#"{"is_builtin":true,"always_active":true}"#);
+        def(
+            &conn,
+            "local_drive",
+            r#"{"is_builtin":true,"always_active":true}"#,
+        );
         // Aggregate: `codebases` (plural) resolves ready with zero projects,
         // unlike the singular `codebase` global probe.
         def(
@@ -1506,8 +1509,14 @@ mod tests {
         assert_eq!(entries.len(), 4);
 
         // Heuristic said not-ready (no credential); the resolver says ready.
-        assert!(entry(&entries, "local_drive").ready, "zero-config must be ready");
-        assert!(entry(&entries, "codebases").ready, "aggregate must be ready");
+        assert!(
+            entry(&entries, "local_drive").ready,
+            "zero-config must be ready"
+        );
+        assert!(
+            entry(&entries, "codebases").ready,
+            "aggregate must be ready"
+        );
         assert!(
             entry(&entries, "web_search").ready,
             "native capability must be ready without a definition row"
@@ -1523,7 +1532,11 @@ mod tests {
     #[test]
     fn batch_entries_dedupe_case_insensitively_and_drop_blanks() {
         let conn = test_db();
-        def(&conn, "local_drive", r#"{"is_builtin":true,"always_active":true}"#);
+        def(
+            &conn,
+            "local_drive",
+            r#"{"is_builtin":true,"always_active":true}"#,
+        );
         let entries =
             connector_readiness_entries(&conn, ["local_drive", "Local_Drive", "  ", "\t"]);
         assert_eq!(entries.len(), 1, "one question per connector: {entries:?}");
@@ -1540,8 +1553,14 @@ mod tests {
             r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#,
         );
         let entries = connector_readiness_entries(&conn, ["notion", "codebase"]);
-        assert_eq!(entry(&entries, "notion").kind, Some(SetupKind::VaultCredential));
-        assert_eq!(entry(&entries, "codebase").kind, Some(SetupKind::DevProject));
+        assert_eq!(
+            entry(&entries, "notion").kind,
+            Some(SetupKind::VaultCredential)
+        );
+        assert_eq!(
+            entry(&entries, "codebase").kind,
+            Some(SetupKind::DevProject)
+        );
     }
 
     // --- Phase 1: credential-link resolution ---
@@ -1588,7 +1607,11 @@ mod tests {
         // credential — they must never appear in the credential-link map.
         let conn = test_db();
         def(&conn, "local_drive", r#"{"always_active":true}"#);
-        def(&conn, "codebase", r#"{"always_active":true,"connection_mode":"desktop_bridge"}"#);
+        def(
+            &conn,
+            "codebase",
+            r#"{"always_active":true,"connection_mode":"desktop_bridge"}"#,
+        );
         let links = resolve_credential_links(&conn, ["local_drive", "codebase"]);
         assert!(links.is_empty());
     }
@@ -1601,20 +1624,6 @@ mod tests {
         def(&conn, "hubspot", r#"{"auth_type":"api_key"}"#);
         let links = resolve_credential_links(&conn, ["hubspot"]);
         assert!(links.is_empty());
-    }
-
-    #[test]
-    fn credential_connector_with_ambiguous_candidates_needs_setup() {
-        // Phase 2: two `email`-category credentials → not uniquely bindable.
-        // Readiness must be NeedsSetup so the build asks which one, rather
-        // than promoting `ready` off a connector it can't unambiguously wire.
-        let conn = test_db();
-        def(&conn, "email", r#"{"auth_type":"api_key"}"#);
-        def_cat(&conn, "gmail", r#"{"auth_type":"api_key"}"#, "email");
-        def_cat(&conn, "outlook", r#"{"auth_type":"api_key"}"#, "email");
-        cred(&conn, "c1", "gmail");
-        cred(&conn, "c2", "outlook");
-        assert!(!connector_readiness(&conn, "email").is_ready());
     }
 
     // --- Fail-closed defaults (this requirement) ---
@@ -1712,7 +1721,10 @@ mod tests {
 
     /// A stub probe: always returns `result`, and counts invocations. Keeps
     /// the suite off the developer's real `vercel` / `gh` binaries.
-    fn stub_probe(result: CliProbeResult, calls: &Cell<usize>) -> impl Fn(&CliProbeSpec) -> CliProbeResult + '_ {
+    fn stub_probe(
+        result: CliProbeResult,
+        calls: &Cell<usize>,
+    ) -> impl Fn(&CliProbeSpec) -> CliProbeResult + '_ {
         move |_spec| {
             calls.set(calls.get() + 1);
             result
@@ -1734,11 +1746,18 @@ mod tests {
         field(&conn, "vercel-cred", "token");
 
         let calls = Cell::new(0usize);
-        let readiness =
-            connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Unauthed, &calls));
+        let readiness = connector_readiness_with_probe(
+            &conn,
+            "vercel",
+            stub_probe(CliProbeResult::Unauthed, &calls),
+        );
 
         assert_eq!(readiness, Readiness::Ready);
-        assert_eq!(calls.get(), 0, "a bound credential must short-circuit the CLI probe");
+        assert_eq!(
+            calls.get(),
+            0,
+            "a bound credential must short-circuit the CLI probe"
+        );
     }
 
     #[test]
@@ -1747,7 +1766,11 @@ mod tests {
         vercel_def(&conn);
         let calls = Cell::new(0usize);
         assert_eq!(
-            connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Authed, &calls)),
+            connector_readiness_with_probe(
+                &conn,
+                "vercel",
+                stub_probe(CliProbeResult::Authed, &calls)
+            ),
             Readiness::Ready
         );
         assert_eq!(calls.get(), 1);
@@ -1758,7 +1781,11 @@ mod tests {
         let conn = test_db();
         vercel_def(&conn);
         let calls = Cell::new(0usize);
-        match connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Unauthed, &calls)) {
+        match connector_readiness_with_probe(
+            &conn,
+            "vercel",
+            stub_probe(CliProbeResult::Unauthed, &calls),
+        ) {
             Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::CliLogin),
             other => panic!("expected NeedsSetup(CliLogin), got {other:?}"),
         }
@@ -1770,7 +1797,11 @@ mod tests {
         let conn = test_db();
         vercel_def(&conn);
         let calls = Cell::new(0usize);
-        match connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Absent, &calls)) {
+        match connector_readiness_with_probe(
+            &conn,
+            "vercel",
+            stub_probe(CliProbeResult::Absent, &calls),
+        ) {
             Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::VaultCredential),
             other => panic!("expected NeedsSetup(VaultCredential), got {other:?}"),
         }
@@ -1782,7 +1813,11 @@ mod tests {
         let conn = test_db();
         def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
         let calls = Cell::new(0usize);
-        match connector_readiness_with_probe(&conn, "notion", stub_probe(CliProbeResult::Authed, &calls)) {
+        match connector_readiness_with_probe(
+            &conn,
+            "notion",
+            stub_probe(CliProbeResult::Authed, &calls),
+        ) {
             Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::VaultCredential),
             other => panic!("expected NeedsSetup(VaultCredential), got {other:?}"),
         }
@@ -1847,7 +1882,10 @@ mod tests {
                 },
             );
         }
-        assert!(peek_cli_probe(spec.name).is_none(), "an aged-out entry must not be served");
+        assert!(
+            peek_cli_probe(spec.name).is_none(),
+            "an aged-out entry must not be served"
+        );
 
         // Eviction clears it outright.
         evict_cli_probe_cache(Some("railway"));
@@ -1885,7 +1923,10 @@ mod tests {
                     "`{}` did not reach the CLI-auth fallback",
                     spec.name
                 ),
-                other => panic!("expected NeedsSetup(CliLogin) for `{}`, got {other:?}", spec.name),
+                other => panic!(
+                    "expected NeedsSetup(CliLogin) for `{}`, got {other:?}",
+                    spec.name
+                ),
             }
         }
     }

@@ -53,13 +53,13 @@ use crate::events::{emit_to, ExecutionEventEmitter};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use personas_db::models::Persona;
-use personas_db::repos::execution::executions as exec_repo;
-use personas_db::DbPool;
 use crate::event_registry::event_name;
 use personas_core::types::{
     ExecutionOutputEvent, ExecutionResult, ExecutionState, ExecutionStatusEvent, ModelProfile,
 };
+use personas_db::models::Persona;
+use personas_db::repos::execution::executions as exec_repo;
+use personas_db::DbPool;
 
 // ── Ollama API types ─────────────────────────────────────────────────────
 

@@ -51,7 +51,9 @@ fn safe_drive_filename(name: &str) -> Result<&str, String> {
     // Reject Windows drive letters (`C:foo.txt`) and stream-name suffixes
     // (`foo.txt:stream`) which on NTFS write to alternate data streams.
     if trimmed.contains(':') {
-        return Err(format!("filename contains ':' (Windows drive/stream): {trimmed:?}"));
+        return Err(format!(
+            "filename contains ':' (Windows drive/stream): {trimmed:?}"
+        ));
     }
     let p = Path::new(trimmed);
     if p.is_absolute() {
@@ -185,6 +187,17 @@ fn drive_err(e: impl std::fmt::Display) -> AppError {
 }
 
 /// Build an authenticated reqwest client with the Google access token.
+///
+/// Not one of the shared clients: the OAuth token is installed as a
+/// `default_headers` entry so all ten Drive calls in this file inherit it, and
+/// a process-wide static cannot hold a per-user token. Every host here is a
+/// compile-time `googleapis.com` literal, and the token rides in
+/// `Authorization`, which reqwest strips across a host change.
+///
+/// KNOWN GAP, left as-is by the Wave-2 `http` lane because closing it is a
+/// behaviour change rather than a client swap: this builder states NO
+/// `.timeout()`, so a stalled Google connection hangs the sync with no
+/// deadline (golden path `outbound-http-call.md` §7.C).
 fn drive_client(token: &str) -> Result<reqwest::Client, AppError> {
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(

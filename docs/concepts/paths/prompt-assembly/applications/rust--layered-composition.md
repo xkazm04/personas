@@ -42,7 +42,7 @@ keeps its inline fallback rather than leaving a dangling pointer.
 
 ## The companion assembler
 
-`src-tauri/src/companion/prompt.rs` states its layer stack in the module
+`src-tauri/src/companion/prompt/` states its layer stack in the module
 doc — constitution → identity → observability digest → recall (us-history
 vs world-knowledge kept distinct) → doctrine — and funnels everything
 through one `compose()` (`:1779`), which returns the composed string

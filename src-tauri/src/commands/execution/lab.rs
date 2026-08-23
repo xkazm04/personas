@@ -20,20 +20,9 @@ use crate::engine::test_runner::{self, parse_model_configs};
 use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::utils::extract_panic_message;
 use crate::validation;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `engine/mod.rs::run_persona_with_concurrency_tracking`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 /// Cancel an active run (if registered) and wait briefly for the background task to wind down
 /// before proceeding with deletion. All lab run types use the "test" domain.
@@ -943,10 +932,20 @@ fn merge_model_into_profile(prior_raw: Option<&str>, model_id: &str, provider: &
         val = serde_json::Value::Object(serde_json::Map::new());
     }
     if let Some(obj) = val.as_object_mut() {
-        obj.insert("model".into(), serde_json::Value::String(model_id.to_string()));
+        obj.insert(
+            "model".into(),
+            serde_json::Value::String(model_id.to_string()),
+        );
         obj.insert(
             "provider".into(),
-            serde_json::Value::String(if provider.is_empty() { "anthropic" } else { provider }.to_string()),
+            serde_json::Value::String(
+                if provider.is_empty() {
+                    "anthropic"
+                } else {
+                    provider
+                }
+                .to_string(),
+            ),
         );
     }
     serde_json::to_string(&val).unwrap_or_else(|_| "{}".to_string())
@@ -1009,7 +1008,10 @@ fn activate_version_atomic(
         ],
     )?;
     if rows == 0 {
-        return Err(AppError::NotFound(format!("Persona {}", version.persona_id)));
+        return Err(AppError::NotFound(format!(
+            "Persona {}",
+            version.persona_id
+        )));
     }
 
     // 2. Demote the current production version (if different from the target).
@@ -1597,7 +1599,10 @@ mod tests {
         }
 
         let result = activate_version_atomic(&pool, &version, "v2", "opus", "anthropic");
-        assert!(result.is_err(), "activation must fail when promote affects 0 rows");
+        assert!(
+            result.is_err(),
+            "activation must fail when promote affects 0 rows"
+        );
 
         // The persona must be BYTE-for-BYTE what it was before the failed call.
         let conn = pool.get().unwrap();

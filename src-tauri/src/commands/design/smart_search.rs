@@ -161,9 +161,10 @@ Rules:
 /// Identical repeat searches (re-opening the panel, refine-then-undo) skip the
 /// 30-215s CLI rank. Implicitly invalidated: the candidate `summaries_json` is
 /// part of the key, so adding/editing a template changes it. Bounded on insert.
-static SMART_SEARCH_CACHE: std::sync::LazyLock<
-    std::sync::Mutex<std::collections::HashMap<u64, (std::time::Instant, Vec<String>, String)>>,
-> = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+type SmartSearchCache = std::collections::HashMap<u64, (std::time::Instant, Vec<String>, String)>;
+
+static SMART_SEARCH_CACHE: std::sync::LazyLock<std::sync::Mutex<SmartSearchCache>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
 
 const SMART_SEARCH_CACHE_TTL_SECS: u64 = 600;
 const SMART_SEARCH_CACHE_MAX: usize = 256;
@@ -353,7 +354,11 @@ pub async fn smart_search_templates(
         }
         cache.insert(
             cache_key,
-            (std::time::Instant::now(), raw.ranked_ids.clone(), raw.rationale.clone()),
+            (
+                std::time::Instant::now(),
+                raw.ranked_ids.clone(),
+                raw.rationale.clone(),
+            ),
         );
     }
 

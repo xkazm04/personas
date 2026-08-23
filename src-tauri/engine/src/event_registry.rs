@@ -21,7 +21,6 @@ use tauri::{AppHandle, Emitter};
 // `emit_event` helper stays here, because it is the part that needs tauri.
 pub use personas_core::events::event_name;
 
-
 // ---------------------------------------------------------------------------
 // Typed emit helper
 // ---------------------------------------------------------------------------

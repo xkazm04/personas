@@ -68,8 +68,8 @@ const URL_FETCH_TIMEOUT: Duration = Duration::from_secs(10);
 /// the user's free-text answer. Pure — no I/O.
 ///
 /// `name` is the source identifier (filename for files, URL for URL refs).
-/// `content` is the already-loaded text (caller is responsible for size cap
-/// + truncation marker).
+/// `content` is the already-loaded text (caller is responsible for size cap +
+/// truncation marker).
 pub fn inject_reference_into_answer(answer: &str, name: &str, content: &str) -> String {
     let trimmed_answer = answer.trim_end();
     let separator = if trimmed_answer.is_empty() {

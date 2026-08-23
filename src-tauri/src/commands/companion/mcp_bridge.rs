@@ -78,8 +78,7 @@ pub async fn companion_test_fleet_dispatch(
     params: Value,
 ) -> Result<String, AppError> {
     crate::ipc_auth::require_auth(&state).await?;
-    let result = crate::commands::companion::approvals::test_only_execute_fleet_dispatch(
-        &app, &params,
-    )?;
+    let result =
+        crate::commands::companion::approvals::test_only_execute_fleet_dispatch(&app, &params)?;
     Ok(result)
 }

@@ -91,7 +91,8 @@ impl TableVocabulary {
 /// map) names nothing and can never resolve.
 pub(crate) fn normalize_table_ref(raw: &str) -> Option<String> {
     let trimmed = raw.trim().trim_end_matches(';').trim();
-    let unquoted = trimmed.trim_matches(|c| c == '"' || c == '`' || c == '\'' || c == '[' || c == ']');
+    let unquoted =
+        trimmed.trim_matches(|c| c == '"' || c == '`' || c == '\'' || c == '[' || c == ']');
     // `main.users` / `public.users` — the schema qualifier is not part of the name.
     let bare = unquoted.rsplit('.').next().unwrap_or(unquoted).trim();
     if bare.is_empty() {
@@ -279,7 +280,10 @@ mod tests {
     #[test]
     fn prose_is_not_a_table_name() {
         // A real entry from the shipped map.
-        assert_eq!(normalize_table_ref("(all tables — this context owns the schema)"), None);
+        assert_eq!(
+            normalize_table_ref("(all tables — this context owns the schema)"),
+            None
+        );
         assert_eq!(normalize_table_ref(""), None);
         assert_eq!(normalize_table_ref("   "), None);
     }
@@ -287,8 +291,14 @@ mod tests {
     #[test]
     fn unreadable_root_is_truncated_not_empty() {
         let v = collect_table_names(Path::new("Z:/no/such/tree/at/all"));
-        assert!(v.truncated, "a tree we cannot read is unknown, not schema-free");
-        assert!(!v.is_usable(), "an unusable vocabulary may never drop a name");
+        assert!(
+            v.truncated,
+            "a tree we cannot read is unknown, not schema-free"
+        );
+        assert!(
+            !v.is_usable(),
+            "an unusable vocabulary may never drop a name"
+        );
     }
 
     #[test]
@@ -313,9 +323,22 @@ mod tests {
             return;
         }
         let v = collect_table_names(&repo_root);
-        assert!(v.is_usable(), "the repo's own schema must be readable; truncated={} at {:?}", v.truncated, v.first_unreadable);
-        for real in ["dev_standards", "doc_status", "doc_read_events", "dev_contexts"] {
-            assert!(v.names.contains(real), "{real} is a real table in this repo");
+        assert!(
+            v.is_usable(),
+            "the repo's own schema must be readable; truncated={} at {:?}",
+            v.truncated,
+            v.first_unreadable
+        );
+        for real in [
+            "dev_standards",
+            "doc_status",
+            "doc_read_events",
+            "dev_contexts",
+        ] {
+            assert!(
+                v.names.contains(real),
+                "{real} is a real table in this repo"
+            );
         }
         for invented in ["standards_violations", "doc_rot_findings"] {
             assert!(

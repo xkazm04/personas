@@ -8,7 +8,7 @@
 //! - URL:        [`ROADMAP_URL`]
 //! - Cache:      `<app_data_dir>/roadmap_cache.json`, 1 h TTL, ETag-revalidated
 //! - Fallback:   if the network fails *and* no cache exists, returns Err.
-//!               The frontend interprets Err as "use bundled content".
+//!   The frontend interprets Err as "use bundled content".
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -258,6 +258,9 @@ enum FetchOutcome {
 }
 
 async fn fetch_from_network(cached: Option<&CachedRoadmap>) -> Result<FetchOutcome, String> {
+    // Not `SHARED_HTTP`: this is the only client in the tree with a
+    // `connect_timeout`, and it wants both bounds at 5 s so a roadmap fetch
+    // never delays a paint. `ROADMAP_URL` is a compile-time literal.
     let client = reqwest::Client::builder()
         .connect_timeout(REQUEST_TIMEOUT)
         .timeout(REQUEST_TIMEOUT)
@@ -339,10 +342,7 @@ fn validate(r: &LiveRoadmap) -> Result<(), String> {
         match en.items.get(&item.id) {
             Some(content) if !content.title.trim().is_empty() => {}
             Some(_) => {
-                return Err(format!(
-                    "i18n.en.items[{:?}] has an empty title",
-                    item.id
-                ));
+                return Err(format!("i18n.en.items[{:?}] has an empty title", item.id));
             }
             None => {
                 return Err(format!(

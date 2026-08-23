@@ -145,8 +145,12 @@ fn collect_markdown_files(root: &Path) -> Result<Vec<PathBuf>, AppError> {
         on_error: ErrorPolicy::Abort,
         skip_hidden_files: false,
     };
-    walk_markdown_files(root, &opts)
-        .map_err(|e| AppError::Internal(format!("read_dir failed while walking {}: {e}", root.display())))
+    walk_markdown_files(root, &opts).map_err(|e| {
+        AppError::Internal(format!(
+            "read_dir failed while walking {}: {e}",
+            root.display()
+        ))
+    })
 }
 
 /// Heuristic for "this note is probably an entry point and shouldn't be

@@ -80,7 +80,8 @@ fn compose_rollup(user_db: &UserDbPool) -> Result<String, AppError> {
 
     // Triage verdict distribution from the headless triage rows' outcome_json.
     let mut passes = 0i64;
-    let (mut drop, mut digest, mut attention, mut deep, mut parse_fail) = (0i64, 0i64, 0i64, 0i64, 0i64);
+    let (mut drop, mut digest, mut attention, mut deep, mut parse_fail) =
+        (0i64, 0i64, 0i64, 0i64, 0i64);
     {
         let mut stmt = conn.prepare(
             "SELECT outcome_json FROM companion_turn
@@ -95,7 +96,10 @@ fn compose_rollup(user_db: &UserDbPool) -> Result<String, AppError> {
             let Ok(v) = serde_json::from_str::<serde_json::Value>(&oj) else {
                 continue;
             };
-            if v.get("parse_failure").and_then(|x| x.as_bool()).unwrap_or(false) {
+            if v.get("parse_failure")
+                .and_then(|x| x.as_bool())
+                .unwrap_or(false)
+            {
                 parse_fail += 1;
             }
             let n = |k: &str| v.get(k).and_then(|x| x.as_i64()).unwrap_or(0);
@@ -123,7 +127,9 @@ fn compose_rollup(user_db: &UserDbPool) -> Result<String, AppError> {
     )?;
 
     let mut s = String::from("**Today's rollup** — the full audit, without the live noise.\n\n");
-    s.push_str(&format!("- I ran **{turns}** turn(s) today (${cost:.2}).\n"));
+    s.push_str(&format!(
+        "- I ran **{turns}** turn(s) today (${cost:.2}).\n"
+    ));
     if passes > 0 {
         s.push_str(&format!(
             "- Triage: **{passes}** pass(es) — {drop} dropped, {digest} digested, {attention} flagged for you, {deep} deep-dived"
@@ -208,14 +214,19 @@ pub fn compose_night_report(
         ));
         for (_sid, payload) in &parked {
             let v: serde_json::Value = serde_json::from_str(payload).unwrap_or_default();
-            let action = v.get("action").and_then(|x| x.as_str()).unwrap_or("unknown action");
+            let action = v
+                .get("action")
+                .and_then(|x| x.as_str())
+                .unwrap_or("unknown action");
             s.push_str(&format!("  - {action}\n"));
         }
     }
     for reason in parked_reviews.iter().take(3) {
         s.push_str(&format!("- Parked: {reason}\n"));
     }
-    s.push_str("\nNothing was merged or pushed — every change sits on a night branch awaiting you.");
+    s.push_str(
+        "\nNothing was merged or pushed — every change sits on a night branch awaiting you.",
+    );
     Ok(s)
 }
 

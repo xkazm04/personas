@@ -92,7 +92,8 @@ fn tokens() -> &'static RwLock<TokenRegistry> {
 pub fn mint_session_token(fleet_session_id: &str) -> String {
     let token = Uuid::new_v4().simple().to_string();
     let mut reg = tokens().write().unwrap_or_else(|p| p.into_inner());
-    reg.tokens.insert(token.clone(), fleet_session_id.to_string());
+    reg.tokens
+        .insert(token.clone(), fleet_session_id.to_string());
     token
 }
 
@@ -166,7 +167,6 @@ impl JsonRpcError {
 
 /// Standard JSON-RPC error codes.
 mod codes {
-    pub const PARSE_ERROR: i32 = -32700;
     pub const INVALID_REQUEST: i32 = -32600;
     pub const METHOD_NOT_FOUND: i32 = -32601;
     pub const INVALID_PARAMS: i32 = -32602;
@@ -208,12 +208,15 @@ async fn rpc_handler(
     };
 
     match dispatch(&app, &headers, &req.method, req.params).await {
-        Ok(result) => Ok(Json(serde_json::to_value(JsonRpcResponse {
-            jsonrpc: "2.0",
-            id,
-            result: Some(result),
-            error: None,
-        }).unwrap_or_default())),
+        Ok(result) => Ok(Json(
+            serde_json::to_value(JsonRpcResponse {
+                jsonrpc: "2.0",
+                id,
+                result: Some(result),
+                error: None,
+            })
+            .unwrap_or_default(),
+        )),
         Err(err) => Ok(Json(error_response(id, err))),
     }
 }
@@ -224,7 +227,8 @@ fn error_response(id: Value, err: JsonRpcError) -> Value {
         id,
         result: None,
         error: Some(err),
-    }).unwrap_or_default()
+    })
+    .unwrap_or_default()
 }
 
 async fn dispatch(
@@ -313,9 +317,8 @@ fn require_session(headers: &HeaderMap) -> Result<String, JsonRpcError> {
                 format!("missing {SESSION_HEADER} header"),
             )
         })?;
-    resolve_token(token).ok_or_else(|| {
-        JsonRpcError::new(codes::UNAUTHORIZED, "unknown or revoked session token")
-    })
+    resolve_token(token)
+        .ok_or_else(|| JsonRpcError::new(codes::UNAUTHORIZED, "unknown or revoked session token"))
 }
 
 // ---------------------------------------------------------------------------

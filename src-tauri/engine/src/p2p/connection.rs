@@ -20,8 +20,8 @@ use super::types::{
     ConnectionHealth, ConnectionMetricsSnapshot, ConnectionState, DisconnectReason,
     PeerConnectionInfo,
 };
-use personas_db::DbPool;
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 /// RAII guard that removes a peer_id from the `connecting` set when dropped,
 /// keeping `connect_to_peer` cancellation-safe.
@@ -185,6 +185,18 @@ impl ConnectionManager {
             .await
             .get(peer_id)
             .map(|c| c.remote_public_key_b64.clone())
+    }
+
+    /// The channel binding of the live QUIC session to `peer_id` — the same
+    /// value both ends signed over during the v3 handshake.
+    ///
+    /// `None` if not connected. Re-derived rather than cached so it can never
+    /// outlive the session it describes: a reconnect produces a new TLS session
+    /// and therefore a new binding, and anything keyed on the old one must fail
+    /// rather than silently carry over.
+    pub async fn channel_binding(&self, peer_id: &str) -> Option<String> {
+        let conn = self.get_quinn_conn(peer_id).await?;
+        super::transport::channel_binding(&conn).ok()
     }
 
     /// The display name a currently-connected peer presented at handshake.
@@ -370,12 +382,16 @@ impl ConnectionManager {
         let mut send = tokio::io::BufWriter::new(send);
         let mut recv = tokio::io::BufReader::new(recv);
 
-        // -- v2 signed handshake, initiator side --------------------------
+        // -- v3 channel-bound signed handshake, initiator side -------------
+        // The binding is exported from THIS QUIC session. A relay holding two
+        // TLS sessions cannot make the two ends agree on it, which is what
+        // stops it forwarding these signed messages verbatim.
+        let channel_binding = super::transport::channel_binding(&quinn_conn)?;
         let local = crate::identity::get_or_create_identity(&self.pool)?;
         let client_nonce = protocol::generate_nonce();
         let hello_sig = crate::identity::sign_message(
             &self.pool,
-            &protocol::hello_transcript(&local.peer_id, &client_nonce),
+            &protocol::hello_transcript(&local.peer_id, &channel_binding, &client_nonce),
         )?;
 
         protocol::write_message(
@@ -436,12 +452,18 @@ impl ConnectionManager {
         // Authenticate the responder: nonce shape, peer_id↔public-key binding,
         // and a signature over a transcript that includes OUR nonce (so this
         // proof cannot be a recording of an earlier session).
-        protocol::validate_nonce(&server_nonce, "responder")
-            .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e))?;
+        protocol::validate_nonce(&server_nonce, "responder").inspect_err(|e| {
+            Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e)
+        })?;
         protocol::verify_handshake_proof(
             &remote_peer_id,
             &remote_public_key_b64,
-            &protocol::hello_ack_transcript(&remote_peer_id, &server_nonce, &client_nonce),
+            &protocol::hello_ack_transcript(
+                &remote_peer_id,
+                &channel_binding,
+                &server_nonce,
+                &client_nonce,
+            ),
             &remote_sig,
         )
         .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e))?;
@@ -449,7 +471,12 @@ impl ConnectionManager {
         // Close the loop: prove liveness to the responder by signing ITS nonce.
         let confirm_sig = crate::identity::sign_message(
             &self.pool,
-            &protocol::hello_confirm_transcript(&local.peer_id, &client_nonce, &server_nonce),
+            &protocol::hello_confirm_transcript(
+                &local.peer_id,
+                &channel_binding,
+                &client_nonce,
+                &server_nonce,
+            ),
         )?;
         protocol::write_message(
             &mut send,
@@ -593,7 +620,11 @@ impl ConnectionManager {
             return Err(AppError::Validation("Rejecting self-connection".into()));
         }
 
-        // -- v2 signed handshake, responder side --------------------------
+        // -- v3 channel-bound signed handshake, responder side -------------
+        // Same binding, exported from our end of the same QUIC session. If a
+        // relay terminated TLS in between, this value differs from the one the
+        // initiator signed over and every proof below fails to verify.
+        let channel_binding = super::transport::channel_binding(&quinn_conn)?;
         // First pass on the initiator's claim: the key must hash to the claimed
         // peer_id and the Hello signature must verify. This alone is not proof
         // of liveness (a recorded Hello would pass) — HelloConfirm below closes
@@ -603,7 +634,7 @@ impl ConnectionManager {
         protocol::verify_handshake_proof(
             &remote_peer_id,
             &remote_public_key_b64,
-            &protocol::hello_transcript(&remote_peer_id, &client_nonce),
+            &protocol::hello_transcript(&remote_peer_id, &channel_binding, &client_nonce),
             &hello_sig,
         )
         .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming Hello", e))?;
@@ -612,7 +643,12 @@ impl ConnectionManager {
         let server_nonce = protocol::generate_nonce();
         let ack_sig = crate::identity::sign_message(
             &self.pool,
-            &protocol::hello_ack_transcript(&local.peer_id, &server_nonce, &client_nonce),
+            &protocol::hello_ack_transcript(
+                &local.peer_id,
+                &channel_binding,
+                &server_nonce,
+                &client_nonce,
+            ),
         )?;
 
         protocol::write_message(
@@ -652,7 +688,12 @@ impl ConnectionManager {
         protocol::verify_handshake_proof(
             &remote_peer_id,
             &remote_public_key_b64,
-            &protocol::hello_confirm_transcript(&remote_peer_id, &client_nonce, &server_nonce),
+            &protocol::hello_confirm_transcript(
+                &remote_peer_id,
+                &channel_binding,
+                &client_nonce,
+                &server_nonce,
+            ),
             &confirm_sig,
         )
         .inspect_err(|e| {
@@ -1025,14 +1066,15 @@ impl ConnectionManager {
         let peer_ids: Vec<String> = self.connections.read().await.keys().cloned().collect();
 
         // Collect ping results without holding the write lock
-        let results: Vec<(String, Result<u64, personas_core::error::AppError>)> = stream::iter(peer_ids)
-            .map(|peer_id| async move {
-                let result = self.ping_peer_latency(&peer_id).await;
-                (peer_id, result)
-            })
-            .buffer_unordered(8)
-            .collect()
-            .await;
+        let results: Vec<(String, Result<u64, personas_core::error::AppError>)> =
+            stream::iter(peer_ids)
+                .map(|peer_id| async move {
+                    let result = self.ping_peer_latency(&peer_id).await;
+                    (peer_id, result)
+                })
+                .buffer_unordered(8)
+                .collect()
+                .await;
 
         // Apply all successful updates in a single write-lock acquisition
         let mut failed_peers = Vec::new();

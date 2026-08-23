@@ -3,6 +3,7 @@ use tracing::warn;
 
 use crate::models::{ExecutionKnowledge, KnowledgeGraphSummary};
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 fn row_to_knowledge(row: &Row) -> rusqlite::Result<ExecutionKnowledge> {
@@ -47,7 +48,7 @@ pub fn upsert(
     execution_id: &str,
 ) -> Result<(), AppError> {
     timed_query!("knowledge_entries", "knowledge_entries::upsert", {
-        let mut conn = pool.get()?;
+        let mut conn = pool.conn("knowledge::upsert")?;
         let now = chrono::Utc::now().to_rfc3339();
         let id = uuid::Uuid::new_v4().to_string();
 
@@ -90,7 +91,7 @@ pub fn upsert(
 
         // Use INSERT OR REPLACE with computed running averages
         tx.execute(
-        "INSERT INTO execution_knowledge
+            "INSERT INTO execution_knowledge
             (id, persona_id, use_case_id, knowledge_type, pattern_key, pattern_data,
              success_count, failure_count, avg_cost_usd, avg_duration_ms,
              confidence, last_execution_id, created_at, updated_at)
@@ -112,22 +113,22 @@ pub fn upsert(
             confidence = confidence * 0.8 + CAST(?7 AS REAL) * 0.2,
             last_execution_id = ?12,
             updated_at = ?13",
-        params![
-            id,
-            persona_id,
-            use_case_id,
-            knowledge_type,
-            pattern_key,
-            merged_pattern_data,
-            if success { 1i64 } else { 0i64 },
-            if success { 0i64 } else { 1i64 },
-            cost_usd,
-            duration_ms,
-            if success { 1.0f64 } else { 0.0f64 },
-            execution_id,
-            now,
-        ],
-    )?;
+            params![
+                id,
+                persona_id,
+                use_case_id,
+                knowledge_type,
+                pattern_key,
+                merged_pattern_data,
+                if success { 1i64 } else { 0i64 },
+                if success { 0i64 } else { 1i64 },
+                cost_usd,
+                duration_ms,
+                if success { 1.0f64 } else { 0.0f64 },
+                execution_id,
+                now,
+            ],
+        )?;
 
         tx.commit()?;
 
@@ -150,7 +151,7 @@ pub fn upsert_annotation(
         "knowledge_entries",
         "knowledge_entries::upsert_annotation",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("knowledge::upsert_annotation")?;
             let now = chrono::Utc::now().to_rfc3339();
             let id = uuid::Uuid::new_v4().to_string();
 
@@ -235,7 +236,7 @@ pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppErr
         "knowledge_entries",
         "knowledge_entries::verify_annotation",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("knowledge::verify_annotation")?;
             let now = chrono::Utc::now().to_rfc3339();
             conn.execute(
             "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1 WHERE id = ?2",
@@ -252,7 +253,7 @@ pub fn dismiss_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppEr
         "knowledge_entries",
         "knowledge_entries::dismiss_annotation",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("knowledge::dismiss_annotation")?;
             conn.execute(
                 "DELETE FROM execution_knowledge WHERE id = ?1",
                 params![knowledge_id],
@@ -271,7 +272,7 @@ pub fn list_by_scope(
     limit: Option<i64>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
     timed_query!("knowledge_entries", "knowledge_entries::list_by_scope", {
-        let conn = pool.get()?;
+        let conn = pool.conn("knowledge::list_by_scope")?;
 
         let mut qb = crate::query_builder::QueryBuilder::new();
         qb.where_eq("scope_type", scope_type.to_string());
@@ -306,7 +307,7 @@ pub fn get_shared_injection(
         "knowledge_entries",
         "knowledge_entries::get_shared_injection",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("knowledge::get_shared_injection")?;
 
             let mut results = Vec::new();
 
@@ -396,7 +397,7 @@ pub fn list_for_persona(
         "knowledge_entries",
         "knowledge_entries::list_for_persona",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("knowledge::list_for_persona")?;
 
             let mut qb = crate::query_builder::QueryBuilder::new();
             qb.where_eq("persona_id", persona_id.to_string());
@@ -425,7 +426,7 @@ pub fn get_injection_guidance(
         "knowledge_entries",
         "knowledge_entries::get_injection_guidance",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("knowledge::get_injection_guidance")?;
 
             let mut stmt = conn.prepare(
                 "SELECT * FROM execution_knowledge
@@ -484,7 +485,7 @@ pub fn get_summary(
     persona_id: Option<&str>,
 ) -> Result<KnowledgeGraphSummary, AppError> {
     timed_query!("knowledge_entries", "knowledge_entries::get_summary", {
-        let conn = pool.get()?;
+        let conn = pool.conn("knowledge::get_summary")?;
 
         let where_clause = if persona_id.is_some() {
             "WHERE persona_id = ?1"

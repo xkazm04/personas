@@ -19,9 +19,9 @@ use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
-use personas_db::DbPool;
 use crate::event_registry::{emit_event, event_name};
 use personas_core::error::AppError;
+use personas_db::DbPool;
 
 use self::connection::ConnectionManager;
 use self::device_pairing::DevicePairing;
@@ -445,8 +445,7 @@ async fn build_snapshot(
     let peers = mdns.get_discovered_peers().unwrap_or_default();
     let discovered_peer_count = peers.len() as u32;
 
-    let (local_peer_id, identity_degraded) =
-        crate::identity::local_peer_id_for_status(pool);
+    let (local_peer_id, identity_degraded) = crate::identity::local_peer_id_for_status(pool);
 
     let status = NetworkStatusInfo {
         is_running,

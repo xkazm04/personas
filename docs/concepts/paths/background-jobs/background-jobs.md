@@ -10,8 +10,8 @@ techniques:
   - startup-sweeps
   - job-progress-and-cancellation
 evidence:
-  - src-tauri/src/engine/background.rs        # the supervisor: unified roster (start_loops), startup sweeps, generation-bumped stop_loops, SubscriptionHealth
-  - src-tauri/src/engine/subscription.rs      # the registration door (ReactiveSubscription) + run_single: panic boundary, adaptive 2s/10s cadence, wake-signal hybrid, panic backoff
+  - src-tauri/src/engine/background/        # the supervisor: unified roster (start_loops), startup sweeps, generation-bumped stop_loops, SubscriptionHealth
+  - src-tauri/src/engine/subscription/      # the registration door (ReactiveSubscription) + run_single: panic boundary, adaptive 2s/10s cadence, wake-signal hybrid, panic backoff
   - src-tauri/src/engine/leadership.rs        # heartbeat-lease ownership claim across concurrent processes (engine-leader lock, stale takeover)
   - src/hooks/utility/timing/usePolling.ts    # client-side cadence: visibility pause, error backoff via predicate gate, shared coordinator heartbeat
   - src/features/plugins/obsidian-brain/sub_revitalize/useRevitalizeJob.ts  # job contract: snapshot re-attach, bounded log ring, id-filtered terminal events

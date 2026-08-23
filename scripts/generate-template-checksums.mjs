@@ -12,6 +12,7 @@
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,6 +21,38 @@ const ROOT = join(__dirname, '..');
 const TEMPLATES_DIR = join(ROOT, 'scripts', 'templates');
 const OUTPUT_FILE = join(ROOT, 'src', 'lib', 'personas', 'templates', 'templateChecksums.ts');
 const RUST_OUTPUT_FILE = join(ROOT, 'src-tauri', 'engine', 'src', 'template_checksums.rs');
+
+
+/**
+ * Run rustfmt over a generated .rs file, in place.
+ *
+ * WHY. This generator emits Rust by string concatenation, and its output was
+ * committed unformatted for as long as the repo had no formatting policy. The
+ * 2026-08-20 workspace `cargo fmt` reformatted the committed copy -- correctly,
+ * it is a tracked .rs file and a `rust-fmt` CI job now enforces it -- but the
+ * generator kept emitting the raw shape. Every `npm run dev` / `npm run check`
+ * therefore rewrote the file into a state that FAILS the format gate, and the
+ * only thing between that and a red CI was a human noticing a dirty tree and
+ * reverting it by hand.
+ *
+ * This is the THIRD generator with this exact bug (see generate-connector-seed.mjs
+ * and events/generate-connector-events.mjs). Any generator writing a tracked .rs
+ * file needs this call.
+ *
+ * Best-effort by design: if rustfmt is unavailable the output is still valid Rust
+ * and the build proceeds; the format gate catches the shape later, which is a
+ * louder and better-placed failure than aborting codegen.
+ */
+function rustfmtInPlace(file) {
+  try {
+    execFileSync('rustfmt', ['--edition', '2021', file], { stdio: 'pipe' });
+  } catch (err) {
+    console.warn(
+      `[${file}] rustfmt did not run (${err.code ?? err.message}); ` +
+        'the file is valid Rust but may not match the format gate.',
+    );
+  }
+}
 
 function computeContentHashSync(content) {
   let h1 = 0xdeadbeef;
@@ -290,4 +323,5 @@ rustLines.push('}');
 rustLines.push('');
 
 writeFileSync(RUST_OUTPUT_FILE, rustLines.join('\n'), 'utf-8');
+rustfmtInPlace(RUST_OUTPUT_FILE);
 console.log(`Generated ${RUST_OUTPUT_FILE} with ${publishedCount} checksums (Rust backend, incl. ${skippedUnpublished} unpublished drafts)`);

@@ -85,7 +85,7 @@ fn list_note_files(dir: &Path) -> Vec<(SystemTime, PathBuf)> {
             .collect(),
         Err(_) => return Vec::new(),
     };
-    files.sort_by(|a, b| a.0.cmp(&b.0));
+    files.sort_by_key(|a| a.0);
     files
 }
 
@@ -305,12 +305,18 @@ mod tests {
 
         // The 3 oldest were digested and deleted; the digest names them.
         let digest = fs::read_to_string(dir.join(DIGEST_FILENAME)).unwrap();
-        assert!(digest.contains("Verdict 0"), "oldest note condensed into digest");
+        assert!(
+            digest.contains("Verdict 0"),
+            "oldest note condensed into digest"
+        );
         assert!(digest.contains("Verdict 1"));
         assert!(digest.contains("Verdict 2"));
         assert!(!digest.contains("Verdict 5"), "in-window note not digested");
         // Deleted sources are gone.
-        assert!(!dir.join("2026-01-01-000000.md").exists(), "oldest source deleted");
+        assert!(
+            !dir.join("2026-01-01-000000.md").exists(),
+            "oldest source deleted"
+        );
 
         // Accumulation: another over-cap write rolls more entries into the SAME
         // digest without dropping the earlier ones.
@@ -319,9 +325,19 @@ mod tests {
         }
         compact_notes(dir).unwrap();
         let digest2 = fs::read_to_string(dir.join(DIGEST_FILENAME)).unwrap();
-        assert!(digest2.contains("Verdict 0"), "earlier digest entries preserved");
-        assert!(digest2.contains("Verdict 3"), "newly overflowed entries added");
-        assert_eq!(list_note_files(dir).len(), MAX_NOTES_PER_PERSONA, "still capped");
+        assert!(
+            digest2.contains("Verdict 0"),
+            "earlier digest entries preserved"
+        );
+        assert!(
+            digest2.contains("Verdict 3"),
+            "newly overflowed entries added"
+        );
+        assert_eq!(
+            list_note_files(dir).len(),
+            MAX_NOTES_PER_PERSONA,
+            "still capped"
+        );
     }
 
     #[test]
@@ -334,7 +350,10 @@ mod tests {
         }
         compact_notes(dir).unwrap();
         assert_eq!(list_note_files(dir).len(), MAX_NOTES_PER_PERSONA);
-        assert!(!dir.join(DIGEST_FILENAME).exists(), "no digest when under cap");
+        assert!(
+            !dir.join(DIGEST_FILENAME).exists(),
+            "no digest when under cap"
+        );
     }
 
     #[test]
@@ -349,7 +368,11 @@ mod tests {
             write_note(dir, i, &sample_review(1, &[&format!("Old {i}")]));
         }
         compact_notes(dir).unwrap();
-        assert_eq!(list_note_files(dir).len(), MAX_NOTES_PER_PERSONA, "backlog capped");
+        assert_eq!(
+            list_note_files(dir).len(),
+            MAX_NOTES_PER_PERSONA,
+            "backlog capped"
+        );
         let digest = fs::read_to_string(dir.join(DIGEST_FILENAME)).unwrap();
         // All 40 over-cap notes are represented.
         assert!(digest.contains("Old 0"));
@@ -369,9 +392,15 @@ mod tests {
         let history = read_history_from_dir(dir).expect("history present");
         // Newest READ_WINDOW notes are the highest ordinals.
         let newest = MAX_NOTES_PER_PERSONA + 1;
-        assert!(history.contains(&format!("V{newest}")), "newest note in payload");
+        assert!(
+            history.contains(&format!("V{newest}")),
+            "newest note in payload"
+        );
         // The digest section is appended.
-        assert!(history.contains("rolled-up digest"), "digest section present");
+        assert!(
+            history.contains("rolled-up digest"),
+            "digest section present"
+        );
         assert!(history.contains("V0"), "digested oldest verdict in payload");
     }
 

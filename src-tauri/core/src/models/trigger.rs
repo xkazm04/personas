@@ -5,8 +5,8 @@ use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::models::serde_util::double_option;
 use crate::lifecycle::TriggerStatus;
+use crate::models::serde_util::double_option;
 
 // ============================================================================
 // Triggers

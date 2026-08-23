@@ -134,9 +134,7 @@ pub fn backfill_schedule(
         .map_err(|e| AppError::Validation(format!("invalid end timestamp: {e}")))?
         .with_timezone(&chrono::Utc);
     if end_dt <= start_dt {
-        return Err(AppError::Validation(
-            "end must be after start".into(),
-        ));
+        return Err(AppError::Validation("end must be after start".into()));
     }
     // Refuse to fire slots scheduled in the future — backfill is for
     // catch-up only, not pre-scheduling.
@@ -362,8 +360,8 @@ fn synthesize_user_backfill_payload(
     slot_fired_at: &str,
 ) -> String {
     let base = background::synthesize_trigger_fired_payload(trigger, cfg, slot_fired_at);
-    let mut value: serde_json::Value =
-        serde_json::from_str(&base).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
+    let mut value: serde_json::Value = serde_json::from_str(&base)
+        .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
     if let serde_json::Value::Object(ref mut map) = value {
         map.insert("backfill_slot".into(), serde_json::Value::Bool(true));
         map.insert("user_backfill".into(), serde_json::Value::Bool(true));
@@ -422,10 +420,22 @@ mod tests {
         let user: serde_json::Value = serde_json::from_str(&user_json).unwrap();
 
         // Every field the shared builder produces must survive untouched.
-        for key in ["trigger_id", "trigger_type", "target_persona_id", "fired_at", "cron"] {
-            assert_eq!(user[key], live[key], "field `{key}` diverged from the shared builder");
+        for key in [
+            "trigger_id",
+            "trigger_type",
+            "target_persona_id",
+            "fired_at",
+            "cron",
+        ] {
+            assert_eq!(
+                user[key], live[key],
+                "field `{key}` diverged from the shared builder"
+            );
         }
-        assert!(user.get("interval_seconds").is_none(), "no interval for cron-based schedules");
+        assert!(
+            user.get("interval_seconds").is_none(),
+            "no interval for cron-based schedules"
+        );
 
         // Both backfill markers are layered on top.
         assert_eq!(user["backfill_slot"], serde_json::Value::Bool(true));

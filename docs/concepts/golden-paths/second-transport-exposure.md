@@ -588,9 +588,9 @@ Every inbound surface in the tree, with its bind, its population and its check:
 | `webhook` | `127.0.0.1:9420` | 6 | per-trigger HMAC/URL secret; `/health` open | yes | `webhook_request_log` (**0 rows**) |
 | `pairing` (engine) | `127.0.0.1:9420` | 2 | nonce + human approval — the ceremony *is* the gate | yes | — |
 | `share_link` | `127.0.0.1:9420` | 1 | short-lived URL token | `p2p` builds | — |
-| **`dev_tools_http`** | `127.0.0.1:17400` | **31** | **none** | **yes** | **no** |
-| **`fleet/hooks`** | `127.0.0.1:17400` | **1** (5 events) | **none** | **yes** | no |
-| **`project_tracking/push`** | `127.0.0.1:17400` | **1** | **none** | **yes** | no |
+| `dev_tools_http` | `127.0.0.1:17400` | 31 | **layer** (since 2026-08-22) — `Host` allowlist + `X-Personas-Local-Token`; was **none** | yes | **no** |
+| `fleet/hooks` | `127.0.0.1:17400` | 1 (5 events) | **layer** (since 2026-08-22); was **none** | yes | no |
+| `project_tracking/push` | `127.0.0.1:17400` | 1 | **layer** (since 2026-08-22); was **none** | yes | no |
 | `browser_bridge` | `127.0.0.1:17400` | 2 | pairing token + session token, per handler | yes | no |
 | `companion/orchestration/mcp` | `127.0.0.1:17400` | 1 route / 4 tools | `X-Athena-Session`, `HashMap::get` (not constant-time) | yes | no |
 | `companion_api` (LAN) | **`0.0.0.0:17500`** | 10 | LAN-peer → bearer → constant-time device match | yes, **but only after pairing** | `fleet_decisions` |
@@ -712,6 +712,28 @@ both replace a sentence with something a machine reads.
 All three routers are registered unconditionally at `lib.rs:963-990` and mounted on `local_http`,
 which binds `127.0.0.1` and applies **no layer of any kind** (`local_http/mod.rs:69-79`).
 **`grep -c '\.layer('` over these four files returns 0, 0, 0, 0.**
+
+> **FIXED 2026-08-22.** `local_http::start` now composes the routers and wraps the result in
+> `axum::middleware::from_fn(auth::guard)` — one layer over the whole tree, chosen over a
+> per-handler check precisely because a per-handler check reproduces this bug the next time
+> somebody adds a route. Two gates: a `Host` allowlist (`127.0.0.1` / `localhost` / `::1`), which
+> is what defeats DNS rebinding, and a shared secret in `X-Personas-Local-Token`, which is what
+> stops another principal on the machine. `browser-bridge` is exempt from the second only —
+> `auth::SELF_AUTHENTICATED_PREFIXES`, because the extension is paired by hand with a different
+> credential and both its handlers already check it.
+>
+> Two things this section asked for that were NOT done by adding auth, and were done separately:
+> `POST /dev-tools/scan-codebase` and `/export-context-map` now confine `root_path` to the
+> project's registered tree (an authenticated caller still should not be able to aim a
+> `--dangerously-skip-permissions` child at an arbitrary directory), and the caller text
+> `POST /project-tracking/cli-event` feeds into a prompt is delimited and capped.
+>
+> Two things still NOT fixed, named rather than implied: **`test_automation.rs` (46 routes on
+> :17320) is a different server and this layer does not reach it** — it remains unauthenticated
+> and remains compiled out of release; and `POST /dev-tools/kpi-update` still stores an arbitrary
+> `measure_config.cmd` that `/kpi-decision` can activate and `engine/kpi_eval.rs:199-208` later
+> runs through `sh -c` / `cmd /C`. That is now an authenticated-caller capability rather than an
+> anonymous one, which is a smaller problem but not a closed one.
 
 **Fix, cheapest first:** (a) a `middleware::from_fn` on `dev_tools_http`'s router requiring the
 same bearer the management API takes — the key registry, the audit table and the rate limiter all
@@ -981,12 +1003,29 @@ gate that only lives there effectively runs nowhere; the census runner is the on
     { "path": "src-tauri/src/browser_bridge/mod.rs", "reason": "pairing token + per-test session token checked inside each handler" },
     { "path": "src-tauri/src/engine/share_link.rs", "reason": "short-lived URL token is the credential" },
     { "path": "src-tauri/src/companion/orchestration/mcp/mod.rs", "reason": "X-Athena-Session header resolved to a live fleet session" },
-    { "path": "src-tauri/engine/src/pairing.rs", "reason": "the pairing ceremony itself: nonce + explicit human approval is the gate, by design" }
+    { "path": "src-tauri/engine/src/pairing.rs", "reason": "the pairing ceremony itself: nonce + explicit human approval is the gate, by design" },
+    { "path": "src-tauri/src/commands/infrastructure/dev_tools_http.rs", "reason": "2026-08-22: covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), applied once over the composed tree in local_http::start" },
+    { "path": "src-tauri/src/commands/fleet/hooks.rs", "reason": "2026-08-22: same layer. The credential is baked into the installed curl command; a hook carrying no/stale token reads as drifted and startup re-installs it" },
+    { "path": "src-tauri/src/engine/project_tracking/push.rs", "reason": "2026-08-22: same layer. Its 'no nonce gate in v1 because no remote actor can reach the endpoint' header was wrong and has been corrected in place" },
+    { "path": "src-tauri/src/local_http/mod.rs", "reason": "2026-08-22: the module that INSTALLS the layer. Its only `.route(\"` literals are the #[cfg(test)] fixtures that prove an unauthenticated request is refused" }
   ],
-  "baseline": { "files": 4, "matches": 79 },
+  "baseline": { "files": 1, "matches": 46 },
   "floor": 900
 }
 ```
+
+> **Re-baselined 2026-08-22 — 4 files / 79 → 1 file / 46, and the drop is the fix.** `local_http`
+> gained the router-level layer this section asked for (`local_http/auth.rs`: a `Host` allowlist
+> plus a shared secret, applied once over the composed tree so a router registered tomorrow is
+> covered without its author doing anything). The three violating routers on that server moved
+> into `exclude` **with how they authenticate**, which is the whole point of this rule's exclusion
+> list — it is the transport-classification table, and it now classifies them correctly rather
+> than counting them.
+>
+> **What did NOT move: `test_automation.rs`, all 46 routes, which is the entire remaining
+> baseline.** It is a different server on `127.0.0.1:17320` and this layer does not reach it. It
+> stays compiled out of release (`lib.rs:1574-1582`), which is why it was never the P0 — but
+> "unauthenticated" is still exactly true of it, so it keeps being counted rather than excused.
 
 **The positive control** — same anchor, pointed at the compliant form, no baseline:
 
@@ -1004,13 +1043,17 @@ gate that only lives there effectively runs nowhere; the census runner is the on
   },
   "exclude": [
     { "path": "src-tauri/src/test_automation.rs", "reason": "control: unauthenticated router" },
-    { "path": "src-tauri/src/commands/infrastructure/dev_tools_http.rs", "reason": "control: unauthenticated router" },
-    { "path": "src-tauri/src/commands/fleet/hooks.rs", "reason": "control: unauthenticated router" },
-    { "path": "src-tauri/src/engine/project_tracking/push.rs", "reason": "control: unauthenticated router" }
+    { "path": "src-tauri/src/local_http/mod.rs", "reason": "control: #[cfg(test)] fixtures for the admission layer, not a shipped router" }
   ],
   "floor": 900
 }
 ```
+
+> **Updated 2026-08-22 with the rule above.** `dev_tools_http`, `fleet/hooks` and
+> `project_tracking/push` moved OUT of this control's exclusions because they moved onto the
+> authenticated side of the partition — the control now counts them, and the two sides still sum
+> to the anchor's whole population with no residue. The description's "~51" is the pre-fix number;
+> expect ~85 now (51 + 32 + 1 + 1).
 
 **Measured, in a private scratch registry, then re-extracted from this document and re-run — identical both times:**
 

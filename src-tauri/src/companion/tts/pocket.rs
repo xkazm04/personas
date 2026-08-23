@@ -173,7 +173,9 @@ pub fn delete_voice(voice_id: &str) -> Result<(), AppError> {
 /// Enumerate the cloned voices (wav stems in `voices_dir`).
 fn list_local_voices() -> Vec<PocketVoiceEntry> {
     let Ok(dir) = voices_dir() else { return vec![] };
-    let Ok(entries) = std::fs::read_dir(&dir) else { return vec![] };
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return vec![];
+    };
     let mut out: Vec<PocketVoiceEntry> = entries
         .filter_map(|e| e.ok())
         .filter_map(|e| {
@@ -250,6 +252,11 @@ struct VoicesResponse {
     voices: Vec<PocketVoiceEntry>,
 }
 
+/// Deliberately NOT an SSRF-safe client: `base_url()` defaults to loopback and
+/// is overridden only by `PERSONAS_POCKET_TTS_URL` in this process's own
+/// environment, so the target is a local service by design and a private-IP
+/// rejecting resolver would refuse every call. 3 s is a liveness probe's
+/// deadline, not a request's.
 fn probe_client() -> Result<reqwest::Client, AppError> {
     reqwest::Client::builder()
         .timeout(POCKET_PROBE_TIMEOUT)
@@ -284,7 +291,11 @@ pub async fn status() -> Result<PocketStatus, AppError> {
         model_dir: model_dir()?.display().to_string(),
         voices_dir: voices_dir()?.display().to_string(),
         expected_binary_path: bin_dir
-            .join(if cfg!(windows) { "sherpa-onnx-offline-tts.exe" } else { "sherpa-onnx-offline-tts" })
+            .join(if cfg!(windows) {
+                "sherpa-onnx-offline-tts.exe"
+            } else {
+                "sherpa-onnx-offline-tts"
+            })
             .display()
             .to_string(),
         engine_download_url: ENGINE_DOWNLOAD_URL,
@@ -301,25 +312,22 @@ pub async fn list_voices() -> Result<Vec<PocketVoiceEntry>, AppError> {
 
     let base = base_url();
     let client = probe_client()?;
-    let service_voices: Vec<PocketVoiceEntry> = match client
-        .get(format!("{base}/v1/voices"))
-        .send()
-        .await
-    {
-        Ok(resp) if resp.status().is_success() => resp
-            .json::<VoicesResponse>()
-            .await
-            .map(|v| v.voices)
-            .unwrap_or_default(),
-        // Service down is fine when the sidecar is installed — the local
-        // list stands alone. Only error when NEITHER backend can serve.
-        _ => {
-            if merged.is_empty() && !sidecar_ready() {
-                return Err(not_running_error(&base));
+    let service_voices: Vec<PocketVoiceEntry> =
+        match client.get(format!("{base}/v1/voices")).send().await {
+            Ok(resp) if resp.status().is_success() => resp
+                .json::<VoicesResponse>()
+                .await
+                .map(|v| v.voices)
+                .unwrap_or_default(),
+            // Service down is fine when the sidecar is installed — the local
+            // list stands alone. Only error when NEITHER backend can serve.
+            _ => {
+                if merged.is_empty() && !sidecar_ready() {
+                    return Err(not_running_error(&base));
+                }
+                vec![]
             }
-            vec![]
-        }
-    };
+        };
     for v in service_voices {
         if !merged.iter().any(|m| m.voice_id == v.voice_id) {
             merged.push(v);
@@ -366,31 +374,46 @@ async fn synthesize_sidecar(
     let output_path = tempdir.path().join("out.wav");
 
     let mut cmd = tokio::process::Command::new(&engine);
-    cmd.arg(format!("--pocket-lm-flow={}", dir.join("lm_flow.int8.onnx").display()))
-        .arg(format!("--pocket-lm-main={}", dir.join("lm_main.int8.onnx").display()))
-        .arg(format!("--pocket-encoder={}", dir.join("encoder.onnx").display()))
-        .arg(format!("--pocket-decoder={}", dir.join("decoder.int8.onnx").display()))
-        .arg(format!(
-            "--pocket-text-conditioner={}",
-            dir.join("text_conditioner.onnx").display()
-        ))
-        .arg(format!("--pocket-vocab-json={}", dir.join("vocab.json").display()))
-        .arg(format!(
-            "--pocket-token-scores-json={}",
-            dir.join("token_scores.json").display()
-        ))
-        .arg(format!("--reference-audio={}", reference_wav.display()))
-        .arg("--num-threads=4")
-        .arg(format!("--output-filename={}", output_path.display()))
-        // Text is a POSITIONAL trailing arg (same as Kokoro, unlike Piper).
-        .arg(request.text)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        // On the POCKET_SIDECAR_TIMEOUT path the `wait_with_output` future is
-        // dropped; without this the sidecar is never killed and keeps running
-        // detached against a TempDir that is about to disappear.
-        .kill_on_drop(true);
+    cmd.arg(format!(
+        "--pocket-lm-flow={}",
+        dir.join("lm_flow.int8.onnx").display()
+    ))
+    .arg(format!(
+        "--pocket-lm-main={}",
+        dir.join("lm_main.int8.onnx").display()
+    ))
+    .arg(format!(
+        "--pocket-encoder={}",
+        dir.join("encoder.onnx").display()
+    ))
+    .arg(format!(
+        "--pocket-decoder={}",
+        dir.join("decoder.int8.onnx").display()
+    ))
+    .arg(format!(
+        "--pocket-text-conditioner={}",
+        dir.join("text_conditioner.onnx").display()
+    ))
+    .arg(format!(
+        "--pocket-vocab-json={}",
+        dir.join("vocab.json").display()
+    ))
+    .arg(format!(
+        "--pocket-token-scores-json={}",
+        dir.join("token_scores.json").display()
+    ))
+    .arg(format!("--reference-audio={}", reference_wav.display()))
+    .arg("--num-threads=4")
+    .arg(format!("--output-filename={}", output_path.display()))
+    // Text is a POSITIONAL trailing arg (same as Kokoro, unlike Piper).
+    .arg(request.text)
+    .stdin(Stdio::null())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    // On the POCKET_SIDECAR_TIMEOUT path the `wait_with_output` future is
+    // dropped; without this the sidecar is never killed and keeps running
+    // detached against a TempDir that is about to disappear.
+    .kill_on_drop(true);
 
     // Hide the console window on Windows — same reasoning as kokoro.rs.
     #[cfg(windows)]
@@ -406,7 +429,9 @@ async fn synthesize_sidecar(
     let output = tokio::time::timeout(POCKET_SIDECAR_TIMEOUT, child.wait_with_output())
         .await
         .map_err(|_| {
-            AppError::Internal(format!("pocket sidecar timed out after {POCKET_SIDECAR_TIMEOUT:?}"))
+            AppError::Internal(format!(
+                "pocket sidecar timed out after {POCKET_SIDECAR_TIMEOUT:?}"
+            ))
         })?
         .map_err(|e| AppError::Internal(format!("pocket sidecar wait: {e}")))?;
 
@@ -441,6 +466,9 @@ async fn synthesize_sidecar(
 
 async fn synthesize_service(request: &TtsSynthesisRequest<'_>) -> Result<TtsAudio, AppError> {
     let base = base_url();
+    // Same loopback-by-design target as `probe_client`; 90 s because a cold
+    // synthesis on CPU is slow, which is why this cannot take the 30 s
+    // `SHARED_HTTP`.
     let client = reqwest::Client::builder()
         .timeout(POCKET_TIMEOUT)
         .build()
@@ -513,10 +541,9 @@ mod tests {
     #[test]
     fn voice_entry_deserializes_service_snake_case_and_serializes_camel() {
         // Shape as actually returned by the service's GET /v1/voices.
-        let entry: PocketVoiceEntry = serde_json::from_str(
-            r#"{"voice_id":"step4","name":"step4","category":"cloned"}"#,
-        )
-        .expect("service snake_case must deserialize");
+        let entry: PocketVoiceEntry =
+            serde_json::from_str(r#"{"voice_id":"step4","name":"step4","category":"cloned"}"#)
+                .expect("service snake_case must deserialize");
         assert_eq!(entry.voice_id, "step4");
 
         // ...and re-serializes camelCase for the IPC surface.

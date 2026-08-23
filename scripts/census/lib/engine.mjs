@@ -19,6 +19,39 @@ import { join, relative, sep } from 'node:path';
 const ALWAYS_SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'target', 'coverage']);
 
 /**
+ * Cargo target directories that are NOT literally named `target`.
+ *
+ * WHY. The set above skips `target` by exact name, which is right for a stock
+ * cargo layout and wrong for this one. This repo drives cargo with several
+ * CARGO_TARGET_DIR values so that a clippy run, a bindings export and an
+ * isolated e2e build do not evict each other's artifacts -- `target-clippy`,
+ * `target-bindings`, `.personas-e2e-target`. None of those match `target`, so
+ * the walk descended into all of them and counted vendored crate source as
+ * repo source.
+ *
+ * That is not a cosmetic overcount. It broke the gate in the direction this
+ * runner cares least for: a vendored `common.rs` under
+ * `src-tauri/target-clippy/debug/build/clang-sys-<hash>/out/` contains a
+ * `Command::new(`, which pushed
+ * `process-spawn-outside-chokepoint` to 59/139 against a 58/138 baseline and
+ * failed the pre-push hook -- on this machine only. The same rule against a
+ * clean origin/master worktree scored 58/138, green, and CI never saw it
+ * because CI never has these directories. A gate that fires on whether someone
+ * happened to run `cargo clippy` locally is a gate nobody can trust, and the
+ * documented repair for a rise (`--update`) would have baselined the phantom.
+ *
+ * MEASURED before widening: every directory in this tree matching `target`,
+ * `target-*` or `*-target` is a cargo artifact dir -- all six of them. No source
+ * directory is caught. The suffix arm is what reaches `.personas-e2e-target`.
+ */
+const CARGO_TARGET_DIR_RE = /^(?:target-.+|.+-target)$/;
+
+/** True if `name` is a directory the walk must never descend into. */
+function isSkippedDir(name) {
+  return ALWAYS_SKIP_DIRS.has(name) || CARGO_TARGET_DIR_RE.test(name);
+}
+
+/**
  * Convert a rule-file path pattern into a RegExp.
  * Supported: exact paths, `dir/` prefixes, and globs using `**` / `*`.
  * Paths are always compared in posix form relative to the repo root.
@@ -60,7 +93,7 @@ export function walkFiles(dir, extensions, out = []) {
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (ALWAYS_SKIP_DIRS.has(entry.name)) continue;
+      if (isSkippedDir(entry.name)) continue;
       walkFiles(full, extensions, out);
     } else if (extensions.some((ext) => entry.name.endsWith(ext))) {
       out.push(full);

@@ -341,10 +341,7 @@ mod tests {
             // Single dispatch + group dispatch both go through `row_for_slug`.
             let err = row_for_slug(&db, slug, &objective(), &None)
                 .expect_err("a demo island must never resolve to a row");
-            assert!(
-                format!("{err}").contains("demo islands"),
-                "{slug}: {err}"
-            );
+            assert!(format!("{err}").contains("demo islands"), "{slug}: {err}");
             // The scan path shares the same resolver.
             let err = canvas::resolve_canvas_target(&db, slug).expect_err("scan must refuse too");
             assert!(format!("{err}").contains("demo islands"), "{slug}: {err}");

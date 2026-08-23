@@ -51,7 +51,7 @@
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",
     "gp:index": "node scripts/census/build-golden-path-index.mjs",
-    "check": "npm run check:contracts && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:evidence && npm run check:doc-map && npm run census:check && tsc --noEmit && eslint src/",
+    "check": "npm run check:contracts && npm run check:command-registration && npm run check:bindings && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:evidence && npm run check:doc-map && npm run census:check && tsc --noEmit && eslint src/",
     "lint": "eslint src/",
     "test": "vitest run",
     "test:playwright": "playwright test --config=playwright.config.ts",
@@ -60,6 +60,7 @@
     "test:playwright:tour": "playwright test --config=playwright.config.ts getting-started-tour",
     "test:playwright:tours": "playwright test --config=playwright.config.ts tours-explore",
     "test:rust": "node scripts/build/run-rust-tests.mjs",
+    "test:smoke": "playwright test --config=playwright.config.ts module-smoke",
     "test:rust:crates": "node scripts/build/run-rust-tests.mjs --crates",
     "test:tours:fresh": "node scripts/test/run-tours-fresh.mjs",
     "test:watch": "vitest",
@@ -104,7 +105,11 @@
     "check:corpus": "node scripts/census/check-corpus-integrity.mjs",
     "check:evidence": "node scripts/registry/evidence-check.mjs",
     "registry:mirror": "node scripts/registry/mirror-paths.mjs",
-    "check:doc-map": "node scripts/docs/check-doc-map-paths.mjs"
+    "check:doc-map": "node scripts/docs/check-doc-map-paths.mjs",
+    "active-runs": "node scripts/active-runs.mjs",
+    "check:command-registration": "node scripts/check-command-registration.mjs",
+    "check:bindings": "node scripts/generate-bindings-index.mjs --check && node scripts/check-binding-orphans.mjs",
+    "test:bindings": "node scripts/__tests__/check-binding-orphans.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

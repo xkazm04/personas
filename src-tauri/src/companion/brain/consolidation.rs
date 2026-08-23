@@ -23,18 +23,16 @@ use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
-use crate::companion::brain::oneshot::{
-    self, call_claude_text, extract_json_span, preview,
-};
+use crate::companion::brain::oneshot::{self, call_claude_text, extract_json_span, preview};
 use crate::companion::brain::util;
 use crate::companion::brain::{episodic, semantic};
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
-use std::sync::Arc;
-#[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
+#[cfg(feature = "ml")]
+use std::sync::Arc;
 
 /// Episodes to feed into the consolidation prompt. More = better
 /// recall, but the prompt grows quadratically with context. 80 is a
@@ -463,54 +461,6 @@ pub fn reject_item(pool: &UserDbPool, item_id: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Discard a whole consolidation run: reject every still-pending item
-/// and mark the run as `discarded`. Mirrors Anthropic Managed Agents'
-/// "discard the dream output store" gesture at batch granularity —
-/// per-item review via `apply_item`/`reject_item` already exists; this
-/// is the batch-level version for users who decide the entire pass
-/// isn't worth walking item-by-item.
-///
-/// Already-applied items are left alone (their facts are live in the
-/// brain). Already-rejected items stay rejected. Returns the number of
-/// previously-pending items now rejected.
-///
-/// Idempotent — re-discarding a run with no pending items returns 0
-/// and leaves the status at `discarded`.
-pub fn discard_run(pool: &UserDbPool, run_id: &str) -> Result<i64, AppError> {
-    let now = Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    let tx = conn.unchecked_transaction()?;
-
-    let run_exists: i64 = tx.query_row(
-        "SELECT COUNT(*) FROM companion_consolidation WHERE id = ?1",
-        params![run_id],
-        |r| r.get(0),
-    )?;
-    if run_exists == 0 {
-        return Err(AppError::Internal(format!(
-            "consolidation run `{run_id}` not found"
-        )));
-    }
-
-    let rejected = tx.execute(
-        "UPDATE companion_consolidation_item
-         SET status = 'rejected', resolved_at = ?1
-         WHERE consolidation_id = ?2 AND status = 'pending'",
-        params![now, run_id],
-    )? as i64;
-
-    tx.execute(
-        "UPDATE companion_consolidation
-         SET status = 'discarded'
-         WHERE id = ?1",
-        params![run_id],
-    )?;
-
-    tx.commit()?;
-    tracing::info!(run_id = %run_id, rejected, "consolidation run discarded");
-    Ok(rejected)
-}
-
 /// After a user-driven consolidation lands, decay importance for facts
 /// that haven't been recalled in a while. Floor of 1 — we never delete
 /// via decay, only reduce salience. Returns the number of facts touched.
@@ -610,7 +560,10 @@ pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
 
     match decay_unused_facts(pool) {
         Ok(n) if n > 0 => {
-            tracing::info!(decayed = n, "companion: lifecycle sweep decayed unused facts")
+            tracing::info!(
+                decayed = n,
+                "companion: lifecycle sweep decayed unused facts"
+            )
         }
         Ok(_) => {}
         Err(e) => tracing::warn!(error = %e, "companion: fact decay failed (continuing)"),

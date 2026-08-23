@@ -92,7 +92,8 @@ pub fn list(
                      LIMIT ?2",
                 )?;
                 let rows = stmt.query_map(params![cat, bounded], row_to_settings_audit_entry)?;
-                rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)
             }
             None => {
                 let mut stmt = conn.prepare(
@@ -102,7 +103,8 @@ pub fn list(
                      LIMIT ?1",
                 )?;
                 let rows = stmt.query_map(params![bounded], row_to_settings_audit_entry)?;
-                rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)
             }
         }
     })
@@ -163,7 +165,16 @@ mod tests {
         let pool = test_pool();
         insert(&pool, "api_keys", "first", "create", None, None, Some("ui")).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(20));
-        insert(&pool, "api_keys", "second", "create", None, None, Some("ui")).unwrap();
+        insert(
+            &pool,
+            "api_keys",
+            "second",
+            "create",
+            None,
+            None,
+            Some("ui"),
+        )
+        .unwrap();
         let entries = list(&pool, 10, None).expect("list");
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].setting_key, "second");
@@ -186,7 +197,16 @@ mod tests {
         // The query itself should accept any limit ≤ 1000; we verify the
         // clamp doesn't drop entries when the explicit limit is small.
         for i in 0..5 {
-            insert(&pool, "api_keys", &format!("k{i}"), "create", None, None, None).unwrap();
+            insert(
+                &pool,
+                "api_keys",
+                &format!("k{i}"),
+                "create",
+                None,
+                None,
+                None,
+            )
+            .unwrap();
         }
         let entries = list(&pool, 3, None).expect("list");
         assert_eq!(entries.len(), 3);
@@ -199,7 +219,16 @@ mod tests {
         // want to confirm it's actually being invoked on this path. Use a
         // very obvious token-shaped string.
         let leaky = r#"{"token":"sk-this-should-be-redacted-1234567890abcdef"}"#;
-        insert(&pool, "api_keys", "leaky", "create", None, Some(leaky), None).unwrap();
+        insert(
+            &pool,
+            "api_keys",
+            "leaky",
+            "create",
+            None,
+            Some(leaky),
+            None,
+        )
+        .unwrap();
         let entries = list(&pool, 10, None).expect("list");
         let stored = entries[0].after_value.as_deref().unwrap_or_default();
         assert!(

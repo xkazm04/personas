@@ -131,10 +131,8 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "n8n_activate_workflow",
     "n8n_deactivate_workflow",
     "n8n_trigger_webhook",
-    "github_create_patch_release",
     "invoke_tool_direct",
     "probe_mcp_server",
-    "openapi_parse_from_url",
     "openapi_playground_test",
     "dry_run_trigger",
     "simulate_use_case",
@@ -253,13 +251,6 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // "save_api_definition",
     "parse_api_definition",
     "load_api_definition",
-    // Credentials -- OpenAPI Autopilot (sync commands carrying
-    // `#[requires(privileged)]` that were missing from this list -- currently
-    // unreachable, since neither is wired into `generate_handler!` yet, but a
-    // sync privileged command missing here fails closed on every call the
-    // moment it IS wired up, so it belongs here now per the invariant below).
-    "openapi_parse_from_content",
-    "openapi_generate_connector",
     // Credentials -- Dynamic discovery (adoption questionnaire)
     // NOT listed here because the wrapper-level header check fails
     // intermittently on Windows WebView2 (same race as the data-portability
@@ -332,12 +323,6 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // privileged command — body calls require_privileged_sync via the
     // #[requires(privileged)] macro, so it MUST be listed here).
     "undo_execution",
-    // Execution -- create_execution carries `#[requires(privileged)]` but was
-    // missing from this list. Currently unreachable (not wired into
-    // `generate_handler!`), so no live call ever hit the always-fail-closed
-    // path this omission produces on a registered sync command — listed here
-    // to close the drift before it is ever wired up.
-    "create_execution",
     // Provider usage audit + health bundle. These are SYNC commands whose
     // bodies call `require_privileged_sync`, which hard-requires the wrapper's
     // thread-local validation flag — and the wrapper only validates commands
@@ -874,10 +859,7 @@ mod tests {
         // Healthcheck commands trigger outbound HTTP using live secrets,
         // so they require the IPC session token even though their callers
         // (status pages) feel read-only.
-        assert_eq!(
-            command_tier("healthcheck_credential"),
-            AuthTier::Privileged
-        );
+        assert_eq!(command_tier("healthcheck_credential"), AuthTier::Privileged);
         assert_eq!(
             command_tier("healthcheck_credential_preview"),
             AuthTier::Privileged
@@ -1010,7 +992,11 @@ mod tests {
             } else if let Some(name) = direct_call_command(line) {
                 *checked += 1;
                 if !PRIVILEGED_COMMANDS_SET.contains(name) {
-                    missing.push(format!("{name} (direct call, {}:{})", path.display(), i + 1));
+                    missing.push(format!(
+                        "{name} (direct call, {}:{})",
+                        path.display(),
+                        i + 1
+                    ));
                 }
             }
         }
@@ -1095,18 +1081,33 @@ mod tests {
         ("import_portability_bundle_from_path", "OWED: bulk import"),
         // — deliberate exclusions, documented at ipc_auth.rs:396: the wrapper
         //   already gates these and listing them would double-guard —
-        ("export_credentials", "deliberate: wrapper-level gate, see :396"),
-        ("import_credentials", "deliberate: wrapper-level gate, see :396"),
+        (
+            "export_credentials",
+            "deliberate: wrapper-level gate, see :396",
+        ),
+        (
+            "import_credentials",
+            "deliberate: wrapper-level gate, see :396",
+        ),
         ("export_full", "deliberate: wrapper-level gate, see :396"),
-        ("import_portability_bundle", "deliberate: wrapper-level gate, see :396"),
+        (
+            "import_portability_bundle",
+            "deliberate: wrapper-level gate, see :396",
+        ),
         ("get_api_proxy_metrics", "OWED: verify tier"),
         // — deliberate exclusions (ipc_auth.rs:245-252): the wrapper x-ipc-token
         //   check fails intermittently on Windows WebView2 when the renderer
         //   BATCHES several privileged invokes during page init. Their bodies call
         //   async require_privileged, which verifies init and emits an audit trace
         //   but does NOT authorize — audit depth, not access control. —
-        ("execute_api_request", "deliberate: WebView2 batched-invoke race, see :245"),
-        ("save_api_definition", "deliberate: WebView2 batched-invoke race, see :245"),
+        (
+            "execute_api_request",
+            "deliberate: WebView2 batched-invoke race, see :245",
+        ),
+        (
+            "save_api_definition",
+            "deliberate: WebView2 batched-invoke race, see :245",
+        ),
         // — OPERATOR DECISION REQUIRED —
     ];
 

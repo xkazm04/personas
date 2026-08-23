@@ -1,0 +1,24 @@
+# Baseline: #[tauri::command] functions that are DEFINED and never registered in any
+# generate_handler! block. Each one advertises an IPC surface that does not exist.
+#
+# scripts/check-command-registration.mjs fails on any orphan NOT listed here,
+# and ALSO fails when a listed name stops being an orphan (census convention,
+# scripts/census/rules.json:1-20) -- a silent drop is what a broken matcher
+# looks like, so clearing one costs a deleted line here.
+#
+# THE LIST IS EMPTY, AND THAT IS THE POINT.
+#
+# History: 73 orphans at the commit that added this file. Wave 1 lane `guard`
+# stripped the false #[tauri::command] attribute from 12 of them, leaving 61.
+# Wave 1 lane `delete` then registered exactly one -- companion_test_fleet_dispatch,
+# the only entry with a live consumer (a Playwright spec invoking it by name over
+# the test-automation bridge) -- and DELETED the other 60 outright, on the
+# operator's explicit decision. None was reachable from the frontend and none had
+# a Rust caller.
+#
+# The empty file is deliberately kept rather than removed: it is the baseline the
+# gate compares against, and an empty baseline states "zero orphans is the
+# expected steady state" in a way that a missing file cannot. Adding a name here
+# again should require the same argument the 73 never had.
+#
+# One bare command name per line. `#` starts a comment.

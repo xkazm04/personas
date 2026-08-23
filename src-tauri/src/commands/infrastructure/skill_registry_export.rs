@@ -38,6 +38,38 @@ fn skills_of(root: &str) -> Vec<SkillEntry> {
 /// `(id, name, root_path)` of a registered sibling project.
 type SiblingRow = (String, String, String);
 
+/// The origin URL of a directory's git working copy, or None when it has none.
+/// Read-only and best-effort: a library that is a plain directory is a
+/// legitimate case, not a defect to report.
+fn git_remote_of(dir: &Path) -> Option<String> {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["remote", "get-url", "origin"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let url = String::from_utf8(out.stdout).ok()?.trim().to_string();
+    (!url.is_empty()).then_some(url)
+}
+
+/// The commit a directory's git working copy is at. Same contract as above.
+fn git_head_of(dir: &Path) -> Option<String> {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let sha = String::from_utf8(out.stdout).ok()?.trim().to_string();
+    (!sha.is_empty()).then_some(sha)
+}
+
 /// Build and write the registry file. Returns the number of skills written.
 ///
 /// `library_root` is the library this snapshot COMPARES AGAINST. When the
@@ -71,7 +103,11 @@ pub fn write_skill_registry(
         )
         .ok();
     let project_name: String = conn
-        .query_row("SELECT name FROM dev_projects WHERE id = ?1", [project_id], |r| r.get(0))
+        .query_row(
+            "SELECT name FROM dev_projects WHERE id = ?1",
+            [project_id],
+            |r| r.get(0),
+        )
         .unwrap_or_else(|_| "unknown".into());
     let siblings: Vec<SiblingRow> = match &workspace {
         None => Vec::new(),
@@ -80,10 +116,9 @@ pub fn write_skill_registry(
                 "SELECT id, name, root_path FROM dev_projects
                  WHERE workspace_id = ?1 AND id != ?2 ORDER BY name",
             )?;
-            let rows =
-                stmt.query_map([wid.as_str(), project_id], |r| {
-                    Ok((r.get(0)?, r.get(1)?, r.get(2)?))
-                })?;
+            let rows = stmt.query_map([wid.as_str(), project_id], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })?;
             rows.flatten().collect()
         }
     };
@@ -92,13 +127,11 @@ pub fn write_skill_registry(
     // skills (workspaces are single-digit small; the walk is cheap). Siblings
     // on unreadable/disconnected roots simply scan empty and drop out.
     let mine = skills_of(root_path);
-    let library_dir: Option<std::path::PathBuf> = match library_root
-        .map(str::trim)
-        .filter(|r| !r.is_empty())
-    {
-        Some(root) => Some(std::path::PathBuf::from(root)),
-        None => global_skills_dir(),
-    };
+    let library_dir: Option<std::path::PathBuf> =
+        match library_root.map(str::trim).filter(|r| !r.is_empty()) {
+            Some(root) => Some(std::path::PathBuf::from(root)),
+            None => global_skills_dir(),
+        };
     // A named library that is not on disk scans EMPTY rather than falling back
     // to the home library. Comparing against the wrong library silently is how
     // a skill gets "published" over a newer copy nobody looked at.
@@ -131,10 +164,16 @@ pub fn write_skill_registry(
              GROUP BY skill_name, project_id"
         );
         if let Ok(mut stmt) = conn.prepare(&sql) {
-            let params: Vec<&dyn rusqlite::types::ToSql> =
-                ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+            let params: Vec<&dyn rusqlite::types::ToSql> = ids
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
             if let Ok(rows) = stmt.query_map(params.as_slice(), |r| {
-                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?, r.get::<_, i64>(2)?))
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                    r.get::<_, i64>(2)?,
+                ))
             }) {
                 for row in rows.flatten() {
                     if let (name, Some(pid), n) = row {
@@ -186,6 +225,12 @@ pub fn write_skill_registry(
         // Named so the agent can tell which contract it is under: the registry
         // lane uses semver and a closed category set, the home library neither.
         "library_kind": if library_root.is_some() { "registry" } else { "home" },
+        // WHERE the library came from and WHICH commit it is at. A path alone is
+        // this machine's fact; the remote plus the commit is the one every other
+        // consumer shares, and it is what turns "the library moved" into a range
+        // someone can actually read.
+        "library_remote": library_dir.as_deref().and_then(git_remote_of),
+        "library_commit": library_dir.as_deref().and_then(git_head_of),
         "skills": skills_json,
         "note": "Snapshot written by the Personas app; may be up to one scan old. \
                  Compare `version` fields (major.minor; null = unversioned, treat as 1.0) \

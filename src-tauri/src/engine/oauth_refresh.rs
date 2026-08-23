@@ -156,10 +156,8 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
     let mut failed: usize = 0;
 
     // Pre-parse all credential metadata once (avoids double parse per credential)
-    let parsed_meta: Vec<Option<serde_json::Value>> = all_creds
-        .iter()
-        .map(parse_credential_metadata)
-        .collect();
+    let parsed_meta: Vec<Option<serde_json::Value>> =
+        all_creds.iter().map(parse_credential_metadata).collect();
 
     for (i, cred) in all_creds.iter().enumerate() {
         let meta = &parsed_meta[i];
@@ -629,8 +627,19 @@ async fn refresh_single_credential_inner(
                 let mut conn = pool.get()?;
                 let tx = conn.transaction()?;
 
-                cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
-                cred_repo::verify_field_roundtrip_on_conn(&tx, &cred.id, "access_token", &resolved.token)?;
+                cred_repo::upsert_field_on_conn(
+                    &tx,
+                    &cred.id,
+                    "access_token",
+                    &resolved.token,
+                    true,
+                )?;
+                cred_repo::verify_field_roundtrip_on_conn(
+                    &tx,
+                    &cred.id,
+                    "access_token",
+                    &resolved.token,
+                )?;
                 cred_repo::upsert_field_on_conn(
                     &tx,
                     &cred.id,
@@ -670,7 +679,8 @@ async fn refresh_single_credential_inner(
                         error = %e,
                         "OAuth refresh persist failed; retrying so the provider-rotated refresh_token is not dropped"
                     );
-                    tokio::time::sleep(std::time::Duration::from_millis(150 * attempt as u64)).await;
+                    tokio::time::sleep(std::time::Duration::from_millis(150 * attempt as u64))
+                        .await;
                 }
                 Err(e) => {
                     tracing::error!(
@@ -1096,7 +1106,10 @@ mod revocation_healing_tests {
             .collect();
         assert_eq!(oauth.len(), 1, "one oauth issue created for the dependent");
         assert_eq!(oauth[0].severity, "high");
-        assert!(oauth[0].description.contains(cred_id), "credential marker embedded");
+        assert!(
+            oauth[0].description.contains(cred_id),
+            "credential marker embedded"
+        );
 
         // Tick-tick: a second revocation pass must NOT create a duplicate.
         route_revocation_to_healing(&pool, cred_id, "Gmail", "gmail");

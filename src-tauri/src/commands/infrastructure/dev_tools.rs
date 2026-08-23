@@ -29,7 +29,9 @@ pub use portfolio::*;
 pub use ship_ingest::*;
 pub use triage_ingest::*;
 
-use crate::db::models::{DevIdea, DevKpi, DevKpiMeasurement, DevPipeline, DevProject, DevScan, DevTask, DevUseCase, TriageRule};
+use crate::db::models::{
+    DevIdea, DevKpi, DevKpiMeasurement, DevProject, DevScan, DevTask, DevUseCase, TriageRule,
+};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -46,15 +48,6 @@ pub fn dev_tools_list_projects(
 ) -> Result<Vec<DevProject>, AppError> {
     require_auth_sync(&state)?;
     repo::list_projects(&state.db, status.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_project(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevProject, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_project_by_id(&state.db, &id)
 }
 
 #[tauri::command]
@@ -163,10 +156,15 @@ pub fn dev_tools_backfill_qa_pr_review(
     let now = chrono::Utc::now().to_rfc3339();
 
     let rows: Vec<(String, String, Option<String>)> = {
-        let mut stmt = conn
-            .prepare("SELECT id, name, design_context FROM personas WHERE name LIKE '%QA Guardian%'")?;
+        let mut stmt = conn.prepare(
+            "SELECT id, name, design_context FROM personas WHERE name LIKE '%QA Guardian%'",
+        )?;
         let mapped = stmt.query_map([], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?))
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, Option<String>>(2)?,
+            ))
         })?;
         mapped.filter_map(Result::ok).collect()
     };
@@ -458,7 +456,11 @@ pub fn dev_tools_update_idea(
         &id,
         title.as_deref(),
         description.as_ref().map(|o| o.as_deref()),
-        if verdict.is_some() { None } else { status.as_deref() },
+        if verdict.is_some() {
+            None
+        } else {
+            status.as_deref()
+        },
         category.as_deref(),
         effort,
         impact,
@@ -671,7 +673,14 @@ pub fn dev_tools_list_pending_ideas(
     limit: Option<i64>,
 ) -> Result<Vec<DevIdea>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_ideas(&state.db, None, Some("pending"), None, Some(limit.unwrap_or(100)), None)
+    repo::list_ideas(
+        &state.db,
+        None,
+        Some("pending"),
+        None,
+        Some(limit.unwrap_or(100)),
+        None,
+    )
 }
 
 /// Write a triage decision to the project's dev memory + the bound team's
@@ -814,47 +823,6 @@ pub fn dev_tools_get_scan(
     repo::get_scan_by_id(&state.db, &id)
 }
 
-#[tauri::command]
-pub fn dev_tools_create_scan(
-    state: State<'_, Arc<AppState>>,
-    project_id: Option<String>,
-    scan_type: String,
-    status: Option<String>,
-) -> Result<DevScan, AppError> {
-    require_auth_sync(&state)?;
-    repo::create_scan(
-        &state.db,
-        project_id.as_deref(),
-        &scan_type,
-        status.as_deref(),
-    )
-}
-
-#[tauri::command]
-#[allow(clippy::too_many_arguments)]
-pub fn dev_tools_update_scan(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    status: Option<String>,
-    idea_count: Option<i32>,
-    input_tokens: Option<i64>,
-    output_tokens: Option<i64>,
-    duration_ms: Option<i64>,
-    error: Option<Option<String>>,
-) -> Result<DevScan, AppError> {
-    require_auth_sync(&state)?;
-    repo::update_scan(
-        &state.db,
-        &id,
-        status.as_deref(),
-        idea_count,
-        input_tokens,
-        output_tokens,
-        duration_ms,
-        error.as_ref().map(|o| o.as_deref()),
-    )
-}
-
 // ============================================================================
 // Tasks
 // ============================================================================
@@ -867,15 +835,6 @@ pub fn dev_tools_list_tasks(
 ) -> Result<Vec<DevTask>, AppError> {
     require_auth_sync(&state)?;
     repo::list_tasks(&state.db, project_id.as_deref(), status.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_task(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevTask, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_task_by_id(&state.db, &id)
 }
 
 #[tauri::command]
@@ -1053,7 +1012,11 @@ pub async fn dev_tools_dispatch_ideas(
         dispatch_ideas_core(&state.db, &app, idea_ids, &target, depth.as_deref(), false).await?;
 
     if target == "runner" {
-        let task_ids: Vec<String> = result.dispatched.iter().map(|d| d.task_id.clone()).collect();
+        let task_ids: Vec<String> = result
+            .dispatched
+            .iter()
+            .map(|d| d.task_id.clone())
+            .collect();
         crate::commands::infrastructure::task_executor::dev_tools_start_batch(
             state.clone(),
             app,
@@ -1102,7 +1065,9 @@ pub async fn dispatch_ideas_core(
     unattended: bool,
 ) -> Result<DispatchIdeasResult, AppError> {
     if idea_ids.is_empty() {
-        return Err(AppError::Validation("No ideas selected to dispatch.".into()));
+        return Err(AppError::Validation(
+            "No ideas selected to dispatch.".into(),
+        ));
     }
     if !matches!(target, "runner" | "fleet") {
         return Err(AppError::Validation(format!(
@@ -1122,7 +1087,10 @@ pub async fn dispatch_ideas_core(
         let idea = match repo::get_idea_by_id(db, &id) {
             Ok(i) => i,
             Err(_) => {
-                skipped.push(DispatchSkip { idea_id: id, reason: "not found".into() });
+                skipped.push(DispatchSkip {
+                    idea_id: id,
+                    reason: "not found".into(),
+                });
                 continue;
             }
         };
@@ -1140,7 +1108,10 @@ pub async fn dispatch_ideas_core(
             match apply_idea_verdict_by(db, &id, IdeaVerdict::Accept, actor) {
                 Ok(i) => i,
                 Err(e) => {
-                    skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
+                    skipped.push(DispatchSkip {
+                        idea_id: id,
+                        reason: e.to_string(),
+                    });
                     continue;
                 }
             }
@@ -1161,7 +1132,10 @@ pub async fn dispatch_ideas_core(
         ) {
             Ok(t) => t,
             Err(e) => {
-                skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
+                skipped.push(DispatchSkip {
+                    idea_id: id,
+                    reason: e.to_string(),
+                });
                 continue;
             }
         };
@@ -1492,102 +1466,6 @@ pub fn run_triage_rules_core(
 // Pipelines (Idea-to-Execution)
 // ============================================================================
 
-#[tauri::command]
-pub fn dev_tools_create_pipeline(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-    idea_id: String,
-    auto_execute: Option<bool>,
-    verify_after: Option<bool>,
-) -> Result<DevPipeline, AppError> {
-    require_auth_sync(&state)?;
-    repo::create_pipeline(
-        &state.db,
-        &project_id,
-        &idea_id,
-        auto_execute.unwrap_or(true),
-        verify_after.unwrap_or(false),
-    )
-}
-
-#[tauri::command]
-pub fn dev_tools_list_pipelines(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-    stage: Option<String>,
-) -> Result<Vec<DevPipeline>, AppError> {
-    require_auth_sync(&state)?;
-    repo::list_pipelines(&state.db, &project_id, stage.as_deref())
-}
-
-#[tauri::command]
-pub fn dev_tools_get_pipeline(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevPipeline, AppError> {
-    require_auth_sync(&state)?;
-    repo::get_pipeline_by_id(&state.db, &id)
-}
-
-#[tauri::command]
-pub async fn dev_tools_advance_pipeline(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    new_stage: String,
-    task_id: Option<String>,
-    error: Option<String>,
-) -> Result<DevPipeline, AppError> {
-    require_auth_sync(&state)?;
-    let pipeline = repo::advance_pipeline_stage(
-        &state.db,
-        &id,
-        &new_stage,
-        task_id.as_deref(),
-        error.as_deref(),
-    )?;
-
-    // F5: non-disruptive auto-checkpoint of the project repo at each stage
-    // transition (git stash create + a hidden ref — never touches the user's
-    // branch/working tree). Best-effort: a snapshot failure never blocks the
-    // advance, and a clean tree records nothing.
-    if let Ok(project) = repo::get_project_by_id(&state.db, &pipeline.project_id) {
-        if !project.root_path.is_empty() {
-            let checkpoint_id = uuid::Uuid::new_v4().to_string();
-            let status = if error.is_some() { "failed" } else { "advanced" };
-            match crate::engine::git_checkpoint::snapshot_stage(
-                std::path::Path::new(&project.root_path),
-                &id,
-                &checkpoint_id,
-            )
-            .await
-            {
-                Ok(Some(sha)) => {
-                    let _ = crate::db::repos::dev_run_checkpoints::insert(
-                        &state.db,
-                        &id,
-                        &new_stage,
-                        &sha,
-                        status,
-                    );
-                }
-                Ok(None) => {}
-                Err(e) => tracing::debug!("dev checkpoint snapshot skipped: {e}"),
-            }
-        }
-    }
-
-    Ok(pipeline)
-}
-
-#[tauri::command]
-pub fn dev_tools_delete_pipeline(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    repo::delete_pipeline(&state.db, &id)
-}
-
 // ============================================================================
 // KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
 // ============================================================================
@@ -1603,10 +1481,7 @@ pub fn dev_tools_list_kpis(
 }
 
 #[tauri::command]
-pub fn dev_tools_get_kpi(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<DevKpi, AppError> {
+pub fn dev_tools_get_kpi(state: State<'_, Arc<AppState>>, id: String) -> Result<DevKpi, AppError> {
     require_auth_sync(&state)?;
     repo::get_kpi(&state.db, &id)
 }
@@ -1712,10 +1587,7 @@ pub fn dev_tools_update_kpi(
 }
 
 #[tauri::command]
-pub fn dev_tools_delete_kpi(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn dev_tools_delete_kpi(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_kpi(&state.db, &id)
 }
@@ -1810,9 +1682,7 @@ pub async fn dev_tools_evaluate_due_kpis(
 
 /// All KPIs across every project (cross-project dashboard scope).
 #[tauri::command]
-pub fn dev_tools_list_all_kpis(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<DevKpi>, AppError> {
+pub fn dev_tools_list_all_kpis(state: State<'_, Arc<AppState>>) -> Result<Vec<DevKpi>, AppError> {
     require_auth_sync(&state)?;
     repo::list_all_kpis(&state.db)
 }
@@ -1862,8 +1732,13 @@ pub async fn dev_tools_kpi_compose_binding(
     let (procedure, composed_by) =
         crate::engine::kpi_binding::compose_procedure(&state.db, &kpi, &credential_id).await?;
     let (value, evidence) =
-        crate::engine::kpi_binding::execute_procedure(&state.db, &credential_id, &procedure).await?;
-    if let Some(mt) = kpi.metric_type.as_deref().and_then(crate::engine::kpi_binding::metric_type) {
+        crate::engine::kpi_binding::execute_procedure(&state.db, &credential_id, &procedure)
+            .await?;
+    if let Some(mt) = kpi
+        .metric_type
+        .as_deref()
+        .and_then(crate::engine::kpi_binding::metric_type)
+    {
         crate::engine::kpi_binding::check_invariants(mt, value)?;
     }
     Ok(serde_json::json!({
@@ -1895,7 +1770,11 @@ pub async fn dev_tools_kpi_activate_binding(
         &credential_id,
         &credential.service_type,
         &procedure,
-        if composed_by == "recipe" { "recipe" } else { "llm" },
+        if composed_by == "recipe" {
+            "recipe"
+        } else {
+            "llm"
+        },
     )?;
     let _ = repo::record_kpi_measurement(
         &state.db,
@@ -2149,7 +2028,9 @@ pub(crate) fn encode_claude_project_dir(root_path: &str) -> String {
 /// Days since `mtime`, saturating at 0 for future timestamps. None on error.
 fn days_since(meta: std::io::Result<std::fs::Metadata>) -> Option<u32> {
     let modified = meta.ok()?.modified().ok()?;
-    let elapsed = std::time::SystemTime::now().duration_since(modified).unwrap_or_default();
+    let elapsed = std::time::SystemTime::now()
+        .duration_since(modified)
+        .unwrap_or_default();
     Some((elapsed.as_secs() / 86_400) as u32)
 }
 
@@ -2163,7 +2044,10 @@ fn probe_agent_memory(root: &std::path::Path, root_path: &str) -> (bool, u32, u3
         }
     };
 
-    let repo_candidates = [root.join("MEMORY.md"), root.join(".claude").join("MEMORY.md")];
+    let repo_candidates = [
+        root.join("MEMORY.md"),
+        root.join(".claude").join("MEMORY.md"),
+    ];
     let mut has_repo_memory = false;
     for p in &repo_candidates {
         if p.is_file() {
@@ -2195,7 +2079,7 @@ fn probe_agent_memory(root: &std::path::Path, root_path: &str) -> (bool, u32, u3
                     continue;
                 }
                 file_count += 1;
-                bump_age(days_since(entry.metadata().map_err(std::io::Error::from)));
+                bump_age(days_since(entry.metadata()));
                 if name == "MEMORY.md" {
                     if let Ok(txt) = std::fs::read_to_string(entry.path()) {
                         index_lines = txt
@@ -2291,7 +2175,9 @@ fn probe_docs(root: &std::path::Path) -> (u32, bool) {
         if seen >= MAX_ENTRIES {
             break;
         }
-        let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            continue;
+        };
         for entry in rd.flatten() {
             seen += 1;
             if seen >= MAX_ENTRIES {
@@ -2299,7 +2185,7 @@ fn probe_docs(root: &std::path::Path) -> (u32, bool) {
             }
             let name = entry.file_name().to_string_lossy().to_lowercase();
             if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-                if depth + 1 <= MAX_DEPTH && !name.starts_with('.') {
+                if depth < MAX_DEPTH && !name.starts_with('.') {
                     stack.push((entry.path(), depth + 1));
                 }
             } else if name.ends_with(".md") || name.ends_with(".mdx") {
@@ -2319,7 +2205,14 @@ fn bounded_probe(root: &std::path::Path) -> (u32, bool, bool) {
     const MAX_ENTRIES: u32 = 8000;
     const MAX_DEPTH: usize = 5;
     const SKIP: [&str; 8] = [
-        "node_modules", "target", "dist", "build", ".next", "vendor", "coverage", ".git",
+        "node_modules",
+        "target",
+        "dist",
+        "build",
+        ".next",
+        "vendor",
+        "coverage",
+        ".git",
     ];
     let mut test_count: u32 = 0;
     let mut has_mig = false;
@@ -2351,7 +2244,7 @@ fn bounded_probe(root: &std::path::Path) -> (u32, bool, bool) {
                 if name == "evals" || name == "eval" {
                     has_eval = true;
                 }
-                if depth + 1 <= MAX_DEPTH {
+                if depth < MAX_DEPTH {
                     stack.push((entry.path(), depth + 1));
                 }
             } else if name.contains(".test.")
@@ -2439,7 +2332,10 @@ pub fn dev_tools_probe_repo_evidence(
             // (Supabase/Firebase) last so a dedicated auth lib wins.
             ev.auth_method = if deps.contains("clerk") {
                 Some("Clerk".into())
-            } else if deps.contains("next-auth") || deps.contains("@auth/") || deps.contains("authjs") {
+            } else if deps.contains("next-auth")
+                || deps.contains("@auth/")
+                || deps.contains("authjs")
+            {
                 Some("Auth.js".into())
             } else if deps.contains("auth0") {
                 Some("Auth0".into())
@@ -2562,9 +2458,7 @@ pub fn dev_tools_probe_repo_evidence(
 /// can show the real app icon instead of a colored dot. `None` when nothing
 /// suitable exists — the wall falls back to its status dot.
 #[tauri::command]
-pub async fn dev_tools_get_project_favicon(
-    root_path: String,
-) -> Result<Option<String>, AppError> {
+pub async fn dev_tools_get_project_favicon(root_path: String) -> Result<Option<String>, AppError> {
     use base64::Engine as _;
     const CANDIDATES: &[&str] = &[
         "public/favicon.svg",
@@ -2592,11 +2486,15 @@ pub async fn dev_tools_get_project_favicon(
     }
     for rel in CANDIDATES {
         let p = root.join(rel);
-        let Ok(meta) = std::fs::metadata(&p) else { continue };
+        let Ok(meta) = std::fs::metadata(&p) else {
+            continue;
+        };
         if !meta.is_file() || meta.len() == 0 || meta.len() > MAX_BYTES {
             continue;
         }
-        let Ok(bytes) = std::fs::read(&p) else { continue };
+        let Ok(bytes) = std::fs::read(&p) else {
+            continue;
+        };
         let mime = match p.extension().and_then(|e| e.to_str()) {
             Some("svg") => "image/svg+xml",
             Some("ico") => "image/x-icon",
@@ -2622,7 +2520,10 @@ mod repo_evidence_tests {
 
     #[test]
     fn encodes_unix_paths_like_claude_code() {
-        assert_eq!(encode_claude_project_dir("/home/x/repo.app"), "-home-x-repo-app");
+        assert_eq!(
+            encode_claude_project_dir("/home/x/repo.app"),
+            "-home-x-repo-app"
+        );
     }
 }
 
@@ -2642,7 +2543,10 @@ mod verdict_core_tests {
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let uri = format!("file:verdict_core_testdb_{id}?mode=memory&cache=shared");
         let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
-        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
+        let pool = r2d2::Pool::builder()
+            .max_size(4)
+            .build(manager)
+            .expect("pool");
         {
             let conn = pool.get().expect("conn");
             conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
@@ -2653,7 +2557,8 @@ mod verdict_core_tests {
     }
 
     fn seeded_idea(pool: &DbPool) -> String {
-        let project = repo::create_project(pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let project =
+            repo::create_project(pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
         repo::create_finding(
             pool,
             &project.id,
@@ -2708,7 +2613,9 @@ mod verdict_core_tests {
         apply_idea_verdict(
             &pool,
             &idea_id,
-            IdeaVerdict::Reject { reason: Some("out of scope".into()) },
+            IdeaVerdict::Reject {
+                reason: Some("out of scope".into()),
+            },
         )
         .unwrap();
         // A replay carrying no reason must not erase the one a human gave.
@@ -2727,11 +2634,16 @@ mod verdict_core_tests {
         let flipped = apply_idea_verdict(
             &pool,
             &idea_id,
-            IdeaVerdict::Reject { reason: Some("changed our mind".into()) },
+            IdeaVerdict::Reject {
+                reason: Some("changed our mind".into()),
+            },
         )
         .unwrap();
         assert_eq!(flipped.status, "rejected");
-        assert_eq!(flipped.rejection_reason.as_deref(), Some("changed our mind"));
+        assert_eq!(
+            flipped.rejection_reason.as_deref(),
+            Some("changed our mind")
+        );
     }
 
     // ------------------------------------------------------------------
@@ -2751,7 +2663,9 @@ mod verdict_core_tests {
         apply_idea_verdict_cas(
             &pool,
             &idea_id,
-            IdeaVerdict::Reject { reason: Some("out of scope".into()) },
+            IdeaVerdict::Reject {
+                reason: Some("out of scope".into()),
+            },
             "Human",
             Some("pending"),
         )
@@ -2782,12 +2696,20 @@ mod verdict_core_tests {
         // against a status the row no longer holds is data loss.
         let pool = test_pool();
         let idea_id = seeded_idea(&pool);
-        apply_idea_verdict_cas(&pool, &idea_id, IdeaVerdict::Accept, "Human", Some("pending"))
-            .unwrap();
+        apply_idea_verdict_cas(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Accept,
+            "Human",
+            Some("pending"),
+        )
+        .unwrap();
         let flipped = apply_idea_verdict_cas(
             &pool,
             &idea_id,
-            IdeaVerdict::Reject { reason: Some("changed our mind".into()) },
+            IdeaVerdict::Reject {
+                reason: Some("changed our mind".into()),
+            },
             "Human",
             Some("accepted"),
         )
@@ -2803,11 +2725,22 @@ mod verdict_core_tests {
         // now stale — otherwise recovery reports a conflict against itself.
         let pool = test_pool();
         let idea_id = seeded_idea(&pool);
-        apply_idea_verdict_cas(&pool, &idea_id, IdeaVerdict::Accept, "Human", Some("pending"))
-            .unwrap();
-        let replay =
-            apply_idea_verdict_cas(&pool, &idea_id, IdeaVerdict::Accept, "Human", Some("pending"))
-                .unwrap();
+        apply_idea_verdict_cas(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Accept,
+            "Human",
+            Some("pending"),
+        )
+        .unwrap();
+        let replay = apply_idea_verdict_cas(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Accept,
+            "Human",
+            Some("pending"),
+        )
+        .unwrap();
         assert_eq!(replay.status, "accepted");
         assert_eq!(decision_memories(&pool, &idea_id), 1);
     }

@@ -91,7 +91,7 @@ fn extract_uc_description(uc: &Value) -> Option<String> {
         .and_then(|v| v.as_str())
         .map(|s| {
             if s.len() > 500 {
-                format!("{}…", crate::utils::text::truncate_on_char_boundary(&s, 499))
+                format!("{}…", crate::utils::text::truncate_on_char_boundary(s, 499))
             } else {
                 s.to_string()
             }
@@ -147,14 +147,11 @@ pub fn derive_recipes_from_template_inner(
     template_payload_json: &str,
 ) -> Result<Vec<DeriveResult>, AppError> {
     if template_id.trim().is_empty() {
-        return Err(AppError::Validation(
-            "template_id cannot be empty".into(),
-        ));
+        return Err(AppError::Validation("template_id cannot be empty".into()));
     }
 
-    let payload: Value = serde_json::from_str(template_payload_json).map_err(|e| {
-        AppError::Validation(format!("template_payload_json parse error: {e}"))
-    })?;
+    let payload: Value = serde_json::from_str(template_payload_json)
+        .map_err(|e| AppError::Validation(format!("template_payload_json parse error: {e}")))?;
 
     let use_cases = payload
         .get("use_cases")
@@ -241,15 +238,12 @@ pub fn derive_recipes_from_template_inner(
                         use_case_name: uc_name,
                         recipe_id: prev.id,
                         action: DeriveAction::Unchanged,
-                        source_version: prev
-                            .source_version
-                            .unwrap_or_else(|| "1.0.0".to_string()),
+                        source_version: prev.source_version.unwrap_or_else(|| "1.0.0".to_string()),
                     });
                 } else {
                     // Updated — bump version and rewrite mutable fields.
-                    let new_version = bump_version(
-                        prev.source_version.as_deref().unwrap_or("1.0.0"),
-                    );
+                    let new_version =
+                        bump_version(prev.source_version.as_deref().unwrap_or("1.0.0"));
                     let update = UpdateRecipeInput {
                         name: uc_name.clone(),
                         description: uc_description,
@@ -304,32 +298,6 @@ pub async fn derive_recipes_from_template(
     derive_recipes_from_template_inner(&state, &template_id, &template_payload_json)
 }
 
-/// Read-only companion to `derive_recipes_from_template`: list every recipe
-/// row that was derived from a given template, ordered by `source_use_case_id`.
-///
-/// Practical uses:
-/// - Verifying Phase 1b ran successfully (count + spot-check expected ids).
-/// - Debugging Phase 2.2 conversion before / after `--apply` — compare what
-///   `convert-templates-to-recipe-refs.py` would write against what's
-///   actually in the DB.
-/// - Future template-editor UI that wants to show "this template
-///   contributes N recipes to the catalog".
-///
-/// Returns `[]` when no recipes have been derived for `template_id` yet.
-/// The caller distinguishes "migration not run" from "template has no UCs"
-/// by checking the template's payload directly.
-#[tauri::command]
-pub async fn list_recipes_by_template(
-    state: State<'_, Arc<AppState>>,
-    template_id: String,
-) -> Result<Vec<RecipeDefinition>, AppError> {
-    require_auth(&state).await?;
-    if template_id.trim().is_empty() {
-        return Err(AppError::Validation("template_id cannot be empty".into()));
-    }
-    recipe_repo::list_by_source_template(&state.db, &template_id)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -359,7 +327,10 @@ mod tests {
     #[test]
     fn extract_category_from_string() {
         let payload = serde_json::json!({ "category": "infrastructure" });
-        assert_eq!(extract_category(&payload), Some("infrastructure".to_string()));
+        assert_eq!(
+            extract_category(&payload),
+            Some("infrastructure".to_string())
+        );
     }
 
     #[test]
@@ -402,7 +373,10 @@ mod tests {
             extract_uc_category(&serde_json::json!({ "category": "analysis" })),
             Some("analysis".to_string()),
         );
-        assert_eq!(extract_uc_category(&serde_json::json!({ "category": 3 })), None);
+        assert_eq!(
+            extract_uc_category(&serde_json::json!({ "category": 3 })),
+            None
+        );
         assert_eq!(extract_uc_category(&serde_json::json!({})), None);
     }
 
@@ -443,8 +417,11 @@ mod tests {
         // v5 UUIDs have version=5 in the third group's first hex digit
         let parts: Vec<&str> = id.split('-').collect();
         assert_eq!(parts.len(), 5);
-        assert_eq!(parts[2].chars().next(), Some('5'),
-            "expected v5 UUID (version digit 5) but got {id}");
+        assert_eq!(
+            parts[2].chars().next(),
+            Some('5'),
+            "expected v5 UUID (version digit 5) but got {id}"
+        );
     }
 
     /// Frozen-output canary — locks the cross-language parity contract.

@@ -30,9 +30,9 @@
 //!   subclass `PersonaCompiler` from here** — invoke the shared `design::`
 //!   helpers directly so the boundary stays explicit.
 
-use personas_db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 use crate::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
 use crate::design::{self, DESIGN_OUTPUT_SCHEMA};
+use personas_db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 
 // ============================================================================
 // IntentCompiler input

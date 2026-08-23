@@ -95,9 +95,39 @@ fn sourceless_memories_are_not_deduped() {
 #[test]
 fn injection_puts_constraints_first_then_decisions() {
     let pool = test_pool();
-    record(&pool, "p", "learned", "L", "an observation", 9, "task_outcome", Some("t1")).unwrap();
-    record(&pool, "p", "decision", "D", "a settled do", 4, "idea_decision", Some("i1")).unwrap();
-    record(&pool, "p", "constraint", "C", "a durable dont", 4, "idea_decision", Some("i2")).unwrap();
+    record(
+        &pool,
+        "p",
+        "learned",
+        "L",
+        "an observation",
+        9,
+        "task_outcome",
+        Some("t1"),
+    )
+    .unwrap();
+    record(
+        &pool,
+        "p",
+        "decision",
+        "D",
+        "a settled do",
+        4,
+        "idea_decision",
+        Some("i1"),
+    )
+    .unwrap();
+    record(
+        &pool,
+        "p",
+        "constraint",
+        "C",
+        "a durable dont",
+        4,
+        "idea_decision",
+        Some("i2"),
+    )
+    .unwrap();
 
     let ordered = get_for_injection(&pool, "p", 10).unwrap();
     let cats: Vec<&str> = ordered.iter().map(|m| m.category.as_str()).collect();
@@ -111,8 +141,28 @@ fn injection_puts_constraints_first_then_decisions() {
 #[test]
 fn injection_is_project_scoped() {
     let pool = test_pool();
-    record(&pool, "p1", "learned", "Mine", "x", 5, "task_outcome", Some("t1")).unwrap();
-    record(&pool, "p2", "learned", "Theirs", "y", 5, "task_outcome", Some("t2")).unwrap();
+    record(
+        &pool,
+        "p1",
+        "learned",
+        "Mine",
+        "x",
+        5,
+        "task_outcome",
+        Some("t1"),
+    )
+    .unwrap();
+    record(
+        &pool,
+        "p2",
+        "learned",
+        "Theirs",
+        "y",
+        5,
+        "task_outcome",
+        Some("t2"),
+    )
+    .unwrap();
     let mine = get_for_injection(&pool, "p1", 10).unwrap();
     assert_eq!(mine.len(), 1);
     assert_eq!(mine[0].title, "Mine");
@@ -121,8 +171,28 @@ fn injection_is_project_scoped() {
 #[test]
 fn recent_by_kind_filters_and_orders() {
     let pool = test_pool();
-    record(&pool, "p", "decision", "A decision", "x", 5, "idea_decision", Some("i1")).unwrap();
-    record(&pool, "p", "learned", "An outcome", "y", 5, "task_outcome", Some("t1")).unwrap();
+    record(
+        &pool,
+        "p",
+        "decision",
+        "A decision",
+        "x",
+        5,
+        "idea_decision",
+        Some("i1"),
+    )
+    .unwrap();
+    record(
+        &pool,
+        "p",
+        "learned",
+        "An outcome",
+        "y",
+        5,
+        "task_outcome",
+        Some("t1"),
+    )
+    .unwrap();
     let outcomes = list_recent_by_kind(&pool, "p", "task_outcome", 10).unwrap();
     assert_eq!(outcomes.len(), 1);
     assert_eq!(outcomes[0].title, "An outcome");
@@ -151,7 +221,10 @@ fn render_respects_the_character_budget() {
         "budget must cap the block, got {}",
         rendered.len()
     );
-    assert!(render_for_prompt(&[], 300).is_none(), "nothing to inject -> None");
+    assert!(
+        render_for_prompt(&[], 300).is_none(),
+        "nothing to inject -> None"
+    );
 }
 
 #[test]

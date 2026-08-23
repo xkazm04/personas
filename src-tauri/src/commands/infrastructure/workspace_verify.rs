@@ -18,16 +18,15 @@
 //! reproduce identifiers verbatim is a well-known failure mode, and a mismatched
 //! id would silently mark the wrong practice.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
+use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
 use crate::db::models::WorkspaceKnowledge;
 use crate::db::repos::dev_tools as dev_repo;
@@ -36,18 +35,6 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 const VERIFY_MODEL: &str = "claude-sonnet-4-6";
 const VERIFY_TIMEOUT_SECS: u64 = 1_200;
@@ -248,7 +235,11 @@ pub async fn dev_tools_workspace_verify_adoptions(
     // `fact` has no work behind it either way. Then never-verified cells
     // (`proposed`) ahead of re-checks, so the queue fills before it refreshes.
     candidates.sort_by_key(|k| {
-        let actionable = if repo::is_actionable_kind(&k.kind) { 0 } else { 1 };
+        let actionable = if repo::is_actionable_kind(&k.kind) {
+            0
+        } else {
+            1
+        };
         let unseen = match prior_state.get(&k.id).map(String::as_str) {
             Some("proposed") => 0,
             Some("to_process") => 1,
@@ -275,8 +266,10 @@ pub async fn dev_tools_workspace_verify_adoptions(
     let wid = workspace_id.clone();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
-    tauri::async_runtime::spawn(async move {
-        let work = AssertUnwindSafe(async move {
+    spawn_guarded(
+        "workspace adoption-verify",
+        jid_for_panic.clone(),
+        async move {
             match run_verify(
                 &app, &jid, &db, &wid, &pid, &ids, &titles, &priors, prompt, root, token,
             )
@@ -295,21 +288,12 @@ pub async fn dev_tools_workspace_verify_adoptions(
                     VERIFY_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
                 }
             }
-        })
-        .catch_unwind()
-        .await;
-
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %jid_for_panic,
-                panic = %msg,
-                "workspace adoption-verify task panicked — marking job as failed"
-            );
+        },
+        move |msg| async move {
             VERIFY_JOBS.emit_line(&app_for_panic, &jid_for_panic, format!("[Failed] {msg}"));
             VERIFY_JOBS.set_status(&app_for_panic, &jid_for_panic, "failed", Some(msg));
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }
@@ -348,16 +332,6 @@ pub fn dev_tools_workspace_get_verify_status(
     } else {
         Ok(json!({ "job_id": job_id, "status": "not_found" }))
     }
-}
-
-#[tauri::command]
-pub fn dev_tools_workspace_cancel_verify(
-    app: tauri::AppHandle,
-    state: State<'_, Arc<AppState>>,
-    job_id: String,
-) -> Result<(), AppError> {
-    require_auth_sync(&state)?;
-    VERIFY_JOBS.cancel(&app, &job_id)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -431,7 +405,11 @@ async fn run_verify(
                     // An out-of-range index is a model error, not a verdict —
                     // dropping it is safer than mismarking a neighbour.
                     if v.n == 0 || v.n > ids.len() {
-                        VERIFY_JOBS.emit_line(app, job_id, format!("[Ignored] verdict for unknown item #{}", v.n));
+                        VERIFY_JOBS.emit_line(
+                            app,
+                            job_id,
+                            format!("[Ignored] verdict for unknown item #{}", v.n),
+                        );
                         continue;
                     }
                     let title = &titles[v.n - 1];
@@ -487,7 +465,9 @@ async fn run_verify(
             let trimmed = e.trim();
             crate::utils::text::truncate_on_char_boundary(trimmed, 600).to_string()
         });
-        if let Err(e) = repo::set_adoption(db, practice_id, project_id, state, note.as_deref(), None) {
+        if let Err(e) =
+            repo::set_adoption(db, practice_id, project_id, state, note.as_deref(), None)
+        {
             tracing::warn!(error = %e, practice_id, "verify: failed to record verdict");
             continue;
         }

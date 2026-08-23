@@ -12,12 +12,20 @@ pub(super) const HTTP_TIMEOUT_SECS: u64 = 600;
 pub(super) const MAX_TOOL_ITERS: usize = 6;
 /// Cap on a single http_get response fed back to the model.
 pub(super) const HTTP_GET_MAX_BYTES: usize = 16 * 1024;
+/// Deadline for the built-in `http_get` tool. Deliberately short and separate
+/// from `HTTP_TIMEOUT_SECS`: that 600 s budget is the LLM's, and the tool client
+/// is a different trust context that must not inherit it. Was applied per-request
+/// via `.timeout(10)`; it is now the client's own timeout.
+pub(super) const HTTP_GET_TIMEOUT_SECS: u64 = 10;
 
 /// Whether a `ModelProfile.provider` string selects this remote HTTP path.
 /// Phase 1: Qwen / DashScope only. Adding OpenAI/Gemini later is a one-line
 /// extension here plus a price-table entry.
 pub fn is_remote_http_provider(provider: &str) -> bool {
-    matches!(provider.trim().to_ascii_lowercase().as_str(), "qwen" | "dashscope")
+    matches!(
+        provider.trim().to_ascii_lowercase().as_str(),
+        "qwen" | "dashscope"
+    )
 }
 
 /// Per-1M-token USD pricing (verified Sep-2025 SKUs). Unknown models -> None,
@@ -44,10 +52,22 @@ pub(super) fn cost_of(model: &str, in_tok: u64, out_tok: u64) -> f64 {
 /// not be able to trigger them, and connector tools also need the local
 /// credential bridge (Phase 3b-connectors).
 pub(super) const REMOTE_SAFE_MCP_TOOLS: &[&str] = &[
-    "personas_list", "personas_get", "personas_status", "personas_result", "personas_health",
-    "personas_knowledge_search", "personas_search_executions", "personas_list_templates",
-    "context_list_groups", "context_search_by_keyword", "context_get_by_file_path", "context_neighbors",
-    "arena_list_models", "arena_list_runs", "arena_run_status", "arena_get_results",
+    "personas_list",
+    "personas_get",
+    "personas_status",
+    "personas_result",
+    "personas_health",
+    "personas_knowledge_search",
+    "personas_search_executions",
+    "personas_list_templates",
+    "context_list_groups",
+    "context_search_by_keyword",
+    "context_get_by_file_path",
+    "context_neighbors",
+    "arena_list_models",
+    "arena_list_runs",
+    "arena_run_status",
+    "arena_get_results",
     "obsidian_vault_search",
     // Bounded write: lets a running persona post its own summary to Messages.
     "post_message",
@@ -59,8 +79,10 @@ pub(super) const REMOTE_SAFE_MCP_TOOLS: &[&str] = &[
 /// to the model). Off by default because enabling sends connector RESULTS (e.g.
 /// email content) to the remote provider — a per-team data-residency decision.
 pub(super) const CONNECTOR_TOOLS: &[&str] = &[
-    "gmail_list_messages", "gmail_get_message",
-    "gdrive_list_files", "gdrive_get_file",
+    "gmail_list_messages",
+    "gmail_get_message",
+    "gdrive_list_files",
+    "gdrive_get_file",
     "gcalendar_list_events",
 ];
 

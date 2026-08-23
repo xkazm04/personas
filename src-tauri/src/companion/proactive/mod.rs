@@ -167,7 +167,10 @@ pub const FLEET_OP_COMPLETED_TRIGGER_KIND: &str = "fleet_op_completed";
 /// up on the next tick (spending a budget unit at that point) or aged out by
 /// [`sweep_lifecycle`]. The budget bypass is therefore a property of the
 /// *direct* delivery path, not a licence to strand a row.
-pub fn enqueue_external(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<ProactiveMessage>, AppError> {
+pub fn enqueue_external(
+    pool: &UserDbPool,
+    nudge: &Nudge,
+) -> Result<Option<ProactiveMessage>, AppError> {
     enqueue_if_new(pool, nudge)
 }
 
@@ -554,7 +557,10 @@ pub fn deliver_now(pool: &UserDbPool, app: &tauri::AppHandle, msg: ProactiveMess
             ..msg
         }],
     };
-    if let Err(e) = app.emit(crate::commands::companion::proactive::PROACTIVE_EVENT, payload) {
+    if let Err(e) = app.emit(
+        crate::commands::companion::proactive::PROACTIVE_EVENT,
+        payload,
+    ) {
         tracing::warn!(error = %e, "proactive: deliver_now event emit failed");
     }
 }
@@ -690,9 +696,11 @@ mod tests {
     fn count_rows(pool: &UserDbPool) -> i64 {
         pool.get()
             .unwrap()
-            .query_row("SELECT COUNT(*) FROM companion_proactive_message", [], |r| {
-                r.get(0)
-            })
+            .query_row(
+                "SELECT COUNT(*) FROM companion_proactive_message",
+                [],
+                |r| r.get(0),
+            )
             .unwrap()
     }
 
@@ -721,9 +729,11 @@ mod tests {
         let pool = test_pool();
         // dev_goal* share a per-kind cap of 2.
         for i in 0..5 {
-            assert!(enqueue_external(&pool, &nudge("dev_goal_stalled", &format!("goal{i}")))
-                .unwrap()
-                .is_some());
+            assert!(
+                enqueue_external(&pool, &nudge("dev_goal_stalled", &format!("goal{i}")))
+                    .unwrap()
+                    .is_some()
+            );
         }
         let released = release_pending(&pool).unwrap();
         assert_eq!(released.len(), 2, "per-kind cap releases 2");
@@ -764,7 +774,9 @@ mod tests {
         let released = release_pending(&pool).unwrap();
         assert_eq!(released.len(), 3, "2 goal nudges (cap) + the incident");
         assert!(
-            released.iter().any(|m| m.trigger_kind == "incident_blocker"),
+            released
+                .iter()
+                .any(|m| m.trigger_kind == "incident_blocker"),
             "the incident must not be starved by the capped goal kind"
         );
     }
@@ -775,7 +787,13 @@ mod tests {
     #[test]
     fn stale_queued_row_expires_and_its_trigger_refires_immediately() {
         let pool = test_pool();
-        seed(&pool, "old", "dev_goal_stalled", "datetime('now','-3 days')", "NULL");
+        seed(
+            &pool,
+            "old",
+            "dev_goal_stalled",
+            "datetime('now','-3 days')",
+            "NULL",
+        );
 
         // Same (trigger_kind, trigger_ref) as the stale row.
         let fresh = enqueue_external(&pool, &nudge("dev_goal_stalled", "old"))
@@ -792,7 +810,13 @@ mod tests {
     #[test]
     fn fresh_queued_row_is_delivered_not_expired() {
         let pool = test_pool();
-        seed(&pool, "recent", "fleet_stale", "datetime('now','-2 hours')", "NULL");
+        seed(
+            &pool,
+            "recent",
+            "fleet_stale",
+            "datetime('now','-2 hours')",
+            "NULL",
+        );
         let released = release_pending(&pool).unwrap();
         assert_eq!(released.len(), 1);
         assert_eq!(status_of(&pool, "recent"), "delivered");
@@ -845,7 +869,11 @@ mod tests {
         );
         let released = release_pending(&pool).unwrap();
         assert_eq!(status_of(&pool, "ancient"), "expired");
-        assert_eq!(released.len(), 1, "the 2-day-late commitment is still honoured");
+        assert_eq!(
+            released.len(),
+            1,
+            "the 2-day-late commitment is still honoured"
+        );
         assert_eq!(released[0].id, "late_but_ok");
     }
 

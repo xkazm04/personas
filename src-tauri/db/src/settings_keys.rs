@@ -62,6 +62,16 @@ pub const DELEGATE_BASE_URL: &str = "delegate_base_url";
 /// Active CLI engine: `"claude_code"` or `"codex_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
 
+/// Absolute path of the knowledge-registry working copy this installation is
+/// paired with (P6 consult lane, `engine::knowledge_consult`).
+///
+/// The workspace registry section keeps its richer link state in its own store;
+/// this key exists because the RUNNER needs the path and runs with no frontend
+/// — a background or scheduled execution has no other way to learn it. Unset,
+/// blank, or pointing at a directory that no longer exists all mean the same
+/// thing: the consult lane is off and executions run exactly as before.
+pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
+
 /// Browser-bridge pairing token — the secret the Athena Browser Bridge
 /// extension presents on its WebSocket handshake. Persisted so the extension
 /// pairs once and survives app restarts; regenerated from the Companion
@@ -632,6 +642,20 @@ pub const TEAM_SLACK_BRIDGE_CURSOR_PREFIX: &str = "team_slack_bridge_cursor:";
 /// fall back to the legacy global `autonomous_*` flags.
 pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 
+/// Per-project **App master mandate**. Full key:
+/// `app_master_mandate:<project_id>`, value = a JSON
+/// `personas_engine::app_master::MandateRecord`. Written once when a kp
+/// App-master hire is approved; read by the autonomy front door and by the
+/// diff chokepoint. Absent = the project carries no App master, which is the
+/// overwhelmingly common case and means "behave exactly as before".
+///
+/// A JSON blob rather than an enum because the mandate is genuinely
+/// structured (a rung, a class list, an owner, the tenure dates) — but
+/// `validate_value` still rejects malformed JSON at write time, so a
+/// truncated record can never be read back as an *empty* (i.e. permissive)
+/// mandate.
+pub const APP_MASTER_MANDATE_PREFIX: &str = "app_master_mandate:";
+
 /// Durable mirror of the webview appearance preferences (JSON-encoded object:
 /// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
 /// `customTheme`). The render-path authority stays in webview localStorage
@@ -727,6 +751,7 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_MODEL,
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
+    KNOWLEDGE_REGISTRY_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,
@@ -825,6 +850,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     HEALTH_WATCH_PREFIX,
     CLOUD_SYNC_CURSOR_PREFIX,
     AUTOPILOT_MODE_PREFIX,
+    APP_MASTER_MANDATE_PREFIX,
     TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
 ];
 
@@ -887,6 +913,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // still reject truncated/garbage JSON at write time instead of letting the
     // Axum read handler fall back to defaults and silently drop the setting.
     if key.starts_with(AUTO_OPTIMIZE_PREFIX) || key.starts_with(HEALTH_WATCH_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
+    // Per-project App master mandate (prefix key). Same reasoning as above: the
+    // consumer struct lives in `personas-engine`, which `personas-db` cannot
+    // import, but a truncated blob must still be refused at write time — a
+    // mandate that fails to parse is read as ABSENT, and an absent mandate
+    // enforces nothing.
+    if key.starts_with(APP_MASTER_MANDATE_PREFIX) {
         return validate_json_wellformed(key, value);
     }
     match key {
@@ -1166,6 +1200,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
     if key.starts_with(AUTO_ROLLBACK_PREFIX)
         || key.starts_with(AUTO_OPTIMIZE_PREFIX)
         || key.starts_with(AUTOPILOT_MODE_PREFIX)
+        || key.starts_with(APP_MASTER_MANDATE_PREFIX)
     {
         return Some("autonomy");
     }
@@ -1465,7 +1500,11 @@ mod tests {
             r#"{"memoryRules":[],"memoryRejectCategories":[],"reviewRules":[]}"#
         )
         .is_ok());
-        assert!(validate_value(PERFORMANCE_DIGEST, r#"{"enabled":false,"cadence":"weekly"}"#).is_ok());
+        assert!(validate_value(
+            PERFORMANCE_DIGEST,
+            r#"{"enabled":false,"cadence":"weekly"}"#
+        )
+        .is_ok());
         // All-optional-field structs accept an empty object.
         assert!(validate_value(GLOBAL_MODEL_PROFILE, "{}").is_ok());
         assert!(validate_value(OBSIDIAN_MIRROR_CONFIG, "{}").is_ok());
@@ -1499,11 +1538,9 @@ mod tests {
         )
         .is_ok());
         // Unknown theme id is ACCEPTED (frontend-owned catalog; coerced on read).
-        assert!(validate_value(
-            APPEARANCE_PREFERENCES,
-            r#"{"themeId":"some-future-theme"}"#
-        )
-        .is_ok());
+        assert!(
+            validate_value(APPEARANCE_PREFERENCES, r#"{"themeId":"some-future-theme"}"#).is_ok()
+        );
         // Stable enum fields ARE validated when present.
         assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"textScale":"gigantic"}"#).is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"brightness":"ultra"}"#).is_err());
@@ -1550,7 +1587,10 @@ mod tests {
         // Prefix families.
         assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
         assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
-        assert_eq!(audit_category("health_watch:persona-2"), Some("notifications"));
+        assert_eq!(
+            audit_category("health_watch:persona-2"),
+            Some("notifications")
+        );
         assert_eq!(
             audit_category("execution_retention_months:persona-3"),
             Some("retention")

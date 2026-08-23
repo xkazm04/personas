@@ -10,7 +10,7 @@ techniques:
   - dead-letter-design
   - non-delivery-ledgers
 evidence:
-  - src-tauri/src/engine/background.rs                          # atomic-claim tick, two-snapshot stuck reaper, EventGateReason typed non-delivery ledger
+  - src-tauri/src/engine/background/                          # atomic-claim tick, two-snapshot stuck reaper, EventGateReason typed non-delivery ledger
   - src-tauri/db/src/repos/communication/events.rs              # conditional-write claim_pending, one-UPDATE reap verdict, bounded retry→dead_letter, TOCTOU-guarded manual redrive w/ lineage
   - src/features/triggers/sub_dead_letter/DeadLetterTab.tsx     # triage surface: failure-mode clustering, filters, bulk retry/discard with per-item typed failure reporting
   - src-tauri/db/src/repos/resources/cloud_webhook_watermarks.rs # restart-safe dedup watermark so upstream redelivery doesn't duplicate

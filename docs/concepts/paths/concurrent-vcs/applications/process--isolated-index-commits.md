@@ -41,7 +41,7 @@ git show --name-status --format= HEAD                   # file list AND status l
    (Q3/Q4/Q5); the staged-count guard is TOCTOU (Q6). The earlier diagnosis
    ("lefthook re-stages") was refuted — no hooks were present.
 3. **The correct form was already in the checkout and had not traveled.**
-   `.claude/skills/mvp/state/calibration.md:54` (run 2) states the defect and
+   `.claude/mvp/calibration.md:54` (run 2) states the defect and
    the fix independently; `:84` (run 4) reports it holding — "zero swept
    commits across 8 builders plus the orchestrator", four consecutive runs.
    Zero SKILL.md specifications mention `GIT_INDEX_FILE`; nine still prescribe

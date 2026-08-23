@@ -25,9 +25,9 @@
 
 use std::path::Path;
 
+use personas_core::error::AppError;
 use personas_db::repos::core::memories as mem_repo;
 use personas_db::DbPool;
-use personas_core::error::AppError;
 
 /// Env var that gates the projection write. Unset → no-op.
 pub const PROJECTION_ENV: &str = "PERSONAS_CLAUDE_MD_PROJECTION";

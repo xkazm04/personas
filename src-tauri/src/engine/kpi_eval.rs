@@ -66,8 +66,12 @@ pub async fn evaluate_kpi(pool: &DbPool, kpi_id: &str) -> Result<DevKpiMeasureme
                 serde_json::from_str(&binding.procedure).map_err(|e| {
                     AppError::Internal(format!("Stored binding procedure is corrupt: {e}"))
                 })?;
-            match crate::engine::kpi_binding::execute_procedure(pool, &binding.credential_id, &procedure)
-                .await
+            match crate::engine::kpi_binding::execute_procedure(
+                pool,
+                &binding.credential_id,
+                &procedure,
+            )
+            .await
             {
                 Ok((value, evidence)) => {
                     if let Some(mt) = kpi
@@ -88,7 +92,9 @@ pub async fn evaluate_kpi(pool: &DbPool, kpi_id: &str) -> Result<DevKpiMeasureme
             }
         }
         other => {
-            return Err(AppError::Validation(format!("Unknown measure_kind '{other}'")))
+            return Err(AppError::Validation(format!(
+                "Unknown measure_kind '{other}'"
+            )))
         }
     };
 
@@ -106,7 +112,10 @@ pub async fn evaluate_due_kpis(
     let kpis = repo::list_kpis(pool, project_id, Some("active"))?;
     let mut out = HashMap::new();
     for kpi in kpis {
-        if !matches!(kpi.measure_kind.as_str(), "codebase" | "derived" | "connector") {
+        if !matches!(
+            kpi.measure_kind.as_str(),
+            "codebase" | "derived" | "connector"
+        ) {
             continue;
         }
         let due = match (kpi.cadence.as_str(), kpi.last_measured_at.as_deref()) {
@@ -165,7 +174,10 @@ async fn measure_codebase(
         .get("cmd")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Validation("codebase measure_config needs a 'cmd'".into()))?;
-    let parse = config.get("parse").and_then(|v| v.as_str()).unwrap_or("regex:([\\d.]+)");
+    let parse = config
+        .get("parse")
+        .and_then(|v| v.as_str())
+        .unwrap_or("regex:([\\d.]+)");
 
     let output = run_shell_bounded(root_path, cmd).await?;
     let value = parse_value(&output, parse).ok_or_else(|| {
@@ -208,14 +220,17 @@ async fn run_shell_bounded(cwd: &str, cmd: &str) -> Result<String, AppError> {
     }
 
     let fut = command.output();
-    let out = tokio::time::timeout(std::time::Duration::from_secs(CODEBASE_CMD_TIMEOUT_SECS), fut)
-        .await
-        .map_err(|_| {
-            AppError::Internal(format!(
-                "Measurement command timed out after {CODEBASE_CMD_TIMEOUT_SECS}s"
-            ))
-        })?
-        .map_err(|e| AppError::Internal(format!("Failed to run measurement command: {e}")))?;
+    let out = tokio::time::timeout(
+        std::time::Duration::from_secs(CODEBASE_CMD_TIMEOUT_SECS),
+        fut,
+    )
+    .await
+    .map_err(|_| {
+        AppError::Internal(format!(
+            "Measurement command timed out after {CODEBASE_CMD_TIMEOUT_SECS}s"
+        ))
+    })?
+    .map_err(|e| AppError::Internal(format!("Failed to run measurement command: {e}")))?;
 
     let mut text = String::from_utf8_lossy(&out.stdout).into_owned();
     if !out.stderr.is_empty() {
@@ -328,14 +343,18 @@ fn measure_derived(
                  JOIN team_assignments a ON a.id = e.assignment_id
                  WHERE a.team_id = ?1 AND e.kind = 'qa_changes_requested_rework'
                    AND datetime(e.created_at) > datetime('now','-7 days')",
-                rusqlite::params![team_id], |r| r.get(0))?;
+                rusqlite::params![team_id],
+                |r| r.get(0),
+            )?;
             let merges: f64 = conn.query_row(
                 "SELECT COUNT(*) FROM team_assignment_steps s
                  JOIN team_assignments a ON a.id = s.assignment_id
                  WHERE a.team_id = ?1 AND s.status = 'done'
                    AND LOWER(s.title) LIKE '%merge%'
                    AND datetime(s.completed_at) > datetime('now','-7 days')",
-                rusqlite::params![team_id], |r| r.get(0))?;
+                rusqlite::params![team_id],
+                |r| r.get(0),
+            )?;
             // No QA activity in the window is NOT a healthy 0% bounce rate —
             // it's no data. Returning 0.0 recorded a falsely-perfect KPI; error
             // instead so the evaluator skips recording until there's real data.
@@ -345,7 +364,10 @@ fn measure_derived(
                 ));
             }
             let rate = bounces / (bounces + merges) * 100.0;
-            (rate, format!("bounces={bounces} cleanMerges={merges} window=7d"))
+            (
+                rate,
+                format!("bounces={bounces} cleanMerges={merges} window=7d"),
+            )
         }
         // Failed / total executions of the team's members, last 7 days, %.
         "exec_failure_rate" => {
@@ -355,11 +377,14 @@ fn measure_derived(
                  FROM persona_executions e
                  JOIN persona_team_members m ON m.persona_id = e.persona_id AND m.team_id = ?1
                  WHERE datetime(e.created_at) > datetime('now','-7 days')",
-                rusqlite::params![team_id], |r| Ok((r.get::<_, Option<f64>>(0)?.unwrap_or(0.0), r.get(1)?)))?;
+                rusqlite::params![team_id],
+                |r| Ok((r.get::<_, Option<f64>>(0)?.unwrap_or(0.0), r.get(1)?)),
+            )?;
             // Zero executions is no data, not a healthy 0% failure rate.
             if total <= 0.0 {
                 return Err(AppError::Validation(
-                    "exec_failure_rate: no team executions in the last 7 days — insufficient data".into(),
+                    "exec_failure_rate: no team executions in the last 7 days — insufficient data"
+                        .into(),
                 ));
             }
             let rate = failed / total * 100.0;
@@ -380,8 +405,13 @@ fn measure_derived(
                 "SELECT MAX(julianday('now') - julianday(datetime(created_at)))
                  FROM team_assignments
                  WHERE team_id = ?1 AND status = 'awaiting_review'",
-                rusqlite::params![team_id], |r| r.get(0))?;
-            (days.unwrap_or(0.0), "oldest parked awaiting_review assignment".into())
+                rusqlite::params![team_id],
+                |r| r.get(0),
+            )?;
+            (
+                days.unwrap_or(0.0),
+                "oldest parked awaiting_review assignment".into(),
+            )
         }
         other => {
             return Err(AppError::Validation(format!(

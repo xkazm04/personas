@@ -48,7 +48,8 @@ pub const METRIC_TYPES: &[MetricType] = &[
         unit: "users",
         direction: "up",
         categories: &["analytics", "marketing"],
-        contract: "Count of DISTINCT human visitors/users of the product over the trailing 7 days. \
+        contract:
+            "Count of DISTINCT human visitors/users of the product over the trailing 7 days. \
                    One non-negative integer.",
         min: 0.0,
         integer: true,
@@ -59,7 +60,8 @@ pub const METRIC_TYPES: &[MetricType] = &[
         unit: "requests",
         direction: "up",
         categories: &["analytics", "monitoring", "cloud"],
-        contract: "Total backend API requests served over the trailing 7 days. One non-negative integer.",
+        contract:
+            "Total backend API requests served over the trailing 7 days. One non-negative integer.",
         min: 0.0,
         integer: true,
     },
@@ -91,7 +93,8 @@ pub const METRIC_TYPES: &[MetricType] = &[
         unit: "$",
         direction: "up",
         categories: &["finance"],
-        contract: "Gross revenue collected over the trailing 7 days in USD. One non-negative number.",
+        contract:
+            "Gross revenue collected over the trailing 7 days in USD. One non-negative number.",
         min: 0.0,
         integer: false,
     },
@@ -204,7 +207,9 @@ pub fn find_matching_credentials(
     metric_type_id: &str,
 ) -> Result<Vec<MatchingCredential>, AppError> {
     let Some(mt) = metric_type(metric_type_id) else {
-        return Err(AppError::Validation(format!("Unknown metric type '{metric_type_id}'")));
+        return Err(AppError::Validation(format!(
+            "Unknown metric type '{metric_type_id}'"
+        )));
     };
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
@@ -224,14 +229,16 @@ pub fn find_matching_credentials(
     Ok(rows
         .into_iter()
         .filter(|(_, _, _, _, cat)| mt.categories.contains(&cat.as_str()))
-        .map(|(id, name, service_type, label, category)| MatchingCredential {
-            has_recipe: recipe(&service_type, metric_type_id).is_some(),
-            credential_id: id,
-            name,
-            service_type,
-            connector_label: label,
-            category,
-        })
+        .map(
+            |(id, name, service_type, label, category)| MatchingCredential {
+                has_recipe: recipe(&service_type, metric_type_id).is_some(),
+                credential_id: id,
+                name,
+                service_type,
+                connector_label: label,
+                category,
+            },
+        )
         .collect())
 }
 
@@ -276,7 +283,9 @@ fn extract_value(body: &serde_json::Value, extract: &str) -> Option<f64> {
         };
     }
     match mode {
-        "json_path" => cur.as_f64().or_else(|| cur.as_str().and_then(|s| s.parse().ok())),
+        "json_path" => cur
+            .as_f64()
+            .or_else(|| cur.as_str().and_then(|s| s.parse().ok())),
         "count" => cur.as_array().map(|a| a.len() as f64),
         _ => None,
     }
@@ -293,7 +302,9 @@ pub async fn execute_procedure(
 
     let url = render_template(&procedure.http.url, &fields);
     let method = reqwest::Method::from_bytes(procedure.http.method.to_uppercase().as_bytes())
-        .map_err(|_| AppError::Validation(format!("Bad HTTP method '{}'", procedure.http.method)))?;
+        .map_err(|_| {
+            AppError::Validation(format!("Bad HTTP method '{}'", procedure.http.method))
+        })?;
     // SSRF-safe client: KPI procedure URLs are LLM-composed/frozen and fired on
     // a schedule, so they must not be able to reach cloud-metadata or internal
     // services. Matches every other outbound path in the crate (build.rs client
@@ -308,8 +319,11 @@ pub async fn execute_procedure(
     if let Some(body) = &procedure.http.body {
         // Render templates inside the JSON body via its string form.
         let rendered = render_template(&body.to_string(), &fields);
-        let parsed: serde_json::Value = serde_json::from_str(&rendered)
-            .map_err(|e| AppError::Validation(format!("Procedure body is not valid JSON after templating: {e}")))?;
+        let parsed: serde_json::Value = serde_json::from_str(&rendered).map_err(|e| {
+            AppError::Validation(format!(
+                "Procedure body is not valid JSON after templating: {e}"
+            ))
+        })?;
         req = req.json(&parsed);
     }
 
@@ -353,7 +367,9 @@ pub async fn execute_procedure(
 /// and never records a measurement.
 pub fn check_invariants(mt: &MetricType, value: f64) -> Result<(), AppError> {
     if !value.is_finite() {
-        return Err(AppError::Validation("Measured value is not a finite number".into()));
+        return Err(AppError::Validation(
+            "Measured value is not a finite number".into(),
+        ));
     }
     if value < mt.min {
         return Err(AppError::Validation(format!(
@@ -464,7 +480,11 @@ Respond with your analysis, then EXACTLY ONE line that is this JSON object and n
         mt_id = mt_id,
         contract = mt.contract,
         unit = mt.unit,
-        int_rule = if mt.integer { "integer" } else { "decimal allowed" },
+        int_rule = if mt.integer {
+            "integer"
+        } else {
+            "decimal allowed"
+        },
         brief = brief,
         field_keys = field_keys,
         kpi_name = kpi.name,
@@ -504,7 +524,8 @@ Respond with your analysis, then EXACTLY ONE line that is this JSON object and n
         if let Some(procedure) = parse_procedure(&blob) {
             return Ok((procedure, "llm"));
         }
-        declined = blob.contains("\"kpi_procedure\": null") || blob.contains("\"kpi_procedure\":null");
+        declined =
+            blob.contains("\"kpi_procedure\": null") || blob.contains("\"kpi_procedure\":null");
         if declined {
             break;
         }

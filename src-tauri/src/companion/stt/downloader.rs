@@ -122,6 +122,15 @@ pub async fn download_model(model_id: &str, app: &AppHandle) -> Result<(), AppEr
     let url = format!("{HF_BASE}/ggml-{model_id}.bin");
     let final_path = model_path(model_id)?;
 
+    // Not `SHARED_HTTP`: a model/engine archive needs the 20-minute
+    // `DOWNLOAD_TIMEOUT`, not 30 s. The URL is built from compile-time literals
+    // (`HF_BASE`) plus a curated id, so nothing user-supplied reaches the
+    // authority and the SSRF-safe resolver would add nothing. This is one of
+    // FOUR byte-for-byte identical download clients (stt/downloader.rs,
+    // stt/installer.rs, tts/kokoro_installer.rs, tts/pocket_installer.rs) — the
+    // right home for them is the `ClientProfile` factory named in
+    // `outbound-http-call.md` §8 Gap 1, not a fifth fixed constant beside
+    // `SHARED_HTTP`.
     let client = reqwest::Client::builder()
         .timeout(DOWNLOAD_TIMEOUT)
         .build()
@@ -132,7 +141,14 @@ pub async fn download_model(model_id: &str, app: &AppHandle) -> Result<(), AppEr
         // two models can stream concurrently — sweeping every `*.partial` in the
         // shared dir destroyed the other download's in-flight file.
         cleanup_partial(&final_path);
-        emit(app, model_id, DownloadState::Failed, 0, None, Some(e.to_string()));
+        emit(
+            app,
+            model_id,
+            DownloadState::Failed,
+            0,
+            None,
+            Some(e.to_string()),
+        );
         return Err(e);
     }
 

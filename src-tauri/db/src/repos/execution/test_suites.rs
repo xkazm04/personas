@@ -2,6 +2,7 @@ use rusqlite::params;
 
 use crate::models::PersonaTestSuite;
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 // -- Row mapper -------------------------------------------------
@@ -26,7 +27,7 @@ pub fn create(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
+        let conn = pool.conn("test_suites::create")?;
         conn.execute(
             "INSERT INTO test_suites (id, persona_id, name, description, scenarios, scenario_count, source_run_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
@@ -40,7 +41,7 @@ crud_get_by_id!(PersonaTestSuite, "test_suites", "TestSuite", row_to_suite);
 
 pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaTestSuite>, AppError> {
     timed_query!("test_suites", "test_suites::list_by_persona", {
-        let conn = pool.get()?;
+        let conn = pool.conn("test_suites::list_by_persona")?;
         let mut stmt = conn.prepare(
             "SELECT * FROM test_suites WHERE persona_id = ?1
              ORDER BY updated_at DESC",
@@ -60,7 +61,7 @@ pub fn list_by_persona_ids(
         if persona_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let conn = pool.get()?;
+        let conn = pool.conn("test_suites::list_by_persona_ids")?;
         let placeholders: Vec<String> = persona_ids
             .iter()
             .enumerate()
@@ -91,7 +92,7 @@ pub fn update(
 ) -> Result<PersonaTestSuite, AppError> {
     timed_query!("test_suites", "test_suites::update", {
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let conn = pool.conn("test_suites::update")?;
         conn.execute(
             "UPDATE test_suites SET
                 name = COALESCE(?1, name),

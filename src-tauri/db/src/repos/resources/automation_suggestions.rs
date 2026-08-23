@@ -50,28 +50,43 @@ pub struct MinedExecution {
     pub created_at: String,
 }
 
+/// Projection behind `MinedEvent`. Every name is a real `persona_events`
+/// column, read off the DDL rather than inferred from the struct field.
+const MINED_EVENT_COLUMNS: &str = "id, event_type, source_id, created_at";
+
+row_mapper!(row_to_mined_event -> MinedEvent {
+    id,
+    event_type,
+    source_id,
+    created_at,
+});
+
+/// Projection behind `MinedExecution`, checked the same way against the
+/// `persona_executions` DDL.
+const MINED_EXECUTION_COLUMNS: &str = "id, persona_id, trigger_id, created_at";
+
+row_mapper!(row_to_mined_execution -> MinedExecution {
+    id,
+    persona_id,
+    trigger_id,
+    created_at,
+});
+
 /// Events eligible as co-occurrence antecedents: everything in the lookback
 /// except dead-letter/discarded rows (dead-letter mining is a deferred,
 /// separate lens). Ordered ascending so the miner's window scan is a single
 /// forward pass; capped to bound per-tick memory.
 pub fn mining_events(pool: &DbPool, since: &str, cap: i64) -> Result<Vec<MinedEvent>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, event_type, source_id, created_at
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {MINED_EVENT_COLUMNS}
            FROM persona_events
           WHERE created_at >= ?1
             AND status NOT IN ('dead_letter', 'discarded')
           ORDER BY created_at ASC
           LIMIT ?2",
-    )?;
-    let rows = stmt.query_map(params![since, cap], |row| {
-        Ok(MinedEvent {
-            id: row.get(0)?,
-            event_type: row.get(1)?,
-            source_id: row.get(2)?,
-            created_at: row.get(3)?,
-        })
-    })?;
+    ))?;
+    let rows = stmt.query_map(params![since, cap], row_to_mined_event)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
 }
 
@@ -84,22 +99,15 @@ pub fn mining_manual_executions(
     cap: i64,
 ) -> Result<Vec<MinedExecution>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, persona_id, trigger_id, created_at
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {MINED_EXECUTION_COLUMNS}
            FROM persona_executions
           WHERE created_at >= ?1
             AND trigger_id IS NULL
           ORDER BY created_at ASC
           LIMIT ?2",
-    )?;
-    let rows = stmt.query_map(params![since, cap], |row| {
-        Ok(MinedExecution {
-            id: row.get(0)?,
-            persona_id: row.get(1)?,
-            trigger_id: row.get(2)?,
-            created_at: row.get(3)?,
-        })
-    })?;
+    ))?;
+    let rows = stmt.query_map(params![since, cap], row_to_mined_execution)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
 }
 
@@ -107,34 +115,43 @@ pub fn mining_manual_executions(
 // Suggestion rows
 // ---------------------------------------------------------------------------
 
+/// One projection for every full-row read of `automation_suggestions`.
+/// Mirrors `CREATE TABLE` at
+/// `migrations/incremental/c04_milestones_and_autopilot.rs:423`, column for
+/// column and in DDL order.
+const COLUMNS: &str = "id, event_type, persona_id, status, occurrence_count, \
+     manual_run_count, support, window_seconds, lookback_days, evidence_json, \
+     committed_trigger_id, first_seen_at, last_seen_at, decided_at, created_at, updated_at";
+
+/// Hand-written rather than `row_mapper!`: `status` goes through
+/// `AutomationSuggestionStatus::from_db`, three counts clamp a signed column
+/// into `u32`, and `evidence` is parsed out of the `evidence_json` column — a
+/// field whose name does NOT match its column, which is exactly the mapping a
+/// name-inferring conversion would have got wrong.
 fn row_to_suggestion(row: &rusqlite::Row<'_>) -> rusqlite::Result<AutomationSuggestion> {
-    let status_str: String = row.get(3)?;
-    let evidence_json: String = row.get(9)?;
+    let status_str: String = row.get("status")?;
+    let evidence_json: String = row.get("evidence_json")?;
     let evidence: Vec<AutomationSuggestionEvidence> =
         serde_json::from_str(&evidence_json).unwrap_or_default();
     Ok(AutomationSuggestion {
-        id: row.get(0)?,
-        event_type: row.get(1)?,
-        persona_id: row.get(2)?,
+        id: row.get("id")?,
+        event_type: row.get("event_type")?,
+        persona_id: row.get("persona_id")?,
         status: AutomationSuggestionStatus::from_db(&status_str),
-        occurrence_count: row.get::<_, i64>(4)?.max(0) as u32,
-        manual_run_count: row.get::<_, i64>(5)?.max(0) as u32,
-        support: row.get::<_, f64>(6)? as f32,
-        window_seconds: row.get::<_, i64>(7)?.max(0) as u32,
-        lookback_days: row.get::<_, i64>(8)?.max(0) as u32,
+        occurrence_count: row.get::<_, i64>("occurrence_count")?.max(0) as u32,
+        manual_run_count: row.get::<_, i64>("manual_run_count")?.max(0) as u32,
+        support: row.get::<_, f64>("support")? as f32,
+        window_seconds: row.get::<_, i64>("window_seconds")?.max(0) as u32,
+        lookback_days: row.get::<_, i64>("lookback_days")?.max(0) as u32,
         evidence,
-        committed_trigger_id: row.get(10)?,
-        first_seen_at: row.get(11)?,
-        last_seen_at: row.get(12)?,
-        decided_at: row.get(13)?,
-        created_at: row.get(14)?,
-        updated_at: row.get(15)?,
+        committed_trigger_id: row.get("committed_trigger_id")?,
+        first_seen_at: row.get("first_seen_at")?,
+        last_seen_at: row.get("last_seen_at")?,
+        decided_at: row.get("decided_at")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
     })
 }
-
-const SELECT_COLS: &str = "id, event_type, persona_id, status, occurrence_count, \
-     manual_run_count, support, window_seconds, lookback_days, evidence_json, \
-     committed_trigger_id, first_seen_at, last_seen_at, decided_at, created_at, updated_at";
 
 /// All suggestions, strongest signal first (proposed before decided, then by
 /// support). The Studio feed filters client-side; the table stays small by
@@ -142,20 +159,20 @@ const SELECT_COLS: &str = "id, event_type, persona_id, status, occurrence_count,
 pub fn list(pool: &DbPool) -> Result<Vec<AutomationSuggestion>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(&format!(
-        "SELECT {SELECT_COLS} FROM automation_suggestions
+        "SELECT {COLUMNS} FROM automation_suggestions
           ORDER BY CASE status WHEN 'proposed' THEN 0 WHEN 'accepted' THEN 1 ELSE 2 END,
                    support DESC, occurrence_count DESC",
     ))?;
-    let rows = stmt.query_map([], |row| row_to_suggestion(row))?;
+    let rows = stmt.query_map([], row_to_suggestion)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<AutomationSuggestion, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(&format!(
-        "SELECT {SELECT_COLS} FROM automation_suggestions WHERE id = ?1",
+        "SELECT {COLUMNS} FROM automation_suggestions WHERE id = ?1",
     ))?;
-    stmt.query_row([id], |row| row_to_suggestion(row))
+    stmt.query_row([id], row_to_suggestion)
         .map_err(|e| match e {
             rusqlite::Error::QueryReturnedNoRows => {
                 AppError::NotFound(format!("automation suggestion {id} not found"))
@@ -233,7 +250,13 @@ pub fn prune_stale_proposed(
         "SELECT id, event_type, persona_id FROM automation_suggestions WHERE status = 'proposed'",
     )?;
     let rows: Vec<(String, String, String)> = stmt
-        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
+        .query_map([], |row| {
+            Ok((
+                row.get("id")?,
+                row.get("event_type")?,
+                row.get("persona_id")?,
+            ))
+        })?
         .collect::<Result<Vec<_>, _>>()?;
     let mut deleted = 0u32;
     for (id, event_type, persona_id) in rows {
@@ -295,7 +318,7 @@ pub fn committed_trigger_ids(pool: &DbPool) -> Result<Vec<String>, AppError> {
         "SELECT committed_trigger_id FROM automation_suggestions
           WHERE status = 'accepted' AND committed_trigger_id IS NOT NULL",
     )?;
-    let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>("committed_trigger_id"))?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
 }
 
@@ -307,6 +330,32 @@ pub fn decided_pairs(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
         "SELECT event_type, persona_id FROM automation_suggestions
           WHERE status IN ('accepted', 'rejected')",
     )?;
-    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let rows = stmt.query_map([], |row| {
+        Ok((row.get("event_type")?, row.get("persona_id")?))
+    })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every projection const in this file must prepare against the real
+    /// migrated schema. A by-name read of a column the table does not have
+    /// compiles fine and fails at runtime on the first row; this is the only
+    /// gate that catches it.
+    #[test]
+    fn every_projection_prepares_against_the_real_schema() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for (columns, table) in [
+            (COLUMNS, "automation_suggestions"),
+            (MINED_EVENT_COLUMNS, "persona_events"),
+            (MINED_EXECUTION_COLUMNS, "persona_executions"),
+        ] {
+            let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
+            conn.prepare(&sql)
+                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
+        }
+    }
 }

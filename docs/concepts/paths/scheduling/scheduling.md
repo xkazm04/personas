@@ -11,7 +11,7 @@ techniques:
   - schedule-observability
 evidence:
   - src-tauri/core/src/scheduler.rs          # next-run computation: one tz policy, anchored intervals, bounded slot enumeration
-  - src-tauri/src/engine/background.rs       # reconciliation tick, overlap skip-with-signal, backfill claims, EventGateLedger
+  - src-tauri/src/engine/background/       # reconciliation tick, overlap skip-with-signal, backfill claims, EventGateLedger
 counter_evidence:
   - src/features/triggers/lib/eventReason.ts # non-fire reason vocabulary hand-duplicated from the backend enum ("keep in sync")
 deviations:

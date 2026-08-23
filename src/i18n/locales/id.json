@@ -14428,7 +14428,12 @@
         "repo_pick_credential_first": "Pilih kredensial terlebih dahulu",
         "repo_private": "{name} (privat)",
         "section_title": "Registry pengetahuan",
-        "this_workspace": "ruang kerja ini"
+        "this_workspace": "ruang kerja ini",
+        "sync": "Sinkronkan",
+        "sync_current": "Salinan kerja registry sudah terkini",
+        "sync_failed": "Registry tidak tersinkron:",
+        "sync_pulled_one": "{count} commit ditarik ke salinan kerja registry",
+        "sync_pulled_other": "{count} commit ditarik ke salinan kerja registry"
       },
       "skills_library_unwired_body": "Skill buatan sendiri berasal dari registry pengetahuan yang dipegang ruang kerja ini. Hubungkan satu di Dev Tools → Workspaces, pada ruang kerja tempat proyek ini berada.",
       "skills_library_unwired_title": "Tidak ada registry yang terhubung",

@@ -78,9 +78,8 @@ impl CliUsage {
             return None;
         }
         let usage = value.get("usage");
-        let tok = |key: &str| -> Option<i64> {
-            usage.and_then(|u| u.get(key)).and_then(Value::as_i64)
-        };
+        let tok =
+            |key: &str| -> Option<i64> { usage.and_then(|u| u.get(key)).and_then(Value::as_i64) };
         Some(CliUsage {
             cost_usd: value.get("total_cost_usd").and_then(Value::as_f64),
             input_tokens: tok("input_tokens"),
@@ -606,9 +605,15 @@ mod tests {
                 |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
             )
             .unwrap();
-        assert_eq!(is_error, 1, "the failure must be visible to the health query");
+        assert_eq!(
+            is_error, 1,
+            "the failure must be visible to the health query"
+        );
         assert_eq!(reason, "timeout");
-        assert_eq!(cost, None, "unknown cost stays NULL rather than blocking the row");
+        assert_eq!(
+            cost, None,
+            "unknown cost stays NULL rather than blocking the row"
+        );
 
         // And it is what `companion_get_health` actually counts.
         let errors: i64 = conn

@@ -68,7 +68,8 @@ pub fn fleet_attention() -> Vec<Nudge> {
             }
             FleetSessionState::Exited => {
                 let exited_recently = (now_ms - s.last_activity_ms) <= FAILURE_WINDOW_MS;
-                let bad_exit = matches!(s.exit_code, Some(code) if code != 0) || s.exit_code.is_none();
+                let bad_exit =
+                    matches!(s.exit_code, Some(code) if code != 0) || s.exit_code.is_none();
                 if exited_recently && bad_exit {
                     let detail = match s.exit_code {
                         Some(c) => format!("exit code {c}"),

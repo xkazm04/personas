@@ -1,13 +1,12 @@
 //! Tauri commands for vector knowledge base CRUD, ingestion, and search.
 
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures_util::FutureExt;
 use rusqlite::params;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
+use crate::background_job::spawn_guarded;
 use crate::db::models::{
     KbDocument, KbEntity, KbExtractionRun, KbExtractionSchema, KbSearchQuery, KbSearchResponse,
     KnowledgeBase, VectorSearchResult,
@@ -15,23 +14,11 @@ use crate::db::models::{
 use crate::db::repos::resources::audit_log;
 use crate::db::{DbPool, UserDbPool};
 use crate::engine::event_registry::event_name;
-use crate::engine::{kb_extract, kb_ingest};
 use crate::engine::vector_store::SqliteVectorStore;
+use crate::engine::{kb_extract, kb_ingest};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
-
-/// Extract a printable message from a panic payload returned by `catch_unwind`.
-/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
-fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
-    if let Some(s) = panic.downcast_ref::<&str>() {
-        return s.to_string();
-    }
-    if let Some(s) = panic.downcast_ref::<String>() {
-        return s.clone();
-    }
-    "unknown panic".to_string()
-}
 
 /// Maximum recursion depth when scanning directories.
 const MAX_DIR_DEPTH: usize = 10;
@@ -457,67 +444,60 @@ async fn spawn_ingest_job(
     let kb_name_for_panic = kb_name.clone();
     let job_id_for_panic = job_id_clone.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let result = kb_ingest::ingest_files(
-            app.clone(),
-            user_db,
-            embedder,
-            vector_store,
-            kb,
-            file_paths,
-            job_id_clone.clone(),
-            cancel,
-        )
-        .await;
+    spawn_guarded(
+        "KB ingest",
+        job_id_for_panic.clone(),
+        async move {
+            let result = kb_ingest::ingest_files(
+                app.clone(),
+                user_db,
+                embedder,
+                vector_store,
+                kb,
+                file_paths,
+                job_id_clone.clone(),
+                cancel,
+            )
+            .await;
 
-        // Unregister the job now that ingestion is done.
-        {
-            let mut jobs = ingest_jobs.lock().await;
-            jobs.remove(&kb_id);
-        }
-
-        match &result {
-            Ok(_) => {
-                audit_log::insert_warn(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_ingest_complete",
-                    Some(&format!("{file_count} file(s) ingested")),
-                );
+            // Unregister the job now that ingestion is done.
+            {
+                let mut jobs = ingest_jobs.lock().await;
+                jobs.remove(&kb_id);
             }
-            Err(e) => {
-                tracing::error!(error = %e, "Ingestion failed");
-                let _ = audit_log::insert(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_ingest_failed",
-                    None,
-                    None,
-                    Some(&e.to_string()),
-                );
-                let _ = app.emit(
-                    event_name::KB_INGEST_ERROR,
-                    serde_json::json!({
-                        "jobId": job_id_clone,
-                        "error": e.to_string()
-                    }),
-                );
-            }
-        }
-        })
-        .catch_unwind()
-        .await;
 
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %job_id_for_panic,
-                panic = %msg,
-                "KB ingest task panicked — cleaning up job and marking as failed"
-            );
+            match &result {
+                Ok(_) => {
+                    audit_log::insert_warn(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_ingest_complete",
+                        Some(&format!("{file_count} file(s) ingested")),
+                    );
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "Ingestion failed");
+                    let _ = audit_log::insert(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_ingest_failed",
+                        None,
+                        None,
+                        Some(&e.to_string()),
+                    );
+                    let _ = app.emit(
+                        event_name::KB_INGEST_ERROR,
+                        serde_json::json!({
+                            "jobId": job_id_clone,
+                            "error": e.to_string()
+                        }),
+                    );
+                }
+            }
+        },
+        move |msg| async move {
             {
                 let mut jobs = ingest_jobs_for_panic.lock().await;
                 jobs.remove(&kb_id_for_panic);
@@ -538,8 +518,8 @@ async fn spawn_ingest_job(
                     "error": msg
                 }),
             );
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }
@@ -766,66 +746,59 @@ pub async fn reindex_kb_internal(
     let kb_name_for_panic = kb_name.clone();
     let job_id_for_panic = job_id_clone.clone();
 
-    tokio::spawn(async move {
-        let work = AssertUnwindSafe(async move {
-        let result = kb_ingest::reindex_kb(
-            app_task.clone(),
-            user_db,
-            embedder,
-            vector_store,
-            kb,
-            job_id_clone.clone(),
-            cancel,
-        )
-        .await;
+    spawn_guarded(
+        "KB reindex",
+        job_id_for_panic.clone(),
+        async move {
+            let result = kb_ingest::reindex_kb(
+                app_task.clone(),
+                user_db,
+                embedder,
+                vector_store,
+                kb,
+                job_id_clone.clone(),
+                cancel,
+            )
+            .await;
 
-        // Unregister the job now that reindex is done.
-        {
-            let mut jobs = ingest_jobs.lock().await;
-            jobs.remove(&kb_id_task);
-        }
-
-        match &result {
-            Ok(_) => {
-                audit_log::insert_warn(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_reindex_complete",
-                    None,
-                );
+            // Unregister the job now that reindex is done.
+            {
+                let mut jobs = ingest_jobs.lock().await;
+                jobs.remove(&kb_id_task);
             }
-            Err(e) => {
-                tracing::error!(error = %e, "Reindex failed");
-                let _ = audit_log::insert(
-                    &audit_pool,
-                    &kb_cred_id,
-                    &kb_name,
-                    "kb_reindex_failed",
-                    None,
-                    None,
-                    Some(&e.to_string()),
-                );
-                let _ = app_task.emit(
-                    event_name::KB_INGEST_ERROR,
-                    serde_json::json!({
-                        "jobId": job_id_clone,
-                        "error": e.to_string()
-                    }),
-                );
-            }
-        }
-        })
-        .catch_unwind()
-        .await;
 
-        if let Err(panic) = work {
-            let msg = extract_panic_message(panic);
-            tracing::error!(
-                job_id = %job_id_for_panic,
-                panic = %msg,
-                "KB reindex task panicked — cleaning up job and marking as failed"
-            );
+            match &result {
+                Ok(_) => {
+                    audit_log::insert_warn(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_reindex_complete",
+                        None,
+                    );
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "Reindex failed");
+                    let _ = audit_log::insert(
+                        &audit_pool,
+                        &kb_cred_id,
+                        &kb_name,
+                        "kb_reindex_failed",
+                        None,
+                        None,
+                        Some(&e.to_string()),
+                    );
+                    let _ = app_task.emit(
+                        event_name::KB_INGEST_ERROR,
+                        serde_json::json!({
+                            "jobId": job_id_clone,
+                            "error": e.to_string()
+                        }),
+                    );
+                }
+            }
+        },
+        move |msg| async move {
             {
                 let mut jobs = ingest_jobs_for_panic.lock().await;
                 jobs.remove(&kb_id_for_panic);
@@ -846,8 +819,8 @@ pub async fn reindex_kb_internal(
                     "error": msg
                 }),
             );
-        }
-    });
+        },
+    );
 
     Ok(job_id)
 }
@@ -1546,11 +1519,11 @@ mod search_floor_tests {
         // two "far" ones are orthogonal / opposite (distance √2 / 2.0).
         let query = [1.0f32, 0.0, 0.0, 0.0];
         let seeds: &[(&str, [f32; 4])] = &[
-            ("near-a", [1.0, 0.0, 0.0, 0.0]),        // d = 0
+            ("near-a", [1.0, 0.0, 0.0, 0.0]),         // d = 0
             ("near-b", [0.9, 0.435_889_9, 0.0, 0.0]), // unit, d ≈ 0.447
-            ("near-c", [0.6, 0.8, 0.0, 0.0]),        // unit, d ≈ 0.894
-            ("far-x", [0.0, 1.0, 0.0, 0.0]),         // orthogonal, d ≈ 1.414
-            ("far-y", [-1.0, 0.0, 0.0, 0.0]),        // opposite,  d = 2
+            ("near-c", [0.6, 0.8, 0.0, 0.0]),         // unit, d ≈ 0.894
+            ("far-x", [0.0, 1.0, 0.0, 0.0]),          // orthogonal, d ≈ 1.414
+            ("far-y", [-1.0, 0.0, 0.0, 0.0]),         // opposite,  d = 2
         ];
         let entries: Vec<(String, Vec<f32>)> = seeds
             .iter()
@@ -1616,7 +1589,11 @@ mod search_filter_tests {
         let mut hydrated = HashMap::new();
         for i in 0..30 {
             let id = format!("c{i}");
-            let path = if i % 5 == 0 { "/reports/q3" } else { "/notes/x" };
+            let path = if i % 5 == 0 {
+                "/reports/q3"
+            } else {
+                "/notes/x"
+            };
             matches.push((id.clone(), i as f32 * 0.01));
             hydrated.insert(id, chunk(path));
         }

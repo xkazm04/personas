@@ -187,13 +187,11 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
     // (compounding linearly across dead hosts). mark_triggered_with_hash's
     // CAS already dedupes racing completions, so no new locking is needed.
     use futures_util::StreamExt;
-    futures_util::stream::iter(
-        triggers
-            .into_iter()
-            .filter(|t| t.trigger_type == "polling"),
-    )
-    .for_each_concurrent(4, |trigger| poll_one_trigger(pool, scheduler, http, now, trigger))
-    .await;
+    futures_util::stream::iter(triggers.into_iter().filter(|t| t.trigger_type == "polling"))
+        .for_each_concurrent(4, |trigger| {
+            poll_one_trigger(pool, scheduler, http, now, trigger)
+        })
+        .await;
 }
 
 /// Poll a single due trigger: active-window/backoff gates, SSRF check, HTTP
@@ -221,8 +219,12 @@ async fn poll_one_trigger(
         // exactly this reason.
         if !trigger.is_within_active_window(now) {
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            match trigger_repo::advance_schedule_pointer(pool, &trigger.id, next, trigger.trigger_version)
-            {
+            match trigger_repo::advance_schedule_pointer(
+                pool,
+                &trigger.id,
+                next,
+                trigger.trigger_version,
+            ) {
                 Ok(_) => clear_backoff(&trigger.id),
                 Err(e) => {
                     tracing::error!(trigger_id = %trigger.id, "advance_schedule_pointer failed: {}", e);

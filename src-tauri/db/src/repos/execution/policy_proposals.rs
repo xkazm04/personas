@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::policy_tuning::{BudgetCeilingChange, PolicyEvidenceSnapshot, RoutingRuleChange};
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// One row in `policy_proposals`, hydrated for the frontend.
@@ -75,7 +76,7 @@ pub fn create(
         ProposalPayload::Budget(b) => ("budget_ceiling", None, serde_json::to_string(b)?),
     };
     let evidence_json = serde_json::to_string(evidence)?;
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::create")?;
     conn.execute(
         "INSERT INTO policy_proposals
             (id, kind, category, payload_json, evidence_snapshot_id, evidence_json,
@@ -94,7 +95,7 @@ pub fn exists_similar_routing(
     category: Option<&str>,
     to_model: &str,
 ) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::exists_similar_routing")?;
     let n: i64 = conn.query_row(
         "SELECT COUNT(*) FROM policy_proposals
          WHERE kind = 'routing_rule'
@@ -110,7 +111,7 @@ pub fn exists_similar_routing(
 /// Same answered-question guard for budget-ceiling proposals (any open or
 /// declined ceiling proposal blocks a new one — one budget question at a time).
 pub fn exists_open_budget(pool: &DbPool) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::exists_open_budget")?;
     let n: i64 = conn.query_row(
         "SELECT COUNT(*) FROM policy_proposals
          WHERE kind = 'budget_ceiling' AND status IN ('pending', 'declined')",
@@ -121,7 +122,7 @@ pub fn exists_open_budget(pool: &DbPool) -> Result<bool, AppError> {
 }
 
 pub fn get(pool: &DbPool, id: &str) -> Result<Option<PolicyProposal>, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::get")?;
     let row = conn
         .query_row(
             "SELECT id, kind, category, payload_json, evidence_snapshot_id,
@@ -134,8 +135,12 @@ pub fn get(pool: &DbPool, id: &str) -> Result<Option<PolicyProposal>, AppError> 
     Ok(row)
 }
 
-pub fn list(pool: &DbPool, only_pending: bool, limit: u32) -> Result<Vec<PolicyProposal>, AppError> {
-    let conn = pool.get()?;
+pub fn list(
+    pool: &DbPool,
+    only_pending: bool,
+    limit: u32,
+) -> Result<Vec<PolicyProposal>, AppError> {
+    let conn = pool.conn("policy_proposals::list")?;
     let where_clause = if only_pending {
         "WHERE status = 'pending'"
     } else {
@@ -160,7 +165,7 @@ pub fn list(pool: &DbPool, only_pending: bool, limit: u32) -> Result<Vec<PolicyP
 /// (rule / setting) first, in the same command, so a failed write never
 /// strands an "applied" row. Returns false when the row was not pending.
 pub fn mark_applied(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::mark_applied")?;
     let updated = conn.execute(
         "UPDATE policy_proposals
          SET status = 'applied', decided_at = datetime('now')
@@ -172,7 +177,7 @@ pub fn mark_applied(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 
 /// Flip `pending → declined`, recording the operator's reason as feedback.
 pub fn mark_declined(pool: &DbPool, id: &str, reason: Option<&str>) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let conn = pool.conn("policy_proposals::mark_declined")?;
     let updated = conn.execute(
         "UPDATE policy_proposals
          SET status = 'declined', decline_reason = ?2, decided_at = datetime('now')
@@ -277,7 +282,12 @@ mod tests {
     fn create_get_roundtrip_with_typed_payload() {
         let pool = test_pool();
         let routing = sample_routing();
-        let id = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         let got = get(&pool, &id).unwrap().unwrap();
         assert_eq!(got.kind, "routing_rule");
         assert_eq!(got.status, "pending");
@@ -293,12 +303,22 @@ mod tests {
     fn apply_and_decline_transitions_are_single_shot() {
         let pool = test_pool();
         let routing = sample_routing();
-        let id = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         assert!(mark_applied(&pool, &id).unwrap());
         assert!(!mark_applied(&pool, &id).unwrap()); // no re-apply
         assert!(!mark_declined(&pool, &id, Some("late")).unwrap()); // no post-apply decline
 
-        let id2 = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id2 = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         assert!(mark_declined(&pool, &id2, Some("prefer opus quality")).unwrap());
         let got = get(&pool, &id2).unwrap().unwrap();
         assert_eq!(got.status, "declined");
@@ -311,7 +331,12 @@ mod tests {
         let pool = test_pool();
         let routing = sample_routing();
         assert!(!exists_similar_routing(&pool, Some("research"), "sonnet").unwrap());
-        let id = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         assert!(exists_similar_routing(&pool, Some("research"), "sonnet").unwrap());
         // Different category or model → not similar.
         assert!(!exists_similar_routing(&pool, Some("dev"), "sonnet").unwrap());
@@ -322,7 +347,12 @@ mod tests {
         // Applied rows stop blocking (a later re-proposal after evidence
         // changes is legitimate — the rule is live and `already_routed`
         // suppresses duplicates at generation time instead).
-        let id3 = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let id3 = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         mark_applied(&pool, &id3).unwrap();
         // id (declined) still present → still true; drop it to isolate.
         let conn = pool.get().unwrap();
@@ -335,8 +365,18 @@ mod tests {
     fn list_orders_and_filters_pending() {
         let pool = test_pool();
         let routing = sample_routing();
-        let a = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
-        let b = create(&pool, ProposalPayload::Routing(&routing), &sample_evidence()).unwrap();
+        let a = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
+        let b = create(
+            &pool,
+            ProposalPayload::Routing(&routing),
+            &sample_evidence(),
+        )
+        .unwrap();
         mark_declined(&pool, &a, None).unwrap();
         let all = list(&pool, false, 10).unwrap();
         assert_eq!(all.len(), 2);

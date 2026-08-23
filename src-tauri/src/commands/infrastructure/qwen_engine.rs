@@ -36,7 +36,9 @@ pub fn set_qwen_credentials(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     if api_key.trim().is_empty() {
-        return Err(AppError::Validation("Qwen API key must not be empty".into()));
+        return Err(AppError::Validation(
+            "Qwen API key must not be empty".into(),
+        ));
     }
     http_engine::store_qwen_api_key(api_key.trim()).map_err(AppError::Internal)?;
     if let Some(url) = base_url {

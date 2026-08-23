@@ -14428,7 +14428,12 @@
         "repo_pick_credential_first": "Nejprve vyberte přihlašovací údaje",
         "repo_private": "{name} (soukromý)",
         "section_title": "Znalostní registr",
-        "this_workspace": "tento pracovní prostor"
+        "this_workspace": "tento pracovní prostor",
+        "sync": "Synchronizovat",
+        "sync_current": "Pracovní kopie registru je již aktuální",
+        "sync_failed": "Registr nebyl synchronizován:",
+        "sync_pulled_one": "Do pracovní kopie registru staženo {count} commit",
+        "sync_pulled_other": "Do pracovní kopie registru staženo {count} commitů"
       },
       "skills_library_unwired_body": "Vlastní skilly pocházejí ze znalostního registru, který drží tento pracovní prostor. Připojte jej v Dev Tools → Workspaces, u pracovního prostoru, do něhož projekt patří.",
       "skills_library_unwired_title": "Není připojen žádný registr",

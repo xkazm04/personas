@@ -50,7 +50,14 @@ pub(super) fn fail(
 ) -> ExecutionResult {
     let duration_ms = start_time.elapsed().as_millis() as u64;
     tracing::warn!(execution_id, error = error_msg, "[http_engine] failed");
-    emit_status(emitter, execution_id, ExecutionState::Failed, Some(error_msg), duration_ms, None);
+    emit_status(
+        emitter,
+        execution_id,
+        ExecutionState::Failed,
+        Some(error_msg),
+        duration_ms,
+        None,
+    );
     ExecutionResult {
         success: false,
         error: Some(error_msg.to_string()),

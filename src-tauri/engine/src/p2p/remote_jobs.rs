@@ -320,7 +320,11 @@ impl RemoteJobs {
                 // The link died between the connectivity check and the write.
                 // Cancel rather than leave it pending: nothing on the other side
                 // is running, because it never got the request.
-                repo::mark_cancelled(&self.pool, &job_id, &format!("Could not reach the device: {e}"))?;
+                repo::mark_cancelled(
+                    &self.pool,
+                    &job_id,
+                    &format!("Could not reach the device: {e}"),
+                )?;
                 let job = self.reload(&job_id)?;
                 self.emit(&job).await;
                 return Err(e);
@@ -352,17 +356,15 @@ impl RemoteJobs {
         if self.require_paired(peer_id).is_err() {
             return;
         }
-        let open = match repo::list_unfinished_for_peer(
-            &self.pool,
-            RemoteJobDirection::Outbound,
-            peer_id,
-        ) {
-            Ok(jobs) => jobs,
-            Err(e) => {
-                tracing::warn!(peer_id = %peer_id, "Could not list jobs to resume: {e}");
-                return;
-            }
-        };
+        let open =
+            match repo::list_unfinished_for_peer(&self.pool, RemoteJobDirection::Outbound, peer_id)
+            {
+                Ok(jobs) => jobs,
+                Err(e) => {
+                    tracing::warn!(peer_id = %peer_id, "Could not list jobs to resume: {e}");
+                    return;
+                }
+            };
         for job in open {
             if let Err(e) = self.resume_job(peer_id, &job).await {
                 tracing::debug!(
@@ -389,13 +391,12 @@ impl RemoteJobs {
 
         let deadline = tokio::time::Instant::now() + RESUME_TIMEOUT;
         loop {
-            let frame =
-                match tokio::time::timeout_at(deadline, protocol::decode(&mut recv)).await {
-                    // A closed stream is the normal end of a replay with nothing
-                    // left to send, so it is not worth surfacing as an error.
-                    Ok(Ok(frame)) => frame,
-                    Ok(Err(_)) | Err(_) => break,
-                };
+            let frame = match tokio::time::timeout_at(deadline, protocol::decode(&mut recv)).await {
+                // A closed stream is the normal end of a replay with nothing
+                // left to send, so it is not worth surfacing as an error.
+                Ok(Ok(frame)) => frame,
+                Ok(Err(_)) | Err(_) => break,
+            };
             match frame {
                 Message::RemoteJobProgress { job_id, seq, text } => {
                     self.apply_progress(peer_id, &job_id, seq, text).await?;
@@ -405,7 +406,8 @@ impl RemoteJobs {
                     status,
                     summary,
                 } => {
-                    self.apply_result(peer_id, &job_id, &status, summary).await?;
+                    self.apply_result(peer_id, &job_id, &status, summary)
+                        .await?;
                     break;
                 }
                 other => {
@@ -518,7 +520,14 @@ impl RemoteJobs {
                 instruction,
                 origin_display_name,
             } => self
-                .accept_request(peer_id, &paired, job_id, kind, instruction, origin_display_name)
+                .accept_request(
+                    peer_id,
+                    &paired,
+                    job_id,
+                    kind,
+                    instruction,
+                    origin_display_name,
+                )
                 .await
                 .map(|ack| vec![ack]),
 
@@ -543,7 +552,8 @@ impl RemoteJobs {
                 status,
                 summary,
             } => {
-                self.apply_result(peer_id, &job_id, &status, summary).await?;
+                self.apply_result(peer_id, &job_id, &status, summary)
+                    .await?;
                 Ok(Vec::new())
             }
 
@@ -699,7 +709,12 @@ impl RemoteJobs {
         let status = RemoteJobStatus::parse(status)
             .filter(|s| s.is_terminal())
             .unwrap_or(RemoteJobStatus::Failed);
-        if repo::finish(&self.pool, job_id, status, &truncate(summary, MAX_NOTE_BYTES))? {
+        if repo::finish(
+            &self.pool,
+            job_id,
+            status,
+            &truncate(summary, MAX_NOTE_BYTES),
+        )? {
             let job = self.reload(job_id)?;
             self.emit(&job).await;
         }
@@ -934,8 +949,15 @@ mod tests {
         let pool = test_pool();
         let jobs = service(pool.clone());
         pair(&pool, "trusted-peer", "Laptop");
-        repo::create_outbound(&pool, "job-1", "trusted-peer", "Laptop", "instruction", "go")
-            .expect("outbound");
+        repo::create_outbound(
+            &pool,
+            "job-1",
+            "trusted-peer",
+            "Laptop",
+            "instruction",
+            "go",
+        )
+        .expect("outbound");
         repo::mark_running(&pool, "job-1").expect("running");
 
         for frame in [
@@ -1230,10 +1252,7 @@ mod tests {
         }
         let notes = repo::list_notes(&pool, "job-1").expect("notes");
         assert_eq!(notes.len(), 3, "a second replay must add nothing");
-        assert_eq!(
-            repo::get(&pool, "job-1").expect("get").unwrap().last_seq,
-            3
-        );
+        assert_eq!(repo::get(&pool, "job-1").expect("get").unwrap().last_seq, 3);
 
         // And a replayed result is likewise applied once, keeping the first verdict.
         for _ in 0..2 {

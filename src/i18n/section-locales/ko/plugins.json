@@ -1680,7 +1680,12 @@
       "repo_pick_credential_first": "먼저 자격 증명을 선택하세요",
       "repo_private": "{name}(비공개)",
       "section_title": "지식 레지스트리",
-      "this_workspace": "이 워크스페이스"
+      "this_workspace": "이 워크스페이스",
+      "sync": "동기화",
+      "sync_current": "레지스트리 작업 사본이 이미 최신입니다",
+      "sync_failed": "레지스트리를 동기화하지 못했습니다:",
+      "sync_pulled_one": "레지스트리 작업 사본으로 커밋 {count}개를 가져왔습니다",
+      "sync_pulled_other": "레지스트리 작업 사본으로 커밋 {count}개를 가져왔습니다"
     },
     "skills_library_unwired_body": "직접 작성한 스킬은 이 워크스페이스가 보유한 지식 레지스트리에서 가져옵니다. Dev Tools → Workspaces에서 이 프로젝트가 속한 워크스페이스에 레지스트리를 연결하세요.",
     "skills_library_unwired_title": "연결된 레지스트리가 없습니다",

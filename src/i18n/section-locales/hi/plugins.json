@@ -1680,7 +1680,12 @@
       "repo_pick_credential_first": "पहले क्रेडेंशियल चुनें",
       "repo_private": "{name} (निजी)",
       "section_title": "ज्ञान रजिस्ट्री",
-      "this_workspace": "यह वर्कस्पेस"
+      "this_workspace": "यह वर्कस्पेस",
+      "sync": "सिंक करें",
+      "sync_current": "रजिस्ट्री वर्किंग कॉपी पहले से ही अद्यतित है",
+      "sync_failed": "रजिस्ट्री सिंक नहीं हुई:",
+      "sync_pulled_one": "रजिस्ट्री वर्किंग कॉपी में {count} कमिट लाया गया",
+      "sync_pulled_other": "रजिस्ट्री वर्किंग कॉपी में {count} कमिट लाए गए"
     },
     "skills_library_unwired_body": "स्वयं लिखे गए स्किल इस वर्कस्पेस की ज्ञान रजिस्ट्री से आते हैं। Dev Tools → Workspaces में, उस वर्कस्पेस पर एक रजिस्ट्री कनेक्ट करें जिससे यह प्रोजेक्ट संबंधित है।",
     "skills_library_unwired_title": "कोई रजिस्ट्री कनेक्ट नहीं है",

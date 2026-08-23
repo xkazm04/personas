@@ -72,11 +72,25 @@ mod tests {
     fn maps_app_router_pages_to_routes() {
         let tmp = std::env::temp_dir().join(format!("routes-test-{}", std::process::id()));
         let app = tmp.join("app");
-        for sub in ["", "cart", "(marketing)/about", "shop/[slug]", "_components"] {
-            let d = if sub.is_empty() { app.clone() } else { app.join(sub) };
+        for sub in [
+            "",
+            "cart",
+            "(marketing)/about",
+            "shop/[slug]",
+            "_components",
+        ] {
+            let d = if sub.is_empty() {
+                app.clone()
+            } else {
+                app.join(sub)
+            };
             fs::create_dir_all(&d).unwrap();
             // _components is private — give it a page to prove it's skipped
-            fs::write(d.join("page.tsx"), "export default function P(){return null}").unwrap();
+            fs::write(
+                d.join("page.tsx"),
+                "export default function P(){return null}",
+            )
+            .unwrap();
         }
         let routes = list_routes(&tmp).unwrap();
         let _ = fs::remove_dir_all(&tmp);

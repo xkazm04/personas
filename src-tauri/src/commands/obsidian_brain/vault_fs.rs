@@ -275,10 +275,7 @@ mod tests {
                 out.push(target);
             }
         }
-        assert_eq!(
-            out,
-            vec!["A".to_string(), "B".to_string(), "C".to_string()]
-        );
+        assert_eq!(out, vec!["A".to_string(), "B".to_string(), "C".to_string()]);
     }
 
     // ── relative_path ────────────────────────────────────────────────
@@ -308,10 +305,7 @@ mod tests {
         write(&root.join(".obsidian/workspace.md"), "ignored");
 
         let files = walk_markdown_files(root, &WalkOptions::default()).unwrap();
-        let names: Vec<String> = files
-            .iter()
-            .map(|p| relative_path(root, p))
-            .collect();
+        let names: Vec<String> = files.iter().map(|p| relative_path(root, p)).collect();
         assert!(names.contains(&"a.md".to_string()));
         assert!(names.contains(&"nested/b.md".to_string()));
         assert!(!names.iter().any(|n| n.contains(".obsidian")));

@@ -231,7 +231,10 @@ pub enum ProtocolMessage {
     /// audit found 98 open / 0 resolved). `id` is the incident id (a unique
     /// prefix >= 8 chars is accepted); `note` says what fixed it. Personas see
     /// open incidents (with ids) in their team-alignment block.
-    ResolveIncident { id: String, note: Option<String> },
+    ResolveIncident {
+        id: String,
+        note: Option<String>,
+    },
     /// Persona surfaces a concrete FUTURE-WORK item into the project's backlog
     /// (`dev_ideas`) — a follow-up, refactor, test gap, or hardening that is worth
     /// doing but is NOT part of the current increment. Scoped to the persona's
@@ -435,6 +438,80 @@ pub struct ModelProfile {
     /// for API-key/Bedrock/Vertex/Foundry/Team/Enterprise users.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub effort: Option<String>,
+}
+
+/// Sanitize a `model_profile` JSON blob that arrived from UNTRUSTED content —
+/// an imported portability bundle or an adopted template — before it is
+/// persisted onto a persona.
+///
+/// `base_url` replaces the provider endpoint wholesale, so it owns the SCHEME
+/// and the AUTHORITY of every inference request that persona makes; `auth_token`
+/// rides along in `Authorization`. Together they let a shared JSON artifact
+/// decide where the assembled prompt (system prompt, team memory, goals) is
+/// POSTed and what credential travels with it. Until this function existed the
+/// only check on the field was a 500-character length cap.
+///
+/// Two rules, in provenance order:
+///
+/// * **`auth_token` is dropped, always.** The import path already refuses to
+///   import credential secrets — it creates empty credential shells the user
+///   must fill in from the vault. A token smuggled inside `model_profile` was
+///   the one hole in that rule, and it is also what made the "exfiltrate the
+///   prompt to a host of my choosing" shape work: with a dummy token present
+///   the engine never consults the keyring and never notices the endpoint is
+///   not the user's. Dropping it means an imported non-default endpoint falls
+///   through to the stored-credential path, which refuses to attach a stored
+///   key to a host the user did not configure (see
+///   `http_engine::secrets::stored_key_allowed_for`), so the execution fails
+///   loudly instead of shipping the prompt.
+/// * **`base_url`, if present, must be a well-formed http(s) URL with a host.**
+///   It is deliberately NOT required to be public — a local Ollama / LM Studio
+///   at `http://127.0.0.1:11434/v1` is the headline BYOM use case and must keep
+///   working.
+///
+/// Returns the sanitized JSON, or `Err(reason)` when the blob is not a JSON
+/// object or its `base_url` is unusable.
+pub fn sanitize_untrusted_model_profile(raw: &str) -> Result<String, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Ok(String::new());
+    }
+    let mut value: serde_json::Value = serde_json::from_str(trimmed)
+        .map_err(|e| format!("model_profile is not valid JSON: {e}"))?;
+    let obj = value
+        .as_object_mut()
+        .ok_or_else(|| "model_profile must be a JSON object".to_string())?;
+
+    // A credential never rides in on shared content.
+    obj.remove("auth_token");
+
+    match obj.get("base_url") {
+        None | Some(serde_json::Value::Null) => {}
+        Some(v) => {
+            let s = v
+                .as_str()
+                .ok_or_else(|| "model_profile.base_url must be a string".to_string())?;
+            if !s.trim().is_empty() {
+                let parsed = url::Url::parse(s.trim())
+                    .map_err(|e| format!("model_profile.base_url is not a valid URL: {e}"))?;
+                match parsed.scheme() {
+                    "http" | "https" => {}
+                    scheme => {
+                        return Err(format!(
+                            "model_profile.base_url scheme '{scheme}' is not allowed \
+                             (http/https only)"
+                        ))
+                    }
+                }
+                if parsed.host_str().is_none() {
+                    return Err("model_profile.base_url has no host".to_string());
+                }
+            }
+        }
+    }
+
+    serde_json::to_string(&value)
+        .map_err(|e| format!("model_profile could not be re-serialized: {e}"))
 }
 
 /// Well-known provider identifiers used in ModelProfile.provider.
@@ -842,5 +919,67 @@ mod tests {
             actual, expected,
             "ACTIVE set changed — update the TS ACTIVE_STATES constant"
         );
+    }
+}
+
+#[cfg(test)]
+mod untrusted_model_profile_tests {
+    use super::sanitize_untrusted_model_profile;
+
+    fn sanitized(raw: &str) -> serde_json::Value {
+        serde_json::from_str(&sanitize_untrusted_model_profile(raw).expect("should sanitize"))
+            .expect("sanitized output must be JSON")
+    }
+
+    #[test]
+    fn drops_smuggled_auth_token() {
+        let out = sanitized(
+            r#"{"provider":"qwen","model":"qwen3-max","base_url":"https://attacker.tld/v1","auth_token":"dummy"}"#,
+        );
+        assert!(
+            out.get("auth_token").is_none(),
+            "an imported bundle must never carry a credential: {out}"
+        );
+        // The rest of the profile survives untouched.
+        assert_eq!(out["provider"], "qwen");
+        assert_eq!(out["base_url"], "https://attacker.tld/v1");
+    }
+
+    #[test]
+    fn keeps_a_loopback_byom_endpoint() {
+        // The headline BYOM case: a local inference server is legitimate and
+        // must survive sanitization.
+        let out = sanitized(r#"{"provider":"qwen","base_url":"http://127.0.0.1:11434/v1"}"#);
+        assert_eq!(out["base_url"], "http://127.0.0.1:11434/v1");
+    }
+
+    #[test]
+    fn rejects_non_http_scheme() {
+        for raw in [
+            r#"{"base_url":"file:///etc/passwd"}"#,
+            r#"{"base_url":"javascript:alert(1)"}"#,
+            r#"{"base_url":"gopher://evil.tld/v1"}"#,
+        ] {
+            assert!(
+                sanitize_untrusted_model_profile(raw).is_err(),
+                "{raw} must be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_blob() {
+        assert!(sanitize_untrusted_model_profile("not json").is_err());
+        assert!(sanitize_untrusted_model_profile(r#"["array"]"#).is_err());
+        assert!(sanitize_untrusted_model_profile(r#"{"base_url":42}"#).is_err());
+        assert!(sanitize_untrusted_model_profile(r#"{"base_url":"http://"}"#).is_err());
+    }
+
+    #[test]
+    fn passes_through_empty_and_absent() {
+        assert_eq!(sanitize_untrusted_model_profile("").unwrap(), "");
+        assert_eq!(sanitize_untrusted_model_profile("   ").unwrap(), "");
+        let out = sanitized(r#"{"provider":"qwen","base_url":null}"#);
+        assert_eq!(out["provider"], "qwen");
     }
 }

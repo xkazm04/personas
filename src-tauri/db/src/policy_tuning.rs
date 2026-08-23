@@ -215,7 +215,8 @@ fn quality_pair(
     challenger: &EvidenceCell,
     cfg: &TuningThresholds,
 ) -> (String, f64, f64) {
-    let lab_ok = |c: &EvidenceCell| c.lab_samples >= cfg.min_lab_samples && c.avg_lab_quality.is_some();
+    let lab_ok =
+        |c: &EvidenceCell| c.lab_samples >= cfg.min_lab_samples && c.avg_lab_quality.is_some();
     if lab_ok(incumbent) && lab_ok(challenger) {
         (
             "lab".to_string(),
@@ -263,8 +264,8 @@ pub fn generate_proposals(
         // Incumbent = the model this category currently resolves to via the
         // cascade (probe with a synthetic persona id so only category /
         // universal rules match), else the dominant model by observed runs.
-        let routed = resolve(current_rules, "\u{0}policy-tuning-probe", Some(category))
-            .map(|r| r.model);
+        let routed =
+            resolve(current_rules, "\u{0}policy-tuning-probe", Some(category)).map(|r| r.model);
         let Some(&dominant) = cells.iter().max_by_key(|c| c.runs) else {
             continue;
         };

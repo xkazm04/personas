@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::DbPool;
+use crate::PoolExt;
 use personas_core::error::AppError;
 
 /// One recorded reason a chain relay did not continue past a given link.
@@ -65,7 +66,7 @@ pub struct ChainStopReasonInput<'a> {
 pub fn record(pool: &DbPool, input: ChainStopReasonInput) -> Result<(), AppError> {
     timed_query!("chain_stop_reasons", "chain_stop_reasons::record", {
         let id = uuid::Uuid::new_v4().to_string();
-        let conn = pool.get()?;
+        let conn = pool.conn("chain_stop_reasons::record")?;
         conn.execute(
             "INSERT INTO chain_stop_reasons
                 (id, chain_trace_id, link_execution_id, trigger_id, target_persona_id,
@@ -96,7 +97,7 @@ pub fn get_by_chain_trace_id(
         "chain_stop_reasons",
         "chain_stop_reasons::get_by_chain_trace_id",
         {
-            let conn = pool.get()?;
+            let conn = pool.conn("chain_stop_reasons::get_by_chain_trace_id")?;
             let mut stmt = conn.prepare(
                 "SELECT id, chain_trace_id, link_execution_id, trigger_id, target_persona_id,
                         reason_token, detail, chain_depth, created_at
@@ -124,8 +125,8 @@ pub fn get_by_chain_trace_id(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::init_test_db;
     use crate::chain::stop_reason;
+    use crate::init_test_db;
 
     fn input<'a>(
         chain: &'a str,
@@ -147,7 +148,11 @@ mod tests {
     #[test]
     fn record_and_query_by_chain_trace_id() {
         let pool = init_test_db().unwrap();
-        record(&pool, input("chain-A", "exec-1", stop_reason::CYCLE_DETECTED, 1)).unwrap();
+        record(
+            &pool,
+            input("chain-A", "exec-1", stop_reason::CYCLE_DETECTED, 1),
+        )
+        .unwrap();
         record(
             &pool,
             ChainStopReasonInput {
@@ -159,7 +164,11 @@ mod tests {
         )
         .unwrap();
         // A different chain is not returned.
-        record(&pool, input("chain-B", "exec-3", stop_reason::PREDICATE_UNMET, 0)).unwrap();
+        record(
+            &pool,
+            input("chain-B", "exec-3", stop_reason::PREDICATE_UNMET, 0),
+        )
+        .unwrap();
 
         let rows = get_by_chain_trace_id(&pool, "chain-A").unwrap();
         assert_eq!(rows.len(), 2);

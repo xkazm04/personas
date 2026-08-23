@@ -82,6 +82,13 @@ fn read_settings(path: &PathBuf) -> Result<Value, String> {
 /// install time — if the user restarts the app with a different bound
 /// port, [`check_hooks`] surfaces the mismatch.
 fn build_command(port: u16, event_lower: &str) -> String {
+    // The local_http admission layer refuses any request without the shared
+    // secret, so the hook has to carry it. Baked in at install time exactly
+    // like the port; `check_hooks_inner` treats a hook whose command lacks the
+    // CURRENT token as needing an upgrade, which routes it through the same
+    // startup self-heal that already fixes port drift.
+    let token = crate::local_http::auth::local_token();
+    let token_header = crate::local_http::auth::TOKEN_HEADER;
     // `curl -s -X POST --data-binary @-` reads stdin verbatim and POSTs it.
     // -m 2 = 2-second timeout (we never want hooks to stall the user's CC).
     // ConnectTimeout 1s — localhost should be sub-ms when up.
@@ -95,6 +102,7 @@ fn build_command(port: u16, event_lower: &str) -> String {
     format!(
         "curl -s -m 2 --connect-timeout 1 -X POST --data-binary @- \
          -H \"Content-Type: application/json\" \
+         -H \"{token_header}: {token}\" \
          http://127.0.0.1:{port}/fleet/hooks/{event_lower} || exit 0"
     )
 }
@@ -116,9 +124,7 @@ pub fn install_hooks(port: u16) -> Result<FleetHookStatus, String> {
         .ok_or("settings.json root is not an object")?;
 
     // Ensure root.hooks is an object.
-    let hooks = root
-        .entry("hooks".to_string())
-        .or_insert_with(|| json!({}));
+    let hooks = root.entry("hooks".to_string()).or_insert_with(|| json!({}));
     if !hooks.is_object() {
         return Err("settings.json `hooks` must be an object".into());
     }
@@ -161,11 +167,11 @@ pub fn install_hooks(port: u16) -> Result<FleetHookStatus, String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("create ~/.claude: {e}"))?;
     }
-    let pretty = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("serialize settings: {e}"))?;
+    let pretty =
+        serde_json::to_string_pretty(&settings).map_err(|e| format!("serialize settings: {e}"))?;
     fs::write(&path, pretty).map_err(|e| format!("write settings: {e}"))?;
 
-    check_hooks_inner(&settings, port)
+    check_hooks_inner(&settings, port, &crate::local_http::auth::local_token())
 }
 
 /// Remove every Fleet-tagged hook entry.
@@ -182,23 +188,18 @@ pub fn uninstall_hooks() -> Result<FleetHookStatus, String> {
     }
 
     let mut settings = read_settings(&path)?;
-    if let Some(hooks_map) = settings
-        .get_mut("hooks")
-        .and_then(|h| h.as_object_mut())
-    {
+    if let Some(hooks_map) = settings.get_mut("hooks").and_then(|h| h.as_object_mut()) {
         for arr_value in hooks_map.values_mut() {
             if let Some(arr) = arr_value.as_array_mut() {
                 arr.retain(|item| !is_fleet_tagged(item));
             }
         }
         // Drop empty arrays so the settings file doesn't accumulate cruft.
-        hooks_map.retain(|_, v| {
-            !v.as_array().map(|a| a.is_empty()).unwrap_or(false)
-        });
+        hooks_map.retain(|_, v| !v.as_array().map(|a| a.is_empty()).unwrap_or(false));
     }
 
-    let pretty = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("serialize settings: {e}"))?;
+    let pretty =
+        serde_json::to_string_pretty(&settings).map_err(|e| format!("serialize settings: {e}"))?;
     fs::write(&path, pretty).map_err(|e| format!("write settings: {e}"))?;
 
     Ok(FleetHookStatus {
@@ -215,10 +216,14 @@ pub fn uninstall_hooks() -> Result<FleetHookStatus, String> {
 pub fn check_hooks(port: u16) -> Result<FleetHookStatus, String> {
     let path = settings_path().ok_or("home directory not resolvable")?;
     let settings = read_settings(&path)?;
-    check_hooks_inner(&settings, port)
+    check_hooks_inner(&settings, port, &crate::local_http::auth::local_token())
 }
 
-fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookStatus, String> {
+fn check_hooks_inner(
+    settings: &Value,
+    current_port: u16,
+    current_token: &str,
+) -> Result<FleetHookStatus, String> {
     let hooks_map = settings
         .get("hooks")
         .and_then(|h| h.as_object())
@@ -251,6 +256,14 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
                 for h in inner_hooks {
                     if let Some(cmd) = h.get("command").and_then(|v| v.as_str()) {
                         if cmd.contains("/fleet/hooks/") && !cmd.contains("|| exit 0") {
+                            needs_upgrade = true;
+                        }
+                        // Credential drift: a hook installed before the
+                        // admission layer existed (or under a different
+                        // token) now 401s on every lifecycle event, silently,
+                        // in every Claude Code session on the machine. Same
+                        // remedy as a legacy command — reinstall.
+                        if cmd.contains("/fleet/hooks/") && !cmd.contains(current_token) {
                             needs_upgrade = true;
                         }
                     }
@@ -290,7 +303,8 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
     let installed = !present.is_empty();
     // `needs_upgrade` rides the port_matches signal on purpose: the startup
     // self-heal reinstalls whenever installed && !port_matches, and a
-    // reinstall is exactly what upgrades a legacy command in place.
+    // reinstall is exactly what upgrades a legacy command — or a command
+    // carrying no/stale local token — in place.
     let port_matches = installed_port == Some(current_port) && !needs_upgrade;
 
     Ok(FleetHookStatus {
@@ -308,7 +322,10 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
 /// install left behind, instead of duplicating hooks (which caused real hooks
 /// to be split across a live + a dead port).
 fn is_fleet_tagged(v: &Value) -> bool {
-    if v.get(FLEET_MARKER).and_then(|m| m.as_bool()).unwrap_or(false) {
+    if v.get(FLEET_MARKER)
+        .and_then(|m| m.as_bool())
+        .unwrap_or(false)
+    {
         return true;
     }
     if let Some(cmd) = v.get("command").and_then(|c| c.as_str()) {
@@ -358,9 +375,56 @@ mod tests {
 
     #[test]
     fn check_handles_empty_settings() {
-        let status = check_hooks_inner(&json!({}), 17400).unwrap();
+        let status = check_hooks_inner(&json!({}), 17400, "tok").unwrap();
         assert!(!status.installed);
         assert_eq!(status.present_events.len(), 0);
         assert_eq!(status.missing_events.len(), FLEET_EVENTS.len());
+    }
+
+    /// A hook installed before the admission layer existed carries no local
+    /// token, so every lifecycle event it fires now 401s — silently, in every
+    /// Claude Code session on the machine. It must read as "needs reinstall",
+    /// which is the signal the startup self-heal already acts on.
+    #[test]
+    fn hook_without_current_token_reads_as_drifted() {
+        let legacy = json!({
+            "hooks": {
+                "Stop": [{
+                    "matcher": "*",
+                    "_fleet": true,
+                    "hooks": [{
+                        "type": "command",
+                        "_fleet": true,
+                        "command": "curl -s -m 2 --connect-timeout 1 -X POST --data-binary @-                             -H \"Content-Type: application/json\"                             http://127.0.0.1:17400/fleet/hooks/stop || exit 0"
+                    }]
+                }]
+            }
+        });
+        let status = check_hooks_inner(&legacy, 17400, "the-current-token").unwrap();
+        assert!(status.installed, "the entry is still recognised as ours");
+        assert_eq!(status.installed_port, Some(17400));
+        assert!(
+            !status.port_matches,
+            "a hook with no local token must route through the reinstall path"
+        );
+    }
+
+    /// ...and once reinstalled with the live token it must stop asking.
+    #[test]
+    fn hook_with_current_token_is_settled() {
+        let cmd = build_command(17400, "stop");
+        let installed = json!({
+            "hooks": {
+                "Stop": [{
+                    "matcher": "*",
+                    "_fleet": true,
+                    "hooks": [{ "type": "command", "_fleet": true, "command": cmd }]
+                }]
+            }
+        });
+        let status =
+            check_hooks_inner(&installed, 17400, &crate::local_http::auth::local_token()).unwrap();
+        assert!(status.installed);
+        assert!(status.port_matches);
     }
 }

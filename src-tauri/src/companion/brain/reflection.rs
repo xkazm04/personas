@@ -83,7 +83,7 @@ pub async fn run_reflection(
 pub fn list_reflections(pool: &UserDbPool, limit: u32) -> Result<Vec<ReflectionRow>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT id, file_path, body_excerpt, created_at
+        "SELECT id, body_excerpt, created_at
          FROM companion_node
          WHERE kind = 'reflection'
          ORDER BY created_at DESC
@@ -93,9 +93,8 @@ pub fn list_reflections(pool: &UserDbPool, limit: u32) -> Result<Vec<ReflectionR
         .query_map(params![limit], |row| {
             Ok(ReflectionRow {
                 id: row.get(0)?,
-                file_path: row.get(1)?,
-                preview: row.get::<_, Option<String>>(2)?.unwrap_or_default(),
-                created_at: row.get(3)?,
+                preview: row.get::<_, Option<String>>(1)?.unwrap_or_default(),
+                created_at: row.get(2)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -123,7 +122,6 @@ pub fn read_reflection(pool: &UserDbPool, id: &str) -> Result<ReflectionDetail, 
 #[derive(Debug)]
 pub struct ReflectionRow {
     pub id: String,
-    pub file_path: String,
     pub preview: String,
     pub created_at: String,
 }

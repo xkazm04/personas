@@ -182,9 +182,15 @@ mod tests {
         assert_eq!(pending[0].origin_device, "workstation-b");
         assert_eq!(pending[0].item_kind, KIND_FACT);
         assert!(pending[0].payload_json.contains("prefers_atomic_commits"));
-        assert!(!pending[0].received_at.is_empty(), "received_at is defaulted by the schema");
+        assert!(
+            !pending[0].received_at.is_empty(),
+            "received_at is defaulted by the schema"
+        );
 
-        assert_eq!(mark_processed(&pool, &[id.clone()], "cyc_alpha").unwrap(), 1);
+        assert_eq!(
+            mark_processed(&pool, &[id.clone()], "cyc_alpha").unwrap(),
+            1
+        );
         assert!(
             list_unprocessed(&pool, 50).unwrap().is_empty(),
             "a consumed delta must not be handed to the next cycle again"
@@ -213,7 +219,10 @@ mod tests {
         let pool = crate::db::init_test_user_db().unwrap();
         let id = insert_delta(&pool, "workstation-b", KIND_TAXONOMY, "{}").unwrap();
 
-        assert_eq!(mark_processed(&pool, &[id.clone()], "cyc_first").unwrap(), 1);
+        assert_eq!(
+            mark_processed(&pool, &[id.clone()], "cyc_first").unwrap(),
+            1
+        );
         assert_eq!(
             mark_processed(&pool, &[id.clone()], "cyc_second").unwrap(),
             0,
@@ -238,8 +247,8 @@ mod tests {
     fn unprocessed_deltas_come_back_oldest_first_and_respect_the_limit() {
         let pool = crate::db::init_test_user_db().unwrap();
         for i in 0..5 {
-            let id = insert_delta(&pool, "workstation-b", KIND_FACT, &format!("{{\"n\":{i}}}"))
-                .unwrap();
+            let id =
+                insert_delta(&pool, "workstation-b", KIND_FACT, &format!("{{\"n\":{i}}}")).unwrap();
             // `received_at` defaults to a whole-second timestamp, so several
             // inserts in one test share it. Force a distinct order rather than
             // asserting on a tie the schema does not guarantee.

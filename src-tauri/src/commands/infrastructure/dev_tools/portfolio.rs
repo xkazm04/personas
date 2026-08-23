@@ -1,10 +1,12 @@
-use std::sync::Arc;
-use tauri::State;
-use crate::db::models::{CrossProjectRelation, DevIdea, PortfolioHealthSummary, RiskMatrixEntry, TechRadarEntry};
+use crate::db::models::{
+    CrossProjectRelation, DevIdea, PortfolioHealthSummary, RiskMatrixEntry, TechRadarEntry,
+};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use std::sync::Arc;
+use tauri::State;
 
 // ============================================================================
 // Cross-Project (Codebases connector)
@@ -824,5 +826,3 @@ pub async fn dev_tools_get_dependency_graph(
         "dependencies": shared,
     }))
 }
-
-

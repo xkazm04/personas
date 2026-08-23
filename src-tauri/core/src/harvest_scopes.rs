@@ -216,7 +216,11 @@ fn read_mapped_contexts(map: &serde_json::Value) -> Vec<MappedContext> {
                         .and_then(|v| v.as_str())
                         .unwrap_or("Ungrouped")
                         .to_string(),
-                    name: c.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    name: c
+                        .get("name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string(),
                     files: str_list(c.get("file_paths")),
                 })
                 .collect();
@@ -229,14 +233,22 @@ fn read_mapped_contexts(map: &serde_json::Value) -> Vec<MappedContext> {
         .into_iter()
         .flatten()
         .flat_map(|g| {
-            let group = g.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+            let group = g
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
             g.get("contexts")
                 .and_then(|v| v.as_array())
                 .into_iter()
                 .flatten()
                 .map(move |c| MappedContext {
                     group: group.clone(),
-                    name: c.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    name: c
+                        .get("name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string(),
                     files: str_list(c.get("filePaths")),
                 })
                 .collect::<Vec<_>>()
@@ -301,7 +313,7 @@ fn scopes_from_walk(root: &Path) -> Vec<HarvestScope> {
                 || !e
                     .file_name()
                     .to_str()
-                    .map(|n| SKIP_DIRS.contains(&n) || n.starts_with('.') && n != "." )
+                    .map(|n| SKIP_DIRS.contains(&n) || n.starts_with('.') && n != ".")
                     .unwrap_or(false)
         })
         .filter_map(Result::ok)
@@ -443,9 +455,18 @@ mod tests {
         }"#;
         let s = scopes_from_context_map(raw).expect("v2 map must yield scopes");
         assert_eq!(s.len(), 2, "one scope per group, not per context");
-        let agent = s.iter().find(|x| x.id == "group:agent-platform").expect("agent platform");
-        assert_eq!(agent.file_count, 3, "files summed across the group's contexts");
-        assert_eq!(agent.contexts, vec!["ai-director".to_string(), "lab".to_string()]);
+        let agent = s
+            .iter()
+            .find(|x| x.id == "group:agent-platform")
+            .expect("agent platform");
+        assert_eq!(
+            agent.file_count, 3,
+            "files summed across the group's contexts"
+        );
+        assert_eq!(
+            agent.contexts,
+            vec!["ai-director".to_string(), "lab".to_string()]
+        );
         // Largest territory still leads the fan-out.
         assert_eq!(s[0].id, "group:agent-platform");
     }

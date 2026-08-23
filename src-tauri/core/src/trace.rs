@@ -283,10 +283,7 @@ impl TraceCollector {
         // breadcrumb buffer.
         if matches!(span_type, SpanType::PipelineStage) {
             let mut data = sentry::protocol::Map::new();
-            data.insert(
-                "execution_id".into(),
-                self.execution_id.clone().into(),
-            );
+            data.insert("execution_id".into(), self.execution_id.clone().into());
             data.insert("persona_id".into(), self.persona_id.clone().into());
             sentry::add_breadcrumb(sentry::Breadcrumb {
                 category: Some("execution.stage".into()),

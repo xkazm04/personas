@@ -16,6 +16,8 @@ use crate::error::AppError;
 
 use crate::AppState;
 use personas_macros::requires;
+use serde::Serialize;
+use ts_rs::TS;
 
 #[tauri::command]
 pub fn list_credentials(
@@ -207,7 +209,11 @@ pub fn update_credential(
         // refresh_token). Otherwise the stale expiry keeps the proactive engine
         // skipping this credential — the reconnect "works" but 401s within ~1h.
         if crate::engine::rotation::is_oauth_credential(&state.db, &cred) {
-            crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone(), Some(app));
+            crate::engine::oauth_refresh::spawn_connect_seed(
+                state.db.clone(),
+                cred.clone(),
+                Some(app),
+            );
         }
     }
 
@@ -423,35 +429,64 @@ pub async fn healthcheck_all_credentials(
     crate::engine::healthcheck::run_all_healthchecks(&state.db).await
 }
 
+/// At-rest encryption posture of the credential vault.
+///
+/// Field names are deliberately snake_case (no `rename_all`) because the
+/// frontend has read `status.key_source` / `status.credential_audit_write_failures`
+/// since before this payload was typed.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct VaultStatus {
+    /// Where the master key came from — `"keychain"` when the OS keyring holds
+    /// it, a fallback label otherwise. The trust badge branches on this.
+    pub key_source: String,
+    // i64/u64 render as `bigint` under this repo's ts-rs config, but Tauri's
+    // IPC hands JavaScript a plain `number` — so the honest TS type is
+    // `number`, as 314 other fields in this tree already declare.
+    #[ts(type = "number")]
+    pub total: i64,
+    #[ts(type = "number")]
+    pub encrypted: i64,
+    #[ts(type = "number")]
+    pub plaintext: i64,
+    #[ts(type = "number")]
+    pub legacy_ipc_decrypt_calls: u64,
+    #[ts(type = "number")]
+    pub credential_audit_write_failures: u64,
+}
+
 #[tauri::command]
-pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value, AppError> {
+pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<VaultStatus, AppError> {
     // Public command — no IPC token required (read-only status check)
     let (total, plaintext) = repo::count_vault_status(&state.db)?;
     let encrypted = total - plaintext;
-    let source = crypto::key_source_label();
-    let legacy_ipc_decrypt_calls = crypto::legacy_ipc_decrypt_calls();
-    let credential_audit_write_failures = crypto::credential_audit_write_failures();
 
-    Ok(serde_json::json!({
-        "key_source": source,
-        "total": total,
-        "encrypted": encrypted,
-        "plaintext": plaintext,
-        "legacy_ipc_decrypt_calls": legacy_ipc_decrypt_calls,
-        "credential_audit_write_failures": credential_audit_write_failures,
-    }))
+    Ok(VaultStatus {
+        key_source: crypto::key_source_label().to_string(),
+        total,
+        encrypted,
+        plaintext,
+        legacy_ipc_decrypt_calls: crypto::legacy_ipc_decrypt_calls(),
+        credential_audit_write_failures: crypto::credential_audit_write_failures(),
+    })
+}
+
+/// Outcome of the startup sweep that encrypts any credential still stored in
+/// plaintext.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct MigrationResult {
+    pub migrated: usize,
+    pub failed: usize,
 }
 
 #[tauri::command]
 #[requires(privileged)]
 pub fn migrate_plaintext_credentials(
     state: State<'_, Arc<AppState>>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<MigrationResult, AppError> {
     let (migrated, failed) = crypto::migrate_plaintext_credentials(&state.db)?;
-    Ok(serde_json::json!({
-        "migrated": migrated,
-        "failed": failed,
-    }))
+    Ok(MigrationResult { migrated, failed })
 }
 
 /// Get field-level metadata for a credential (field keys, types, sensitivity).

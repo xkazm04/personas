@@ -282,6 +282,9 @@ pub struct McpToolsInput {
     pub arguments: serde_json::Value,
     pub persona_id: Option<String>,
     pub persona_name: Option<String>,
+    /// `persona_executions` row this call runs inside, if any — feeds the
+    /// per-execution `persona_tool_usage` counter (KP bridge WP4).
+    pub execution_id: Option<String>,
 }
 
 /// Capability adapter for `engine::mcp_tools`.
@@ -315,6 +318,7 @@ impl Capability for McpToolsCapability {
             self.rate_limiter.as_deref(),
             input.persona_id.as_deref(),
             input.persona_name.as_deref(),
+            input.execution_id.as_deref(),
         )
         .await
     }

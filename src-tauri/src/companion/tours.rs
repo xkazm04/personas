@@ -120,11 +120,13 @@ fn validate_step(raw: &Value, index: usize) -> Result<Value, String> {
         .as_object()
         .ok_or_else(|| format!("{path}: not an object"))?;
 
-    let title = clean_text(obj.get("title"), 160).ok_or_else(|| format!("{path}: missing title"))?;
+    let title =
+        clean_text(obj.get("title"), 160).ok_or_else(|| format!("{path}: missing title"))?;
     let description = clean_text(obj.get("description"), MAX_TEXT)
         .ok_or_else(|| format!("{path}: missing description"))?;
     let hint = clean_text(obj.get("hint"), MAX_TEXT).unwrap_or_default();
-    let id = clean_text(obj.get("id"), 80).unwrap_or_else(|| format!("composed-step-{}", index + 1));
+    let id =
+        clean_text(obj.get("id"), 80).unwrap_or_else(|| format!("composed-step-{}", index + 1));
 
     let nav = obj
         .get("nav")
@@ -173,10 +175,10 @@ fn validate_step(raw: &Value, index: usize) -> Result<Value, String> {
             let sobj = sub
                 .as_object()
                 .ok_or_else(|| format!("{spath}: not an object"))?;
-            let sid = clean_text(sobj.get("id"), 80)
-                .unwrap_or_else(|| format!("{id}-sub-{}", i + 1));
-            let label =
-                clean_text(sobj.get("label"), 160).ok_or_else(|| format!("{spath}: missing label"))?;
+            let sid =
+                clean_text(sobj.get("id"), 80).unwrap_or_else(|| format!("{id}-sub-{}", i + 1));
+            let label = clean_text(sobj.get("label"), 160)
+                .ok_or_else(|| format!("{spath}: missing label"))?;
             let shint = clean_text(sobj.get("hint"), MAX_TEXT).unwrap_or_default();
             let mut s = serde_json::json!({ "id": sid, "label": label, "hint": shint });
             if let Some(anchor) = clean_text(sobj.get("highlightTestId"), 120) {
@@ -424,7 +426,8 @@ mod tests {
     #[test]
     fn rejects_unknown_anchor() {
         let mut spec = valid_spec();
-        spec["steps"][0]["highlightTestId"] = Value::String("totally-hallucinated-anchor-xyz".into());
+        spec["steps"][0]["highlightTestId"] =
+            Value::String("totally-hallucinated-anchor-xyz".into());
         let err = validate_tour_spec(&spec).unwrap_err();
         assert!(err.contains("unknown anchor"), "got: {err}");
     }
@@ -497,7 +500,10 @@ mod tests {
         // prefix as well as the length, so the next change to either half has
         // to come past this test rather than around it.
         let hash = manifest_hash();
-        assert!(hash.starts_with("sha256:"), "expected a prefixed digest, got {hash}");
+        assert!(
+            hash.starts_with("sha256:"),
+            "expected a prefixed digest, got {hash}"
+        );
         assert_eq!(hash.len(), "sha256:".len() + 64);
     }
 }
