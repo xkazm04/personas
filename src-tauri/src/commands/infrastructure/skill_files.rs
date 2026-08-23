@@ -775,19 +775,29 @@ fn extract_skill_context_tracked(content: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Frontmatter `version:` normalized to canonical "major.minor" — both
-/// segments must be non-empty and all-digit (`2.1` ✓, `v2`, `1.0.3`, `two.1`
-/// → None). Note `extract_frontmatter_value` matches `version:` at line start
-/// inside the frontmatter block only; keys like `min-version:` cannot
-/// false-match (strip_prefix on the trimmed line), though an indented
-/// `version:` inside a nested YAML block would — acceptable with the shape
-/// check.
+/// Frontmatter `version:` normalized to canonical "major.minor".
+///
+/// Accepts `MAJOR.MINOR` and `MAJOR.MINOR.PATCH`, each part 1–4 ASCII digits
+/// (`2.1` ✓, `1.0.3` ✓ → `"1.0"`; `v2`, `1`, `1.`, `.5`, `12345.0`, `two.1`
+/// → None). The registry's skills lane REQUIRES semver `MAJOR.MINOR.PATCH`
+/// and this app's own share task rewrites versions to that form, so a reader
+/// that rejected three parts could not read back what the app publishes. The
+/// patch digit is accepted and **dropped**: the app's drift comparisons
+/// (`parse_skill_version`, `trace/traceModel.ts::driftOf`) are major.minor
+/// semantics, and a patch bump is by definition not a contract change.
+///
+/// Note `extract_frontmatter_value` matches `version:` at line start inside
+/// the frontmatter block only; keys like `min-version:` cannot false-match
+/// (strip_prefix on the trimmed line), though an indented `version:` inside a
+/// nested YAML block would — acceptable with the shape check.
 fn extract_skill_version(content: &str) -> Option<String> {
     let v = extract_frontmatter_value(content, "version")?;
-    let mut parts = v.splitn(2, '.');
     let is_num = |s: &str| !s.is_empty() && s.len() <= 4 && s.bytes().all(|b| b.is_ascii_digit());
-    match (parts.next(), parts.next()) {
-        (Some(maj), Some(min)) if is_num(maj) && is_num(min) => Some(format!("{maj}.{min}")),
+    let parts: Vec<&str> = v.split('.').collect();
+    match parts.as_slice() {
+        [maj, min] | [maj, min, _] if parts.iter().all(|p| is_num(p)) => {
+            Some(format!("{maj}.{min}"))
+        }
         _ => None,
     }
 }
@@ -1738,8 +1748,20 @@ mod tests {
             extract_skill_version("---\nversion: \"10.42\"\n---\n").as_deref(),
             Some("10.42")
         );
-        // Malformed shapes all normalize to None.
-        for bad in ["v2", "1", "1.0.3", "two.one", "1.", ".5", "12345.0", ""] {
+        // Semver MAJOR.MINOR.PATCH — what the registry's skills lane requires
+        // and what this app's share task writes — reads back as major.minor;
+        // the patch digit is accepted and dropped.
+        assert_eq!(
+            extract_skill_version("---\nname: x\nversion: 1.0.3\n---\nBody").as_deref(),
+            Some("1.0")
+        );
+        assert_eq!(
+            extract_skill_version("---\nversion: \"2.14.9999\"\n---\n").as_deref(),
+            Some("2.14")
+        );
+        // Malformed shapes all normalize to None — including four parts and a
+        // patch segment that is not all-digit.
+        for bad in ["v2", "1", "two.one", "1.", ".5", "12345.0", "", "1.0.", "1.0.x", "1.0.3.4", "1.0.12345"] {
             let md = format!("---\nversion: {bad}\n---\n");
             assert_eq!(extract_skill_version(&md), None, "should reject {bad:?}");
         }
