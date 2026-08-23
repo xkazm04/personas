@@ -595,9 +595,9 @@ measurement. What is real today, and what is not:
 | Field | State | Source / why |
 | --- | --- | --- |
 | `proposalsOpened` | **real** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` this month. Each dispatch carries the branch-only guardrail, so this counts sessions dispatched to author a branch — not branches confirmed on a remote. `None` when the engine has not run for the project (no ledger, not zero). |
-| `proposalsMerged` | **null, always** | Nothing merges an autopilot branch or records that a human did; the guardrail forbids the agent from pushing or opening a PR, and no webhook feeds the outcome back. |
-| `proposalsReverted` | **null, always** | Same. |
-| `gatePassRate` | **null, always** | Personas records persona-lab test runs, not the repository's own declared gate runs. No denominator exists. |
+| `proposalsMerged` | **real (P5a)** | `COUNT` over `app_master_proposals` where `merged_at` falls in the month. Set by the reconciler when `git merge-base --is-ancestor <branch> <main_branch>` says the tip landed; the date is the committer date of the earliest main-branch commit that descends from it. `None` **only** when the project has no proposal row at all — with no ledger there is nothing to be right about. Once one proposal exists, `0` is a real reading. |
+| `proposalsReverted` | **real (P5a)** | `COUNT` over `app_master_proposals` where `reverted_at` falls in the month. A merged proposal is reverted when a later main-branch commit says `Revert "<subject>"` or `This reverts commit <sha>` about one of the commits captured on the branch at discovery. Same `None` rule. |
+| `gatePassRate` | **real (P5a)** | `passed / (passed + failed)` over `app_master_gate_runs` this month — runs of the repository's **own declared gate commands** against proposal branches. A command that timed out or could not be spawned is recorded `did_not_run` and sits in **neither** half. `None` when no gate command ran in the window, including the *not configured* case (a mandate that declares none), which is not a pass. |
 | `forbiddenClassViolations` | **real** | `COUNT` over `app_master.forbidden_class_violation` events for the project this month. A `0` here is a genuine reading. |
 | `kpiDeltas[]` | **real** | The project's App-master-seeded KPIs. `measured` is `current_value.is_some() && last_measured_at.is_some()` — a value with no reading time is a leftover, not a reading. |
 | `budgetReservedUsd` | **real** | `SUM(projected_cost_usd)` over the month's night runs. That projection **is** the reservation: it is taken before any session spawns and it is what the ceiling is checked against. `None` when no night run happened. |
@@ -650,10 +650,9 @@ No new pages — the existing manual-review surfaces render it.
 
 ### 11.6 Known gaps
 
-- **`proposalsMerged` / `proposalsReverted` / `gatePassRate` are unmeasurable
-  on this build** and are omitted rather than sent as zero. Closing them needs
-  a merge/revert signal (a PR webhook or a branch reconciler) and a
-  project-level gate-run ledger.
+- ~~**`proposalsMerged` / `proposalsReverted` / `gatePassRate` are unmeasurable
+  on this build.**~~ **CLOSED by P5a** (§11.7). What remains of that gap is
+  named there: squash merges, and a mandate that declares no gates.
 - **`pr` and `kpi_tick` cadence triggers are not installed.** They are recorded
   as unsupported on the persona; kp sees them in `setupNotes` /
   `unsupportedTriggers` and in the approval result message.
@@ -668,3 +667,146 @@ No new pages — the existing manual-review surfaces render it.
   `dependency_bump_to_satisfy_check` blocks every manifest edit through
   `dev_tools_apply_diff`. That is the conservative direction; the fix is a
   stated goal on the call, not a guess in the detector.
+
+---
+
+## 12. Real gate runs + merge/revert detection (P5a)
+
+> **Status: implemented on `master`.** Phase P5a closes the three fields §11.4
+> could only send as `null`. Nothing on the wire changed shape — the same three
+> optional keys, now populated when there is something to populate them with.
+
+P4 shipped a backbone with three fields that were `null` **every time**, because
+no ledger behind them existed. kp's `backbone_score()` excludes an unmeasured
+rule from both the numerator *and* the denominator and degrades the verdict to
+`incomplete`, so an App master's probation review could never be about a
+complete record. P5a is the missing instrument, and only the instrument: no
+number here is estimated, defaulted or inferred.
+
+### 12.1 Where the gate commands come from
+
+**`mandate.approvalGates` on the persisted `MandateRecord`, and nowhere else.**
+kp composes that list from the repo dossier's `declaredGates`, so it is the
+repository's own declaration as far as this process can see it
+(`gate-sees-target`; registry technique
+`software-engineering/…/machine-paced-delivery/techniques/pre-authorship-verification`).
+
+Two candidates were considered and rejected:
+
+- `dev_projects.standards_config` — its `precommit` block holds policy flags
+  (`{lint, docs_required, code_quality}`), not commands. Reading a command out
+  of it would mean inventing one.
+- Package-manager detection (`Cargo.toml` ⇒ `cargo test`, …), the fallback
+  `dev_tools_run_tests` uses. A command nobody in the project runs produces a
+  green result about a check that does not exist — worse than no result,
+  because it is believed.
+
+An empty list is reported **`not configured`**, distinctly from *passed* and
+from *failed*, and **nothing runs**.
+
+### 12.2 The reconciler
+
+`engine/app_master_reconcile.rs` — a 30-minute subscription beside the probation
+tick, costing one `app_settings` prefix query when no project carries a mandate.
+Per mandated project with a real, git work-tree `root_path`:
+
+| Step | What happens |
+| --- | --- |
+| discover | `git for-each-ref refs/heads/autopilot/*` — the namespace the unattended dispatch guardrail *tells* the session to use, not a guess about naming. Each branch is upserted into `app_master_proposals` with its tip and the commits it carries relative to the main branch. |
+| gate | Up to 3 not-yet-gated proposals per tick get §12.1's commands run against them, one `app_master_gate_runs` row each. The attempt is stamped either way, so a *not configured* project is answered once rather than retried forever. |
+| merge | `git merge-base --is-ancestor <tip> <main_branch>` ⇒ `merged_at` = the committer date of the earliest main-branch commit descending from the tip (the merge commit), falling back to the tip's own date on a fast-forward. |
+| revert | For a merged, not-yet-reverted proposal: `git log <main> --since=<merged_at>` scanned for `Revert "<subject>"` or `This reverts commit <sha>` naming one of the captured commits. |
+
+**The commit list is captured at discovery, before any merge.** After a merge
+the branch is an ancestor of main and the fork point no longer isolates its
+commits — revert detection needs the subjects it had beforehand. Re-seeing a
+branch refreshes its tip but never overwrites the captured commits and never
+clears an observation already made.
+
+**The main branch is resolved, not assumed**: `dev_projects.main_branch` if that
+ref exists, else `main`, else `master`. If none resolves the project is skipped
+with a warning rather than judged against a branch nobody merges into.
+
+### 12.3 Why the gates run there and not at dispatch
+
+The Overnight engine's dispatch is **asynchronous** — it spawns headless fleet
+sessions and writes its ledger row immediately, long before any of them has
+authored a branch. A gate wired into `run_project_night` would run against a
+branch that does not exist yet: the gate would not see its target, which is the
+exact failure the technique names.
+
+`dev_tools_apply_diff` is the other candidate chokepoint and is deliberately
+left alone: it holds a *diff*, not a branch, it is a synchronous IPC command a
+user is waiting on, and the forbidden-class detector already runs there.
+Running a repository's gate suite inside it would block the UI for minutes.
+
+### 12.4 Running a gate without disturbing anyone
+
+`git worktree add --detach <temp> <branch>`, run, remove, prune. The branch is
+never checked out in the shared tree — kp-style repos have concurrent agent
+sessions working in one checkout, and a gate that switched branches under them
+would be a bug shipped into somebody else's work. Each command runs through the
+platform shell with `stdin` on null and `kill_on_drop`, bounded by
+`PERSONAS_APP_MASTER_GATE_TIMEOUT_SECS` (default 600 s per command).
+
+### 12.5 Three-valued outcomes
+
+`app_master_gate_runs.outcome` is `passed` | `failed` | `did_not_run`.
+
+**`did_not_run` is in neither half of the pass rate.** Counting it as a failure
+would turn a flaky spawn into a performance claim about the holder; counting it
+as a pass would be a lie. An all-`did_not_run` window therefore yields `None`,
+not `0.0` — "nothing could be run" and "everything failed" are opposite findings
+that a `0.0` would make identical. Each row keeps the exit code (null exactly
+when `did_not_run`), the duration, and the **first real error line**, bounded to
+400 characters: verdict first, first failure located, bounded detail.
+
+### 12.6 Schema
+
+Both tables are created in `db/src/migrations/incremental/c04_milestones_and_autopilot.rs`,
+guarded on `has_table`, with soft refs to `dev_projects` / `personas` (no FK) so
+the audit trail outlives the project row — the `autopilot_night_runs` precedent.
+
+```
+app_master_proposals(id, project_id, persona_id, branch, head_sha, base_sha,
+                     commits JSON, first_seen_at, merged_at, merge_sha,
+                     reverted_at, revert_sha, gates_ran_at,
+                     UNIQUE(project_id, branch))
+app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
+                     outcome CHECK(passed|failed|did_not_run), duration_ms,
+                     first_error, ran_at)
+```
+
+### 12.7 What is still not measured
+
+- **A squash merge is invisible.** It rewrites the commits, so the tip is never
+  an ancestor of main and the proposal reads *not merged*. The error is in the
+  direction of claiming **less** delivery than happened, never more — stated
+  here and in the probation narration rather than papered over. Closing it needs
+  either a `Merged-from:` trailer convention or a PR webhook.
+- **A proposal that never becomes a local branch is never seen.** The dispatch
+  ledger still counts it under `proposalsOpened`; the gap between the two
+  numbers is itself a reading (a dispatched session that authored nothing).
+- **A project with no declared gates reports `gatePassRate: null` forever.**
+  That is correct — there is nothing to run — but it means kp's `gates` rule
+  stays unmeasured for that hire. The fix is on kp's side of the wire: send the
+  dossier's `declaredGates` in `mandate.approvalGates`.
+- **The forbidden-class detector does not know about a project's own eval
+  thresholds.** `gate_configuration` keys off CI and linter config paths; a
+  repo's `thresholds.py` (or equivalent) is not among them, so lowering a bar
+  passes the detector and is caught only by a human reading the diff. See
+  `docs/tests/appmaster-bench/seeds/kp-05.md`, which exists to measure exactly
+  that.
+- **The probation narration is still deterministic.** `narrationSource` remains
+  `"deterministic"`; it now restates the P5a numbers (and distinguishes a
+  measured `0` from an absent reading in words), but no LLM narrates the packet.
+  An LLM pass stays a labelled second field that may never rewrite a number.
+
+### 12.8 The bench
+
+`docs/tests/appmaster-bench/` — a skeleton (not yet run) for hiring kp's own App
+master on a `suggest` autopilot, seeding five known-answer items out of kp's
+`docs/BACKLOG.md`, running one night, and reading the backbone. Three of the
+five seeds carry a forbidden-class trap; two of those traps are deliberately
+ones the detector does **not** catch, so a run measures how much of the honesty
+story rests on the human reviewer.

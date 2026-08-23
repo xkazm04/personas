@@ -147,19 +147,36 @@ pub(crate) struct KpAppMasterRollup {
     /// confirmed to exist on a remote.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proposals_opened: Option<i64>,
-    /// **Always `None` today.** Nothing in Personas merges an autopilot branch
-    /// or records that a human did — the guardrail explicitly forbids the agent
-    /// from pushing or opening a PR, and no webhook feeds the outcome back. A
-    /// `0` here would read, in kp, as "opened proposals, merged none", which is
-    /// a performance claim nobody measured.
+    /// Real since P5a: proposals observed on the project's main branch in the
+    /// period, from the `app_master_proposals` ledger the reconciler
+    /// (`engine::app_master_reconcile`) maintains. `merged_at` is set when
+    /// `git merge-base --is-ancestor <branch> <main>` says the tip landed.
+    ///
+    /// `None` only when the project has **no proposal rows at all** — with no
+    /// ledger there is nothing to be right about. Once one proposal exists a
+    /// `0` is a real reading: work was authored and none of it landed.
+    ///
+    /// Under-reports a **squash** merge, which rewrites the commits and leaves
+    /// no ancestor relationship. Stated rather than papered over: the error is
+    /// in the direction of claiming less delivery, never more.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proposals_merged: Option<i64>,
-    /// **Always `None` today**, for the same reason as `proposals_merged`.
+    /// Real since P5a: merged proposals later taken back, detected from the
+    /// main branch's own log (`Revert "<subject>"` or `This reverts commit
+    /// <sha>` naming one of the proposal's captured commits). Same `None`
+    /// rule as `proposals_merged`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proposals_reverted: Option<i64>,
-    /// **Always `None` today.** Personas records persona-lab test runs, not the
-    /// repository's own declared gates; there is no gate-run ledger for a
-    /// project, so there is no denominator.
+    /// Real since P5a: passed / (passed + failed) over the runs of the
+    /// repository's **own declared gate commands** against proposal branches
+    /// in the period (`app_master_gate_runs`). The commands come from the App
+    /// master mandate's `approvalGates` — kp's carrier for the dossier's
+    /// `declaredGates` — and from nowhere else.
+    ///
+    /// A command that timed out or could not be spawned is recorded
+    /// `did_not_run` and sits in **neither** half of the ratio. `None` when no
+    /// gate command actually ran in the period — including the case where the
+    /// mandate declares none, which is *not configured*, not a pass.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gate_pass_rate: Option<f64>,
     /// Real: a COUNT over `app_master.forbidden_class_violation` events for the
@@ -600,11 +617,20 @@ pub(crate) fn app_master_rollup(
     // opt-in, and over-reporting the mode would over-claim the autonomy.
     .unwrap_or("off");
 
+    // P5a: the two ledgers that closed the three structural nulls. Both hand
+    // back `None` for "no record exists", never a convenient zero.
+    let counts =
+        personas_engine::app_master_gates::proposal_counts_since(pool, &project_id, &since);
+
     Some(KpAppMasterRollup {
         proposals_opened,
-        proposals_merged: None,
-        proposals_reverted: None,
-        gate_pass_rate: None,
+        proposals_merged: counts.map(|c| c.merged),
+        proposals_reverted: counts.map(|c| c.reverted),
+        gate_pass_rate: personas_engine::app_master_gates::gate_pass_rate_since(
+            pool,
+            &project_id,
+            &since,
+        ),
         forbidden_class_violations: personas_engine::app_master::count_violations_since(
             pool,
             &project_id,
@@ -834,9 +860,12 @@ mod tests {
             connector_uses: vec![],
             app_master: Some(KpAppMasterRollup {
                 proposals_opened: Some(7),
-                proposals_merged: None,
-                proposals_reverted: None,
-                gate_pass_rate: None,
+                // P5a: real readings now. A measured 0 must reach kp as a 0 —
+                // it is the difference between "nothing landed" and "nobody
+                // watched", and kp's backbone scores them differently.
+                proposals_merged: Some(4),
+                proposals_reverted: Some(0),
+                gate_pass_rate: Some(0.75),
                 forbidden_class_violations: Some(2),
                 kpi_deltas: Some(vec![KpKpiDelta {
                     kpi_key: "gate_pass_rate".into(),
@@ -869,6 +898,9 @@ mod tests {
                 "connectorUses": [],
                 // v2 fields, FLATTENED onto the same object (not nested).
                 "proposalsOpened": 7,
+                "proposalsMerged": 4,
+                "proposalsReverted": 0,
+                "gatePassRate": 0.75,
                 "forbiddenClassViolations": 2,
                 "kpiDeltas": [{
                     "kpiKey": "gate_pass_rate",
@@ -884,10 +916,50 @@ mod tests {
                 "budgetUnmeasured": false,
                 "ledgerConsistent": true,
                 "autopilotMode": "suggest",
-                // proposalsMerged / proposalsReverted / gatePassRate are ABSENT,
-                // not zero — see the doc comments on those fields.
             })
         );
+    }
+
+    #[test]
+    fn a_project_with_no_proposal_ledger_omits_the_three_p5a_fields() {
+        // The other half of the P5a contract: real when there IS a record,
+        // ABSENT when there is none. Never a zero standing in for silence.
+        let v = serde_json::to_value(KpAppMasterRollup {
+            proposals_opened: Some(3),
+            proposals_merged: None,
+            proposals_reverted: None,
+            gate_pass_rate: None,
+            budget_settled_usd: Some(1.0),
+            autopilot_mode: "suggest",
+            ..Default::default()
+        })
+        .unwrap();
+        let obj = v.as_object().unwrap();
+        for absent in ["proposalsMerged", "proposalsReverted", "gatePassRate"] {
+            assert!(
+                !obj.contains_key(absent),
+                "{absent} must be omitted, got {v}"
+            );
+        }
+        assert_eq!(obj.get("proposalsOpened"), Some(&serde_json::json!(3)));
+    }
+
+    #[test]
+    fn a_measured_zero_is_sent_as_zero_not_omitted() {
+        let v = serde_json::to_value(KpAppMasterRollup {
+            proposals_opened: Some(3),
+            proposals_merged: Some(0),
+            proposals_reverted: Some(0),
+            gate_pass_rate: Some(0.0),
+            budget_settled_usd: Some(1.0),
+            autopilot_mode: "suggest",
+            ..Default::default()
+        })
+        .unwrap();
+        let obj = v.as_object().unwrap();
+        assert_eq!(obj.get("proposalsMerged"), Some(&serde_json::json!(0)));
+        assert_eq!(obj.get("proposalsReverted"), Some(&serde_json::json!(0)));
+        assert_eq!(obj.get("gatePassRate"), Some(&serde_json::json!(0.0)));
     }
 
     #[test]
@@ -901,8 +973,9 @@ mod tests {
         })
         .unwrap();
         let obj = v.as_object().unwrap();
-        // The four things Personas cannot read today must not appear at all. An
-        // absent key is a coverage gap in kp's backbone; a `0` is a measurement.
+        // Every optional field with no reading behind it must not appear at
+        // all. An absent key is a coverage gap in kp's backbone; a `0` is a
+        // measurement.
         for absent in [
             "proposalsOpened",
             "proposalsMerged",

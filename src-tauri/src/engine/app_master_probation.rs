@@ -160,15 +160,37 @@ fn narrate(
              project in the window, so there is no dispatch ledger to read.\n",
         ),
     }
-    out.push_str(
-        "Proposals merged / reverted: NOT MEASURED. Nothing in this build records whether a \
-         human merged or reverted an autopilot branch, so no merge rate can be quoted — this \
-         is a hole in the instrument, not a zero.\n",
-    );
-    out.push_str(
-        "Gate pass rate: NOT MEASURED. This build keeps no ledger of the repository's own \
-         declared gate runs, so there is no denominator.\n",
-    );
+    // P5a: these three now come from real ledgers (the proposal reconciler and
+    // the gate-run recorder). The narration still has to distinguish a MEASURED
+    // zero from an ABSENT reading in words — "nothing merged" and "nobody was
+    // watching" are opposite findings that look identical in a number.
+    match (b.proposals_merged, b.proposals_reverted) {
+        (Some(m), Some(r)) => out.push_str(&format!(
+            "Proposals merged: {m}. Proposals reverted: {r}. Both are readings from the \
+             proposal ledger: a branch counts as merged when its tip is an ancestor of the \
+             project's main branch, and as reverted when a later main-branch commit says so \
+             about one of its own commits. A squash merge rewrites the commits and is NOT \
+             detected, so this under-reports rather than over-reports delivery.\n"
+        )),
+        _ => out.push_str(
+            "Proposals merged / reverted: NOT MEASURED — no proposal branch has ever been \
+             recorded for this project, so there is nothing that could have merged or been \
+             reverted. A hole in the instrument, not a zero.\n",
+        ),
+    }
+    match b.gate_pass_rate {
+        Some(rate) => out.push_str(&format!(
+            "Gate pass rate: {:.0}% on the repository's OWN declared gate commands, run \
+             against the proposal branches themselves. A command that timed out or could not \
+             be spawned was recorded DID NOT RUN and counted in neither half of the ratio.\n",
+            rate * 100.0
+        )),
+        None => out.push_str(
+            "Gate pass rate: NOT MEASURED — no declared gate command actually ran in the \
+             window. Either the mandate declares none (which is `not configured`, and not a \
+             pass) or every attempt failed to run. With no denominator there is no rate.\n",
+        ),
+    }
     match b.forbidden_class_violations {
         Some(0) => out.push_str(
             "Forbidden-class violations: 0. This IS a reading — the violation ledger was \
@@ -476,8 +498,10 @@ mod tests {
 
     #[test]
     fn the_narration_never_reports_an_unmeasured_field_as_zero() {
+        // The fixture backbone leaves the P5a fields absent — a project whose
+        // reconciler has never seen a proposal branch and whose gates have
+        // never run. Those must read as holes, not as zeros.
         let n = narrate("kp App Master", &record(), Some(&backbone()), 12);
-        // The three things this build cannot read say so, in words.
         assert!(
             n.contains("Proposals merged / reverted: NOT MEASURED"),
             "{n}"
@@ -495,6 +519,29 @@ mod tests {
         // A measured objective quotes both ends.
         assert!(n.contains("gate_pass_rate: 0.82 → 0.9"), "{n}");
         assert!(n.contains("1 of 2 were measured"), "{n}");
+    }
+
+    #[test]
+    fn a_measured_zero_merge_rate_is_narrated_as_a_reading_not_a_hole() {
+        // P5a: a project whose reconciler HAS seen proposals and none merged.
+        // "0 merged" and "nobody watched" must not read the same.
+        let mut b = backbone();
+        b.proposals_merged = Some(0);
+        b.proposals_reverted = Some(0);
+        b.gate_pass_rate = Some(0.0);
+        let n = narrate("kp App Master", &record(), Some(&b), 12);
+        assert!(
+            n.contains("Proposals merged: 0. Proposals reverted: 0."),
+            "{n}"
+        );
+        assert!(
+            !n.contains("Proposals merged / reverted: NOT MEASURED"),
+            "{n}"
+        );
+        assert!(n.contains("Gate pass rate: 0%"), "{n}");
+        assert!(!n.contains("Gate pass rate: NOT MEASURED"), "{n}");
+        // The squash-merge blind spot is stated, not hidden.
+        assert!(n.contains("squash merge"), "{n}");
     }
 
     #[test]

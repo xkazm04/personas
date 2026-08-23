@@ -295,6 +295,17 @@ pub fn start_loops(
                 pool: pool.clone(),
             },
         ),
+        // App master proposal reconciler (P5a) — observes proposal branches,
+        // runs the repository's OWN declared gates against them, and records
+        // merges and reverts. Without it `proposalsMerged`,
+        // `proposalsReverted` and `gatePassRate` are structurally null and the
+        // probation verdict can never be anything but `incomplete`. Free when
+        // no project carries a mandate (one settings-prefix query and out).
+        Box::new(
+            crate::engine::app_master_reconcile::AppMasterReconcileSubscription {
+                pool: pool.clone(),
+            },
+        ),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context
