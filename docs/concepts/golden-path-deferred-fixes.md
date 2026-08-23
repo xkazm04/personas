@@ -3001,7 +3001,7 @@ Three things are owed and none is applied:
    that a `post-commit` hook's exit code is ignored by git, so this is a loud **detector**, never
    a gate.
 
-The working answer is already in the repo — `.claude/skills/mvp/state/calibration.md:54` — where
+The working answer is already in the repo — `.claude/mvp/calibration.md:54` — where
 it has held for four consecutive runs across eight concurrent builders in five repositories. It
 never travelled because a per-run calibration log is not where anyone looks for a project rule.
 

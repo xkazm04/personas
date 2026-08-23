@@ -94,15 +94,71 @@ const mdFiles = (dir) =>
     ? fs.readdirSync(dir).filter((f) => f.endsWith('.md') && !f.startsWith('.')).sort()
     : [];
 
-const subjectsOf = (base) =>
-  fs.existsSync(base)
-    ? fs
-        .readdirSync(base, { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => e.name)
-        .filter((slug) => fs.existsSync(path.join(base, slug, `${slug}.md`)))
-        .sort()
-    : [];
+/**
+ * Locate every subject under `base`: `Map<slug, absolute subject dir>`.
+ *
+ * The registry's bundles are NESTED (`<bundle>/<category>/[<subcategory>/]
+ * <subject>/<subject>.md`, rkb-profile §2) and `docs/concepts/paths/` is flat,
+ * so the one-level `readdir` this used to be saw zero bundle subjects and the
+ * parity check failed the whole corpus as "dropped by the mirror". Two sources,
+ * in order:
+ *
+ *   1. `<base>/index.json` — the bundle's GENERATED index, whose
+ *      `subjects[slug].file` is the authoritative location of the golden path
+ *      (repo-relative, e.g. `knowledge/software-engineering/ui-surfaces/…/
+ *      accessibility/accessibility.md`). Entries whose file is not on disk are
+ *      dropped here and surface as parity failures, which is the truthful
+ *      outcome: the index claims a subject the tree does not carry.
+ *   2. A recursive walk — the same rule `scripts/lib/taxonomy.mjs::walkSubjects`
+ *      uses registry-side: a directory holding `<name>/<name>.md` IS a subject
+ *      (at any depth); any other directory is a grouping folder and is
+ *      descended into. Works unchanged for a flat tree, so the local corpus
+ *      (no index.json) takes this path.
+ *
+ * Identity is the bare slug at every depth (rkb-profile §2.1), so callers keep
+ * comparing slugs; only the LOCATION became a lookup.
+ */
+const subjectDirsOf = (base, repoRoot) => {
+  const found = new Map();
+  if (!fs.existsSync(base)) return found;
+
+  const indexPath = path.join(base, 'index.json');
+  if (fs.existsSync(indexPath)) {
+    try {
+      const idx = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+      const subjects = idx && typeof idx.subjects === 'object' && idx.subjects ? idx.subjects : {};
+      for (const [slug, entry] of Object.entries(subjects)) {
+        if (!entry || typeof entry.file !== 'string' || !entry.file) continue;
+        const abs = path.resolve(repoRoot, entry.file);
+        if (path.basename(abs) !== `${slug}.md` || !fs.existsSync(abs)) continue;
+        found.set(slug, path.dirname(abs));
+      }
+      if (found.size > 0) return found;
+    } catch {
+      // Malformed index: fall through to the walk rather than reporting an
+      // empty bundle — "blind" must never read as "clean".
+    }
+  }
+
+  const walk = (absDir) => {
+    const children = fs
+      .readdirSync(absDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('_'))
+      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const e of children) {
+      const abs = path.join(absDir, e.name);
+      if (fs.existsSync(path.join(abs, `${e.name}.md`))) {
+        if (!found.has(e.name)) found.set(e.name, abs);
+      } else if (e.name !== 'techniques' && e.name !== 'applications') {
+        walk(abs);
+      }
+    }
+  };
+  walk(base);
+  return found;
+};
+
+const subjectsOf = (dirs) => [...dirs.keys()].sort();
 
 // ---------------------------------------------------------------------------
 // 0. Assert the inputs. A checker that walks zero files and exits 0 reports
@@ -116,7 +172,8 @@ if (!fs.existsSync(CORPUS)) {
       `not deleting.`,
   );
 }
-const corpusSubjects = subjectsOf(CORPUS);
+const corpusDirs = subjectDirsOf(CORPUS, ROOT);
+const corpusSubjects = subjectsOf(corpusDirs);
 if (corpusSubjects.length === 0) {
   fatal(`${path.relative(ROOT, CORPUS)} contains no subject folders.`);
 }
@@ -131,8 +188,9 @@ const corpusTechniques = new Set();
 const corpusApplications = new Set();
 
 for (const slug of corpusSubjects) {
-  const rel = `docs/concepts/paths/${slug}/${slug}.md`;
-  const fm = readFm(path.join(CORPUS, slug, `${slug}.md`));
+  const dir = corpusDirs.get(slug);
+  const rel = path.relative(ROOT, path.join(dir, `${slug}.md`)).replace(/\\/g, '/');
+  const fm = readFm(path.join(dir, `${slug}.md`));
   if (!fm) {
     fail(`${rel}: no frontmatter block`);
     continue;
@@ -159,10 +217,10 @@ for (const slug of corpusSubjects) {
     }
   }
 
-  for (const f of mdFiles(path.join(CORPUS, slug, 'techniques'))) {
+  for (const f of mdFiles(path.join(dir, 'techniques'))) {
     corpusTechniques.add(`${slug}/${f}`);
   }
-  for (const f of mdFiles(path.join(CORPUS, slug, 'applications'))) {
+  for (const f of mdFiles(path.join(dir, 'applications'))) {
     corpusApplications.add(`${slug}/${f}`);
   }
 }
@@ -186,13 +244,15 @@ if (!fs.existsSync(BUNDLE)) {
   note(`SKIPPED: ${msg}`);
 } else {
   paired = true;
-  bundleSubjects = subjectsOf(BUNDLE);
+  const bundleDirs = subjectDirsOf(BUNDLE, REGISTRY);
+  bundleSubjects = subjectsOf(bundleDirs);
 
   for (const slug of bundleSubjects) {
-    for (const f of mdFiles(path.join(BUNDLE, slug, 'techniques'))) {
+    const dir = bundleDirs.get(slug);
+    for (const f of mdFiles(path.join(dir, 'techniques'))) {
       bundleTechniques.add(`${slug}/${f}`);
     }
-    for (const f of mdFiles(path.join(BUNDLE, slug, 'applications'))) {
+    for (const f of mdFiles(path.join(dir, 'applications'))) {
       bundleApplications.add(`${slug}/${f}`);
     }
 
@@ -200,13 +260,9 @@ if (!fs.existsSync(BUNDLE)) {
     //     keys. Registry CI checks this too — cheaply repeated here so a bad
     //     mirror is caught BEFORE it is pushed rather than after.
     const files = [
-      path.join(BUNDLE, slug, `${slug}.md`),
-      ...mdFiles(path.join(BUNDLE, slug, 'techniques')).map((f) =>
-        path.join(BUNDLE, slug, 'techniques', f),
-      ),
-      ...mdFiles(path.join(BUNDLE, slug, 'applications')).map((f) =>
-        path.join(BUNDLE, slug, 'applications', f),
-      ),
+      path.join(dir, `${slug}.md`),
+      ...mdFiles(path.join(dir, 'techniques')).map((f) => path.join(dir, 'techniques', f)),
+      ...mdFiles(path.join(dir, 'applications')).map((f) => path.join(dir, 'applications', f)),
     ];
     for (const abs of files) {
       if (!fs.existsSync(abs)) continue;
@@ -225,7 +281,7 @@ if (!fs.existsSync(BUNDLE)) {
     // 2b. Sidecar completeness. The overlays are gitignored, so a fresh clone
     //     has none and that is correct — but a PARTIAL set means the mirror
     //     stopped halfway, which is worth catching on the machine that mirrors.
-    if (fs.existsSync(path.join(BUNDLE, slug, '.evidence.local.md'))) sidecarsFound += 1;
+    if (fs.existsSync(path.join(dir, '.evidence.local.md'))) sidecarsFound += 1;
     else sidecarsMissing.push(slug);
   }
 
