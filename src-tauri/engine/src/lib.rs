@@ -50,6 +50,7 @@ pub mod ambient_signal_repo;
 pub mod api_definition;
 #[cfg(feature = "desktop")]
 pub mod app_focus;
+pub mod app_master;
 pub mod archetype_catalog;
 pub mod auto_triage;
 pub mod autonomy;

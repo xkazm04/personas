@@ -1,6 +1,10 @@
 # Active Runs Ledger
 
 ## Active
+
+- **[2026-08-22 21:35]**
+- **Paths:** `src-tauri/src/commands/fleet/**` · `src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs`
+- **Status:** started
 ### rust-refactor-w0 — Rust backend refactor, Wave 0 (gates before any structural move) — session fable-5 Director + Opus builders — started
 - 2026-08-20. Plan: `docs/plans/rust-refactor.md` (W0-W6). This entry covers **W0 only**.
 - **Write-set (Director):** `docs/plans/rust-refactor.md`, `.github/workflows/{ci,audit}.yml`, `lefthook.yml`, `src-tauri/deny.toml`, `.claude/conventions.json`, `.claude/CLAUDE.md`, `.claude/active-runs.md`.
@@ -381,6 +385,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### fleet-cli-naming — pass --name through fleet spawn
 
 ### research-adw-loop-engineering — /research (focus: local skills + CLAUDE.md) on IndyDevDan "Forget loop engineering / AI Developer Workflows" — session opus-5[1m]
 - **[2026-08-21 18:35]** Source: https://www.youtube.com/watch?v=VQy50fuxI34
@@ -3451,6 +3457,17 @@ timestamp — the next session can recognize it as abandoned.
 - KNOWN OVERLAP RISK: athena-fleet-conductor declares approvals/approval_exec_fleet.rs (different file) but may touch the same action catalog in approval_lifecycle.rs — merge coordination needed at integration time, both add entries append-style.
 
 #### spark-agent-candidate-bridge — UPDATE 2026-08-04 (2): kp side MERGED to kp main (765cfee6, gates green). Personas branch worktree-spark-agent-candidate-bridge is COMPLETE (WP3 449861d61 + WP4 25bde5428, all gates green) and READY TO MERGE — held because master's working tree has uncommitted changes to src-tauri/db/src/repos/execution/executions.rs (another session) which the branch also modifies (adds get_monthly_rollup). Whoever owns that dirty state: commit it, then `git merge worktree-spark-agent-candidate-bridge` resolves the rest. Worktree kept alive until merged.
+
+#### spark-agent-candidate-bridge — CLOSED 2026-08-23: MERGED to master (`--no-ff`), 19 days after the hold. Phase 0 of the "App master" program (kp `docs/concepts/app-master.md` §4.1) — session opus-5[1m].
+- The hold reason had expired: `executions.rs` was clean on master. Master had moved **887 commits** since the merge base (`1277d0a8a`), so the branch met a restructured tree: `engine/mod.rs` was split into `engine/execution.rs` et al (−4251 lines) and `engine/background.rs` into `engine/background/` (−3700). Merge was still mostly additive — **26 files, +2018/−37** — with **4 conflicts**, all resolved keeping BOTH sides:
+  - `engine/mod.rs` — took master's slimmed file, kept the branch's `pub mod kp_reporter;`.
+  - `engine/background.rs` (modify/delete) — accepted master's deletion; `KpReporterSubscription` re-registered in its successor `engine/background/lifecycle.rs`.
+  - `engine/execution.rs` — the branch's `push_execution_event` block moved into `handle_execution_result` where master relocated it (this file was not in the branch at all).
+  - `approval_lifecycle.rs` — master extracted the action match into `execute_approval_action`; `"kp_hire_request"` re-registered there. `executions.rs` — both test blocks kept.
+- Verified: `cargo check --workspace --features desktop --all-targets` clean (warnings only, all pre-existing). Crate tests per crate — see the commit message for counts. The one `personas-db` failure (`repos::dev::ideas::backlog_memory_tests::normalize_collapses_rewordings_and_keeps_verbs`) is untouched by this merge and pre-existing.
+- Also fixed here because the bridge depends on it: **deferred-fix #39's :9420 route-table race** (`docs/concepts/golden-path-deferred-fixes.md` §39). `/api/kp/*` and `/pair/*` live only on the 34-route table, which a single `try_state::<Arc<AppState>>()` poll used to decide silently. `background/lifecycle.rs` now polls (50 × 100 ms) and logs at **error** if it ever falls back; `/health` reports `"management": bool` so a caller can tell the two tables apart instead of inferring from a 404. `AppState` is managed at `boot/mod.rs:196`, before all three `start_loops` callers, so the full table is now the deterministic outcome.
+- Docs updated in the same change: `docs/architecture/cloud-integration-bridge.md` §10 (new — routes, approval flow, reporter, route-table note), `docs/api/management-api.openapi.yaml` (3 `/api/kp/*` paths + `KpPersonaRequest` schema + `/health.management`), `docs/concepts/golden-path-deferred-fixes.md` §39.
+- NOT done here: the worktree `.claude/worktrees/spark-agent-candidate-bridge` and its branch are left in place (they are the other session's to remove); `npm run check` / census / vitest not run (Rust-and-docs-only change, and the census walk is a pre-push gate this session does not push through).
 
 
 #### reflect-me-run1 + prose-capture — Decision Mirror: first /reflect-me distillation, then Phase 1c prose channel — session opus-5[1m]

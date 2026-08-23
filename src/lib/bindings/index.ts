@@ -721,6 +721,7 @@ export type { PresetPublishResult } from "./PresetPublishResult";
 export type { ProjectHealthEntry } from "./ProjectHealthEntry";
 export type { ProjectionResult } from "./ProjectionResult";
 export type { ProjectPulseSnapshot } from "./ProjectPulseSnapshot";
+export type { PromotionReport } from "./PromotionReport";
 export type { PromptAbExecResult } from "./PromptAbExecResult";
 export type { PromptAbTestResult } from "./PromptAbTestResult";
 export type { PromptPerformanceData } from "./PromptPerformanceData";
