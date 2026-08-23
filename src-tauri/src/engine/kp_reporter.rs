@@ -112,6 +112,92 @@ struct KpExecutionEvent<'a> {
     connector_uses: Vec<KpConnectorUse>,
 }
 
+/// One objective's movement inside its window. `measured: false` means nobody
+/// read the meter — a coverage gap, NOT a missed target and NOT a hit. kp's
+/// `backbone_score()` refuses to read an unmeasured input as a good one, so
+/// this flag is load-bearing on the far side, not decoration.
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct KpKpiDelta {
+    pub kpi_key: String,
+    pub baseline: Option<f64>,
+    pub current: Option<f64>,
+    pub target: Option<f64>,
+    /// kp's vocabulary (`gte` / `lte`), not the Personas `up` / `down` — the
+    /// mapping is undone here so kp never has to guess which side it is on.
+    pub direction: &'static str,
+    pub window_days: i64,
+    pub measured: bool,
+}
+
+/// The App master extension of a rollup (P4, wire contract v2).
+///
+/// **Every field here is `Option` and every `None` is omitted from the wire.**
+/// That is the whole design: kp's backbone treats an absent reading as a
+/// coverage gap and a present `0` as a measurement, so a guessed zero would be
+/// scored as a real, bad result. Where Personas has no ledger to read, it says
+/// nothing rather than something convenient.
+#[derive(Debug, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct KpAppMasterRollup {
+    /// Unattended fix sessions dispatched for this project in the period. Each
+    /// carries the branch-only guardrail contract (`autopilot/<slug>`, no push,
+    /// no merge), so this is "proposals opened" as far as Personas can witness
+    /// it: it counts sessions dispatched to author a branch, not branches
+    /// confirmed to exist on a remote.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proposals_opened: Option<i64>,
+    /// **Always `None` today.** Nothing in Personas merges an autopilot branch
+    /// or records that a human did — the guardrail explicitly forbids the agent
+    /// from pushing or opening a PR, and no webhook feeds the outcome back. A
+    /// `0` here would read, in kp, as "opened proposals, merged none", which is
+    /// a performance claim nobody measured.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proposals_merged: Option<i64>,
+    /// **Always `None` today**, for the same reason as `proposals_merged`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proposals_reverted: Option<i64>,
+    /// **Always `None` today.** Personas records persona-lab test runs, not the
+    /// repository's own declared gates; there is no gate-run ledger for a
+    /// project, so there is no denominator.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gate_pass_rate: Option<f64>,
+    /// Real: a COUNT over `app_master.forbidden_class_violation` events for the
+    /// project in the period. Zero here is a genuine reading — the ledger
+    /// exists and was queried — not an absence.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub forbidden_class_violations: Option<i64>,
+    /// Real: one entry per objective seeded at hire, read from the project's
+    /// KPI rows.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kpi_deltas: Option<Vec<KpKpiDelta>>,
+    /// Real: the overnight budget governor's pre-dispatch projection, summed
+    /// over the period's night runs. That projection IS the reservation — it is
+    /// taken before any session spawns and it is what the ceiling is checked
+    /// against.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub budget_reserved_usd: Option<f64>,
+    /// Real: the persona's settled month-to-date spend, the same number the
+    /// Personas budget UI shows (`MONTHLY_SPEND_PREDICATE`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub budget_settled_usd: Option<f64>,
+    /// True when the period has terminal runs but recorded **$0** — the
+    /// subscription-auth case, where the engine genuinely cannot meter spend.
+    /// A1/L3: an unmetered window is reported `unmeasured`, never as zero
+    /// spend, because "it cost nothing" and "nobody was counting" are opposite
+    /// findings that look identical in a number.
+    pub budget_unmeasured: bool,
+    /// Cross-ledger check (A3 · self-report honesty): every fleet session the
+    /// night-run ledger claims to have dispatched should have a `dev_tasks` row
+    /// written by the *other* writer on the dispatch path. `None` when the
+    /// period recorded no dispatch at all — with nothing to compare, "true"
+    /// would be a claim about an empty set dressed as a verification.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ledger_consistent: Option<bool>,
+    /// Real: the project's current autopilot mode. `suggest` during probation.
+    pub autopilot_mode: &'static str,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct KpRollupEvent {
@@ -124,6 +210,11 @@ struct KpRollupEvent {
     tokens_in: i64,
     tokens_out: i64,
     connector_uses: Vec<KpConnectorUse>,
+    /// Flattened onto the rollup object so the v2 fields sit beside the v1
+    /// ones exactly as the wire contract spells them. Absent entirely for a
+    /// persona that is not an App master — the old shape, byte for byte.
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    app_master: Option<KpAppMasterRollup>,
 }
 
 #[derive(Debug, Serialize)]
@@ -325,6 +416,209 @@ pub(crate) fn push_lifecycle_event(
     spawn_kp_report(link, body, None, persona_id.to_string(), event);
 }
 
+/// Push the App master probation verdict (wire contract v2:
+/// `lifecycle` / `probation_review` with `{decision, note}`).
+///
+/// `decision` is kp's closed vocabulary — `activated` | `extended` | `retired`
+/// — and is a `&'static str` so a call site cannot invent a fourth value that
+/// kp would silently drop.
+pub(crate) fn push_probation_review(
+    link: &KpLink,
+    persona_id: &str,
+    persona_name: &str,
+    decision: &'static str,
+    note: &str,
+) {
+    debug_assert!(
+        matches!(decision, "activated" | "extended" | "retired"),
+        "probation_review decision outside kp's vocabulary: {decision}"
+    );
+    if is_severed(persona_id) {
+        return;
+    }
+    let body = serde_json::json!({
+        "kind": "lifecycle",
+        "event": "probation_review",
+        "personaId": persona_id,
+        "personaName": persona_name,
+        "decision": decision,
+        "note": note,
+    });
+    spawn_kp_report(link, body, None, persona_id.to_string(), "probation_review");
+}
+
+// ---------------------------------------------------------------------------
+// App master rollup extension (P4)
+// ---------------------------------------------------------------------------
+
+/// UTC start-of-month, RFC-3339 — the same boundary `MONTHLY_SPEND_PREDICATE`
+/// uses, so the App master numbers and the v1 cost/run numbers cover exactly
+/// the same window. Two periods in one payload would make every ratio kp
+/// computes from them quietly wrong.
+fn utc_month_start() -> String {
+    let now = chrono::Utc::now();
+    format!("{}-01T00:00:00+00:00", now.format("%Y-%m"))
+}
+
+/// Night-run aggregates for one project since `since`: dispatched sessions,
+/// the governor's pre-dispatch reservation, and the recorded session ids (for
+/// the cross-ledger check).
+fn night_run_totals(
+    pool: &DbPool,
+    project_id: &str,
+    since: &str,
+) -> Option<(i64, f64, Vec<String>)> {
+    let conn = pool.get().ok()?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT dispatched_count, projected_cost_usd, session_ids
+             FROM autopilot_night_runs
+             WHERE project_id = ?1 AND started_at >= ?2",
+        )
+        .ok()?;
+    let rows = stmt
+        .query_map(rusqlite::params![project_id, since], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, f64>(1)?,
+                r.get::<_, Option<String>>(2)?,
+            ))
+        })
+        .ok()?;
+    let mut dispatched = 0i64;
+    let mut reserved = 0.0f64;
+    let mut sessions: Vec<String> = Vec::new();
+    let mut any = false;
+    for row in rows.flatten() {
+        any = true;
+        dispatched += row.0;
+        reserved += row.1;
+        if let Some(json) = row.2 {
+            if let Ok(ids) = serde_json::from_str::<Vec<String>>(&json) {
+                sessions.extend(ids);
+            }
+        }
+    }
+    any.then_some((dispatched, reserved, sessions))
+}
+
+/// Every session the night-run ledger claims to have dispatched should have a
+/// `dev_tasks` row — written by a different function on the same path. `None`
+/// when nothing was dispatched: there is no honest verdict on an empty set.
+fn ledger_consistent(pool: &DbPool, sessions: &[String]) -> Option<bool> {
+    if sessions.is_empty() {
+        return None;
+    }
+    let conn = pool.get().ok()?;
+    let mut stmt = conn
+        .prepare("SELECT COUNT(*) FROM dev_tasks WHERE session_id = ?1")
+        .ok()?;
+    for sid in sessions {
+        let n: i64 = stmt.query_row(rusqlite::params![sid], |r| r.get(0)).ok()?;
+        if n == 0 {
+            tracing::warn!(
+                session_id = %sid,
+                "kp_reporter: night-run ledger claims a dispatched session with no dev_tasks row"
+            );
+            return Some(false);
+        }
+    }
+    Some(true)
+}
+
+/// Read the project's App-master-seeded KPIs back as `kpiDeltas`.
+fn kpi_deltas(pool: &DbPool, project_id: &str) -> Vec<KpKpiDelta> {
+    use crate::commands::companion::approvals::app_master_measure_config_kpi_key as kpi_key_of;
+
+    crate::db::repos::dev_tools::list_kpis(pool, project_id, None)
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|k| {
+            let key = kpi_key_of(&k.measure_config)?;
+            let window_days = serde_json::from_str::<serde_json::Value>(&k.measure_config)
+                .ok()
+                .and_then(|v| v.pointer("/appMaster/windowDays")?.as_i64())
+                .unwrap_or(30);
+            Some(KpKpiDelta {
+                kpi_key: key,
+                baseline: k.baseline_value,
+                current: k.current_value,
+                target: k.target_value,
+                // Undo the seed-time `gte→up` / `lte→down` mapping.
+                direction: if k.direction == "down" { "lte" } else { "gte" },
+                window_days,
+                // A KPI is measured when a reading exists AND something recorded
+                // when it was taken. A `current_value` with no `last_measured_at`
+                // is a leftover, not a reading.
+                measured: k.current_value.is_some() && k.last_measured_at.is_some(),
+            })
+        })
+        .collect()
+}
+
+/// Compute the v2 App master block for `persona_id`, or `None` when the persona
+/// is not an App master (the overwhelmingly common case: one design_context
+/// parse and out).
+pub(crate) fn app_master_rollup(
+    pool: &DbPool,
+    design_context: Option<&str>,
+    monthly_runs: i64,
+    monthly_cost_usd: f64,
+) -> Option<KpAppMasterRollup> {
+    let link = crate::db::models::parse_design_context(design_context).app_master?;
+    let project_id = link.project_id;
+    if project_id.trim().is_empty() {
+        // A hire whose project binding failed. It is still an App master, and
+        // saying so with everything unmeasured is more useful than silence.
+        return Some(KpAppMasterRollup {
+            budget_settled_usd: Some(monthly_cost_usd),
+            budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
+            autopilot_mode: "off",
+            ..Default::default()
+        });
+    }
+    let since = utc_month_start();
+
+    let (proposals_opened, budget_reserved_usd, sessions) =
+        match night_run_totals(pool, &project_id, &since) {
+            Some((d, r, s)) => (Some(d), Some(r), s),
+            // No night run in the period: the engine has not run for this
+            // project, so there is no reservation ledger to read. Not zero.
+            None => (None, None, Vec::new()),
+        };
+
+    let autopilot_mode = crate::db::repos::core::settings::get(
+        pool,
+        &personas_engine::autopilot::setting_key(&project_id),
+    )
+    .ok()
+    .flatten()
+    .and_then(|v| personas_engine::autopilot::AutopilotMode::parse(&v))
+    .map(|m| m.as_str())
+    // No explicit row means the project follows the legacy global flags. `off`
+    // is the honest floor to report: it is what the project grants with no
+    // opt-in, and over-reporting the mode would over-claim the autonomy.
+    .unwrap_or("off");
+
+    Some(KpAppMasterRollup {
+        proposals_opened,
+        proposals_merged: None,
+        proposals_reverted: None,
+        gate_pass_rate: None,
+        forbidden_class_violations: personas_engine::app_master::count_violations_since(
+            pool,
+            &project_id,
+            &since,
+        ),
+        kpi_deltas: Some(kpi_deltas(pool, &project_id)),
+        budget_reserved_usd,
+        budget_settled_usd: Some(monthly_cost_usd),
+        budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
+        ledger_consistent: ledger_consistent(pool, &sessions),
+        autopilot_mode,
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Periodic rollup subscription
 // ---------------------------------------------------------------------------
@@ -427,6 +721,12 @@ async fn kp_rollup_tick(pool: &DbPool) {
             tokens_in: rollup.tokens_in,
             tokens_out: rollup.tokens_out,
             connector_uses,
+            app_master: app_master_rollup(
+                pool,
+                design_context.as_deref(),
+                rollup.runs,
+                rollup.cost_usd,
+            ),
         };
         let Ok(body) = serde_json::to_value(&event) else {
             continue;
@@ -498,6 +798,9 @@ mod tests {
             tokens_in: 210_000,
             tokens_out: 36_000,
             connector_uses: vec![],
+            // v2 is additive: a non-App-master persona sends the v1 shape,
+            // byte for byte, with no new keys at all.
+            app_master: None,
         };
         assert_eq!(
             serde_json::to_value(&event).unwrap(),
@@ -511,6 +814,144 @@ mod tests {
                 "tokensIn": 210000,
                 "tokensOut": 36000,
                 "connectorUses": [],
+            })
+        );
+    }
+
+    // -- App master rollup extension (wire contract v2) ------------------------
+
+    #[test]
+    fn app_master_rollup_payload_matches_wire_contract_v2() {
+        let event = KpRollupEvent {
+            kind: "rollup",
+            period: "2026-08".into(),
+            runs: 12,
+            successes: 11,
+            failures: 1,
+            cost_usd: 3.5,
+            tokens_in: 90_000,
+            tokens_out: 12_000,
+            connector_uses: vec![],
+            app_master: Some(KpAppMasterRollup {
+                proposals_opened: Some(7),
+                proposals_merged: None,
+                proposals_reverted: None,
+                gate_pass_rate: None,
+                forbidden_class_violations: Some(2),
+                kpi_deltas: Some(vec![KpKpiDelta {
+                    kpi_key: "gate_pass_rate".into(),
+                    baseline: Some(0.82),
+                    current: Some(0.9),
+                    target: Some(0.95),
+                    direction: "gte",
+                    window_days: 30,
+                    measured: true,
+                }]),
+                budget_reserved_usd: Some(6.0),
+                budget_settled_usd: Some(3.5),
+                budget_unmeasured: false,
+                ledger_consistent: Some(true),
+                autopilot_mode: "suggest",
+            }),
+        };
+        assert_eq!(
+            serde_json::to_value(&event).unwrap(),
+            serde_json::json!({
+                // v1 fields, unchanged and in place.
+                "kind": "rollup",
+                "period": "2026-08",
+                "runs": 12,
+                "successes": 11,
+                "failures": 1,
+                "costUsd": 3.5,
+                "tokensIn": 90000,
+                "tokensOut": 12000,
+                "connectorUses": [],
+                // v2 fields, FLATTENED onto the same object (not nested).
+                "proposalsOpened": 7,
+                "forbiddenClassViolations": 2,
+                "kpiDeltas": [{
+                    "kpiKey": "gate_pass_rate",
+                    "baseline": 0.82,
+                    "current": 0.9,
+                    "target": 0.95,
+                    "direction": "gte",
+                    "windowDays": 30,
+                    "measured": true,
+                }],
+                "budgetReservedUsd": 6.0,
+                "budgetSettledUsd": 3.5,
+                "budgetUnmeasured": false,
+                "ledgerConsistent": true,
+                "autopilotMode": "suggest",
+                // proposalsMerged / proposalsReverted / gatePassRate are ABSENT,
+                // not zero — see the doc comments on those fields.
+            })
+        );
+    }
+
+    #[test]
+    fn an_unmeasurable_field_is_omitted_and_never_sent_as_zero() {
+        let v = serde_json::to_value(KpAppMasterRollup {
+            proposals_opened: None,
+            budget_settled_usd: Some(0.0),
+            budget_unmeasured: true,
+            autopilot_mode: "measure",
+            ..Default::default()
+        })
+        .unwrap();
+        let obj = v.as_object().unwrap();
+        // The four things Personas cannot read today must not appear at all. An
+        // absent key is a coverage gap in kp's backbone; a `0` is a measurement.
+        for absent in [
+            "proposalsOpened",
+            "proposalsMerged",
+            "proposalsReverted",
+            "gatePassRate",
+            "forbiddenClassViolations",
+            "kpiDeltas",
+            "budgetReservedUsd",
+            "ledgerConsistent",
+        ] {
+            assert!(
+                !obj.contains_key(absent),
+                "{absent} must be omitted, got {v}"
+            );
+        }
+        // $0 with runs recorded is `unmeasured`, not free.
+        assert_eq!(obj.get("budgetSettledUsd"), Some(&serde_json::json!(0.0)));
+        assert_eq!(obj.get("budgetUnmeasured"), Some(&serde_json::json!(true)));
+        // These two are never optional: an App master always has a mode, and
+        // "is the budget metered" always has an answer.
+        assert!(obj.contains_key("autopilotMode"));
+        assert!(obj.contains_key("budgetUnmeasured"));
+    }
+
+    #[test]
+    fn an_unmeasured_kpi_is_not_a_missed_target() {
+        let d = KpKpiDelta {
+            kpi_key: "p95_build_s".into(),
+            baseline: None,
+            current: None,
+            target: Some(120.0),
+            direction: "lte",
+            window_days: 14,
+            measured: false,
+        };
+        let v = serde_json::to_value(&d).unwrap();
+        // Nulls are SENT here (not omitted): kp's KpiDelta declares them
+        // nullable, and an absent `current` would be indistinguishable from a
+        // delta that was never included.
+        assert_eq!(
+            v,
+            serde_json::json!({
+                "kpiKey": "p95_build_s",
+                "baseline": null,
+                "current": null,
+                "target": 120.0,
+                "direction": "lte",
+                "windowDays": 14,
+                "measured": false,
             })
         );
     }

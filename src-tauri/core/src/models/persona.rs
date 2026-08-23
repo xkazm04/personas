@@ -482,6 +482,61 @@ pub struct KpLink {
     pub report_token: String,
 }
 
+/// Typed record of an **App master** hire (kp `docs/concepts/app-master.md`
+/// §4.2, P4). Written once by the `kp_hire_request` approval executor when the
+/// inbound request carried an `appMaster` block, alongside — never instead of —
+/// [`KpLink`]: an App master is still a kp hire, so the counters reporter keeps
+/// working through the same link.
+///
+/// This is the **provenance** record: what kp sent and what Personas did with
+/// it. It is deliberately NOT the enforcement authority. The mandate the
+/// autonomy gate and the diff chokepoint read lives in an `app_settings` row
+/// keyed by [`Self::mandate_key`], because enforcement happens per *project*
+/// and only the project id is in scope at those call sites. Two copies of a
+/// rung that could disagree is exactly the bug a single authority prevents —
+/// so the rung is not repeated here, only the key that finds it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AppMasterLink {
+    /// The `dev_projects.id` this App master owns.
+    pub project_id: String,
+    /// The team the persona was added to, bound to the project.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_id: Option<String>,
+    /// `dev_kpis.id` per objective seeded at hire, in spec order. An objective
+    /// that could not be seeded is absent — the list is what exists, not what
+    /// was asked for.
+    #[serde(default)]
+    pub kpi_ids: Vec<String>,
+    /// `persona_triggers.id` per installed cadence trigger.
+    #[serde(default)]
+    pub trigger_ids: Vec<String>,
+    /// Cadence trigger kinds kp asked for that Personas has no mapping for
+    /// (`pr`, `kpi_tick` as of P4). Recorded rather than approximated: a
+    /// trigger wired to the nearest-looking event would fire on the wrong
+    /// thing and read, from kp, as a working cadence.
+    #[serde(default)]
+    pub unsupported_triggers: Vec<String>,
+    /// RFC-3339 probation end — approval time + `tenure.probationDays`.
+    pub probation_ends_at: String,
+    /// The `app_settings` key holding the enforceable mandate record
+    /// (`app_master_mandate:<project_id>`).
+    pub mandate_key: String,
+    /// What the binding pass did and did not manage, in order. Duplicated from
+    /// `setup_detail` on purpose: `promote_build_draft` OVERWRITES
+    /// `setup_detail` from the connector-readiness pass, so the display copy
+    /// does not survive the build. A partial hire that silently reads complete
+    /// after promote is the exact failure this field prevents.
+    #[serde(default)]
+    pub setup_notes: Vec<String>,
+    /// The `AppMasterSpec` kp sent, verbatim. Kept whole so a later phase can
+    /// read a field this one does not know about, and so a review packet can
+    /// quote the spec rather than a lossy projection of it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spec: Option<serde_json::Value>,
+}
+
 /// Structured envelope for the `design_context` JSON column.
 ///
 /// Independent sections:
@@ -540,6 +595,13 @@ pub struct DesignContextData {
     /// rows deserialize unchanged.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kp_link: Option<KpLink>,
+    /// App master hire record (P4). `None` for every persona not hired through
+    /// a kp request carrying an `appMaster` block — including ordinary kp
+    /// hires, which keep `kp_link` alone. Typed + defaulted for the same
+    /// reason as `kp_link`: `DesignContextData` has no serde catch-all, so an
+    /// untyped key would be silently DROPPED on the next round-trip.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub app_master: Option<AppMasterLink>,
 }
 
 impl DesignContextData {

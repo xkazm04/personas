@@ -2483,12 +2483,161 @@ struct KpPersonaSpec {
     success_metrics: Vec<KpSuccessMetric>,
 }
 
+// --- App master (P4) -------------------------------------------------------
+//
+// kp's `AppMasterSpec` (pipeline/jobfit/appmaster.py, projected to Zod as
+// `appMasterSpecSchema`). Mirrored here as a serde struct rather than parsed
+// out of a `serde_json::Value` at use time so the shape is checked ONCE, at
+// intake, before anything is written — the payload then sits in the approval
+// inbox until a human clicks, and the executor re-reads it from the DB.
+//
+// Every field is `#[serde(default)]`: kp's own coercer already defaults the
+// whole shape, and an intake that 400s on a missing optional would refuse
+// hires kp considers valid. Unknown fields are ignored by serde, which is
+// deliberate — kp owns this schema and may add to it; a strict `deny_unknown`
+// here would turn every kp-side addition into a Personas outage.
+//
+// The strictness that DOES live here is the part Personas has to enforce
+// later: the rung must be grantable and the forbidden classes must be in the
+// closed vocabulary. Storing a rung of 3 or a class this build cannot detect
+// would produce a mandate that *looks* enforced and is not.
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmRepo {
+    #[serde(default)]
+    url: Option<String>,
+    #[serde(default)]
+    root_path: Option<String>,
+    #[serde(default = "kp_default_main_branch")]
+    main_branch: String,
+}
+
+fn kp_default_main_branch() -> String {
+    "main".to_string()
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmApp {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    repo: KpAmRepo,
+    #[serde(default)]
+    context_map_ref: Option<String>,
+    #[serde(default)]
+    dossier_id: Option<String>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmObjective {
+    #[serde(default)]
+    kpi_key: String,
+    #[serde(default)]
+    label: String,
+    /// Nullable on purpose: an objective nobody has measured is a real state,
+    /// and a 0 here would invent a baseline. Carried through to the seeded KPI
+    /// as NULL, never as zero.
+    #[serde(default)]
+    baseline: Option<f64>,
+    #[serde(default)]
+    target: Option<f64>,
+    #[serde(default)]
+    unit: String,
+    #[serde(default = "kp_default_direction")]
+    direction: String,
+    #[serde(default = "kp_default_window_days")]
+    window_days: i64,
+}
+
+fn kp_default_direction() -> String {
+    "gte".to_string()
+}
+
+fn kp_default_window_days() -> i64 {
+    30
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmMandate {
+    #[serde(default)]
+    scope_rung: u8,
+    #[serde(default)]
+    forbidden_classes: Vec<String>,
+    #[serde(default)]
+    approval_gates: Vec<String>,
+    #[serde(default)]
+    owner: String,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmTrigger {
+    #[serde(default)]
+    kind: String,
+    #[serde(default)]
+    config: serde_json::Value,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmCadence {
+    #[serde(default)]
+    triggers: Vec<KpAmTrigger>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAmTenure {
+    #[serde(default = "kp_default_probation_days")]
+    probation_days: i64,
+    #[serde(default = "kp_default_probation_days")]
+    review_cadence_days: i64,
+    #[serde(default)]
+    retire_criteria: Vec<String>,
+}
+
+fn kp_default_probation_days() -> i64 {
+    30
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpAppMasterSpec {
+    #[serde(default)]
+    app: KpAmApp,
+    #[serde(default)]
+    objectives: Vec<KpAmObjective>,
+    #[serde(default)]
+    mandate: KpAmMandate,
+    #[serde(default)]
+    cadence: KpAmCadence,
+    #[serde(default)]
+    tenure: KpAmTenure,
+}
+
+/// Bounds. Generous (a paired localhost bridge), but bounded — a buggy kp
+/// client must not be able to park an unbounded blob in the approval inbox or
+/// seed a thousand KPIs on approval.
+const KP_MAX_OBJECTIVES: usize = 16;
+const KP_MAX_TRIGGERS: usize = 16;
+const KP_MAX_APPROVAL_GATES: usize = 32;
+const KP_MAX_RETIRE_CRITERIA: usize = 32;
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct KpPersonaRequestBody {
     kp: KpRequestOrigin,
     spec: KpPersonaSpec,
     report_token: String,
+    /// Present ⇒ this is an **App master** hire (P4). Additive: the old flat
+    /// shape keeps working unchanged, and a request without this block takes
+    /// exactly the path it took before.
+    #[serde(default)]
+    app_master: Option<KpAppMasterSpec>,
 }
 
 const KP_MAX_CONNECTORS: usize = 32;
@@ -2569,6 +2718,169 @@ fn validate_kp_persona_request(body: &KpPersonaRequestBody) -> Result<(), String
             30,
         )?;
     }
+    if let Some(am) = &body.app_master {
+        validate_kp_app_master(am)?;
+    }
+    Ok(())
+}
+
+/// Validate the `appMaster` block. Pure — unit-tested below.
+///
+/// Two of these checks are the whole reason this function exists rather than a
+/// `serde` derive:
+///
+/// - **`mandate.scopeRung` must be 0..=2.** Rungs 3 (deploy/merge) and 4
+///   (change gates) are not grantable to any holder in v1. Refusing at intake
+///   is the difference between "the mandate cannot say that" and "the mandate
+///   says it and the enforcement layer is expected to remember to ignore it".
+/// - **`mandate.forbiddenClasses` must be in the closed vocabulary.** A class
+///   this build cannot detect is a class this build cannot block. Accepting it
+///   would store a mandate that reads stricter than it is enforced.
+fn validate_kp_app_master(am: &KpAppMasterSpec) -> Result<(), String> {
+    let repo = &am.app.repo;
+    let has_url = repo
+        .url
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty());
+    let has_path = repo
+        .root_path
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty());
+    if !has_url && !has_path {
+        return Err(
+            "`appMaster.app.repo` must carry a `url` or a `rootPath` — an App master \
+             is accountable for ONE application and the binding is what makes that true"
+                .into(),
+        );
+    }
+    if let Some(u) = repo.url.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        if !(u.starts_with("http://") || u.starts_with("https://")) {
+            return Err("`appMaster.app.repo.url` must be an http(s) URL".into());
+        }
+        if u.chars().count() > 500 || u.chars().any(char::is_whitespace) {
+            return Err("`appMaster.app.repo.url` is not a sane URL".into());
+        }
+    }
+    if let Some(p) = repo
+        .root_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if p.chars().count() > 1000 {
+            return Err("`appMaster.app.repo.rootPath` exceeds 1000 characters".into());
+        }
+    }
+    if repo.main_branch.trim().is_empty() || repo.main_branch.chars().count() > 200 {
+        return Err("`appMaster.app.repo.mainBranch` must be 1..200 characters".into());
+    }
+    if am.app.name.chars().count() > 200 {
+        return Err("`appMaster.app.name` exceeds 200 characters".into());
+    }
+
+    // -- mandate: the two checks that carry the enforcement contract ---------
+    if !(0..=personas_engine::app_master::MAX_GRANTABLE_RUNG).contains(&am.mandate.scope_rung) {
+        return Err(format!(
+            "`appMaster.mandate.scopeRung` must be 0 (read), 1 (retry) or 2 (open branch/PR); \
+             got {}. Rung 3 (deploy/merge) and rung 4 (change gates) are never granted in v1.",
+            am.mandate.scope_rung
+        ));
+    }
+    for c in &am.mandate.forbidden_classes {
+        if personas_engine::app_master::ForbiddenClass::parse(c).is_none() {
+            return Err(format!(
+                "`appMaster.mandate.forbiddenClasses` contains `{c}`, which is not in the closed \
+                 vocabulary (test_deletion_or_skip, suppression_directive, gate_configuration, \
+                 dependency_bump_to_satisfy_check, credentials_or_permissions, \
+                 delivery_configuration). A class this build cannot detect is a class it cannot block."
+            ));
+        }
+    }
+    if am.mandate.approval_gates.len() > KP_MAX_APPROVAL_GATES {
+        return Err(format!(
+            "`appMaster.mandate.approvalGates` exceeds {KP_MAX_APPROVAL_GATES} entries"
+        ));
+    }
+    for g in &am.mandate.approval_gates {
+        if g.trim().is_empty() || g.chars().count() > 500 {
+            return Err("`appMaster.mandate.approvalGates[]` must be 1..500 characters".into());
+        }
+    }
+    if am.mandate.owner.chars().count() > 200 {
+        return Err("`appMaster.mandate.owner` exceeds 200 characters".into());
+    }
+
+    // -- objectives ----------------------------------------------------------
+    if am.objectives.len() > KP_MAX_OBJECTIVES {
+        return Err(format!(
+            "`appMaster.objectives` exceeds {KP_MAX_OBJECTIVES} entries"
+        ));
+    }
+    for o in &am.objectives {
+        if o.kpi_key.trim().is_empty() {
+            return Err("`appMaster.objectives[].kpiKey` must not be empty".into());
+        }
+        if o.kpi_key.chars().count() > 120 || o.label.chars().count() > 300 {
+            return Err("`appMaster.objectives[]` key/label exceeds its length bound".into());
+        }
+        if !matches!(o.direction.as_str(), "gte" | "lte") {
+            return Err(format!(
+                "`appMaster.objectives[].direction` must be `gte` or `lte`, got {:?}",
+                o.direction
+            ));
+        }
+        if !(1..=3650).contains(&o.window_days) {
+            return Err("`appMaster.objectives[].windowDays` must be between 1 and 3650".into());
+        }
+        for (what, v) in [("baseline", o.baseline), ("target", o.target)] {
+            if v.is_some_and(|n| !n.is_finite()) {
+                return Err(format!(
+                    "`appMaster.objectives[].{what}` must be a finite number or null"
+                ));
+            }
+        }
+        if o.unit.chars().count() > 60 {
+            return Err("`appMaster.objectives[].unit` exceeds 60 characters".into());
+        }
+    }
+
+    // -- cadence -------------------------------------------------------------
+    if am.cadence.triggers.len() > KP_MAX_TRIGGERS {
+        return Err(format!(
+            "`appMaster.cadence.triggers` exceeds {KP_MAX_TRIGGERS} entries"
+        ));
+    }
+    for t in &am.cadence.triggers {
+        // The kinds are kp's closed vocabulary. An unknown kind is refused
+        // rather than dropped: a cadence silently missing a trigger reads, from
+        // kp, as a cadence that was installed.
+        if !matches!(t.kind.as_str(), "schedule" | "pr" | "kpi_tick") {
+            return Err(format!(
+                "`appMaster.cadence.triggers[].kind` must be `schedule`, `pr` or `kpi_tick`, got {:?}",
+                t.kind
+            ));
+        }
+    }
+
+    // -- tenure --------------------------------------------------------------
+    if !(1..=3650).contains(&am.tenure.probation_days) {
+        return Err("`appMaster.tenure.probationDays` must be between 1 and 3650".into());
+    }
+    if !(1..=3650).contains(&am.tenure.review_cadence_days) {
+        return Err("`appMaster.tenure.reviewCadenceDays` must be between 1 and 3650".into());
+    }
+    if am.tenure.retire_criteria.len() > KP_MAX_RETIRE_CRITERIA {
+        return Err(format!(
+            "`appMaster.tenure.retireCriteria` exceeds {KP_MAX_RETIRE_CRITERIA} entries"
+        ));
+    }
+    for c in &am.tenure.retire_criteria {
+        if c.chars().count() > 500 {
+            return Err("`appMaster.tenure.retireCriteria[]` exceeds 500 characters".into());
+        }
+    }
     Ok(())
 }
 
@@ -2579,6 +2891,32 @@ fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
         Some(b) => format!(", budget ${b:.0}/mo"),
         None => String::new(),
     };
+    // An App master hire binds a repository, seeds KPIs and installs a
+    // mandate. The human is agreeing to more than "make a persona", so the
+    // card says which app, how far the mandate reaches, and for how long.
+    if let Some(am) = &body.app_master {
+        let app = if am.app.name.trim().is_empty() {
+            am.app
+                .repo
+                .url
+                .as_deref()
+                .or(am.app.repo.root_path.as_deref())
+                .unwrap_or("an unnamed app")
+        } else {
+            am.app.name.trim()
+        };
+        return format!(
+            "KP job '{}' requests an APP MASTER for {app}: {} — mandate rung {} ({}), \
+             {} objective(s), {}-day probation on `suggest` autopilot{}",
+            body.kp.job_title.trim(),
+            body.spec.name.trim(),
+            am.mandate.scope_rung,
+            personas_engine::app_master::rung_label(am.mandate.scope_rung),
+            am.objectives.len(),
+            am.tenure.probation_days,
+            budget
+        );
+    }
     format!(
         "KP job '{}' requests an AI hire: {} — {} connector(s){}",
         body.kp.job_title.trim(),
@@ -2958,6 +3296,244 @@ mod tests {
         assert!(validate_kp_persona_request(&b)
             .unwrap_err()
             .contains("reportToken"));
+    }
+
+    // ---- App master block (P4) ---------------------------------------------
+
+    fn kp_app_master_json() -> serde_json::Value {
+        serde_json::json!({
+            "schemaVersion": 1,
+            "role": {"title": "App master", "population": "agent", "seniority": "senior",
+                     "rubricVersion": "app-master-rubric-v1"},
+            "app": {
+                "name": "kp",
+                "repo": {"url": "https://github.com/xkazm04/kp", "rootPath": null, "mainBranch": "main"},
+                "contextMapRef": "context-map.json",
+                "dossierId": "dos_1"
+            },
+            "objectives": [
+                {"kpiKey": "gate_pass_rate", "label": "Gate pass rate", "baseline": 0.82,
+                 "target": 0.95, "unit": "ratio", "direction": "gte", "windowDays": 30},
+                {"kpiKey": "p95_build_s", "label": "p95 build seconds", "baseline": null,
+                 "target": 120.0, "unit": "s", "direction": "lte", "windowDays": 14}
+            ],
+            "mandate": {
+                "scopeRung": 2,
+                "forbiddenClasses": ["test_deletion_or_skip", "gate_configuration"],
+                "approvalGates": ["npm run test:unit"],
+                "owner": "ana@example.com"
+            },
+            "cadence": {"triggers": [
+                {"kind": "schedule", "config": {"cron": "0 2 * * *"}},
+                {"kind": "pr", "config": {}}
+            ]},
+            "budget": {"monthlyUsd": 40.0, "reservationPolicy": "estimate", "onCap": "drain"},
+            "tenure": {"probationDays": 30, "reviewCadenceDays": 30,
+                       "retireCriteria": ["no merged proposal in two windows"]},
+            "agent": {"name": "kp App Master", "mission": "Own kp's value ledger.",
+                      "systemPromptDraft": "", "connectors": ["github"], "maxTurns": null},
+            "human": null,
+            "coercionNotes": [],
+            "promptVersion": "app-master-v1"
+        })
+    }
+
+    fn kp_app_master_body() -> KpPersonaRequestBody {
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        v["appMaster"] = kp_app_master_json();
+        serde_json::from_value(v).expect("app master body")
+    }
+
+    #[test]
+    fn app_master_block_is_optional_and_the_old_shape_still_validates() {
+        // The additive contract: a body with no `appMaster` is unchanged.
+        assert!(kp_body().app_master.is_none());
+        assert_eq!(validate_kp_persona_request(&kp_body()), Ok(()));
+    }
+
+    #[test]
+    fn app_master_block_parses_kps_real_spec_shape_and_ignores_unknown_fields() {
+        let b = kp_app_master_body();
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+        let am = b.app_master.expect("appMaster parsed");
+        assert_eq!(am.app.name, "kp");
+        assert_eq!(am.app.repo.main_branch, "main");
+        assert_eq!(am.objectives.len(), 2);
+        // A null baseline stays null. Reading it as 0.0 would invent a
+        // measurement nobody took.
+        assert_eq!(am.objectives[1].baseline, None);
+        assert_eq!(am.objectives[1].target, Some(120.0));
+        assert_eq!(am.mandate.scope_rung, 2);
+        assert_eq!(am.cadence.triggers.len(), 2);
+        assert_eq!(am.tenure.probation_days, 30);
+
+        // kp owns this schema and will add to it. An addition must not 400.
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["somethingKpAddsLater"] = serde_json::json!({"nested": true});
+        spec["mandate"]["futureField"] = serde_json::json!(7);
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).expect("forward-compatible");
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+    }
+
+    #[test]
+    fn app_master_rejects_a_rung_v1_never_grants() {
+        for rung in [3u8, 4, 9] {
+            let mut v = serde_json::to_value(kp_body()).unwrap();
+            let mut spec = kp_app_master_json();
+            spec["mandate"]["scopeRung"] = serde_json::json!(rung);
+            v["appMaster"] = spec;
+            let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+            let err = validate_kp_persona_request(&b).unwrap_err();
+            assert!(err.contains("scopeRung"), "{err}");
+            assert!(err.contains("never granted"), "{err}");
+        }
+        // 0, 1 and 2 are all grantable.
+        for rung in [0u8, 1, 2] {
+            let mut v = serde_json::to_value(kp_body()).unwrap();
+            let mut spec = kp_app_master_json();
+            spec["mandate"]["scopeRung"] = serde_json::json!(rung);
+            v["appMaster"] = spec;
+            let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+            assert_eq!(validate_kp_persona_request(&b), Ok(()), "rung {rung}");
+        }
+    }
+
+    #[test]
+    fn app_master_rejects_a_forbidden_class_outside_the_closed_vocabulary() {
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["mandate"]["forbiddenClasses"] =
+            serde_json::json!(["test_deletion_or_skip", "merge_to_main"]);
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+        let err = validate_kp_persona_request(&b).unwrap_err();
+        assert!(err.contains("merge_to_main"), "{err}");
+        assert!(err.contains("cannot detect"), "{err}");
+
+        // Every class kp declares IS accepted — the vocabularies must agree or
+        // a legitimate mandate is refused at the door.
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["mandate"]["forbiddenClasses"] = serde_json::json!([
+            "test_deletion_or_skip",
+            "suppression_directive",
+            "gate_configuration",
+            "dependency_bump_to_satisfy_check",
+            "credentials_or_permissions",
+            "delivery_configuration"
+        ]);
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+    }
+
+    #[test]
+    fn app_master_rejects_an_unbound_app_and_a_bad_binding() {
+        // No url AND no rootPath: nothing to be accountable for.
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["app"]["repo"] =
+            serde_json::json!({"url": null, "rootPath": null, "mainBranch": "main"});
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("app.repo"));
+
+        // A non-http url.
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["app"]["repo"]["url"] = serde_json::json!("git@github.com:x/y.git");
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("http(s)"));
+
+        // A rootPath alone IS a valid binding.
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["app"]["repo"] =
+            serde_json::json!({"url": null, "rootPath": "C:/repos/kp", "mainBranch": "main"});
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+    }
+
+    #[test]
+    fn app_master_rejects_out_of_vocabulary_and_out_of_bounds_fields() {
+        let cases: &[(&str, serde_json::Value, &str)] = &[
+            (
+                "/objectives/0/direction",
+                serde_json::json!("upward"),
+                "direction",
+            ),
+            (
+                "/objectives/0/windowDays",
+                serde_json::json!(0),
+                "windowDays",
+            ),
+            ("/objectives/0/kpiKey", serde_json::json!("  "), "kpiKey"),
+            (
+                "/cadence/triggers/0/kind",
+                serde_json::json!("cron"),
+                "kind",
+            ),
+            (
+                "/tenure/probationDays",
+                serde_json::json!(0),
+                "probationDays",
+            ),
+            (
+                "/tenure/reviewCadenceDays",
+                serde_json::json!(99999),
+                "reviewCadenceDays",
+            ),
+        ];
+        for (ptr, val, needle) in cases {
+            let mut v = serde_json::to_value(kp_body()).unwrap();
+            let mut spec = kp_app_master_json();
+            *spec.pointer_mut(ptr).expect(ptr) = val.clone();
+            v["appMaster"] = spec;
+            let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+            let err = validate_kp_persona_request(&b).unwrap_err();
+            assert!(err.contains(needle), "{ptr}: {err}");
+        }
+        // Bounded collections.
+        let mut v = serde_json::to_value(kp_body()).unwrap();
+        let mut spec = kp_app_master_json();
+        spec["objectives"] = serde_json::Value::Array(
+            (0..17)
+                .map(|i| {
+                    serde_json::json!({"kpiKey": format!("k{i}"), "label": "x", "unit": "",
+                                            "direction": "gte", "windowDays": 30})
+                })
+                .collect(),
+        );
+        v["appMaster"] = spec;
+        let b: KpPersonaRequestBody = serde_json::from_value(v).unwrap();
+        assert!(validate_kp_persona_request(&b)
+            .unwrap_err()
+            .contains("objectives"));
+    }
+
+    #[test]
+    fn the_approval_card_tells_the_human_this_is_an_app_master_hire() {
+        let plain = kp_hire_rationale(&kp_body());
+        assert!(!plain.contains("APP MASTER"), "{plain}");
+
+        let am = kp_hire_rationale(&kp_app_master_body());
+        // The human is agreeing to a repo binding, a mandate and a probation —
+        // the card must name all three, not just "make a persona".
+        assert!(am.contains("APP MASTER"), "{am}");
+        assert!(am.contains("kp"), "{am}");
+        assert!(am.contains("rung 2"), "{am}");
+        assert!(am.contains("open branch/PR"), "{am}");
+        assert!(am.contains("2 objective(s)"), "{am}");
+        assert!(am.contains("30-day probation"), "{am}");
+        assert!(am.contains("suggest"), "{am}");
     }
 
     /// In-memory user-db pool with just the `companion_approval` table (schema

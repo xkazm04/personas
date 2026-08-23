@@ -287,6 +287,14 @@ pub fn start_loops(
         // persona is KP-linked (one LIKE-prefiltered scan per tick); leadership
         // default keeps multi-instance setups from double-reporting.
         Box::new(crate::engine::kp_reporter::KpReporterSubscription { pool: pool.clone() }),
+        // App master probation (P4) — raises the end-of-probation review packet
+        // once per hire. Free when no project carries an App master mandate
+        // (one settings-prefix query per tick and out).
+        Box::new(
+            crate::engine::app_master_probation::AppMasterProbationSubscription {
+                pool: pool.clone(),
+            },
+        ),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context

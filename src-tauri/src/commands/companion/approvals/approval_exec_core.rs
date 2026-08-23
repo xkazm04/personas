@@ -930,11 +930,22 @@ pub(crate) async fn execute_kp_hire_request(
         .and_then(|v| v.as_str())
         .map(String::from);
 
+    // App master (P4): present ⇒ this hire binds an application, not just a
+    // job. The block is cloned out of `params` here because the binding pass
+    // runs after the persona exists and `params` is borrowed throughout.
+    let app_master: Option<serde_json::Value> =
+        super::app_master_hire::app_master_block(params).cloned();
+
     // Build intent: the mission plus enough hiring context for the one-shot
-    // design pass to pick sensible connectors and use cases.
-    let mut intent = format!(
-        "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
-    );
+    // design pass to pick sensible connectors and use cases. An App master
+    // gets the full mission + objectives + mandate + cadence instead — the
+    // design pass has to know the line before it picks the tools.
+    let mut intent = match &app_master {
+        Some(am) => super::app_master_hire::app_master_intent(&mission, &job_title, &job_id, am),
+        None => format!(
+            "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
+        ),
+    };
     if !connectors.is_empty() {
         intent.push_str(&format!(
             "\nPreferred connectors: {}.",
@@ -1027,6 +1038,49 @@ pub(crate) async fn execute_kp_hire_request(
         return Err(spawn_err);
     }
 
+    // 2b. App master binding (P4). Deliberately AFTER the spawn: a spawn
+    //     failure above rolls the draft persona back, and binding first would
+    //     leave a project, a team and seeded KPIs behind for a persona that
+    //     never existed. Nothing here can fail the hire — the persona and its
+    //     build are already real — so every problem becomes a note on the
+    //     persona instead of an error the operator cannot act on.
+    let mut app_master_summary = String::new();
+    if let Some(am) = &app_master {
+        let outcome =
+            super::app_master_hire::bind_app_master(&state.db, &persona.id, &persona.name, am);
+        app_master_summary = format!(
+            " Bound to project {} — {} KPI(s) seeded, {} cadence trigger(s) installed{}. \
+             Autopilot is on `suggest` for probation.",
+            if outcome.project_id.is_empty() {
+                "(none — see the persona's setup detail)"
+            } else {
+                &outcome.project_id
+            },
+            outcome.kpi_ids.len(),
+            outcome.trigger_ids.len(),
+            if outcome.unsupported_triggers.is_empty() {
+                String::new()
+            } else {
+                // Never rounded up to "installed": the operator has to know
+                // which part of the cadence kp asked for is simply not running.
+                format!(
+                    ", {} UNSUPPORTED and NOT installed ({})",
+                    outcome.unsupported_triggers.len(),
+                    outcome.unsupported_triggers.join(", ")
+                )
+            }
+        );
+        if let Err(e) =
+            super::app_master_hire::stamp_app_master_link(&state.db, &persona.id, am, &outcome)
+        {
+            tracing::warn!(
+                persona_id = %persona.id,
+                error = %e,
+                "app_master: could not stamp the App master link onto the persona"
+            );
+        }
+    }
+
     // 3. Stamp the created persona + build session onto the approval row so
     //    `GET /api/kp/persona-requests/{id}` can report them. Best-effort —
     //    a failure only degrades the KP poll, never the hire itself.
@@ -1048,7 +1102,7 @@ pub(crate) async fn execute_kp_hire_request(
     );
 
     Ok(ExecuteResult::message(format!(
-        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.",
+        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{app_master_summary}",
         persona_name = persona.name,
     )))
 }

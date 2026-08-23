@@ -48,6 +48,22 @@ pub async fn dev_tools_create_branch(
 }
 
 /// Apply a unified diff to files in a project.
+///
+/// **App master mandate chokepoint (P4).** This is the one place in the
+/// codebase where a proposal exists as a *diff* before it exists as a change to
+/// the working tree, so it is where the forbidden-change classes are enforced.
+/// If the project carries an App master mandate, the diff is scanned by the
+/// deterministic detector in `personas_engine::app_master` and:
+///
+/// - a hit **blocks the apply** — the diff is never partially applied, and it
+///   is never rewritten into an allowed shape (a rewritten proposal teaches the
+///   holder which shapes evade the check, which is worse than the change);
+/// - every hit is recorded on the event ledger as a
+///   `app_master.forbidden_class_violation` carrying the matched rule and path,
+///   which is what the reporter's `forbiddenClassViolations` counts;
+/// - the error names the rule and the path, so the refusal can be argued with.
+///
+/// A project with no App master takes exactly the path it took before.
 #[tauri::command]
 pub async fn dev_tools_apply_diff(
     state: State<'_, Arc<AppState>>,
@@ -56,6 +72,7 @@ pub async fn dev_tools_apply_diff(
 ) -> Result<GitOperationResult, AppError> {
     require_auth_sync(&state)?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
+    enforce_app_master_mandate(&state.db, &project_id, &diff_content)?;
 
     let mut child = tokio::process::Command::new("git")
         .args(["apply", "--stat", "--apply", "-"])
@@ -92,6 +109,49 @@ pub async fn dev_tools_apply_diff(
         commit_hash: None,
         files_changed: None,
     })
+}
+
+/// Refuse a diff that touches one of the project's forbidden change classes.
+///
+/// `Ok(())` for every project with no App master mandate — the gate is strictly
+/// additive. `upgrade_goal` is `false` here because nothing at this call site
+/// states one: `dev_tools_apply_diff` takes a project and a blob of diff, with
+/// no field in which a caller could declare "this change IS the dependency
+/// upgrade". Consequence, stated rather than hidden: a mandate that forbids
+/// `dependency_bump_to_satisfy_check` blocks *every* manifest edit through this
+/// route, and the holder has to route a genuine upgrade through a human. That
+/// is the conservative direction to be wrong in, and the fix is a stated goal
+/// on the call, not a guess in the detector.
+fn enforce_app_master_mandate(
+    db: &crate::db::DbPool,
+    project_id: &str,
+    diff_content: &str,
+) -> Result<(), AppError> {
+    use personas_engine::app_master;
+
+    let Some(record) = app_master::get_mandate(db, project_id) else {
+        return Ok(());
+    };
+    let violations = app_master::scan_diff(
+        diff_content,
+        &record.mandate.forbidden_classes,
+        app_master::ScanContext {
+            upgrade_goal: false,
+        },
+    );
+    if violations.is_empty() {
+        return Ok(());
+    }
+    // Record BEFORE refusing: the count is the backbone's, and a refusal the
+    // ledger never saw would make the review packet under-report.
+    app_master::record_violations(db, &record, &violations);
+    tracing::warn!(
+        project_id,
+        persona_id = %record.persona_id,
+        hits = violations.len(),
+        "app_master: blocked a proposal that touches a forbidden change class"
+    );
+    Err(app_master::MandateRefusal::ForbiddenClasses(violations).into())
 }
 
 /// Run tests for a project by detecting the test runner.

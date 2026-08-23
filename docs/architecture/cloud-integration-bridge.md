@@ -449,3 +449,222 @@ Two changes make it deterministic and observable (2026-08-23):
   missing route from a 404. `webhook::management_routes_live()` is the in-process reader.
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
+
+---
+
+## 11. App master (P4) — the mandated hire
+
+> **Status: implemented on `master`.** Phase P4 of kp's App-master program
+> (kp `docs/concepts/app-master.md` §4, `docs/features/app-master/README.md`).
+> Phase 0 was §10 above (the hire bridge itself). What P4 adds: an inbound
+> `appMaster` block, the binding of that hire to a real `DevProject`, the
+> enforcement of its mandate, the v2 rollup, and the probation review.
+
+kp can hire an **App master** — the single accountable owner of one
+application — instead of an ordinary persona. The difference is that the hire
+carries an application: a repository, a value ledger, a mandate that says how
+far the holder may go, a cadence, and a probation window.
+
+### 11.1 The wire (v2, additive)
+
+`POST /api/kp/persona-requests` gains **one optional field**:
+
+```jsonc
+{ "kp": {...}, "spec": {...}, "reportToken": "...",
+  "appMaster": { /* kp's AppMasterSpec — pipeline/jobfit/appmaster.py */ } }
+```
+
+Absent ⇒ the request takes exactly the P0 path, byte for byte. Present ⇒ this
+is an App master hire. Unknown fields inside the block are **ignored**: kp owns
+that schema and will extend it, and a `deny_unknown_fields` here would turn
+every kp-side addition into a Personas outage.
+
+Two checks are refused with **400** rather than stored, because storing them
+would produce a mandate that reads stricter than it is enforced
+(`validate_kp_app_master`, `engine/management_api.rs`):
+
+| Refused | Why |
+| --- | --- |
+| `mandate.scopeRung` outside `0..=2` | Rung 3 (deploy/merge) and 4 (change gates) are never grantable in v1. Refusing at the door beats storing a rung the enforcement layer must remember to ignore. |
+| `mandate.forbiddenClasses` outside the closed vocabulary | A class this build cannot **detect** is a class it cannot **block**. |
+
+Also bounded/validated: the repo binding (a `url` or a `rootPath` must be
+present; `url` must be http(s)), objective direction (`gte`/`lte`), window days,
+trigger kind (`schedule`/`pr`/`kpi_tick`), tenure days, and collection sizes.
+
+The approval card names what the human is actually agreeing to — the app, the
+rung and its label, the objective count, and the probation length — because an
+App master hire binds a repository, not just a persona.
+
+### 11.2 Hire handler v2
+
+On approval, `execute_kp_hire_request` creates the persona and starts its build
+exactly as before, then runs the binding pass
+(`commands/companion/approvals/app_master_hire.rs`) **after** the build session
+spawns — so a spawn failure still rolls back to "nothing happened" instead of
+orphaning a project and a team.
+
+| Step | What happens |
+| --- | --- |
+| (a) project | Match `appMaster.app.repo` against existing `dev_projects` by `github_url` (normalised: case, `.git`, trailing `/`) then by `root_path`; create with `main_branch` if absent. Existing values are **backfilled, never overwritten** — a hire must not silently re-point somebody's project. |
+| (b) build intent | The mission plus the objectives (with unmeasured baselines stated as unmeasured), the mandate **spelled out as rules** rather than as a rung number, the gate commands, the owner to escalate to, the cadence, and the tenure. |
+| (c) team | Reuse `dev_projects.team_id` if set, else create `"<app> — App master"` bound to the project; add the persona as `lead`. |
+| (d) objectives | One `dev_kpis` row per objective through the same repo `/dev-tools/kpi-update` writes through. |
+| (e) triggers | `schedule` → `TriggerKind::Schedule` with kp's own `{cron}`. `pr` and `kpi_tick` have **no mapping** and are recorded as unsupported. |
+| (f) autopilot | The project is set to `suggest` — probation. Never `full`; activation is a human decision at 11.5. |
+| (g) tenure | `app_master_mandate:<project_id>` holds the mandate + `probation_ends_at` (approval time + `tenure.probationDays`) + the retirement criteria. |
+
+**Shape mismatches, resolved explicitly.** `DevKpi` has no `key` and no
+`window` column, so kp's `kpiKey` and `windowDays` ride in `measure_config`
+under an `appMaster` envelope (which is also how the reporter finds these rows
+again). `direction` is mapped `gte→up` / `lte→down` and mapped back on the way
+out. `category` is `value` and `measure_kind` is `manual`: nothing on the
+Personas side knows how to read a kp objective automatically, and a `codebase`
+kind would claim an automated reading no binding exists for. A **null baseline
+stays null** — `baseline_value` is nullable, so "nobody measured this" survives
+the write.
+
+**Partial success is reported, never rounded up.** Every step that fails
+becomes a note, not an abort: the persona and its build are already real. The
+notes land on `setup_detail` (for the operator, now) and on
+`design_context.appMaster.setupNotes` (durably) — because
+`promote_build_draft` **overwrites** `setup_detail` and **rebuilds**
+`design_context`. That rebuild now re-injects `kpLink`, `appMaster` and
+`devProjectId`; before P4 it re-injected only `kpLink`, so an App master link
+would not have survived its own build.
+
+### 11.3 Mandate enforcement
+
+`personas-engine`'s new `app_master` module holds the mandate, the closed
+vocabulary and the deterministic detector; `autonomy.rs` gains the front door.
+
+**The rung gate** is a *second, independent* gate beside autopilot mode.
+Autopilot answers "is this project on autopilot for this capability"; the rung
+answers "may the holder go this far at all". `Action::required_rung()` maps
+every autonomous action onto the ladder (read / retry / open branch-PR), and
+`autonomy::mandate_permits{,_for}` returns a **typed** `MandateRefusal` naming
+the action, both rungs and the owner to escalate to — not a bare `false`. A
+project with **no** mandate is never refused: the gate is strictly additive.
+Wired at the Overnight engine's dispatch decision
+(`commands/infrastructure/overnight.rs`), where the refusal becomes the night
+run's `blocked_reason`.
+
+**The forbidden-class detector** (`app_master::scan_diff`) is a pure function
+over a unified diff. It runs at `dev_tools_apply_diff` — the one place a
+proposal exists as a *diff* before it exists as a change — and a hit **blocks
+the apply**, records one `app_master.forbidden_class_violation` event per hit
+(with the matched rule and path), and returns an error naming them. The diff is
+**never rewritten** into an allowed shape: a rewritten proposal teaches the
+holder which shapes evade the check.
+
+Rules, by class:
+
+| Class | Rules |
+| --- | --- |
+| `test_deletion_or_skip` | A removed non-blank line in a test path (`test-file-deletion` when the file is deleted, `test-line-removal` otherwise). An added skip marker: `@pytest.mark.skip` / `.xfail`, `pytest.skip(`, `@unittest.skip`, `t.Skip(`, `#[ignore]`, `xdescribe(`/`xtest(`/`xit(` anywhere; `.skip(`, `.only(`, `@disabled`, `@ignore` **only under a test path**. |
+| `suppression_directive` | An added line containing `eslint-disable`, `# noqa` / `# ruff: noqa`, `# type: ignore`, `@ts-ignore` / `@ts-expect-error` / `@ts-nocheck`, `#[allow(` / `#![allow(` / `#[expect(`, `// nolint`, `#pragma warning disable`, `// prettier-ignore`, `// biome-ignore`, `# pylint: disable`. |
+| `gate_configuration` | A touched path under `.github/workflows/` or `.circleci/`, or named `.gitlab-ci.yml`, `azure-pipelines.yml`, `lefthook.y[a]ml`, `.pre-commit-config.yaml`, `pytest.ini`, `tox.ini`, `setup.cfg`, `jest.config.*`, `vitest.config.*`, `playwright.config.*`, `.eslintrc*`, `eslint.config.*`, `clippy.toml`, `rustfmt.toml`, `ruff.toml`, `mypy.ini`, `codecov.yml`, or `tsconfig*.json`. |
+| `dependency_bump_to_satisfy_check` | A touched dependency manifest or lockfile (`package.json`, the four JS lockfiles, `Cargo.toml`/`.lock`, `pyproject.toml`, `poetry.lock`, `Pipfile*`, `requirements*.txt`, `go.mod`/`go.sum`, `Gemfile*`, `composer.*`, `pubspec.*`) **without a stated upgrade goal**. The caller states the goal; the detector never infers one. |
+| `credentials_or_permissions` | `.env*`, `*.pem`/`*.key`/`*.p12`/`*.pfx`/`*.jks`/`*.keystore`, `id_rsa`, `id_ed25519`, `authorized_keys`, `.netrc`, `.npmrc`, `.pypirc`, `CODEOWNERS`, `service-account.json`, anything under `secrets/` or `credentials/`, or a basename containing `credentials`/`iam-policy`. |
+| `delivery_configuration` | `Dockerfile*`, `docker-compose*`, `*.tf`/`*.tfvars`, `vercel.json`, `netlify.toml`, `fly.toml`, `railway.json`, `render.yaml`, `app.yaml`, `Procfile`, `serverless.y[a]ml`, anything under `helm/`, `k8s/`, `kubernetes/`, `deploy/`, or a basename containing `feature-flags`/`feature_flags`. |
+
+Only classes **in the mandate** are scanned for, so a narrower mandate genuinely
+means fewer blocks. Only **added** lines are scanned for line rules — a
+suppression that was already there is not this proposal's doing — with test
+*deletions* the deliberate exception. Every hit carries `class`, `rule`, `path`
+and (for line rules) the line and a truncated evidence snippet, so a refusal can
+be argued with. Unit-tested on synthetic diffs in
+`engine/src/app_master.rs::tests`.
+
+Rule ordering and scope are load-bearing and were both found by a test:
+`.skip(` is a substring of `@pytest.mark.skip(` and `t.skip(` is a substring of
+`it.skip(`, so specific dialects are matched first and identifier-led needles
+require a word boundary; and generic markers fire only under a test path so an
+ordinary `queue.skip(3)` is not read as cheating.
+
+### 11.4 Reporter v2
+
+`kp_reporter.rs` flattens an App master block onto the monthly rollup for
+personas carrying `design_context.appMaster`. Nothing changes for any other
+persona — the v1 payload is unchanged, byte for byte.
+
+**Every field is optional and every `None` is omitted from the wire**, because
+kp's backbone treats an absent reading as a coverage gap and a present `0` as a
+measurement. What is real today, and what is not:
+
+| Field | State | Source / why |
+| --- | --- | --- |
+| `proposalsOpened` | **real** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` this month. Each dispatch carries the branch-only guardrail, so this counts sessions dispatched to author a branch — not branches confirmed on a remote. `None` when the engine has not run for the project (no ledger, not zero). |
+| `proposalsMerged` | **null, always** | Nothing merges an autopilot branch or records that a human did; the guardrail forbids the agent from pushing or opening a PR, and no webhook feeds the outcome back. |
+| `proposalsReverted` | **null, always** | Same. |
+| `gatePassRate` | **null, always** | Personas records persona-lab test runs, not the repository's own declared gate runs. No denominator exists. |
+| `forbiddenClassViolations` | **real** | `COUNT` over `app_master.forbidden_class_violation` events for the project this month. A `0` here is a genuine reading. |
+| `kpiDeltas[]` | **real** | The project's App-master-seeded KPIs. `measured` is `current_value.is_some() && last_measured_at.is_some()` — a value with no reading time is a leftover, not a reading. |
+| `budgetReservedUsd` | **real** | `SUM(projected_cost_usd)` over the month's night runs. That projection **is** the reservation: it is taken before any session spawns and it is what the ceiling is checked against. `None` when no night run happened. |
+| `budgetSettledUsd` | **real** | The persona's settled month-to-date spend, sharing `MONTHLY_SPEND_PREDICATE` with the budget UI. |
+| `budgetUnmeasured` | **real** | `runs > 0 && cost_usd == 0.0` — the subscription-auth case. "It cost nothing" and "nobody was counting" are opposite findings that look identical in a number. |
+| `ledgerConsistent` | **real** | Cross-ledger check: every session the night-run ledger claims to have dispatched must have a `dev_tasks` row, written by a different function on the same path. `None` when nothing was dispatched — there is no honest verdict on an empty set. |
+| `autopilotMode` | **real** | The project's `autopilot_mode:<id>` row; `off` when there is none (the honest floor). |
+
+Lifecycle gains `probation_review` with `{decision, note}`.
+
+### 11.5 Probation review
+
+`engine/app_master_probation.rs` registers a 15-minute subscription beside the
+other lifecycle ticks (`engine/background/lifecycle.rs`). It costs one settings
+prefix query when no project carries a mandate.
+
+When `probation_ends_at` passes and no decision has been taken, it builds a
+packet and files it through the Director's review path
+(`engine::director::create_probation_review`, `severity: high`,
+`context_data.source: "director"` so the existing learning and UI treatment
+apply, `context_data.kind: "app_master_probation"`).
+
+The packet is **the deterministic backbone plus a narration generated from it**,
+stamped `narrationSource: "deterministic"`. It restates the numbers in
+sentences and cannot disagree with them, because it is rendered from them.
+Every unmeasured input is narrated as unmeasured — "proposals merged: NOT
+MEASURED … a hole in the instrument, not a zero" — and a *measured* zero is
+distinguished from an absent one in words. No LLM narrates this packet yet;
+adding one would be a second, labelled field and must never rewrite a number.
+
+The human's answer, applied by `react_to_app_master_probation`
+(`commands/design/reviews.rs`), from both the plain resolve path and the
+choose-an-action path:
+
+| Decision | Autopilot | Mandate record | kp lifecycle |
+| --- | --- | --- | --- |
+| approve / `activate` | `suggest` → `full` | decided `activated` | `probation_review {activated}` |
+| `extend_30` | unchanged (`suggest`) | window +30 days, **not** decided, review id cleared so a fresh packet fires later | `probation_review {extended}` |
+| reject / `retire` | → `off`, cadence triggers disabled | decided `retired` | `probation_review {retired}` |
+
+Extending changes the clock, not the autonomy — flipping the mode there would
+make "give it more time" mean "give it more power". Retiring **disables**
+rather than deletes: the persona, its project, its KPIs and its violation
+ledger stay readable, because a retirement that erased the record would destroy
+the evidence for the decision at the moment it was taken. The action path
+short-circuits its usual follow-up persona run: telling an App master to "carry
+out" its own activation or retirement is not its call to make.
+
+No new pages — the existing manual-review surfaces render it.
+
+### 11.6 Known gaps
+
+- **`proposalsMerged` / `proposalsReverted` / `gatePassRate` are unmeasurable
+  on this build** and are omitted rather than sent as zero. Closing them needs
+  a merge/revert signal (a PR webhook or a branch reconciler) and a
+  project-level gate-run ledger.
+- **`pr` and `kpi_tick` cadence triggers are not installed.** They are recorded
+  as unsupported on the persona; kp sees them in `setupNotes` /
+  `unsupportedTriggers` and in the approval result message.
+- **A URL-only App master cannot create a project.** `dev_projects.root_path`
+  is `NOT NULL`; the hire records the reason and asks the operator to add the
+  project, rather than writing an empty path.
+- **A probation review needs an execution to anchor to.**
+  `persona_manual_reviews.execution_id` is `NOT NULL` with an FK; an App master
+  that has never run defers its review (with a warning) until it runs once,
+  rather than being silently skipped.
+- **The diff chokepoint states no upgrade goal**, so a mandate forbidding
+  `dependency_bump_to_satisfy_check` blocks every manifest edit through
+  `dev_tools_apply_diff`. That is the conservative direction; the fix is a
+  stated goal on the call, not a guess in the detector.

@@ -399,8 +399,30 @@ async fn run_project_night(
     let month_spend = month_spend_usd(pool);
     let ceiling = monthly_ceiling_usd(pool);
 
+    // App master mandate (P4) — the SECOND gate, independent of autopilot mode.
+    // Dispatching authors a change, so it needs rung 2; a project whose App
+    // master holds rung 0 or 1 is refused here even on `full` autopilot. The
+    // refusal is typed and carries the owner to escalate to, so it lands in
+    // `blocked_reason` as a sentence the operator can act on rather than as a
+    // silent "0 dispatched" night.
+    let mandate_refusal = personas_engine::autonomy::mandate_permits_for(
+        pool,
+        project_id,
+        personas_engine::autonomy::Action::BacklogToGoal,
+    )
+    .err();
+
     if !triage.accepted_idea_ids.is_empty() {
-        if !mode.allows(Capability::DispatchFixes) {
+        if let Some(refusal) = &mandate_refusal {
+            blocked_reason = Some(format!(
+                "{refusal} ({} accepted idea(s) left for the morning)",
+                triage.accepted_idea_ids.len()
+            ));
+            tracing::warn!(
+                project_id,
+                "overnight: App master mandate refused dispatch: {refusal}"
+            );
+        } else if !mode.allows(Capability::DispatchFixes) {
             blocked_reason = Some(format!(
                 "mode `{}` triages but does not dispatch ({} accepted idea(s) left for the morning)",
                 mode.as_str(),

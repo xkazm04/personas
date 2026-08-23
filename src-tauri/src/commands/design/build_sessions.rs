@@ -2877,15 +2877,38 @@ pub async fn promote_build_draft_inner(
                     .kp_link
                     .map(|link| (link, promoted_name))
             });
-    let design_context_str = match &kp_link {
-        Some((link, _)) => match serde_json::from_str::<serde_json::Value>(&design_context_str) {
-            Ok(mut v) => {
-                v["kpLink"] = serde_json::to_value(link).unwrap_or(serde_json::Value::Null);
+    // Same hazard, same fix, for the App master hire (P4): the binding to the
+    // project, the mandate key, the seeded KPI ids and the UNSUPPORTED cadence
+    // kinds all live on `design_context.appMaster`, and a rebuild would drop
+    // them — leaving a persona that owns an app with no record that it does.
+    let app_master_link: Option<crate::db::models::AppMasterLink> =
+        persona_repo::get_by_id(&state.db, &persona_id)
+            .ok()
+            .and_then(|p| p.parsed_design_context().app_master);
+    let dev_project_id: Option<String> = persona_repo::get_by_id(&state.db, &persona_id)
+        .ok()
+        .and_then(|p| p.parsed_design_context().dev_project_id);
+    let design_context_str = {
+        let needs_reinject =
+            kp_link.is_some() || app_master_link.is_some() || dev_project_id.is_some();
+        match (
+            needs_reinject,
+            serde_json::from_str::<serde_json::Value>(&design_context_str),
+        ) {
+            (true, Ok(mut v)) => {
+                if let Some((link, _)) = &kp_link {
+                    v["kpLink"] = serde_json::to_value(link).unwrap_or(serde_json::Value::Null);
+                }
+                if let Some(am) = &app_master_link {
+                    v["appMaster"] = serde_json::to_value(am).unwrap_or(serde_json::Value::Null);
+                }
+                if let Some(pid) = &dev_project_id {
+                    v["devProjectId"] = serde_json::Value::String(pid.clone());
+                }
                 v.to_string()
             }
-            Err(_) => design_context_str,
-        },
-        None => design_context_str,
+            _ => design_context_str,
+        }
     };
     let connectors_needing_setup = find_connectors_needing_setup(&ir);
 

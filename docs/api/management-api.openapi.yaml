@@ -163,6 +163,14 @@ paths:
         inbox and returns immediately with `status: "pending_approval"`. A human
         approves or rejects it in the desktop app; either way KP is notified at
         `kp.baseUrl` with `reportToken` and can also poll the status route below.
+
+        **App master (P4).** The body gains an optional `appMaster` block
+        (kp's `AppMasterSpec`). Present ⇒ approving the request ALSO ensures a
+        Dev project for `appMaster.app.repo`, creates/binds a team, seeds each
+        objective as a project KPI, installs the supported cadence triggers,
+        sets the project's autopilot to `suggest` (probation) and persists the
+        mandate + tenure. Absent ⇒ the request takes exactly the pre-P4 path.
+        See `docs/architecture/cloud-integration-bridge.md` §11.
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/KpPersonaRequest" } } }
@@ -176,7 +184,7 @@ paths:
                 properties:
                   requestId: { type: string, examples: ["appr_a1b2c3d4e5f6"] }
                   status: { type: string, const: pending_approval }
-        "400": { description: "Validation failure: empty/oversized field, non-http(s) kp.baseUrl, or more than 32 connectors or metrics" }
+        "400": { description: "Validation failure: empty/oversized field, non-http(s) kp.baseUrl, more than 32 connectors or metrics, or an appMaster block whose mandate.scopeRung is outside 0..2, whose mandate.forbiddenClasses leaves the closed vocabulary, whose app.repo carries neither a url nor a rootPath, or whose objective/trigger/tenure values leave their vocabularies or bounds" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /api/kp/persona-requests/{requestId}:
@@ -375,7 +383,94 @@ components:
         reportToken:
           type: string
           description: Capability token the persona's counter rollups are reported back with.
+        appMaster:
+          $ref: "#/components/schemas/AppMasterSpec"
       required: [kp, spec, reportToken]
+
+    AppMasterSpec:
+      type: object
+      description: |
+        kp's `AppMasterSpec` (authored in `pipeline/jobfit/appmaster.py`,
+        projected to Zod as `appMasterSpecSchema`). Present on a hire request
+        ⇒ **App master hire** (P4). Additive: the old flat shape keeps working.
+
+        Personas mirrors only the fields it acts on and **ignores unknown
+        fields** — kp owns this schema and may extend it; rejecting an
+        addition would turn a kp release into a Personas outage. Fields kp
+        sends that Personas does not read here (`schemaVersion`, `role`,
+        `budget`, `agent`, `human`, `coercionNotes`, `promptVersion`) are
+        accepted and stored verbatim on the persona's
+        `design_context.appMaster.spec`.
+      properties:
+        app:
+          type: object
+          description: The application the holder is accountable for.
+          properties:
+            name: { type: string, maxLength: 200 }
+            repo:
+              type: object
+              description: "One of `url` or `rootPath` MUST be present — the binding is what makes accountability for ONE app true."
+              properties:
+                url: { type: [string, "null"], description: "http(s) only. ssh transports are refused." }
+                rootPath: { type: [string, "null"], maxLength: 1000 }
+                mainBranch: { type: string, default: main, maxLength: 200 }
+            contextMapRef: { type: [string, "null"] }
+            dossierId: { type: [string, "null"] }
+        objectives:
+          type: array
+          maxItems: 16
+          description: |
+            The value ledger. Each is seeded as a `dev_kpis` row. `DevKpi` has
+            no key or window column, so `kpiKey` and `windowDays` are carried
+            in `measure_config` under an `appMaster` envelope; `direction` is
+            mapped `gte→up` / `lte→down` and mapped back in the rollup.
+          items:
+            type: object
+            properties:
+              kpiKey: { type: string, maxLength: 120 }
+              label: { type: string, maxLength: 300 }
+              baseline: { type: [number, "null"], description: "null is preserved as NULL — an objective nobody measured must not acquire a baseline of 0." }
+              target: { type: [number, "null"] }
+              unit: { type: string, maxLength: 60 }
+              direction: { type: string, enum: [gte, lte] }
+              windowDays: { type: integer, minimum: 1, maximum: 3650 }
+            required: [kpiKey]
+        mandate:
+          type: object
+          description: How far the holder may go on its own. Enforced, not advisory.
+          properties:
+            scopeRung:
+              type: integer
+              enum: [0, 1, 2]
+              description: "0 read, 1 retry, 2 open branch/PR. Rung 3 (deploy/merge) and 4 (change gates) are NEVER grantable in v1 and are refused with 400."
+            forbiddenClasses:
+              type: array
+              items:
+                type: string
+                enum: [test_deletion_or_skip, suppression_directive, gate_configuration, dependency_bump_to_satisfy_check, credentials_or_permissions, delivery_configuration]
+              description: "Closed vocabulary. A value outside it is refused with 400 — a class this build cannot detect is a class it cannot block."
+            approvalGates: { type: array, maxItems: 32, items: { type: string, maxLength: 500 } }
+            owner: { type: string, maxLength: 200 }
+        cadence:
+          type: object
+          properties:
+            triggers:
+              type: array
+              maxItems: 16
+              items:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    enum: [schedule, pr, kpi_tick]
+                    description: "Only `schedule` has a Personas mapping (TriggerKind::Schedule, config `{cron}`). `pr` and `kpi_tick` are recorded as UNSUPPORTED on the persona rather than approximated — see the hire result message and `design_context.appMaster.unsupportedTriggers`."
+                  config: { type: object, additionalProperties: true }
+        tenure:
+          type: object
+          properties:
+            probationDays: { type: integer, minimum: 1, maximum: 3650, default: 30 }
+            reviewCadenceDays: { type: integer, minimum: 1, maximum: 3650, default: 30 }
+            retireCriteria: { type: array, maxItems: 32, items: { type: string, maxLength: 500 } }
     PairRequest:
       type: object
       properties:

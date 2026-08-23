@@ -329,12 +329,20 @@ pub struct ScanContext {
 
 const MAX_EVIDENCE_CHARS: usize = 160;
 
-/// Path substrings/suffixes that identify a **test** file.
+/// Does this path name a **test** file?
+///
+/// The `test_` prefix is matched at the start of the BASENAME only. As a bare
+/// substring it also matches `latest_run.rs`, `greatest_hits.py` and anything
+/// else containing "…test_…" — and a false positive here is not harmless: it
+/// makes the generic skip markers (`.skip(`, `.only(`) fire on production code
+/// and turns an ordinary line removal into a "deleted a test" violation.
 fn is_test_path(lower: &str) -> bool {
-    lower.contains(".test.")
+    let base = basename(lower);
+    base.starts_with("test_")
+        || lower.contains(".test.")
         || lower.contains(".spec.")
         || lower.contains("_test.")
-        || lower.contains("test_")
+        || lower.ends_with("_test")
         || lower.contains("/tests/")
         || lower.starts_with("tests/")
         || lower.contains("/__tests__/")
@@ -1153,6 +1161,32 @@ diff --git a/src-tauri/src/scoring.rs b/src-tauri/src/scoring.rs
         let v = scan(rust);
         assert_eq!(v.len(), 1, "{v:#?}");
         assert_eq!(v[0].rule, "rust-ignore");
+    }
+
+    #[test]
+    fn a_path_that_merely_contains_test_underscore_is_not_a_test_path() {
+        // `latest_run.rs` contains "test_". Read as a test path it would make
+        // every line removal in it a "deleted a test" violation.
+        assert!(!is_test_path("src/latest_run.rs"));
+        assert!(!is_test_path("pipeline/greatest_hits.py"));
+        assert!(!is_test_path("src/contest_view.tsx"));
+        // Real test paths still match, in every convention the repo uses.
+        assert!(is_test_path("tests/test_scoring.py"));
+        assert!(is_test_path("pipeline/jobfit/test_repo_scan.py"));
+        assert!(is_test_path("src/foo.test.ts"));
+        assert!(is_test_path("src/foo.spec.tsx"));
+        assert!(is_test_path("pkg/thing_test.go"));
+        assert!(is_test_path("src/__tests__/foo.tsx"));
+
+        // End to end: a removal in `latest_run.rs` is not a violation.
+        let diff = "diff --git a/src/latest_run.rs b/src/latest_run.rs
+--- a/src/latest_run.rs
++++ b/src/latest_run.rs
+@@
+-    let old = 1;
++    let next = queue.skip(2);
+";
+        assert!(scan(diff).is_empty(), "{:#?}", scan(diff));
     }
 
     #[test]
