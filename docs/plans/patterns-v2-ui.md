@@ -188,6 +188,13 @@ honest and available — do not fake adherence from proxies.
 | P4b | **Graph readability + old-graph retirement (2026-08-19)** — `8dca19082` deleted the old topic-graph Nexus (~2,300 LOC: PatternGraphHost/Nexus, ClusterPatternsModal, FabricSearch, ProjectFilter, graphModel, graphTheme + 36 orphaned keys ×14 locales); salvage: pan/zoom engine → `sub_patterns/canvas/`, playbooks rail (only UI for the live CLI consult backend) → `sub_patterns/playbooks/` mounted in the Practices lane (create flow now uses a filterable practice picker, the selection basket died with the graph). Accepted losses: relation-label vocabulary (`graph_rel_*`), adoption-matrix project lens, dual-grain coverage rollup, cluster modal. `896262d6c` added two structured layout variants behind a persisted switcher (default **Atlas**): Atlas = proportional angular sectors + concentric arc bands, capacity from real arc length (collision-impossible, tested: min pairwise 77.6px on the 26-subject worst case); Board = 8 category columns of fixed pills, labels inside, accordion technique drill; Nexus kept third for comparison. Shared rings extracted to `nodeRings.tsx`. Polish backlog: Board label LOD below k≈0.7, sparse-sector compaction in Atlas, measured (not char-count) truncation. | done |
 | P5 | Cleanup, tests, doc-sync, Practices demotion polish | 0.5 session (S) |
 
+> **2026-08-23 — the Graph lane is DESCOPED.** Operator call: as ai-registry grows
+> (7 bundles, arbitrary domains), a single-bundle navigation geometry cannot stay
+> relevant. The graph (all three variants + canvas engine) is deleted and its slot goes
+> to a **Project × registry-status Coverage** lane. Successor plan:
+> [`registry-coverage-ui.md`](./registry-coverage-ui.md) (R0 = the deletion, audited
+> blast radius inside). The Subjects lane and its Adherence section stay.
+
 **Risks:** parser divergence (mitigated by shared fixtures); multi-workspace repos
 without a hierarchy (designed empty state); the 12 partial wave-11 subject folders
 currently untracked on disk (the reader must tolerate incomplete folders exactly as
