@@ -242,6 +242,26 @@ pub fn spawn_session(
     cols: u16,
     rows: u16,
 ) -> Result<String, String> {
+    spawn_session_named(app, cwd, args, cols, rows, None).map(|(id, _)| id)
+}
+
+/// [`spawn_session`] plus an optional CLI-facing name, passed to claude as
+/// `--name <label>` so the session stays addressable (`claude agents --json`,
+/// `/resume`, terminal title) even when the app — and its in-memory registry —
+/// is down. The label is collision-checked against the CLI part of every
+/// tracked session's display name and discriminated with session-id chars
+/// (`super::naming::disambiguate`). Returns `(fleet_session_id, cli_name)`:
+/// the resolved name (`None` when nothing was passed — empty label, or a
+/// `--resume` spawn, which keeps its prior name) so the caller can build the
+/// registry display name around the same string.
+pub fn spawn_session_named(
+    app: AppHandle,
+    cwd: PathBuf,
+    args: Vec<String>,
+    cols: u16,
+    rows: u16,
+    cli_name: Option<String>,
+) -> Result<(String, Option<String>), String> {
     if !cwd.exists() {
         return Err(format!("cwd does not exist: {}", cwd.display()));
     }
@@ -287,6 +307,28 @@ pub fn spawn_session(
             Some(uuid::Uuid::new_v4().to_string())
         }
     };
+
+    // CLI name: `--name <label>` so the spawned process itself carries the
+    // identity. Collisions are real (two live sessions here were both
+    // auto-named `kp-5e`; two dispatch roles in one op can do the same), so the
+    // label is checked against the CLI part of every tracked display name and
+    // gets a short session-id discriminator when taken. Empty label or a
+    // `--resume` spawn → no flag (`cli_name_args` is the single gate).
+    let cli_name: Option<String> = cli_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|label| {
+            let taken: Vec<String> = registry()
+                .list_dto()
+                .into_iter()
+                .filter_map(|s| s.name)
+                .map(|n| super::naming::cli_part_of_display_name(&n).to_string())
+                .collect();
+            super::naming::disambiguate(label, &taken, &id)
+        });
+    let name_args = super::naming::cli_name_args(cli_name.as_deref(), &args);
+    let cli_name = if name_args.is_empty() { None } else { cli_name };
 
     // Wire MCP: mint a per-session token, write a per-session
     // mcp.json, return the path so we can inject `--mcp-config` into
@@ -339,6 +381,10 @@ pub fn spawn_session(
             // Deterministic binding + Wake win; in-session `/resume` stays a known
             // limitation (use Fleet's Wake/Recover to resume instead).
         }
+        // `--name <label>` — empty for a nameless or `--resume` spawn.
+        for a in &name_args {
+            c.arg(a);
+        }
         for a in &args {
             c.arg(a);
         }
@@ -372,6 +418,9 @@ pub fn spawn_session(
             c.arg("--session-id");
             c.arg(sid);
             // No `--fork-session` — see the windows branch: it breaks Wake/Recover.
+        }
+        for a in &name_args {
+            c.arg(a);
         }
         for a in &args {
             c.arg(a);
@@ -495,14 +544,16 @@ pub fn spawn_session(
     // Notify the UI a new session showed up.
     emit_registry_changed(&app, "added", &id);
 
-    // P1 — give the session a distinct, meaningful title from its task via a
-    // cheap LLM call (the OSC title is just "Claude Code"). Spawn-with-task only;
-    // a bare interactive session keeps its project label until it titles itself.
-    // Skip LLM naming for resumes: the positional we pass to `claude --resume`
-    // is a continuation nudge (RESUME_CONTINUATION_PROMPT), not a task title —
-    // naming a woken session after it would mislabel it. A resumed session keeps
-    // its prior identity instead.
-    if !args.iter().any(|a| a == "--resume") {
+    // Haiku naming is the FALLBACK for a bare spawn that carried no CLI name:
+    // when `--name` was passed the process already titles itself with it (the
+    // OSC title equals the name), and the one-shot is an extra CLI process with
+    // a 30 s timeout per session — so skip it. Spawn-with-task only; a bare
+    // interactive session keeps its project label until it titles itself.
+    // Skip LLM naming for resumes too: the positional we pass to
+    // `claude --resume` is a continuation nudge (RESUME_CONTINUATION_PROMPT),
+    // not a task title — naming a woken session after it would mislabel it. A
+    // resumed session keeps its prior identity instead.
+    if cli_name.is_none() && !args.iter().any(|a| a == "--resume") {
         if let Some(task) = super::naming::task_from_args(&args) {
             super::naming::name_session_from_task(app.clone(), id.clone(), task);
         }
@@ -534,7 +585,7 @@ pub fn spawn_session(
         }
     });
 
-    Ok(id)
+    Ok((id, cli_name))
 }
 
 /// Mint an MCP session token and write a per-session `mcp.json` that
@@ -569,10 +620,18 @@ pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
     // per-session token — no per-request crypto, just a UUID lookup
     // on our side. Header name MUST match `mcp::SESSION_HEADER`
     // (case-insensitive per HTTP).
+    // Two headers, two different jobs. `X-Athena-Session` says WHICH fleet
+    // session is calling; the local_http token says the caller is entitled to
+    // reach the server at all (see `local_http::auth`). Without the second one
+    // the admission layer 401s the child's every MCP call.
     let body = personas_core::mcp_config::mcp_config_json([(
         "athena",
         personas_core::mcp_config::McpServer::http(format!("http://127.0.0.1:{port}/mcp/rpc"))
-            .with_header("X-Athena-Session", token),
+            .with_header("X-Athena-Session", token)
+            .with_header(
+                crate::local_http::auth::TOKEN_HEADER,
+                crate::local_http::auth::local_token(),
+            ),
     )]);
     let serialized = match serde_json::to_string_pretty(&body) {
         Ok(s) => s,

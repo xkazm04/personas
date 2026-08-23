@@ -595,7 +595,14 @@ pub async fn run_tool_tests(
                     .get("connector")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
-                let r = tool_runner::execute_test_curl(curl_cmd, &env_map).await;
+                // Self-hosted connectors (LightTrack, Langfuse, LangSmith)
+                // legitimately point at localhost/LAN; every other connector
+                // gets the SSRF check. Same metadata flag the API proxy reads.
+                let allow_private = tool_runner::connector_allows_private_network_by_name(
+                    pool,
+                    connector.as_deref(),
+                );
+                let r = tool_runner::execute_test_curl(curl_cmd, &env_map, allow_private).await;
                 tally.record_executed(tool_name, connector, r)
             }
         };
@@ -1263,6 +1270,7 @@ Tools that only mutate state — emit an entry with empty curl, NO `cli_native` 
 2. Minimal params (limit=1, maxResults=1, per_page=1).
 3. Use $ENV_VAR placeholders for credential values; match the env prefix of the credential from the list above.
 4. Always include `-s` (silent) and `-w '\n%{{http_code}}'` to capture HTTP status.
+5. The runner validates every curl against an ALLOWLIST of flags before executing it. Use only: `-s -S -L -f -i -I -G --compressed -H -X -A -u -m --max-time --connect-timeout --retry -d --data --data-raw --data-urlencode -w --url`, plus exactly ONE http/https URL. Anything else (`-o`, `-O`, `-T`, `-K`, `-D`, `-c`, `-b`, `-k`, `-F`, `--trace`, `--proto`, …) is rejected and the test fails before it runs. A `-d`/`--data` value may NOT begin with `@` — curl would read a local file and POST it.
 
 ## Output Format
 Output EXACTLY one JSON object — a test_plan array. No markdown, no commentary, raw JSON only:

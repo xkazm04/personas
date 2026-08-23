@@ -176,6 +176,31 @@ pub(crate) fn import_bundle(
                 other => other.clone(),
             };
 
+            // Strip any credential smuggled inside `model_profile`. The
+            // credential phase above deliberately imports metadata only ("no
+            // secrets -- user must re-enter via Credential Vault"); an
+            // `auth_token` inside this JSON blob was the one way around that,
+            // and it is also what let an imported non-default `base_url` reach a
+            // live request at all -- with a token present the engine never
+            // consults the keyring and so never notices the endpoint is not the
+            // user's. Without it, `http_engine::secrets` refuses to attach the
+            // stored key to an endpoint the user did not configure and the
+            // execution fails loudly instead of shipping the prompt.
+            let model_profile = match p.model_profile.as_deref() {
+                Some(raw) => match crate::engine::types::sanitize_untrusted_model_profile(raw) {
+                    Ok(clean) if clean.is_empty() => None,
+                    Ok(clean) => Some(clean),
+                    Err(reason) => {
+                        result.warnings.push(format!(
+                            "Persona '{}': dropped model_profile ({reason})",
+                            p.name
+                        ));
+                        None
+                    }
+                },
+                None => None,
+            };
+
             match tx.execute(
                 "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
@@ -195,7 +220,7 @@ pub(crate) fn import_bundle(
                     enabled_i,
                     max_concurrent,
                     timeout_ms,
-                    p.model_profile,
+                    model_profile,
                     p.max_budget_usd,
                     p.max_turns,
                     p.design_context,

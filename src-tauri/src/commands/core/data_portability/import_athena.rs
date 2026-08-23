@@ -324,7 +324,17 @@ pub(crate) fn import_athena_learned(
             node.file_path.replace(&node.id, &new_id)
         };
 
-        let abs = root.join(&rel_path);
+        // Validation already refused an escaping `file_path`, but `rel_path`
+        // is not that value -- the collision rename above rewrote it. Re-assert
+        // the boundary where the write actually happens, so a path that only
+        // becomes unsafe after the rewrite still cannot leave the brain root.
+        let Some(abs) = safe_join(&root, &rel_path) else {
+            result.warnings.push(format!(
+                "Athena: {} '{}' named a file path outside her brain directory ('{rel_path}'); skipped.",
+                node.kind, node.id
+            ));
+            continue;
+        };
         if let Some(parent) = abs.parent() {
             if let Err(e) = std::fs::create_dir_all(parent) {
                 result.warnings.push(format!(

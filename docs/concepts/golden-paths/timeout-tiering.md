@@ -1041,7 +1041,7 @@ precondition for everything in §2.
     "ignoreCommentLines": true,
     "description": "a timeout application (`tokio::time::timeout(...)` or a reqwest `.timeout(...)`) whose duration is a numeric literal written inline at the application site. PROXY FOR the stack-free condition: the bound on this operation has no name, so nothing else can reference it, no other bound can be derived from it, and no test can assert its ordering against the bound that wraps it. Compliant form: a named `const`, which the positive control counts."
   },
-  "baseline": { "files": 38, "matches": 61 },
+  "baseline": { "files": 35, "matches": 58 },
   "floor": 900
 }
 ```

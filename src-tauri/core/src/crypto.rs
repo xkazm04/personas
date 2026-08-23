@@ -804,98 +804,32 @@ fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
 /// Restrict file permissions so only the current user can read/write the key file.
 /// Returns an error if permissions cannot be set -- the caller must not leave the
 /// key file world-readable.
-#[cfg(windows)]
+///
+/// The platform work moved to `crate::fs_private` on 2026-08-22 so the same
+/// primitive could cover `local_http`'s handshake file and the project-tracking
+/// scratch dir. Behaviour here is unchanged: Windows strips inherited ACEs and
+/// grants only the current user; Unix sets 0600; an unknown platform refuses.
 fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> {
-    let path_str = path.to_string_lossy();
-    let username = whoami::username();
-
-    // 1. Remove inherited ACEs so other users/groups lose access
-    // 2. Grant only the current user Full Control (`:r` = replace, not append)
-    let result = std::process::Command::new("icacls")
-        .args([
-            &*path_str,
-            "/inheritance:r",
-            "/grant:r",
-            &format!("{username}:(F)"),
-        ])
-        .output();
-
-    match result {
-        Ok(output) if output.status.success() => {
-            tracing::debug!("Restricted key file permissions to current user");
-            Ok(())
-        }
-        Ok(output) => {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(CryptoError::KeyManagement(format!(
-                "icacls failed to restrict key file permissions (exit {}): {}",
-                output.status,
-                stderr.trim()
-            )))
-        }
-        Err(e) => Err(CryptoError::KeyManagement(format!(
-            "Failed to run icacls for key file permissions: {}",
-            e
-        ))),
-    }
-}
-
-#[cfg(unix)]
-fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> {
-    use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).map_err(|e| {
-        CryptoError::KeyManagement(format!("Failed to set key file permissions to 0600: {}", e))
+    crate::fs_private::restrict_file_to_current_user(path).map_err(|e| {
+        CryptoError::KeyManagement(format!("Failed to restrict key file permissions: {e}"))
     })?;
-    tracing::debug!("Restricted key file permissions to owner-only (0600)");
+    tracing::debug!("Restricted key file permissions to current user");
     Ok(())
-}
-
-#[cfg(not(any(windows, unix)))]
-fn restrict_file_permissions(_path: &std::path::Path) -> Result<(), CryptoError> {
-    Err(CryptoError::KeyManagement(
-        "Cannot restrict key file permissions on this platform -- refusing to store key".into(),
-    ))
 }
 
 /// Best-effort attempt to repair permissions on a key file that has become
 /// inaccessible (e.g., created by a different elevation level or session).
 /// Returns `true` if the repair succeeded.
-#[cfg(windows)]
+///
+/// Delegates to `crate::fs_private` (2026-08-22) so this crate has exactly one
+/// process-spawn site. Semantics are unchanged and deliberately DIFFERENT from
+/// `restrict_file_permissions`: this path is additive and must not strip
+/// inherited ACEs, because the caller has already lost access and the inherited
+/// entry may be the only way back in.
 fn repair_key_file_permissions(path: &std::path::Path) -> bool {
-    let path_str = path.to_string_lossy();
-    let username = whoami::username();
-
-    // Grant current user full control (additive, then re-restrict)
-    let result = std::process::Command::new("icacls")
-        .args([&*path_str, "/grant", &format!("{username}:(F)")])
-        .output();
-
-    match result {
-        Ok(output) if output.status.success() => {
+    match crate::fs_private::grant_current_user_access(path) {
+        Ok(()) => {
             tracing::info!("Repaired key file permissions for current user");
-            true
-        }
-        Ok(output) => {
-            tracing::warn!(
-                "icacls repair failed (exit {}): {}",
-                output.status,
-                String::from_utf8_lossy(&output.stderr).trim()
-            );
-            false
-        }
-        Err(e) => {
-            tracing::warn!("Failed to run icacls for permission repair: {}", e);
-            false
-        }
-    }
-}
-
-#[cfg(not(windows))]
-fn repair_key_file_permissions(path: &std::path::Path) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-    match fs::set_permissions(path, fs::Permissions::from_mode(0o600)) {
-        Ok(_) => {
-            tracing::info!("Repaired key file permissions to 0600");
             true
         }
         Err(e) => {

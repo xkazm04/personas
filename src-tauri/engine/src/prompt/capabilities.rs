@@ -42,7 +42,44 @@ pub fn resolve_use_case_model_override(mo: &serde_json::Value) -> Option<ModelPr
                 ..ModelProfile::default()
             })
         }
-        v @ serde_json::Value::Object(_) => serde_json::from_value(v.clone()).ok(),
+        v @ serde_json::Value::Object(_) => {
+            let mut profile: ModelProfile = serde_json::from_value(v.clone()).ok()?;
+
+            // SECURITY: a capability-level override selects a MODEL. It never
+            // carries a credential, and it must not name an unusable endpoint.
+            //
+            // The capability UI writes only {provider, model, base_url}
+            // (`useCaseDetailHelpers.ts` MODEL_OPTIONS) — `auth_token` is
+            // authored in exactly one place, the persona editor
+            // (`useEditorSave.ts`), on the persona's OWN `model_profile`. But
+            // this value is copied verbatim out of untrusted template JSON
+            // (`template_adopt.rs`, `insert("model_override", mo.clone())`) and
+            // out of LLM-authored `agent_ir` (`build_sessions.rs`), so a token
+            // arriving here is smuggled by construction. Dropping it means an
+            // override pointed at a foreign endpoint falls through to
+            // `http_engine::secrets::resolve_api_key`, which refuses to attach
+            // the user's stored key to a host they never configured — instead
+            // of this override quietly becoming a second, unguarded way to set
+            // the same two fields `model_profile` is now sanitized for.
+            profile.auth_token = None;
+
+            // `base_url` owns the scheme and authority of the request. Reject
+            // one that is not a usable http(s) URL. Deliberately NOT a
+            // private-address check: an override pointed at a local Ollama is
+            // legitimate and must keep working.
+            if let Some(raw) = profile.base_url.as_deref() {
+                let trimmed = raw.trim();
+                let usable = trimmed.is_empty()
+                    || url::Url::parse(trimmed).is_ok_and(|u| {
+                        matches!(u.scheme(), "http" | "https") && u.host_str().is_some()
+                    });
+                if !usable {
+                    profile.base_url = None;
+                }
+            }
+
+            Some(profile)
+        }
         _ => None,
     }
 }
@@ -356,4 +393,56 @@ pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
         ));
     }
     doc
+}
+
+#[cfg(test)]
+mod model_override_provenance_tests {
+    use super::resolve_use_case_model_override;
+    use serde_json::json;
+
+    #[test]
+    fn drops_a_token_smuggled_through_a_capability_override() {
+        let mo = json!({
+            "provider": "qwen",
+            "model": "qwen3-max",
+            "base_url": "https://attacker.tld/v1",
+            "auth_token": "dummy",
+        });
+        let p = resolve_use_case_model_override(&mo).expect("object override resolves");
+        assert_eq!(
+            p.auth_token, None,
+            "a use-case override never carries a credential"
+        );
+        // The endpoint itself survives — refusing to attach the STORED key to it
+        // is `http_engine::secrets`' job, not this function's.
+        assert_eq!(p.base_url.as_deref(), Some("https://attacker.tld/v1"));
+    }
+
+    #[test]
+    fn keeps_a_local_inference_override() {
+        let mo = json!({ "provider": "ollama", "model": "llama3", "base_url": "http://127.0.0.1:11434/v1" });
+        let p = resolve_use_case_model_override(&mo).expect("resolves");
+        assert_eq!(p.base_url.as_deref(), Some("http://127.0.0.1:11434/v1"));
+    }
+
+    #[test]
+    fn drops_an_unusable_base_url() {
+        for bad in [
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+            "http://",
+            "not a url",
+        ] {
+            let p = resolve_use_case_model_override(&json!({ "model": "m", "base_url": bad }))
+                .expect("resolves");
+            assert_eq!(p.base_url, None, "{bad} must be dropped");
+        }
+    }
+
+    #[test]
+    fn tier_slugs_are_unaffected() {
+        let p = resolve_use_case_model_override(&json!("haiku")).expect("slug resolves");
+        assert_eq!(p.model.as_deref(), Some("claude-haiku-4-5-20251001"));
+        assert_eq!(p.auth_token, None);
+    }
 }

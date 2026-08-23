@@ -1117,7 +1117,7 @@
       },
       "baseline": {
         "files": 84,
-        "matches": 286
+        "matches": 284
       },
       "floor": 700
     },
@@ -1898,8 +1898,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 147,
-        "matches": 299
+        "files": 146,
+        "matches": 298
       },
       "floor": 400
     },
@@ -2791,8 +2791,8 @@
         "description": "a timeout application (`tokio::time::timeout(...)` or a reqwest `.timeout(...)`) whose duration is a numeric literal written inline at the application site. PROXY FOR the stack-free condition: the bound on this operation has no name, so nothing else can reference it, no other bound can be derived from it, and no test can assert its ordering against the bound that wraps it. Compliant form: a named `const`, which the positive control counts."
       },
       "baseline": {
-        "files": 37,
-        "matches": 60
+        "files": 35,
+        "matches": 58
       },
       "floor": 900
     },
@@ -2861,11 +2861,27 @@
         {
           "path": "src-tauri/engine/src/pairing.rs",
           "reason": "the pairing ceremony itself: nonce + explicit human approval is the gate, by design"
+        },
+        {
+          "path": "src-tauri/src/commands/infrastructure/dev_tools_http.rs",
+          "reason": "2026-08-22: covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), applied once over the composed tree in local_http::start"
+        },
+        {
+          "path": "src-tauri/src/commands/fleet/hooks.rs",
+          "reason": "2026-08-22: same layer. The credential is baked into the installed curl command; a hook carrying no/stale token reads as drifted and startup re-installs it"
+        },
+        {
+          "path": "src-tauri/src/engine/project_tracking/push.rs",
+          "reason": "2026-08-22: same layer. Its 'no nonce gate in v1 because no remote actor can reach the endpoint' header was wrong and has been corrected in place"
+        },
+        {
+          "path": "src-tauri/src/local_http/mod.rs",
+          "reason": "2026-08-22: the module that INSTALLS the layer. Its only `.route(\"` literals are the #[cfg(test)] fixtures that prove an unauthenticated request is refused"
         }
       ],
       "baseline": {
-        "files": 4,
-        "matches": 80
+        "files": 1,
+        "matches": 46
       },
       "floor": 900
     },
@@ -5102,8 +5118,8 @@
         "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
       },
       "baseline": {
-        "files": 37,
-        "matches": 43
+        "files": 38,
+        "matches": 45
       },
       "floor": 900
     },
@@ -5335,7 +5351,7 @@
       ],
       "baseline": {
         "files": 58,
-        "matches": 138
+        "matches": 137
       },
       "floor": 900
     },

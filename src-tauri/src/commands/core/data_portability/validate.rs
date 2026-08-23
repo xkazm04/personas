@@ -145,6 +145,17 @@ pub(crate) fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError
             &p.model_profile,
             MAX_SHORT_FIELD_LEN,
         )?;
+        // A length cap was the ONLY check on this field until 2026-08-22, and
+        // `model_profile.base_url` replaces the inference endpoint wholesale --
+        // scheme and authority -- for every execution of the imported persona.
+        // Reject a blob that is not a JSON object, or whose `base_url` is not a
+        // usable http(s) URL, before it is persisted. (`auth_token` is stripped
+        // at the INSERT, in `import.rs`: validation reports, it does not mutate.)
+        if let Some(raw) = p.model_profile.as_deref() {
+            crate::engine::types::sanitize_untrusted_model_profile(raw).map_err(|reason| {
+                AppError::Validation(format!("{prefix}.model_profile: {reason}"))
+            })?;
+        }
         validation::require_optional_max_len(
             &format!("{prefix}.design_context"),
             &p.design_context,

@@ -3,9 +3,21 @@
 //! context-map scan (and register / list projects) WITHOUT the UI — the
 //! original ask was a route to scan a project's context map directly.
 //!
-//! Loopback-only (the server binds 127.0.0.1). The underlying scan command is
-//! already unauthenticated on the IPC surface (`require_auth` is a no-op), so
-//! this exposes nothing the running app's frontend can't already do.
+//! Authentication: every route here sits behind `local_http`'s admission layer
+//! (`local_http::auth`) — a `Host` allowlist that defeats DNS rebinding, plus
+//! a shared secret published to same-user consumers at
+//! `~/.personas/local-http.json`. Terminal callers (`project-populate`,
+//! `kpi-sim`) read the port AND the token from that file; see
+//! `.claude/skills/project-populate/references/bridge.md`.
+//!
+//! The header here previously justified having no auth at all with "loopback
+//! only … this exposes nothing the running app's frontend can't already do".
+//! That inherited a Public-IPC classification nobody had made for this
+//! transport, and it was wrong on reachability: a DNS-rebound page becomes
+//! same-origin with `127.0.0.1:<port>` and can read responses, and `127.0.0.1`
+//! is machine-scoped rather than user-scoped. `POST /projects` +
+//! `POST /scan-codebase` was a chain to `spawn_headless_claude` with an
+//! attacker-chosen `current_dir` under `--dangerously-skip-permissions`.
 //!
 //! Endpoints (mounted under `/dev-tools`):
 //!   GET  /projects                          → list dev projects (find the project_id)
@@ -45,7 +57,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
 use crate::commands::infrastructure::context_generation::{
-    launch_context_scan, list_scans_json, scan_status_json,
+    confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
 use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
 use crate::commands::infrastructure::kpi_scan::{
@@ -122,6 +134,31 @@ fn db(s: &DevToolsHttp) -> DbPool {
 }
 fn err(e: AppError) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+}
+
+/// A refused path is the caller's mistake, not ours — 400, with the reason.
+fn bad_request(e: AppError) -> (StatusCode, String) {
+    (StatusCode::BAD_REQUEST, e.to_string())
+}
+
+/// Canonicalise a project root, refusing anything that is not an existing
+/// directory. The Windows verbatim prefix `canonicalize` prepends is stripped:
+/// it round-trips through `Path` fine but leaks into `context-map.json`,
+/// `CLAUDE.md` and every UI surface that shows a project path.
+fn canonical_project_root(raw: &str) -> Result<String, AppError> {
+    personas_core::validation::require_non_empty("root_path", raw)?;
+    let trimmed = raw.trim();
+    let p = std::path::Path::new(trimmed).canonicalize().map_err(|e| {
+        AppError::Validation(format!("root_path is not a directory: {trimmed} ({e})"))
+    })?;
+    if !p.is_dir() {
+        return Err(AppError::Validation(format!(
+            "root_path is not a directory: {trimmed}"
+        )));
+    }
+    let s = p.to_string_lossy().to_string();
+    const VERBATIM: &str = "\\\\?\\";
+    Ok(s.strip_prefix(VERBATIM).map(str::to_string).unwrap_or(s))
 }
 
 // ============================================================================
@@ -484,10 +521,16 @@ async fn create_project(
     State(s): State<DevToolsHttp>,
     Json(b): Json<CreateProjectBody>,
 ) -> Result<Json<DevProject>, (StatusCode, String)> {
+    // `root_path` had NO validation at all, and it is the value every later
+    // scan of this project confines itself to — so it is the head of the
+    // chain, not an incidental field. Require a directory that exists now and
+    // store its canonical form, so the confinement check downstream compares
+    // against a real path rather than a string the caller invented.
+    let root_path = canonical_project_root(&b.root_path).map_err(bad_request)?;
     let p = repo::create_project(
         &db(&s),
         &b.name,
-        &b.root_path,
+        &root_path,
         b.description.as_deref(),
         None,
         b.tech_stack.as_deref(),
@@ -708,10 +751,12 @@ async fn export_context_map(
     Json(b): Json<ExportContextMapBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let project = require_project(&s, &b.project_id)?;
-    let root = match b.root_path.as_deref() {
-        Some(r) if r != "." && !r.is_empty() => r.to_string(),
-        _ => project.root_path.clone(),
-    };
+    // This route WRITES: `context-map.json` plus a replaced block inside the
+    // target's `CLAUDE.md`. An unconstrained `root_path` therefore let a
+    // caller author agent instructions anywhere on disk. Confine it to the
+    // project's registered root, same rule as a scan.
+    let root = confine_to_project_root(&project.root_path, b.root_path.as_deref().unwrap_or(""))
+        .map_err(bad_request)?;
     let contexts = write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(err)?;
     Ok(Json(
         serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),

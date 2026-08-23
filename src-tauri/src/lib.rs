@@ -1131,6 +1131,7 @@ pub fn run() {
             // docs/skill-standard.md)
             commands::infrastructure::skill_usage::skill_version_timeline,
             commands::infrastructure::skill_lessons::skill_lessons_list,
+            commands::infrastructure::knowledge_promote::dev_tools_promote_persona_knowledge,
             commands::infrastructure::registry_sync::dev_tools_registry_sync,
             commands::infrastructure::registry_sync::dev_tools_set_knowledge_root,
             commands::infrastructure::registry_usage::dev_tools_write_registry_usage,

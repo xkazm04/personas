@@ -99,11 +99,20 @@ artifact can be correct about this port; only a table emitted at startup can (§
 scanning **16** ports (`:22-23`). **Zero `.layer(` calls exist on this listener or on any router
 mounted into it** — no auth, no CORS, no body limit, no timeout, no audit.
 
+> **The "no auth" half is FIXED as of 2026-08-22; the rest of that sentence still
+> stands.** `local_http::start` now wraps the composed router in
+> `axum::middleware::from_fn(local_http::auth::guard)` — a `Host` allowlist
+> (defeats DNS rebinding) plus a shared secret (defeats another principal on the
+> machine), with one reviewed exemption for `browser-bridge`, which authenticates
+> itself. **No CORS policy, no body limit, no timeout and no audit were added**,
+> so four of the five gaps this section names are still open. The counts in §
+> "the numbers" below were measured before the layer and are annotated there.
+
 | Routes | Prefix (declared at) | Path(s) | Auth | Reaches |
 |---:|---|---|---|---|
-| 31 | `dev-tools` (`lib.rs:987`) | `/dev-tools/*` (`dev_tools_http.rs:70-100`) | **none** | **13 GET-serving paths, 19 POST-serving, 32 method handlers on 31 registrations** (`/projects` at `:70` is both). Reads: the operator's whole project inventory. Writes: **three headless-Claude spawns**, a rewrite of `context-map.json` + `CLAUDE.md` on disk, six destructive context mutations |
-| 1 | `fleet` (`lib.rs:968`) | `POST /fleet/hooks/{event}` (`hooks.rs:37`) | **none** | mutates fleet session state. **The path segment is the verb selector and accepts any string**; the handler recognizes **7** kinds (`sessionstart`, `notification`, `stop`, `pretooluse`, `posttooluse`, `userpromptsubmit`, `sessionend` — `:87`, `:243-291`) while **the module docstring lists 5** (`:29-34`). One route, seven verbs, five documented. |
-| 1 | `project-tracking` (`lib.rs:963`) | `POST /project-tracking/cli-event` (`push.rs:54`) | **none** | inserts a tracking event, then debounce-triggers an LLM consolidator run |
+| 31 | `dev-tools` (`lib.rs:987`) | `/dev-tools/*` (`dev_tools_http.rs:70-100`) | **layer, since 2026-08-22** (was **none**) — `Host` allowlist + `X-Personas-Local-Token`, applied once over the whole `local_http` tree in `local_http::start` | **13 GET-serving paths, 19 POST-serving, 32 method handlers on 31 registrations** (`/projects` at `:70` is both). Reads: the operator's whole project inventory. Writes: **three headless-Claude spawns**, a rewrite of `context-map.json` + `CLAUDE.md` on disk, six destructive context mutations |
+| 1 | `fleet` (`lib.rs:968`) | `POST /fleet/hooks/{event}` (`hooks.rs:37`) | **layer, since 2026-08-22** (was **none**) | mutates fleet session state. **The path segment is the verb selector and accepts any string**; the handler recognizes **7** kinds (`sessionstart`, `notification`, `stop`, `pretooluse`, `posttooluse`, `userpromptsubmit`, `sessionend` — `:87`, `:243-291`) while **the module docstring lists 5** (`:29-34`). One route, seven verbs, five documented. |
+| 1 | `project-tracking` (`lib.rs:963`) | `POST /project-tracking/cli-event` (`push.rs:54`) | **layer, since 2026-08-22** (was **none**) | inserts a tracking event, then debounce-triggers an LLM consolidator run |
 | 1 | `mcp` (`lib.rs:976`) | `POST /mcp/rpc` (`orchestration/mcp/mod.rs:119`) | `X-Athena-Session` on `tools/call` only (`:258`) | 4 `athena.*` tools; `initialize`, `server/discover`, `tools/list` answer **unauthenticated** by design (`:244-255`) |
 | 2 | `browser-bridge` (`lib.rs:983`) | `GET /browser-bridge/ws`, `POST /browser-bridge/mcp` | pairing token pre-upgrade (`relay.rs:78-82`); session header | drives the user's real Chrome — **9 browser tools behind one POST** |
 
@@ -259,8 +268,8 @@ units, and no table in which they could be laid side by side.
 | `.route("…", …)` registrations in 963 `.rs` files | **130** | 11 files; matches the sibling path exactly |
 | …expressed as **method handlers** | **133** | exactly 3 registrations carry two methods: `dev_tools_http.rs:70` (`get(list_projects).post(create_project)`), `management_api.rs:99` and `:103`. **A registration count and a handler count are different numbers and P3 is about exactly this.** |
 | …**live in this process** | **116** | −3 the unused `start_webhook_server` variant, −1 `share_link` (`p2p` off), −10 `companion_api` (unpaired) |
-| …requiring **a credential** | **34** | management 29 · browser-bridge 2 · `/mcp/rpc` 1 · webhook POST 1 (HMAC) · `/pair/claim` 1 (nonce) |
-| …requiring **nothing** | **82** | test-automation 46 · dev-tools 31 · hooks 1 · cli-event 1 · `/health` 1 · `GET /webhook/{id}` 1 · `POST /pair/request` 1 *(deliberate ceremony)* |
+| …requiring **a credential** | **34** → **67** | Measured before 2026-08-22: management 29 · browser-bridge 2 · `/mcp/rpc` 1 · webhook POST 1 (HMAC) · `/pair/claim` 1 (nonce). **+33** from the `local_http` admission layer (dev-tools 31 · hooks 1 · cli-event 1). |
+| …requiring **nothing** | **82** → **49** | Measured before 2026-08-22. The `local_http` 33 (dev-tools 31 · hooks 1 · cli-event 1) moved behind the admission layer and now require a credential, leaving: test-automation 46 · `/health` 1 · `GET /webhook/{id}` 1 · `POST /pair/request` 1 *(deliberate ceremony)*. **test-automation is now 94% of what is left**, and it is the one that is compiled out of release. |
 | Named verbs hidden **behind** those routes | **+23** | `/browser-bridge/mcp` 9 (`browser_bridge/mcp.rs:139-209`) · `/fleet/hooks/{event}` 7 (`hooks.rs:87`, `:243-291`) · `/mcp/rpc` 4 (`orchestration/mcp/handlers.rs:114-117`) · `/a2a/{id}` 3 (`management_api.rs:1678-1681`) — plus a WebSocket protocol on `/browser-bridge/ws`. **4 routes carry 23 capabilities; every route-counting instrument reports 4.** |
 | Inbound HTTP listeners with **zero routes** | **2** | the OAuth callback servers (§0.2) |
 | Listeners stating a **body cap** | **1 of 5** | and it reaches 3 of that listener's 34 routes (§0.7) |

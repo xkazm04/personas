@@ -91,6 +91,10 @@ Probing the two binaries for the pairing subsystem's own compile-time constants 
 | `mdns` | 0 | **67** |
 | `quinn` | 0 | **247** |
 
+> The two domain constants above were renamed by protocol v3 (2026-08-22) and are now
+> `personas-p2p-handshake/v3` and `personas-p2p-pairing/v2`. The counts stand as measured against
+> the binaries named in the header; re-probe with the new strings, not these.
+
 **What a runtime observer could tell:** everything. The absence is externally legible three ways —
 UDP/4242 unbound, no mDNS service registered by the app, and the `#[cfg(feature = "p2p")]` gate on
 the `generate_handler!` entries (`lib.rs:3544-3569`) means `pair_request` / `pair_confirm` /
@@ -493,9 +497,9 @@ ever paired and only a ledger tells you whether the gate has ever refused anythi
 
 | Primitive | What it gives you |
 |---|---|
-| **`engine/src/p2p/protocol.rs:199-304`** — `hello_transcript` / `hello_ack_transcript` / `hello_confirm_transcript` / `verify_handshake_proof` | **The best authentication mechanism in six codebases, and the one site to copy.** Three legs so freshness is *mutual*: each side ends holding a signature over a nonce it personally chose. `HANDSHAKE_DOMAIN` (`:35`) separates these signatures from every other signature the app makes; the transcript encoding is injective by construction and says why (`:217-223`); `verify_handshake_proof` checks **both** that the key hashes to the claimed id and that the signature verifies (`:284-304`). Enforced on both sides — the responder refuses to establish without leg 3 (`connection.rs:631-660`), the initiator sends it before inserting (`:449-460`). 8 unit tests including replay, key substitution and identity substitution. |
+| **`engine/src/p2p/protocol.rs`** — `hello_transcript` / `hello_ack_transcript` / `hello_confirm_transcript` / `verify_handshake_proof` | **The best authentication mechanism in six codebases, and the one site to copy — after the v3 correction below.** Every transcript now also mixes in `transport::channel_binding`, an RFC 5705 exporter over the QUIC session carrying it; take it from the live connection and never from a wire field. Three legs so freshness is *mutual*: each side ends holding a signature over a nonce it personally chose. `HANDSHAKE_DOMAIN` (`:35`) separates these signatures from every other signature the app makes; the transcript encoding is injective by construction and says why (`:217-223`); `verify_handshake_proof` checks **both** that the key hashes to the claimed id and that the signature verifies (`:284-304`). Enforced on both sides — the responder refuses to establish without leg 3 (`connection.rs:631-660`), the initiator sends it before inserting (`:449-460`). 8 unit tests including replay, key substitution and identity substitution. |
 | **`engine/src/identity.rs:73-76`** — `public_key_to_peer_id` | `base58(sha256(public_key))`, full digest. The binding that makes a registry lookup by id equivalent to a key comparison. The private key goes to the **OS keyring** (`:145`), never to disk. |
-| **`engine/src/p2p/protocol.rs:327-345`** — `pairing_fingerprint` | Order-independent by sorting the two peer ids, fresh per ceremony by mixing the session nonce, domain-separated (`PAIRING_DOMAIN`), and honest in its own docstring about being *"a comparison code, not a secret"*. |
+| **`engine/src/p2p/protocol.rs`** — `pairing_fingerprint` | Order-independent by sorting the two peer ids, fresh per ceremony by mixing the session nonce, domain-separated (`PAIRING_DOMAIN`), and honest in its own docstring about being *"a comparison code, not a secret"*. **Corrected 2026-08-22:** under `PAIRING_DOMAIN` v1 it was a pure function of two *public* peer ids and a nonce an on-path attacker was himself relaying, so a machine-in-the-middle made **both screens show the same code** — the human step confirmed the attack instead of catching it. v2 mixes the channel binding in, so the two ends of a relay derive two different codes. |
 | **`engine/src/p2p/device_pairing.rs`** in full | The ceremony. `PairPending` is a **receipt, not an acceptance** (`:31-34`) — the responder never auto-accepts, because the point of the code is that a human looked at it. `PAIRING_TTL` 300 s, `MAX_PENDING` 16. The counter-offer group resolution (`:36-66`) is genuinely good: an unauthenticated wire claim (`devices_at_stake`) is used **only** to choose between counter-offering and refusing, and every write re-checks the predicate locally through `join_device_group`, so *"a peer can never talk us into stranding our own devices"* (`:301-308`). |
 | **`engine/src/p2p/remote_jobs.rs:214-228`** — `require_paired`, called once at `:490` | **One gate, one call site, covering every frame of the job protocol including unsolicited progress and results.** The docstring states the leaf's whole thesis: *"An authenticated connection is NOT a trusted one — any LAN peer may complete the signed handshake."* Refusals are logged with the peer id and answered with a reason rather than a timeout. Copy the *placement*; §7.A is about what it reads. |
 | **`commands/fleet/companion_api.rs:223`** — `authorize(app, peer, headers)` | **The reference for a trust check on a transport whose population is larger than loopback**, and the fleet's best verb bound. Guard order is the lesson: `is_lan_peer` **first**, so a misconfiguration answers 403 with zero secret-bearing computation; then bearer extraction; then a constant-time digest compare over **every** stored device; then a fixed 350 ms penalty before the 401. Five allowlisted verbs. Every act appended to `fleet_decisions` with the device id. The projection is deliberately data-poor (*"NO PTY bytes, no transcripts, no cwd paths, no credentials"*, `:25-27`). |
@@ -933,7 +937,22 @@ deleted; here, prose describes a control as absent that had been built.
 Reported because a path that lists only defects mis-sets priors.
 
 - **The handshake is the best thing in six codebases** and is enforced on both sides, with the third
-  leg mandatory on the accept path. §6 details it.
+  leg mandatory on the accept path. §6 details it. **Corrected 2026-08-22 — this clearance was wrong,
+  and the way it was wrong is worth more than the finding.** Every property this path checked was
+  present and correct: three legs, mutual freshness, domain separation, injective encoding, both
+  halves of `verify_handshake_proof`, enforcement on both sides, eight unit tests. The audit asked
+  *is this handshake sound?* and the answer was yes. The question it never asked is *is this
+  handshake attached to anything?* — no field in any of the three transcripts came from the TLS
+  session carrying them, the QUIC certificates are unverified by design (`SkipServerVerification`),
+  and there is no application-layer encryption underneath. So an on-path attacker could terminate
+  TLS to each side and relay all three signed messages **verbatim**, forging nothing and holding
+  neither private key, and both peers would verify each other's genuine signatures. §7.J's
+  observation that the promotion criterion and its implementation sat in two modules "with nothing
+  between them" was the same shape one layer down, and this path printed it without noticing that
+  the handshake and the transport were also two modules with nothing between them. Fixed by
+  protocol v3 (channel binding, `transport::channel_binding`). **Generalisation: auditing a
+  cryptographic mechanism in isolation certifies the mechanism, not the composition — and every
+  MITM lives in the composition.**
 - **The companion API's guard order, verb allowlist, data-poor projection and decision ledger** are the
   fleet's best answer to "a device on the LAN". Its five verbs against `vibeman`'s eighteen is the
   whole of P10 in one comparison.

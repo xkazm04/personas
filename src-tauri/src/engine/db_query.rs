@@ -107,10 +107,14 @@ fn inject_row_limit(query_text: &str) -> String {
 
     // Scan for an existing top-level LIMIT and for line comments, with string
     // literals stripped so a value like '... limit ...' never false-matches.
-    let stripped_upper = strip_sql_literals(trimmed_end).to_ascii_uppercase();
-    if stripped_upper.contains("--") {
+    let stripped = strip_sql_literals(trimmed_end);
+    // A line comment would swallow the appended clause; an unterminated literal
+    // or comment means the statement could not be read at all. Leave both
+    // untouched — an un-capped read is a UX cost, a mis-appended one is a bug.
+    if stripped.unterminated || stripped.has_line_comment {
         return query_text.to_string();
     }
+    let stripped_upper = stripped.text.to_ascii_uppercase();
     let already_limited = stripped_upper
         .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
         .any(|tok| tok == "LIMIT");
@@ -291,33 +295,177 @@ const CTE_MUTATION_VERBS: &[&str] = &[
     "DELETE", "INSERT", "UPDATE", "MERGE", "REPLACE", "UPSERT", "TRUNCATE", "DROP", "ALTER",
 ];
 
-/// Strip the contents of single- and double-quoted SQL literals so verb scanning
-/// ignores data/identifiers (e.g. a literal `'DELETE'` must not trip the check).
-/// Conservative: an unterminated quote drops the remainder — the safe direction
-/// for a mutation classifier.
-fn strip_sql_literals(sql: &str) -> String {
+/// Output of [`strip_sql_literals`]: the executable skeleton of a statement plus
+/// the two flags a fail-closed caller needs.
+struct StrippedSql {
+    /// The query with every string literal and comment body replaced by a
+    /// single space. Only meaningful when `unterminated` is false.
+    text: String,
+    /// A quoted literal or a block comment ran to end-of-input without closing,
+    /// so an unknown amount of the payload was never classified. Callers MUST
+    /// treat the query as unsafe instead of trusting `text`.
+    unterminated: bool,
+    /// A `--` was seen outside any literal — whether or not it was blanked out
+    /// (see the dialect rule below). Only [`inject_row_limit`] cares: appending
+    /// ` LIMIT n` after a line comment would put the clause inside the comment,
+    /// so the flag must be set even for the `--x` form we leave visible.
+    has_line_comment: bool,
+}
+
+/// True when what follows `--` makes it a line comment in *every* dialect this
+/// module forwards to. Postgres and SQLite end a comment at a bare `--`; MySQL
+/// (PlanetScale/Vitess) requires whitespace after it. See the dialect note on
+/// [`strip_sql_literals`].
+fn is_line_comment_gap(next: Option<&char>) -> bool {
+    match next {
+        None => true, // `--` at end of input is a comment everywhere
+        Some(c) => c.is_whitespace(),
+    }
+}
+
+/// Blank out the contents of SQL string literals **and comments** so that verb
+/// and separator scanning sees only text the database will actually execute.
+///
+/// # Direction of failure — read this before editing
+///
+/// Every caller **searches this function's output for danger** (a `;`, a
+/// mutation verb). Text this function drops is therefore danger the caller can
+/// no longer see: for these consumers "consume to end of input" is the
+/// **UNSAFE** direction, not the safe one.
+///
+/// The pre-2026-08-22 version had no `--` arm and no `/* */` arm, and its own
+/// doc comment called dropping the remainder "the safe direction for a mutation
+/// classifier" — exactly inverted. A single apostrophe inside a comment (`--'`,
+/// `/* it's */`) opened a literal that never closed, so everything after it
+/// vanished from the classifier's view — including a whole data-modifying CTE
+/// that Postgres went on to execute as ONE statement:
+///
+/// ```sql
+/// WITH t AS (SELECT 1) --'
+/// , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d
+/// ```
+///
+/// So this function never silently swallows the tail. When a literal or block
+/// comment does not close it sets `unterminated`, and every caller fails
+/// **closed**: classify as a mutation, as multiple statements, as not-a-read.
+///
+/// # Dialect rule: blank out only what is inert EVERYWHERE
+///
+/// The same string is classified once and then forwarded to Postgres/Neon,
+/// SQLite, or MySQL (PlanetScale/Vitess) — and this function does not know
+/// which. Blanking out something one engine actually executes would re-open the
+/// very hole above, so anything dialect-dependent is left **visible** and is
+/// scanned as executable text. That over-rejects; over-rejection is the side of
+/// this line to be wrong on.
+///
+/// * `--` is stripped only when followed by whitespace or end of input. MySQL
+///   needs that whitespace, so a bare `--1; DROP TABLE t` really is two MySQL
+///   statements and the `;` must stay countable.
+/// * `/*! … */` is a MySQL **executable** comment — its body runs — so it is
+///   never blanked out. Plain `/* … */` is.
+/// * `#` is a MySQL line comment and nothing at all in Postgres/SQLite, so it
+///   is not treated as a comment. An apostrophe behind one therefore opens an
+///   unterminated literal and the query fails closed, which is what we want.
+///
+/// # Deliberate escaping decisions
+///
+/// * Doubled quotes (`''`, `""`) stay inside the literal.
+/// * A backslash is **inert** inside a literal. Postgres runs with
+///   `standard_conforming_strings=on` and SQLite has no backslash escape at
+///   all, so honouring a backslash-quote pair as a closing quote would be the
+///   wrong reading in both engines.
+/// * Nested block comments (`/* /* */ */`) are counted by depth. Nesting is a
+///   Postgres extension; SQLite ends the comment at the first `*/`. Where the
+///   dialects disagree, the depth counter is still inside a comment at EOF,
+///   which sets `unterminated` and refuses the statement — safe under either
+///   reading rather than guessing which engine is on the other end.
+/// * Postgres dollar-quoting (`$$ … $$`) is **not** understood: a `;` or a verb
+///   inside one is read as executable text and over-rejects the query.
+fn strip_sql_literals(sql: &str) -> StrippedSql {
+    let chars: Vec<char> = sql.chars().collect();
     let mut out = String::with_capacity(sql.len());
-    let mut chars = sql.chars().peekable();
-    while let Some(c) = chars.next() {
-        match c {
-            '\'' | '"' => {
-                let quote = c;
-                while let Some(n) = chars.next() {
-                    if n == quote {
-                        // Doubled-quote escape ('' or "") stays inside the literal.
-                        if chars.peek() == Some(&quote) {
-                            chars.next();
-                            continue;
-                        }
-                        break;
+    let mut unterminated = false;
+    let mut has_line_comment = false;
+    let mut i = 0usize;
+
+    while i < chars.len() {
+        match chars[i] {
+            // `--` line comment. Postgres and SQLite end a comment at a bare
+            // `--`; MySQL requires whitespace after it. Flag it either way so
+            // `inject_row_limit` never appends a clause that could land inside
+            // a comment — but only BLANK IT OUT when every dialect agrees it
+            // is one. The newline is deliberately left in place so whatever
+            // follows the comment stays visible.
+            '-' if chars.get(i + 1) == Some(&'-') => {
+                has_line_comment = true;
+                if is_line_comment_gap(chars.get(i + 2)) {
+                    i += 2;
+                    while i < chars.len() && chars[i] != '\n' {
+                        i += 1;
+                    }
+                    out.push(' ');
+                } else {
+                    // Dialect-dependent: leave it visible so the guards can
+                    // still see a `;` or a verb behind it.
+                    out.push(chars[i]);
+                    i += 1;
+                }
+            }
+            // `/* … */` block comment, depth-counted. `/*!` is excluded: MySQL
+            // executes that body, so it must stay visible.
+            '/' if chars.get(i + 1) == Some(&'*') && chars.get(i + 2) != Some(&'!') => {
+                let mut depth = 1usize;
+                i += 2;
+                while i < chars.len() && depth > 0 {
+                    if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                        depth += 1;
+                        i += 2;
+                    } else if chars[i] == '*' && chars.get(i + 1) == Some(&'/') {
+                        depth -= 1;
+                        i += 2;
+                    } else {
+                        i += 1;
                     }
                 }
-                out.push(' '); // replace the whole literal with a separator
+                if depth > 0 {
+                    unterminated = true;
+                }
+                out.push(' ');
             }
-            _ => out.push(c),
+            // Quoted literal / quoted identifier.
+            c @ ('\'' | '"') => {
+                i += 1;
+                let mut closed = false;
+                while i < chars.len() {
+                    if chars[i] == c {
+                        // Doubled-quote escape ('' or "") stays inside.
+                        if chars.get(i + 1) == Some(&c) {
+                            i += 2;
+                            continue;
+                        }
+                        i += 1;
+                        closed = true;
+                        break;
+                    }
+                    i += 1;
+                }
+                if !closed {
+                    unterminated = true;
+                }
+                out.push(' '); // the whole literal becomes a separator
+            }
+            c => {
+                out.push(c);
+                i += 1;
+            }
         }
     }
-    out
+
+    StrippedSql {
+        text: out,
+        unterminated,
+        has_line_comment,
+    }
 }
 
 /// True if the payload contains more than one SQL statement — i.e. any content
@@ -327,7 +475,12 @@ fn strip_sql_literals(sql: &str) -> String {
 /// sees statement one, while Neon/PlanetScale forward the raw payload verbatim.
 fn has_multiple_statements(query_text: &str) -> bool {
     let stripped = strip_sql_literals(query_text);
-    stripped.trim().trim_end_matches(';').contains(';')
+    // Fail CLOSED. If a literal or comment never closed we could not read the
+    // rest of the payload, so we must not certify it as a single statement.
+    if stripped.unterminated {
+        return true;
+    }
+    stripped.text.trim().trim_end_matches(';').contains(';')
 }
 
 /// True if a `WITH`-led statement embeds a data-modifying verb in its body.
@@ -335,7 +488,15 @@ fn has_multiple_statements(query_text: &str) -> bool {
 /// non-`[A-Za-z0-9_]`) so columns like `updated_at` / `deleted` do not
 /// false-positive.
 fn cte_body_has_mutation(query_text: &str) -> bool {
-    strip_sql_literals(query_text)
+    let stripped = strip_sql_literals(query_text);
+    // Fail CLOSED: an unreadable tail is assumed to mutate. This guard is only
+    // ever consulted in order to GRANT read-only status, so "unknown" has to
+    // resolve to "no".
+    if stripped.unterminated {
+        return true;
+    }
+    stripped
+        .text
         .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
         .any(|tok| {
             let up = tok.to_ascii_uppercase();
@@ -3123,6 +3284,167 @@ mod tests {
             !is_mutation(q),
             "a verb inside a string literal must not trip the classifier"
         );
+    }
+
+    // -- comment-blind literal stripper (safe-mode bypass, 2026-08-22) -----
+    //
+    // INVARIANT (read this before touching `strip_sql_literals`):
+    // Both safe-mode guards SEARCH THE STRIPPED TEXT FOR DANGER, so any text
+    // the stripper DROPS is danger it can no longer see. "Consume to EOF" is
+    // therefore the UNSAFE direction here, not the safe one. Every payload
+    // below smuggles an apostrophe inside a comment so the old stripper
+    // mistook it for an opening quote and ate the rest of the query.
+
+    #[test]
+    fn test_line_comment_apostrophe_cannot_hide_cte_mutation() {
+        // Postgres ends the `--` comment at the newline and executes the
+        // data-modifying CTE as ONE statement -- no stacked-statement support
+        // needed, so `has_multiple_statements` never sees it either.
+        let payload =
+            "WITH t AS (SELECT 1) --'\n, d AS (DELETE FROM users RETURNING 1) SELECT * FROM d";
+        assert!(
+            is_mutation(payload),
+            "a DELETE after a comment-hidden apostrophe must classify as a mutation"
+        );
+        assert!(
+            !is_sqlite_read(payload),
+            "a DELETE after a comment-hidden apostrophe must not classify as a read"
+        );
+        assert!(
+            cte_body_has_mutation(payload),
+            "the CTE body guard must still see the DELETE"
+        );
+    }
+
+    #[test]
+    fn test_block_comment_apostrophe_cannot_hide_cte_mutation() {
+        // An English contraction inside a block comment is enough.
+        let payload = "WITH t AS (SELECT 1) /* it's fine */ , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d";
+        assert!(
+            is_mutation(payload),
+            "a DELETE after a block-comment apostrophe must classify as a mutation"
+        );
+        assert!(!is_sqlite_read(payload));
+    }
+
+    #[test]
+    fn test_comment_hidden_semicolon_is_still_multi_statement() {
+        assert!(
+            has_multiple_statements("SELECT 1 --'\n; DROP TABLE users"),
+            "a line comment must not swallow the statement separator"
+        );
+        assert!(
+            has_multiple_statements("SELECT 1 /* don't */ ; DROP TABLE users"),
+            "a block comment must not swallow the statement separator"
+        );
+    }
+
+    #[test]
+    fn test_unterminated_literal_classifies_unsafe_not_safe() {
+        // The old doc comment called "drop the remainder" the safe direction.
+        // For a guard that searches for danger it is exactly inverted.
+        let payload =
+            "WITH t AS (SELECT 1) ' , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d";
+        assert!(
+            is_mutation(payload),
+            "an unterminated literal must fail CLOSED (treated as a mutation)"
+        );
+        assert!(!is_sqlite_read(payload));
+        assert!(
+            has_multiple_statements("SELECT 1 ' ; DROP TABLE users"),
+            "an unterminated literal must fail closed in the multi-statement guard too"
+        );
+    }
+
+    #[test]
+    fn test_unterminated_block_comment_classifies_unsafe() {
+        // Nested block comments are a Postgres extension; SQLite ends at the
+        // first `*/`. Depth-counting plus fail-closed covers both dialects:
+        // whichever engine is right, an unbalanced comment is refused. Both
+        // payloads carry an apostrophe, which is what made the old stripper
+        // eat the tail instead of seeing the danger in it.
+        assert!(
+            is_mutation(
+                "WITH t AS (SELECT 1) /* don't /* b */ , d AS (DELETE FROM users RETURNING 1) SELECT * FROM d"
+            ),
+            "a nested block comment must not hide the DELETE behind it"
+        );
+        assert!(
+            has_multiple_statements("SELECT 1 /* it's unbalanced ; DROP TABLE users"),
+            "an unterminated block comment must fail closed"
+        );
+    }
+
+    #[test]
+    fn test_mysql_dialect_divergences_fail_closed() {
+        // PlanetScale (Vitess/MySQL) is a live pass-through connector, and MySQL
+        // does not read comments the way Postgres/SQLite do. The stripper only
+        // blanks out what is inert in EVERY dialect it forwards to; anything
+        // dialect-dependent is left VISIBLE so the guards can still see danger
+        // in it (over-rejection, never under-rejection).
+
+        // MySQL needs whitespace after `--`; `--x` is not a comment there, so
+        // the `;` behind it is a real separator and must stay visible.
+        assert!(
+            has_multiple_statements("SELECT 1 --x; DROP TABLE users"),
+            "`--` without trailing whitespace is dialect-dependent: do not strip it"
+        );
+
+        // `/*! ... */` is an EXECUTABLE comment in MySQL — its body runs.
+        assert!(
+            has_multiple_statements("SELECT 1 /*!50000 ; DROP TABLE users */"),
+            "a MySQL executable comment body must not be blanked out"
+        );
+
+        // `#` is a MySQL line comment and nothing in Postgres/SQLite. It is not
+        // stripped, so the apostrophe behind it opens an unterminated literal
+        // and the query fails closed.
+        assert!(
+            has_multiple_statements("SELECT 1 #'\n; DROP TABLE users"),
+            "a `#`-comment apostrophe must not swallow the separator"
+        );
+    }
+
+    // -- negative controls: a classifier that rejects everything is useless --
+
+    #[test]
+    fn test_ordinary_reads_with_comments_stay_read_only() {
+        let cases = [
+            "SELECT id, name FROM users -- only the active ones\nWHERE active = 1",
+            "/* monthly report */ SELECT count(*) FROM orders",
+            "SELECT * FROM logs WHERE msg = 'DELETE failed' -- audit trail",
+            "WITH t AS (SELECT 1) /* no mutation here */ SELECT * FROM t",
+            "SELECT * FROM t WHERE note = 'a;b' -- keeps the semicolon",
+            "SELECT 'it''s fine' AS s FROM t -- doubled-quote escape",
+        ];
+        for q in cases {
+            assert!(!is_mutation(q), "must stay a read: {q}");
+            assert!(!has_multiple_statements(q), "must stay one statement: {q}");
+        }
+        // SQLite-flavoured reads route down the read branch.
+        assert!(is_sqlite_read(
+            "SELECT id FROM users -- only the active ones\nWHERE active = 1"
+        ));
+        assert!(is_sqlite_read(
+            "WITH t AS (SELECT 1) /* no mutation here */ SELECT * FROM t"
+        ));
+    }
+
+    #[test]
+    fn test_row_limit_injection_unchanged_by_comment_handling() {
+        // A bare read still gets its cap...
+        let expected = format!("LIMIT {}", MAX_ROWS + 1);
+        let limited = inject_row_limit("SELECT * FROM t");
+        assert!(limited.ends_with(expected.as_str()), "got: {limited}");
+        // ...and a query carrying a line comment is still left alone, because
+        // appending after `-- note` would put the LIMIT inside the comment.
+        let commented = "SELECT * FROM t -- note";
+        assert_eq!(inject_row_limit(commented), commented);
+        // ...including the MySQL-ambiguous `--x` form, which is NOT blanked out
+        // but is still flagged, so the cap is declined rather than appended
+        // into a Postgres comment. (Regression lock: green before the fix too.)
+        let tight = "SELECT * FROM t --x";
+        assert_eq!(inject_row_limit(tight), tight);
     }
 
     // -- extract_pg_host ---------------------------------------------

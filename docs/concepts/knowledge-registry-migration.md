@@ -379,21 +379,63 @@ memory but no expert system. Connection design (sketch, to be its own plan):
       from the workspace registry store's single `commit` choke point. localStorage cannot
       be read from Rust and a 3am schedule has no window to ask. One root for now; the
       per-project mapping is the next slice.
-  - ⚠️ **`use_when` — the designated selection key — covers 376/1005.** Measured
-    2026-08-20: 100% in `civic-intelligence`, `grant-funding`, `llm-observability` and
-    `media-generation`; **0/629 in `software-engineering`**, the bundle a coding persona
-    needs most. A slug/category fallback covers the gap and is genuinely weaker (a name is
-    not a situation), so every pick records its selector and the runner logs the split —
-    the gap is observable rather than inferred from disappointing output.
-    **Backfilling `use_when` across `software-engineering` is the highest-value next
-    step for this lane**, and needs no code change to take effect.
-    - A relevance floor came out of running the selector against the real corpus rather
-      than fixtures: without it, one shared *category* word pulled 11 irrelevant techniques
-      in behind a single genuine match. Fixtures could not have caught it; the
-      `#[ignore]`d `smoke_against_the_real_registry` test is what did.
-  - **Propose-upward lane:** persona executions that surface generalizable lessons emit
-    candidates through the EXISTING harvest door shape (`result.json` → governed ingest →
-    human adjudication), tagged `source: persona-execution` — nothing auto-adopts.
+  - ✅ **`use_when` coverage: 1557/1557 — the backfill needed no work.** The 2026-08-20
+    reading of 376/1005 (0/629 in `software-engineering`) was taken against a clone 37
+    commits behind. After syncing on 2026-08-22 every bundle is at 100%, and a sixth
+    bundle (`recruiting`, 384 techniques) had appeared. Verified twice: by
+    `build-index.mjs` and by an independent frontmatter walk. **The scoping step is what
+    saved the work** — the highest-value next step turned out to be already done, and
+    only measuring after the sync could show that.
+    - **Three consequences the sync forced, none of them the backfill:**
+      1. The bundle was re-shelved under `<category>/<subcategory>/<subject>/`. The reader
+         BUILT its paths from the old flat convention, so every entry it handed a persona
+         became a dead link — silently: the menu still rendered, nothing could be opened.
+         Now derived from the subject's own `file` field, which the index has always
+         carried. **All 15 fixture tests stayed green through this**; only the `#[ignore]`d
+         real-corpus smoke test caught it, which is exactly the gap it was written for.
+      2. 100% trigger coverage killed the fallback. The rule "a technique that declares
+         triggers is never readmitted by its slug" was defensible when most of the corpus
+         had none; at 1557/1557 it disabled name matching everywhere, and a persona
+         working on agent-memory recall was measurably offered NOTHING — every trigger
+         there is phrased in deliberately different vocabulary from the names. Triggers
+         are a precision instrument, not an index of phrasings, so name matching is back
+         for all techniques at a higher bar (`DECLARED_TRIGGER_SLUG_FLOOR`) when triggers
+         exist and did not fire.
+      3. **105 gitignored `.evidence.local.md` sidecars (238 KB) were orphaned** at the old
+         flat paths — git moves tracked files, never ignored ones. A `git clean -fdx`
+         would have destroyed the whole local evidence layer. Relocated by mapping each
+         subject through `index.json`; 105/105 matched, byte count identical.
+    - A relevance floor came out of the same real-corpus run: without it, one shared
+      *category* word pulled 11 irrelevant techniques in behind a single genuine match.
+  - ✅ **Propose-upward lane — SHIPPED 2026-08-22**
+    (`src-tauri/src/commands/infrastructure/knowledge_promote.rs`,
+    `dev_tools_promote_persona_knowledge`).
+    - **The material already existed.** The Knowledge Annotation Protocol has long asked
+      personas to emit `{"knowledge_annotation": …}` when they learn something "valuable
+      for future executions (by you or other personas)"; those land in
+      `execution_knowledge` scoped `persona` | `tool` | `connector` | `global`. That scope
+      is the persona's own claim about how far its insight travels, so it is the selector:
+      `persona` stays put, the other three are org candidates. **No new protocol, no new
+      prompt text, no new burden on the model.**
+    - **Through the existing door, not beside it.** `ws_repo::ingest_candidates` with
+      `actor_kind = "persona-execution"` — the same governed ingest the practice-harvest
+      uses. That inherits the whole contract: candidates land **`observed`**, never
+      adopted; the dedup key and the 90-day rejected window mean a re-promotion cannot
+      re-propose what a human already declined; the 120-per-run cap holds. A second door
+      would have been a second set of rules to keep honest.
+    - Confidence floor 0.6, deliberately just above the protocol's unstated 0.5 default,
+      so promotion means the persona actively claimed more than the default. Filtered rows
+      are counted in the report, never silently dropped, and `dryRun` shows the exact
+      titles before anything is written.
+    - **Three things it refuses to do**, each because the alternative fabricates
+      confidence: it does not classify (every candidate is `fact` — a keyword guess would
+      put a *confident* wrong label on a row a human then trusts; the adjudicator re-kinds
+      it, and an LLM pass is the legitimate refinement); it does not stamp
+      `origin_project_id` (a persona's `project_id` is not a dev project, and faking that
+      column would read as verified provenance — the persona and execution ids go in
+      `detail_md` as what they are); it does not track what it promoted (the door's dedup
+      already absorbs a re-run, and a tracking column would be a second source of truth
+      about the same fact).
   - Non-coding domains slot in the moment their bundle exists (`knowledge/media-craft/`
     for a gravitone-flavored persona) — the mechanism is domain-blind by construction.
 
