@@ -746,8 +746,43 @@ Running a repository's gate suite inside it would block the UI for minutes.
 never checked out in the shared tree — kp-style repos have concurrent agent
 sessions working in one checkout, and a gate that switched branches under them
 would be a bug shipped into somebody else's work. Each command runs through the
-platform shell with `stdin` on null and `kill_on_drop`, bounded by
-`PERSONAS_APP_MASTER_GATE_TIMEOUT_SECS` (default 600 s per command).
+platform shell with `stdin` on null, `kill_on_drop`, the parent environment plus
+`CI=1` (so Next/Vite/Jest-style tools take their non-interactive path), bounded
+by `PERSONAS_APP_MASTER_GATE_TIMEOUT_SECS` (default 600 s per command).
+
+**The worktree borrows the source checkout's installed dependencies.** A fresh
+worktree materialises tracked files only, so it has no `node_modules/`, no
+virtualenv, no `vendor/`, no `target/` — and every `npm run …` gate in it exited
+non-zero for a reason that had nothing to do with the proposal. That is a false
+reading, not a gate: `gatePassRate` read `0` while nothing about the branch had
+been tested. `gate-sees-target` means the repository's own commands with the
+repository's own **resolved environment**, so before the gates run:
+
+| Borrowed | How | Condition |
+| --- | --- | --- |
+| `node_modules`, `.venv`, `venv`, `.tox`, `vendor` | directory **junction** on Windows (`cmd /C mklink /J` — `symlink_dir` needs `SeCreateSymbolicLinkPrivilege`, a junction needs no privilege), `symlink` elsewhere | exists in the source root, absent in the worktree |
+| `target` | same | …and the repo has a `Cargo.toml`; a stray `target/` in a Node repo is somebody else's output |
+| `.env.local`, `.env` | **copied as files**, not linked — a gate that rewrote a linked dotfile would rewrite the operator's own | exists in the source root |
+
+**Nothing is installed.** `npm ci` is a different blast radius (network,
+minutes, a lockfile write) and is not this instrument's job. When a dependency
+is missing from the *source* checkout too and the command obviously needs it —
+the narrow, conclusive case: the command's first token is
+`npm`/`pnpm`/`yarn`/`npx`/`bun` and there is no `node_modules` — the gate is
+recorded `did_not_run` with reason `deps_missing:<dir>`, in neither half of the
+pass rate. `pytest` / `python -m …` without a virtualenv is **not** conclusive
+(the interpreter on `PATH` may have the packages), so those simply run and
+answer for themselves.
+
+What was borrowed is recorded on `GateSweep::linked_deps`, printed as the
+verdict's first line (`ENV   borrowed from the source checkout, not rebuilt: …`)
+and logged per sweep — a reviewer must be able to see that the environment was
+borrowed rather than rebuilt. The links are removed **before** the worktree is,
+so no recursive delete ever walks into a junction; a link is unlinked
+(`remove_dir` on a reparse point / `remove_file` on a symlink) and the target is
+untouched. `a_gate_sees_the_source_checkouts_installed_dependencies` pins both
+halves: the gate resolves `node_modules/marker` inside the worktree, and the
+source's copy still exists afterwards.
 
 ### 12.5 Three-valued outcomes
 
@@ -784,6 +819,15 @@ app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
   direction of claiming **less** delivery than happened, never more — stated
   here and in the probation narration rather than papered over. Closing it needs
   either a `Merged-from:` trailer convention or a PR webhook.
+- **A borrowed dependency directory is shared, not copied — accepted risk.** A
+  gate that *mutates* `node_modules/` (an install, a patch step, a `cargo build`
+  writing `target/`) mutates the source checkout's own through the junction.
+  Accepted rather than defended against: a mandate forbids dependency bumps in
+  the first place (`forbiddenClasses`), copying a real `node_modules` per gate
+  run would cost minutes and gigabytes per proposal, and the alternative —
+  installing into the worktree — is the larger blast radius this section
+  refuses. A gate that writes to `target/` will also serialise against a build
+  running in the source checkout via cargo's own lock.
 - **A proposal that never becomes a local branch is never seen.** The dispatch
   ledger still counts it under `proposalsOpened`; the gap between the two
   numbers is itself a reading (a dispatched session that authored nothing).

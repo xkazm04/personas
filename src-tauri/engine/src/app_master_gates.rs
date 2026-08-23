@@ -29,7 +29,11 @@
 //!    it sees what a human would merge and never disturbs a shared checkout.
 //!    Repos like kp run concurrent agent sessions in one tree; a gate that
 //!    checked out a branch under them would be a bug we shipped into somebody
-//!    else's work.
+//!    else's work. The worktree **borrows the source checkout's installed
+//!    dependencies** ([`borrow_installed_deps`]) — a fresh worktree has no
+//!    `node_modules`, so before this every `npm run …` gate failed for a
+//!    reason that had nothing to do with the proposal, and a `gatePassRate` of
+//!    0 was a false reading, not a verdict.
 //! 3. **Three-valued outcomes.** `passed` / `failed` / `did_not_run`. A
 //!    timeout or a spawn failure is `did_not_run`: it is not a pass, it is not
 //!    a failure, and it is excluded from both halves of the pass-rate ratio.
@@ -957,6 +961,237 @@ pub async fn find_revert(
 }
 
 // ---------------------------------------------------------------------------
+// Borrowing the source checkout's installed dependencies
+// ---------------------------------------------------------------------------
+
+/// Dependency directories a repository's own gates need and a **fresh worktree
+/// never has**: `git worktree add` materialises tracked files only, so
+/// `node_modules/`, a virtualenv, `vendor/` and `target/` are all absent. Every
+/// `npm run …` in such a tree exits non-zero for a reason that has nothing to
+/// do with the proposal, and recording that as a genuine FAIL is a false
+/// reading — the pass rate would say the App master broke the build when the
+/// truth is that the gate never had an environment.
+///
+/// `gate-sees-target` means the gate runs *the repository's own commands with
+/// the repository's own resolved environment*. So the worktree **borrows** the
+/// source checkout's installed dependencies by linking them in — a directory
+/// junction on Windows, a symlink elsewhere. Nothing is installed: `npm ci` is
+/// a different blast radius (network, minutes, and a lockfile write) and is not
+/// this instrument's job.
+///
+/// `target` is only borrowed for a Rust repository (see [`dep_dir_candidates`])
+/// — a stray `target/` in a Node repo is somebody else's build output.
+pub const BORROWED_DEP_DIRS: &[&str] =
+    &["node_modules", ".venv", "venv", ".tox", "vendor", "target"];
+
+/// Environment files a gate may need to boot at all (kp's suite reads
+/// `.env.local`). **Copied, never linked** — a gate that rewrote a linked
+/// dotfile would rewrite the operator's own, and these are small.
+pub const BORROWED_ENV_FILES: &[&str] = &[".env.local", ".env"];
+
+/// What a gate worktree borrowed from the source checkout, so a reviewer can
+/// see the environment was **borrowed, not rebuilt**.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct BorrowedEnv {
+    /// Names linked (directories) or copied (env files) into the worktree.
+    pub linked: Vec<String>,
+    /// Dependency directories resolvable inside the worktree after borrowing —
+    /// either because we linked them, or because the repository tracks them.
+    pub present: Vec<String>,
+    /// Dependency directories missing from the **source** checkout too. We do
+    /// not install them; when a command obviously needs one, the gate is
+    /// `did_not_run`, not `failed`.
+    pub absent: Vec<String>,
+    /// How a directory was linked: `junction` on Windows, `symlink` elsewhere.
+    pub mechanism: &'static str,
+}
+
+impl BorrowedEnv {
+    /// Is this dependency directory resolvable inside the worktree?
+    pub fn present(&self, dir: &str) -> bool {
+        self.present.iter().any(|d| d == dir)
+    }
+
+    /// One line for the verdict — silent when nothing was borrowed.
+    pub fn note(&self) -> Option<String> {
+        if self.linked.is_empty() {
+            return None;
+        }
+        Some(format!(
+            "ENV   borrowed from the source checkout ({}), not rebuilt: {}",
+            self.mechanism,
+            self.linked.join(", ")
+        ))
+    }
+}
+
+/// The dependency directories worth considering for this repository.
+///
+/// `target` is Rust's and only Rust's: without a `Cargo.toml` a `target/` in
+/// the source tree is some other tool's output and linking it in would put a
+/// directory in the gate's way that its own commands never expected.
+fn dep_dir_candidates(source_root: &Path) -> Vec<&'static str> {
+    let rust = source_root.join("Cargo.toml").exists();
+    BORROWED_DEP_DIRS
+        .iter()
+        .copied()
+        .filter(|d| *d != "target" || rust)
+        .collect()
+}
+
+/// The platform's non-privileged directory link.
+///
+/// Windows: a **directory junction** via `cmd /C mklink /J`.
+/// `std::os::windows::fs::symlink_dir` needs `SeCreateSymbolicLinkPrivilege`
+/// (Developer Mode or an elevated process); a junction needs neither, and a
+/// gate run must not require the operator to be an administrator.
+fn link_dir(source: &Path, link: &Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        let out = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(link)
+            .arg(source)
+            .stdin(std::process::Stdio::null())
+            .output()
+            .map_err(|e| format!("could not run mklink: {e}"))?;
+        if out.status.success() {
+            return Ok(());
+        }
+        let msg = String::from_utf8_lossy(&out.stderr);
+        let msg = if msg.trim().is_empty() {
+            String::from_utf8_lossy(&out.stdout).trim().to_string()
+        } else {
+            msg.trim().to_string()
+        };
+        Err(format!("mklink /J failed: {msg}"))
+    }
+    #[cfg(not(windows))]
+    {
+        std::os::unix::fs::symlink(source, link).map_err(|e| format!("symlink failed: {e}"))
+    }
+}
+
+/// Remove one borrowed entry from the worktree.
+///
+/// **The target is never touched.** A junction and a symlink are removed as
+/// links: `symlink_metadata` does not follow them, and `remove_dir` on a
+/// reparse point / `remove_file` on a symlink unlinks the pointer only. A real
+/// directory found under a borrowed name is left alone — it was not ours.
+fn unlink_borrowed(worktree: &Path, name: &str) {
+    let path = worktree.join(name);
+    let Ok(meta) = std::fs::symlink_metadata(&path) else {
+        return;
+    };
+    if meta.file_type().is_symlink() {
+        // Windows reparse points (junctions included) report as symlinks and
+        // unlink through `remove_dir`; POSIX symlinks through `remove_file`.
+        if std::fs::remove_dir(&path).is_err() {
+            let _ = std::fs::remove_file(&path);
+        }
+    } else if meta.is_file() {
+        // A copied env file — ours, and only inside the throwaway worktree.
+        let _ = std::fs::remove_file(&path);
+    }
+    // A real directory is not ours to delete.
+}
+
+/// Link the source checkout's installed dependencies into a fresh gate
+/// worktree, and copy its env files.
+///
+/// Best-effort by design: a link that cannot be made is reported (the
+/// dependency simply is not `present`), never fatal — a gate that would have
+/// worked anyway must still get its chance.
+pub fn borrow_installed_deps(source_root: &Path, worktree: &Path) -> BorrowedEnv {
+    let mechanism = if cfg!(windows) { "junction" } else { "symlink" };
+    let mut env = BorrowedEnv {
+        mechanism,
+        ..Default::default()
+    };
+
+    for name in dep_dir_candidates(source_root) {
+        let src = source_root.join(name);
+        let dst = worktree.join(name);
+        if dst.exists() {
+            // The repository tracks it (rare, but real). Nothing to borrow and
+            // nothing missing.
+            env.present.push(name.to_string());
+            continue;
+        }
+        if !src.is_dir() {
+            env.absent.push(name.to_string());
+            continue;
+        }
+        match link_dir(&src, &dst) {
+            Ok(()) => {
+                env.linked.push(name.to_string());
+                env.present.push(name.to_string());
+            }
+            Err(e) => {
+                tracing::warn!(
+                    dir = name,
+                    error = %e,
+                    "app_master_gates: could not borrow a dependency directory into the gate worktree"
+                );
+                env.absent.push(name.to_string());
+            }
+        }
+    }
+
+    for name in BORROWED_ENV_FILES {
+        let src = source_root.join(name);
+        let dst = worktree.join(name);
+        if dst.exists() || !src.is_file() {
+            continue;
+        }
+        match std::fs::copy(&src, &dst) {
+            Ok(_) => env.linked.push(name.to_string()),
+            Err(e) => tracing::warn!(
+                file = *name,
+                error = %e,
+                "app_master_gates: could not copy an env file into the gate worktree"
+            ),
+        }
+    }
+
+    env
+}
+
+/// Is this command obviously a Node package-manager invocation?
+///
+/// Deliberately narrow. `npm`/`pnpm`/`yarn`/`npx`/`bun` cannot resolve a script
+/// or a binary without `node_modules` — that is conclusive. `pytest` or
+/// `python -m …` without a virtualenv is **not** conclusive: the interpreter on
+/// `PATH` may well have the packages, so those just run and answer for
+/// themselves.
+pub fn is_node_package_manager_command(command: &str) -> bool {
+    let first = command
+        .trim_start()
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    let first = first
+        .trim_end_matches(".cmd")
+        .trim_end_matches(".exe")
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or("");
+    matches!(first, "npm" | "pnpm" | "yarn" | "npx" | "bun")
+}
+
+/// The dependency this command obviously needs and this worktree does not have,
+/// if any. `Some(dir)` means the gate is recorded `did_not_run` with reason
+/// `deps_missing:<dir>` — not `failed`, because nothing about the proposal was
+/// ever tested.
+fn deps_missing_for(command: &str, env: &BorrowedEnv) -> Option<&'static str> {
+    if is_node_package_manager_command(command) && !env.present("node_modules") {
+        return Some("node_modules");
+    }
+    None
+}
+
+// ---------------------------------------------------------------------------
 // Running the declared gates on a proposal branch
 // ---------------------------------------------------------------------------
 
@@ -966,6 +1201,10 @@ pub struct GateSweep {
     pub branch: String,
     pub source: GateSource,
     pub runs: Vec<GateRun>,
+    /// What the worktree borrowed from the source checkout — the environment
+    /// the gates actually saw. Empty when nothing was borrowed (including when
+    /// the worktree could not be created at all).
+    pub linked_deps: Vec<String>,
 }
 
 impl GateSweep {
@@ -980,6 +1219,12 @@ impl GateSweep {
             );
         }
         let mut out = String::new();
+        if !self.linked_deps.is_empty() {
+            out.push_str(&format!(
+                "ENV   borrowed from the source checkout, not rebuilt: {}\n",
+                self.linked_deps.join(", ")
+            ));
+        }
         for r in &self.runs {
             out.push_str(&r.one_line());
             out.push('\n');
@@ -1015,9 +1260,21 @@ impl GateSweep {
 /// branch is not "checked out" anywhere and stays available), and removed
 /// afterwards even when a gate failed.
 ///
+/// **The worktree borrows the source checkout's installed dependencies**
+/// ([`borrow_installed_deps`]): a fresh worktree has no `node_modules`, no
+/// virtualenv, no `vendor/`, no `target/`, so every `npm run …` in it would
+/// exit non-zero for a reason that has nothing to do with the proposal. Those
+/// directories are linked in (junction / symlink), `.env.local`/`.env` copied,
+/// and the links removed with the worktree — the targets are never touched.
+/// Nothing is installed. What was borrowed is recorded on
+/// [`GateSweep::linked_deps`] and in the verdict.
+///
 /// A worktree that cannot be created records every declared command as
 /// `did_not_run` with the reason — an unrunnable gate is a hole in the
-/// instrument and must be visible as one, not as silence.
+/// instrument and must be visible as one, not as silence. So does a command
+/// that obviously needs a dependency the **source** checkout does not have
+/// either (`deps_missing:<dir>`): it was never given an environment, so it is
+/// not a failure of the proposal.
 pub async fn run_declared_gates(
     pool: &DbPool,
     project_id: &str,
@@ -1036,6 +1293,7 @@ pub async fn run_declared_gates(
             branch: branch.to_string(),
             source,
             runs: Vec::new(),
+            linked_deps: Vec::new(),
         };
     }
 
@@ -1063,15 +1321,55 @@ pub async fn run_declared_gates(
         return did_not_run_sweep(pool, project_id, persona_id, branch, &commands, source, &e);
     }
 
+    // The gates must see the repository's own resolved environment, so borrow
+    // it rather than rebuild it.
+    let borrowed = borrow_installed_deps(root_path, &wt_path);
+    if !borrowed.linked.is_empty() {
+        tracing::info!(
+            project_id,
+            branch,
+            mechanism = borrowed.mechanism,
+            "app_master_gates: gate worktree borrowed the source checkout's environment ({}) — not rebuilt",
+            borrowed.linked.join(", ")
+        );
+    }
+
     let timeout = gate_timeout();
     let mut runs: Vec<GateRun> = Vec::new();
     for cmd in &commands {
-        let run = run_one_gate(project_id, persona_id, branch, cmd, &wt_path, timeout).await;
+        let run = match deps_missing_for(cmd, &borrowed) {
+            // The source checkout has no such dependency either. Installing it
+            // is a different blast radius (network, minutes, a lockfile write)
+            // and is not this instrument's job — so the gate never ran, and
+            // says so.
+            Some(dir) => GateRun::new(
+                project_id,
+                persona_id,
+                branch,
+                cmd,
+                GateOutcome::DidNotRun,
+                None,
+                0,
+                Some(format!(
+                    "deps_missing:{dir} — the source checkout has no {dir}/ to borrow into the \
+                     gate worktree, and nothing was installed. Not a pass and not a failure."
+                )),
+            ),
+            None => run_one_gate(project_id, persona_id, branch, cmd, &wt_path, timeout).await,
+        };
         if let Err(e) = record_gate_run(pool, &run) {
             tracing::warn!(project_id, branch, error = %e,
                 "app_master_gates: could not record a gate run");
         }
         runs.push(run);
+    }
+
+    // Unlink the borrowed environment BEFORE the worktree is removed. A
+    // recursive delete that walked into a junction would delete the operator's
+    // real `node_modules`; unlinking first means the removal only ever sees an
+    // ordinary tree.
+    for name in &borrowed.linked {
+        unlink_borrowed(&wt_path, name);
     }
 
     // Best-effort cleanup — a leaked worktree is a mess, but a failed cleanup
@@ -1084,6 +1382,7 @@ pub async fn run_declared_gates(
         branch: branch.to_string(),
         source,
         runs,
+        linked_deps: borrowed.linked,
     }
 }
 
@@ -1123,6 +1422,7 @@ fn did_not_run_sweep(
         branch: branch.to_string(),
         source,
         runs,
+        linked_deps: Vec::new(),
     }
 }
 
@@ -1135,10 +1435,14 @@ async fn run_one_gate(
     timeout: Duration,
 ) -> GateRun {
     let start = std::time::Instant::now();
+    // The parent environment passes through (that is how the repository's own
+    // toolchain is found), plus `CI=1` so Next/Vite/Jest-style tools take their
+    // non-interactive path instead of asking a question nobody can answer.
     let spawn = if cfg!(target_os = "windows") {
         tokio::process::Command::new("cmd")
             .args(["/C", command])
             .current_dir(cwd)
+            .env("CI", "1")
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -1151,6 +1455,7 @@ async fn run_one_gate(
         tokio::process::Command::new("sh")
             .args(["-c", command])
             .current_dir(cwd)
+            .env("CI", "1")
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -1621,6 +1926,7 @@ mod tests {
             branch: "autopilot/x".into(),
             source: GateSource::NotConfigured,
             runs: vec![],
+            linked_deps: vec![],
         };
         let v = sweep.verdict();
         assert!(v.contains("NOT CONFIGURED"));
@@ -1629,6 +1935,7 @@ mod tests {
         let sweep = GateSweep {
             branch: "autopilot/x".into(),
             source: GateSource::Mandate,
+            linked_deps: vec!["node_modules".into()],
             runs: vec![
                 GateRun::new(
                     "p",
@@ -1656,6 +1963,43 @@ mod tests {
         assert!(v.contains("PASS  npm run lint"));
         assert!(v.contains("DID NOT RUN  npm test"));
         assert!(v.contains("100% of the gates that ran passed (1 did not run)"));
+        // The reviewer can see the environment was borrowed, not rebuilt.
+        assert!(v.contains("borrowed from the source checkout, not rebuilt: node_modules"));
+    }
+
+    // -- borrowing the source checkout's environment ------------------------
+
+    #[test]
+    fn a_node_package_manager_command_is_recognised_and_pytest_is_not() {
+        for cmd in [
+            "npm run test:unit",
+            "  pnpm lint",
+            "yarn build",
+            "npx tsc --noEmit",
+            "bun test",
+            "npm.cmd run x",
+        ] {
+            assert!(is_node_package_manager_command(cmd), "{cmd}");
+        }
+        // Not conclusive: the interpreter on PATH may well have the packages,
+        // so these just run and answer for themselves.
+        for cmd in [
+            "pytest -q",
+            "python -m pytest",
+            "cargo test",
+            "make check",
+            "",
+        ] {
+            assert!(!is_node_package_manager_command(cmd), "{cmd}");
+        }
+    }
+
+    #[test]
+    fn target_is_only_a_candidate_for_a_rust_repository() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(!dep_dir_candidates(dir.path()).contains(&"target"));
+        std::fs::write(dir.path().join("Cargo.toml"), "[package]").unwrap();
+        assert!(dep_dir_candidates(dir.path()).contains(&"target"));
     }
 
     // -- git plumbing, against a real throwaway repository -------------------
@@ -1950,6 +2294,122 @@ mod tests {
         assert_eq!(
             gate_pass_rate_since(&pool, "proj-timeout", "2000-01-01T00:00:00+00:00"),
             None
+        );
+    }
+
+    /// A gate that can only pass if the worktree resolved `node_modules` — the
+    /// directory `git worktree add` never materialises, because it is not
+    /// tracked. Before the borrow this was a genuine FAIL for every `npm run …`
+    /// gate, i.e. a `gatePassRate` of 0 that said nothing about the proposal.
+    #[tokio::test]
+    async fn a_gate_sees_the_source_checkouts_installed_dependencies() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        // Untracked, exactly like a real install.
+        std::fs::create_dir_all(repo.path().join("node_modules")).unwrap();
+        std::fs::write(repo.path().join("node_modules").join("marker"), "installed").unwrap();
+        std::fs::write(repo.path().join(".env.local"), "KP_X=1\n").unwrap();
+
+        repo.git(&["checkout", "-b", "autopilot/fix-deps"]).unwrap();
+        repo.commit("dep.txt", "d", "feat: dep").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        let pool = init_test_db().unwrap();
+        let (marker_gate, env_gate) = if cfg!(target_os = "windows") {
+            (
+                "if exist node_modules\\marker (exit 0) else (exit 1)",
+                "if exist .env.local (exit 0) else (exit 1)",
+            )
+        } else {
+            ("test -e node_modules/marker", "test -e .env.local")
+        };
+        seed_mandate(&pool, "proj-deps", &[marker_gate, env_gate]);
+
+        let sweep = run_declared_gates(
+            &pool,
+            "proj-deps",
+            "persona-1",
+            repo.path(),
+            "autopilot/fix-deps",
+        )
+        .await;
+
+        assert_eq!(sweep.source, GateSource::Mandate);
+        assert_eq!(
+            sweep.runs[0].outcome,
+            GateOutcome::Passed,
+            "the gate did not resolve the borrowed node_modules: {}",
+            sweep.runs[0].one_line()
+        );
+        assert_eq!(sweep.runs[1].outcome, GateOutcome::Passed);
+        assert!(sweep.linked_deps.contains(&"node_modules".to_string()));
+        assert!(sweep.linked_deps.contains(&".env.local".to_string()));
+        assert!(sweep
+            .verdict()
+            .contains("borrowed from the source checkout, not rebuilt"));
+
+        // The link was removed with the worktree and the TARGET survived — a
+        // recursive delete that walked into the junction would have taken the
+        // operator's real install with it.
+        assert!(
+            repo.path().join("node_modules").join("marker").exists(),
+            "the source checkout's node_modules must survive worktree cleanup"
+        );
+        assert_eq!(
+            std::fs::read_to_string(repo.path().join("node_modules").join("marker")).unwrap(),
+            "installed"
+        );
+        assert!(repo.path().join(".env.local").exists());
+        // …and no worktree leaked.
+        assert_eq!(
+            repo.git(&["worktree", "list"])
+                .unwrap()
+                .lines()
+                .filter(|l| !l.trim().is_empty())
+                .count(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn an_npm_gate_with_no_node_modules_anywhere_did_not_run_and_never_failed() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        // No node_modules in the SOURCE checkout either, and we install
+        // nothing: `npm ci` is a different blast radius and cost.
+        let pool = init_test_db().unwrap();
+        seed_mandate(
+            &pool,
+            "proj-nodeps",
+            &["npm run test:unit", "git --version"],
+        );
+
+        let sweep =
+            run_declared_gates(&pool, "proj-nodeps", "persona-1", repo.path(), "main").await;
+
+        assert_eq!(sweep.runs.len(), 2);
+        assert_eq!(sweep.runs[0].outcome, GateOutcome::DidNotRun);
+        assert!(sweep.runs[0].exit_code.is_none());
+        assert!(
+            sweep.runs[0]
+                .first_error
+                .as_deref()
+                .unwrap()
+                .starts_with("deps_missing:node_modules"),
+            "expected a deps_missing reason, got {:?}",
+            sweep.runs[0].first_error
+        );
+        // A command that does not need the missing dependency still runs.
+        assert_eq!(sweep.runs[1].outcome, GateOutcome::Passed);
+        assert!(sweep.linked_deps.is_empty());
+        // did_not_run is in neither half: one pass out of one that ran.
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-nodeps", "2000-01-01T00:00:00+00:00"),
+            Some(1.0)
         );
     }
 }
