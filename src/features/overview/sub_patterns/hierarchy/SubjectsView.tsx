@@ -33,18 +33,7 @@ import { useHierarchyScorecard } from './useHierarchyScorecard';
  *  markdown resolve through `resolveDocLink` instead. */
 const LAWS_FILE = 'docs/concepts/paths/_laws.md';
 
-/** Cross-lane navigation nudge (hierarchy graph → "Open in Subjects"): a
- *  fresh object identity per navigation re-triggers the selection effect. */
-export interface SubjectsFocusRequest {
-  slug: string;
-  technique?: string;
-}
-
-export function SubjectsView({
-  focusSubject = null,
-}: {
-  focusSubject?: SubjectsFocusRequest | null;
-} = {}) {
+export function SubjectsView() {
   const { t, tx } = useTranslation();
   const p = t.overview.patterns_v2;
   const addToast = useToastStore((s) => s.addToast);
@@ -104,17 +93,6 @@ export function SubjectsView({
     setSelectedSlug(slug);
     setFocus(null);
   }, []);
-
-  // Cross-lane nudge from the hierarchy graph ("Open in Subjects"): select the
-  // named subject (and expand the named technique). Fresh object identity per
-  // navigation re-triggers even for the same slug.
-  useEffect(() => {
-    if (!focusSubject) return;
-    setSelectedSlug(focusSubject.slug);
-    setFocus(
-      focusSubject.technique ? { kind: 'technique', technique: focusSubject.technique } : null,
-    );
-  }, [focusSubject]);
 
   // Relative-link interception: resolve against the doc the click happened in,
   // then route. An unresolvable link surfaces honestly as a one-line toast.

@@ -245,12 +245,14 @@ data is *loaded*; progressive reveal bounds how fast loaded rows are *mounted*.
 
 ## Patterns: Subjects (knowledge hierarchy) — 2026-08-18
 
-The Patterns tab now opens on a three-way lane switch — **Subjects | Graph |
-Practices** (persisted per device; Subjects is the default). Graph and
-Practices is the pre-existing workspace practice library (its former internal
-Library|Graph toggle and the old topic-graph Nexus were retired 2026-08-19 —
-the lane is library-only, with the Playbooks rail behind a toolbar toggle);
-Subjects is new: a master–detail reader over the ratified v2
+The Patterns tab opens on a two-way lane switch — **Subjects | Practices**
+(persisted per device; Subjects is the default; a **Coverage** lane is coming
+as the successor to the retired Graph lane, per
+`docs/plans/registry-coverage-ui.md`). Practices is the pre-existing
+workspace practice library (its former internal Library|Graph toggle and the
+old topic-graph Nexus were retired 2026-08-19 — the lane is library-only,
+with the Playbooks rail behind a toolbar toggle);
+Subjects is a master–detail reader over the ratified v2
 knowledge hierarchy (**Golden Paths → Techniques → Applications → Evidence**),
 read live from a managed repo's `docs/concepts/paths/**` by the Rust reader
 (`dev_tools_hierarchy_graph` / `dev_tools_hierarchy_doc`) — filesystem-truth,
@@ -271,38 +273,15 @@ into `golden-path-deferred-fixes.md`), and the corpus-mapped legacy docs. A
 warnings badge in the toolbar lists everything the reader skipped — corpus
 health for free.
 
-The **Graph lane** (P3, 2026-08-18) renders the same corpus as a Nexus-style
-sky: 8 category keystones on a fixed compass ring (order from
-`categories.json` — empty categories keep their spoke), subjects marching
-outward along each spoke with size ∝ technique count, and a subject's
-techniques unfolding as the third ring on focus. **Status is the node ring
-language** — dashed draft · solid forged · double reconciled · filled
-transplant-tested (legend bottom-left) — and a **Laws lens** in the toolbar
-dims everything except the subjects/techniques citing the selected law.
-Cross-subject links draw only inside a focused category (dashed to the foreign
-keystone when the far end is unfocused); clicking a technique opens its doc in
-a modal with law chips, stack-badged applications and an "Open in Subjects"
-jump. (The old workspace-practices Nexus was deleted 2026-08-19; its pan/zoom
-camera and chrome live on in `sub_patterns/canvas/`, and the Playbooks rail
-moved into the Practices lane.)
-
-The Graph lane offers **three layout variants** (2026-08-19, toolbar switcher,
-persisted; Atlas is the default): **Atlas** — each category owns an angular
-sector sized to its subject count, subjects on concentric arc bands whose
-capacity is derived from real arc length, so nodes can never overlap; drilling
-a subject hides its siblings and fans techniques radially. **Board** — eight
-category columns of fixed-height pills with labels inside the pill, status as
-border language, adherence as a bottom bar, and an accordion technique drill.
-**Nexus** — the original compass-spoke sky, kept for comparison. All variants
-share the status/adherence ring language, the Laws/Context lenses, search,
-breadcrumb, and Esc walk-out.
+The **Graph lane** (P3, 2026-08-18: a Nexus-style sky over the same corpus,
+later with Atlas/Board layout variants and Laws/Context lenses) was **retired
+2026-08-23** along with its pan/zoom canvas (`sub_patterns/canvas/`). Its
+successor is the Registry Coverage lane — see
+`docs/plans/registry-coverage-ui.md`.
 
 **Adherence** (P4, 2026-08-18) joins the census scorecard
 (`scripts/census/context-scorecard.json`, read by
-`dev_tools_hierarchy_scorecard`) onto both lanes: subject nodes in the graph
-carry a coverage-style arc showing `cleanContexts / applicableContexts`, a
-**Context lens** beside the Laws lens dims subjects with no census sites in a
-chosen context (intersecting with the Laws lens when both are active), and the
+`dev_tools_hierarchy_scorecard`) onto the Subjects lane: the
 Subjects detail's Evidence & Deviations tab gains an Adherence section — the
 headline ratio, a table of dirty contexts with their top rules, the
 uncontexted bucket, and the measurement timestamp plus the regeneration

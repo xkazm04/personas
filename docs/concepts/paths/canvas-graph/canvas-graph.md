@@ -15,8 +15,8 @@ evidence:
   - src/features/teams/sub_mastermind/lib/useIslandDrag.ts       # gesture loan on a node drag: capture, 4px threshold, world conversion, commit-on-release
   - src/features/teams/sub_mastermind/lib/tidyLayout.ts          # deterministic bounded auto-layout; user-pinned positions as fixed anchors
   - src/features/teams/sub_mastermind/lib/layoutStore.ts         # one versioned layout document, v1→v2 migration, author (provenance) field
-  - src/features/overview/sub_patterns/canvas/useGraphCanvas.ts   # wheel-ownership lesson (container→svg), capture-at-threshold, trailing-click suppression, LOD
-  - src/features/overview/sub_patterns/hierarchy/graph/HierarchyNexus.tsx  # shared geometry for links + nodes; cross-cluster edges only in focused dimension
+  # (useGraphCanvas.ts / HierarchyNexus.tsx — the pattern-graph twin — were retired 2026-08-23 with the hierarchy-graph lane; their lessons survive in the viewport-transform application doc)
+  - src/features/overview/sub_memories/components/MemoriesPageGraph.tsx  # shared node-position geometry for edges + nodes; cross-cluster (persona) edges surface only in the hovered dimension
 counter_evidence:
   - src/features/teams/sub_mastermind/lib/GroupLayer.tsx         # group-body drag with no travel threshold — the click-vs-drag defect the standard names
 deviations:

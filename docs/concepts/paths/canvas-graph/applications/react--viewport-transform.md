@@ -7,9 +7,16 @@ stack: react
 
 # The Mastermind camera and the pattern-graph camera — two realizations, one contract
 
-This repo holds two independent pan/zoom cameras, and together they witness
+This repo held two independent pan/zoom cameras, and together they witness
 nearly every clause of the viewport-transform technique — including two
 lessons that were paid for live and then folded back upward.
+
+> **Exemplar retired 2026-08-23**: the pattern-graph twin
+> (`src/features/overview/sub_patterns/canvas/useGraphCanvas.ts`) was deleted
+> with the hierarchy-graph lane. Its `useGraphCanvas.ts:*` line citations below
+> are preserved as the historical record of lessons paid for live — the file is
+> no longer in the tree. The Mastermind camera (`useCanvasCamera.ts`) remains
+> the live witness.
 
 ## The transform authority
 
@@ -23,8 +30,8 @@ true` instead of silently landing short), then recompute the pan so the world
 point under the pivot stays fixed. Every entry point routes through it: wheel
 (`:150`), double-click (`:213-216`), toolbar buttons via viewport center
 (`:218-223`), and `fit` (`:225-237`) which derives the framing transform from
-world bounds. The pattern-graph twin, `useGraphCanvas.ts`
-(`src/features/overview/sub_patterns/canvas/useGraphCanvas.ts`), repeats the
+world bounds. The pattern-graph twin, `useGraphCanvas.ts` (retired
+2026-08-23 — see the note above), repeated the
 same change of basis with a center-origin convention (`:96-101`) and exposes
 `project()` (`:191-197`) so HTML overlays share the authority instead of
 re-deriving it.

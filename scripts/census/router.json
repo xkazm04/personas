@@ -1,6 +1,6 @@
 {
  "meta": {
-  "entries": 721
+  "entries": 719
  },
  "routes": [
   {
@@ -152,7 +152,7 @@
    ]
   },
   {
-   "glob": "src-tauri/engine/src/test_runner.rs",
+   "glob": "src-tauri/engine/src/test_runner/",
    "subject": "admission-queue",
    "laws": [
     "one-authority-per-vocabulary",
@@ -260,7 +260,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/brain/sleep_cycle.rs",
+   "glob": "src-tauri/src/companion/brain/sleep_cycle/",
    "subject": "agent-memory",
    "laws": [
     "derivation-names-recomputation",
@@ -604,7 +604,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/engine/background.rs",
+   "glob": "src-tauri/src/engine/background/",
    "subject": "background-jobs",
    "laws": [
     "identity-survives-reuse",
@@ -618,7 +618,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/engine/subscription.rs",
+   "glob": "src-tauri/src/engine/subscription/",
    "subject": "background-jobs",
    "laws": [
     "identity-survives-reuse",
@@ -815,16 +815,7 @@
    ]
   },
   {
-   "glob": "src/features/overview/sub_patterns/canvas/useGraphCanvas.ts",
-   "subject": "canvas-graph",
-   "laws": [
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "one-authority-per-vocabulary"
-   ]
-  },
-  {
-   "glob": "src/features/overview/sub_patterns/hierarchy/graph/HierarchyNexus.tsx",
+   "glob": "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx",
    "subject": "canvas-graph",
    "laws": [
     "identity-survives-reuse",
@@ -1745,7 +1736,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/engine/background.rs",
+   "glob": "src-tauri/src/engine/background/",
    "subject": "cost-metering",
    "laws": [
     "gate-sees-target",
@@ -2171,7 +2162,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/engine/background.rs",
+   "glob": "src-tauri/src/engine/background/",
    "subject": "delivery-guarantees",
    "laws": [
     "identity-survives-reuse",
@@ -2520,7 +2511,7 @@
    ]
   },
   {
-   "glob": ".claude/skills/guide-sync/SKILL.md",
+   "glob": ".claude/skills/guide-sync/skill.md",
    "subject": "docs-sync",
    "laws": [
     "failure-not-empty-success",
@@ -3068,7 +3059,7 @@
    ]
   },
   {
-   "glob": "src-tauri/engine/src/test_runner.rs",
+   "glob": "src-tauri/engine/src/test_runner/",
    "subject": "eval-harness",
    "laws": [
     "gate-sees-target",
@@ -3307,7 +3298,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/engine/background.rs",
+   "glob": "src-tauri/src/engine/background/",
    "subject": "feed",
    "laws": [
     "derivation-names-recomputation",
@@ -3736,7 +3727,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/dispatcher.rs",
+   "glob": "src-tauri/src/companion/dispatcher/",
    "subject": "hitl-approval",
    "laws": [
     "gate-sees-target",
@@ -4164,21 +4155,6 @@
    ]
   },
   {
-   "glob": "src-tauri/src/commands/obsidian_brain/semantic_lint.rs",
-   "subject": "markdown-vault",
-   "laws": [
-    "creation-names-reaper",
-    "failure-not-empty-success",
-    "gate-sees-target",
-    "deletion-is-not-repair",
-    "one-authority-per-vocabulary",
-    "derivation-names-recomputation",
-    "count-carries-predicate",
-    "identity-survives-reuse",
-    "one-validation-door"
-   ]
-  },
-  {
    "glob": "src-tauri/src/commands/obsidian_brain/graph.rs",
    "subject": "markdown-vault",
    "laws": [
@@ -4419,7 +4395,7 @@
    ]
   },
   {
-   "glob": "src-tauri/db/src/migrations/incremental.rs",
+   "glob": "src-tauri/db/src/migrations/incremental/",
    "subject": "metrics-rollups",
    "laws": [
     "failure-not-empty-success",
@@ -4472,7 +4448,7 @@
    ]
   },
   {
-   "glob": "src-tauri/db/src/migrations/incremental.rs",
+   "glob": "src-tauri/db/src/migrations/incremental/",
    "subject": "migrations",
    "laws": [
     "identity-survives-reuse",
@@ -4573,7 +4549,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/session.rs",
+   "glob": "src-tauri/src/companion/session/",
    "subject": "model-routing",
    "laws": [
     "derivation-names-recomputation",
@@ -5546,7 +5522,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/prompt.rs",
+   "glob": "src-tauri/src/companion/prompt/",
    "subject": "prompt-assembly",
    "laws": [
     "one-authority-per-vocabulary",
@@ -5661,7 +5637,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/brain/sleep_cycle.rs",
+   "glob": "src-tauri/src/companion/brain/sleep_cycle/",
    "subject": "prompt-safety",
    "laws": [
     "failure-not-empty-success",
@@ -5683,7 +5659,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/dispatcher.rs",
+   "glob": "src-tauri/src/companion/dispatcher/",
    "subject": "prompt-safety",
    "laws": [
     "failure-not-empty-success",
@@ -6255,7 +6231,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/engine/background.rs",
+   "glob": "src-tauri/src/engine/background/",
    "subject": "scheduling",
    "laws": [
     "count-carries-predicate",
@@ -7213,7 +7189,7 @@
    ]
   },
   {
-   "glob": "src-tauri/db/src/migrations/incremental.rs",
+   "glob": "src-tauri/db/src/migrations/incremental/",
    "subject": "status-vocabulary",
    "laws": [
     "gate-sees-target",
@@ -7309,7 +7285,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/companion/dispatcher.rs",
+   "glob": "src-tauri/src/companion/dispatcher/",
    "subject": "structured-output",
    "laws": [
     "identity-survives-reuse",

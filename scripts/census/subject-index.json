@@ -163,7 +163,7 @@
     "src-tauri/engine/src/queue.rs",
     "src-tauri/src/engine/resource_governor.rs",
     "src-tauri/src/engine/mod.rs",
-    "src-tauri/engine/src/test_runner.rs"
+    "src-tauri/engine/src/test_runner/"
    ],
    "counter_evidence": [
     "src-tauri/src/commands/infrastructure/task_executor.rs"
@@ -323,7 +323,7 @@
    "evidence": [
     "src-tauri/src/companion/brain/consolidation.rs",
     "src-tauri/src/companion/brain/episodic.rs",
-    "src-tauri/src/companion/brain/sleep_cycle.rs",
+    "src-tauri/src/companion/brain/sleep_cycle/",
     "src-tauri/src/companion/brain/retrieval.rs",
     "src-tauri/src/companion/orchestration/operative_memory.rs",
     "src-tauri/db/src/memory_recall.rs"
@@ -782,8 +782,8 @@
     }
    ],
    "evidence": [
-    "src-tauri/src/engine/background.rs",
-    "src-tauri/src/engine/subscription.rs",
+    "src-tauri/src/engine/background/",
+    "src-tauri/src/engine/subscription/",
     "src-tauri/src/engine/leadership.rs",
     "src/hooks/utility/timing/usePolling.ts",
     "src/features/plugins/obsidian-brain/sub_revitalize/useRevitalizeJob.ts"
@@ -945,8 +945,7 @@
     "src/features/teams/sub_mastermind/lib/useIslandDrag.ts",
     "src/features/teams/sub_mastermind/lib/tidyLayout.ts",
     "src/features/teams/sub_mastermind/lib/layoutStore.ts",
-    "src/features/overview/sub_patterns/canvas/useGraphCanvas.ts",
-    "src/features/overview/sub_patterns/hierarchy/graph/HierarchyNexus.tsx"
+    "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx"
    ],
    "counter_evidence": [
     "src/features/teams/sub_mastermind/lib/GroupLayer.tsx"
@@ -1772,7 +1771,7 @@
     "src-tauri/db/src/repos/llm_spend.rs",
     "src-tauri/db/src/repos/execution/executions.rs",
     "src-tauri/src/commands/communication/observability/metrics.rs",
-    "src-tauri/src/engine/background.rs",
+    "src-tauri/src/engine/background/",
     "src-tauri/src/commands/execution/executions.rs",
     "src-tauri/engine/src/cost.rs",
     "src-tauri/core/src/run_budget.rs",
@@ -2190,7 +2189,7 @@
     }
    ],
    "evidence": [
-    "src-tauri/src/engine/background.rs",
+    "src-tauri/src/engine/background/",
     "src-tauri/db/src/repos/communication/events.rs",
     "src/features/triggers/sub_dead_letter/DeadLetterTab.tsx",
     "src-tauri/db/src/repos/resources/cloud_webhook_watermarks.rs"
@@ -2555,7 +2554,7 @@
     "scripts/docs/check-doc-map-paths.mjs",
     "src-tauri/src/commands/infrastructure/doc_rot.rs",
     ".claude/guide-sync-marker.json",
-    ".claude/skills/guide-sync/SKILL.md",
+    ".claude/skills/guide-sync/skill.md",
     ".claude/CLAUDE.md",
     "docs/concepts/golden-paths/documentation-sync.md"
    ],
@@ -3118,7 +3117,7 @@
     }
    ],
    "evidence": [
-    "src-tauri/engine/src/test_runner.rs",
+    "src-tauri/engine/src/test_runner/",
     "src-tauri/engine/src/output_assertions.rs",
     "src/features/agents/sub_lab/libs/evalAggregation.ts",
     "src/stores/slices/agents/labSlice.ts",
@@ -3205,7 +3204,7 @@
     "src/features/overview/sub_events/components/EventLogList.tsx",
     "src/stores/slices/pipeline/channelSlice.ts",
     "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts",
-    "src-tauri/src/engine/background.rs"
+    "src-tauri/src/engine/background/"
    ],
    "counter_evidence": [
     "src/features/fleet/monitor/channels/mergedFeed.tsx"
@@ -3676,7 +3675,7 @@
     "src-tauri/db/src/repos/communication/manual_reviews.rs",
     "src-tauri/src/commands/tools/triggers.rs",
     "src-tauri/src/engine/pipeline_executor.rs",
-    "src-tauri/src/companion/dispatcher.rs",
+    "src-tauri/src/companion/dispatcher/",
     "src-tauri/engine/src/autonomy.rs",
     "src/features/triggers/sub_triggers/PendingTriggerApprovals.tsx",
     "src/features/triggers/sub_triggers/UnattendedModeSection.tsx"
@@ -4084,7 +4083,6 @@
    "evidence": [
     "src-tauri/src/commands/obsidian_brain/vault_fs.rs",
     "src-tauri/src/commands/obsidian_brain/lint.rs",
-    "src-tauri/src/commands/obsidian_brain/semantic_lint.rs",
     "src-tauri/src/commands/obsidian_brain/graph.rs",
     "src-tauri/src/commands/obsidian_brain/markdown.rs",
     "src-tauri/src/commands/obsidian_brain/mod.rs",
@@ -4335,7 +4333,7 @@
     "src-tauri/src/commands/communication/observability/metrics.rs",
     "src-tauri/db/src/repos/communication/sla.rs",
     "src-tauri/db/src/repos/execution/metrics.rs",
-    "src-tauri/db/src/migrations/incremental.rs",
+    "src-tauri/db/src/migrations/incremental/",
     "src/features/overview/sub_usage/libs/periodComparison.ts",
     "src/features/overview/libs/computeTrends.ts",
     "src/features/overview/sub_usage/libs/pivotToolUsage.ts"
@@ -4417,7 +4415,7 @@
    ],
    "evidence": [
     "src-tauri/db/src/migrations/mod.rs",
-    "src-tauri/db/src/migrations/incremental.rs",
+    "src-tauri/db/src/migrations/incremental/",
     "src-tauri/db/src/backup.rs",
     "src-tauri/db/src/migrations/fk_hygiene.rs",
     "src-tauri/db/src/migrations/helpers.rs"
@@ -4565,7 +4563,7 @@
    ],
    "evidence": [
     "src-tauri/src/companion/model_routing.rs",
-    "src-tauri/src/companion/session.rs",
+    "src-tauri/src/companion/session/",
     "src/features/settings/sub_byom/libs/byomHelpers.ts",
     "src/features/settings/sub_byom/libs/useByomSettings.ts",
     "src-tauri/db/src/repos/execution/provider_audit.rs",
@@ -5397,7 +5395,7 @@
    ],
    "evidence": [
     "src-tauri/engine/src/prompt/mod.rs",
-    "src-tauri/src/companion/prompt.rs",
+    "src-tauri/src/companion/prompt/",
     "src-tauri/engine/src/skills_sidecar/mod.rs",
     "src-tauri/engine/src/prompt/resume_prompt.rs",
     "src-tauri/engine/src/prompt/variables.rs",
@@ -5480,9 +5478,9 @@
    ],
    "evidence": [
     "src-tauri/engine/src/prompt/runtime_safety.rs",
-    "src-tauri/src/companion/brain/sleep_cycle.rs",
+    "src-tauri/src/companion/brain/sleep_cycle/",
     "src-tauri/core/src/redact.rs",
-    "src-tauri/src/companion/dispatcher.rs",
+    "src-tauri/src/companion/dispatcher/",
     "src/lib/utils/sanitizers/promptInjection.ts"
    ],
    "counter_evidence": [
@@ -6041,7 +6039,7 @@
    ],
    "evidence": [
     "src-tauri/core/src/scheduler.rs",
-    "src-tauri/src/engine/background.rs"
+    "src-tauri/src/engine/background/"
    ],
    "counter_evidence": [
     "src/features/triggers/lib/eventReason.ts"
@@ -6871,7 +6869,7 @@
     "src/features/shared/components/display/Numeric.tsx",
     "src/features/shared/components/display/RelativeTime.tsx",
     "src/lib/utils/formatters.ts",
-    "src-tauri/db/src/migrations/incremental.rs"
+    "src-tauri/db/src/migrations/incremental/"
    ],
    "counter_evidence": [
     "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx",
@@ -7036,7 +7034,7 @@
    ],
    "evidence": [
     "src-tauri/src/commands/credentials/ai_artifact_flow.rs",
-    "src-tauri/src/companion/dispatcher.rs",
+    "src-tauri/src/companion/dispatcher/",
     "src-tauri/engine/src/design.rs",
     "src/features/plugins/research-lab/sub_reports/parseSynthesis.ts",
     "src-tauri/engine/src/safe_json.rs",
@@ -8267,7 +8265,7 @@
     "docs/concepts/golden-paths/definition-version-history.md"
    ],
    "counter_evidence": [
-    "src-tauri/db/src/migrations/incremental.rs"
+    "src-tauri/db/src/migrations/incremental/"
    ],
    "deviations": [
     "w9-versioning-snapshots"

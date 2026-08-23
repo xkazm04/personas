@@ -70,11 +70,13 @@ written imperatively per island element (`:228-231`) rather than threading a
 
 ## Rung 4 — detail as a function of zoom
 
-The pattern-graph sibling supplies the LOD half of the budget:
-`labelScale(k) = k^-0.62` (`useGraphCanvas.ts:216-221`) counter-scales text
-so names stay readable at 0.3× without becoming billboards at 3×, and
-`lod(k, from, to)` (`:223-225`) is the opacity ramp — not a step — that
-fades detail bands in across a zoom range. Mastermind's zoom bands
+The pattern-graph sibling supplied the LOD half of the budget (the exemplar,
+`sub_patterns/canvas/useGraphCanvas.ts`, was retired 2026-08-23 with the
+hierarchy-graph lane; the recipe is preserved here as the record):
+`labelScale(k) = k^-0.62` (`useGraphCanvas.ts:216-221`) counter-scaled text
+so names stayed readable at 0.3× without becoming billboards at 3×, and
+`lod(k, from, to)` (`:223-225`) was the opacity ramp — not a step — that
+faded detail bands in across a zoom range. Mastermind's zoom bands
 (`zoomBand`/`bandGte` in its types module) gate which structural layers
 render at all.
 

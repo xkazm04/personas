@@ -8530,7 +8530,6 @@ export type Translations = {
     };
     patterns_v2: {
       lane_subjects: string;
-      lane_graph: string;
       lane_practices: string;
       lane_switch_aria: string;
       project_picker_placeholder: string;
@@ -8571,26 +8570,6 @@ export type Translations = {
       deviations_empty: string;
       doc_load_failed: string;
       doc_missing: string;
-      graph_canvas_aria: string;
-      graph_crest_counts: string;
-      graph_back_home_aria: string;
-      graph_breadcrumb_aria: string;
-      legend_aria: string;
-      laws_lens_label: string;
-      laws_lens_aria: string;
-      laws_lens_clear: string;
-      laws_lens_citing: string;
-      laws_lens_empty: string;
-      search_kind_category: string;
-      search_kind_subject: string;
-      search_kind_technique: string;
-      search_kind_application: string;
-      search_results_aria: string;
-      open_in_subjects: string;
-      modal_laws_heading: string;
-      modal_applications_heading: string;
-      modal_applications_empty: string;
-      shared_owner_note: string;
       adherence_heading: string;
       adherence_headline: string;
       adherence_predicate: string;
@@ -8602,16 +8581,6 @@ export type Translations = {
       adherence_col_rules: string;
       adherence_more_rules: string;
       adherence_uncontexted: string;
-      context_lens_label: string;
-      context_lens_aria: string;
-      context_lens_clear: string;
-      context_lens_search: string;
-      context_lens_sites: string;
-      context_lens_empty: string;
-      variant_atlas: string;
-      variant_board: string;
-      variant_nexus: string;
-      variant_switcher_aria: string;
     };
   };
   matrix_v3: {
@@ -14529,9 +14498,6 @@ export type Translations = {
         filter_adopted: string;
         filter_archived: string;
         filter_pending: string;
-        graph_zoom_in: string;
-        graph_zoom_out: string;
-        graph_reset: string;
         col_ftype: string;
         playbooks_title: string;
         playbooks_empty: string;

@@ -1,6 +1,5 @@
 // The ONE persistence point for "which managed repo is the knowledge source".
-// Both hierarchy lanes (Subjects master–detail and the hierarchy graph) read
-// and write the same key so switching lanes never switches corpora.
+// The Subjects lane (master–detail) reads and writes this key.
 import { silentCatch } from '@/lib/silentCatch';
 
 export const HIERARCHY_PROJECT_KEY = 'patterns:hierarchy-project';

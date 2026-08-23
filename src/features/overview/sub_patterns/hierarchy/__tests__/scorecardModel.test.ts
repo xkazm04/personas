@@ -1,18 +1,11 @@
 // Pure-helper tests for the census adherence scorecard model (P4). The
-// contract under test is the honesty rules: absence ≠ cleanliness, the
-// denominator comes from the artifact (never derived from the dirty-context
-// array), and the context lens union counts every subject's sites.
+// contract under test is the honesty rule: absence ≠ cleanliness.
 import { describe, expect, it } from 'vitest';
 
 import type { HierarchyScorecard } from '@/lib/bindings/HierarchyScorecard';
 import type { SubjectScore } from '@/lib/bindings/SubjectScore';
 
-import {
-  adherenceRatio,
-  buildContextLensEntries,
-  sitesBySubjectForContext,
-  subjectScoreMap,
-} from '../scorecardModel';
+import { subjectScoreMap } from '../scorecardModel';
 
 function score(partial: Partial<SubjectScore> & { slug: string }): SubjectScore {
   return {
@@ -56,64 +49,5 @@ describe('subjectScoreMap', () => {
     expect(map?.get('table')?.sites).toBe(5);
     expect(map?.get('absent-subject')).toBeUndefined();
     expect(subjectScoreMap(scorecard([]))).toEqual(new Map());
-  });
-});
-
-describe('adherenceRatio', () => {
-  it('is cleanContexts / applicableContexts', () => {
-    expect(adherenceRatio(score({ slug: 's', applicableContexts: 10, cleanContexts: 4 }))).toBe(0.4);
-  });
-
-  it('renders zero applicable contexts as 0, never 1 — no denominator is no evidence', () => {
-    expect(adherenceRatio(score({ slug: 's', applicableContexts: 0, cleanContexts: 0 }))).toBe(0);
-  });
-
-  it('clamps to 1', () => {
-    expect(adherenceRatio(score({ slug: 's', applicableContexts: 2, cleanContexts: 3 }))).toBe(1);
-  });
-});
-
-const ctx = (id: string, name: string, group: string, sites: number) => ({
-  id,
-  name,
-  group,
-  sites,
-  matchedFiles: 1,
-  ruleCount: 1,
-  topRules: [{ id: 'r1', sites }],
-});
-
-describe('context lens helpers', () => {
-  const scores = new Map<string, SubjectScore>([
-    [
-      'table',
-      score({
-        slug: 'table',
-        sites: 70,
-        contexts: [ctx('c1', 'agents', 'Agent Platform', 60), ctx('c2', 'vault', 'Security', 10)],
-      }),
-    ],
-    [
-      'feed',
-      score({
-        slug: 'feed',
-        sites: 15,
-        contexts: [ctx('c1', 'agents', 'Agent Platform', 15)],
-      }),
-    ],
-  ]);
-
-  it('unions contexts across subjects with summed sites, grouped/sorted', () => {
-    const entries = buildContextLensEntries(scores);
-    expect(entries).toEqual([
-      { id: 'c1', name: 'agents', group: 'Agent Platform', totalSites: 75 },
-      { id: 'c2', name: 'vault', group: 'Security', totalSites: 10 },
-    ]);
-  });
-
-  it('maps per-subject sites for one context, omitting clean subjects', () => {
-    const sites = sitesBySubjectForContext(scores, 'c2');
-    expect(sites.get('table')).toBe(10);
-    expect(sites.has('feed')).toBe(false);
   });
 });

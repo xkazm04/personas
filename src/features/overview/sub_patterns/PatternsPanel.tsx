@@ -1,16 +1,15 @@
-// Patterns — the Overview host for the knowledge surfaces. Three lanes
+// Patterns — the Overview host for the knowledge surfaces. Two lanes
 // (persisted per device, `Subjects` default):
 //
 // - **Subjects** — the v2 knowledge hierarchy (Golden Paths → Techniques →
 //   Applications → Evidence), read live from a managed repo's
 //   `docs/concepts/paths/**` by the Rust reader. Needs only a project id —
 //   no workspace.
-// - **Graph** — the hierarchy graph (P3): the same corpus rendered as a
-//   Nexus-style sky (8 category keystones → subjects → techniques). Also
-//   project-scoped, no workspace dependency.
 // - **Practices** — the pre-existing workspace practice library (DB plane):
-//   the consolidated tree plus the playbooks rail. (The old workspace-practice
-//   Nexus was retired once the hierarchy graph superseded it.)
+//   the consolidated tree plus the playbooks rail.
+//
+// (The hierarchy graph lane was retired 2026-08-23; its successor is the
+// Registry Coverage lane — see docs/plans/registry-coverage-ui.md.)
 import { useEffect, useMemo, useState } from 'react';
 
 import { listWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -29,18 +28,17 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import HierarchyGraphHost from './hierarchy/graph/HierarchyGraphHost';
-import { SubjectsView, type SubjectsFocusRequest } from './hierarchy/SubjectsView';
+import { SubjectsView } from './hierarchy/SubjectsView';
 import KnowledgeLibrary from './KnowledgeLibrary';
 
-type Lane = 'subjects' | 'graph' | 'practices';
+type Lane = 'subjects' | 'practices';
 
 const LANE_KEY = 'patterns:lane';
 
 function initialLane(): Lane {
   try {
     const stored = localStorage.getItem(LANE_KEY);
-    if (stored === 'subjects' || stored === 'graph' || stored === 'practices') return stored;
+    if (stored === 'subjects' || stored === 'practices') return stored;
   } catch (err) {
     // localStorage unavailable — default lane.
     silentCatch('patterns:laneRead')(err);
@@ -181,9 +179,6 @@ export default function PatternsPanel() {
   const { t } = useTranslation();
   const p = t.overview.patterns_v2;
   const [lane, setLane] = useState<Lane>(initialLane);
-  // Cross-lane navigation: the graph's "Open in Subjects" hands a focus
-  // request across; a fresh object per navigation re-triggers the effect.
-  const [subjectsFocus, setSubjectsFocus] = useState<SubjectsFocusRequest | null>(null);
 
   const pickLane = (next: Lane) => {
     setLane(next);
@@ -201,7 +196,6 @@ export default function PatternsPanel() {
         <SegmentedTabs<Lane>
           tabs={[
             { id: 'subjects', label: p.lane_subjects },
-            { id: 'graph', label: p.lane_graph },
             { id: 'practices', label: p.lane_practices },
           ]}
           activeTab={lane}
@@ -211,18 +205,7 @@ export default function PatternsPanel() {
         />
       </div>
 
-      {lane === 'subjects' ? (
-        <SubjectsView focusSubject={subjectsFocus} />
-      ) : lane === 'graph' ? (
-        <HierarchyGraphHost
-          onOpenInSubjects={(slug, technique) => {
-            setSubjectsFocus({ slug, technique });
-            pickLane('subjects');
-          }}
-        />
-      ) : (
-        <WorkspaceLane />
-      )}
+      {lane === 'subjects' ? <SubjectsView /> : <WorkspaceLane />}
     </div>
   );
 }
