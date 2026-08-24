@@ -74,6 +74,7 @@ recordings/
 !.claude/active-runs.md
 !.claude/settings.json
 !.claude/skills/
+!.claude/rules/
 !.claude/perfect/
 !.claude/ship-loop/
 !.claude/mvp/
