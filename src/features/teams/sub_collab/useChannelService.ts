@@ -22,6 +22,8 @@ const COALESCE_MS = 1_000;
  */
 export function useChannelService(): void {
   const refresh = usePipelineStore((s) => s.refreshSubscribedChannels);
+  const refreshPersonas = usePipelineStore((s) => s.refreshSubscribedPersonaChannels);
+  const notifyPersona = usePipelineStore((s) => s.notifyPersonaChannel);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,13 +48,41 @@ export function useChannelService(): void {
       else unlisten = u;
     });
 
-    const timer = setInterval(() => void refresh(), CHANNEL_POLL_MS);
+    // PERSONA_CHANNEL_MESSAGE — the persona conversations' push path. Coalesced
+    // like the progress storm above, but PER PERSONA: the payload names one
+    // persona, so a burst refreshes only the channels it actually changed
+    // instead of fanning a head refetch across every subscription.
+    let personaUnlisten: (() => void) | null = null;
+    let personaPending: ReturnType<typeof setTimeout> | null = null;
+    const personaQueue = new Set<string>();
+    void listen<{ persona_id: string }>(EventName.PERSONA_CHANNEL_MESSAGE, (e) => {
+      if (cancelled || !e.payload?.persona_id) return;
+      personaQueue.add(e.payload.persona_id);
+      if (personaPending !== null) return;
+      personaPending = setTimeout(() => {
+        personaPending = null;
+        if (cancelled) return;
+        const ids = [...personaQueue];
+        personaQueue.clear();
+        for (const id of ids) void notifyPersona(id);
+      }, COALESCE_MS);
+    }).then((u) => {
+      if (cancelled) u();
+      else personaUnlisten = u;
+    });
+
+    const timer = setInterval(() => {
+      void refresh();
+      void refreshPersonas();
+    }, CHANNEL_POLL_MS);
 
     return () => {
       cancelled = true;
       clearInterval(timer);
       if (pending !== null) clearTimeout(pending);
+      if (personaPending !== null) clearTimeout(personaPending);
       if (unlisten) unlisten();
+      if (personaUnlisten) personaUnlisten();
     };
-  }, [refresh]);
+  }, [refresh, refreshPersonas, notifyPersona]);
 }

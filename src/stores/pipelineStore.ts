@@ -9,6 +9,7 @@ import { createTeamSlice } from "./slices/pipeline/teamSlice";
 import { createRecipeSlice } from "./slices/pipeline/recipeSlice";
 import { createAssignmentSlice } from "./slices/pipeline/assignmentSlice";
 import { createChannelSlice } from "./slices/pipeline/channelSlice";
+import { createPersonaChannelSlice } from "./slices/pipeline/personaChannelSlice";
 
 export const usePipelineStore = create<PipelineStore>()((...a) => ({
   ...createCoreState(),
@@ -17,4 +18,5 @@ export const usePipelineStore = create<PipelineStore>()((...a) => ({
   ...createRecipeSlice(...a),
   ...createAssignmentSlice(...a),
   ...createChannelSlice(...a),
+  ...createPersonaChannelSlice(...a),
 }));

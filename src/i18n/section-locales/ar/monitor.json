@@ -489,5 +489,19 @@
   "no_messages": "لا توجد تقارير غير مقروءة لهذه الشخصية.",
   "open_messages": "فتح التقارير",
   "open_messages_with_count": "فتح {count} من التقارير",
-  "section_messages": "التقارير ({count})"
+  "section_messages": "التقارير ({count})",
+  "conv_persona_composer_placeholder": "راسل {name}",
+  "conv_persona_empty_body": "قل شيئًا — سترد هنا الردود والتقارير والمراجعات والذكريات.",
+  "conv_persona_empty_title": "لا توجد محادثة بعد",
+  "conv_persona_event_emitted": "تم إصدار {event}",
+  "conv_persona_failed": "لم يتم التسليم",
+  "conv_persona_group": "الشخصيات",
+  "conv_persona_memory_saved": "تم حفظ الذاكرة: {title}",
+  "conv_persona_report_chip": "تقرير",
+  "conv_persona_review_approved": "تمت الموافقة",
+  "conv_persona_review_open": "فتح في المراجعات",
+  "conv_persona_review_rejected": "مرفوض",
+  "conv_persona_review_resolved": "تم الحل",
+  "conv_persona_sending": "جارٍ الإرسال…",
+  "conv_persona_working": "{name} يعمل…"
 }

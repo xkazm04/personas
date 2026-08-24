@@ -489,5 +489,19 @@
   "no_messages": "এই পারসোনার জন্য কোনো অপঠিত রিপোর্ট নেই।",
   "open_messages": "রিপোর্ট খুলুন",
   "open_messages_with_count": "{count}টি রিপোর্ট খুলুন",
-  "section_messages": "রিপোর্ট ({count})"
+  "section_messages": "রিপোর্ট ({count})",
+  "conv_persona_composer_placeholder": "{name}-কে বার্তা পাঠান",
+  "conv_persona_empty_body": "কিছু বলুন — উত্তর, রিপোর্ট, রিভিউ ও মেমরি এখানে আসবে।",
+  "conv_persona_empty_title": "এখনও কোনো কথোপকথন নেই",
+  "conv_persona_event_emitted": "{event} নির্গত হয়েছে",
+  "conv_persona_failed": "পৌঁছায়নি",
+  "conv_persona_group": "পার্সোনা",
+  "conv_persona_memory_saved": "মেমরি সংরক্ষিত: {title}",
+  "conv_persona_report_chip": "রিপোর্ট",
+  "conv_persona_review_approved": "অনুমোদিত",
+  "conv_persona_review_open": "রিভিউতে খুলুন",
+  "conv_persona_review_rejected": "প্রত্যাখ্যাত",
+  "conv_persona_review_resolved": "সমাধান হয়েছে",
+  "conv_persona_sending": "পাঠানো হচ্ছে…",
+  "conv_persona_working": "{name} কাজ করছে…"
 }

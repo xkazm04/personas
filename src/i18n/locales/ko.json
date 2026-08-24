@@ -490,7 +490,21 @@
     "no_messages": "이 페르소나에 읽지 않은 보고서가 없습니다.",
     "open_messages": "보고서 열기",
     "open_messages_with_count": "보고서 {count}개 열기",
-    "section_messages": "보고서 ({count})"
+    "section_messages": "보고서 ({count})",
+    "conv_persona_composer_placeholder": "{name}에게 메시지 보내기",
+    "conv_persona_empty_body": "말을 걸어 보세요 — 답장, 리포트, 리뷰, 메모리가 여기에 도착합니다.",
+    "conv_persona_empty_title": "아직 대화가 없습니다",
+    "conv_persona_event_emitted": "{event} 이벤트가 발생했습니다",
+    "conv_persona_failed": "전달되지 않음",
+    "conv_persona_group": "페르소나",
+    "conv_persona_memory_saved": "메모리 저장됨: {title}",
+    "conv_persona_report_chip": "리포트",
+    "conv_persona_review_approved": "승인됨",
+    "conv_persona_review_open": "리뷰에서 열기",
+    "conv_persona_review_rejected": "거절됨",
+    "conv_persona_review_resolved": "해결됨",
+    "conv_persona_sending": "보내는 중…",
+    "conv_persona_working": "{name} 작업 중…"
   },
   "common": {
     "loading": "로딩 중...",

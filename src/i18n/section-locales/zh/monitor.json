@@ -489,5 +489,19 @@
   "no_messages": "该角色没有未读报告。",
   "open_messages": "打开报告",
   "open_messages_with_count": "打开 {count} 份报告",
-  "section_messages": "报告（{count}）"
+  "section_messages": "报告（{count}）",
+  "conv_persona_composer_placeholder": "给 {name} 发消息",
+  "conv_persona_empty_body": "说点什么吧 — 回复、报告、审查和记忆都会出现在这里。",
+  "conv_persona_empty_title": "暂无对话",
+  "conv_persona_event_emitted": "已发出 {event}",
+  "conv_persona_failed": "未送达",
+  "conv_persona_group": "人格",
+  "conv_persona_memory_saved": "已保存记忆：{title}",
+  "conv_persona_report_chip": "报告",
+  "conv_persona_review_approved": "已批准",
+  "conv_persona_review_open": "在审查中打开",
+  "conv_persona_review_rejected": "已拒绝",
+  "conv_persona_review_resolved": "已解决",
+  "conv_persona_sending": "发送中…",
+  "conv_persona_working": "{name} 正在工作…"
 }

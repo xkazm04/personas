@@ -158,7 +158,10 @@ function MonitorChannelGridImpl({
     </div>
   );
 
-  if (channelTeams.length === 0) {
+  // Persona conversations (W5) don't need a team — with zero staffed teams
+  // but enabled personas, the workspace still opens (Conversations shows the
+  // Personas group; the Stream/Map are simply empty).
+  if (channelTeams.length === 0 && !personas.some((p) => p.enabled)) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground">
         <MessagesSquare className="w-8 h-8 text-foreground" />
@@ -181,7 +184,7 @@ function MonitorChannelGridImpl({
       ) : layout === 'map' ? (
         <ChannelMap teams={workspaceTeams} onDrillIn={drillIn} layoutControl={layoutSwitcher} />
       ) : (
-        <ConversationBriefing teams={workspaceTeams} bridges={bridges} layoutControl={layoutSwitcher} />
+        <ConversationBriefing teams={workspaceTeams} personas={personas} bridges={bridges} layoutControl={layoutSwitcher} />
       )}
     </div>
   );

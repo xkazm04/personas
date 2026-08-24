@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { ConversationRow } from './conversationModel';
 
 /* ----------------------------------------------------------------------------
  * VIRTUAL CONVERSATION — the chat list, windowed.
@@ -25,11 +24,14 @@ import type { ConversationRow } from './conversationModel';
 
 const ESTIMATE = 64;
 
-export function VirtualConversation({
+// Generic over the row type — the team conversation renders `ConversationRow`,
+// the persona conversation `PersonaConversationRow`; the virtualizer only ever
+// touches `key`.
+export function VirtualConversation<R extends { key: string }>({
   rows, renderRow, onTopReached, hasMore,
 }: {
-  rows: ConversationRow[];
-  renderRow: (row: ConversationRow) => ReactNode;
+  rows: R[];
+  renderRow: (row: R) => ReactNode;
   /** Fired when the top scrolls into view — pages older history. */
   onTopReached?: () => void;
   hasMore?: boolean;

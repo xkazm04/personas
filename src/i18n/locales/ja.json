@@ -490,7 +490,21 @@
     "no_messages": "このペルソナに未読レポートはありません。",
     "open_messages": "レポートを開く",
     "open_messages_with_count": "{count} 件のレポートを開く",
-    "section_messages": "レポート（{count}）"
+    "section_messages": "レポート（{count}）",
+    "conv_persona_composer_placeholder": "{name} にメッセージ",
+    "conv_persona_empty_body": "話しかけてみましょう — 返信、レポート、レビュー、メモリがここに届きます。",
+    "conv_persona_empty_title": "まだ会話はありません",
+    "conv_persona_event_emitted": "{event} が発行されました",
+    "conv_persona_failed": "未送信",
+    "conv_persona_group": "ペルソナ",
+    "conv_persona_memory_saved": "メモリを保存: {title}",
+    "conv_persona_report_chip": "レポート",
+    "conv_persona_review_approved": "承認済み",
+    "conv_persona_review_open": "レビューで開く",
+    "conv_persona_review_rejected": "却下",
+    "conv_persona_review_resolved": "解決済み",
+    "conv_persona_sending": "送信中…",
+    "conv_persona_working": "{name} が作業中…"
   },
   "common": {
     "loading": "読み込み中...",

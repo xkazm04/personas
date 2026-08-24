@@ -490,7 +490,21 @@
     "no_messages": "Không có báo cáo chưa đọc cho persona này.",
     "open_messages": "Mở báo cáo",
     "open_messages_with_count": "Mở {count} báo cáo",
-    "section_messages": "Báo cáo ({count})"
+    "section_messages": "Báo cáo ({count})",
+    "conv_persona_composer_placeholder": "Nhắn tin cho {name}",
+    "conv_persona_empty_body": "Hãy nói gì đó — phản hồi, báo cáo, đánh giá và ký ức sẽ xuất hiện ở đây.",
+    "conv_persona_empty_title": "Chưa có cuộc trò chuyện",
+    "conv_persona_event_emitted": "Đã phát {event}",
+    "conv_persona_failed": "Chưa gửi được",
+    "conv_persona_group": "Persona",
+    "conv_persona_memory_saved": "Đã lưu ký ức: {title}",
+    "conv_persona_report_chip": "Báo cáo",
+    "conv_persona_review_approved": "Đã phê duyệt",
+    "conv_persona_review_open": "Mở trong Đánh giá",
+    "conv_persona_review_rejected": "Đã từ chối",
+    "conv_persona_review_resolved": "Đã giải quyết",
+    "conv_persona_sending": "Đang gửi…",
+    "conv_persona_working": "{name} đang làm việc…"
   },
   "common": {
     "loading": "Đang tải...",

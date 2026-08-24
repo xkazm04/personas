@@ -490,7 +490,21 @@
     "no_messages": "No hay informes sin leer para esta persona.",
     "open_messages": "Abrir informes",
     "open_messages_with_count": "Abrir {count} informe(s)",
-    "section_messages": "Informes ({count})"
+    "section_messages": "Informes ({count})",
+    "conv_persona_composer_placeholder": "Escribe a {name}",
+    "conv_persona_empty_body": "Di algo: las respuestas, informes, revisiones y memorias llegarán aquí.",
+    "conv_persona_empty_title": "Aún no hay conversación",
+    "conv_persona_event_emitted": "Se emitió {event}",
+    "conv_persona_failed": "No entregado",
+    "conv_persona_group": "Personas individuales",
+    "conv_persona_memory_saved": "Memoria guardada: {title}",
+    "conv_persona_report_chip": "Informe",
+    "conv_persona_review_approved": "Aprobado",
+    "conv_persona_review_open": "Abrir en Revisiones",
+    "conv_persona_review_rejected": "Rechazado",
+    "conv_persona_review_resolved": "Resuelto",
+    "conv_persona_sending": "Enviando…",
+    "conv_persona_working": "{name} está trabajando…"
   },
   "common": {
     "loading": "Cargando...",

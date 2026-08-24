@@ -490,7 +490,21 @@
     "no_messages": "Tidak ada laporan yang belum dibaca untuk persona ini.",
     "open_messages": "Buka laporan",
     "open_messages_with_count": "Buka {count} laporan",
-    "section_messages": "Laporan ({count})"
+    "section_messages": "Laporan ({count})",
+    "conv_persona_composer_placeholder": "Kirim pesan ke {name}",
+    "conv_persona_empty_body": "Katakan sesuatu — balasan, laporan, tinjauan, dan memori akan muncul di sini.",
+    "conv_persona_empty_title": "Belum ada percakapan",
+    "conv_persona_event_emitted": "{event} telah dipancarkan",
+    "conv_persona_failed": "Tidak terkirim",
+    "conv_persona_group": "Persona",
+    "conv_persona_memory_saved": "Memori disimpan: {title}",
+    "conv_persona_report_chip": "Laporan",
+    "conv_persona_review_approved": "Disetujui",
+    "conv_persona_review_open": "Buka di Tinjauan",
+    "conv_persona_review_rejected": "Ditolak",
+    "conv_persona_review_resolved": "Terselesaikan",
+    "conv_persona_sending": "Mengirim…",
+    "conv_persona_working": "{name} sedang bekerja…"
   },
   "common": {
     "loading": "Memuat...",

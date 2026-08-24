@@ -490,7 +490,21 @@
     "no_messages": "Нет непрочитанных отчётов для этой персоны.",
     "open_messages": "Открыть отчёты",
     "open_messages_with_count": "Открыть отчёты: {count}",
-    "section_messages": "Отчёты ({count})"
+    "section_messages": "Отчёты ({count})",
+    "conv_persona_composer_placeholder": "Написать {name}",
+    "conv_persona_empty_body": "Напишите что-нибудь — ответы, отчёты, ревью и воспоминания появятся здесь.",
+    "conv_persona_empty_title": "Разговора пока нет",
+    "conv_persona_event_emitted": "Событие {event} отправлено",
+    "conv_persona_failed": "Не доставлено",
+    "conv_persona_group": "Персоны",
+    "conv_persona_memory_saved": "Память сохранена: {title}",
+    "conv_persona_report_chip": "Отчёт",
+    "conv_persona_review_approved": "Одобрено",
+    "conv_persona_review_open": "Открыть в ревью",
+    "conv_persona_review_rejected": "Отклонено",
+    "conv_persona_review_resolved": "Решено",
+    "conv_persona_sending": "Отправка…",
+    "conv_persona_working": "{name} работает…"
   },
   "common": {
     "loading": "Загрузка...",

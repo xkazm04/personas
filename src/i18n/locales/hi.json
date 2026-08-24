@@ -490,7 +490,21 @@
     "no_messages": "इस पर्सोना के लिए कोई अपठित रिपोर्ट नहीं है।",
     "open_messages": "रिपोर्टें खोलें",
     "open_messages_with_count": "{count} रिपोर्ट खोलें",
-    "section_messages": "रिपोर्टें ({count})"
+    "section_messages": "रिपोर्टें ({count})",
+    "conv_persona_composer_placeholder": "{name} को संदेश भेजें",
+    "conv_persona_empty_body": "कुछ कहें — जवाब, रिपोर्ट, समीक्षाएँ और मेमोरी यहाँ आएँगी।",
+    "conv_persona_empty_title": "अभी कोई बातचीत नहीं",
+    "conv_persona_event_emitted": "{event} उत्सर्जित हुआ",
+    "conv_persona_failed": "डिलीवर नहीं हुआ",
+    "conv_persona_group": "पर्सोना",
+    "conv_persona_memory_saved": "मेमोरी सहेजी गई: {title}",
+    "conv_persona_report_chip": "रिपोर्ट",
+    "conv_persona_review_approved": "स्वीकृत",
+    "conv_persona_review_open": "समीक्षाओं में खोलें",
+    "conv_persona_review_rejected": "अस्वीकृत",
+    "conv_persona_review_resolved": "हल हो गया",
+    "conv_persona_sending": "भेजा जा रहा है…",
+    "conv_persona_working": "{name} काम कर रहा है…"
   },
   "common": {
     "loading": "लोड हो रहा है...",

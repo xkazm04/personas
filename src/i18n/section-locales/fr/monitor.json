@@ -489,5 +489,19 @@
   "no_messages": "Aucun rapport non lu pour ce persona.",
   "open_messages": "Ouvrir les rapports",
   "open_messages_with_count": "Ouvrir {count} rapport(s)",
-  "section_messages": "Rapports ({count})"
+  "section_messages": "Rapports ({count})",
+  "conv_persona_composer_placeholder": "Écrire à {name}",
+  "conv_persona_empty_body": "Dites quelque chose — les réponses, rapports, revues et mémoires arriveront ici.",
+  "conv_persona_empty_title": "Pas encore de conversation",
+  "conv_persona_event_emitted": "{event} a été émis",
+  "conv_persona_failed": "Non remis",
+  "conv_persona_group": "Personas individuels",
+  "conv_persona_memory_saved": "Mémoire enregistrée : {title}",
+  "conv_persona_report_chip": "Rapport",
+  "conv_persona_review_approved": "Approuvé",
+  "conv_persona_review_open": "Ouvrir dans Revues",
+  "conv_persona_review_rejected": "Rejeté",
+  "conv_persona_review_resolved": "Résolu",
+  "conv_persona_sending": "Envoi…",
+  "conv_persona_working": "{name} travaille…"
 }

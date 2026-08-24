@@ -16,9 +16,11 @@ import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
 import { ReviewsRail } from './ReviewsRail';
+import { PersonaConversation } from './PersonaConversation';
 import { useConversation } from './useConversation';
 import { dayLabel, type ConversationRow } from './conversationModel';
 import type { StreamTeam } from './types';
+import type { Persona } from '@/lib/bindings/Persona';
 
 /* ----------------------------------------------------------------------------
  * CONVERSATIONS — the Monitor's messenger, and the only place you write (D5).
@@ -43,9 +45,11 @@ import type { StreamTeam } from './types';
 type RailTab = 'focus' | 'reviews' | 'quick';
 
 export function ConversationBriefing({
-  teams, bridges, layoutControl,
+  teams, personas, bridges, layoutControl,
 }: {
   teams: StreamTeam[];
+  /** The workspace roster — feeds the sidebar's Personas group (W5). */
+  personas?: Persona[];
   /** Slack bridges keyed by team id — derived once by the workspace host (see
    *  `lib/channel/teamBridge`). Absent = nothing is bridged. */
   bridges?: Record<string, TeamSlackBridge>;
@@ -53,6 +57,9 @@ export function ConversationBriefing({
 }) {
   const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Persona scope: selecting a persona routes the main pane to the persona
+  // conversation; selecting a team routes back. Exactly one is active.
+  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
   const [focusDelib, setFocusDelib] = useState<string | null>(null);
@@ -66,7 +73,34 @@ export function ConversationBriefing({
   useEffect(() => {
     setFocusDelib(null);
     setTab('reviews');
-  }, [activeId]);
+  }, [activeId, activePersonaId]);
+
+  const selectTeam = useCallback((teamId: string) => {
+    setActivePersonaId(null);
+    setActiveId(teamId);
+  }, []);
+  const selectPersona = useCallback((personaId: string) => {
+    setActivePersonaId(personaId);
+  }, []);
+
+  const activePersona = useMemo(
+    () => (activePersonaId ? personas?.find((p) => p.id === activePersonaId) ?? null : null),
+    [personas, activePersonaId],
+  );
+  // The persona rail's Reviews tab is scoped to THIS persona only.
+  const personaRailMembers = useMemo(
+    () =>
+      activePersona
+        ? [{
+            memberId: activePersona.id,
+            personaId: activePersona.id,
+            name: activePersona.name,
+            icon: activePersona.icon,
+            color: activePersona.color,
+          }]
+        : [],
+    [activePersona],
+  );
 
   const team = useMemo(() => teams.find((t) => t.teamId === activeId) ?? null, [teams, activeId]);
   const conv = useConversation(activeId);
@@ -199,9 +233,20 @@ export function ConversationBriefing({
 
       <div className="flex-1 min-h-0 flex">
         <div className="flex-shrink-0 w-[280px] min-h-0">
-          <ConversationSidebar teams={teams} activeId={activeId} onSelect={setActiveId} />
+          <ConversationSidebar
+            teams={teams}
+            personas={personas}
+            activeId={activePersonaId ? null : activeId}
+            activePersonaId={activePersonaId}
+            onSelect={selectTeam}
+            onSelectPersona={selectPersona}
+          />
         </div>
 
+        {activePersona ? (
+          // Persona scope — its own composer (plain send) lives inside.
+          <PersonaConversation persona={activePersona} />
+        ) : (
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {!team ? (
             <div className="flex-1 flex items-center justify-center typo-body text-foreground opacity-50">{t.monitor.conv_pick_project}</div>
@@ -234,6 +279,7 @@ export function ConversationBriefing({
             />
           )}
         </div>
+        )}
 
         {/* THE RAIL — decision surfaces. Not messages, so not in the timeline. */}
         <div className="flex-shrink-0 w-[320px] min-h-0 border-l border-border bg-foreground/[0.012] flex flex-col">
@@ -244,7 +290,7 @@ export function ConversationBriefing({
             <button
               type="button"
               onClick={() => setTab('focus')}
-              disabled={!focusDelib}
+              disabled={!focusDelib || !!activePersona}
               className={`${tabClass(tab === 'focus')} disabled:opacity-25`}
             >
               <Scale className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_deliberation}
@@ -256,11 +302,14 @@ export function ConversationBriefing({
 
           <div className="flex-1 min-h-0 overflow-y-auto p-2">
             {tab === 'quick' && <QuickAnswerBody />}
-            {tab === 'reviews' && team && <ReviewsRail members={team.members} />}
-            {tab === 'focus' && team && focusDelib && (
+            {/* Persona scope: the rail's Reviews are that persona's pending
+                reviews only; deliberations are a team concept. */}
+            {tab === 'reviews' && activePersona && <ReviewsRail members={personaRailMembers} />}
+            {tab === 'reviews' && !activePersona && team && <ReviewsRail members={team.members} />}
+            {tab === 'focus' && !activePersona && team && focusDelib && (
               <DeliberationRail teamId={team.teamId} deliberationId={focusDelib} />
             )}
-            {tab === 'focus' && !focusDelib && (
+            {tab === 'focus' && !activePersona && !focusDelib && (
               <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.conv_focus_hint}</p>
             )}
           </div>

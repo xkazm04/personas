@@ -149,20 +149,32 @@ function sameItem(a: TeamChannelItem, b: TeamChannelItem): boolean {
  * a row whose fields are unchanged keeps its previous object, and if NOTHING
  * changed the previous array itself is returned — the caller can then skip the
  * store write entirely and no subscriber re-renders.
+ *
+ * Generic over the item type (C1's structural refresh is shared with the
+ * persona channel slice, whose `PersonaChannelItem` has different fields — the
+ * caller supplies the field-walk equality).
  */
-export function mergeHead(prev: TeamChannelItem[], head: TeamChannelItem[]): TeamChannelItem[] {
+export function mergeHeadBy<T extends { id: string; at: string }>(
+  prev: T[],
+  head: T[],
+  same: (a: T, b: T) => boolean,
+): T[] {
   const prevById = new Map(prev.map((i) => [i.id, i]));
   const seen = new Set(head.map((i) => i.id));
   const oldest = head[head.length - 1]?.at;
-  const next: TeamChannelItem[] = head.map((i) => {
+  const next: T[] = head.map((i) => {
     const old = prevById.get(i.id);
-    return old && sameItem(old, i) ? old : i;
+    return old && same(old, i) ? old : i;
   });
   for (const i of prev) {
     if (!seen.has(i.id) && (oldest === undefined || i.at <= oldest)) next.push(i);
   }
   if (next.length === prev.length && next.every((i, idx) => i === prev[idx])) return prev;
   return next;
+}
+
+export function mergeHead(prev: TeamChannelItem[], head: TeamChannelItem[]): TeamChannelItem[] {
+  return mergeHeadBy(prev, head, sameItem);
 }
 
 export function mergeHorizon(states: ChannelTeamState[]): string | null {

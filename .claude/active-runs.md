@@ -1,6 +1,10 @@
 # Active Runs Ledger
 
 ## Active
+
+- **[2026-08-24 18:29]**
+- **Paths:** `src/features/fleet/monitor/channels/**` · `src/api/pipeline/personaChannel.ts` · `src/stores/slices/pipeline/**` · `src/features/teams/sub_collab/useChannelService.ts` · `src/i18n/locales/**`
+- **Status:** started
 ### ship-ux-operating-table — Ship UX rounds 2-3: instrument, not briefing — session opus-5[1m] via /athena — in progress
 - 2026-08-24. Commits so far: `790553673` (objective onto the cut · one button shape · prose out of the composer · goal rail replaces the library tree). This entry covers the round after it: the Ask-Athena pointer + the markdown description editor.
 - **Declared paths:** `src/features/teams/sub_factory/l2/ship/**` · `src/features/shared/components/editors/MarkdownMiniEditor.tsx` (+ its test) · `src-tauri/src/companion/ship_ops.rs` · `src-tauri/src/companion/templates/{constitution.md,mod.rs}` · `docs/features/plugins/dev tools/ship.md` · `src/i18n/**`.
@@ -408,6 +412,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### channels-v2-w5 — channels-v2 W5: persona conversations UI (store+api+sidebar+conversation)
 
 ### registry-p3-flip — ai-registry sync + P3 authority flip (nested-layout reader) — session fable-5 — **COMPLETE**
 - **[2026-08-23]** Pulled ai-registry 45 commits (29c68cd→59e6c7f, fast-forward; healed a stale phantom-staged index in the clone first — worktree was byte-identical to HEAD). Upstream: 143 subjects / 898 techniques / 386 applications / 12 laws, bundle restructured to nested taxonomy rings; personas mirror was 105/624/236/9 flat.

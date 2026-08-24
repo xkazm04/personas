@@ -489,5 +489,19 @@
   "no_messages": "Keine ungelesenen Berichte für diese Persona.",
   "open_messages": "Berichte öffnen",
   "open_messages_with_count": "{count} Bericht(e) öffnen",
-  "section_messages": "Berichte ({count})"
+  "section_messages": "Berichte ({count})",
+  "conv_persona_composer_placeholder": "Nachricht an {name}",
+  "conv_persona_empty_body": "Sag etwas — Antworten, Berichte, Reviews und Erinnerungen landen hier.",
+  "conv_persona_empty_title": "Noch keine Unterhaltung",
+  "conv_persona_event_emitted": "{event} wurde ausgelöst",
+  "conv_persona_failed": "Nicht zugestellt",
+  "conv_persona_group": "Einzel-Personas",
+  "conv_persona_memory_saved": "Erinnerung gespeichert: {title}",
+  "conv_persona_report_chip": "Bericht",
+  "conv_persona_review_approved": "Genehmigt",
+  "conv_persona_review_open": "In Reviews öffnen",
+  "conv_persona_review_rejected": "Abgelehnt",
+  "conv_persona_review_resolved": "Gelöst",
+  "conv_persona_sending": "Wird gesendet…",
+  "conv_persona_working": "{name} arbeitet…"
 }

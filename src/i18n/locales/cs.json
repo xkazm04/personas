@@ -490,7 +490,21 @@
     "no_messages": "Žádné nepřečtené reporty pro tuto personu.",
     "open_messages": "Otevřít reporty",
     "open_messages_with_count": "Otevřít {count} report(y)",
-    "section_messages": "Reporty ({count})"
+    "section_messages": "Reporty ({count})",
+    "conv_persona_composer_placeholder": "Napište {name}",
+    "conv_persona_empty_body": "Napište něco — odpovědi, reporty, revize i vzpomínky se objeví tady.",
+    "conv_persona_empty_title": "Zatím žádná konverzace",
+    "conv_persona_event_emitted": "Byla vyslána událost {event}",
+    "conv_persona_failed": "Nedoručeno",
+    "conv_persona_group": "Persony",
+    "conv_persona_memory_saved": "Vzpomínka uložena: {title}",
+    "conv_persona_report_chip": "Hlášení",
+    "conv_persona_review_approved": "Schváleno",
+    "conv_persona_review_open": "Otevřít v revizích",
+    "conv_persona_review_rejected": "Zamítnuto",
+    "conv_persona_review_resolved": "Vyřešeno",
+    "conv_persona_sending": "Odesílání…",
+    "conv_persona_working": "{name} pracuje…"
   },
   "common": {
     "loading": "Načítání...",
