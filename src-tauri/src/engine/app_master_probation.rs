@@ -32,6 +32,8 @@
 
 use std::time::Duration;
 
+use tauri::Manager;
+
 use crate::db::DbPool;
 
 use super::subscription::ReactiveSubscription;
@@ -306,13 +308,39 @@ fn narrate(
 // The tick
 // ---------------------------------------------------------------------------
 
+/// What one probation pass did. Returned so the headless bridge's on-demand
+/// tick (`docs/architecture/cloud-integration-bridge.md` §13) can report the
+/// reviews it raised AND the ones it deliberately did not — a deferred review
+/// (the App master has never executed) is a finding, not a no-op.
+#[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ProbationSummary {
+    /// Projects carrying a mandate.
+    pub mandates: usize,
+    /// Probation windows that had closed and had no decision yet.
+    pub due: usize,
+    /// Review packets filed this pass.
+    pub raised: usize,
+    /// Due, but no packet could be filed (no persona, no execution to anchor
+    /// to, an unparseable end date). Each carries its reason in `notes`.
+    pub deferred: usize,
+    pub notes: Vec<String>,
+}
+
 /// Raise a probation review for every mandate whose window has closed and whose
 /// decision has not been taken, exactly once each.
 pub(crate) fn probation_tick(pool: &DbPool) {
+    let _ = probation_tick_summary(pool);
+}
+
+/// [`probation_tick`], counted.
+pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
+    let mut summary = ProbationSummary::default();
     let mandates = personas_engine::app_master::load_mandates(pool);
     if mandates.is_empty() {
-        return; // one prefix query and out — the overwhelmingly common case.
+        return summary; // one prefix query and out — the common case.
     }
+    summary.mandates = mandates.len();
     let now = chrono::Utc::now();
 
     for (project_id, mut record) in mandates {
@@ -328,11 +356,17 @@ pub(crate) fn probation_tick(pool: &DbPool) {
                 probation_ends_at = %record.probation_ends_at,
                 "app_master: unparseable probation end; no review can be scheduled"
             );
+            summary.deferred += 1;
+            summary.notes.push(format!(
+                "{project_id}: unparseable probation end `{}`",
+                record.probation_ends_at
+            ));
             continue;
         };
         if now < ends.with_timezone(&chrono::Utc) {
             continue;
         }
+        summary.due += 1;
 
         let Ok(persona) = crate::db::repos::core::personas::get_by_id(pool, &record.persona_id)
         else {
@@ -341,6 +375,11 @@ pub(crate) fn probation_tick(pool: &DbPool) {
                 persona_id = %record.persona_id,
                 "app_master: probation is due but the persona is gone; no review raised"
             );
+            summary.deferred += 1;
+            summary.notes.push(format!(
+                "{project_id}: persona {} is gone",
+                record.persona_id
+            ));
             continue;
         };
 
@@ -365,6 +404,10 @@ pub(crate) fn probation_tick(pool: &DbPool) {
                  the review is DEFERRED (a manual review requires an execution to anchor to). \
                  It will be raised as soon as the persona runs once."
             );
+            summary.deferred += 1;
+            summary.notes.push(format!(
+                "{project_id}: DEFERRED — the App master has never executed, and a manual                  review needs an execution to anchor to"
+            ));
             continue;
         };
 
@@ -389,6 +432,7 @@ pub(crate) fn probation_tick(pool: &DbPool) {
                          mandate — the next tick may raise a duplicate"
                     );
                 }
+                summary.raised += 1;
                 tracing::info!(
                     project_id,
                     persona_id = %record.persona_id,
@@ -396,12 +440,183 @@ pub(crate) fn probation_tick(pool: &DbPool) {
                     "app_master: raised the probation review"
                 );
             }
-            Err(e) => tracing::warn!(
-                project_id, error = %e,
-                "app_master: could not raise the probation review; will retry next tick"
-            ),
+            Err(e) => {
+                summary.deferred += 1;
+                summary
+                    .notes
+                    .push(format!("{project_id}: could not raise the review: {e}"));
+                tracing::warn!(
+                    project_id, error = %e,
+                    "app_master: could not raise the probation review; will retry next tick"
+                );
+            }
         }
     }
+    summary
+}
+
+// ---------------------------------------------------------------------------
+// The headless-bridge decision sweep (test mode)
+// ---------------------------------------------------------------------------
+
+/// One review this sweep answered.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HeadlessProbationOutcome {
+    pub project_id: String,
+    pub persona_id: String,
+    pub review_id: String,
+    /// kp's three-valued verdict over the packet's own backbone.
+    pub verdict: String,
+    /// `activated` | `extended` | `retired`.
+    pub decision: String,
+    /// Consecutive `incomplete` extensions before this decision.
+    pub prior_incomplete_streak: u32,
+    /// Which of the six backbone rules had no reading. An `incomplete` verdict
+    /// is only actionable if the operator can see WHAT was not measured.
+    pub unmeasured: Vec<String>,
+}
+
+/// Answer every raised-but-undecided probation review, deterministically, with
+/// no human in the loop. Caller must have checked
+/// `personas_engine::headless::enabled()`.
+///
+/// The decision is taken from the packet's **own** backbone — the same numbers
+/// the human would read — through `personas_engine::headless::backbone_verdict`,
+/// a verdict-only port of kp's `backbone_score`. It is then applied through
+/// `react_to_app_master_probation`, the same function the human's click
+/// reaches, so the headless mode changes *who decides*, never *what a decision
+/// does*.
+///
+/// Termination: `incomplete` extends, and an extension ends nothing. The second
+/// consecutive `incomplete` therefore retires
+/// (`headless::headless_probation_decision`), and the streak is recorded on the
+/// mandate — after `react_*` writes it, because that function reloads and
+/// rewrites the record itself.
+pub(crate) fn headless_probation_sweep(
+    app: &tauri::AppHandle,
+    pool: &DbPool,
+) -> Vec<HeadlessProbationOutcome> {
+    use personas_engine::headless;
+
+    let mut out = Vec::new();
+    for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
+        if record.probation_decided_at.is_some() {
+            continue;
+        }
+        let Some(review_id) = record.probation_review_id.clone() else {
+            continue; // nothing has been raised for this hire yet
+        };
+        let review =
+            match crate::db::repos::communication::manual_reviews::get_by_id(pool, &review_id) {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::warn!(project_id, review_id, error = %e,
+                    "headless bridge: probation review row unreadable; leaving it undecided");
+                    continue;
+                }
+            };
+        if !matches!(
+            review.status,
+            crate::db::models::ManualReviewStatus::Pending
+        ) {
+            continue; // somebody already answered it
+        }
+
+        let ctx: serde_json::Value = review
+            .context_data
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or(serde_json::Value::Null);
+        let backbone = ctx
+            .get("backbone")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null);
+        let reading = headless::backbone_reading_from_json(&backbone);
+        let verdict = headless::backbone_verdict(&reading);
+        let unmeasured: Vec<String> = headless::unmeasured_rules(&reading)
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        let decision =
+            headless::headless_probation_decision(verdict, record.headless_incomplete_streak);
+
+        tracing::warn!(
+            project_id,
+            review_id,
+            verdict = verdict.as_str(),
+            decision = decision.outcome(),
+            streak = record.headless_incomplete_streak,
+            actor = headless::ACTOR,
+            "HEADLESS BRIDGE: deciding an App master probation review with NO human in the loop"
+        );
+
+        // Mark the review answered on the same path a human answers it, then
+        // apply the decision through the shared carry-out.
+        if let Err(e) = crate::db::repos::communication::manual_reviews::update_status(
+            pool,
+            &review_id,
+            crate::db::models::ManualReviewStatus::Approved,
+            Some(format!(
+                "{}: chose action `{}` from a `{}` backbone verdict",
+                headless::ACTOR,
+                decision.action(),
+                verdict.as_str()
+            )),
+        ) {
+            tracing::warn!(project_id, review_id, error = %e,
+                "headless bridge: could not resolve the probation review; not applying a decision");
+            continue;
+        }
+        let review =
+            match crate::db::repos::communication::manual_reviews::get_by_id(pool, &review_id) {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::warn!(project_id, review_id, error = %e,
+                    "headless bridge: probation review vanished mid-decision");
+                    continue;
+                }
+            };
+        let state = app.state::<std::sync::Arc<crate::AppState>>();
+        let applied = crate::commands::design::reviews::react_to_app_master_probation(
+            &state,
+            &review,
+            Some(decision.action()),
+        );
+        if !applied {
+            tracing::warn!(
+                project_id,
+                review_id,
+                "headless bridge: the probation packet was not recognised; nothing applied"
+            );
+            continue;
+        }
+
+        // The streak is written AFTER the carry-out, which reloads and rewrites
+        // the mandate record itself — writing first would be silently clobbered.
+        if let Some(mut fresh) = personas_engine::app_master::get_mandate(pool, &project_id) {
+            fresh.headless_incomplete_streak = match verdict {
+                headless::BackboneVerdict::Incomplete => record.headless_incomplete_streak + 1,
+                _ => 0,
+            };
+            if let Err(e) = personas_engine::app_master::set_mandate(pool, &fresh) {
+                tracing::error!(project_id, error = %e,
+                    "headless bridge: could not record the incomplete streak — the loop may not \
+                     terminate on the next review");
+            }
+        }
+
+        out.push(HeadlessProbationOutcome {
+            project_id: project_id.clone(),
+            persona_id: record.persona_id.clone(),
+            review_id,
+            verdict: verdict.as_str().to_string(),
+            decision: decision.outcome().to_string(),
+            prior_incomplete_streak: record.headless_incomplete_streak,
+            unmeasured,
+        });
+    }
+    out
 }
 
 /// Periodic probation-window check. Registered beside the other lifecycle
@@ -458,6 +673,7 @@ mod tests {
             probation_decided_at: None,
             probation_decision: None,
             probation_review_id: None,
+            headless_incomplete_streak: 0,
         }
     }
 

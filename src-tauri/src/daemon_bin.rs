@@ -73,6 +73,22 @@ async fn main() -> ExitCode {
         return ExitCode::from(EXIT_NOT_ENABLED);
     }
 
+    // The headless bridge test mode (docs/architecture/cloud-integration-bridge.md
+    // §13) is a DESKTOP-process mode. Say so here rather than letting an
+    // operator who exported the variable conclude from a quiet daemon that the
+    // bridge is up: this binary never binds :9420's management table, so
+    // `/pair/*`, `/api/kp/*` and the tick endpoint are simply not served.
+    if std::env::var("PERSONAS_HEADLESS_BRIDGE").ok().as_deref() == Some("1") {
+        eprintln!(
+            "NOTE: PERSONAS_HEADLESS_BRIDGE=1 is set, but personas-daemon does NOT serve the\n\
+             management API. The headless bridge needs AppState + a Tauri AppHandle (the hire\n\
+             executor spawns a build session through them), and this binary builds neither.\n\
+             Run the DESKTOP process with the variable set instead; see\n\
+             docs/architecture/cloud-integration-bridge.md §13.\n\
+             The daemon continues with its normal trigger runtime."
+        );
+    }
+
     let args = match parse_args(std::env::args().collect()) {
         Ok(a) => a,
         Err(msg) => {

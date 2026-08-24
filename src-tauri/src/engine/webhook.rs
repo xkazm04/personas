@@ -129,12 +129,18 @@ pub async fn start_webhook_server_with_management(
     // Warm the paired-origin CORS allowlist from persisted keys so approvals
     // survive restarts (Direction 1).
     super::management_api::load_paired_origins(&pool);
+    // The pairing router lives in `personas-engine`, below the crate that owns
+    // the CORS allowlist. Hand it the notifier rather than move the static, so
+    // a headless auto-approval (§13) updates the same allowlist a human
+    // approval does.
+    personas_engine::pairing::set_paired_origin_hook(super::management_api::add_paired_origin);
 
     let webhook_state = WebhookState {
         pool: pool.clone(),
         rate_limiter: rate_limiter.clone(),
         tier_config,
     };
+    let pool_for_pairing = pool.clone();
 
     let mgmt_state = super::management_api::ManagementState {
         pool,
@@ -156,7 +162,7 @@ pub async fn start_webhook_server_with_management(
         .merge(super::management_api::management_router(mgmt_state))
         // Pairing entry points (/pair/request, /pair/claim) — permissive CORS,
         // no api-key middleware; the nonce + user approval are the gate (Dir 1).
-        .merge(super::pairing::pairing_router(app_handle));
+        .merge(super::pairing::pairing_router(app_handle, pool_for_pairing));
     #[cfg(feature = "p2p")]
     let app = app.merge(super::share_link::share_link_router());
 
@@ -186,10 +192,16 @@ async fn health() -> impl IntoResponse {
     // MANAGEMENT_ROUTES_LIVE). `/api/kp/*` and `/pair/*` exist only when it
     // is true; a caller that needs them probes here instead of inferring a
     // missing route from a 404.
+    // `headlessBridge` names the test mode (`PERSONAS_HEADLESS_BRIDGE=1`,
+    // docs/architecture/cloud-integration-bridge.md §13). An unattended driver
+    // VERIFIES the mode here instead of inferring it from a pairing that
+    // happened to auto-approve — the difference between "the mode is on" and
+    // "a human happened to click fast" must never be a guess.
     Json(serde_json::json!({
         "status": "ok",
         "service": "personas-webhook",
         "management": management_routes_live(),
+        "headlessBridge": personas_engine::headless::enabled(),
     }))
 }
 

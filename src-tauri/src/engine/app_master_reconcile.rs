@@ -76,21 +76,71 @@ const REVERT_LOOKBACK_DAYS: i64 = 120;
 // The tick
 // ---------------------------------------------------------------------------
 
+/// What one reconciliation pass observed. Returned so the headless bridge's
+/// on-demand tick (`docs/architecture/cloud-integration-bridge.md` §13) can
+/// report what actually ran rather than "done". Every field is a count of
+/// something the pass *witnessed* — no field is an estimate, and `errors`
+/// carries the per-project failures verbatim instead of collapsing them into a
+/// success.
+#[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ReconcileSummary {
+    /// Projects carrying an App master mandate that were swept.
+    pub projects: usize,
+    /// Proposal branches seen in the `autopilot/*` namespace.
+    pub branches_seen: usize,
+    /// Branches recorded in `app_master_proposals` for the first time.
+    pub newly_recorded: usize,
+    /// Proposals whose declared gates were run this pass (capped per tick).
+    pub gated: usize,
+    pub errors: Vec<String>,
+}
+
 /// One reconciliation pass over every mandated project.
 pub(crate) async fn reconcile_tick(pool: &DbPool) {
+    let _ = reconcile_tick_summary(pool, None).await;
+}
+
+/// [`reconcile_tick`], counted, and optionally scoped to one project.
+pub(crate) async fn reconcile_tick_summary(
+    pool: &DbPool,
+    only_project: Option<&str>,
+) -> ReconcileSummary {
+    let mut summary = ReconcileSummary::default();
     let mandates = personas_engine::app_master::load_mandates(pool);
     if mandates.is_empty() {
-        return;
+        return summary;
     }
     for (project_id, record) in mandates {
-        if let Err(e) = reconcile_project(pool, &project_id, &record).await {
-            tracing::warn!(
-                project_id = %project_id,
-                error = %e,
-                "app_master_reconcile: project pass failed"
-            );
+        if only_project.is_some_and(|want| want != project_id) {
+            continue;
+        }
+        summary.projects += 1;
+        match reconcile_project(pool, &project_id, &record).await {
+            Ok(counts) => {
+                summary.branches_seen += counts.branches_seen;
+                summary.newly_recorded += counts.newly_recorded;
+                summary.gated += counts.gated;
+            }
+            Err(e) => {
+                summary.errors.push(format!("{project_id}: {e}"));
+                tracing::warn!(
+                    project_id = %project_id,
+                    error = %e,
+                    "app_master_reconcile: project pass failed"
+                );
+            }
         }
     }
+    summary
+}
+
+/// What one project's pass observed.
+#[derive(Debug, Default)]
+struct ProjectCounts {
+    branches_seen: usize,
+    newly_recorded: usize,
+    gated: usize,
 }
 
 /// Reconcile one project. Returns `Err` only for conditions worth logging;
@@ -99,7 +149,8 @@ async fn reconcile_project(
     pool: &DbPool,
     project_id: &str,
     record: &personas_engine::app_master::MandateRecord,
-) -> Result<(), String> {
+) -> Result<ProjectCounts, String> {
+    let mut counts = ProjectCounts::default();
     let project = crate::db::repos::dev_tools::get_project_by_id(pool, project_id)
         .map_err(|e| format!("project row unreadable: {e}"))?;
     let root = PathBuf::from(&project.root_path);
@@ -107,7 +158,7 @@ async fn reconcile_project(
         // A URL-only App master (a known P4 gap). Nothing to observe on disk;
         // the ledger stays empty and the reporter keeps saying `null`, which is
         // the truth about this project.
-        return Ok(());
+        return Ok(counts);
     }
     // A path that is not a git work tree has no proposals by definition — and
     // git would otherwise walk up to a PARENT repository and answer about
@@ -117,7 +168,7 @@ async fn reconcile_project(
         .map(|s| s.trim() != "true")
         .unwrap_or(true)
     {
-        return Ok(());
+        return Ok(counts);
     }
 
     let Some(main_branch) = gates::resolve_main_branch(&root, project.main_branch.as_deref()).await
@@ -133,6 +184,7 @@ async fn reconcile_project(
     let branches = gates::list_proposal_branches(&root)
         .await
         .map_err(|e| format!("branch discovery failed: {e}"))?;
+    counts.branches_seen = branches.len();
     let mut newly_seen: Vec<String> = Vec::new();
     for branch in &branches {
         let known = gates::get_proposal(pool, project_id, branch)
@@ -165,6 +217,7 @@ async fn reconcile_project(
         }
         if !known {
             newly_seen.push(branch.clone());
+            counts.newly_recorded += 1;
         }
     }
 
@@ -188,6 +241,7 @@ async fn reconcile_project(
         // otherwise be re-attempted every tick forever; a "not configured"
         // verdict is a real, recorded answer.
         let _ = gates::mark_gates_ran(pool, &proposal.id, &chrono::Utc::now().to_rfc3339());
+        counts.gated += 1;
         tracing::info!(
             project_id,
             branch = %proposal.branch,
@@ -210,7 +264,7 @@ async fn reconcile_project(
             newly_seen.join(", ")
         );
     }
-    Ok(())
+    Ok(counts)
 }
 
 /// Observe one proposal's fate on the main branch.

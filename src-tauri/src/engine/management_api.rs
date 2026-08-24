@@ -69,7 +69,7 @@ pub struct ManagementState {
 
 pub fn management_router(state: ManagementState) -> Router {
     let state_arc = Arc::new(state);
-    Router::new()
+    let router = Router::new()
         // Personas
         .route("/api/personas", get(list_personas))
         .route("/api/personas/{persona_id}", get(get_persona))
@@ -139,7 +139,25 @@ pub fn management_router(state: ManagementState) -> Router {
         // any-valid-key read rule.
         .route("/api/kp/persona-requests", post(kp_create_persona_request))
         .route("/api/kp/persona-requests/{id}", get(kp_get_persona_request))
-        .route("/api/kp/connector-catalog", get(kp_connector_catalog))
+        .route("/api/kp/connector-catalog", get(kp_connector_catalog));
+
+    // Headless bridge test mode (§13). The route is ADDED, not merely refused,
+    // so with the mode off it 404s: "there is nothing there" and "you may not
+    // have it" are different answers, and a driver that probes for the mode
+    // must be able to tell them apart. `/health.headlessBridge` is the
+    // affirmative check.
+    let router = if personas_engine::headless::enabled() {
+        tracing::warn!(
+            "HEADLESS BRIDGE: serving POST /api/kp/test/tick — an on-demand run of the \
+             overnight / reconcile / report / probation loop, gated on the {} scope",
+            personas_engine::headless::TEST_SCOPE
+        );
+        router.route("/api/kp/test/tick", post(kp_test_tick))
+    } else {
+        router
+    };
+
+    router
         .with_state(state_arc.clone())
         // Auth middleware runs INSIDE the CORS layer so OPTIONS preflight
         // requests do not require an API key.
@@ -258,6 +276,10 @@ const SCOPE_BUILD: &str = "personas:build";
 /// never receives it unless the user grants a specific credential. The internal
 /// "system" key holds it so the connector bridge keeps working.
 const SCOPE_PROXY: &str = "proxy";
+/// Headless bridge test scope (§13). Minted only by the auto-pairing path in
+/// `personas_engine::pairing::auto_approve_headless`, and demanded only by
+/// `/api/kp/test/*` — which only exists while the mode is on.
+const SCOPE_TEST: &str = personas_engine::headless::TEST_SCOPE;
 /// Resource-scoped grant prefixes. A key holding `personas:execute:persona:<id>`
 /// may execute only persona `<id>`; `proxy:credential:<id>` scopes the proxy to
 /// one credential. See docs/architecture/cloud-integration-bridge.md §3.2.
@@ -372,6 +394,19 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
             Ok(())
         } else {
             Err("api key lacks proxy scope for this credential")
+        };
+    }
+    if path.starts_with("/api/kp/test/") {
+        // Headless bridge test surface (§13). Deliberately a scope of its own
+        // rather than `personas:build`: the tick endpoint spends money and
+        // spawns fleet sessions on demand, and the only keys that carry
+        // `personas:test` are the ones the headless bridge minted itself.
+        // The route only EXISTS while the mode is on, so this arm is the second
+        // gate, not the first.
+        return if has(SCOPE_TEST) {
+            Ok(())
+        } else {
+            Err("api key lacks the personas:test scope")
         };
     }
     if path.starts_with("/api/kp/") {
@@ -2982,19 +3017,49 @@ async fn kp_create_persona_request(
         }
     };
     params["requestId"] = serde_json::Value::String(request_id.clone());
-    match insert_kp_hire_approval(
+    if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
         &request_id,
         &params,
         &kp_hire_rationale(&body),
     ) {
-        Ok(()) => ok_json(serde_json::json!({
-            "requestId": request_id,
-            "status": "pending_approval",
-        }))
-        .into_response(),
-        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response();
     }
+
+    // Headless bridge (§13): execute the hire NOW, through the same executor
+    // the human click reaches, recording `headless_bridge` as the actor. The
+    // response reports the real outcome instead of `pending_approval` — a
+    // driver that was told "pending" and polled for a decision nobody was
+    // going to take would hang forever. `GET /api/kp/persona-requests/{id}`
+    // still answers, so a client that polls anyway sees the same fate.
+    if personas_engine::headless::enabled() {
+        let app = state.app.clone();
+        // `app_state` borrows the AppHandle; drop it before the await so the
+        // non-Send `tauri::State` guard does not cross a suspension point.
+        drop(app_state);
+        return match crate::commands::companion::approvals::auto_execute_kp_hire(&app, &request_id)
+            .await
+        {
+            Ok(outcome) => ok_json(serde_json::json!({
+                "requestId": request_id,
+                // `approved_failed` is reported as `failed`, exactly as the
+                // status GET maps it — a hire the executor could not finish is
+                // not a hire the operator turned down.
+                "status": if outcome.status == "approved" { "approved" } else { "failed" },
+                "autoApproved": true,
+                "actor": personas_engine::headless::ACTOR,
+                "message": outcome.message,
+            }))
+            .into_response(),
+            Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        };
+    }
+
+    ok_json(serde_json::json!({
+        "requestId": request_id,
+        "status": "pending_approval",
+    }))
+    .into_response()
 }
 
 /// `GET /api/kp/persona-requests/{id}` — poll a hire request's fate.
@@ -3115,6 +3180,229 @@ fn builtin_connector_catalog() -> Vec<serde_json::Value> {
 /// `GET /api/kp/connector-catalog` — what the KP app's hire form can offer.
 async fn kp_connector_catalog() -> Response {
     ok_json(builtin_connector_catalog()).into_response()
+}
+
+// =============================================================================
+// Headless bridge test tick (§13) — the on-demand "night"
+// =============================================================================
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpTestTickBody {
+    /// Scope the overnight + reconcile phases to one project. Absent ⇒ every
+    /// project the autopilot mode makes eligible / every mandated project.
+    #[serde(default)]
+    project_id: Option<String>,
+    /// Scope the report phase to one persona. Absent ⇒ every kp-linked persona.
+    #[serde(default)]
+    persona_id: Option<String>,
+    /// Absent ⇒ all four, in [`TICK_PHASES`] order.
+    #[serde(default)]
+    phases: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct KpTestPhaseResult {
+    phase: &'static str,
+    /// False ⇒ the phase was in the request but could not run at all; `skipped`
+    /// says why. A phase that ran and found nothing to do is `ran: true` with
+    /// zero counts — "nothing happened" and "nothing was attempted" are
+    /// different findings.
+    ran: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skipped: Option<String>,
+    duration_ms: u128,
+    /// Phase-specific counts. Shapes are documented per phase in §13.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    counts: Option<serde_json::Value>,
+    /// Per-item detail (night runs, probation decisions). Empty when there is
+    /// nothing to itemise.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    details: Vec<serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    errors: Vec<String>,
+}
+
+/// `POST /api/kp/test/tick` — run one compressed "night" synchronously.
+///
+/// Exists only while `PERSONAS_HEADLESS_BRIDGE=1` (the route is not added
+/// otherwise) and demands the `personas:test` scope. It **reuses** the four
+/// existing tick bodies rather than reimplementing them, so a compressed night
+/// is the same night: `run_overnight_now_core` (the body of
+/// `dev_tools_run_overnight_now`, autopilot gate + App master mandate + budget
+/// governor + slot cap intact), `reconcile_tick_summary`, `kp_rollup_tick_summary`
+/// and `probation_tick_summary` + the headless decision sweep.
+///
+/// Synchronous by design: a driver that compresses a night into one call needs
+/// the call to *mean* the night is over.
+async fn kp_test_tick(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Json(body): Json<KpTestTickBody>,
+) -> Response {
+    // Second gate. The route only exists while the mode is on, but a stale
+    // router is not a thing this handler is willing to assume.
+    if !personas_engine::headless::enabled() {
+        return err_json(StatusCode::NOT_FOUND, "not found").into_response();
+    }
+
+    // The phase vocabulary, the dependency ordering and the refusal of an
+    // unknown name all live in `personas_engine::headless` — one spelling,
+    // and the one place they can be unit-tested on this machine.
+    let requested = match personas_engine::headless::select_tick_phases(body.phases.as_deref()) {
+        Ok(phases) => phases,
+        Err(unknown) => {
+            return err_json(
+                StatusCode::BAD_REQUEST,
+                &format!(
+                    "unknown phase(s): {}. Known phases: {}",
+                    unknown.join(", "),
+                    personas_engine::headless::TICK_PHASES.join(", ")
+                ),
+            )
+            .into_response();
+        }
+    };
+
+    let started = chrono::Utc::now();
+    let pool = state.pool.clone();
+    let app = state.app.clone();
+    let mut results: Vec<KpTestPhaseResult> = Vec::new();
+
+    for phase in requested {
+        let t0 = std::time::Instant::now();
+        let result = match phase {
+            "overnight" => tick_phase_overnight(&pool, &app, body.project_id.as_deref()).await,
+            "reconcile" => tick_phase_reconcile(&pool, body.project_id.as_deref()).await,
+            "report" => tick_phase_report(&pool, body.persona_id.as_deref()).await,
+            "probation" => tick_phase_probation(&pool, &app),
+            _ => unreachable!("phase list is closed"),
+        };
+        results.push(KpTestPhaseResult {
+            phase,
+            duration_ms: t0.elapsed().as_millis(),
+            ..result
+        });
+    }
+
+    let finished = chrono::Utc::now();
+    ok_json(serde_json::json!({
+        "headlessBridge": true,
+        "actor": personas_engine::headless::ACTOR,
+        "startedAt": started.to_rfc3339(),
+        "finishedAt": finished.to_rfc3339(),
+        "durationMs": (finished - started).num_milliseconds(),
+        "projectId": body.project_id,
+        "personaId": body.persona_id,
+        "phases": results,
+    }))
+    .into_response()
+}
+
+/// A phase result with the fields the loop fills in left at their defaults.
+fn phase_stub() -> KpTestPhaseResult {
+    KpTestPhaseResult {
+        phase: "",
+        ran: true,
+        skipped: None,
+        duration_ms: 0,
+        counts: None,
+        details: Vec::new(),
+        errors: Vec::new(),
+    }
+}
+
+async fn tick_phase_overnight(
+    pool: &crate::db::DbPool,
+    app: &AppHandle,
+    project_id: Option<&str>,
+) -> KpTestPhaseResult {
+    use crate::commands::infrastructure::overnight;
+
+    let projects: Vec<String> = match project_id {
+        Some(id) => vec![id.to_string()],
+        None => overnight::overnight_eligible_projects(pool),
+    };
+    let mut out = phase_stub();
+    if projects.is_empty() {
+        out.counts = Some(serde_json::json!({ "projects": 0, "dispatched": 0, "blocked": 0 }));
+        return out;
+    }
+
+    let (mut dispatched, mut blocked, mut degraded) = (0i64, 0i64, 0i64);
+    for id in &projects {
+        match overnight::run_overnight_now_core(pool, app, id).await {
+            Ok(run) => {
+                dispatched += run.dispatched_count;
+                if run.blocked_reason.is_some() {
+                    blocked += 1;
+                }
+                if run.degraded {
+                    degraded += 1;
+                }
+                out.details
+                    .push(serde_json::to_value(&run).unwrap_or(serde_json::Value::Null));
+            }
+            // A refusal is a RESULT, not a transport failure: an autopilot mode
+            // that does not grant ScanAndTriage, or a claim that could not be
+            // taken. It belongs in `errors` where the driver can read it.
+            Err(e) => out.errors.push(format!("{id}: {e}")),
+        }
+    }
+    out.counts = Some(serde_json::json!({
+        "projects": projects.len(),
+        "dispatched": dispatched,
+        "blocked": blocked,
+        "degraded": degraded,
+    }));
+    out
+}
+
+async fn tick_phase_reconcile(
+    pool: &crate::db::DbPool,
+    project_id: Option<&str>,
+) -> KpTestPhaseResult {
+    let summary =
+        crate::engine::app_master_reconcile::reconcile_tick_summary(pool, project_id).await;
+    let mut out = phase_stub();
+    out.errors = summary.errors.clone();
+    out.counts = serde_json::to_value(&summary).ok();
+    out
+}
+
+async fn tick_phase_report(
+    pool: &crate::db::DbPool,
+    persona_id: Option<&str>,
+) -> KpTestPhaseResult {
+    let summary = crate::engine::kp_reporter::kp_rollup_tick_summary(pool, persona_id).await;
+    let mut out = phase_stub();
+    out.errors = summary.errors.clone();
+    out.counts = serde_json::to_value(&summary).ok();
+    out
+}
+
+fn tick_phase_probation(pool: &crate::db::DbPool, app: &AppHandle) -> KpTestPhaseResult {
+    use crate::engine::app_master_probation as probation;
+
+    // Raise first, then decide: a window that closed during this very tick gets
+    // its packet and its answer in the same call, which is the whole point of
+    // compressing a night.
+    let raised = probation::probation_tick_summary(pool);
+    let decided = probation::headless_probation_sweep(app, pool);
+    let mut out = phase_stub();
+    out.details = decided
+        .iter()
+        .filter_map(|d| serde_json::to_value(d).ok())
+        .collect();
+    out.counts = Some(serde_json::json!({
+        "mandates": raised.mandates,
+        "due": raised.due,
+        "raised": raised.raised,
+        "deferred": raised.deferred,
+        "decided": decided.len(),
+        "notes": raised.notes,
+    }));
+    out
 }
 
 // =============================================================================

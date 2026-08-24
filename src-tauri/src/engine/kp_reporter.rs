@@ -686,12 +686,41 @@ impl ReactiveSubscription for KpReporterSubscription {
 /// `parse_design_context` on each hit — the LIKE only bounds the scan, the
 /// typed parse decides.
 async fn kp_rollup_tick(pool: &DbPool) {
+    let _ = kp_rollup_tick_summary(pool, None).await;
+}
+
+/// What one rollup pass pushed. Returned so the headless bridge's on-demand
+/// tick (`docs/architecture/cloud-integration-bridge.md` §13) can report the
+/// push it actually made — including the pushes it *skipped*, which is the
+/// difference between "kp has no numbers yet" and "kp was never told".
+#[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RollupSummary {
+    /// Personas carrying a `kpLink` that were considered.
+    pub candidates: usize,
+    /// Rollups posted to kp (fire-and-forget — a push is attempted, not
+    /// confirmed; `post_kp_report` logs its own transport failures).
+    pub pushed: usize,
+    /// Considered but not pushed (severed link, unreadable rollup, a LIKE
+    /// false-positive the typed parse rejected).
+    pub skipped: usize,
+    pub period: String,
+    pub errors: Vec<String>,
+}
+
+/// [`kp_rollup_tick`], counted, and optionally scoped to one persona.
+pub(crate) async fn kp_rollup_tick_summary(
+    pool: &DbPool,
+    only_persona: Option<&str>,
+) -> RollupSummary {
+    let mut summary = RollupSummary::default();
     let candidates: Vec<(String, Option<String>)> = {
         let conn = match pool.get() {
             Ok(c) => c,
             Err(e) => {
                 tracing::warn!(error = %e, "kp_reporter: pool unavailable; skipping tick");
-                return;
+                summary.errors.push(format!("pool unavailable: {e}"));
+                return summary;
             }
         };
         let mut stmt = match conn.prepare(
@@ -700,7 +729,8 @@ async fn kp_rollup_tick(pool: &DbPool) {
             Ok(s) => s,
             Err(e) => {
                 tracing::warn!(error = %e, "kp_reporter: prefilter query failed; skipping tick");
-                return;
+                summary.errors.push(format!("prefilter query failed: {e}"));
+                return summary;
             }
         };
         match stmt
@@ -710,19 +740,27 @@ async fn kp_rollup_tick(pool: &DbPool) {
             Ok(rows) => rows,
             Err(e) => {
                 tracing::warn!(error = %e, "kp_reporter: prefilter scan failed; skipping tick");
-                return;
+                summary.errors.push(format!("prefilter scan failed: {e}"));
+                return summary;
             }
         }
     };
 
     let period = chrono::Utc::now().format("%Y-%m").to_string();
+    summary.period = period.clone();
 
     for (persona_id, design_context) in candidates {
+        if only_persona.is_some_and(|want| want != persona_id) {
+            continue;
+        }
+        summary.candidates += 1;
         let Some(link) = crate::db::models::parse_design_context(design_context.as_deref()).kp_link
         else {
+            summary.skipped += 1;
             continue; // LIKE false-positive — the typed parse is authoritative.
         };
         if is_severed(&persona_id) {
+            summary.skipped += 1;
             continue;
         }
 
@@ -730,6 +768,10 @@ async fn kp_rollup_tick(pool: &DbPool) {
             Ok(r) => r,
             Err(e) => {
                 tracing::warn!(persona_id = %persona_id, error = %e, "kp_reporter: monthly rollup query failed");
+                summary.skipped += 1;
+                summary
+                    .errors
+                    .push(format!("{persona_id}: monthly rollup query failed: {e}"));
                 continue;
             }
         };
@@ -755,6 +797,7 @@ async fn kp_rollup_tick(pool: &DbPool) {
             ),
         };
         let Ok(body) = serde_json::to_value(&event) else {
+            summary.skipped += 1;
             continue;
         };
         // No Idempotency-Key: a rollup is an authoritative upsert by period.
@@ -767,7 +810,9 @@ async fn kp_rollup_tick(pool: &DbPool) {
             "rollup",
         )
         .await;
+        summary.pushed += 1;
     }
+    summary
 }
 
 // ---------------------------------------------------------------------------

@@ -107,6 +107,7 @@ pub mod file_watcher;
 pub mod fix_loop;
 pub mod git_checkpoint;
 pub mod google_oauth;
+pub mod headless;
 pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod hooks_sidecar;

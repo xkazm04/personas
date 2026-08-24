@@ -890,6 +890,7 @@ fn persist_mandate(
         probation_decided_at: None,
         probation_decision: None,
         probation_review_id: None,
+        headless_incomplete_streak: 0,
     };
     match personas_engine::app_master::set_mandate(db, &record) {
         Ok(()) => Some(record),

@@ -151,6 +151,7 @@ mod approval_exec_fleet;
 mod approval_exec_knowledge;
 mod approval_exec_night;
 mod approval_exec_ship;
+mod approval_headless;
 mod approval_lifecycle;
 
 // The App master hire module is private, but the kp reporter needs ONE thing
@@ -168,4 +169,5 @@ pub use approval_exec_fleet::*;
 pub(crate) use approval_exec_knowledge::*;
 pub(crate) use approval_exec_night::*;
 pub use approval_exec_ship::*;
+pub(crate) use approval_headless::*;
 pub use approval_lifecycle::*;

@@ -854,3 +854,274 @@ master on a `suggest` autopilot, seeding five known-answer items out of kp's
 five seeds carry a forbidden-class trap; two of those traps are deliberately
 ones the detector does **not** catch, so a run measures how much of the honesty
 story rests on the human reviewer.
+
+---
+
+## 13. Headless bridge (test mode) — P6a
+
+> **Status: implemented on `master`.** Both kp and Personas are pre-production.
+> Proving the App-master hire needs *mass* unattended loops of pair → hire →
+> night → reconcile → report → probation, and every one of those loops stops at
+> a human click. This section is the switch that removes those clicks, and the
+> reasons it cannot be flipped by accident.
+
+> ⚠️ **NEVER enable this on a machine other people can reach.**
+>
+> With the mode on, a `POST /pair/request` from **any** origin mints a real,
+> working management key with no human in the loop, and a `POST
+> /api/kp/persona-requests` with that key creates a persona and starts an
+> autonomous build against a repository on this machine. On a shared box, a
+> port-forwarded box, or anything reachable past `127.0.0.1`, that is a
+> remote-code-execution path — not a test convenience. It exists for a developer
+> workstation running a driver against its own checkout, and nowhere else.
+> Production onboarding keeps every human gate; nothing below is reachable
+> without the env var.
+
+### 13.1 The gate
+
+`PERSONAS_HEADLESS_BRIDGE=1`, in the process environment **at start**.
+
+`personas_engine::headless::enabled()` reads the variable **once** and latches
+the answer in an atomic for the life of the process. That is the difference
+between "documented as a startup flag" and "enforced as one": a plugin, a
+connector or a test helper calling `set_var` later cannot turn the mode on, so
+the running app's answer to "am I in test mode" has exactly one input.
+
+Two observable consequences, both deliberate:
+
+- **`personas_engine::headless::warn_at_boot()`** runs from `app_lib::run()`
+  immediately after `logging::init()`, before anything can read the flag, and
+  emits a single loud `tracing::warn!` naming every gate that is now removed and
+  the actor they will be recorded as. A mode that removes every human gate must
+  not be discoverable only by noticing that a modal never appeared.
+- **`GET /health` gains `"headlessBridge": bool`** beside `management`. A driver
+  **verifies** the mode there rather than inferring it from a pairing that
+  happened to succeed — "the mode is on" and "a human clicked fast" must never
+  be a guess. `/health` is unauthenticated and served by both route tables.
+
+With the gate off, every behaviour below is **absent**, not refused. The tick
+route is never added to the router, so it answers **404** rather than 403: "there
+is nothing there" and "you may not have it" are different answers, and a probing
+driver has to be able to tell them apart.
+
+### 13.2 The actor
+
+Everything this mode decides is recorded as **`headless_bridge`**.
+
+`companion_approval` has no `decided_by` column, so the actor is merged into the
+row's own payload (`decidedBy` / `decidedAt`, via `headless::stamp_actor`)
+*before* the executor runs — a row that crashes mid-flight still names its actor.
+A probation decision carries it in the review's `reviewer_notes`. An approval row
+that said `approved` with nothing else on it would be a true row telling a false
+story: that a human looked at this.
+
+### 13.3 Auto-pairing
+
+`personas_engine::pairing::auto_approve_headless`, called from
+`handle_pair_request` when the gate is on.
+
+| Unchanged | Changed |
+| --- | --- |
+| The authoritative origin is still the `Origin` header — a page can only pair itself | No `PAIRING_REQUESTED` event is emitted: the pairing is already resolved, so a modal raised for it could never be acted on (`pending_origin` returns `None` once approved) |
+| The nonce still has to be the one that was registered, with its entropy floor and its TTL | The key is minted **here**, by `external_api_keys::create`, instead of by the `approve_pairing` command |
+| `/pair/claim` is still single-use and still checks the requesting origin against the approved one | Scopes are the requested set **plus `personas:test`**, and the key expires in **1 day** — an unattended key is not a pairing |
+| The key is origin-bound, so it is useless from any other origin | The 202 body reads `{status: "approved", autoApproved: true, actor, keyPrefix}` instead of `{status: "pending"}` |
+
+The CORS allowlist is still updated. The allowlist lives in `app_lib`'s
+management API, below which `personas-engine` sits, so the owner installs itself
+as a hook (`pairing::set_paired_origin_hook`) at server start rather than the
+static moving across a crate boundary for one caller.
+
+### 13.4 Auto-hire
+
+`commands::companion::approvals::approval_headless::auto_execute_kp_hire`,
+called from `kp_create_persona_request` after the approval row is inserted.
+
+It **does not fork the executor**. The row goes through `load_pending` (the same
+atomic `pending → running` transition and the same consent-freshness refusal a
+click gets) and then through `execute_approval_action`, the one shared executor
+table — so `execute_kp_hire_request` runs byte for byte as it does for a human:
+draft persona, one-shot build session, App master binding, partial-success notes,
+the kp lifecycle push. A failure lands on `approved_failed` exactly as a failed
+human approval does, and the response reports it as `failed`, never `rejected` —
+an executor that could not finish is not a recruiter who said no.
+
+The response is the real outcome rather than `pending_approval`:
+`{requestId, status: "approved" | "failed", autoApproved: true, actor, message}`.
+A driver told "pending" would poll forever for a decision nobody was going to
+take. `GET /api/kp/persona-requests/{id}` still answers, so a client that polls
+anyway sees the same fate.
+
+The arm refuses any action other than `kp_hire_request`: the exception is for one
+action, not for the approval inbox.
+
+### 13.5 Auto-probation
+
+`engine::app_master_probation::headless_probation_sweep`.
+
+The decision is taken from the packet's **own** backbone — the same numbers the
+human reads, under `context_data.backbone` — through `headless::backbone_verdict`,
+a **verdict-only port** of kp's `pipeline/jobfit/appmaster.py::backbone_score`
+(and its TypeScript mirror `app/_lib/app-master/backbone.ts`). The weights and
+per-rule contributions are deliberately *not* ported: nothing here renders a
+score, and a second implementation of the arithmetic would be a second thing to
+keep in sync. What is ported is what the decision hangs on, exactly as kp writes
+it:
+
+- a failed **gate** (any forbidden-class violation) ⇒ `fail`, never averaged away;
+- otherwise **any unmeasured rule** ⇒ `incomplete` (unmeasured is a coverage gap,
+  never a zero — including the budget rule, where an absent reading is *not* a
+  perfect $0 window);
+- otherwise ⇒ `pass`.
+
+| Verdict | Decision | Applied as |
+| --- | --- | --- |
+| `pass` | activated | `activate` |
+| `fail` | retired | `retire` |
+| `incomplete` | extended (one window) | `extend_30` |
+| `incomplete`, **second consecutive** | retired | `retire` |
+
+**Why the second `incomplete` retires.** Extending is the one decision that ends
+nothing. A driver compressing a hundred nights into a hundred ticks would
+otherwise produce a hundred extensions and never a decision, so the loop would
+not terminate. The streak is `MandateRecord.headlessIncompleteStreak`, written
+**after** the carry-out (which reloads and rewrites the record itself, so writing
+first would be silently clobbered) and reset by any non-`incomplete` verdict.
+Nothing on the human path ever writes it.
+
+The decision is applied through `react_to_app_master_probation` — the same
+function the human's click reaches — after `manual_reviews::update_status` marks
+the review answered on the human path's own transition. So the mode changes *who
+decides*, never *what a decision does*: autopilot mode, mandate record, cadence
+triggers and the kp `probation_review` lifecycle event are all identical.
+
+### 13.6 The tick endpoint
+
+`POST /api/kp/test/tick` — headless mode **and** the `personas:test` scope.
+`personas:build` is not enough: this route spends money and spawns fleet sessions
+on demand, and the only keys carrying `personas:test` are the ones this mode
+minted itself. The route only *exists* while the mode is on, so the scope check
+is the second gate, not the first.
+
+```jsonc
+// request (every field optional)
+{ "projectId": "…",     // scopes overnight + reconcile; absent => all eligible/mandated
+  "personaId": "…",     // scopes report; absent => every kp-linked persona
+  "phases": ["overnight", "reconcile", "report", "probation"] }  // absent => all four
+```
+
+```jsonc
+// response (200) — inside the standard { success, data } envelope
+{ "headlessBridge": true, "actor": "headless_bridge",
+  "startedAt": "…", "finishedAt": "…", "durationMs": 41230,
+  "projectId": "…", "personaId": null,
+  "phases": [
+    { "phase": "overnight", "ran": true, "durationMs": 38010,
+      "counts": { "projects": 1, "dispatched": 0, "blocked": 1, "degraded": 0 },
+      "details": [ /* the NightRun ledger row, verbatim */ ],
+      "errors": [] },
+    { "phase": "reconcile", "ran": true, "durationMs": 2900,
+      "counts": { "projects": 1, "branchesSeen": 3, "newlyRecorded": 1, "gated": 1, "errors": [] } },
+    { "phase": "report",    "ran": true, "durationMs": 120,
+      "counts": { "candidates": 1, "pushed": 1, "skipped": 0, "period": "2026-08", "errors": [] } },
+    { "phase": "probation", "ran": true, "durationMs": 200,
+      "counts": { "mandates": 1, "due": 1, "raised": 1, "deferred": 0, "decided": 1, "notes": [] },
+      "details": [ { "projectId": "…", "personaId": "…", "reviewId": "…",
+                     "verdict": "incomplete", "decision": "extended",
+                     "priorIncompleteStreak": 0,
+                     "unmeasured": ["durability", "gates"] } ] }
+  ] }
+```
+
+**The phases run synchronously and in dependency order**, whatever order they
+were asked for. Overnight authors the branches the reconciler observes; the
+reconciler writes the gate and merge rows the reporter reads; the reporter's
+rollup is the backbone the probation packet embeds. Asking for `probation` first
+would produce a review about the night before last, and silently obeying that
+would be worse than reordering it. The vocabulary, the ordering and the refusal
+live in `headless::select_tick_phases` — an **unknown** phase name is a 400, never
+a silent skip, because a driver that typed `reconciile` and got a 200 would read
+the typo as a passing run.
+
+**Nothing is reimplemented.** Each phase calls the body the subscription calls:
+
+| Phase | Function | What still bounds it |
+| --- | --- | --- |
+| `overnight` | `overnight::run_overnight_now_core` (the body of `dev_tools_run_overnight_now`, minus its IPC auth check) | autopilot capability gate, App master mandate rung, budget governor + `full → suggest` degrade, fleet slot cap, branch-only dispatch, the ledger row |
+| `reconcile` | `app_master_reconcile::reconcile_tick_summary` | the same worktree-isolated gate sweep, the same per-tick gating cap |
+| `report` | `kp_reporter::kp_rollup_tick_summary` | the same `MONTHLY_SPEND_PREDICATE` axes, the same severed-link skip |
+| `probation` | `probation_tick_summary` (raise), then §13.5 (decide) | the same execution-anchor requirement; a hire that has never run still **defers**, and says so in `notes` |
+
+Each of those tick bodies now returns a counted summary; the subscriptions
+discard it. A phase that ran and found nothing to do is `ran: true` with zero
+counts — "nothing happened" and "nothing was attempted" are different findings.
+
+### 13.7 Where it runs: the desktop process, and why not the daemon
+
+**The mode runs in the desktop process (`personas-desktop`). `personas-daemon`
+does not serve it.** That is a limitation, stated rather than worked around.
+
+```bash
+# Windows, from the repo root — a dev build with the mode on:
+$env:PERSONAS_HEADLESS_BRIDGE="1"; npm run tauri dev
+# or against an installed build:
+$env:PERSONAS_HEADLESS_BRIDGE="1"; .\personas-desktop.exe
+# Verify (unauthenticated):
+curl http://127.0.0.1:9420/health
+# -> {"status":"ok","service":"personas-webhook","management":true,"headlessBridge":true}
+```
+
+`PERSONAS_WEBHOOK_PORT` still moves the port. `management: true` must also hold —
+on a degraded boot (`AppState` never resolves) :9420 serves the webhook-only
+table and neither `/pair/*` nor `/api/kp/*` exists, headless or not (§10.4).
+
+**What the daemon would need, measured before deciding.** `personas-daemon`
+builds a pool, a scheduler, a circuit breaker and a child-pid map, and executes
+personas by calling `runner::run_execution` with a `NoOpEmitter` directly. It
+does **not** build `AppState`. The management stack needs both halves of what it
+lacks:
+
+- `ManagementState` carries a `tauri::AppHandle`, and ~15 handlers resolve
+  `tauri::State<Arc<AppState>>` off it — including all three `/api/kp/*` routes,
+  which read `app_state.user_db`.
+- `execute_kp_hire_request` takes `tauri::State<'_, Arc<AppState>>` *and* an
+  `AppHandle`, and spawns the build session through
+  `state.build_session_manager.start_session(…, app.clone(), …)`.
+- `AppState` is constructed only in the Tauri `setup` hook (`boot/mod.rs`), which
+  needs a live `&tauri::App` for `app.manage()`, `services::start_local_http(app)`
+  and `project_tracking::start(…, app.handle())`.
+
+So a `--bridge` daemon flag could serve `/health`, `/pair/*` and the `/api/kp/*`
+status GETs, but **not** auto-hire, **not** the overnight phase and **not** the
+probation decision — i.e. not the loop. Rather than ship a flag that looks like
+the mode and cannot drive it, the daemon prints a pointer at startup when it sees
+`PERSONAS_HEADLESS_BRIDGE=1` and continues with its normal trigger runtime.
+Closing this properly is an `AppState` decoupling (a context trait behind the
+management handlers), which is the crate split's own open work, not this
+section's.
+
+**Credentials on a headless-ish boot.** The desktop process unlocks credentials
+through the OS keychain exactly as it always does. On a box where the keychain is
+unavailable (a CI runner, a locked-out session), `personas-core::crypto` fails
+**closed** unless `PERSONAS_ALLOW_FALLBACK_KEY=1` allows the DPAPI-wrapped local
+fallback — the same switch the daemon documents. Without a usable key the app
+boots but every credential-bearing execution fails, so an App master with
+connectors will produce a night of failures rather than a night of work: set the
+fallback deliberately, or run where the keychain is real.
+
+### 13.8 What is not covered
+
+- **The tick's own behaviour is not unit-tested in `app_lib`.** That crate's test
+  binary does not launch on this machine (`STATUS_ENTRYPOINT_NOT_FOUND`, exit
+  `0xc0000139` — pre-existing, unrelated, reproduced at HEAD). The testable core
+  was therefore pushed down into `personas-engine`, where it runs: the phase
+  vocabulary + ordering + unknown-name refusal (`select_tick_phases`), the actor
+  stamp (`stamp_actor`), the backbone verdict port, the probation policy incl.
+  the two-incomplete termination, and the auto-pairing round trip against a real
+  temp DB. The app_lib halves that stay untested are the four thin phase adapters
+  and the route-registration `if`.
+- **No identity on the loop beyond the key.** The mode's threat model is "this
+  machine is mine". There is no per-driver identity and no audit of *which*
+  driver ticked.
+- **The mode cannot be turned off without a restart.** That is the latch working
+  as intended, in the direction that matters: it also cannot be turned *on*.

@@ -219,6 +219,20 @@ pub struct MandateRecord {
     /// the tick does not raise a second one every 300 s while it waits.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub probation_review_id: Option<String>,
+    /// How many consecutive `incomplete` probation reviews the **headless
+    /// bridge** (`crate::headless`) has already answered with an extension.
+    ///
+    /// It exists so the unattended loop terminates: `incomplete` means "extend",
+    /// and a driver that compresses a hundred nights into a hundred ticks would
+    /// otherwise produce a hundred extensions and never a decision. The second
+    /// consecutive one retires instead. Always `0` on the human path — nothing
+    /// but the headless sweep writes it.
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub headless_incomplete_streak: u32,
+}
+
+fn is_zero_u32(v: &u32) -> bool {
+    *v == 0
 }
 
 /// Why an action was refused. Typed so a call site reports the reason rather
@@ -1444,6 +1458,7 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
             probation_decided_at: None,
             probation_decision: None,
             probation_review_id: None,
+            headless_incomplete_streak: 0,
         };
         let json = serde_json::to_string(&rec).unwrap();
         assert!(json.contains("\"scopeRung\":2"), "{json}");

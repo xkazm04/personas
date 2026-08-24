@@ -1631,6 +1631,7 @@ mod tests {
             probation_decided_at: None,
             probation_decision: None,
             probation_review_id: None,
+            headless_incomplete_streak: 0,
         };
         crate::app_master::set_mandate(pool, &record).unwrap();
     }

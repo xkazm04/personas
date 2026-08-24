@@ -21,6 +21,9 @@ info:
     - `personas:build` — the `/api/build*` flow.
     - `proxy` / `proxy:credential:<id>` — the credential proxy (NOT covered by
       `personas:execute`).
+    - `personas:test` — the headless bridge test surface (`/api/kp/test/*`).
+      Minted only by the mode's own auto-pairing; the routes it gates exist
+      only while `PERSONAS_HEADLESS_BRIDGE=1`.
 
     A route naming a persona/credential is satisfied by the broad scope OR the
     matching per-resource grant. Keys may be origin-bound (paired) and expiring;
@@ -58,6 +61,15 @@ paths:
                   management:
                     type: boolean
                     description: true when /api/* and /pair/* are served on this boot
+                  headlessBridge:
+                    type: boolean
+                    description: |
+                      true when this process started with `PERSONAS_HEADLESS_BRIDGE=1`
+                      (docs/architecture/cloud-integration-bridge.md §13): pairing
+                      requests auto-approve, kp hire requests auto-execute, and App
+                      master probation reviews auto-decide, all recorded as actor
+                      `headless_bridge`. An unattended driver VERIFIES the mode here
+                      rather than inferring it from a pairing that happened to succeed.
 
   /api/personas:
     get:
@@ -164,6 +176,14 @@ paths:
         approves or rejects it in the desktop app; either way KP is notified at
         `kp.baseUrl` with `reportToken` and can also poll the status route below.
 
+        **Headless bridge (§13).** With `PERSONAS_HEADLESS_BRIDGE=1` the request
+        is executed on the spot, through the same executor a human click reaches,
+        and the response reports the real outcome instead of `pending_approval`:
+        `{requestId, status: "approved" | "failed", autoApproved: true,
+        actor: "headless_bridge", message}`. The approval row records
+        `decidedBy: "headless_bridge"` in its payload. The status route below
+        still answers, so a client that polls anyway sees the same fate.
+
         **App master (P4).** The body gains an optional `appMaster` block
         (kp's `AppMasterSpec`). Present ⇒ approving the request ALSO ensures a
         Dev project for `appMaster.app.repo`, creates/binds a team, seeds each
@@ -213,6 +233,76 @@ paths:
                   personaName: { type: [string, "null"] }
                   buildPhase: { type: [string, "null"], description: Phase of the persona build session, when one exists }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/kp/test/tick:
+    post:
+      summary: "Headless bridge only: run one compressed night on demand"
+      description: |
+        **Exists only while `PERSONAS_HEADLESS_BRIDGE=1`** — with the mode off the
+        route is not registered and answers **404**, not 403. Requires the
+        `personas:test` scope (see §13); `personas:build` is not enough.
+
+        Runs the four loop phases **synchronously and in dependency order**,
+        whatever order they were asked for, reusing the existing tick bodies
+        rather than reimplementing them:
+
+        | phase | what runs | `counts` |
+        | --- | --- | --- |
+        | `overnight` | `run_overnight_now_core` per eligible project — autopilot capability gate, App master mandate, budget governor, fleet slot cap and branch-only dispatch all intact | `{projects, dispatched, blocked, degraded}`; `details[]` = the `NightRun` ledger rows |
+        | `reconcile` | `app_master_reconcile::reconcile_tick_summary` | `{projects, branchesSeen, newlyRecorded, gated, errors}` |
+        | `report` | `kp_reporter::kp_rollup_tick_summary` | `{candidates, pushed, skipped, period, errors}` |
+        | `probation` | `probation_tick_summary` (raise) then the headless decision sweep | `{mandates, due, raised, deferred, decided, notes}`; `details[]` = one decision each |
+
+        A phase that ran and found nothing to do is `ran: true` with zero counts.
+        An **unknown** phase name is a 400, never a silent skip — a driver that
+        typed `reconciile` and got a 200 would read the typo as a passing run.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId:
+                  type: string
+                  description: Scope the overnight + reconcile phases to one project. Absent ⇒ every eligible / mandated project.
+                personaId:
+                  type: string
+                  description: Scope the report phase to one persona. Absent ⇒ every kp-linked persona.
+                phases:
+                  type: array
+                  items: { type: string, enum: [overnight, reconcile, report, probation] }
+                  description: Absent ⇒ all four.
+      responses:
+        "200":
+          description: Every requested phase ran (a phase's own failures are in its `errors`)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  headlessBridge: { type: boolean, const: true }
+                  actor: { type: string, const: headless_bridge }
+                  startedAt: { type: string, format: date-time }
+                  finishedAt: { type: string, format: date-time }
+                  durationMs: { type: integer }
+                  projectId: { type: [string, "null"] }
+                  personaId: { type: [string, "null"] }
+                  phases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        phase: { type: string, enum: [overnight, reconcile, report, probation] }
+                        ran: { type: boolean }
+                        skipped: { type: [string, "null"] }
+                        durationMs: { type: integer }
+                        counts: { type: [object, "null"] }
+                        details: { type: array, items: { type: object } }
+                        errors: { type: array, items: { type: string } }
+        "400": { description: One or more unknown phase names }
+        "403": { description: "The key lacks the personas:test scope" }
+        "404": { description: The headless bridge test mode is off on this process }
 
   /api/kp/connector-catalog:
     get:
@@ -273,10 +363,18 @@ paths:
         The authoritative origin is the request's `Origin` header. Creates a pending
         pairing (keyed by `nonce`) and raises an in-app approval modal. Nothing is
         minted here. Poll `/pair/claim` after the user approves.
+
+        **Headless bridge (§13).** With `PERSONAS_HEADLESS_BRIDGE=1` the pairing
+        is approved on the spot and an origin-bound key IS minted here, carrying
+        the requested scopes plus `personas:test` and expiring in 1 day. No modal
+        is raised (nobody is watching for one) and the 202 body reads
+        `{status: "approved", autoApproved: true, actor: "headless_bridge",
+        keyPrefix}`. `/pair/claim` still hands the token over exactly once, to
+        the approved origin only — origin binding and single use are unchanged.
       requestBody:
         content: { application/json: { schema: { $ref: "#/components/schemas/PairRequest" } } }
       responses:
-        "202": { description: Pending — await user approval, then claim }
+        "202": { description: "Pending — await user approval, then claim. Under the headless bridge: already approved, claim immediately." }
         "400": { description: Missing Origin / bad nonce }
 
   /pair/claim:
