@@ -75,6 +75,10 @@ recordings/
 !.claude/settings.json
 !.claude/skills/
 !.claude/perfect/
+!.claude/architect/
+!.claude/explorer/
+!.claude/research/
+!.claude/leonardo/
 !.claude/ship-loop/
 !.claude/mvp/
 !.claude/agents/
