@@ -21,7 +21,7 @@
  * its children survive because two other surfaces still render them (the
  * channel-timeline rail and the reviews rail) — only the popover shell is gone.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
@@ -38,11 +38,15 @@ import { QuestionPanel } from './deck/QuestionPanel';
 import { ReasonStrip } from './deck/ReasonStrip';
 import { TriageCard } from './deck/TriageCard';
 import { useDeckControls } from './deck/useDeckControls';
-import { TRIAGE_KINDS } from './triageTypes';
+import { TRIAGE_KINDS, type TriageItem } from './triageTypes';
 import type { UnifiedTriageQueue } from './useUnifiedTriage';
 
 /** One live card, two for depth. More is just paint. */
 const STACK_DEPTH = 3;
+
+/** Stable empty list for the rail's one-frame cold gate below — a fresh `[]`
+ *  per render would defeat `DeckQueueRail`'s memo. */
+const NO_ITEMS: TriageItem[] = [];
 
 export function TriageDeckVariant({
   queue,
@@ -151,6 +155,37 @@ export function TriageDeckVariant({
   // reading order. Jumping to row 18 deals 18, 19 and 20 — the queue is not
   // reordered and the reviewer does not get sent back to the front.
   const stack = queue.items.slice(queue.cursor, queue.cursor + STACK_DEPTH);
+
+  /**
+   * Two-phase COLD first deal — the first commit that has cards paints card 1
+   * whole and the frame everything else already gives it; the work nobody can
+   * see waits one frame.
+   *
+   * On a cold open the queue arrives into an empty deck, and the commit that
+   * replaces the ghosts used to mount everything at once: three cards each
+   * parsing markdown, plus the whole queue rail. Cards 2–3 sit BEHIND card 1 —
+   * only their bottom slivers are visible — so their prose being one frame late
+   * is invisible, and the rail's rows arriving on the next frame reads as the
+   * rail filling in under its own chrome.
+   *
+   * The gate is "did this deck MOUNT with nothing to deal":
+   *  • a WARM open (module warm cache, or a remount over live stores) has
+   *    cards on the very first render, so `settled` initialises true and no
+   *    deferred phase exists — warm opens paint exactly as before;
+   *  • after the one flip it never re-arms — later polls, advances and skips
+   *    keep today's always-parsed behaviour, so the advance animation never
+   *    reveals an unparsed card.
+   */
+  const [settled, setSettled] = useState(() => queue.items.length > 0);
+  const stackDealt = stack.length > 0;
+  useEffect(() => {
+    if (settled || !stackDealt) return;
+    // Next frame, not idle: the deferred halves are the depth cards' prose and
+    // the rail rows, and "one frame after first paint" is the whole contract.
+    const raf = requestAnimationFrame(() => setSettled(true));
+    return () => cancelAnimationFrame(raf);
+  }, [settled, stackDealt]);
+
   const showLoading = queue.loading && stack.length === 0;
   // "You filtered it away" and "you finished" are different endings.
   const filteredOut = TRIAGE_KINDS.some((k) => !queue.activeKinds.has(k) && queue.allCounts[k] > 0);
@@ -200,7 +235,12 @@ export function TriageDeckVariant({
             without reordering the list or touching the keyboard's contract
             with the card being decided. */}
         <DeckQueueRail
-          items={queue.items}
+          // One `QueueRow` subtree per queued item — up to a hundred of them —
+          // held out of the cold first deal's commit and mounted a frame later
+          // (see `settled`). The rail renders nothing while its list is empty
+          // today, so the cold ghost phase never had a rail to lose; a warm
+          // open initialises `settled` true and mounts it exactly as before.
+          items={settled ? queue.items : NO_ITEMS}
           cursor={queue.cursor}
           skips={queue.skips}
           onJump={queue.focusItem}
@@ -258,6 +298,10 @@ export function TriageDeckVariant({
                   key={item.id}
                   item={item}
                   index={i}
+                  // Cold first deal only: the two depth cards' prose is behind
+                  // card 1 and cannot be seen, so its markdown parses wait one
+                  // frame instead of sharing card 1's first commit.
+                  deferBody={!settled && i > 0}
                   draggable={!item.input}
                   reduced={reduced}
                   cycle={queue.skips.get(item.id) ?? 0}

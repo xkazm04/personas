@@ -33,7 +33,15 @@
  * (what the reviewer sees and what the counters say) and `triageDispatch`
  * (which backend a verdict writes to). This file is the wiring.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import * as devApi from '@/api/devTools/devTools';
 import { listPromotionProposals } from '@/api/agents/evolution';
@@ -386,8 +394,21 @@ export function useUnifiedTriage(
   hosts: UnifiedTriageHosts = {},
 ): UnifiedTriageQueue {
   const { onOpenBuilder, onOpenRun, onOpenGoalBoard } = hosts;
-  const interactions = usePendingInteractions();
-  const center = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
+  // The two BORROWED sources, deferred. Their hooks own their fetch state, so
+  // this hook cannot mark those landings as transitions the way it does for the
+  // four sources it owns below — `useDeferredValue` is the consumer-side
+  // equivalent: when a poll or the cold load replaces `reviews`/`knowledge`,
+  // the urgent re-render keeps the previous value (every memo under it holds)
+  // and the tree that actually mounts three markdown cards and the queue rail
+  // is built at deferred priority, off the urgent frame. On MOUNT the deferred
+  // value IS the current value, so a warm reopen pays no extra render and never
+  // shows a stale frame. The one-frame lag on later updates is nothing this
+  // surface can notice: both sources are already 15–30s polls, and every write
+  // is id-addressed with a compare-and-swap conflict path behind it.
+  const liveInteractions = usePendingInteractions();
+  const interactions = useDeferredValue(liveInteractions);
+  const liveCenter = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
+  const center = useDeferredValue(liveCenter);
   const projects = useSystemStore((s) => s.projects);
   // Promotion proposals carry a persona id and nothing human-readable; the
   // roster the app already holds is what turns it into a name and a colour.
@@ -578,21 +599,40 @@ export function useUnifiedTriage(
       .then((page) => {
         if (cancelled) return;
         cursorRef.current = page.cursor;
-        noteFailure('ideas', null);
-        setIdeas((prev) => {
-          const next = appending ? [...prev, ...page.ideas] : page.ideas;
-          // `counts` is scoped to the non-status filters, so `pending` is the
-          // whole pending backlog rather than this page's slice.
-          setIdeaPage({ loaded: next.length, pending: page.counts.pending, hasMore: page.hasMore });
-          return next;
+        // The landing is a TRANSITION, and the loading flip rides INSIDE it.
+        // A cold open otherwise commits the whole dealt deck — three markdown
+        // parses, the queue rail, the action bar — in one urgent frame the
+        // moment this settles, blocking the overlay's own entrance animation.
+        // As a transition the ghost stack stays up (urgent tree unchanged)
+        // while React builds the data tree interruptibly. `setIdeasLoading`
+        // must be in the SAME transition as the data: flipped urgently it
+        // would land first, and `loading:false` over a still-empty stack
+        // renders the CLEARED ending for a frame — the exact lie DeckFailed
+        // exists to stop, told by a scheduler race.
+        startTransition(() => {
+          noteFailure('ideas', null);
+          setIdeas((prev) => {
+            const next = appending ? [...prev, ...page.ideas] : page.ideas;
+            // `counts` is scoped to the non-status filters, so `pending` is the
+            // whole pending backlog rather than this page's slice.
+            setIdeaPage({
+              loaded: next.length,
+              pending: page.counts.pending,
+              hasMore: page.hasMore,
+            });
+            return next;
+          });
+          setIdeasLoading(false);
         });
       })
       .catch((error) => {
-        if (!cancelled) noteFailure('ideas', extractMessage(error));
+        if (!cancelled) {
+          startTransition(() => {
+            noteFailure('ideas', extractMessage(error));
+            setIdeasLoading(false);
+          });
+        }
         toastCatch('Could not load backlog ideas')(error);
-      })
-      .finally(() => {
-        if (!cancelled) setIdeasLoading(false);
       });
     return () => {
       cancelled = true;
@@ -608,18 +648,25 @@ export function useUnifiedTriage(
     void policyTuningList(true, PROPOSAL_PAGE_SIZE)
       .then((rows) => {
         if (cancelled) return;
-        setPolicyProposals(rows);
-        noteFailure('policy', null);
-        // A fixed-limit query that returns exactly its limit is a slice, and
-        // this ledger is small BY CONSTRUCTION rather than by guarantee.
-        noteCapped('policy', rows.length >= PROPOSAL_PAGE_SIZE);
+        // Transition, loading flip inside it — see the ideas effect above for
+        // why the pair must land together.
+        startTransition(() => {
+          setPolicyProposals(rows);
+          noteFailure('policy', null);
+          // A fixed-limit query that returns exactly its limit is a slice, and
+          // this ledger is small BY CONSTRUCTION rather than by guarantee.
+          noteCapped('policy', rows.length >= PROPOSAL_PAGE_SIZE);
+          setProposalsLoading(false);
+        });
       })
       .catch((error) => {
-        if (!cancelled) noteFailure('policy', extractMessage(error));
+        if (!cancelled) {
+          startTransition(() => {
+            noteFailure('policy', extractMessage(error));
+            setProposalsLoading(false);
+          });
+        }
         toastCatch('Could not load tuning proposals')(error);
-      })
-      .finally(() => {
-        if (!cancelled) setProposalsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -632,16 +679,21 @@ export function useUnifiedTriage(
     void listPromotionProposals({ status: 'pending', limit: PROPOSAL_PAGE_SIZE })
       .then((rows) => {
         if (cancelled) return;
-        setPromotions(rows);
-        noteFailure('evolution', null);
-        noteCapped('evolution', rows.length >= PROPOSAL_PAGE_SIZE);
+        startTransition(() => {
+          setPromotions(rows);
+          noteFailure('evolution', null);
+          noteCapped('evolution', rows.length >= PROPOSAL_PAGE_SIZE);
+          setPromotionsLoading(false);
+        });
       })
       .catch((error) => {
-        if (!cancelled) noteFailure('evolution', extractMessage(error));
+        if (!cancelled) {
+          startTransition(() => {
+            noteFailure('evolution', extractMessage(error));
+            setPromotionsLoading(false);
+          });
+        }
         toastCatch('Could not load promotion proposals')(error);
-      })
-      .finally(() => {
-        if (!cancelled) setPromotionsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -659,15 +711,20 @@ export function useUnifiedTriage(
       .listPendingAcceptance()
       .then((rows) => {
         if (cancelled) return;
-        setGoals(rows);
-        noteFailure('goals', null);
+        startTransition(() => {
+          setGoals(rows);
+          noteFailure('goals', null);
+          setGoalsLoading(false);
+        });
       })
       .catch((error) => {
-        if (!cancelled) noteFailure('goals', extractMessage(error));
+        if (!cancelled) {
+          startTransition(() => {
+            noteFailure('goals', extractMessage(error));
+            setGoalsLoading(false);
+          });
+        }
         toastCatch('Could not load goals awaiting acceptance')(error);
-      })
-      .finally(() => {
-        if (!cancelled) setGoalsLoading(false);
       });
     return () => {
       cancelled = true;

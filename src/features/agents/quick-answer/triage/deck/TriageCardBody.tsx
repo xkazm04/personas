@@ -83,6 +83,7 @@ export function TriageCardBody({
   item,
   isTop,
   answerSlot,
+  deferBody = false,
   scrollerRef,
 }: {
   item: TriageItem;
@@ -98,6 +99,13 @@ export function TriageCardBody({
    */
   isTop: boolean;
   answerSlot?: ReactNode;
+  /**
+   * Cold-first-deal gate — see `TriageCard`. Header and scroller frame render
+   * regardless; only the markdown halves (`CardBody`/`CardProse`) wait, and
+   * only for the single frame the deck holds this true. Never set on the top
+   * card, so `answerSlot` (top-only) never meets it.
+   */
+  deferBody?: boolean;
   /** Set on the TOP card only — see `TriageCard`. */
   scrollerRef?: Ref<HTMLDivElement>;
 }) {
@@ -125,8 +133,12 @@ export function TriageCardBody({
         className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"
       >
         <div className="w-full space-y-4">
-          {answerSlot ?? <CardBody item={item} />}
-          <CardProse item={item} />
+          {deferBody ? null : (
+            <>
+              {answerSlot ?? <CardBody item={item} />}
+              <CardProse item={item} />
+            </>
+          )}
         </div>
       </div>
     </>

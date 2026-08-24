@@ -86,6 +86,13 @@ interface TriageCardProps {
   onCommit: (dir: FlingDirection, itemId: string) => void;
   /** Replaces the prose body for items with an `input`. */
   answerSlot?: ReactNode;
+  /**
+   * Skip the body's markdown for THIS commit — the deck sets it on the depth
+   * cards for the cold first deal only, where their prose is hidden behind the
+   * top card anyway. The frame, header and edge rails still render, so the
+   * card's geometry (and the stack's silhouette) is identical either way.
+   */
+  deferBody?: boolean;
 }
 
 function TriageCardImpl({
@@ -98,6 +105,7 @@ function TriageCardImpl({
   scrollerRef,
   onCommit,
   answerSlot,
+  deferBody = false,
 }: TriageCardProps) {
   const isTop = index === 0;
 
@@ -217,6 +225,7 @@ function TriageCardImpl({
               item={item}
               isTop={isTop}
               answerSlot={answerSlot}
+              deferBody={deferBody}
               scrollerRef={scrollerRef}
             />
           </div>
