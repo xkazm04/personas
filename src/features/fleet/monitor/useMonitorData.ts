@@ -165,6 +165,25 @@ const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
   personaHealth: true,
 };
 
+/**
+ * Module-scoped warm cache (loading pattern v2, mechanic 4 — precedent:
+ * LifecyclePage / CompetitionList). The Monitor and the triage deck fully
+ * unmount on close, and this hook held its reviews/messages in component
+ * state — so every re-open started from `loading: true` with an empty queue
+ * and re-ghosted a surface the user saw populated two seconds ago. The last
+ * successful fetch lives here instead, keyed by the review read's bound
+ * (a capped deck read and the Monitor's unbounded read are different queues
+ * and must not warm each other), so a remount paints warm immediately while
+ * the mount-time refetch revalidates underneath (law 1: the fetch never hides
+ * the rows already rendered).
+ */
+const reviewsWarmCache = new Map<string, { rows: MonitorReviewItem[]; hasMore: boolean }>();
+let messagesWarmCache: PersonaMessage[] | null = null;
+
+function reviewsCacheKey(reviewLimit: number | undefined): string {
+  return reviewLimit === undefined ? 'all' : `limit:${reviewLimit}`;
+}
+
 export interface MonitorData {
   personas: ReturnType<typeof useAgentStore.getState>['personas'];
   healthMap: Record<string, PersonaHealth>;
@@ -273,11 +292,17 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
 
-  const [localReviews, setLocalReviews] = useState<MonitorReviewItem[]>([]);
+  // Seed from the warm cache so a re-opened surface paints its last-known rows
+  // instead of a ghost; `loading` is true only when there is nothing warm to
+  // show (first-ever open), which is the only time a ghost is honest.
+  const warm = reviewsWarmCache.get(reviewsCacheKey(reviewLimit));
+  const [localReviews, setLocalReviews] = useState<MonitorReviewItem[]>(() => warm?.rows ?? []);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
-  const [reviewsHasMore, setReviewsHasMore] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [reviewsHasMore, setReviewsHasMore] = useState(() => warm?.hasMore ?? false);
+  const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>(
+    () => messagesWarmCache ?? [],
+  );
+  const [loading, setLoading] = useState(warm === undefined);
   const { track, busy: isProcessing } = useInFlight();
   // The app's ONE persona-join helper, already used by ManualReviewList for the
   // same rows. This shaper populated no identity at all, which is why the deck
@@ -312,7 +337,11 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
         // Keep the array we already have when nothing moved. The rows are equal
         // by value on almost every poll, and the identity is what the whole
         // downstream memo chain keys on — see `sameReviews`.
-        setLocalReviews((prev) => (sameReviews(prev, shaped) ? prev : shaped));
+        setLocalReviews((prev) => {
+          const next = sameReviews(prev, shaped) ? prev : shaped;
+          reviewsWarmCache.set(reviewsCacheKey(reviewLimit), { rows: next, hasMore: page.hasMore });
+          return next;
+        });
         setReviewsHasMore(page.hasMore);
         // Clearing on success is what makes the flag self-healing: React bails
         // out of a set to the identical value, so a healthy poll costs nothing.
@@ -331,7 +360,9 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const reloadMessages = useCallback(async () => {
     try {
       const raw = await listMessages(MESSAGE_SCAN_LIMIT);
-      if (mounted.current) setUnreadMessages(raw.filter((m) => !m.is_read));
+      const unread = raw.filter((m) => !m.is_read);
+      messagesWarmCache = unread;
+      if (mounted.current) setUnreadMessages(unread);
     } catch (err) {
       logger.error('Failed to load messages', { error: err });
     }
@@ -477,8 +508,10 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
 
   const handleMarkRead = useCallback(
     async (id: string) => {
-      // Optimistic — drop it from the unread set immediately.
+      // Optimistic — drop it from the unread set immediately (and from the warm
+      // cache, so a close/re-open inside the poll window doesn't resurrect it).
       setUnreadMessages((prev) => prev.filter((m) => m.id !== id));
+      messagesWarmCache = messagesWarmCache?.filter((m) => m.id !== id) ?? null;
       try {
         await markMessageRead(id);
         void fetchUnreadMessageCount();

@@ -7,10 +7,8 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
 import { POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
-import { PersonaMonitor } from '@/features/fleet/monitor';
-import { QuickAnswerPopover } from '@/features/agents/quick-answer/QuickAnswerPopover';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
@@ -21,11 +19,34 @@ const DispatchPanel = lazy(() =>
   import('@/features/overview/sub_manual-review/components/dispatch/DispatchPanel')
     .then((m) => ({ default: m.DispatchPanel })),
 );
+// And the two heaviest surfaces of all: the Persona Monitor drags the whole
+// fleet feature tree (channel grid, triage columns, drawer, grid view) and the
+// Quick Answer deck pulls the unified 7-queue triage machinery. Both were
+// static imports here, which put them in the main bundle for every window that
+// never opens them.
+const PersonaMonitor = lazy(() =>
+  import('@/features/fleet/monitor').then((m) => ({ default: m.PersonaMonitor })),
+);
+const QuickAnswerPopover = lazy(() =>
+  import('@/features/agents/quick-answer/QuickAnswerPopover')
+    .then((m) => ({ default: m.QuickAnswerPopover })),
+);
 
-function OverlayFallback() {
+/**
+ * Chunk fallback for a lazily-summoned full-screen overlay: the overlay's OWN
+ * opaque shell (same fixed geometry as the surface about to mount, so the swap
+ * moves nothing) with the shared delayed header ghost under it. Warm chunks
+ * resolve before its 150ms delay elapses, so this paints only when the chunk
+ * is genuinely cold. Never a spinner (banned for surfaces) and never null
+ * (which flashes the app underneath on first summon).
+ */
+function OverlayChunkFallback({ topClass }: { topClass: string }) {
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <LoadingSpinner size="md" />
+    <div
+      aria-hidden
+      className={`fixed inset-x-0 bottom-0 ${topClass} z-50 bg-background flex flex-col px-6 pt-3`}
+    >
+      <RouteChunkSkeleton showIcon showActions={false} showSubtitle={false} />
     </div>
   );
 }
@@ -175,6 +196,12 @@ export function useTitleBarTray() {
  * Mounts the Persona Monitor + Quick Answer popover for the dock's review and
  * monitor capsules. AnimatePresence so each overlay plays its exit fade-out
  * on close (a bare conditional unmounts instantly, skipping it).
+ *
+ * Exit + lazy: each keyed `<Suspense>` is the AnimatePresence child, and on
+ * close AnimatePresence keeps that whole subtree mounted while the inner
+ * motion root (already chunk-loaded by then) receives the exit signal through
+ * PresenceContext — the same proven contract the dispatch overlay below has
+ * always used, so lazification does not skip the fade-out.
  */
 export function TrayOverlays() {
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
@@ -182,13 +209,21 @@ export function TrayOverlays() {
   return (
     <AnimatePresence>
       {headerOverlay === 'monitor' && (
-        <PersonaMonitor onClose={() => setHeaderOverlay('none')} />
+        <Suspense
+          key="monitor"
+          fallback={<OverlayChunkFallback topClass="top-[var(--titlebar-height,40px)]" />}
+        >
+          <PersonaMonitor onClose={() => setHeaderOverlay('none')} />
+        </Suspense>
       )}
       {headerOverlay === 'quick-answer' && (
-        <QuickAnswerPopover
-          onClose={() => setHeaderOverlay('none')}
-          onOpenMonitor={() => setHeaderOverlay('monitor')}
-        />
+        // top-12 mirrors the triage deck's own shell (TriageDeckVariant).
+        <Suspense key="quick-answer" fallback={<OverlayChunkFallback topClass="top-12" />}>
+          <QuickAnswerPopover
+            onClose={() => setHeaderOverlay('none')}
+            onOpenMonitor={() => setHeaderOverlay('monitor')}
+          />
+        </Suspense>
       )}
       {headerOverlay === 'dispatch' && (
         <Suspense key="dispatch" fallback={null}>
@@ -197,7 +232,10 @@ export function TrayOverlays() {
       )}
       {headerOverlay === 'schedules' && (
         <FullScreenOverlay key="schedules" onClose={() => setHeaderOverlay('none')} testId="schedules-overlay">
-          <Suspense fallback={<OverlayFallback />}>
+          {/* The shell above is the permanent chrome; the fallback is the shared
+              delayed ghost — never a spinner (the old OverlayFallback rendered
+              LoadingSpinner, which renders null: a blank gap posing as feedback). */}
+          <Suspense fallback={<RouteChunkSkeleton />}>
             <ScheduleTimeline />
           </Suspense>
         </FullScreenOverlay>

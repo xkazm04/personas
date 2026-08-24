@@ -7,10 +7,11 @@
 // live-mode pop-up toggle sit in the header. The global fleet pulse lives in
 // the app chrome (see FleetActivityStrip), not here.
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { memo, useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Activity, Search, MessagesSquare, Bell, LayoutGrid } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useSystemStore } from '@/stores/systemStore';
@@ -32,6 +33,13 @@ interface PersonaMonitorProps {
   onClose: () => void;
 }
 
+// The strip takes no props and owns its own store subscriptions, so there is
+// nothing for it to learn from a parent render — but the 1s elapsed-time tick
+// below re-renders this whole component, and an unmemoized strip (233 lines of
+// execution-bar work) re-rendered with it every second. memo turns the tick
+// into a bail-out at this boundary.
+const MemoFleetActivityStrip = memo(FleetActivityStrip);
+
 
 interface Selection {
   personaId: string;
@@ -40,9 +48,16 @@ interface Selection {
 
 export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const { t, tx } = useTranslation();
+  // All four feeds stay ON regardless of the active view — deliberately, not
+  // as a leftover: the footer's review count and the header's attention badges
+  // render in every view, the channel grid needs the roster the health feed
+  // fills, and gating `feeds` per view would tear pollers down and refetch on
+  // every toggle. The per-surface gating this hook supports is for OTHER
+  // mounts (the triage deck passes DECK_FEEDS); the Monitor is the one surface
+  // that legitimately renders everything.
   const {
     personas, healthMap, reviews, unreadMessages, activeProcesses,
-    isProcessing, handleReviewAction, handleMarkRead,
+    loading, isProcessing, handleReviewAction, handleMarkRead,
   } = useMonitorData();
 
   const { cards, systemProcesses } = useMemo(
@@ -140,6 +155,24 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     () => personas.find((p) => p.id === selection?.personaId) ?? null,
     [personas, selection],
   );
+
+  // Stable drawer callbacks — these were inline arrows, so every render of
+  // this component (including each 1s tick) handed MonitorDrawer fresh
+  // function identities. The drawer legitimately re-renders on `now` while
+  // something runs, but when the fleet is idle these were the only unstable
+  // props left.
+  const handleDrawerReviewAction = useCallback(
+    (id: string, status: Parameters<typeof handleReviewAction>[1], notes?: string) =>
+      void handleReviewAction(id, status, notes).catch(
+        toastCatch('PersonaMonitor:handleReviewAction'),
+      ),
+    [handleReviewAction],
+  );
+  const handleDrawerMarkRead = useCallback(
+    (id: string) => void handleMarkRead(id),
+    [handleMarkRead],
+  );
+  const closeDrawer = useCallback(() => setSelection(null), []);
 
   // Faint network-of-agents backdrop — dark mode only (the light-theme
   // alternative is a follow-up). Rendered behind everything at low opacity so
@@ -269,7 +302,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           (reused), so running/queued executions are visible right in the header
           instead of static count badges. */}
       <div className="relative flex-shrink-0 h-2.5 border-b border-primary/10">
-        <FleetActivityStrip />
+        <MemoFleetActivityStrip />
       </div>
 
       {/* System band — app-level activity with no persona (fleet view only) */}
@@ -284,7 +317,14 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       /* Body — project columns overview with the drawer layered over it */
       <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden px-5 py-4">
-          {viewMode === 'grid' ? (
+          {loading && displayCards.length === 0 ? (
+            // First-ever cold open only (the warm cache in useMonitorData makes
+            // every re-open paint the last-known fleet immediately): permanent
+            // chrome above stays, and the body shows the shared delayed ghost
+            // instead of the views' settled empty states — "all clear" before
+            // the first read lands would be an empty-flash lie (law 1 / law 3).
+            <RouteChunkSkeleton showIcon showActions={false} />
+          ) : viewMode === 'grid' ? (
             <FleetGridView
               cards={displayCards}
               personas={personas}
@@ -329,13 +369,9 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   designContext={selectedPersona?.design_context ?? null}
                   isProcessing={isProcessing}
                   now={now}
-                  onReviewAction={(id, status, notes) =>
-                    void handleReviewAction(id, status, notes).catch(
-                      toastCatch('PersonaMonitor:handleReviewAction'),
-                    )
-                  }
-                  onMarkRead={(id) => void handleMarkRead(id)}
-                  onClose={() => setSelection(null)}
+                  onReviewAction={handleDrawerReviewAction}
+                  onMarkRead={handleDrawerMarkRead}
+                  onClose={closeDrawer}
                 />
               </motion.div>
             </>
