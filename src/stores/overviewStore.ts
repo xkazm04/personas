@@ -9,7 +9,7 @@ import { create } from "zustand";
 import { createCoreState, type OverviewStore } from "./storeTypes";
 
 import { createOverviewSlice } from "./slices/overview/overviewSlice";
-import { createMessageSlice } from "./slices/overview/messageSlice";
+import { createReportSlice } from "./slices/overview/reportSlice";
 import { createEventSlice } from "./slices/overview/eventSlice";
 import { createHealingSlice } from "./slices/overview/healingSlice";
 import { createMemorySlice } from "./slices/overview/memorySlice";
@@ -24,7 +24,7 @@ export const useOverviewStore = create<OverviewStore>()(
   (...a) => ({
     ...createCoreState(),
     ...createOverviewSlice(...a),
-    ...createMessageSlice(...a),
+    ...createReportSlice(...a),
     ...createEventSlice(...a),
     ...createHealingSlice(...a),
     ...createMemorySlice(...a),

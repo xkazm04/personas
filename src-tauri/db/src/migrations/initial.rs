@@ -11,7 +11,11 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
 
     // Pre-schema migrations: add columns that the SCHEMA's CREATE INDEX statements depend on.
     // These must run before SCHEMA so that indexes on new columns don't fail for existing DBs.
-    let _ = conn.execute_batch("ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"); // ignore "duplicate column" error on re-run
+    // Deliberately the LEGACY table name: this patches pre-rename DBs so the
+    // e10 persona_messages -> persona_reports rename step can copy thread_id.
+    // On fresh/renamed DBs the table does not exist and the error is ignored
+    // (persona_reports declares thread_id in schema.rs).
+    let _ = conn.execute_batch("ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"); // ignore "duplicate column" / "no such table" error on re-run
     let _ = conn.execute_batch(
         "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
     ); // ignore "duplicate column" error on re-run

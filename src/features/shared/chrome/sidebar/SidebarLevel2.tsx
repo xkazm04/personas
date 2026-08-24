@@ -30,12 +30,12 @@ import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav'
 interface SidebarLevel2Props {
   onCreatePersona: () => void;
   pendingReviewCount?: number;
-  unreadMessageCount?: number;
+  unreadReportCount?: number;
   pendingEventCount?: number;
   directorAttentionCount?: number;
 }
 
-export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0, unreadMessageCount = 0, pendingEventCount = 0, directorAttentionCount = 0 }: SidebarLevel2Props) {
+export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0, unreadReportCount = 0, pendingEventCount = 0, directorAttentionCount = 0 }: SidebarLevel2Props) {
   const { t } = useTranslation();
   const labelOf = useSidebarLabels();
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
@@ -100,7 +100,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   // Badge maps
   const overviewBadges: Record<string, SubNavBadge> = {};
   if (pendingReviewCount > 0) overviewBadges['manual-review'] = { count: pendingReviewCount, className: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
-  if (unreadMessageCount > 0) overviewBadges['messages'] = { count: unreadMessageCount, className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30' };
+  if (unreadReportCount > 0) overviewBadges['messages'] = { count: unreadReportCount, className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30' };
   if (pendingEventCount > 0) overviewBadges['events'] = { count: pendingEventCount, className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30' };
   if (directorAttentionCount > 0) overviewBadges['director'] = { count: directorAttentionCount, className: 'bg-violet-500/20 text-violet-400 border border-violet-500/30' };
 

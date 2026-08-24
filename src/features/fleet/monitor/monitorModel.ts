@@ -14,7 +14,7 @@ import type { ComponentType } from 'react';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { HealthStatus } from '@/lib/bindings/HealthStatus';
 import type { Translations } from '@/i18n/generated/types';
@@ -161,7 +161,7 @@ export interface PersonaCardModel {
   /** Highest-severity review bucket present — tints the review badge. */
   topReviewSeverity: SeverityBucket | null;
   /** Unread messages for this persona. */
-  messages: PersonaMessage[];
+  messages: PersonaReport[];
   processes: ProcessEntry[];
   running: number;
   queued: number;
@@ -208,7 +208,7 @@ export interface MonitorModel {
 export function buildMonitorModel(
   personas: Persona[],
   reviews: ManualReviewItem[],
-  unreadMessages: PersonaMessage[],
+  unreadMessages: PersonaReport[],
   activeProcesses: Record<string, ActiveProcess>,
   healthMap: Record<string, PersonaHealth>,
 ): MonitorModel {
@@ -250,7 +250,7 @@ export function buildMonitorModel(
     icon: string | null,
     color: string | null,
     revs: ManualReviewItem[],
-    msgs: PersonaMessage[],
+    msgs: PersonaReport[],
     procs: ProcessEntry[],
     health: PersonaHealth | undefined,
   ): PersonaCardModel => {

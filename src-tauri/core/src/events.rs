@@ -66,7 +66,7 @@ event_names! {
     TEAM_ASSIGNMENT_PROGRESS   => "team-assignment-progress",
 
     // Messages
-    MESSAGE_CREATED            => "message-created",
+    REPORT_CREATED            => "report-created",
 
     // Design & review
     DESIGN_STATUS              => "design-status",

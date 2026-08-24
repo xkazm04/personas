@@ -61,10 +61,10 @@ function resolvePersonaFromIndex(
 export function useUnifiedInbox(): UnifiedInboxItem[] {
   const { t } = useTranslation();
   const unknownLabel = t.cockpit.unknown_assistant;
-  const { manualReviews, messages, healingIssues } = useOverviewStore(
+  const { manualReviews, reports, healingIssues } = useOverviewStore(
     useShallow((s) => ({
       manualReviews: s.manualReviews,
-      messages: s.messages,
+      reports: s.reports,
       healingIssues: s.healingIssues,
     })),
   );
@@ -82,7 +82,7 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
 
     const outputs: UnifiedInboxItem[] = [];
     const regularMessages: UnifiedInboxItem[] = [];
-    for (const m of messages) {
+    for (const m of reports) {
       if (m.is_read !== false) continue;
       const persona = resolve(m.persona_id);
       if (isMessageOutput(m)) outputs.push(adaptOutput(m, persona));
@@ -96,5 +96,5 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
     return [...approvals, ...regularMessages, ...outputs, ...healing]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, MAX_ITEMS);
-  }, [manualReviews, messages, healingIssues, personas, unknownLabel]);
+  }, [manualReviews, reports, healingIssues, personas, unknownLabel]);
 }

@@ -295,7 +295,7 @@ pub fn companion_analyze_fleet(
 }
 
 /// Compact digest across the three operational inboxes — Messages
-/// (`persona_messages`), Human Review (`persona_manual_reviews`), and Incidents
+/// (`persona_reports`), Human Review (`persona_manual_reviews`), and Incidents
 /// (`audit_incidents`) — pulled from the OPERATIONAL store (`state.db` /
 /// personas.db) and embedded in the daily-brief directive. Athena's
 /// `personas_database` connector points at the companion-brain DB, not the
@@ -309,7 +309,7 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
     };
     // Window expressed in fractional days for julianday() math. This is uniform
     // across the three tables despite their mixed `created_at` formats
-    // (persona_messages / persona_manual_reviews store RFC3339; audit_incidents
+    // (persona_reports / persona_manual_reviews store RFC3339; audit_incidents
     // stores SQLite datetime-text) — julianday() parses both, and both stored
     // times and `now` are UTC. A plain `created_at >= datetime('now', …)` string
     // compare would be wrong for the RFC3339 columns (the `T`/`Z` break ordering).
@@ -324,7 +324,7 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
             "SELECT COUNT(*),
                     SUM(CASE WHEN COALESCE(is_read,0)=0 THEN 1 ELSE 0 END),
                     SUM(CASE WHEN COALESCE(priority,'normal') NOT IN ('low','normal') THEN 1 ELSE 0 END)
-             FROM persona_messages
+             FROM persona_reports
              WHERE julianday('now') - julianday(created_at) <= ?1",
             params![win_days],
             |r| {
@@ -342,7 +342,7 @@ pub(crate) fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> S
                 ));
                 if let Ok(mut stmt) = conn.prepare(
                     "SELECT COALESCE(NULLIF(title,''),'(untitled)'), COALESCE(priority,'normal')
-                     FROM persona_messages
+                     FROM persona_reports
                      WHERE julianday('now') - julianday(created_at) <= ?1
                      ORDER BY created_at DESC LIMIT 5",
                 ) {

@@ -257,7 +257,7 @@ CREATE INDEX IF NOT EXISTS idx_rm_created ON review_messages(review_id, created_
 
 -- FKs added by the FK hygiene ADR (2026-05-02-fk-hygiene-cascade). Fresh
 -- installs land in the right shape; legacy DBs get rebuilt by fk_hygiene.rs.
-CREATE TABLE IF NOT EXISTS persona_messages (
+CREATE TABLE IF NOT EXISTS persona_reports (
     id           TEXT PRIMARY KEY,
     persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     execution_id TEXT,
@@ -269,20 +269,22 @@ CREATE TABLE IF NOT EXISTS persona_messages (
     metadata     TEXT,
     created_at   TEXT NOT NULL,
     read_at      TEXT,
-    thread_id    TEXT
+    thread_id    TEXT,
+    use_case_id  TEXT
 );
-CREATE INDEX IF NOT EXISTS idx_pmsg_persona ON persona_messages(persona_id);
-CREATE INDEX IF NOT EXISTS idx_pmsg_is_read ON persona_messages(is_read);
-CREATE INDEX IF NOT EXISTS idx_pmsg_created ON persona_messages(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_prpt_persona ON persona_reports(persona_id);
+CREATE INDEX IF NOT EXISTS idx_prpt_use_case ON persona_reports(use_case_id);
+CREATE INDEX IF NOT EXISTS idx_prpt_is_read ON persona_reports(is_read);
+CREATE INDEX IF NOT EXISTS idx_prpt_created ON persona_reports(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_prpt_thread ON persona_reports(thread_id);
 
 -- ============================================================================
 -- Message Deliveries
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS persona_message_deliveries (
+CREATE TABLE IF NOT EXISTS persona_report_deliveries (
     id            TEXT PRIMARY KEY,
-    message_id    TEXT NOT NULL REFERENCES persona_messages(id) ON DELETE CASCADE,
+    message_id    TEXT NOT NULL REFERENCES persona_reports(id) ON DELETE CASCADE,
     channel_type  TEXT NOT NULL,
     status        TEXT NOT NULL DEFAULT 'pending',
     error_message TEXT,
@@ -290,7 +292,7 @@ CREATE TABLE IF NOT EXISTS persona_message_deliveries (
     delivered_at  TEXT,
     created_at    TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_pmd_message ON persona_message_deliveries(message_id);
+CREATE INDEX IF NOT EXISTS idx_prd_message ON persona_report_deliveries(message_id);
 
 -- ============================================================================
 -- Tool Usage Analytics

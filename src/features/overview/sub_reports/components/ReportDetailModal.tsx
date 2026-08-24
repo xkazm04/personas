@@ -15,7 +15,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { getMessageDeliveries } from "@/api/overview/messages";
+import { getReportDeliveries } from "@/api/overview/reports";
 import {
   createMemory, updateMemoryContent, listMemoriesByExecution,
 } from "@/api/overview/memories";
@@ -40,15 +40,15 @@ import {
 import { FocusedDecisionCard } from '@/features/overview/sub_manual-review/components/FocusedDecisionCard';
 import { silentCatch } from '@/lib/silentCatch';
 import { toastCatch } from '@/lib/silentCatch';
-import type { PersonaMessage } from '@/lib/types/types';
-import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
+import type { PersonaReport } from '@/lib/types/types';
+import type { PersonaReportDelivery } from '@/lib/bindings/PersonaReportDelivery';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
 interface MessageDetailModalProps {
-  message: PersonaMessage;
+  message: PersonaReport;
   onClose: () => void;
   onDelete: () => void | Promise<void>;
   onNavigate?: (dir: 1 | -1) => void;
@@ -112,36 +112,36 @@ const DECISION_MD_CLASS = [
  *                        same execution_id. Inline approve/reject so the
  *                        user can resolve message + review in one stop.
  */
-export function MessageDetailModal({
+export function ReportDetailModal({
   message, onClose, onDelete, onNavigate, hasPrev, hasNext,
 }: MessageDetailModalProps) {
   const { t, tx } = useTranslation();
   const msgId = message.id ?? '';
   const msgContent = message.content ?? '';
-  const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
+  const [deliveries, setDeliveries] = useState<PersonaReportDelivery[]>([]);
   const [deliveriesLoading, setDeliveriesLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { copied: copiedId, copy: copyId } = useCopyToClipboard();
   const [navDir, setNavDir] = useState<1 | -1>(1);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const markMessageAsRead = useOverviewStore((s) => s.markMessageAsRead);
+  const markReportAsRead = useOverviewStore((s) => s.markReportAsRead);
 
   // Plugin gating — Companion plugin must be enabled for "Play in chat".
   const companionEnabled = useSystemStore((s) => s.enabledPlugins.has('companion'));
 
   useEffect(() => {
     if (msgId && !message.is_read) {
-      markMessageAsRead(msgId);
+      markReportAsRead(msgId);
     }
-  }, [msgId, message.is_read, markMessageAsRead]);
+  }, [msgId, message.is_read, markReportAsRead]);
 
   useEffect(() => {
     setDeliveriesLoading(true);
-    getMessageDeliveries(msgId)
+    getReportDeliveries(msgId)
       .then(setDeliveries)
       .catch((err) => {
-        silentCatch('MessageDetailModal:getMessageDeliveries')(err);
+        silentCatch('ReportDetailModal:getReportDeliveries')(err);
         setDeliveries([]);
       })
       .finally(() => setDeliveriesLoading(false));
@@ -234,7 +234,7 @@ export function MessageDetailModal({
           setRating(existing.importance);
         }
       })
-      .catch(silentCatch('MessageDetailModal:listMemoriesByExecution'));
+      .catch(silentCatch('ReportDetailModal:listMemoriesByExecution'));
     return () => { cancelled = true; };
   }, [message.execution_id, message.persona_id]);
 
@@ -243,11 +243,11 @@ export function MessageDetailModal({
     if (stars < 1 || stars > 5) return;
 
     setRatingSaving(true);
-    const title = tx(t.overview.messages_view.rating_memory_title, { stars });
+    const title = tx(t.overview.reports_view.rating_memory_title, { stars });
     const contentKey =
-      stars >= 4 ? t.overview.messages_view.rating_memory_content_good :
-      stars >= 3 ? t.overview.messages_view.rating_memory_content_neutral :
-      t.overview.messages_view.rating_memory_content_poor;
+      stars >= 4 ? t.overview.reports_view.rating_memory_content_good :
+      stars >= 3 ? t.overview.reports_view.rating_memory_content_neutral :
+      t.overview.reports_view.rating_memory_content_poor;
     const content = tx(contentKey, { stars });
 
     try {
@@ -294,7 +294,7 @@ export function MessageDetailModal({
         setLinkedReviews(rows.filter((r) => r.execution_id === message.execution_id));
       })
       .catch((err) => {
-        silentCatch('MessageDetailModal:listManualReviews')(err);
+        silentCatch('ReportDetailModal:listManualReviews')(err);
         setLinkedReviews([]);
       })
       .finally(() => setReviewsLoading(false));
@@ -330,14 +330,14 @@ export function MessageDetailModal({
     // alternative is an off-screen iframe with `srcdoc`: the iframe lives
     // inside the current webview, so we can call `.contentWindow.print()`
     // on it and the OS print dialog opens against that document.
-    const personaName = message.persona_name || t.overview.messages_view.unknown_persona;
+    const personaName = message.persona_name || t.overview.reports_view.unknown_persona;
     const escape = (s: string) =>
       s.replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-    const safeTitle = escape(message.title || t.overview.messages_view.message_label);
+    const safeTitle = escape(message.title || t.overview.reports_view.report_label);
     const safeBody = escape(msgContent || '');
     const safePersona = escape(personaName);
 
@@ -370,7 +370,7 @@ export function MessageDetailModal({
       // success AND cancel). Belt-and-braces timeout in case afterprint
       // doesn't reach us.
       const cleanup = () => {
-        try { iframe.remove(); } catch (err) { silentCatch("features/overview/sub_messages/components/MessageDetailModal:catch1")(err); }
+        try { iframe.remove(); } catch (err) { silentCatch("features/overview/sub_reports/components/ReportDetailModal:catch1")(err); }
       };
       win.addEventListener('afterprint', cleanup, { once: true });
       window.setTimeout(cleanup, 120_000);
@@ -389,7 +389,7 @@ export function MessageDetailModal({
 
     // 1. Compose the contextual cockpit spec that supplements the chat.
     const spec: CompanionCockpitSpecBody = {
-      title: `Context: ${message.title || t.overview.messages_view.message_label}`,
+      title: `Context: ${message.title || t.overview.reports_view.report_label}`,
       widgets: [
         {
           id: 'w-msg',
@@ -458,7 +458,7 @@ export function MessageDetailModal({
       >
         <TypeIcon className="w-4 h-4" />
       </span>
-      {message.title || t.overview.messages_view.message_label}
+      {message.title || t.overview.reports_view.report_label}
       {onNavigate && (
         <span className="inline-flex items-center ml-2 gap-0.5">
           <button
@@ -489,8 +489,8 @@ export function MessageDetailModal({
   // Persona-name → Agent detail: split the localized "From {name}" string
   // around the {name} placeholder so we can wrap just the name in a button
   // without baking presentation into the locale entry.
-  const personaName = message.persona_name || t.overview.messages_view.unknown_persona;
-  const fromTemplate = t.overview.messages_view.from_label;
+  const personaName = message.persona_name || t.overview.reports_view.unknown_persona;
+  const fromTemplate = t.overview.reports_view.from_label;
   const [fromBefore, fromAfter] = fromTemplate.split('{name}');
   const openPersonaDetail = () => {
     if (!message.persona_id) return;
@@ -507,7 +507,7 @@ export function MessageDetailModal({
         data-testid="msg-detail-persona-link"
         onClick={openPersonaDetail}
         className="inline-flex items-center gap-1 px-1.5 py-0.5 -mx-0.5 rounded-input typo-body font-medium text-primary hover:text-primary/80 hover:bg-primary/[0.08] transition-colors focus-ring"
-        title={t.overview.messages_view.persona_link_title}
+        title={t.overview.reports_view.persona_link_title}
       >
         {personaName}
         <ExternalLink className="w-3 h-3 opacity-70" />
@@ -544,7 +544,7 @@ export function MessageDetailModal({
                 className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
                 title={message.execution_id}
               >
-                {t.overview.messages_view.view_execution} <ExternalLink className="w-3 h-3" />
+                {t.overview.reports_view.view_execution} <ExternalLink className="w-3 h-3" />
               </button>
             )}
           </div>
@@ -591,7 +591,7 @@ export function MessageDetailModal({
         >
           {/* I. Content — large reading surface */}
           <section className="mb-10">
-            <SectionMark index="I" label={t.overview.messages_view.content_label} />
+            <SectionMark index="I" label={t.overview.reports_view.content_label} />
             <article className="rounded-3xl bg-[color-mix(in_srgb,var(--color-background),var(--color-foreground)_3.5%)] px-8 py-7 shadow-elevation-1">
               <MarkdownRenderer
                 content={msgContent}
@@ -631,14 +631,14 @@ export function MessageDetailModal({
               <ContentActionButton
                 onClick={handleExportPdf}
                 icon={<Printer className="w-3.5 h-3.5" />}
-                label={t.overview.messages_view.action_export_pdf}
+                label={t.overview.reports_view.action_export_pdf}
                 testId="msg-detail-action-export-pdf"
               />
               {companionEnabled && (
                 <ContentActionButton
                   onClick={handlePlayInChat}
                   icon={<MessageCircle className="w-3.5 h-3.5" />}
-                  label={t.overview.messages_view.action_play_in_chat}
+                  label={t.overview.reports_view.action_play_in_chat}
                   testId="msg-detail-action-play-in-chat"
                   highlight
                 />
@@ -648,7 +648,7 @@ export function MessageDetailModal({
 
           {/* II. Editor's note — feedback panel + star rating */}
           <section className="mb-10">
-            <SectionMark index="II" label={t.overview.messages_view.improve_agent} muted />
+            <SectionMark index="II" label={t.overview.reports_view.improve_agent} muted />
 
             <StarRatingRow
               value={rating}
@@ -663,7 +663,7 @@ export function MessageDetailModal({
               <div className="flex items-center gap-3 px-5 py-4 mt-3 rounded-2xl bg-emerald-500/[0.08] border-l-[3px] border-emerald-400/70">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <span className="typo-body-lg text-emerald-300 font-medium">
-                  {t.overview.messages_view.improvement_started}
+                  {t.overview.reports_view.improvement_started}
                 </span>
               </div>
             ) : !showFeedback ? (
@@ -674,21 +674,21 @@ export function MessageDetailModal({
               >
                 <Wand2 className="w-4 h-4 text-amber-400/85 flex-shrink-0 group-hover:text-amber-300 transition-colors" />
                 <span className="typo-body-lg text-foreground/85 italic">
-                  {t.overview.messages_view.what_could_be_better}
+                  {t.overview.reports_view.what_could_be_better}
                 </span>
                 <span className="ml-auto typo-label text-amber-400/75">
-                  {t.overview.messages_view.improve_agent}
+                  {t.overview.reports_view.improve_agent}
                 </span>
               </button>
             ) : (
               <div className="rounded-2xl border-l-[3px] border-amber-400/60 bg-amber-500/[0.05] px-5 py-4 mt-3">
                 <p className="typo-label text-amber-300/85 mb-3">
-                  {t.overview.messages_view.what_could_be_better}
+                  {t.overview.reports_view.what_could_be_better}
                 </p>
                 <textarea
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder={t.overview.messages_view.improve_placeholder}
+                  placeholder={t.overview.reports_view.improve_placeholder}
                   rows={3}
                   autoFocus
                   className="w-full px-4 py-3 rounded-modal border border-amber-400/15 bg-background/30 typo-body-lg leading-relaxed text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-amber-400/40 focus-visible:bg-background/55 transition-colors"
@@ -701,7 +701,7 @@ export function MessageDetailModal({
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-card typo-caption font-semibold bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 disabled:opacity-40 transition-colors"
                   >
                     {improving === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                    {improving === 'loading' ? t.overview.messages_view.starting : t.overview.messages_view.submit_improvement}
+                    {improving === 'loading' ? t.overview.reports_view.starting : t.overview.reports_view.submit_improvement}
                   </button>
                   <button
                     type="button"
@@ -719,13 +719,13 @@ export function MessageDetailModal({
           <section className="mb-10">
             <SectionMark
               index="III"
-              label={t.overview.messages_view.delivery_status}
+              label={t.overview.reports_view.delivery_status}
               icon={<Send className="w-3 h-3.5 text-foreground" />}
               muted
             />
             {deliveriesLoading ? null : deliveries.length === 0 ? (
               <p className="typo-body text-foreground italic">
-                {t.overview.messages_view.no_channels}
+                {t.overview.reports_view.no_channels}
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -740,13 +740,13 @@ export function MessageDetailModal({
           <section data-testid="msg-detail-pending-decisions">
             <SectionMark
               index="IV"
-              label={t.overview.messages_view.section_pending_decisions}
+              label={t.overview.reports_view.section_pending_decisions}
               icon={<ShieldCheck className="w-3 h-3.5 text-foreground" />}
               muted
             />
             {reviewsLoading ? null : linkedReviews.length === 0 ? (
               <p className="typo-body text-foreground italic">
-                {t.overview.messages_view.pending_decisions_empty}
+                {t.overview.reports_view.pending_decisions_empty}
               </p>
             ) : (
               <div className="space-y-3">
@@ -796,7 +796,7 @@ function StarRatingRow({
       className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/[0.05] border border-primary/10"
     >
       <span className="typo-label text-foreground flex-shrink-0">
-        {t.overview.messages_view.rating_label}
+        {t.overview.reports_view.rating_label}
       </span>
       <div
         className="inline-flex items-center gap-0.5"
@@ -813,7 +813,7 @@ function StarRatingRow({
               onMouseEnter={() => setHover(n)}
               onClick={() => onChange(n)}
               disabled={disabled || saving}
-              aria-label={tx(t.overview.messages_view.rating_star_aria, { value: n })}
+              aria-label={tx(t.overview.reports_view.rating_star_aria, { value: n })}
               className={`p-1 rounded-card transition-transform ${
                 disabled ? 'cursor-not-allowed opacity-40' :
                 saving ? 'cursor-wait' :
@@ -839,7 +839,7 @@ function StarRatingRow({
         >
           {saving
             ? <Loader2 className="inline w-3 h-3 animate-spin" />
-            : tx(t.overview.messages_view.rating_saved, { stars: value })}
+            : tx(t.overview.reports_view.rating_saved, { stars: value })}
         </span>
       )}
     </div>
@@ -953,9 +953,9 @@ function PendingDecisionCard({
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsUp className="w-3 h-3" />}
           {hasChildren
             ? allAccepted
-              ? t.overview.messages_view.pending_decisions_approve_all
-              : t.overview.messages_view.pending_decisions_approve
-            : t.overview.messages_view.pending_decisions_approve}
+              ? t.overview.reports_view.pending_decisions_approve_all
+              : t.overview.reports_view.pending_decisions_approve
+            : t.overview.reports_view.pending_decisions_approve}
         </button>
         <button
           type="button"
@@ -966,8 +966,8 @@ function PendingDecisionCard({
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsDown className="w-3 h-3" />}
           {hasChildren && anyRejected
-            ? t.overview.messages_view.pending_decisions_reject_all
-            : t.overview.messages_view.pending_decisions_reject}
+            ? t.overview.reports_view.pending_decisions_reject_all
+            : t.overview.reports_view.pending_decisions_reject}
         </button>
         <button
           type="button"
@@ -975,7 +975,7 @@ function PendingDecisionCard({
           className="ml-auto inline-flex items-center gap-1 px-2.5 py-2 typo-caption text-foreground hover:text-foreground/85 transition-colors"
         >
           <ShieldAlert className="w-3 h-3" />
-          {t.overview.messages_view.pending_decisions_view_all}
+          {t.overview.reports_view.pending_decisions_view_all}
         </button>
       </div>
     </div>

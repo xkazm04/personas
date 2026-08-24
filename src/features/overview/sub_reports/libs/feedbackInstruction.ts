@@ -14,7 +14,7 @@
  * advisory-mode chat session. Claude's advisory wrapper will then add its
  * own diagnostic framing on top.
  */
-import type { PersonaMessage } from "@/lib/types/types";
+import type { PersonaReport } from "@/lib/types/types";
 
 /** Max chars of source message content included in the instruction. */
 const MAX_MESSAGE_EXCERPT = 600;
@@ -23,7 +23,7 @@ const MAX_MESSAGE_EXCERPT = 600;
 const MAX_FEEDBACK_LENGTH = 2000;
 
 /** Short topic marker derived from message metadata. */
-function buildTopicMarker(msg: PersonaMessage): string {
+function buildTopicMarker(msg: PersonaReport): string {
   const parts: string[] = [];
   if (msg.content_type) parts.push(msg.content_type);
   if (msg.priority && msg.priority !== "normal") parts.push(`${msg.priority}-priority`);
@@ -44,7 +44,7 @@ function truncate(text: string, max: number): string {
  * Build the full advisory instruction sent as the first user turn of the
  * background feedback chat.
  */
-export function buildFeedbackInstruction(msg: PersonaMessage, feedbackText: string): string {
+export function buildFeedbackInstruction(msg: PersonaReport, feedbackText: string): string {
   const topic = buildTopicMarker(msg);
   const contentExcerpt = truncate((msg.content ?? "").trim(), MAX_MESSAGE_EXCERPT);
   const feedback = truncate(feedbackText.trim(), MAX_FEEDBACK_LENGTH);
@@ -70,7 +70,7 @@ export function buildFeedbackInstruction(msg: PersonaMessage, feedbackText: stri
 }
 
 /** Short display title for the feedback chat — used in process activity row and notifications. */
-export function buildFeedbackChatTitle(msg: PersonaMessage): string {
+export function buildFeedbackChatTitle(msg: PersonaReport): string {
   const subject = msg.title?.trim() || (msg.content ?? "").trim().slice(0, 50);
   const truncated = subject.length > 48 ? subject.slice(0, 47) + "\u2026" : subject;
   return `Feedback \u2014 ${truncated}`;

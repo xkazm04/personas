@@ -15,8 +15,8 @@ use personas_core::error::AppError;
 /// idempotently — no-ops on a DB that has already been migrated.
 pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_memories(conn)?;
-    migrate_persona_messages(conn)?;
-    migrate_persona_message_deliveries(conn)?;
+    migrate_persona_reports(conn)?;
+    migrate_persona_report_deliveries(conn)?;
     migrate_persona_healing_issues(conn)?;
     migrate_persona_metrics_snapshots(conn)?;
     migrate_persona_prompt_versions(conn)?;
@@ -521,21 +521,21 @@ fn migrate_persona_healing_issues(conn: &Connection) -> Result<(), AppError> {
     )
 }
 
-fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError> {
+fn migrate_persona_report_deliveries(conn: &Connection) -> Result<(), AppError> {
     // Worst case in the FK-hygiene scope per the ADR: NO FK *and* no
     // cleanup block in any repo. Orphans guaranteed accumulating until now.
     // CASCADE on message_id finally collects them when the parent message
     // is deleted (which `personas.rs::delete()` triggers via its persona_id
-    // cascade once persona_messages also CASCADEs to a persona).
+    // cascade once persona_reports also CASCADEs to a persona).
     recreate_with_fk(
         conn,
-        "persona_message_deliveries",
+        "persona_report_deliveries",
         1,
-        &["DELETE FROM persona_message_deliveries \
-             WHERE message_id NOT IN (SELECT id FROM persona_messages);"],
-        "CREATE TABLE persona_message_deliveries_new (
+        &["DELETE FROM persona_report_deliveries \
+             WHERE message_id NOT IN (SELECT id FROM persona_reports);"],
+        "CREATE TABLE persona_report_deliveries_new (
             id            TEXT PRIMARY KEY,
-            message_id    TEXT NOT NULL REFERENCES persona_messages(id) ON DELETE CASCADE,
+            message_id    TEXT NOT NULL REFERENCES persona_reports(id) ON DELETE CASCADE,
             channel_type  TEXT NOT NULL,
             status        TEXT NOT NULL DEFAULT 'pending',
             error_message TEXT,
@@ -544,11 +544,11 @@ fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError>
             created_at    TEXT NOT NULL
         );",
         None,
-        &["CREATE INDEX IF NOT EXISTS idx_pmd_message ON persona_message_deliveries(message_id);"],
+        &["CREATE INDEX IF NOT EXISTS idx_prd_message ON persona_report_deliveries(message_id);"],
     )
 }
 
-fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
+fn migrate_persona_reports(conn: &Connection) -> Result<(), AppError> {
     // Only persona_id gets a FK; nullable execution_id stays unconstrained.
     // Messages are surfaced in dashboards independently of execution lifetime
     // and an execution being purged shouldn't strand the message that
@@ -556,11 +556,11 @@ fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
     // state when the link is broken.
     recreate_with_fk(
         conn,
-        "persona_messages",
+        "persona_reports",
         1,
-        &["DELETE FROM persona_messages \
+        &["DELETE FROM persona_reports \
              WHERE persona_id NOT IN (SELECT id FROM personas);"],
-        "CREATE TABLE persona_messages_new (
+        "CREATE TABLE persona_reports_new (
             id           TEXT PRIMARY KEY,
             persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
             execution_id TEXT,
@@ -576,10 +576,10 @@ fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
         );",
         None,
         &[
-            "CREATE INDEX IF NOT EXISTS idx_pmsg_persona ON persona_messages(persona_id);",
-            "CREATE INDEX IF NOT EXISTS idx_pmsg_is_read ON persona_messages(is_read);",
-            "CREATE INDEX IF NOT EXISTS idx_pmsg_created ON persona_messages(created_at DESC);",
-            "CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);",
+            "CREATE INDEX IF NOT EXISTS idx_prpt_persona ON persona_reports(persona_id);",
+            "CREATE INDEX IF NOT EXISTS idx_prpt_is_read ON persona_reports(is_read);",
+            "CREATE INDEX IF NOT EXISTS idx_prpt_created ON persona_reports(created_at DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_prpt_thread ON persona_reports(thread_id);",
         ],
     )
 }
@@ -739,13 +739,13 @@ mod tests {
         insert_persona(&pool, "p1");
         let conn = pool.get().expect("pool.get");
         conn.execute(
-            "INSERT INTO persona_messages (id, persona_id, content, created_at) \
+            "INSERT INTO persona_reports (id, persona_id, content, created_at) \
              VALUES ('msg1', 'p1', 'c', datetime('now'))",
             [],
         )
         .expect("insert message");
         conn.execute(
-            "INSERT INTO persona_message_deliveries (id, message_id, channel_type, created_at) \
+            "INSERT INTO persona_report_deliveries (id, message_id, channel_type, created_at) \
              VALUES ('d1', 'msg1', 'email', datetime('now'))",
             [],
         )
@@ -758,7 +758,7 @@ mod tests {
         assert_eq!(
             count(
                 &pool,
-                "SELECT COUNT(*) FROM persona_messages WHERE persona_id = ?1",
+                "SELECT COUNT(*) FROM persona_reports WHERE persona_id = ?1",
                 "p1"
             ),
             0
@@ -768,7 +768,7 @@ mod tests {
             pool.get()
                 .unwrap()
                 .query_row(
-                    "SELECT COUNT(*) FROM persona_message_deliveries WHERE message_id = 'msg1'",
+                    "SELECT COUNT(*) FROM persona_report_deliveries WHERE message_id = 'msg1'",
                     [],
                     |row| row.get::<_, i64>(0),
                 )

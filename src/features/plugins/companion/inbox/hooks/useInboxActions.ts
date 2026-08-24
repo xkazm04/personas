@@ -47,7 +47,7 @@ const EMPTY_ACTIONS: InboxActions = { primary: null, secondary: null, tertiary: 
 
 export function useInboxActions(item: UnifiedInboxItem | null): InboxActions {
   const updateManualReview = useOverviewStore((s) => s.updateManualReview);
-  const markMessageAsRead = useOverviewStore((s) => s.markMessageAsRead);
+  const markReportAsRead = useOverviewStore((s) => s.markReportAsRead);
   const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
 
   return useMemo<InboxActions>(() => {
@@ -106,7 +106,7 @@ export function useInboxActions(item: UnifiedInboxItem | null): InboxActions {
             labelKey: 'action_mark_read',
             tone: 'violet',
             run: async () => {
-              await markMessageAsRead(item.source);
+              await markReportAsRead(item.source);
             },
           },
           secondary: null,
@@ -119,12 +119,12 @@ export function useInboxActions(item: UnifiedInboxItem | null): InboxActions {
             labelKey: 'action_mark_read',
             tone: 'emerald',
             run: async () => {
-              await markMessageAsRead(item.source);
+              await markReportAsRead(item.source);
             },
           },
           secondary: null,
           tertiary: null,
         };
     }
-  }, [item, updateManualReview, markMessageAsRead, resolveHealingIssue]);
+  }, [item, updateManualReview, markReportAsRead, resolveHealingIssue]);
 }

@@ -285,20 +285,31 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     // Lets the activity feed, review queues, and learned-memory injection scope
     // by capability. Inherited from the originating execution at dispatch time.
     // See docs/concepts/persona-capabilities/04-data-model.md and 09-implementation-plan.md §C5.
+    // Name-tolerant: on a pre-rename DB the data still lives in
+    // `persona_messages` at this point in the chain (the e10 rename step runs
+    // later); on a fresh install `persona_reports` already declares
+    // use_case_id in schema.rs and this is a no-op probe on that name.
+    let msg_table = if has_table(conn, "persona_messages")? {
+        "persona_messages"
+    } else {
+        "persona_reports"
+    };
     let has_msg_use_case_id: bool = conn
-        .prepare(
-            "SELECT COUNT(*) FROM pragma_table_info('persona_messages') WHERE name = 'use_case_id'",
-        )?
+        .prepare(&format!(
+            "SELECT COUNT(*) FROM pragma_table_info('{msg_table}') WHERE name = 'use_case_id'",
+        ))?
         .query_row([], |row| row.get::<_, i64>(0))
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_msg_use_case_id {
         ddl_step(
             conn,
-            "ALTER TABLE persona_messages ADD COLUMN use_case_id TEXT;
-             CREATE INDEX IF NOT EXISTS idx_pmsg_use_case ON persona_messages(use_case_id);",
+            &format!(
+                "ALTER TABLE {msg_table} ADD COLUMN use_case_id TEXT;
+                 CREATE INDEX IF NOT EXISTS idx_prpt_use_case ON {msg_table}(use_case_id);"
+            ),
         )?;
-        tracing::info!("Added use_case_id column to persona_messages");
+        tracing::info!("Added use_case_id column to {msg_table}");
     }
 
     let has_review_use_case_id: bool = conn

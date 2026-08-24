@@ -6,7 +6,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import type { PersonaMessage } from '@/lib/types/types';
+import type { PersonaReport } from '@/lib/types/types';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -14,26 +14,26 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  * Message summary — contextual cockpit hero.
  *
  * Renders the persona, title, and a content excerpt for a specific message.
- * The originating "Play in chat" handler passes the full `PersonaMessage`
+ * The originating "Play in chat" handler passes the full `PersonaReport`
  * via `config.snapshot` (it already has the row in scope) so we render
  * synchronously without an extra fetch.
  *
  * Config:
- *   { messageId: string, snapshot?: PersonaMessage }
+ *   { messageId: string, snapshot?: PersonaReport }
  */
-export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
+export function ReportSummaryWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const messageId = (config?.messageId as string | undefined) ?? '';
-  const snapshot = config?.snapshot as PersonaMessage | undefined;
+  const snapshot = config?.snapshot as PersonaReport | undefined;
 
   // Fallback path — if the widget is mounted without snapshot (future
   // surfaces composing this widget), pick the message from the overview
   // store cache. We do not fetch from the backend; the cockpit grid cell
   // should never block on IPC for a header card.
-  const fromStore = useOverviewStore((s) => s.messages.find((m) => m.id === messageId));
+  const fromStore = useOverviewStore((s) => s.reports.find((m) => m.id === messageId));
   const msg = snapshot ?? fromStore;
 
-  const personaName = msg?.persona_name ?? t.overview.messages_view.unknown_persona;
+  const personaName = msg?.persona_name ?? t.overview.reports_view.unknown_persona;
   const excerpt = useMemo(() => {
     const raw = msg?.content ?? '';
     const stripped = raw.replace(/```[\s\S]*?```/g, '').replace(/\s+/g, ' ').trim();
@@ -51,7 +51,7 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
     return (
       <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col items-center justify-center gap-2 text-foreground">
         <MessageSquare className="w-5 h-5" />
-        <div className="typo-caption">{t.overview.cockpit.message_unavailable}</div>
+        <div className="typo-caption">{t.overview.cockpit.report_unavailable}</div>
       </div>
     );
   }
@@ -63,14 +63,14 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
     >
       <div className="flex items-center justify-between mb-3">
         <div className="typo-caption text-foreground uppercase tracking-wide">
-          {title ?? t.overview.cockpit.message_summary_title}
+          {title ?? t.overview.cockpit.report_summary_title}
         </div>
         <button
           type="button"
           onClick={openMessages}
           className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/85 transition-colors"
         >
-          {t.overview.cockpit.open_in_messages}
+          {t.overview.cockpit.open_in_reports}
           <ExternalLink className="w-3 h-3" />
         </button>
       </div>
@@ -84,7 +84,7 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
         />
         <div className="min-w-0 flex-1">
           <p className="typo-body-lg font-semibold text-foreground/95 truncate">
-            {msg.title || t.overview.messages_view.message_label}
+            {msg.title || t.overview.reports_view.report_label}
           </p>
           <p className="typo-caption text-foreground mt-0.5">
             {personaName} · {formatRelativeTime(msg.created_at)}
@@ -93,7 +93,7 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
       </div>
 
       <p className="typo-body text-foreground leading-relaxed flex-1 overflow-y-auto min-h-0">
-        {excerpt || <span className="italic text-foreground">{t.overview.cockpit.message_empty}</span>}
+        {excerpt || <span className="italic text-foreground">{t.overview.cockpit.report_empty}</span>}
       </p>
     </div>
   );

@@ -55,7 +55,7 @@ use crate::cdc::CdcAction;
 pub const JOURNAL_TABLES: &[&str] = &[
     "personas",
     "persona_memories",
-    "persona_messages",
+    "persona_reports",
     "persona_events",
     "persona_triggers",
     "persona_automations",

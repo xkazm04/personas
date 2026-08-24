@@ -217,7 +217,7 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
         "persona_executions" => Some(event_name::EXECUTION_STATUS),
 
         // Messages: new messages
-        "persona_messages" => Some(event_name::MESSAGE_CREATED),
+        "persona_reports" => Some(event_name::REPORT_CREATED),
 
         // Memories: created/updated/deleted
         "persona_memories" => Some("memory-updated"),
@@ -358,7 +358,7 @@ pub fn spawn_cdc_drain_task(
             // and no-ops when sync is disabled, so this is cheap.
             if matches!(
                 event.table.as_str(),
-                "personas" | "persona_executions" | "persona_events" | "persona_messages"
+                "personas" | "persona_executions" | "persona_events" | "persona_reports"
             ) {
                 (hooks.notify_cloud_dirty)();
             }

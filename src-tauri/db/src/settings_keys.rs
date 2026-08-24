@@ -321,7 +321,7 @@ pub const AUTONOMOUS_MESSAGE_TRIAGE: &str = "autonomous_message_triage";
 pub const AUTONOMOUS_MESSAGE_TRIAGE_DEFAULT: bool = false;
 
 /// Cursor for the autonomous message-triage leg: the ISO8601 `created_at`
-/// of the newest `persona_messages` row already triaged. Unlike the
+/// of the newest `persona_reports` row already triaged. Unlike the
 /// exec-review cursor it advances only past the batch actually processed
 /// (oldest-first), so a backlog drains progressively instead of being
 /// skipped. Free-form timestamp value (no typed validation).

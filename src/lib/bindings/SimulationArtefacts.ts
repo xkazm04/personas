@@ -8,7 +8,7 @@ import type { PersonaMemory } from "./PersonaMemory";
  * `get_by_execution`) and `memories` (already has `get_by_execution`).
  *
  * **`messages` and `events` deferred to a follow-up slice** — neither repo
- * exposes a `get_by_execution` helper today (`persona_messages` has the
+ * exposes a `get_by_execution` helper today (`persona_reports` has the
  * column but no scoped accessor; `persona_events` uses `source_id` for
  * execution linkage which needs a small new query). The Execution Detail
  * tab (post-promote) covers those views; v1 dry-run focuses on the

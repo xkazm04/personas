@@ -13,7 +13,7 @@ const h = vi.hoisted(() => {
     teams: [] as Array<{ id: string }>,
     fetchTeams: vi.fn().mockResolvedValue(undefined),
   };
-  const attention = { counts: { unread_messages: 0, pending_reviews: 0 } as Record<string, number> };
+  const attention = { counts: { unread_reports: 0, pending_reviews: 0 } as Record<string, number> };
   const vault = {
     credentials: [] as Array<{ id: string; service_type: string }>,
     fetchCredentials: vi.fn().mockResolvedValue(undefined),
@@ -57,7 +57,7 @@ describe('useNavCardStatus', () => {
     h.overviewState.primeHomeSpine.mockClear();
     h.pipelineState.teams = [];
     h.pipelineState.fetchTeams.mockClear();
-    h.attention.counts = { unread_messages: 0, pending_reviews: 0 };
+    h.attention.counts = { unread_reports: 0, pending_reviews: 0 };
     h.vault.credentials = [];
   });
 

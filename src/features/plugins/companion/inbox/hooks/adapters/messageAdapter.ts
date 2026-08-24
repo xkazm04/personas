@@ -1,9 +1,9 @@
 /**
- * Pure function: map a PersonaMessage + resolved persona summary into a
+ * Pure function: map a PersonaReport + resolved persona summary into a
  * UnifiedInboxItem of kind 'message'. Messages have no severity field, so
  * we derive one from `priority` (high -> warning, everything else -> info).
  */
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import { type Severity, type UnifiedInboxItem } from '../../types';
 import type { PersonaSummary } from './types';
 
@@ -14,7 +14,7 @@ function priorityToSeverity(priority: unknown): Severity {
 }
 
 export function adaptMessage(
-  msg: PersonaMessage,
+  msg: PersonaReport,
   persona: PersonaSummary,
 ): Extract<UnifiedInboxItem, { kind: 'message' }> {
   return {

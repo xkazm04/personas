@@ -1,4 +1,4 @@
-import type { PersonaMessage } from '@/lib/types/types';
+import type { PersonaReport } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 
 /**
@@ -11,7 +11,7 @@ import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
  * verify what the composer should contain.
  */
 export function buildSummariseChatPrompt(
-  message: PersonaMessage,
+  message: PersonaReport,
   linkedReviews: PersonaManualReview[],
 ): string {
   const personaName = message.persona_name ?? 'this agent';

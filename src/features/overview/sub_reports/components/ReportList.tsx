@@ -9,19 +9,19 @@ import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
+import { useReportCreatedListener } from '@/hooks/realtime/useReportCreatedListener';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import type { PersonaMessage } from '@/lib/types/types';
-import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
-import { seedMockMessage, deleteAllMessages } from '@/api/overview/messages';
+import type { PersonaReport } from '@/lib/types/types';
+import type { PersonaReport as RawPersonaReport } from '@/lib/bindings/PersonaReport';
+import { seedMockMessage, deleteAllReports } from '@/api/overview/reports';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { Trash2 } from 'lucide-react';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { priorityConfig, MESSAGE_ROW_HEIGHT, type PriorityStyle } from '../libs/messageHelpers';
+import { priorityConfig, MESSAGE_ROW_HEIGHT, type PriorityStyle } from '../libs/reportHelpers';
 import { PriorityChip } from './PriorityChip';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 
@@ -42,7 +42,7 @@ type ReadFilter = 'all' | 'unread' | 'read';
 
 import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { MessageDetailModal } from './MessageDetailModal';
+import { ReportDetailModal } from './ReportDetailModal';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -50,42 +50,42 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("message-list");
 
-export default function MessageList() {
+export default function ReportList() {
   const { t, tx } = useTranslation();
   const PRIORITY_FILTER_OPTIONS = [
-    { value: 'all', label: t.overview.messages_view.all_priorities },
-    { value: 'high', label: t.overview.messages.priority_high },
-    { value: 'low', label: t.overview.messages.priority_low },
-    { value: 'normal', label: t.overview.messages.priority_normal },
+    { value: 'all', label: t.overview.reports_view.all_priorities },
+    { value: 'high', label: t.overview.reports.priority_high },
+    { value: 'low', label: t.overview.reports.priority_low },
+    { value: 'normal', label: t.overview.reports.priority_normal },
   ];
   const READ_FILTER_OPTIONS = [
-    { value: 'all', label: t.overview.messages_view.all_statuses },
-    { value: 'read', label: t.overview.messages_view.read },
-    { value: 'unread', label: t.overview.messages_view.unread },
+    { value: 'all', label: t.overview.reports_view.all_statuses },
+    { value: 'read', label: t.overview.reports_view.read },
+    { value: 'unread', label: t.overview.reports_view.unread },
   ];
   const {
-    messages, messagesTotal,
-    fetchMessages, fetchUnreadMessageCount,
-    markMessageAsRead, markAllMessagesAsRead, deleteMessage,
+    reports, reportsTotal,
+    fetchReports, fetchUnreadReportCount,
+    markReportAsRead, markAllReportsAsRead, deleteReport,
   } = useOverviewStore(useShallow((s) => ({
-    messages: s.messages,
-    messagesTotal: s.messagesTotal,
-    fetchMessages: s.fetchMessages,
-    fetchUnreadMessageCount: s.fetchUnreadMessageCount,
-    markMessageAsRead: s.markMessageAsRead,
-    markAllMessagesAsRead: s.markAllMessagesAsRead,
-    deleteMessage: s.deleteMessage,
+    reports: s.reports,
+    reportsTotal: s.reportsTotal,
+    fetchReports: s.fetchReports,
+    fetchUnreadReportCount: s.fetchUnreadReportCount,
+    markReportAsRead: s.markReportAsRead,
+    markAllReportsAsRead: s.markAllReportsAsRead,
+    deleteReport: s.deleteReport,
   })));
   const personas = useAgentStore((s) => s.personas);
   const personaMap = usePersonaMap();
-  const enrichedMessages = useEnrichedRecords(messages, personaMap);
+  const enrichedMessages = useEnrichedRecords(reports, personaMap);
 
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   // Hide read messages by default — they're typically resolved noise. The
   // header button toggles between 'unread' and 'all' for recovery/remind.
   const [readFilter, setReadFilter] = useState<ReadFilter>('unread');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
-  const [selectedMsg, setSelectedMsg] = useState<PersonaMessage | null>(null);
+  const [selectedMsg, setSelectedMsg] = useState<PersonaReport | null>(null);
   // True while a (re)fetch is in flight. It NEVER hides rows already on
   // screen — it only decides whether an empty row-region shows ghost rows
   // (fetch running) or the empty state (fetch settled, genuinely nothing).
@@ -94,38 +94,38 @@ export default function MessageList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
-  const fetchUnreadMessageCountRef = useRef(fetchUnreadMessageCount);
-  fetchUnreadMessageCountRef.current = fetchUnreadMessageCount;
+  const fetchUnreadMessageCountRef = useRef(fetchUnreadReportCount);
+  fetchUnreadMessageCountRef.current = fetchUnreadReportCount;
 
   useEffect(() => {
     let active = true;
     const loadInitial = async () => {
       setIsLoading(true);
       try {
-        await fetchMessages(true);
+        await fetchReports(true);
       }
       finally { if (active) setIsLoading(false); }
     };
     loadInitial();
     return () => { active = false; };
-  }, [fetchMessages]);
+  }, [fetchReports]);
 
-  const handleMessageCreated = useCallback((raw: RawPersonaMessage) => {
-    // The 'message-created' event fires from BOTH the protocol dispatcher (full
-    // PersonaMessage) AND the CDC layer (lightweight { action, table, rowid }).
+  const handleMessageCreated = useCallback((raw: RawPersonaReport) => {
+    // The 'report-created' event fires from BOTH the protocol dispatcher (full
+    // PersonaReport) AND the CDC layer (lightweight { action, table, rowid }).
     // Ignore CDC notifications — they lack message fields and would render as
     // ghost "Unknown" entries.
     if (!raw.id || !raw.persona_id) return;
 
     useOverviewStore.setState((state) => {
-      const exists = state.messages.some((m) => m.id === raw.id);
+      const exists = state.reports.some((m) => m.id === raw.id);
       if (exists) return state;
-      return { messages: [raw, ...state.messages], messagesTotal: state.messagesTotal + 1 };
+      return { reports: [raw, ...state.reports], reportsTotal: state.reportsTotal + 1 };
     });
     fetchUnreadMessageCountRef.current();
   }, []);
 
-  useMessageCreatedListener(handleMessageCreated);
+  useReportCreatedListener(handleMessageCreated);
 
   const filteredMessages = useMemo(() => {
     let result = enrichedMessages;
@@ -141,22 +141,22 @@ export default function MessageList() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchMessages(true);
+      await fetchReports(true);
     }
     finally { setIsRefreshing(false); }
   };
 
-  const handleRowClick = useCallback((msg: PersonaMessage) => {
+  const handleRowClick = useCallback((msg: PersonaReport) => {
     setSelectedMsg(msg);
-    if (!msg.is_read) markMessageAsRead(msg.id);
-  }, [markMessageAsRead]);
+    if (!msg.is_read) markReportAsRead(msg.id);
+  }, [markReportAsRead]);
 
   const handleSeedMessage = useCallback(async () => {
-    try { await seedMockMessage(); await fetchMessages(true); }
+    try { await seedMockMessage(); await fetchReports(true); }
     catch (err) { logger.error('Failed to seed mock message', { error: err }); }
-  }, [fetchMessages]);
+  }, [fetchReports]);
 
-  const remaining = messagesTotal - messages.length;
+  const remaining = reportsTotal - reports.length;
 
   // Progressive reveal — spread row mounting across ~2s so a large inbox
   // doesn't big-bang every row onto one frame after the table frame lands.
@@ -192,10 +192,10 @@ export default function MessageList() {
       if (idx === -1) return current;
       const next = filteredMessages[idx + direction];
       if (!next) return current;
-      if (!next.is_read) markMessageAsRead(next.id);
+      if (!next.is_read) markReportAsRead(next.id);
       return next;
     });
-  }, [filteredMessages, markMessageAsRead]);
+  }, [filteredMessages, markReportAsRead]);
 
   // Concrete (never-undefined) fallback that mirrors the quiet-solid Normal tier;
   // priorityConfig is a string-indexed record, so a literal is needed to satisfy
@@ -223,7 +223,7 @@ export default function MessageList() {
         />
       </div>
       <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
-        {t.overview.messages_view.col_title}
+        {t.overview.reports_view.col_title}
         <ColumnResizeHandle
           label={t.shared.resize_column}
           onBeginResize={(w, x) => colWidths.beginResize('title', w, x)}
@@ -256,7 +256,7 @@ export default function MessageList() {
           onReset={() => colWidths.clearColumn('status')}
         />
       </div>
-      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_created}</div>
+      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.reports_view.col_created}</div>
     </div>
   );
 
@@ -265,8 +265,8 @@ export default function MessageList() {
       <ContentHeader
         icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
-        title={t.overview.messages_view.title}
-        subtitle={tx(messagesTotal === 1 ? t.overview.messages_view.messages_subtitle_one : t.overview.messages_view.messages_subtitle, { count: messagesTotal })}
+        title={t.overview.reports_view.title}
+        subtitle={tx(reportsTotal === 1 ? t.overview.reports_view.reports_subtitle_one : t.overview.reports_view.reports_subtitle, { count: reportsTotal })}
         actions={
           <>
             {reveal.isRevealing && (
@@ -277,31 +277,31 @@ export default function MessageList() {
               </span>
             )}
             {import.meta.env.DEV && (
-              <button type="button" onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.messages_view.seed_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.overview.messages_view.mock_message}
+              <button type="button" onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.reports_view.seed_tooltip}>
+                <Plus className="w-3.5 h-3.5" /> {t.overview.reports_view.mock_report}
               </button>
             )}
             <button
               type="button"
               onClick={() => setReadFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground hover:text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-all"
-              title={readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
+              title={readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
             >
               {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              {readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
+              {readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
             </button>
             <button type="button" onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button type="button" onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
-              <CheckCheck className="w-3.5 h-3.5" /> {t.overview.messages_view.mark_all_read}
+            <button type="button" onClick={() => markAllReportsAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
+              <CheckCheck className="w-3.5 h-3.5" /> {t.overview.reports_view.mark_all_read}
             </button>
-            {messages.length > 0 && (
+            {reports.length > 0 && (
               <button
                 type="button"
                 onClick={() => setConfirmingDeleteAll(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading text-red-400 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-all"
-                title={t.overview.messages_view.delete_all}
+                title={t.overview.reports_view.delete_all}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -328,8 +328,8 @@ export default function MessageList() {
               motif="messages"
               content={{
                 icon: MessageSquare,
-                title: t.overview.messages_view.no_messages,
-                subtitle: t.overview.messages_view.no_messages_hint,
+                title: t.overview.reports_view.no_reports,
+                subtitle: t.overview.reports_view.no_reports_hint,
                 action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
                 secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
               }}
@@ -340,7 +340,7 @@ export default function MessageList() {
             {columnHeaderRow}
             {filteredMessages.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="typo-body text-foreground">{t.overview.messages_view.no_filter_match}</p>
+                <p className="typo-body text-foreground">{t.overview.reports_view.no_filter_match}</p>
               </div>
             ) : (
               <div ref={parentRef} className="flex-1 overflow-y-auto">
@@ -364,17 +364,17 @@ export default function MessageList() {
                       >
                         <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
-                          <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
+                          <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.reports_view.unknown_persona}</span>
                         </div>
                         <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                         <div role="gridcell" className="px-4"><PriorityChip priority={priority} /></div>
-                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
+                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.reports_view.unread} aria-label={t.overview.reports_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.reports_view.read} aria-hidden="true" />}</div>
                         <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>
                       </RevealItem>
                     );
                   })}
                 </div>
-                {remaining > 0 && (<div className="p-4"><button type="button" onClick={() => fetchMessages(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
+                {remaining > 0 && (<div className="p-4"><button type="button" onClick={() => fetchReports(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.reports_view.load_more, { count: remaining })}</button></div>)}
               </div>
             )}
           </div>
@@ -383,10 +383,10 @@ export default function MessageList() {
 
       <AnimatePresence>
         {selectedMsg && (
-          <MessageDetailModal
+          <ReportDetailModal
             message={selectedMsg}
             onClose={() => setSelectedMsg(null)}
-            onDelete={() => deleteMessage(selectedMsg.id)}
+            onDelete={() => deleteReport(selectedMsg.id)}
             onNavigate={navigateMessage}
             hasPrev={filteredMessages.findIndex((m) => m.id === selectedMsg.id) > 0}
             hasNext={(() => {
@@ -400,16 +400,16 @@ export default function MessageList() {
       {confirmingDeleteAll && (
         <ConfirmDialog
           danger
-          title={t.overview.messages_view.delete_all_confirm_title}
-          body={tx(t.overview.messages_view.delete_all_confirm_body, { count: messagesTotal })}
-          confirmLabel={t.overview.messages_view.delete_all_confirm_cta}
+          title={t.overview.reports_view.delete_all_confirm_title}
+          body={tx(t.overview.reports_view.delete_all_confirm_body, { count: reportsTotal })}
+          confirmLabel={t.overview.reports_view.delete_all_confirm_cta}
           onConfirm={async () => {
             try {
-              await deleteAllMessages();
-              await fetchMessages(true);
-              await fetchUnreadMessageCount();
+              await deleteAllReports();
+              await fetchReports(true);
+              await fetchUnreadReportCount();
             } catch (e) {
-              toastCatch('MessageList:deleteAll', 'Failed to delete all messages')(e);
+              toastCatch('ReportList:deleteAll', 'Failed to delete all messages')(e);
             } finally {
               setConfirmingDeleteAll(false);
             }

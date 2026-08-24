@@ -5,9 +5,9 @@ import { listExecutions } from '@/api/agents/executions';
 import { listMemories } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { listEvents } from '@/api/overview/events';
-import { listMessages } from '@/api/overview/messages';
+import { listReports } from '@/api/overview/reports';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import type { PersonaEvent, PersonaMessage } from '@/lib/types/types';
+import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ActivityItem, ActivityType } from './activityTypes';
@@ -49,7 +49,7 @@ export function ActivityTab() {
         listEvents(100).catch((err) => { silentCatch('ActivityTab:listEvents')(err); return [] as PersonaEvent[]; }),
         listMemories(personaId, undefined, undefined, 50).catch((err) => { silentCatch('ActivityTab:listMemories')(err); return [] as PersonaMemory[]; }),
         listManualReviews(personaId).catch((err) => { silentCatch('ActivityTab:listManualReviews')(err); return [] as PersonaManualReview[]; }),
-        listMessages(50).catch((err) => { silentCatch('ActivityTab:listMessages')(err); return [] as PersonaMessage[]; }),
+        listReports(50).catch((err) => { silentCatch('ActivityTab:listReports')(err); return [] as PersonaReport[]; }),
       ]);
 
       const personaEvents = events.filter(
@@ -96,7 +96,7 @@ export function ActivityTab() {
         })),
         ...personaMessages.map((m): ActivityItem => ({
           type: 'message', id: m.id,
-          title: m.title || t.agents.activity.message_title,
+          title: m.title || t.agents.activity.report_title,
           subtitle: m.content?.slice(0, 80) || '',
           status: m.priority || 'normal',
           timestamp: m.created_at,

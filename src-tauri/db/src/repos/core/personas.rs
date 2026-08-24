@@ -1807,7 +1807,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 
         let tx = conn.unchecked_transaction()?;
 
-        // persona_memories, persona_messages, persona_healing_issues, and
+        // persona_memories, persona_reports, persona_healing_issues, and
         // persona_events.target_persona_id are now FK-cascaded /
         // FK-set-null automatically by the FK hygiene ADR
         // (2026-05-02-fk-hygiene-cascade). Only persona_events.source_id

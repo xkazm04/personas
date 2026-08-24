@@ -12,7 +12,7 @@
 
 import { listen, emit, type UnlistenFn, type Event } from '@tauri-apps/api/event';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { LearnedMemoryRef } from '@/lib/bindings/LearnedMemoryRef';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
@@ -67,7 +67,7 @@ export const EventName = {
   EVENT_BUS: 'event-bus',
 
   // Messages
-  MESSAGE_CREATED: 'message-created',
+  REPORT_CREATED: 'report-created',
 
   // Design & review
   DESIGN_STATUS: 'design-status',
@@ -814,7 +814,7 @@ export interface EventPayloadMap {
   [EventName.EVENT_BUS]: PersonaEvent;
 
   // Messages
-  [EventName.MESSAGE_CREATED]: PersonaMessage;
+  [EventName.REPORT_CREATED]: PersonaReport;
 
   // Design & review
   [EventName.DESIGN_STATUS]: DesignStatusPayload;

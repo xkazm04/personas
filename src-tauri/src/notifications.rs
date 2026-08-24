@@ -1343,9 +1343,9 @@ async fn test_deliver_built_in(
     title: &str,
     body: &str,
 ) -> Result<(), String> {
-    use crate::db::models::CreateMessageInput;
-    use crate::db::repos::communication::messages as msg_repo;
-    let input = CreateMessageInput {
+    use crate::db::models::CreateReportInput;
+    use crate::db::repos::communication::reports as msg_repo;
+    let input = CreateReportInput {
         persona_id: "__test__".to_string(),
         execution_id: None,
         title: Some(title.to_string()),

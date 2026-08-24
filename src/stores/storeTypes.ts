@@ -11,7 +11,7 @@ import type { TriggerSlice } from "./slices/pipeline/triggerSlice";
 import type { ExecutionSlice } from "./slices/agents/executionSlice";
 import type { CredentialSlice } from "./slices/vault/credentialSlice";
 import type { OverviewSlice } from "./slices/overview/overviewSlice";
-import type { MessageSlice } from "./slices/overview/messageSlice";
+import type { ReportSlice } from "./slices/overview/reportSlice";
 import type { EventSlice } from "./slices/overview/eventSlice";
 import type { HealingSlice } from "./slices/overview/healingSlice";
 import type { TeamSlice } from "./slices/pipeline/teamSlice";
@@ -214,7 +214,7 @@ export type AgentStore = CoreState &
 /** Overview domain: dashboard, messages, events, healing, memories, cron, alerts, persona health, process activity */
 export type OverviewStore = CoreState &
   OverviewSlice &
-  MessageSlice &
+  ReportSlice &
   EventSlice &
   HealingSlice &
   MemorySlice &

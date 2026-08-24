@@ -188,7 +188,7 @@ fn messages_inbox(conn: &Connection, args: &Value) -> Result<String, AppError> {
     let mut sql = String::from(
         "SELECT id, COALESCE(NULLIF(title, ''), '(untitled)'), COALESCE(priority, 'normal'), \
                 CASE WHEN COALESCE(is_read, 0) = 0 THEN 'unread' ELSE 'read' END, created_at \
-         FROM persona_messages \
+         FROM persona_reports \
          WHERE created_at >= datetime('now', ?)",
     );
     let mut binds = vec![SqlValue::Text(format!("-{days} days"))];

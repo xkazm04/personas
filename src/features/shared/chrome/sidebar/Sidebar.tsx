@@ -78,7 +78,7 @@ export default function Sidebar() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
-  const { pendingReviewCount, unreadMessageCount, pendingEventCount, directorAttentionCount } = useBadgeCounts();
+  const { pendingReviewCount, unreadReportCount, pendingEventCount, directorAttentionCount } = useBadgeCounts();
   const selectPersona = useAgentStore((s) => s.selectPersona);
 
   const isDev = import.meta.env.DEV;
@@ -177,7 +177,7 @@ export default function Sidebar() {
       {/* Screen-reader announcements for badge count changes */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {pendingReviewCount > 0 && tx(pendingReviewCount === 1 ? t.sidebar.pending_reviews_sr : t.sidebar.pending_reviews_sr_other, { count: pendingReviewCount }) + '.'}
-        {unreadMessageCount > 0 && ' ' + tx(unreadMessageCount === 1 ? t.sidebar.unread_messages_sr : t.sidebar.unread_messages_sr_other, { count: unreadMessageCount }) + '.'}
+        {unreadReportCount > 0 && ' ' + tx(unreadReportCount === 1 ? t.sidebar.unread_reports_sr : t.sidebar.unread_reports_sr_other, { count: unreadReportCount }) + '.'}
         {pendingEventCount > 0 && ' ' + tx(pendingEventCount === 1 ? t.sidebar.pending_events_sr : t.sidebar.pending_events_sr_other, { count: pendingEventCount }) + '.'}
         {directorAttentionCount > 0 && ' ' + tx(directorAttentionCount === 1 ? t.sidebar.director_attention_sr : t.sidebar.director_attention_sr_other, { count: directorAttentionCount }) + '.'}
       </div>
@@ -225,7 +225,7 @@ export default function Sidebar() {
                     <SidebarLevel2
                       onCreatePersona={handleCreatePersona}
                       pendingReviewCount={pendingReviewCount}
-                      unreadMessageCount={unreadMessageCount}
+                      unreadReportCount={unreadReportCount}
                       pendingEventCount={pendingEventCount}
                       directorAttentionCount={directorAttentionCount}
                     />

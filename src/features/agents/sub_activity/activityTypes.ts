@@ -2,7 +2,7 @@ import { Play, Zap, Brain, AlertTriangle, MessageSquare, type LucideIcon } from 
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
-import type { PersonaMessage } from '@/lib/types/types';
+import type { PersonaReport } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 
 export type ActivityType = 'all' | 'execution' | 'event' | 'memory' | 'review' | 'message';
@@ -20,7 +20,7 @@ export interface ActivityItem {
    * (ad-hoc chat, budget alerts, reviews from non-capability runs).
    */
   useCaseId: string | null;
-  raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview | PersonaMessage;
+  raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview | PersonaReport;
 }
 
 export const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {

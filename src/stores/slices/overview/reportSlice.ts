@@ -3,94 +3,94 @@ import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import { createLogger } from "@/lib/log";
 
-const logger = createLogger("messages");
-import type { PersonaMessage } from "@/lib/types/types";
-import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead, getBulkDeliverySummaries } from "@/api/overview/messages";
-import type { MessageDeliverySummary } from "@/lib/bindings/MessageDeliverySummary";
+const logger = createLogger("reports");
+import type { PersonaReport } from "@/lib/types/types";
+import { deleteReport, getReportCount, getUnreadReportCount, listReports, markAllReportsRead, markReportRead, getBulkDeliverySummaries } from "@/api/overview/reports";
+import type { ReportDeliverySummary } from "@/lib/bindings/ReportDeliverySummary";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 import { silentCatch } from '@/lib/silentCatch';
 
 
 
-export interface MessageSlice {
+export interface ReportSlice {
   // State
-  messages: PersonaMessage[];
-  messagesTotal: number;
-  unreadMessageCount: number;
-  /** IDs of messages with in-flight markAsRead calls (not yet confirmed by backend). */
+  reports: PersonaReport[];
+  reportsTotal: number;
+  unreadReportCount: number;
+  /** IDs of reports with in-flight markAsRead calls (not yet confirmed by backend). */
   _pendingReadIds: Set<string>;
   /** Delivery status summaries keyed by message ID. */
-  deliverySummaries: Map<string, MessageDeliverySummary>;
+  deliverySummaries: Map<string, ReportDeliverySummary>;
 
   // Actions
-  fetchMessages: (reset?: boolean) => Promise<void>;
-  markMessageAsRead: (id: string) => Promise<void>;
-  markAllMessagesAsRead: (personaId?: string) => Promise<void>;
-  deleteMessage: (id: string) => Promise<void>;
-  fetchUnreadMessageCount: () => Promise<void>;
+  fetchReports: (reset?: boolean) => Promise<void>;
+  markReportAsRead: (id: string) => Promise<void>;
+  markAllReportsAsRead: (personaId?: string) => Promise<void>;
+  deleteReport: (id: string) => Promise<void>;
+  fetchUnreadReportCount: () => Promise<void>;
   fetchDeliverySummaries: (messageIds: string[]) => Promise<void>;
 }
 
-export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlice> = (set, get) => ({
-  messages: [],
-  messagesTotal: 0,
-  unreadMessageCount: 0,
+export const createReportSlice: StateCreator<OverviewStore, [], [], ReportSlice> = (set, get) => ({
+  reports: [],
+  reportsTotal: 0,
+  unreadReportCount: 0,
   _pendingReadIds: new Set(),
   deliverySummaries: new Map(),
 
-  fetchMessages: async (reset = true) => {
+  fetchReports: async (reset = true) => {
     try {
       const PAGE_SIZE = 50;
-      const offset = reset ? 0 : get().messages.length;
-      const [rawMessages, totalCount, unreadCount] = await Promise.all([
-        listMessages(PAGE_SIZE, offset),
-        reset ? getMessageCount() : Promise.resolve(get().messagesTotal),
-        getUnreadMessageCount(),
+      const offset = reset ? 0 : get().reports.length;
+      const [rawReports, totalCount, unreadCount] = await Promise.all([
+        listReports(PAGE_SIZE, offset),
+        reset ? getReportCount() : Promise.resolve(get().reportsTotal),
+        getUnreadReportCount(),
       ]);
       if (reset) {
         // Reset replaces the whole list, so the in-flight-read guard must be
         // cleared too — a leftover id (in-flight mark that never settled, or a
-        // recycled id) would otherwise permanently no-op markMessageAsRead for it.
-        set({ messages: rawMessages, messagesTotal: totalCount, unreadMessageCount: unreadCount, _pendingReadIds: new Set() });
+        // recycled id) would otherwise permanently no-op markReportAsRead for it.
+        set({ reports: rawReports, reportsTotal: totalCount, unreadReportCount: unreadCount, _pendingReadIds: new Set() });
       } else {
         set((state) => ({
-          messages: [...state.messages, ...rawMessages],
-          messagesTotal: totalCount,
-          unreadMessageCount: unreadCount,
+          reports: [...state.reports, ...rawReports],
+          reportsTotal: totalCount,
+          unreadReportCount: unreadCount,
         }));
       }
-      // Fetch delivery summaries for the loaded messages (non-blocking)
-      const ids = rawMessages.map((m) => m.id);
+      // Fetch delivery summaries for the loaded reports (non-blocking)
+      const ids = rawReports.map((m) => m.id);
       if (ids.length > 0) void get().fetchDeliverySummaries(ids);
     } catch (err) {
-      reportError(err, "Failed to fetch messages", set);
+      reportError(err, "Failed to fetch reports", set);
     }
   },
 
-  markMessageAsRead: async (id) => {
+  markReportAsRead: async (id) => {
     // Guard: no-op if already read or already pending to prevent count drift
-    const { messages, _pendingReadIds } = get();
-    const msg = messages.find((m) => m.id === id);
+    const { reports, _pendingReadIds } = get();
+    const msg = reports.find((m) => m.id === id);
     if (!msg || msg.is_read || _pendingReadIds.has(id)) return;
 
     const prevReadAt = msg.read_at;
 
     // Optimistically mark as read and add to pending set
     const readAt = new Date().toISOString();
-    const markRead = (m: PersonaMessage) =>
+    const markRead = (m: PersonaReport) =>
       m.id === id ? { ...m, is_read: true, read_at: readAt } : m;
 
     set((state) => {
       const nextPending = new Set(state._pendingReadIds);
       nextPending.add(id);
       return {
-        messages: state.messages.map(markRead),
+        reports: state.reports.map(markRead),
         _pendingReadIds: nextPending,
-        unreadMessageCount: Math.max(0, state.unreadMessageCount - 1),
+        unreadReportCount: Math.max(0, state.unreadReportCount - 1),
       };
     });
     try {
-      await markMessageRead(id);
+      await markReportRead(id);
       // Success: remove from pending set (count is already correct)
       set((state) => {
         const nextPending = new Set(state._pendingReadIds);
@@ -98,53 +98,53 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         return { _pendingReadIds: nextPending };
       });
     } catch (err) {
-      logger.warn("markMessageAsRead failed, recovering state", { messageId: id, error: String(err) });
+      logger.warn("markReportAsRead failed, recovering state", { messageId: id, error: String(err) });
       // Rollback: remove from pending set and restore the message
-      const rollback = (m: PersonaMessage) =>
+      const rollback = (m: PersonaReport) =>
         m.id === id ? { ...m, is_read: false, read_at: prevReadAt ?? null } : m;
       set((state) => {
         const nextPending = new Set(state._pendingReadIds);
         nextPending.delete(id);
         return {
-          messages: state.messages.map(rollback),
+          reports: state.reports.map(rollback),
           _pendingReadIds: nextPending,
-          unreadMessageCount: state.unreadMessageCount + 1,
+          unreadReportCount: state.unreadReportCount + 1,
         };
       });
       reportError(err, "Failed to mark message as read", set);
     }
   },
 
-  markAllMessagesAsRead: async (personaId?) => {
+  markAllReportsAsRead: async (personaId?) => {
     try {
-      await markAllMessagesRead(personaId);
+      await markAllReportsRead(personaId);
       const readAt = new Date().toISOString();
-      const shouldMark = (m: PersonaMessage) => !personaId || m.persona_id === personaId;
+      const shouldMark = (m: PersonaReport) => !personaId || m.persona_id === personaId;
       set((state) => {
-        const updatedMessages = state.messages.map((m) =>
+        const updatedReports = state.reports.map((m) =>
           shouldMark(m) ? { ...m, is_read: true, read_at: readAt } : m,
         );
-        const unreadMessageCount = updatedMessages.filter((m) => !m.is_read).length;
-        return { messages: updatedMessages, unreadMessageCount };
+        const unreadReportCount = updatedReports.filter((m) => !m.is_read).length;
+        return { reports: updatedReports, unreadReportCount };
       });
       // Fetch authoritative count in case the loaded list is a partial page
-      await get().fetchUnreadMessageCount();
+      await get().fetchUnreadReportCount();
     } catch (err) {
       reportError(err, "Failed to mark all as read", set);
     }
   },
 
-  deleteMessage: async (id) => {
+  deleteReport: async (id) => {
     try {
-      await deleteMessage(id);
+      await deleteReport(id);
       set((state) => {
         // Evict orphaned delivery summary for the deleted message
         const nextDeliverySummaries = new Map(state.deliverySummaries);
         nextDeliverySummaries.delete(id);
 
         return {
-          messages: state.messages.filter((m) => m.id !== id),
-          messagesTotal: Math.max(0, state.messagesTotal - 1),
+          reports: state.reports.filter((m) => m.id !== id),
+          reportsTotal: Math.max(0, state.reportsTotal - 1),
           deliverySummaries: nextDeliverySummaries,
         };
       });
@@ -153,12 +153,12 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
     }
   },
 
-  fetchUnreadMessageCount: deduplicateFetch('unreadMessageCount', async () => {
+  fetchUnreadReportCount: deduplicateFetch('unreadReportCount', async () => {
     try {
-      const unread = await getUnreadMessageCount();
-      set({ unreadMessageCount: unread });
+      const unread = await getUnreadReportCount();
+      set({ unreadReportCount: unread });
     } catch (err) {
-      logger.warn("fetchUnreadMessageCount failed", { error: String(err) });
+      logger.warn("fetchUnreadReportCount failed", { error: String(err) });
     }
   }),
 
@@ -178,6 +178,6 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         }
         return { deliverySummaries: next };
       });
-    } catch (err) { silentCatch("stores/slices/overview/messageSlice:catch1")(err); }
+    } catch (err) { silentCatch("stores/slices/overview/reportSlice:catch1")(err); }
   },
 });

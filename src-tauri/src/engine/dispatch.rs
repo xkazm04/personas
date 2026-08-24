@@ -12,10 +12,10 @@ use super::protocol::{ExecutionProtocol, StatusFinalization};
 use super::quality_gate::{self, FilterAction, QualityGateConfig};
 use super::types::{ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent};
 use crate::db::models::{
-    CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
+    CreateManualReviewInput, CreatePersonaEventInput, CreatePersonaMemoryInput, CreateReportInput,
 };
 use crate::db::repos::communication::{
-    events as event_repo, manual_reviews as review_repo, messages as msg_repo,
+    events as event_repo, manual_reviews as review_repo, reports as msg_repo,
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::knowledge as knowledge_repo;
@@ -239,7 +239,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let use_case_id_owned = ctx.use_case_id.map(|s| s.to_string());
             match msg_repo::create(
                 ctx.pool,
-                CreateMessageInput {
+                CreateReportInput {
                     persona_id: ctx.persona_id.to_string(),
                     execution_id: Some(ctx.execution_id.to_string()),
                     title: title.clone(),
@@ -257,7 +257,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         m.title.as_deref().unwrap_or("untitled"),
                         m.id
                     ));
-                    emit_to(ctx.emitter, event_name::MESSAGE_CREATED, &m);
+                    emit_to(ctx.emitter, event_name::REPORT_CREATED, &m);
                     if ctx.is_simulation {
                         ctx.logger
                             .log("[SIM] Notification delivery skipped (simulation)");

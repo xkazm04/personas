@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import {
@@ -50,8 +50,8 @@ function mkReview(personaId: string, severity: string): ManualReviewItem {
   return { id: `r-${Math.round(severity.length * 7)}-${personaId}`, persona_id: personaId, severity } as unknown as ManualReviewItem;
 }
 
-function mkMessage(personaId: string, id: string): PersonaMessage {
-  return { id, persona_id: personaId } as unknown as PersonaMessage;
+function mkMessage(personaId: string, id: string): PersonaReport {
+  return { id, persona_id: personaId } as unknown as PersonaReport;
 }
 
 /** A full PersonaCardModel with sensible defaults, for the pure resolvers. */

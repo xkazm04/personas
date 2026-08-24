@@ -190,8 +190,8 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/core/src/models/memory.rs': [
     'CreatePersonaMemoryInput', 'PersonaMemory',
   ],
-  'src-tauri/core/src/models/message.rs': [
-    'CreateMessageInput', 'PersonaMessage', 'PersonaMessageDelivery',
+  'src-tauri/core/src/models/report.rs': [
+    'CreateReportInput', 'PersonaReport', 'PersonaReportDelivery',
   ],
   'src-tauri/core/src/models/n8n_session.rs': [
     'N8nSessionResponse', 'N8nSessionSummary', 'N8nTransformSession',

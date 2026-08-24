@@ -58,7 +58,7 @@ export default function SidebarLevel1({
   const factoryRunning = useImproveActivityStore(selectAnyImproveRunning);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const clearObsidianRevitalizeCompletion = useSystemStore((s) => s.clearObsidianRevitalizeCompletion);
-  const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
+  const { pendingReviewCount, unreadReportCount } = useBadgeCounts();
   const { hasUpdate: whatsNewUpdate, dismiss: dismissWhatsNew } = useWhatsNewIndicator();
   const isDev = import.meta.env.DEV;
   const isDark = useIsDarkTheme();
@@ -99,11 +99,11 @@ export default function SidebarLevel1({
         {
           id: 'unread-messages',
           priority: 1,
-          active: unreadMessageCount > 0,
-          label: `${unreadMessageCount} unread message${unreadMessageCount !== 1 ? 's' : ''}`,
+          active: unreadReportCount > 0,
+          label: `${unreadReportCount} unread message${unreadReportCount !== 1 ? 's' : ''}`,
           variant: 'count',
           color: 'bg-blue-500 shadow-blue-500/30',
-          count: unreadMessageCount,
+          count: unreadReportCount,
         },
       ],
       // Per-task indicators on the Agents button are owned by OrbitDots
@@ -189,7 +189,7 @@ export default function SidebarLevel1({
     };
     return map;
   }, [
-    pendingReviewCount, unreadMessageCount,
+    pendingReviewCount, unreadReportCount,
     contextScanActive, contextScanComplete, factoryRunning,
     setContextScanComplete, creativeSessionRunning, studioJobActive,
     obsidianRevitalizeRunning, obsidianRevitalizeJustCompleted,

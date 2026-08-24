@@ -1,7 +1,7 @@
 //! Autonomous MESSAGE triage — the Overview → Messages counterpart of
 //! Athena's human-review resolution.
 //!
-//! Personas write `persona_messages` rows at the user constantly; at
+//! Personas write `persona_reports` rows at the user constantly; at
 //! fleet scale most of them are operational confirmations nobody needs
 //! to read. With autonomous mode on (`companion_autonomous_mode` — the
 //! master toggle implies message triage; the legacy
@@ -35,7 +35,7 @@
 
 use std::sync::LazyLock;
 
-use crate::db::repos::communication::messages as msg_repo;
+use crate::db::repos::communication::reports as msg_repo;
 use crate::db::settings_keys::{COMPANION_AUTONOMOUS_MODE, COMPANION_MSG_TRIAGE_CURSOR};
 use crate::db::DbPool;
 use crate::engine::inflight_guard::InflightGuard;

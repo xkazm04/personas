@@ -62,7 +62,7 @@ export function useTitleBarTray() {
   const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
   const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
-  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
+  const unreadReportCount = useOverviewStore((s) => s.unreadReportCount);
   const draftReadyCount = useOverviewStore((s) =>
     Object.values(s.activeProcesses).filter((p) => p.status === 'draft_ready').length,
   );
@@ -147,7 +147,7 @@ export function useTitleBarTray() {
    * input lives in `buildSessions` state and has no row anywhere to count.
    */
   const quickCount = pendingTotal + questionCount;
-  const monitorAttention = unreadMessageCount + draftReadyCount;
+  const monitorAttention = unreadReportCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';
   const reviewOpen = headerOverlay === 'quick-answer';

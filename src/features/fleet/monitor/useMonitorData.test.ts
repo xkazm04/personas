@@ -36,9 +36,9 @@ vi.mock('@/api/system/cloud', () => ({
   cloudRespondToReview: (...args: unknown[]) => mockCloudRespond(...args),
 }));
 
-vi.mock('@/api/overview/messages', () => ({
-  listMessages: vi.fn().mockResolvedValue([]),
-  markMessageRead: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/api/overview/reports', () => ({
+  listReports: vi.fn().mockResolvedValue([]),
+  markReportRead: vi.fn().mockResolvedValue(undefined),
 }));
 
 /** Every poller registered this mount, by `name`, with its `enabled` flag. */
@@ -69,7 +69,7 @@ const overviewState = {
   fetchCloudReviews: vi.fn().mockResolvedValue(undefined),
   respondToCloudReview: vi.fn().mockResolvedValue(undefined),
   fetchPendingReviewCount: vi.fn().mockResolvedValue(undefined),
-  fetchUnreadMessageCount: vi.fn().mockResolvedValue(undefined),
+  fetchUnreadReportCount: vi.fn().mockResolvedValue(undefined),
 };
 const systemState = { cloudConfig: { is_connected: false } };
 
@@ -217,7 +217,7 @@ describe('useMonitorData — no poller for data the surface cannot render', () =
 
   it('starts NO message or health poller for a surface that renders neither', async () => {
     // The triage deck: `usePendingInteractions` does not even return
-    // `unreadMessages`, yet opening the deck used to run a list_messages(300)
+    // `unreadMessages`, yet opening the deck used to run a list_reports(300)
     // query and a fetchPersonaSummaries() every 30 seconds for its whole life.
     await mount({ messages: false, personaHealth: false });
     expect(pollerEnabled('monitor:reviews')).toBe(true);
@@ -226,9 +226,9 @@ describe('useMonitorData — no poller for data the surface cannot render', () =
   });
 
   it('never even fetches messages once when they are not wanted', async () => {
-    const { listMessages } = await import('@/api/overview/messages');
+    const { listReports } = await import('@/api/overview/reports');
     await mount({ messages: false, personaHealth: false });
-    expect(listMessages).not.toHaveBeenCalled();
+    expect(listReports).not.toHaveBeenCalled();
   });
 
   it('still fills a COLD persona roster once — the review cards need the names', async () => {

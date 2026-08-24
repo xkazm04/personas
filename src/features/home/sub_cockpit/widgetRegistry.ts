@@ -14,7 +14,7 @@ import type { ComponentType } from 'react';
 import { ConnectedServicesWidget } from './widgets/ConnectedServicesWidget';
 import { DecisionsPanelWidget } from './widgets/DecisionsPanelWidget';
 import { PersonaOverviewWidget } from './widgets/PersonaOverviewWidget';
-import { MessageSummaryWidget } from './widgets/MessageSummaryWidget';
+import { ReportSummaryWidget } from './widgets/ReportSummaryWidget';
 import { ExecutionFactsWidget } from './widgets/ExecutionFactsWidget';
 import { LinkedDecisionsWidget } from './widgets/LinkedDecisionsWidget';
 import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
@@ -56,7 +56,7 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // Overview > Messages detail modal's "Play in chat" handler. Athena
   // does not emit these via compose_cockpit; they only render inside
   // a transient contextualCockpit overlay.
-  message_summary: MessageSummaryWidget,
+  message_summary: ReportSummaryWidget,
   execution_facts: ExecutionFactsWidget,
   linked_decisions: LinkedDecisionsWidget,
   linked_memories: LinkedMemoriesWidget,

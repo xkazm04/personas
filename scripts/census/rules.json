@@ -1628,7 +1628,7 @@
           "reason": "pre-mount boot-failure screen rendered before the app shell exists, so no scaffold primitive is reachable from it"
         },
         {
-          "path": "src/features/overview/sub_messages/components/MessageDetailModal.tsx",
+          "path": "src/features/overview/sub_reports/components/ReportDetailModal.tsx",
           "reason": "the <h1> at :361 is inside a template literal that builds a standalone printable HTML document for print-to-PDF, not a React surface inside the app scaffold"
         }
       ],

@@ -1576,7 +1576,7 @@ const bridge: TestBridge = {
       ]);
       // Messages and events need filtering by persona
       const [msgs, events] = await Promise.all([
-        invoke<unknown[]>('list_messages', { limit: 500, offset: 0 }),
+        invoke<unknown[]>('list_reports', { limit: 500, offset: 0 }),
         invoke<unknown[]>('list_events', { limit: 500 }),
       ]);
       const filteredMsgs = (msgs as Array<{ persona_id: string }>).filter(m => m.persona_id === personaId);
@@ -1630,7 +1630,7 @@ const bridge: TestBridge = {
     try {
       const [executions, messagesAll, memories, reviews] = await Promise.all([
         invoke<unknown[]>('list_executions', { personaId, limit: 50 }),
-        invoke<unknown[]>('list_messages', { limit: 200, offset: 0 }),
+        invoke<unknown[]>('list_reports', { limit: 200, offset: 0 }),
         invoke<unknown[]>('list_memories', { personaId }),
         invoke<unknown[]>('list_manual_reviews', { personaId }),
       ]);

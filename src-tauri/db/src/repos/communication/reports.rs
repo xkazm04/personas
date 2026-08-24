@@ -1,8 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::models::{
-    CreateMessageInput, MessageThreadSummary, PersonaMessage, PersonaMessageDelivery,
-};
+use crate::models::{CreateReportInput, PersonaReport, PersonaReportDelivery, ReportThreadSummary};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -11,7 +9,7 @@ use personas_core::error::AppError;
 // Projections
 //
 // One `const` per table. `SELECT *` left the fetched column set to whatever
-// `CREATE TABLE` said at runtime -- and `persona_messages` has been extended
+// `CREATE TABLE` said at runtime -- and `persona_reports` has been extended
 // twice by `ALTER TABLE` since (`thread_id` at `migrations/initial.rs:14`,
 // `use_case_id` at `migrations/incremental/e01_execution_and_use_cases.rs:298`),
 // so the wildcard's result shape genuinely differs between a fresh install and
@@ -19,7 +17,7 @@ use personas_core::error::AppError;
 // FETCH.
 // ============================================================================
 
-const MESSAGE_COLUMNS: &str = "id, persona_id, execution_id, title, content, content_type, \
+const REPORT_COLUMNS: &str = "id, persona_id, execution_id, title, content, content_type, \
                                priority, is_read, metadata, created_at, read_at, \
                                thread_id, use_case_id";
 
@@ -30,8 +28,8 @@ const DELIVERY_COLUMNS: &str = "id, message_id, channel_type, status, error_mess
 // Row Mappers
 // ============================================================================
 
-fn row_to_message(row: &Row) -> rusqlite::Result<PersonaMessage> {
-    Ok(PersonaMessage {
+fn row_to_report(row: &Row) -> rusqlite::Result<PersonaReport> {
+    Ok(PersonaReport {
         id: row.get("id")?,
         persona_id: row.get("persona_id")?,
         execution_id: row.get("execution_id")?,
@@ -48,8 +46,8 @@ fn row_to_message(row: &Row) -> rusqlite::Result<PersonaMessage> {
     })
 }
 
-fn row_to_delivery(row: &Row) -> rusqlite::Result<PersonaMessageDelivery> {
-    Ok(PersonaMessageDelivery {
+fn row_to_delivery(row: &Row) -> rusqlite::Result<PersonaReportDelivery> {
+    Ok(PersonaReportDelivery {
         id: row.get("id")?,
         message_id: row.get("message_id")?,
         channel_type: row.get("channel_type")?,
@@ -69,33 +67,33 @@ pub fn get_all(
     pool: &DbPool,
     limit: Option<i64>,
     offset: Option<i64>,
-) -> Result<Vec<PersonaMessage>, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_all", {
+) -> Result<Vec<PersonaReport>, AppError> {
+    timed_query!("persona_reports", "persona_reports::get_all", {
         let limit = limit.unwrap_or(50);
         let offset = offset.unwrap_or(0);
         let conn = pool.get()?;
 
         let mut stmt = conn.prepare_cached(&format!(
-            "SELECT {MESSAGE_COLUMNS} FROM persona_messages
+            "SELECT {REPORT_COLUMNS} FROM persona_reports
              ORDER BY created_at DESC
              LIMIT ?1 OFFSET ?2"
         ))?;
-        let rows = stmt.query_map(params![limit, offset], row_to_message)?;
+        let rows = stmt.query_map(params![limit, offset], row_to_report)?;
         let messages = collect_rows(rows, "messages::get_all");
         Ok(messages)
     })
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMessage, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_by_id", {
+pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaReport, AppError> {
+    timed_query!("persona_reports", "persona_reports::get_by_id", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(&format!(
-            "SELECT {MESSAGE_COLUMNS} FROM persona_messages WHERE id = ?1"
+            "SELECT {REPORT_COLUMNS} FROM persona_reports WHERE id = ?1"
         ))?;
-        stmt.query_row(params![id], row_to_message)
+        stmt.query_row(params![id], row_to_report)
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => {
-                    AppError::NotFound(format!("PersonaMessage {id}"))
+                    AppError::NotFound(format!("PersonaReport {id}"))
                 }
                 other => AppError::Database(other),
             })
@@ -109,68 +107,64 @@ pub fn get_by_use_case_id(
     persona_id: &str,
     use_case_id: &str,
     limit: Option<i64>,
-) -> Result<Vec<PersonaMessage>, AppError> {
-    timed_query!(
-        "persona_messages",
-        "persona_messages::get_by_use_case_id",
-        {
-            let limit = limit.unwrap_or(50);
-            let conn = pool.get()?;
+) -> Result<Vec<PersonaReport>, AppError> {
+    timed_query!("persona_reports", "persona_reports::get_by_use_case_id", {
+        let limit = limit.unwrap_or(50);
+        let conn = pool.get()?;
 
-            let mut stmt = conn.prepare_cached(&format!(
-                "SELECT {MESSAGE_COLUMNS} FROM persona_messages
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {REPORT_COLUMNS} FROM persona_reports
                  WHERE persona_id = ?1 AND use_case_id = ?2
                  ORDER BY created_at DESC
                  LIMIT ?3"
-            ))?;
-            let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_message)?;
-            Ok(collect_rows(rows, "messages::get_by_use_case_id"))
-        }
-    )
+        ))?;
+        let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_report)?;
+        Ok(collect_rows(rows, "messages::get_by_use_case_id"))
+    })
 }
 
 pub fn get_by_persona_id(
     pool: &DbPool,
     persona_id: &str,
     limit: Option<i64>,
-) -> Result<Vec<PersonaMessage>, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_by_persona_id", {
+) -> Result<Vec<PersonaReport>, AppError> {
+    timed_query!("persona_reports", "persona_reports::get_by_persona_id", {
         let limit = limit.unwrap_or(50);
         let conn = pool.get()?;
 
         let mut stmt = conn.prepare_cached(&format!(
-            "SELECT {MESSAGE_COLUMNS} FROM persona_messages
+            "SELECT {REPORT_COLUMNS} FROM persona_reports
              WHERE persona_id = ?1
              ORDER BY created_at DESC
              LIMIT ?2"
         ))?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_message)?;
+        let rows = stmt.query_map(params![persona_id, limit], row_to_report)?;
         let messages = collect_rows(rows, "messages::get_by_persona_id");
         Ok(messages)
     })
 }
 
 pub fn get_unread_count(pool: &DbPool) -> Result<i64, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_unread_count", {
+    timed_query!("persona_reports", "persona_reports::get_unread_count", {
         let conn = pool.get()?;
         let mut stmt =
-            conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_messages WHERE is_read = 0")?;
+            conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_reports WHERE is_read = 0")?;
         let count: i64 = stmt.query_row([], |row| row.get("n"))?;
         Ok(count)
     })
 }
 
 pub fn get_total_count(pool: &DbPool) -> Result<i64, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_total_count", {
+    timed_query!("persona_reports", "persona_reports::get_total_count", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_messages")?;
+        let mut stmt = conn.prepare_cached("SELECT COUNT(*) AS n FROM persona_reports")?;
         let count: i64 = stmt.query_row([], |row| row.get("n"))?;
         Ok(count)
     })
 }
 
-pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage, AppError> {
-    timed_query!("persona_messages", "persona_messages::create", {
+pub fn create(pool: &DbPool, input: CreateReportInput) -> Result<PersonaReport, AppError> {
+    timed_query!("persona_reports", "persona_reports::create", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let content_type = input.content_type.unwrap_or_else(|| "text".into());
@@ -202,7 +196,7 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
                 // duplicates this guard targets (identical cascade-fired
                 // notifications) while letting distinct content through.
                 let mut dup_stmt = conn.prepare_cached(
-                    "SELECT id FROM persona_messages
+                    "SELECT id FROM persona_reports
                      WHERE persona_id = ?1 AND title = ?2 AND content = ?3
                        AND date(created_at) = date(?4)
                      ORDER BY created_at DESC LIMIT 1",
@@ -224,7 +218,7 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
         }
 
         let mut stmt = conn.prepare_cached(
-            "INSERT INTO persona_messages
+            "INSERT INTO persona_reports
              (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id, use_case_id)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, ?9, ?10, ?11)",
         )?;
@@ -246,15 +240,15 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
     })
 }
 
-pub fn get_by_thread(pool: &DbPool, thread_id: &str) -> Result<Vec<PersonaMessage>, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_by_thread", {
+pub fn get_by_thread(pool: &DbPool, thread_id: &str) -> Result<Vec<PersonaReport>, AppError> {
+    timed_query!("persona_reports", "persona_reports::get_by_thread", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(&format!(
-            "SELECT {MESSAGE_COLUMNS} FROM persona_messages
+            "SELECT {REPORT_COLUMNS} FROM persona_reports
              WHERE thread_id = ?1
              ORDER BY created_at ASC"
         ))?;
-        let rows = stmt.query_map(params![thread_id], row_to_message)?;
+        let rows = stmt.query_map(params![thread_id], row_to_report)?;
         Ok(collect_rows(rows, "messages::get_by_thread"))
     })
 }
@@ -267,10 +261,10 @@ pub fn get_thread_summaries(
     limit: Option<i64>,
     offset: Option<i64>,
     persona_id: Option<&str>,
-) -> Result<Vec<MessageThreadSummary>, AppError> {
+) -> Result<Vec<ReportThreadSummary>, AppError> {
     timed_query!(
-        "persona_messages",
-        "persona_messages::get_thread_summaries",
+        "persona_reports",
+        "persona_reports::get_thread_summaries",
         {
             let limit = limit.unwrap_or(50);
             let offset = offset.unwrap_or(0);
@@ -296,7 +290,7 @@ pub fn get_thread_summaries(
                    MIN(created_at) AS first_at,
                    MAX(created_at) AS last_at,
                    COUNT(*) AS cnt
-            FROM persona_messages
+            FROM persona_reports
             {persona_where}
             GROUP BY thread_id
             ORDER BY last_at DESC
@@ -307,7 +301,7 @@ pub fn get_thread_summaries(
                pm.content_type, pm.priority, pm.is_read, pm.metadata,
                pm.created_at, pm.read_at, pm.thread_id
         FROM thread_agg ta
-        JOIN persona_messages pm
+        JOIN persona_reports pm
           ON pm.thread_id = ta.thread_id
           AND pm.created_at = ta.first_at
         ORDER BY ta.last_at DESC",
@@ -319,10 +313,10 @@ pub fn get_thread_summaries(
                     row.get::<_, String>("ta_thread_id")?,
                     row.get::<_, Option<String>>("ta_last_at")?,
                     row.get::<_, i64>("ta_cnt")?,
-                    row_to_message(row)?,
+                    row_to_report(row)?,
                 ))
             };
-            let rows: Vec<Result<(String, Option<String>, i64, PersonaMessage), rusqlite::Error>> =
+            let rows: Vec<Result<(String, Option<String>, i64, PersonaReport), rusqlite::Error>> =
                 if let Some(pid) = persona_id {
                     stmt.query_map(params![pid, limit, offset], mapper)?
                         .collect()
@@ -335,7 +329,7 @@ pub fn get_thread_summaries(
                 let (tid, last_at, cnt, parent) = row.map_err(AppError::Database)?;
                 let reply_count = cnt - 1;
                 let latest_reply_at = if reply_count > 0 { last_at } else { None };
-                summaries.push(MessageThreadSummary {
+                summaries.push(ReportThreadSummary {
                     thread_id: tid,
                     parent,
                     reply_count,
@@ -349,18 +343,18 @@ pub fn get_thread_summaries(
 }
 
 pub fn get_thread_count(pool: &DbPool, persona_id: Option<&str>) -> Result<i64, AppError> {
-    timed_query!("persona_messages", "persona_messages::get_thread_count", {
+    timed_query!("persona_reports", "persona_reports::get_thread_count", {
         let conn = pool.get()?;
         if let Some(pid) = persona_id {
             let count: i64 = conn.query_row(
-                "SELECT COUNT(DISTINCT thread_id) AS n FROM persona_messages WHERE thread_id IS NOT NULL AND persona_id = ?1",
+                "SELECT COUNT(DISTINCT thread_id) AS n FROM persona_reports WHERE thread_id IS NOT NULL AND persona_id = ?1",
                 params![pid],
                 |row| row.get("n"),
             )?;
             Ok(count)
         } else {
             let count: i64 = conn.query_row(
-                "SELECT COUNT(DISTINCT thread_id) AS n FROM persona_messages WHERE thread_id IS NOT NULL",
+                "SELECT COUNT(DISTINCT thread_id) AS n FROM persona_reports WHERE thread_id IS NOT NULL",
                 [],
                 |row| row.get("n"),
             )?;
@@ -370,17 +364,17 @@ pub fn get_thread_count(pool: &DbPool, persona_id: Option<&str>) -> Result<i64, 
 }
 
 pub fn mark_as_read(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    timed_query!("persona_messages", "persona_messages::mark_as_read", {
+    timed_query!("persona_reports", "persona_reports::mark_as_read", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
         let rows = conn.execute(
-            "UPDATE persona_messages SET is_read = 1, read_at = ?1 WHERE id = ?2",
+            "UPDATE persona_reports SET is_read = 1, read_at = ?1 WHERE id = ?2",
             params![now, id],
         )?;
 
         if rows == 0 {
-            return Err(AppError::NotFound(format!("PersonaMessage {id}")));
+            return Err(AppError::NotFound(format!("PersonaReport {id}")));
         }
 
         Ok(())
@@ -407,13 +401,13 @@ pub fn list_unread_after(
     cursor: &str,
     limit: i64,
 ) -> Result<Vec<UnreadMessageForTriage>, AppError> {
-    timed_query!("persona_messages", "persona_messages::list_unread_after", {
+    timed_query!("persona_reports", "persona_reports::list_unread_after", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(
             "SELECT m.id AS id, COALESCE(p.name, m.persona_id) AS persona_name,
                     m.title AS title, m.content AS content,
                     m.priority AS priority, m.created_at AS created_at
-             FROM persona_messages m
+             FROM persona_reports m
              LEFT JOIN personas p ON p.id = m.persona_id
              WHERE m.is_read = 0 AND m.created_at > ?1
              ORDER BY m.created_at ASC
@@ -445,19 +439,19 @@ pub fn annotate_athena_triage(
     note: &str,
 ) -> Result<(), AppError> {
     timed_query!(
-        "persona_messages",
-        "persona_messages::annotate_athena_triage",
+        "persona_reports",
+        "persona_reports::annotate_athena_triage",
         {
             let conn = pool.get()?;
             let existing: Option<String> = conn
                 .query_row(
-                    "SELECT metadata FROM persona_messages WHERE id = ?1",
+                    "SELECT metadata FROM persona_reports WHERE id = ?1",
                     params![id],
                     |row| row.get("metadata"),
                 )
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
-                        AppError::NotFound(format!("PersonaMessage {id}"))
+                        AppError::NotFound(format!("PersonaReport {id}"))
                     }
                     other => AppError::Database(other),
                 })?;
@@ -480,7 +474,7 @@ pub fn annotate_athena_triage(
             });
 
             conn.execute(
-                "UPDATE persona_messages SET metadata = ?1 WHERE id = ?2",
+                "UPDATE persona_reports SET metadata = ?1 WHERE id = ?2",
                 params![root.to_string(), id],
             )?;
             Ok(())
@@ -489,19 +483,19 @@ pub fn annotate_athena_triage(
 }
 
 pub fn mark_all_as_read(pool: &DbPool, persona_id: Option<&str>) -> Result<(), AppError> {
-    timed_query!("persona_messages", "persona_messages::mark_all_as_read", {
+    timed_query!("persona_reports", "persona_reports::mark_all_as_read", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
         if let Some(pid) = persona_id {
             conn.execute(
-                "UPDATE persona_messages SET is_read = 1, read_at = ?1
+                "UPDATE persona_reports SET is_read = 1, read_at = ?1
                  WHERE persona_id = ?2 AND is_read = 0",
                 params![now, pid],
             )?;
         } else {
             conn.execute(
-                "UPDATE persona_messages SET is_read = 1, read_at = ?1 WHERE is_read = 0",
+                "UPDATE persona_reports SET is_read = 1, read_at = ?1 WHERE is_read = 0",
                 params![now],
             )?;
         }
@@ -511,43 +505,39 @@ pub fn mark_all_as_read(pool: &DbPool, persona_id: Option<&str>) -> Result<(), A
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("persona_messages", "persona_messages::delete", {
+    timed_query!("persona_reports", "persona_reports::delete", {
         let conn = pool.get()?;
-        let rows = conn.execute("DELETE FROM persona_messages WHERE id = ?1", params![id])?;
+        let rows = conn.execute("DELETE FROM persona_reports WHERE id = ?1", params![id])?;
         Ok(rows > 0)
     })
 }
 
-/// Hard-delete ALL messages. FK child `persona_message_deliveries` cascades.
+/// Hard-delete ALL messages. FK child `persona_report_deliveries` cascades.
 /// Returns the number of rows deleted.
 pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
-    timed_query!("persona_messages", "persona_messages::delete_all", {
+    timed_query!("persona_reports", "persona_reports::delete_all", {
         let conn = pool.get()?;
-        let n = conn.execute("DELETE FROM persona_messages", [])?;
+        let n = conn.execute("DELETE FROM persona_reports", [])?;
         Ok(n)
     })
 }
 
-/// Prune READ messages older than the retention window. `persona_messages` had
+/// Prune READ messages older than the retention window. `persona_reports` had
 /// no retention at all, so read notifications accumulated unbounded. Unread
 /// messages are always kept (they may still need the user's attention). FK
-/// child `persona_message_deliveries` cascades. Single statement → atomic.
+/// child `persona_report_deliveries` cascades. Single statement → atomic.
 /// Returns the number of rows deleted.
-pub fn cleanup_old_messages(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
-    timed_query!(
-        "persona_messages",
-        "persona_messages::cleanup_old_messages",
-        {
-            let conn = pool.get()?;
-            let cutoff = format!("-{retention_days} days");
-            let n = conn.execute(
-                "DELETE FROM persona_messages
+pub fn cleanup_old_reports(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
+    timed_query!("persona_reports", "persona_reports::cleanup_old_reports", {
+        let conn = pool.get()?;
+        let cutoff = format!("-{retention_days} days");
+        let n = conn.execute(
+            "DELETE FROM persona_reports
              WHERE is_read = 1 AND created_at < datetime('now', ?1)",
-                params![cutoff],
-            )?;
-            Ok(n)
-        }
-    )
+            params![cutoff],
+        )?;
+        Ok(n)
+    })
 }
 
 // ============================================================================
@@ -564,8 +554,8 @@ pub fn get_bulk_delivery_summaries(
         return Ok(vec![]);
     }
     timed_query!(
-        "persona_messages",
-        "persona_messages::get_bulk_delivery_summaries",
+        "persona_reports",
+        "persona_reports::get_bulk_delivery_summaries",
         {
             let conn = pool.get()?;
             let mut all_results = Vec::new();
@@ -581,7 +571,7 @@ pub fn get_bulk_delivery_summaries(
                     SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered,
                     SUM(CASE WHEN status IN ('pending', 'queued') THEN 1 ELSE 0 END) AS pending,
                     SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
-             FROM persona_message_deliveries
+             FROM persona_report_deliveries
              WHERE message_id IN ({})
              GROUP BY message_id",
                     placeholders,
@@ -604,22 +594,22 @@ pub fn get_bulk_delivery_summaries(
     )
 }
 
-pub fn get_deliveries_by_message(
+pub fn get_deliveries_by_report(
     pool: &DbPool,
     message_id: &str,
-) -> Result<Vec<PersonaMessageDelivery>, AppError> {
+) -> Result<Vec<PersonaReportDelivery>, AppError> {
     timed_query!(
-        "persona_messages",
-        "persona_messages::get_deliveries_by_message",
+        "persona_reports",
+        "persona_reports::get_deliveries_by_report",
         {
             let conn = pool.get()?;
             let mut stmt = conn.prepare_cached(&format!(
-                "SELECT {DELIVERY_COLUMNS} FROM persona_message_deliveries
+                "SELECT {DELIVERY_COLUMNS} FROM persona_report_deliveries
                  WHERE message_id = ?1
                  ORDER BY created_at DESC"
             ))?;
             let rows = stmt.query_map(params![message_id], row_to_delivery)?;
-            let deliveries = collect_rows(rows, "messages::get_deliveries_by_message");
+            let deliveries = collect_rows(rows, "messages::get_deliveries_by_report");
             Ok(deliveries)
         }
     )
@@ -654,7 +644,7 @@ mod tests {
 
         let msg = create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: persona_id.clone(),
                 execution_id: None,
                 title: Some("Build Report".into()),
@@ -696,7 +686,7 @@ mod tests {
         for i in 0..5 {
             create(
                 &pool,
-                CreateMessageInput {
+                CreateReportInput {
                     persona_id: persona_id.clone(),
                     execution_id: None,
                     title: Some(format!("Msg {i}")),
@@ -731,7 +721,7 @@ mod tests {
 
         create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: p1.clone(),
                 execution_id: None,
                 title: None,
@@ -762,7 +752,7 @@ mod tests {
 
         let msg1 = create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: persona_id.clone(),
                 execution_id: None,
                 title: None,
@@ -778,7 +768,7 @@ mod tests {
 
         create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: persona_id.clone(),
                 execution_id: None,
                 title: None,
@@ -820,7 +810,7 @@ mod tests {
         // Create messages for two personas
         create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: p1.clone(),
                 execution_id: None,
                 title: None,
@@ -836,7 +826,7 @@ mod tests {
 
         create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: p2.clone(),
                 execution_id: None,
                 title: None,
@@ -868,7 +858,7 @@ mod tests {
 
         let msg = create(
             &pool,
-            CreateMessageInput {
+            CreateReportInput {
                 persona_id: persona_id.clone(),
                 execution_id: None,
                 title: None,
@@ -899,7 +889,7 @@ mod tests {
         for i in 0..3 {
             create(
                 &pool,
-                CreateMessageInput {
+                CreateReportInput {
                     persona_id: persona_id.clone(),
                     execution_id: None,
                     title: None,

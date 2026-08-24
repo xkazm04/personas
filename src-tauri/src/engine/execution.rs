@@ -2538,7 +2538,7 @@ fn check_and_apply_circuit_breaker(pool: &DbPool, app: &AppHandle, persona_id: &
         CIRCUIT_BREAKER_THRESHOLD,
     );
 
-    // Surface to the user via persona_messages so the notification bell
+    // Surface to the user via persona_reports so the notification bell
     // picks it up. The message carries enough context for them to know
     // why it was disabled and what to fix.
     let last_outcome = outcomes.first().map(|s| s.as_str()).unwrap_or("unknown");
@@ -2551,9 +2551,9 @@ fn check_and_apply_circuit_breaker(pool: &DbPool, app: &AppHandle, persona_id: &
         "Persona auto-disabled after {} consecutive non-value-delivering runs (last outcome: {}).\n\n{}",
         CIRCUIT_BREAKER_THRESHOLD, last_outcome, hint,
     );
-    let _ = crate::db::repos::communication::messages::create(
+    let _ = crate::db::repos::communication::reports::create(
         pool,
-        crate::db::models::CreateMessageInput {
+        crate::db::models::CreateReportInput {
             persona_id: persona_id.into(),
             execution_id: None,
             title: Some(format!("{} — Setup required", persona.name)),
@@ -2591,9 +2591,9 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
                     "Budget alert: {} has spent ${:.4} this month (budget: ${:.2}). Agent may be automatically paused.",
                     p.name, monthly_spend, budget
                 );
-                let _ = crate::db::repos::communication::messages::create(
+                let _ = crate::db::repos::communication::reports::create(
                     pool,
-                    crate::db::models::CreateMessageInput {
+                    crate::db::models::CreateReportInput {
                         persona_id: persona_id.into(),
                         execution_id: Some(exec_id.into()),
                         title: Some("Budget Exceeded".into()),

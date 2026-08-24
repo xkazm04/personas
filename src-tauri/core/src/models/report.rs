@@ -7,7 +7,7 @@ use ts_rs::TS;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-pub struct PersonaMessage {
+pub struct PersonaReport {
     pub id: String,
     pub persona_id: String,
     pub execution_id: Option<String>,
@@ -29,7 +29,7 @@ pub struct PersonaMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-pub struct CreateMessageInput {
+pub struct CreateReportInput {
     pub persona_id: String,
     pub execution_id: Option<String>,
     pub title: Option<String>,
@@ -46,9 +46,9 @@ pub struct CreateMessageInput {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct MessageThreadSummary {
+pub struct ReportThreadSummary {
     pub thread_id: String,
-    pub parent: PersonaMessage,
+    pub parent: PersonaReport,
     pub reply_count: i64,
     pub latest_reply_at: Option<String>,
 }
@@ -59,7 +59,7 @@ pub struct MessageThreadSummary {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-pub struct PersonaMessageDelivery {
+pub struct PersonaReportDelivery {
     pub id: String,
     pub message_id: String,
     pub channel_type: String,

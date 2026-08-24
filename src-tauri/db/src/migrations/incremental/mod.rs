@@ -28,6 +28,7 @@ mod e06_teams_and_sync;
 mod e07_deliberation_and_scoring;
 mod e08_sla_and_dev_tools;
 mod e09_devices_and_provenance;
+mod e10_reports_rename;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -53,6 +54,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e07_deliberation_and_scoring::run(conn)?;
     e08_sla_and_dev_tools::run(conn)?;
     e09_devices_and_provenance::run(conn)?;
+    e10_reports_rename::run(conn)?;
 
     Ok(())
 }

@@ -23,7 +23,7 @@
 //! - Self-evaluation of the Director persona is always skipped.
 //!
 //! # Phase 3 (planned)
-//! - Three-way verdict routing: info → `persona_messages`,
+//! - Three-way verdict routing: info → `persona_reports`,
 //!   warning → manual reviews, error + auto-fixable → `persona_healing_issues`
 //!   + `ai_healing::apply_db_fixes`. Scheduler tick in `background.rs`.
 
@@ -1318,7 +1318,7 @@ pub async fn run_director_cycle_batch(
 
         // A persona with NO executions cannot anchor a manual review (FK
         // constraint requires execution_id). Tally the skip so the report is
-        // honest; Phase 3 will switch those to `persona_messages` (no FK).
+        // honest; Phase 3 will switch those to `persona_reports` (no FK).
         if ctx.latest_execution_id.is_none() {
             skipped += 1;
             continue;

@@ -87,7 +87,7 @@ export default function CockpitPanel() {
 
   // Empty-state CTA: seed Athena with a concrete "compose a persona overview
   // cockpit" request and auto-send it, then open the chat panel so the user
-  // sees the composition stream in. Mirrors MessageDetailModal's "Play in
+  // sees the composition stream in. Mirrors ReportDetailModal's "Play in
   // chat" preset+autoSend pattern.
   const composePersonaCockpit = useCallback(() => {
     useCompanionStore.getState().setPendingPrompt({
@@ -294,7 +294,7 @@ export default function CockpitPanel() {
                   ? tx(t.overview.cockpit.context_for, {
                       title:
                         contextualCockpit.source.messageTitle ||
-                        t.overview.messages_view.message_label,
+                        t.overview.reports_view.report_label,
                     })
                   : null}
             </span>

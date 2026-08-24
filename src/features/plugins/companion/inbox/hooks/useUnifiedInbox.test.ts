@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -49,7 +49,7 @@ function approvalRecord(o: Partial<ManualReviewItem> = {}): ManualReviewItem {
   } as ManualReviewItem;
 }
 
-function messageRecord(o: Partial<PersonaMessage> = {}): PersonaMessage {
+function messageRecord(o: Partial<PersonaReport> = {}): PersonaReport {
   return {
     id: 'msg-1',
     persona_id: 'p-1',
@@ -212,7 +212,7 @@ describe('useUnifiedInbox', () => {
   beforeEach(() => {
     useOverviewStore.setState({
       manualReviews: [],
-      messages: [],
+      reports: [],
       healingIssues: [],
     });
     useAgentStore.setState({ personas: [personaRecord()] });
@@ -226,7 +226,7 @@ describe('useUnifiedInbox', () => {
   it('merges three sources into one array (approvals + messages + healing)', () => {
     useOverviewStore.setState({
       manualReviews: [approvalRecord({ id: 'rev-1' })],
-      messages: [messageRecord({ id: 'msg-1' })],
+      reports: [messageRecord({ id: 'msg-1' })],
       healingIssues: [healingRecord({ id: 'heal-1' })],
     });
     const { result } = renderHook(() => useUnifiedInbox());
@@ -250,7 +250,7 @@ describe('useUnifiedInbox', () => {
 
   it('filters out read messages', () => {
     useOverviewStore.setState({
-      messages: [
+      reports: [
         messageRecord({ id: 'msg-unread', is_read: false }),
         messageRecord({ id: 'msg-read', is_read: true }),
       ],
@@ -276,7 +276,7 @@ describe('useUnifiedInbox', () => {
   it('sorts items newest-first by createdAt', () => {
     useOverviewStore.setState({
       manualReviews: [approvalRecord({ id: 'old', created_at: '2026-04-18T00:00:00.000Z' })],
-      messages: [messageRecord({ id: 'mid', created_at: '2026-04-19T00:00:00.000Z' })],
+      reports: [messageRecord({ id: 'mid', created_at: '2026-04-19T00:00:00.000Z' })],
       healingIssues: [healingRecord({ id: 'new', created_at: '2026-04-20T00:00:00.000Z' })],
     });
     const { result } = renderHook(() => useUnifiedInbox());
@@ -304,7 +304,7 @@ describe('useUnifiedInbox', () => {
     );
     useOverviewStore.setState({
       manualReviews: approvals,
-      messages: msgs,
+      reports: msgs,
       healingIssues: healing,
     });
     const { result } = renderHook(() => useUnifiedInbox());
@@ -398,7 +398,7 @@ describe('useUnifiedInbox — output-kind emission', () => {
   beforeEach(() => {
     useOverviewStore.setState({
       manualReviews: [],
-      messages: [],
+      reports: [],
       healingIssues: [],
     });
     useAgentStore.setState({ personas: [personaRecord()] });
@@ -406,7 +406,7 @@ describe('useUnifiedInbox — output-kind emission', () => {
 
   it('markdown messages are emitted as output kind', () => {
     useOverviewStore.setState({
-      messages: [messageRecord({ id: 'md-1', content_type: 'markdown' })],
+      reports: [messageRecord({ id: 'md-1', content_type: 'markdown' })],
     });
     const { result } = renderHook(() => useUnifiedInbox());
     expect(result.current).toHaveLength(1);
@@ -416,7 +416,7 @@ describe('useUnifiedInbox — output-kind emission', () => {
 
   it('messages with output keywords in title are emitted as output', () => {
     useOverviewStore.setState({
-      messages: [
+      reports: [
         messageRecord({
           id: 'kw-1',
           content_type: 'text',
@@ -430,7 +430,7 @@ describe('useUnifiedInbox — output-kind emission', () => {
 
   it('plain text messages without output keywords stay message kind', () => {
     useOverviewStore.setState({
-      messages: [
+      reports: [
         messageRecord({
           id: 'plain-1',
           content_type: 'text',
@@ -445,7 +445,7 @@ describe('useUnifiedInbox — output-kind emission', () => {
 
   it('a given message is emitted exactly once (no double-emission)', () => {
     useOverviewStore.setState({
-      messages: [
+      reports: [
         messageRecord({
           id: 'dup-check',
           content_type: 'markdown',

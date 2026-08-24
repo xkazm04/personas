@@ -1008,3 +1008,102 @@ fn pending_auth_scaffolding_columns_are_gone() {
          and the comment explaining the deletion needs revisiting"
     );
 }
+
+/// The Reports rebrand (e10) must converge the upgrade path onto the shape
+/// fresh installs get from schema.rs. Simulate a legacy DB: the renamed
+/// tables already exist (created empty by this boot's schema batch — which
+/// `init_test_db` replays), while the data still sits in `persona_messages` /
+/// `persona_message_deliveries` in their oldest shape (no thread_id, no
+/// use_case_id). Replaying the boot chain must copy every row across, drop
+/// the legacy tables, and be idempotent on a second replay.
+#[test]
+fn reports_rename_copies_legacy_rows_and_drops_old_tables() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch(
+        "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+            VALUES ('per-1', 'P', 'sp', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         CREATE TABLE persona_messages (
+            id           TEXT PRIMARY KEY,
+            persona_id   TEXT NOT NULL,
+            execution_id TEXT,
+            title        TEXT,
+            content      TEXT NOT NULL,
+            content_type TEXT NOT NULL DEFAULT 'text',
+            priority     TEXT NOT NULL DEFAULT 'normal',
+            is_read      INTEGER NOT NULL DEFAULT 0,
+            metadata     TEXT,
+            created_at   TEXT NOT NULL,
+            read_at      TEXT
+         );
+         CREATE TABLE persona_message_deliveries (
+            id            TEXT PRIMARY KEY,
+            message_id    TEXT NOT NULL REFERENCES persona_messages(id) ON DELETE CASCADE,
+            channel_type  TEXT NOT NULL,
+            status        TEXT NOT NULL DEFAULT 'pending',
+            error_message TEXT,
+            external_id   TEXT,
+            delivered_at  TEXT,
+            created_at    TEXT NOT NULL
+         );
+         INSERT INTO persona_messages (id, persona_id, title, content, created_at)
+            VALUES ('msg-1', 'per-1', 'Weekly digest', 'body', '2026-01-02T00:00:00Z');
+         INSERT INTO persona_messages (id, persona_id, title, content, created_at)
+            VALUES ('msg-orphan', 'per-GONE', 'stray', 'body', '2026-01-02T00:00:00Z');
+         INSERT INTO persona_message_deliveries (id, message_id, channel_type, created_at)
+            VALUES ('del-1', 'msg-1', 'desktop', '2026-01-02T00:00:01Z');",
+    )
+    .unwrap();
+
+    // Replay the boot chain twice — the second pass must be a no-op.
+    for _ in 0..2 {
+        crate::migrations::run(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+    }
+
+    assert!(!has_table(&conn, "persona_messages").unwrap());
+    assert!(!has_table(&conn, "persona_message_deliveries").unwrap());
+
+    let (id, title, thread_id, use_case_id): (String, String, Option<String>, Option<String>) =
+        conn.query_row(
+            "SELECT id, title, thread_id, use_case_id FROM persona_reports WHERE id = 'msg-1'",
+            [],
+            |r| {
+                Ok((
+                    r.get("id")?,
+                    r.get("title")?,
+                    r.get("thread_id")?,
+                    r.get("use_case_id")?,
+                ))
+            },
+        )
+        .unwrap();
+    assert_eq!(id, "msg-1");
+    assert_eq!(title, "Weekly digest");
+    assert_eq!(thread_id, None, "legacy rows never had a thread stamped");
+    assert_eq!(use_case_id, None);
+
+    // The orphan (parent persona gone) is scrubbed, not carried, so the
+    // copy can run with FK enforcement on.
+    let orphans: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_reports WHERE id = 'msg-orphan'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(orphans, 0);
+
+    let delivery: String = conn
+        .query_row(
+            "SELECT message_id FROM persona_report_deliveries WHERE id = 'del-1'",
+            [],
+            |r| r.get("message_id"),
+        )
+        .unwrap();
+    assert_eq!(delivery, "msg-1");
+
+    // Index names converged on the persona_reports-based set.
+    assert!(has_index(&conn, "idx_prpt_created").unwrap());
+    assert!(!has_index(&conn, "idx_pmsg_created").unwrap());
+}

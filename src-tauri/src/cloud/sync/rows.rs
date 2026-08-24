@@ -644,7 +644,7 @@ pub fn fetch_messages(
 ) -> Result<(Vec<SyncedMessageRow>, Option<String>), AppError> {
     let (rows, max_cursor) = fetch(
         pool,
-        "persona_messages",
+        "persona_reports",
         MESSAGE_COLS,
         "created_at",
         &cursor_prev,

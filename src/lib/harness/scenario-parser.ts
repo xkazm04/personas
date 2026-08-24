@@ -172,7 +172,7 @@ const AREAS: ScenarioArea[] = [
       'sub_events/',
       'sub_health/',
       'sub_memories/',
-      'sub_messages/',
+      'sub_reports/',
       'sub_manual-review/',
       'sub_knowledge/',
       'sub_timeline/',

@@ -13,7 +13,7 @@ import type { PersonaCredential } from "@/lib/bindings/PersonaCredential";
 import type { CredentialEvent } from "@/lib/bindings/CredentialEvent";
 import type { PersonaEvent } from "@/lib/bindings/PersonaEvent";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
-import type { PersonaMessage as RawPersonaMessage } from "@/lib/bindings/PersonaMessage";
+import type { PersonaReport as RawPersonaReport } from "@/lib/bindings/PersonaReport";
 import type { PersonaMetricsSnapshot } from "@/lib/bindings/PersonaMetricsSnapshot";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
@@ -500,4 +500,4 @@ export interface ManualReviewItem extends WithPersonaInfo {
 
 export interface GlobalExecution extends PersonaExecution, WithPersonaInfo {}
 
-export interface PersonaMessage extends RawPersonaMessage, WithPersonaInfo {}
+export interface PersonaReport extends RawPersonaReport, WithPersonaInfo {}

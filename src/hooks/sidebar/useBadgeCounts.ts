@@ -23,7 +23,7 @@ import { silentCatch } from "@/lib/silentCatch";
 
 interface BadgeCounts {
   pendingReviewCount: number;
-  unreadMessageCount: number;
+  unreadReportCount: number;
   pendingEventCount: number;
   directorAttentionCount: number;
 }
@@ -42,7 +42,7 @@ export function useBadgeCounts(): BadgeCounts {
     // Stagger fetches across frames to avoid a burst of simultaneous
     // set() calls that cause cascading React re-renders in one frame.
     await state.fetchPendingReviewCount();
-    state.fetchUnreadMessageCount().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchUnreadMessageCount'));
+    state.fetchUnreadReportCount().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchUnreadReportCount'));
     await new Promise(r => setTimeout(r, 0)); // yield to browser
     state.fetchRecentEvents().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchRecentEvents'));
     fetchBudgetSpend().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchBudgetSpend'));
@@ -69,7 +69,7 @@ export function useBadgeCounts(): BadgeCounts {
 
   return {
     pendingReviewCount: counts.pending_reviews,
-    unreadMessageCount: counts.unread_messages,
+    unreadReportCount: counts.unread_reports,
     pendingEventCount: counts.pending_events,
     directorAttentionCount,
   };

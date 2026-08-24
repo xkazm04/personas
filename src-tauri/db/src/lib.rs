@@ -484,7 +484,7 @@ fn cleanup_orphan_rows(conn: &rusqlite::Connection) {
         "persona_event_subscriptions",
         "persona_executions",
         "persona_memories",
-        "persona_messages",
+        "persona_reports",
         "persona_healing_issues",
         "persona_manual_reviews",
         "persona_metrics_snapshots",

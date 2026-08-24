@@ -20,7 +20,7 @@ import { MonitorCapabilities } from './MonitorCapabilities';
 import { navigateToProcess } from './navigateToProcess';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import {
   SEVERITY_META, severityBucket, severityLabel, processStatusMeta, processStatusLabel, elapsedStr,
   type PersonaCardModel, type SeverityBucket, type ProcessEntry, type DrawerSection,
@@ -291,7 +291,7 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
 // Message card
 // ---------------------------------------------------------------------------
 
-function DrawerMessageCard({ message, onMarkRead }: { message: PersonaMessage; onMarkRead: (id: string) => void }) {
+function DrawerMessageCard({ message, onMarkRead }: { message: PersonaReport; onMarkRead: (id: string) => void }) {
   const { t } = useTranslation();
   const isHighPriority = message.priority === 'high' || message.priority === 'urgent';
   return (

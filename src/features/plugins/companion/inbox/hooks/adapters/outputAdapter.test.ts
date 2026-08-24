@@ -1,5 +1,5 @@
 /**
- * Tests for `isMessageOutput` — the classifier that splits PersonaMessages
+ * Tests for `isMessageOutput` — the classifier that splits PersonaReports
  * into "output" vs "message" buckets for the unified inbox.
  *
  * Precedence:
@@ -10,10 +10,10 @@
  */
 import { describe, it, expect } from 'vitest';
 
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import { isMessageOutput } from './outputAdapter';
 
-function makeMsg(overrides: Partial<PersonaMessage> = {}): PersonaMessage {
+function makeMsg(overrides: Partial<PersonaReport> = {}): PersonaReport {
   return {
     id: 'msg-1',
     persona_id: 'p-1',

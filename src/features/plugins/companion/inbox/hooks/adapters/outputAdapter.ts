@@ -1,5 +1,5 @@
 /**
- * Pure function: map a PersonaMessage that has been classified as an "output"
+ * Pure function: map a PersonaReport that has been classified as an "output"
  * (via `isMessageOutput`) + resolved persona summary into a UnifiedInboxItem
  * of kind 'output'.
  *
@@ -12,7 +12,7 @@
  * Classification lives here alongside the adapter so consumers only need to
  * import one thing.
  */
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { UnifiedInboxItem } from '../../types';
 import type { PersonaSummary } from './types';
 
@@ -25,7 +25,7 @@ import type { PersonaSummary } from './types';
 const OUTPUT_KEYWORDS = ['draft', 'summary', 'report', 'digest', 'brief', 'analysis'] as const;
 
 /**
- * Decide whether a PersonaMessage should render as an `output` inbox item.
+ * Decide whether a PersonaReport should render as an `output` inbox item.
  *
  * Rules (first hit wins):
  *   1. **Explicit backend signal:** `content_type === 'output'`.
@@ -36,7 +36,7 @@ const OUTPUT_KEYWORDS = ['draft', 'summary', 'report', 'digest', 'brief', 'analy
  *   4. **Keyword fallback:** title OR first 80 chars of content (case-
  *      insensitive) contains any entry from OUTPUT_KEYWORDS.
  */
-export function isMessageOutput(msg: PersonaMessage): boolean {
+export function isMessageOutput(msg: PersonaReport): boolean {
   if (msg.content_type === 'output') return true;
   if (msg.content_type === 'result') return true;
   if (msg.content_type === 'markdown') return true;
@@ -45,13 +45,13 @@ export function isMessageOutput(msg: PersonaMessage): boolean {
 }
 
 /**
- * Adapt a PersonaMessage into a UnifiedInboxItem of kind 'output'.
+ * Adapt a PersonaReport into a UnifiedInboxItem of kind 'output'.
  *
  * Severity is always 'info'. `data.summary` is populated with the first 200
  * chars of content for card-face display; full body is preserved in `body`.
  */
 export function adaptOutput(
-  msg: PersonaMessage,
+  msg: PersonaReport,
   persona: PersonaSummary,
 ): Extract<UnifiedInboxItem, { kind: 'output' }> {
   return {

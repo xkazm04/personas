@@ -117,7 +117,7 @@ export default function DashboardHomeMissionControl() {
   })));
   const { counts: attention } = useAttention("dashboard");
   const pendingReviewCount = attention.pending_reviews;
-  const unreadMessageCount = attention.unread_messages;
+  const unreadReportCount = attention.unread_reports;
   const activeAlertCount = attention.active_alerts;
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
@@ -205,17 +205,17 @@ export default function DashboardHomeMissionControl() {
       detail: t.overview.dashboard.triage_detail_reviews,
       onClick: () => setOverviewTab('manual-review'),
     });
-    if (unreadMessageCount > 0) out.push({
+    if (unreadReportCount > 0) out.push({
       id: 'messages',
       kind: 'message',
-      title: `${unreadMessageCount} ${t.overview.widgets.messages_badge}`,
+      title: `${unreadReportCount} ${t.overview.widgets.reports_badge}`,
       detail: t.overview.dashboard.triage_detail_messages,
       onClick: () => setOverviewTab('messages'),
     });
     // Memory suggestions get their own detailed panel in the Instruments bay
     // below — they're richer than the triage summary affords.
     return out.sort((a, b) => TRIAGE_SEVERITY[a.kind] - TRIAGE_SEVERITY[b.kind]);
-  }, [activeAlertCount, pipelineErrorCount, pendingReviewCount, unreadMessageCount, t, setOverviewTab]);
+  }, [activeAlertCount, pipelineErrorCount, pendingReviewCount, unreadReportCount, t, setOverviewTab]);
 
   const chartData = useMemo(() => {
     // Scope the Instruments traffic chart to the persona filter when a persona

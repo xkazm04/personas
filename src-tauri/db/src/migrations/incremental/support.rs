@@ -636,7 +636,7 @@ pub(super) fn research_lab_align_columns(conn: &Connection) {
         ("persona_executions", "created_at"),
         ("persona_events", "created_at"),
         ("persona_manual_reviews", "updated_at"),
-        ("persona_messages", "created_at"),
+        ("persona_reports", "created_at"),
         ("persona_metrics_snapshots", "created_at"),
         ("persona_tool_usage", "created_at"),
         ("persona_memories", "updated_at"),

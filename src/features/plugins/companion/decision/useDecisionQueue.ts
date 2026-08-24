@@ -21,7 +21,7 @@ import {
 } from '@/api/companion';
 import { listManualReviews } from '@/api/overview/reviews';
 import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
-import { markMessageRead } from '@/api/overview/messages';
+import { markReportRead } from '@/api/overview/reports';
 import { companionEngageProactive } from '@/api/companion';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -311,7 +311,7 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
         // triggerRef is the underlying message id.
         if (message.triggerRef) {
           try {
-            await markMessageRead(message.triggerRef);
+            await markReportRead(message.triggerRef);
           } catch (err) {
             silentCatch('companion/decision:message-mark-read')(err);
           }

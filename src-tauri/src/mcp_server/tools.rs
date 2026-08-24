@@ -1335,7 +1335,7 @@ fn handle_post_message(args: &Value, pool: &McpDbPool) -> Result<String, String>
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
-        "INSERT INTO persona_messages
+        "INSERT INTO persona_reports
             (id, persona_id, execution_id, title, content, content_type, priority, is_read, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, 'text', ?6, 0, ?7)",
         rusqlite::params![id, persona_id, execution_id, title, content, priority, now],
@@ -2413,7 +2413,7 @@ mod driver_tool_tests {
             .get()
             .unwrap()
             .query_row(
-                "SELECT COUNT(*) FROM persona_messages WHERE persona_id = ?1",
+                "SELECT COUNT(*) FROM persona_reports WHERE persona_id = ?1",
                 rusqlite::params![pid],
                 |r| r.get(0),
             )

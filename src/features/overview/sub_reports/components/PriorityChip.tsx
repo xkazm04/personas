@@ -1,4 +1,4 @@
-import type { PriorityStyle } from '../libs/messageHelpers';
+import type { PriorityStyle } from '../libs/reportHelpers';
 
 interface PriorityChipProps {
   priority: PriorityStyle;

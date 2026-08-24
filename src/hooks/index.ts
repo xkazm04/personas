@@ -44,7 +44,7 @@ export { useStructuredStream, type StreamHandlers } from "./execution/useStructu
 
 // Realtime hooks
 export * from "./realtime/useRealtimeEvents";
-export * from "./realtime/useMessageCreatedListener";
+export * from "./realtime/useReportCreatedListener";
 
 // Database hooks
 export * from "./database/useTableIntrospection";

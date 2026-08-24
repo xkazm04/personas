@@ -46,7 +46,7 @@ const overviewState = {
   // Still in the store — the SIDEBAR reads it. The tray must not, because the
   // backend total below already contains it.
   pendingReviewCount: 0,
-  unreadMessageCount: 0,
+  unreadReportCount: 0,
   activeProcesses: {} as Record<string, { status: string }>,
 };
 
@@ -168,7 +168,7 @@ beforeEach(() => {
   notificationState.unreadCount = 0;
   overviewState.cronAgents = [];
   overviewState.pendingReviewCount = 0;
-  overviewState.unreadMessageCount = 0;
+  overviewState.unreadReportCount = 0;
   overviewState.activeProcesses = {};
   agentState.buildSessions = {};
   systemState.headerOverlay = 'none';

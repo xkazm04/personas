@@ -96,7 +96,7 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
     const ov: NavStatChip[] = [];
     if (incidents > 0) ov.push({ key: 'incidents', value: incidents, icon: AlertOctagon, tone: 'red', title: tx(incidents === 1 ? ns.incidents : ns.incidents_other, { count: incidents }) });
     if (counts.pending_reviews > 0) ov.push({ key: 'reviews', value: counts.pending_reviews, icon: ClipboardCheck, tone: 'amber', title: tx(counts.pending_reviews === 1 ? ns.reviews : ns.reviews_other, { count: counts.pending_reviews }) });
-    if (counts.unread_messages > 0) ov.push({ key: 'messages', value: counts.unread_messages, icon: MessageSquare, tone: 'blue', title: tx(counts.unread_messages === 1 ? ns.messages : ns.messages_other, { count: counts.unread_messages }) });
+    if (counts.unread_reports > 0) ov.push({ key: 'messages', value: counts.unread_reports, icon: MessageSquare, tone: 'blue', title: tx(counts.unread_reports === 1 ? ns.reports : ns.reports_other, { count: counts.unread_reports }) });
     if (ov.length) status.overview = ov;
 
     // Teams — always show the count (card only renders on Team+ tiers).
@@ -132,5 +132,5 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
     }
 
     return status;
-  }, [incidents, counts.unread_messages, counts.pending_reviews, teams.length, agents, enabledAgents, events, creds, ns, tx]);
+  }, [incidents, counts.unread_reports, counts.pending_reviews, teams.length, agents, enabledAgents, events, creds, ns, tx]);
 }

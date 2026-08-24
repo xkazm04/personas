@@ -2,11 +2,11 @@ import type { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { channelIcon, channelTint } from '@/features/shared/glyph/channels';
-import { deliveryStatusConfig, channelLabels } from '../libs/messageHelpers';
-import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
+import { deliveryStatusConfig, channelLabels } from '../libs/reportHelpers';
+import type { PersonaReportDelivery } from '@/lib/bindings/PersonaReportDelivery';
 
 interface ChannelDeliveryPillProps {
-  delivery: PersonaMessageDelivery;
+  delivery: PersonaReportDelivery;
   t: ReturnType<typeof useTranslation>['t'];
 }
 
@@ -14,7 +14,7 @@ interface ChannelDeliveryPillProps {
  * Channel-delivery status pill: brand icon in a status-colored ring + status
  * label + hover-exact RelativeTime, wrapped in a flex gap-2 row.
  *
- * Replaces the plain-text delivery colophon in MessageDetailModal Section III.
+ * Replaces the plain-text delivery colophon in ReportDetailModal Section III.
  * The channel brand icon (Slack/Telegram/Email/Desktop) is wrapped in a ring
  * tinted by delivery status, so success/failure is scannable at a glance — the
  * icon answers "which channel", the ring + label answer "did it land".

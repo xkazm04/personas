@@ -1,17 +1,17 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import type { PersonaEvent, PersonaMessage } from '@/lib/types/types';
+import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { resolveReviewRow } from '@/lib/decisions/rowWrites';
-import { deleteMessage } from '@/api/overview/messages';
+import { deleteReport } from '@/api/overview/reports';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModal';
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
-import { MessageDetailModal } from '@/features/overview/sub_messages/components/MessageDetailModal';
+import { ReportDetailModal } from '@/features/overview/sub_reports/components/ReportDetailModal';
 import type { ActivityItem } from './activityTypes';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
@@ -27,7 +27,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
   const [selectedReview, setSelectedReview] = useState<PersonaManualReview | null>(null);
-  const [selectedMessage, setSelectedMessage] = useState<PersonaMessage | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<PersonaReport | null>(null);
   const [reviewProcessing, setReviewProcessing] = useState(false);
 
   const handleRowClick = useCallback((item: ActivityItem) => {
@@ -36,7 +36,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
       case 'event': setSelectedEvent(item.raw as PersonaEvent); break;
       case 'memory': setSelectedMemory(item.raw as PersonaMemory); break;
       case 'review': setSelectedReview(item.raw as PersonaManualReview); break;
-      case 'message': setSelectedMessage(item.raw as PersonaMessage); break;
+      case 'message': setSelectedMessage(item.raw as PersonaReport); break;
     }
   }, []);
 
@@ -83,11 +83,11 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
       )}
 
       {selectedMessage && (
-        <MessageDetailModal
+        <ReportDetailModal
           message={selectedMessage}
           onClose={() => setSelectedMessage(null)}
           onDelete={async () => {
-            await deleteMessage(selectedMessage.id).catch(silentCatch('ActivityModals:deleteMessage'));
+            await deleteReport(selectedMessage.id).catch(silentCatch('ActivityModals:deleteReport'));
             setSelectedMessage(null);
             onDataChanged();
           }}

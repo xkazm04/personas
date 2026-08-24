@@ -3048,7 +3048,7 @@ pub async fn run_execution(
         }
     }
 
-    // Deliver message to persona_messages if execution produced output but the AI
+    // Deliver message to persona_reports if execution produced output but the AI
     // did NOT already send a structured report via the emit_message protocol tool.
     // When a protocol UserMessage exists, it IS the report — the raw dump is redundant.
     // The INSERT is conditional on the execution NOT already being terminal in the DB,
@@ -3093,7 +3093,7 @@ pub async fn run_execution(
             // `output` kind items via isMessageOutput(), preferring this explicit
             // signal over the pre-Phase-17 keyword heuristic.
             conn.execute(
-                "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
+                "INSERT INTO persona_reports (id, persona_id, execution_id, title, content, content_type, priority, created_at)
                  SELECT ?1, ?2, ?3, ?4, ?5, 'output', 'normal', ?6
                  WHERE NOT EXISTS (
                      SELECT 1 FROM persona_executions WHERE id = ?3

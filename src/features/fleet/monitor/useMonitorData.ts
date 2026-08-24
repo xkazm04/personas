@@ -11,14 +11,14 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { listManualReviews, listManualReviewsPage } from '@/api/overview/reviews';
 import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@/lib/decisions/rowWrites';
-import { listMessages, markMessageRead } from '@/api/overview/messages';
+import { listReports, markReportRead } from '@/api/overview/reports';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
 import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import { createLogger } from '@/lib/log';
@@ -134,7 +134,7 @@ function sameReviews(a: readonly MonitorReviewItem[], b: readonly MonitorReviewI
  * unconditionally, which was right for the Monitor and wrong for everyone else.
  * The triage deck reaches this hook through `usePendingInteractions`, which does
  * not even return `unreadMessages` — so opening the deck was paying for a
- * `list_messages(300)` query and a `fetchPersonaSummaries()` every 30 seconds
+ * `list_reports(300)` query and a `fetchPersonaSummaries()` every 30 seconds
  * for data no pixel on that surface could show.
  *
  * Defaults are ALL ON, so `useMonitorData()` behaves exactly as before and the
@@ -178,7 +178,7 @@ const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
  * the rows already rendered).
  */
 const reviewsWarmCache = new Map<string, { rows: MonitorReviewItem[]; hasMore: boolean }>();
-let messagesWarmCache: PersonaMessage[] | null = null;
+let messagesWarmCache: PersonaReport[] | null = null;
 
 function reviewsCacheKey(reviewLimit: number | undefined): string {
   return reviewLimit === undefined ? 'all' : `limit:${reviewLimit}`;
@@ -211,7 +211,7 @@ export interface MonitorData {
    * empty one that does not say it failed.
    */
   reviewsHasMore: boolean;
-  unreadMessages: PersonaMessage[];
+  unreadMessages: PersonaReport[];
   activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
   /** True while ANY review write is in flight. Presentational only — the write
@@ -289,7 +289,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const cloudReviews = useOverviewStore((s) => s.cloudReviews);
   const fetchCloudReviews = useOverviewStore((s) => s.fetchCloudReviews);
   const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
-  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
+  const fetchUnreadReportCount = useOverviewStore((s) => s.fetchUnreadReportCount);
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
 
   // Seed from the warm cache so a re-opened surface paints its last-known rows
@@ -299,7 +299,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const [localReviews, setLocalReviews] = useState<MonitorReviewItem[]>(() => warm?.rows ?? []);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [reviewsHasMore, setReviewsHasMore] = useState(() => warm?.hasMore ?? false);
-  const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>(
+  const [unreadMessages, setUnreadMessages] = useState<PersonaReport[]>(
     () => messagesWarmCache ?? [],
   );
   const [loading, setLoading] = useState(warm === undefined);
@@ -359,7 +359,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
 
   const reloadMessages = useCallback(async () => {
     try {
-      const raw = await listMessages(MESSAGE_SCAN_LIMIT);
+      const raw = await listReports(MESSAGE_SCAN_LIMIT);
       const unread = raw.filter((m) => !m.is_read);
       messagesWarmCache = unread;
       if (mounted.current) setUnreadMessages(unread);
@@ -513,14 +513,14 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
       setUnreadMessages((prev) => prev.filter((m) => m.id !== id));
       messagesWarmCache = messagesWarmCache?.filter((m) => m.id !== id) ?? null;
       try {
-        await markMessageRead(id);
-        void fetchUnreadMessageCount();
+        await markReportRead(id);
+        void fetchUnreadReportCount();
       } catch (err) {
         logger.error('Failed to mark message read', { error: err });
         void reloadMessages();
       }
     },
-    [fetchUnreadMessageCount, reloadMessages],
+    [fetchUnreadReportCount, reloadMessages],
   );
 
   // Memoised because this object is the ROOT of the triage deck's prop graph:

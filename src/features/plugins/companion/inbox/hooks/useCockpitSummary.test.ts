@@ -11,7 +11,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { ExecutionDashboardData } from '@/lib/bindings/ExecutionDashboardData';
 import type { DashboardDailyPoint } from '@/lib/bindings/DashboardDailyPoint';
 import type { ManualReviewItem } from '@/lib/types/types';
-import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
 import { useAgentStore } from '@/stores/agentStore';
@@ -114,7 +114,7 @@ function approvalRecord(o: Partial<ManualReviewItem> = {}): ManualReviewItem {
   } as ManualReviewItem;
 }
 
-function messageRecord(o: Partial<PersonaMessage> = {}): PersonaMessage {
+function messageRecord(o: Partial<PersonaReport> = {}): PersonaReport {
   return {
     id: 'msg-1',
     persona_id: 'p-1',
@@ -159,7 +159,7 @@ function resetStores() {
   useOverviewStore.setState({
     executionDashboard: null,
     manualReviews: [],
-    messages: [],
+    reports: [],
     healingIssues: [],
   });
   useAuthStore.setState({ user: null });
@@ -287,7 +287,7 @@ describe('useCockpitSummary', () => {
     useAgentStore.setState({ personas: [personaRecord()] });
     useOverviewStore.setState({
       manualReviews: [approvalRecord({ id: 'rev-a', severity: 'warning' })],
-      messages: [messageRecord({ id: 'msg-info', priority: 'normal', is_read: false })],
+      reports: [messageRecord({ id: 'msg-info', priority: 'normal', is_read: false })],
       healingIssues: [
         healingRecord({ id: 'heal-crit', severity: 'critical', status: 'open', auto_fixed: false }),
       ],

@@ -3,8 +3,8 @@ use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
 
-use crate::db::models::{MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
-use crate::db::repos::communication::messages as repo;
+use crate::db::models::{PersonaReport, PersonaReportDelivery, ReportThreadSummary};
+use crate::db::repos::communication::reports as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -12,7 +12,7 @@ use crate::AppState;
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct MessageDeliverySummary {
+pub struct ReportDeliverySummary {
     pub message_id: String,
     pub delivered: i64,
     pub pending: i64,
@@ -20,32 +20,29 @@ pub struct MessageDeliverySummary {
 }
 
 #[tauri::command]
-pub fn list_messages(
+pub fn list_reports(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
     offset: Option<i64>,
-) -> Result<Vec<PersonaMessage>, AppError> {
+) -> Result<Vec<PersonaReport>, AppError> {
     require_auth_sync(&state)?;
     repo::get_all(&state.db, limit, offset)
 }
 
 #[tauri::command]
-pub fn get_message(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<PersonaMessage, AppError> {
+pub fn get_report(state: State<'_, Arc<AppState>>, id: String) -> Result<PersonaReport, AppError> {
     require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
 #[tauri::command]
-pub fn mark_message_read(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
+pub fn mark_report_read(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::mark_as_read(&state.db, &id)
 }
 
 #[tauri::command]
-pub fn mark_all_messages_read(
+pub fn mark_all_reports_read(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
 ) -> Result<(), AppError> {
@@ -54,49 +51,49 @@ pub fn mark_all_messages_read(
 }
 
 #[tauri::command]
-pub fn delete_message(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
+pub fn delete_report(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
 #[tauri::command]
-pub fn delete_all_messages(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
+pub fn delete_all_reports(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
     require_auth_sync(&state)?;
     repo::delete_all(&state.db)
 }
 
 #[tauri::command]
-pub fn get_unread_message_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
+pub fn get_unread_report_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_unread_count(&state.db)
 }
 
 #[tauri::command]
-pub fn get_message_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
+pub fn get_report_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_total_count(&state.db)
 }
 
 #[tauri::command]
-pub fn get_message_deliveries(
+pub fn get_report_deliveries(
     state: State<'_, Arc<AppState>>,
     message_id: String,
-) -> Result<Vec<PersonaMessageDelivery>, AppError> {
+) -> Result<Vec<PersonaReportDelivery>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_deliveries_by_message(&state.db, &message_id)
+    repo::get_deliveries_by_report(&state.db, &message_id)
 }
 
 #[tauri::command]
 pub fn get_bulk_delivery_summaries(
     state: State<'_, Arc<AppState>>,
     message_ids: Vec<String>,
-) -> Result<Vec<MessageDeliverySummary>, AppError> {
+) -> Result<Vec<ReportDeliverySummary>, AppError> {
     require_auth_sync(&state)?;
     let rows = repo::get_bulk_delivery_summaries(&state.db, &message_ids)?;
     Ok(rows
         .into_iter()
         .map(
-            |(message_id, delivered, pending, failed)| MessageDeliverySummary {
+            |(message_id, delivered, pending, failed)| ReportDeliverySummary {
                 message_id,
                 delivered,
                 pending,
@@ -107,10 +104,10 @@ pub fn get_bulk_delivery_summaries(
 }
 
 #[tauri::command]
-pub fn get_messages_by_thread(
+pub fn get_reports_by_thread(
     state: State<'_, Arc<AppState>>,
     thread_id: String,
-) -> Result<Vec<PersonaMessage>, AppError> {
+) -> Result<Vec<PersonaReport>, AppError> {
     require_auth_sync(&state)?;
     repo::get_by_thread(&state.db, &thread_id)
 }
@@ -121,7 +118,7 @@ pub fn get_thread_summaries(
     limit: Option<i64>,
     offset: Option<i64>,
     persona_id: Option<String>,
-) -> Result<Vec<MessageThreadSummary>, AppError> {
+) -> Result<Vec<ReportThreadSummary>, AppError> {
     require_auth_sync(&state)?;
     repo::get_thread_summaries(&state.db, limit, offset, persona_id.as_deref())
 }
@@ -138,7 +135,7 @@ pub fn get_thread_count(
 // -- Dev seed: mock message -------------------------------------------------------
 
 #[tauri::command]
-pub fn seed_mock_message(state: State<'_, Arc<AppState>>) -> Result<PersonaMessage, AppError> {
+pub fn seed_mock_message(state: State<'_, Arc<AppState>>) -> Result<PersonaReport, AppError> {
     require_auth_sync(&state)?;
 
     #[cfg(not(debug_assertions))]
@@ -169,7 +166,7 @@ pub fn seed_mock_message(state: State<'_, Arc<AppState>>) -> Result<PersonaMessa
         let result = {
             let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
             conn.execute(
-                "INSERT INTO persona_messages
+                "INSERT INTO persona_reports
                  (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id)
                  VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, 0, NULL, ?7, ?8)",
                 rusqlite::params![id, persona_id, tpl.title, tpl.content, content_type, priority, now, thread_id],

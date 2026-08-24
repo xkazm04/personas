@@ -63,7 +63,7 @@ export function isComplexQuestion(q: BuildQuestion): boolean {
  *
  * Neither unread messages nor persona health summaries appear anywhere in this
  * hook's return type, so neither gets a poller. Before this, opening Quick
- * Answer started a `list_messages(300)` query and a `fetchPersonaSummaries()`
+ * Answer started a `list_reports(300)` query and a `fetchPersonaSummaries()`
  * every 30 seconds for the entire time it was open, and threw both away.
  *
  * A module constant, not an inline literal: it is a hook argument, and a fresh

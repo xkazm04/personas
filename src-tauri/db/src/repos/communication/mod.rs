@@ -2,7 +2,7 @@ pub mod alert_rules;
 pub mod chat;
 pub mod events;
 pub mod manual_reviews;
-pub mod messages;
+pub mod reports;
 pub mod reviews;
 pub mod shared_events;
 pub mod sla;

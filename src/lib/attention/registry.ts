@@ -22,7 +22,7 @@ import { selectActiveAlertCount } from "@/stores/selectors/activeAlertCount";
  */
 export type AttentionDomainId =
   | "pending_reviews"
-  | "unread_messages"
+  | "unread_reports"
   | "active_alerts"
   | "memory_actions"
   | "pending_events";
@@ -52,10 +52,10 @@ const REGISTRY: AttentionDomain[] = [
     count: (s: OverviewStore) => s.pendingReviewCount,
   },
   {
-    id: "unread_messages",
-    labelKey: "unread_messages",
+    id: "unread_reports",
+    labelKey: "unread_reports",
     scopes: ["sidebar", "dashboard", "overview"],
-    count: (s: OverviewStore) => s.unreadMessageCount,
+    count: (s: OverviewStore) => s.unreadReportCount,
   },
   {
     id: "active_alerts",

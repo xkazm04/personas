@@ -15,7 +15,7 @@ import { pageTransition } from '@/features/overview/libs/animations';
 const DashboardWithSubtabs = lazyRetry(() => import('@/features/overview/components/dashboard/DashboardWithSubtabs'));
 const ExecutionsWithSubtabs = lazyRetry(() => import('@/features/overview/components/dashboard/ExecutionsWithSubtabs'));
 const ManualReviewList = lazyRetry(() => import('@/features/overview/sub_manual-review/components/ManualReviewList'));
-const MessageList = lazyRetry(() => import('@/features/overview/sub_messages/components/MessageList'));
+const ReportList = lazyRetry(() => import('@/features/overview/sub_reports/components/ReportList'));
 const EventLogList = lazyRetry(() => import('@/features/overview/sub_events/components/EventLogList'));
 // The four former "Knowledge" subtabs. KnowledgeHub (the SegmentedTabs shell
 // that used to wrap them) was deleted on 2026-07-29 — the sidebar is the
@@ -79,7 +79,7 @@ function OverviewContent() {
           overviewTab === 'incidents' ? <IncidentsInbox /> :
           overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
           overviewTab === 'manual-review' ? <ManualReviewList /> :
-          overviewTab === 'messages' ? <MessageList /> :
+          overviewTab === 'messages' ? <ReportList /> :
           overviewTab === 'events' ? <EventLogList /> :
           overviewTab === 'memories' ? <MemoriesPage /> :
           overviewTab === 'patterns' ? <PatternsPanel /> :
