@@ -13,7 +13,6 @@
   "dashboard": "لوحة المعلومات",
   "executions": "عمليات التنفيذ",
   "manual_review": "المراجعة اليدوية",
-  "messages": "الرسائل",
   "knowledge": "المعرفة",
   "sla": "SLA",
   "cron_agents": "وكلاء cron",
@@ -58,8 +57,6 @@
   "soon_badge": "قريبًا",
   "pending_reviews_sr": "{count} مراجعة معلّقة",
   "pending_reviews_sr_other": "{count} مراجعات معلّقة",
-  "unread_messages_sr": "{count} رسالة غير مقروءة",
-  "unread_messages_sr_other": "{count} رسائل غير مقروءة",
   "pending_events_sr": "{count} حدث معلّق",
   "pending_events_sr_other": "{count} أحداث معلّقة",
   "cockpit": "القمرة",
@@ -96,5 +93,8 @@
   "memories": "الذكريات",
   "memory_graph": "الرسم البياني",
   "patterns": "الأنماط",
-  "devices": "الأجهزة"
+  "devices": "الأجهزة",
+  "messages": "التقارير",
+  "unread_reports_sr": "{count} تقرير غير مقروء",
+  "unread_reports_sr_other": "{count} تقارير غير مقروءة"
 }

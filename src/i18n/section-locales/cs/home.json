@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} otevřený incident",
     "incidents_other": "{count} otevřených incidentů",
-    "messages": "{count} nepřečtená zpráva",
-    "messages_other": "{count} nepřečtených zpráv",
     "reviews": "{count} čekající přezkoumání",
     "reviews_other": "{count} čekajících přezkoumání",
     "teams": "{count} tým",
@@ -108,7 +106,9 @@
     "trend_down": "dolů o {pct} % oproti předchozím 24 h",
     "trend_flat": "žádná změna oproti předchozím 24 h",
     "agents_enabled": "{count} aktivní agent",
-    "agents_enabled_other": "{count} aktivních agentů"
+    "agents_enabled_other": "{count} aktivních agentů",
+    "reports": "{count} nepřečtený report",
+    "reports_other": "{count} nepřečtených reportů"
   },
   "get_started": {
     "ask_cta": "Zeptat se asistenta",

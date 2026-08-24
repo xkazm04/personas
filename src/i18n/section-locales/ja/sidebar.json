@@ -13,7 +13,6 @@
   "dashboard": "ダッシュボード",
   "executions": "実行履歴",
   "manual_review": "手動レビュー",
-  "messages": "メッセージ",
   "knowledge": "ナレッジ",
   "sla": "SLA",
   "cron_agents": "Cronエージェント",
@@ -58,8 +57,6 @@
   "soon_badge": "近日",
   "pending_reviews_sr": "{count}件のレビュー待ち",
   "pending_reviews_sr_other": "{count}件のレビュー待ち",
-  "unread_messages_sr": "{count}件の未読メッセージ",
-  "unread_messages_sr_other": "{count}件の未読メッセージ",
   "pending_events_sr": "{count}件の保留イベント",
   "pending_events_sr_other": "{count}件の保留イベント",
   "cockpit": "コックピット",
@@ -96,5 +93,8 @@
   "memories": "メモリ",
   "memory_graph": "グラフ",
   "patterns": "パターン",
-  "devices": "デバイス"
+  "devices": "デバイス",
+  "messages": "レポート",
+  "unread_reports_sr": "未読レポート {count} 件",
+  "unread_reports_sr_other": "未読レポート {count} 件"
 }

@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count}টি খোলা ঘটনা",
     "incidents_other": "{count}টি খোলা ঘটনা",
-    "messages": "{count}টি অপঠিত বার্তা",
-    "messages_other": "{count}টি অপঠিত বার্তা",
     "reviews": "{count}টি মুলতুবি পর্যালোচনা",
     "reviews_other": "{count}টি মুলতুবি পর্যালোচনা",
     "teams": "{count}টি দল",
@@ -108,7 +106,9 @@
     "trend_down": "আগের ২৪ ঘণ্টার তুলনায় {pct}% কম",
     "trend_flat": "আগের ২৪ ঘণ্টার তুলনায় কোনো পরিবর্তন নেই",
     "agents_enabled": "{count}টি সক্রিয় এজেন্ট",
-    "agents_enabled_other": "{count}টি সক্রিয় এজেন্ট"
+    "agents_enabled_other": "{count}টি সক্রিয় এজেন্ট",
+    "reports": "{count}টি অপঠিত রিপোর্ট",
+    "reports_other": "{count}টি অপঠিত রিপোর্ট"
   },
   "get_started": {
     "ask_cta": "সহকারীকে জিজ্ঞেস করুন",

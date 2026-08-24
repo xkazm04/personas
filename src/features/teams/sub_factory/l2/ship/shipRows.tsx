@@ -96,6 +96,38 @@ export function LedgerHeader({ title, count, aside, muted }: {
   );
 }
 
+/**
+ * The CUT's header — and the milestone's identity, which is the same thing.
+ *
+ * The objective and its description used to sit in the page header, above the
+ * roadmap spine and the control bar, separated from the ledger they describe by
+ * two other readings. That put the milestone's name in one place and its
+ * contents in another, and made the top of the surface a stack of four things
+ * to read before reaching anything you could act on.
+ *
+ * A milestone IS its objective, so the objective is the heading of the cut.
+ * `objective` and `description` are slots rather than strings because they are
+ * inline-editable fields (`ShipGoalField` / `ShipDescriptionField`) — the header
+ * owns the layout, the caller owns the editing.
+ */
+export function LedgerObjectiveHeader({ objective, description, count }: {
+  objective: ReactNode;
+  description?: ReactNode;
+  /** Ready / total across the cut, on the right edge where every other
+   *  ledger's count already sits. */
+  count: ReactNode;
+}) {
+  return (
+    <div className="mb-3">
+      <div className="flex items-baseline gap-3 min-w-0">
+        <div className="min-w-0 flex-1">{objective}</div>
+        <span className="typo-data text-foreground/40 shrink-0">{count}</span>
+      </div>
+      {description}
+    </div>
+  );
+}
+
 /** The ledger's empty slot. Both scope lists (in the cut, outside the cut) use
  *  it, so an empty section reads the same on either side: a dashed card in the
  *  hue of what it wants next (blue invites setup, grey is simply nothing left

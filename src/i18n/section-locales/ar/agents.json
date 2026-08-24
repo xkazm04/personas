@@ -1705,7 +1705,6 @@
     "col_time": "الوقت",
     "execution_status": "حالة التنفيذ {status}",
     "no_output": "لا يوجد مخرج",
-    "message_title": "الرسالة",
     "modal_execution_title": "{name} - تنفيذ",
     "modal_execution_subtitle": "المعرّف: {id}",
     "modal_review_title": "مراجعة: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "الحكم",
     "verdict_none": "لم يراجعه المدير بعد",
     "verdict_tooltip": "حكم المدير: {score}/5",
-    "annotation_saving": "جارٍ الحفظ…"
+    "annotation_saving": "جارٍ الحفظ…",
+    "report_title": "تقرير"
   },
   "settings_status": {
     "saving": "جارٍ حفظ {sections}...",

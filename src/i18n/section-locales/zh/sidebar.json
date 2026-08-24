@@ -13,7 +13,6 @@
   "dashboard": "仪表盘",
   "executions": "执行记录",
   "manual_review": "人工审核",
-  "messages": "消息",
   "knowledge": "知识图谱",
   "sla": "SLA",
   "cron_agents": "定时智能体",
@@ -58,8 +57,6 @@
   "soon_badge": "即将",
   "pending_reviews_sr": "{count} 条待审核",
   "pending_reviews_sr_other": "{count} 条待审核",
-  "unread_messages_sr": "{count} 条未读消息",
-  "unread_messages_sr_other": "{count} 条未读消息",
   "pending_events_sr": "{count} 个待处理事件",
   "pending_events_sr_other": "{count} 个待处理事件",
   "cockpit": "驾驶舱",
@@ -96,5 +93,8 @@
   "memories": "记忆",
   "memory_graph": "图表",
   "patterns": "模式",
-  "devices": "设备"
+  "devices": "设备",
+  "messages": "报告",
+  "unread_reports_sr": "{count} 份未读报告",
+  "unread_reports_sr_other": "{count} 份未读报告"
 }

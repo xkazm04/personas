@@ -1705,7 +1705,6 @@
     "col_time": "시간",
     "execution_status": "실행 {status}",
     "no_output": "출력 없음",
-    "message_title": "메시지",
     "modal_execution_title": "{name} - 실행",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "검토: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "평결",
     "verdict_none": "Director가 아직 검토하지 않았습니다",
     "verdict_tooltip": "Director 평결: {score}/5",
-    "annotation_saving": "저장 중…"
+    "annotation_saving": "저장 중…",
+    "report_title": "보고서"
   },
   "settings_status": {
     "saving": "{sections} 저장 중...",

@@ -1705,7 +1705,6 @@
     "col_time": "Thời gian",
     "execution_status": "Thực thi {status}",
     "no_output": "Không có đầu ra",
-    "message_title": "Tin nhắn",
     "modal_execution_title": "{name} - Thực thi",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "Xem xét: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "Phán quyết",
     "verdict_none": "Chưa được Director đánh giá",
     "verdict_tooltip": "Phán quyết Director: {score}/5",
-    "annotation_saving": "Đang lưu…"
+    "annotation_saving": "Đang lưu…",
+    "report_title": "Báo cáo"
   },
   "settings_status": {
     "saving": "Đang lưu {sections}...",

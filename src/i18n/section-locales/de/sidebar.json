@@ -13,7 +13,6 @@
   "dashboard": "Dashboard",
   "executions": "Ausführungen",
   "manual_review": "Manuelle Prüfung",
-  "messages": "Nachrichten",
   "knowledge": "Wissen",
   "sla": "SLA",
   "cron_agents": "Cron-Agenten",
@@ -58,8 +57,6 @@
   "soon_badge": "bald",
   "pending_reviews_sr": "{count} ausstehende Prüfung",
   "pending_reviews_sr_other": "{count} ausstehende Prüfungen",
-  "unread_messages_sr": "{count} ungelesene Nachricht",
-  "unread_messages_sr_other": "{count} ungelesene Nachrichten",
   "pending_events_sr": "{count} ausstehendes Ereignis",
   "pending_events_sr_other": "{count} ausstehende Ereignisse",
   "cockpit": "Cockpit",
@@ -96,5 +93,8 @@
   "memories": "Erinnerungen",
   "memory_graph": "Graph",
   "patterns": "Muster",
-  "devices": "Geräte"
+  "devices": "Geräte",
+  "messages": "Berichte",
+  "unread_reports_sr": "{count} ungelesener Bericht",
+  "unread_reports_sr_other": "{count} ungelesene Berichte"
 }

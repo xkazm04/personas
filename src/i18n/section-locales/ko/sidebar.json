@@ -13,7 +13,6 @@
   "dashboard": "대시보드",
   "executions": "실행",
   "manual_review": "수동 검토",
-  "messages": "메시지",
   "knowledge": "지식",
   "sla": "SLA",
   "cron_agents": "Cron 에이전트",
@@ -58,8 +57,6 @@
   "soon_badge": "예정",
   "pending_reviews_sr": "검토 대기 {count}건",
   "pending_reviews_sr_other": "검토 대기 {count}건",
-  "unread_messages_sr": "읽지 않은 메시지 {count}건",
-  "unread_messages_sr_other": "읽지 않은 메시지 {count}건",
   "pending_events_sr": "대기 이벤트 {count}건",
   "pending_events_sr_other": "대기 이벤트 {count}건",
   "cockpit": "코크핏",
@@ -96,5 +93,8 @@
   "memories": "메모리",
   "memory_graph": "그래프",
   "patterns": "패턴",
-  "devices": "기기"
+  "devices": "기기",
+  "messages": "보고서",
+  "unread_reports_sr": "읽지 않은 보고서 {count}개",
+  "unread_reports_sr_other": "읽지 않은 보고서 {count}개"
 }

@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count}件のオープンインシデント",
     "incidents_other": "{count}件のオープンインシデント",
-    "messages": "{count}件の未読メッセージ",
-    "messages_other": "{count}件の未読メッセージ",
     "reviews": "{count}件の保留中レビュー",
     "reviews_other": "{count}件の保留中レビュー",
     "teams": "{count}チーム",
@@ -108,7 +106,9 @@
     "trend_down": "前の24時間比で{pct}%減",
     "trend_flat": "前の24時間比で変化なし",
     "agents_enabled": "有効なエージェント {count} 件",
-    "agents_enabled_other": "有効なエージェント {count} 件"
+    "agents_enabled_other": "有効なエージェント {count} 件",
+    "reports": "未読レポート {count} 件",
+    "reports_other": "未読レポート {count} 件"
   },
   "get_started": {
     "ask_cta": "アシスタントに聞く",

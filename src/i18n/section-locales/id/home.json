@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} insiden aktif",
     "incidents_other": "{count} insiden aktif",
-    "messages": "{count} pesan belum dibaca",
-    "messages_other": "{count} pesan belum dibaca",
     "reviews": "{count} ulasan tertunda",
     "reviews_other": "{count} ulasan tertunda",
     "teams": "{count} tim",
@@ -108,7 +106,9 @@
     "trend_down": "turun {pct}% vs 24 jam sebelumnya",
     "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya",
     "agents_enabled": "{count} agen aktif",
-    "agents_enabled_other": "{count} agen aktif"
+    "agents_enabled_other": "{count} agen aktif",
+    "reports": "{count} laporan belum dibaca",
+    "reports_other": "{count} laporan belum dibaca"
   },
   "get_started": {
     "ask_cta": "Tanya asisten",

@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} incident ouvert",
     "incidents_other": "{count} incidents ouverts",
-    "messages": "{count} message non lu",
-    "messages_other": "{count} messages non lus",
     "reviews": "{count} révision en attente",
     "reviews_other": "{count} révisions en attente",
     "teams": "{count} équipe",
@@ -108,7 +106,9 @@
     "trend_down": "en baisse de {pct}% par rapport aux 24h précédentes",
     "trend_flat": "aucun changement par rapport aux 24h précédentes",
     "agents_enabled": "{count} agent actif",
-    "agents_enabled_other": "{count} agents actifs"
+    "agents_enabled_other": "{count} agents actifs",
+    "reports": "{count} rapport non lu",
+    "reports_other": "{count} rapports non lus"
   },
   "get_started": {
     "ask_cta": "Interroger l'assistant",

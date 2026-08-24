@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} открытый инцидент",
     "incidents_other": "{count} открытых инцидентов",
-    "messages": "{count} непрочитанное сообщение",
-    "messages_other": "{count} непрочитанных сообщений",
     "reviews": "{count} ожидающая проверка",
     "reviews_other": "{count} ожидающих проверок",
     "teams": "{count} команда",
@@ -108,7 +106,9 @@
     "trend_down": "-{pct}% по сравнению с предыдущими 24 ч",
     "trend_flat": "без изменений по сравнению с предыдущими 24 ч",
     "agents_enabled": "{count} активный агент",
-    "agents_enabled_other": "{count} активных агентов"
+    "agents_enabled_other": "{count} активных агентов",
+    "reports": "{count} непрочитанный отчёт",
+    "reports_other": "{count} непрочитанных отчётов"
   },
   "get_started": {
     "ask_cta": "Спросить ассистента",

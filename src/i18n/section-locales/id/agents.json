@@ -1705,7 +1705,6 @@
     "col_time": "Waktu",
     "execution_status": "Eksekusi {status}",
     "no_output": "Tidak ada keluaran",
-    "message_title": "Pesan",
     "modal_execution_title": "{name} - Eksekusi",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "Tinjau: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "Putusan",
     "verdict_none": "Belum ditinjau oleh Director",
     "verdict_tooltip": "Putusan Director: {score}/5",
-    "annotation_saving": "Menyimpan…"
+    "annotation_saving": "Menyimpan…",
+    "report_title": "Laporan"
   },
   "settings_status": {
     "saving": "Menyimpan {sections}...",

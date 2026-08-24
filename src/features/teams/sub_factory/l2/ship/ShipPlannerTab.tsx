@@ -26,7 +26,7 @@ import {
   BUCKET_HUE, bucketLabel,
   type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
-import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { LedgerEmpty, LedgerHeader, LedgerList, LedgerObjectiveHeader, LedgerRow } from './shipRows';
 import { ShipVelocityNote } from './ShipVelocityNote';
 import { useShipData, type ShipData } from './useShipData';
 
@@ -139,13 +139,34 @@ function Workspace({ vm, ship, editable, t, tx }: {
 
   return (
     <>
+      {/* The milestone IS its objective, so the objective heads the cut rather
+          than floating in the page header two readings away from the ledger it
+          describes. Rendered unconditionally — `showCut` hides the LIST when
+          there is nothing in the cut and everything is still outside it, and a
+          milestone with no identity on screen at that exact moment is worse
+          than an empty list. */}
+      <LedgerObjectiveHeader
+        count={tx(t.ship.in_the_cut_count, { done: coreReady, total: core.length })}
+        objective={(
+          <ShipGoalField
+            name={vm.name}
+            goal={vm.goal}
+            editable={editable}
+            onSave={(goal) => ship.setGoal(vm.id, goal)}
+          />
+        )}
+        description={(
+          <ShipDescriptionField
+            name={vm.name}
+            description={vm.description}
+            editable={editable}
+            onSave={(description) => ship.setDescription(vm.id, description)}
+          />
+        )}
+      />
+
       {showCut && (
       <>
-      <LedgerHeader
-        title={t.ship.in_the_cut}
-        count={tx(t.ship.in_the_cut_count, { done: coreReady, total: core.length })}
-        aside={tx(t.ship.in_the_cut_aside, { name: vm.name })}
-      />
       <div className="mb-5">
         <LedgerList testid="ship-cut-list">
           {core.map((mm, i) => (
@@ -293,18 +314,10 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
         data-testid="ship-content-header"
       >
         <div className="min-w-0 flex-1">
-          <ShipGoalField
-            name={vm.name}
-            goal={vm.goal}
-            editable={editable}
-            onSave={(goal) => ship.setGoal(vm.id, goal)}
-          />
-          <ShipDescriptionField
-            name={vm.name}
-            description={vm.description}
-            editable={editable}
-            onSave={(description) => ship.setDescription(vm.id, description)}
-          />
+          {/* Objective + description moved into the cut header (Workspace) —
+              the milestone's identity belongs on the thing it names. What is
+              left here is the two readings that are ABOUT the milestone rather
+              than part of it, and the controls. */}
           <ShipVelocityNote rows={ship.roadmap.map((ms) => ms.row)} vm={vm} />
           {/* Reporting only: certification is gated by `verdict` (the criteria
               registry, now read inside the certify panel), never by these. */}

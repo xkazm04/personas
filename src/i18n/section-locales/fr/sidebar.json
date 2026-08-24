@@ -13,7 +13,6 @@
   "dashboard": "Tableau de bord",
   "executions": "Exécutions",
   "manual_review": "Revue manuelle",
-  "messages": "Messages",
   "knowledge": "Connaissances",
   "sla": "SLA",
   "cron_agents": "Agents cron",
@@ -58,8 +57,6 @@
   "soon_badge": "bientôt",
   "pending_reviews_sr": "{count} revue en attente",
   "pending_reviews_sr_other": "{count} revues en attente",
-  "unread_messages_sr": "{count} message non lu",
-  "unread_messages_sr_other": "{count} messages non lus",
   "pending_events_sr": "{count} événement en attente",
   "pending_events_sr_other": "{count} événements en attente",
   "cockpit": "Cockpit",
@@ -96,5 +93,8 @@
   "memories": "Mémorisations",
   "memory_graph": "Graphe",
   "patterns": "Motifs",
-  "devices": "Appareils"
+  "devices": "Appareils",
+  "messages": "Rapports",
+  "unread_reports_sr": "{count} rapport non lu",
+  "unread_reports_sr_other": "{count} rapports non lus"
 }

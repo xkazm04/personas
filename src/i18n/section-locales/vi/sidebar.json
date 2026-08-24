@@ -13,7 +13,6 @@
   "dashboard": "Bảng điều khiển",
   "executions": "Thực thi",
   "manual_review": "Duyệt thủ công",
-  "messages": "Tin nhắn",
   "knowledge": "Tri thức",
   "sla": "SLA",
   "cron_agents": "Tác tử cron",
@@ -58,8 +57,6 @@
   "soon_badge": "sắp",
   "pending_reviews_sr": "{count} đánh giá đang chờ",
   "pending_reviews_sr_other": "{count} đánh giá đang chờ",
-  "unread_messages_sr": "{count} tin nhắn chưa đọc",
-  "unread_messages_sr_other": "{count} tin nhắn chưa đọc",
   "pending_events_sr": "{count} sự kiện đang chờ",
   "pending_events_sr_other": "{count} sự kiện đang chờ",
   "cockpit": "Cockpit",
@@ -96,5 +93,8 @@
   "memories": "Bộ nhớ",
   "memory_graph": "Đồ thị",
   "patterns": "Mẫu",
-  "devices": "Thiết bị"
+  "devices": "Thiết bị",
+  "messages": "Báo cáo",
+  "unread_reports_sr": "{count} báo cáo chưa đọc",
+  "unread_reports_sr_other": "{count} báo cáo chưa đọc"
 }

@@ -13,7 +13,6 @@
   "dashboard": "Dasbor",
   "executions": "Eksekusi",
   "manual_review": "Tinjauan Manual",
-  "messages": "Pesan",
   "knowledge": "Pengetahuan",
   "sla": "SLA",
   "cron_agents": "Agen Cron",
@@ -58,8 +57,6 @@
   "soon_badge": "segera",
   "pending_reviews_sr": "{count} tinjauan tertunda",
   "pending_reviews_sr_other": "{count} tinjauan tertunda",
-  "unread_messages_sr": "{count} pesan belum dibaca",
-  "unread_messages_sr_other": "{count} pesan belum dibaca",
   "pending_events_sr": "{count} peristiwa tertunda",
   "pending_events_sr_other": "{count} peristiwa tertunda",
   "cockpit": "Cockpit",
@@ -96,5 +93,8 @@
   "memories": "Memori",
   "memory_graph": "Grafik",
   "patterns": "Pola",
-  "devices": "Perangkat"
+  "devices": "Perangkat",
+  "messages": "Laporan",
+  "unread_reports_sr": "{count} laporan belum dibaca",
+  "unread_reports_sr_other": "{count} laporan belum dibaca"
 }

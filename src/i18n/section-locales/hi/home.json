@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} खुली घटना",
     "incidents_other": "{count} खुली घटनाएँ",
-    "messages": "{count} अपठित संदेश",
-    "messages_other": "{count} अपठित संदेश",
     "reviews": "{count} लंबित समीक्षा",
     "reviews_other": "{count} लंबित समीक्षाएँ",
     "teams": "{count} टीम",
@@ -108,7 +106,9 @@
     "trend_down": "पिछले 24 घंटों की तुलना में {pct}% नीचे",
     "trend_flat": "पिछले 24 घंटों की तुलना में कोई बदलाव नहीं",
     "agents_enabled": "{count} सक्रिय एजेंट",
-    "agents_enabled_other": "{count} सक्रिय एजेंट"
+    "agents_enabled_other": "{count} सक्रिय एजेंट",
+    "reports": "{count} अपठित रिपोर्ट",
+    "reports_other": "{count} अपठित रिपोर्टें"
   },
   "get_started": {
     "ask_cta": "असिस्टेंट से पूछें",

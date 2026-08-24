@@ -1705,7 +1705,6 @@
     "col_time": "समय",
     "execution_status": "निष्पादन {status}",
     "no_output": "कोई आउटपुट नहीं",
-    "message_title": "संदेश",
     "modal_execution_title": "{name} - निष्पादन",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "समीक्षा: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "निर्णय",
     "verdict_none": "Director द्वारा अभी समीक्षा नहीं",
     "verdict_tooltip": "Director का निर्णय: {score}/5",
-    "annotation_saving": "सहेजा जा रहा है…"
+    "annotation_saving": "सहेजा जा रहा है…",
+    "report_title": "रिपोर्ट"
   },
   "settings_status": {
     "saving": "{sections} सहेजा जा रहा है...",

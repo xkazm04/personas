@@ -1705,7 +1705,6 @@
     "col_time": "時刻",
     "execution_status": "実行 {status}",
     "no_output": "出力なし",
-    "message_title": "メッセージ",
     "modal_execution_title": "{name} - 実行",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "レビュー: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "評価",
     "verdict_none": "Directorによる審査はまだありません",
     "verdict_tooltip": "Director の評価: {score}/5",
-    "annotation_saving": "保存中…"
+    "annotation_saving": "保存中…",
+    "report_title": "レポート"
   },
   "settings_status": {
     "saving": "{sections} を保存中...",

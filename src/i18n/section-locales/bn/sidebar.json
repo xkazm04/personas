@@ -13,7 +13,6 @@
   "dashboard": "ড্যাশবোর্ড",
   "executions": "সম্পাদন",
   "manual_review": "ম্যানুয়াল পর্যালোচনা",
-  "messages": "বার্তা",
   "knowledge": "জ্ঞানভাণ্ডার",
   "sla": "SLA",
   "cron_agents": "Cron এজেন্ট",
@@ -58,8 +57,6 @@
   "soon_badge": "শীঘ্র",
   "pending_reviews_sr": "{count} পর্যালোচনা বাকি",
   "pending_reviews_sr_other": "{count} পর্যালোচনা বাকি",
-  "unread_messages_sr": "{count} অপঠিত বার্তা",
-  "unread_messages_sr_other": "{count} অপঠিত বার্তা",
   "pending_events_sr": "{count} মুলতুবি ইভেন্ট",
   "pending_events_sr_other": "{count} মুলতুবি ইভেন্ট",
   "cockpit": "ককপিট",
@@ -96,5 +93,8 @@
   "memories": "স্মৃতি",
   "memory_graph": "গ্রাফ",
   "patterns": "প্যাটার্ন",
-  "devices": "ডিভাইসসমূহ"
+  "devices": "ডিভাইসসমূহ",
+  "messages": "রিপোর্ট",
+  "unread_reports_sr": "{count}টি অপঠিত রিপোর্ট",
+  "unread_reports_sr_other": "{count}টি অপঠিত রিপোর্ট"
 }

@@ -195,7 +195,7 @@ Consequences worth knowing:
 
 The composer renders the footprint as a chip row tinted by tone, with a summary line counting the critical and KPI-less contexts inside it.
 
-## 7. The control bar, composer, library tree and context drawer
+## 7. The control bar, composer and goal rail
 
 ### The control bar (`ShipControlBar.tsx`)
 
@@ -212,6 +212,12 @@ Before 2026-08-20 these lived in four places (the lifecycle button and Compose f
 **Certify carries the criteria reading on its own face** — a `met/total` badge in the verdict's colour — which is what the five permanent chips were spending a header row to say.
 
 **Ask Athena** builds the whole live milestone into a briefing (`shipAthena.ts`) and sends it through `useAskAthena` tagged `system_source: 'Ship'`. That tag is load-bearing: the backend files the turn as `TurnOrigin::External`, so Athena is told the surface handed her a situation rather than the operator asking a question. See §13.
+
+### The objective heads the cut, not the page
+
+`LedgerObjectiveHeader` (`shipRows.tsx`) renders the milestone's objective and description as the heading of the **in the cut** ledger, with the ready/total count on the right edge where every other ledger's count sits. They used to live in the page header, above the roadmap spine and separated from the ledger they describe by the velocity note and the duality summary — the milestone's name in one place, its contents in another, and four things to read before reaching anything actionable.
+
+It renders unconditionally. `showCut` hides the LIST when the cut is empty and everything is still outside it; a milestone with no identity on screen at that exact moment would be worse than an empty list.
 
 ### Certification is two beats (`ShipCertifyModal.tsx`)
 
@@ -234,16 +240,15 @@ Two ledgers rendered through the shared `LedgerRow` / `LedgerList` / `LedgerHead
 
 A two-pane surface: the project library on the left, the milestone's live cut on the right (bound-goal chips, the derived footprint strip, the core member list with Remove actions).
 
-**Library tree** (`ShipLibraryTree.tsx`), built for the 10-to-100-context case:
+**Goal rail** (`ShipGoalRail.tsx`) — the composer's left pane, and the whole of it.
 
-- **Group bands.** Contexts are bucketed by their `dev_context_groups` group, colored by the group's color (named palette or a raw hex), with ungrouped contexts collected into a trailing "Ungrouped" band. The first band opens by default.
-- **Context rows.** A tone dot, the name (a button that pops the drawer), a chevron that expands children in place, and a right-side count reading `Nf Mg` (features, goals), `empty`, plus " · in cut" when the context is already in the milestone's footprint.
-- **Children.** Features (violet sparkle) with an add-to-cut button or an "in cut" label; goals (teal target) with a Bind button or a "bound" label, each carrying a goal-assist lightning button.
-- **Quick-add.** Every expanded context ends with an inline "New feature in <context>..." input. Submitting calls `createUseCase` with that context as both the sole slice and the primary context, so a thin library never dead-ends.
-- **Filter.** One search box over contexts, features and goals. A context survives if its own name matches, or any feature or goal beneath it matches. An active query force-opens every surviving band and context, and an empty result renders a "Nothing matches" state.
-- **New goal.** Opens the shared `GoalEditorModal` from `sub_goals`, so goals can be authored here without leaving the composer.
+It replaced a browsable library (group bands → contexts → features → per-context quick-add) and a 380px context drawer on the operator's ruling of **2026-08-24**: composing a milestone must not require browsing a tree to work out which context or use case an idea belongs to. That mapping is the LLM layer's job — `buildGoalAssistPrompt` already asks an agent to assign contexts, do the work and flag the result for review — and demanding it of a person meant asking them to think in the schema's vocabulary rather than their own.
 
-**Context drawer** (`ShipContextDrawer.tsx`): a 380px right-side panel opened by clicking a context name. It re-hosts the Context Map's ContextDetail pattern on Ship-local data only, never `systemStore`. Contents: group name, a health record row (file count, KPI count or "no KPI", error count when monitoring is wired), the features slicing this context, the goals attached to it, and up to 8 sample file paths with a "+N more" tail. Features and goals in the drawer carry the same Cut / Bind affordances as the tree, so the drawer is a selection surface, not just a readout.
+A **goal** is the artifact the operator thinks in: an intention, not a slice of the codebase. So the rail lists goals and nothing else — unbound first, alphabetical inside each half so binding one does not reshuffle the list — with a Bind action, the ⚡ assist, and **New goal** as the primary affordance. The filter only appears past seven goals; a list you can read at a glance does not need a search box above it.
+
+Removed with it, each deliberately: the context tree and feature rows; the per-context quick-add (it minted a use case against a context the operator had to pick — the same demand in a smaller hat); the "what this library is" paragraph; and `UnchartedEmptyState`'s context-scan button. Contexts are still scanned from the Factory's own surfaces, and a goal needs none, so an unscanned project can still be given objectives. `useShipData` lost `createFeature`, `scanContexts` and `ctxScanning` in the same change — they existed only for those two components, and leaving uncalled methods on the hook is the orphan rot this repo measures elsewhere.
+
+Features still reach the cut, through the planner's own **outside the cut** ledger or through Athena — neither of which requires navigating a hierarchy.
 
 ## 8. Fleet dispatch and goal assist
 
@@ -261,7 +266,7 @@ Confirming spawns a Fleet Dev-runner session in the project's `root_path` via `d
 
 ### Goal assist
 
-The "too many contexts to comprehend" helper. A goal can be written without picking a context (the shared `GoalEditorModal`), then handed to an agent from either the library tree, the drawer, or a bound-goal chip in the composer. `buildGoalAssistPrompt` (`ShipDispatch.tsx:32-52`) briefs the agent with four ordered jobs:
+The "too many contexts to comprehend" helper. A goal can be written without picking a context (the shared `GoalEditorModal`), then handed to an agent from either the goal rail or a bound-goal chip in the composer. `buildGoalAssistPrompt` (`ShipDispatch.tsx:32-52`) briefs the agent with four ordered jobs:
 
 1. Assign contexts by reading `context-map.json` at the repo root, or inferring from the directory structure.
 2. Execute the goal if it is actionable now, otherwise break it down and complete the first step.
@@ -280,7 +285,6 @@ The layer has four distinct empty states, each with exactly one follow-up.
 | --- | --- | --- |
 | Project has no milestones | `ShipPlannerTab.tsx:229-237` | "No milestones yet" plus the prominent new-milestone input. The Ship tab is otherwise blank |
 | Milestone exists, core cut empty | the In-the-cut ledger | "No cut yet. Promote from the ledger below, or open the composer." In the composer the copy splits by whether the project has been scanned at all |
-| Project has zero contexts | `UnchartedEmptyState` in the library tree | The motionized `SCOPE_MAP_GLYPH`, "Nothing mapped yet", and a **Run context scan** button. The scan goes through `scanCodebase`, registers in the activity dock as `factory_scan`, and refetches both the context map and the milestones when `CONTEXT_GEN_COMPLETE` lands with a matching `scan_id` (`useShipData.ts:278-303`) |
 | Contexts scanned but no features or goals | library hint line | "The scan mapped these areas but no features exist yet. Add the first ones right here, or run the feature scan from Overview." |
 
 ### The onboarding seed milestone
@@ -309,8 +313,7 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | `src/features/plugins/companion/useAskAthena.ts` | The one door an app surface uses to start a conversation, provenance-tagged |
 | `src-tauri/src/companion/ship_ops.rs` | `describe_ship_milestone` — Athena's read op over a live cut |
 | `.../ship/ShipMilestoneComposer.tsx` | Two-pane compose mode: library, bound goals, footprint strip, live cut, goal editor, dispatch chooser |
-| `.../ship/ShipLibraryTree.tsx` | Group bands, context rows, feature/goal children, quick-add, filter, uncharted empty state |
-| `.../ship/ShipContextDrawer.tsx` | Right-side context detail panel with Cut / Bind affordances |
+| `.../ship/ShipGoalRail.tsx` | The composer's left pane: the project's goals, Bind / assist / New goal |
 | `.../ship/ShipDispatch.tsx` | `shipDispatchKey`, `buildCriterionPrompt`, `buildGoalAssistPrompt`, `ShipDispatchModal` |
 | `.../ship/shipModel.ts` | Types, ink maps, `shipVerdict`, `featureState`, `bucketLabel` |
 | `.../ship/shipDerive.ts` | `deriveFootprint`, the pure id-keyed scope derivation lifted out of the hook |

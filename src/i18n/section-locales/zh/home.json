@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} 个未解决事件",
     "incidents_other": "{count} 个未解决事件",
-    "messages": "{count} 条未读消息",
-    "messages_other": "{count} 条未读消息",
     "reviews": "{count} 个待审核",
     "reviews_other": "{count} 个待审核",
     "teams": "{count} 个团队",
@@ -108,7 +106,9 @@
     "trend_down": "较前 24 小时下降 {pct}%",
     "trend_flat": "较前 24 小时无变化",
     "agents_enabled": "{count} 个已启用代理",
-    "agents_enabled_other": "{count} 个已启用代理"
+    "agents_enabled_other": "{count} 个已启用代理",
+    "reports": "{count} 份未读报告",
+    "reports_other": "{count} 份未读报告"
   },
   "get_started": {
     "ask_cta": "向助手提问",

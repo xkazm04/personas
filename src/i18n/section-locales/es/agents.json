@@ -1705,7 +1705,6 @@
     "col_time": "Tiempo",
     "execution_status": "Ejecución {status}",
     "no_output": "Sin salida",
-    "message_title": "Mensaje",
     "modal_execution_title": "{name} - Ejecución",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "Revisión: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "Veredicto",
     "verdict_none": "Aún no revisado por el Director",
     "verdict_tooltip": "Veredicto del Director: {score}/5",
-    "annotation_saving": "Guardando…"
+    "annotation_saving": "Guardando…",
+    "report_title": "Informe"
   },
   "settings_status": {
     "saving": "Guardando {sections}...",

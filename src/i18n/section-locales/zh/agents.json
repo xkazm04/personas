@@ -1705,7 +1705,6 @@
     "col_time": "时间",
     "execution_status": "执行 {status}",
     "no_output": "无输出",
-    "message_title": "消息",
     "modal_execution_title": "{name} - 执行",
     "modal_execution_subtitle": "ID：{id}",
     "modal_review_title": "审查：{title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "评定",
     "verdict_none": "尚未经过 Director 审核",
     "verdict_tooltip": "Director 评定：{score}/5",
-    "annotation_saving": "保存中…"
+    "annotation_saving": "保存中…",
+    "report_title": "报告"
   },
   "settings_status": {
     "saving": "正在保存 {sections}...",

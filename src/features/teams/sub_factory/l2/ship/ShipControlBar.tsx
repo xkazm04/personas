@@ -27,6 +27,21 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { INK } from '../../passport/passportInk';
 import { CRIT_HUE, shipVerdict, type ShipMilestoneVM } from './shipModel';
 
+/**
+ * The bar's one button shape, as a class string.
+ *
+ * Run and Ingest are `AsyncButton`s — they must be, because they fire a real
+ * async action and this app requires a visible spinner on a control the user
+ * just pressed. But they were rendering in `Button`'s default `secondary`
+ * variant while everything beside them used this bordered-hue treatment, so two
+ * of the five controls in one toolbar read as a different family. Passing this
+ * class plus `variant="ghost"` (which contributes no border or fill of its own)
+ * makes the async pair sit in the same shape as the rest, without giving up the
+ * spinner or the double-submit guard.
+ */
+const BAR_BTN =
+  'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring';
+
 /** Shared shape for the bar's plain (non-async) buttons. */
 function BarButton({ hue, icon, label, tip, onClick, testId }: {
   hue: string;
@@ -41,7 +56,7 @@ function BarButton({ hue, icon, label, tip, onClick, testId }: {
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
+        className={BAR_BTN}
         style={{ color: hue, borderColor: `${hue}55` }}
         data-testid={testId}
       >
@@ -108,7 +123,7 @@ export function ShipControlBar({
         <button
           type="button"
           onClick={onCertify}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
+          className={BAR_BTN}
           style={{ color: INK.emerald, borderColor: `${INK.emerald}55` }}
           data-testid="ship-lifecycle-action"
         >
@@ -144,6 +159,9 @@ export function ShipControlBar({
           // promise away — see the note in ShipDispatch, where two presses in
           // one frame produced two Fleet sessions.
           onClick={() => onRun()}
+          variant="ghost"
+          className={BAR_BTN}
+          style={{ color: INK.blue, borderColor: `${INK.blue}55` }}
           icon={<SquareTerminal className="w-3.5 h-3.5" aria-hidden />}
           data-testid="ship-run-milestone"
         >
@@ -155,6 +173,9 @@ export function ShipControlBar({
         <AsyncButton
           isLoading={ingesting}
           onClick={() => onIngest()}
+          variant="ghost"
+          className={BAR_BTN}
+          style={{ color: INK.blue, borderColor: `${INK.blue}55` }}
           icon={<Download className="w-3.5 h-3.5" aria-hidden />}
           data-testid="ship-ingest-run"
         >

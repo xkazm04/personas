@@ -1705,7 +1705,6 @@
     "col_time": "সময়",
     "execution_status": "এক্সিকিউশন {status}",
     "no_output": "কোনো আউটপুট নেই",
-    "message_title": "বার্তা",
     "modal_execution_title": "{name} - এক্সিকিউশন",
     "modal_execution_subtitle": "আইডি: {id}",
     "modal_review_title": "পর্যালোচনা: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "রায়",
     "verdict_none": "Director এখনও পর্যালোচনা করেননি",
     "verdict_tooltip": "Director-এর রায়: {score}/5",
-    "annotation_saving": "সংরক্ষণ করা হচ্ছে…"
+    "annotation_saving": "সংরক্ষণ করা হচ্ছে…",
+    "report_title": "রিপোর্ট"
   },
   "settings_status": {
     "saving": "{sections} সংরক্ষণ হচ্ছে...",

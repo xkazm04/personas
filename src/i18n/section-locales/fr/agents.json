@@ -1705,7 +1705,6 @@
     "col_time": "Heure",
     "execution_status": "Exécution {status}",
     "no_output": "Aucune sortie",
-    "message_title": "Message",
     "modal_execution_title": "{name} - Exécution",
     "modal_execution_subtitle": "ID : {id}",
     "modal_review_title": "Révision : {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "Verdict",
     "verdict_none": "Pas encore examiné par le Director",
     "verdict_tooltip": "Verdict du Director : {score}/5",
-    "annotation_saving": "Enregistrement…"
+    "annotation_saving": "Enregistrement…",
+    "report_title": "Rapport"
   },
   "settings_status": {
     "saving": "Enregistrement {sections}...",

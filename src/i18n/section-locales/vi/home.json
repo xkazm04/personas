@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} sự cố đang mở",
     "incidents_other": "{count} sự cố đang mở",
-    "messages": "{count} tin nhắn chưa đọc",
-    "messages_other": "{count} tin nhắn chưa đọc",
     "reviews": "{count} yêu cầu xét duyệt",
     "reviews_other": "{count} yêu cầu xét duyệt",
     "teams": "{count} nhóm",
@@ -108,7 +106,9 @@
     "trend_down": "giảm {pct}% so với 24h trước",
     "trend_flat": "không đổi so với 24h trước",
     "agents_enabled": "{count} agent đang hoạt động",
-    "agents_enabled_other": "{count} agent đang hoạt động"
+    "agents_enabled_other": "{count} agent đang hoạt động",
+    "reports": "{count} báo cáo chưa đọc",
+    "reports_other": "{count} báo cáo chưa đọc"
   },
   "get_started": {
     "ask_cta": "Hỏi trợ lý",

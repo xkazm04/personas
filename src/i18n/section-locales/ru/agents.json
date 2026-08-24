@@ -1705,7 +1705,6 @@
     "col_time": "Время",
     "execution_status": "Запуск {status}",
     "no_output": "Нет вывода",
-    "message_title": "Сообщение",
     "modal_execution_title": "{name} — Запуск",
     "modal_execution_subtitle": "ID: {id}",
     "modal_review_title": "Проверка: {title}",
@@ -1728,7 +1727,8 @@
     "col_verdict": "Вердикт",
     "verdict_none": "Ещё не проверено Director’ом",
     "verdict_tooltip": "Вердикт Director: {score}/5",
-    "annotation_saving": "Сохранение…"
+    "annotation_saving": "Сохранение…",
+    "report_title": "Отчёт"
   },
   "settings_status": {
     "saving": "Сохранение {sections}...",

@@ -1,13 +1,11 @@
-// The milestone composer (wired): the scale-ready library tree on the left
-// (ShipLibraryTree — group bands, search, quick-add, context drawer), the
-// milestone's live core cut on the right. Every add / remove is a
+// The milestone composer (wired): the project's GOALS on the left
+// (ShipGoalRail), the milestone's live core cut on the right. Every add / remove is a
 // dev_milestone_items write; the derived footprint re-computes in useShipData
 // on refetch. This surface also hosts the LLM assist path: goals can be
 // authored context-less (shared GoalEditorModal) and handed to an agent via
 // the universal DispatchChooser (Dev runner / Fleet / CLI) to categorize,
 // execute, and flag the milestone item for manual review.
 import { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Target, X, Zap } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -17,10 +15,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
 import { buildGoalAssistPrompt } from './ShipDispatch';
-import { ShipContextDrawer } from './ShipContextDrawer';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
-import { ShipLibraryTree } from './ShipLibraryTree';
-import { TONE_HUE_MAP, type ShipContext, type ShipGoal, type ShipMilestoneVM } from './shipModel';
+import { ShipGoalRail } from './ShipGoalRail';
+import { TONE_HUE_MAP, type ShipGoal, type ShipMilestoneVM } from './shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useShipData';
 
@@ -35,7 +32,6 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
   onBack: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const [drawerCtx, setDrawerCtx] = useState<ShipContext | null>(null);
   const [goalModal, setGoalModal] = useState(false);
   const [assistGoal, setAssistGoal] = useState<ShipGoal | null>(null);
   const cut = vm.members.filter((m) => m.bucket === 'core');
@@ -48,12 +44,13 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
       </button>
 
       <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(300px, 1fr) minmax(0, 1.25fr)' }}>
-        {/* LEFT — the project library */}
+        {/* LEFT — the project's goals. Not a browsable library: composing a
+            milestone must not require picking the context or use case an idea
+            belongs to (operator's ruling, 2026-08-24). See ShipGoalRail. */}
         <div className="min-w-0 rounded-modal border border-foreground/[0.08] p-3" style={{ background: 'rgba(148,163,184,.02)' }}>
-          <ShipLibraryTree
+          <ShipGoalRail
             ship={ship}
             vm={vm}
-            onOpenContext={setDrawerCtx}
             onNewGoal={() => setGoalModal(true)}
             onAssistGoal={setAssistGoal}
           />
@@ -78,23 +75,14 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                 </button>
               </span>
             ))}
-            {/* Only point at the library when it can actually deliver. */}
-            {vm.boundGoals.length === 0 && ship.goals.length > 0 && (
-              <span className="typo-caption" style={{ color: INK.blue }}>{t.ship.no_objective_hint}</span>
-            )}
-            {vm.boundGoals.length === 0 && ship.goals.length === 0 && (
-              <button type="button" onClick={() => setGoalModal(true)} className="typo-caption text-foreground/45 hover:text-foreground/75 transition-colors focus-ring rounded-interactive">
-                {t.ship.no_goals_cta}
-              </button>
-            )}
           </div>
 
+          {vm.footprint.length > 0 && (
           <div className="rounded-card px-3 py-2 mb-3 border border-foreground/[0.07]" style={{ background: 'rgba(148,163,184,.03)' }} data-testid="ship-footprint">
-            <span className="typo-caption block mb-1.5">
-              {tx(t.ship.footprint_label, { count: vm.footprint.length })}
-              {vm.footprint.filter((c) => c.tone === 'crit').length > 0 && <span style={{ color: INK.red }}>{tx(t.ship.footprint_critical, { count: vm.footprint.filter((c) => c.tone === 'crit').length })}</span>}
-              {vm.footprint.filter((c) => c.kpis === 0).length > 0 && <span style={{ color: INK.blue }}>{tx(t.ship.footprint_no_kpi, { count: vm.footprint.filter((c) => c.kpis === 0).length })}</span>}
-            </span>
+            {/* No label line. The chips carry the whole reading — one per
+                context, coloured by health, suffixed when a KPI is missing —
+                and a sentence restating their count above them was a paragraph
+                describing a picture sitting directly underneath it. */}
             <span className="flex items-center gap-1.5 flex-wrap">
               {vm.footprint.map((c) => (
                 <Tooltip key={c.id} content={tx(c.kpis === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: c.kpis })}>
@@ -104,9 +92,9 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                   </span>
                 </Tooltip>
               ))}
-              {vm.footprint.length === 0 && <span className="typo-caption">{t.ship.footprint_empty}</span>}
             </span>
           </div>
+          )}
 
           <LedgerHeader title={t.ship.the_cut} count={cut.length} aside={t.ship.the_cut_aside} />
           <LedgerList testid="ship-compose-cut">
@@ -145,18 +133,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
         </div>
       </div>
 
-      {/* the context detail drawer (ContextDetail pattern, Ship-local data) */}
-      <AnimatePresence>
-        {drawerCtx && (
-          <ShipContextDrawer
-            ctx={drawerCtx}
-            groupName={ship.groups.find((g) => g.id === drawerCtx.groupId)?.name ?? null}
-            vm={vm}
-            ship={ship}
-            onClose={() => setDrawerCtx(null)}
-          />
-        )}
-      </AnimatePresence>
+
 
       {/* context-less goal authoring — the shared editor from sub_goals */}
       {ship.project && (

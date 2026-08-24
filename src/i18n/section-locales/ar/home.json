@@ -90,8 +90,6 @@
   "nav_status": {
     "incidents": "{count} حادثة مفتوحة",
     "incidents_other": "{count} حوادث مفتوحة",
-    "messages": "{count} رسالة غير مقروءة",
-    "messages_other": "{count} رسائل غير مقروءة",
     "reviews": "{count} مراجعة معلّقة",
     "reviews_other": "{count} مراجعات معلّقة",
     "teams": "{count} فريق",
@@ -108,7 +106,9 @@
     "trend_down": "انخفض {pct}% مقارنةً بالـ 24 ساعة السابقة",
     "trend_flat": "لا تغيير مقارنةً بالـ 24 ساعة السابقة",
     "agents_enabled": "{count} وكيل نشط",
-    "agents_enabled_other": "{count} وكلاء نشطون"
+    "agents_enabled_other": "{count} وكلاء نشطون",
+    "reports": "{count} تقرير غير مقروء",
+    "reports_other": "{count} تقارير غير مقروءة"
   },
   "get_started": {
     "ask_cta": "اسأل المساعد",
