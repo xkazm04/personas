@@ -50,7 +50,10 @@ export interface ShipData {
   create: (name: string, goal?: string) => void;
   setStatus: (id: string, status: MilestoneStatus) => void;
   /** Rename the milestone's objective line (the `goal` column). */
+  /** Rename the milestone's objective TITLE (the `goal` column). */
   setGoal: (id: string, goal: string) => void;
+  /** Set the milestone's prose description (the `description` column). */
+  setDescription: (id: string, description: string) => void;
   /**
    * Upsert a scope member. `annotations` is a PATCH: pass only the keys that
    * changed. An omitted key leaves the stored column untouched; an explicit
@@ -223,6 +226,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         id: m.id,
         name: m.name,
         goal: m.goal,
+        description: m.description,
         status: m.status as ShipMilestoneVM['status'],
         targetLabel: m.status === 'shipped'
           ? tx(t.ship.target_shipped, { date: dateLabel(m.shippedAt) ?? '' }).trim()
@@ -250,6 +254,10 @@ export function useShipData(data: FactoryL2Data): ShipData {
 
   const setGoal = useCallback((id: string, goal: string) => {
     void updateMilestone(id, { goal }).then(reload).catch(toastCatch('ship milestone goal'));
+  }, [reload]);
+
+  const setDescription = useCallback((id: string, description: string) => {
+    void updateMilestone(id, { description }).then(reload).catch(toastCatch('ship milestone description'));
   }, [reload]);
 
   const setItem = useCallback((
@@ -306,7 +314,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
     loading: loading || data.loading,
     project: data.project,
     roadmap, contexts, groups, features, goals, reload,
-    create, setStatus, setGoal, setItem, removeItem,
+    create, setStatus, setGoal, setDescription, setItem, removeItem,
     createFeature, scanContexts, ctxScanning: ctxScanId !== null,
   };
 }

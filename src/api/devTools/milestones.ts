@@ -20,7 +20,11 @@ export async function listMilestones(projectId: string): Promise<DevMilestone[]>
 export async function createMilestone(input: {
   projectId: string;
   name: string;
+  /** The objective as a SHORT TITLE — a handful of words. Prose belongs in
+   *  `description`; the backend enforces the split with a length bound. */
   goal?: string;
+  /** What shipping this milestone means, in prose. Optional. */
+  description?: string;
   status?: MilestoneStatus;
   targetDate?: string;
 }): Promise<DevMilestone> {
@@ -33,7 +37,11 @@ export async function updateMilestone(
   id: string,
   patch: {
     name?: string;
+    /** Short title only — see `createMilestone`. */
     goal?: string;
+    /** Nullable patch: omit to leave the stored prose alone, `''` to clear it.
+     *  Editing the title must never silently wipe the description under it. */
+    description?: string;
     status?: MilestoneStatus;
     targetDate?: string;
     orderIndex?: number;

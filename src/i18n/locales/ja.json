@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "システム全体のショートカットを有効にする",
       "global_hotkey_failed": "そのショートカットは他のアプリが使用中のため、有効にできませんでした。",
       "global_hotkey_in_app_only": "Personas が前面にあるときのみ使えます",
-      "global_hotkey_title": "どこからでも話しかける"
+      "global_hotkey_title": "どこからでも話しかける",
+      "ship_milestone_prose_label": "リリースの意味",
+      "ship_milestone_prose_placeholder": "任意：このマイルストーンをリリースするとは実際どういうことか"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "予測 {date}",
     "milestone_bar_planned": "計画中",
     "milestone_bar_target": "期限 {date}",
-    "milestone_bar_tooltip": "{project} の進行中マイルストーン — Ship タブを開く"
+    "milestone_bar_tooltip": "{project} の進行中マイルストーン — Ship タブを開く",
+    "ship_panel_title": "リリース"
   },
   "ship": {
     "add": "追加",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "このマイルストーンをリリースできるかは、これらの基準だけが決めます。各行はライブシグナルから導出されており、手入力されたものはありません。",
     "certify_ship_title": "{name} をリリース",
     "compose_scope_tooltip": "このマイルストーンを構成する機能と目標を選びます",
-    "criteria_badge_aria": "終了基準 {total} 件のうち {unmet} 件が未達成"
+    "criteria_badge_aria": "終了基準 {total} 件のうち {unmet} 件が未達成",
+    "description_edit_aria": "{name} の説明を編集",
+    "description_empty": "説明を追加",
+    "description_placeholder": "このマイルストーンをリリースするとは実際どういうことか"
   }
 }

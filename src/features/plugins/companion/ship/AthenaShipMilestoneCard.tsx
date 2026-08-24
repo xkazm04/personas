@@ -8,6 +8,10 @@ import { companionCreateShipMilestone, type ShipMilestoneRow } from '@/api/compa
 import { AthenaShipMilestoneRow } from './AthenaShipMilestoneRow';
 import { resolveChatCard } from '../useChatCards';
 
+/** Mirrors `SHIP_MILESTONE_GOAL_MAX` (approval_exec_ship.rs) and
+ *  `OBJECTIVE_MAX` (ShipMilestoneMeta.tsx). One number, three places. */
+const SHIP_OBJECTIVE_MAX = 72;
+
 /** Parse the `ship_milestone` chat-card config the dispatcher validated. */
 export function parseMilestoneRows(raw: unknown): ShipMilestoneRow[] {
   if (!Array.isArray(raw)) return [];
@@ -51,6 +55,9 @@ export function AthenaShipMilestoneCard({
   const [goal, setGoal] = useState(() =>
     typeof config?.goal === 'string' ? config.goal : '',
   );
+  const [description, setDescription] = useState(() =>
+    typeof config?.description === 'string' ? config.description : '',
+  );
   const [rows, setRows] = useState<ShipMilestoneRow[]>(() =>
     parseMilestoneRows(config?.rows),
   );
@@ -80,6 +87,7 @@ export function AthenaShipMilestoneCard({
         projectId,
         name.trim(),
         goal.trim() ? goal.trim() : null,
+        description.trim() ? description.trim() : null,
         rows.map((r) => ({
           itemKind: r.itemKind,
           itemId: r.itemId,
@@ -142,15 +150,32 @@ export function AthenaShipMilestoneCard({
         className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body-strong text-foreground disabled:opacity-60"
         data-testid="athena-ship-name"
       />
-      <textarea
+      {/* An INPUT, capped — not the 2-row textarea this used to be. The control
+          was shaped like a prose field and the op grammar asked for a
+          paragraph, so a paragraph is what arrived and what rendered as the
+          Ship tab's heading. The bound matches the backend's
+          SHIP_MILESTONE_GOAL_MAX, so the card cannot submit what the door
+          would refuse. */}
+      <input
+        type="text"
         value={goal}
         onChange={(e) => setGoal(e.target.value)}
         disabled={busy}
-        rows={2}
+        maxLength={SHIP_OBJECTIVE_MAX}
         aria-label={c.ship_milestone_goal_label}
         placeholder={c.ship_milestone_goal_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground disabled:opacity-60"
         data-testid="athena-ship-goal"
+      />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        disabled={busy}
+        rows={3}
+        aria-label={c.ship_milestone_prose_label}
+        placeholder={c.ship_milestone_prose_placeholder}
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:opacity-60"
+        data-testid="athena-ship-prose"
       />
 
       {rows.length === 0 ? (

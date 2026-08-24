@@ -154,5 +154,8 @@
   "certify_ship_intro": "Tato kritéria, a jen ona, rozhodují o tom, zda lze milník vydat. Každý řádek je odvozen z živých signálů — nic se sem nepíše ručně.",
   "certify_ship_title": "Vydat {name}",
   "compose_scope_tooltip": "Vyberte, které funkce a cíle tvoří tento milník",
-  "criteria_badge_aria": "{unmet} z {total} výstupních kritérií zatím nesplněno"
+  "criteria_badge_aria": "{unmet} z {total} výstupních kritérií zatím nesplněno",
+  "description_edit_aria": "Upravit popis milníku {name}",
+  "description_empty": "Přidat popis",
+  "description_placeholder": "Co ve skutečnosti znamená vydat tento milník"
 }

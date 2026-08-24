@@ -26,6 +26,7 @@ pub fn dev_tools_create_milestone(
     project_id: String,
     name: String,
     goal: Option<String>,
+    description: Option<String>,
     status: Option<String>,
     target_date: Option<String>,
 ) -> Result<DevMilestone, AppError> {
@@ -35,17 +36,23 @@ pub fn dev_tools_create_milestone(
         &project_id,
         &name,
         goal.as_deref(),
+        description.as_deref(),
         status.as_deref(),
         target_date.as_deref(),
     )
 }
 
+// Eight patch fields, one per column this command may set. Bundling them into
+// a struct would change the IPC payload shape for every existing caller to buy
+// nothing but a shorter signature.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn dev_tools_update_milestone(
     state: State<'_, Arc<AppState>>,
     id: String,
     name: Option<String>,
     goal: Option<String>,
+    description: Option<String>,
     status: Option<String>,
     target_date: Option<String>,
     order_index: Option<i32>,
@@ -56,6 +63,7 @@ pub fn dev_tools_update_milestone(
         &id,
         name.as_deref(),
         goal.as_deref(),
+        description.as_deref(),
         status.as_deref(),
         target_date.as_deref(),
         order_index,

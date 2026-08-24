@@ -34,9 +34,23 @@ pub(crate) const SHIP_MILESTONE_MAX_ROWS: usize = FLEET_PLAN_MAX_ROWS;
 /// Longest milestone name. Same bound as the fleet plan's one-line intent —
 /// both are the single label the thing is filed under.
 pub(crate) const SHIP_MILESTONE_NAME_MAX: usize = FLEET_PLAN_INTENT_MAX;
-/// Longest milestone goal (the paragraph naming what shipping this means).
-/// Same bound as a plan row's objective: a real brief, never a document.
-pub(crate) const SHIP_MILESTONE_GOAL_MAX: usize = FLEET_PLAN_OBJECTIVE_MAX;
+/// Longest milestone OBJECTIVE. A handful of words — the Ship tab renders it
+/// as the milestone's heading, so this is a title bound, not a prose bound.
+///
+/// It used to be `FLEET_PLAN_OBJECTIVE_MAX` and the grammar asked the model for
+/// "one paragraph: what shipping this milestone actually means". The model
+/// complied, and the paragraph rendered where a name belonged. The operator
+/// ruled on 2026-08-24 that no automation may write descriptive text into this
+/// field; the prose moved to `dev_milestones.description`, and this number is
+/// what makes the rule enforceable rather than advisory.
+///
+/// 72 is shared with the `dev_milestones.description` migration, which used the
+/// same threshold to decide which existing goals were really prose and moved
+/// them. Keep the two in step.
+pub(crate) const SHIP_MILESTONE_GOAL_MAX: usize = 72;
+/// Longest milestone DESCRIPTION — the paragraph that used to be crammed into
+/// the objective. A real brief, never a document.
+pub(crate) const SHIP_MILESTONE_DESC_MAX: usize = FLEET_PLAN_OBJECTIVE_MAX;
 /// Longest per-row "why this is in scope" note, stored in
 /// `dev_milestone_items.description` (WP1).
 pub(crate) const SHIP_MILESTONE_DESCRIPTION_MAX: usize = FLEET_PLAN_OBJECTIVE_MAX;
@@ -66,7 +80,10 @@ pub(crate) struct ShipMilestonePlan {
     /// Resolved `dev_projects.id` — never the string the model wrote.
     pub project_id: String,
     pub name: String,
+    /// The objective, as a SHORT TITLE (see `SHIP_MILESTONE_GOAL_MAX`).
     pub goal: Option<String>,
+    /// What shipping this means, in prose. Where the paragraph goes now.
+    pub description: Option<String>,
     pub rows: Vec<ShipMilestoneRow>,
 }
 
@@ -195,6 +212,7 @@ pub(crate) fn validate_ship_milestone(
     project_slug: &str,
     name: &str,
     goal: &str,
+    description: &str,
     rows: &[serde_json::Value],
 ) -> Result<ShipMilestonePlan, String> {
     let conn = db.get().map_err(|e| format!("database unavailable: {e}"))?;
@@ -212,7 +230,18 @@ pub(crate) fn validate_ship_milestone(
     let goal = goal.trim();
     if goal.chars().count() > SHIP_MILESTONE_GOAL_MAX {
         return Err(format!(
-            "`goal` is too long (max {SHIP_MILESTONE_GOAL_MAX} characters)"
+            "`goal` is the milestone's TITLE and is too long at {} characters \
+             (max {SHIP_MILESTONE_GOAL_MAX}). It renders as the heading in the \
+             Ship tab, so a sentence there reads as a broken layout, not as an \
+             explanation. Put a handful of words here and move the prose to \
+             `description`.",
+            goal.chars().count()
+        ));
+    }
+    let description = description.trim();
+    if description.chars().count() > SHIP_MILESTONE_DESC_MAX {
+        return Err(format!(
+            "`description` is too long (max {SHIP_MILESTONE_DESC_MAX} characters)"
         ));
     }
 
@@ -284,6 +313,7 @@ pub(crate) fn validate_ship_milestone(
         project_id,
         name: name.to_string(),
         goal: (!goal.is_empty()).then(|| goal.to_string()),
+        description: (!description.is_empty()).then(|| description.to_string()),
         rows: out,
     })
 }
@@ -304,6 +334,7 @@ pub(crate) fn create_ship_milestone_inner(
         &plan.project_id,
         &plan.name,
         plan.goal.as_deref(),
+        plan.description.as_deref(),
         None,
         None,
     )?;
@@ -342,6 +373,7 @@ pub async fn companion_create_ship_milestone(
     project_slug: String,
     name: String,
     goal: Option<String>,
+    description: Option<String>,
     rows: Vec<serde_json::Value>,
 ) -> Result<ShipMilestoneCreated, AppError> {
     ipc_auth::require_auth(&state).await?;
@@ -350,6 +382,7 @@ pub async fn companion_create_ship_milestone(
         &project_slug,
         &name,
         goal.as_deref().unwrap_or(""),
+        description.as_deref().unwrap_or(""),
         &rows,
     )
     .map_err(AppError::Validation)?;
@@ -695,6 +728,7 @@ pub(crate) fn execute_ship_milestone_lifecycle(
         milestone_id,
         None,
         None,
+        None,
         Some(target),
         None,
         None,
@@ -742,7 +776,7 @@ mod ship_milestone_tests {
                 title TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'open',
                 updated_at TEXT NOT NULL);
              CREATE TABLE dev_milestones (id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
-                name TEXT NOT NULL, goal TEXT,
+                name TEXT NOT NULL, goal TEXT, description TEXT,
                 status TEXT NOT NULL DEFAULT 'planned'
                     CHECK(status IN ('planned','active','shipped')),
                 order_index INTEGER NOT NULL DEFAULT 0, target_date TEXT,
@@ -787,6 +821,7 @@ mod ship_milestone_tests {
             "Personas",
             "  M1  ",
             "  first cut  ",
+            "  what shipping it means  ",
             &[
                 row("use_case", "uc_1", Some("  the whole point  ")),
                 // A name and a slug both resolve to the real id.
@@ -798,6 +833,7 @@ mod ship_milestone_tests {
         assert_eq!(plan.project_id, "proj_1");
         assert_eq!(plan.name, "M1");
         assert_eq!(plan.goal.as_deref(), Some("first cut"));
+        assert_eq!(plan.description.as_deref(), Some("what shipping it means"));
         assert_eq!(plan.rows[0].description.as_deref(), Some("the whole point"));
         assert_eq!(plan.rows[1].item_id, "uc_2");
         assert_eq!(plan.rows[2].item_kind, "goal");
@@ -812,6 +848,7 @@ mod ship_milestone_tests {
             &pool,
             "proj_1",
             "M1",
+            "",
             "",
             &[row("use_case", "uc_does_not_exist", None)],
         )
@@ -832,8 +869,9 @@ mod ship_milestone_tests {
     #[test]
     fn rejects_an_item_id_from_the_wrong_table() {
         let pool = pool_with_fixture();
-        let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &[row("goal", "uc_1", None)])
-            .expect_err("a use case is not a goal");
+        let err =
+            validate_ship_milestone(&pool, "proj_1", "M1", "", "", &[row("goal", "uc_1", None)])
+                .expect_err("a use case is not a goal");
         assert!(err.contains("goal_1"), "{err}");
     }
 
@@ -850,9 +888,15 @@ mod ship_milestone_tests {
             )
             .unwrap();
         }
-        let err =
-            validate_ship_milestone(&pool, "proj_1", "M1", "", &[row("use_case", "uc_9", None)])
-                .expect_err("cross-project membership must be refused");
+        let err = validate_ship_milestone(
+            &pool,
+            "proj_1",
+            "M1",
+            "",
+            "",
+            &[row("use_case", "uc_9", None)],
+        )
+        .expect_err("cross-project membership must be refused");
         assert!(err.contains("uc_9"), "{err}");
     }
 
@@ -860,8 +904,9 @@ mod ship_milestone_tests {
     fn rejects_a_kind_that_is_not_a_milestone_member() {
         let pool = pool_with_fixture();
         for kind in ["kpi", "context", ""] {
-            let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &[row(kind, "x", None)])
-                .expect_err("only use_case and goal are members");
+            let err =
+                validate_ship_milestone(&pool, "proj_1", "M1", "", "", &[row(kind, "x", None)])
+                    .expect_err("only use_case and goal are members");
             assert!(err.contains("item_kind"), "{err}");
             assert!(
                 err.contains("KPI"),
@@ -878,6 +923,7 @@ mod ship_milestone_tests {
             "not-a-project",
             "M1",
             "",
+            "",
             &[row("goal", "goal_1", None)],
         )
         .expect_err("an unknown project must be refused");
@@ -888,11 +934,11 @@ mod ship_milestone_tests {
     #[test]
     fn enforces_the_row_bounds_and_refuses_duplicates() {
         let pool = pool_with_fixture();
-        assert!(validate_ship_milestone(&pool, "proj_1", "M1", "", &[]).is_err());
+        assert!(validate_ship_milestone(&pool, "proj_1", "M1", "", "", &[]).is_err());
         let many: Vec<serde_json::Value> = (0..SHIP_MILESTONE_MAX_ROWS + 1)
             .map(|_| row("use_case", "uc_1", None))
             .collect();
-        let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &many)
+        let err = validate_ship_milestone(&pool, "proj_1", "M1", "", "", &many)
             .expect_err("the cap must hold");
         assert!(err.contains(&SHIP_MILESTONE_MAX_ROWS.to_string()), "{err}");
 
@@ -900,13 +946,13 @@ mod ship_milestone_tests {
             row("use_case", "uc_1", None),
             row("use_case", "Ship tab", None),
         ];
-        let err = validate_ship_milestone(&pool, "proj_1", "M1", "", &dup)
+        let err = validate_ship_milestone(&pool, "proj_1", "M1", "", "", &dup)
             .expect_err("the same member twice must be refused");
         assert!(err.contains("already in this milestone"), "{err}");
 
         let long = "x".repeat(SHIP_MILESTONE_NAME_MAX + 1);
-        assert!(validate_ship_milestone(&pool, "proj_1", &long, "", &dup[..1]).is_err());
-        assert!(validate_ship_milestone(&pool, "proj_1", "  ", "", &dup[..1]).is_err());
+        assert!(validate_ship_milestone(&pool, "proj_1", &long, "", "", &dup[..1]).is_err());
+        assert!(validate_ship_milestone(&pool, "proj_1", "  ", "", "", &dup[..1]).is_err());
     }
 
     /// The EDITED rows are what gets created: the plan handed to
@@ -921,6 +967,7 @@ mod ship_milestone_tests {
             &pool,
             "proj_1",
             "M1 — first cut",
+            "first cut",
             "everything the Ship tab needs to be believable",
             &[
                 row("use_case", "uc_1", Some("rewritten by the operator")),
@@ -946,7 +993,20 @@ mod ship_milestone_tests {
         );
         assert_eq!(
             goal.as_deref(),
-            Some("everything the Ship tab needs to be believable")
+            Some("first cut"),
+            "the objective stays a TITLE"
+        );
+        let description: Option<String> = conn
+            .query_row(
+                "SELECT description FROM dev_milestones WHERE id = ?1",
+                params![created.milestone_id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            description.as_deref(),
+            Some("everything the Ship tab needs to be believable"),
+            "the prose lands in `description`, not in the heading",
         );
         let desc: Option<String> = conn
             .query_row(
@@ -968,13 +1028,58 @@ mod ship_milestone_tests {
         assert_eq!(bucket, SHIP_MILESTONE_BUCKET);
     }
 
-    /// The caps are borrowed on purpose, not copied. If the fleet plan's
-    /// reviewability ceiling ever moves, this milestone's moves with it.
+    /// The caps that are BORROWED are borrowed on purpose, not copied: if the
+    /// fleet plan's reviewability ceiling moves, this milestone's moves with it.
+    ///
+    /// `SHIP_MILESTONE_GOAL_MAX` deliberately does NOT borrow, and this test is
+    /// where that decision is pinned. It used to equal the plan's objective
+    /// bound, which is a bound on a BRIEF; the objective renders as the Ship
+    /// tab's heading and needs a bound on a TITLE. The prose bound moved to
+    /// `SHIP_MILESTONE_DESC_MAX`, which still borrows.
     #[test]
     fn caps_mirror_the_plan_card_rather_than_inventing_numbers() {
         assert_eq!(SHIP_MILESTONE_MAX_ROWS, FLEET_PLAN_MAX_ROWS);
         assert_eq!(SHIP_MILESTONE_NAME_MAX, FLEET_PLAN_INTENT_MAX);
-        assert_eq!(SHIP_MILESTONE_GOAL_MAX, FLEET_PLAN_OBJECTIVE_MAX);
+        assert_eq!(SHIP_MILESTONE_DESC_MAX, FLEET_PLAN_OBJECTIVE_MAX);
+        assert!(
+            SHIP_MILESTONE_GOAL_MAX < FLEET_PLAN_OBJECTIVE_MAX,
+            "the objective is a title; a brief-sized bound is what let a paragraph become the heading",
+        );
+    }
+
+    /// The rule the operator actually asked for, as a test rather than a
+    /// comment: no automation may put descriptive text in the objective.
+    #[test]
+    fn a_paragraph_in_the_objective_is_refused_and_told_where_to_put_it() {
+        let pool = pool_with_fixture();
+        let prose = "Shipping this milestone means the Ship tab is believable end to end:                      the cut is real, the criteria derive from live signals, and the                      operator can certify without reading the code.";
+        assert!(prose.chars().count() > SHIP_MILESTONE_GOAL_MAX);
+        let err = validate_ship_milestone(
+            &pool,
+            "proj_1",
+            "M1",
+            prose,
+            "",
+            &[row("use_case", "uc_1", None)],
+        )
+        .expect_err("a paragraph is not a title");
+        assert!(err.contains("TITLE"), "{err}");
+        assert!(
+            err.contains("description"),
+            "the refusal names the fix: {err}"
+        );
+
+        // The same prose in `description` is fine — it was never the content
+        // that was wrong, only the field.
+        validate_ship_milestone(
+            &pool,
+            "proj_1",
+            "M1",
+            "first cut",
+            prose,
+            &[row("use_case", "uc_1", None)],
+        )
+        .expect("prose belongs in description");
     }
 }
 

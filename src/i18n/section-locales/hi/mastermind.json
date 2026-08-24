@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "अनुमान {date}",
   "milestone_bar_planned": "नियोजित",
   "milestone_bar_target": "नियत {date}",
-  "milestone_bar_tooltip": "{project} का चालू माइलस्टोन — इसका Ship टैब खोलें"
+  "milestone_bar_tooltip": "{project} का चालू माइलस्टोन — इसका Ship टैब खोलें",
+  "ship_panel_title": "रिलीज़"
 }

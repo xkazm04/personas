@@ -154,5 +154,8 @@
   "certify_ship_intro": "এই মাইলস্টোন প্রকাশ করা যাবে কি না তা কেবল এই শর্তগুলিই ঠিক করে। প্রতিটি লাইন লাইভ সংকেত থেকে উদ্ভূত — এখানে কিছুই হাতে লেখা হয় না।",
   "certify_ship_title": "{name} প্রকাশ করুন",
   "compose_scope_tooltip": "কোন ফিচার ও লক্ষ্য নিয়ে এই মাইলস্টোন গঠিত তা বেছে নিন",
-  "criteria_badge_aria": "{total}-টির মধ্যে {unmet}-টি প্রস্থান শর্ত এখনও অপূর্ণ"
+  "criteria_badge_aria": "{total}-টির মধ্যে {unmet}-টি প্রস্থান শর্ত এখনও অপূর্ণ",
+  "description_edit_aria": "{name}-এর বিবরণ সম্পাদনা করুন",
+  "description_empty": "বিবরণ যোগ করুন",
+  "description_placeholder": "এই মাইলস্টোন প্রকাশ করার প্রকৃত অর্থ কী"
 }

@@ -16027,6 +16027,8 @@ export type Translations = {
       global_hotkey_active: string;
       global_hotkey_in_app_only: string;
       global_hotkey_failed: string;
+      ship_milestone_prose_label: string;
+      ship_milestone_prose_placeholder: string;
     };
     artist_gallery: {
       loading_viewer: string;
@@ -20275,6 +20277,7 @@ export type Translations = {
     milestone_bar_target: string;
     milestone_bar_forecast: string;
     milestone_bar_tooltip: string;
+    ship_panel_title: string;
   };
   ship: {
     tab_ship: string;
@@ -20433,5 +20436,8 @@ export type Translations = {
     certify_ship_title: string;
     certify_cut_intro: string;
     certify_ship_intro: string;
+    description_placeholder: string;
+    description_empty: string;
+    description_edit_aria: string;
   };
 };

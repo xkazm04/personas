@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Zapnout systémovou zkratku",
     "global_hotkey_failed": "Tuto zkratku už používá jiná aplikace, proto ji nelze zapnout.",
     "global_hotkey_in_app_only": "Funguje jen když je Personas vpředu",
-    "global_hotkey_title": "Mluvte odkudkoli"
+    "global_hotkey_title": "Mluvte odkudkoli",
+    "ship_milestone_prose_label": "Co znamená vydání",
+    "ship_milestone_prose_placeholder": "Volitelné: co ve skutečnosti znamená vydat tento milník"
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

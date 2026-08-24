@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "Aktifkan pintasan seluruh sistem",
       "global_hotkey_failed": "Aplikasi lain sudah memakai pintasan itu, jadi tidak bisa diaktifkan.",
       "global_hotkey_in_app_only": "Hanya berfungsi saat Personas di depan",
-      "global_hotkey_title": "Bicara dari mana saja"
+      "global_hotkey_title": "Bicara dari mana saja",
+      "ship_milestone_prose_label": "Arti merilis ini",
+      "ship_milestone_prose_placeholder": "Opsional: apa arti sebenarnya merilis milestone ini"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "perkiraan {date}",
     "milestone_bar_planned": "direncanakan",
     "milestone_bar_target": "tenggat {date}",
-    "milestone_bar_tooltip": "Milestone yang sedang berjalan untuk {project} — buka tab Ship-nya"
+    "milestone_bar_tooltip": "Milestone yang sedang berjalan untuk {project} — buka tab Ship-nya",
+    "ship_panel_title": "Rilis"
   },
   "ship": {
     "add": "Tambah",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "Kriteria inilah, dan hanya ini, yang menentukan apakah milestone ini bisa dirilis. Setiap baris diturunkan dari sinyal langsung — tidak ada yang diketik manual di sini.",
     "certify_ship_title": "Rilis {name}",
     "compose_scope_tooltip": "Pilih fitur dan tujuan mana yang membentuk milestone ini",
-    "criteria_badge_aria": "{unmet} dari {total} kriteria keluar belum terpenuhi"
+    "criteria_badge_aria": "{unmet} dari {total} kriteria keluar belum terpenuhi",
+    "description_edit_aria": "Edit deskripsi {name}",
+    "description_empty": "Tambahkan deskripsi",
+    "description_placeholder": "Apa arti sebenarnya merilis milestone ini"
   }
 }

@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "تفعيل الاختصار على مستوى النظام",
     "global_hotkey_failed": "هناك تطبيق آخر يستخدم هذا الاختصار بالفعل، لذا تعذّر تفعيله.",
     "global_hotkey_in_app_only": "يعمل فقط عندما يكون Personas في المقدمة",
-    "global_hotkey_title": "تحدّث من أي مكان"
+    "global_hotkey_title": "تحدّث من أي مكان",
+    "ship_milestone_prose_label": "ما الذي يعنيه الإطلاق",
+    "ship_milestone_prose_placeholder": "اختياري: ما الذي يعنيه إطلاق هذا المعلم فعليًا"
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",

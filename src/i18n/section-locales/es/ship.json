@@ -154,5 +154,8 @@
   "certify_ship_intro": "Estos criterios, y solo estos, deciden si este hito puede publicarse. Cada línea se deriva de señales en vivo: aquí no se escribe nada a mano.",
   "certify_ship_title": "Publicar {name}",
   "compose_scope_tooltip": "Elige qué funcionalidades y objetivos componen este hito",
-  "criteria_badge_aria": "{unmet} de {total} criterios de salida sin cumplir"
+  "criteria_badge_aria": "{unmet} de {total} criterios de salida sin cumplir",
+  "description_edit_aria": "Editar la descripción de {name}",
+  "description_empty": "Añadir una descripción",
+  "description_placeholder": "Qué significa realmente publicar este hito"
 }

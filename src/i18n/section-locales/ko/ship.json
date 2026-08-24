@@ -154,5 +154,8 @@
   "certify_ship_intro": "이 마일스톤을 출시할 수 있는지는 오직 이 기준들이 결정합니다. 각 항목은 실시간 신호에서 도출되며, 직접 입력된 값은 없습니다.",
   "certify_ship_title": "{name} 출시",
   "compose_scope_tooltip": "이 마일스톤을 구성할 기능과 목표를 선택하세요",
-  "criteria_badge_aria": "종료 기준 {total}개 중 {unmet}개 미충족"
+  "criteria_badge_aria": "종료 기준 {total}개 중 {unmet}개 미충족",
+  "description_edit_aria": "{name}의 설명 편집",
+  "description_empty": "설명 추가",
+  "description_placeholder": "이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지"
 }

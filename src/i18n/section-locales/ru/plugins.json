@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Включить общесистемное сочетание клавиш",
     "global_hotkey_failed": "Это сочетание клавиш уже занято другим приложением, поэтому включить его не удалось.",
     "global_hotkey_in_app_only": "Работает, только когда Personas на переднем плане",
-    "global_hotkey_title": "Говорите откуда угодно"
+    "global_hotkey_title": "Говорите откуда угодно",
+    "ship_milestone_prose_label": "Что значит выпустить",
+    "ship_milestone_prose_placeholder": "Необязательно: что на самом деле означает выпустить эту веху"
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",

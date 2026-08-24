@@ -154,5 +154,8 @@
   "certify_ship_intro": "Chỉ những tiêu chí này quyết định cột mốc có thể phát hành hay không. Mỗi dòng đều được suy ra từ tín hiệu trực tiếp — không có gì ở đây được nhập tay.",
   "certify_ship_title": "Phát hành {name}",
   "compose_scope_tooltip": "Chọn những tính năng và mục tiêu tạo nên cột mốc này",
-  "criteria_badge_aria": "{unmet} trên {total} tiêu chí hoàn tất vẫn chưa đạt"
+  "criteria_badge_aria": "{unmet} trên {total} tiêu chí hoàn tất vẫn chưa đạt",
+  "description_edit_aria": "Sửa mô tả của {name}",
+  "description_empty": "Thêm mô tả",
+  "description_placeholder": "Phát hành cột mốc này thực sự nghĩa là gì"
 }

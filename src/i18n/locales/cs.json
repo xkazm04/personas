@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "Zapnout systémovou zkratku",
       "global_hotkey_failed": "Tuto zkratku už používá jiná aplikace, proto ji nelze zapnout.",
       "global_hotkey_in_app_only": "Funguje jen když je Personas vpředu",
-      "global_hotkey_title": "Mluvte odkudkoli"
+      "global_hotkey_title": "Mluvte odkudkoli",
+      "ship_milestone_prose_label": "Co znamená vydání",
+      "ship_milestone_prose_placeholder": "Volitelné: co ve skutečnosti znamená vydat tento milník"
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "odhad {date}",
     "milestone_bar_planned": "plánováno",
     "milestone_bar_target": "termín {date}",
-    "milestone_bar_tooltip": "Otevřený milník projektu {project} — otevřít jeho záložku Ship"
+    "milestone_bar_tooltip": "Otevřený milník projektu {project} — otevřít jeho záložku Ship",
+    "ship_panel_title": "Vydat"
   },
   "ship": {
     "add": "Přidat",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "Tato kritéria, a jen ona, rozhodují o tom, zda lze milník vydat. Každý řádek je odvozen z živých signálů — nic se sem nepíše ručně.",
     "certify_ship_title": "Vydat {name}",
     "compose_scope_tooltip": "Vyberte, které funkce a cíle tvoří tento milník",
-    "criteria_badge_aria": "{unmet} z {total} výstupních kritérií zatím nesplněno"
+    "criteria_badge_aria": "{unmet} z {total} výstupních kritérií zatím nesplněno",
+    "description_edit_aria": "Upravit popis milníku {name}",
+    "description_empty": "Přidat popis",
+    "description_placeholder": "Co ve skutečnosti znamená vydat tento milník"
   }
 }

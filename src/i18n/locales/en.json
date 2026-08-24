@@ -16020,7 +16020,9 @@
       "global_hotkey_disable": "Disable system-wide shortcut",
       "global_hotkey_active": "Works anywhere on your computer",
       "global_hotkey_in_app_only": "Works only while Personas is in front",
-      "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled."
+      "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled.",
+      "ship_milestone_prose_label": "What shipping this means",
+      "ship_milestone_prose_placeholder": "Optional: what shipping this milestone actually means"
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_planned": "planned",
     "milestone_bar_target": "due {date}",
     "milestone_bar_forecast": "forecast {date}",
-    "milestone_bar_tooltip": "The open milestone for {project} — open its Ship tab"
+    "milestone_bar_tooltip": "The open milestone for {project} — open its Ship tab",
+    "ship_panel_title": "Ship"
   },
   "ship": {
     "tab_ship": "Ship",
@@ -20426,6 +20429,9 @@
     "certify_cut_title": "Cut the scope of {name}",
     "certify_ship_title": "Ship {name}",
     "certify_cut_intro": "Cutting freezes the scope: anything that joins after this is marked as scope creep. The exit criteria below are measured against the cut, so they do not block making one.",
-    "certify_ship_intro": "These criteria, and only these, decide whether this milestone can ship. Every line is derived from live signals — nothing here is typed in."
+    "certify_ship_intro": "These criteria, and only these, decide whether this milestone can ship. Every line is derived from live signals — nothing here is typed in.",
+    "description_placeholder": "What shipping this milestone actually means",
+    "description_empty": "Add a description",
+    "description_edit_aria": "Edit the description of {name}"
   }
 }

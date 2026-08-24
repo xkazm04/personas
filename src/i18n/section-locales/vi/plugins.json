@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Bật phím tắt toàn hệ thống",
     "global_hotkey_failed": "Một ứng dụng khác đã dùng phím tắt đó nên không thể bật.",
     "global_hotkey_in_app_only": "Chỉ hoạt động khi Personas ở phía trước",
-    "global_hotkey_title": "Nói từ bất kỳ đâu"
+    "global_hotkey_title": "Nói từ bất kỳ đâu",
+    "ship_milestone_prose_label": "Phát hành nghĩa là gì",
+    "ship_milestone_prose_placeholder": "Tùy chọn: phát hành cột mốc này thực sự nghĩa là gì"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",

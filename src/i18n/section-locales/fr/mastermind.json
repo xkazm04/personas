@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "prévision {date}",
   "milestone_bar_planned": "planifié",
   "milestone_bar_target": "pour le {date}",
-  "milestone_bar_tooltip": "Le jalon ouvert de {project} — ouvrir son onglet Ship"
+  "milestone_bar_tooltip": "Le jalon ouvert de {project} — ouvrir son onglet Ship",
+  "ship_panel_title": "Livrer"
 }

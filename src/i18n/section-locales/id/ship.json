@@ -154,5 +154,8 @@
   "certify_ship_intro": "Kriteria inilah, dan hanya ini, yang menentukan apakah milestone ini bisa dirilis. Setiap baris diturunkan dari sinyal langsung — tidak ada yang diketik manual di sini.",
   "certify_ship_title": "Rilis {name}",
   "compose_scope_tooltip": "Pilih fitur dan tujuan mana yang membentuk milestone ini",
-  "criteria_badge_aria": "{unmet} dari {total} kriteria keluar belum terpenuhi"
+  "criteria_badge_aria": "{unmet} dari {total} kriteria keluar belum terpenuhi",
+  "description_edit_aria": "Edit deskripsi {name}",
+  "description_empty": "Tambahkan deskripsi",
+  "description_placeholder": "Apa arti sebenarnya merilis milestone ini"
 }

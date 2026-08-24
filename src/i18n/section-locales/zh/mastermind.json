@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "预计 {date}",
   "milestone_bar_planned": "已规划",
   "milestone_bar_target": "截止 {date}",
-  "milestone_bar_tooltip": "{project} 进行中的里程碑 — 打开其 Ship 标签页"
+  "milestone_bar_tooltip": "{project} 进行中的里程碑 — 打开其 Ship 标签页",
+  "ship_panel_title": "发布"
 }

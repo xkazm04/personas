@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "perkiraan {date}",
   "milestone_bar_planned": "direncanakan",
   "milestone_bar_target": "tenggat {date}",
-  "milestone_bar_tooltip": "Milestone yang sedang berjalan untuk {project} — buka tab Ship-nya"
+  "milestone_bar_tooltip": "Milestone yang sedang berjalan untuk {project} — buka tab Ship-nya",
+  "ship_panel_title": "Rilis"
 }

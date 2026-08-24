@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "启用系统级快捷键",
       "global_hotkey_failed": "该快捷键已被其他应用占用，无法启用。",
       "global_hotkey_in_app_only": "仅在 Personas 处于前台时可用",
-      "global_hotkey_title": "随时随地开口"
+      "global_hotkey_title": "随时随地开口",
+      "ship_milestone_prose_label": "发布意味着什么",
+      "ship_milestone_prose_placeholder": "可选：发布这个里程碑究竟意味着什么"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "预计 {date}",
     "milestone_bar_planned": "已规划",
     "milestone_bar_target": "截止 {date}",
-    "milestone_bar_tooltip": "{project} 进行中的里程碑 — 打开其 Ship 标签页"
+    "milestone_bar_tooltip": "{project} 进行中的里程碑 — 打开其 Ship 标签页",
+    "ship_panel_title": "发布"
   },
   "ship": {
     "add": "添加",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "只有这些标准决定该里程碑能否发布。每一行都由实时信号推导得出——这里没有任何手动填写的内容。",
     "certify_ship_title": "发布 {name}",
     "compose_scope_tooltip": "选择哪些功能和目标构成这个里程碑",
-    "criteria_badge_aria": "{total} 项出口标准中有 {unmet} 项尚未满足"
+    "criteria_badge_aria": "{total} 项出口标准中有 {unmet} 项尚未满足",
+    "description_edit_aria": "编辑 {name} 的描述",
+    "description_empty": "添加描述",
+    "description_placeholder": "发布这个里程碑究竟意味着什么"
   }
 }

@@ -154,5 +154,8 @@
   "certify_ship_intro": "このマイルストーンをリリースできるかは、これらの基準だけが決めます。各行はライブシグナルから導出されており、手入力されたものはありません。",
   "certify_ship_title": "{name} をリリース",
   "compose_scope_tooltip": "このマイルストーンを構成する機能と目標を選びます",
-  "criteria_badge_aria": "終了基準 {total} 件のうち {unmet} 件が未達成"
+  "criteria_badge_aria": "終了基準 {total} 件のうち {unmet} 件が未達成",
+  "description_edit_aria": "{name} の説明を編集",
+  "description_empty": "説明を追加",
+  "description_placeholder": "このマイルストーンをリリースするとは実際どういうことか"
 }

@@ -52,6 +52,12 @@ describe('AthenaShipMilestoneCard', () => {
     fireEvent.change(screen.getByTestId('athena-ship-description-1'), {
       target: { value: 'his reason, not hers' },
     });
+    // The milestone's own prose is a SEPARATE field from the per-row reasons —
+    // that split is the whole point of the 2026-08-24 change, so the test
+    // exercises both and asserts they arrive in different arguments.
+    fireEvent.change(screen.getByTestId('athena-ship-prose'), {
+      target: { value: 'what shipping it actually means' },
+    });
     fireEvent.click(screen.getByTestId('athena-ship-confirm'));
 
     await waitFor(() => expect(createShipMilestone).toHaveBeenCalledTimes(1));
@@ -59,6 +65,7 @@ describe('AthenaShipMilestoneCard', () => {
       'proj_1',
       'M1 renamed by the operator',
       'the goal he actually meant',
+      'what shipping it actually means',
       [
         { itemKind: 'use_case', itemId: 'item_0', description: 'reason 0' },
         { itemKind: 'goal', itemId: 'item_1', description: 'his reason, not hers' },
@@ -73,7 +80,8 @@ describe('AthenaShipMilestoneCard', () => {
     fireEvent.click(screen.getByTestId('athena-ship-confirm'));
 
     await waitFor(() => expect(createShipMilestone).toHaveBeenCalledTimes(1));
-    const rows = createShipMilestone.mock.calls[0][3] as Array<{ itemId: string }>;
+    // Argument 4 now, not 3 — `description` sits between `goal` and `rows`.
+    const rows = createShipMilestone.mock.calls[0][4] as Array<{ itemId: string }>;
     expect(rows).toHaveLength(1);
     expect(rows[0].itemId).toBe('item_1');
   });

@@ -382,3 +382,54 @@ export function derivePassportFromMetadata(
     },
   };
 }
+
+/**
+ * A passport from the `dev_projects` row ALONE — no cross-project scan, no
+ * skills probe, no repo evidence, no telemetry.
+ *
+ * WHY IT EXISTS. Opening the Mastermind canvas used to render nothing at all
+ * until every project's passport had resolved: the page held the canvas behind
+ * `loading && passports.length === 0`, and the fallback was `LoadingSpinner`,
+ * which renders `null`. So the cold open was not a slow canvas, it was a BLANK
+ * RECTANGLE whose duration was set by the slowest project in the workspace.
+ *
+ * This is the cheap first frame. `listProjects()` is one IPC call and returns
+ * everything an island needs to EXIST — id, name, purpose, repo — so the canvas
+ * can paint its full population immediately and let each project sharpen in
+ * place as its real data lands.
+ *
+ * WHAT IT DELIBERATELY DOES NOT DO. It does not guess. Every readiness score
+ * here is a placeholder that `provisional: true` marks as unmeasured, and the
+ * canvas renders a provisional island's dimension cells as `unknown` rather
+ * than as the zeros this synthesis would otherwise imply. An unscanned project
+ * shown as "no CI, no tests, no KPIs" would be a false accusation against the
+ * operator's own product — the exact failure the canvas's own doctrine names
+ * when it says `unknown` is not `absent`.
+ */
+export function derivePassportSkeleton(project: DevProject): AppPassport {
+  // A metadata object shaped like the real one but carrying only what the
+  // project row actually knows. Empty arrays and zero counts are NOT claims —
+  // `provisional` is what tells every reader to disregard them.
+  const meta: CrossProjectProjectMetadata = {
+    project_id: project.id,
+    name: project.name,
+    root_path: project.root_path,
+    description: project.description ?? null,
+    github_url: project.github_url ?? null,
+    status: project.status,
+    declared_tech_stack: project.tech_stack ?? null,
+    summary: project.description ?? '',
+    capabilities: [],
+    keywords: [],
+    tech_layers: [],
+    entry_points: [],
+    db_tables: [],
+    api_surface: [],
+    cross_refs: [],
+    hot_directories: [],
+    context_count: 0,
+    group_count: 0,
+    active_goal_count: 0,
+  };
+  return { ...derivePassportFromMetadata(meta, project), provisional: true };
+}

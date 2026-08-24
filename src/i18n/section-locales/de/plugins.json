@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Systemweites Tastenkürzel aktivieren",
     "global_hotkey_failed": "Eine andere App belegt dieses Tastenkürzel bereits, daher konnte es nicht aktiviert werden.",
     "global_hotkey_in_app_only": "Funktioniert nur bei aktivem Personas-Fenster",
-    "global_hotkey_title": "Von überall sprechen"
+    "global_hotkey_title": "Von überall sprechen",
+    "ship_milestone_prose_label": "Was das Ausliefern bedeutet",
+    "ship_milestone_prose_placeholder": "Optional: was das Ausliefern dieses Meilensteins wirklich bedeutet"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

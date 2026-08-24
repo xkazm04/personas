@@ -27,6 +27,7 @@ import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
 import { FleetBadges } from '../lib/FleetBadges';
 import { IslandBanner } from '../lib/IslandBanner';
+import { IslandShipPanel } from '../lib/IslandShipPanel';
 import { StatColumns } from '../lib/StatColumns';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
@@ -150,7 +151,11 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
       )}
       {(band === 'near' || band === 'close') && (
         <text y={5} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--foreground)" style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {island.autoScore}·{island.prodScore}
+          {/* A provisional island's scores are placeholders from the skeleton
+              paint, not measurements. Printing `0·0` would accuse an unscanned
+              project of being the worst on the map; the em-dashes say "not
+              measured yet" and are replaced the moment its passport lands. */}
+          {island.provisional ? '—·—' : `${island.autoScore}·${island.prodScore}`}
         </text>
       )}
       {band === 'close' && (
@@ -187,6 +192,20 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
           yWorld={botY + 12}
           onOpenList={(state, e) => onFleetList(island.slug, state, e)}
           onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
+        />
+      )}
+
+      {/* Delivery panel — NEAR and CLOSE only. At those bands the reader has
+          travelled to one project and is asking what is LEFT, which a single
+          milestone name on the banner cannot answer; at far/mid the banner chip
+          is the right density and this would be unreadable anyway. Anchored
+          below the fleet badges so the two never overlap when both are present. */}
+      {(band === 'near' || band === 'close') && island.ship && (
+        <IslandShipPanel
+          ship={island.ship}
+          z={z}
+          yWorld={botY + (island.fleet.length > 0 || island.personasRunning.length > 0 ? 46 : 16)}
+          onOpenShip={() => onShipOpen(island.slug)}
         />
       )}
     </g>

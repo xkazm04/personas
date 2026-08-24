@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "예상 {date}",
   "milestone_bar_planned": "계획됨",
   "milestone_bar_target": "마감 {date}",
-  "milestone_bar_tooltip": "{project}의 진행 중인 마일스톤 — Ship 탭 열기"
+  "milestone_bar_tooltip": "{project}의 진행 중인 마일스톤 — Ship 탭 열기",
+  "ship_panel_title": "출시"
 }

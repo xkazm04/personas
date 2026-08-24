@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "Activer le raccourci système",
       "global_hotkey_failed": "Une autre application utilise déjà ce raccourci, il n'a donc pas pu être activé.",
       "global_hotkey_in_app_only": "Fonctionne uniquement quand Personas est au premier plan",
-      "global_hotkey_title": "Parlez depuis n'importe où"
+      "global_hotkey_title": "Parlez depuis n'importe où",
+      "ship_milestone_prose_label": "Ce que livrer signifie",
+      "ship_milestone_prose_placeholder": "Facultatif : ce que livrer ce jalon signifie vraiment"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "prévision {date}",
     "milestone_bar_planned": "planifié",
     "milestone_bar_target": "pour le {date}",
-    "milestone_bar_tooltip": "Le jalon ouvert de {project} — ouvrir son onglet Ship"
+    "milestone_bar_tooltip": "Le jalon ouvert de {project} — ouvrir son onglet Ship",
+    "ship_panel_title": "Livrer"
   },
   "ship": {
     "add": "Ajouter",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "Ces critères, et eux seuls, décident si ce jalon peut être livré. Chaque ligne découle de signaux en direct : rien ici n'est saisi à la main.",
     "certify_ship_title": "Livrer {name}",
     "compose_scope_tooltip": "Choisis les fonctionnalités et les objectifs qui composent ce jalon",
-    "criteria_badge_aria": "{unmet} critères de sortie non remplis sur {total}"
+    "criteria_badge_aria": "{unmet} critères de sortie non remplis sur {total}",
+    "description_edit_aria": "Modifier la description de {name}",
+    "description_empty": "Ajouter une description",
+    "description_placeholder": "Ce que livrer ce jalon signifie vraiment"
   }
 }

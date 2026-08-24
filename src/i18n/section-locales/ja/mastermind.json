@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "予測 {date}",
   "milestone_bar_planned": "計画中",
   "milestone_bar_target": "期限 {date}",
-  "milestone_bar_tooltip": "{project} の進行中マイルストーン — Ship タブを開く"
+  "milestone_bar_tooltip": "{project} の進行中マイルストーン — Ship タブを開く",
+  "ship_panel_title": "リリース"
 }

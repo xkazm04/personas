@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "تفعيل الاختصار على مستوى النظام",
       "global_hotkey_failed": "هناك تطبيق آخر يستخدم هذا الاختصار بالفعل، لذا تعذّر تفعيله.",
       "global_hotkey_in_app_only": "يعمل فقط عندما يكون Personas في المقدمة",
-      "global_hotkey_title": "تحدّث من أي مكان"
+      "global_hotkey_title": "تحدّث من أي مكان",
+      "ship_milestone_prose_label": "ما الذي يعنيه الإطلاق",
+      "ship_milestone_prose_placeholder": "اختياري: ما الذي يعنيه إطلاق هذا المعلم فعليًا"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "توقّع {date}",
     "milestone_bar_planned": "مُخطَّط",
     "milestone_bar_target": "الموعد {date}",
-    "milestone_bar_tooltip": "المعلم المفتوح لمشروع {project} — افتح تبويب Ship الخاص به"
+    "milestone_bar_tooltip": "المعلم المفتوح لمشروع {project} — افتح تبويب Ship الخاص به",
+    "ship_panel_title": "إطلاق"
   },
   "ship": {
     "add": "إضافة",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "هذه المعايير وحدها تقرّر ما إذا كان يمكن إطلاق هذا المعلم. كل سطر مشتق من إشارات حيّة — لا شيء هنا مُدخَل يدويًا.",
     "certify_ship_title": "إطلاق {name}",
     "compose_scope_tooltip": "اختر الميزات والأهداف التي يتكوّن منها هذا المعلم",
-    "criteria_badge_aria": "{unmet} من {total} من معايير الخروج لم تتحقق بعد"
+    "criteria_badge_aria": "{unmet} من {total} من معايير الخروج لم تتحقق بعد",
+    "description_edit_aria": "تعديل وصف {name}",
+    "description_empty": "إضافة وصف",
+    "description_placeholder": "ما الذي يعنيه إطلاق هذا المعلم فعليًا"
   }
 }

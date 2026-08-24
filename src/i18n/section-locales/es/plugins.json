@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Activar el atajo de todo el sistema",
     "global_hotkey_failed": "Otra aplicación ya usa ese atajo, así que no se pudo activar.",
     "global_hotkey_in_app_only": "Solo funciona con Personas en primer plano",
-    "global_hotkey_title": "Habla desde donde estés"
+    "global_hotkey_title": "Habla desde donde estés",
+    "ship_milestone_prose_label": "Qué significa publicarlo",
+    "ship_milestone_prose_placeholder": "Opcional: qué significa realmente publicar este hito"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

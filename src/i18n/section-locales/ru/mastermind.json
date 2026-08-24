@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "прогноз {date}",
   "milestone_bar_planned": "запланировано",
   "milestone_bar_target": "срок {date}",
-  "milestone_bar_tooltip": "Открытая веха проекта {project} — открыть его вкладку Ship"
+  "milestone_bar_tooltip": "Открытая веха проекта {project} — открыть его вкладку Ship",
+  "ship_panel_title": "Выпуск"
 }

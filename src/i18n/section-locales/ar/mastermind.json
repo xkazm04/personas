@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "توقّع {date}",
   "milestone_bar_planned": "مُخطَّط",
   "milestone_bar_target": "الموعد {date}",
-  "milestone_bar_tooltip": "المعلم المفتوح لمشروع {project} — افتح تبويب Ship الخاص به"
+  "milestone_bar_tooltip": "المعلم المفتوح لمشروع {project} — افتح تبويب Ship الخاص به",
+  "ship_panel_title": "إطلاق"
 }

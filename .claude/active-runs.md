@@ -2,6 +2,11 @@
 
 ## Active
 
+### channels-lane-b — Lane B: persona channels + Messages->Reports rebrand + follow-up loop
+- **[2026-08-24 12:31]**
+- **Paths:** `src-tauri/src/commands/**` · `src-tauri/db/src/**` · `src-tauri/engine/**` · `src/features/fleet/monitor/channels/**` · `src/api/pipeline/**` · `src/stores/slices/pipeline/**`
+- **Status:** started
+
 - **[2026-08-23 17:36]**
 - **Paths:** `.claude/active-runs.md`
 - **Status:** started

@@ -154,5 +154,8 @@
   "certify_ship_intro": "هذه المعايير وحدها تقرّر ما إذا كان يمكن إطلاق هذا المعلم. كل سطر مشتق من إشارات حيّة — لا شيء هنا مُدخَل يدويًا.",
   "certify_ship_title": "إطلاق {name}",
   "compose_scope_tooltip": "اختر الميزات والأهداف التي يتكوّن منها هذا المعلم",
-  "criteria_badge_aria": "{unmet} من {total} من معايير الخروج لم تتحقق بعد"
+  "criteria_badge_aria": "{unmet} من {total} من معايير الخروج لم تتحقق بعد",
+  "description_edit_aria": "تعديل وصف {name}",
+  "description_empty": "إضافة وصف",
+  "description_placeholder": "ما الذي يعنيه إطلاق هذا المعلم فعليًا"
 }

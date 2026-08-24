@@ -108,7 +108,10 @@ export interface ShipMilestoneVM {
   row: DevMilestone;
   id: string;
   name: string;
+  /** The objective, as a SHORT TITLE — the Ship tab's heading. */
   goal: string | null;
+  /** What shipping this means, in prose. Never rendered as the heading. */
+  description: string | null;
   status: MilestoneStatus;
   targetLabel: string | null;
   members: ShipMember[];

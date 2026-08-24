@@ -21,7 +21,7 @@ import { ShipControlBar } from './ShipControlBar';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
 import { ShipRunSummary, useShipMilestoneRun } from './ShipMilestoneRun';
-import { ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
+import { ShipDescriptionField, ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
 import {
   BUCKET_HUE, bucketLabel,
   type ScopeBucket, type ShipMilestoneVM,
@@ -298,6 +298,12 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
             goal={vm.goal}
             editable={editable}
             onSave={(goal) => ship.setGoal(vm.id, goal)}
+          />
+          <ShipDescriptionField
+            name={vm.name}
+            description={vm.description}
+            editable={editable}
+            onSave={(description) => ship.setDescription(vm.id, description)}
           />
           <ShipVelocityNote rows={ship.roadmap.map((ms) => ms.row)} vm={vm} />
           {/* Reporting only: certification is gated by `verdict` (the criteria

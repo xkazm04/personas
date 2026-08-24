@@ -75,14 +75,18 @@ export function IslandBanner({ island, z, band, topWorldY, handleProps, onContex
           </text>
         )}
         <text x={w / 2 - 13} y={4} textAnchor="end" fontSize={10.5} fill={mix('var(--foreground)', 55)} style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {island.autoScore}·{island.prodScore}
+          {/* See MosaicIsland: placeholders read as em-dashes, never as zeros. */}
+          {island.provisional ? '—·—' : `${island.autoScore}·${island.prodScore}`}
         </text>
       </g>
 
       {/* Ship milestone chip — dev status at first sight: the next milestone
           and shipped count from dev_milestones, floated above the name pill.
-          Late forecast tints warning; everything-shipped tints success. */}
-      {island.ship && (() => {
+          Late forecast tints warning; everything-shipped tints success.
+          FAR and MID only: at near/close `IslandShipPanel` sits under the island
+          with the same data expanded into the next three steps, and printing
+          both would say the same thing twice in one viewport. */}
+      {island.ship && band !== 'near' && band !== 'close' && (() => {
         const ship = island.ship;
         const chFs = 10.5;
         const chH = chFs + 9;

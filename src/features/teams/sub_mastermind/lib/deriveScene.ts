@@ -47,6 +47,37 @@ function readinessState(p: AppPassport): IslandState {
 
 function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitoring: MonitoringSummary | undefined, llmSpend: number | null | undefined, goalsOngoing: number | undefined, families: FamilyHealth): Island {
   const pos = spiralPlace(i, p.identity.slug);
+  // A PROVISIONAL passport was built from the project row alone so the canvas
+  // could paint before the scan resolved (`derivePassportSkeleton`). Its scores
+  // are placeholders, so every cell reads `unknown` and the island takes the
+  // neutral state — never `critical`, which is what a zeroed score would
+  // otherwise produce and which would accuse an unscanned project of being the
+  // worst one on the map. The island still occupies its real position, so when
+  // the measured passport lands it sharpens IN PLACE with no relayout.
+  if (p.provisional) {
+    return {
+      slug: p.identity.slug,
+      name: p.identity.name,
+      purpose: p.identity.purpose,
+      x: pos.x, y: pos.y,
+      state: 'building',
+      stateSource: 'readiness',
+      monitorErrors: null,
+      autoScore: 0,
+      prodScore: 0,
+      lifecycle: LIFECYCLE_LABEL[p.identity.lifecycle],
+      automationLabel: AUTOMATION_LABEL[p.automationReadiness.level],
+      blockers: 0,
+      nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues, goalsOngoing, families)
+        .map((n) => ({ ...n, status: 'unknown' as const, detail: null, reached: 0, steps: 0, days: null, action: null })),
+      fleet: [],
+      personasRunning: [],
+      runners: [],
+      attention: false,
+      stats: [],
+      provisional: true,
+    };
+  }
   // Colour = static readiness combined with the live monitoring signal (fresh
   // errors → critical, quiet-but-open issues → warning). Fleet "attention" is
   // attached by the page from the resolved fleet (default false here).

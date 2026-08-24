@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "启用系统级快捷键",
     "global_hotkey_failed": "该快捷键已被其他应用占用，无法启用。",
     "global_hotkey_in_app_only": "仅在 Personas 处于前台时可用",
-    "global_hotkey_title": "随时随地开口"
+    "global_hotkey_title": "随时随地开口",
+    "ship_milestone_prose_label": "发布意味着什么",
+    "ship_milestone_prose_placeholder": "可选：发布这个里程碑究竟意味着什么"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",

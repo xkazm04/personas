@@ -62,6 +62,7 @@ export function milestone(over: Partial<DevMilestone> = {}): DevMilestone {
     projectId: 'p1',
     name: 'v1',
     goal: null,
+    description: null,
     status: 'active',
     orderIndex: 0,
     targetDate: null,

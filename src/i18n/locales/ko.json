@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "시스템 전체 단축키 켜기",
       "global_hotkey_failed": "다른 앱이 이미 그 단축키를 사용 중이라 켤 수 없습니다.",
       "global_hotkey_in_app_only": "Personas가 앞에 있을 때만 작동합니다",
-      "global_hotkey_title": "어디서나 말하기"
+      "global_hotkey_title": "어디서나 말하기",
+      "ship_milestone_prose_label": "출시의 의미",
+      "ship_milestone_prose_placeholder": "선택 사항: 이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "예상 {date}",
     "milestone_bar_planned": "계획됨",
     "milestone_bar_target": "마감 {date}",
-    "milestone_bar_tooltip": "{project}의 진행 중인 마일스톤 — Ship 탭 열기"
+    "milestone_bar_tooltip": "{project}의 진행 중인 마일스톤 — Ship 탭 열기",
+    "ship_panel_title": "출시"
   },
   "ship": {
     "add": "추가",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "이 마일스톤을 출시할 수 있는지는 오직 이 기준들이 결정합니다. 각 항목은 실시간 신호에서 도출되며, 직접 입력된 값은 없습니다.",
     "certify_ship_title": "{name} 출시",
     "compose_scope_tooltip": "이 마일스톤을 구성할 기능과 목표를 선택하세요",
-    "criteria_badge_aria": "종료 기준 {total}개 중 {unmet}개 미충족"
+    "criteria_badge_aria": "종료 기준 {total}개 중 {unmet}개 미충족",
+    "description_edit_aria": "{name}의 설명 편집",
+    "description_empty": "설명 추가",
+    "description_placeholder": "이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지"
   }
 }

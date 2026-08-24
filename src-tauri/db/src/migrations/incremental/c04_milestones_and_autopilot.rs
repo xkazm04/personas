@@ -52,6 +52,29 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "dev_milestones.description",
+            description: "Split the milestone's objective in two: `goal` becomes a SHORT TITLE and this carries the prose. The two were one column, so anything explaining what shipping meant had to be written into the field the UI renders as the heading — and an automation asked for 'one paragraph' duly wrote one, which then rendered as a wall of text where a name belonged.",
+            already_applied: |conn| has_column(conn, "dev_milestones", "description"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_milestones ADD COLUMN description TEXT;")?;
+                // Existing prose is MOVED, not copied and not dropped: a goal
+                // longer than a title was never a title, and leaving it in
+                // place would keep rendering as the heading. The short ones
+                // stay exactly where they are.
+                ddl_step(
+                    conn,
+                    "UPDATE dev_milestones
+                        SET description = goal, goal = NULL
+                      WHERE goal IS NOT NULL AND length(goal) > 72;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "dev_milestone_items.description_rating",
             description: "Give a milestone scope member a free-text rationale and an operator rating (1..5, NULL = unrated), so a bucket decision carries its reason and its judged value.",
             already_applied: |conn| has_column(conn, "dev_milestone_items", "rating"),

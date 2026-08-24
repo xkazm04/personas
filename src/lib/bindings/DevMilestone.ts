@@ -8,9 +8,19 @@
  */
 export type DevMilestone = { id: string, projectId: string, name: string, 
 /**
- * The one-sentence core-value statement the cut converges on.
+ * The objective as a SHORT TITLE — a handful of words, not a sentence and
+ * never a paragraph. The Ship tab renders this as the milestone's heading,
+ * so prose here does not read as an explanation, it reads as a broken
+ * layout. Anything longer belongs in [`Self::description`], and both the
+ * UI and the companion's `show_ship_milestone` validator enforce the split
+ * rather than trusting the writer.
  */
 goal: string | null, 
+/**
+ * What shipping this milestone actually means, in prose. Optional: a
+ * milestone whose title is self-explanatory needs nothing here.
+ */
+description: string | null, 
 /**
  * 'planned' | 'active' | 'shipped'
  */

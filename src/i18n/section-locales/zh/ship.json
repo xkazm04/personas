@@ -154,5 +154,8 @@
   "certify_ship_intro": "只有这些标准决定该里程碑能否发布。每一行都由实时信号推导得出——这里没有任何手动填写的内容。",
   "certify_ship_title": "发布 {name}",
   "compose_scope_tooltip": "选择哪些功能和目标构成这个里程碑",
-  "criteria_badge_aria": "{total} 项出口标准中有 {unmet} 项尚未满足"
+  "criteria_badge_aria": "{total} 项出口标准中有 {unmet} 项尚未满足",
+  "description_edit_aria": "编辑 {name} 的描述",
+  "description_empty": "添加描述",
+  "description_placeholder": "发布这个里程碑究竟意味着什么"
 }

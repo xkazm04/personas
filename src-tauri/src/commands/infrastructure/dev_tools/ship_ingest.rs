@@ -712,10 +712,12 @@ mod door_tests {
         let project =
             repo::create_project(&pool, "P", &root, None, None, None, None, None).unwrap();
         let ms =
-            repo::create_milestone(&pool, &project.id, "v1", Some("ship it"), None, None).unwrap();
+            repo::create_milestone(&pool, &project.id, "v1", Some("ship it"), None, None, None)
+                .unwrap();
         // Member joins BEFORE the cut, in `later`. Both facts must survive.
         repo::set_milestone_item(&pool, &ms.id, "use_case", "uc-a", "later", None, None).unwrap();
-        repo::update_milestone(&pool, &ms.id, None, None, Some("active"), None, None).unwrap();
+        repo::update_milestone(&pool, &ms.id, None, None, None, Some("active"), None, None)
+            .unwrap();
 
         write_run(
             &tmp,
@@ -773,7 +775,7 @@ mod door_tests {
         let root = tmp.to_string_lossy().into_owned();
         let project =
             repo::create_project(&pool, "P", &root, None, None, None, None, None).unwrap();
-        let ms = repo::create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        let ms = repo::create_milestone(&pool, &project.id, "v1", None, None, None, None).unwrap();
         repo::set_milestone_item(&pool, &ms.id, "use_case", "uc-a", "core", None, None).unwrap();
 
         // Row 0 is valid, row 1 is not. Nothing may land.

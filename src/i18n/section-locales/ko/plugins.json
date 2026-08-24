@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "시스템 전체 단축키 켜기",
     "global_hotkey_failed": "다른 앱이 이미 그 단축키를 사용 중이라 켤 수 없습니다.",
     "global_hotkey_in_app_only": "Personas가 앞에 있을 때만 작동합니다",
-    "global_hotkey_title": "어디서나 말하기"
+    "global_hotkey_title": "어디서나 말하기",
+    "ship_milestone_prose_label": "출시의 의미",
+    "ship_milestone_prose_placeholder": "선택 사항: 이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

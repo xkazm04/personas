@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Aktifkan pintasan seluruh sistem",
     "global_hotkey_failed": "Aplikasi lain sudah memakai pintasan itu, jadi tidak bisa diaktifkan.",
     "global_hotkey_in_app_only": "Hanya berfungsi saat Personas di depan",
-    "global_hotkey_title": "Bicara dari mana saja"
+    "global_hotkey_title": "Bicara dari mana saja",
+    "ship_milestone_prose_label": "Arti merilis ini",
+    "ship_milestone_prose_placeholder": "Opsional: apa arti sebenarnya merilis milestone ini"
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",

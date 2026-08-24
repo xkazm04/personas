@@ -154,5 +154,8 @@
   "certify_ship_intro": "Ces critères, et eux seuls, décident si ce jalon peut être livré. Chaque ligne découle de signaux en direct : rien ici n'est saisi à la main.",
   "certify_ship_title": "Livrer {name}",
   "compose_scope_tooltip": "Choisis les fonctionnalités et les objectifs qui composent ce jalon",
-  "criteria_badge_aria": "{unmet} critères de sortie non remplis sur {total}"
+  "criteria_badge_aria": "{unmet} critères de sortie non remplis sur {total}",
+  "description_edit_aria": "Modifier la description de {name}",
+  "description_empty": "Ajouter une description",
+  "description_placeholder": "Ce que livrer ce jalon signifie vraiment"
 }

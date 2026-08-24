@@ -15,6 +15,7 @@ fn row_to_milestone(row: &Row) -> rusqlite::Result<DevMilestone> {
         project_id: row.get("project_id")?,
         name: row.get("name")?,
         goal: row.get("goal")?,
+        description: row.get("description")?,
         status: row.get("status")?,
         order_index: row.get("order_index")?,
         target_date: row.get("target_date")?,
@@ -59,6 +60,7 @@ pub fn create_milestone(
     project_id: &str,
     name: &str,
     goal: Option<&str>,
+    description: Option<&str>,
     status: Option<&str>,
     target_date: Option<&str>,
 ) -> Result<DevMilestone, AppError> {
@@ -106,9 +108,9 @@ pub fn create_milestone(
         // so without this its `cut_at` would stay NULL forever and every item
         // added later would report `added_after_cut = false`.
         conn.execute(
-            "INSERT INTO dev_milestones (id, project_id, name, goal, status, order_index, target_date, cut_at, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END, ?8, ?8)",
-            params![id, project_id, name.trim(), goal, status, order_index, target_date, now],
+            "INSERT INTO dev_milestones (id, project_id, name, goal, description, status, order_index, target_date, cut_at, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?9, ?5, ?6, ?7, CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END, ?8, ?8)",
+            params![id, project_id, name.trim(), goal, status, order_index, target_date, now, description],
         )?;
         drop(conn);
         get_milestone_by_id(pool, &id)
@@ -137,6 +139,7 @@ pub fn update_milestone(
     id: &str,
     name: Option<&str>,
     goal: Option<&str>,
+    description: Option<&str>,
     status: Option<&str>,
     target_date: Option<&str>,
     order_index: Option<i32>,
@@ -159,6 +162,16 @@ pub fn update_milestone(
             conn.execute(
                 "UPDATE dev_milestones SET goal = ?2, updated_at = ?3 WHERE id = ?1",
                 params![id, goal, now],
+            )?;
+        }
+        // Same nullable-patch convention as `set_milestone_item`: the outer
+        // Option is "was this field sent at all", so omitting it leaves the
+        // column alone and `Some("")` clears it. Editing the title must never
+        // silently wipe the prose underneath it.
+        if let Some(description) = description {
+            conn.execute(
+                "UPDATE dev_milestones SET description = ?2, updated_at = ?3 WHERE id = ?1",
+                params![id, description, now],
             )?;
         }
         if let Some(status) = status {
@@ -469,6 +482,7 @@ mod milestone_tests {
             "v1 — First Ship",
             Some("Core value"),
             None,
+            None,
             Some("2026-08-15"),
         )
         .unwrap();
@@ -480,7 +494,8 @@ mod milestone_tests {
         assert!(!a.added_after_cut);
 
         // Activating stamps cut_at once.
-        let m = update_milestone(&pool, &m.id, None, None, Some("active"), None, None).unwrap();
+        let m =
+            update_milestone(&pool, &m.id, None, None, None, Some("active"), None, None).unwrap();
         assert!(m.cut_at.is_some());
 
         // New membership after the cut IS creep; re-bucketing an old one isn't.
@@ -495,7 +510,8 @@ mod milestone_tests {
         assert_eq!(items.len(), 3);
 
         // Shipping stamps shipped_at; delete cascades members.
-        let m = update_milestone(&pool, &m.id, None, None, Some("shipped"), None, None).unwrap();
+        let m =
+            update_milestone(&pool, &m.id, None, None, None, Some("shipped"), None, None).unwrap();
         assert!(m.shipped_at.is_some());
         delete_milestone(&pool, &m.id).unwrap();
         assert!(list_milestone_items(&pool, &m.id).unwrap().is_empty());
@@ -505,9 +521,11 @@ mod milestone_tests {
     fn milestone_validation_rejects_bad_enums() {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp2", None, None, None, None, None).unwrap();
-        assert!(create_milestone(&pool, &project.id, "  ", None, None, None).is_err());
-        assert!(create_milestone(&pool, &project.id, "M", None, Some("bogus"), None).is_err());
-        let m = create_milestone(&pool, &project.id, "M", None, None, None).unwrap();
+        assert!(create_milestone(&pool, &project.id, "  ", None, None, None, None).is_err());
+        assert!(
+            create_milestone(&pool, &project.id, "M", None, None, Some("bogus"), None).is_err()
+        );
+        let m = create_milestone(&pool, &project.id, "M", None, None, None, None).unwrap();
         assert!(
             set_milestone_item(&pool, &m.id, "context", "c-1", "core", None, None).is_err(),
             "contexts are never members"
@@ -561,8 +579,8 @@ mod milestone_tests {
             None,
         )
         .unwrap();
-        create_milestone(&pool, &a.id, "v1", None, Some("active"), None).unwrap();
-        create_milestone(&pool, &a.id, "v2", None, None, None).unwrap();
+        create_milestone(&pool, &a.id, "v1", None, None, Some("active"), None).unwrap();
+        create_milestone(&pool, &a.id, "v2", None, None, None, None).unwrap();
 
         let mk_kpi = |name: &str, status: &str| {
             create_kpi(
@@ -642,6 +660,7 @@ mod milestone_tests {
             &project.id,
             "Onboard to Personas",
             None,
+            None,
             Some("active"),
             None,
         )
@@ -655,7 +674,16 @@ mod milestone_tests {
         assert!(item.added_after_cut, "items added after the cut are creep");
 
         // A milestone born 'planned' is still uncut.
-        let p = create_milestone(&pool, &project.id, "Later", None, Some("planned"), None).unwrap();
+        let p = create_milestone(
+            &pool,
+            &project.id,
+            "Later",
+            None,
+            None,
+            Some("planned"),
+            None,
+        )
+        .unwrap();
         assert!(p.cut_at.is_none());
     }
 
@@ -668,9 +696,9 @@ mod milestone_tests {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp4", None, None, None, None, None).unwrap();
 
-        let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        let m = create_milestone(&pool, &project.id, "v1", None, None, None, None).unwrap();
         assert_eq!(m.status, "planned");
-        let err = update_milestone(&pool, &m.id, None, None, Some("shipped"), None, None);
+        let err = update_milestone(&pool, &m.id, None, None, None, Some("shipped"), None, None);
         assert!(
             matches!(err, Err(AppError::Validation(_))),
             "planned → shipped must be rejected, got {err:?}"
@@ -681,9 +709,11 @@ mod milestone_tests {
         assert!(still.shipped_at.is_none());
 
         // The legal path stamps both timestamps.
-        let m = update_milestone(&pool, &m.id, None, None, Some("active"), None, None).unwrap();
+        let m =
+            update_milestone(&pool, &m.id, None, None, None, Some("active"), None, None).unwrap();
         assert!(m.cut_at.is_some());
-        let m = update_milestone(&pool, &m.id, None, None, Some("shipped"), None, None).unwrap();
+        let m =
+            update_milestone(&pool, &m.id, None, None, None, Some("shipped"), None, None).unwrap();
         assert!(m.cut_at.is_some(), "cut_at survives the ship transition");
         assert!(m.shipped_at.is_some());
     }
@@ -697,7 +727,7 @@ mod milestone_tests {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp5", None, None, None, None, None).unwrap();
 
-        let err = create_milestone(&pool, &project.id, "v1", None, Some("shipped"), None);
+        let err = create_milestone(&pool, &project.id, "v1", None, None, Some("shipped"), None);
         assert!(
             matches!(err, Err(AppError::Validation(_))),
             "creating shipped must be rejected, got {err:?}"
@@ -711,10 +741,10 @@ mod milestone_tests {
         );
 
         // The legal shapes still work.
-        let planned = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        let planned = create_milestone(&pool, &project.id, "v1", None, None, None, None).unwrap();
         assert_eq!(planned.status, "planned");
         let active =
-            create_milestone(&pool, &project.id, "v2", None, Some("active"), None).unwrap();
+            create_milestone(&pool, &project.id, "v2", None, None, Some("active"), None).unwrap();
         assert_eq!(active.status, "active");
         assert!(active.shipped_at.is_none());
     }
@@ -726,7 +756,7 @@ mod milestone_tests {
     fn milestone_item_description_and_rating_round_trip() {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp6", None, None, None, None, None).unwrap();
-        let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        let m = create_milestone(&pool, &project.id, "v1", None, None, None, None).unwrap();
 
         // Born before the cut, with both annotations.
         let a = set_milestone_item(
@@ -748,7 +778,7 @@ mod milestone_tests {
 
         // Cut the milestone, then re-bucket WITHOUT sending either field:
         // both must survive untouched, and so must the creep flag.
-        update_milestone(&pool, &m.id, None, None, Some("active"), None, None).unwrap();
+        update_milestone(&pool, &m.id, None, None, None, Some("active"), None, None).unwrap();
         let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later", None, None).unwrap();
         assert_eq!(a.bucket, "later");
         assert_eq!(
@@ -818,7 +848,7 @@ mod milestone_tests {
     fn milestone_item_rating_bounds_are_enforced() {
         let pool = crate::init_test_db().unwrap();
         let project = create_project(&pool, "P", "/tmp/mp7", None, None, None, None, None).unwrap();
-        let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        let m = create_milestone(&pool, &project.id, "v1", None, None, None, None).unwrap();
 
         for bad in [0, 6, -1, 99] {
             let err = set_milestone_item(

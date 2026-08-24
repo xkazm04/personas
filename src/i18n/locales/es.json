@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "Activar el atajo de todo el sistema",
       "global_hotkey_failed": "Otra aplicación ya usa ese atajo, así que no se pudo activar.",
       "global_hotkey_in_app_only": "Solo funciona con Personas en primer plano",
-      "global_hotkey_title": "Habla desde donde estés"
+      "global_hotkey_title": "Habla desde donde estés",
+      "ship_milestone_prose_label": "Qué significa publicarlo",
+      "ship_milestone_prose_placeholder": "Opcional: qué significa realmente publicar este hito"
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "previsión {date}",
     "milestone_bar_planned": "planificado",
     "milestone_bar_target": "para {date}",
-    "milestone_bar_tooltip": "El hito abierto de {project} — abrir su pestaña Ship"
+    "milestone_bar_tooltip": "El hito abierto de {project} — abrir su pestaña Ship",
+    "ship_panel_title": "Publicar"
   },
   "ship": {
     "add": "Añadir",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "Estos criterios, y solo estos, deciden si este hito puede publicarse. Cada línea se deriva de señales en vivo: aquí no se escribe nada a mano.",
     "certify_ship_title": "Publicar {name}",
     "compose_scope_tooltip": "Elige qué funcionalidades y objetivos componen este hito",
-    "criteria_badge_aria": "{unmet} de {total} criterios de salida sin cumplir"
+    "criteria_badge_aria": "{unmet} de {total} criterios de salida sin cumplir",
+    "description_edit_aria": "Editar la descripción de {name}",
+    "description_empty": "Añadir una descripción",
+    "description_placeholder": "Qué significa realmente publicar este hito"
   }
 }

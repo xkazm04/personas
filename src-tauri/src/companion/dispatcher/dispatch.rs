@@ -1476,6 +1476,15 @@ pub fn dispatch_with_sys(
                     .get("goal")
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
+                // `goal` is the milestone's TITLE and is length-bounded as one;
+                // the prose belongs here. Splitting them is what stops a
+                // paragraph rendering where a heading goes — see
+                // SHIP_MILESTONE_GOAL_MAX.
+                let description = env
+                    .params
+                    .get("description")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 let rows = env
                     .params
                     .get("rows")
@@ -1501,6 +1510,7 @@ pub fn dispatch_with_sys(
                     project_slug,
                     name,
                     goal,
+                    description,
                     &rows,
                 ) {
                     Ok(plan) => {

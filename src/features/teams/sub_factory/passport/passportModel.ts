@@ -222,6 +222,20 @@ export interface AppPassport {
   automationReadiness: AutomationReadiness;
   productionReadiness: ProductionReadiness;
   evidence?: { confidence?: number; source?: string; files?: string[] };
+  /**
+   * This passport was built from the `dev_projects` ROW ALONE, before the
+   * cross-project scan was read — it exists so a surface can paint the project
+   * immediately instead of waiting for every project's data (see
+   * `derivePassportSkeleton`).
+   *
+   * Every score and level on a provisional passport is a PLACEHOLDER, not a
+   * measurement. Anything that renders one must say "not measured yet" rather
+   * than showing the zero — the canvas doctrine's rule that `unknown` is not
+   * `absent` applies here exactly: reporting an unscanned project as having no
+   * CI, no tests and no KPIs is a false alarm about the operator's product,
+   * not a fast paint.
+   */
+  provisional?: boolean;
 }
 
 // -- ordinal scales (index = escalating rank, for sort + heatmap position) -----

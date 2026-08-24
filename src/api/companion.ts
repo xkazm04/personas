@@ -208,13 +208,17 @@ export interface ShipMilestoneCreated {
 export async function companionCreateShipMilestone(
   projectSlug: string,
   name: string,
+  /** The objective as a SHORT TITLE — the backend refuses over 72 chars. */
   goal: string | null,
+  /** What shipping this means, in prose. Where the paragraph belongs. */
+  description: string | null,
   rows: ShipMilestoneRow[],
 ): Promise<ShipMilestoneCreated> {
   return invoke<ShipMilestoneCreated>('companion_create_ship_milestone', {
     projectSlug,
     name,
     goal,
+    description,
     rows: rows.map((r) => ({
       item_kind: r.itemKind,
       item_id: r.itemId,

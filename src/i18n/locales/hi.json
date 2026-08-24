@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "सिस्टम-व्यापी शॉर्टकट चालू करें",
       "global_hotkey_failed": "कोई दूसरा ऐप पहले से यह शॉर्टकट इस्तेमाल कर रहा है, इसलिए इसे चालू नहीं किया जा सका।",
       "global_hotkey_in_app_only": "सिर्फ़ तब काम करता है जब Personas सामने हो",
-      "global_hotkey_title": "कहीं से भी बात करें"
+      "global_hotkey_title": "कहीं से भी बात करें",
+      "ship_milestone_prose_label": "रिलीज़ करने का अर्थ",
+      "ship_milestone_prose_placeholder": "वैकल्पिक: इस माइलस्टोन को रिलीज़ करने का वास्तव में क्या अर्थ है"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "अनुमान {date}",
     "milestone_bar_planned": "नियोजित",
     "milestone_bar_target": "नियत {date}",
-    "milestone_bar_tooltip": "{project} का चालू माइलस्टोन — इसका Ship टैब खोलें"
+    "milestone_bar_tooltip": "{project} का चालू माइलस्टोन — इसका Ship टैब खोलें",
+    "ship_panel_title": "रिलीज़"
   },
   "ship": {
     "add": "जोड़ें",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "यह माइलस्टोन रिलीज़ हो सकता है या नहीं, यह केवल ये मानदंड तय करते हैं। हर पंक्ति लाइव संकेतों से निकाली गई है — यहाँ कुछ भी हाथ से नहीं भरा जाता।",
     "certify_ship_title": "{name} रिलीज़ करें",
     "compose_scope_tooltip": "चुनें कि कौन-सी सुविधाएँ और लक्ष्य इस माइलस्टोन का हिस्सा हैं",
-    "criteria_badge_aria": "{total} में से {unmet} एग्ज़िट मानदंड अब भी अधूरे"
+    "criteria_badge_aria": "{total} में से {unmet} एग्ज़िट मानदंड अब भी अधूरे",
+    "description_edit_aria": "{name} का विवरण संपादित करें",
+    "description_empty": "विवरण जोड़ें",
+    "description_placeholder": "इस माइलस्टोन को रिलीज़ करने का वास्तव में क्या अर्थ है"
   }
 }

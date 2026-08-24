@@ -11,7 +11,8 @@ import { listCredentials } from '@/api/vault/credentials';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
-import { derivePassportFromMetadata } from './passportDerive';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import { derivePassportFromMetadata, derivePassportSkeleton } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
 import { sortByNameAsc, type AppPassport, type DocRotRollup } from './passportModel';
 import type { ImproveRaw } from './improve/ImproveContext';
@@ -117,10 +118,35 @@ export function usePassportData(): PassportData {
       cachedSnapshot = { passports, rawByProject, generatedAt, at: Date.now() };
       setState({ passports, rawByProject, loading: false, error: null, generatedAt });
     };
-    const [projects, cached] = await Promise.all([
-      listProjects(),
-      regen ? generateCrossProjectMetadata(projectId) : getCrossProjectMetadata(),
-    ]);
+    // PHASE -1 — the SKELETON paint, one IPC deep.
+    //
+    // `listProjects()` and the metadata read used to be awaited together, so
+    // the first frame could not arrive until the SLOWER of the two did — and on
+    // a workspace with no cached scan the metadata arm is a full cross-project
+    // generation. The Mastermind canvas held itself behind that with a
+    // `LoadingSpinner` fallback that renders `null`, which made the cold open a
+    // blank rectangle for as long as the slowest project took.
+    //
+    // The project list alone is enough to place every island. Fire both, but
+    // publish off the list the moment IT lands rather than waiting for its
+    // partner. Guarded to the first-ever load of an app session: a cached
+    // snapshot or an explicit rescan already has real data on screen, and
+    // painting placeholders over it would be a regression dressed as progress.
+    const projectsP = listProjects();
+    const cachedP = regen ? generateCrossProjectMetadata(projectId) : getCrossProjectMetadata();
+    if (!cachedSnapshot && !regen) {
+      const early = await projectsP.catch(() => [] as DevProject[]);
+      if (early.length > 0 && buildLatestWins.isCurrent(token)) {
+        const skeletons = sortByNameAsc(early.map(derivePassportSkeleton));
+        const rawSk = new Map<string, ImproveRaw>();
+        // NOT published through `publish()`: that writes `cachedSnapshot`, and
+        // caching placeholders would make the NEXT mount paint unmeasured cells
+        // from cache and never learn better. This frame is deliberately
+        // transient — it exists on screen and nowhere else.
+        setState({ passports: skeletons, rawByProject: rawSk, loading: true, error: null, generatedAt: null });
+      }
+    }
+    const [projects, cached] = await Promise.all([projectsP, cachedP]);
     // First run (no cached scan yet) → generate one so the Wall is never empty
     // when projects exist but have never been cross-scanned.
     const map = cached ?? (await generateCrossProjectMetadata());

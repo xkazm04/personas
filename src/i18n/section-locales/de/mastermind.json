@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "Prognose {date}",
   "milestone_bar_planned": "geplant",
   "milestone_bar_target": "fällig {date}",
-  "milestone_bar_tooltip": "Der offene Meilenstein von {project} — Ship-Tab öffnen"
+  "milestone_bar_tooltip": "Der offene Meilenstein von {project} — Ship-Tab öffnen",
+  "ship_panel_title": "Ausliefern"
 }

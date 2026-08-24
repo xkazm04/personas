@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "Включить общесистемное сочетание клавиш",
       "global_hotkey_failed": "Это сочетание клавиш уже занято другим приложением, поэтому включить его не удалось.",
       "global_hotkey_in_app_only": "Работает, только когда Personas на переднем плане",
-      "global_hotkey_title": "Говорите откуда угодно"
+      "global_hotkey_title": "Говорите откуда угодно",
+      "ship_milestone_prose_label": "Что значит выпустить",
+      "ship_milestone_prose_placeholder": "Необязательно: что на самом деле означает выпустить эту веху"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "прогноз {date}",
     "milestone_bar_planned": "запланировано",
     "milestone_bar_target": "срок {date}",
-    "milestone_bar_tooltip": "Открытая веха проекта {project} — открыть его вкладку Ship"
+    "milestone_bar_tooltip": "Открытая веха проекта {project} — открыть его вкладку Ship",
+    "ship_panel_title": "Выпуск"
   },
   "ship": {
     "add": "Добавить",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "Только эти критерии решают, можно ли выпустить эту веху. Каждая строка выводится из живых сигналов — здесь ничего не вписывается вручную.",
     "certify_ship_title": "Выпустить {name}",
     "compose_scope_tooltip": "Выберите, какие функции и цели составляют эту веху",
-    "criteria_badge_aria": "{unmet} из {total} критериев выхода ещё не выполнено"
+    "criteria_badge_aria": "{unmet} из {total} критериев выхода ещё не выполнено",
+    "description_edit_aria": "Изменить описание вехи {name}",
+    "description_empty": "Добавить описание",
+    "description_placeholder": "Что на самом деле означает выпустить эту веху"
   }
 }

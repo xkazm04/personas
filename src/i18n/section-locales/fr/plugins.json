@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "Activer le raccourci système",
     "global_hotkey_failed": "Une autre application utilise déjà ce raccourci, il n'a donc pas pu être activé.",
     "global_hotkey_in_app_only": "Fonctionne uniquement quand Personas est au premier plan",
-    "global_hotkey_title": "Parlez depuis n'importe où"
+    "global_hotkey_title": "Parlez depuis n'importe où",
+    "ship_milestone_prose_label": "Ce que livrer signifie",
+    "ship_milestone_prose_placeholder": "Facultatif : ce que livrer ce jalon signifie vraiment"
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

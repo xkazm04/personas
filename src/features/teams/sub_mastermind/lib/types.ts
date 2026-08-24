@@ -83,6 +83,16 @@ export interface IslandShip {
   forecastDate: string | null;
   /** Velocity forecast says the next milestone lands past its target date. */
   late: boolean;
+  /**
+   * The next unshipped milestones in plan order, cut/active first — at most
+   * three. This is the WORK REMAINING, which is what a reader zoomed in on one
+   * island is actually asking about; the `next`/`shipped`/`total` fields above
+   * answer the portfolio-distance question ("is this project moving") and say
+   * nothing about what comes after the current cut.
+   *
+   * Empty when everything is shipped, and absent on older payloads.
+   */
+  upcoming?: Array<{ name: string; status: 'active' | 'planned' }>;
 }
 
 export interface Island {
@@ -125,6 +135,14 @@ export interface Island {
   stats: IslandStat[];
   /** Ship-milestone chip data (page attaches it; undefined = no milestones). */
   ship?: IslandShip | null;
+  /**
+   * Painted from the project row alone, before its scan resolved. Every cell is
+   * `unknown` and every number is a placeholder — the island exists so the
+   * canvas can show its real population immediately, and it sharpens in place
+   * when the measured passport lands. Renderers must not read a provisional
+   * island's scores as findings.
+   */
+  provisional?: boolean;
 }
 
 export interface IslandEdge {

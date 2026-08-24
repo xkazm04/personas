@@ -15726,7 +15726,9 @@
       "global_hotkey_enable": "Bật phím tắt toàn hệ thống",
       "global_hotkey_failed": "Một ứng dụng khác đã dùng phím tắt đó nên không thể bật.",
       "global_hotkey_in_app_only": "Chỉ hoạt động khi Personas ở phía trước",
-      "global_hotkey_title": "Nói từ bất kỳ đâu"
+      "global_hotkey_title": "Nói từ bất kỳ đâu",
+      "ship_milestone_prose_label": "Phát hành nghĩa là gì",
+      "ship_milestone_prose_placeholder": "Tùy chọn: phát hành cột mốc này thực sự nghĩa là gì"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",
@@ -20268,7 +20270,8 @@
     "milestone_bar_forecast": "dự báo {date}",
     "milestone_bar_planned": "đã lên kế hoạch",
     "milestone_bar_target": "hạn {date}",
-    "milestone_bar_tooltip": "Cột mốc đang mở của {project} — mở tab Ship của nó"
+    "milestone_bar_tooltip": "Cột mốc đang mở của {project} — mở tab Ship của nó",
+    "ship_panel_title": "Phát hành"
   },
   "ship": {
     "add": "Thêm",
@@ -20426,6 +20429,9 @@
     "certify_ship_intro": "Chỉ những tiêu chí này quyết định cột mốc có thể phát hành hay không. Mỗi dòng đều được suy ra từ tín hiệu trực tiếp — không có gì ở đây được nhập tay.",
     "certify_ship_title": "Phát hành {name}",
     "compose_scope_tooltip": "Chọn những tính năng và mục tiêu tạo nên cột mốc này",
-    "criteria_badge_aria": "{unmet} trên {total} tiêu chí hoàn tất vẫn chưa đạt"
+    "criteria_badge_aria": "{unmet} trên {total} tiêu chí hoàn tất vẫn chưa đạt",
+    "description_edit_aria": "Sửa mô tả của {name}",
+    "description_empty": "Thêm mô tả",
+    "description_placeholder": "Phát hành cột mốc này thực sự nghĩa là gì"
   }
 }

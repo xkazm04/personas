@@ -159,5 +159,6 @@
   "milestone_bar_forecast": "পূর্বাভাস {date}",
   "milestone_bar_planned": "পরিকল্পিত",
   "milestone_bar_target": "নির্ধারিত {date}",
-  "milestone_bar_tooltip": "{project}-এর চলমান মাইলস্টোন — এর Ship ট্যাব খুলুন"
+  "milestone_bar_tooltip": "{project}-এর চলমান মাইলস্টোন — এর Ship ট্যাব খুলুন",
+  "ship_panel_title": "প্রকাশ"
 }

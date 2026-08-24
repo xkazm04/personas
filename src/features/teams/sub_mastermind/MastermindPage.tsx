@@ -257,6 +257,15 @@ function MastermindInner() {
             targetDate: vm.next?.targetDate ?? null,
             forecastDate: vm.forecast?.date ?? null,
             late: vm.forecast?.late ?? false,
+            // Plan order with the cut one first — the same rule `buildCoverRoadmap`
+            // uses to pick `next`, extended to the two behind it. Capped at three
+            // because this renders inside an island: a fourth row costs more
+            // vertical space than it returns at any zoom a human reads at.
+            upcoming: vm.steps
+              .filter((st) => st.status !== 'shipped')
+              .sort((a, b) => (a.status === b.status ? 0 : a.status === 'active' ? -1 : 1))
+              .slice(0, 3)
+              .map((st) => ({ name: st.name, status: st.status === 'active' ? 'active' as const : 'planned' as const })),
           });
         }
         setShipByProject(m);
@@ -837,11 +846,25 @@ function MastermindInner() {
   return (
     <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      {/* Hold the canvas back until the durable layout doc has hydrated (so the
-          variant's sync layout initializers read the persisted doc) AND the
-          first passport load has resolved — an empty world during the fetch
-          reads as "you have nothing", not "loading". */}
-      {layoutReady && !(loading && passports.length === 0) ? (
+      {/* The canvas waits on the durable LAYOUT doc and on nothing else.
+          Islands pop in as their projects resolve.
+
+          It used to also wait on `!(loading && passports.length === 0)` — the
+          first passport load for EVERY project — with `LoadingSpinner` as the
+          fallback. That component renders `null` (it is a documented shim, not
+          a spinner), so the cold open was not a slow canvas but a BLANK
+          RECTANGLE, and its duration was set by the slowest project in the
+          workspace. The reasoning in the old comment was sound — an empty world
+          reads as "you have nothing" — but the fix for that is to show the
+          projects sooner, not to show nothing for longer: `usePassportData`
+          now publishes a skeleton island per project one IPC deep, so the
+          population is real from the first frame and each island sharpens in
+          place as its data lands.
+
+          The layout gate stays. It is a single durable-doc read, and dropping
+          it would let islands paint at their spiral fallback positions and then
+          JUMP when the persisted layout arrives. */}
+      {layoutReady ? (
         <MastermindHexMosaic
           scene={canvasScene}
           mode={mode}
@@ -861,7 +884,10 @@ function MastermindInner() {
           canOpenTerminal={canOpenTerminal}
         />
       ) : (
-        <LoadingSpinner label={layoutReady ? t.mastermind.loading_projects : t.mastermind.loading_layout} />
+        // Layout-doc read only — one DB round trip, not a fan-out. The label is
+        // announced for assistive tech; there is deliberately no spinner, which
+        // this app bans as a surface loading state (docs/design/overview-loading.md).
+        <LoadingSpinner label={t.mastermind.loading_layout} />
       )}
 
       <ProjectListSidebar

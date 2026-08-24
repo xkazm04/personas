@@ -154,5 +154,8 @@
   "certify_ship_intro": "Diese Kriterien, und nur diese, entscheiden, ob dieser Meilenstein ausgeliefert werden kann. Jede Zeile leitet sich aus Live-Signalen ab — hier wird nichts von Hand eingetragen.",
   "certify_ship_title": "{name} ausliefern",
   "compose_scope_tooltip": "Wähle, welche Funktionen und Ziele diesen Meilenstein ausmachen",
-  "criteria_badge_aria": "{unmet} von {total} Exit-Kriterien noch nicht erfüllt"
+  "criteria_badge_aria": "{unmet} von {total} Exit-Kriterien noch nicht erfüllt",
+  "description_edit_aria": "Beschreibung von {name} bearbeiten",
+  "description_empty": "Beschreibung hinzufügen",
+  "description_placeholder": "Was das Ausliefern dieses Meilensteins wirklich bedeutet"
 }

@@ -2953,7 +2953,9 @@
     "global_hotkey_enable": "システム全体のショートカットを有効にする",
     "global_hotkey_failed": "そのショートカットは他のアプリが使用中のため、有効にできませんでした。",
     "global_hotkey_in_app_only": "Personas が前面にあるときのみ使えます",
-    "global_hotkey_title": "どこからでも話しかける"
+    "global_hotkey_title": "どこからでも話しかける",
+    "ship_milestone_prose_label": "リリースの意味",
+    "ship_milestone_prose_placeholder": "任意：このマイルストーンをリリースするとは実際どういうことか"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",
