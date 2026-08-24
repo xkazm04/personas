@@ -10,7 +10,7 @@
   "unpin_mini_player": "ミニプレーヤーをピン解除",
   "pipeline": "パイプライン",
   "lines": "行",
-  "waiting_for_output": "出力を待っています...",
+  "waiting_for_output": "出力を待っています…",
   "no_output": "出力なし",
   "background": "バックグラウンド",
   "time_seconds_ago": "{count}s ago",

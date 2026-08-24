@@ -32,13 +32,13 @@
   "get_started": "শুরু করুন",
   "install_nodejs": "Node.js ইনস্টল",
   "install_cli": "Claude CLI ইনস্টল",
-  "downloading": "ডাউনলোড হচ্ছে...",
-  "installing": "ইনস্টল হচ্ছে...",
+  "downloading": "ডাউনলোড হচ্ছে…",
+  "installing": "ইনস্টল হচ্ছে…",
   "installed_success": "সফলভাবে ইনস্টল হয়েছে",
   "installation_failed": "ইনস্টলেশন ব্যর্থ",
   "try_manual": "ম্যানুয়ালি চালানো চেষ্টা করুন:",
   "official_page": "অফিসিয়াল পেজ",
   "edit_key": "কী সম্পাদনা",
   "edit_config": "কনফিগ সম্পাদনা",
-  "signing_in": "সাইন ইন হচ্ছে..."
+  "signing_in": "সাইন ইন হচ্ছে…"
 }

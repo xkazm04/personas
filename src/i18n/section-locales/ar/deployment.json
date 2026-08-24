@@ -2,15 +2,15 @@
   "title": "النشر",
   "orchestrator_url": "URL المنسّق",
   "api_key": "مفتاح API",
-  "connecting": "جارٍ الاتصال...",
-  "sr_connecting": "جارٍ الاتصال بمنسّق السحابة...",
+  "connecting": "جارٍ الاتصال…",
+  "sr_connecting": "جارٍ الاتصال بمنسّق السحابة…",
   "auth_code": "رمز التفويض",
-  "deploying": "جارٍ النشر...",
+  "deploying": "جارٍ النشر…",
   "sr_deploying": "جارٍ نشر الوكيل على السحابة",
   "no_targets": "لا توجد أهداف نشر متصلة",
   "status": {
     "connected": "متصل",
-    "loading": "جارٍ تحميل حالة السحابة...",
+    "loading": "جارٍ تحميل حالة السحابة…",
     "token_available": "الرمز متوفر",
     "no_token": "لم يتم إعداد رمز",
     "no_token_configured": "لم يتم تكوين رمز",
@@ -21,7 +21,7 @@
     "request_body": "جسم الطلب",
     "response_label": "الاستجابة",
     "send_request": "إرسال الطلب",
-    "sending": "جارٍ الإرسال...",
+    "sending": "جارٍ الإرسال…",
     "empty_response": "(استجابة فارغة)",
     "snippets": "مقاطع الكود",
     "request_body_placeholder": "{ \"message\": \"اكتب طلبك هنا…\" }"
@@ -35,7 +35,7 @@
     "connected": "متصل",
     "disconnect": "قطع الاتصال",
     "diagnose": "تشخيص",
-    "diagnosing": "جارٍ التشخيص...",
+    "diagnosing": "جارٍ التشخيص…",
     "diagnostics_title": "التشخيصات",
     "url_protocol_error": "يجب أن يستخدم العنوان http أو https",
     "url_hostname_error": "العنوان يفتقر إلى اسم المضيف",
@@ -49,7 +49,7 @@
     "active_deployments": "عمليات النشر النشطة"
   },
   "exec_detail": {
-    "fetching_output": "جارٍ جلب الناتج...",
+    "fetching_output": "جارٍ جلب الناتج…",
     "no_output": "لا يوجد ناتج",
     "label_status": "الحالة:",
     "label_duration": "المدة:",
@@ -87,7 +87,7 @@
     "trigger_type": "نوع المُشغّل",
     "schedule_cron": "الجدول الزمني (cron)",
     "create_trigger": "إنشاء مُشغّل",
-    "creating": "جارٍ الإنشاء...",
+    "creating": "جارٍ الإنشاء…",
     "cron_expression": "تعبير cron",
     "utc_suffix": "(UTC)",
     "webhook_info": "سيتم إنشاء نقطة نهاية webhook لهذا المُشغِّل. يمكنك تهيئة تصفية الحمولة بعد الإنشاء."
@@ -155,7 +155,7 @@
     "header": "مُشغّلات السحابة ({count})",
     "add_trigger": "إضافة مُشغّل",
     "deploy_first": "انشر وكيلًا أولًا لإنشاء مُشغّلات سحابية.",
-    "loading": "جارٍ تحميل المُشغّلات...",
+    "loading": "جارٍ تحميل المُشغّلات…",
     "empty": "لا توجد مُشغّلات سحابية بعد. أنشئ واحدًا لجدولة تشغيلات تلقائية.",
     "recent_firings": "الإطلاقات الأخيرة",
     "no_firings": "لا توجد إطلاقات حديثة",
@@ -164,7 +164,7 @@
     "label_last_triggered": "آخر تشغيل:",
     "label_next_trigger": "التشغيل التالي:",
     "label_cron": "Cron:",
-    "loading_firings": "جارٍ التحميل..."
+    "loading_firings": "جارٍ التحميل…"
   },
   "dashboard": {
     "title": "النشرات",
@@ -191,7 +191,7 @@
     "deploy_hint": "انشر الوكلاء من تبويبَي السحابة أو GitLab.",
     "showing_of": "عرض {showing} من {total} نشر{plural}",
     "total_invocations": "إجمالي الاستدعاءات:",
-    "search_placeholder": "بحث في النشرات...",
+    "search_placeholder": "بحث في النشرات…",
     "filter": "تصفية",
     "filter_target": "الهدف",
     "filter_status": "الحالة",

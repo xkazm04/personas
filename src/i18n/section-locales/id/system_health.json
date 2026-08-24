@@ -32,13 +32,13 @@
   "get_started": "Mulai",
   "install_nodejs": "Instal Node.js",
   "install_cli": "Instal Claude CLI",
-  "downloading": "Mengunduh...",
-  "installing": "Menginstal...",
+  "downloading": "Mengunduh…",
+  "installing": "Menginstal…",
   "installed_success": "Berhasil diinstal",
   "installation_failed": "Instalasi gagal",
   "try_manual": "Coba jalankan secara manual:",
   "official_page": "Halaman resmi",
   "edit_key": "Edit kunci",
   "edit_config": "Edit Konfigurasi",
-  "signing_in": "Sedang masuk..."
+  "signing_in": "Sedang masuk…"
 }

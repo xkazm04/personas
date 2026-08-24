@@ -32,13 +32,13 @@
   "get_started": "시작하기",
   "install_nodejs": "Node.js 설치",
   "install_cli": "Claude CLI 설치",
-  "downloading": "다운로드 중...",
-  "installing": "설치 중...",
+  "downloading": "다운로드 중…",
+  "installing": "설치 중…",
   "installed_success": "성공적으로 설치되었습니다",
   "installation_failed": "설치에 실패했습니다",
   "try_manual": "수동으로 실행해 보세요:",
   "official_page": "공식 페이지",
   "edit_key": "키 편집",
   "edit_config": "설정 편집",
-  "signing_in": "로그인 중..."
+  "signing_in": "로그인 중…"
 }

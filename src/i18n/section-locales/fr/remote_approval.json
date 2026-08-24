@@ -1,7 +1,7 @@
 {
-  "title": "Demande d'exécution à distance",
+  "title": "Demande d’exécution à distance",
   "body": "Votre tableau de bord a demandé une exécution de {persona} sur cet appareil.",
-  "safety_note": "L'exécution se fait localement sur cet appareil avec ses propres identifiants. Rien ne s'exécute avant votre approbation.",
+  "safety_note": "L’exécution se fait localement sur cet appareil avec ses propres identifiants. Rien ne s’exécute avant votre approbation.",
   "approve": "Approuver et exécuter",
   "approving": "Démarrage…",
   "reject": "Rejeter",

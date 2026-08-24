@@ -32,13 +32,13 @@
   "get_started": "Začít",
   "install_nodejs": "Nainstalovat Node.js",
   "install_cli": "Nainstalovat Claude CLI",
-  "downloading": "Stahování...",
-  "installing": "Instalace...",
+  "downloading": "Stahování…",
+  "installing": "Instalace…",
   "installed_success": "Úspěšně nainstalováno",
   "installation_failed": "Instalace selhala",
   "try_manual": "Zkus spustit ručně:",
   "official_page": "Oficiální stránka",
   "edit_key": "Upravit klíč",
   "edit_config": "Upravit konfiguraci",
-  "signing_in": "Přihlašování..."
+  "signing_in": "Přihlašování…"
 }

@@ -10,7 +10,7 @@
   "unpin_mini_player": "Открепить мини-плеер",
   "pipeline": "Конвейер",
   "lines": "строк",
-  "waiting_for_output": "Ожидание вывода...",
+  "waiting_for_output": "Ожидание вывода…",
   "no_output": "Нет вывода",
   "background": "Фон",
   "time_seconds_ago": "{count}s ago",

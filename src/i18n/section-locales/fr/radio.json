@@ -36,7 +36,7 @@
   "keep_kept": "Conservé",
   "keep_toggle_label": "Garder la station dans le sélecteur du pied de page",
   "manage_subtitle": "Gérez les stations, définissez les paramètres de lecture par défaut et prévisualisez avant de conserver.",
-  "master_footer_desc": "Afficher la radio dans le pied de page de l'application.",
+  "master_footer_desc": "Afficher la radio dans le pied de page de l’application.",
   "master_footer_title": "Contrôleur de pied de page",
   "master_resume_desc": "Démarrer automatiquement la dernière station au prochain lancement.",
   "master_resume_title": "Reprendre au lancement",
@@ -47,8 +47,8 @@
   "kind_youtube": "YouTube",
   "kind_stream": "Flux",
   "source_prefix": "Source :",
-  "settings_description": "Des stations sélectionnées qui jouent en arrière-plan. Deux types : les listes de lecture YouTube (via un lecteur IFrame caché — utilisez les boutons précédent/suivant pour changer de piste) et les flux internet directs (source unique et continue — utilisez le sélecteur pour changer). Le contrôleur se trouve au centre du pied de page de l'application.",
+  "settings_description": "Des stations sélectionnées qui jouent en arrière-plan. Deux types : les listes de lecture YouTube (via un lecteur IFrame caché — utilisez les boutons précédent/suivant pour changer de piste) et les flux internet directs (source unique et continue — utilisez le sélecteur pour changer). Le contrôleur se trouve au centre du pied de page de l’application.",
   "enable_description": "Désactivé par défaut. Une fois activé, un contrôleur compact apparaît au centre du pied de page. Votre choix est mémorisé après chaque redémarrage.",
   "station_toggle_label": "Afficher dans le sélecteur",
-  "auto_resume_description": "Lorsqu'elle est activée, la dernière station diffusée démarre automatiquement la première fois que la radio se charge après l'ouverture de l'application. Désactivé par défaut."
+  "auto_resume_description": "Lorsqu’elle est activée, la dernière station diffusée démarre automatiquement la première fois que la radio se charge après l’ouverture de l’application. Désactivé par défaut."
 }

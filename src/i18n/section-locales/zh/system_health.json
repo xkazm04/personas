@@ -32,13 +32,13 @@
   "get_started": "开始使用",
   "install_nodejs": "安装 Node.js",
   "install_cli": "安装 Claude CLI",
-  "downloading": "下载中...",
-  "installing": "安装中...",
+  "downloading": "下载中…",
+  "installing": "安装中…",
   "installed_success": "安装成功",
   "installation_failed": "安装失败",
   "try_manual": "尝试手动运行：",
   "official_page": "官方页面",
   "edit_key": "编辑凭证",
   "edit_config": "编辑配置",
-  "signing_in": "登录中..."
+  "signing_in": "登录中…"
 }

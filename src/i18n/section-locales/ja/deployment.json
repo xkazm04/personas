@@ -2,15 +2,15 @@
   "title": "デプロイ",
   "orchestrator_url": "オーケストレーターURL",
   "api_key": "APIキー",
-  "connecting": "接続中...",
-  "sr_connecting": "クラウドオーケストレーターに接続中...",
+  "connecting": "接続中…",
+  "sr_connecting": "クラウドオーケストレーターに接続中…",
   "auth_code": "認証コード",
-  "deploying": "デプロイ中...",
+  "deploying": "デプロイ中…",
   "sr_deploying": "エージェントをクラウドにデプロイ中",
   "no_targets": "デプロイ先が接続されていません",
   "status": {
     "connected": "接続済",
-    "loading": "クラウドステータスを読み込み中...",
+    "loading": "クラウドステータスを読み込み中…",
     "token_available": "トークンあり",
     "no_token": "トークン未設定",
     "no_token_configured": "トークンが設定されていません",
@@ -21,7 +21,7 @@
     "request_body": "リクエストボディ",
     "response_label": "レスポンス",
     "send_request": "リクエストを送信",
-    "sending": "送信中...",
+    "sending": "送信中…",
     "empty_response": "（空のレスポンス）",
     "snippets": "スニペット",
     "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
@@ -35,7 +35,7 @@
     "connected": "接続済み",
     "disconnect": "切断",
     "diagnose": "診断",
-    "diagnosing": "診断中...",
+    "diagnosing": "診断中…",
     "diagnostics_title": "診断",
     "url_protocol_error": "URLはhttpまたはhttpsを使用する必要があります",
     "url_hostname_error": "URLにホスト名がありません",
@@ -49,7 +49,7 @@
     "active_deployments": "アクティブなデプロイメント"
   },
   "exec_detail": {
-    "fetching_output": "出力を取得中...",
+    "fetching_output": "出力を取得中…",
     "no_output": "出力なし",
     "label_status": "ステータス:",
     "label_duration": "所要時間:",
@@ -87,7 +87,7 @@
     "trigger_type": "トリガータイプ",
     "schedule_cron": "スケジュール（cron）",
     "create_trigger": "トリガーを作成",
-    "creating": "作成中...",
+    "creating": "作成中…",
     "cron_expression": "Cron式",
     "utc_suffix": "(UTC)",
     "webhook_info": "このトリガー用のwebhookエンドポイントが作成されます。作成後にペイロードフィルタリングを設定できます。"
@@ -155,7 +155,7 @@
     "header": "クラウドトリガー ({count})",
     "add_trigger": "トリガーを追加",
     "deploy_first": "クラウドトリガーを作成するには、まずエージェントをデプロイしてください。",
-    "loading": "トリガーを読み込み中...",
+    "loading": "トリガーを読み込み中…",
     "empty": "クラウドトリガーがまだありません。自動実行のスケジュールを作成してください。",
     "recent_firings": "最近の発火",
     "no_firings": "最近の発火なし",
@@ -164,7 +164,7 @@
     "label_last_triggered": "最終トリガー:",
     "label_next_trigger": "次回トリガー:",
     "label_cron": "Cron:",
-    "loading_firings": "読み込み中..."
+    "loading_firings": "読み込み中…"
   },
   "dashboard": {
     "title": "デプロイメント",
@@ -191,7 +191,7 @@
     "deploy_hint": "クラウドまたはGitLabタブからペルソナをデプロイします。",
     "showing_of": "{total} {showing} {plural} 個の展開中 を表示中",
     "total_invocations": "総呼び出し回数:",
-    "search_placeholder": "デプロイメントを検索...",
+    "search_placeholder": "デプロイメントを検索…",
     "filter": "フィルター",
     "filter_target": "ターゲット",
     "filter_status": "ステータス",

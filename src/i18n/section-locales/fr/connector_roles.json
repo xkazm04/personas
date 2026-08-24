@@ -1,6 +1,6 @@
 {
   "chat_messaging": "Chat et messagerie",
-  "email_delivery": "Livraison d'e-mail",
+  "email_delivery": "Livraison d’e-mail",
   "sms": "SMS",
   "source_control": "Contrôle de source",
   "ci_cd": "CI/CD",
@@ -37,7 +37,7 @@
   "advertising": "Publicité",
   "e_signature": "Signature électronique",
   "hr_recruiting": "RH et recrutement",
-  "tool_gateway": "Passerelle d'outils",
+  "tool_gateway": "Passerelle d’outils",
   "code_editor": "Éditeur de code",
   "container_runtime": "Environnement de conteneurs",
   "shell": "Shell / Terminal",

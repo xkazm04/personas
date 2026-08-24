@@ -42,7 +42,7 @@
     "refineWithAi": "Tinh chỉnh bằng AI",
     "bioRefineHint": "AI sẽ giữ nguyên giọng văn và dữ kiện hiện có — chỉ làm chặt câu chữ. Bên dưới là các từ khóa định hướng tùy chọn.",
     "bioRefineKeywordsPlaceholder": "(tùy chọn) ví dụ: ngắn gọn hơn, bớt văn phong doanh nghiệp, giữ kiểu hài khô",
-    "refining": "Đang tinh chỉnh...",
+    "refining": "Đang tinh chỉnh…",
     "refineBio": "Tinh chỉnh tiểu sử"
   },
   "channels": {

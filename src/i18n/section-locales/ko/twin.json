@@ -42,7 +42,7 @@
     "refineWithAi": "AI로 다듬기",
     "bioRefineHint": "AI는 기존의 목소리와 사실은 그대로 유지하면서 문장만 다듬어 줍니다. 아래에 선택적 방향 키워드를 입력할 수 있습니다.",
     "bioRefineKeywordsPlaceholder": "(선택) 예: 더 간결하게, 덜 사무적으로, 건조한 유머는 유지",
-    "refining": "다듬는 중...",
+    "refining": "다듬는 중…",
     "refineBio": "Bio 다듬기"
   },
   "channels": {

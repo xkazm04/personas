@@ -1,11 +1,11 @@
 {
   "n8n_transform": "Transformation n8n",
   "template_adopt": "Adoption de modèle",
-  "rebuild": "Reconstruction d'agent",
+  "rebuild": "Reconstruction d’agent",
   "template_test": "Test de modèle",
   "context_scan": "Scan de carte de contexte",
-  "idea_scan": "Scan d'idées",
-  "execution": "Exécution d'agent",
+  "idea_scan": "Scan d’idées",
+  "execution": "Exécution d’agent",
   "matrix_build": "Construction de matrice",
   "lab_run": "Exécution de laboratoire",
   "connector_test": "Test de connecteur",
@@ -13,8 +13,8 @@
   "feedback_chat": "Conversation de retour",
   "complete_suffix": "Terminé",
   "failed_suffix": "Échoué",
-  "pending_reviews_one": "{count} révision en attente d'approbation",
-  "pending_reviews_other": "{count} révisions en attente d'approbation",
-  "team_assignment_failed": "Attribution d'équipe",
-  "team_assignment_unmatched": "Attribution d'équipe"
+  "pending_reviews_one": "{count} révision en attente d’approbation",
+  "pending_reviews_other": "{count} révisions en attente d’approbation",
+  "team_assignment_failed": "Attribution d’équipe",
+  "team_assignment_unmatched": "Attribution d’équipe"
 }

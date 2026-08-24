@@ -118,7 +118,7 @@
     "delivered": "Livré",
     "failed": "Échoué",
     "pending": "En attente",
-    "queued": "En file d'attente"
+    "queued": "En file d’attente"
   },
   "rotation": {
     "anomaly": "Anomalie",
@@ -137,13 +137,13 @@
   },
   "error_category": {
     "api_error": "Erreur API",
-    "credential_error": "Erreur d'identifiants",
+    "credential_error": "Erreur d’identifiants",
     "network": "Réseau",
     "provider_not_found": "Fournisseur introuvable",
     "rate_limit": "Limite de débit",
     "session_limit": "Limite de session",
     "timeout": "Délai dépassé",
-    "tool_error": "Erreur d'outil",
+    "tool_error": "Erreur d’outil",
     "transient_process_failure": "Échec transitoire du processus",
     "unknown": "Inconnu",
     "validation": "Erreur de validation"
@@ -182,7 +182,7 @@
     "misconfigured": "Mal configuré",
     "rate_limited": "Limite de débit atteinte",
     "timeout": "Délai dépassé",
-    "tool_error": "Échec de l'outil",
+    "tool_error": "Échec de l’outil",
     "transport": "Échec de la connexion",
     "unknown": "Erreur inconnue",
     "unsupported": "Non exécutable ici"

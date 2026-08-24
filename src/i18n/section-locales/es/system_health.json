@@ -32,13 +32,13 @@
   "get_started": "Comenzar",
   "install_nodejs": "Instalar Node.js",
   "install_cli": "Instalar Claude CLI",
-  "downloading": "Descargando...",
-  "installing": "Instalando...",
+  "downloading": "Descargando…",
+  "installing": "Instalando…",
   "installed_success": "Instalado exitosamente",
   "installation_failed": "La instalación falló",
   "try_manual": "Intenta ejecutar manualmente:",
   "official_page": "Página oficial",
   "edit_key": "Editar clave",
   "edit_config": "Editar configuración",
-  "signing_in": "Iniciando sesión..."
+  "signing_in": "Iniciando sesión…"
 }

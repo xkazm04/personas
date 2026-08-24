@@ -2,15 +2,15 @@
   "title": "Nasazení",
   "orchestrator_url": "URL orchestrátoru",
   "api_key": "API klíč",
-  "connecting": "Připojování...",
-  "sr_connecting": "Připojování ke cloudovému orchestrátoru...",
+  "connecting": "Připojování…",
+  "sr_connecting": "Připojování ke cloudovému orchestrátoru…",
   "auth_code": "Autorizační kód",
-  "deploying": "Nasazování...",
+  "deploying": "Nasazování…",
   "sr_deploying": "Nasazování persony do cloudu",
   "no_targets": "Žádné cíle nasazení připojeny",
   "status": {
     "connected": "Připojeno",
-    "loading": "Načítání stavu cloudu...",
+    "loading": "Načítání stavu cloudu…",
     "token_available": "Token dostupný",
     "no_token": "Žádný token nakonfigurován",
     "no_token_configured": "Žádný token nenakonfigurován",
@@ -21,7 +21,7 @@
     "request_body": "Tělo požadavku",
     "response_label": "Odpověď",
     "send_request": "Odeslat požadavek",
-    "sending": "Odesílání...",
+    "sending": "Odesílání…",
     "empty_response": "(prázdná odpověď)",
     "snippets": "Snippety",
     "request_body_placeholder": "{ \"message\": \"Váš dotaz zde…\" }"
@@ -35,7 +35,7 @@
     "connected": "Připojeno",
     "disconnect": "Odpojit",
     "diagnose": "Diagnostikovat",
-    "diagnosing": "Diagnostika...",
+    "diagnosing": "Diagnostika…",
     "diagnostics_title": "Diagnostika",
     "url_protocol_error": "URL musí používat http nebo https",
     "url_hostname_error": "URL neobsahuje název hostitele",
@@ -49,7 +49,7 @@
     "active_deployments": "Aktivní nasazení"
   },
   "exec_detail": {
-    "fetching_output": "Načítání výstupu...",
+    "fetching_output": "Načítání výstupu…",
     "no_output": "Žádný výstup",
     "label_status": "Stav:",
     "label_duration": "Doba trvání:",
@@ -87,7 +87,7 @@
     "trigger_type": "Typ spouštěče",
     "schedule_cron": "Plán (cron)",
     "create_trigger": "Vytvořit spouštěč",
-    "creating": "Vytváření...",
+    "creating": "Vytváření…",
     "cron_expression": "Cron výraz",
     "utc_suffix": "(UTC)",
     "webhook_info": "Pro tento spouštěč bude vytvořen webhook endpoint. Filtrování payloadu můžeš nakonfigurovat po vytvoření."
@@ -155,7 +155,7 @@
     "header": "Cloud spouštěče ({count})",
     "add_trigger": "Přidat spouštěč",
     "deploy_first": "Nejprve nasaďte personu pro vytvoření cloud spouštěčů.",
-    "loading": "Načítání spouštěčů...",
+    "loading": "Načítání spouštěčů…",
     "empty": "Zatím žádné cloud spouštěče. Vytvořte jeden pro plánování automatických spuštění.",
     "recent_firings": "Nedávná spuštění",
     "no_firings": "Žádná nedávná spuštění",
@@ -164,7 +164,7 @@
     "label_last_triggered": "Naposledy spuštěno:",
     "label_next_trigger": "Další spuštění:",
     "label_cron": "Cron:",
-    "loading_firings": "Načítání..."
+    "loading_firings": "Načítání…"
   },
   "dashboard": {
     "title": "Nasazení",
@@ -191,7 +191,7 @@
     "deploy_hint": "Nasaď persony ze záložek Cloud nebo GitLab.",
     "showing_of": "Zobrazeno {showing} z {total} nasazení{plural}",
     "total_invocations": "Celkem vyvolání:",
-    "search_placeholder": "Hledat nasazení...",
+    "search_placeholder": "Hledat nasazení…",
     "filter": "Filtr",
     "filter_target": "Cíl",
     "filter_status": "Stav",

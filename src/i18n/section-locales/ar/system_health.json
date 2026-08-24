@@ -32,13 +32,13 @@
   "get_started": "ابدأ",
   "install_nodejs": "تثبيت Node.js",
   "install_cli": "تثبيت Claude CLI",
-  "downloading": "جارٍ التنزيل...",
-  "installing": "جارٍ التثبيت...",
+  "downloading": "جارٍ التنزيل…",
+  "installing": "جارٍ التثبيت…",
   "installed_success": "تم التثبيت بنجاح",
   "installation_failed": "فشل التثبيت",
   "try_manual": "جرّب التشغيل يدويًا:",
   "official_page": "الصفحة الرسمية",
   "edit_key": "تعديل المفتاح",
   "edit_config": "تعديل الإعدادات",
-  "signing_in": "جارٍ تسجيل الدخول..."
+  "signing_in": "جارٍ تسجيل الدخول…"
 }

@@ -42,7 +42,7 @@
     "refineWithAi": "Refinar con IA",
     "bioRefineHint": "La IA conservará tu voz y los datos existentes — solo afinará la prosa. Las palabras clave de orientación son opcionales.",
     "bioRefineKeywordsPlaceholder": "(opcional) p. ej. más conciso, menos corporativo, mantén el humor seco",
-    "refining": "Refinando...",
+    "refining": "Refinando…",
     "refineBio": "Refinar bio"
   },
   "channels": {

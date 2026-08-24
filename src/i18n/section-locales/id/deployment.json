@@ -2,15 +2,15 @@
   "title": "Deployment",
   "orchestrator_url": "URL Orkestrator",
   "api_key": "Kunci API",
-  "connecting": "Menghubungkan...",
-  "sr_connecting": "Menghubungkan ke orkestrator cloud...",
+  "connecting": "Menghubungkan…",
+  "sr_connecting": "Menghubungkan ke orkestrator cloud…",
   "auth_code": "Kode Otorisasi",
-  "deploying": "Men-deploy...",
+  "deploying": "Men-deploy…",
   "sr_deploying": "Men-deploy persona ke cloud",
   "no_targets": "Tidak ada target deployment terhubung",
   "status": {
     "connected": "Terhubung",
-    "loading": "Memuat status cloud...",
+    "loading": "Memuat status cloud…",
     "token_available": "Token tersedia",
     "no_token": "Tidak ada token dikonfigurasi",
     "no_token_configured": "Tidak ada token yang dikonfigurasi",
@@ -21,7 +21,7 @@
     "request_body": "Isi Permintaan",
     "response_label": "Respons",
     "send_request": "Kirim Permintaan",
-    "sending": "Mengirim...",
+    "sending": "Mengirim…",
     "empty_response": "(respons kosong)",
     "snippets": "Cuplikan",
     "request_body_placeholder": "{ \"message\": \"Prompt Anda di sini…\" }"
@@ -35,7 +35,7 @@
     "connected": "Terhubung",
     "disconnect": "Putuskan",
     "diagnose": "Diagnosis",
-    "diagnosing": "Mendiagnosis...",
+    "diagnosing": "Mendiagnosis…",
     "diagnostics_title": "Diagnostik",
     "url_protocol_error": "URL harus menggunakan http atau https",
     "url_hostname_error": "URL tidak memiliki nama host",
@@ -49,7 +49,7 @@
     "active_deployments": "Penerapan Aktif"
   },
   "exec_detail": {
-    "fetching_output": "Mengambil output...",
+    "fetching_output": "Mengambil output…",
     "no_output": "Tidak ada output",
     "label_status": "Status:",
     "label_duration": "Durasi:",
@@ -87,7 +87,7 @@
     "trigger_type": "Tipe Pemicu",
     "schedule_cron": "Jadwal (cron)",
     "create_trigger": "Buat Pemicu",
-    "creating": "Membuat...",
+    "creating": "Membuat…",
     "cron_expression": "Ekspresi cron",
     "utc_suffix": "(UTC)",
     "webhook_info": "Webhook akan dikirim ke endpoint ini"
@@ -155,7 +155,7 @@
     "header": "Pemicu Cloud ({count})",
     "add_trigger": "Tambah Pemicu",
     "deploy_first": "Deploy persona terlebih dahulu untuk membuat pemicu cloud.",
-    "loading": "Memuat pemicu...",
+    "loading": "Memuat pemicu…",
     "empty": "Belum ada pemicu cloud. Buat satu untuk menjadwalkan eksekusi otomatis.",
     "recent_firings": "Pemicuan terbaru",
     "no_firings": "Tidak ada pemicuan terbaru",
@@ -164,7 +164,7 @@
     "label_last_triggered": "Terakhir dipicu:",
     "label_next_trigger": "Pemicu berikutnya:",
     "label_cron": "Cron:",
-    "loading_firings": "Memuat data pemicuan..."
+    "loading_firings": "Memuat data pemicuan…"
   },
   "dashboard": {
     "title": "Deployment",
@@ -191,7 +191,7 @@
     "deploy_hint": "Deploy persona dari tab Cloud atau GitLab.",
     "showing_of": "Menampilkan {showing} dari {total} deployment{plural}",
     "total_invocations": "Total pemanggilan:",
-    "search_placeholder": "Cari deployment...",
+    "search_placeholder": "Cari deployment…",
     "filter": "Filter",
     "filter_target": "Target",
     "filter_status": "Status",
