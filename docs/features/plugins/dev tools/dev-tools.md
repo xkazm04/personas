@@ -134,7 +134,24 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 > scan lane (`idea_scanner.rs`, `dev_tools_run_scan`, `dev_scans`/`dev_ideas`) is
 > **kept** — Context Map, Mastermind and the triage sweeps still drive it.
 
-The **Skills** tab (`sub_skills/`) now has two page tabs:
+The **Skills** tab (`sub_skills/`) now has five page tabs (Overview | Analytics | Registry | Launch | Trace):
+
+**Launch** (2026-08-23, prototype) — a skill-first launch surface: pick ONE registry skill
+from a name-sorted dropdown (source = the workspace's paired ai-registry clone's `skills/`
+lane, falling back to the active project's `.ai/manifest.yaml` `registry.local` via the new
+`skill_files_registry_root` command), and the workspace's projects render as a grid scored
+against it — **ready** (skill installed or registry-LINKED; the scanner now resolves
+symlink/junction skills and reports `source_kind: "registry"` instead of rejecting them),
+**needs adopt** (dimmed, with an enabled adopt affordance running the direct-install lane
+behind `SkillActionConfirm`), **adopting** and **running** (disabled; running is derived
+from live fleet sessions whose cwd + `/skill` args match). Clicking a ready project hands
+the run to **Athena**: the chat opens with an auto-sent ask instructing her to compose a
+one-row `show_fleet_plan` (audited dispatch, she gathers missing skill arguments and
+stewards the session). Four directional UI variants ship behind a prototype switcher
+pending live evaluation — Launchpad (mission-control tiles), Atlas (tech-stack bands with
+coverage bars), Circuit (SVG wire board), Briefing (two-pane with the literal Athena ask)
+— `launch/SkillLaunchTab.tsx`, consolidation TODO dated 2026-08-23.
+
 
 **Overview (default)** — the workspace library and the active project's skills side by side.
 The library panel has a **Custom | Preset** switcher: Custom lists user-authored skills from
