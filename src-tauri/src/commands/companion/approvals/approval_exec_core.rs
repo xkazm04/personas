@@ -890,7 +890,26 @@ pub(crate) async fn execute_kp_hire_request(
     // the payload sat in the DB in between — fail closed on anything missing.
     let name = str_field(params, &["spec", "name"], "spec.name")?.to_string();
     let mission = str_field(params, &["spec", "mission"], "spec.mission")?.to_string();
-    let job_id = str_field(params, &["kp", "jobId"], "kp.jobId")?.to_string();
+    // An intake-originated App-master hire has NO kp job: the wire carries
+    // `jobId: ""` + `kp.intakeId` (accepted by validate_kp_persona_request since
+    // bench sweep #4/#5, 2026-08-24). Mirror that rule here — the payload sat in
+    // the DB in between, so this re-check must not be stricter than intake was.
+    let job_id = match str_field(params, &["kp", "jobId"], "kp.jobId") {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            let intake_id = params
+                .get("kp")
+                .and_then(|k| k.get("intakeId"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .unwrap_or("");
+            if params.get("appMaster").is_some() && !intake_id.is_empty() {
+                String::new()
+            } else {
+                return Err(e);
+            }
+        }
+    };
     let job_title = str_field(params, &["kp", "jobTitle"], "kp.jobTitle")?.to_string();
     let base_url = str_field(params, &["kp", "baseUrl"], "kp.baseUrl")?.to_string();
     let report_token = str_field(params, &["reportToken"], "reportToken")?.to_string();
