@@ -139,5 +139,6 @@
   "description_empty": "説明を追加",
   "description_placeholder": "このマイルストーンをリリースするとは実際どういうことか",
   "goals_rail_empty": "目標はまだありません。書けば Athena が配置します",
-  "goals_rail_title": "目標"
+  "goals_rail_title": "目標",
+  "description_editor_hint": "Ctrl+B で太字 · 行頭に「- 」でリスト"
 }

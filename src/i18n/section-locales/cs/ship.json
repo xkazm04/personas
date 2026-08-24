@@ -139,5 +139,6 @@
   "description_empty": "Přidat popis",
   "description_placeholder": "Co ve skutečnosti znamená vydat tento milník",
   "goals_rail_empty": "Zatím žádné cíle — napište jeden a Athéna ho zařadí",
-  "goals_rail_title": "Cíle"
+  "goals_rail_title": "Cíle",
+  "description_editor_hint": "Ctrl+B pro tučné písmo · řádek začněte „- “ pro odrážky"
 }

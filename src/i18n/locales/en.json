@@ -20414,6 +20414,7 @@
     "description_empty": "Add a description",
     "description_edit_aria": "Edit the description of {name}",
     "goals_rail_title": "Goals",
-    "goals_rail_empty": "No goals yet — write one and Athena will place it"
+    "goals_rail_empty": "No goals yet — write one and Athena will place it",
+    "description_editor_hint": "Ctrl+B for bold · start a line with “- ” for a list"
   }
 }

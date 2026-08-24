@@ -1,6 +1,13 @@
 # Active Runs Ledger
 
 ## Active
+### ship-ux-operating-table — Ship UX rounds 2-3: instrument, not briefing — session opus-5[1m] via /athena — in progress
+- 2026-08-24. Commits so far: `790553673` (objective onto the cut · one button shape · prose out of the composer · goal rail replaces the library tree). This entry covers the round after it: the Ask-Athena pointer + the markdown description editor.
+- **Declared paths:** `src/features/teams/sub_factory/l2/ship/**` · `src/features/shared/components/editors/MarkdownMiniEditor.tsx` (+ its test) · `src-tauri/src/companion/ship_ops.rs` · `src-tauri/src/companion/templates/{constitution.md,mod.rs}` · `docs/features/plugins/dev tools/ship.md` · `src/i18n/**`.
+- **⚠ THE SHARED TREE DOES NOT COMPILE, AND IT IS NOT MINE.** `src-tauri/src/companion/proactive/triggers.rs` has TWO definitions of `fn conversation_resume` in the working tree (HEAD has one) — a concurrent session is mid-edit. Every `cargo check` in the main checkout fails on it. My Rust change was therefore verified in an ISOLATED worktree (`.claude/worktrees/rustcheck`, detached at HEAD with only my `ship_ops.rs` overlaid) rather than claimed. **If you own triggers.rs, land or revert it — it is blocking Rust verification for everyone in this checkout.**
+- **⚠ The i18n pipeline forces co-mingling.** `translate-extract`/`translate-merge` rewrite WHOLE locale files, so a concurrent session's in-flight locale work rides in any commit that adds a key. `790553673` carries their `Messages -> Reports` rename for this reason, stated in its message; their Rust and component work was deliberately not staged.
+- Round 2 (`790553673`) also DELETED `ShipLibraryTree.tsx` + `ShipContextDrawer.tsx` and `createFeature`/`scanContexts`/`ctxScanning` from `useShipData` — the drawer had no opener left once the tree went. 20 orphaned i18n keys removed across 14 locales.
+
 
 ### channels-lane-b — Lane B: persona channels + Messages->Reports rebrand + follow-up loop
 - **[2026-08-24 12:31]**

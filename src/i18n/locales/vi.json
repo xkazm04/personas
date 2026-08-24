@@ -20414,6 +20414,7 @@
     "description_empty": "Thêm mô tả",
     "description_placeholder": "Phát hành cột mốc này thực sự nghĩa là gì",
     "goals_rail_empty": "Chưa có mục tiêu nào — hãy viết một mục tiêu, Athena sẽ sắp xếp",
-    "goals_rail_title": "Mục tiêu"
+    "goals_rail_title": "Mục tiêu",
+    "description_editor_hint": "Ctrl+B để in đậm · bắt đầu dòng bằng “- ” để tạo danh sách"
   }
 }

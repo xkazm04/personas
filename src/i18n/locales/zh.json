@@ -20414,6 +20414,7 @@
     "description_empty": "添加描述",
     "description_placeholder": "发布这个里程碑究竟意味着什么",
     "goals_rail_empty": "还没有目标——写一个，Athena 会把它归位",
-    "goals_rail_title": "目标"
+    "goals_rail_title": "目标",
+    "description_editor_hint": "Ctrl+B 加粗 · 行首输入“- ”创建列表"
   }
 }

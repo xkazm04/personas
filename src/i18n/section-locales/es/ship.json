@@ -139,5 +139,6 @@
   "description_empty": "Añadir una descripción",
   "description_placeholder": "Qué significa realmente publicar este hito",
   "goals_rail_empty": "Aún no hay objetivos: escribe uno y Athena lo situará",
-  "goals_rail_title": "Objetivos"
+  "goals_rail_title": "Objetivos",
+  "description_editor_hint": "Ctrl+B para negrita · empieza una línea con “- ” para una lista"
 }

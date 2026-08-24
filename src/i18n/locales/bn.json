@@ -20414,6 +20414,7 @@
     "description_empty": "বিবরণ যোগ করুন",
     "description_placeholder": "এই মাইলস্টোন প্রকাশ করার প্রকৃত অর্থ কী",
     "goals_rail_empty": "এখনও কোনো লক্ষ্য নেই — একটি লিখুন, Athena সেটি সাজিয়ে দেবে",
-    "goals_rail_title": "লক্ষ্য"
+    "goals_rail_title": "লক্ষ্য",
+    "description_editor_hint": "বোল্ডের জন্য Ctrl+B · তালিকার জন্য লাইন “- ” দিয়ে শুরু করুন"
   }
 }

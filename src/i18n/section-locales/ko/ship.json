@@ -139,5 +139,6 @@
   "description_empty": "설명 추가",
   "description_placeholder": "이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지",
   "goals_rail_empty": "아직 목표가 없습니다 — 하나 작성하면 Athena가 배치합니다",
-  "goals_rail_title": "목표"
+  "goals_rail_title": "목표",
+  "description_editor_hint": "Ctrl+B 굵게 · 줄 앞에 “- ” 입력하면 목록"
 }

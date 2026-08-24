@@ -20414,6 +20414,7 @@
     "description_empty": "विवरण जोड़ें",
     "description_placeholder": "इस माइलस्टोन को रिलीज़ करने का वास्तव में क्या अर्थ है",
     "goals_rail_empty": "अभी कोई लक्ष्य नहीं — एक लिखें, Athena उसे सही जगह रखेगी",
-    "goals_rail_title": "लक्ष्य"
+    "goals_rail_title": "लक्ष्य",
+    "description_editor_hint": "बोल्ड के लिए Ctrl+B · सूची के लिए पंक्ति “- ” से शुरू करें"
   }
 }

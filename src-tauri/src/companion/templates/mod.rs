@@ -397,4 +397,4 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// is paired, which is a fact to report, not a gap to fill with a guess. The
 /// block is absent in a lite build too, where the transport does not exist —
 /// same shape, same reading, no special case.
-pub const CONSTITUTION_VERSION: u32 = 56;
+pub const CONSTITUTION_VERSION: u32 = 57;

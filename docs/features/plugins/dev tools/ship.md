@@ -211,7 +211,11 @@ Before 2026-08-20 these lived in four places (the lifecycle button and Compose f
 
 **Certify carries the criteria reading on its own face** — a `met/total` badge in the verdict's colour — which is what the five permanent chips were spending a header row to say.
 
-**Ask Athena** builds the whole live milestone into a briefing (`shipAthena.ts`) and sends it through `useAskAthena` tagged `system_source: 'Ship'`. That tag is load-bearing: the backend files the turn as `TurnOrigin::External`, so Athena is told the surface handed her a situation rather than the operator asking a question. See §13.
+**Ask Athena** POINTS at the milestone; it does not paste it. `buildShipAskPrompt` (`shipAthena.ts`) sends the project, the milestone id, an instruction to read it with `describe_ship_milestone`, and the one reading that op cannot see — the ship verdict and the unmet criteria, which derive client-side from runtime signals.
+
+It used to send `buildShipBriefing`: the cut, the outside pool, the footprint, every criterion with its evidence and the duality conflicts, ~100 lines pushed into the turn. Retired 2026-08-24 for three reasons — it made the read op redundant, it went stale the instant it was composed (which matters most in the one case this button exists for, a conversation that changes the thing being discussed), and it taught reasoning from the message rather than from the registry.
+
+Either way the message goes through `useAskAthena` tagged `system_source: 'Ship'`. That tag is load-bearing: the backend files the turn as `TurnOrigin::External`, so Athena is told the surface handed her a situation rather than the operator asking a question. See §13.
 
 ### The objective heads the cut, not the page
 
@@ -487,7 +491,9 @@ Added 2026-08-20 (constitution v55). She could propose a whole milestone (`show_
 
 Auto-fires, costs nothing, lands as a System episode on her next turn. Resolves, in order: an exact milestone id → an exact milestone name → a **project** name/slug/id, which resolves to that project's open milestone by the same `active`-then-`planned` rule the cover roadmap and the canvas status bar use.
 
-It answers with the live cut per bucket — each member's contexts, active-KPI count, the operator's own note and rating (labelled every time as an opinion that gates nothing), the `added_after_cut` flag — plus the bound goals and the cut/target/shipped dates. Orphan members (a use case a rescan deleted) are reported as orphans rather than dropped.
+It answers with the **objective** — its short title and the markdown description beneath it, on their own lines and unmangled — and the live cut per bucket: each member's contexts, active-KPI count, the operator's own note and rating (labelled every time as an opinion that gates nothing), the `added_after_cut` flag, plus the bound goals and the cut/target/shipped dates. Orphan members (a use case a rescan deleted) are reported as orphans rather than dropped.
+
+The description was missing until 2026-08-24 — the column was added after this op was written and the `SELECT` never picked it up, so the statement of intent a decomposition works from was invisible to the tool that was supposed to carry it. The answer now closes with a **decomposition contract**: work out what the objective needs that the cut does not contain, propose it as GOALS bound to the milestone, never ask the operator which context it belongs to, and put a fleet on the gaps that are real work.
 
 **What it deliberately does not answer.** The exit-criteria verdicts, per-context health and the ship verdict derive client-side in `useShipData` from runtime signals the database cannot see. Recomputing them in Rust would give the app a second, quieter derivation that drifts from the one on the operator's screen. The op says so in its own body; the Ship control bar's Ask-Athena button is what carries the live reading into a conversation instead.
 

@@ -139,5 +139,6 @@
   "description_empty": "Beschreibung hinzufügen",
   "description_placeholder": "Was das Ausliefern dieses Meilensteins wirklich bedeutet",
   "goals_rail_empty": "Noch keine Ziele — schreib eines, und Athena ordnet es ein",
-  "goals_rail_title": "Ziele"
+  "goals_rail_title": "Ziele",
+  "description_editor_hint": "Strg+B für Fettdruck · Zeile mit „- “ beginnen für eine Liste"
 }

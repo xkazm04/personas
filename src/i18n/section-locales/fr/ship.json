@@ -139,5 +139,6 @@
   "description_empty": "Ajouter une description",
   "description_placeholder": "Ce que livrer ce jalon signifie vraiment",
   "goals_rail_empty": "Aucun objectif pour l'instant — écrivez-en un et Athena le placera",
-  "goals_rail_title": "Objectifs"
+  "goals_rail_title": "Objectifs",
+  "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste"
 }

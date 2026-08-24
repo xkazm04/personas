@@ -19,10 +19,13 @@
 //    a human look. It is REPORTING ONLY. The ship button is gated by the exit
 //    criteria (shipVerdict) and by nothing else; no count on this strip can
 //    open or close it, and the strip says so.
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pencil, Scale, TriangleAlert } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import {
+  MarkdownMiniEditor, MarkdownMiniView, type MarkdownMiniEditorHandle,
+} from '@/features/shared/components/editors/MarkdownMiniEditor';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
@@ -155,6 +158,10 @@ export function ShipDescriptionField({ name, description, editable, onSave }: {
   const { t, tx } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(description ?? '');
+  const editorRef = useRef<MarkdownMiniEditorHandle>(null);
+  // `autoFocus` cannot reach through the editor component, so focus is driven
+  // once the textarea has actually mounted.
+  useEffect(() => { if (editing) editorRef.current?.focus(); }, [editing]);
   useEffect(() => { setDraft(description ?? ''); }, [description]);
 
   const commit = () => {
@@ -165,40 +172,57 @@ export function ShipDescriptionField({ name, description, editable, onSave }: {
 
   if (editing) {
     return (
-      <textarea
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        // Enter inserts a newline here — this is prose, unlike the title, where
-        // Enter commits. Escape reverts in both.
-        onKeyDown={(e) => { if (e.key === 'Escape') { setDraft(description ?? ''); setEditing(false); } }}
-        rows={3}
-        placeholder={t.ship.description_placeholder}
-        aria-label={tx(t.ship.description_edit_aria, { name })}
-        className="w-full min-w-0 mt-1 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1.5 typo-caption text-foreground placeholder:text-foreground/30 focus-ring resize-y"
-        data-testid="ship-milestone-description"
-      />
+      <div className="mt-1">
+        <MarkdownMiniEditor
+          ref={editorRef}
+          value={draft}
+          onChange={setDraft}
+          onCommit={commit}
+          onCancel={() => { setDraft(description ?? ''); setEditing(false); }}
+          rows={4}
+          placeholder={t.ship.description_placeholder}
+          ariaLabel={tx(t.ship.description_edit_aria, { name })}
+          className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1.5 typo-caption text-foreground placeholder:text-foreground/30 focus-ring resize-y font-mono"
+          testId="ship-milestone-description"
+        />
+        {/* The two behaviours, named once at the moment they are usable, and
+            never again. A permanent hint under a field the operator writes in
+            weekly is the kind of prose this module just removed. */}
+        <p className="typo-caption text-foreground/40 mt-1">{t.ship.description_editor_hint}</p>
+      </div>
     );
   }
   // Nothing written and nothing editable is nothing to render — a permanent
   // empty row under every shipped milestone would be chrome with no content.
   if (!editable && !(description && description.trim())) return null;
+
+  const written = Boolean(description && description.trim());
   return (
-    <button
-      type="button"
-      disabled={!editable}
-      onClick={() => setEditing(true)}
-      className="group block w-full text-left mt-1 rounded-interactive px-1 -mx-1 py-0.5 transition-colors hover:bg-foreground/[0.04] focus-ring disabled:pointer-events-none"
-      aria-label={tx(t.ship.description_edit_aria, { name })}
-      data-testid="ship-milestone-description"
-    >
-      <span className={`typo-caption ${description && description.trim() ? 'text-foreground' : 'text-foreground/45'}`}>
-        {description && description.trim() !== '' ? description : t.ship.description_empty}
-      </span>
+    <div className="group mt-1 flex items-start gap-1.5" data-testid="ship-milestone-description">
+      {/* NOT a button around the prose. Rendered markdown contains block
+          elements and can contain links, and nesting either inside a <button>
+          is invalid HTML that makes the link unreachable. The pencil beside it
+          is the real control — one focusable thing, correctly shaped. */}
+      <div className="min-w-0 flex-1">
+        {written ? (
+          <MarkdownMiniView content={description!} className="typo-caption text-foreground" />
+        ) : (
+          <span className="typo-caption text-foreground/45">{t.ship.description_empty}</span>
+        )}
+      </div>
       {editable && (
-        <Pencil className="inline-block ml-1.5 w-3 h-3 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
+        <Tooltip content={tx(t.ship.description_edit_aria, { name })}>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            aria-label={tx(t.ship.description_edit_aria, { name })}
+            className="shrink-0 mt-0.5 p-1 rounded-interactive opacity-0 group-hover:opacity-60 focus-visible:opacity-100 transition-opacity hover:bg-foreground/[0.06] focus-ring"
+            data-testid="ship-milestone-description-edit"
+          >
+            <Pencil className="w-3 h-3" aria-hidden />
+          </button>
+        </Tooltip>
       )}
-    </button>
+    </div>
   );
 }

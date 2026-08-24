@@ -20421,5 +20421,6 @@ export type Translations = {
     description_edit_aria: string;
     goals_rail_title: string;
     goals_rail_empty: string;
+    description_editor_hint: string;
   };
 };

@@ -45,7 +45,12 @@ struct Resolved {
     project_id: String,
     project_name: String,
     name: String,
+    /// The objective, as a short title.
     goal: Option<String>,
+    /// The objective's prose — markdown, authored by the operator. This is the
+    /// statement of intent a decomposition works FROM, so an answer that omits
+    /// it leaves the model guessing at what the milestone is for.
+    description: Option<String>,
     status: String,
     target_date: Option<String>,
     cut_at: Option<String>,
@@ -94,15 +99,16 @@ fn resolve(conn: &rusqlite::Connection, query: &str) -> Option<Resolved> {
                 project_name: row.get(2)?,
                 name: row.get(3)?,
                 goal: row.get(4)?,
-                status: row.get(5)?,
-                target_date: row.get(6)?,
-                cut_at: row.get(7)?,
-                shipped_at: row.get(8)?,
+                description: row.get(5)?,
+                status: row.get(6)?,
+                target_date: row.get(7)?,
+                cut_at: row.get(8)?,
+                shipped_at: row.get(9)?,
             })
         })
         .ok()
     };
-    const COLS: &str = "m.id, m.project_id, p.name, m.name, m.goal, m.status,
+    const COLS: &str = "m.id, m.project_id, p.name, m.name, m.goal, m.description, m.status,
                         m.target_date, m.cut_at, m.shipped_at
                  FROM dev_milestones m JOIN dev_projects p ON p.id = m.project_id";
 
@@ -346,6 +352,18 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
          or drops them, `ship_milestone_lifecycle` cuts or ships it, and \
          `show_ship_milestone` proposes an entirely new cut. All three are cards \
          the operator confirms."
+            .to_string(),
+    );
+    out.push(
+        "DECOMPOSING IT. The objective above is the intent; the cut is what has \
+         been committed to it so far. To turn one into the other, work out what \
+         the objective needs that the cut does not yet contain, and propose those \
+         as GOALS bound to this milestone — a goal is where an intention lives \
+         before it has a home, and the operator must never be asked which context \
+         or use case it belongs to (that mapping is yours). Bind them with \
+         `set_ship_scope` (item_kind: goal); where the gap is real work rather \
+         than a scoping decision, put a session on it with `show_fleet_plan`. \
+         Propose few and concrete over many and vague."
             .to_string(),
     );
 

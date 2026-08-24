@@ -20414,6 +20414,7 @@
     "description_empty": "Добавить описание",
     "description_placeholder": "Что на самом деле означает выпустить эту веху",
     "goals_rail_empty": "Целей пока нет — напишите одну, и Athena её разместит",
-    "goals_rail_title": "Цели"
+    "goals_rail_title": "Цели",
+    "description_editor_hint": "Ctrl+B — полужирный · начните строку с «- » для списка"
   }
 }

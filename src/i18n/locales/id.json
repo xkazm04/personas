@@ -20414,6 +20414,7 @@
     "description_empty": "Tambahkan deskripsi",
     "description_placeholder": "Apa arti sebenarnya merilis milestone ini",
     "goals_rail_empty": "Belum ada tujuan — tulis satu dan Athena akan menempatkannya",
-    "goals_rail_title": "Tujuan"
+    "goals_rail_title": "Tujuan",
+    "description_editor_hint": "Ctrl+B untuk tebal · awali baris dengan “- ” untuk daftar"
   }
 }

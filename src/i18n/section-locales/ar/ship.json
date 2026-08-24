@@ -139,5 +139,6 @@
   "description_empty": "إضافة وصف",
   "description_placeholder": "ما الذي يعنيه إطلاق هذا المعلم فعليًا",
   "goals_rail_empty": "لا توجد أهداف بعد — اكتب هدفًا وستتولى Athena تصنيفه",
-  "goals_rail_title": "الأهداف"
+  "goals_rail_title": "الأهداف",
+  "description_editor_hint": "Ctrl+B للخط العريض · ابدأ السطر بـ ”- “ لإنشاء قائمة"
 }

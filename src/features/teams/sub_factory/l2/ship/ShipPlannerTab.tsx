@@ -15,7 +15,7 @@ import type { Translations } from '@/i18n/generated/types';
 
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
-import { buildShipBriefing } from './shipAthena';
+import { buildShipAskPrompt } from './shipAthena';
 import { ShipCertifyModal } from './ShipCertifyModal';
 import { ShipControlBar } from './ShipControlBar';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
@@ -287,19 +287,11 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
 
   const editable = vm.status !== 'shipped';
 
-  // Hand Athena the whole live milestone, tagged as coming from this surface.
-  // The pool she can draw scope FROM is everything not in the core cut — the
-  // same set the "Outside the cut" ledger shows him.
+  // Point her at the milestone and the op that reads it — do not paste the
+  // milestone. See shipAthena.ts for why the briefing was retired.
   const openAthena = () => {
     if (!data.project) return;
-    const memberIds = new Set(vm.members.map((mm) => mm.feature.id));
-    const outsidePool = [
-      ...vm.members.filter((mm) => mm.bucket !== 'core')
-        .map((mm) => ({ name: mm.feature.name, bucket: mm.bucket as string | null, contexts: mm.feature.contexts })),
-      ...ship.features.filter((f) => !memberIds.has(f.id))
-        .map((f) => ({ name: f.name, bucket: null, contexts: f.contexts })),
-    ];
-    askAthena('Ship', buildShipBriefing(vm, data.project, outsidePool));
+    askAthena('Ship', buildShipAskPrompt(vm, data.project));
   };
 
   return (
