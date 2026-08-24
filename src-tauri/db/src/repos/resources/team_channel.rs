@@ -318,3 +318,113 @@ pub fn record_delivery(
         Ok(())
     })
 }
+
+// ---------------------------------------------------------------------------
+// Persona channel (channels-v2 W3/W4)
+// ---------------------------------------------------------------------------
+
+/// Input for a persona-channel chat row. Distinct from
+/// [`CreateChannelMessageInput`] on purpose (mirrors the `create_external`
+/// reasoning): a persona-channel writer must set `persona_id` + the sentinel
+/// `team_id`, may supply its own row id (the optimistic-echo retire contract:
+/// the frontend mints a client id, renders instantly, and retires the ghost
+/// when the server row with that id arrives), and never sets team-only fields
+/// (`addressed_to`, `assignment_id`). Keeping it separate means no team-side
+/// call site can accidentally write a persona-scoped row or vice versa.
+pub struct CreatePersonaChannelMessageInput {
+    /// Client-minted id (optimistic echo) or None → `tcm-<uuid>`.
+    pub id: Option<String>,
+    pub persona_id: String,
+    /// 'user' | 'persona' (athena posts would ride the same door).
+    pub author_kind: String,
+    pub author_id: Option<String>,
+    /// Display name for persona-authored rows (no join at read time).
+    pub author_label: Option<String>,
+    pub body: String,
+    pub reply_to: Option<String>,
+    /// Marks a failure record ("the run died") — stored as
+    /// `{"failed":true}` in the `deliveries` column, which the persona
+    /// read-model surfaces as `extra`. Safe: delivery receipts are written
+    /// only by the team orchestrator, which scopes by REAL team ids and can
+    /// never touch a `persona:<id>`-sentinel row.
+    pub failed: bool,
+}
+
+/// Insert a persona-channel chat row. Returns `(id, at)` with `at` already
+/// normalized to `YYYY-MM-DDTHH:MM:SSZ` — the same shape the read-model
+/// emits, so the caller can hand it straight back to the frontend.
+///
+/// `team_id` is the sentinel `persona:<persona_id>`: the column is
+/// `TEXT NOT NULL` with no FK, and every team-scoped reader (the team
+/// read-model, the orchestrator's injection/delivery machinery, the Slack
+/// bridge) filters on real team ids, so sentinel rows are invisible to all
+/// of them by construction. The REAL scope key is the `persona_id` column
+/// (indexed `(persona_id, created_at DESC)`), which is what
+/// `read_persona_channel` filters on — the sentinel is only there to keep
+/// NOT NULL honest and to make the row's provenance greppable.
+pub fn create_persona_channel_message(
+    pool: &DbPool,
+    input: CreatePersonaChannelMessageInput,
+) -> Result<(String, String), AppError> {
+    timed_query!("team_channel", "team_channel::create_persona_channel", {
+        let body = input.body.trim();
+        if body.is_empty() {
+            return Err(AppError::Validation("Message body cannot be empty".into()));
+        }
+        let id = match input
+            .id
+            .map(|i| i.trim().to_string())
+            .filter(|i| !i.is_empty())
+        {
+            Some(client_id) => {
+                if client_id.len() > 64
+                    || !client_id
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+                {
+                    return Err(AppError::Validation(
+                        "client_id must be <= 64 chars of [A-Za-z0-9_-]".into(),
+                    ));
+                }
+                client_id
+            }
+            None => format!("tcm-{}", uuid::Uuid::new_v4()),
+        };
+        let label = input
+            .author_label
+            .as_deref()
+            .map(str::trim)
+            .filter(|l| !l.is_empty());
+        let deliveries = if input.failed {
+            Some("{\"failed\":true}")
+        } else {
+            None
+        };
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO team_channel_messages
+                (id, team_id, author_kind, author_id, body, addressed_to, reply_to,
+                 assignment_id, consumer, deliveries, created_at, author_label, persona_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6, NULL, 'display', ?7, datetime('now'), ?8, ?9)",
+            params![
+                id,
+                format!("persona:{}", input.persona_id),
+                input.author_kind,
+                input.author_id,
+                body,
+                input.reply_to,
+                deliveries,
+                label,
+                input.persona_id,
+            ],
+        )
+        .map_err(AppError::Database)?;
+        let at: String = conn.query_row(
+            "SELECT strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at))
+             FROM team_channel_messages WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )?;
+        Ok((id, at))
+    })
+}

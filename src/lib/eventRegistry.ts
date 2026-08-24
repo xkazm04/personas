@@ -68,6 +68,9 @@ export const EventName = {
 
   // Messages
   REPORT_CREATED: 'report-created',
+  // Persona channel (channels-v2 W4): fired after a user post lands and again
+  // after the persona's reply/failure row lands.
+  PERSONA_CHANNEL_MESSAGE: 'persona-channel-message',
 
   // Design & review
   DESIGN_STATUS: 'design-status',
@@ -815,6 +818,7 @@ export interface EventPayloadMap {
 
   // Messages
   [EventName.REPORT_CREATED]: PersonaReport;
+  [EventName.PERSONA_CHANNEL_MESSAGE]: { persona_id: string };
 
   // Design & review
   [EventName.DESIGN_STATUS]: DesignStatusPayload;

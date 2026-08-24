@@ -553,7 +553,8 @@ pub(super) fn research_lab_align_columns(conn: &Connection) {
             assignment_id TEXT,
             consumer      TEXT NOT NULL DEFAULT 'inject',
             deliveries    TEXT,
-            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            persona_id    TEXT
         );",
     );
     let _ = ddl_step(
@@ -567,6 +568,16 @@ pub(super) fn research_lab_align_columns(conn: &Connection) {
         conn,
         "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_deliberation
             ON team_channel_messages(deliberation_id, created_at);",
+    );
+    // Persona channel chat lens (channels-v2 W3). Fresh installs get the
+    // column from the CREATE TABLE above; upgrade DBs lack it until e11 runs
+    // in phase 2, so this index create fails silently on THAT boot (the
+    // `let _` swallow is the established convergence mechanism here — see
+    // deliberation_id above) and e11 then adds both column and index.
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_persona
+            ON team_channel_messages(persona_id, created_at DESC);",
     );
 
     // Obsidian Brain — Revitalize run history. One row per finished pass

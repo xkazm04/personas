@@ -18,7 +18,8 @@
 //! Ordering guarantees the legacy column set is complete before the copy:
 //! `initial::run()` adds `thread_id` to the legacy table (pre-schema ALTER)
 //! and e01 adds `use_case_id` to whichever table name is live, both earlier
-//! in the same boot. This module must stay LAST in the e-chain.
+//! in the same boot. This module must stay AFTER e01 in the e-chain (e11+
+//! steps that touch unrelated tables may follow it).
 
 use rusqlite::Connection;
 
