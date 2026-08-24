@@ -1,6 +1,10 @@
 # Active Runs Ledger
 
 ## Active
+
+- **[2026-08-22 18:33]**
+- **Paths:** `src-tauri/src/local_http/**` · `src-tauri/src/boot/**` · `src-tauri/src/commands/fleet/hook_install.rs` · `src-tauri/src/commands/fleet/pty.rs` · `src-tauri/src/commands/infrastructure/dev_tools_http.rs` · `src-tauri/src/commands/infrastructure/context_generation.rs` · `src-tauri/src/engine/project_tracking/**` · `src-tauri/db/src/settings_keys.rs`
+- **Status:** started
 ### rust-refactor-w0 — Rust backend refactor, Wave 0 (gates before any structural move) — session fable-5 Director + Opus builders — started
 - 2026-08-20. Plan: `docs/plans/rust-refactor.md` (W0-W6). This entry covers **W0 only**.
 - **Write-set (Director):** `docs/plans/rust-refactor.md`, `.github/workflows/{ci,audit}.yml`, `lefthook.yml`, `src-tauri/deny.toml`, `.claude/conventions.json`, `.claude/CLAUDE.md`, `.claude/active-runs.md`.
@@ -381,6 +385,15 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### registry-p3-flip — ai-registry sync + P3 authority flip (nested-layout reader) — session fable-5 — **COMPLETE**
+- **[2026-08-23]** Pulled ai-registry 45 commits (29c68cd→59e6c7f, fast-forward; healed a stale phantom-staged index in the clone first — worktree was byte-identical to HEAD). Upstream: 143 subjects / 898 techniques / 386 applications / 12 laws, bundle restructured to nested taxonomy rings; personas mirror was 105/624/236/9 flat.
+- Operator chose **P3 flip** over reverse-merge. Landed: `hierarchy_read.rs` recursive subject discovery + taxonomy.json categories + preferred `software-engineering` domain (7 bundles in the registry now) — 46/46 tests green vs BOTH layouts incl. the live clone; `evidence-check.mjs` nested-aware (was reading the bundle as 0 subjects — blind parity gate; now green: corpus ⊆ bundle, registry ahead 38/274/150 as notes); `mirror-paths.mjs` refuses nested bundles (flat mirror retired); migration doc P3 banner. `docs/concepts/paths/` FROZEN (tracked, evidence home, checker still binds it). Runtime flip = pair the registry on the workspace (corpusRootFor seam, already shipped).
+- **Paths:** `src-tauri/src/commands/infrastructure/hierarchy_read.rs` · `scripts/registry/{evidence-check,mirror-paths}.mjs` · `docs/concepts/knowledge-registry-migration.md`
+- NOT staged by me: this ledger edit rides with the next session's commit (sec-localhttp's in-flight hunks are in this file).
+- **RUNTIME FLIP EXECUTED (same session):** paired xkazm04/ai-registry onto workspace "Personas Core" (9c6a73a4) via the live app's test-automation bridge (:17320) — localStorage `devtools.registryLinks.v1` merge-written (state=paired, sha 613e061, 5 lanes, 7 domains, GitHub PAT credential), `dev_tools_set_knowledge_root` → clone path, UI reloaded, pairing verified post-reload. `.personas/registry.yaml` consumer overlay committed + pushed to the registry (613e061; first push REJECTED non-fast-forward — origin had gained 2 more commits within the hour — rebased and re-pushed, exit code checked not piped). Live-app graph read against the clone: **143 subjects / 898 techniques / 386 applications / 9 categories / 12 laws** — the dev watcher had already rebuilt the app with the nested-layout reader. Patterns UI on the personas project now reads the registry.
+
+### sec-localhttp — Fix unauthenticated local_http RCE + prompt-injection (VULN 4/5)
 
 ### research-adw-loop-engineering — /research (focus: local skills + CLAUDE.md) on IndyDevDan "Forget loop engineering / AI Developer Workflows" — session opus-5[1m]
 - **[2026-08-21 18:35]** Source: https://www.youtube.com/watch?v=VQy50fuxI34
