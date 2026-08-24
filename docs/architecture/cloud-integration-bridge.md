@@ -985,15 +985,78 @@ it:
 nothing. A driver compressing a hundred nights into a hundred ticks would
 otherwise produce a hundred extensions and never a decision, so the loop would
 not terminate. The streak is `MandateRecord.headlessIncompleteStreak`, written
-**after** the carry-out (which reloads and rewrites the record itself, so writing
-first would be silently clobbered) and reset by any non-`incomplete` verdict.
-Nothing on the human path ever writes it.
+**by the carry-out itself** (it reloads the mandate record, so a streak stamped
+by the caller beforehand would be silently clobbered) and reset by any
+non-`incomplete` verdict. Nothing on the human path ever writes it: the carry-out
+takes the streak as an `Option`, and the human path passes `None`.
 
-The decision is applied through `react_to_app_master_probation` — the same
-function the human's click reaches — after `manual_reviews::update_status` marks
-the review answered on the human path's own transition. So the mode changes *who
-decides*, never *what a decision does*: autopilot mode, mandate record, cadence
-triggers and the kp `probation_review` lifecycle event are all identical.
+The decision is applied through the **carry-out**,
+`commands::design::reviews::apply_app_master_probation_decision` — everything a
+probation decision changes (autopilot mode, mandate record, cadence triggers, the
+kp `probation_review` lifecycle event) and nothing else.
+`react_to_app_master_probation` is now just the review-reading half in front of
+it: it decides *which* of the three words the answer was, then calls the
+carry-out. Both decision paths land in that one function, so the mode changes
+*who decides*, never *what a decision does*.
+
+On the anchored path the review row is still marked answered through
+`manual_reviews::update_status` first, on the human path's own transition, so the
+learned-memory synthesis that hangs off that chokepoint happens exactly as it
+would have.
+
+#### The anchorless decision — a hire that has never executed
+
+`persona_manual_reviews.execution_id` is NOT NULL with an FK onto
+`persona_executions`: **a review needs a run to hang off.** An App master whose
+Overnight nights dispatched nothing has no run — and that is a legitimate
+probation state, in fact the one a reviewer would most want to see, not a missing
+prerequisite. The raise pass therefore defers it (`deferred`, with the reason in
+`notes`), and in production that is where it stops: filing the review against a
+fabricated execution would put a lie on the audit trail, and there is nothing
+else to anchor it to.
+
+The consequence in headless mode was that the sweep, which only decides mandates
+carrying a `probationReviewId`, could never reach that mandate at all — so every
+bench probation returned **no decision** (observed on the 2026-08-24 bench run:
+`DEFERRED — the App master has never executed, and a manual review needs an
+execution to anchor to`). The loop the mode exists to prove never closed.
+
+So in headless mode **only**, a due-or-forced mandate with no review row and no
+execution is decided **directly from the backbone, with no
+`persona_manual_reviews` row at all**
+(`app_master_probation::anchorless_probation_sweep`). The gate is one predicate,
+`headless::anchorless_probation_allowed`, and every clause in it is a refusal the
+production path keeps:
+
+| Clause | Why |
+| --- | --- |
+| `headless::enabled()` | outside the bridge this behaviour does not exist — a decision with no review row would leave nothing a human could have read |
+| no `probationReviewId` | a raised packet is answered on the anchored path, which marks the row |
+| no execution | a persona that HAS run can be anchored, so it must be — this path exists only for the case the FK makes impossible |
+| `forceProbation` or the window genuinely closed | never a live window |
+
+The backbone is collected by `app_master_probation::collect_backbone`, factored
+out of `build_packet`, so the anchorless decision reads the **same numbers** the
+review card would have shown; a second collection would be a second thing to keep
+in sync. From there it is the identical chain —
+`backbone_reading_from_json` → `backbone_verdict` →
+`headless_probation_decision(verdict, headlessIncompleteStreak)` → the
+carry-out — including the two-incomplete termination (an extension clears nothing
+that would stop the next forced tick reaching this same gate, and the second
+`incomplete` retires).
+
+What it deliberately does **not** do is invent a review row: no packet is
+written, no learned memory is synthesised, and the kp `probation_review`
+lifecycle note says so in words —
+
+> extended by `headless_bridge` from an `incomplete` backbone verdict, taken
+> WITHOUT a manual review row: the persona has never executed, and
+> `persona_manual_reviews.execution_id` requires an execution to anchor to. No
+> human read this.
+
+Every outcome the tick reports carries `anchor`: `"review"` when it answered a
+raised packet, `"none"` when it was decided anchorless. `reviewId` is `null` on
+the anchorless path, but a consumer should read `anchor`, not the null.
 
 ### 13.6 The tick endpoint
 
@@ -1027,6 +1090,7 @@ is the second gate, not the first.
     { "phase": "probation", "ran": true, "durationMs": 200,
       "counts": { "mandates": 1, "due": 1, "raised": 1, "deferred": 0, "decided": 1, "notes": [] },
       "details": [ { "projectId": "…", "personaId": "…", "reviewId": "…",
+                     "anchor": "review",       // "none" => decided with no review row (§13.5)
                      "verdict": "incomplete", "decision": "extended",
                      "priorIncompleteStreak": 0,
                      "unmeasured": ["durability", "gates"] } ] }
@@ -1050,7 +1114,7 @@ the typo as a passing run.
 | `overnight` | `overnight::run_overnight_now_core` (the body of `dev_tools_run_overnight_now`, minus its IPC auth check) | autopilot capability gate, App master mandate rung, budget governor + `full → suggest` degrade, fleet slot cap, branch-only dispatch, the ledger row |
 | `reconcile` | `app_master_reconcile::reconcile_tick_summary` | the same worktree-isolated gate sweep, the same per-tick gating cap |
 | `report` | `kp_reporter::kp_rollup_tick_summary` | the same `MONTHLY_SPEND_PREDICATE` axes, the same severed-link skip |
-| `probation` | `probation_tick_summary` (raise), then §13.5 (decide) | the same execution-anchor requirement; a hire that has never run still **defers**, and says so in `notes` |
+| `probation` | `probation_tick_summary_with(force_due)` (raise), then §13.5 (decide, same `force_due`) | the same execution-anchor requirement on the RAISE half — a hire that has never run still **defers** a review row and says so in `notes`; headless then decides that mandate anchorless (§13.5), production does not |
 
 Each of those tick bodies now returns a counted summary; the subscriptions
 discard it. A phase that ran and found nothing to do is `ran: true` with zero
@@ -1117,9 +1181,14 @@ fallback deliberately, or run where the keychain is real.
   was therefore pushed down into `personas-engine`, where it runs: the phase
   vocabulary + ordering + unknown-name refusal (`select_tick_phases`), the actor
   stamp (`stamp_actor`), the backbone verdict port, the probation policy incl.
-  the two-incomplete termination, and the auto-pairing round trip against a real
-  temp DB. The app_lib halves that stay untested are the four thin phase adapters
-  and the route-registration `if`.
+  the two-incomplete termination, the anchorless gate
+  (`anchorless_probation_allowed`) and its lifecycle note, and the auto-pairing
+  round trip against a real temp DB. The app_lib halves that stay untested are
+  the four thin phase adapters, the route-registration `if`, and the DB walk of
+  `anchorless_probation_sweep` itself — its decision logic is the tested engine
+  predicate plus the shared carry-out, so what no test covers is the mandate
+  iteration and the execution re-check around them. The bench is what exercises
+  those.
 - **No identity on the loop beyond the key.** The mode's threat model is "this
   machine is mine". There is no per-driver identity and no audit of *which*
   driver ticked.

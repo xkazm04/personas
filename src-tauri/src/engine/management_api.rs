@@ -3432,8 +3432,12 @@ fn tick_phase_probation(
     // Raise first, then decide: a window that closed during this very tick gets
     // its packet and its answer in the same call, which is the whole point of
     // compressing a night.
+    // `force_due` goes to BOTH halves: a mandate the raise pass had to defer
+    // (never executed, so no review row can anchor) is decided anchorless by
+    // the sweep, and it has to agree with the raise pass about what "due" means
+    // or a forced tick would raise nothing and decide nothing.
     let raised = probation::probation_tick_summary_with(pool, force_due);
-    let decided = probation::headless_probation_sweep(app, pool);
+    let decided = probation::headless_probation_sweep(app, pool, force_due);
     let mut out = phase_stub();
     out.details = decided
         .iter()

@@ -58,6 +58,18 @@
 //! `incomplete` therefore retires instead
 //! ([`headless_probation_decision`]) — a driver that compresses a hundred
 //! nights into a hundred ticks must not produce a hundred extensions.
+//!
+//! # The anchorless decision
+//!
+//! `persona_manual_reviews.execution_id` is NOT NULL with an FK onto
+//! `persona_executions`, so a probation review needs a run to hang off. An App
+//! master whose nights dispatched nothing has **no run** — which is a
+//! legitimate probation state (and, read honestly, a poor one), not a missing
+//! prerequisite. In production that mandate defers, because filing a review
+//! against a fabricated execution would be a lie on the audit trail. In
+//! headless mode it is decided **without a review row** from the same backbone
+//! the packet would have embedded ([`anchorless_probation_allowed`]) — the
+//! alternative is a bench where every probation returns no decision at all.
 
 use std::sync::atomic::{AtomicU8, Ordering};
 
@@ -414,6 +426,48 @@ pub fn headless_probation_decision(
     }
 }
 
+/// What a headless probation decision was anchored to. Reported on every
+/// outcome so a bench can tell the two paths apart without inferring it from a
+/// null review id.
+pub const ANCHOR_REVIEW: &str = "review";
+pub const ANCHOR_NONE: &str = "none";
+
+/// May the headless bridge decide this mandate **with no manual-review row**?
+///
+/// Every clause is a refusal the production path keeps:
+///
+/// * `headless_enabled` — outside the bridge this behaviour does not exist.
+///   A real operator's inbox is the only place a probation is decided, and a
+///   decision with no review row would leave nothing for them to have read.
+/// * `!has_review_row` — a raised packet is answered through the review path,
+///   which marks the row and synthesises the learned memory.
+/// * `!has_execution` — a persona that HAS run can be anchored, so it must be:
+///   the anchorless path exists only for the case the FK makes impossible.
+/// * `force_due || window_closed` — the bench's `forceProbation`, or a
+///   probation window that genuinely closed. Never a live window.
+pub fn anchorless_probation_allowed(
+    headless_enabled: bool,
+    force_due: bool,
+    window_closed: bool,
+    has_review_row: bool,
+    has_execution: bool,
+) -> bool {
+    headless_enabled && !has_review_row && !has_execution && (force_due || window_closed)
+}
+
+/// The note carried onto the mandate's kp `probation_review` lifecycle event
+/// when the decision was taken with no review row. It says what was skipped and
+/// why, in the record itself — a lifecycle event that read like every other one
+/// would claim a review happened.
+pub fn anchorless_probation_note(decision_outcome: &str, verdict: &str) -> String {
+    format!(
+        "{decision_outcome} by `{ACTOR}` from a `{verdict}` backbone verdict, taken WITHOUT a \
+         manual review row: the persona has never executed, and \
+         `persona_manual_reviews.execution_id` requires an execution to anchor to. No human \
+         read this."
+    )
+}
+
 // ---------------------------------------------------------------------------
 // The on-demand tick
 // ---------------------------------------------------------------------------
@@ -656,6 +710,94 @@ mod tests {
             headless_probation_decision(BackboneVerdict::Fail, 3),
             ProbationDecision::Retire
         );
+    }
+
+    // -- the anchorless decision --------------------------------------------
+
+    #[test]
+    fn an_anchorless_probation_is_decided_only_inside_the_headless_bridge() {
+        // The exact live case: never executed, nothing raised, forced due.
+        assert!(anchorless_probation_allowed(
+            true, true, false, false, false
+        ));
+        // Production sees the same mandate and must still defer.
+        assert!(
+            !anchorless_probation_allowed(false, true, false, false, false),
+            "deciding a probation with no review row outside headless mode would leave an \
+             audit trail with nothing a human could have read"
+        );
+    }
+
+    #[test]
+    fn an_anchorless_probation_waits_for_the_window_unless_it_is_forced() {
+        // Not forced and the window is still open — nothing to decide.
+        assert!(!anchorless_probation_allowed(
+            true, false, false, false, false
+        ));
+        // Not forced but the window genuinely closed — decide.
+        assert!(anchorless_probation_allowed(
+            true, false, true, false, false
+        ));
+    }
+
+    #[test]
+    fn a_persona_that_has_executed_still_goes_through_the_review_path() {
+        // An execution exists, so the FK can be satisfied and a real review row
+        // must be raised and answered instead.
+        assert!(!anchorless_probation_allowed(
+            true, true, false, false, true
+        ));
+        assert!(!anchorless_probation_allowed(
+            true, false, true, false, true
+        ));
+        // And a packet already raised is always the review path's business.
+        assert!(!anchorless_probation_allowed(
+            true, true, false, true, false
+        ));
+    }
+
+    #[test]
+    fn the_anchorless_path_terminates_on_the_second_incomplete_too() {
+        // The streak policy is shared, so the anchorless loop cannot extend
+        // forever either: first incomplete extends, second retires.
+        assert!(anchorless_probation_allowed(
+            true, true, false, false, false
+        ));
+        assert_eq!(
+            headless_probation_decision(BackboneVerdict::Incomplete, 0),
+            ProbationDecision::Extend
+        );
+        // The extension clears `probationReviewId` and leaves the persona still
+        // unexecuted, so the next forced tick reaches this same gate…
+        assert!(anchorless_probation_allowed(
+            true, true, false, false, false
+        ));
+        // …and this time it ends.
+        assert_eq!(
+            headless_probation_decision(BackboneVerdict::Incomplete, 1),
+            ProbationDecision::Retire
+        );
+    }
+
+    #[test]
+    fn the_anchorless_note_says_what_was_skipped_and_why() {
+        let note = anchorless_probation_note(ProbationDecision::Extend.outcome(), "incomplete");
+        assert!(note.contains("extended"), "{note}");
+        assert!(note.contains("incomplete"), "{note}");
+        assert!(note.contains("WITHOUT a manual review row"), "{note}");
+        assert!(note.contains("never executed"), "{note}");
+        assert!(note.contains(ACTOR), "{note}");
+        assert!(note.contains("No human read this"), "{note}");
+    }
+
+    #[test]
+    fn a_never_executed_app_master_reads_incomplete_not_pass() {
+        // What the anchorless path will actually see: an App master whose
+        // nights dispatched nothing has no rollup worth the name. It must not
+        // fall through to `pass` on a backbone of absences.
+        let empty = backbone_reading_from_json(&serde_json::json!({}));
+        assert_eq!(backbone_verdict(&empty), BackboneVerdict::Incomplete);
+        assert!(unmeasured_rules(&empty).contains(&"delivery"));
     }
 
     // -- the on-demand tick -------------------------------------------------

@@ -67,13 +67,18 @@ pub(crate) const EXTEND_DAYS: i64 = 30;
 // The packet
 // ---------------------------------------------------------------------------
 
-/// Render the deterministic backbone + its narration for one App master.
-pub(crate) fn build_packet(
+/// Collect the deterministic backbone for one App master, and the execution
+/// count its narration quotes.
+///
+/// Factored out of [`build_packet`] because the headless anchorless decision
+/// ([`headless_probation_sweep`]) has no packet to read a backbone out of and
+/// must nevertheless read the SAME numbers — a second collection would be a
+/// second thing to keep in sync, and the first time they disagreed the bench
+/// and the review card would be deciding different hires.
+pub(crate) fn collect_backbone(
     pool: &DbPool,
     persona_id: &str,
-    persona_name: &str,
-    record: &personas_engine::app_master::MandateRecord,
-) -> (String, String, String) {
+) -> (Option<crate::engine::kp_reporter::KpAppMasterRollup>, i64) {
     let persona = crate::db::repos::core::personas::get_by_id(pool, persona_id).ok();
     let design_context = persona.as_ref().and_then(|p| p.design_context.clone());
     let (runs, cost_usd) =
@@ -87,6 +92,17 @@ pub(crate) fn build_packet(
         runs,
         cost_usd,
     );
+    (backbone, runs)
+}
+
+/// Render the deterministic backbone + its narration for one App master.
+pub(crate) fn build_packet(
+    pool: &DbPool,
+    persona_id: &str,
+    persona_name: &str,
+    record: &personas_engine::app_master::MandateRecord,
+) -> (String, String, String) {
+    let (backbone, runs) = collect_backbone(pool, persona_id);
     let backbone_json = backbone
         .as_ref()
         .and_then(|b| serde_json::to_value(b).ok())
@@ -474,7 +490,15 @@ pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> Pro
 pub(crate) struct HeadlessProbationOutcome {
     pub project_id: String,
     pub persona_id: String,
-    pub review_id: String,
+    /// The review this decision answered. `None` on the anchorless path, where
+    /// there deliberately is no review row — see `anchor`.
+    pub review_id: Option<String>,
+    /// What the decision hung off: `review` (a raised packet a human could have
+    /// read) or `none` (the backbone directly, because the persona has never
+    /// executed and `persona_manual_reviews.execution_id` cannot be satisfied).
+    /// A bench must be able to tell those apart without inferring it from a
+    /// null id.
+    pub anchor: &'static str,
     /// kp's three-valued verdict over the packet's own backbone.
     pub verdict: String,
     /// `activated` | `extended` | `retired`.
@@ -500,11 +524,25 @@ pub(crate) struct HeadlessProbationOutcome {
 /// Termination: `incomplete` extends, and an extension ends nothing. The second
 /// consecutive `incomplete` therefore retires
 /// (`headless::headless_probation_decision`), and the streak is recorded on the
-/// mandate — after `react_*` writes it, because that function reloads and
-/// rewrites the record itself.
+/// mandate by the carry-out itself (which reloads the record, so writing it
+/// from here would be silently clobbered).
+///
+/// Two paths, one decision policy:
+///
+/// * **anchored** — a review row exists; it is answered on the human path's own
+///   transition and then carried out.
+/// * **anchorless** — no review row exists and none ever can, because the App
+///   master has never executed and `persona_manual_reviews.execution_id` is NOT
+///   NULL with an FK onto `persona_executions`. That is a legitimate probation
+///   state: an Overnight that dispatched nothing leaves exactly this record.
+///   Production defers it, honestly. Headless decides it from the backbone
+///   directly ([`anchorless_probation_sweep`]) — otherwise every bench
+///   probation returns no decision and the loop it exists to prove never
+///   closes.
 pub(crate) fn headless_probation_sweep(
     app: &tauri::AppHandle,
     pool: &DbPool,
+    force_due: bool,
 ) -> Vec<HeadlessProbationOutcome> {
     use personas_engine::headless;
 
@@ -591,6 +629,13 @@ pub(crate) fn headless_probation_sweep(
             &state,
             &review,
             Some(decision.action()),
+            // The streak rides through to the carry-out, which is the one place
+            // that writes it — it reloads the mandate record, so anything
+            // stamped here beforehand would be clobbered.
+            Some(match verdict {
+                headless::BackboneVerdict::Incomplete => record.headless_incomplete_streak + 1,
+                _ => 0,
+            }),
         );
         if !applied {
             tracing::warn!(
@@ -601,24 +646,135 @@ pub(crate) fn headless_probation_sweep(
             continue;
         }
 
-        // The streak is written AFTER the carry-out, which reloads and rewrites
-        // the mandate record itself — writing first would be silently clobbered.
-        if let Some(mut fresh) = personas_engine::app_master::get_mandate(pool, &project_id) {
-            fresh.headless_incomplete_streak = match verdict {
-                headless::BackboneVerdict::Incomplete => record.headless_incomplete_streak + 1,
-                _ => 0,
-            };
-            if let Err(e) = personas_engine::app_master::set_mandate(pool, &fresh) {
-                tracing::error!(project_id, error = %e,
-                    "headless bridge: could not record the incomplete streak — the loop may not \
-                     terminate on the next review");
-            }
+        out.push(HeadlessProbationOutcome {
+            project_id: project_id.clone(),
+            persona_id: record.persona_id.clone(),
+            review_id: Some(review_id),
+            anchor: headless::ANCHOR_REVIEW,
+            verdict: verdict.as_str().to_string(),
+            decision: decision.outcome().to_string(),
+            prior_incomplete_streak: record.headless_incomplete_streak,
+            unmeasured,
+        });
+    }
+
+    out.extend(anchorless_probation_sweep(app, pool, force_due));
+    out
+}
+
+/// Decide the mandates the review path can never reach: due (or forced) and
+/// **never executed**, so no `persona_manual_reviews` row can be filed against
+/// them at all.
+///
+/// The gate is `headless::anchorless_probation_allowed` — one predicate, unit
+/// tested in `personas-engine`, that refuses this behaviour outside the bridge,
+/// refuses it for a persona that HAS an execution (that one is anchorable, so
+/// it must be anchored) and refuses it while the window is still open unless
+/// the bench forced it.
+///
+/// Everything downstream of the verdict is the shared carry-out, so an
+/// anchorless decision and a human's click change exactly the same things. What
+/// it does NOT do is invent a review row: no packet is written, no learned
+/// memory is synthesised, and the kp lifecycle note says in words that no human
+/// read it.
+fn anchorless_probation_sweep(
+    app: &tauri::AppHandle,
+    pool: &DbPool,
+    force_due: bool,
+) -> Vec<HeadlessProbationOutcome> {
+    use personas_engine::headless;
+
+    let mut out = Vec::new();
+    let now = chrono::Utc::now();
+    for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
+        if record.probation_decided_at.is_some() {
+            continue;
+        }
+        let window_closed = chrono::DateTime::parse_from_rfc3339(&record.probation_ends_at)
+            .map(|ends| now >= ends.with_timezone(&chrono::Utc))
+            .unwrap_or(false);
+        // Re-checked here rather than inferred from the raise pass's `notes`: a
+        // deferral reason parsed out of a log line is not a fact about the
+        // database.
+        let has_execution = crate::db::repos::execution::executions::get_by_persona_id(
+            pool,
+            &record.persona_id,
+            Some(1),
+        )
+        .map(|rows| !rows.is_empty())
+        .unwrap_or(true); // unreadable ⇒ assume anchorable, and decide nothing
+        if !headless::anchorless_probation_allowed(
+            headless::enabled(),
+            force_due,
+            window_closed,
+            record.probation_review_id.is_some(),
+            has_execution,
+        ) {
+            continue;
+        }
+        // The raise path defers a vanished persona too; so does this one.
+        let Ok(persona) = crate::db::repos::core::personas::get_by_id(pool, &record.persona_id)
+        else {
+            continue;
+        };
+
+        let (backbone, _runs) = collect_backbone(pool, &record.persona_id);
+        let backbone_json = backbone
+            .as_ref()
+            .and_then(|b| serde_json::to_value(b).ok())
+            .unwrap_or(serde_json::Value::Null);
+        let reading = headless::backbone_reading_from_json(&backbone_json);
+        let verdict = headless::backbone_verdict(&reading);
+        let unmeasured: Vec<String> = headless::unmeasured_rules(&reading)
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        let decision =
+            headless::headless_probation_decision(verdict, record.headless_incomplete_streak);
+
+        tracing::warn!(
+            project_id,
+            persona_id = %record.persona_id,
+            persona = %persona.name,
+            verdict = verdict.as_str(),
+            decision = decision.outcome(),
+            streak = record.headless_incomplete_streak,
+            actor = headless::ACTOR,
+            anchor = headless::ANCHOR_NONE,
+            "HEADLESS BRIDGE: deciding an App master probation with NO human in the loop AND NO \
+             review row — the persona has never executed, so no review could be anchored to one"
+        );
+
+        let state = app.state::<std::sync::Arc<crate::AppState>>();
+        let applied = crate::commands::design::reviews::apply_app_master_probation_decision(
+            &state,
+            crate::commands::design::reviews::ProbationCarryOut {
+                project_id: &project_id,
+                decision: decision.outcome(),
+                note: Some(headless::anchorless_probation_note(
+                    decision.outcome(),
+                    verdict.as_str(),
+                )),
+                headless_incomplete_streak: Some(match verdict {
+                    headless::BackboneVerdict::Incomplete => record.headless_incomplete_streak + 1,
+                    _ => 0,
+                }),
+                review_id: None,
+            },
+        );
+        if !applied {
+            tracing::warn!(
+                project_id,
+                "headless bridge: the mandate vanished mid-decision; nothing applied"
+            );
+            continue;
         }
 
         out.push(HeadlessProbationOutcome {
             project_id: project_id.clone(),
             persona_id: record.persona_id.clone(),
-            review_id,
+            review_id: None,
+            anchor: headless::ANCHOR_NONE,
             verdict: verdict.as_str().to_string(),
             decision: decision.outcome().to_string(),
             prior_incomplete_streak: record.headless_incomplete_streak,
