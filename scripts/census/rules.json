@@ -585,7 +585,7 @@
       ],
       "baseline": {
         "files": 357,
-        "matches": 805
+        "matches": 804
       },
       "floor": 4000
     },
@@ -1407,8 +1407,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 559,
-        "matches": 1085
+        "files": 557,
+        "matches": 1082
       },
       "floor": 2000
     },
@@ -2117,8 +2117,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 188,
-        "matches": 390
+        "files": 189,
+        "matches": 389
       },
       "floor": 4000
     },
@@ -3185,8 +3185,8 @@
         "$measured": "2026-08-16 @ 7b42f9333 — 4829 .ts/.tsx walked, floor 4000, run under 2s; two independent implementations (TypeScript 6 AST walker + the census engine) reconciled at identical membership after a diagnosed method-call-through-an-object gap; all 6 matches and all 9 control matches hand-read; the DispatchChooser double-press replayed in Node against transcribed AsyncButton + dispatch source; live counts from read-only copies of personas.db / personas_data.db and a read-only fleet_list_sessions probe of the running app (fleet_sessions 0 rows, live registry 0 sessions, dev_tasks 2 rows running since 2026-04-09, persona_executions 2188)."
       },
       "baseline": {
-        "files": 6,
-        "matches": 6
+        "files": 5,
+        "matches": 5
       },
       "floor": 4000
     },

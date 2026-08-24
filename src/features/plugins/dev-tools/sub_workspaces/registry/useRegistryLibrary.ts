@@ -23,6 +23,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { skillFilesRegistryRoot } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
+import { createSWRFetcher } from '@/lib/utils/staleWhileRevalidate';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { registryFor, registryLinkSnapshot, subscribeRegistryLinks, type Registry } from './registryLinkStore';
@@ -84,30 +85,34 @@ export function resolveLibraryRoot(input: {
   return { libraryRoot: null, source: 'home' };
 }
 
-/** root_path → manifest-declared lane root (null = probed, nothing declared).
- *  Module-level so tab switches and sibling consumers share one IPC round. */
-const manifestRootCache = new Map<string, string | null>();
-/** In-flight probes, deduped per root_path. */
-const manifestRootInFlight = new Map<string, Promise<void>>();
+/** root_path → settled manifest probe result. Backed by the repo's shared
+ *  SWR primitive (createSWRFetcher: module cache + in-flight dedupe + TTL +
+ *  size cap live THERE, not here) — a manifest rarely changes mid-session, so
+ *  a 5-minute TTL keeps tab switches free while still noticing an edit.
+ *  `manifestSettledRoots` only records "this root_path has an answer" so the
+ *  hook can render synchronously; the value itself always comes through SWR. */
+const MANIFEST_TTL_MS = 5 * 60_000;
+const manifestSettledRoots = new Map<string, string | null>();
 
 function loadManifestRoot(rootPath: string): Promise<void> {
-  let p = manifestRootInFlight.get(rootPath);
-  if (!p) {
-    p = skillFilesRegistryRoot(rootPath)
-      .catch((e) => { silentCatch('registryLibrary manifest root')(e); return null; })
-      .then((root) => {
-        manifestRootCache.set(rootPath, root);
-        manifestRootInFlight.delete(rootPath);
-      });
-    manifestRootInFlight.set(rootPath, p);
-  }
-  return p;
+  const fetchOnce = createSWRFetcher<string | null>(
+    `registry-manifest-root:${rootPath}`,
+    () => skillFilesRegistryRoot(rootPath).catch((e) => {
+      silentCatch('registryLibrary manifest root')(e);
+      return null;
+    }),
+    MANIFEST_TTL_MS,
+  );
+  return fetchOnce().then(({ data }) => {
+    manifestSettledRoots.set(rootPath, data);
+  });
 }
 
 export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
   const { workspaces } = useWorkspaces();
   useSyncExternalStore(subscribeRegistryLinks, registryLinkSnapshot, registryLinkSnapshot);
   const projects = useSystemStore((s) => s.projects);
+  const projectsLoading = useSystemStore((s) => s.projectsLoading);
 
   const workspace = projectId ? workspaceOf(workspaces, projectId) : null;
   const registry = workspace ? registryFor(workspace.id) : null;
@@ -120,19 +125,24 @@ export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
   // Manifest fallback — only probed when no registry resolves a root and the
   // project is known. Cached per root_path; the effect just wakes the render
   // when a cold probe lands.
-  const projectRoot = !registry && projectId
-    ? (projects.find((p) => p.id === projectId)?.root_path ?? null)
-    : null;
+  // Distinguish "the projects store is mid-fetch" from "this project does not
+  // exist": while a fetch is in flight and a projectId is named but unfound,
+  // the row is MISSING-not-absent, so resolution must hold (source stays
+  // null) instead of settling on the home library. A store that was never
+  // fetched (empty, not loading) settles like before - it cannot wedge.
+  const projectRow = projectId ? projects.find((p) => p.id === projectId) : undefined;
+  const projectRoot = !registry && projectRow ? projectRow.root_path : null;
+  const awaitingProjects = !registry && projectId !== null && !projectRow && projectsLoading;
   const [, bump] = useState(0);
   useEffect(() => {
-    if (!projectRoot || manifestRootCache.has(projectRoot)) return;
+    if (!projectRoot || manifestSettledRoots.has(projectRoot)) return;
     let alive = true;
     void loadManifestRoot(projectRoot).then(() => { if (alive) bump((n) => n + 1); });
     return () => { alive = false; };
   }, [projectRoot]);
 
-  const manifestSettled = projectRoot === null || manifestRootCache.has(projectRoot);
-  const manifestRoot = projectRoot ? (manifestRootCache.get(projectRoot) ?? null) : null;
+  const manifestSettled = !awaitingProjects && (projectRoot === null || manifestSettledRoots.has(projectRoot));
+  const manifestRoot = projectRoot ? (manifestSettledRoots.get(projectRoot) ?? null) : null;
 
   const { libraryRoot, source } = resolveLibraryRoot({ registryRoot, manifestRoot, manifestSettled });
 
