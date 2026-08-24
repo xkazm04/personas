@@ -20,6 +20,7 @@ import FleetActivityStrip from "@/features/shared/chrome/FleetActivityStrip";
 import { useTranslation } from '@/i18n/useTranslation';
 import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
@@ -277,6 +278,31 @@ export default function App() {
     useToastStore.getState().addToast(t.common.language_changed, 'success', 1600);
   }, [language, t]);
 
+  /* C5 — SHELL SUSPENSION. The monitor / quick-answer / schedules overlays
+   * are fully opaque and cover the whole content area, yet the app shell
+   * underneath stayed mounted, painted, hit-testable and in the a11y tree.
+   * While one of them is open the content wrapper goes `inert` +
+   * `content-visibility: hidden`: the browser skips paint/hit-test/a11y for
+   * the whole subtree while React state, effects and scroll offsets stay
+   * alive (unlike display:none) — reopen is instant, no re-ghost.
+   * Dispatch is deliberately NOT in the set: it is a side panel over a
+   * translucent scrim, the shell must remain visible beneath it.
+   * Suspension is DELAYED past the overlay's entrance animation so the shell
+   * never visibly vanishes under a still-fading overlay; restore is
+   * immediate on close so the exit fade plays over live content. */
+  const headerOverlay = useSystemStore((s) => s.headerOverlay);
+  const wantShellSuspend =
+    headerOverlay === 'monitor' || headerOverlay === 'quick-answer' || headerOverlay === 'schedules';
+  const [shellSuspended, setShellSuspended] = useState(false);
+  useEffect(() => {
+    if (!wantShellSuspend) {
+      setShellSuspended(false);
+      return;
+    }
+    const id = setTimeout(() => setShellSuspended(true), 300);
+    return () => clearTimeout(id);
+  }, [wantShellSuspend]);
+
   const isMobilePreview = useMobilePreview();
 
   // Forward every commit to window.__PERF__ when present (set up by
@@ -337,7 +363,8 @@ export default function App() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={language}
-              className="flex flex-1 overflow-hidden"
+              inert={shellSuspended || undefined}
+              className={`flex flex-1 overflow-hidden${shellSuspended ? ' shell-suspended' : ''}`}
               initial={shouldAnimate ? { opacity: 0, y: 4 } : false}
               animate={{ opacity: 1, y: 0 }}
               exit={shouldAnimate ? { opacity: 0 } : { opacity: 1 }}

@@ -1894,6 +1894,14 @@ body[data-drag-active="true"] * {
   animation: expand-in 150ms ease-out both;
 }
 
+/* C5 — the app shell under a fully-opaque tray overlay (monitor / quick
+   answer / schedules). Skips paint, hit-testing and the a11y tree for the
+   entire subtree while React state and scroll offsets stay alive; the
+   element itself keeps its flex size, so nothing reflows on toggle. */
+.shell-suspended {
+  content-visibility: hidden;
+}
+
 .animate-fade-in {
   animation: fade-in 150ms ease-out both;
 }
