@@ -375,15 +375,10 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
             connected" are different facts and sending the user hunting for the
             former when it is the latter is the whole defect this avoids.
 
-            "Unwired" means source === 'home': neither a workspace pairing nor
-            the repo manifest resolved a library, and the async manifest probe
-            has SETTLED — a manifest-resolved root counts as wired, and while
-            the probe is in flight (source null) nothing is claimed yet.
-
             Preset skills are exempt: they are installer-bundled (SYSTEM_SKILLS)
             and must keep working with no registry at all, which is what makes
             the app usable before any of this is set up. */}
-        {libTab === 'custom' && library.source === 'home' ? (
+        {libTab === 'custom' && !library.registry ? (
           <div className="py-8 px-4 text-center flex flex-col items-center gap-2">
             <p className="typo-body text-foreground">{d.skills_library_unwired_title}</p>
             <p className="typo-caption text-foreground/70 max-w-sm">

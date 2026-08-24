@@ -25,7 +25,6 @@ import { SkillActionConfirm } from '../SkillActionConfirm';
 import { cellKey, type RegistryMode } from './registryTypes';
 import { useProjectRegistry } from './useProjectRegistry';
 import { useSkillsRegistry } from './useSkillsRegistry';
-import { RegistryGhosts } from './RegistryHeatmapCells';
 import { RegistryHeatmap } from './RegistryHeatmap';
 
 function Hint({ children }: { children: React.ReactNode }) {
@@ -99,11 +98,8 @@ export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }:
     const column = columnById.get(columnId);
     if (!column?.rootPath) return;
     const full = axis === 'project' ? [args, column.name].filter(Boolean).join(' ') : args;
-    // No tick bump here: a dispatch only changes which cells are RUNNING, and
-    // the model hooks watch sessions on their own decoupled poll — re-fetching
-    // the whole listSkills fan-out for a run lock was the freeze pattern.
     void spawnSession(column.rootPath, [skillCommand(skill, full)])
-      .then(() => { addToast(tx(d.skills_registry_dispatched, { skill }), 'success'); })
+      .then(() => { addToast(tx(d.skills_registry_dispatched, { skill }), 'success'); setTick((n) => n + 1); })
       .catch(toastCatch('registry use'));
   }, [columnById, axis, addToast, tx, d]);
 
@@ -114,22 +110,8 @@ export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }:
     setPending(null);
   };
 
-  // Stable handlers so the memoized RegistryRow leaves don't re-render on
-  // unrelated host state (pending/adopting churn).
-  const openAdopt = useCallback(
-    (skill: string, columnId: string) => setPending({ kind: 'adopt', skill, columnId, columnName: columnById.get(columnId)?.name ?? '' }),
-    [columnById],
-  );
-  const openUse = useCallback(
-    (skill: string, columnId: string) => setPending({ kind: 'use', skill, columnId, columnName: columnById.get(columnId)?.name ?? '' }),
-    [columnById],
-  );
-
   if (axis === 'workspace' && !model.header) return <Hint>{d.skills_registry_no_workspace}</Hint>;
   if (model.columns.length === 0) {
-    // Cold load: the column axis is still being fetched (project mode derives
-    // it from contexts) — a calm ghost, never the settled "no data" hint.
-    if (model.loading) return <RegistryGhosts columns={6} />;
     return <Hint>{axis === 'project' ? d.skills_registry_no_contexts : d.skills_registry_no_projects}</Hint>;
   }
 
@@ -149,8 +131,8 @@ export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }:
         <RegistryHeatmap
           model={model}
           adopting={adopting}
-          onAdopt={openAdopt}
-          onUse={openUse}
+          onAdopt={(skill, columnId) => setPending({ kind: 'adopt', skill, columnId, columnName: columnById.get(columnId)?.name ?? '' })}
+          onUse={(skill, columnId) => setPending({ kind: 'use', skill, columnId, columnName: columnById.get(columnId)?.name ?? '' })}
           onOpenInfo={onOpenInfo}
         />
       </div>

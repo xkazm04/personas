@@ -1,11 +1,11 @@
 // Skill Launch data spine — one skill x the workspace's projects, with a
 // launch affordance per cell.
 //
-// Rows come from the same library every Skills tab reads: `useRegistryLibrary`
-// resolves the wired registry's `skills/` lane when the workspace holds one,
-// and otherwise falls back to the lane the active project's repo declares in
-// `.ai/manifest.yaml` (the fallback used to live inline here; it moved into
-// the hook so Overview/Registry/Trace resolve identically).
+// Rows come from the same library the Registry matrix reads (the wired
+// registry's `skills/` lane when the workspace holds one), with a manifest
+// fallback: when no registry is paired but the active project's repo declares
+// one (`.ai/manifest.yaml`), `skillFilesRegistryRoot` resolves the lane from
+// the manifest so the Launch tab still shows the org catalogue.
 //
 // Per (selected skill, project) cell: installed? (with version/syncState),
 // adopting? (local in-flight install), running? (a live Fleet session in that
@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   installSkill, installSystemSkill, listSkills, listSkillsGlobal,
-  type SkillEntry,
+  skillFilesRegistryRoot, type SkillEntry,
 } from '@/api/devTools/devTools';
 import { listSessions } from '@/api/fleet/fleet';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
@@ -129,7 +129,7 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
   const { workspaces } = useWorkspaces();
   const allProjects = useSystemStore((s) => s.projects);
   const storeSessions = useSystemStore((s) => s.fleetSessions);
-  const { libraryRoot, source: librarySource } = useRegistryLibrary(activeProjectId);
+  const { libraryRoot } = useRegistryLibrary(activeProjectId);
 
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
@@ -155,20 +155,26 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
     return members.length > 0 ? members : allProjects.filter((p) => p.status === 'active');
   }, [workspace, allProjects]);
 
+  const activeProject = useMemo(
+    () => (activeProjectId ? allProjects.find((p) => p.id === activeProjectId) ?? null : null),
+    [allProjects, activeProjectId],
+  );
+
   // -- Skill list + per-project support map (fan-out, bounded).
   const firstFetchDone = useRef(false);
   useEffect(() => {
     let alive = true;
     if (!firstFetchDone.current) setLoading(true);
-    // Library resolution (registry > repo manifest > home) lives in
-    // useRegistryLibrary; a null source means its manifest probe is still in
-    // flight — hold the fetch so we never briefly paint the home library.
-    if (librarySource === null) return () => { alive = false; };
-    // Both roots null (source 'home') = nothing wired anywhere.
-    setRegistryWired(libraryRoot != null);
     void (async () => {
+      let root = libraryRoot;
+      if (!root && activeProject) {
+        root = await skillFilesRegistryRoot(activeProject.root_path)
+          .catch((e) => { silentCatch('skillLaunch registry root')(e); return null; });
+      }
+      if (!alive) return;
+      setRegistryWired(root != null);
       const [globalSkills, perInstalled] = await Promise.all([
-        listSkillsGlobal(libraryRoot).catch((e) => { silentCatch('skillLaunch library')(e); return [] as SkillEntry[]; }),
+        listSkillsGlobal(root).catch((e) => { silentCatch('skillLaunch library')(e); return [] as SkillEntry[]; }),
         mapWithConcurrency(wsProjects, 6, async (p) => ({
           pid: p.id,
           installed: await listSkills(p.id).catch((e) => { silentCatch('skillLaunch listSkills')(e); return [] as SkillEntry[]; }),
@@ -183,7 +189,7 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspace?.id, wsProjects.length, libraryRoot, librarySource, tick]);
+  }, [workspace?.id, wsProjects.length, libraryRoot, activeProject?.root_path, tick]);
 
   // -- Fleet liveness. The store's fleetSessions can be stale when the Fleet
   // tab was never opened (listeners attach there), so poll the registry

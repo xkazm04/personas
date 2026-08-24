@@ -41,9 +41,7 @@ export interface SkillsManagerData {
   /**
    * WHERE the library above came from, and whether a registry is wired at all.
    * Surfaces must distinguish "the registry publishes no skills" from "no
-   * registry is connected"; only this can tell them apart. `library.source`
-   * is the settled provenance (registry / manifest / home) — a manifest-
-   * resolved root counts as wired, and null means still resolving.
+   * registry is connected"; only this can tell them apart.
    */
   library: RegistryLibrary;
   /** The active project's installed skills, name-asc, with meta — the
@@ -112,17 +110,13 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
   }, [refreshTick]);
 
   useEffect(() => {
-    // Headed at the registry lane when one is wired (workspace pairing or the
-    // repo manifest); the home library otherwise. A null source means the
-    // hook's manifest probe is still in flight — hold the fetch rather than
-    // briefly painting the home library against the wrong provenance.
-    if (library.source === null) return;
     let alive = true;
+    // Headed at the registry lane when one is wired; the home library otherwise.
     listSkillsGlobal(library.libraryRoot)
       .then((rows) => { if (alive) setWorkspaceSkills([...rows].sort((a, b) => a.name.localeCompare(b.name))); })
       .catch(silentCatch('skillsManager global list'));
     return () => { alive = false; };
-  }, [refreshTick, library.libraryRoot, library.source]);
+  }, [refreshTick, library.libraryRoot]);
 
   useEffect(() => {
     if (!activeProjectId) { setCoverage([]); setTotalContexts(0); setProjectSkills([]); return; }

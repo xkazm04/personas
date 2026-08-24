@@ -1,13 +1,7 @@
 // Skill history — the unified run log (Fleet skill dispatches + legacy Idea
 // Scanner rows). Generalized from the scanner's ScanHistoryTable.
-//
-// The log is windowed: only the first PAGE_SIZE rows render (progressively
-// revealed), and "load more" appends another page — so DOM cost stays flat
-// as skill use grows while the header still reports the full count.
-import { useMemo, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 
-import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -32,16 +26,6 @@ function formatDuration(row: SkillRunRow): string {
   if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
   if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m`;
   return `${(ms / 3_600_000).toFixed(1)}h`;
-}
-
-/** Rows rendered per page — "load more" appends another page. */
-const PAGE_SIZE = 50;
-
-/** Column-header cell — module-scoped so headers don't remount per render. */
-function H({ children, right }: { children: React.ReactNode; right?: boolean }) {
-  return (
-    <span className={`text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 ${right ? 'text-right' : ''}`}>{children}</span>
-  );
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -100,15 +84,13 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
     return typeof v === 'string' ? v : s;
   };
 
-  // Windowed page of the (potentially long) run log — DOM stays bounded while
-  // the header count reports the full history.
-  const [limit, setLimit] = useState(PAGE_SIZE);
-  const visible = useMemo(() => runs.slice(0, limit), [runs, limit]);
+  // The run log can hold dozens of rows in a scroll well — reveal them across
+  // a short window instead of mounting all at once (loading-pattern v2 §3).
+  const reveal = useProgressiveReveal(runs.length, { initialCount: 12 });
 
-  // Reveal the visible page across a short window instead of mounting all at
-  // once (loading-pattern v2 §3); "load more" growth is chased and animated.
-  const reveal = useProgressiveReveal(visible.length, { initialCount: 12 });
-  const shown = useMemo(() => visible.slice(0, reveal.count), [visible, reveal.count]);
+  const H = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
+    <span className={`text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 ${right ? 'text-right' : ''}`}>{children}</span>
+  );
 
   return (
     <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="skill-history">
@@ -130,7 +112,7 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
           <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_history_empty}</p>
         )}
         <ul>
-          {shown.map((row) => (
+          {runs.slice(0, reveal.count).map((row) => (
             <li key={`${row.kind}-${row.id}`} className={`${GRID} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
               <SkillCell row={row} onOpenInfo={onOpenInfo} />
               <span
@@ -166,21 +148,6 @@ export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
             </li>
           ))}
         </ul>
-        {runs.length > limit && (
-          <div className="py-2 flex justify-center">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setLimit((l) => l + PAGE_SIZE)}
-              data-testid="skill-history-load-more"
-            >
-              {/* Deliberate reuse: dev_runner.load_more IS this string ("Load
-                  more"), same `plugins` section chunk — a dedicated duplicate
-                  key would add 14 locale rows for identical copy. */}
-              {t.plugins.dev_runner.load_more}
-            </Button>
-          </div>
-        )}
       </div>
     </section>
   );

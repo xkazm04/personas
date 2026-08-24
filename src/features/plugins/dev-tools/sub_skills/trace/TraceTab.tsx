@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { SkillTreeView } from './SkillTreeView';
@@ -22,7 +21,6 @@ export interface TraceTabProps {
 
 export function TraceTab({ activeProjectId, onOpenInfo }: TraceTabProps) {
   const { t, tx } = useTranslation();
-  const reduced = useReducedMotion();
   const model = useSkillTraceModel(activeProjectId);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
 
@@ -50,11 +48,10 @@ export function TraceTab({ activeProjectId, onOpenInfo }: TraceTabProps) {
           {tx(t.plugins.dev_tools.trace_summary, { projects: model.projects.length })}
         </span>
       </div>
-      {/* one-shot crossfade on level change (matrix ⇄ tree); CircuitWires
-          precedent — reduced motion skips the entrance entirely */}
+      {/* one-shot crossfade on level change (matrix ⇄ tree) */}
       <motion.div
         key={selectedSkill ?? 'overview'}
-        initial={reduced ? false : { opacity: 0, y: 6 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
         className="flex-1 min-h-0 flex flex-col"

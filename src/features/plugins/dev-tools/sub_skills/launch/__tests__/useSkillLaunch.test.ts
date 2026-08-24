@@ -7,7 +7,6 @@ import {
   argsInvokeSkill, composeLaunchAsk, deriveLaunchStatus, parseArgumentHint,
   launchKey, normPath, sessionRunsSkill,
 } from '../useSkillLaunch';
-import { resolveLibraryRoot } from '../../../sub_workspaces/registry/useRegistryLibrary';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 describe('deriveLaunchStatus', () => {
@@ -127,36 +126,5 @@ describe('parseArgumentHint', () => {
     expect(parseArgumentHint('[init|scan|run|benchmark|recall|backlog] [args]'))
       .toEqual(['[init|scan|run|benchmark|recall|backlog]', '[args]']);
     expect(parseArgumentHint('[boot|gate|audit|recall]')).toEqual(['[boot|gate|audit|recall]']);
-  });
-});
-
-// Library-root resolution order (registry pairing > repo manifest > home).
-// The resolver lives in useRegistryLibrary because every Skills tab reads it;
-// it is tested here because the Launch tab is where the manifest lane was
-// first load-bearing (its inline fallback moved into the hook).
-describe('resolveLibraryRoot', () => {
-  const reg = 'C:/clones/ai-registry/skills';
-  const man = 'C:/dev/repo/../ai-registry/skills';
-
-  it('pairing root wins over a manifest root, settled or not', () => {
-    expect(resolveLibraryRoot({ registryRoot: reg, manifestRoot: man, manifestSettled: true }))
-      .toEqual({ libraryRoot: reg, source: 'registry' });
-    expect(resolveLibraryRoot({ registryRoot: reg, manifestRoot: null, manifestSettled: false }))
-      .toEqual({ libraryRoot: reg, source: 'registry' });
-  });
-
-  it('is unsettled (source null, no root) while the manifest probe is in flight', () => {
-    expect(resolveLibraryRoot({ registryRoot: null, manifestRoot: null, manifestSettled: false }))
-      .toEqual({ libraryRoot: null, source: null });
-  });
-
-  it('falls back to the manifest root once the probe settles', () => {
-    expect(resolveLibraryRoot({ registryRoot: null, manifestRoot: man, manifestSettled: true }))
-      .toEqual({ libraryRoot: man, source: 'manifest' });
-  });
-
-  it('settles to home (null root) when neither lane resolves', () => {
-    expect(resolveLibraryRoot({ registryRoot: null, manifestRoot: null, manifestSettled: true }))
-      .toEqual({ libraryRoot: null, source: 'home' });
   });
 });

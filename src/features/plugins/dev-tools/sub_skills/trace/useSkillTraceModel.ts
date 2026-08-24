@@ -207,16 +207,11 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
     return (i != null ? matrix.cells.get(skillName)?.[i] : undefined) ?? EMPTY_CELL;
   }, [matrix, projectIndex]);
 
-  const header = useMemo(
-    () => (workspace ? { id: workspace.id, name: workspace.name, color: workspace.color ?? null } : null),
-    [workspace],
-  );
-
-  // Stable model identity: consumers memo derived aggregates (column totals,
-  // tree scenes) on the model object, so it must only change when data does —
-  // a fresh literal per render silently defeated every one of those memos.
-  return useMemo(
-    () => ({ header, projects: wsProjects, skills, cell, loading: f.loading }),
-    [header, wsProjects, skills, cell, f.loading],
-  );
+  return {
+    header: workspace ? { id: workspace.id, name: workspace.name, color: workspace.color ?? null } : null,
+    projects: wsProjects,
+    skills,
+    cell,
+    loading: f.loading,
+  };
 }

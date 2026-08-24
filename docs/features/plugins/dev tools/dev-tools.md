@@ -134,7 +134,7 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 > scan lane (`idea_scanner.rs`, `dev_tools_run_scan`, `dev_scans`/`dev_ideas`) is
 > **kept** — Context Map, Mastermind and the triage sweeps still drive it.
 
-The **Skills** tab (`sub_skills/`) now has five page tabs (Overview | Analytics | Registry | Launch | Trace). All five resolve the skill library through ONE seam (`useRegistryLibrary`): the workspace's paired registry lane, else the project repo's `.ai/manifest.yaml` `registry.local` (2026-08-24 — previously only Launch had the manifest fallback, so Overview/Registry showed "No registry connected" on manifest-linked repos). A same-day performance pass: Analytics defers its below-the-fold panels (lazyRetry chunks mounting on visibility/idle) and windows the run history at 50 rows with Load more; the Registry heatmap got memoized rows/cells, content-visibility windowing, and a 10s run-lock poll decoupled from the structural fan-out; Trace matched the Launch tab's token register (Tooltip over native title=, reduced-motion-guarded entrances, memoized models).
+The **Skills** tab (`sub_skills/`) now has five page tabs (Overview | Analytics | Registry | Launch | Trace):
 
 **Launch** (2026-08-23; consolidated to the Circuit winner 2026-08-24) — a skill-first
 launch surface: pick ONE registry skill from a name-sorted dropdown (source = the

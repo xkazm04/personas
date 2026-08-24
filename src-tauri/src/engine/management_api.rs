@@ -2482,6 +2482,11 @@ struct KpRequestOrigin {
     job_title: String,
     #[serde(default)]
     workspace: Option<String>,
+    /// The kp intake session the hire came from. An App-master hire composed in
+    /// the intake dialog has NO job — kp sends `jobId: ""` with this as the
+    /// walk-back handle (P4-kp, 2026-08-23), so validation accepts either.
+    #[serde(default)]
+    intake_id: Option<String>,
 }
 
 /// One success metric KP attaches to the hire ("time-to-fill < 14 days").
@@ -2708,7 +2713,21 @@ fn validate_kp_persona_request(body: &KpPersonaRequestBody) -> Result<(), String
     if base.chars().count() > 500 || base.chars().any(char::is_whitespace) {
         return Err("`kp.baseUrl` is not a sane URL".into());
     }
-    req("kp.jobId", &body.kp.job_id, 128)?;
+    // An App-master hire from the kp intake dialog carries no job: kp sends
+    // `jobId: ""` + `intakeId` (its P4 sentinel). Refusing the empty jobId here
+    // failed every intake-originated dispatch on first live contact
+    // (bench sweep #4, 2026-08-24). One of the two handles must be present.
+    let intake_handle = body.kp.intake_id.as_deref().map(str::trim).unwrap_or("");
+    if body.kp.job_id.trim().is_empty() {
+        if body.app_master.is_none() || intake_handle.is_empty() {
+            return Err("`kp.jobId` must not be empty (or send `appMaster` + `kp.intakeId` for an intake-originated hire)".into());
+        }
+        if intake_handle.chars().count() > 128 {
+            return Err("`kp.intakeId` exceeds 128 characters".into());
+        }
+    } else {
+        req("kp.jobId", &body.kp.job_id, 128)?;
+    }
     req("kp.jobTitle", &body.kp.job_title, 300)?;
     opt("kp.workspace", body.kp.workspace.as_deref(), 200)?;
     req("reportToken", &body.report_token, 500)?;
@@ -3637,6 +3656,33 @@ mod tests {
         // The additive contract: a body with no `appMaster` is unchanged.
         assert!(kp_body().app_master.is_none());
         assert_eq!(validate_kp_persona_request(&kp_body()), Ok(()));
+    }
+
+    #[test]
+    fn an_intake_originated_hire_has_no_job_and_still_validates() {
+        // kp's P4 sentinel: an App-master hire composed in the intake dialog
+        // sends `jobId: ""` + `kp.intakeId`. Refusing it failed every live
+        // intake dispatch (bench sweep #4, 2026-08-24).
+        let mut b = kp_app_master_body();
+        b.kp.job_id = String::new();
+        b.kp.intake_id = Some("intake-abc123".into());
+        assert_eq!(validate_kp_persona_request(&b), Ok(()));
+
+        // But an empty jobId with NO appMaster (old shape) stays refused…
+        let mut old = kp_body();
+        old.kp.job_id = String::new();
+        old.kp.intake_id = Some("intake-abc123".into());
+        assert!(validate_kp_persona_request(&old)
+            .unwrap_err()
+            .contains("kp.jobId"));
+
+        // …and so does an App-master body with NEITHER handle.
+        let mut none = kp_app_master_body();
+        none.kp.job_id = String::new();
+        none.kp.intake_id = None;
+        assert!(validate_kp_persona_request(&none)
+            .unwrap_err()
+            .contains("kp.jobId"));
     }
 
     #[test]

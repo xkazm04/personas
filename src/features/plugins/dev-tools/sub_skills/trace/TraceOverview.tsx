@@ -11,7 +11,7 @@ import { Globe, Info, Network } from 'lucide-react';
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TraceEmberCell } from './TraceEmberCell';
@@ -35,16 +35,6 @@ const TIER_SWATCH: Record<HeatTier, string> = {
 export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOverviewProps) {
   const { t, tx } = useTranslation();
   const reveal = useRevealTracker(model.header?.id);
-  // Progressive row MOUNTING (RegistryHeatmap parity): each row is
-  // projects-many interactive ember cells; hand rows to the renderer in
-  // chunks instead of big-banging the whole matrix onto one frame.
-  const mount = useProgressiveReveal(model.skills.length, {
-    initialCount: 15,
-    minChunk: 8,
-    intervalMs: 80,
-    resetKey: model.header?.id,
-  });
-  const shown = useMemo(() => model.skills.slice(0, mount.count), [model.skills, mount.count]);
   const showGhost = model.loading && model.skills.length === 0;
   const settledEmpty = !model.loading && model.skills.length === 0;
 
@@ -55,20 +45,18 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
 
   return (
     <div className="flex flex-col min-h-0 h-full">
-      <div className="flex flex-col min-h-0 flex-1 rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
+      <div className="flex flex-col min-h-0 flex-1 rounded-card border border-border/60 bg-secondary/[0.15] overflow-hidden">
         <div className="overflow-auto flex-1 min-h-0">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10">
               <tr className="bg-secondary/90 backdrop-blur-sm">
-                <th className="text-left typo-caption text-foreground font-medium px-3 py-2 border-b-2 border-primary/15">
+                <th className="text-left typo-caption text-foreground font-medium px-3 py-2 border-b-2 border-border">
                   {tx(t.plugins.dev_tools.trace_skills_count, { count: model.skills.length })}
                 </th>
-                <th className="typo-caption text-foreground font-medium pr-2 py-2 border-b-2 border-primary/15 text-right w-12">v</th>
+                <th className="typo-caption text-foreground font-medium pr-2 py-2 border-b-2 border-border text-right w-12">v</th>
                 {model.projects.map((p) => (
-                  <th key={p.id} className="typo-caption text-foreground font-medium px-1 py-2 border-b-2 border-primary/15 border-l border-primary/10 max-w-[76px]">
-                    <Tooltip content={p.name}>
-                      <span className="block truncate">{p.name}</span>
-                    </Tooltip>
+                  <th key={p.id} className="typo-caption text-foreground font-medium px-1 py-2 border-b-2 border-border border-l border-border/20 max-w-[76px]">
+                    <span className="block truncate" title={p.name}>{p.name}</span>
                   </th>
                 ))}
               </tr>
@@ -77,35 +65,31 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
               {showGhost ? (
                 <tr><td colSpan={model.projects.length + 2} className="p-3"><TraceGhosts columns={model.projects.length} /></td></tr>
               ) : (
-                shown.map((s, rowIdx) => {
+                model.skills.map((s, rowIdx) => {
                   // Icon encodes the METHOD's scope, not the skill's brand:
                   // context-tracked (walks the context map) vs agnostic.
                   const Icon = s.contextTracked ? Network : Globe;
-                  const nameButton = (
-                    <button
-                      type="button"
-                      onClick={() => onSelectSkill(s.name)}
-                      className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
-                    >
-                      <Icon size={16} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
-                      <span className="typo-body truncate">{s.name}</span>
-                    </button>
-                  );
                   return (
                     <RevealItem
                       key={s.name}
                       as="tr"
                       revealId={s.name}
-                      order={rowIdx - mount.newSince}
+                      order={rowIdx}
                       hasEntered={reveal.hasEntered}
                       markEntered={reveal.markEntered}
                       className={`group ${rowIdx % 2 === 1 ? 'bg-secondary/25' : ''} hover:bg-primary/5 transition-colors`}
                     >
-                      <td className="px-3 py-1 border-b border-primary/10">
+                      <td className="px-3 py-1 border-b border-border/40">
                         <div className="flex items-center gap-2 min-w-48">
-                          {s.contextTracked
-                            ? <Tooltip content={t.plugins.dev_tools.skills_info_context_tracked}>{nameButton}</Tooltip>
-                            : nameButton}
+                          <button
+                            type="button"
+                            onClick={() => onSelectSkill(s.name)}
+                            className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
+                            title={s.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
+                          >
+                            <Icon size={16} style={s.visual ? { color: s.visual.color } : undefined} className="shrink-0" />
+                            <span className="typo-body truncate">{s.name}</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => onOpenInfo(s.name)}
@@ -116,7 +100,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                           </button>
                         </div>
                       </td>
-                      <td className="pr-2 py-1 border-b border-primary/10 text-right">
+                      <td className="pr-2 py-1 border-b border-border/40 text-right">
                         <span className="typo-data tabular-nums">{s.libraryVersion ?? '1.0'}</span>
                       </td>
                       {model.projects.map((p) => {
@@ -128,7 +112,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                         const mismatch = cell.adopted
                           && (cell.installedVersion ?? '1.0') !== (s.libraryVersion ?? '1.0');
                         return (
-                          <td key={p.id} className="text-center py-1 border-b border-primary/10 border-l border-primary/10">
+                          <td key={p.id} className="text-center py-1 border-b border-border/40 border-l border-border/20">
                             <span className="inline-flex items-center">
                               <TraceEmberCell cell={cell} accent={s.visual?.color ?? null} onClick={() => onSelectSkill(s.name)} />
                               {mismatch && (
@@ -150,7 +134,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                 <tr className="bg-secondary/60">
                   <td className="px-3 py-1.5 typo-caption text-foreground text-right" colSpan={2}>30d</td>
                   {columnTotals.map((n, i) => (
-                    <td key={model.projects[i]?.id ?? i} className="text-center typo-data tabular-nums py-1.5 border-l border-primary/10">
+                    <td key={model.projects[i]?.id ?? i} className="text-center typo-data tabular-nums py-1.5 border-l border-border/20">
                       {n > 0 ? n : <span aria-hidden>·</span>}
                     </td>
                   ))}

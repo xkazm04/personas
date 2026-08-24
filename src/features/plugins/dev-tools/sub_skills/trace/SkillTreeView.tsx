@@ -10,8 +10,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Globe, Network } from 'lucide-react';
 
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DRIFT_FILL, DRIFT_ORDER } from './driftTokens';
@@ -31,8 +29,6 @@ const CHIP_H = 34;
 
 export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps) {
   const { t, tx } = useTranslation();
-  // CircuitWires precedent: reduced motion skips the one-shot draws/springs.
-  const reduced = useReducedMotion();
   const [hovered, setHovered] = useState<string | null>(null);
   // Icon encodes the method's scope (context-tracked vs agnostic), mirroring
   // the Level-1 rows; the skill's accent colour still identifies the family.
@@ -57,21 +53,15 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
           <ArrowLeft size={13} />
           {t.plugins.dev_tools.trace_back}
         </button>
-        {(() => {
-          const infoButton = (
-            <button
-              type="button"
-              onClick={() => onOpenInfo(model.skillName)}
-              className="inline-flex items-center gap-2 hover:text-primary transition-colors"
-            >
-              <Icon size={18} style={accent ? { color: accent } : undefined} />
-              <span className="typo-title">{model.skillName}</span>
-            </button>
-          );
-          return model.contextTracked
-            ? <Tooltip content={t.plugins.dev_tools.skills_info_context_tracked}>{infoButton}</Tooltip>
-            : infoButton;
-        })()}
+        <button
+          type="button"
+          onClick={() => onOpenInfo(model.skillName)}
+          className="inline-flex items-center gap-2 hover:text-primary transition-colors"
+          title={model.contextTracked ? t.plugins.dev_tools.skills_info_context_tracked : undefined}
+        >
+          <Icon size={18} style={accent ? { color: accent } : undefined} />
+          <span className="typo-title">{model.skillName}</span>
+        </button>
         <span className="typo-caption text-foreground">
           {tx(t.plugins.dev_tools.trace_tree_stats, { projects: model.branches.length, invokes: model.totalInvokes })}
         </span>
@@ -99,13 +89,13 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
                 strokeWidth={1.25 + 2.5 * Math.sqrt(Math.max(0, Math.min(1, b.weight)))}
                 strokeDasharray={b.invokes30d === 0 ? '3 5' : undefined}
                 className="stroke-foreground/45"
-                initial={reduced ? false : { pathLength: 0 }}
+                initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
                 transition={{ duration: 0.4, delay: i * 0.04, ease: 'easeOut' }}
               />
               {/* mid-branch measurement: the 30d run count, lettered */}
               {b.invokes30d > 0 && (
-                <motion.g initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 + i * 0.04 }}>
+                <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 + i * 0.04 }}>
                   <rect x={mid.x - 14} y={mid.y - 9} width={28} height={16} rx={3} className="fill-background stroke-border" strokeWidth={0.75} />
                   <text x={mid.x} y={mid.y + 3} textAnchor="middle" fontSize={10} className="fill-foreground tabular-nums">
                     {b.invokes30d}×
@@ -114,7 +104,7 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
               )}
               {/* project chip */}
               <motion.g
-                initial={reduced ? false : { opacity: 0, scale: 0.7 }}
+                initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 + i * 0.04, type: 'spring', stiffness: 220, damping: 20 }}
                 style={{ transformOrigin: `${g.node.x}px ${g.node.y}px` }}
@@ -143,7 +133,7 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
         })}
 
         {/* title-block core stamp — drawn last so branch roots tuck under it */}
-        <motion.g initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <rect x={CORE_X - 62} y={CORE_Y - 24} width={124} height={48} rx={6}
             className="fill-secondary" strokeWidth={1.5} style={{ stroke: accent ?? 'currentColor' }} />
           <line x1={CORE_X - 62} y1={CORE_Y} x2={CORE_X + 62} y2={CORE_Y} className="stroke-border" strokeWidth={0.75} />
