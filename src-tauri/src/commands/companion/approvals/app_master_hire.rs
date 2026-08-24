@@ -274,7 +274,7 @@ pub(crate) fn app_master_intent(
         .unwrap_or(30);
     out.push_str(&format!(
         "\nTENURE: you start on PROBATION for {probation} days, with the project on \
-         `suggest` autopilot — you find, triage and propose, and you do not spend on \
+         `full` autopilot inside your mandate — you author real proposals on branches, never merge, and do not spend on \
          dispatched fixes. At the end of probation a human reviews a deterministic record \
          of what you did (proposals, gate pass rate, forbidden-class violations, KPI \
          movement, budget) and activates, extends or retires you.\n"
@@ -801,16 +801,21 @@ fn install_triggers(
 // (f)+(g) autopilot probation + the persisted mandate
 // ---------------------------------------------------------------------------
 
-/// Put the project on `suggest` — probation. `suggest` is precisely "finds,
-/// triages and proposes; never spends on dispatched fixes", which is what
-/// probation means for this role. Never `full`: activation is a human decision
-/// at the probation review.
+/// Put the project on `full` — probation WITH authoring. The first live run
+/// (2026-08-24, kp hiring its own App master) proved `suggest` makes probation
+/// unpassable: the Overnight engine dispatches nothing on `suggest`, so
+/// delivery/durability/gates stay unmeasured forever and the verdict can only
+/// be `incomplete`. Per proposal-not-push, authoring on branches IS the safe
+/// autonomous act — the mandate (rung ≤ 2 + forbidden classes + branch-only
+/// guardrail) carries the safety and the human gate sits at MERGE. The
+/// probation review now decides whether the tenure CONTINUES, not whether
+/// authoring begins.
 fn set_probation_autopilot(db: &crate::db::DbPool, project_id: &str, notes: &mut Vec<String>) {
     let key = personas_engine::autopilot::setting_key(project_id);
-    match crate::db::repos::core::settings::set(db, &key, AutopilotMode::Suggest.as_str()) {
-        Ok(()) => notes.push("project autopilot set to `suggest` (probation)".into()),
+    match crate::db::repos::core::settings::set(db, &key, AutopilotMode::Full.as_str()) {
+        Ok(()) => notes.push("project autopilot set to `full` (probation with authoring — branch-only, mandate-enforced)".into()),
         Err(e) => notes.push(format!(
-            "could not set the project's autopilot to `suggest`: {e} — the project keeps \
+            "could not set the project's autopilot to `full`: {e} — the project keeps \
              its previous mode, which may be more or less permissive than probation"
         )),
     }
@@ -1090,7 +1095,7 @@ mod tests {
         assert!(i.contains("ana@example.com"), "{i}");
         assert!(i.contains("0 2 * * *"), "{i}");
         assert!(i.contains("30 days"), "{i}");
-        assert!(i.contains("`suggest` autopilot"), "{i}");
+        assert!(i.contains("`full` autopilot inside your mandate"), "{i}");
         assert!(i.contains("no merged proposal in two windows"), "{i}");
     }
 
