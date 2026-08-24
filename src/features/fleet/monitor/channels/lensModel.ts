@@ -150,39 +150,59 @@ export interface Facet<T> {
  * Facet counts for the rail. Each dimension is counted against the rows that
  * survive the OTHER dimensions — so a count tells you "selecting this adds N
  * rows to what you're already looking at", not a misleading global total.
+ *
+ * SINGLE PASS (C3). The original ran `matchesLens` under three lens variants
+ * as three full filter passes plus 14 per-value `filter().length` scans —
+ * O(14·N) over the whole merged history on every lens or data change. Each
+ * per-dimension predicate is independent, so one walk computes the four match
+ * bits per row and feeds all three tallies. Semantics are identical.
  */
 export function facetCounts(
   rows: TaggedItem[],
   lens: LensState,
   nameOf: (personaId: string | null) => string | undefined,
 ) {
-  const without = (patch: Partial<LensState>) => {
-    const l = { ...lens, ...patch };
-    return rows.filter((r) => matchesLens(r, l, nameOf));
-  };
+  const kindTally = new Map<ChannelKind, number>();
+  const famTally = new Map<EventFamily, number>();
+  const signTally = new Map<string, number>();
+  const q = lens.search.trim().toLowerCase();
 
-  const kindRows = without({ kinds: new Set() });
-  const kinds: Facet<ChannelKind>[] = ALL_KINDS.map((k) => ({
-    key: k,
-    count: kindRows.filter((r) => itemKind(r.item) === k).length,
-  }));
+  for (const r of rows) {
+    const { item } = r;
+    const k = itemKind(item);
+    const fam = rowFamily(item);
 
-  const famRows = without({ families: new Set() });
-  const families: Facet<EventFamily>[] = ALL_FAMILIES.map((f) => ({
-    key: f,
-    count: famRows.filter((r) => rowFamily(r.item) === f).length,
-  }));
+    const mKind = lens.kinds.size === 0 || lens.kinds.has(k);
+    const mFam = lens.families.size === 0 || (fam !== null && lens.families.has(fam));
+    const mSign =
+      lens.callsigns.size === 0 || (!!item.personaId && lens.callsigns.has(item.personaId));
+    let mSearch = true;
+    if (q) {
+      const hay =
+        `${item.body ?? ''} ${item.label} ${callsign(nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
+      mSearch = hay.includes(q);
+    }
 
-  const signRows = without({ callsigns: new Set() });
-  const counts = new Map<string, number>();
-  for (const r of signRows) {
+    // Each dimension counts against the rows surviving the OTHER dimensions.
+    if (mFam && mSign && mSearch) kindTally.set(k, (kindTally.get(k) ?? 0) + 1);
+    if (fam && mKind && mSign && mSearch) famTally.set(fam, (famTally.get(fam) ?? 0) + 1);
     // Slack rows carry the SLACK user id in `personaId` (the read-model reuses
     // the author_id column). It will never resolve in the persona index, so
     // counting it here would put a nameless "SYSTEM" row in the callsign rail.
-    if (r.item.kind === 'slack') continue;
-    if (r.item.personaId) counts.set(r.item.personaId, (counts.get(r.item.personaId) ?? 0) + 1);
+    if (item.kind !== 'slack' && item.personaId && mKind && mFam && mSearch) {
+      signTally.set(item.personaId, (signTally.get(item.personaId) ?? 0) + 1);
+    }
   }
-  const callsigns: Facet<string>[] = [...counts.entries()]
+
+  const kinds: Facet<ChannelKind>[] = ALL_KINDS.map((k) => ({
+    key: k,
+    count: kindTally.get(k) ?? 0,
+  }));
+  const families: Facet<EventFamily>[] = ALL_FAMILIES.map((f) => ({
+    key: f,
+    count: famTally.get(f) ?? 0,
+  }));
+  const callsigns: Facet<string>[] = [...signTally.entries()]
     .sort((a, b) => b[1] - a[1]) // ranked by traffic volume (the Red Room's rule)
     .map(([key, count]) => ({ key, count }));
 

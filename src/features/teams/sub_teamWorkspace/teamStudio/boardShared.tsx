@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   CircleDashed, Loader2, AlertCircle, CheckCircle2, CircleSlash, XCircle, Wand2,
   ChevronDown, ChevronRight, SkipForward, Ban, RotateCcw, Target,
@@ -128,44 +128,109 @@ export function PersonaStack({ ids, index, max = 4 }: { ids: Array<string | null
   );
 }
 
+/* ----------------------------------------------------------------------------
+ * Shared assignment-steps store (C3).
+ *
+ * The previous hook was per-instance: every mounted card fetched on mount and,
+ * while live, ran its OWN 5s interval — and virtualized timelines mount/unmount
+ * cards on every scroll, so scrolling a busy conversation was a refetch storm
+ * (one IPC per card scrolled into view, N intervals for N visible live cards).
+ *
+ * Now one module-scoped entry per assignmentId: a warm snapshot (a remount
+ * inside the freshness window renders instantly with no fetch), one shared
+ * interval per live assignment regardless of subscriber count, and in-flight
+ * dedupe. Entries are retained after the last unsubscribe on purpose — the
+ * scroll-away/scroll-back cycle is the hot path, and the set is bounded by
+ * assignments actually viewed this session.
+ * -------------------------------------------------------------------------- */
+
+interface StepsSnapshot {
+  steps: TeamAssignmentStep[];
+  loaded: boolean;
+}
+const EMPTY_STEPS: StepsSnapshot = { steps: [], loaded: false };
+
+interface StepsEntry {
+  snapshot: StepsSnapshot;
+  subs: Set<() => void>;
+  liveCount: number;
+  timer: ReturnType<typeof setInterval> | null;
+  inflight: boolean;
+  fetchedAt: number;
+}
+
+const stepsStore = new Map<string, StepsEntry>();
+const STEPS_POLL_MS = 5_000;
+/** A snapshot younger than this satisfies a new subscriber without a fetch. */
+const STEPS_FRESH_MS = 4_000;
+
+function stepsEntry(id: string): StepsEntry {
+  let e = stepsStore.get(id);
+  if (!e) {
+    e = { snapshot: EMPTY_STEPS, subs: new Set(), liveCount: 0, timer: null, inflight: false, fetchedAt: 0 };
+    stepsStore.set(id, e);
+  }
+  return e;
+}
+
+function fetchAssignmentSteps(id: string): void {
+  const e = stepsEntry(id);
+  if (e.inflight) return;
+  e.inflight = true;
+  listTeamAssignmentSteps(id)
+    .then((s) => {
+      e.fetchedAt = Date.now();
+      e.snapshot = { steps: [...s].sort((a, b) => a.stepOrder - b.stepOrder), loaded: true };
+      e.subs.forEach((cb) => cb());
+    })
+    .catch(silentCatch('teams/boardShared:useAssignmentSteps'))
+    .finally(() => {
+      e.inflight = false;
+    });
+}
+
 /**
- * Steps for one assignment, kept fresh: fetch on mount/id change, refetch on a
- * gentle interval while the assignment is in a live status. The global
- * assignment progress listener keeps the assignment rows fresh; this fills the
- * step-level gap for the focused assignment.
+ * Steps for one assignment, kept fresh: warm shared snapshot on mount, one
+ * shared gentle interval per live assignment. The global assignment progress
+ * listener keeps the assignment rows fresh; this fills the step-level gap for
+ * the focused assignment.
  */
 export function useAssignmentSteps(assignmentId: string | null, live: boolean) {
-  const [steps, setSteps] = useState<TeamAssignmentStep[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const subscribe = useCallback(
+    (cb: () => void) => {
+      if (!assignmentId) return () => {};
+      const e = stepsEntry(assignmentId);
+      e.subs.add(cb);
+      if (Date.now() - e.fetchedAt > STEPS_FRESH_MS) fetchAssignmentSteps(assignmentId);
+      if (live) {
+        e.liveCount += 1;
+        if (!e.timer) e.timer = setInterval(() => fetchAssignmentSteps(assignmentId), STEPS_POLL_MS);
+      }
+      return () => {
+        e.subs.delete(cb);
+        if (live) {
+          e.liveCount -= 1;
+          if (e.liveCount <= 0 && e.timer) {
+            clearInterval(e.timer);
+            e.timer = null;
+          }
+        }
+      };
+    },
+    [assignmentId, live],
+  );
 
+  const getSnapshot = useCallback(
+    () => (assignmentId ? stepsEntry(assignmentId).snapshot : EMPTY_STEPS),
+    [assignmentId],
+  );
+
+  const snap = useSyncExternalStore(subscribe, getSnapshot);
   const refresh = useCallback(() => {
-    if (!assignmentId) return;
-    listTeamAssignmentSteps(assignmentId)
-      .then((s) => {
-        setSteps([...s].sort((a, b) => a.stepOrder - b.stepOrder));
-        setLoaded(true);
-      })
-      .catch(silentCatch('teams/boardShared:useAssignmentSteps'));
+    if (assignmentId) fetchAssignmentSteps(assignmentId);
   }, [assignmentId]);
 
-  useEffect(() => {
-    setSteps([]);
-    setLoaded(false);
-    refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    if (timer.current) clearInterval(timer.current);
-    if (live && assignmentId) {
-      timer.current = setInterval(refresh, 5000);
-    }
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [live, assignmentId, refresh]);
-
-  return { steps, loaded, refresh };
+  return { steps: snap.steps, loaded: snap.loaded, refresh };
 }
 
 /* ----------------------------------------------------------------------------

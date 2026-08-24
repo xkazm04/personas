@@ -26,7 +26,6 @@ export function useConversation(teamId: string | null) {
   useChannelSubscription(ids);
   useChannelSubscription(ids, [...DELIB_KINDS]);
 
-  const channels = usePipelineStore((s) => s.channels);
   const loadOlderChannel = usePipelineStore((s) => s.loadOlderChannel);
   const sendChannelDirective = usePipelineStore((s) => s.sendChannelDirective);
   const markChannelSeen = usePipelineStore((s) => s.markChannelSeen);
@@ -35,8 +34,14 @@ export function useConversation(teamId: string | null) {
   const [deliberations, setDeliberations] = useState<TeamDeliberation[]>([]);
   const [proposals, setProposals] = useState<AssignProposal[]>([]);
 
-  const talk = teamId ? channels[channelKey(teamId)] ?? EMPTY_CHANNEL : EMPTY_CHANNEL;
-  const turns = teamId ? channels[channelKey(teamId, [...DELIB_KINDS])] ?? EMPTY_CHANNEL : EMPTY_CHANNEL;
+  // C2: subscribe to this team's two cache entries only — a whole-map selector
+  // made every OTHER team's poll re-render the open conversation. The state
+  // object keeps identity on a quiet refresh (C1), so these selectors bail.
+  const talk =
+    usePipelineStore((s) => (teamId ? s.channels[channelKey(teamId)] : undefined)) ?? EMPTY_CHANNEL;
+  const turns =
+    usePipelineStore((s) => (teamId ? s.channels[channelKey(teamId, [...DELIB_KINDS])] : undefined)) ??
+    EMPTY_CHANNEL;
 
   // The deliberation OBJECTS (topic, status, round, cost) — the turns alone
   // don't carry them.
@@ -135,17 +140,26 @@ export function useConversation(teamId: string | null) {
     if (teamId) markChannelSeen(teamId);
   }, [teamId, markChannelSeen]);
 
-  return {
-    rows,
-    delibIndex,
-    loaded: talk.loaded,
-    posting: talk.posting,
-    hasMore: !talk.exhausted,
-    loadOlder,
-    send,
-    markSeen,
-    addProposal,
-    dropProposal,
-    confirmProposal,
-  };
+  // Memoized so consumers can use the object itself as a dependency —
+  // ConversationBriefing's renderRow previously re-minted every render because
+  // this literal was fresh each time, which re-rendered every visible row.
+  return useMemo(
+    () => ({
+      rows,
+      delibIndex,
+      loaded: talk.loaded,
+      posting: talk.posting,
+      hasMore: !talk.exhausted,
+      loadOlder,
+      send,
+      markSeen,
+      addProposal,
+      dropProposal,
+      confirmProposal,
+    }),
+    [
+      rows, delibIndex, talk.loaded, talk.posting, talk.exhausted,
+      loadOlder, send, markSeen, addProposal, dropProposal, confirmProposal,
+    ],
+  );
 }

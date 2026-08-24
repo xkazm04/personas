@@ -110,7 +110,7 @@ export function ConversationBriefing({
         })
         .catch(silentCatch('conversation:pin'));
     },
-    [activeId, addToast],
+    [activeId, addToast, t.monitor.conv_pinned],
   );
 
   const focusDeliberation = useCallback((id: string) => {
@@ -118,6 +118,18 @@ export function ConversationBriefing({
     setTab('focus');
   }, []);
 
+  const dayWords = useMemo(
+    () => ({ today: t.monitor.conv_day_today, yesterday: t.monitor.conv_day_yesterday }),
+    [t],
+  );
+
+  // C2/C3: renderRow closes over STABLE references only (the memoized conv's
+  // fields, keyed callbacks, the state setter). It previously closed over a
+  // fresh `conv` literal and minted per-row closures, so every poll re-rendered
+  // every visible row; now the memo'd cards bail unless their own row changed.
+  // (`dayWords` was also referenced from here before it was declared — a
+  // missing dep that happened to work by closure timing.)
+  const { delibIndex, confirmProposal, dropProposal } = conv;
   const renderRow = useCallback(
     (row: ConversationRow) => {
       switch (row.kind) {
@@ -137,35 +149,33 @@ export function ConversationBriefing({
               assignmentId={row.assignmentId}
               items={row.items}
               expanded={expanded.has(row.key)}
-              onToggle={() => toggle(row.key)}
+              rowKey={row.key}
+              onToggle={toggle}
             />
           );
         case 'deliberation':
           return (
             <DeliberationCard
-              deliberation={conv.delibIndex.get(row.deliberationId)}
+              deliberation={delibIndex.get(row.deliberationId)}
+              deliberationId={row.deliberationId}
               items={row.items}
               expanded={expanded.has(row.key)}
-              onToggle={() => toggle(row.key)}
-              onFocus={() => focusDeliberation(row.deliberationId)}
+              rowKey={row.key}
+              onToggle={toggle}
+              onFocus={focusDeliberation}
             />
           );
         case 'proposal':
           return (
             <ProposalCard
               proposal={row.proposal}
-              onConfirm={() => void conv.confirmProposal(row.proposal)}
-              onDismiss={() => conv.dropProposal(row.proposal.goal)}
+              onConfirm={() => void confirmProposal(row.proposal)}
+              onDismiss={() => dropProposal(row.proposal.goal)}
             />
           );
       }
     },
-    [expanded, toggle, conv, focusDeliberation],
-  );
-
-  const dayWords = useMemo(
-    () => ({ today: t.monitor.conv_day_today, yesterday: t.monitor.conv_day_yesterday }),
-    [t],
+    [expanded, toggle, delibIndex, focusDeliberation, confirmProposal, dropProposal, dayWords],
   );
 
   const tabClass = (on: boolean) =>

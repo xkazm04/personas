@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { channelKey, mergeHorizon, type ChannelTeamState } from '@/stores/slices/pipeline/channelSlice';
 import { useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
@@ -38,7 +39,6 @@ export function useLensFeed(teams: FeedTeam[], kinds: ChannelKind[] | undefined)
   useChannelSubscription(teamIds, kinds);
 
 
-  const channels = usePipelineStore((s) => s.channels);
   const counts = usePipelineStore((s) => s.channelCounts);
   const loadOlderMerged = usePipelineStore((s) => s.loadOlderMerged);
 
@@ -51,30 +51,64 @@ export function useLensFeed(teams: FeedTeam[], kinds: ChannelKind[] | undefined)
     [kindKey],
   );
 
-  const { rows, loading, hasMore } = useMemo(() => {
-    const states: ChannelTeamState[] = [];
-    const flat: TaggedItem[] = [];
+  // C2: subscribe to THIS lens's cache entries, not the whole channels map.
+  // With the whole-map selector, any other team's (or the deliberation key's)
+  // poll re-rendered the Stream. useShallow over the per-key array bails when
+  // every entry kept identity — which C1's structural refresh guarantees on a
+  // quiet tick.
+  const keys = useMemo(
+    () => teams.map((tm) => channelKey(tm.teamId, stableKinds)),
+    [teams, stableKinds],
+  );
+  const states = usePipelineStore(
+    useShallow((s) => keys.map((k) => s.channels[k])),
+  );
 
-    for (const team of teams) {
-      const st = channels[channelKey(team.teamId, stableKinds)];
-      if (!st) continue;
-      states.push(st);
-      for (const item of st.items) flat.push({ item, team });
-    }
+  // Per-team TaggedItem wrappers, cached by (team, items) identity. Without
+  // this, one team's new row re-minted EVERY team's wrappers and the memo'd
+  // StreamRow never bailed for the untouched teams.
+  const tagCache = useRef(
+    new Map<string, { items: ChannelTeamState['items']; team: FeedTeam; rows: TaggedItem[] }>(),
+  );
+
+  const { rows, loading, hasMore } = useMemo(() => {
+    const live: ChannelTeamState[] = [];
+    const flat: TaggedItem[] = [];
+    const cache = tagCache.current;
+    const seen = new Set<string>();
+
+    teams.forEach((team, i) => {
+      const st = states[i];
+      if (!st) return;
+      live.push(st);
+      seen.add(team.teamId);
+      const hit = cache.get(team.teamId);
+      let tagged: TaggedItem[];
+      if (hit && hit.items === st.items && hit.team === team) {
+        tagged = hit.rows;
+      } else {
+        tagged = st.items.map((item) => ({ item, team }));
+        cache.set(team.teamId, { items: st.items, team, rows: tagged });
+      }
+      for (const r of tagged) flat.push(r);
+    });
+    for (const k of cache.keys()) if (!seen.has(k)) cache.delete(k);
 
     // Same comparator the server ranks by — (at, id) desc. The merge must sort
-    // identically or paging would interleave wrongly.
+    // identically or paging would interleave wrongly. (A k-way head merge was
+    // considered and declined: this only runs when something actually changed
+    // now, and the loaded window is a few hundred rows.)
     flat.sort((a, b) => b.item.at.localeCompare(a.item.at) || b.item.id.localeCompare(a.item.id));
 
-    const horizon = mergeHorizon(states);
+    const horizon = mergeHorizon(live);
     const visible = horizon === null ? flat : flat.filter((r) => r.item.at >= horizon);
 
     return {
       rows: visible,
-      loading: states.length === 0 || states.some((s) => !s.loaded),
-      hasMore: states.some((s) => !s.exhausted) || visible.length < flat.length,
+      loading: live.length === 0 || live.some((s) => !s.loaded),
+      hasMore: live.some((s) => !s.exhausted) || visible.length < flat.length,
     };
-  }, [teams, channels, stableKinds]);
+  }, [teams, states]);
 
   const loadMore = useCallback(() => {
     void loadOlderMerged(teamIds, stableKinds);

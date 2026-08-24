@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Check, ChevronDown, Pause, Play, Scale, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Collapse } from '@/features/shared/components/display/Collapse';
@@ -28,7 +28,10 @@ import { clusterStatus } from './conversationModel';
 
 /* ── TALK ──────────────────────────────────────────────────────────────────── */
 
-export function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i: TeamChannelItem) => void }) {
+/** memo (C3): `item` keeps identity across quiet refreshes since C1, and
+ *  `onOpen` is a state setter — so a poll that changes nothing re-parses no
+ *  markdown and re-renders no bubble. */
+export const TalkBubble = memo(function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i: TeamChannelItem) => void }) {
   const personaIndex = usePersonaIndex();
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = itemAccent(item, persona);
@@ -94,17 +97,20 @@ export function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i
       </div>
     </div>
   );
-}
+});
 
 /* ── ASSIGNMENT ────────────────────────────────────────────────────────────── */
 
-export function AssignmentCard({
-  assignmentId, items, expanded, onToggle,
+/** memo (C3): `rowKey` + a keyed `onToggle` keep every prop referentially
+ *  stable, so expanding one card re-renders that card, not every band. */
+export const AssignmentCard = memo(function AssignmentCard({
+  assignmentId, items, expanded, rowKey, onToggle,
 }: {
   assignmentId: string;
   items: TeamChannelItem[];
   expanded: boolean;
-  onToggle: () => void;
+  rowKey: string;
+  onToggle: (key: string) => void;
 }) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
@@ -130,7 +136,7 @@ export function AssignmentCard({
 
   return (
     <div className="my-2 rounded-card border border-status-info/25 bg-status-info/[0.06] overflow-hidden">
-      <button type="button" onClick={onToggle} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-status-info/[0.1] transition-colors">
+      <button type="button" onClick={() => onToggle(rowKey)} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-status-info/[0.1] transition-colors">
         <Wand2 className="w-4 h-4 flex-shrink-0 text-status-info" />
         <span className="min-w-0 flex-1">
           <span className="block typo-body font-medium text-foreground truncate">{title}</span>
@@ -200,7 +206,7 @@ export function AssignmentCard({
       </Collapse>
     </div>
   );
-}
+});
 
 /* ── DELIBERATION ──────────────────────────────────────────────────────────── */
 
@@ -214,16 +220,19 @@ const DELIB_STATUS: Record<string, string> = {
   awaiting_action: 'text-amber-300',
 };
 
-export function DeliberationCard({
-  deliberation, items, expanded, onToggle, onFocus,
+/** memo (C3): same contract as AssignmentCard — keyed callbacks, stable props. */
+export const DeliberationCard = memo(function DeliberationCard({
+  deliberation, deliberationId, items, expanded, rowKey, onToggle, onFocus,
 }: {
   deliberation: TeamDeliberation | undefined;
+  deliberationId: string;
   items: TeamChannelItem[];
   expanded: boolean;
-  onToggle: () => void;
+  rowKey: string;
+  onToggle: (key: string) => void;
   /** Send this deliberation's CONTROLS to the rail. Expanding shows its turns;
    *  focusing is what lets you drive it — two different verbs on purpose. */
-  onFocus: () => void;
+  onFocus: (deliberationId: string) => void;
 }) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
@@ -236,7 +245,7 @@ export function DeliberationCard({
 
   return (
     <div className="my-2 rounded-card border border-violet-400/25 bg-violet-400/[0.05] overflow-hidden">
-      <button type="button" onClick={onToggle} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-violet-400/[0.09] transition-colors">
+      <button type="button" onClick={() => onToggle(rowKey)} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-violet-400/[0.09] transition-colors">
         <Scale className="w-4 h-4 flex-shrink-0 text-violet-300" />
         <span className="min-w-0 flex-1">
           <span className="block typo-body font-medium text-foreground truncate">{topic}</span>
@@ -258,8 +267,8 @@ export function DeliberationCard({
         <span
           role="button"
           tabIndex={0}
-          onClick={(e) => { e.stopPropagation(); onFocus(); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onFocus(); } }}
+          onClick={(e) => { e.stopPropagation(); onFocus(deliberationId); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onFocus(deliberationId); } }}
           className="flex-shrink-0 px-2 py-0.5 rounded-interactive border border-violet-400/30 typo-caption text-violet-300 hover:bg-violet-400/15 transition-colors"
         >
           {t.monitor.conv_drive}
@@ -284,7 +293,7 @@ export function DeliberationCard({
       </Collapse>
     </div>
   );
-}
+});
 
 /* ── PROPOSAL — the composer's decomposed goal, awaiting Confirm ───────────── */
 
