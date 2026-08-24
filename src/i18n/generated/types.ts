@@ -239,6 +239,7 @@ export type Translations = {
     channel_day_yesterday: string;
     channel_pin_memory: string;
     channel_pinned_memory: string;
+    channel_copy_message: string;
     channel_pin_failed: string;
     quick_choose_action: string;
     quick_dismiss: string;

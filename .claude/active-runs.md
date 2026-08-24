@@ -2,6 +2,12 @@
 
 ## Active
 
+### prototype-subjects-lane — /prototype 3 directional variants on Patterns → Subjects (hierarchy view) — session fable-5 — started
+- 2026-08-24. Operator brief: content model is right, visual representation is hard to read and poor to look at; 3 variants behind a tab switcher, winner/fusion after review.
+- **Declared paths:** `src/features/overview/sub_patterns/hierarchy/SubjectsView.tsx` · `src/features/overview/sub_patterns/hierarchy/SubjectDetail.tsx` (shared-parts extraction only) · `src/features/overview/sub_patterns/hierarchy/variants/**` (new) · `.claude/active-runs.md`
+- **Worktree deviation, stated:** working on the MAIN checkout — the variants must render in the live dev app and a second app instance is impossible (data-dir/keyring singletons). Writes are scoped to declared paths; commits via read-tree isolated index; the channels session's large in-flight tree is never staged.
+- **Round 1 LANDED — `f8925fb44`** (tsc clean, 0 lint errors, hooks green). Codex / Atlas / Console behind a throwaway switcher in the SubjectsView toolbar; shared doc parts hoisted to `variants/shared.tsx`; law chips fixed to resolve `_laws.md` via `source.corpusRel` (was hardcoded to the personas layout — dead against the registry corpus). All three variants smoke-tested in the live app via the :17320 bridge. Awaiting operator prune/fuse verdict.
+
 - **[2026-08-24 18:29]**
 - **Paths:** `src/features/fleet/monitor/channels/**` · `src/api/pipeline/personaChannel.ts` · `src/stores/slices/pipeline/**` · `src/features/teams/sub_collab/useChannelService.ts` · `src/i18n/locales/**`
 - **Status:** started
