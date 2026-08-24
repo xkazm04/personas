@@ -62,7 +62,7 @@
   "topology_optimizer": "مُحسِّن الطوبولوجيا",
   "suggestion_count_one": "{count} اقتراح",
   "suggestion_count_other": "{count} اقتراحات",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} تشغيل",
   "run_count_other": "{count} تشغيلات",
   "success_rate": "{rate}% نجاح",
   "refresh_analytics": "تحديث التحليلات",

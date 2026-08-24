@@ -62,7 +62,7 @@
   "topology_optimizer": "Optimalizátor topologie",
   "suggestion_count_one": "{count} návrh",
   "suggestion_count_other": "{count} návrhů",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} běh",
   "run_count_other": "{count} běhů",
   "success_rate": "{rate}% úspěch",
   "refresh_analytics": "Obnovit analytiku",

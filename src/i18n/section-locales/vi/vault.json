@@ -1090,7 +1090,7 @@
     "recipe_used_other": "Thiết lập đã xác minh — đã dùng {count} lần",
     "filter_all_purposes": "Tất cả mục đích ({count})",
     "filter_all_categories": "Tất cả danh mục ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "Tất cả ({count})",
     "filter_status_connected": "Đã kết nối ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "Tất cả giấy phép ({count})",

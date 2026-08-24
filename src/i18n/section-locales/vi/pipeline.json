@@ -62,7 +62,7 @@
   "topology_optimizer": "Tối ưu hóa cấu trúc",
   "suggestion_count_one": "{count} gợi ý",
   "suggestion_count_other": "{count} gợi ý",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} lần chạy",
   "run_count_other": "{count} lần chạy",
   "success_rate": "{rate}% thành công",
   "refresh_analytics": "Làm mới phân tích",

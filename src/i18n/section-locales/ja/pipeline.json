@@ -62,7 +62,7 @@
   "topology_optimizer": "トポロジーオプティマイザー",
   "suggestion_count_one": "{count}件の提案",
   "suggestion_count_other": "{count}件の提案",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} 件の実行",
   "run_count_other": "{count}件の実行",
   "success_rate": "{rate}%の成功率",
   "refresh_analytics": "アナリティクスを更新",

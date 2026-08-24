@@ -262,7 +262,7 @@
     "try_button": "Coba",
     "parameters": "Parameter",
     "request_body": "Isi permintaan",
-    "path_placeholder": "/api/v1/resource",
+    "path_placeholder": "/v1/endpoint",
     "sending": "Mengirim…",
     "mcp_input_schema": "Skema masukan",
     "mcp_discover": "Temukan alat server MCP",
@@ -1090,7 +1090,7 @@
     "recipe_used_other": "Konfigurasi terverifikasi — digunakan {count} kali",
     "filter_all_purposes": "Semua tujuan ({count})",
     "filter_all_categories": "Semua kategori ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "Semua ({count})",
     "filter_status_connected": "Terhubung ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "Semua lisensi ({count})",
@@ -1597,7 +1597,7 @@
     "slowest_responses": "Respons paling lambat",
     "passed_count": "{count} lulus",
     "failed_count": "{count} gagal",
-    "total_count": "{count} total"
+    "total_count": "Total {count}"
   },
   "health_bar": {
     "healthy": "sehat",

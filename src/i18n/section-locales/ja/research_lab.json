@@ -25,7 +25,7 @@
   "project_thesis_placeholder": "あなたがテストしている中心的な主張または質問",
   "project_domain": "ドメイン",
   "project_scope": "スコープの制約",
-  "obsidian_vault": "Obsidian vault",
+  "obsidian_vault": "Obsidian保管庫",
   "obsidian_vault_hint": "実験と発見を同期するためにObsidian vaultをリンクします",
   "select_vault": "Vaultを選択",
   "clear_vault": "クリア",

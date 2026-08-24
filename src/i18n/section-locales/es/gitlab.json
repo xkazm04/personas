@@ -6,7 +6,7 @@
   "tab_agents": "Agentes",
   "tab_history": "Historial",
   "tab_gitops": "GitOps",
-  "tab_pipelines": "Pipelines",
+  "tab_pipelines": "Canalizaciones",
   "gitlab_credential": "Credencial de GitLab",
   "using_credential": "Usando {name} de la Bóveda",
   "instance_url": "URL de Instancia",

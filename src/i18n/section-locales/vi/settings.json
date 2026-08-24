@@ -203,7 +203,7 @@
       "teams": "Microsoft Teams (webhook đến)",
       "generic": "JSON chung (POST)"
     },
-    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url": "URL Webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "webhook_subscriptions_events": "Bộ lọc sự kiện",
     "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
@@ -321,7 +321,7 @@
     "no_signals": "Không có tín hiệu gần đây nào được nắm bắt",
     "sensory_policy": "Chính sách cảm nhận",
     "reset_defaults": "Đặt lại về mặc định",
-    "clipboard": "Clipboard",
+    "clipboard": "Bộ nhớ tạm",
     "file_changes": "Thay đổi tệp",
     "app_focus": "Tiêu điểm ứng dụng",
     "focus_filter": "Bộ lọc ứng dụng tiêu điểm",

@@ -1090,7 +1090,7 @@
     "recipe_used_other": "Configuración verificada — usada {count} veces",
     "filter_all_purposes": "Todos los propósitos ({count})",
     "filter_all_categories": "Todas las categorías ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "Todos ({count})",
     "filter_status_connected": "Conectado ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "Todas las licencias ({count})",
@@ -1597,7 +1597,7 @@
     "slowest_responses": "Respuestas más lentas",
     "passed_count": "{count} aprobadas",
     "failed_count": "{count} fallidas",
-    "total_count": "{count} total"
+    "total_count": "{count} en total"
   },
   "health_bar": {
     "healthy": "saludable",

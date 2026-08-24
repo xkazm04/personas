@@ -1090,7 +1090,7 @@
     "recipe_used_other": "सत्यापित सेटअप — {count} बार उपयोग किया गया",
     "filter_all_purposes": "सभी उद्देश्य ({count})",
     "filter_all_categories": "सभी श्रेणियाँ ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "सभी ({count})",
     "filter_status_connected": "कनेक्टेड ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "सभी लाइसेंस ({count})",

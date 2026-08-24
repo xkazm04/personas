@@ -512,7 +512,7 @@
     "verdict_field": "Kết luận",
     "chain_ended_because": "Lý do chuỗi kết thúc",
     "chain_total_cost": "Chi phí chuỗi",
-    "active_chains_agents_one": "{count} agent",
+    "active_chains_agents_one": "{count} tác nhân",
     "active_chains_agents_other": "{count} agent",
     "active_chains_depth": "độ sâu {count}",
     "active_chains_hops_one": "{count} bước nhảy",
@@ -2174,7 +2174,7 @@
     "published": "Đã chia sẻ — sao chép link để gửi đi"
   },
   "build_template_match_loading": "Đang tìm template phù hợp…",
-  "title": "Personas",
+  "title": "Persona",
   "loading": "Đang tải…",
   "overview": {
     "title": "Bề mặt tác tử",

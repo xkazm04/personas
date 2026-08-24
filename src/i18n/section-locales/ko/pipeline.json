@@ -62,7 +62,7 @@
   "topology_optimizer": "토폴로지 최적화",
   "suggestion_count_one": "제안 {count}개",
   "suggestion_count_other": "제안 {count}개",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count}회 실행",
   "run_count_other": "실행 {count}회",
   "success_rate": "성공률 {rate}%",
   "refresh_analytics": "분석 새로고침",

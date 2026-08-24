@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} ide",
     "backlog_load_more": "Muat lebih banyak ({count} dimuat)",
     "backlog_no_description": "Tidak ada deskripsi yang tercatat untuk ide ini.",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "Pemindai ide",
     "backlog_project_none": "Tanpa proyek",
     "backlog_search": "Cari ide…",
     "backlog_select_row": "Pilih ide",
@@ -2053,7 +2053,7 @@
   "crash_logs": {
     "title": "Log kerusakan",
     "no_logs": "Tidak ada log kerusakan yang tercatat.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Tumpukan Komponen ---"
   },
   "events_list": {
     "save_view_tooltip": "Simpan filter saat ini sebagai tampilan",

@@ -154,7 +154,7 @@
     "when_label": "언제 실행할까요?",
     "cron_placeholder": "평일 오전 9시마다",
     "cron_hint": "자연어 (예: \\\"평일 오전 9시마다\\\") 또는 cron (예: \\\"0 9 * * 1-5\\\")",
-    "webhook_url": "Webhook URL",
+    "webhook_url": "웹훅 URL",
     "webhook_placeholder": "https://...",
     "check_interval": "확인 간격",
     "check_interval_placeholder": "5분마다",

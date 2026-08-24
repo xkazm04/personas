@@ -1092,7 +1092,7 @@
     "schedule": "计划",
     "schedule_placeholder": "每个工作日上午 9 点",
     "schedule_hint": "自然语言或 cron（例如「0 9 * * 1-5」）",
-    "webhook_url": "Webhook URL",
+    "webhook_url": "webhook URL",
     "webhook_url_placeholder": "https://...",
     "check_interval": "检查间隔",
     "check_interval_placeholder": "每 5 分钟",

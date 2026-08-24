@@ -142,7 +142,7 @@
   "pipeline_subtitle": "Pipeline riset",
   "completion": "penyelesaian",
   "domains": "Bidang",
-  "projects_total": "{count} total",
+  "projects_total": "Total {count}",
   "all_projects": "Semua proyek",
   "open_action": "Buka",
   "updated_prefix": "Diperbarui {date}",

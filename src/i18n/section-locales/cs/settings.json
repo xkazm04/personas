@@ -203,7 +203,7 @@
       "teams": "Microsoft Teams (příchozí webhook)",
       "generic": "Obecný JSON (POST)"
     },
-    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url": "URL webhooku",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "webhook_subscriptions_events": "Vzory událostí",
     "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
@@ -363,7 +363,7 @@
     "tab_providers": "Poskytovatelé",
     "tab_keys": "API klíče",
     "tab_routing": "Cenové směrování",
-    "tab_compliance": "Compliance",
+    "tab_compliance": "Soulad",
     "tab_audit": "Audit log",
     "allowed_providers": "Povolení poskytovatelé",
     "allowed_providers_hint": "Vyber, které poskytovatele tvá organizace schvaluje. Ponech prázdné pro povolení všech.",

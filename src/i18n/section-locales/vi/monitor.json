@@ -463,7 +463,7 @@
   "triage_summary_kind_value": "{accepted}/{decided}",
   "triage_summary_lost": "Bị người khác giành mất",
   "triage_summary_pace": "Thẻ điển hình",
-  "triage_summary_pace_value": "{seconds}s",
+  "triage_summary_pace_value": "{seconds} giây",
   "triage_summary_rate": "{percent}%",
   "triage_summary_title": "Phiên này",
   "triage_summary_undone": "Đã hoàn tác",

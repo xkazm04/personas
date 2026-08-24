@@ -1,5 +1,5 @@
 {
-  "title": "Media Studio",
+  "title": "Mediální studio",
   "subtitle": "Komponuj videa s textovými, obrazovými a audio vrstvami",
   "ffmpeg_not_found": "FFmpeg nenalezen",
   "ffmpeg_not_found_hint": "Pro export videí je vyžadován FFmpeg. Nainstaluj ho a restartuj aplikaci.",

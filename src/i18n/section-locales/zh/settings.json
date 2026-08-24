@@ -203,7 +203,7 @@
       "teams": "Microsoft Teams（传入 webhook）",
       "generic": "通用 JSON（POST）"
     },
-    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url": "webhook URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "webhook_subscriptions_events": "事件模式",
     "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",

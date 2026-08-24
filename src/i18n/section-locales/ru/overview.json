@@ -464,7 +464,7 @@
     "backlog_bulk_accept": "Принять выбранные",
     "backlog_bulk_reject": "Отклонить выбранные",
     "backlog_cat_business": "Бизнес",
-    "backlog_cat_mastermind": "Mastermind",
+    "backlog_cat_mastermind": "Мастермайнд",
     "backlog_cat_technical": "Технические",
     "backlog_cat_user": "Пользовательский опыт",
     "backlog_col_category": "Категория",
@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} идей",
     "backlog_load_more": "Загрузить ещё (загружено {count})",
     "backlog_no_description": "Для этой идеи не записано описание.",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "Сканер идей",
     "backlog_project_none": "Без проекта",
     "backlog_search": "Поиск идей…",
     "backlog_select_row": "Выбрать идею",
@@ -2053,7 +2053,7 @@
   "crash_logs": {
     "title": "Журналы сбоев",
     "no_logs": "Журналы сбоев не зарегистрированы.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Стек компонентов ---"
   },
   "events_list": {
     "save_view_tooltip": "Сохранить текущие фильтры как представление",

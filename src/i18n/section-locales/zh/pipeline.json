@@ -62,7 +62,7 @@
   "topology_optimizer": "拓扑优化器",
   "suggestion_count_one": "{count} 条建议",
   "suggestion_count_other": "{count} 条建议",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} 次运行",
   "run_count_other": "{count} 次运行",
   "success_rate": "{rate}% 成功率",
   "refresh_analytics": "刷新分析",

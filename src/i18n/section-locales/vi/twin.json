@@ -411,12 +411,12 @@
     "channelsInUse": "Kênh đang dùng"
   },
   "variantTabs": {
-    "prototype": "Prototype",
+    "prototype": "Nguyên mẫu",
     "atelier": "Atelier",
     "atelierHint": "Studio giàu không khí · dải gradient · điểm nhấn trang trí",
     "console": "Console",
     "consoleHint": "Sổ cái dày đặc · Thẻ KPI · Ưu tiên bàn phím",
-    "baseline": "Baseline",
+    "baseline": "Đường cơ sở",
     "baselineHint": "Bố cục hiện đang phát hành, dùng làm tham chiếu"
   },
   "wiki": {

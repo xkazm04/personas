@@ -1090,7 +1090,7 @@
     "recipe_used_other": "已验证配置 — 使用过 {count} 次",
     "filter_all_purposes": "所有用途（{count}）",
     "filter_all_categories": "所有类别（{count}）",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "全部 ({count})",
     "filter_status_connected": "已连接（{count}）",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "所有许可证（{count}）",

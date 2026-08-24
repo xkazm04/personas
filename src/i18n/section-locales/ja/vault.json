@@ -1090,7 +1090,7 @@
     "recipe_used_other": "検証済みのセットアップ — {count} 回使用",
     "filter_all_purposes": "すべての用途（{count}）",
     "filter_all_categories": "すべてのカテゴリ（{count}）",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "すべて ({count})",
     "filter_status_connected": "接続済み（{count}）",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "すべてのライセンス（{count}）",

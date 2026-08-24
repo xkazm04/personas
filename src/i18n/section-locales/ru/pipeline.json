@@ -62,7 +62,7 @@
   "topology_optimizer": "Оптимизатор топологии",
   "suggestion_count_one": "{count} предложение",
   "suggestion_count_other": "Предложений: {count}",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} запуск",
   "run_count_other": "Запусков: {count}",
   "success_rate": "{rate}% успеха",
   "refresh_analytics": "Обновить аналитику",

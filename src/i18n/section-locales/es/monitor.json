@@ -463,7 +463,7 @@
   "triage_summary_kind_value": "{accepted} de {decided}",
   "triage_summary_lost": "Perdidos ante otro",
   "triage_summary_pace": "Tarjeta típica",
-  "triage_summary_pace_value": "{seconds}s",
+  "triage_summary_pace_value": "{seconds} s",
   "triage_summary_rate": "{percent}%",
   "triage_summary_title": "Esta sesión",
   "triage_summary_undone": "Revertidos",

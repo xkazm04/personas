@@ -61,7 +61,7 @@
   },
   "tray_schedules": "Planifications",
   "tray_schedules_today": "{count} planifiée(s) aujourd’hui",
-  "tray_notifications": "Notifications",
+  "tray_notifications": "Messagerie",
   "tray_notifications_unread": "{count} notifications non lues",
   "system_load": {
     "label": "Charge système",

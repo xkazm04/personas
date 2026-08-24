@@ -7,6 +7,6 @@
   "protocol_compliance_description": "Vérifie les motifs de messages de protocole attendus",
   "confusion_detect_label": "Détection de confusion",
   "confusion_detect_description": "Vérifie les phrases de confusion/échec connues",
-  "composite_label": "Composite",
+  "composite_label": "composite",
   "composite_description": "Combinaison pondérée de toutes les stratégies"
 }

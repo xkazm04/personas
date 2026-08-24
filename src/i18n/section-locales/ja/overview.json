@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} 件のアイデア",
     "backlog_load_more": "さらに読み込む（{count} 件読み込み済み）",
     "backlog_no_description": "このアイデアには説明が記録されていません。",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "アイデアスキャナー",
     "backlog_project_none": "プロジェクトなし",
     "backlog_search": "アイデアを検索…",
     "backlog_select_row": "アイデアを選択",

@@ -62,7 +62,7 @@
   "topology_optimizer": "Topologie-Optimierer",
   "suggestion_count_one": "{count} Vorschlag",
   "suggestion_count_other": "{count} Vorschläge",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} Lauf",
   "run_count_other": "{count} Läufe",
   "success_rate": "{rate}% Erfolg",
   "refresh_analytics": "Analysen aktualisieren",

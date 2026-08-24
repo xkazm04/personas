@@ -538,7 +538,7 @@
     "triggers_count_summary": "{count} Trigger",
     "connectors_count_summary": "{count} Konnektoren",
     "selected_for_import": "für Import ausgewählt",
-    "tools_header": "Tools ({count})",
+    "tools_header": "Werkzeuge ({count})",
     "triggers_header": "Trigger ({count})",
     "connectors_header": "Konnektoren ({count})",
     "previous_imports": "Frühere Importe",

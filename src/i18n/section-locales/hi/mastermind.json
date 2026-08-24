@@ -149,7 +149,7 @@
   "_comment_far_personas_other": "Far-zoom island tooltip, breakdown item for the persona lane (plural).",
   "family_runners": "Dev runners",
   "lane_none": "कुछ भी नहीं चल रहा",
-  "lane_personas": "Personas",
+  "lane_personas": "एजेंट",
   "lane_runners": "रनर",
   "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
   "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",

@@ -1,5 +1,5 @@
 {
-  "title": "Media Studio",
+  "title": "Medienstudio",
   "subtitle": "Videos mit Text-, Bild- und Audio-Ebenen zusammenstellen",
   "ffmpeg_not_found": "FFmpeg nicht gefunden",
   "ffmpeg_not_found_hint": "FFmpeg ist zum Exportieren von Videos erforderlich. Installieren und App neu starten.",

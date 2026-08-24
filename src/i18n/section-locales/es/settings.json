@@ -203,7 +203,7 @@
       "teams": "Microsoft Teams (webhook entrante)",
       "generic": "JSON genérico (POST)"
     },
-    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url": "URL de Webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "webhook_subscriptions_events": "Patrones de eventos",
     "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
@@ -560,7 +560,7 @@
       "filter_teamed": "En un equipo",
       "filter_unteamed": "Sin equipo",
       "in_team": "en {team}",
-      "kpi_count_label": "{count} KPIs",
+      "kpi_count_label": "{count} KPI",
       "kpi_off_track": "KPIs desviados",
       "kpi_setup_hint": "Los KPIs de cada equipo seleccionado van con él — todos o ninguno.",
       "kpi_setup_none": "No hay KPIs de equipo disponibles para incluir.",

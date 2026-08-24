@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} ý tưởng",
     "backlog_load_more": "Tải thêm ({count} đã tải)",
     "backlog_no_description": "Ý tưởng này chưa có mô tả nào được ghi lại.",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "Trình quét ý tưởng",
     "backlog_project_none": "Không có dự án",
     "backlog_search": "Tìm kiếm ý tưởng…",
     "backlog_select_row": "Chọn ý tưởng",
@@ -1353,7 +1353,7 @@
     "confidence_pct_suffix": "% tin cậy",
     "spike_on": "tăng đột biến vào",
     "correlated_events_prefix": "Sự kiện tương quan (",
-    "circuit_breaker_label": "circuit breaker",
+    "circuit_breaker_label": "bộ ngắt mạch",
     "auto_disabled_message": "Tác nhân này đã bị tự động vô hiệu hóa như một phản ứng circuit-breaker đối với các lần thất bại lặp lại.",
     "execution_label": "Thực thi:",
     "issue_marked_as": "Vấn đề này được đánh dấu là",
@@ -2053,7 +2053,7 @@
   "crash_logs": {
     "title": "Nhật ký sự cố",
     "no_logs": "Không có nhật ký sự cố nào.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Ngăn xếp Component ---"
   },
   "events_list": {
     "save_view_tooltip": "Lưu bộ lọc hiện tại thành view",

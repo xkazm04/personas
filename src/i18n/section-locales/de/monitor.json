@@ -463,7 +463,7 @@
   "triage_summary_kind_value": "{accepted} von {decided}",
   "triage_summary_lost": "An andere verloren",
   "triage_summary_pace": "Typische Karte",
-  "triage_summary_pace_value": "{seconds}s",
+  "triage_summary_pace_value": "{seconds} s",
   "triage_summary_rate": "{percent}%",
   "triage_summary_title": "Diese Sitzung",
   "triage_summary_undone": "Zurückgenommen",

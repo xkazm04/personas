@@ -168,7 +168,7 @@
     "language_hint": "Choisissez la langue de l’interface de l’application. Le même sélecteur est également disponible sur l’écran d’accueil."
   },
   "notifications": {
-    "title": "Notifications",
+    "title": "Messagerie",
     "subtitle": "Contrôlez quelles alertes de guérison déclenchent des notifications",
     "severity_critical_label": "Critique",
     "severity_high_label": "Élevé",
@@ -203,7 +203,7 @@
       "teams": "Microsoft Teams (webhook entrant)",
       "generic": "JSON générique (POST)"
     },
-    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url": "URL webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
     "webhook_subscriptions_events": "Motifs d’événements",
     "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
@@ -560,7 +560,7 @@
       "filter_teamed": "Dans une équipe",
       "filter_unteamed": "Sans équipe",
       "in_team": "dans {team}",
-      "kpi_count_label": "{count} KPIs",
+      "kpi_count_label": "{count} KPI",
       "kpi_off_track": "KPIs hors cible",
       "kpi_setup_hint": "Les KPIs de chaque équipe sélectionnée voyagent avec elle — tout ou rien.",
       "kpi_setup_none": "Aucun KPI d’équipe disponible à inclure.",
@@ -716,7 +716,7 @@
       "engine": "Moteur",
       "integrations": "Intégrations",
       "limits": "Limites",
-      "notifications": "Notifications",
+      "notifications": "Messagerie",
       "quality_gates": "Contrôles qualité",
       "retention": "Rétention",
       "sync": "Synchronisation cloud"

@@ -144,9 +144,9 @@
     "all_agents_label": "Semua agen",
     "draft_builds": "Build draf",
     "progress": "Kemajuan",
-    "dev_tools_label": "Dev Tools",
+    "dev_tools_label": "Alat pengembang",
     "obsidian_brain": "Obsidian Brain",
-    "research_lab": "Research Lab",
+    "research_lab": "Lab riset",
     "teams_label": "Tim",
     "cloud_label": "Cloud",
     "cloud_dev_pill": "dev",
@@ -245,7 +245,7 @@
     "run_use_case": "Jalankan kasus penggunaan ini",
     "custom_model": "Model kustom",
     "no_results": "Tidak ada hasil ditemukan",
-    "ctrl_enter": "Ctrl+Enter"
+    "ctrl_enter": "Ctrl+Enter untuk menjalankan"
   },
   "json_valid": "JSON valid",
   "json_invalid": "JSON tidak valid",

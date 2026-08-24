@@ -62,7 +62,7 @@
   "topology_optimizer": "टोपोलॉजी ऑप्टिमाइज़र",
   "suggestion_count_one": "{count} सुझाव",
   "suggestion_count_other": "{count} सुझाव",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} रन",
   "run_count_other": "{count} रन",
   "success_rate": "{rate}% सफलता",
   "refresh_analytics": "एनालिटिक्स रीफ्रेश करें",

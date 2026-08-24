@@ -62,7 +62,7 @@
   "topology_optimizer": "Pengoptimal topologi",
   "suggestion_count_one": "{count} saran",
   "suggestion_count_other": "{count} saran",
-  "run_count_one": "{count} run",
+  "run_count_one": "{count} eksekusi",
   "run_count_other": "{count} proses",
   "success_rate": "{rate}% berhasil",
   "refresh_analytics": "Segarkan analitik",

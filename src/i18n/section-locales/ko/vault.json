@@ -1090,7 +1090,7 @@
     "recipe_used_other": "확인된 설정 — {count}회 사용",
     "filter_all_purposes": "전체 용도 ({count})",
     "filter_all_categories": "전체 카테고리 ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "전체 ({count})",
     "filter_status_connected": "연결됨 ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "전체 라이선스 ({count})",

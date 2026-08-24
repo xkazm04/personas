@@ -464,7 +464,7 @@
     "backlog_bulk_accept": "चयनित स्वीकारें",
     "backlog_bulk_reject": "चयनित अस्वीकारें",
     "backlog_cat_business": "व्यवसाय",
-    "backlog_cat_mastermind": "Mastermind",
+    "backlog_cat_mastermind": "मास्टरमाइंड",
     "backlog_cat_technical": "तकनीकी",
     "backlog_cat_user": "उपयोगकर्ता अनुभव",
     "backlog_col_category": "श्रेणी",
@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} विचार",
     "backlog_load_more": "और लोड करें ({count} लोड हुए)",
     "backlog_no_description": "इस विचार के लिए कोई विवरण दर्ज नहीं किया गया।",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "आइडिया स्कैनर",
     "backlog_project_none": "कोई प्रोजेक्ट नहीं",
     "backlog_search": "विचार खोजें…",
     "backlog_select_row": "विचार चुनें",
@@ -2053,7 +2053,7 @@
   "crash_logs": {
     "title": "क्रैश लॉग",
     "no_logs": "कोई क्रैश लॉग दर्ज नहीं है।",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- कंपोनेंट स्टैक ---"
   },
   "events_list": {
     "save_view_tooltip": "वर्तमान फ़िल्टर को दृश्य के रूप में सहेजें",

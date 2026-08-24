@@ -1,5 +1,5 @@
 {
-  "title": "Media Studio",
+  "title": "미디어 스튜디오",
   "subtitle": "텍스트, 이미지, 오디오 레이어로 영상을 구성합니다",
   "ffmpeg_not_found": "FFmpeg를 찾을 수 없습니다",
   "ffmpeg_not_found_hint": "영상을 내보내려면 FFmpeg가 필요합니다. 설치한 후 앱을 다시 시작하세요.",

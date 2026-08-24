@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} nápadů",
     "backlog_load_more": "Načíst další ({count} načteno)",
     "backlog_no_description": "K tomuto nápadu nebyl zaznamenán žádný popis.",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "Skener nápadů",
     "backlog_project_none": "Žádný projekt",
     "backlog_search": "Hledat nápady…",
     "backlog_select_row": "Vybrat nápad",
@@ -2053,7 +2053,7 @@
   "crash_logs": {
     "title": "Protokoly pádů",
     "no_logs": "Žádné protokoly pádů nejsou zaznamenány.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Zásobník komponent ---"
   },
   "events_list": {
     "save_view_tooltip": "Uložit aktuální filtry jako zobrazení",

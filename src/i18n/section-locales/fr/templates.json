@@ -444,7 +444,7 @@
     "architecture": "Architecture",
     "events": "Événements",
     "reviews_label": "Révisions",
-    "notifications": "Notifications"
+    "notifications": "Messagerie"
   },
   "questionnaire": {
     "header": "{label} — Question {current} sur {total}",
@@ -471,7 +471,7 @@
       "configuration": "Configuration",
       "human_in_the_loop": "Supervision humaine",
       "memory_and_learning": "Mémoire et apprentissage",
-      "notifications": "Notifications",
+      "notifications": "Messagerie",
       "domain": "Domaine",
       "quality": "Qualité"
     }

@@ -1,5 +1,5 @@
 {
-  "title": "Media Studio",
+  "title": "Studio media",
   "subtitle": "Susun video dengan lapisan teks, gambar, dan audio",
   "ffmpeg_not_found": "FFmpeg tidak ditemukan",
   "ffmpeg_not_found_hint": "FFmpeg diperlukan untuk mengekspor video. Instal dan mulai ulang aplikasi.",

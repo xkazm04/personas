@@ -740,7 +740,7 @@
     "no_items_found": "Không tìm thấy {item}. Tạo một cái trong {service} trước.",
     "retry": "Thử lại",
     "source_local": "Tệp hoặc thư mục cục bộ",
-    "source_codebase": "Codebase",
+    "source_codebase": "Cơ sở mã",
     "source_database": "Cơ sở dữ liệu",
     "source_local_hint": "Dán đường dẫn cục bộ đầy đủ đến tệp hoặc thư mục.",
     "source_codebase_hint": "Chọn một dự án đã đăng ký trong Dev Tools.",

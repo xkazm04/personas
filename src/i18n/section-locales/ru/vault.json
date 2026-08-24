@@ -1090,7 +1090,7 @@
     "recipe_used_other": "Проверенная настройка — использований: {count}",
     "filter_all_purposes": "Все назначения ({count})",
     "filter_all_categories": "Все категории ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "Все ({count})",
     "filter_status_connected": "Подключено ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "Все лицензии ({count})",

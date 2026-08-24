@@ -464,7 +464,7 @@
     "backlog_bulk_accept": "নির্বাচিতগুলো গ্রহণ করুন",
     "backlog_bulk_reject": "নির্বাচিতগুলো প্রত্যাখ্যান করুন",
     "backlog_cat_business": "ব্যবসা",
-    "backlog_cat_mastermind": "Mastermind",
+    "backlog_cat_mastermind": "মাস্টারমাইন্ড",
     "backlog_cat_technical": "প্রযুক্তিগত",
     "backlog_cat_user": "ব্যবহারকারীর অভিজ্ঞতা",
     "backlog_col_category": "বিভাগ",
@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count}টি আইডিয়া",
     "backlog_load_more": "আরও লোড করুন ({count}টি লোড হয়েছে)",
     "backlog_no_description": "এই আইডিয়ার জন্য কোনো বিবরণ রেকর্ড করা হয়নি।",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "আইডিয়া স্ক্যানার",
     "backlog_project_none": "কোনো প্রকল্প নেই",
     "backlog_search": "আইডিয়া খুঁজুন…",
     "backlog_select_row": "আইডিয়া নির্বাচন করুন",
@@ -2053,7 +2053,7 @@
   "crash_logs": {
     "title": "ক্র্যাশ লগ",
     "no_logs": "কোনো ক্র্যাশ লগ রেকর্ড করা হয়নি।",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- কম্পোনেন্ট স্ট্যাক ---"
   },
   "events_list": {
     "save_view_tooltip": "বর্তমান ফিল্টারকে ভিউ হিসাবে সংরক্ষণ করুন",

@@ -50,7 +50,7 @@
   "no_deployments": "Noch keine Bereitstellungen aufgezeichnet",
   "deploy_to_build_history": "Eine Persona bereitstellen, um den Bereitstellungsverlauf aufzubauen",
   "current": "Aktuell",
-  "rollback": "Rollback",
+  "rollback": "Zurücksetzen",
   "duo_agent_api": "Duo Agent API",
   "agents_md": "AGENTS.md",
   "rollback_to_deployment": "Auf diese Bereitstellung zurücksetzen",

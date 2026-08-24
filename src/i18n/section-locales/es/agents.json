@@ -1562,7 +1562,7 @@
     "_comment_layout_tab_sigil_grid": "Layout switcher option — current 3x3 sigil grid (default)",
     "layout_tab_sigil_grid": "Sigil Grid",
     "_comment_layout_tab_persona_layout": "Layout switcher option — Persona Sigil hero + Capability Sigil rows prototype",
-    "layout_tab_persona_layout": "Persona Layout",
+    "layout_tab_persona_layout": "Diseño de persona",
     "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
     "layout_tab_prototype_badge": "Prototipo",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",

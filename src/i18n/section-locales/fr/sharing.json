@@ -276,7 +276,7 @@
   "incoming_decline": "Refuser",
   "refusal_title": "Le jumelage avec {device} a été refusé",
   "peer_connected_toast": "Connecté au pair",
-  "col_job_instruction": "Instruction",
+  "col_job_instruction": "Consigne",
   "peer_disconnect_failed_toast": "Impossible de se déconnecter du pair",
   "job_refusal_title": "Raison du refus",
   "never_synced": "Jamais",

@@ -113,7 +113,7 @@
   "every_interval": "setiap {interval}",
   "from_source": "dari {source}",
   "schedule": {
-    "interval_label": "Interval",
+    "interval_label": "Berkala",
     "preset_1m": "1 menit",
     "preset_5m": "5 menit",
     "preset_15m": "15 menit",

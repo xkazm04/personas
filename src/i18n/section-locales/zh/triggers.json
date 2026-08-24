@@ -151,7 +151,7 @@
     "delete_trigger": "删除触发器",
     "activity_log": "活动日志",
     "no_activity": "尚未记录活动",
-    "webhook_url": "Webhook URL",
+    "webhook_url": "webhook URL",
     "webhook_secret": "安全密钥",
     "copied": "已复制！",
     "copy_curl": "复制示例 curl",
@@ -187,7 +187,7 @@
     "content_hash": "仅检测更改"
   },
   "webhook": {
-    "url_label": "Webhook URL",
+    "url_label": "webhook URL",
     "secret_label": "安全密钥（可选）",
     "secret_placeholder": "用于验证传入数据的密钥"
   },

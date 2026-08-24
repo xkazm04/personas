@@ -116,7 +116,7 @@
   "minutes_ago": "{mins}m ago",
   "hours_ago": "{hrs}h ago",
   "yesterday": "গতকাল",
-  "days_ago": "{days}d ago",
+  "days_ago": "{days}দি আগে",
   "status_succeeded": "সফল",
   "status_failed": "ব্যর্থ",
   "status_canceled": "বাতিল",

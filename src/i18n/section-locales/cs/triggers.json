@@ -236,7 +236,7 @@
     "title": "Rychlostní limity",
     "max_fires": "Max. běhů",
     "per_window": "Časové období",
-    "window_seconds": "{seconds}s",
+    "window_seconds": "{seconds} s",
     "window_minutes": "{minutes}m",
     "window_hours": "{hours}h",
     "currently_limited": "Nyní pozastaveno (limit dosažen)"

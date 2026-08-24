@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} idées",
     "backlog_load_more": "Charger plus ({count} chargées)",
     "backlog_no_description": "Aucune description n’a été enregistrée pour cette idée.",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "Scanner d’idées",
     "backlog_project_none": "Aucun projet",
     "backlog_search": "Rechercher des idées…",
     "backlog_select_row": "Sélectionner l’idée",
@@ -1032,8 +1032,8 @@
   "memory_actions": {
     "dismiss_suggestion": "Ignorer la suggestion",
     "memory_insights": "Insights mémoire",
-    "suggestions": "{count} suggestions",
-    "suggestions_one": "{count} suggestion"
+    "suggestions": "{count} propositions",
+    "suggestions_one": "{count} proposition"
   },
   "memory_conflict": {
     "memory_a": "Mémoire A",

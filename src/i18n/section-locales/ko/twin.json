@@ -168,7 +168,7 @@
     "previewTooltip": "현재 설정으로 짧은 샘플을 합성합니다",
     "previewNeedsConfig": "미리 듣기 전에 voice id와 credential id를 설정하세요",
     "previewSample": "voice 채널을 통해 말할 때 당신의 트윈이 이런 목소리로 들립니다.",
-    "eyebrowAtelier": "Voice Studio",
+    "eyebrowAtelier": "보이스 스튜디오",
     "atelierVariantLabel": "Atelier",
     "currentVariantLabel": "현재",
     "stageEmptyHeadline": "아직 등록된 음성이 없습니다",

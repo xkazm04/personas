@@ -1090,7 +1090,7 @@
     "recipe_used_other": "Ověřené nastavení — použito {count}x",
     "filter_all_purposes": "Všechny účely ({count})",
     "filter_all_categories": "Všechny kategorie ({count})",
-    "filter_status_all": "All ({count})",
+    "filter_status_all": "Vše ({count})",
     "filter_status_connected": "Připojeno ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "Všechny licence ({count})",

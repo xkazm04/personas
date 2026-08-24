@@ -486,7 +486,7 @@
     "backlog_group_summary": "{group} · {count} ideas",
     "backlog_load_more": "Cargar más ({count} cargadas)",
     "backlog_no_description": "No se registró ninguna descripción para esta idea.",
-    "backlog_origin_scanner": "Idea Scanner",
+    "backlog_origin_scanner": "Escáner de ideas",
     "backlog_project_none": "Sin proyecto",
     "backlog_search": "Buscar ideas…",
     "backlog_select_row": "Seleccionar idea",

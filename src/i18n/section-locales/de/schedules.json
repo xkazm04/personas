@@ -20,7 +20,7 @@
   "failing": "Fehlernd",
   "paused": "Pausiert",
   "idle": "Inaktiv",
-  "headless": "headless",
+  "headless": "ohne Oberfläche",
   "run_now": "Jetzt ausführen",
   "change_frequency": "Häufigkeit ändern",
   "pause_schedule": "Zeitplan pausieren",

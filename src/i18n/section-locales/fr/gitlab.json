@@ -76,7 +76,7 @@
   "select_pipeline_to_view": "Sélectionnez un pipeline pour voir les tâches",
   "loading_log": "Chargement du journal…",
   "no_log_output": "Aucune sortie de journal",
-  "notifications": "Notifications",
+  "notifications": "Messagerie",
   "clear_all": "Tout effacer",
   "close_notification_center": "Fermer le centre de notifications",
   "no_notifications_yet": "Aucune notification pour l’instant",

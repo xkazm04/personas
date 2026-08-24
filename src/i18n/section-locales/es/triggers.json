@@ -236,7 +236,7 @@
     "title": "Límites de Velocidad",
     "max_fires": "Máx. ejecuciones",
     "per_window": "Período de tiempo",
-    "window_seconds": "{seconds}s",
+    "window_seconds": "{seconds} s",
     "window_minutes": "{minutes}m",
     "window_hours": "{hours}h",
     "currently_limited": "Actualmente pausado (límite alcanzado)"

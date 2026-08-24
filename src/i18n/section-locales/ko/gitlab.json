@@ -116,7 +116,7 @@
   "minutes_ago": "{mins}m ago",
   "hours_ago": "{hrs}h ago",
   "yesterday": "어제",
-  "days_ago": "{days}d ago",
+  "days_ago": "{days}일 전",
   "status_succeeded": "성공",
   "status_failed": "실패",
   "status_canceled": "취소됨",

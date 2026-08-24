@@ -73,7 +73,7 @@
   "type_polling": "Tự động kiểm tra",
   "type_event_listener": "Trình nghe sự kiện",
   "type_file_watcher": "Theo dõi tệp",
-  "type_clipboard": "Clipboard",
+  "type_clipboard": "Bộ nhớ tạm",
   "type_app_focus": "Tiêu điểm ứng dụng",
   "type_chain": "Chuỗi",
   "type_composite": "Kết hợp",
@@ -236,9 +236,9 @@
     "title": "Giới hạn tốc độ",
     "max_fires": "Số lần chạy tối đa",
     "per_window": "Khoảng thời gian",
-    "window_seconds": "{seconds}s",
+    "window_seconds": "{seconds} giây",
     "window_minutes": "{minutes}m",
-    "window_hours": "{hours}h",
+    "window_hours": "{hours}g",
     "currently_limited": "Hiện đang tạm dừng (đạt giới hạn)"
   },
   "dry_run": {
