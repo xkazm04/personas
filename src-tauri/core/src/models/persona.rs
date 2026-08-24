@@ -480,6 +480,28 @@ pub struct KpLink {
     pub base_url: String,
     /// Bearer-ish token for `POST {base_url}/api/agents/report/{token}`.
     pub report_token: String,
+    /// `spec.connectors` from the hire request, verbatim — the tool surface kp
+    /// actually asked for (typically `["github"]` for an App master).
+    ///
+    /// Carried here rather than re-read from the approval payload because the
+    /// payload is consumed at approval time and the constraint is needed much
+    /// later, at build verification and at promote. It is the *request*, not a
+    /// derived allow-list: `personas_engine::kp_tool_surface` turns it into the
+    /// set of tools a kp hire's build may attach, and drops the rest before the
+    /// verification gate can count an invented tool as unverified.
+    ///
+    /// `#[serde(default)]` — rows written before 2026-08-24 deserialize to an
+    /// empty list, which constrains a kp hire to the baseline + transport
+    /// tools only. That is the honest reading: a link that never recorded a
+    /// request cannot vouch for a connector.
+    #[serde(default)]
+    pub requested_connectors: Vec<String>,
+    /// The hire's `appMaster.mandate.approvalGates` named commands (e.g.
+    /// `npm run test:unit`), so a command runner is part of the mandated
+    /// surface. False for every hire whose mandate names no gates — and for
+    /// every ordinary (non-App-master) kp hire.
+    #[serde(default)]
+    pub runs_commands: bool,
 }
 
 /// Typed record of an **App master** hire (kp `docs/concepts/app-master.md`
@@ -1059,6 +1081,8 @@ mod kp_link_tests {
                 job_title: "Senior Rust Engineer".into(),
                 base_url: "http://localhost:3001".into(),
                 report_token: "tok_abc123".into(),
+                requested_connectors: vec!["github".into()],
+                runs_commands: true,
             }),
             ..Default::default()
         };
@@ -1085,5 +1109,19 @@ mod kp_link_tests {
             serde_json::from_str(r#"{"summary":"old row"}"#).expect("legacy parse");
         assert!(legacy.kp_link.is_none());
         assert!(!legacy.to_json_string().contains("kpLink"));
+    }
+
+    /// A `kpLink` written before the tool-surface fields existed must still
+    /// deserialize — and must read as "this link vouches for no connector",
+    /// not as an error and not as a wildcard.
+    #[test]
+    fn kp_link_without_tool_surface_fields_deserializes_to_an_empty_request() {
+        let legacy: DesignContextData = serde_json::from_str(
+            r#"{"kpLink":{"jobId":"j1","jobTitle":"t","baseUrl":"http://x","reportToken":"tok"}}"#,
+        )
+        .expect("legacy kpLink parse");
+        let link = legacy.kp_link.expect("kp_link present");
+        assert!(link.requested_connectors.is_empty());
+        assert!(!link.runs_commands);
     }
 }

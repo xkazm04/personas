@@ -25,4 +25,28 @@ baseUrl: string,
 /**
  * Bearer-ish token for `POST {base_url}/api/agents/report/{token}`.
  */
-reportToken: string, };
+reportToken: string, 
+/**
+ * `spec.connectors` from the hire request, verbatim — the tool surface kp
+ * actually asked for (typically `["github"]` for an App master).
+ *
+ * Carried here rather than re-read from the approval payload because the
+ * payload is consumed at approval time and the constraint is needed much
+ * later, at build verification and at promote. It is the *request*, not a
+ * derived allow-list: `personas_engine::kp_tool_surface` turns it into the
+ * set of tools a kp hire's build may attach, and drops the rest before the
+ * verification gate can count an invented tool as unverified.
+ *
+ * `#[serde(default)]` — rows written before 2026-08-24 deserialize to an
+ * empty list, which constrains a kp hire to the baseline + transport
+ * tools only. That is the honest reading: a link that never recorded a
+ * request cannot vouch for a connector.
+ */
+requestedConnectors: Array<string>, 
+/**
+ * The hire's `appMaster.mandate.approvalGates` named commands (e.g.
+ * `npm run test:unit`), so a command runner is part of the mandated
+ * surface. False for every hire whose mandate names no gates — and for
+ * every ordinary (non-App-master) kp hire.
+ */
+runsCommands: boolean, };

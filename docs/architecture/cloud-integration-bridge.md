@@ -450,6 +450,87 @@ Two changes make it deterministic and observable (2026-08-23):
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
 
+### 10.5 The hire's tool surface — a build attaches only what was requested (2026-08-24)
+
+A kp hire request names the tool surface it wants (`spec.connectors`, typically
+`["github"]` for an App master). The one-shot build's design pass is free-running,
+so it used to invent whatever tool vocabulary it liked on top: the 2026-08-24 live
+bench had **two of five real builds** come back carrying `text_analysis`,
+`data_processing`, `ai_generation`, `code_analysis` and `execute_sql`.
+
+The verification gate then did its job. Those tools were reported *available* and
+never actually called, so `evaluate_promote_gate`
+(`engine/build_session/oneshot.rs`) counted them `unverified` and **held
+promotion** — "N tool(s) were reported as available but never actually called".
+The gate was right; the build was over-provisioning. So the fix is subtractive and
+structural, not a plea in the prompt.
+
+**The carrier.** `KpLink` (`core/src/models/persona.rs`) gained two
+`#[serde(default)]` fields, stamped once by `execute_kp_hire_request`:
+
+| Field | Source | Meaning |
+| --- | --- | --- |
+| `requested_connectors` | `spec.connectors`, verbatim | the surface kp asked for |
+| `runs_commands` | `appMaster.mandate.approvalGates` is non-empty | the mandate names shell commands the hire must be able to run |
+
+No migration — `design_context` is a JSON column, and links written before this
+date deserialize to an empty request (which reads as "vouches for no connector",
+the honest default).
+
+**The rule.** `personas_engine::kp_tool_surface` turns that into the allowed set.
+A tool survives when **any** of:
+
+1. it belongs to a **requested connector** — name or `requires_credential_type`
+   matches, using the same bidirectional-substring rule as the promote path's
+   `infer_credential_type`, with connector names under three characters matched
+   only for equality;
+2. it is a **credential-free transport** (`http_request`, `api_call`, …) — the
+   connector behind it owns the credential and the gate exercises it with a real
+   curl, so it cannot mint a false green, and stripping it would only cut the
+   persona's route to the connector it *was* granted;
+3. it is on the **hire baseline** — `file_read` / `file_write`. An App master is
+   hired to read and change an application's own source. Both are already on
+   `tool_tests::PLATFORM_BUILTIN_TOOLS`, so allowing them costs the gate nothing:
+   they pass on a code-authored allow-list, not on a model-authored claim;
+4. it is a **command runner** (`run_command`, `bash`, …) **and** `runs_commands`
+   is true. The approval gates are literally the commands the App master must run
+   before it may propose a diff (§12.1); with no gates declared, no runner.
+
+Everything else is dropped.
+
+**The enforcement points.** `build_session::kp_surface::apply_kp_tool_surface` is
+the DB glue (read the link, log every detach) and is called at the two — and only
+two — places a build's tool set is consumed:
+
+- `oneshot::run_test_pass`, **before** `run_tool_tests`, so the gate exercises a
+  small real surface instead of holding on an invented one;
+- `promote_build_draft_inner` (`commands/design/build_sessions.rs`), **before**
+  `prepare_tool_actions`, so the persona is attached the same surface that was
+  verified. Filtering only at test time would verify one set and ship another.
+
+**No behavior change off the kp path.** `KpToolSurface::from_design_context`
+returns `None` for every persona without a `kp_link`, so an ordinary build is
+never handed a surface and its IR is never touched.
+
+Limits worth knowing:
+
+- The pass is **purely subtractive**. An allowed name the design pass did not emit
+  stays absent — nothing is injected to make a surface look complete.
+- It does **not** narrow `required_connectors`. An over-provisioned *connector*
+  can also produce an unverified entry, but connectors additionally drive
+  credential injection, connector readiness and `setup_detail`; the bench evidence
+  named tools. Open.
+- A hire whose design pass produces **nothing** inside the requested surface ends
+  with zero tools, which `run_tool_tests` reports as the defensible empty pass.
+  That is logged at `warn` rather than failed — it is a signal about the design
+  pass, not about the persona.
+- The policy list `TRANSPORT_TOOLS` intentionally mirrors
+  `build_sessions::GENERIC_TOOL_NAMES`; they are meant to name the same tools, so
+  change them together.
+
+Tested in `personas-engine` (11 checks in `kp_tool_surface`), where the crate's
+test binary actually runs — see §13.8 for why the pure logic lives there.
+
 ---
 
 ## 11. App master (P4) — the mandated hire

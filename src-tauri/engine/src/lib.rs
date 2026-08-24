@@ -116,6 +116,7 @@ pub mod identity;
 pub mod inflight_guard;
 pub mod intent_compiler;
 pub mod kb_index;
+pub mod kp_tool_surface;
 pub mod logger;
 pub mod oauth_refresh_lock;
 #[cfg(feature = "ollama")]

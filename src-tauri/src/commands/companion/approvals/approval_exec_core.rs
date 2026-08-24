@@ -987,13 +987,32 @@ pub(crate) async fn execute_kp_hire_request(
         }
     }
 
+    // The mandate's `approvalGates` are shell commands the App master must run
+    // before it may propose a diff (`npm run test:unit`, …). Gates present ⇒ a
+    // command runner is part of the surface this hire asked for; absent ⇒ it is
+    // not, and the build may not attach one. See `kp_tool_surface`.
+    let runs_commands = app_master
+        .as_ref()
+        .and_then(|am| am.pointer("/mandate/approvalGates"))
+        .and_then(|v| v.as_array())
+        .is_some_and(|gates| {
+            gates
+                .iter()
+                .any(|g| g.as_str().is_some_and(|s| !s.trim().is_empty()))
+        });
+
     // The typed link back to the KP job — the whole point of WP3's model change.
+    // It also carries the requested tool surface (`spec.connectors` + whether
+    // the mandate runs commands), because the constraint is enforced long after
+    // this payload is gone: at build verification and at promote.
     let design_context = crate::db::models::DesignContextData {
         kp_link: Some(crate::db::models::KpLink {
             job_id,
             job_title: job_title.clone(),
             base_url,
             report_token,
+            requested_connectors: connectors.clone(),
+            runs_commands,
         }),
         ..Default::default()
     };

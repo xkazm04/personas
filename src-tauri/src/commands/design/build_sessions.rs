@@ -2745,6 +2745,14 @@ pub async fn promote_build_draft_inner(
         }
     }
 
+    // kp hires only: narrow the tool set to the surface the hire asked for,
+    // before ANY of it is turned into `persona_tools` rows. This is the same
+    // constraint the verification pass applied in `oneshot::run_test_pass` —
+    // applied again here because the two must not disagree: filtering only at
+    // test time would verify one surface and attach another. No-op for every
+    // build without a `kp_link`.
+    crate::engine::build_session::apply_kp_tool_surface(&state.db, &persona_id, &mut ir, "promote");
+
     // Recipe parameterization (Foundry arc, 2026-07): derive tunable params from
     // each capability's `input_schema` and synthesize a `## Capability
     // Parameters` section into structured_prompt.instructions so the
