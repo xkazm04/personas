@@ -35,6 +35,19 @@ pre-commit:
     # ever fires on a file the author actually changed.
     - name: rustfmt-staged
       glob: "*.rs"
+      # The census self-test fixtures are EXEMPT, and not as a convenience: their
+      # formatting IS the test data. `__fixtures__/rust-tree/pool.rs` contains a
+      # function literally named `split_across_lines` whose body is
+      # `pool.get()` on one line and `.expect("conn")` on the next, which exists
+      # to prove the matcher follows a call across a line break. rustfmt joins it, the fixture stops
+      # testing what it was written to test, and the self-test still passes — a
+      # gate going blind while reading green.
+      #
+      # Found 2026-08-23 by a MERGE commit: the hook reads {staged_files}, and a
+      # merge stages every file it resolved, so these fixtures were never staged
+      # by an ordinary commit and the collision had not surfaced yet.
+      exclude:
+        - "scripts/census/__fixtures__/**/*.rs"
       run: rustfmt --edition 2021 --check {staged_files}
 
     # Block commits that would ship a translation gap (English mixed into a

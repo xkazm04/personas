@@ -35,6 +35,7 @@ pub mod prompt;
 #[cfg(feature = "p2p")]
 pub mod remote_jobs;
 pub mod session;
+pub mod ship_ops;
 pub mod stt;
 pub mod templates;
 pub mod tours;

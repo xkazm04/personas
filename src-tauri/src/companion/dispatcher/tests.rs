@@ -160,6 +160,35 @@ fn show_ship_milestone_is_a_card_op_not_an_action_or_a_read_op() {
     assert!(!READ_OPS.contains(&"show_ship_milestone"));
 }
 
+/// The other three Ship ops, each on the list that gives it its behaviour.
+///
+/// An entry here is not decoration: an action with no `ALLOWED_ACTIONS` entry
+/// never becomes an approval row at all, so it does nothing on BOTH consent
+/// paths and does it silently — which is the exact failure the (now retired)
+/// `containment_posture_tests` parity test existed to catch. This re-establishes
+/// that coverage for the ops this session added, in the module that survived the
+/// dispatcher split.
+#[test]
+fn the_ship_ops_are_on_the_lists_that_give_them_their_behaviour() {
+    // Reads: auto-fire, no card, no executor.
+    assert!(READ_OPS.contains(&"describe_ship_milestone"));
+    assert!(!ALLOWED_ACTIONS.contains(&"describe_ship_milestone"));
+    // It needs a target, so it must NOT be query-optional.
+    assert!(!READ_OPS_QUERY_OPTIONAL.contains(&"describe_ship_milestone"));
+
+    // Writes: approval actions with executors in `approval_exec_ship`.
+    for action in ["set_ship_scope", "ship_milestone_lifecycle"] {
+        assert!(
+            ALLOWED_ACTIONS.contains(&action),
+            "{action} needs an ALLOWED_ACTIONS entry or no approval row is ever created"
+        );
+        assert!(
+            !READ_OPS.contains(&action),
+            "{action} writes; it is not a read op"
+        );
+    }
+}
+
 // ── show_persona_walkthrough ────────────────────────────────────────
 
 #[test]

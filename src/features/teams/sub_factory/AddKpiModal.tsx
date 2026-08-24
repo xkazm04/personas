@@ -11,7 +11,7 @@ import { Plus, Loader2, Sparkles, X, MessageSquare } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
 
 import { type KpiCategory, type KpiTier } from './factoryModel';
 import { useAddKpi } from './useAddKpi';
@@ -33,10 +33,14 @@ export function AddKpiModal({
 
   // Hand off to Athena for a guided, conversational setup (she gathers the
   // shape, proposes the KPI, and the user verifies it in Teams › KPIs).
+  // Routed through `useAskAthena` so the prompt is TAGGED as app-composed:
+  // this text is the modal's words, not the operator's, and Athena is told so.
+  const ask = useAskAthena();
   const askAthena = () => {
     const where = projectName ? ` for the "${projectName}" project` : '';
-    useCompanionStore.getState().setPendingChatPrompt(
-      `I'd like to add a new KPI${where}. Walk me through configuring it — ask me what to measure, whether higher or lower is better, a rough target, how often, and how it's measured.`,
+    ask(
+      'Add KPI',
+      `The operator opened the Add-KPI form${where} and asked to configure it with you instead. Walk them through it — ask what to measure, whether higher or lower is better, a rough target, how often, and how it is measured — then propose the KPI.`,
     );
     onClose();
   };

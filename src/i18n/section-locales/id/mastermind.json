@@ -154,5 +154,10 @@
   "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
   "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
   "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-  "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+  "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+  "milestone_bar_cut": "cakupan dikunci",
+  "milestone_bar_forecast": "perkiraan {date}",
+  "milestone_bar_planned": "direncanakan",
+  "milestone_bar_target": "tenggat {date}",
+  "milestone_bar_tooltip": "Milestone yang sedang berjalan untuk {project} — buka tab Ship-nya"
 }

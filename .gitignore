@@ -72,7 +72,11 @@ recordings/
 !.claude/Design.md
 !.claude/conventions.json
 !.claude/active-runs.md
+!.claude/settings.json
 !.claude/skills/
+!.claude/perfect/
+!.claude/ship-loop/
+!.claude/mvp/
 !.claude/agents/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md
@@ -140,3 +144,54 @@ practice-harvest/
 # src-tauri/build.rs TS_RS_EXPORT_DIR); a cargo invocation that misses that env
 # drops a duplicate tree here. Ignored so it never dirties the tree or drifts.
 /bindings/
+
+# /consult skill log (counts reach the ai-registry signals lane; the log itself stays local)
+.ai/consults.jsonl
+
+# BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-skills.mjs)
+# The links are machine state; the declaration lives in .ai/manifest.yaml `skills:`.
+/.claude/skills/architect
+/.claude/skills/consult
+/.claude/skills/explorer
+/.claude/skills/friend
+/.claude/skills/i18n-translate
+/.claude/skills/kpi-sim
+/.claude/skills/leonardo
+/.claude/skills/motionize
+/.claude/skills/mvp
+/.claude/skills/perfect
+/.claude/skills/project-populate
+/.claude/skills/promote
+/.claude/skills/research
+/.claude/skills/scan-sweep
+/.claude/skills/ship-loop
+/.claude/skills/spark
+/.claude/skills/tiger
+/.claude/skills/uat
+# END ai-registry linked skills
+
+# BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-registry.mjs)
+# Links are machine state; the declarations live in .ai/manifest.yaml (`skills:` and `knowledge.domains`).
+/.claude/skills/conform
+/.claude/skills/architect
+/.claude/skills/consult
+/.claude/skills/explorer
+/.claude/skills/friend
+/.claude/skills/i18n-translate
+/.claude/skills/kpi-sim
+/.claude/skills/leonardo
+/.claude/skills/motionize
+/.claude/skills/mvp
+/.claude/skills/perfect
+/.claude/skills/project-populate
+/.claude/skills/promote
+/.claude/skills/research
+/.claude/skills/scan-sweep
+/.claude/skills/ship-loop
+/.claude/skills/spark
+/.claude/skills/tiger
+/.claude/skills/uat
+/.claude/rules/ai-registry-access.md
+/.claude/rules/ai-registry-software-engineering.md
+/.claude/rules/ai-registry-llm-observability.md
+# END ai-registry linked skills

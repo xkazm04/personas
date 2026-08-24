@@ -80,6 +80,8 @@ pub async fn execute_mcp_tool(
         Some(&state.rate_limiter),
         None,
         None,
+        // Manual/UI invocation — no persona_executions row for the usage counter.
+        None,
     )
     .await
 }

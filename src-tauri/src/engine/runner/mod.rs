@@ -403,7 +403,7 @@ pub async fn run_execution(
         None,
         Some(serde_json::json!({ "tool_count": tools.len() })),
     );
-    let (mut cred_env, mut cred_hints, cred_failures, mut injected_connectors) =
+    let (mut cred_env, mut cred_hints, cred_failures, mut injected_connectors, _cred_ids) =
         resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
 
     // Second pass: inject credentials for ALL connectors referenced in the persona's

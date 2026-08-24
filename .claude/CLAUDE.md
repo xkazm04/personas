@@ -1008,3 +1008,26 @@ Corrections are the highest-value signal in the ledger — never skip one, never
 paraphrase away the user's reasoning. The ledger (`.claude/decision-ledger/`)
 is personal data: gitignored, never committed, never quoted into committed
 files. Distillation runs via the `/reflect-me` skill.
+
+## AI registry (knowledge + skills)
+
+This repo is wired to the organization's AI registry - ONE local checkout, at the path in
+`.ai/manifest.yaml` under `registry.local` (default `../ai-registry`).
+
+- **The knowledge is already loaded.** `.claude/rules/ai-registry-*.md` are links to the
+  registry's generated rules: the access contract, plus a subject map for every domain in
+  `.ai/manifest.yaml` `knowledge.domains`. Rules load in every session, so the corpus is in
+  front of you without invoking anything. Before a design, architecture or product decision
+  in a covered domain, open the governing subject - resolve it through
+  `knowledge/<domain>/index.json` (`subjects["<slug>"].file`), never by building a path from
+  a slug. Where this repo falls short of the standard, that is a deviation to record, not a
+  reason to lower the standard. `/consult <topic>` does the same read deliberately and logs
+  it so the registry can see which knowledge is actually reached for.
+- **Shared skills are links, not copies.** Every name in `.ai/manifest.yaml` `skills:` is
+  linked from `.claude/skills/<name>` into the registry's lane, so there is exactly one file
+  on this machine: editing a shared skill from this repo edits the registry's file, and the
+  change is live in every project immediately. Never copy a registry skill in - a real
+  directory under `.claude/skills/` is a project-owned skill and must carry its own name.
+- **After changing the manifest**, re-link with `node <registry>/scripts/link-registry.mjs`
+  (`--check` verifies without writing). Project-specific configuration for a shared skill
+  lives in its committed overlay, e.g. `.claude/perfect/config.md`.

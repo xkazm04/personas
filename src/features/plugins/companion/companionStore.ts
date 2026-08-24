@@ -399,8 +399,8 @@ interface CompanionStore {
    *
    * Latest-wins; the consumer clears it before it calls `send()`.
    */
-  voiceTurnRequest: string | null;
-  setVoiceTurnRequest: (text: string | null) => void;
+  voiceTurnRequest: AppPromptRequest | null;
+  setVoiceTurnRequest: (req: AppPromptRequest | string | null) => void;
 
   /**
    * True while a hold-to-talk capture/transcription session is in flight
@@ -416,12 +416,15 @@ interface CompanionStore {
 
   /**
    * A starter message dropped into the chat from elsewhere in the app (e.g. the
-   * Add-KPI modal's "Ask Athena" action). The always-mounted panel opens itself
-   * and sends it, beginning a guided conversation. Latest-wins; the consumer
-   * clears it before calling `send()`.
+   * Add-KPI modal's "Ask Athena" action, the Ship control bar). The
+   * always-mounted panel opens itself and sends it, beginning a guided
+   * conversation. Latest-wins; the consumer clears it before calling `send()`.
+   *
+   * Carries its own provenance — see [`AppPromptRequest`]. A bare string is
+   * still accepted and is treated as "the user typed this".
    */
-  pendingChatPrompt: string | null;
-  setPendingChatPrompt: (text: string | null) => void;
+  pendingChatPrompt: AppPromptRequest | null;
+  setPendingChatPrompt: (req: AppPromptRequest | string | null) => void;
 
   /**
    * Monotonic nonce bumped each time a pre-composed message is forwarded to
@@ -712,6 +715,29 @@ export interface AthenaAssignmentRef {
 export interface PendingPromptPayload {
   text: string;
   autoSend?: boolean;
+}
+
+/**
+ * A prompt an APP SURFACE composed and handed to Athena — the Ship control
+ * bar's "Ask Athena", the Add-KPI modal's guided setup, and so on.
+ *
+ * `source` is the whole point. `companion_send_message` has taken a
+ * `system_source` since the paired-device work: when set, the backend files the
+ * turn as [`TurnOrigin::External`], persists it as a **System** episode instead
+ * of impersonating the operator, prepends
+ * `[Automated request from <source> — not the user]` to what the model actually
+ * reads on stdin, and leaves any running autonomous chain alone (a surface
+ * asking a question is not the operator interrupting). Until 2026-08-20 **no
+ * frontend call site passed it**, so every app-composed prompt reached Athena
+ * wearing the user's face and she had no way to tell a button from a person.
+ *
+ * Omit `source` only when the text really is the user's own words.
+ */
+export interface AppPromptRequest {
+  text: string;
+  /** Short provenance label, e.g. `'Ship'`. Becomes the `[Automated request
+   *  from …]` tag. Omitted → the turn is filed as ordinary user input. */
+  source?: string;
 }
 
 /** Auto-clear timer for the proactive `flashHighlight` ring (module-scoped so a
@@ -1036,11 +1062,16 @@ export const useCompanionStore = create<CompanionStore>()(
   },
 
   voiceTurnRequest: null,
-  setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
+  // A bare string is the user's own voice (hold-to-talk, the orb's quick input)
+  // and carries no provenance tag; an `AppPromptRequest` is a surface speaking
+  // on his behalf and must name itself. See `AppPromptRequest`.
+  setVoiceTurnRequest: (req) =>
+    set({ voiceTurnRequest: typeof req === 'string' ? { text: req } : req }),
   voiceCaptureActive: false,
   setVoiceCaptureActive: (voiceCaptureActive) => set({ voiceCaptureActive }),
   pendingChatPrompt: null,
-  setPendingChatPrompt: (pendingChatPrompt) => set({ pendingChatPrompt }),
+  setPendingChatPrompt: (req) =>
+    set({ pendingChatPrompt: typeof req === 'string' ? { text: req } : req }),
 
   forwardAckPulse: 0,
   pulseForwardAck: () => set((s) => ({ forwardAckPulse: s.forwardAckPulse + 1 })),

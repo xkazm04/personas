@@ -12,7 +12,7 @@
 > full), `.claude/CLAUDE.md` §"Concurrent CLI sessions" + §"Parallel-safety primitives"
 > (`:240-283`), all **35** skills under `.claude/skills/` (**53** tracked `.md`, every
 > `active-runs` mention read in context), `lefthook.yml` (91 lines), `.github/workflows/ci.yml`
-> test wiring, `.claude/skills/mvp/state/calibration.md` (the fleet's own five-run index-race
+> test wiring, `.claude/mvp/calibration.md` (the fleet's own five-run index-race
 > log), and `git log` over **7,406** commits — including the full five-commit forensic chain
 > behind `PersonaOverviewVariantConstellation.tsx`.
 >
@@ -76,7 +76,7 @@ Read the table those six answers make:
 
 **One technique passes all three columns.** It is not exotic — `GIT_INDEX_FILE` is a documented
 git environment variable — and it is already written down in this checkout, at
-`.claude/skills/mvp/state/calibration.md:54`, by a builder that hit the same wall from the other
+`.claude/mvp/calibration.md:54`, by a builder that hit the same wall from the other
 side:
 
 > *"**`git commit -- <path>` commits the WORKING TREE, not the index** — a genuine hole in the
@@ -314,7 +314,7 @@ misattributed commit.
 
 ## 6. Evidence
 
-**The one site to copy: `.claude/skills/mvp/state/calibration.md`.** It is not a spec, it is a
+**The one site to copy: `.claude/mvp/calibration.md`.** It is not a spec, it is a
 per-run calibration log, and it is the only artifact in this checkout that (a) states the correct
 git mechanism, (b) proposes the working primitive, and (c) reports the result of applying it
 across four subsequent runs. Its run-2 entry (`:54`) is quoted in §0; its run-4 entry (`:84`)
@@ -377,9 +377,9 @@ Split by intent, **9 prescribe it** —
 | `guide-sync/skill.md:47` | "`git commit --only <files>` **to bypass the shared index entirely**" |
 | `prototype/SKILL.md:55` | same sentence, verbatim |
 | `sentry/SKILL.md:59` | same sentence, verbatim |
-| `mvp/state/calibration.md:11` | "builder briefs must use `git commit -- <paths>`" (run 1; **corrected by the same file at `:54` after run 2**) |
+| `.claude/mvp/calibration.md:11` | "builder briefs must use `git commit -- <paths>`" (run 1; **corrected by the same file at `:54` after run 2**) |
 
-— and **2 document the defect** (`mvp/state/calibration.md:54`, `:84`). The three
+— and **2 document the defect** (`.claude/mvp/calibration.md:54`, `:84`). The three
 `GIT_INDEX_FILE` occurrences are all in that one calibration log; **no SKILL.md mentions it.**
 
 The readback row deserves its own line. The single match is

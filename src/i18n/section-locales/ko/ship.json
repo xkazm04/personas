@@ -146,5 +146,13 @@
   "run_milestone": "마일스톤 실행",
   "run_milestone_tooltip": "/ship-milestone으로 이 컷을 실행하는 Claude Code 세션을 연 다음, 실행 반영으로 결과를 가져옵니다.",
   "run_proposed_hint": "실행이 이것들을 제안하지만 자동으로 추가되지는 않습니다. 동의하면 작성기에서 직접 추가하세요.",
-  "run_proposed_title": "{count}개의 제안된 추가 항목"
+  "run_proposed_title": "{count}개의 제안된 추가 항목",
+  "ask_athena": "Athena에게 묻기",
+  "ask_athena_tooltip": "확정된 범위, 차단 요인, 아직 범위 밖에 있는 항목까지 이 마일스톤을 Athena에게 그대로 보여준 채로 열고, 대화하며 범위를 정합니다",
+  "certify_cut_intro": "범위를 확정하면 내용이 동결되고, 이후에 추가되는 항목은 범위 확장으로 표시됩니다. 아래 종료 기준은 확정된 범위를 기준으로 측정되므로 확정 자체를 막지 않습니다.",
+  "certify_cut_title": "{name}의 범위 확정",
+  "certify_ship_intro": "이 마일스톤을 출시할 수 있는지는 오직 이 기준들이 결정합니다. 각 항목은 실시간 신호에서 도출되며, 직접 입력된 값은 없습니다.",
+  "certify_ship_title": "{name} 출시",
+  "compose_scope_tooltip": "이 마일스톤을 구성할 기능과 목표를 선택하세요",
+  "criteria_badge_aria": "종료 기준 {total}개 중 {unmet}개 미충족"
 }

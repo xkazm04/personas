@@ -1256,6 +1256,44 @@ input[type="range"]:disabled::-moz-range-thumb {
   -webkit-backdrop-filter: blur(var(--blur-tooltip));
 }
 
+/* ---------------------------------------------------------------------------
+   Tooltip surface (`.tooltip-surface`)
+   ---------------------------------------------------------------------------
+   The shared Tooltip used to render on `.glass-sm`, which is `--background`
+   mixed 70% with TRANSPARENT and hairlined in `--primary`. Two problems, both
+   of which read to the operator as "that isn't our theme":
+
+   1. At 70% opacity the text sits on whatever is behind it. Over the
+      Mastermind sea, a chart, or a dense table the tooltip is legible only by
+      luck — and the 4px blur is not enough to rescue it, because blur reduces
+      detail, not contrast.
+   2. A `--primary`-tinted border makes the ring the brightest edge on screen
+      (--primary is cyan on the default theme). Combined with elevation-3 that
+      is exactly the "thick outline" reading.
+
+   `.mm-chrome` already solved this relationship for canvas controls: on dark
+   themes chrome goes a step DARKER than the surface it floats over so it
+   recedes, and on light themes it comes forward as near-white. This applies
+   the same rule to the one overlay that never got it. The border is
+   `--foreground`-tinted, so it stays a hairline in every palette instead of
+   glowing in the accent colour.
+
+   Opacity is 96%, not 100%: enough to own its own contrast, still enough for
+   the blur tier to read as depth rather than as a pasted rectangle. */
+.tooltip-surface {
+  --tooltip-bg: color-mix(in srgb, #000 34%, var(--background));
+  --tooltip-edge: color-mix(in srgb, var(--foreground) 14%, transparent);
+  background-color: color-mix(in srgb, var(--tooltip-bg) 96%, transparent);
+  border: 1px solid var(--tooltip-edge);
+  color: var(--foreground);
+}
+
+[data-theme^="light"] .tooltip-surface {
+  /* Light palettes run the ladder the other way — chrome comes FORWARD. */
+  --tooltip-bg: color-mix(in srgb, #fff 72%, var(--background));
+  --tooltip-edge: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
 /* Skip backdrop-filter under prefers-reduced-motion. Covers both the
    semantic tiers above and any unmigrated `backdrop-blur-*` utilities
    (Tailwind classes start with the literal substring "backdrop-blur-"). */

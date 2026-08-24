@@ -525,6 +525,7 @@ export type { KnowledgeGap } from "./KnowledgeGap";
 export type { KnowledgeGraphSummary } from "./KnowledgeGraphSummary";
 export type { KpiSimIngestSummary } from "./KpiSimIngestSummary";
 export type { KpiSimPrepared } from "./KpiSimPrepared";
+export type { KpLink } from "./KpLink";
 export type { LabAbExperiment } from "./LabAbExperiment";
 export type { LaneDate } from "./LaneDate";
 export type { LabAbResult } from "./LabAbResult";

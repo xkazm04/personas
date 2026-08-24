@@ -171,6 +171,10 @@ pub(crate) async fn execute_approval_action(
         // path. Behavior is otherwise identical — the frontend's
         // UnifiedMatrixEntry consumes both via the same prefill slot.
         "build_oneshot" => execute_build_oneshot(&state, &app, params).await,
+        // KP bridge (WP3) — an external hiring app's persona hire request,
+        // inserted by `POST /api/kp/persona-requests` (management_api), not by
+        // Athena's grammar. Modeled on build_oneshot; NOT autopilot-eligible.
+        "kp_hire_request" => execute_kp_hire_request(&state, &app, params).await,
         "run_arena" => execute_run_arena(&state, &app, params).await,
         "companion_breed_personas" => execute_companion_breed_personas(&state, &app, params).await,
         "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, params).await,
@@ -192,6 +196,10 @@ pub(crate) async fn execute_approval_action(
         // filed while autonomous mode was on and clicked after it was turned
         // off is refused at fire time, naming the reason.
         "remote_instruct" => execute_remote_instruct(&state, params).await,
+        // Ship layer — act on a milestone that already exists. The CREATE path
+        // is the editable `show_ship_milestone` chat card, not an approval.
+        "set_ship_scope" => execute_set_ship_scope(&state, params),
+        "ship_milestone_lifecycle" => execute_ship_milestone_lifecycle(&state, params),
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, params),
@@ -278,9 +286,14 @@ pub async fn companion_reject_action(
     reason: Option<String>,
 ) -> Result<ApprovalOutcome, AppError> {
     ipc_auth::require_auth(&state).await?;
-    let (action, _params) = load_pending(&state, &approval_id)?;
+    let (action, params) = load_pending(&state, &approval_id)?;
     finalize_approval(&state, &approval_id, APPROVAL_STATUS_REJECTED)?;
     let reason = reason.unwrap_or_else(|| "no reason given".into());
+    // KP bridge (WP3): tell the originating KP app its hire request was turned
+    // down. Best-effort fire-and-forget — a dead KP app never blocks the reject.
+    if action == "kp_hire_request" {
+        notify_kp_lifecycle(&params, "rejected", Some(reason.clone()), None);
+    }
     let log = format!("[Athena action rejected] {action}\n\nReason: {reason}");
     log_action_episode(&state, &action, &log).await;
     Ok(ApprovalOutcome {

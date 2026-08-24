@@ -180,6 +180,9 @@ pub async fn invoke_tool_direct(
         &persona.name,
         &input_json,
         Some(&state.rate_limiter),
+        // Manual Tool Runner invocation — no persona_executions row exists, so
+        // there is nothing for the per-execution usage counter to attach to.
+        None,
     )
     .await
 }

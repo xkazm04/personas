@@ -3,15 +3,20 @@
 // ingested executed the milestone invisibly, which is the whole risk of running
 // it as a CLI skill instead of an in-app op.
 //
+// SPLIT 2026-08-20: the two buttons moved into the unified `ShipControlBar` and
+// the result panel stayed under it, so the file now exports a HOOK (the two
+// actions plus their busy flags and the ingest summary) and the panel that
+// renders the summary. The pairing argument above survives the move intact —
+// they are still adjacent, just in a toolbar with the other milestone verbs
+// instead of floating in the header on their own.
+//
 // Dispatch is EXACTLY one positional token (`/ship-milestone <id>`) — the
 // spawner appends `--mcp-config` last, and anything after that flag is
 // swallowed by it.
-import { useState } from 'react';
-import { Download, SquareTerminal } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 import { spawnSession } from '@/api/fleet/fleet';
 import { shipMilestoneIngest, type ShipMilestoneIngestSummary } from '@/api/devTools/milestones';
-import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -21,7 +26,7 @@ import { INK } from '../../passport/passportInk';
 
 /** The ingest result, reported inline. Proposals are shown as PROPOSALS — the
  *  door refuses to apply them, and this panel does not offer to either. */
-function RunSummary({ summary, onDismiss }: {
+export function ShipRunSummary({ summary, onDismiss }: {
   summary: ShipMilestoneIngestSummary;
   onDismiss: () => void;
 }) {
@@ -82,17 +87,27 @@ function RunSummary({ summary, onDismiss }: {
   );
 }
 
-/** Run + ingest, for one milestone. `rootPath` null while the project loads. */
-export function ShipMilestoneRun({ milestoneId, rootPath }: {
-  milestoneId: string;
-  rootPath: string | null;
-}) {
-  const { t } = useTranslation();
+/**
+ * Run + ingest, for one milestone. `rootPath` is null while the project loads,
+ * which is why `run` guards on it rather than the caller doing so.
+ *
+ * The two actions are returned rather than rendered so the control bar can sit
+ * them beside Certify and Compose; the caller renders `<ShipRunSummary>` with
+ * the returned `summary` wherever the result belongs on its own layout.
+ */
+export function useShipMilestoneRun(milestoneId: string, rootPath: string | null): {
+  run: () => Promise<void>;
+  ingest: () => Promise<void>;
+  spawning: boolean;
+  ingesting: boolean;
+  summary: ShipMilestoneIngestSummary | null;
+  dismissSummary: () => void;
+} {
   const [spawning, setSpawning] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [summary, setSummary] = useState<ShipMilestoneIngestSummary | null>(null);
 
-  const run = async () => {
+  const run = useCallback(async () => {
     if (!rootPath) return;
     setSpawning(true);
     try {
@@ -103,9 +118,9 @@ export function ShipMilestoneRun({ milestoneId, rootPath }: {
     } finally {
       setSpawning(false);
     }
-  };
+  }, [milestoneId, rootPath]);
 
-  const ingest = async () => {
+  const ingest = useCallback(async () => {
     setIngesting(true);
     try {
       setSummary(await shipMilestoneIngest(milestoneId));
@@ -116,32 +131,9 @@ export function ShipMilestoneRun({ milestoneId, rootPath }: {
     } finally {
       setIngesting(false);
     }
-  };
+  }, [milestoneId]);
 
-  return (
-    <div data-testid="ship-milestone-run">
-      <span className="inline-flex items-center gap-2">
-        <AsyncButton
-          isLoading={spawning}
-          disabled={!rootPath}
-          onClick={() => void run()}
-          icon={<SquareTerminal className="w-3.5 h-3.5" aria-hidden />}
-          title={t.ship.run_milestone_tooltip}
-          data-testid="ship-run-milestone"
-        >
-          {t.ship.run_milestone}
-        </AsyncButton>
-        <AsyncButton
-          isLoading={ingesting}
-          onClick={() => void ingest()}
-          icon={<Download className="w-3.5 h-3.5" aria-hidden />}
-          title={t.ship.run_ingest_tooltip}
-          data-testid="ship-ingest-run"
-        >
-          {t.ship.run_ingest}
-        </AsyncButton>
-      </span>
-      {summary && <RunSummary summary={summary} onDismiss={() => setSummary(null)} />}
-    </div>
-  );
+  const dismissSummary = useCallback(() => setSummary(null), []);
+
+  return { run, ingest, spawning, ingesting, summary, dismissSummary };
 }

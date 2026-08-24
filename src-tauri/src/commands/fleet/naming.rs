@@ -1,12 +1,116 @@
-//! One-shot LLM naming for Fleet sessions.
+//! Session naming for Fleet sessions — the CLI `--name` path and the LLM
+//! fallback.
 //!
-//! Claude Code's OSC terminal title resolves to the generic "Claude Code" for
-//! every headless spawn, so each tile would read the same. Instead, when a
-//! session is spawned with a task we ask a cheap model (Haiku) for a terse 3-5
-//! word label and store it as the session's `title`. Fire-and-forget and
-//! UI-independent — it labels the session whether or not anyone is watching it.
+//! Claude Code accepts `-n, --name <name>`, which sets the display name in the
+//! prompt box, the `/resume` picker, the terminal title AND `claude agents
+//! --json` — so a name passed at spawn survives the app being down. That is
+//! the primary path: [`cli_safe_label`] derives `athena-<role>` for every
+//! dispatched session and `pty::spawn_session_named` passes it as `--name`.
+//!
+//! The Haiku one-shot below ([`name_session_from_task`]) is now ONLY the
+//! fallback for bare spawns that carry no role (and so no CLI name). It is an
+//! extra CLI process with a 30 s timeout per session, so `pty.rs` skips it
+//! whenever a name was already passed at spawn. (Historically it existed
+//! because every headless spawn's OSC title resolved to the generic "Claude
+//! Code"; `--name` closed that gap.)
 
 use tauri::AppHandle;
+
+/// Hard cap on the CLI-facing name: short enough to survive an argv round-trip
+/// plus a terminal title cleanly (decision: ASCII lowercase-kebab, ≤ 24 chars).
+pub const CLI_NAME_MAX_CHARS: usize = 24;
+
+/// Number of session-id characters appended when a CLI name is already taken.
+const DISCRIMINATOR_CHARS: usize = 3;
+
+/// Collapse arbitrary text into ASCII lowercase-kebab: runs of
+/// non-alphanumerics become a single `-`, leading/trailing dashes are dropped.
+fn kebab(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut pending_dash = false;
+    for c in raw.chars() {
+        if c.is_ascii_alphanumeric() {
+            if pending_dash && !out.is_empty() {
+                out.push('-');
+            }
+            pending_dash = false;
+            out.push(c.to_ascii_lowercase());
+        } else {
+            pending_dash = true;
+        }
+    }
+    out
+}
+
+fn truncate_kebab(s: &str, max: usize) -> String {
+    s.chars()
+        .take(max)
+        .collect::<String>()
+        .trim_end_matches('-')
+        .to_string()
+}
+
+/// Derive the CLI-safe session name for a dispatched role:
+/// `athena-<role>` in ASCII lowercase-kebab, truncated to
+/// [`CLI_NAME_MAX_CHARS`], never ending in a dash. The `athena` prefix is
+/// sourced from `ATHENA_SESSION_NAME_SENTINEL` because
+/// `FleetRegistry::is_athena_owned` prefix-matches it to gate the autonomous
+/// `fleet_send_input` / `fleet_kill` paths — it is load-bearing, not
+/// decoration. The `·` and project label stay in the registry display name;
+/// they are not passed to the CLI.
+///
+/// Returns an empty string for an empty/unsanitisable role, which the spawn
+/// path treats as "no CLI name" (→ Haiku fallback).
+pub fn cli_safe_label(role: &str) -> String {
+    let role = kebab(role);
+    if role.is_empty() {
+        return String::new();
+    }
+    truncate_kebab(
+        &format!("{}-{role}", super::registry::ATHENA_SESSION_NAME_SENTINEL),
+        CLI_NAME_MAX_CHARS,
+    )
+}
+
+/// The part of a registry display name that corresponds to the CLI name:
+/// everything before the first ` · ` separator
+/// (`"athena-writer · personas"` → `"athena-writer"`).
+pub fn cli_part_of_display_name(name: &str) -> &str {
+    name.split(" · ").next().unwrap_or(name).trim()
+}
+
+/// Resolve a collision: if `label` is already in `taken`, append `-<xyz>` where
+/// `xyz` is the first [`DISCRIMINATOR_CHARS`] of `session_id`, trimming the
+/// base so the result still fits [`CLI_NAME_MAX_CHARS`]. Two live sessions on
+/// one machine are both auto-named `kp-5e` today, and two dispatch roles in
+/// one operation can collide the same way — the name must stay addressable.
+pub fn disambiguate(label: &str, taken: &[String], session_id: &str) -> String {
+    if label.is_empty() || !taken.iter().any(|t| t == label) {
+        return label.to_string();
+    }
+    let disc: String = session_id
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .take(DISCRIMINATOR_CHARS)
+        .collect::<String>()
+        .to_ascii_lowercase();
+    if disc.is_empty() {
+        return label.to_string();
+    }
+    let base = truncate_kebab(label, CLI_NAME_MAX_CHARS.saturating_sub(disc.len() + 1));
+    format!("{base}-{disc}")
+}
+
+/// The argv fragment that carries the CLI name: `["--name", label]`, or
+/// nothing when the label is empty or the spawn is a `--resume` (a resumed
+/// session already has its name; passing another would rename it).
+pub fn cli_name_args(label: Option<&str>, spawn_args: &[String]) -> Vec<String> {
+    let label = label.map(str::trim).unwrap_or("");
+    if label.is_empty() || spawn_args.iter().any(|a| a == "--resume") {
+        return Vec::new();
+    }
+    vec!["--name".to_string(), label.to_string()]
+}
 
 /// Cheap, fast model for the one-shot name — mirrors the smart-search default.
 const NAMING_MODEL: &str = "claude-haiku-4-5-20251001";
@@ -56,6 +160,8 @@ const VALUE_FLAGS: &[&str] = &[
     "--resume",
     "--max-turns",
     "--add-dir",
+    // The CLI display name (`-n, --name <name>`); its value is not the task.
+    "--name",
 ];
 
 /// Pull the session's task from its spawn args — the first positional argument,
@@ -136,7 +242,86 @@ pub fn name_session_from_task(app: AppHandle, session_id: String, task: String) 
 
 #[cfg(test)]
 mod tests {
-    use super::{clean_name, result_field, task_from_args};
+    use super::{
+        clean_name, cli_name_args, cli_part_of_display_name, cli_safe_label, disambiguate,
+        result_field, task_from_args, CLI_NAME_MAX_CHARS,
+    };
+    use crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL;
+
+    #[test]
+    fn cli_safe_label_is_kebab_and_keeps_the_sentinel_prefix() {
+        assert_eq!(
+            cli_safe_label("writer"),
+            format!("{ATHENA_SESSION_NAME_SENTINEL}-writer")
+        );
+        // Spaces, case, the registry's `·` and unicode all collapse to kebab.
+        assert_eq!(
+            cli_safe_label("Code Reviewer · qa"),
+            format!("{ATHENA_SESSION_NAME_SENTINEL}-code-reviewer-qa")
+        );
+        assert_eq!(cli_safe_label("   "), "");
+        assert_eq!(cli_safe_label("·"), "");
+        for label in [cli_safe_label("writer"), cli_safe_label("QA/Guardian_2")] {
+            assert!(label.starts_with(ATHENA_SESSION_NAME_SENTINEL));
+            assert!(label
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'));
+        }
+    }
+
+    #[test]
+    fn cli_safe_label_truncates_to_the_cap_without_a_trailing_dash() {
+        let long = cli_safe_label("a-very-long-role-name-that-overflows-the-cap");
+        assert!(long.chars().count() <= CLI_NAME_MAX_CHARS);
+        assert!(!long.ends_with('-'));
+        assert!(long.starts_with(ATHENA_SESSION_NAME_SENTINEL));
+        // "athena-" is 7 chars; a 17-char role puts a dash exactly at the cut.
+        let boundary = cli_safe_label("abcdefghijklmnopq-xyz");
+        assert!(!boundary.ends_with('-'));
+        assert!(boundary.chars().count() <= CLI_NAME_MAX_CHARS);
+    }
+
+    #[test]
+    fn disambiguate_appends_session_id_chars_only_on_collision() {
+        let taken = vec!["athena-writer".to_string(), "athena-qa".to_string()];
+        assert_eq!(
+            disambiguate("athena-writer", &taken, "3f2a9c-uuid"),
+            "athena-writer-3f2"
+        );
+        assert_eq!(
+            disambiguate("athena-reviewer", &taken, "3f2a9c"),
+            "athena-reviewer"
+        );
+        assert_eq!(disambiguate("", &taken, "3f2a9c"), "");
+        // Still within the cap when the base already sits at the cap.
+        let full = cli_safe_label("abcdefghijklmnopqrstuvwxyz");
+        let out = disambiguate(&full, std::slice::from_ref(&full), "ABC123");
+        assert!(out.chars().count() <= CLI_NAME_MAX_CHARS);
+        assert!(out.ends_with("-abc"));
+        assert!(out.starts_with(ATHENA_SESSION_NAME_SENTINEL));
+    }
+
+    #[test]
+    fn cli_part_of_display_name_drops_the_project_suffix() {
+        assert_eq!(
+            cli_part_of_display_name("athena-writer · personas"),
+            "athena-writer"
+        );
+        assert_eq!(cli_part_of_display_name("athena-writer"), "athena-writer");
+    }
+
+    #[test]
+    fn cli_name_args_omitted_for_empty_label_or_resume() {
+        let fresh = vec!["Do the thing".to_string()];
+        assert_eq!(
+            cli_name_args(Some("athena-writer"), &fresh),
+            vec!["--name".to_string(), "athena-writer".to_string()]
+        );
+        assert!(cli_name_args(None, &fresh).is_empty());
+        assert!(cli_name_args(Some("  "), &fresh).is_empty());
+        let resumed = vec!["--resume".to_string(), "abc".to_string()];
+        assert!(cli_name_args(Some("athena-writer"), &resumed).is_empty());
+    }
 
     #[test]
     fn clean_name_strips_quotes_and_takes_first_line() {

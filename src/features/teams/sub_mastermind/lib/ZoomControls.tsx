@@ -4,6 +4,7 @@
 // Fit reframes every island in one click.
 import { Maximize2, Minus, Plus, Undo2, Wand2 } from 'lucide-react';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function ZoomControls({ onZoomBy, onFit, onTidy, onUndo, canUndo }: {
@@ -14,17 +15,21 @@ export function ZoomControls({ onZoomBy, onFit, onTidy, onUndo, canUndo }: {
   canUndo: boolean;
 }) {
   const { t } = useTranslation();
+  // `aria-label` names the control, the Tooltip shows the same words on hover
+  // AND on keyboard focus. The native `title` this replaced did neither for a
+  // keyboard or touch user (golden path P2, docs/concepts/golden-paths/tooltip.md).
   const btn = (label: string, onClick: () => void, icon: React.ReactNode, testId: string) => (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className="p-1.5 rounded-interactive text-foreground/65 hover:text-foreground hover:bg-primary/12 transition-colors focus-ring"
-      data-testid={testId}
-    >
-      {icon}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className="p-1.5 rounded-interactive text-foreground/65 hover:text-foreground hover:bg-primary/12 transition-colors focus-ring"
+        data-testid={testId}
+      >
+        {icon}
+      </button>
+    </Tooltip>
   );
   return (
     <div className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-0.5 p-1 rounded-interactive mm-chrome surface-blur-tooltip">

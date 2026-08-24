@@ -642,6 +642,20 @@ pub const TEAM_SLACK_BRIDGE_CURSOR_PREFIX: &str = "team_slack_bridge_cursor:";
 /// fall back to the legacy global `autonomous_*` flags.
 pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 
+/// Per-project **App master mandate**. Full key:
+/// `app_master_mandate:<project_id>`, value = a JSON
+/// `personas_engine::app_master::MandateRecord`. Written once when a kp
+/// App-master hire is approved; read by the autonomy front door and by the
+/// diff chokepoint. Absent = the project carries no App master, which is the
+/// overwhelmingly common case and means "behave exactly as before".
+///
+/// A JSON blob rather than an enum because the mandate is genuinely
+/// structured (a rung, a class list, an owner, the tenure dates) — but
+/// `validate_value` still rejects malformed JSON at write time, so a
+/// truncated record can never be read back as an *empty* (i.e. permissive)
+/// mandate.
+pub const APP_MASTER_MANDATE_PREFIX: &str = "app_master_mandate:";
+
 /// Durable mirror of the webview appearance preferences (JSON-encoded object:
 /// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
 /// `customTheme`). The render-path authority stays in webview localStorage
@@ -836,6 +850,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     HEALTH_WATCH_PREFIX,
     CLOUD_SYNC_CURSOR_PREFIX,
     AUTOPILOT_MODE_PREFIX,
+    APP_MASTER_MANDATE_PREFIX,
     TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
 ];
 
@@ -898,6 +913,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     // still reject truncated/garbage JSON at write time instead of letting the
     // Axum read handler fall back to defaults and silently drop the setting.
     if key.starts_with(AUTO_OPTIMIZE_PREFIX) || key.starts_with(HEALTH_WATCH_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
+    // Per-project App master mandate (prefix key). Same reasoning as above: the
+    // consumer struct lives in `personas-engine`, which `personas-db` cannot
+    // import, but a truncated blob must still be refused at write time — a
+    // mandate that fails to parse is read as ABSENT, and an absent mandate
+    // enforces nothing.
+    if key.starts_with(APP_MASTER_MANDATE_PREFIX) {
         return validate_json_wellformed(key, value);
     }
     match key {
@@ -1177,6 +1200,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
     if key.starts_with(AUTO_ROLLBACK_PREFIX)
         || key.starts_with(AUTO_OPTIMIZE_PREFIX)
         || key.starts_with(AUTOPILOT_MODE_PREFIX)
+        || key.starts_with(APP_MASTER_MANDATE_PREFIX)
     {
         return Some("autonomy");
     }

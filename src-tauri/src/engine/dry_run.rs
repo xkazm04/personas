@@ -236,7 +236,7 @@ pub async fn dry_run_persona(
     }
 
     // -- Credential resolution --------------------------------------------
-    let (_cred_env, _cred_hints, cred_failures, injected_connectors) =
+    let (_cred_env, _cred_hints, cred_failures, injected_connectors, _cred_ids) =
         resolve_credential_env_vars(&state.db, &tools, &persona.id, &persona.name).await;
 
     let mut resolved_credentials = injected_connectors.clone();

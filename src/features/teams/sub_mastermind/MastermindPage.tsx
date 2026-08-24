@@ -41,6 +41,7 @@ import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
 
 import { CanvasToolbar } from './lib/CanvasToolbar';
 import { DataHealthBar } from './lib/DataHealthBar';
+import { MilestoneStatusBar } from './lib/MilestoneStatusBar';
 import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
@@ -250,8 +251,11 @@ function MastermindInner() {
           if (vm.steps.length === 0) continue;
           m.set(r.projectId, {
             next: vm.next?.name ?? null,
+            nextStatus: vm.next?.status === 'active' ? 'active' : vm.next ? 'planned' : null,
             shipped: vm.shipped,
             total: vm.steps.length,
+            targetDate: vm.next?.targetDate ?? null,
+            forecastDate: vm.forecast?.date ?? null,
             late: vm.forecast?.late ?? false,
           });
         }
@@ -1063,7 +1067,18 @@ function MastermindInner() {
         </button>
       )}
 
-      <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
+      {/* Bottom chrome, stacked in ONE column above the mode toolbar. Both
+          children self-hide, so a healthy workspace with nothing in flight
+          renders an empty (invisible) stack — and neither can be positioned
+          on top of the other by a constant drifting in the wrong file. */}
+      <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none [&>*]:pointer-events-auto">
+        <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
+        <MilestoneStatusBar
+          islands={positioned.islands}
+          focusedSlug={focusedSlug ?? openSlug}
+          onOpenShip={(slug) => openFactory(slug, 'ship')}
+        />
+      </div>
     </div>
     </ImproveProvider>
   );

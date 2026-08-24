@@ -75,6 +75,7 @@
 
 use std::collections::HashMap;
 
+use crate::app_master::{self, MandateRecord, MandateRefusal, RUNG_BRANCH, RUNG_READ, RUNG_RETRY};
 use crate::autopilot::{self, AutopilotMode, Capability};
 use personas_db::settings_keys;
 use personas_db::DbPool;
@@ -149,6 +150,42 @@ impl Action {
             _ => None,
         }
     }
+
+    /// The **App master scope rung** this action needs (`0 read · 1 retry ·
+    /// 2 open branch/PR`; see [`crate::app_master`]).
+    ///
+    /// The mapping asks one question per action: *what does running this
+    /// actually do to the repository?* Reading, ranking and measuring are
+    /// rung 0 no matter how much they cost; re-running work that already
+    /// exists is rung 1; anything that authors a change is rung 2.
+    ///
+    /// This is a **second, independent** gate. Autopilot mode answers "is this
+    /// project on autopilot for this capability"; the rung answers "is the
+    /// holder of this project allowed to go this far at all". A project can be
+    /// on `full` autopilot and still be refused by a rung-0 mandate — which is
+    /// exactly the state a probationary read-only App master is in.
+    pub fn required_rung(self) -> u8 {
+        match self {
+            // Observe, measure, rank, report. No write reaches the repo.
+            Self::KpiEvaluation
+            | Self::BacklogTriage
+            | Self::IdeaScan
+            | Self::DirectorStorm
+            | Self::AthenaReactions
+            | Self::ReviewTriageHigh
+            | Self::AthenaReviewResolution
+            | Self::CompanionMaster => RUNG_READ,
+            // Re-run existing work; no new change is authored.
+            Self::AssignmentRetry => RUNG_RETRY,
+            // These author work: a derived goal, an advanced goal, a resolved
+            // deliberation and a promoted backlog idea all end in a session
+            // that edits the checkout.
+            Self::KpiGoalDerivation
+            | Self::GoalAdvancement
+            | Self::BacklogToGoal
+            | Self::Deliberation => RUNG_BRANCH,
+        }
+    }
 }
 
 /// Read an action's **global** flag as a bool (`"true"` → on). The chokepoint
@@ -175,6 +212,76 @@ pub fn is_allowed(
     match action.capability() {
         Some(cap) => autopilot::cap_enabled(modes, project_id, global, cap),
         None => global,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// App master mandate — the second gate (P4)
+// ---------------------------------------------------------------------------
+
+/// Load every project's App master mandate for this tick. Mirrors
+/// [`load_modes`]: one prefix query, absent = unmandated.
+pub use crate::app_master::load_mandates;
+
+/// Does this project's App master mandate permit `action`?
+///
+/// `Ok(())` for **every project that carries no mandate** — this gate is
+/// strictly additive, so nothing about an ordinary project's behaviour
+/// changes. For a mandated project the rung ladder decides, and a refusal is
+/// [`MandateRefusal::AboveRung`]: typed, naming the action, both rungs and the
+/// owner to escalate to.
+///
+/// Deliberately separate from [`is_allowed`] rather than folded into it.
+/// `is_allowed` answers a *configuration* question and a `false` is a
+/// no-op-this-tick; a mandate refusal is a *governance* answer that must be
+/// reported, counted and escalated. Collapsing them into one `bool` would
+/// throw away the reason at the exact call site that needs it.
+pub fn mandate_permits(
+    mandates: &HashMap<String, MandateRecord>,
+    project_id: &str,
+    action: Action,
+) -> Result<(), MandateRefusal> {
+    let Some(record) = mandates.get(project_id) else {
+        return Ok(());
+    };
+    record
+        .mandate
+        .permits_rung(action.required_rung(), action.label())
+}
+
+/// One-shot variant for call sites that hold a pool and a single project (the
+/// overnight tick, the diff chokepoint) rather than a pre-loaded map.
+pub fn mandate_permits_for(
+    pool: &DbPool,
+    project_id: &str,
+    action: Action,
+) -> Result<(), MandateRefusal> {
+    let Some(record) = app_master::get_mandate(pool, project_id) else {
+        return Ok(());
+    };
+    record
+        .mandate
+        .permits_rung(action.required_rung(), action.label())
+}
+
+impl Action {
+    /// Human label used in refusal messages and review packets.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::GoalAdvancement => "advance a goal",
+            Self::KpiGoalDerivation => "derive a goal from an off-track KPI",
+            Self::KpiEvaluation => "measure due KPIs",
+            Self::CompanionMaster => "companion autonomy",
+            Self::AssignmentRetry => "retry a failed assignment",
+            Self::ReviewTriageHigh => "auto-triage a high-severity review",
+            Self::BacklogToGoal => "promote a backlog idea into a goal",
+            Self::IdeaScan => "scan for ideas",
+            Self::BacklogTriage => "triage the backlog",
+            Self::DirectorStorm => "run a Director coaching pass",
+            Self::AthenaReactions => "post channel reactions",
+            Self::AthenaReviewResolution => "resolve a parked review",
+            Self::Deliberation => "advance a deliberation",
+        }
     }
 }
 
@@ -219,6 +326,110 @@ mod tests {
         // UNSET project → follow the global flag in both directions (legacy).
         assert!(is_allowed(&m, "p_unset", true, Action::GoalAdvancement));
         assert!(!is_allowed(&m, "p_unset", false, Action::GoalAdvancement));
+    }
+
+    // -- App master mandate gate (P4) ----------------------------------------
+
+    fn all_actions() -> [Action; 13] {
+        [
+            Action::GoalAdvancement,
+            Action::KpiGoalDerivation,
+            Action::KpiEvaluation,
+            Action::CompanionMaster,
+            Action::AssignmentRetry,
+            Action::ReviewTriageHigh,
+            Action::BacklogToGoal,
+            Action::IdeaScan,
+            Action::BacklogTriage,
+            Action::DirectorStorm,
+            Action::AthenaReactions,
+            Action::AthenaReviewResolution,
+            Action::Deliberation,
+        ]
+    }
+
+    fn record(project_id: &str, rung: u8) -> MandateRecord {
+        MandateRecord {
+            persona_id: "p1".into(),
+            project_id: project_id.into(),
+            mandate: crate::app_master::Mandate {
+                scope_rung: rung,
+                owner: "ana@example.com".into(),
+                ..Default::default()
+            },
+            probation_ends_at: "2026-09-22T00:00:00Z".into(),
+            review_cadence_days: 30,
+            retire_criteria: Vec::new(),
+            probation_decided_at: None,
+            probation_decision: None,
+            probation_review_id: None,
+        }
+    }
+
+    #[test]
+    fn an_unmandated_project_is_never_refused() {
+        let mandates: HashMap<String, MandateRecord> = HashMap::new();
+        for a in all_actions() {
+            assert!(
+                mandate_permits(&mandates, "any-project", a).is_ok(),
+                "the mandate gate must be additive: {a:?} was refused for a project with no App master"
+            );
+        }
+        // A mandate on a DIFFERENT project must not leak onto this one.
+        let mut m = HashMap::new();
+        m.insert("other".to_string(), record("other", RUNG_READ));
+        assert!(mandate_permits(&m, "mine", Action::GoalAdvancement).is_ok());
+    }
+
+    #[test]
+    fn a_read_only_mandate_refuses_every_authoring_action_by_name() {
+        let mut m = HashMap::new();
+        m.insert("p".to_string(), record("p", RUNG_READ));
+        // Rung 0 still measures, ranks and reports.
+        assert!(mandate_permits(&m, "p", Action::KpiEvaluation).is_ok());
+        assert!(mandate_permits(&m, "p", Action::BacklogTriage).is_ok());
+        // …but authors nothing, and cannot even retry.
+        let refused = mandate_permits(&m, "p", Action::GoalAdvancement).unwrap_err();
+        assert!(refused.to_string().contains("advance a goal"), "{refused}");
+        assert!(mandate_permits(&m, "p", Action::AssignmentRetry).is_err());
+        assert!(mandate_permits(&m, "p", Action::Deliberation).is_err());
+    }
+
+    #[test]
+    fn rung_two_permits_every_action_v1_can_grant() {
+        let mut m = HashMap::new();
+        m.insert("p".to_string(), record("p", RUNG_BRANCH));
+        for a in all_actions() {
+            assert!(
+                mandate_permits(&m, "p", a).is_ok(),
+                "rung 2 is the ceiling v1 grants — {a:?} must fit under it"
+            );
+        }
+    }
+
+    #[test]
+    fn the_mandate_gate_is_independent_of_autopilot_mode() {
+        // A project on FULL autopilot whose mandate is rung 0: autopilot says
+        // yes, the mandate says no. Both must be consulted; neither implies
+        // the other.
+        let modes = modes(&[("p", AutopilotMode::Full)]);
+        let mut mandates = HashMap::new();
+        mandates.insert("p".to_string(), record("p", RUNG_READ));
+        assert!(is_allowed(&modes, "p", false, Action::GoalAdvancement));
+        assert!(mandate_permits(&mandates, "p", Action::GoalAdvancement).is_err());
+    }
+
+    #[test]
+    fn every_action_maps_to_a_grantable_rung() {
+        for a in all_actions() {
+            assert!(
+                a.required_rung() <= crate::app_master::MAX_GRANTABLE_RUNG,
+                "{a:?} requires rung {} — an action no mandate can ever permit is \
+                 dead code pretending to be a gate",
+                a.required_rung()
+            );
+            assert!(!a.label().is_empty(), "{a:?} has no refusal label");
+        }
     }
 
     #[test]

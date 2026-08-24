@@ -20270,6 +20270,11 @@ export type Translations = {
     athena_revert_body_one: string;
     athena_revert_body_other: string;
     athena_revert_cta: string;
+    milestone_bar_cut: string;
+    milestone_bar_planned: string;
+    milestone_bar_target: string;
+    milestone_bar_forecast: string;
+    milestone_bar_tooltip: string;
   };
   ship: {
     tab_ship: string;
@@ -20420,5 +20425,13 @@ export type Translations = {
     run_proposed_title: string;
     run_proposed_hint: string;
     run_asked_title: string;
+    ask_athena: string;
+    ask_athena_tooltip: string;
+    compose_scope_tooltip: string;
+    criteria_badge_aria: string;
+    certify_cut_title: string;
+    certify_ship_title: string;
+    certify_cut_intro: string;
+    certify_ship_intro: string;
   };
 };

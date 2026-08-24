@@ -853,6 +853,307 @@ pub(crate) async fn execute_build_oneshot(
     })
 }
 
+/// KP bridge (WP3) — approve an external KP hiring app's persona hire request.
+///
+/// The pending row is inserted by `POST /api/kp/persona-requests`
+/// (`engine::management_api`), NOT by Athena's grammar. Modeled exactly on
+/// `execute_build_oneshot` above: create the draft persona, kick off a
+/// headless one-shot build, roll back the orphan draft if the spawn fails.
+/// The persona carries a typed `kp_link` in its design_context so the KP job
+/// stays addressable (WP4's outbound reporter reads it from there).
+///
+/// Deliberately NOT on `AUTOAPPROVE_ALLOWLIST` (approval_autopilot.rs) — like
+/// every build action, a KP hire always requires the human click.
+pub(crate) async fn execute_kp_hire_request(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    fn str_field<'a>(
+        v: &'a serde_json::Value,
+        path: &[&str],
+        what: &str,
+    ) -> Result<&'a str, AppError> {
+        let mut cur = v;
+        for p in path {
+            cur = cur
+                .get(p)
+                .ok_or_else(|| AppError::Internal(format!("kp_hire_request: missing `{what}`")))?;
+        }
+        cur.as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| AppError::Internal(format!("kp_hire_request: missing `{what}`")))
+    }
+
+    // Re-extract the essentials; the management API validated at intake, but
+    // the payload sat in the DB in between — fail closed on anything missing.
+    let name = str_field(params, &["spec", "name"], "spec.name")?.to_string();
+    let mission = str_field(params, &["spec", "mission"], "spec.mission")?.to_string();
+    let job_id = str_field(params, &["kp", "jobId"], "kp.jobId")?.to_string();
+    let job_title = str_field(params, &["kp", "jobTitle"], "kp.jobTitle")?.to_string();
+    let base_url = str_field(params, &["kp", "baseUrl"], "kp.baseUrl")?.to_string();
+    let report_token = str_field(params, &["reportToken"], "reportToken")?.to_string();
+    let system_prompt = params
+        .get("spec")
+        .and_then(|s| s.get("systemPromptDraft"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        // Same minimal fallback as the build_oneshot draft stub — the one-shot
+        // build's design pass replaces it once the agent_ir resolves.
+        .unwrap_or("You are a helpful AI assistant.")
+        .to_string();
+    let connectors: Vec<String> = params
+        .get("spec")
+        .and_then(|s| s.get("connectors"))
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|c| c.as_str())
+                .map(|c| c.trim().to_string())
+                .filter(|c| !c.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    let max_budget_usd = params
+        .get("spec")
+        .and_then(|s| s.get("maxBudgetUsd"))
+        .and_then(|v| v.as_f64());
+    let max_turns = params
+        .get("spec")
+        .and_then(|s| s.get("maxTurns"))
+        .and_then(|v| v.as_i64())
+        .map(|n| n as i32);
+    let request_id = params
+        .get("requestId")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+
+    // Build intent: the mission plus enough hiring context for the one-shot
+    // design pass to pick sensible connectors and use cases.
+    let mut intent = format!(
+        "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
+    );
+    if !connectors.is_empty() {
+        intent.push_str(&format!(
+            "\nPreferred connectors: {}.",
+            connectors.join(", ")
+        ));
+    }
+    if let Some(metrics) = params
+        .get("spec")
+        .and_then(|s| s.get("successMetrics"))
+        .and_then(|v| v.as_array())
+        .filter(|a| !a.is_empty())
+    {
+        let lines: Vec<String> = metrics
+            .iter()
+            .filter_map(|m| m.get("label").and_then(|l| l.as_str()))
+            .map(|l| format!("- {l}"))
+            .collect();
+        if !lines.is_empty() {
+            intent.push_str(&format!("\nSuccess metrics:\n{}", lines.join("\n")));
+        }
+    }
+
+    // The typed link back to the KP job — the whole point of WP3's model change.
+    let design_context = crate::db::models::DesignContextData {
+        kp_link: Some(crate::db::models::KpLink {
+            job_id,
+            job_title: job_title.clone(),
+            base_url,
+            report_token,
+        }),
+        ..Default::default()
+    };
+
+    // 1. Create the draft persona (mirrors execute_build_oneshot).
+    let description: String = mission.chars().take(200).collect();
+    let persona = crate::db::repos::core::personas::create(
+        &state.db,
+        crate::db::models::CreatePersonaInput {
+            name,
+            system_prompt,
+            project_id: None,
+            description: Some(description),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: Some(true),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile: None,
+            max_budget_usd,
+            max_turns,
+            design_context: Some(design_context.to_json_string()),
+            notification_channels: None,
+            // First-class draft: promoted to `active` by promote_build_draft
+            // once the build finishes.
+            lifecycle: Some("draft".to_string()),
+        },
+    )?;
+
+    // 2. Start the one-shot build headlessly, exactly like build_oneshot.
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let dummy_channel: tauri::ipc::Channel<serde_json::Value> =
+        tauri::ipc::Channel::new(|_response| Ok(()));
+    if let Err(spawn_err) = state.build_session_manager.start_session(
+        session_id.clone(),
+        persona.id.clone(),
+        intent,
+        dummy_channel,
+        state.db.clone(),
+        state.process_registry.clone(),
+        None,
+        None,
+        app.clone(),
+        None,
+        Some("one_shot".to_string()),
+        None, // no companion chat originated this build
+        None,
+        None,
+    ) {
+        // Roll back the orphan draft persona — same reasoning as
+        // execute_build_oneshot: the build never started, so the stub must not
+        // linger in rosters/dashboards. Best-effort cleanup.
+        if let Err(cleanup_err) = crate::db::repos::core::personas::delete(&state.db, &persona.id) {
+            tracing::error!(
+                persona_id = %persona.id,
+                error = %cleanup_err,
+                "Failed to roll back orphan draft persona after kp_hire_request spawn failure"
+            );
+        }
+        return Err(spawn_err);
+    }
+
+    // 3. Stamp the created persona + build session onto the approval row so
+    //    `GET /api/kp/persona-requests/{id}` can report them. Best-effort —
+    //    a failure only degrades the KP poll, never the hire itself.
+    if let Some(rid) = request_id {
+        if let Err(e) =
+            stamp_kp_request_result(state, &rid, &persona.id, &persona.name, &session_id)
+        {
+            tracing::warn!(request_id = %rid, error = %e, "kp_hire_request: failed to stamp result onto approval row");
+        }
+    }
+
+    // 4. Best-effort lifecycle push so the KP app learns the verdict without
+    //    polling. WP4 owns periodic reporting; this is approval/rejection only.
+    notify_kp_lifecycle(
+        params,
+        "approved",
+        None,
+        Some((persona.id.clone(), persona.name.clone())),
+    );
+
+    Ok(ExecuteResult::message(format!(
+        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.",
+        persona_name = persona.name,
+    )))
+}
+
+/// Merge `{result: {personaId, personaName, buildSessionId}}` into the
+/// approval row's payload. The management API's status GET reads it back.
+fn stamp_kp_request_result(
+    state: &State<'_, Arc<AppState>>,
+    request_id: &str,
+    persona_id: &str,
+    persona_name: &str,
+    build_session_id: &str,
+) -> Result<(), AppError> {
+    let conn = state.user_db.get()?;
+    let payload: Option<String> = conn
+        .query_row(
+            "SELECT payload FROM companion_approval WHERE id = ?1",
+            params![request_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+    let Some(payload) = payload else {
+        return Err(AppError::Internal(format!(
+            "approval `{request_id}` not found"
+        )));
+    };
+    let mut v: serde_json::Value = serde_json::from_str(&payload)
+        .map_err(|e| AppError::Internal(format!("payload parse: {e}")))?;
+    v["result"] = serde_json::json!({
+        "personaId": persona_id,
+        "personaName": persona_name,
+        "buildSessionId": build_session_id,
+    });
+    conn.execute(
+        "UPDATE companion_approval SET payload = ?1 WHERE id = ?2",
+        params![v.to_string(), request_id],
+    )?;
+    Ok(())
+}
+
+/// Best-effort lifecycle push to the KP app:
+/// `POST {kp.baseUrl}/api/agents/report/{reportToken}` with
+/// `{kind: "lifecycle", event, reason?, personaId?, personaName?}`.
+///
+/// Fire-and-forget on `crate::SHARED_HTTP` (which CAN reach localhost — the
+/// KP app runs there; precedent: `commands/tools/triggers.rs` webhook replay)
+/// with a 5s per-request timeout. Failures are warned, never surfaced — the
+/// approval/rejection outcome must not depend on the KP app being up. The
+/// URL embeds the report token, so it is never logged.
+pub(crate) fn notify_kp_lifecycle(
+    params: &serde_json::Value,
+    event: &str,
+    reason: Option<String>,
+    persona: Option<(String, String)>,
+) {
+    let Some(base_url) = params
+        .get("kp")
+        .and_then(|k| k.get("baseUrl"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| s.starts_with("http://") || s.starts_with("https://"))
+    else {
+        tracing::warn!(
+            event,
+            "kp lifecycle push skipped: no usable kp.baseUrl in params"
+        );
+        return;
+    };
+    let Some(token) = params
+        .get("reportToken")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        tracing::warn!(event, "kp lifecycle push skipped: no reportToken in params");
+        return;
+    };
+    let mut body = serde_json::json!({ "kind": "lifecycle", "event": event });
+    if let Some(reason) = reason {
+        body["reason"] = serde_json::Value::String(reason);
+    }
+    if let Some((persona_id, persona_name)) = persona {
+        body["personaId"] = serde_json::Value::String(persona_id);
+        body["personaName"] = serde_json::Value::String(persona_name);
+    }
+    // Delegate the actual send to the WP4 shared push core (SHARED_HTTP, 5s
+    // timeout, warn-only, token never logged) so there is exactly ONE code
+    // path that talks to the KP report endpoint. No persona id here: at
+    // approval time the persona may not exist yet, and approval-time 404s
+    // must not count toward any persona's severed-link streak.
+    let base_url = base_url.to_string();
+    let token = token.to_string();
+    tauri::async_runtime::spawn(async move {
+        crate::engine::kp_reporter::post_kp_report(
+            &base_url,
+            &token,
+            &body,
+            None,
+            None,
+            "lifecycle",
+        )
+        .await;
+    });
+}
+
 /// Run an arena pass directly via `lab_start_arena` so the user gets
 /// the result in the lab tab without Athena having to script the UI.
 /// `models` is the JSON shape the lab Tauri command expects (an array
