@@ -512,6 +512,38 @@ pub fn start_loops(
                     "AppState never resolved — :9420 degrades to the webhook-only route                      table; /api/* (management API, KP bridge) and /pair/* will 404 for                      the life of this process"
                 );
             }
+            // A restart races the dying instance for the port: its socket can
+            // linger (FIN_WAIT/CloseWait) for tens of seconds, the bind fails
+            // with 10048, and this task used to give up FOREVER — a process
+            // that looks healthy but serves nothing on :9420 (bench sweeps
+            // 2026-08-24, twice). Wait for the port to actually free up before
+            // starting; the probe listener is dropped immediately.
+            {
+                let port = crate::engine::webhook::webhook_port();
+                for attempt in 0u32..24 {
+                    match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
+                        Ok(probe) => {
+                            drop(probe);
+                            if attempt > 0 {
+                                tracing::info!(attempt, port, "webhook port freed up; binding");
+                            }
+                            break;
+                        }
+                        Err(_) if attempt < 23 => {
+                            if attempt == 0 {
+                                tracing::warn!(
+                                    port,
+                                    "webhook port busy (a dying instance?); waiting up to 2 min"
+                                );
+                            }
+                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                        }
+                        Err(e) => {
+                            tracing::error!(port, error = %e, "webhook port still busy after 2 min — the bind below will fail");
+                        }
+                    }
+                }
+            }
             let result = if let Some(registry) = process_registry {
                 crate::engine::webhook::start_webhook_server_with_management(
                     pool,
