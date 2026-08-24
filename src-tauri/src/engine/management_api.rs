@@ -3162,6 +3162,13 @@ async fn kp_get_persona_request(
     // wire status still `approved`, 20-minute timeout instead of a fast fail.
     let status = if status == "approved" && build_phase.as_deref() == Some("failed") {
         "failed"
+    } else if status == "approved" && build_phase.as_deref() == Some("promoted") {
+        // Promote flips the persona's lifecycle to `active` and fires a
+        // best-effort `activated` push — which is fire-and-forget and CAN be
+        // lost (first live sweep: the spawned task vanished and the hire sat
+        // `onboarding` forever on the kp side). The status poll is the pull
+        // fallback, so it must state the truth on its own: promoted = active.
+        "active"
     } else {
         status
     };
