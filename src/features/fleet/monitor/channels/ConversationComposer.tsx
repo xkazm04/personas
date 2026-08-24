@@ -61,12 +61,18 @@ export function ConversationComposer({
     }
   }, [draft, teamId]);
 
-  // Autosize.
+  // Autosize — rAF-batched (C4). The write-auto → read-scrollHeight pair
+  // forces a synchronous reflow; doing it inline in the effect put that
+  // reflow on every keystroke's commit. One frame of latency on a textarea
+  // growing a line is imperceptible; a layout thrash per keypress is not.
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    const id = requestAnimationFrame(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    });
+    return () => cancelAnimationFrame(id);
   }, [draft]);
 
   const mentionQuery = mentionAt === null ? null : draft.slice(mentionAt + 1).toLowerCase();

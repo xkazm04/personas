@@ -45,7 +45,10 @@ export function VirtualConversation({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ESTIMATE,
-    measureElement: (el) => el.getBoundingClientRect().height,
+    // C4: no measureElement override. The previous `(el) =>
+    // el.getBoundingClientRect().height` forced a synchronous layout per row
+    // per measure; TanStack's default path measures via border-box size /
+    // ResizeObserver and batches, which is the whole point of using it.
     overscan: 8,
     getItemKey: (i) => rows[i]?.key ?? i,
   });
