@@ -245,10 +245,23 @@ data is *loaded*; progressive reveal bounds how fast loaded rows are *mounted*.
 
 ## Patterns: Subjects (knowledge hierarchy) — 2026-08-18
 
-The Patterns tab opens on a two-way lane switch — **Subjects | Practices**
-(persisted per device; Subjects is the default; a **Coverage** lane is coming
-as the successor to the retired Graph lane, per
-`docs/plans/registry-coverage-ui.md`). Practices is the pre-existing
+The Patterns tab opens on a three-way lane switch — **Subjects | Coverage |
+Practices** (persisted per device; Subjects is the default). **Coverage**
+(2026-08-24, `docs/plans/registry-coverage-ui.md` R2) is the Project ×
+registry-status grid over the paired knowledge registry: one tile per managed
+project with four symbol rows — Registry presence (with domain chips),
+Extracted (registry "forged from" lineage + the app's harvest ledger),
+Applied (skills adopted/behind, `.ai/registry-map.json` state, practice
+adoption) and Freshness (the project clock vs the registry's last lane
+commit) — plus a per-tile debt badge and a detail drawer with the full
+evidence (skills-vs-lane-version table, registry-map breakdown, verbatim
+debt list). The header card shows the registry's HEAD sha (with a `dirty`
+marker), catalog age, per-lane freshness chips and a Sync action; registry
+slugs no local project matches render in a "registry-only" section rather
+than being guessed away. Signals are honest: a dimension with no data reads
+"no signal" (never zero-as-good), and the calm "in sync" check is earned —
+all four dimensions carrying signal and zero derived debts. Debt dispatch
+(Fleet) is the R3 slice. Practices is the pre-existing
 workspace practice library (its former internal Library|Graph toggle and the
 old topic-graph Nexus were retired 2026-08-19 — the lane is library-only,
 with the Playbooks rail behind a toolbar toggle);

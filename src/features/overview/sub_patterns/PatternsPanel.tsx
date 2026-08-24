@@ -1,15 +1,15 @@
-// Patterns — the Overview host for the knowledge surfaces. Two lanes
+// Patterns — the Overview host for the knowledge surfaces. Three lanes
 // (persisted per device, `Subjects` default):
 //
 // - **Subjects** — the v2 knowledge hierarchy (Golden Paths → Techniques →
 //   Applications → Evidence), read live from a managed repo's
 //   `docs/concepts/paths/**` by the Rust reader. Needs only a project id —
 //   no workspace.
+// - **Coverage** — Project × registry-status grid over the paired knowledge
+//   registry (docs/plans/registry-coverage-ui.md R2), successor to the
+//   retired hierarchy-graph lane (2026-08-23).
 // - **Practices** — the pre-existing workspace practice library (DB plane):
 //   the consolidated tree plus the playbooks rail.
-//
-// (The hierarchy graph lane was retired 2026-08-23; its successor is the
-// Registry Coverage lane — see docs/plans/registry-coverage-ui.md.)
 import { useEffect, useMemo, useState } from 'react';
 
 import { listWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -28,17 +28,18 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
+import { CoverageLane } from './coverage/CoverageLane';
 import { SubjectsView } from './hierarchy/SubjectsView';
 import KnowledgeLibrary from './KnowledgeLibrary';
 
-type Lane = 'subjects' | 'practices';
+type Lane = 'subjects' | 'coverage' | 'practices';
 
 const LANE_KEY = 'patterns:lane';
 
 function initialLane(): Lane {
   try {
     const stored = localStorage.getItem(LANE_KEY);
-    if (stored === 'subjects' || stored === 'practices') return stored;
+    if (stored === 'subjects' || stored === 'coverage' || stored === 'practices') return stored;
   } catch (err) {
     // localStorage unavailable — default lane.
     silentCatch('patterns:laneRead')(err);
@@ -196,6 +197,7 @@ export default function PatternsPanel() {
         <SegmentedTabs<Lane>
           tabs={[
             { id: 'subjects', label: p.lane_subjects },
+            { id: 'coverage', label: p.lane_coverage },
             { id: 'practices', label: p.lane_practices },
           ]}
           activeTab={lane}
@@ -205,7 +207,7 @@ export default function PatternsPanel() {
         />
       </div>
 
-      {lane === 'subjects' ? <SubjectsView /> : <WorkspaceLane />}
+      {lane === 'subjects' ? <SubjectsView /> : lane === 'coverage' ? <CoverageLane /> : <WorkspaceLane />}
     </div>
   );
 }
