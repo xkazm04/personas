@@ -333,6 +333,54 @@ export interface UnifiedTriageHosts {
   onOpenGoalBoard?: (projectId: string) => void;
 }
 
+/**
+ * Module-scoped warm cache — what the four self-owned sources held when the
+ * deck last rendered, so a REOPEN paints the queue instantly instead of
+ * re-ghosting over data the app read seconds ago.
+ *
+ * `QuickAnswerPopover` unmounts whenever the header overlay changes, so every
+ * reopen used to be a full cold load: four fetch effects from zero, ghost cards
+ * over an empty stack, and the reviewer's queue arriving in pieces — for rows
+ * that had not changed since they closed the deck to go check something. This
+ * is the same posture as the overview's module-scoped list caches (a view that
+ * fully unmounts on nav-away keeps its last fetch so a remount paints warm):
+ * the state initialisers below seed from it, the fetch effects still run on
+ * mount and REVALIDATE, and the effect that maintains it writes every change
+ * back. Stale-while-revalidate, not a TTL cache — a card resolved elsewhere
+ * while the deck was closed is replaced by the first revalidation, and a
+ * verdict raced against it lands in the same compare-and-swap conflict path a
+ * mid-session race always did.
+ *
+ * The idea revalidation deliberately restarts from the FIRST page (`ideaFetch`
+ * has no persisted cursor): the cache exists to kill the reopen ghost, not to
+ * preserve a paged working set whose later pages may have shifted under it.
+ *
+ * The two borrowed sources (reviews via `usePendingInteractions`, practices via
+ * `useWorkspaceCenter`) still cold-load — their hooks own that state — but with
+ * the owned four seeded the stack is non-empty on first paint, which is what
+ * gates the ghost.
+ */
+interface TriageWarmCache {
+  ideas: DevIdea[];
+  ideaPage: { loaded: number; pending: number; hasMore: boolean };
+  ideaCursor: string | null;
+  policyProposals: PolicyProposal[];
+  promotions: EvolutionPromotionProposal[];
+  goals: PendingAcceptanceGoal[];
+}
+
+let warmCache: TriageWarmCache | null = null;
+
+/**
+ * Test hatch — module state must be resettable or every test inherits the last
+ * one's queue (the exact leak `resetJournalCache` / `resetTriageSessionCache`
+ * exist to stop in this module's two siblings). Production never calls it: the
+ * cache outliving the deck is the feature.
+ */
+export function resetTriageWarmCache(): void {
+  warmCache = null;
+}
+
 export function useUnifiedTriage(
   copy: TriageCopy = DEFAULT_TRIAGE_COPY,
   hosts: UnifiedTriageHosts = {},
@@ -358,16 +406,21 @@ export function useUnifiedTriage(
   // number it is meant to be clearing standing for up to half a minute.
   const refreshPendingCounts = useSystemStore((s) => s.refreshPendingCounts);
 
-  const [ideas, setIdeas] = useState<DevIdea[]>([]);
-  const [ideasLoading, setIdeasLoading] = useState(true);
+  // Seeded from the warm cache so a reopen deals cards on first paint; the
+  // fetch effects below still run and revalidate. `loading` starts false when
+  // warm — the deck is showing real rows, not waiting on anything it knows of.
+  const [ideas, setIdeas] = useState<DevIdea[]>(() => warmCache?.ideas ?? []);
+  const [ideasLoading, setIdeasLoading] = useState(!warmCache);
   /**
    * Which page to fetch. `cursor` undefined = start over (a reload); set = append
    * the next page. `gen` makes a repeat request with the SAME cursor a distinct
    * state, so "load more" twice in a row is two fetches rather than one.
    */
   const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
-  const [ideaPage, setIdeaPage] = useState({ loaded: 0, pending: 0, hasMore: false });
-  const cursorRef = useRef<string | null>(null);
+  const [ideaPage, setIdeaPage] = useState(
+    () => warmCache?.ideaPage ?? { loaded: 0, pending: 0, hasMore: false },
+  );
+  const cursorRef = useRef<string | null>(warmCache?.ideaCursor ?? null);
 
   /**
    * Which sources failed, and which came back full.
@@ -469,10 +522,14 @@ export function useUnifiedTriage(
    * deal the next PAGE of ideas, and re-querying two unrelated ledgers because
    * the reviewer asked for more backlog is work nobody asked for.
    */
-  const [policyProposals, setPolicyProposals] = useState<PolicyProposal[]>([]);
-  const [promotions, setPromotions] = useState<EvolutionPromotionProposal[]>([]);
-  const [proposalsLoading, setProposalsLoading] = useState(true);
-  const [promotionsLoading, setPromotionsLoading] = useState(true);
+  const [policyProposals, setPolicyProposals] = useState<PolicyProposal[]>(
+    () => warmCache?.policyProposals ?? [],
+  );
+  const [promotions, setPromotions] = useState<EvolutionPromotionProposal[]>(
+    () => warmCache?.promotions ?? [],
+  );
+  const [proposalsLoading, setProposalsLoading] = useState(!warmCache);
+  const [promotionsLoading, setPromotionsLoading] = useState(!warmCache);
   const [proposalGen, setProposalGen] = useState(0);
 
   /**
@@ -484,9 +541,24 @@ export function useUnifiedTriage(
    * nobody asked for — the same reason `proposalGen` is separate from
    * `ideaFetch.gen`.
    */
-  const [goals, setGoals] = useState<PendingAcceptanceGoal[]>([]);
-  const [goalsLoading, setGoalsLoading] = useState(true);
+  const [goals, setGoals] = useState<PendingAcceptanceGoal[]>(() => warmCache?.goals ?? []);
+  const [goalsLoading, setGoalsLoading] = useState(!warmCache);
   const [goalGen, setGoalGen] = useState(0);
+
+  // Keep the warm cache current. Every path that changes one of these goes
+  // through a setState, so one effect covers the initial load, every poll and
+  // every optimistic removal — and the seeded first render writes back the
+  // values it was seeded FROM, which is a no-op by value.
+  useEffect(() => {
+    warmCache = {
+      ideas,
+      ideaPage,
+      ideaCursor: cursorRef.current,
+      policyProposals,
+      promotions,
+      goals,
+    };
+  }, [ideas, ideaPage, policyProposals, promotions, goals]);
 
   const projectName = useCallback(
     (projectId: string | null) =>

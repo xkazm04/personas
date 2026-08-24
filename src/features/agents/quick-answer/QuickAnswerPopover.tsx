@@ -19,6 +19,8 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+
 import { useUnifiedTriage } from './triage/useUnifiedTriage';
 import { useTriageCopy } from './triage/useTriageCopy';
 
@@ -100,7 +102,24 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
   const queue = useUnifiedTriage(copy, hosts);
 
   return (
-    <Suspense fallback={null}>
+    // NOT `fallback={null}`: the deck is a lazy chunk, and null left the
+    // titlebar button visibly doing nothing for the whole first-open chunk-load
+    // gap. The fallback claims the deck's exact geometry (opaque, pinned under
+    // the title bar — the same classes `TriageDeckVariant` renders) with the
+    // shared delayed header ghost inside. Both wrapper and ghost sit behind the
+    // standard 150ms CSS animation delay, so a warm or prefetched chunk
+    // resolves before a single pixel of fallback paints.
+    <Suspense
+      fallback={
+        <div
+          aria-hidden
+          className="fixed inset-x-0 bottom-0 top-12 z-50 flex flex-col bg-background animate-fade-in"
+          style={{ animationDelay: '150ms' }}
+        >
+          <RouteChunkSkeleton showActions={false} showSubtitle={false} />
+        </div>
+      }
+    >
       <TriageDeckVariant
         queue={queue}
         title={t.monitor.quick_title}

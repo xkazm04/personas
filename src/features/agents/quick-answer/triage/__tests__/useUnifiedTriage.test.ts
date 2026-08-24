@@ -153,7 +153,7 @@ vi.mock('@/i18n/useTranslation', () => ({
 import { clearJournal, resetJournalCache } from '../triageJournal';
 import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
 import { TRIAGE_KINDS } from '../triageTypes';
-import { useUnifiedTriage } from '../useUnifiedTriage';
+import { resetTriageWarmCache, useUnifiedTriage } from '../useUnifiedTriage';
 
 // --- fixtures --------------------------------------------------------------
 
@@ -290,6 +290,9 @@ beforeEach(() => {
   clearJournal();
   resetTriageSessionCache();
   resetJournalCache();
+  // The warm cache is module state too: without this, every test opens the deck
+  // pre-seeded with whatever queue the PREVIOUS test's fetches left behind.
+  resetTriageWarmCache();
   interactions.reviewsError = null;
   workspaceCenter.workspaces = [];
   workspaceCenter.knowledgeError = null;

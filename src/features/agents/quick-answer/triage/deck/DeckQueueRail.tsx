@@ -58,7 +58,21 @@ export const ROW_HEIGHT = 40;
  */
 export const RAIL_WIDTH = 'w-60 xl:w-72 2xl:w-72 min-[1728px]:w-96 min-[1920px]:w-[30rem]';
 
-function QueueRow({
+/**
+ * Memoised, one level below the rail's own memo — because the two protect
+ * against different invalidations. The rail's memo holds across a KEYSTROKE
+ * (its props are untouched); it cannot hold across an ADVANCE, where the
+ * projection hands down a fresh `items` array every time the cursor moves. The
+ * item OBJECTS inside that array are stable (`projectQueue` maps the same
+ * references out of the memoised `all`), so with the row memoised an advance
+ * re-renders exactly the two rows whose `current` flag flipped instead of one
+ * subtree per queued item — on a 60-card deck, 2 rows instead of 60 per throw.
+ *
+ * `onJump` takes the id and is passed straight through (`queue.focusItem` is
+ * stable); an inline `() => onJump(item.id)` closure at the call site was the
+ * one prop that defeated this memo.
+ */
+const QueueRow = memo(function QueueRow({
   item,
   position,
   current,
@@ -70,7 +84,7 @@ function QueueRow({
   current: boolean;
   /** Skipped at least once this session — it is being re-offered, not new. */
   deferred: boolean;
-  onJump: () => void;
+  onJump: (id: string) => void;
 }) {
   const { t, tx } = useTranslation();
   const meta = KIND_META[item.kind];
@@ -90,7 +104,7 @@ function QueueRow({
     <button
       ref={ref}
       type="button"
-      onClick={onJump}
+      onClick={() => onJump(item.id)}
       aria-current={current ? 'true' : undefined}
       // The kind rides in the tooltip too: with the second line gone, the icon
       // is the only thing carrying it on screen, and an icon is not a label.
@@ -129,7 +143,7 @@ function QueueRow({
       ) : null}
     </button>
   );
-}
+});
 
 /**
  * Memoised, and the row list is why.
@@ -205,7 +219,7 @@ export const DeckQueueRail = memo(function DeckQueueRail({
                     position={row.index + 1}
                     current={row.index === cursor}
                     deferred={(skips.get(item.id) ?? 0) > 0}
-                    onJump={() => onJump(item.id)}
+                    onJump={onJump}
                   />
                 </li>
               );
@@ -220,7 +234,7 @@ export const DeckQueueRail = memo(function DeckQueueRail({
                   position={i + 1}
                   current={i === cursor}
                   deferred={(skips.get(item.id) ?? 0) > 0}
-                  onJump={() => onJump(item.id)}
+                  onJump={onJump}
                 />
               </li>
             ))}
