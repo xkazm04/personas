@@ -23,8 +23,10 @@ import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { mapWithConcurrency } from '@/lib/concurrency';
+import { getActiveTranslations, interpolate as tx } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 
 import { isPresetSkill } from '../../constants/presetSkills';
 import { useRegistryLibrary } from '../../sub_workspaces/registry/useRegistryLibrary';
@@ -246,8 +248,28 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
     });
     if (!started) return;
     try {
-      if (isPresetSkill(skill)) await installSystemSkill(skill, cell.project.id, false);
-      else await installSkill(skill, null, cell.project.id, false);
+      // Bind the door's outcome - `installed: false, reason: "exists"` is a
+      // real answer, and toasting success over it is the exact defect the
+      // catalog-browse-and-apply census rule ratchets (SkillInstallModal
+      // :79-92 is the sanctioned shape). Either way the refresh re-reads
+      // reality, so the cell lands on what the filesystem actually holds.
+      const result = isPresetSkill(skill)
+        ? await installSystemSkill(skill, cell.project.id, false)
+        : await installSkill(skill, null, cell.project.id, false);
+      const t = getActiveTranslations();
+      if (result.installed) {
+        useToastStore.getState().addToast(
+          tx(t.plugins.fleet.skill_install_success, {
+            skill, project: cell.project.name, count: result.fileCount,
+          }),
+          'success',
+        );
+      } else {
+        useToastStore.getState().addToast(
+          tx(t.plugins.fleet.skill_install_exists, { skill, project: cell.project.name }),
+          'warning',
+        );
+      }
       setTick((n) => n + 1);
     } catch (err) {
       toastCatch('skill launch adopt')(err);
