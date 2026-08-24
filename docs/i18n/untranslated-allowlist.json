@@ -2575,6 +2575,7 @@
   "id:monitor.quick_source_unknown",
   "id:monitor.triage_fact_persona",
   "id:monitor.triage_source_cloud",
+  "id:onboarding.step_discover",
   "id:overview.activity.col_model",
   "id:overview.activity.col_status",
   "id:overview.certification.col_seed",
