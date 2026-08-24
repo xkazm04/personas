@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "高",
     "medium": "中",
-    "low": "Low"
+    "low": "低"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "低",
     "medium": "中",
     "high": "高"
   },

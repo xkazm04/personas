@@ -496,7 +496,7 @@
     "loading": "Laden…",
     "saving": "Speichern…",
     "deleting": "Löschen…",
-    "retry": "Erneut",
+    "retry": "Wiederholen",
     "cancel": "Abbrechen",
     "save": "Speichern",
     "delete": "Löschen",
@@ -543,10 +543,10 @@
     "connected": "Verbunden",
     "disconnected": "Getrennt",
     "reconnecting": "Erneut verbinden",
-    "reconnect_attempt": "Verbindungsversuch {attempt} -- Wiederholung in {seconds}s",
+    "reconnect_attempt": "Verbindungsversuch {attempt} — Wiederholung in {seconds}s",
     "error_boundary_title_named": "In {name} ist etwas Unerwartetes passiert",
     "error_boundary_title": "Etwas Unerwartetes ist passiert",
-    "error_boundary_subtitle": "Keine Sorge -- Ihre Daten sind sicher. Sie können es erneut versuchen oder zum Dashboard zurückkehren.",
+    "error_boundary_subtitle": "Keine Sorge — Ihre Daten sind sicher. Sie können es erneut versuchen oder zum Dashboard zurückkehren.",
     "try_again": "Erneut versuchen",
     "go_to_dashboard": "Zum Dashboard",
     "copy_report": "Bericht für Support kopieren",
@@ -579,7 +579,7 @@
     "all_personas": "Alle Personas",
     "search_ellipsis": "Suchen…",
     "search": "Suchen",
-    "no_personas_matching": "Keine Personas für \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{query}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
+    "no_personas_matching": "Keine Personas passend zu „{query}“",
     "drop_file_here": "Datei hier ablegen",
     "attach": "Anhängen",
     "references": "Referenzen",
@@ -593,7 +593,7 @@
     "staleness_tooltip_labeled": "{label}-Daten zuletzt aktualisiert {age}",
     "staleness_tooltip": "Daten zuletzt aktualisiert {age}",
     "staleness_refresh_failed": "(Aktualisierung fehlgeschlagen)",
-    "command_palette_placeholder": "Agenten, Zugangsdaten, Vorlagen suchen… (\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" für Befehle)",
+    "command_palette_placeholder": "Agenten, Zugangsdaten, Vorlagen suchen… („>“ für Befehle)",
     "command_palette_navigate": "navigieren",
     "command_palette_select": "auswählen",
     "command_palette_commands": "Befehle",
@@ -613,7 +613,7 @@
     "field_checking_availability": "Prüfen…",
     "field_name_available": "Name verfügbar",
     "field_name_taken": "Bereits verwendet",
-    "field_name_taken_suggestion": "Bereits vergeben — versuchen Sie es mit {name}",
+    "field_name_taken_suggestion": "Bereits verwendet — versuchen Sie es mit {name}",
     "form_error_summary_title_one": "{count} Feld benötigt Ihre Aufmerksamkeit",
     "form_error_summary_title_other": "{count} Felder benötigen Ihre Aufmerksamkeit",
     "error_boundary_chunk_subtitle": "Ein Teil der App konnte nicht geladen werden — das kann nach einem Update oder einer Verbindungsunterbrechung passieren. Ihre Daten sind sicher; ein Neustart der App behebt das Problem in der Regel.",
@@ -674,8 +674,8 @@
     "dispatch_method_fleet": "Fleet-Terminal",
     "dispatch_method_fleet_desc": "Interaktive Claude-Sitzung im Repo — beobachte die Arbeit und steuere sie über das Fleet-Raster.",
     "dispatch_pick_method": "Wähle, wie der Agent in „{project}“ läuft — der Prompt bleibt bis zur Übermittlung bearbeitbar.",
-    "dispatch_method_console": "Dein Terminal",
-    "dispatch_method_console_desc": "Öffnet ein neues Terminalfenster, das dir gehört. Es läuft weiter, nachdem Personas geschlossen wurde, aber die App kann es weder überwachen noch stoppen."
+    "dispatch_method_console": "Ihr Terminal",
+    "dispatch_method_console_desc": "Öffnet ein neues Terminalfenster, das Ihnen gehört. Es läuft weiter, nachdem Personas geschlossen wurde, aber die App kann es weder überwachen noch stoppen."
   },
   "chrome": {
     "app_title": "Personas",
@@ -909,8 +909,8 @@
       "pick_tool": "Wählen Sie Ihr bevorzugtes Tool",
       "pick_tool_hint": "Dies wird Ihre erste Dienstverbindung sein.",
       "describe_goal": "Was möchten Sie automatisieren?",
-      "describe_goal_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel -- wir helfen Ihnen dabei.",
-      "goal_placeholder": "z.B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
+      "describe_goal_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel — wir helfen Ihnen dabei.",
+      "goal_placeholder": "z. B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
       "ready_to_save": "Bereit zum Speichern",
       "step_role": "Ihre Rolle",
       "step_role_hint": "Teilen Sie uns Ihre Rolle mit, damit wir die Erfahrung anpassen können.",
@@ -974,8 +974,8 @@
       "pick_tool": "Wählen Sie Ihr bevorzugtes Tool",
       "tool_hint": "Dies wird Ihre erste Konnektor-Integration sein.",
       "automate_title": "Was möchten Sie automatisieren?",
-      "automate_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel -- wir helfen Ihnen dabei.",
-      "automate_placeholder": "z.B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
+      "automate_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel — wir helfen Ihnen dabei.",
+      "automate_placeholder": "z. B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
       "min_chars": "Min. 10 Zeichen ({current}/10)",
       "ready_to_save": "Bereit zum Speichern",
       "back": "Zurück",
@@ -1017,14 +1017,14 @@
     "get_started": {
       "ask_cta": "Assistenten fragen",
       "build_cta": "Ersten Agenten erstellen",
-      "subtitle": "Beschreibe eine Aufgabe in einfacher Sprache und wir richten einen funktionierenden Agenten ein — oder bitte den Assistenten, es für dich zu tun.",
+      "subtitle": "Beschreiben Sie eine Aufgabe in einfacher Sprache und wir richten einen funktionierenden Agenten ein — oder bitten Sie den Assistenten, es für Sie zu tun.",
       "title": "Ersten Agenten erstellen"
     },
     "welcome": "Willkommen",
     "greeting_morning": "Guten Morgen",
     "greeting_afternoon": "Guten Tag",
     "greeting_evening": "Guten Abend",
-    "operator": "Operator",
+    "operator": "Benutzer",
     "commander": "Commander",
     "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
     "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
@@ -1054,23 +1054,23 @@
     "nav": {
       "overview": {
         "label": "Übersicht",
-        "description": "Dashboard-Analysen, Ausführungsverlauf und Echtzeit-Systemüberwachung aller Agenten"
+        "description": "Sehen Sie, wie Ihre Agenten performen, was sie zuletzt getan haben, und behalten Sie alles an einem Ort im Blick"
       },
       "personas": {
         "label": "Agenten",
-        "description": "KI-Agenten mit individuellen Verhaltensweisen und Fähigkeiten erstellen, konfigurieren und verwalten"
+        "description": "KI-Agenten erstellen, einrichten und verwalten — geben Sie ihnen individuelles Verhalten und verbinden Sie sie mit Ihren Tools"
       },
       "events": {
         "label": "Ereignisse",
-        "description": "Ereignis-Auslöser, webhook-Listener und zeitgesteuerte Automatisierungen konfigurieren"
+        "description": "Festlegen, was Ihre Agenten auslöst — Zeitpläne, eingehende Benachrichtigungen oder von Ihnen definierte Änderungen"
       },
       "credentials": {
         "label": "Zugangsdaten",
-        "description": "API-Zugangsdaten, Datenbankverbindungen, OAuth-Token und verschlüsselte Geheimnisse verwalten"
+        "description": "Dienst-Logins, Datenbankverbindungen und Passwörter verwalten, mit denen Agenten auf Ihre Tools zugreifen"
       },
       "design-reviews": {
         "label": "Vorlagen",
-        "description": "n8n-Workflows importieren, Vorlagengalerie durchsuchen und Agenten-Baupläne generieren"
+        "description": "Fertige Agenten-Baupläne durchsuchen, Workflows importieren und neue Agenten-Designs generieren"
       },
       "team": {
         "label": "Teams",
@@ -1082,11 +1082,11 @@
       },
       "cloud": {
         "label": "Cloud",
-        "description": "Agenten in der Cloud bereitstellen, Zeitpläne verwalten und GitLab CI integrieren"
+        "description": "Agenten in der Cloud ausführen, damit sie auch laufen, wenn Ihr Computer aus ist"
       },
       "settings": {
         "label": "Einstellungen",
-        "description": "Kontoeinstellungen, Darstellung, Benachrichtigungsregeln und Engine-Konfiguration"
+        "description": "Ihr Konto, das Erscheinungsbild der App, Benachrichtigungseinstellungen und erweiterte Optionen"
       },
       "plugins": {
         "label": "Plugins",
@@ -1096,8 +1096,8 @@
     "icon_showcase": {
       "lucide_tab": "Lucide (Bibliothek)",
       "personas_tab": "Personas (Animiert)",
-      "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
-      "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
+      "lucide_footer": "lucide-react — allgemeine Icon-Bibliothek — statisch",
+      "personas_footer": "9 benutzerdefinierte Icons — neuronale/Schaltkreismotive — CSS-animiert — themenadaptiv"
     },
     "since_left": {
       "alerts": "{count} Warnung ausgelöst",
@@ -12579,10 +12579,10 @@
     "forage_confidence": {
       "high": "Hoch",
       "medium": "Mittel",
-      "low": "Low"
+      "low": "Niedrig"
     },
     "capability_risk": {
-      "low": "low",
+      "low": "Niedrig",
       "medium": "Mittel",
       "high": "Hoch"
     },
@@ -12603,7 +12603,7 @@
       "delivered": "Zugestellt",
       "failed": "Fehlgeschlagen",
       "pending": "Ausstehend",
-      "queued": "In Warteschlange"
+      "queued": "Warteschlange"
     },
     "rotation": {
       "anomaly": "Anomalie",
@@ -12641,7 +12641,7 @@
       "depth_limit": "Tiefenlimit",
       "handoff_suppressed": "Übergabe unterdrückt",
       "malformed_config": "Ungültige Konfiguration",
-      "outside_window": "Außerhalb Aktivfenster",
+      "outside_window": "Außerhalb des Zeitfensters",
       "predicate_unmet": "Bedingung nicht erfüllt",
       "publish_failed": "Veröffentlichung fehlgeschlagen",
       "quarantined": "Trigger in Quarantäne",
@@ -17749,7 +17749,7 @@
     "blast_safe_to_delete": "Keine abhängigen Ressourcen gefunden. Sicher zu löschen.",
     "blast_impact": "Auswirkung",
     "grid_rows": "Zeilen",
-    "grid_showing": "Zeige {start}–{end} von {total} Elementen",
+    "grid_showing": "{start}–{end} von {total} Elementen",
     "grid_rows_per_page": "Zeilen pro Seite",
     "empty_chart_heading": "Noch keine Traffic-Daten",
     "empty_chart_description": "Traffic- und Fehlermetriken erscheinen hier, sobald Ihre Agenten Anfragen verarbeiten.",
@@ -17782,7 +17782,7 @@
     "suspense_loading": "Wird geladen",
     "persona_select": "Persona auswählen",
     "persona_all": "Alle Personas",
-    "persona_no_match": "Keine Personas passend zu \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{query}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
+    "persona_no_match": "Keine Personas passend zu „{query}“",
     "persona_modal_title": "Persona auswählen",
     "table_filter": "Tabellen filtern…",
     "table_deselect_all": "Alle abwählen",
@@ -17849,21 +17849,21 @@
       "no_matches": "Keine Treffer",
       "all_prefix": "Alle (",
       "clear_icon": "Icon löschen",
-      "select_persona_icon": "Persona-Symbol auswaehlen",
-      "select_persona_icon_desc": "Waehlen Sie ein integriertes Symbol oder laden Sie ein eigenes Bild hoch.",
+      "select_persona_icon": "Persona-Symbol auswählen",
+      "select_persona_icon_desc": "Wählen Sie ein integriertes Symbol oder laden Sie ein eigenes Bild hoch.",
       "builtin_icons": "Integriert",
       "your_icons": "Ihre Symbole",
       "upload_icon": "Bild hochladen",
       "uploading_icon": "Wird hochgeladen…",
-      "no_custom_icons": "Laden Sie ein Bild hoch, um es fuer Ihre Personas wiederzuverwenden.",
+      "no_custom_icons": "Laden Sie ein Bild hoch, um es für Ihre Personas wiederzuverwenden.",
       "remove_custom_icon": "Symbol entfernen",
       "generate_with_ai": "Mit KI generieren",
       "generate_icon": "Generieren",
       "generating_icon": "Wird generiert…",
-      "generate_icon_prompt_placeholder": "Beschreiben Sie das gewuenschte Symbol…",
+      "generate_icon_prompt_placeholder": "Beschreiben Sie das gewünschte Symbol…",
       "select_agent_icon": "Agenten-Icon auswählen",
       "select_agent_icon_desc": "Wählen Sie ein Icon für diesen Agenten aus. Passende Hell-/Dunkel-Varianten werden automatisch verwendet.",
-      "icon_gen_cost_notice": "Das Generieren verbraucht die kostenpflichtigen Bildguthaben deines Connectors.",
+      "icon_gen_cost_notice": "Das Generieren verbraucht die kostenpflichtigen Bildguthaben Ihres Connectors.",
       "icon_gen_spend_summary": "≈{cost} für {count} Generierungen · letzte {days}d"
     },
     "reasoning_trace": {
@@ -17942,7 +17942,7 @@
       "draft_generated": "Entwurf erfolgreich generiert",
       "transformation_failed": "Transformation fehlgeschlagen",
       "waiting_to_start": "Warte auf Start der Transformation…",
-      "continue_working": "Sie können weiterarbeiten -- wir benachrichtigen Sie, wenn der Entwurf bereit ist.",
+      "continue_working": "Sie können weiterarbeiten — wir benachrichtigen Sie, wenn der Entwurf bereit ist.",
       "draft_ready": "Ihr Persona-Entwurf ist bereit für Prüfung und Bearbeitung.",
       "click_generate": "Klicken Sie auf „Persona-Entwurf generieren“, um zu beginnen.",
       "skip_configuration": "Konfiguration überspringen",
@@ -17960,7 +17960,7 @@
     },
     "terminal_extra": {
       "press_enter": "Eingabe drücken oder Abspielen klicken, um zu starten",
-      "connection_failed": "Verbindung fehlgeschlagen – Anbieter-Einstellungen prüfen und erneut versuchen",
+      "connection_failed": "Verbindung fehlgeschlagen — Anbieter-Einstellungen prüfen und erneut versuchen",
       "search_output": "Ausgabe suchen…",
       "dismiss": "Verwerfen",
       "connecting": "Verbinde mit Provider",
@@ -18006,15 +18006,15 @@
     "bulk_toolbar_aria": "Sammelaktionen",
     "bulk_selected": "{count} ausgewählt",
     "bulk_clear_selection": "Auswahl aufheben",
-    "resize_column": "Spaltengroesse aendern - ziehen zum Anpassen, doppelklicken zum Zuruecksetzen",
+    "resize_column": "Spaltengröße ändern — ziehen zum Anpassen, doppelklicken zum Zurücksetzen",
     "drag_handle_aria": "Zum Neuanordnen ziehen",
     "empty_todos_heading": "Alles erledigt",
-    "empty_todos_description": "Keine reviews or alerts need your attention right now.",
-    "empty_stream_heading": "Keine activity yet",
+    "empty_todos_description": "Im Moment sind keine Prüfungen oder Warnungen zu bearbeiten.",
+    "empty_stream_heading": "Noch keine Aktivität",
     "empty_stream_description": "Live-Ausführungen Ihrer Agenten erscheinen hier, sobald sie stattfinden.",
-    "empty_routines_heading": "Keine routines scheduled",
+    "empty_routines_heading": "Keine geplanten Routinen",
     "empty_routines_description": "Geplante und wiederkehrende Trigger erscheinen hier.",
-    "empty_heatmap_heading": "Keine activity yet",
+    "empty_heatmap_heading": "Noch keine Aktivität",
     "empty_heatmap_description": "Der Ausführungsverlauf Ihrer Agenten füllt sich im Laufe des Jahres.",
     "sort_active_asc": "Sortiert nach {label}, aufsteigend. Aktivieren, um absteigend zu sortieren.",
     "sort_active_desc": "Sortiert nach {label}, absteigend. Aktivieren, um aufsteigend zu sortieren.",
@@ -18029,8 +18029,8 @@
     "code_show_lines": "Alle {count} Zeilen anzeigen",
     "grid_loading": "Wird geladen…",
     "grid_no_data": "Keine Daten",
-    "glossary_webhook": "Eine URL, die automatische Benachrichtigungen erhält, wenn etwas passiert – wie ein Briefkasten für Ihre App.",
-    "glossary_schema": "Die erwartete Form der eingehenden Daten – welche Felder erforderlich sind und welchen Typ sie haben sollen.",
+    "glossary_webhook": "Eine URL, die automatische Benachrichtigungen erhält, wenn etwas passiert — wie ein Briefkasten für Ihre App.",
+    "glossary_schema": "Die erwartete Form der eingehenden Daten — welche Felder erforderlich sind und welchen Typ sie haben sollen.",
     "glossary_payload": "Die tatsächlichen Daten, die mit einer Anfrage oder einem Ereignis gesendet werden.",
     "glossary_endpoint": "Eine spezifische Adresse, unter der Ihr Agent erreichbar ist oder Daten senden kann.",
     "glossary_json": "Ein gängiges Textformat für strukturierte Daten, mit geschweiften Klammern und Schlüssel-Wert-Paaren.",
@@ -18041,11 +18041,11 @@
     "connection_disconnected": "Getrennt",
     "connection_connecting": "Verbinde…",
     "connection_reconnecting": "Erneut verbinden",
-    "connection_reconnecting_title": "Verbindungsversuch {attempt} – erneut in {seconds}s versuchen",
+    "connection_reconnecting_title": "Verbindungsversuch {attempt} — erneut in {seconds}s versuchen",
     "go_back": "Zurück",
     "error_boundary_heading_named": "In {name} ist etwas Unerwartetes passiert",
     "error_boundary_heading": "Etwas Unerwartetes ist passiert",
-    "error_boundary_reassurance": "Keine Sorge – Ihre Daten sind sicher. Sie können es erneut versuchen oder zum Dashboard zurückkehren.",
+    "error_boundary_reassurance": "Keine Sorge — Ihre Daten sind sicher. Sie können es erneut versuchen oder zum Dashboard zurückkehren.",
     "error_boundary_try_again": "Erneut versuchen",
     "error_boundary_go_dashboard": "Zum Dashboard",
     "error_boundary_copied": "In Zwischenablage kopiert",
@@ -18072,7 +18072,7 @@
     "toggle_enabled": "Aktiviert",
     "toggle_disabled": "Deaktiviert",
     "design_drop_file": "Datei hier ablegen",
-    "design_placeholder": "Beschreiben Sie, was diese Persona tun soll…\\\\\\\\\n\\\\\\\\\nBeispiele:\\\\\\\\\n  - Mein Gmail auf Rechnungen überwachen und Beträge in eine Tabelle extrahieren\\\\\\\\\n  - GitHub-Webhooks beobachten und Zusammenfassungen an Slack senden\\\\\\\\\n  - Unsere API-Protokolle täglich analysieren und Anomalien markieren",
+    "design_placeholder": "Beschreiben Sie, was diese Persona tun soll…\n\nBeispiele:\n  - Mein Gmail auf Rechnungen überwachen und Beträge in eine Tabelle extrahieren\n  - GitHub-Webhooks beobachten und Zusammenfassungen an Slack senden\n  - Unsere API-Protokolle täglich analysieren und Anomalien markieren",
     "design_attach": "Anhängen",
     "design_references": "Referenzen",
     "design_files_attached_one": "{count} Datei angehängt",
@@ -18097,7 +18097,7 @@
     "unsaved_saving": "Wird gespeichert…",
     "unsaved_discard": "Änderungen verwerfen",
     "unsaved_stay": "Auf der Seite bleiben",
-    "cmd_placeholder": "Agenten, Zugangsdaten, Vorlagen suchen… (\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"-Eingabe für Befehle)",
+    "cmd_placeholder": "Agenten, Zugangsdaten, Vorlagen suchen… („>“ für Befehle)",
     "cmd_navigate": "navigieren",
     "cmd_select": "auswählen",
     "cmd_commands": "Befehle"

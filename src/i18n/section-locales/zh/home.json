@@ -60,7 +60,7 @@
     "composed_tours": "由 Athena 编排",
     "composed_badge": "Athena 编排",
     "composed_stale": "可能已过时 — 应用在编排后已发生变化",
-    "composed_empty": "当你请 Athena 演示某项功能时，她编排的操作指引会显示在这里。"
+    "composed_empty": "当您请 Athena 演示某项功能时，她编排的操作指引会显示在这里。"
   },
   "setup_stepper": {
     "your_profile": "您的个人资料",
@@ -107,14 +107,14 @@
     "trend_up": "较前 24 小时上升 {pct}%",
     "trend_down": "较前 24 小时下降 {pct}%",
     "trend_flat": "较前 24 小时无变化",
-    "agents_enabled": "{count} 个已启用代理",
-    "agents_enabled_other": "{count} 个已启用代理"
+    "agents_enabled": "{count} 个已启用智能体",
+    "agents_enabled_other": "{count} 个已启用智能体"
   },
   "get_started": {
     "ask_cta": "向助手提问",
-    "build_cta": "创建你的第一个智能体",
-    "subtitle": "用日常语言描述一项任务，我们将为你搭建一个可运行的智能体——或者直接让助手来完成。",
-    "title": "创建你的第一个智能体"
+    "build_cta": "创建您的第一个智能体",
+    "subtitle": "用日常语言描述一项任务，我们将为您搭建一个可运行的智能体——或者直接让助手来完成。",
+    "title": "创建您的第一个智能体"
   },
   "welcome": "欢迎",
   "greeting_morning": "早上好",
@@ -144,7 +144,7 @@
   "fleet": {
     "executions_today": "今日运行",
     "success_rate": "成功率",
-    "active_agents": "活跃代理",
+    "active_agents": "活跃智能体",
     "credentials": "凭证"
   },
   "nav": {
@@ -161,16 +161,16 @@
       "description": "配置事件触发器、webhook 监听器和定时自动化任务"
     },
     "credentials": {
-      "label": "凭证",
-      "description": "管理 API 凭证、数据库连接、OAuth 令牌和加密密钥"
+      "label": "连接",
+      "description": "管理服务登录信息、数据库连接和密码，让智能体能够访问您的工具。"
     },
     "design-reviews": {
       "label": "模板",
-      "description": "导入 n8n 工作流、浏览模板库并生成智能体蓝图"
+      "description": "浏览现成的智能体蓝图，导入工作流，并生成新的智能体设计。"
     },
     "team": {
       "label": "团队",
-      "description": "通过拖拽编排和路由构建多智能体团队流水线"
+      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流。"
     },
     "teams": {
       "label": "团队",
@@ -178,7 +178,7 @@
     },
     "cloud": {
       "label": "云端",
-      "description": "将智能体部署到云端基础设施、管理计划任务并集成 GitLab CI"
+      "description": "让您的智能体在云端运行，即使电脑关机也能继续工作。"
     },
     "settings": {
       "label": "设置",
@@ -186,7 +186,7 @@
     },
     "plugins": {
       "label": "插件",
-      "description": "通过第三方插件和自定义扩展扩展您的代理"
+      "description": "通过第三方插件和自定义扩展扩展您的智能体"
     }
   },
   "icon_showcase": {

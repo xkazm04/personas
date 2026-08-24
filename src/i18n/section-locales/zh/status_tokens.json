@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "高",
     "medium": "中",
-    "low": "Low"
+    "low": "低"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "低",
     "medium": "中",
     "high": "高"
   },
@@ -202,7 +202,7 @@
     "dry_run": "试运行（模拟）",
     "handoff_target_disabled": "交接目标已关闭",
     "no_subscriber": "没有匹配的订阅者",
-    "persona_disabled": "代理已关闭",
+    "persona_disabled": "智能体已关闭",
     "stuck_reclaimed": "已回收并重新排队",
     "stuck_retry_exhausted": "已回收，重试次数用尽",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."

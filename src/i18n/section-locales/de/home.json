@@ -5,8 +5,8 @@
     "pick_tool": "Wählen Sie Ihr bevorzugtes Tool",
     "pick_tool_hint": "Dies wird Ihre erste Dienstverbindung sein.",
     "describe_goal": "Was möchten Sie automatisieren?",
-    "describe_goal_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel -- wir helfen Ihnen dabei.",
-    "goal_placeholder": "z.B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
+    "describe_goal_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel — wir helfen Ihnen dabei.",
+    "goal_placeholder": "z. B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
     "ready_to_save": "Bereit zum Speichern",
     "step_role": "Ihre Rolle",
     "step_role_hint": "Teilen Sie uns Ihre Rolle mit, damit wir die Erfahrung anpassen können.",
@@ -70,8 +70,8 @@
     "pick_tool": "Wählen Sie Ihr bevorzugtes Tool",
     "tool_hint": "Dies wird Ihre erste Konnektor-Integration sein.",
     "automate_title": "Was möchten Sie automatisieren?",
-    "automate_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel -- wir helfen Ihnen dabei.",
-    "automate_placeholder": "z.B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
+    "automate_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel — wir helfen Ihnen dabei.",
+    "automate_placeholder": "z. B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren…",
     "min_chars": "Min. 10 Zeichen ({current}/10)",
     "ready_to_save": "Bereit zum Speichern",
     "back": "Zurück",
@@ -113,14 +113,14 @@
   "get_started": {
     "ask_cta": "Assistenten fragen",
     "build_cta": "Ersten Agenten erstellen",
-    "subtitle": "Beschreibe eine Aufgabe in einfacher Sprache und wir richten einen funktionierenden Agenten ein — oder bitte den Assistenten, es für dich zu tun.",
+    "subtitle": "Beschreiben Sie eine Aufgabe in einfacher Sprache und wir richten einen funktionierenden Agenten ein — oder bitten Sie den Assistenten, es für Sie zu tun.",
     "title": "Ersten Agenten erstellen"
   },
   "welcome": "Willkommen",
   "greeting_morning": "Guten Morgen",
   "greeting_afternoon": "Guten Tag",
   "greeting_evening": "Guten Abend",
-  "operator": "Operator",
+  "operator": "Benutzer",
   "commander": "Commander",
   "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
   "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
@@ -150,23 +150,23 @@
   "nav": {
     "overview": {
       "label": "Übersicht",
-      "description": "Dashboard-Analysen, Ausführungsverlauf und Echtzeit-Systemüberwachung aller Agenten"
+      "description": "Sehen Sie, wie Ihre Agenten performen, was sie zuletzt getan haben, und behalten Sie alles an einem Ort im Blick"
     },
     "personas": {
       "label": "Agenten",
-      "description": "KI-Agenten mit individuellen Verhaltensweisen und Fähigkeiten erstellen, konfigurieren und verwalten"
+      "description": "KI-Agenten erstellen, einrichten und verwalten — geben Sie ihnen individuelles Verhalten und verbinden Sie sie mit Ihren Tools"
     },
     "events": {
       "label": "Ereignisse",
-      "description": "Ereignis-Auslöser, webhook-Listener und zeitgesteuerte Automatisierungen konfigurieren"
+      "description": "Festlegen, was Ihre Agenten auslöst — Zeitpläne, eingehende Benachrichtigungen oder von Ihnen definierte Änderungen"
     },
     "credentials": {
       "label": "Zugangsdaten",
-      "description": "API-Zugangsdaten, Datenbankverbindungen, OAuth-Token und verschlüsselte Geheimnisse verwalten"
+      "description": "Dienst-Logins, Datenbankverbindungen und Passwörter verwalten, mit denen Agenten auf Ihre Tools zugreifen"
     },
     "design-reviews": {
       "label": "Vorlagen",
-      "description": "n8n-Workflows importieren, Vorlagengalerie durchsuchen und Agenten-Baupläne generieren"
+      "description": "Fertige Agenten-Baupläne durchsuchen, Workflows importieren und neue Agenten-Designs generieren"
     },
     "team": {
       "label": "Teams",
@@ -178,11 +178,11 @@
     },
     "cloud": {
       "label": "Cloud",
-      "description": "Agenten in der Cloud bereitstellen, Zeitpläne verwalten und GitLab CI integrieren"
+      "description": "Agenten in der Cloud ausführen, damit sie auch laufen, wenn Ihr Computer aus ist"
     },
     "settings": {
       "label": "Einstellungen",
-      "description": "Kontoeinstellungen, Darstellung, Benachrichtigungsregeln und Engine-Konfiguration"
+      "description": "Ihr Konto, das Erscheinungsbild der App, Benachrichtigungseinstellungen und erweiterte Optionen"
     },
     "plugins": {
       "label": "Plugins",
@@ -192,8 +192,8 @@
   "icon_showcase": {
     "lucide_tab": "Lucide (Bibliothek)",
     "personas_tab": "Personas (Animiert)",
-    "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
-    "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
+    "lucide_footer": "lucide-react — allgemeine Icon-Bibliothek — statisch",
+    "personas_footer": "9 benutzerdefinierte Icons — neuronale/Schaltkreismotive — CSS-animiert — themenadaptiv"
   },
   "since_left": {
     "alerts": "{count} Warnung ausgelöst",

@@ -1,5 +1,5 @@
 {
-  "budget_exceeded": "此代理的月度预算已超出。在代理设置中覆盖预算暂停或增加预算以继续。",
+  "budget_exceeded": "此智能体的月度预算已超出。在智能体设置中覆盖预算暂停或增加预算以继续。",
   "something_went_wrong": "出了点问题",
   "failed": "失败",
   "complete": "完成",
@@ -25,7 +25,7 @@
   "run_preview": "运行预览",
   "close_preview": "关闭预览",
   "budget_limit": "预算限制",
-  "run_agent": "运行代理",
+  "run_agent": "运行智能体",
   "model": "模型",
   "trust": "信任",
   "timeout": "超时",

@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "Élevée",
     "medium": "Moyenne",
-    "low": "Low"
+    "low": "Faible"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "faible",
     "medium": "moyen",
     "high": "élevé"
   },
@@ -112,7 +112,7 @@
     "paused": "En pause",
     "failed": "Échoué",
     "unknown": "Inconnu",
-    "file-based": "Basé sur fichier"
+    "file-based": "Basé sur un fichier"
   },
   "delivery": {
     "delivered": "Livré",

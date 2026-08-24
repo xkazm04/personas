@@ -42,10 +42,10 @@
     "url_invalid": "无效 URL"
   },
   "deployments_panel": {
-    "deploy_persona": "部署代理",
-    "select_persona": "选择要部署的代理",
-    "all_deployed": "所有代理已部署",
-    "no_deployments_yet": "尚无部署。在上方选择一个代理以将其部署为云 API 端点。",
+    "deploy_persona": "部署智能体",
+    "select_persona": "选择要部署的智能体",
+    "all_deployed": "所有智能体已部署",
+    "no_deployments_yet": "尚无部署。在上方选择一个智能体以将其部署为云 API 端点。",
     "active_deployments": "活动部署"
   },
   "exec_detail": {
@@ -82,8 +82,8 @@
   },
   "trigger_form": {
     "new_cloud_trigger": "新建云触发器",
-    "persona_must_be_deployed": "代理（必须已部署）",
-    "select_persona": "选择代理",
+    "persona_must_be_deployed": "智能体（必须已部署）",
+    "select_persona": "选择智能体",
     "trigger_type": "触发器类型",
     "schedule_cron": "计划（cron）",
     "create_trigger": "创建触发器",
@@ -188,7 +188,7 @@
     "no_match_filters": "无部署匹配筛选器",
     "no_deployments": "暂无部署",
     "adjust_filters": "尝试调整搜索或筛选器。",
-    "deploy_hint": "从云端或 GitLab 标签部署代理。",
+    "deploy_hint": "从云端或 GitLab 标签部署智能体。",
     "showing_of": "显示 {showing} 的部署，共 {total} 个部署{plural}",
     "total_invocations": "总调用次数：",
     "search_placeholder": "搜索部署…",

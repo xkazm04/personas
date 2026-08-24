@@ -566,7 +566,7 @@
     "description_label": "설명",
     "model_label": "모델",
     "agent_description_placeholder": "에이전트 설명…",
-    "simple_mode": "심플 모드",
+    "simple_mode": "간단 모드",
     "advanced_json": "고급 (JSON)",
     "label_placeholder": "레이블",
     "value_placeholder": "값",
@@ -592,7 +592,7 @@
     "staleness_days_ago": "{days}일 전",
     "staleness_tooltip_labeled": "{label} 데이터 마지막 업데이트 {age}",
     "staleness_tooltip": "데이터 마지막 업데이트 {age}",
-    "staleness_refresh_failed": "(새로 고침 실패)",
+    "staleness_refresh_failed": "(새로고침 실패)",
     "command_palette_placeholder": "에이전트, 자격 증명, 템플릿 검색… (\">\" 입력으로 명령)",
     "command_palette_navigate": "탐색",
     "command_palette_select": "선택",
@@ -633,7 +633,7 @@
     "confirm_destructive_delete_persona": "에이전트 삭제",
     "confirm_destructive_delete_persona_warning": "이 에이전트와 모든 설정이 영구적으로 삭제됩니다.",
     "confirm_destructive_discard_event": "이벤트 버리기",
-    "confirm_destructive_discard_event_warning": "이 배달 실패 이벤트가 영구적으로 삭제됩니다.",
+    "confirm_destructive_discard_event_warning": "이 배달 실패 이벤트가 영구적으로 버려집니다.",
     "inactive": "비활성",
     "rename_to": "변경할 이름",
     "agent_count_one": "에이전트 {count}개",
@@ -909,7 +909,7 @@
       "pick_tool": "선호 도구 선택",
       "pick_tool_hint": "첫 번째 서비스 연결이 됩니다.",
       "describe_goal": "자동화하려는 것은 무엇인가요?",
-      "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
+      "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 — 설정을 도와드립니다.",
       "goal_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
       "ready_to_save": "저장 준비 완료",
       "step_role": "역할",
@@ -921,7 +921,7 @@
       "select_role_first": "도구 옵션을 보려면 먼저 역할을 선택하세요.",
       "select_tool_first": "목표를 설정하려면 먼저 도구를 선택하세요.",
       "get_started": "시작하기",
-      "role_office_rat": "오피스 워커",
+      "role_office_rat": "일반 사용자",
       "role_office_rat_hint": "비기술 사용자",
       "role_developer": "개발자",
       "role_developer_hint": "기술 사용자",
@@ -933,7 +933,7 @@
     },
     "learning": {
       "title": "학습 센터",
-      "subtitle": "Personas 마스터를 위한 가이드 투어 및 빠른 팁",
+      "subtitle": "Personas 마스터를 위한 가이드 투어 및 파워 무브",
       "guided_tours": "가이드 투어",
       "tours_completed": "{completed}/{total} 완료",
       "done": "완료",
@@ -992,22 +992,22 @@
       "edit": "{personaName} 계속 편집하기"
     },
     "nav_status": {
-      "incidents": "{count}개 진행 중인 인시던트",
-      "incidents_other": "{count}개 진행 중인 인시던트",
-      "messages": "{count}개 읽지 않은 메시지",
-      "messages_other": "{count}개 읽지 않은 메시지",
-      "reviews": "{count}개 대기 중인 검토",
-      "reviews_other": "{count}개 대기 중인 검토",
-      "teams": "{count}개 팀",
-      "teams_other": "{count}개 팀",
+      "incidents": "진행 중인 인시던트 {count}건",
+      "incidents_other": "진행 중인 인시던트 {count}건",
+      "messages": "읽지 않은 메시지 {count}개",
+      "messages_other": "읽지 않은 메시지 {count}개",
+      "reviews": "대기 중인 검토 {count}개",
+      "reviews_other": "대기 중인 검토 {count}개",
+      "teams": "팀 {count}개",
+      "teams_other": "팀 {count}개",
       "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
       "agents_active_other": "최근 24시간 동안 활성 에이전트 {count}개",
       "events_today": "최근 24시간 동안 이벤트 {count}개",
       "events_today_other": "최근 24시간 동안 이벤트 {count}개",
-      "connections_external": "{count}개 외부 연결",
-      "connections_external_other": "{count}개 외부 연결",
-      "connections_builtin": "{count}개 내장 커넥터",
-      "connections_builtin_other": "{count}개 내장 커넥터",
+      "connections_external": "외부 연결 {count}개",
+      "connections_external_other": "외부 연결 {count}개",
+      "connections_builtin": "내장 커넥터 {count}개",
+      "connections_builtin_other": "내장 커넥터 {count}개",
       "trend_up": "이전 24시간 대비 {pct}% 증가",
       "trend_down": "이전 24시간 대비 {pct}% 감소",
       "trend_flat": "이전 24시간 대비 변화 없음",
@@ -1024,7 +1024,7 @@
     "greeting_morning": "좋은 아침입니다",
     "greeting_afternoon": "좋은 오후입니다",
     "greeting_evening": "좋은 저녁입니다",
-    "operator": "운영자",
+    "operator": "사용자",
     "commander": "사령관",
     "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
     "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
@@ -1054,7 +1054,7 @@
     "nav": {
       "overview": {
         "label": "개요",
-        "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링"
+        "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링을 제공합니다."
       },
       "personas": {
         "label": "에이전트",
@@ -1065,12 +1065,12 @@
         "description": "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다"
       },
       "credentials": {
-        "label": "자격 증명",
+        "label": "연결",
         "description": "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다"
       },
       "design-reviews": {
         "label": "템플릿",
-        "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성"
+        "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성을 지원합니다."
       },
       "team": {
         "label": "팀",
@@ -1078,7 +1078,7 @@
       },
       "teams": {
         "label": "팀",
-        "description": "여러 에이전트를 팀으로 결합하여 다단계 워크플로를 함께 처리합니다"
+        "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다."
       },
       "cloud": {
         "label": "클라우드",
@@ -1086,11 +1086,11 @@
       },
       "settings": {
         "label": "설정",
-        "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정"
+        "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정을 관리합니다."
       },
       "plugins": {
         "label": "플러그인",
-        "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능 확장"
+        "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능을 확장합니다."
       }
     },
     "icon_showcase": {
@@ -12508,13 +12508,13 @@
     },
     "severity": {
       "info": "정보",
-      "low": "Low",
+      "low": "낮음",
       "medium": "보통",
       "high": "높음",
       "critical": "심각"
     },
     "priority": {
-      "low": "Low",
+      "low": "낮음",
       "normal": "보통",
       "high": "높음",
       "urgent": "긴급"
@@ -12579,10 +12579,10 @@
     "forage_confidence": {
       "high": "높음",
       "medium": "보통",
-      "low": "Low"
+      "low": "낮음"
     },
     "capability_risk": {
-      "low": "low",
+      "low": "낮음",
       "medium": "보통",
       "high": "높음"
     },
@@ -12590,7 +12590,7 @@
       "production": "프로덕션",
       "promising": "유망",
       "not_ready": "준비 안 됨",
-      "broken": "오류"
+      "broken": "고장"
     },
     "deployment": {
       "active": "활성",
@@ -12603,7 +12603,7 @@
       "delivered": "전달됨",
       "failed": "실패",
       "pending": "대기 중",
-      "queued": "큐에 있음"
+      "queued": "대기 중"
     },
     "rotation": {
       "anomaly": "이상 감지",
@@ -12645,14 +12645,14 @@
       "predicate_unmet": "조건 미충족",
       "publish_failed": "게시 실패",
       "quarantined": "트리거 격리됨",
-      "healing_abandoned": "자가 치유 중단",
-      "healing_capped": "치유 재시도 소진"
+      "healing_abandoned": "자가 복구 중단",
+      "healing_capped": "복구 재시도 소진"
     },
     "build": {
       "analyzing": "분석 중",
       "awaiting_input": "입력 대기 중",
       "cancelled": "취소됨",
-      "completed": "완료됨",
+      "completed": "완료",
       "draft_ready": "초안 준비됨",
       "failed": "실패",
       "initializing": "초기화 중",
@@ -12673,8 +12673,8 @@
       "unsupported": "여기서 실행 불가"
     },
     "remote_job": {
-      "completed": "완료됨",
-      "failed": "실패함",
+      "completed": "완료",
+      "failed": "실패",
       "cancelled": "취소됨",
       "refused": "거절됨",
       "pending": "대기 중",
@@ -17749,7 +17749,7 @@
     "blast_safe_to_delete": "종속된 리소스가 없습니다. 삭제해도 안전합니다.",
     "blast_impact": "영향",
     "grid_rows": "행",
-    "grid_showing": "Showing {start}\\u2013{end} of {total} items",
+    "grid_showing": "전체 {total}개 항목 중 {start}–{end}",
     "grid_rows_per_page": "페이지당 행 수",
     "empty_chart_heading": "아직 트래픽 데이터가 없습니다",
     "empty_chart_description": "에이전트가 요청을 처리하기 시작하면 트래픽 및 오류 지표가 여기에 표시됩니다.",
@@ -17800,8 +17800,8 @@
     "devtools_loading_projects": "프로젝트 로딩 중…",
     "devtools_loading": "로딩 중…",
     "devtools_load_failed": "프로젝트를 불러오지 못했습니다",
-    "devtools_no_projects": "No projects found",
-    "devtools_no_projects_hint": "Add a codebase project in Dev Tools first, then return here to select it.",
+    "devtools_no_projects": "코드베이스가 없습니다",
+    "devtools_no_projects_hint": "먼저 Codebase 커넥터를 추가한 다음 여기로 돌아와서 선택하세요.",
     "draft_editor": {
       "persona_name_placeholder": "페르소나 이름…",
       "description_placeholder": "간단한 설명…",
@@ -17813,7 +17813,7 @@
       "system_prompt_placeholder": "이 페르소나의 핵심 지침…",
       "custom_sections": "사용자 지정 섹션",
       "remove_section": "섹션 제거",
-      "key_placeholder": "key",
+      "key_placeholder": "키",
       "label_placeholder": "레이블",
       "content_placeholder": "섹션 내용…",
       "icon_label": "아이콘",
@@ -17942,9 +17942,9 @@
       "draft_generated": "초안 생성 완료",
       "transformation_failed": "생성 실패",
       "waiting_to_start": "생성을 시작하기를 기다리는 중…",
-      "continue_working": "계속 작업할 수 있습니다 -- 초안이 준비되면 알려드리겠습니다.",
+      "continue_working": "계속 작업할 수 있습니다 — 초안이 준비되면 알려드리겠습니다.",
       "draft_ready": "페르소나 초안이 검토 및 편집할 준비가 되었습니다.",
-      "click_generate": "시작하려면 \\u201c페르소나 초안 생성\\u201d을 클릭하세요.",
+      "click_generate": "시작하려면 \"페르소나 초안 생성\"을 클릭하세요.",
       "skip_configuration": "구성 건너뛰기",
       "no_config_questions": "구성 질문이 필요하지 않습니다.",
       "answer_questions": "페르소나 생성을 사용자 지정하려면 이 질문에 답하세요.",
@@ -18006,15 +18006,15 @@
     "bulk_toolbar_aria": "일괄 작업",
     "bulk_selected": "{count}개 선택됨",
     "bulk_clear_selection": "선택 해제",
-    "resize_column": "열 크기 조정 - 드래그하여 조정하고 두 번 클릭하여 재설정",
+    "resize_column": "열 크기 조정 — 드래그하여 조정하고 두 번 클릭하여 재설정",
     "drag_handle_aria": "드래그하여 순서 변경",
     "empty_todos_heading": "모두 처리했습니다",
-    "empty_todos_description": "reviews or alerts need your attention right now.",
-    "empty_stream_heading": "activity yet",
+    "empty_todos_description": "지금 주의가 필요한 검토나 알림이 없습니다.",
+    "empty_stream_heading": "아직 활동이 없습니다",
     "empty_stream_description": "에이전트가 실행되는 대로 여기에 실시간으로 표시됩니다.",
-    "empty_routines_heading": "routines scheduled",
+    "empty_routines_heading": "예약된 루틴이 없습니다",
     "empty_routines_description": "예약되거나 반복되는 트리거가 여기에 표시됩니다.",
-    "empty_heatmap_heading": "activity yet",
+    "empty_heatmap_heading": "아직 활동이 없습니다",
     "empty_heatmap_description": "에이전트의 실행 기록이 한 해 동안 채워집니다.",
     "sort_active_asc": "{label} 기준으로 오름차순 정렬되었습니다. 내림차순으로 정렬하려면 클릭하세요.",
     "sort_active_desc": "{label} 기준으로 내림차순 정렬되었습니다. 오름차순으로 정렬하려면 클릭하세요.",
@@ -18029,8 +18029,8 @@
     "code_show_lines": "전체 {count}줄 보기",
     "grid_loading": "불러오는 중…",
     "grid_no_data": "데이터 없음",
-    "glossary_webhook": "A URL that receives automatic notifications when something happens \\u2014 like a mailbox for your app.",
-    "glossary_schema": "The expected shape of incoming data \\u2014 which fields are required and what type they should be.",
+    "glossary_webhook": "무언가 발생했을 때 자동으로 알림을 받는 URL입니다 — 앱을 위한 사서함과 같은 역할을 합니다.",
+    "glossary_schema": "수신 데이터의 예상 구조입니다 — 어떤 필드가 필수이고 어떤 유형이어야 하는지를 나타냅니다.",
     "glossary_payload": "요청이나 이벤트와 함께 전송되는 실제 데이터입니다.",
     "glossary_endpoint": "에이전트가 연결되거나 데이터를 보낼 수 있는 특정 주소입니다.",
     "glossary_json": "중괄호와 키-값 쌍을 사용해 구조화된 데이터를 표현하는 대표적인 텍스트 형식입니다.",
@@ -18041,11 +18041,11 @@
     "connection_disconnected": "연결 끊김",
     "connection_connecting": "연결하는 중…",
     "connection_reconnecting": "재연결하는 중",
-    "connection_reconnecting_title": "Reconnection attempt {attempt} \\u2014 retrying in {seconds}s",
+    "connection_reconnecting_title": "재연결 시도 {attempt}회 — {seconds}초 후 재시도",
     "go_back": "뒤로 가기",
     "error_boundary_heading_named": "{name}에서 예상치 못한 오류가 발생했습니다",
     "error_boundary_heading": "예상치 못한 오류가 발생했습니다",
-    "error_boundary_reassurance": "Don't worry \\u2014 your data is safe. You can try again or head back to the dashboard.",
+    "error_boundary_reassurance": "걱정하지 마세요 — 데이터는 안전합니다. 다시 시도하거나 대시보드로 돌아갈 수 있습니다.",
     "error_boundary_try_again": "다시 시도",
     "error_boundary_go_dashboard": "대시보드로 이동",
     "error_boundary_copied": "클립보드에 복사됨",
@@ -18078,7 +18078,7 @@
     "design_files_attached_one": "파일 {count}개 첨부됨",
     "design_files_attached_other": "파일 {count}개 첨부됨",
     "design_submit_hint": "제출하려면 Enter를, 줄바꿈하려면 Shift+Enter를 누르세요.",
-    "devtools_no_projects_nav": "Navigate to Plugins \\u2192 Dev Tools to create a project.",
+    "devtools_no_projects_nav": "프로젝트를 만들려면 플러그인 → 개발 도구로 이동하세요.",
     "process_activity": "프로세스 활동",
     "process_action_required": "조치 필요",
     "process_active": "진행 중",
@@ -18094,10 +18094,10 @@
     "unsaved_body_sections": "{sections}에 저장하지 않은 변경 사항이 있습니다. 저장하지 않고 나가면 이 내용이 사라집니다.",
     "unsaved_body": "저장하지 않은 변경 사항이 있습니다. 저장하지 않고 나가면 사라집니다.",
     "unsaved_save": "저장 후 계속",
-    "unsaved_saving": "Saving\\u2026",
+    "unsaved_saving": "저장 중…",
     "unsaved_discard": "변경 내용 취소",
     "unsaved_stay": "머무르기",
-    "cmd_placeholder": "Search agents, credentials, templates… (type \\\">\\\" for commands)",
+    "cmd_placeholder": "에이전트, 자격 증명, 템플릿 검색… (명령어를 사용하려면 \">\"를 입력하세요)",
     "cmd_navigate": "이동",
     "cmd_select": "선택",
     "cmd_commands": "명령어"

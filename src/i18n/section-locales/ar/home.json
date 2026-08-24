@@ -17,7 +17,7 @@
     "select_role_first": "اختر دوراً أولاً لإتاحة خيارات الأداة.",
     "select_tool_first": "اختر أداة أولاً لتحديد هدفك.",
     "get_started": "ابدأ",
-    "role_office_rat": "موظف مكتبي",
+    "role_office_rat": "مستخدم عادي",
     "role_office_rat_hint": "مستخدم غير تقني",
     "role_developer": "مطور",
     "role_developer_hint": "مستخدم تقني",

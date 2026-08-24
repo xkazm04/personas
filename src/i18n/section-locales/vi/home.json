@@ -5,7 +5,7 @@
     "pick_tool": "Chọn công cụ yêu thích",
     "pick_tool_hint": "Đây sẽ là kết nối dịch vụ đầu tiên của bạn.",
     "describe_goal": "Bạn muốn tự động hóa điều gì?",
-    "describe_goal_hint": "Mô tả mục tiêu tự động hóa đầu tiên -- chúng tôi sẽ giúp bạn thiết lập.",
+    "describe_goal_hint": "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
     "goal_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack…",
     "ready_to_save": "Sẵn sàng lưu",
     "step_role": "Vai trò của bạn",
@@ -37,7 +37,7 @@
     "start_tour": "Bắt đầu tham quan",
     "steps_count": "{count} bước",
     "tour_steps_label": "Những gì bạn sẽ học được",
-    "power_moves": "Thao Tác Nâng Cao",
+    "power_moves": "Thao tác nâng cao",
     "moves_used": "{used}/{total} đã dùng",
     "try_it": "Thử ngay",
     "used_badge": "Đã dùng",
@@ -70,7 +70,7 @@
     "pick_tool": "Chọn công cụ yêu thích",
     "tool_hint": "Đây sẽ là tích hợp trình kết nối đầu tiên của bạn.",
     "automate_title": "Bạn muốn tự động hóa điều gì?",
-    "automate_hint": "Mô tả mục tiêu tự động hóa đầu tiên -- chúng tôi sẽ giúp bạn thiết lập.",
+    "automate_hint": "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
     "automate_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack…",
     "min_chars": "Tối thiểu 10 ký tự ({current}/10)",
     "ready_to_save": "Sẵn sàng lưu",
@@ -120,10 +120,10 @@
   "greeting_morning": "Chào buổi sáng",
   "greeting_afternoon": "Chào buổi chiều",
   "greeting_evening": "Chào buổi tối",
-  "operator": "Điều hành viên",
+  "operator": "Người dùng",
   "commander": "Chỉ huy",
-  "summary_empty": "Bắt đầu bằng cách tạo tác tử đầu tiên hoặc khám phá nền tảng.",
-  "summary_stats": "Bạn có {personasCount} tác tử{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
+  "summary_empty": "Bắt đầu bằng cách tạo tác nhân đầu tiên hoặc khám phá nền tảng.",
+  "summary_stats": "Bạn có {personasCount} tác nhân{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
   "quick_navigation": "Điều hướng nhanh",
   "platform_label": "nền tảng Personas",
   "roadmap": {
@@ -142,47 +142,47 @@
     "next_count": "{count} Tiếp theo"
   },
   "fleet": {
-    "executions_today": "Chạy Hôm Nay",
-    "success_rate": "Tỷ Lệ Thành Công",
-    "active_agents": "Agent Hoạt Động",
-    "credentials": "Thông Tin Xác Thực"
+    "executions_today": "Lượt chạy hôm nay",
+    "success_rate": "Tỷ lệ thành công",
+    "active_agents": "Tác nhân hoạt động",
+    "credentials": "Thông tin xác thực"
   },
   "nav": {
     "overview": {
       "label": "Tổng quan",
-      "description": "Phân tích bảng điều khiển, lịch sử thực thi và giám sát hệ thống thời gian thực trên tất cả tác tử"
+      "description": "Xem hiệu suất của các tác nhân, những gì họ đã làm gần đây, và giám sát mọi thứ ở một nơi"
     },
     "personas": {
-      "label": "Tác tử",
-      "description": "Tạo, cấu hình và quản lý tác tử AI với hành vi và khả năng tùy chỉnh"
+      "label": "Tác nhân",
+      "description": "Tạo, thiết lập và quản lý tác nhân AI của bạn — cho chúng hành vi tùy chỉnh và kết nối chúng với công cụ của bạn."
     },
     "events": {
       "label": "Sự kiện",
-      "description": "Cấu hình trình kích hoạt sự kiện, trình lắng nghe webhook và tự động hóa theo lịch trình"
+      "description": "Thiết lập điều gì kích hoạt tác nhân của bạn chạy — lịch trình, thông báo đến, hoặc thay đổi bạn xác định"
     },
     "credentials": {
       "label": "Khóa",
-      "description": "Quản lý thông tin xác thực API, kết nối cơ sở dữ liệu, mã thông báo OAuth và bí mật được mã hóa"
+      "description": "Quản lý thông tin đăng nhập dịch vụ, kết nối cơ sở dữ liệu và mật khẩu cho phép tác nhân truy cập công cụ của bạn"
     },
     "design-reviews": {
       "label": "Mẫu",
-      "description": "Nhập quy trình n8n, duyệt thư viện mẫu và tạo bản thiết kế tác tử"
+      "description": "Duyệt các bản thiết kế tác nhân dựng sẵn, nhập quy trình làm việc và tạo thiết kế tác nhân mới"
     },
     "team": {
       "label": "Nhóm",
-      "description": "Xây dựng đường ống tác tử đa tác tử với điều phối kéo thả và định tuyến"
+      "description": "Kết hợp nhiều tác nhân thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
     },
     "teams": {
       "label": "Nhóm",
-      "description": "Kết hợp nhiều agent thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
+      "description": "Kết hợp nhiều tác nhân thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
     },
     "cloud": {
       "label": "Đám mây",
-      "description": "Triển khai tác tử lên hạ tầng đám mây, quản lý lịch trình và tích hợp GitLab CI"
+      "description": "Chạy tác nhân của bạn trên đám mây để chúng vẫn hoạt động ngay cả khi máy tính của bạn tắt"
     },
     "settings": {
       "label": "Cài đặt",
-      "description": "Tùy chọn tài khoản, giao diện, quy tắc thông báo và cấu hình công cụ xử lý"
+      "description": "Tài khoản của bạn, giao diện ứng dụng, tùy chọn thông báo và các tùy chọn nâng cao"
     },
     "plugins": {
       "label": "Plugin",

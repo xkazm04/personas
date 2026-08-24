@@ -83,32 +83,32 @@
     "language": "Язык"
   },
   "resume": {
-    "failure": "Непрочитанный сбой в {personaName} — требует изучения",
+    "failure": "Непрочитанный сбой в «{personaName}» — требует изучения",
     "tour": "Продолжить {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
-    "edit": "Продолжить редактирование {personaName}"
+    "edit": "Продолжить редактирование «{personaName}»"
   },
   "nav_status": {
     "incidents": "{count} открытый инцидент",
-    "incidents_other": "{count} открытых инцидентов",
+    "incidents_other": "Открытых инцидентов: {count}",
     "messages": "{count} непрочитанное сообщение",
-    "messages_other": "{count} непрочитанных сообщений",
+    "messages_other": "Непрочитанных сообщений: {count}",
     "reviews": "{count} ожидающая проверка",
-    "reviews_other": "{count} ожидающих проверок",
+    "reviews_other": "Ожидающих проверок: {count}",
     "teams": "{count} команда",
-    "teams_other": "{count} команд",
+    "teams_other": "Команд: {count}",
     "agents_active": "{count} агент активен за последние 24 ч",
-    "agents_active_other": "{count} агентов активны за последние 24 ч",
+    "agents_active_other": "Активных агентов за последние 24 ч: {count}",
     "events_today": "{count} событие за последние 24 ч",
-    "events_today_other": "{count} событий за последние 24 ч",
+    "events_today_other": "Событий за последние 24 ч: {count}",
     "connections_external": "{count} внешнее подключение",
-    "connections_external_other": "{count} внешних подключений",
+    "connections_external_other": "Внешних подключений: {count}",
     "connections_builtin": "{count} встроенный коннектор",
-    "connections_builtin_other": "{count} встроенных коннекторов",
+    "connections_builtin_other": "Встроенных коннекторов: {count}",
     "trend_up": "+{pct}% по сравнению с предыдущими 24 ч",
     "trend_down": "-{pct}% по сравнению с предыдущими 24 ч",
     "trend_flat": "без изменений по сравнению с предыдущими 24 ч",
     "agents_enabled": "{count} активный агент",
-    "agents_enabled_other": "{count} активных агентов"
+    "agents_enabled_other": "Активных агентов: {count}"
   },
   "get_started": {
     "ask_cta": "Спросить ассистента",
@@ -161,7 +161,7 @@
       "description": "Настройка триггеров событий, обработчиков webhook и автоматизаций по расписанию"
     },
     "credentials": {
-      "label": "Ключи",
+      "label": "Подключения",
       "description": "Управление учётными данными API, подключениями к базам данных, токенами OAuth и зашифрованными секретами"
     },
     "design-reviews": {
@@ -197,7 +197,7 @@
   },
   "since_left": {
     "alerts": "{count} оповещение",
-    "alerts_other": "{count} оповещений",
+    "alerts_other": "Оповещений: {count}",
     "approvals": "{count} ожидает подтверждения",
     "approvals_other": "{count} ожидают подтверждения",
     "dismiss": "Закрыть",

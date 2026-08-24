@@ -77,7 +77,7 @@
     "refresh_token": "Refrescar Token",
     "open_authorization_window": "Abrir Ventana de Autorización",
     "token_unknown_msg": "No se pudo verificar la validez del token. Refresca el token para confirmar que siga activo.",
-    "connect_anthropic_msg": "Conecta tu cuenta de Anthropic para habilitar la autenticación basada en OAuth para ejecuciones en la nube.",
+    "connect_anthropic_msg": "Conecte su cuenta de Anthropic para habilitar la autenticación basada en OAuth para ejecuciones en la nube.",
     "token_expired_msg_prefix": "Este token OAuth ha caducado"
   },
   "trigger_form": {
@@ -187,7 +187,7 @@
     "no_targets_hint": "Conéctate a la ejecución en la nube o GitLab en las pestañas respectivas para ver los despliegues aquí.",
     "no_match_filters": "Ningún despliegue coincide con los filtros",
     "no_deployments": "Sin despliegues aún",
-    "adjust_filters": "Intenta ajustar tu búsqueda o filtros.",
+    "adjust_filters": "Intente ajustar su búsqueda o filtros.",
     "deploy_hint": "Despliega personas desde las pestañas Nube o GitLab.",
     "showing_of": "Mostrando {showing} de {total} despliegue{plural}",
     "total_invocations": "Total de invocaciones:",

@@ -6,7 +6,7 @@
   "connect_to_see_stats": "Conecta {{service}} para ver estadísticas de {{category}}",
   "go_to_connections": "Ir a Conexiones",
   "credential_found": "Credencial de {{service}} encontrada",
-  "set_repo_url": "Establece una URL de repositorio en tu proyecto para ver estadísticas.",
+  "set_repo_url": "Establezca una URL de repositorio en su proyecto para ver estadísticas.",
   "go_to_projects": "Ir a Proyectos",
   "link_monitoring": "Vincúlalo a este proyecto para ver estadísticas de seguimiento de errores.",
   "link_to_project": "Vincular al Proyecto",

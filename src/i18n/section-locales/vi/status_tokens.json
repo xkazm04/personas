@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "Cao",
     "medium": "Trung bình",
-    "low": "Low"
+    "low": "Thấp"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "thấp",
     "medium": "trung bình",
     "high": "cao"
   },

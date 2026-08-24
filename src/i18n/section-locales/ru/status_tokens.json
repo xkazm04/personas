@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "Высокая",
     "medium": "Средняя",
-    "low": "Low"
+    "low": "Низкая"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "низкий",
     "medium": "средний",
     "high": "высокий"
   },

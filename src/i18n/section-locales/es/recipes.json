@@ -2,7 +2,7 @@
   "no_match": "No hay recetas coincidentes",
   "empty": "Aún no hay recetas",
   "no_match_hint": "Prueba con un término de búsqueda diferente.",
-  "empty_hint": "Crea tu primera receta LLM reutilizable para comenzar.",
+  "empty_hint": "Cree su primera receta LLM reutilizable para comenzar.",
   "add_field": "Agregar Campo",
   "title": "Recetas",
   "new_recipe": "Nueva Receta",
