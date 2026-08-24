@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  argsInvokeSkill, composeLaunchAsk, deriveLaunchStatus, inferObjective,
+  argsInvokeSkill, composeLaunchAsk, deriveLaunchStatus,
   launchKey, normPath, sessionRunsSkill,
 } from '../useSkillLaunch';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -86,26 +86,23 @@ describe('normPath / launchKey', () => {
   });
 });
 
-describe('inferObjective / composeLaunchAsk', () => {
+describe('composeLaunchAsk', () => {
   const project = { name: 'Repo', root_path: 'C:/dev/repo' } as DevProject; // only the two fields the ask reads
 
-  it('takes the first sentence of the description', () => {
-    expect(inferObjective('x', 'Sweep the repo. Then report.')).toBe('Sweep the repo.');
-    expect(inferObjective('x', 'One line no period\nsecond line')).toBe('One line no period');
-  });
-
-  it('falls back when the description is missing', () => {
-    expect(inferObjective('perfect', null)).toContain('perfect');
-    expect(inferObjective('perfect', '  ')).toContain('perfect');
-  });
-
-  it('composes the fleet-plan ask with skill, project name, and cwd', () => {
-    const ask = composeLaunchAsk('perfect', project, 'Polish the product.');
+  it('states the user action, skill, project and cwd - nothing leading', () => {
+    const ask = composeLaunchAsk('perfect', project, null);
+    expect(ask).toContain('The user clicked Launch');
     expect(ask).toContain('/perfect');
     expect(ask).toContain('"Repo"');
     expect(ask).toContain('cwd: C:/dev/repo');
-    expect(ask).toContain('show_fleet_plan');
-    expect(ask).toContain('objective: "Polish the product."');
-    expect(ask).toContain('skill: "perfect"');
+    // Non-leading by design: no dictated objective, no scripted questioning.
+    expect(ask).not.toContain('objective:');
+    expect(ask).not.toContain('ask me');
+  });
+
+  it('carries the declared argument syntax when the skill has one', () => {
+    const ask = composeLaunchAsk('conform', project, '[context-or-path] [--budget <n>]');
+    expect(ask).toContain('/conform [context-or-path] [--budget <n>]');
+    expect(composeLaunchAsk('conform', project, null)).not.toContain('argument syntax');
   });
 });

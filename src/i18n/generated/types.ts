@@ -13851,23 +13851,12 @@ export type Translations = {
       launch_no_projects_hint: string;
       launch_pick_skill_title: string;
       launch_pick_skill_hint: string;
-      launch_coverage: string;
       launch_installed_version: string;
       launch_library_version: string;
       launch_running_hint: string;
       launch_adopting_hint: string;
       launch_needs_adopt_hint: string;
       launch_via_athena_hint: string;
-      launch_briefing_title: string;
-      launch_briefing_hint: string;
-      launch_briefing_objective: string;
-      launch_briefing_cwd: string;
-      launch_briefing_skill: string;
-      launch_variant_launchpad: string;
-      launch_variant_atlas: string;
-      launch_variant_circuit: string;
-      launch_variant_briefing: string;
-      launch_variant_aria: string;
       launch_sent_to_athena: string;
       launch_ungrouped: string;
       trace_summary: string;
@@ -14773,6 +14762,8 @@ export type Translations = {
       skills_library_unwired_title: string;
       skills_library_unwired_body: string;
       skills_library_unwired_unassigned: string;
+      launch_args_label: string;
+      launch_args_none: string;
     };
     doc_signing: {
       sign_heading: string;

@@ -1,8 +1,9 @@
 // Circuit leaf — one project node card at the end of a wire. Fixed height
 // (CircuitWires.NODE_H) so wire endpoints stay computed, not measured.
-import { Play, ArrowDownToLine } from 'lucide-react';
+// Two-row layout by design: row 1 = identity (project name + status icons),
+// row 2 = everything else (actions, versions, transient feedback).
+import { ArrowDownToLine, CircleDashed, Loader2, Play, Radio } from 'lucide-react';
 
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -20,14 +21,25 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
   const { status, project } = cell;
   const style = { height: NODE_H };
 
-  const versions = (
-    // muted-ok: structural micro-label (version chip, chrome not body copy)
-    <span className="typo-caption text-foreground/40 truncate">
-      {cell.installedVersion
-        ? tx(d.launch_installed_version, { version: cell.installedVersion })
-        : cell.libraryVersion
-          ? tx(d.launch_library_version, { version: cell.libraryVersion })
-          : null}
+  const versionText = cell.installedVersion
+    ? tx(d.launch_installed_version, { version: cell.installedVersion })
+    : cell.libraryVersion
+      ? tx(d.launch_library_version, { version: cell.libraryVersion })
+      : null;
+
+  const versions = versionText && (
+    <span
+      // muted-ok: structural micro-label (version chip, chrome not body copy)
+      className="typo-caption text-foreground/40 truncate ml-auto"
+    >
+      {versionText}
+    </span>
+  );
+
+  const nameRow = (icon: React.ReactNode) => (
+    <span className="flex items-center gap-1.5 min-w-0 w-full">
+      <span className="typo-body font-medium text-foreground truncate">{project.name}</span>
+      <span className="ml-auto flex items-center gap-1 flex-shrink-0">{icon}</span>
     </span>
   );
 
@@ -42,14 +54,13 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
         aria-label={`${d.launch_action_launch}: ${project.name}`}
         className={`${frame} border-status-success/40 bg-secondary/25 hover:bg-secondary/40 cursor-pointer`}
       >
-        <span className="flex items-center gap-1.5 min-w-0">
-          <span className="typo-body font-medium text-foreground truncate">{project.name}</span>
-          <Play className="w-3 h-3 text-status-success flex-shrink-0 ml-auto" aria-hidden />
+        {nameRow(<Play className="w-3 h-3 text-status-success" aria-hidden />)}
+        <span className="flex items-center gap-2 min-w-0 w-full">
+          <span className={`typo-caption ${justSent ? 'text-status-success animate-fade-in' : 'text-status-success'}`}>
+            {justSent ? d.launch_sent_to_athena : d.launch_action_launch}
+          </span>
+          {versions}
         </span>
-        <span className="typo-caption text-status-success">
-          {justSent ? d.launch_sent_to_athena : d.launch_status_ready}
-        </span>
-        {versions}
       </button>
     );
   }
@@ -57,18 +68,21 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
   if (status === 'needs_adopt') {
     return (
       <div style={style} className={`${frame} border-primary/10 bg-secondary/10 opacity-70`}>
-        <span className="typo-body font-medium text-foreground truncate">{project.name}</span>
-        <Tooltip content={d.launch_needs_adopt_hint}>
-          <button
-            type="button"
-            onClick={onAdopt}
-            aria-label={`${d.launch_action_adopt}: ${project.name}`}
-            className="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-interactive typo-caption font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors"
-          >
-            <ArrowDownToLine className="w-3 h-3" aria-hidden />
-            {d.launch_action_adopt}
-          </button>
-        </Tooltip>
+        {nameRow(<CircleDashed className="w-3 h-3 text-foreground opacity-40" aria-hidden />)}
+        <span className="flex items-center gap-2 min-w-0 w-full">
+          <Tooltip content={d.launch_needs_adopt_hint}>
+            <button
+              type="button"
+              onClick={onAdopt}
+              aria-label={`${d.launch_action_adopt}: ${project.name}`}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors"
+            >
+              <ArrowDownToLine className="w-3 h-3" aria-hidden />
+              {d.launch_action_adopt}
+            </button>
+          </Tooltip>
+          {versions}
+        </span>
       </div>
     );
   }
@@ -89,13 +103,15 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
         aria-label={`${d.launch_action_launch}: ${project.name}`}
         className={`${frame} ${running ? 'border-status-info/40' : 'border-status-warning/40 animate-fade-in'} bg-secondary/15 cursor-not-allowed`}
       >
-        <span className="flex items-center gap-1.5 min-w-0">
-          <span className="typo-body font-medium text-foreground truncate">{project.name}</span>
-          <StatusBadge variant={running ? 'info' : 'warning'} size="sm" className="ml-auto flex-shrink-0">
+        {nameRow(running
+          ? <Radio className="w-3 h-3 text-status-info" aria-hidden />
+          : <Loader2 className="w-3 h-3 text-status-warning" aria-hidden />)}
+        <span className="flex items-center gap-2 min-w-0 w-full">
+          <span className={`typo-caption ${running ? 'text-status-info' : 'text-status-warning'}`}>
             {running ? d.launch_status_running : d.launch_status_adopting}
-          </StatusBadge>
+          </span>
+          {versions}
         </span>
-        {versions}
       </button>
     </Tooltip>
   );

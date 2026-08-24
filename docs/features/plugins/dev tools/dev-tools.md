@@ -136,21 +136,24 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 
 The **Skills** tab (`sub_skills/`) now has five page tabs (Overview | Analytics | Registry | Launch | Trace):
 
-**Launch** (2026-08-23, prototype) — a skill-first launch surface: pick ONE registry skill
-from a name-sorted dropdown (source = the workspace's paired ai-registry clone's `skills/`
-lane, falling back to the active project's `.ai/manifest.yaml` `registry.local` via the new
-`skill_files_registry_root` command), and the workspace's projects render as a grid scored
-against it — **ready** (skill installed or registry-LINKED; the scanner now resolves
-symlink/junction skills and reports `source_kind: "registry"` instead of rejecting them),
-**needs adopt** (dimmed, with an enabled adopt affordance running the direct-install lane
-behind `SkillActionConfirm`), **adopting** and **running** (disabled; running is derived
-from live fleet sessions whose cwd + `/skill` args match). Clicking a ready project hands
-the run to **Athena**: the chat opens with an auto-sent ask instructing her to compose a
-one-row `show_fleet_plan` (audited dispatch, she gathers missing skill arguments and
-stewards the session). Four directional UI variants ship behind a prototype switcher
-pending live evaluation — Launchpad (mission-control tiles), Atlas (tech-stack bands with
-coverage bars), Circuit (SVG wire board), Briefing (two-pane with the literal Athena ask)
-— `launch/SkillLaunchTab.tsx`, consolidation TODO dated 2026-08-23.
+**Launch** (2026-08-23; consolidated to the Circuit winner 2026-08-24) — a skill-first
+launch surface: pick ONE registry skill from a name-sorted dropdown (source = the
+workspace's paired ai-registry clone's `skills/` lane, falling back to the active
+project's `.ai/manifest.yaml` `registry.local` via `skill_files_registry_root`), and the
+workspace's projects render as a wired circuit board scored against it. A wide source
+panel on the left carries the skill's description and its **declared argument syntax**
+(the `argument-hint:` frontmatter, now parsed into `SkillEntry.argumentHint`; the
+registry lane is 26/26 hinted). Project nodes are two-row cards — row 1 identity +
+status icon, row 2 action + versions — at the end of status-toned SVG wires: **ready**
+(lit, click to launch), **needs adopt** (dashed stub, enabled adopt affordance running
+the direct-install lane behind `SkillActionConfirm`), **adopting** / **running**
+(disabled; running derives from live fleet sessions whose cwd + `/skill` args match).
+Clicking a ready node hands the run to **Athena** as a provenance-tagged turn: the chat
+opens with a short, non-leading system note (`TurnOrigin::External`, source
+"Skills Launch" — rendered as a margin note, never a user bubble) stating what the user
+requested plus the declared argument syntax; she gathers anything missing and composes
+the audited `show_fleet_plan` herself. `launch/` = SkillLaunchTab + CircuitVariant +
+CircuitNode + CircuitWires.
 
 
 **Overview (default)** — the workspace library and the active project's skills side by side.

@@ -92,6 +92,10 @@ pub struct SkillEntry {
     /// the UI renders it as an implicit "1.0"). Malformed values normalize
     /// to `None` like the other closed-set frontmatter fields.
     pub version: Option<String>,
+    /// Frontmatter `argument-hint:` — the skill's declared invocation syntax
+    /// (e.g. "[context-or-path] [--budget <n>]"). `None` = no declared
+    /// arguments (or a pre-standard skill); consumers render "none declared".
+    pub argument_hint: Option<String>,
 }
 
 /// On-disk provenance sidecar ([`PROVENANCE_FILE`]). Internal — not exported to
@@ -679,6 +683,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     .map(extract_skill_context_tracked)
                     .unwrap_or(false);
                 let version = content.as_deref().and_then(extract_skill_version);
+                let argument_hint = content.as_deref().and_then(extract_skill_argument_hint);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -693,6 +698,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     memory,
                     context_tracked,
                     version,
+                    argument_hint,
                 });
             }
             continue;
@@ -714,10 +720,10 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let description = skill_md_path
             .as_ref()
             .and_then(|p| read_first_line_description(p));
-        let (category, memory, context_tracked, version) = skill_md_path
+        let (category, memory, context_tracked, version, argument_hint) = skill_md_path
             .as_ref()
             .map(|p| read_skill_meta(p))
-            .unwrap_or((None, None, false, None));
+            .unwrap_or((None, None, false, None, None));
 
         // Count reference files (everything except SKILL.md, the internal
         // provenance sidecar and the lessons log — the latter two are
@@ -760,6 +766,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             memory,
             context_tracked,
             version,
+            argument_hint,
         });
     }
 
@@ -873,17 +880,33 @@ pub(crate) fn parse_skill_version(v: Option<&str>) -> (u32, u32) {
     }
 }
 
-/// Category + memory binding + context declaration + version over a SKILL.md
-/// path (one read, all fields).
-fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>, bool, Option<String>) {
+/// Frontmatter `argument-hint:` — free-form invocation syntax, passed through
+/// verbatim (unlike category/memory there is no closed vocabulary to
+/// normalize). Empty after trim → `None`.
+fn extract_skill_argument_hint(content: &str) -> Option<String> {
+    extract_frontmatter_value(content, "argument-hint").filter(|v| !v.is_empty())
+}
+
+/// Category + memory binding + context declaration + version + argument hint
+/// over a SKILL.md path (one read, all fields).
+type SkillMeta = (
+    Option<String>,
+    Option<String>,
+    bool,
+    Option<String>,
+    Option<String>,
+);
+
+fn read_skill_meta(skill_md_path: &Path) -> SkillMeta {
     match std::fs::read_to_string(skill_md_path) {
         Ok(content) => (
             extract_skill_category(&content),
             extract_skill_memory(&content),
             extract_skill_context_tracked(&content),
             extract_skill_version(&content),
+            extract_skill_argument_hint(&content),
         ),
-        Err(_) => (None, None, false, None),
+        Err(_) => (None, None, false, None, None),
     }
 }
 
@@ -1688,6 +1711,50 @@ mod tests {
         assert_eq!(extract_skill_category("---\nname: x\n---\n"), None);
         assert_eq!(
             extract_skill_category("# Just a heading\ncategory: Data"),
+            None
+        );
+    }
+
+    #[test]
+    fn extract_skill_argument_hint_passthrough() {
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+name: x
+argument-hint: \"[path] [--deep]\"
+---
+"
+            )
+            .as_deref(),
+            Some("[path] [--deep]"),
+        );
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+name: x
+argument-hint: <mode> [locale]
+---
+"
+            )
+            .as_deref(),
+            Some("<mode> [locale]"),
+        );
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+name: x
+---
+"
+            ),
+            None
+        );
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+argument-hint:
+---
+"
+            ),
             None
         );
     }

@@ -63,4 +63,10 @@ contextTracked: boolean,
  * the UI renders it as an implicit "1.0"). Malformed values normalize
  * to `None` like the other closed-set frontmatter fields.
  */
-version: string | null, };
+version: string | null, 
+/**
+ * Frontmatter `argument-hint:` — the skill's declared invocation syntax
+ * (e.g. "[context-or-path] [--budget <n>]"). `None` = no declared
+ * arguments (or a pre-standard skill); consumers render "none declared".
+ */
+argumentHint: string | null, };

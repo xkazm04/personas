@@ -80,20 +80,21 @@ export function deriveLaunchStatus(input: {
   return input.installed ? 'ready' : 'needs_adopt';
 }
 
-/** One-line objective inferred from the skill's description (first sentence). */
-export function inferObjective(skill: string, description: string | null): string {
-  const firstLine = ((description ?? '').split(/\r?\n/)[0] ?? '').trim();
-  const sentence = firstLine ? (firstLine.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? firstLine) : '';
-  return sentence || `Run the ${skill} skill end to end in this repository`;
-}
+/** Provenance label for turns this surface forwards — the backend persists
+ * them as tagged System messages (`TurnOrigin::External`), so Athena is told
+ * the text is app-composed, not the user's own words. */
+export const LAUNCH_SYSTEM_SOURCE = 'Skills Launch';
 
-/** The Athena ask `launch` seeds — machine-facing English, not i18n. */
-export function composeLaunchAsk(skill: string, project: DevProject, description: string | null): string {
-  const objective = inferObjective(skill, description);
-  return `Run the skill /${skill} on the project "${project.name}" (cwd: ${project.root_path}). `
-    + `Compose a fleet plan (show_fleet_plan) with a single row { cwd: "${project.root_path}", `
-    + `objective: "${objective}", skill: "${skill}" }. Before dispatching, ask me for any arguments `
-    + `the skill needs. Then steward the run and report back when it finishes.`;
+/** The Athena ask `launch` seeds — machine-facing English, not i18n.
+ * Deliberately NON-leading: it states what the user requested and nothing
+ * more. Athena already knows how to inspect a skill, gather arguments and
+ * compose a `show_fleet_plan`; dictating those steps here second-guessed her
+ * and confused turns (consolidation feedback, 2026-08-24). */
+export function composeLaunchAsk(skill: string, project: DevProject, argumentHint: string | null): string {
+  const argLine = argumentHint ? ` Declared argument syntax: /${skill} ${argumentHint}.` : '';
+  return `The user clicked Launch in Dev Tools > Skills: run the skill /${skill} `
+    + `on the project "${project.name}" (cwd: ${project.root_path}).${argLine} `
+    + `Dispatch it as a fleet run when you are ready.`;
 }
 
 export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData {
@@ -230,17 +231,17 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
     }
   }, [selectedSkill]);
 
-  // Seed the companion chat with the composed ask — the AddKpiModal mechanism:
-  // setPendingChatPrompt; the chat trigger consumer opens the panel and sends.
+  // Seed the companion chat with the composed ask. Same pending-prompt door
+  // as AddKpiModal, but tagged with a systemSource so the turn renders as a
+  // system divider and Athena is told the app (not the user) wrote the text.
   const launch = useCallback((cell: ProjectLaunchCell) => {
     if (cell.status !== 'ready' || !selectedSkill) return;
-    const description = skills.find((s) => s.name === selectedSkill)?.description
-      ?? support.get(cell.project.id)?.get(selectedSkill)?.description
-      ?? null;
-    useCompanionStore.getState().setPendingChatPrompt(
-      composeLaunchAsk(selectedSkill, cell.project, description),
-    );
-  }, [selectedSkill, skills, support]);
+    const hint = skills.find((s) => s.name === selectedSkill)?.argumentHint ?? null;
+    useCompanionStore.getState().setPendingChatPrompt({
+      text: composeLaunchAsk(selectedSkill, cell.project, hint),
+      systemSource: LAUNCH_SYSTEM_SOURCE,
+    });
+  }, [selectedSkill, skills]);
 
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 

@@ -1,10 +1,11 @@
-// Circuit variant — the selected skill as a source node on the left, wired
-// to each workspace project node on the right. Supported (ready) projects
-// get a lit success wire; needs_adopt gets a dashed stub and a "wire in"
-// adopt affordance; running/adopting recolor the wire. Geometry is fixed
-// (CircuitWires.PITCH rows), so the SVG underlay needs no measurement.
+// Circuit — the consolidated Launch surface. The selected skill is a source
+// panel on the left, wired to each workspace project node on the right.
+// Supported (ready) projects get a lit success wire; needs_adopt gets a
+// dashed stub and a "wire in" adopt affordance; running/adopting recolor the
+// wire. Geometry is fixed (CircuitWires.PITCH rows), so the SVG underlay
+// needs no measurement.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Cpu } from 'lucide-react';
+import { Cpu, TerminalSquare } from 'lucide-react';
 
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -60,25 +61,40 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
 
       {selected && (
         <div className="flex items-stretch">
-          {/* Source node — the selected skill chip, vertically centered so
-              every wire fans out from its mid-height. */}
-          <div className="w-60 flex-shrink-0 flex flex-col justify-center">
-            <div className="rounded-card border border-primary/25 bg-secondary/25 px-4 py-3.5 shadow-elevation-1">
+          {/* Source panel — the selected skill, vertically centered so every
+              wire fans out from its mid-height. Wide on purpose: the
+              description is meant to be READ here, not glimpsed. */}
+          <div className="w-[30rem] flex-shrink-0 flex flex-col justify-center">
+            <div className="rounded-card border border-primary/25 bg-secondary/25 px-5 py-4 shadow-elevation-1">
               <div className="flex items-center gap-2 min-w-0">
                 <Cpu className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
                 <span className="typo-title text-foreground truncate">{selected}</span>
+                {/* muted-ok: structural micro-label (version/category chip beside the title) */}
+                <span className="typo-label text-foreground/45 flex-shrink-0 ml-auto">
+                  {tx(d.launch_skill_meta, {
+                    version: skill?.version ?? '1.0',
+                    category: skill?.category ?? d.launch_ungrouped,
+                  })}
+                </span>
               </div>
-              {/* muted-ok: structural micro-label (version/category chip under the title) */}
-              <p className="typo-label text-foreground/45 mt-1">
-                {tx(d.launch_skill_meta, {
-                  version: skill?.version ?? '1.0',
-                  category: skill?.category ?? d.launch_ungrouped,
-                })}
-              </p>
               {skill?.description && (
-                <p className="typo-caption text-foreground/85 mt-1.5 line-clamp-3">{skill.description}</p>
+                <p className="typo-body text-foreground/90 mt-2.5 line-clamp-6">{skill.description}</p>
               )}
-              <p className="typo-caption text-foreground/85 mt-1.5">{d.launch_via_athena_hint}</p>
+              {/* Declared argument syntax — parsed from the skill's
+                  `argument-hint` frontmatter; absent means the skill takes
+                  no (or free-form) arguments and Athena decides. */}
+              <div className="flex items-center gap-1.5 mt-3 min-w-0">
+                <TerminalSquare className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" aria-hidden />
+                <span className="typo-label text-foreground flex-shrink-0">{d.launch_args_label}</span>
+                {skill?.argumentHint ? (
+                  <code className="typo-caption font-mono text-foreground bg-background/60 border border-primary/10 rounded-interactive px-1.5 py-0.5 truncate">
+                    /{selected} {skill.argumentHint}
+                  </code>
+                ) : (
+                  <span className="typo-caption text-foreground/85">{d.launch_args_none}</span>
+                )}
+              </div>
+              <p className="typo-caption text-foreground/85 mt-2">{d.launch_via_athena_hint}</p>
               {sentProject && (
                 <p className="typo-caption text-status-success animate-fade-in mt-1.5">
                   {d.launch_sent_to_athena}
@@ -91,7 +107,7 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
           <CircuitWires cells={data.cells} selectedSkill={selected} />
 
           {/* Node column — fixed row pitch keeps wire endpoints honest. */}
-          <div className="flex-1 min-w-0 max-w-96 flex flex-col" style={{ rowGap: ROW_GAP }}>
+          <div className="flex-1 min-w-0 max-w-[34rem] flex flex-col" style={{ rowGap: ROW_GAP }}>
             {data.cells.map((cell) => (
               <div key={cell.project.id} style={{ height: NODE_H }}>
                 <CircuitNode

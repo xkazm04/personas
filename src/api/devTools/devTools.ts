@@ -1573,6 +1573,9 @@ export interface SkillEntry {
   /** Declared `version:` frontmatter ("major.minor"), or null = unversioned
    *  (pre-standard skill; render as an implicit "1.0"). */
   version: string | null;
+  /** Declared `argument-hint:` frontmatter — the skill's invocation syntax
+   *  (e.g. "[context-or-path] [--budget <n>]"), or null = no declared args. */
+  argumentHint: string | null;
 }
 
 export interface SkillFileContent {

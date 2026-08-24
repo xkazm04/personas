@@ -104,6 +104,7 @@ export function presetSkillEntry(p: PresetSkillDef): {
   syncState: 'in_sync'; sourceKind: null;
   category: string; memory: 'project'; contextTracked: boolean;
   version: null;
+  argumentHint: null;
 } {
   return {
     name: p.name,
@@ -117,6 +118,7 @@ export function presetSkillEntry(p: PresetSkillDef): {
     memory: 'project',
     contextTracked: true,
     version: null,
+    argumentHint: null,
   };
 }
 

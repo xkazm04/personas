@@ -420,8 +420,8 @@ interface CompanionStore {
    * and sends it, beginning a guided conversation. Latest-wins; the consumer
    * clears it before calling `send()`.
    */
-  pendingChatPrompt: string | null;
-  setPendingChatPrompt: (text: string | null) => void;
+  pendingChatPrompt: string | { text: string; systemSource?: string } | null;
+  setPendingChatPrompt: (text: string | { text: string; systemSource?: string } | null) => void;
 
   /**
    * Monotonic nonce bumped each time a pre-composed message is forwarded to

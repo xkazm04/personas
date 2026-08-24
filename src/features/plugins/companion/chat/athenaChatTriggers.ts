@@ -19,7 +19,7 @@ import { stripMarkdownForSpeech } from './athenaChatSpeech';
 
 export function useAthenaChatTriggers(args: {
   streaming: boolean;
-  send: (text: string) => void;
+  send: (text: string, nonce?: string, opts?: { systemSource?: string }) => void;
   playProgressClip: (text: string) => void;
 }): void {
   const { streaming, send, playProgressClip } = args;
@@ -41,7 +41,10 @@ export function useAthenaChatTriggers(args: {
     useCompanionStore.getState().setPendingChatPrompt(null);
     // App-initiated prompts OPEN the panel — they begin a guided conversation.
     useCompanionStore.getState().setState('open');
-    send(req);
+    // Object form carries provenance: the surface composed the text, the user
+    // only clicked. The send path forwards it as a tagged System turn.
+    if (typeof req === 'string') send(req);
+    else send(req.text, undefined, { systemSource: req.systemSource });
   }, [pendingChatPrompt, streaming, send]);
 
   // Slice 6 — speak the hands-free decision aloud ONLY on Explain/Recommend.
