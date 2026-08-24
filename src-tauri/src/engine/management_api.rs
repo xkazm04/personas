@@ -3155,6 +3155,16 @@ async fn kp_get_persona_request(
                 .flatten()
         })
         .map(|s| s.phase.as_str().to_string());
+    // A build that DIED after a successful approval must not read `approved`
+    // forever — kp (and the bench driver) poll this status and would wait out
+    // their whole activate window on a hire that can no longer arrive. The
+    // first live sweep hit exactly that: promotion held → buildPhase `failed`,
+    // wire status still `approved`, 20-minute timeout instead of a fast fail.
+    let status = if status == "approved" && build_phase.as_deref() == Some("failed") {
+        "failed"
+    } else {
+        status
+    };
     ok_json(serde_json::json!({
         "requestId": id,
         "status": status,
