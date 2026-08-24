@@ -1715,7 +1715,8 @@
     "skills_tab_launch": "Starten",
     "skills_tab_registry": "Registry",
     "launch_args_label": "Argumente",
-    "launch_args_none": "Keine deklariert - Athena fragt nach, falls der Skill welche braucht."
+    "launch_args_none": "Keine deklariert - Athena fragt nach, falls der Skill welche braucht.",
+    "launch_not_installed": "Nicht installiert"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",
@@ -2976,7 +2977,8 @@
     "global_hotkey_enable": "Systemweites Tastenkürzel aktivieren",
     "global_hotkey_failed": "Eine andere App belegt dieses Tastenkürzel bereits, daher konnte es nicht aktiviert werden.",
     "global_hotkey_in_app_only": "Funktioniert nur bei aktivem Personas-Fenster",
-    "global_hotkey_title": "Von überall sprechen"
+    "global_hotkey_title": "Von überall sprechen",
+    "fleet_plan_auto_approved": "Flottenplan automatisch genehmigt (autonomer Modus)."
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

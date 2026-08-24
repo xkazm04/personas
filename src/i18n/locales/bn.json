@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "চালু করুন",
       "skills_tab_registry": "রেজিস্ট্রি",
       "launch_args_label": "আর্গুমেন্ট",
-      "launch_args_none": "কিছু ঘোষণা করা হয়নি - স্কিলের প্রয়োজন হলে Athena জিজ্ঞাসা করবে।"
+      "launch_args_none": "কিছু ঘোষণা করা হয়নি - স্কিলের প্রয়োজন হলে Athena জিজ্ঞাসা করবে।",
+      "launch_not_installed": "ইনস্টল করা নেই"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "সিস্টেম-ব্যাপী শর্টকাট চালু করুন",
       "global_hotkey_failed": "অন্য একটি অ্যাপ ইতিমধ্যেই এই শর্টকাট ব্যবহার করছে, তাই এটি চালু করা যায়নি।",
       "global_hotkey_in_app_only": "শুধু Personas সামনে থাকলে কাজ করে",
-      "global_hotkey_title": "যেকোনো জায়গা থেকে কথা বলুন"
+      "global_hotkey_title": "যেকোনো জায়গা থেকে কথা বলুন",
+      "fleet_plan_auto_approved": "ফ্লিট প্ল্যান স্বয়ংক্রিয়ভাবে অনুমোদিত (স্বায়ত্তশাসিত মোড)।"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

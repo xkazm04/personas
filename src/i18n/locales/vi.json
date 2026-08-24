@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "Khởi chạy",
       "skills_tab_registry": "Sổ đăng ký",
       "launch_args_label": "Tham số",
-      "launch_args_none": "Không khai báo - Athena sẽ hỏi nếu kỹ năng cần."
+      "launch_args_none": "Không khai báo - Athena sẽ hỏi nếu kỹ năng cần.",
+      "launch_not_installed": "Chưa cài đặt"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "Bật phím tắt toàn hệ thống",
       "global_hotkey_failed": "Một ứng dụng khác đã dùng phím tắt đó nên không thể bật.",
       "global_hotkey_in_app_only": "Chỉ hoạt động khi Personas ở phía trước",
-      "global_hotkey_title": "Nói từ bất kỳ đâu"
+      "global_hotkey_title": "Nói từ bất kỳ đâu",
+      "fleet_plan_auto_approved": "Kế hoạch fleet được tự động phê duyệt (chế độ tự hành)."
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

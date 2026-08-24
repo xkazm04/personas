@@ -1715,7 +1715,8 @@
     "skills_tab_launch": "실행",
     "skills_tab_registry": "레지스트리",
     "launch_args_label": "인자",
-    "launch_args_none": "선언된 것 없음 - 필요하면 Athena가 물어봅니다."
+    "launch_args_none": "선언된 것 없음 - 필요하면 Athena가 물어봅니다.",
+    "launch_not_installed": "설치되지 않음"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",
@@ -2976,7 +2977,8 @@
     "global_hotkey_enable": "시스템 전체 단축키 켜기",
     "global_hotkey_failed": "다른 앱이 이미 그 단축키를 사용 중이라 켤 수 없습니다.",
     "global_hotkey_in_app_only": "Personas가 앞에 있을 때만 작동합니다",
-    "global_hotkey_title": "어디서나 말하기"
+    "global_hotkey_title": "어디서나 말하기",
+    "fleet_plan_auto_approved": "플릿 플랜 자동 승인됨 (자율 모드)."
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",

@@ -14764,6 +14764,7 @@ export type Translations = {
       skills_library_unwired_unassigned: string;
       launch_args_label: string;
       launch_args_none: string;
+      launch_not_installed: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -16025,6 +16026,7 @@ export type Translations = {
       global_hotkey_active: string;
       global_hotkey_in_app_only: string;
       global_hotkey_failed: string;
+      fleet_plan_auto_approved: string;
     };
     artist_gallery: {
       loading_viewer: string;

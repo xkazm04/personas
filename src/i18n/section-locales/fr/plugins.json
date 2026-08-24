@@ -1715,7 +1715,8 @@
     "skills_tab_launch": "Lancer",
     "skills_tab_registry": "Registre",
     "launch_args_label": "Arguments",
-    "launch_args_none": "Aucun déclaré - Athena demandera si la compétence en a besoin."
+    "launch_args_none": "Aucun déclaré - Athena demandera si la compétence en a besoin.",
+    "launch_not_installed": "Non installé"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",
@@ -2976,7 +2977,8 @@
     "global_hotkey_enable": "Activer le raccourci système",
     "global_hotkey_failed": "Une autre application utilise déjà ce raccourci, il n'a donc pas pu être activé.",
     "global_hotkey_in_app_only": "Fonctionne uniquement quand Personas est au premier plan",
-    "global_hotkey_title": "Parlez depuis n'importe où"
+    "global_hotkey_title": "Parlez depuis n'importe où",
+    "fleet_plan_auto_approved": "Plan de flotte approuvé automatiquement (mode autonome)."
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

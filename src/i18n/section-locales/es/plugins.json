@@ -1715,7 +1715,8 @@
     "skills_tab_launch": "Lanzar",
     "skills_tab_registry": "Registro",
     "launch_args_label": "Argumentos",
-    "launch_args_none": "Ninguno declarado - Athena preguntará si la habilidad los necesita."
+    "launch_args_none": "Ninguno declarado - Athena preguntará si la habilidad los necesita.",
+    "launch_not_installed": "No instalado"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",
@@ -2976,7 +2977,8 @@
     "global_hotkey_enable": "Activar el atajo de todo el sistema",
     "global_hotkey_failed": "Otra aplicación ya usa ese atajo, así que no se pudo activar.",
     "global_hotkey_in_app_only": "Solo funciona con Personas en primer plano",
-    "global_hotkey_title": "Habla desde donde estés"
+    "global_hotkey_title": "Habla desde donde estés",
+    "fleet_plan_auto_approved": "Plan de flota aprobado automáticamente (modo autónomo)."
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

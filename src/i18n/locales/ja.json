@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "起動",
       "skills_tab_registry": "レジストリ",
       "launch_args_label": "引数",
-      "launch_args_none": "宣言なし - 必要な場合は Athena が確認します。"
+      "launch_args_none": "宣言なし - 必要な場合は Athena が確認します。",
+      "launch_not_installed": "未インストール"
     },
     "doc_signing": {
       "sign_heading": "ドキュメントに署名",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "システム全体のショートカットを有効にする",
       "global_hotkey_failed": "そのショートカットは他のアプリが使用中のため、有効にできませんでした。",
       "global_hotkey_in_app_only": "Personas が前面にあるときのみ使えます",
-      "global_hotkey_title": "どこからでも話しかける"
+      "global_hotkey_title": "どこからでも話しかける",
+      "fleet_plan_auto_approved": "フリートプランを自動承認しました（自律モード）。"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",

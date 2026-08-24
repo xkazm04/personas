@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "تشغيل",
       "skills_tab_registry": "السجل",
       "launch_args_label": "الوسائط",
-      "launch_args_none": "لا شيء معلن - ستسأل Athena إذا احتاجت المهارة أي وسائط."
+      "launch_args_none": "لا شيء معلن - ستسأل Athena إذا احتاجت المهارة أي وسائط.",
+      "launch_not_installed": "غير مثبت"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "تفعيل الاختصار على مستوى النظام",
       "global_hotkey_failed": "هناك تطبيق آخر يستخدم هذا الاختصار بالفعل، لذا تعذّر تفعيله.",
       "global_hotkey_in_app_only": "يعمل فقط عندما يكون Personas في المقدمة",
-      "global_hotkey_title": "تحدّث من أي مكان"
+      "global_hotkey_title": "تحدّث من أي مكان",
+      "fleet_plan_auto_approved": "تمت الموافقة تلقائيًا على خطة الأسطول (الوضع المستقل)."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

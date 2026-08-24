@@ -14757,7 +14757,8 @@
       "skills_library_unwired_body": "Authored skills come from the knowledge registry this workspace holds. Connect one in Dev Tools → Workspaces, on the workspace this project belongs to.",
       "skills_library_unwired_unassigned": "This project is not in a workspace yet. Assign it in Dev Tools → Workspaces, then connect a registry there.",
       "launch_args_label": "Arguments",
-      "launch_args_none": "None declared - Athena will ask if the skill needs any."
+      "launch_args_none": "None declared - Athena will ask if the skill needs any.",
+      "launch_not_installed": "Not installed"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
@@ -16018,7 +16019,8 @@
       "global_hotkey_disable": "Disable system-wide shortcut",
       "global_hotkey_active": "Works anywhere on your computer",
       "global_hotkey_in_app_only": "Works only while Personas is in front",
-      "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled."
+      "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled.",
+      "fleet_plan_auto_approved": "Fleet plan auto-approved (autonomous mode)."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

@@ -80,6 +80,31 @@ export function deriveLaunchStatus(input: {
   return input.installed ? 'ready' : 'needs_adopt';
 }
 
+/** Split a declared `argument-hint` into display bullets. Top-level `|`
+ * alternatives are whole forms (`resume <slug>` stays together); a single
+ * form breaks into its bracketed/`<>` groups so each option reads on its own
+ * line. Pure + exported for tests. */
+export function parseArgumentHint(hint: string): string[] {
+  // Split on `|` only at bracket depth 0 — `[init|scan|run]` is ONE group
+  // whose pipes are its own alternative syntax, not separate forms.
+  const forms: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of hint) {
+    if (ch === '[' || ch === '<') depth++;
+    else if (ch === ']' || ch === '>') depth = Math.max(0, depth - 1);
+    if (ch === '|' && depth === 0) { forms.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  forms.push(cur);
+  const trimmed = forms.map((f) => f.trim()).filter(Boolean);
+  if (trimmed.length > 1) return trimmed;
+  const only = trimmed[0] ?? '';
+  const groups = only.match(/\[[^\]]+\]|<[^>]+>|[^\s[<]+/g) ?? [];
+  // A leading bare verb glues to the first group ("run [--l2]" reads as one).
+  return groups.length > 1 ? groups : [only];
+}
+
 /** Provenance label for turns this surface forwards — the backend persists
  * them as tagged System messages (`TurnOrigin::External`), so Athena is told
  * the text is app-composed, not the user's own words. */

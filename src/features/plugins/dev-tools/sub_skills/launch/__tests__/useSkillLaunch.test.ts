@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  argsInvokeSkill, composeLaunchAsk, deriveLaunchStatus,
+  argsInvokeSkill, composeLaunchAsk, deriveLaunchStatus, parseArgumentHint,
   launchKey, normPath, sessionRunsSkill,
 } from '../useSkillLaunch';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -104,5 +104,27 @@ describe('composeLaunchAsk', () => {
     const ask = composeLaunchAsk('conform', project, '[context-or-path] [--budget <n>]');
     expect(ask).toContain('/conform [context-or-path] [--budget <n>]');
     expect(composeLaunchAsk('conform', project, null)).not.toContain('argument syntax');
+  });
+});
+
+describe('parseArgumentHint', () => {
+  it('splits a single form into bracket groups', () => {
+    expect(parseArgumentHint('[context-or-path] [--subject <slug>] [--stale] [--budget <n>]'))
+      .toEqual(['[context-or-path]', '[--subject <slug>]', '[--stale]', '[--budget <n>]']);
+    expect(parseArgumentHint('<mode> [locale] [scope]')).toEqual(['<mode>', '[locale]', '[scope]']);
+  });
+  it('keeps top-level | alternatives as whole forms', () => {
+    expect(parseArgumentHint('<idea...> | resume <slug> | status | reflect'))
+      .toEqual(['<idea...>', 'resume <slug>', 'status', 'reflect']);
+    expect(parseArgumentHint('run [--l2] [--kpi <id>] | predict'))
+      .toEqual(['run [--l2] [--kpi <id>]', 'predict']);
+  });
+  it('single token stays one bullet', () => {
+    expect(parseArgumentHint('[area]')).toEqual(['[area]']);
+  });
+  it('pipes INSIDE brackets do not split forms', () => {
+    expect(parseArgumentHint('[init|scan|run|benchmark|recall|backlog] [args]'))
+      .toEqual(['[init|scan|run|benchmark|recall|backlog]', '[args]']);
+    expect(parseArgumentHint('[boot|gate|audit|recall]')).toEqual(['[boot|gate|audit|recall]']);
   });
 });

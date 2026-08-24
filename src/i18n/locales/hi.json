@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "लॉन्च",
       "skills_tab_registry": "रजिस्ट्री",
       "launch_args_label": "आर्गुमेंट",
-      "launch_args_none": "कोई घोषित नहीं - ज़रूरत होने पर Athena पूछेगी।"
+      "launch_args_none": "कोई घोषित नहीं - ज़रूरत होने पर Athena पूछेगी।",
+      "launch_not_installed": "इंस्टॉल नहीं है"
     },
     "doc_signing": {
       "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "सिस्टम-व्यापी शॉर्टकट चालू करें",
       "global_hotkey_failed": "कोई दूसरा ऐप पहले से यह शॉर्टकट इस्तेमाल कर रहा है, इसलिए इसे चालू नहीं किया जा सका।",
       "global_hotkey_in_app_only": "सिर्फ़ तब काम करता है जब Personas सामने हो",
-      "global_hotkey_title": "कहीं से भी बात करें"
+      "global_hotkey_title": "कहीं से भी बात करें",
+      "fleet_plan_auto_approved": "फ्लीट प्लान स्वतः स्वीकृत (स्वायत्त मोड)।"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",

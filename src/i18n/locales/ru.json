@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "Запуск",
       "skills_tab_registry": "Реестр",
       "launch_args_label": "Аргументы",
-      "launch_args_none": "Не объявлены - Athena спросит, если навыку они нужны."
+      "launch_args_none": "Не объявлены - Athena спросит, если навыку они нужны.",
+      "launch_not_installed": "Не установлено"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "Включить общесистемное сочетание клавиш",
       "global_hotkey_failed": "Это сочетание клавиш уже занято другим приложением, поэтому включить его не удалось.",
       "global_hotkey_in_app_only": "Работает, только когда Personas на переднем плане",
-      "global_hotkey_title": "Говорите откуда угодно"
+      "global_hotkey_title": "Говорите откуда угодно",
+      "fleet_plan_auto_approved": "План флота одобрен автоматически (автономный режим)."
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

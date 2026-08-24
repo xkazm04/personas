@@ -14463,7 +14463,8 @@
       "skills_tab_launch": "Luncurkan",
       "skills_tab_registry": "Registri",
       "launch_args_label": "Argumen",
-      "launch_args_none": "Tidak ada yang dideklarasikan - Athena akan bertanya jika keterampilan membutuhkannya."
+      "launch_args_none": "Tidak ada yang dideklarasikan - Athena akan bertanya jika keterampilan membutuhkannya.",
+      "launch_not_installed": "Belum terpasang"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",
@@ -15724,7 +15725,8 @@
       "global_hotkey_enable": "Aktifkan pintasan seluruh sistem",
       "global_hotkey_failed": "Aplikasi lain sudah memakai pintasan itu, jadi tidak bisa diaktifkan.",
       "global_hotkey_in_app_only": "Hanya berfungsi saat Personas di depan",
-      "global_hotkey_title": "Bicara dari mana saja"
+      "global_hotkey_title": "Bicara dari mana saja",
+      "fleet_plan_auto_approved": "Rencana armada disetujui otomatis (mode otonom)."
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

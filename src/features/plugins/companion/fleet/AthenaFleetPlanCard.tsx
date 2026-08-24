@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Terminal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Infinity as InfinityIcon, Terminal } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -7,6 +7,7 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { silentCatch } from '@/lib/silentCatch';
 import { companionDispatchFleetPlan, type FleetPlanRow } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
+import { useCompanionStore } from '../companionStore';
 import { AthenaFleetPlanRow } from './AthenaFleetPlanRow';
 import { AthenaFleetPlanResult } from './AthenaFleetPlanResult';
 import { resolveChatCard } from '../useChatCards';
@@ -70,6 +71,7 @@ export function AthenaFleetPlanCard({
   );
 
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
+  const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
 
   // Whenever this card is showing a dispatched outcome (freshly confirmed, or
   // restored from the persisted config after a close/reopen), pull a fresh
@@ -81,12 +83,6 @@ export function AthenaFleetPlanCard({
       fleetRefresh().catch(silentCatch('athena_fleet_plan_card_refresh'));
     }
   }, [dispatchedRows, fleetRefresh]);
-
-  if (dismissed) return null;
-
-  if (result !== null) {
-    return <AthenaFleetPlanResult result={result} dispatchedRows={dispatchedRows} />;
-  }
 
   const confirm = async () => {
     setBusy(true);
@@ -118,6 +114,52 @@ export function AthenaFleetPlanCard({
       setBusy(false);
     }
   };
+
+  // AUTONOMOUS MODE: the plan is Athena's own decision surface, and with
+  // autonomy ON the operator has already delegated it - the card auto-approves
+  // instead of waiting for a click. One-shot (ref-guarded), only for a still-
+  // pending card with valid rows; the backend claim keeps a double-fire from
+  // spawning two fleets, and the dispatch lands in the autonomous-actions
+  // ledger so the delegation stays auditable in chat.
+  const autoFired = useRef(false);
+  useEffect(() => {
+    if (!autonomousMode || autoFired.current) return;
+    if (result !== null || dismissed || busy) return;
+    if (rows.length === 0 || rows.some((r) => !r.objective.trim())) return;
+    autoFired.current = true;
+    void confirm().then(() => {
+      useCompanionStore.getState().recordAthenaAction({
+        id: `autoplan_${Date.now()}`,
+        sessionId: cardId ?? 'fleet-plan',
+        projectLabel: intent,
+        text: rows
+          .map((r) => `${r.skill ? `/${r.skill} ` : ''}${r.objective}`.trim())
+          .join(' · '),
+        createdAt: Date.now(),
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot on mount-with-autonomy; rows/confirm identities churn per keystroke
+  }, [autonomousMode, result, dismissed, busy, rows.length]);
+
+  if (dismissed) return null;
+
+  if (result !== null) {
+    return <AthenaFleetPlanResult result={result} dispatchedRows={dispatchedRows} />;
+  }
+
+  // While an autonomous auto-approve is in flight, the editable proposal has
+  // no decision left to offer - render a slim provenance line, not the card.
+  if (autonomousMode && (autoFired.current || busy)) {
+    return (
+      <div
+        className="flex items-center gap-2 rounded-card border border-primary/20 bg-primary/[0.04] px-3 py-2"
+        data-testid="athena-plan-card-auto"
+      >
+        <InfinityIcon className="w-3.5 h-3.5 text-primary" aria-hidden />
+        <span className="typo-caption text-foreground">{c.fleet_plan_auto_approved}</span>
+      </div>
+    );
+  }
 
   const canConfirm =
     rows.length > 0 && rows.every((r) => r.objective.trim().length > 0) && !busy;
