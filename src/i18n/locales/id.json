@@ -20263,7 +20263,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "cakupan dikunci",
+    "milestone_bar_forecast": "perkiraan {date}",
+    "milestone_bar_planned": "direncanakan",
+    "milestone_bar_target": "tenggat {date}",
+    "milestone_bar_tooltip": "Milestone yang sedang berjalan untuk {project} — buka tab Ship-nya"
   },
   "ship": {
     "add": "Tambah",
@@ -20413,6 +20418,14 @@
     "run_milestone": "Jalankan Milestone",
     "run_milestone_tooltip": "Buka sesi Claude Code yang menjalankan potongan ini dengan /ship-milestone, lalu bawa kembali hasilnya dengan Serap Proses.",
     "run_proposed_hint": "Proses ini menyarankan item-item berikut; tidak ada yang ditambahkan secara otomatis. Tambahkan sendiri dari composer jika Anda setuju.",
-    "run_proposed_title": "{count} penambahan yang diusulkan"
+    "run_proposed_title": "{count} penambahan yang diusulkan",
+    "ask_athena": "Tanya Athena",
+    "ask_athena_tooltip": "Membuka Athena dengan milestone ini di hadapannya — cakupan yang dikunci, penghambatnya, dan apa yang masih di luar — lalu susun cakupannya lewat percakapan",
+    "certify_cut_intro": "Mengunci cakupan akan membekukannya: apa pun yang masuk setelah ini ditandai sebagai scope creep. Kriteria keluar di bawah diukur terhadap cakupan yang dikunci, jadi tidak menghalangi penguncian.",
+    "certify_cut_title": "Kunci cakupan {name}",
+    "certify_ship_intro": "Kriteria inilah, dan hanya ini, yang menentukan apakah milestone ini bisa dirilis. Setiap baris diturunkan dari sinyal langsung — tidak ada yang diketik manual di sini.",
+    "certify_ship_title": "Rilis {name}",
+    "compose_scope_tooltip": "Pilih fitur dan tujuan mana yang membentuk milestone ini",
+    "criteria_badge_aria": "{unmet} dari {total} kriteria keluar belum terpenuhi"
   }
 }

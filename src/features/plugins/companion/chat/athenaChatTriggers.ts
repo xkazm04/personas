@@ -19,7 +19,7 @@ import { stripMarkdownForSpeech } from './athenaChatSpeech';
 
 export function useAthenaChatTriggers(args: {
   streaming: boolean;
-  send: (text: string, nonce?: string, opts?: { systemSource?: string }) => void;
+  send: (text: string, nonce?: string, systemSource?: string) => void;
   playProgressClip: (text: string) => void;
 }): void {
   const { streaming, send, playProgressClip } = args;
@@ -30,7 +30,7 @@ export function useAthenaChatTriggers(args: {
     const req = useCompanionStore.getState().voiceTurnRequest;
     if (!req) return;
     useCompanionStore.getState().setVoiceTurnRequest(null);
-    send(req);
+    send(req.text, undefined, req.source);
   }, [voiceTurnRequest, streaming, send]);
 
   const pendingChatPrompt = useCompanionStore((s) => s.pendingChatPrompt);
@@ -41,10 +41,10 @@ export function useAthenaChatTriggers(args: {
     useCompanionStore.getState().setPendingChatPrompt(null);
     // App-initiated prompts OPEN the panel — they begin a guided conversation.
     useCompanionStore.getState().setState('open');
-    // Object form carries provenance: the surface composed the text, the user
-    // only clicked. The send path forwards it as a tagged System turn.
-    if (typeof req === 'string') send(req);
-    else send(req.text, undefined, { systemSource: req.systemSource });
+    // `req.source` is the provenance label. Passing it is what stops an
+    // app-composed prompt from impersonating the operator — see
+    // `AppPromptRequest`. A request without one is genuinely his words.
+    send(req.text, undefined, req.source);
   }, [pendingChatPrompt, streaming, send]);
 
   // Slice 6 — speak the hands-free decision aloud ONLY on Explain/Recommend.

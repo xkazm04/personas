@@ -22,8 +22,18 @@ import { lastAssistantText } from './athenaChatPreview';
 import type { AthenaChatVoice } from './athenaChatVoice';
 
 export interface AthenaChatSend {
-  /** Direct send — quick replies, refine chips, retry, hero picks, triggers. */
-  send: (text: string, nonce?: string, opts?: { systemSource?: string }) => void;
+  /**
+   * Direct send — quick replies, refine chips, retry, hero picks, triggers.
+   *
+   * `systemSource` marks the message as composed by an APP SURFACE rather than
+   * typed by the operator (see `AppPromptRequest` in the store). It rides
+   * straight through to `companion_send_message`, which files the turn as
+   * `TurnOrigin::External`: persisted as a System episode, tagged
+   * `[Automated request from <source> — not the user]` on Athena's stdin, and
+   * excluded from the "user typed something, stand down" autonomy cancel.
+   * Leave it undefined for genuine user input.
+   */
+  send: (text: string, nonce?: string, systemSource?: string) => void;
   /** A turn is starting or running in THIS client, ahead of the store flip. */
   isSending: () => boolean;
   /** Stop the ACTIVE conversation's in-flight turn. */
@@ -48,7 +58,7 @@ export function useAthenaChatSend(args: {
   const sendingRef = useRef(false);
 
   const sendAsync = useCallback(
-    async (text: string, nonce?: string, opts?: { systemSource?: string }) => {
+    async (text: string, nonce?: string, systemSource?: string) => {
       const trimmed = text.trim();
       if (!trimmed || sendingRef.current) return;
       // Idempotency: dedupe on the client-generated nonce (NOT message text)
@@ -69,13 +79,17 @@ export function useAthenaChatSend(args: {
       // what silently killed six dispatched builds in Aug 2026.
       store.setQuickReplies([]);
       store.clearTransientChatCards();
-      // A systemSource turn is app-composed: render it as a system divider
-      // (mirroring how the backend persists TurnOrigin::External), never as a
-      // user bubble impersonating the user's own words.
+      // The optimistic bubble mirrors how the backend will FILE this turn,
+      // role AND body: an app-composed prompt lands as a System episode whose
+      // content is `[source] message` (session.rs, the `TurnOrigin::External`
+      // arm). Painting it as a user bubble would be a lie the canonical refetch
+      // then corrects in front of the operator; painting it without the tag
+      // would swap its body a second later. The format is duplicated here on
+      // purpose and named on both sides.
       store.appendMessage({
         id: `optim_${Date.now()}`,
-        role: opts?.systemSource ? 'system' : 'user',
-        content: opts?.systemSource ? `[${opts.systemSource}] ${trimmed}` : trimmed,
+        role: systemSource ? 'system' : 'user',
+        content: systemSource ? `[${systemSource}] ${trimmed}` : trimmed,
         createdAt: new Date().toISOString(),
       });
       // Raise this conversation's streaming flag BEFORE the IPC round-trip so
@@ -96,7 +110,7 @@ export function useAthenaChatSend(args: {
           voiceActive,
           recallSynthesisEnabled,
           autonomousMode,
-          opts?.systemSource,
+          systemSource,
           conversationId,
         );
         // The assistant turn is committed. Badge the orb — a send can start from
@@ -158,7 +172,8 @@ export function useAthenaChatSend(args: {
   );
 
   const send = useCallback(
-    (text: string, nonce?: string, opts?: { systemSource?: string }) => void sendAsync(text, nonce, opts),
+    (text: string, nonce?: string, systemSource?: string) =>
+      void sendAsync(text, nonce, systemSource),
     [sendAsync],
   );
 

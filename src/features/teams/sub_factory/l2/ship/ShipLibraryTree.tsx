@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, Loader2, Plus, ScanSearch, Search, Sparkles, Target, Zap } from 'lucide-react';
 
 import { MotionizedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SCOPE_MAP_GLYPH } from '@/features/shared/glyph/glyphs/scopeMapGlyph';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -248,9 +249,11 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                               <Target className="w-3 h-3 shrink-0" style={{ color: INK.teal }} aria-hidden />
                               <span className="typo-caption text-foreground/85 min-w-0">{g.name}</span>
                               <span className="ml-auto inline-flex items-center gap-1">
-                                <button type="button" onClick={() => onAssistGoal(g)} className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring" title={t.ship.goal_assist_tooltip} aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
-                                  <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
-                                </button>
+                                <Tooltip content={t.ship.goal_assist_tooltip}>
+                                  <button type="button" onClick={() => onAssistGoal(g)} className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring" aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
+                                    <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
+                                  </button>
+                                </Tooltip>
                                 {bound
                                   ? <span className="typo-caption shrink-0">{t.ship.bound}</span>
                                   : (

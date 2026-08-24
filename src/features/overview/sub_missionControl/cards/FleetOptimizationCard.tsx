@@ -129,7 +129,9 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
       action: rec.suggestedAction,
       focus,
     });
-    forwardToAthena(text);
+    // Tagged 'Fleet': this text is the card's summary of a recommendation, not
+    // the operator's own question. See `useAskAthena` / `AppPromptRequest`.
+    forwardToAthena(text, 'Fleet');
   }, [rec.title, rec.description, rec.suggestedAction, personaName, t, tx, forwardToAthena]);
 
   return (

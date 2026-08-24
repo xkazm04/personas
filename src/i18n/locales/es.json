@@ -20263,7 +20263,12 @@
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
     "_comment_lane_none": "Mastermind mid-zoom island: shown in a work lane that currently has nothing running.",
     "_comment_lane_personas": "Mastermind mid-zoom island: label for the persona work lane. Short — it sits under a small icon.",
-    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon."
+    "_comment_lane_runners": "Mastermind mid-zoom island: label for the dev-runner work lane (queued/running engine tasks). Short — it sits under a small icon.",
+    "milestone_bar_cut": "cerrado",
+    "milestone_bar_forecast": "previsión {date}",
+    "milestone_bar_planned": "planificado",
+    "milestone_bar_target": "para {date}",
+    "milestone_bar_tooltip": "El hito abierto de {project} — abrir su pestaña Ship"
   },
   "ship": {
     "add": "Añadir",
@@ -20413,6 +20418,14 @@
     "run_milestone": "Ejecutar hito",
     "run_milestone_tooltip": "Abre una sesión de Claude Code que ejecuta este recorte con /ship-milestone y luego trae su resultado de vuelta con Incorporar ejecución.",
     "run_proposed_hint": "La ejecución sugiere estos; no se añadió nada automáticamente. Agrégalos tú mismo desde el compositor si estás de acuerdo.",
-    "run_proposed_title": "{count} adición(es) propuesta(s)"
+    "run_proposed_title": "{count} adición(es) propuesta(s)",
+    "ask_athena": "Preguntar a Athena",
+    "ask_athena_tooltip": "Abre Athena con este hito delante: su alcance cerrado, sus bloqueos y lo que aún queda fuera, y define el alcance conversando",
+    "certify_cut_intro": "Cerrar el alcance lo congela: todo lo que se añada después se marca como desviación de alcance. Los criterios de salida de abajo se miden contra el alcance cerrado, así que no impiden cerrarlo.",
+    "certify_cut_title": "Cerrar el alcance de {name}",
+    "certify_ship_intro": "Estos criterios, y solo estos, deciden si este hito puede publicarse. Cada línea se deriva de señales en vivo: aquí no se escribe nada a mano.",
+    "certify_ship_title": "Publicar {name}",
+    "compose_scope_tooltip": "Elige qué funcionalidades y objetivos componen este hito",
+    "criteria_badge_aria": "{unmet} de {total} criterios de salida sin cumplir"
   }
 }

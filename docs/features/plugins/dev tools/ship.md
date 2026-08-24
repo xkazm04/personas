@@ -42,6 +42,13 @@ Contexts are deliberately **never** members of a milestone (`src-tauri/db/src/re
 
 The strip is inert when no `onOpenShip` handler is supplied.
 
+**Mastermind canvas.** Two doors, both landing on the Ship tab (2026-08-20):
+
+- **The island ship chip** (`sub_mastermind/lib/IslandBanner.tsx`) floats above every island's name pill with the next milestone, `shipped/total`, and a warning tint when the forecast is late. It is clickable in **every** canvas mode — it used to be gated on edit mode, which made the one control that answers "where is this project's delivery at" go inert the moment you picked up the connect or note tool.
+- **The milestone status bar** (`sub_mastermind/lib/MilestoneStatusBar.tsx`) is one line above the mode toolbar naming exactly ONE milestone for the whole workspace: the focused project's when a project is focused, otherwise the most urgent by the canvas's usual worst-first ordering (late → cut → planned → nearest date, with a dated milestone outranking an undated one). It distinguishes a committed **target** from a velocity **forecast** in the label rather than printing a bare date. It renders nothing when no project has an open milestone. `openMilestones()` is unit-tested in `__tests__/milestoneStatusBar.test.ts`.
+
+Both read `IslandShip`, reduced from the batched `projectWallSummary` fan-out in `MastermindPage.tsx` through the same `buildCoverRoadmap` the passport cover uses — so the cover, the chip and the bar cannot disagree about which milestone is "next".
+
 ## 3. Data model
 
 ### `dev_milestones` (`incremental.rs:6283-6301`)
@@ -188,9 +195,33 @@ Consequences worth knowing:
 
 The composer renders the footprint as a chip row tinted by tone, with a summary line counting the critical and KPI-less contexts inside it.
 
-## 7. Composer, library tree and context drawer
+## 7. The control bar, composer, library tree and context drawer
 
-The Planner has two workspace modes on the right, cross-fading in place (`ShipPlannerTab.tsx:333-348`).
+### The control bar (`ShipControlBar.tsx`)
+
+One toolbar carries every milestone verb, ordered by how far each reaches:
+
+| | Verbs | What they touch |
+| --- | --- | --- |
+| 1 | Certify · Compose scope | the milestone itself |
+| 2 | Run milestone · Ingest run | hand the cut to a CLI skill and read the result back |
+| 3 | Ask Athena | nothing — it starts a conversation |
+
+Before 2026-08-20 these lived in four places (the lifecycle button and Compose floated right of the header, Run/Ingest sat in their own strip, the criteria were a permanent chip row) and there was no single answer to "what can I do to this milestone".
+
+**Certify carries the criteria reading on its own face** — a `met/total` badge in the verdict's colour — which is what the five permanent chips were spending a header row to say.
+
+**Ask Athena** builds the whole live milestone into a briefing (`shipAthena.ts`) and sends it through `useAskAthena` tagged `system_source: 'Ship'`. That tag is load-bearing: the backend files the turn as `TurnOrigin::External`, so Athena is told the surface handed her a situation rather than the operator asking a question. See §13.
+
+### Certification is two beats (`ShipCertifyModal.tsx`)
+
+The exit criteria are no longer a permanent chip row. The Certify button opens a panel that shows each criterion's **full derived evidence in the layout** (it used to be compressed into a native `title=`, the one tooltip channel that reaches neither keyboard nor touch), keeps the per-criterion Fleet dispatch arm and its terminal door, and puts the commit at the bottom.
+
+The gate is unchanged: `shipVerdict` over the criteria registry and nothing else. **Cutting is deliberately not gated on the criteria** — cutting is what stamps `cut_at`, and the criteria are measured against the cut, so requiring them first is backwards.
+
+### Two workspace modes
+
+The Planner has two workspace modes on the right, cross-fading in place.
 
 ### Default: the scope ledgers
 
@@ -271,6 +302,12 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | --- | --- |
 | `src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx` | Tab wrapper, `data-testid="factory-ship-tab"` |
 | `.../ship/ShipPlannerTab.tsx` | The surface: content header (goal, criterion chips, lifecycle + compose buttons), roadmap spine, workspace switch, dispatch and terminal modals |
+| `.../ship/ShipControlBar.tsx` | The unified toolbar: Certify (with the criteria badge), Compose scope, Run, Ingest, Ask Athena |
+| `.../ship/ShipCertifyModal.tsx` | The certify panel — every criterion's evidence, its dispatch arm, and the commit |
+| `.../ship/shipAthena.ts` | `buildShipBriefing` — the live milestone as prose for the Ask-Athena handoff |
+| `.../ship/ShipMilestoneRun.tsx` | `useShipMilestoneRun` (the two actions + their busy flags) and `ShipRunSummary` |
+| `src/features/plugins/companion/useAskAthena.ts` | The one door an app surface uses to start a conversation, provenance-tagged |
+| `src-tauri/src/companion/ship_ops.rs` | `describe_ship_milestone` — Athena's read op over a live cut |
 | `.../ship/ShipMilestoneComposer.tsx` | Two-pane compose mode: library, bound goals, footprint strip, live cut, goal editor, dispatch chooser |
 | `.../ship/ShipLibraryTree.tsx` | Group bands, context rows, feature/goal children, quick-add, filter, uncharted empty state |
 | `.../ship/ShipContextDrawer.tsx` | Right-side context detail panel with Cut / Bind affordances |
@@ -299,7 +336,7 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 ## 11. Known gaps
 
 - No UI for `target_date`, milestone reordering, renaming, editing the goal sentence, or deletion, although the API and repo support all of them (§4).
-- The ship gate is client-side only; the backend accepts any valid status transition.
+- The ship gate is client-side only for the UI path; the backend accepts any valid status transition. **Partially closed 2026-08-20** for Athena's path: `ship_milestone_lifecycle` refuses to ship a milestone with no goal bound to it (its `objective` criterion is unmet by definition) and its success message names the criteria it could NOT machine-check. The context-health and sensor criteria remain live readings no backend path can see.
 - The `SHIP_GOAL_REPORT.md` fallback written by goal assist has no ingestion path; the operator reads it manually.
 - The "errors this week" phrasing in blocker lines and dispatch briefs describes unresolved Sentry issues rather than a strict rolling window.
 - `FactoryShipTab.tsx:5-6` names i18n extraction as the remaining pre-ship work; that extraction has since landed (the `ship` section exists in `en.json` and all 14 locales), so the comment is stale.
@@ -436,3 +473,29 @@ decision made in the composer.
 | `src/lib/bindings/ShipMilestoneIngestSummary.ts`, `ShipMilestoneProposedAddition.ts` | ts-rs generated result types |
 | `src-tauri/src/commands/infrastructure/skill_files.rs` → `SYSTEM_SKILLS` | System-skill allowlist |
 | `scripts/sync-system-skills.mjs` | Mirrors the skill into the installer bundle |
+
+---
+
+## 13. Athena's Ship toolset
+
+Added 2026-08-20 (constitution v55). She could propose a whole milestone (`show_ship_milestone`) long before she could read one, so asked where the next milestone stood her only move was to propose a brand-new cut. Three ops close it.
+
+### `describe_ship_milestone` — a read op
+
+Auto-fires, costs nothing, lands as a System episode on her next turn. Resolves, in order: an exact milestone id → an exact milestone name → a **project** name/slug/id, which resolves to that project's open milestone by the same `active`-then-`planned` rule the cover roadmap and the canvas status bar use.
+
+It answers with the live cut per bucket — each member's contexts, active-KPI count, the operator's own note and rating (labelled every time as an opinion that gates nothing), the `added_after_cut` flag — plus the bound goals and the cut/target/shipped dates. Orphan members (a use case a rescan deleted) are reported as orphans rather than dropped.
+
+**What it deliberately does not answer.** The exit-criteria verdicts, per-context health and the ship verdict derive client-side in `useShipData` from runtime signals the database cannot see. Recomputing them in Rust would give the app a second, quieter derivation that drifts from the one on the operator's screen. The op says so in its own body; the Ship control bar's Ask-Athena button is what carries the live reading into a conversation instead.
+
+### `set_ship_scope` — approval-gated
+
+Moves members between `core` / `later` / `never`, or `remove`s the membership. Capped at 8 rows (the shared reviewability ceiling). Every id is resolved against the milestone's own project **before an approval row exists**, so an invented id is refused with a readable reason rather than becoming a row pointing at nothing. It passes `None` for `description` / `rating`, so re-bucketing never erases what the operator thought of a member.
+
+### `ship_milestone_lifecycle` — approval-gated
+
+`cut` (planned → active, freezing the scope) and `ship` (active → shipped). The precondition logic is `ship_lifecycle_target()`, split out of the executor so it is testable against a plain pool.
+
+Both are ordinary approval actions: with autonomous mode off they wait on a click, with it on they fire (the autoapprove allowlist was retired 2026-08-10). That is exactly why the `ship` arm carries the DB-checkable precondition described in §11 rather than trusting a human to be watching.
+
+Tests: `approval_exec_ship.rs::ship_scope_tests` (11).

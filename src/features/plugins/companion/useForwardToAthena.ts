@@ -32,7 +32,7 @@ function titleFromMessage(message: string): string {
  *
  * Returns a stable `forward(message)` callback.
  */
-export function useForwardToAthena(): (message: string) => void {
+export function useForwardToAthena(): (message: string, source?: string) => void {
   const { t } = useTranslation();
   const voiceSettings = useTtsSettings();
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
@@ -41,7 +41,7 @@ export function useForwardToAthena(): (message: string) => void {
   const ackSpeech = t.plugins.companion.forward_ack_speech;
 
   return useCallback(
-    (message: string) => {
+    (message: string, source?: string) => {
       if (!message.trim()) return;
       const store = useCompanionStore.getState();
       // Surface the orb (fall back to the panel when the orb is disabled so
@@ -58,13 +58,13 @@ export function useForwardToAthena(): (message: string) => void {
           const s = useCompanionStore.getState();
           s.upsertConversation(row);
           s.setActiveConversationId(row.id);
-          s.setVoiceTurnRequest(message);
+          s.setVoiceTurnRequest({ text: message, source });
         })
         .catch((err) => {
           // Never drop the message: if the thread couldn't be created, fall back
           // to sending it into the current conversation.
           silentCatch('companion_create_conversation')(err);
-          useCompanionStore.getState().setVoiceTurnRequest(message);
+          useCompanionStore.getState().setVoiceTurnRequest({ text: message, source });
         });
 
       // Immediate spoken acknowledgement — the turn itself can take a while.

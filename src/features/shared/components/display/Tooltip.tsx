@@ -4,8 +4,15 @@ import { MOTION } from '@/lib/utils/designTokens';
 type Placement = 'top' | 'bottom' | 'left' | 'right';
 
 interface TooltipProps {
-  /** The text to display in the tooltip */
-  content: string;
+  /**
+   * What the tooltip says. A plain string is the normal case; a node is
+   * allowed for the small amount of structure a tip legitimately needs (a
+   * label + a dim evidence line, a keyboard hint). It must stay INERT —
+   * nothing focusable, nothing clickable. A surface the user can act inside is
+   * not a tooltip (golden path P7, `docs/concepts/golden-paths/tooltip.md`);
+   * that is a popover and wants `role="dialog"`.
+   */
+  content: ReactNode;
   /** The element that triggers the tooltip on hover */
   children: ReactNode;
   /** Where to place the tooltip relative to the trigger */
@@ -108,12 +115,17 @@ function clampToViewport(
 // -- Arrow geometry ---------------------------------------------------------
 // The arrow is an 8px CSS-border triangle that points from the tooltip box
 // back toward its trigger. ARROW_HALF is half the base; ARROW_DEPTH is how far
-// the tip protrudes from the box edge. The fill matches the `.glass-sm`
-// surface (background mixed 70% with transparency) so the triangle reads as a
-// seamless continuation of the box rather than a detached chevron.
+// the tip protrudes from the box edge. The fill matches the box's own surface
+// so the triangle reads as a seamless continuation rather than a detached
+// chevron.
 const ARROW_HALF = 7;
 const ARROW_DEPTH = 6;
-const ARROW_FILL = 'color-mix(in srgb, var(--background) 70%, transparent)';
+// Reads the SAME custom property the box paints itself from (`.tooltip-surface`
+// declares `--tooltip-bg` on the box, and the arrow is its child, so it
+// inherits). Before this the fill was a hardcoded copy of `.glass-sm`'s
+// background expression, so any change to the surface silently detached the
+// triangle's colour from the box it is supposed to continue.
+const ARROW_FILL = 'color-mix(in srgb, var(--tooltip-bg) 96%, transparent)';
 // Keep the arrow's center this far from the box corners so it never collides
 // with the `rounded-lg` (8px) radius even after the box is clamped to the
 // viewport edge.
@@ -139,7 +151,7 @@ function getArrowStyle(placement: Placement, offset: number): CSSProperties {
         borderLeft: transparentH,
         borderRight: transparentH,
         borderTop: `${ARROW_DEPTH}px solid ${ARROW_FILL}`,
-        filter: 'drop-shadow(0 1px 0.5px var(--glass-border))',
+        filter: 'drop-shadow(0 1px 0.5px var(--tooltip-edge))',
       };
     case 'bottom': // box below trigger → arrow on top edge, pointing up
       return {
@@ -150,7 +162,7 @@ function getArrowStyle(placement: Placement, offset: number): CSSProperties {
         borderLeft: transparentH,
         borderRight: transparentH,
         borderBottom: `${ARROW_DEPTH}px solid ${ARROW_FILL}`,
-        filter: 'drop-shadow(0 -1px 0.5px var(--glass-border))',
+        filter: 'drop-shadow(0 -1px 0.5px var(--tooltip-edge))',
       };
     case 'left': // box left of trigger → arrow on right edge, pointing right
       return {
@@ -161,7 +173,7 @@ function getArrowStyle(placement: Placement, offset: number): CSSProperties {
         borderTop: transparentH,
         borderBottom: transparentH,
         borderLeft: `${ARROW_DEPTH}px solid ${ARROW_FILL}`,
-        filter: 'drop-shadow(1px 0 0.5px var(--glass-border))',
+        filter: 'drop-shadow(1px 0 0.5px var(--tooltip-edge))',
       };
     case 'right': // box right of trigger → arrow on left edge, pointing left
       return {
@@ -172,7 +184,7 @@ function getArrowStyle(placement: Placement, offset: number): CSSProperties {
         borderTop: transparentH,
         borderBottom: transparentH,
         borderRight: `${ARROW_DEPTH}px solid ${ARROW_FILL}`,
-        filter: 'drop-shadow(-1px 0 0.5px var(--glass-border))',
+        filter: 'drop-shadow(-1px 0 0.5px var(--tooltip-edge))',
       };
   }
 }
@@ -296,7 +308,23 @@ export function Tooltip({
         tabIndex={triggerFocusable ? 0 : undefined}
         aria-disabled={triggerFocusable || undefined}
         aria-describedby={visible ? tooltipId : undefined}
-        onKeyDown={triggerFocusable ? (e) => { if (e.key === 'Escape') hide(); } : undefined}
+        // WCAG 1.4.13 "dismissable" — Escape closes the tip without moving
+        // focus, for EVERY tooltip rather than only the `triggerFocusable`
+        // ones. This works on the default `display:contents` wrapper because
+        // REACT events bubble through the React tree, not the DOM box: a
+        // keydown on the focused child inside reaches this handler even though
+        // the span has no layout box of its own.
+        //
+        // A document-level listener was tried first and rejected. It would also
+        // catch a mouse-hovered tip while focus sits elsewhere — but only by
+        // registering an unordered global key handler, and in the capture phase
+        // it would take Escape from whatever IS focused, up to and including a
+        // live PTY terminal (see `capture-phase-key-preemption`, and
+        // docs/concepts/golden-paths/focus-management.md). The residue is
+        // stated rather than hidden: a tip opened by hover, with focus
+        // elsewhere, is dismissed by moving the pointer rather than by Escape.
+        // The keyboard user — the one who can actually get stuck — is covered.
+        onKeyDown={(e) => { if (e.key === 'Escape') hide(); }}
         className={triggerFocusable ? (triggerClassName ?? 'inline-flex') : 'contents'}
       >
         {children}
@@ -312,7 +340,12 @@ export function Tooltip({
             ref={tooltipRef}
             id={tooltipId}
             role="tooltip"
-            className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] text-md font-normal text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
+            // `tooltip-surface` (globals.css) replaces `glass-sm`: an opaque,
+            // foreground-hairlined chrome step instead of a 70%-transparent box
+            // ringed in the accent colour. `typo-caption` replaces the raw
+            // `text-md` — a tip is caption-weight copy, and the semantic token
+            // is what the density scale actually reads.
+            className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] typo-caption text-foreground tooltip-surface surface-blur-tooltip rounded-lg px-2.5 py-1.5 shadow-elevation-2"
             style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
           >
             {content}

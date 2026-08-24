@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Target, X, Zap } from 'lucide-react';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DispatchChooserModal } from '@/features/shared/dispatch/DispatchChooser';
 import { GoalEditorModal } from '@/features/teams/sub_goals/GoalEditorModal';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -67,9 +68,11 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
               <span key={g.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption" style={{ borderColor: `${INK.teal}55`, color: INK.teal }}>
                 <Target className="w-3 h-3" aria-hidden />
                 {g.name}
-                <button type="button" onClick={() => setAssistGoal(g)} className="focus-ring rounded-full" title={t.ship.goal_assist_tooltip} aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
-                  <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
-                </button>
+                <Tooltip content={t.ship.goal_assist_tooltip}>
+                  <button type="button" onClick={() => setAssistGoal(g)} className="focus-ring rounded-full" aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
+                    <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
+                  </button>
+                </Tooltip>
                 <button type="button" onClick={() => ship.removeItem(vm.id, 'goal', g.id)} className="focus-ring rounded-full" aria-label={tx(t.ship.unbind_aria, { name: g.name })}>
                   <X className="w-3 h-3 opacity-60 hover:opacity-100" aria-hidden />
                 </button>
@@ -94,10 +97,12 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
             </span>
             <span className="flex items-center gap-1.5 flex-wrap">
               {vm.footprint.map((c) => (
-                <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs" style={{ borderColor: `${TONE_HUE_MAP[c.tone]}55`, color: TONE_HUE_MAP[c.tone] }} title={`${c.kpis} KPIs`}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: TONE_HUE_MAP[c.tone] }} />
-                  {c.name}{c.kpis === 0 ? ` · ${t.ship.no_kpi_short}` : ''}
-                </span>
+                <Tooltip key={c.id} content={tx(c.kpis === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: c.kpis })}>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-caption" style={{ borderColor: `${TONE_HUE_MAP[c.tone]}55`, color: TONE_HUE_MAP[c.tone] }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: TONE_HUE_MAP[c.tone] }} />
+                    {c.name}{c.kpis === 0 ? ` · ${t.ship.no_kpi_short}` : ''}
+                  </span>
+                </Tooltip>
               ))}
               {vm.footprint.length === 0 && <span className="typo-caption">{t.ship.footprint_empty}</span>}
             </span>

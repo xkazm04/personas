@@ -1825,6 +1825,9 @@ pub fn dispatch_with_sys(
                             "describe_knowledge" => {
                                 crate::companion::knowledge_ops::describe_knowledge(db, query)
                             }
+                            "describe_ship_milestone" => {
+                                crate::companion::ship_ops::describe_ship_milestone(db, query)
+                            }
                             _ => list_teams(db, query),
                         },
                         None => format!(

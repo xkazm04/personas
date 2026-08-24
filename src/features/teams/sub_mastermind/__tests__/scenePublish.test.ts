@@ -53,7 +53,7 @@ const island = (slug: string, over: Partial<Island> = {}): Island =>
     monitorErrors: 7,
     stateSource: 'readiness',
     stats: [],
-    ship: { next: 'M3', shipped: 1, total: 4, late: true },
+    ship: { next: 'M3', nextStatus: 'active' as const, shipped: 1, total: 4, targetDate: '2026-09-01', forecastDate: '2026-09-14', late: true },
     ...over,
   }) as Island;
 

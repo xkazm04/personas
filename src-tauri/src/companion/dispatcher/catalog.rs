@@ -62,6 +62,16 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // `approval_exec_devices::gate_remote_instruct`, NOT in
     // `AUTOAPPROVE_ALLOWLIST` (which has no conditional form).
     "remote_instruct",
+    // Ship layer (2026-08-20) — the two verbs the Ship tab gives a human, given
+    // to Athena as well. `set_ship_scope` moves members between core/later/never
+    // or drops them; `ship_milestone_lifecycle` cuts (freezing the scope) or
+    // ships. Both are approval actions, so manual mode waits on a click — and
+    // because autonomous mode fires everything, the SHIP transition carries its
+    // own DB-checkable precondition in the executor rather than trusting a human
+    // to be watching (`approval_exec_ship`). Creating a milestone stays the
+    // editable `show_ship_milestone` card, which is not an ALLOWED_ACTIONS entry.
+    "set_ship_scope",
+    "ship_milestone_lifecycle",
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",
@@ -234,6 +244,15 @@ pub(super) const READ_OPS: &[&str] = &[
     // query (the digest) and take one for detail.
     "describe_skill_fleet",
     "describe_knowledge",
+    // Ship layer (2026-08-20). She could PROPOSE a whole milestone
+    // (`show_ship_milestone`) long before she could read one, so her only move
+    // in a conversation about the NEXT milestone was to propose a brand-new
+    // cut. This is the other half: the live cut, its buckets, the operator's
+    // own notes and ratings, and the bound goals. It deliberately does NOT
+    // restate the exit-criteria verdicts — those derive client-side from
+    // runtime signals the DB cannot see, and a second derivation here would
+    // drift from the one on his screen. See `companion::ship_ops`.
+    "describe_ship_milestone",
 ];
 
 /// Read ops whose `query` param is optional (they answer for everything when

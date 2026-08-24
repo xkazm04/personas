@@ -146,5 +146,13 @@
   "run_milestone": "Chạy cột mốc",
   "run_milestone_tooltip": "Mở một phiên Claude Code thực thi phần cắt này bằng /ship-milestone, sau đó đưa kết quả trở lại bằng Nạp lượt chạy.",
   "run_proposed_hint": "Lượt chạy đề xuất những mục này; không có gì được thêm tự động. Tự thêm chúng từ trình soạn nếu bạn đồng ý.",
-  "run_proposed_title": "{count} đề xuất bổ sung"
+  "run_proposed_title": "{count} đề xuất bổ sung",
+  "ask_athena": "Hỏi Athena",
+  "ask_athena_tooltip": "Mở Athena với cột mốc này ngay trước mắt — phạm vi đã chốt, các điểm nghẽn và những gì còn nằm ngoài — rồi định hình phạm vi qua trò chuyện",
+  "certify_cut_intro": "Chốt phạm vi sẽ đóng băng nó: mọi thứ thêm vào sau đó đều bị đánh dấu là phình phạm vi. Các tiêu chí hoàn tất bên dưới được đo so với phạm vi đã chốt, nên chúng không cản trở việc chốt.",
+  "certify_cut_title": "Chốt phạm vi của {name}",
+  "certify_ship_intro": "Chỉ những tiêu chí này quyết định cột mốc có thể phát hành hay không. Mỗi dòng đều được suy ra từ tín hiệu trực tiếp — không có gì ở đây được nhập tay.",
+  "certify_ship_title": "Phát hành {name}",
+  "compose_scope_tooltip": "Chọn những tính năng và mục tiêu tạo nên cột mốc này",
+  "criteria_badge_aria": "{unmet} trên {total} tiêu chí hoàn tất vẫn chưa đạt"
 }

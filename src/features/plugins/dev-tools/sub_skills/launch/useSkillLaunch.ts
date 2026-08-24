@@ -107,9 +107,10 @@ export function parseArgumentHint(hint: string): string[] {
   return groups.length > 1 ? groups : [only];
 }
 
-/** Provenance label for turns this surface forwards — the backend persists
- * them as tagged System messages (`TurnOrigin::External`), so Athena is told
- * the text is app-composed, not the user's own words. */
+/** Provenance label (`AppPromptRequest.source`) for turns this surface
+ * forwards — the send path files them as tagged System turns
+ * (`TurnOrigin::External`), so Athena is told the text is app-composed, not
+ * the user's own words. */
 export const LAUNCH_SYSTEM_SOURCE = 'Skills Launch';
 
 /** The Athena ask `launch` seeds — machine-facing English, not i18n.
@@ -286,7 +287,7 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
     const hint = skills.find((s) => s.name === selectedSkill)?.argumentHint ?? null;
     useCompanionStore.getState().setPendingChatPrompt({
       text: composeLaunchAsk(selectedSkill, cell.project, hint),
-      systemSource: LAUNCH_SYSTEM_SOURCE,
+      source: LAUNCH_SYSTEM_SOURCE,
     });
   }, [selectedSkill, skills]);
 
