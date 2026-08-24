@@ -15,7 +15,7 @@
 // It is NOT a fifth list. Rows come from `useBacklogQueue` (the one `dev_ideas`
 // data path) and the undispatched signal from `dev_tools_undispatched_ideas`;
 // this file adds no query of its own.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Rocket, Send, ServerCog, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -35,6 +35,17 @@ import {
   summarizeDispatch,
   type DispatchRow,
 } from './dispatchModel';
+
+/**
+ * Module-scoped warm cache (precedent: `sub_patterns/useHierarchyScorecard.ts`,
+ * `docs/design/overview-loading.md` law-4 remount rule). Closing the panel
+ * deliberately hands the shared `triageItems` back to the Backlog's `pending`
+ * query, so on reopen the store no longer holds the accepted rows and every
+ * open would re-ghost. The last settled row build is kept here instead, so a
+ * reopen paints warm while the refetch runs underneath. Un-keyed on purpose:
+ * this panel always asks the same question (cross-project, `accepted`).
+ */
+let warmRows: DispatchRow[] | null = null;
 
 export function DispatchPanel({ onClose }: { onClose: () => void }) {
   const { t, tx } = useTranslation();
@@ -80,10 +91,32 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
     [projects],
   );
 
-  const rows = useMemo(
+  // On the panel's very first frame the shared `triageLoading` is still false
+  // (the reload effect has not fired yet), so forwarding it raw would flash
+  // the settled empty state before the ghost. This mount counts as loading
+  // until its OWN reload has started and come back.
+  const loadStartedRef = useRef(false);
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (queue.loading) loadStartedRef.current = true;
+    else if (loadStartedRef.current) setSettled(true);
+  }, [queue.loading]);
+  const isLoading = !settled;
+
+  const liveRows = useMemo(
     () => buildDispatchRows(queue.rows, undispatchedIdeas, rootPathOf),
     [queue.rows, undispatchedIdeas, rootPathOf],
   );
+
+  // While this mount's fetch is in flight and the live build is empty, paint
+  // the last settled build instead of a ghost (law 1: a fetch never hides
+  // rendered rows — and a reopen is the same panel asking the same question).
+  const rows = isLoading && liveRows.length === 0 && warmRows ? warmRows : liveRows;
+
+  useEffect(() => {
+    if (settled) warmRows = liveRows;
+  }, [settled, liveRows]);
+
   const summary = useMemo(
     () => summarizeDispatch(rows, dispatchThresholds),
     [rows, dispatchThresholds],
@@ -169,18 +202,25 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
               {c.dispatch_title}
             </h2>
             <p data-testid="dispatch-summary" className="typo-caption text-foreground mt-0.5">
-              {tx(c.dispatch_summary, { undispatched: summary.undispatched, total: summary.total })}
-              {/* Staleness is the BACKEND's rule, echoed back by the attention
-                  queue. With no thresholds in hand the panel says nothing about
-                  it rather than printing a cutoff of its own invention. */}
-              {dispatchThresholds && summary.stale > 0 && (
-                <span className="text-status-warning">
-                  {' · '}
-                  {tx(c.dispatch_summary_stale, {
-                    count: summary.stale,
-                    days: dispatchThresholds.ideaDispatchDays,
-                  })}
-                </span>
+              {/* No confident "0 of 0" while the first fetch is in flight —
+                  counts render once there is data (warm or live) or the fetch
+                  has settled. The header chrome above stays either way. */}
+              {(rows.length > 0 || !isLoading) && (
+                <>
+                  {tx(c.dispatch_summary, { undispatched: summary.undispatched, total: summary.total })}
+                  {/* Staleness is the BACKEND's rule, echoed back by the attention
+                      queue. With no thresholds in hand the panel says nothing about
+                      it rather than printing a cutoff of its own invention. */}
+                  {dispatchThresholds && summary.stale > 0 && (
+                    <span className="text-status-warning">
+                      {' · '}
+                      {tx(c.dispatch_summary_stale, {
+                        count: summary.stale,
+                        days: dispatchThresholds.ideaDispatchDays,
+                      })}
+                    </span>
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -197,6 +237,7 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
         <div className="min-h-0 flex-1 px-4 py-3">
           <DispatchTable
             rows={rows}
+            isLoading={isLoading}
             thresholds={dispatchThresholds}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}

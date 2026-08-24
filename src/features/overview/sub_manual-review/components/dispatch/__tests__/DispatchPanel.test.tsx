@@ -108,6 +108,7 @@ const dispatched = (ideaId: string) => ({
 beforeEach(() => {
   vi.clearAllMocks();
   systemState.triageItems = [];
+  systemState.triageLoading = false;
   systemState.projects = [project()];
   systemState.undispatchedIdeas = null;
   systemState.dispatchThresholds = null;
@@ -168,6 +169,36 @@ describe('the panel reads the one approved queue, grouped by project', () => {
     unmount();
 
     expect(fetchTriageIdeas).toHaveBeenCalledWith(undefined, { status: 'pending' });
+  });
+});
+
+describe('cold load ghosts under the chrome instead of flashing empty', () => {
+  it('shows ghost rows, not the settled empty state, while the first fetch is in flight', () => {
+    systemState.triageItems = [];
+    systemState.triageLoading = true;
+
+    render(<DispatchPanel onClose={() => {}} />);
+
+    // The permanent chrome is up...
+    expect(screen.getByTestId('dispatch-panel')).toBeTruthy();
+    // ...the grid ghosts under it (the delayed skeleton is a live region)...
+    expect(screen.getByRole('status')).toBeTruthy();
+    // ...and the settled empty state is unreachable until the fetch lands.
+    expect(screen.queryByText('Nothing is waiting to be dispatched')).toBeNull();
+  });
+
+  it('does not flash the empty state on the first frame, before the reload flag lands', () => {
+    // On the very first frame the shared `triageLoading` is still false — the
+    // mount effect has not fired the reload yet. The panel must still count
+    // itself as loading rather than claim an empty backlog.
+    systemState.triageItems = [];
+    systemState.triageLoading = false;
+
+    render(<DispatchPanel onClose={() => {}} />);
+
+    expect(screen.queryByText('Nothing is waiting to be dispatched')).toBeNull();
+    // And the header does not print a confident zero while nothing has loaded.
+    expect(screen.getByTestId('dispatch-summary').textContent).toBe('');
   });
 });
 

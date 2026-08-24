@@ -23,12 +23,19 @@ import {
 
 export function DispatchTable({
   rows,
+  isLoading,
   thresholds,
   selectedIds,
   onToggleSelect,
   onToggleSelectAll,
 }: {
   rows: DispatchRow[];
+  /**
+   * The panel's cold-load flag. The shared grid ghosts under its permanent
+   * column header only while `isLoading && rows.length === 0`, so a refetch
+   * with rows on screen changes nothing (overview-loading laws 1 and 5).
+   */
+  isLoading?: boolean;
   thresholds: AttentionThresholds | null;
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
@@ -116,6 +123,7 @@ export function DispatchTable({
   return (
     <FacetedDecisionTable
       items={rows}
+      isLoading={isLoading}
       getRowKey={(r) => r.id}
       getGroupPath={dispatchGroupPath}
       columns={columns}
