@@ -5,23 +5,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 
-import { getHierarchyDoc } from '@/api/devTools/hierarchy';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { HierarchyDoc } from '@/lib/bindings/HierarchyDoc';
 import type { HierarchyGraph } from '@/lib/bindings/HierarchyGraph';
 import type { HierarchyScorecard } from '@/lib/bindings/HierarchyScorecard';
 import type { HierarchySubject } from '@/lib/bindings/HierarchySubject';
 import type { HierarchyTechnique } from '@/lib/bindings/HierarchyTechnique';
 import type { SubjectScore } from '@/lib/bindings/SubjectScore';
-import { silentCatch } from '@/lib/silentCatch';
 
 import { HierarchyStatusChip } from './HierarchyStatusChip';
-import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
+import {
+  InlineDocBody,
+  LawChips,
+  STACK_CLASSES,
+  STACK_FALLBACK,
+} from './variants/shared';
 
 /** The command that recomputes the scorecard — derivation names recomputation.
  *  Mirrors `SCORECARD_GENERATOR` in the Rust reader. */
@@ -34,97 +35,6 @@ export type DetailTab = 'golden_path' | 'techniques' | 'applications' | 'evidenc
 export type DetailFocus =
   | { kind: 'technique'; technique: string }
   | { kind: 'application'; file: string };
-
-/** Semantic stack-badge tones — tokens only, one small map, neutral fallback. */
-const STACK_CLASSES: Record<string, string> = {
-  react: 'border-status-info/30 bg-status-info/10 text-status-info',
-  rust: 'border-status-warning/30 bg-status-warning/10 text-status-warning',
-  sql: 'border-primary/30 bg-primary/10 text-primary',
-  node: 'border-status-success/30 bg-status-success/10 text-status-success',
-  process: 'border-border/60 bg-secondary/50 text-foreground/60',
-};
-const STACK_FALLBACK = 'border-border/60 bg-secondary/50 text-foreground/60';
-
-/** Calm ghost for an in-flight doc body. */
-function BodyGhost() {
-  return (
-    <div aria-hidden="true" className="space-y-3 animate-fade-in" style={{ animationDelay: '150ms' }}>
-      {[95, 100, 82, 70].map((w, i) => (
-        <div key={i} className="h-3.5 rounded-interactive bg-secondary/50" style={{ width: `${w}%` }} />
-      ))}
-    </div>
-  );
-}
-
-/** Lazily fetched markdown body for one repo-relative file. */
-function InlineDocBody({
-  projectId,
-  relPath,
-  onLinkClick,
-}: {
-  projectId: string;
-  relPath: string;
-  onLinkClick: (href: string) => boolean;
-}) {
-  const { t } = useTranslation();
-  const p = t.overview.patterns_v2;
-  const [doc, setDoc] = useState<HierarchyDoc | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    setDoc(null);
-    setFailed(false);
-    getHierarchyDoc(projectId, relPath, corpusRootFor(projectId))
-      .then((d) => { if (live) setDoc(d); })
-      .catch((err) => {
-        silentCatch('patterns:hierarchyInlineDoc')(err);
-        if (live) setFailed(true);
-      });
-    return () => { live = false; };
-  }, [projectId, relPath]);
-
-  if (failed) return <p className="typo-body text-status-warning">{p.doc_load_failed}</p>;
-  if (doc === null) return <BodyGhost />;
-  if (!doc.exists) return <p className="typo-body text-foreground">{p.doc_missing}</p>;
-  return <MarkdownRenderer content={doc.markdown} className="leading-relaxed" onLinkClick={onLinkClick} />;
-}
-
-function LawChips({
-  laws,
-  graph,
-  onOpenLaw,
-}: {
-  laws: string[];
-  graph: HierarchyGraph;
-  onOpenLaw: (lawId: string) => void;
-}) {
-  if (laws.length === 0) return null;
-  return (
-    <span className="flex flex-wrap items-center gap-1">
-      {laws.map((id) => {
-        const law = graph.laws.find((l) => l.id === id);
-        const chip = (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onOpenLaw(id)}
-            className="typo-caption font-mono rounded-interactive border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-accent hover:bg-accent/20 transition-colors"
-          >
-            {id}
-          </button>
-        );
-        return law ? (
-          <Tooltip key={id} content={law.summary || law.title}>
-            {chip}
-          </Tooltip>
-        ) : (
-          chip
-        );
-      })}
-    </span>
-  );
-}
 
 export function SubjectDetail({
   projectId,

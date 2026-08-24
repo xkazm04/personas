@@ -15,6 +15,10 @@ import { useSystemStore } from '@/stores/systemStore';
 
 import { CorpusWarningsBadge } from './CorpusWarningsBadge';
 import { DocViewer } from './DocViewer';
+import { SubjectsAtlas } from './variants/SubjectsAtlas';
+import { SubjectsCodex } from './variants/SubjectsCodex';
+import { SubjectsConsole } from './variants/SubjectsConsole';
+import type { SubjectsVariantProps } from './variants/shared';
 import {
   buildHierarchyIndex,
   groupSubjectsByCategory,
@@ -30,8 +34,21 @@ import { useHierarchyGraph } from './useHierarchyGraph';
 import { useHierarchyScorecard } from './useHierarchyScorecard';
 
 /** The one place a law CHIP (id-only, no href) resolves to a path. Links in
- *  markdown resolve through `resolveDocLink` instead. */
-const LAWS_FILE = 'docs/concepts/paths/_laws.md';
+ *  markdown resolve through `resolveDocLink` instead. Falls back to the
+ *  personas layout when the graph is absent; a registry-shaped corpus carries
+ *  `_laws.md` inside its bundle (`source.corpusRel`). */
+const LAWS_FILE_FALLBACK = 'docs/concepts/paths/_laws.md';
+
+/** PROTOTYPE SCAFFOLD (/prototype 2026-08-24) — design-variant switcher.
+ *  Throwaway: consolidation keeps the winner as the sole render and deletes
+ *  this strip plus the loser files. Labels deliberately not i18n'd. */
+type DesignVariant = 'baseline' | 'codex' | 'atlas' | 'console';
+const VARIANT_TABS: { id: DesignVariant; label: string }[] = [
+  { id: 'baseline', label: 'Baseline' },
+  { id: 'codex', label: 'Codex' },
+  { id: 'atlas', label: 'Atlas' },
+  { id: 'console', label: 'Console' },
+];
 
 export function SubjectsView() {
   const { t, tx } = useTranslation();
@@ -79,6 +96,7 @@ export function SubjectsView() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [focus, setFocus] = useState<DetailFocus | null>(null);
   const [docViewer, setDocViewer] = useState<{ file: string; anchor: string | null } | null>(null);
+  const [designVariant, setDesignVariant] = useState<DesignVariant>('baseline');
 
   // Default selection: first subject of the first group once the graph lands
   // (and re-validate when the project switches away from the current slug).
@@ -141,6 +159,29 @@ export function SubjectsView() {
 
   const emptyGraph = graph !== null && graph.subjects.length === 0;
 
+  // Law chips resolve inside whichever corpus the graph was read from.
+  const lawsFile = graph?.source.corpusRel
+    ? `${graph.source.corpusRel}/_laws.md`
+    : LAWS_FILE_FALLBACK;
+
+  const variantProps: SubjectsVariantProps | null =
+    graph && projectId
+      ? {
+          projectId,
+          graph,
+          groups,
+          selectedSlug,
+          onSelect: selectSubject,
+          matchMap,
+          scorecard,
+          adherence,
+          focus,
+          onLinkHref: handleLinkHref,
+          onOpenDoc: (file, anchor) => setDocViewer({ file, anchor }),
+          onOpenLaw: (lawId) => setDocViewer({ file: lawsFile, anchor: lawId }),
+        }
+      : null;
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Toolbar — permanent chrome (loading law: chrome always renders). */}
@@ -184,6 +225,25 @@ export function SubjectsView() {
         )}
 
         {graph && <CorpusWarningsBadge warnings={graph.warnings} />}
+
+        {/* PROTOTYPE SCAFFOLD — variant switcher (throwaway, see above). */}
+        <div className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border/50 bg-secondary/30 p-0.5">
+          {VARIANT_TABS.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => setDesignVariant(v.id)}
+              aria-pressed={designVariant === v.id}
+              className={`typo-caption rounded-interactive px-2 py-1 transition-colors ${
+                designVariant === v.id
+                  ? 'bg-primary/15 text-foreground font-medium'
+                  : 'text-foreground/60 hover:text-foreground'
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* A fetch failure with a warm copy keeps the warm copy under an honest
@@ -220,6 +280,14 @@ export function SubjectsView() {
             description={graph?.source.reason ?? p.empty_graph_desc}
           />
         </div>
+      ) : designVariant !== 'baseline' && variantProps ? (
+        designVariant === 'codex' ? (
+          <SubjectsCodex {...variantProps} />
+        ) : designVariant === 'atlas' ? (
+          <SubjectsAtlas {...variantProps} />
+        ) : (
+          <SubjectsConsole {...variantProps} />
+        )
       ) : (
         <div className="flex-1 min-h-0 flex rounded-card border border-border/40 bg-background/40 overflow-hidden">
           <SubjectRail
@@ -242,7 +310,7 @@ export function SubjectsView() {
               onLinkHref={handleLinkHref}
               onSelectSubject={selectSubject}
               onOpenDoc={(file, anchor) => setDocViewer({ file, anchor })}
-              onOpenLaw={(lawId) => setDocViewer({ file: LAWS_FILE, anchor: lawId })}
+              onOpenLaw={(lawId) => setDocViewer({ file: lawsFile, anchor: lawId })}
             />
           ) : (
             <div className="flex-1 min-w-0 flex items-center justify-center">
