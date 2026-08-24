@@ -11,7 +11,7 @@ vi.mock('@/api/pipeline/teamChannel', () => ({
 }));
 
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { channelKey, countUnread, mergeHorizon, EMPTY_CHANNEL, CHANNEL_PAGE, type ChannelTeamState } from '../channelSlice';
+import { channelKey, countUnread, mergeHead, mergeHorizon, EMPTY_CHANNEL, CHANNEL_PAGE, type ChannelTeamState } from '../channelSlice';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /** Minimal channel item — only the fields the slice actually reads. */
@@ -334,5 +334,65 @@ describe('channelSlice — directives', () => {
     postTeamDirective.mockRejectedValue(new Error('offline'));
     await expect(usePipelineStore.getState().sendChannelDirective('team-1', 'x')).rejects.toThrow('offline');
     expect(usePipelineStore.getState().channels[channelKey('team-1')]?.posting).toBe(false);
+  });
+});
+
+describe('channelSlice — structural refresh (C1: identity survives the poll)', () => {
+  beforeEach(resetStore);
+
+  it('an identical head is a no-op: state, items array and channels map keep identity', async () => {
+    const key = channelKey('team-1');
+    const head = [item('b', '2026-07-13T11:00:00Z'), item('a', '2026-07-13T10:00:00Z')];
+    listTeamChannel.mockResolvedValue(head.map((i) => ({ ...i })));
+    await usePipelineStore.getState().refreshChannel(key);
+
+    const before = usePipelineStore.getState();
+    // The poll returns the same facts as brand-new objects — the pre-C1 killer.
+    listTeamChannel.mockResolvedValue(head.map((i) => ({ ...i })));
+    await usePipelineStore.getState().refreshChannel(key);
+
+    const after = usePipelineStore.getState();
+    expect(after.channels).toBe(before.channels); // selector bails → zero renders
+    expect(after.channels[key]!.items).toBe(before.channels[key]!.items);
+  });
+
+  it('a new row keeps every unchanged row object, replacing only what changed', async () => {
+    const key = channelKey('team-1');
+    listTeamChannel.mockResolvedValue([item('a', '2026-07-13T10:00:00Z')]);
+    await usePipelineStore.getState().refreshChannel(key);
+    const keptRow = usePipelineStore.getState().channels[key]!.items[0]!;
+
+    listTeamChannel.mockResolvedValue([
+      item('b', '2026-07-13T11:00:00Z'),
+      { ...item('a', '2026-07-13T10:00:00Z') },
+    ]);
+    await usePipelineStore.getState().refreshChannel(key);
+
+    const items = usePipelineStore.getState().channels[key]!.items;
+    expect(items.map((i) => i.id)).toEqual(['b', 'a']);
+    expect(items[1]).toBe(keptRow); // same fact → same object → memo'd row bails
+  });
+
+  it('a changed field on a known id DOES replace the row object', () => {
+    const prev = [item('a', '2026-07-13T10:00:00Z')];
+    const changed = { ...item('a', '2026-07-13T10:00:00Z'), body: 'now with a body' };
+    const next = mergeHead(prev, [changed]);
+    expect(next).not.toBe(prev);
+    expect(next[0]).toBe(changed);
+  });
+
+  it('consumers arrays compare by value, not by reference', () => {
+    const prev = [{ ...item('a', '2026-07-13T10:00:00Z'), consumers: ['p1', 'p2'] }];
+    const same = [{ ...item('a', '2026-07-13T10:00:00Z'), consumers: ['p1', 'p2'] }];
+    expect(mergeHead(prev, same)).toBe(prev);
+    const grew = [{ ...item('a', '2026-07-13T10:00:00Z'), consumers: ['p1', 'p2', 'p3'] }];
+    expect(mergeHead(prev, grew)).not.toBe(prev);
+  });
+
+  it('still keeps the older tail below an unchanged head', () => {
+    const older = item('old', '2026-07-13T09:00:00Z');
+    const head = item('new', '2026-07-13T10:00:00Z');
+    const prev = [head, older];
+    expect(mergeHead(prev, [head])).toBe(prev); // unchanged head + kept tail = no-op
   });
 });

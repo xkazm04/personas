@@ -119,6 +119,52 @@ export function countUnread(state: ChannelTeamState): number {
  * is held back until every team has paged past it. When all teams are exhausted
  * the horizon lifts (null) and the whole merge renders.
  */
+/**
+ * STRUCTURAL REFRESH — reuse the cached row object whenever the server sent
+ * the same fact again.
+ *
+ * The head refresh runs every 15s and after every progress event, and the
+ * server almost always returns rows we already hold. Minting fresh objects for
+ * them (what this slice did before C1) destroyed identity for every row on
+ * every poll, so `memo`'d rows never bailed out and every channel surface
+ * repainted on a no-op tick. All `TeamChannelItem` fields are primitives except
+ * `consumers` (string[]), so equality is a flat field walk — no deep compare.
+ */
+function sameItem(a: TeamChannelItem, b: TeamChannelItem): boolean {
+  if (
+    a.id !== b.id || a.kind !== b.kind || a.at !== b.at || a.personaId !== b.personaId ||
+    a.label !== b.label || a.body !== b.body || a.assignmentId !== b.assignmentId ||
+    a.stepId !== b.stepId || a.extra !== b.extra || a.replyTo !== b.replyTo ||
+    a.deliberationId !== b.deliberationId || a.importance !== b.importance
+  ) return false;
+  const ac = a.consumers, bc = b.consumers;
+  if (ac === bc) return true;
+  if (!ac || !bc || ac.length !== bc.length) return false;
+  for (let i = 0; i < ac.length; i++) if (ac[i] !== bc[i]) return false;
+  return true;
+}
+
+/**
+ * Merge a fresh head page over the cached items, preserving object identity:
+ * a row whose fields are unchanged keeps its previous object, and if NOTHING
+ * changed the previous array itself is returned — the caller can then skip the
+ * store write entirely and no subscriber re-renders.
+ */
+export function mergeHead(prev: TeamChannelItem[], head: TeamChannelItem[]): TeamChannelItem[] {
+  const prevById = new Map(prev.map((i) => [i.id, i]));
+  const seen = new Set(head.map((i) => i.id));
+  const oldest = head[head.length - 1]?.at;
+  const next: TeamChannelItem[] = head.map((i) => {
+    const old = prevById.get(i.id);
+    return old && sameItem(old, i) ? old : i;
+  });
+  for (const i of prev) {
+    if (!seen.has(i.id) && (oldest === undefined || i.at <= oldest)) next.push(i);
+  }
+  if (next.length === prev.length && next.every((i, idx) => i === prev[idx])) return prev;
+  return next;
+}
+
 export function mergeHorizon(states: ChannelTeamState[]): string | null {
   let horizon: string | null = null;
   for (const s of states) {
@@ -198,25 +244,21 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
       const head = await listTeamChannel(teamId, CHANNEL_PAGE, undefined, kinds);
       set((s) => {
         const prev = s.channels[key] ?? { ...EMPTY_CHANNEL, lastSeenAt: readLastSeen(teamId) };
-        const seen = new Set(head.map((i) => i.id));
-        const oldest = head[head.length - 1]?.at;
-        const olderTail = prev.items.filter(
-          (i) => !seen.has(i.id) && (oldest === undefined || i.at <= oldest),
-        );
+        const items = mergeHead(prev.items, head);
+        // A short FIRST page is the whole channel — nothing older exists.
+        // Without this, a team with 3 rows never becomes `exhausted`, and
+        // it would pin the merge horizon at its own oldest row forever,
+        // hiding every other team's history below that point.
+        const exhausted =
+          prev.items.length === 0 && head.length < CHANNEL_PAGE ? true : prev.exhausted;
+        // Identity-preserving no-op: the routine poll usually returns exactly
+        // what we hold. Keeping `s.channels` itself untouched means every
+        // subscriber's selector bails and a quiet tick costs zero renders.
+        if (items === prev.items && prev.loaded && exhausted === prev.exhausted) return {};
         return {
           channels: {
             ...s.channels,
-            [key]: {
-              ...prev,
-              items: [...head, ...olderTail],
-              loaded: true,
-              // A short FIRST page is the whole channel — nothing older exists.
-              // Without this, a team with 3 rows never becomes `exhausted`, and
-              // it would pin the merge horizon at its own oldest row forever,
-              // hiding every other team's history below that point.
-              exhausted:
-                prev.items.length === 0 && head.length < CHANNEL_PAGE ? true : prev.exhausted,
-            },
+            [key]: { ...prev, items, loaded: true, exhausted },
           },
         };
       });

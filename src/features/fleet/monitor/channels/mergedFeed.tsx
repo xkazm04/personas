@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { channelKey } from '@/stores/slices/pipeline/channelSlice';
 import { derivePresence, useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
 import { LIVE_FEED_WINDOW, type FeedTeam, type TaggedItem, type PresenceMap } from './types';
 
@@ -32,7 +33,10 @@ export function useMergedChannels(teams: FeedTeam[]): {
     const presenceByTeam = new Map<string, PresenceMap>();
 
     for (const team of teams) {
-      const items = channels[team.teamId]?.items ?? [];
+      // channelKey, not the bare team id — the cache is keyed `${teamId}|kinds`.
+      // Reading `channels[team.teamId]` (the pre-C1 bug) always missed, so the
+      // merged feed was permanently empty and LiveChannelOverlay never popped.
+      const items = channels[channelKey(team.teamId)]?.items ?? [];
       const rows = items.map((item) => ({ item, team }));
       byTeam.set(team.teamId, rows);
       presenceByTeam.set(team.teamId, derivePresence(items));
