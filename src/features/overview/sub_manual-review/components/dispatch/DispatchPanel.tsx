@@ -15,7 +15,7 @@
 // It is NOT a fifth list. Rows come from `useBacklogQueue` (the one `dev_ideas`
 // data path) and the undispatched signal from `dev_tools_undispatched_ideas`;
 // this file adds no query of its own.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Rocket, Send, ServerCog, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -46,6 +46,10 @@ import {
  * this panel always asks the same question (cross-project, `accepted`).
  */
 let warmRows: DispatchRow[] | null = null;
+
+/** Stable initial value for the deferred table body — a fresh `[]` per render
+ *  would make `useDeferredValue`'s initial argument referentially unstable. */
+const EMPTY_ROWS: DispatchRow[] = [];
 
 export function DispatchPanel({ onClose }: { onClose: () => void }) {
   const { t, tx } = useTranslation();
@@ -113,6 +117,20 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
   // rendered rows — and a reopen is the same panel asking the same question).
   const rows = isLoading && liveRows.length === 0 && warmRows ? warmRows : liveRows;
 
+  // Two-phase commit (overview-loading laws 2/5, applied at render priority
+  // rather than with a timer). `rows` stays urgent — the summary counts above
+  // the table update the moment their source lands. The TABLE BODY renders
+  // from this deferred mirror instead:
+  //  - the mount frame commits with `EMPTY_ROWS`, so the panel's first paint
+  //    is chrome + ghost even when the store already holds a hundred accepted
+  //    ideas (the cold open that used to build rail + rows in one commit);
+  //  - each later arrival (triage page, undispatched signal) re-renders the
+  //    chrome urgently and fills the body in an interruptible deferred pass.
+  // Content is never *held*: the deferred pass is scheduled immediately, there
+  // is no timer and no minimum ghost duration — a warm reopen converges within
+  // the same frame, well inside the ghost's 120ms CSS delay.
+  const tableRows = useDeferredValue(rows, EMPTY_ROWS);
+
   useEffect(() => {
     if (settled) warmRows = liveRows;
   }, [settled, liveRows]);
@@ -135,17 +153,22 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
     });
   }, []);
 
+  // Selection, blocking and dispatch all read `tableRows` — the rows the user
+  // can actually SEE. Acting on the urgent `rows` while the deferred body is a
+  // frame behind could select or send a row that is not yet on screen.
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((prev) =>
-      prev.size === rows.length && rows.length > 0 ? new Set() : new Set(rows.map((r) => r.id)),
+      prev.size === tableRows.length && tableRows.length > 0
+        ? new Set()
+        : new Set(tableRows.map((r) => r.id)),
     );
-  }, [rows]);
+  }, [tableRows]);
 
-  const blocked = useMemo(() => fleetBlockedRows(rows, selectedIds), [rows, selectedIds]);
+  const blocked = useMemo(() => fleetBlockedRows(tableRows, selectedIds), [tableRows, selectedIds]);
   const fleetEligible = selectedIds.size - blocked.length;
 
   const dispatch = useCallback(async (target: 'runner' | 'fleet') => {
-    const ids = rows.filter((r) => selectedIds.has(r.id)).map((r) => r.id);
+    const ids = tableRows.filter((r) => selectedIds.has(r.id)).map((r) => r.id);
     if (ids.length === 0) return;
     setBusy(target);
     setReport(null);
@@ -173,11 +196,11 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
     } finally {
       setBusy(null);
     }
-  }, [rows, selectedIds, queue, refreshUndispatchedIdeas, t]);
+  }, [tableRows, selectedIds, queue, refreshUndispatchedIdeas, t]);
 
   const titleById = useMemo(
-    () => new Map(rows.map((r: DispatchRow) => [r.id, r.title])),
-    [rows],
+    () => new Map(tableRows.map((r: DispatchRow) => [r.id, r.title])),
+    [tableRows],
   );
 
   return (
@@ -236,7 +259,7 @@ export function DispatchPanel({ onClose }: { onClose: () => void }) {
 
         <div className="min-h-0 flex-1 px-4 py-3">
           <DispatchTable
-            rows={rows}
+            rows={tableRows}
             isLoading={isLoading}
             thresholds={dispatchThresholds}
             selectedIds={selectedIds}
