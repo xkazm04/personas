@@ -43,12 +43,21 @@ import { parseSkillArg } from '../analytics/useSkillsAnalytics';
 import { cellKey, type RegistryCell, type RegistryColumn, type RegistryModel, type RegistrySkill } from './registryTypes';
 
 const LIVE_STATES = new Set(['spawning', 'running', 'awaiting_input']);
+/** Cadence of the decoupled run-lock poll (one cheap listSessions IPC). */
+const SESSIONS_POLL_MS = 10_000;
 const GROUP_LABEL: Record<string, string> = {
   technical: 'Technical', user: 'User experience', business: 'Business', mastermind: 'Mastermind',
 };
 
 function normPath(p: string): string {
   return p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+}
+
+/** Identity-preserving set compare so an unchanged poll never re-renders. */
+function sameSet(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const k of a) if (!b.has(k)) return false;
+  return true;
 }
 
 interface Fetched {
@@ -61,12 +70,11 @@ interface Fetched {
   covByKey: Map<string, SkillCoverageRow>;
   ctxByProject: Map<string, number>;
   usageByKey: Map<string, number>;
-  runningSet: Set<string>;
 }
 
 const EMPTY: Fetched = {
   loading: true, libraryNames: [], customCategory: new Map(), descByName: new Map(), installedByProject: new Map(),
-  covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
+  covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(),
 };
 
 export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 0): RegistryModel {
@@ -142,16 +150,15 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
 
       const phase1: Fetched = {
         loading: false, libraryNames, customCategory, descByName, installedByProject,
-        covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
+        covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(),
       };
       setF(phase1);
 
-      // -- PHASE 2: telemetry enrichment (coverage %, 30d invokes, live-run
-      // locks). Merged over the painted grid when it lands.
-      const [usageRows, snap] = await Promise.all([
-        getSkillUsageOverview().catch((e) => { silentCatch('registry usage')(e); return []; }),
-        listSessions().catch((e) => { silentCatch('registry sessions')(e); return { sessions: [] as never[] }; }),
-      ]);
+      // -- PHASE 2: telemetry enrichment (coverage %, 30d invokes). Merged
+      // over the painted grid when it lands. Live-run locks are NOT here —
+      // they ride the decoupled sessions poll below, so a dispatch never
+      // re-triggers this fan-out.
+      const usageRows = await getSkillUsageOverview().catch((e) => { silentCatch('registry usage')(e); return []; });
       const perCov = await mapWithConcurrency(wsProjects, 4, async (p) => {
         const [cov, mc] = await Promise.all([
           memorySkillCoverage(p.id).catch((e) => { silentCatch('registry coverage')(e); return [] as SkillCoverageRow[]; }),
@@ -173,19 +180,35 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
         if (u.scope === 'project' && u.project_id) usageByKey.set(cellKey(u.project_id, u.name), u.invokes_30d);
       }
 
-      const runningSet = new Set<string>();
-      for (const sess of (snap as { sessions: Array<{ args: string[]; cwd: string; state: string }> }).sessions) {
-        if (!LIVE_STATES.has(sess.state)) continue;
-        const parsed = parseSkillArg(sess.args);
-        const pid = projectRootById.get(normPath(sess.cwd));
-        if (parsed && pid) runningSet.add(cellKey(parsed.skill, pid));
-      }
-
-      setF({ ...phase1, covByKey, ctxByProject, usageByKey, runningSet });
+      setF({ ...phase1, covByKey, ctxByProject, usageByKey });
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace?.id, wsProjects.length, libraryRoot, refreshTick]);
+
+  // Live-run locks — a lightweight sessions poll, deliberately DECOUPLED from
+  // the listSkills/coverage fan-out above: a dispatch only changes which cells
+  // are running, so watching sessions must never re-trigger a matrix refetch.
+  // One IPC per tick, identity-preserving so an unchanged poll is render-free.
+  const [running, setRunning] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    let alive = true;
+    const read = async () => {
+      const snap = await listSessions().catch((e) => { silentCatch('registry sessions')(e); return { sessions: [] as never[] }; });
+      if (!alive) return;
+      const next = new Set<string>();
+      for (const sess of (snap as { sessions: Array<{ args: string[]; cwd: string; state: string }> }).sessions) {
+        if (!LIVE_STATES.has(sess.state)) continue;
+        const parsed = parseSkillArg(sess.args);
+        const pid = projectRootById.get(normPath(sess.cwd));
+        if (parsed && pid) next.add(cellKey(parsed.skill, pid));
+      }
+      setRunning((prev) => (sameSet(prev, next) ? prev : next));
+    };
+    void read();
+    const timer = window.setInterval(() => { void read(); }, SESSIONS_POLL_MS);
+    return () => { alive = false; window.clearInterval(timer); };
+  }, [projectRootById, refreshTick]);
 
   const columns: RegistryColumn[] = useMemo(
     () => wsProjects.map((p) => ({
@@ -231,8 +254,8 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
     adopted: f.installedByProject.get(projectId)?.has(skillName) ?? false,
     coveredUnits: f.covByKey.get(cellKey(projectId, skillName))?.coveredContexts ?? 0,
     invokes30d: f.usageByKey.get(cellKey(projectId, skillName)) ?? 0,
-    running: f.runningSet.has(cellKey(skillName, projectId)),
-  }), [f]);
+    running: running.has(cellKey(skillName, projectId)),
+  }), [f, running]);
 
   return {
     mode: 'workspace',

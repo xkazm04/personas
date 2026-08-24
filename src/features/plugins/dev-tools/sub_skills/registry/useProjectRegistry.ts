@@ -32,6 +32,8 @@ import { parseSkillArg } from '../analytics/useSkillsAnalytics';
 import { cellKey, type RegistryCell, type RegistryColumn, type RegistryModel, type RegistrySkill } from './registryTypes';
 
 const LIVE_STATES = new Set(['spawning', 'running', 'awaiting_input']);
+/** Cadence of the decoupled run-lock poll (one cheap listSessions IPC). */
+const SESSIONS_POLL_MS = 10_000;
 const GROUP_LABEL: Record<string, string> = {
   technical: 'Technical', user: 'User experience', business: 'Business', mastermind: 'Mastermind',
 };
@@ -42,6 +44,13 @@ function normPath(p: string): string {
   return p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
 }
 
+/** Identity-preserving set compare so an unchanged poll never re-renders. */
+function sameSet(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const k of a) if (!b.has(k)) return false;
+  return true;
+}
+
 interface Fetched {
   loading: boolean;
   installed: SkillEntry[];
@@ -50,12 +59,11 @@ interface Fetched {
   /** `${skill}|${groupId}` → contexts of that group the skill has touched. */
   coveredByKey: Map<string, number>;
   usageBySkill: Map<string, number>;
-  runningSkills: Set<string>;
 }
 
 const EMPTY: Fetched = {
   loading: true, installed: [], groups: [], contexts: [],
-  coveredByKey: new Map(), usageBySkill: new Map(), runningSkills: new Set(),
+  coveredByKey: new Map(), usageBySkill: new Map(),
 };
 
 export function useProjectRegistry(projectId: string | null, refreshTick = 0): RegistryModel {
@@ -69,12 +77,11 @@ export function useProjectRegistry(projectId: string | null, refreshTick = 0): R
     let alive = true;
     setF((prev) => ({ ...prev, loading: true }));
     void (async () => {
-      const [installed, groups, contexts, usageRows, snap] = await Promise.all([
+      const [installed, groups, contexts, usageRows] = await Promise.all([
         listSkills(projectId).catch((e) => { silentCatch('projectRegistry listSkills')(e); return [] as SkillEntry[]; }),
         listContextGroups(projectId),
         listContexts(projectId).catch((e) => { silentCatch('projectRegistry listContexts')(e); return [] as DevContext[]; }),
         getSkillUsageOverview().catch((e) => { silentCatch('projectRegistry usage')(e); return []; }),
-        listSessions().catch((e) => { silentCatch('projectRegistry sessions')(e); return { sessions: [] as never[] }; }),
       ]);
       if (!alive) return;
 
@@ -105,18 +112,34 @@ export function useProjectRegistry(projectId: string | null, refreshTick = 0): R
         if (u.scope === 'project' && u.project_id === projectId) usageBySkill.set(u.name, u.invokes_30d);
       }
 
-      const root = normPath(project?.root_path ?? '');
-      const runningSkills = new Set<string>();
+      setF({ loading: false, installed, groups, contexts, coveredByKey, usageBySkill });
+    })();
+    return () => { alive = false; };
+  }, [projectId, project?.root_path, refreshTick]);
+
+  // Live-run locks — a lightweight sessions poll, deliberately DECOUPLED from
+  // the per-skill attribution fan-out above: a dispatch only changes which
+  // cells are running, so watching sessions must never re-trigger the fan-out.
+  const [running, setRunning] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!projectId) { setRunning((prev) => (prev.size === 0 ? prev : new Set())); return; }
+    let alive = true;
+    const root = normPath(project?.root_path ?? '');
+    const read = async () => {
+      const snap = await listSessions().catch((e) => { silentCatch('projectRegistry sessions')(e); return { sessions: [] as never[] }; });
+      if (!alive) return;
+      const next = new Set<string>();
       for (const sess of (snap as { sessions: Array<{ args: string[]; cwd: string; state: string }> }).sessions) {
         if (!LIVE_STATES.has(sess.state)) continue;
         if (root && normPath(sess.cwd) !== root) continue;
         const parsed = parseSkillArg(sess.args);
-        if (parsed) runningSkills.add(parsed.skill);
+        if (parsed) next.add(parsed.skill);
       }
-
-      setF({ loading: false, installed, groups, contexts, coveredByKey, usageBySkill, runningSkills });
-    })();
-    return () => { alive = false; };
+      setRunning((prev) => (sameSet(prev, next) ? prev : next));
+    };
+    void read();
+    const timer = window.setInterval(() => { void read(); }, SESSIONS_POLL_MS);
+    return () => { alive = false; window.clearInterval(timer); };
   }, [projectId, project?.root_path, refreshTick]);
 
   /** Context groups that actually hold contexts, plus an ungrouped bucket when
@@ -182,9 +205,9 @@ export function useProjectRegistry(projectId: string | null, refreshTick = 0): R
       adopted: covered > 0,
       coveredUnits: covered,
       invokes30d: f.usageBySkill.get(skillName) ?? 0,
-      running: f.runningSkills.has(skillName),
+      running: running.has(skillName),
     };
-  }, [f]);
+  }, [f, running]);
 
   return {
     mode: 'project',

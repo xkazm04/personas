@@ -23,7 +23,7 @@ export function VersionTimelinePanel({ timeline, loading }: { timeline: SkillRev
       ) : (
         <ol className="flex flex-col gap-1">
           {timeline.map((r) => (
-            <li key={r.rev} className="flex items-center gap-2 typo-caption">
+            <li key={r.rev} className="flex items-center gap-2 typo-caption [content-visibility:auto] [contain-intrinsic-size:auto_24px]">
               <GitCommitVertical size={13} className="text-foreground shrink-0" />
               <span className="text-foreground">#{r.rev}</span>
               {r.version != null ? (

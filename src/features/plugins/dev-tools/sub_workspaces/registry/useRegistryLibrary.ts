@@ -11,8 +11,19 @@
 // no skills" and "you have not connected a registry", which the UI must say
 // differently or the user will go looking for skills that were never meant to be
 // there.
+//
+// When no workspace registry is paired, the hook falls back to the PROJECT
+// REPO's own declaration: `.ai/manifest.yaml` → `registry.local`, resolved by
+// `skillFilesRegistryRoot` over IPC. That probe is async, so `source` is null
+// (and `ready` false) until it settles — consumers must not paint the
+// "no registry connected" state before then. Results are cached per
+// root_path so tab switches never re-invoke IPC.
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+
+import { skillFilesRegistryRoot } from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 
 import { registryFor, registryLinkSnapshot, subscribeRegistryLinks, type Registry } from './registryLinkStore';
 import { useWorkspaces, workspaceOf, workspacesSnapshot } from '../workspaceStore';
@@ -27,6 +38,16 @@ function laneRoot(clonePath: string): string {
   return `${clonePath.replace(/[/\\]+$/, '')}/${SKILLS_LANE}`;
 }
 
+/**
+ * Where `libraryRoot` was resolved from.
+ * - `'registry'` — the workspace's wired registry clone (pairing wins).
+ * - `'manifest'` — the project repo's `.ai/manifest.yaml` `registry.local`.
+ * - `'home'` — nothing wired anywhere; callers fall back to `~/.claude/skills`
+ *   (which is what `listSkillsGlobal(null)` reads).
+ * - `null` — the manifest probe is still in flight; not settled yet.
+ */
+export type RegistryLibrarySource = 'registry' | 'manifest' | 'home' | null;
+
 export interface RegistryLibrary {
   /** The registry this project's workspace holds, if any. */
   registry: Registry | null;
@@ -38,13 +59,55 @@ export interface RegistryLibrary {
    * wired. Pass straight to `listSkillsGlobal`.
    */
   libraryRoot: string | null;
-  /** True once a registry is wired AND its pairing completed. */
+  /** Where `libraryRoot` came from; null while the manifest probe is in flight. */
+  source: RegistryLibrarySource;
+  /** True once a registry is wired AND its pairing completed, OR the project's
+   *  manifest resolved a library root. False while the probe is in flight. */
   ready: boolean;
+}
+
+/**
+ * The resolution order, as a pure function so it is testable: a paired
+ * workspace registry wins > the repo manifest's root > home (null). While the
+ * async manifest probe has not settled, the answer is deliberately "not yet"
+ * (`source: null`) rather than a premature "home" — that distinction is what
+ * keeps consumers from flashing the wrong empty state.
+ */
+export function resolveLibraryRoot(input: {
+  registryRoot: string | null;
+  manifestRoot: string | null;
+  manifestSettled: boolean;
+}): { libraryRoot: string | null; source: RegistryLibrarySource } {
+  if (input.registryRoot) return { libraryRoot: input.registryRoot, source: 'registry' };
+  if (!input.manifestSettled) return { libraryRoot: null, source: null };
+  if (input.manifestRoot) return { libraryRoot: input.manifestRoot, source: 'manifest' };
+  return { libraryRoot: null, source: 'home' };
+}
+
+/** root_path → manifest-declared lane root (null = probed, nothing declared).
+ *  Module-level so tab switches and sibling consumers share one IPC round. */
+const manifestRootCache = new Map<string, string | null>();
+/** In-flight probes, deduped per root_path. */
+const manifestRootInFlight = new Map<string, Promise<void>>();
+
+function loadManifestRoot(rootPath: string): Promise<void> {
+  let p = manifestRootInFlight.get(rootPath);
+  if (!p) {
+    p = skillFilesRegistryRoot(rootPath)
+      .catch((e) => { silentCatch('registryLibrary manifest root')(e); return null; })
+      .then((root) => {
+        manifestRootCache.set(rootPath, root);
+        manifestRootInFlight.delete(rootPath);
+      });
+    manifestRootInFlight.set(rootPath, p);
+  }
+  return p;
 }
 
 export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
   const { workspaces } = useWorkspaces();
   useSyncExternalStore(subscribeRegistryLinks, registryLinkSnapshot, registryLinkSnapshot);
+  const projects = useSystemStore((s) => s.projects);
 
   const workspace = projectId ? workspaceOf(workspaces, projectId) : null;
   const registry = workspace ? registryFor(workspace.id) : null;
@@ -52,14 +115,34 @@ export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
   // The clone path is joined with the lane name rather than stored as a second
   // field: the lane is part of the registry contract, not a user choice, and a
   // stored copy would be one more thing that can drift from it.
-  const libraryRoot = registry ? laneRoot(registry.clonePath) : null;
+  const registryRoot = registry ? laneRoot(registry.clonePath) : null;
+
+  // Manifest fallback — only probed when no registry resolves a root and the
+  // project is known. Cached per root_path; the effect just wakes the render
+  // when a cold probe lands.
+  const projectRoot = !registry && projectId
+    ? (projects.find((p) => p.id === projectId)?.root_path ?? null)
+    : null;
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!projectRoot || manifestRootCache.has(projectRoot)) return;
+    let alive = true;
+    void loadManifestRoot(projectRoot).then(() => { if (alive) bump((n) => n + 1); });
+    return () => { alive = false; };
+  }, [projectRoot]);
+
+  const manifestSettled = projectRoot === null || manifestRootCache.has(projectRoot);
+  const manifestRoot = projectRoot ? (manifestRootCache.get(projectRoot) ?? null) : null;
+
+  const { libraryRoot, source } = resolveLibraryRoot({ registryRoot, manifestRoot, manifestSettled });
 
   return {
     registry,
     workspaceId: workspace?.id ?? null,
     workspaceName: workspace?.name ?? null,
     libraryRoot,
-    ready: registry?.state === 'paired',
+    source,
+    ready: source === 'registry' ? registry?.state === 'paired' : source === 'manifest',
   };
 }
 
@@ -68,6 +151,12 @@ export function useRegistryLibrary(projectId: string | null): RegistryLibrary {
  * component. Returns null when the project is unassigned or its workspace holds
  * no registry — the caller then keeps the home library, which is the behaviour
  * that predates registries.
+ *
+ * Deliberately does NOT carry the hook's async manifest fallback: this twin is
+ * sync by contract, and answering from the manifest cache would make the result
+ * depend on whether some component happened to warm it first — a
+ * nondeterminism worse than the narrower answer. Callers that need the
+ * manifest lane await `skillFilesRegistryRoot(root_path)` themselves.
  */
 export function registryLibraryRootFor(projectId: string): string | null {
   const workspace = workspaceOf(workspacesSnapshot().workspaces, projectId);

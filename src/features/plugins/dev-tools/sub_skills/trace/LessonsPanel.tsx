@@ -1,6 +1,8 @@
 // Flat recent-lessons list under the tree — every LESSONS.md entry for this
 // skill across the workspace (branch sprouts show the same data in-graph;
 // this panel is the readable form).
+import { useMemo } from 'react';
+
 import { BookOpenText } from 'lucide-react';
 
 import type { SkillLessonRow } from '@/api/devTools/devTools';
@@ -14,10 +16,12 @@ export function LessonsPanel({ branches, workspaceLessons, loading }: {
   loading: boolean;
 }) {
   const { t } = useTranslation();
-  const all: Array<{ origin: string; row: SkillLessonRow }> = [
+  // Derived once per data change, not per render (hover on the tree above
+  // re-renders this panel's parent).
+  const all = useMemo<Array<{ origin: string; row: SkillLessonRow }>>(() => [
     ...branches.flatMap((b) => b.lessons.map((row) => ({ origin: b.project.name, row }))),
     ...workspaceLessons.map((row) => ({ origin: t.plugins.dev_tools.trace_core_library, row })),
-  ].sort((a, b) => (b.row.date ?? '').localeCompare(a.row.date ?? ''));
+  ].sort((a, b) => (b.row.date ?? '').localeCompare(a.row.date ?? '')), [branches, workspaceLessons, t]);
 
   return (
     <section className="rounded-card border border-border/50 bg-secondary/30 p-3">
@@ -33,7 +37,9 @@ export function LessonsPanel({ branches, workspaceLessons, loading }: {
       ) : (
         <ul className="flex flex-col gap-2 max-h-56 overflow-auto">
           {all.map(({ origin, row }, i) => (
-            <li key={i} className="flex gap-2">
+            // content-visibility: offscreen lesson bodies (multi-line prose)
+            // cost no layout inside the scroll clip (ScheduleRow precedent).
+            <li key={i} className="flex gap-2 [content-visibility:auto] [contain-intrinsic-size:auto_44px]">
               <BookOpenText size={13} className={`shrink-0 mt-0.5 ${row.is_redesign ? 'text-status-warning' : 'text-status-success'}`} />
               <div className="min-w-0">
                 <div className="typo-caption text-foreground">
