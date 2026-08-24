@@ -520,7 +520,10 @@ pub fn start_loops(
             // starting; the probe listener is dropped immediately.
             {
                 let port = crate::engine::webhook::webhook_port();
-                for attempt in 0u32..24 {
+                // 24 × 5 s = 2 min — the longest observed FIN_WAIT linger; the
+                // "2 min" in the log copy below is derived from this budget.
+                const PORT_PROBE_ATTEMPTS: u32 = 24;
+                for attempt in 0..PORT_PROBE_ATTEMPTS {
                     match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
                         Ok(probe) => {
                             drop(probe);
@@ -529,7 +532,7 @@ pub fn start_loops(
                             }
                             break;
                         }
-                        Err(_) if attempt < 23 => {
+                        Err(_) if attempt + 1 < PORT_PROBE_ATTEMPTS => {
                             if attempt == 0 {
                                 tracing::warn!(
                                     port,
