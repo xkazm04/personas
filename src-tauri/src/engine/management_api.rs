@@ -3235,6 +3235,11 @@ struct KpTestTickBody {
     /// Absent ⇒ all four, in [`TICK_PHASES`] order.
     #[serde(default)]
     phases: Option<Vec<String>>,
+    /// Headless bench only: treat every undecided App-master mandate as DUE in
+    /// the probation phase, so a test exercises the decision without waiting
+    /// out `probationDays`. Ignored by every other phase.
+    #[serde(default)]
+    force_probation: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -3311,7 +3316,7 @@ async fn kp_test_tick(
             "overnight" => tick_phase_overnight(&pool, &app, body.project_id.as_deref()).await,
             "reconcile" => tick_phase_reconcile(&pool, body.project_id.as_deref()).await,
             "report" => tick_phase_report(&pool, body.persona_id.as_deref()).await,
-            "probation" => tick_phase_probation(&pool, &app),
+            "probation" => tick_phase_probation(&pool, &app, body.force_probation),
             _ => unreachable!("phase list is closed"),
         };
         results.push(KpTestPhaseResult {
@@ -3417,13 +3422,17 @@ async fn tick_phase_report(
     out
 }
 
-fn tick_phase_probation(pool: &crate::db::DbPool, app: &AppHandle) -> KpTestPhaseResult {
+fn tick_phase_probation(
+    pool: &crate::db::DbPool,
+    app: &AppHandle,
+    force_due: bool,
+) -> KpTestPhaseResult {
     use crate::engine::app_master_probation as probation;
 
     // Raise first, then decide: a window that closed during this very tick gets
     // its packet and its answer in the same call, which is the whole point of
     // compressing a night.
-    let raised = probation::probation_tick_summary(pool);
+    let raised = probation::probation_tick_summary_with(pool, force_due);
     let decided = probation::headless_probation_sweep(app, pool);
     let mut out = phase_stub();
     out.details = decided

@@ -335,6 +335,15 @@ pub(crate) fn probation_tick(pool: &DbPool) {
 
 /// [`probation_tick`], counted.
 pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
+    probation_tick_summary_with(pool, false)
+}
+
+/// `force_due` (headless bench only — the tick endpoint's `forceProbation`)
+/// treats every undecided mandate as due NOW, so a test can exercise the
+/// probation decision without waiting out `probationDays` of wall clock.
+/// Everything else — the no-double-raise guard, the needs-an-execution
+/// deferral, the decision policy — is exactly the production path.
+pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> ProbationSummary {
     let mut summary = ProbationSummary::default();
     let mandates = personas_engine::app_master::load_mandates(pool);
     if mandates.is_empty() {
@@ -363,7 +372,7 @@ pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
             ));
             continue;
         };
-        if now < ends.with_timezone(&chrono::Utc) {
+        if !force_due && now < ends.with_timezone(&chrono::Utc) {
             continue;
         }
         summary.due += 1;
