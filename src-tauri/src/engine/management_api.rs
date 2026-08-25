@@ -3477,6 +3477,11 @@ struct KpTestSeedWorkBody {
     /// The tasks. Capped at
     /// [`crate::db::repos::dev::bench_seed::MAX_SEED_ITEMS`].
     items: Vec<crate::db::repos::dev::bench_seed::BenchSeedItem>,
+    /// Optional run salt folded verbatim into each item's dedup key, so the
+    /// same seed titles can be re-seeded by a later bench run. Titles cannot
+    /// carry this: the ideas normalizer strips bracketed run stamps.
+    #[serde(default)]
+    dedupe_salt: Option<String>,
 }
 
 /// `POST /api/kp/test/seed-work` — write bench tasks into the backlog the
@@ -3554,7 +3559,12 @@ async fn kp_test_seed_work(
     };
 
     // -- Write ---------------------------------------------------------------
-    match bench_seed::seed_bench_work(&pool, &project_id, &body.items) {
+    match bench_seed::seed_bench_work_salted(
+        &pool,
+        &project_id,
+        &body.items,
+        body.dedupe_salt.as_deref(),
+    ) {
         Ok(outcome) => {
             tracing::warn!(
                 project_id = %outcome.project_id,

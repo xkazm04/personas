@@ -321,6 +321,22 @@ pub fn seed_bench_work(
     project_id: &str,
     items: &[BenchSeedItem],
 ) -> Result<BenchSeedOutcome, AppError> {
+    seed_bench_work_salted(pool, project_id, items, None)
+}
+
+/// `salt` (the bench run's stamp) is folded VERBATIM into every item's
+/// `dedup_key`. Titles alone cannot carry run-uniqueness: the ideas
+/// normalizer collapses rewordings and strips bracketed suffixes, so
+/// `"Fix X [bench 2026-08-25T16-42]"` normalizes to the same token as
+/// `"Fix X [bench 2026-08-25T15-26]"` and the second run seeds nothing
+/// (sweep #18, personas-self: seeded 0/1). The salt lives in the KEY, not the
+/// title, so the backlog reads clean while every run stays its own.
+pub fn seed_bench_work_salted(
+    pool: &DbPool,
+    project_id: &str,
+    items: &[BenchSeedItem],
+    salt: Option<&str>,
+) -> Result<BenchSeedOutcome, AppError> {
     let errors = validate_seed_items(items);
     if !errors.is_empty() {
         return Err(AppError::Validation(errors.join("; ")));
@@ -351,7 +367,11 @@ pub fn seed_bench_work(
 
     for (index, item) in items.iter().enumerate() {
         let title = item.title.trim();
-        let dedup_key = scan_dedup_key(BENCH_SEED_SCAN_TYPE, Some(BENCH_SEED_SCOPE), title);
+        let salted_title = match salt {
+            Some(salt) if !salt.trim().is_empty() => format!("{title} salt {}", salt.trim()),
+            _ => title.to_string(),
+        };
+        let dedup_key = scan_dedup_key(BENCH_SEED_SCAN_TYPE, Some(BENCH_SEED_SCOPE), &salted_title);
         let acceptance = item.acceptance.clone();
         let trap = item.trap.clone();
 
