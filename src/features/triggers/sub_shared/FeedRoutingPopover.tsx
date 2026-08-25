@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import { Route, X } from 'lucide-react';
 
 import { listProjects } from '@/api/devTools/devTools';
-import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { useAppKeyboard, OVERLAY_DISMISS_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import * as api from '@/api/events/sharedEvents';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -60,7 +60,7 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
         return true;
       }
     },
-    { priority: 80 },
+    { priority: OVERLAY_DISMISS_PRIORITY },
   );
   useEffect(() => {
     const onDown = (e: MouseEvent) => {

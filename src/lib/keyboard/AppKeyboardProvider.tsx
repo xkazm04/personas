@@ -97,6 +97,13 @@ export function AppKeyboardProvider({ children }: { children: ReactNode }) {
  */
 export const ROUTE_DECISION_PRIORITY = 10;
 
+/**
+ * Where a transient overlay (a modal, an anchored popover) registers its own
+ * dismiss keys — BaseModal's rung on the ladder. A surface mounted over
+ * everything else must also win the keyboard over everything else.
+ */
+export const OVERLAY_DISMISS_PRIORITY = 80;
+
 export interface AppKeyboardOptions {
   enabled?: boolean;
   /** Higher runs first. See the ladder above {@link AppKeyboardProvider}. */

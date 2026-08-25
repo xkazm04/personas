@@ -3507,8 +3507,8 @@
         "$measured": "2026-08-16 @ e3c5e0d7f — 4829 .ts/.tsx walked, floor 4000, both rules run in 1.1s; two independent implementations of the global-registration population (a handler-identifier resolver and a fixed-window slicer) reconciled exactly at 90 registrations, of which 18 are useAppKeyboard calls; all 13 matches and all 5 control matches hand-read; the AppKeyboardProvider registry and eight real handlers transcribed statement-for-statement and replayed in jsdom (document beats priority 1000; one Ctrl+K fires 3 actions; exclusive:true suppresses 0 of 2 raw listeners; a priority tie inverts with mount order; a bare Enter starts a billable executePersona run and 5 key-repeats start 5). No database was copied and the live app was never touched."
       },
       "baseline": {
-        "files": 13,
-        "matches": 14
+        "files": 12,
+        "matches": 13
       },
       "floor": 4000
     },
