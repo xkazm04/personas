@@ -1,5 +1,6 @@
 // Mission Control — the overview "Mission control" tab (formerly "Home").
-// Operator's cockpit dashboard: triage / vitals / stream + fleet activity,
-// fleet optimization, and upcoming routines.
-export { default } from './DashboardHomeMissionControl';
+// PROTOTYPE IN FLIGHT: the default export is a throwaway A/B switcher between
+// the baseline cockpit and the "Consolidated" monitoring-surface direction.
+// The switcher (and this comment) is removed at consolidation.
+export { default } from './MissionControlSwitcher';
 export { default as DashboardHomeMissionControl } from './DashboardHomeMissionControl';

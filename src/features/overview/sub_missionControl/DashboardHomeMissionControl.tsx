@@ -557,7 +557,7 @@ export const TriagePane = memo(function TriagePane({
 // ---------------------------------------------------------------------------
 
 export const VitalsConsole = memo(function VitalsConsole({
-  successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points, personaName,
+  successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points, personaName, trend,
 }: {
   successRate: number;
   activeAgents: number;
@@ -566,6 +566,9 @@ export const VitalsConsole = memo(function VitalsConsole({
   pendingReviews: number;
   points: { date: string; total_executions: number; failed: number }[];
   personaName: string | null;
+  /** Optional extra readout rendered under the sparkline (e.g. the
+   *  consolidated variant's daily success-rate trend). */
+  trend?: React.ReactNode;
 }) {
   const { t, language } = useTranslation();
   const { effectiveDays, compareEnabled } = useOverviewFilterValues();
@@ -654,6 +657,7 @@ export const VitalsConsole = memo(function VitalsConsole({
             </svg>
           </div>
         )}
+        {trend}
       </div>
     </div>
   );
