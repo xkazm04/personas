@@ -143,5 +143,15 @@
   "description_editor_hint": "Strg+B für Fettdruck · Zeile mit „- “ beginnen für eine Liste",
   "decompose_brief": "Briefing aufschlüsseln",
   "decompose_brief_no_brief": "Dieser Meilenstein hat noch kein Briefing. Schreib auf, was es heißt, ihn zu liefern, und schlüssle das auf.",
-  "decompose_brief_tooltip": "Bitte Athena, das Briefing dieses Meilensteins zu lesen und die darin genannten Ziele vorzuschlagen. Es wird nichts angelegt, bis du ihre Karte bestätigst."
+  "decompose_brief_tooltip": "Bitte Athena, das Briefing dieses Meilensteins zu lesen und die darin genannten Ziele vorzuschlagen. Es wird nichts angelegt, bis du ihre Karte bestätigst.",
+  "member_kind_goal": "Ziel",
+  "certify_criteria_summary": "{met} von {total} Abschlusskriterien erfüllt — der Nachweis für jedes steht auf dem Meilenstein hinter diesem Dialog.",
+  "exit_criteria": "Abschlusskriterien",
+  "exit_criteria_aside": "abgeleitet — nie eingetippt",
+  "crit_skill_coverage": "Skill-Abdeckung",
+  "crit_skill_coverage_empty": "Der Schnitt enthält keine Kontexte, also gibt es keinen Code, den ein Skill abgedeckt haben könnte.",
+  "crit_skill_coverage_evidence": "{covered} von {total} Kontexten im Schnitt tragen frische Skill-Erkenntnisse — {skills}.",
+  "crit_skill_coverage_none": "In den letzten 30 Tagen hat kein Skill Erkenntnisse zu diesem Projekt hinterlassen, es gibt also noch nichts, wogegen sich Abdeckung messen ließe.",
+  "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+  "crit_skill_coverage_uncovered": " Nichts Aktuelles zu: {names}."
 }

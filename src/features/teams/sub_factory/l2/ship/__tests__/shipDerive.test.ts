@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { SHIP_CRITERIA, deriveCriteria } from '../shipCriteria';
-import { deriveFootprint, deriveProgress } from '../shipDerive';
-import { shipVerdict, type ExitCriterion } from '../shipModel';
+import { deriveCutTally, deriveFootprint, deriveProgress } from '../shipDerive';
+import { shipVerdict, type ExitCriterion, type ShipGoal, type ShipMember } from '../shipModel';
 
 import { T, TX, ctx, feature, goal, member, milestone } from './shipFixtures';
 
@@ -55,14 +55,14 @@ describe('deriveFootprint', () => {
     // and the collision therefore cannot hide a critical context from the verdict
     const criteria = deriveCriteria({
       row: milestone(), core, boundGoals: [goal('g1', 'Ship it')], footprint: fp,
-      monitoringWired: true, llmWired: true, t: T, tx: TX,
+      monitoringWired: true, llmWired: true, skillCoverage: [], t: T, tx: TX,
     });
     expect(shipVerdict(legacyOnly(criteria))).toBe('nogo');
   });
 });
 
 describe('deriveCriteria (behaviour snapshot)', () => {
-  const base = { row: milestone(), monitoringWired: true, llmWired: true, t: T, tx: TX };
+  const base = { row: milestone(), monitoringWired: true, llmWired: true, skillCoverage: [], t: T, tx: TX };
 
   it('pins the healthy full-coverage case', () => {
     const core = [member(feature('f1', 'login', [auth]))];
@@ -110,12 +110,12 @@ describe('deriveCriteria (behaviour snapshot)', () => {
 });
 
 describe('the registry', () => {
-  const base = { row: milestone(), monitoringWired: true, llmWired: true, t: T, tx: TX };
+  const base = { row: milestone(), monitoringWired: true, llmWired: true, skillCoverage: [], t: T, tx: TX };
 
   it('runs every registered criterion, in table order', () => {
     const criteria = deriveCriteria({ ...base, core: [], boundGoals: [], footprint: [] });
     expect(criteria.map((c) => c.id)).toEqual(SHIP_CRITERIA.map((s) => s.id));
-    expect(criteria.map((c) => c.id)).toEqual(['contexts', 'kpi', 'objective', 'sensors', 'scope-frozen']);
+    expect(criteria.map((c) => c.id)).toEqual(['contexts', 'kpi', 'objective', 'sensors', 'scope-frozen', 'skill-coverage']);
   });
 
   it('gives every criterion a resolved label and an evidence line', () => {
@@ -130,7 +130,7 @@ describe('the registry', () => {
 });
 
 describe('scope-frozen', () => {
-  const base = { monitoringWired: true, llmWired: true, t: T, tx: TX, boundGoals: [], footprint: [] };
+  const base = { monitoringWired: true, llmWired: true, skillCoverage: [], t: T, tx: TX, boundGoals: [], footprint: [] };
   const scope = (over: Parameters<typeof deriveCriteria>[0]) =>
     deriveCriteria(over).find((c) => c.id === 'scope-frozen')!;
 
@@ -180,6 +180,11 @@ describe('scope-frozen', () => {
     const all = deriveCriteria({
       ...base, row: milestone({ cutAt: '2026-01-01T00:00:00Z' }), core, footprint,
       boundGoals: [goal('g1', 'Ship v1')],
+      // Covered, so `skill-coverage` reads `go` and the only criterion left
+      // moving the verdict is the one this test is about. An unwired coverage
+      // would report `setup`, which outranks `warn`, and the test would pass or
+      // fail for a reason that has nothing to do with scope creep.
+      skillCoverage: [{ skill: 'perfect', contextIds: new Set(footprint.map((c) => c.id)) }],
     });
     expect(shipVerdict(legacyOnly(all))).toBe('go');
     expect(shipVerdict(all)).toBe('warn');
@@ -240,3 +245,146 @@ describe('deriveProgress', () => {
     expect(deriveProgress(core, [])).toBe(67);
   });
 });
+
+describe('deriveCutTally', () => {
+  // The header renders a fraction and the bar renders a percent. Before this
+  // was one function they were computed in two places over two different member
+  // sets, so a goals-only cut showed "0 of 0" beside a bar that had at least
+  // been taught to count goals. These assert they cannot diverge again.
+  it('counts both member kinds, each done by its own reading', () => {
+    const ready = member(feature('f1', 'login', [], true));
+    const notReady = member(feature('f2', 'billing', [], false));
+    const done = goal('g1', 'ship the brief');
+    const open = goal('g2', 'research it');
+    const tally = deriveCutTally(
+      [ready, notReady],
+      [{ ...done, status: 'done' }, { ...open, status: 'in-progress' }],
+    );
+    expect(tally).toEqual({ done: 2, total: 4 });
+  });
+
+  it('agrees with deriveProgress, always', () => {
+    const cases: [ShipMember[], ShipGoal[]][] = [
+      [[], []],
+      [[member(feature('f1', 'a', [], true))], []],
+      [[], [{ ...goal('g1', 'g'), status: 'done' }]],
+      [[member(feature('f1', 'a', [], false))], [{ ...goal('g1', 'g'), status: 'done' }]],
+    ];
+    for (const [core, goals] of cases) {
+      const { done, total } = deriveCutTally(core, goals);
+      const expected = total === 0 ? 0 : Math.round((done / total) * 100);
+      expect(deriveProgress(core, goals)).toBe(expected);
+    }
+  });
+
+  it('reads a goals-only cut as real work, not as nothing', () => {
+    // The shape a milestone takes the moment its brief is decomposed.
+    const goals = [
+      { ...goal('g1', 'research'), status: 'done' },
+      { ...goal('g2', 'registry'), status: 'done' },
+      { ...goal('g3', 'project type'), status: 'open' },
+    ];
+    expect(deriveCutTally([], goals)).toEqual({ done: 2, total: 3 });
+    expect(deriveProgress([], goals)).toBe(67);
+  });
+
+  it('counts every non-done status as not done, through the normalizer', () => {
+    for (const status of ['open', 'in-progress', 'awaiting_acceptance', 'blocked']) {
+      expect(deriveCutTally([], [{ ...goal('g', 'g'), status }]).done).toBe(0);
+    }
+    // and every alias of done as done
+    for (const status of ['done', 'completed', 'complete', 'skipped']) {
+      expect(deriveCutTally([], [{ ...goal('g', 'g'), status }]).done).toBe(1);
+    }
+  });
+});
+
+describe('skill-coverage', () => {
+  const base = { row: milestone(), monitoringWired: true, llmWired: true, t: T, tx: TX };
+  const crit = (over: Partial<Parameters<typeof deriveCriteria>[0]>) =>
+    deriveCriteria({ ...base, core: [], boundGoals: [], footprint: [], skillCoverage: [], ...over } as Parameters<typeof deriveCriteria>[0])
+      .find((c) => c.id === 'skill-coverage')!;
+
+  const a = ctx('c-a', 'auth', 'ok', 1);
+  const b = ctx('c-b', 'billing', 'ok', 1);
+
+  it('reports setup, not failure, when no skill has ever run', () => {
+    // An unmeasured surface is not a failing one. `setup` is the same state the
+    // sensors criterion uses for "nothing wired yet".
+    const c = crit({ footprint: [a, b], skillCoverage: [] });
+    expect(c.state).toBe('setup');
+    expect(c.done).toBe(0);
+    expect(c.total).toBe(2);
+  });
+
+  it('reports setup when the cut has no contexts to cover', () => {
+    const c = crit({ footprint: [], skillCoverage: [{ skill: 'perfect', contextIds: new Set(['c-a']) }] });
+    expect(c.state).toBe('setup');
+    expect(c.total).toBe(0);
+  });
+
+  it('goes green only when every footprint context is covered', () => {
+    const partial = crit({ footprint: [a, b], skillCoverage: [{ skill: 'perfect', contextIds: new Set(['c-a']) }] });
+    expect(partial.state).toBe('warn');
+    expect(partial.done).toBe(1);
+    expect(partial.evidence).toContain('billing');
+
+    const full = crit({ footprint: [a, b], skillCoverage: [{ skill: 'perfect', contextIds: new Set(['c-a', 'c-b']) }] });
+    expect(full.state).toBe('go');
+    expect(full.done).toBe(2);
+  });
+
+  it('counts a context once however many skills reached it', () => {
+    // The gate is "is this context covered at all", so two skills on one context
+    // is one covered context — not two. Getting this wrong would let a project
+    // with many skills and few contexts report over 100%.
+    const c = crit({
+      footprint: [a, b],
+      skillCoverage: [
+        { skill: 'perfect', contextIds: new Set(['c-a']) },
+        { skill: 'scan-sweep', contextIds: new Set(['c-a']) },
+      ],
+    });
+    expect(c.done).toBe(1);
+    expect(c.total).toBe(2);
+  });
+
+  it('does NOT count coverage of contexts outside the cut', () => {
+    // The denominator is the milestone's footprint, not the project. A skill
+    // that has swept forty other contexts has told us nothing about THIS cut,
+    // and an implementation that intersected the wrong way would read 100% on a
+    // milestone it had never looked at.
+    const c = crit({
+      footprint: [a],
+      skillCoverage: [{ skill: 'perfect', contextIds: new Set(['c-x', 'c-y', 'c-z']) }],
+    });
+    expect(c.done).toBe(0);
+    expect(c.state).toBe('warn');
+  });
+
+  it('names each skill against THIS footprint, not against the project', () => {
+    const c = crit({
+      footprint: [a, b],
+      skillCoverage: [
+        { skill: 'perfect', contextIds: new Set(['c-a', 'c-b', 'c-elsewhere']) },
+        { skill: 'scan-sweep', contextIds: new Set(['c-a']) },
+      ],
+    });
+    // perfect reaches both footprint contexts — 2/2, never 3/2
+    expect(c.evidence).toContain('perfect 2/2');
+    expect(c.evidence).toContain('scan-sweep 1/2');
+  });
+
+  it('leaves a skill that reached nothing in this cut out of the breakdown', () => {
+    const c = crit({
+      footprint: [a],
+      skillCoverage: [
+        { skill: 'perfect', contextIds: new Set(['c-a']) },
+        { skill: 'uat', contextIds: new Set(['c-elsewhere']) },
+      ],
+    });
+    expect(c.evidence).toContain('perfect 1/1');
+    expect(c.evidence).not.toContain('uat');
+  });
+});
+

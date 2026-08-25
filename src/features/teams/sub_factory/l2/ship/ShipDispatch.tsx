@@ -72,6 +72,30 @@ export function buildCriterionPrompt(vm: ShipMilestoneVM, c: ExitCriterion, proj
       'Investigate the recent errors in these areas (check Sentry/log traces where available), identify the highest-impact root causes, and fix them. Keep changes surgical and scoped to these contexts. Run the relevant tests before finishing, and summarize what was fixed and what remains.',
     ].join('\n');
   }
+  if (c.id === 'skill-coverage') {
+    const uncovered = vm.footprint.filter((x) => !vm.skillCoverage.some((s) => s.contextIds.has(x.id)));
+    if (uncovered.length === 0) return null;
+    // Which skill to run is the OPERATOR's call, not this function's. Naming one
+    // here would make the dispatch prompt assert that /perfect (say) is the
+    // right instrument for whatever this milestone touches, which is a judgement
+    // nothing in the data supports. The prompt states the gap and the evidence
+    // rule; the session picks, and the consent surface shows the prompt before
+    // anything spawns.
+    const ran = vm.skillCoverage.map((s) => s.skill);
+    return [
+      `You are working in the "${project.name}" repository.`,
+      `Milestone "${vm.name}"${vm.goal ? ` (${vm.goal})` : ''} has contexts in its cut that no skill has looked at in the last 30 days:`,
+      uncovered.map((x) => `- ${x.name}`).join('\n'),
+      '',
+      ran.length > 0
+        ? `Skills that HAVE left insight on this project recently: ${ran.join(', ')}. Prefer continuing one of those over introducing a new one — coverage is only comparable across contexts if the same instrument produced it.`
+        : 'No skill has left insight on this project in the last 30 days, so there is no established instrument to continue. Say which one you chose and why before you run it.',
+      '',
+      'Run the appropriate scan skill over those contexts. What makes this count as coverage is not that the skill RAN — it is that it left durable, context-attributed insight behind, so the next session starts from what this one learned rather than re-deriving it.',
+      '',
+      'Two things to be honest about in your summary: which contexts you actually covered (not which you intended to), and any context where you looked and concluded there was nothing worth recording — that is a real finding and it is different from not having looked.',
+    ].join('\n');
+  }
   if (c.id === 'kpi') {
     const uncovered = vm.footprint.filter((x) => x.kpis === 0);
     if (uncovered.length === 0) return null;

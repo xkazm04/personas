@@ -18,8 +18,10 @@ import type { FactoryL2Data } from '../factoryL2Data';
 import { buildShipAskPrompt, buildShipDecomposePrompt } from './shipAthena';
 import { publishShipReadiness } from './shipReadinessPublish';
 import { ShipCertifyModal } from './ShipCertifyModal';
+import { ShipCriteriaList } from './ShipCriteriaPanel';
 import { ShipControlBar } from './ShipControlBar';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
+import { goalStatusLabel, goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
 import { ShipRunSummary, useShipMilestoneRun } from './ShipMilestoneRun';
 import { ShipDescriptionField, ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
@@ -27,6 +29,7 @@ import {
   BUCKET_HUE, bucketLabel,
   type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
+import { deriveCutTally } from './shipDerive';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerObjectiveHeader, LedgerRow } from './shipRows';
 import { ShipVelocityNote } from './ShipVelocityNote';
 import { useShipData, type ShipData } from './useShipData';
@@ -129,13 +132,20 @@ function Workspace({ vm, ship, editable, t, tx }: {
     ...vm.members.filter((mm) => mm.bucket !== 'core').map((mm) => ({ f: mm.feature, bucket: mm.bucket as ScopeBucket | null, afterCut: mm.afterCut })),
     ...ship.features.filter((f) => !memberIds.has(f.id)).map((f) => ({ f, bucket: null, afterCut: false })),
   ];
-  const coreReady = core.filter((mm) => mm.feature.ready).length;
+  // The cut is BOTH kinds. It used to render `members` alone — features — so a
+  // milestone whose whole cut was goals showed an empty ledger and a 0/0 count
+  // while carrying real, tracked work. Goals were visible only in the composer's
+  // rail, which is a place you go to EDIT scope, not the place you read it.
+  const coreGoals = vm.goalMembers.filter((gm) => gm.bucket === 'core');
+  // ONE derivation for the fraction and the percentage — see `deriveCutTally`
+  // for the disagreement that made it a shared function.
+  const { done: coreReady, total: cutSize } = deriveCutTally(core, coreGoals.map((gm) => gm.goal));
   // An empty ledger is not worth a panel: a header, a count of zero and a card
   // saying nothing is there costs more attention than it returns. Each side
   // hides when it holds nothing. The one exception is a milestone with NOTHING
   // on either side, where hiding both would leave a workspace with no way
   // forward: there, the cut keeps its empty state as the single call to action.
-  const showCut = core.length > 0 || outside.length === 0;
+  const showCut = cutSize > 0 || outside.length === 0;
   const showOutside = outside.length > 0;
 
   return (
@@ -147,7 +157,7 @@ function Workspace({ vm, ship, editable, t, tx }: {
           milestone with no identity on screen at that exact moment is worse
           than an empty list. */}
       <LedgerObjectiveHeader
-        count={tx(t.ship.in_the_cut_count, { done: coreReady, total: core.length })}
+        count={tx(t.ship.in_the_cut_count, { done: coreReady, total: cutSize })}
         objective={(
           <ShipGoalField
             name={vm.name}
@@ -185,7 +195,12 @@ function Workspace({ vm, ship, editable, t, tx }: {
               // two places, never merged into one score.
               footer={(
                 <ShipItemAnnotations
-                  member={mm}
+                  kind="use_case"
+                  id={mm.feature.id}
+                  name={mm.feature.name}
+                  ready={mm.feature.ready}
+                  description={mm.description}
+                  rating={mm.rating}
                   editable={editable}
                   onPatch={(patch) => ship.setItem(vm.id, 'use_case', mm.feature.id, mm.bucket, patch)}
                 />
@@ -199,7 +214,52 @@ function Workspace({ vm, ship, editable, t, tx }: {
               )}
             />
           ))}
-          {core.length === 0 && (
+          {coreGoals.map((gm, i) => {
+            const meta = goalStatusMeta(gm.goal.status);
+            return (
+              <LedgerRow
+                key={gm.goal.id}
+                index={core.length + i}
+                name={gm.goal.name}
+                contexts={gm.goal.contexts}
+                // A goal's right edge carries its STATUS, not a readiness verdict.
+                // Readiness is derived from KPI coverage and context health; a goal
+                // has neither, and rendering a green "Ready" next to one would be
+                // an automation reading nobody took.
+                stateLabel={goalStatusLabel(t.plugins.dev_lifecycle, gm.goal.status)}
+                stateHue={meta.map.fill}
+                blocker={null}
+                meta={(
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    <span className="typo-caption" style={{ color: INK.teal }}>{t.ship.member_kind_goal}</span>
+                    {gm.afterCut && (
+                      <span className="typo-caption" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
+                    )}
+                  </span>
+                )}
+                footer={(
+                  <ShipItemAnnotations
+                    kind="goal"
+                    id={gm.goal.id}
+                    name={gm.goal.name}
+                    ready={null}
+                    description={gm.description}
+                    rating={gm.rating}
+                    editable={editable}
+                    onPatch={(patch) => ship.setItem(vm.id, 'goal', gm.goal.id, gm.bucket, patch)}
+                  />
+                )}
+                actions={editable && (
+                  <>
+                    {(['later', 'never'] as const).map((b) => (
+                      <BucketBtn key={b} label={bucketLabel(t, b)} onClick={() => ship.setItem(vm.id, 'goal', gm.goal.id, b)} />
+                    ))}
+                  </>
+                )}
+              />
+            );
+          })}
+          {cutSize === 0 && (
             <LedgerEmpty testid="ship-cut-empty">
               {ship.features.length === 0 ? t.ship.outside_empty_no_features : t.ship.cut_empty_planner}
             </LedgerEmpty>
@@ -208,6 +268,14 @@ function Workspace({ vm, ship, editable, t, tx }: {
       </div>
       </>
       )}
+
+      {/* The exit criteria, beside the cut they are measured against. They lived
+          behind the certify dialog, which made the only complete reading of a
+          milestone reachable through the button that also commits it. */}
+      <div className="mb-5">
+        <LedgerHeader title={t.ship.exit_criteria} count={vm.criteria.filter((c) => c.state === 'go').length} aside={t.ship.exit_criteria_aside} muted />
+        <ShipCriteriaList vm={vm} project={ship.project} />
+      </div>
 
       {showOutside && (
       <>
@@ -393,7 +461,6 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
       {certifying && (
         <ShipCertifyModal
           vm={vm}
-          project={data.project}
           onCertify={() => ship.setStatus(vm.id, vm.status === 'planned' ? 'active' : 'shipped')}
           onClose={() => setCertifying(false)}
         />

@@ -72,7 +72,13 @@ describe('deriveDuality', () => {
 // The load-bearing guarantee of this work package: the rating is a second
 // opinion, not a gate. If either of these ever fails, the design was violated.
 describe('ratings do not move the verdict or the progress', () => {
-  const base = { row: milestone(), monitoringWired: true, llmWired: true, t: T, tx: TX };
+  // `auth` is covered so `skill-coverage` reads `go`: this file's subject is
+  // whether RATINGS move the verdict, and an unwired criterion reporting `setup`
+  // would move it for an unrelated reason.
+  const base = {
+    row: milestone(), monitoringWired: true, llmWired: true, t: T, tx: TX,
+    skillCoverage: [{ skill: 'perfect', contextIds: new Set(['c-auth']) }],
+  };
 
   const criteriaFor = (rating: number | null) => {
     const core = [member(feature('f1', 'login', [auth]), 'core', false, { rating, description: 'note' })];

@@ -143,5 +143,15 @@
   "description_editor_hint": "Ctrl+B 加粗 · 行首输入“- ”创建列表",
   "decompose_brief": "拆解简报",
   "decompose_brief_no_brief": "这个里程碑还没有简报。先写清楚交付它意味着什么，再来拆解。",
-  "decompose_brief_tooltip": "让 Athena 读这个里程碑的简报，并提出其中点名的目标。在你确认她的卡片之前，不会创建任何东西。"
+  "decompose_brief_tooltip": "让 Athena 读这个里程碑的简报，并提出其中点名的目标。在你确认她的卡片之前，不会创建任何东西。",
+  "member_kind_goal": "目标",
+  "certify_criteria_summary": "已满足 {total} 项发布标准中的 {met} 项——每项的依据都显示在此对话框后的里程碑上。",
+  "exit_criteria": "发布标准",
+  "exit_criteria_aside": "派生生成，从不手工填写",
+  "crit_skill_coverage": "技能覆盖",
+  "crit_skill_coverage_empty": "该切片没有上下文，因此没有技能可以覆盖的代码。",
+  "crit_skill_coverage_evidence": "切片中 {total} 个上下文里有 {covered} 个带有近期技能洞察 —— {skills}。",
+  "crit_skill_coverage_none": "过去 30 天内没有任何技能在此项目留下洞察，因此尚无可用于衡量覆盖的依据。",
+  "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+  "crit_skill_coverage_uncovered": " 以下没有近期记录：{names}。"
 }

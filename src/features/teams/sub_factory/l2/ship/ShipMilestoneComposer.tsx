@@ -111,7 +111,12 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                 meta={m.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
                 footer={(
                   <ShipItemAnnotations
-                    member={m}
+                    kind="use_case"
+                    id={m.feature.id}
+                    name={m.feature.name}
+                    ready={m.feature.ready}
+                    description={m.description}
+                    rating={m.rating}
                     editable={vm.status !== 'shipped'}
                     onPatch={(patch) => ship.setItem(vm.id, 'use_case', m.feature.id, m.bucket, patch)}
                   />

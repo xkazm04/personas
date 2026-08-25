@@ -1664,6 +1664,7 @@ pub fn run() {
             commands::infrastructure::memory_ledger::dev_tools_memory_import_vault,
             commands::infrastructure::memory_ledger::dev_tools_memory_skill_coverage,
             commands::infrastructure::memory_ledger::dev_tools_memory_skill_contexts,
+            commands::infrastructure::memory_ledger::dev_tools_memory_skill_context_pairs,
             commands::infrastructure::kpi_scan::dev_tools_cancel_kpi_scan,
             commands::infrastructure::kpi_scan::dev_tools_get_kpi_scan_status,
             commands::infrastructure::llm_spend::llm_spend_dashboard,

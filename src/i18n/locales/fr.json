@@ -20518,6 +20518,16 @@
     "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste",
     "decompose_brief": "Décomposer le brief",
     "decompose_brief_no_brief": "Ce jalon n’a pas encore de brief. Écris ce que le livrer signifie, puis décompose-le.",
-    "decompose_brief_tooltip": "Demande à Athena de lire le brief de ce jalon et de proposer les objectifs qu’il nomme. Rien n’est créé tant que tu n’as pas validé sa carte."
+    "decompose_brief_tooltip": "Demande à Athena de lire le brief de ce jalon et de proposer les objectifs qu’il nomme. Rien n’est créé tant que tu n’as pas validé sa carte.",
+    "member_kind_goal": "Objectif",
+    "certify_criteria_summary": "{met} sur {total} critères de sortie remplis — les preuves de chacun figurent sur le jalon derrière cette boîte de dialogue.",
+    "exit_criteria": "Critères de sortie",
+    "exit_criteria_aside": "dérivés — jamais saisis",
+    "crit_skill_coverage": "Couverture par les compétences",
+    "crit_skill_coverage_empty": "Le lot ne contient aucun contexte, il n'y a donc pas de code qu'une compétence aurait pu couvrir.",
+    "crit_skill_coverage_evidence": "{covered} des {total} contextes du lot portent des informations récentes issues des compétences — {skills}.",
+    "crit_skill_coverage_none": "Aucune compétence n'a laissé d'information sur ce projet au cours des 30 derniers jours ; il n'y a donc encore rien à quoi mesurer la couverture.",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " Rien de récent sur : {names}."
   }
 }

@@ -20518,6 +20518,16 @@
     "description_editor_hint": "Ctrl+B 굵게 · 줄 앞에 “- ” 입력하면 목록",
     "decompose_brief": "브리프 분해",
     "decompose_brief_no_brief": "이 마일스톤에는 아직 브리프가 없습니다. 출시가 무엇을 뜻하는지 쓴 다음 그것을 분해하세요.",
-    "decompose_brief_tooltip": "Athena에게 이 마일스톤의 브리프를 읽고 거기 적힌 목표를 제안하도록 요청합니다. 카드를 확인하기 전까지는 아무것도 생성되지 않습니다."
+    "decompose_brief_tooltip": "Athena에게 이 마일스톤의 브리프를 읽고 거기 적힌 목표를 제안하도록 요청합니다. 카드를 확인하기 전까지는 아무것도 생성되지 않습니다.",
+    "member_kind_goal": "목표",
+    "certify_criteria_summary": "종료 기준 {total}개 중 {met}개 충족 — 각 근거는 이 대화 상자 뒤의 마일스톤에 있습니다.",
+    "exit_criteria": "종료 기준",
+    "exit_criteria_aside": "파생됨 — 직접 입력하지 않음",
+    "crit_skill_coverage": "스킬 커버리지",
+    "crit_skill_coverage_empty": "컷에 컨텍스트가 없어 스킬이 다룰 코드가 없습니다.",
+    "crit_skill_coverage_evidence": "컷에 포함된 컨텍스트 {total}개 중 {covered}개에 최신 스킬 인사이트가 있습니다 — {skills}.",
+    "crit_skill_coverage_none": "지난 30일 동안 이 프로젝트에 인사이트를 남긴 스킬이 없어 아직 커버리지를 측정할 기준이 없습니다.",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " 최근 정보 없음: {names}."
   }
 }
