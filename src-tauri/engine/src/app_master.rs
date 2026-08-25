@@ -215,6 +215,13 @@ pub struct MandateRecord {
     /// `tenure.reviewCadenceDays`.
     #[serde(default)]
     pub review_cadence_days: i64,
+    /// `budget.monthlyUsd` from the hire's AppMasterSpec — the hire's own
+    /// monthly ceiling, enforced pre-dispatch by the overnight budget governor
+    /// against the HOLDER's settled month spend (2026-08-25: a $5 mandate was
+    /// invisible to the governor; only the app-wide ceiling was consulted).
+    /// Additive: legacy rows carry None = no per-mandate ceiling.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget_monthly_usd: Option<f64>,
     /// `tenure.retireCriteria`, verbatim.
     #[serde(default)]
     pub retire_criteria: Vec<String>,
@@ -1610,6 +1617,7 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
             probation_ends_at: "2026-09-22T10:00:00Z".into(),
             hired_at: "2026-08-23T10:00:00+00:00".into(),
             review_cadence_days: 30,
+            budget_monthly_usd: None,
             retire_criteria: vec!["no merged proposal in two windows".into()],
             probation_decided_at: None,
             probation_decision: None,
@@ -1666,6 +1674,7 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
             probation_ends_at: "2026-09-30T00:00:00+00:00".into(),
             hired_at: at.into(),
             review_cadence_days: 30,
+            budget_monthly_usd: None,
             retire_criteria: vec![],
             probation_decided_at: None,
             probation_decision: None,

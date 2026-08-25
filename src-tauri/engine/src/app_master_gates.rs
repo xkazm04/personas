@@ -1638,6 +1638,7 @@ mod tests {
             probation_ends_at: chrono::Utc::now().to_rfc3339(),
             hired_at: chrono::Utc::now().to_rfc3339(),
             review_cadence_days: 30,
+            budget_monthly_usd: None,
             retire_criteria: vec![],
             probation_decided_at: None,
             probation_decision: None,

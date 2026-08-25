@@ -410,6 +410,19 @@ async fn run_project_night(
     let mut projected = 0.0f64;
     let month_spend = month_spend_usd(pool);
     let ceiling = monthly_ceiling_usd(pool);
+    // The App master's OWN monthly budget (mandate `budget.monthlyUsd`), if the
+    // project has a hire. First live tight-budget night (2026-08-25): a $5
+    // mandate sailed straight past the governor because only the app-wide
+    // ceiling was consulted — the ledger row showed `ceilingUsd: null` while
+    // the project had $28 of month spend. The mandate ceiling is checked
+    // against the HOLDER's settled month spend (per-persona rollup), never the
+    // project aggregate — two ceilings, two denominators.
+    let app_master_budget: Option<(String, f64)> =
+        personas_engine::app_master::get_mandate(pool, project_id).and_then(|r| {
+            r.budget_monthly_usd
+                .filter(|b| *b > 0.0)
+                .map(|b| (r.persona_id.clone(), b))
+        });
 
     // App master mandate (P4) — the SECOND gate, independent of autopilot mode.
     // Dispatching authors a change, so it needs rung 2; a project whose App
@@ -450,70 +463,112 @@ async fn run_project_night(
                 blocked_reason = Some("no free fleet live slots tonight".into());
             } else {
                 projected = capacity as f64 * EST_COST_PER_SESSION_USD;
-                match budget_verdict(month_spend, ceiling, projected) {
-                    BudgetVerdict::Block { overshoot_usd } => {
-                        // HARD refusal + LOUD degrade full → suggest. Durable:
-                        // the same setting the cockpit reads, so the UI shows it.
-                        degraded = true;
-                        let key = autopilot::setting_key(project_id);
-                        if let Err(e) = crate::db::repos::core::settings::set(
-                            pool,
-                            &key,
-                            AutopilotMode::Suggest.as_str(),
-                        ) {
-                            tracing::error!(error = %e, project_id, "overnight: failed to persist full→suggest degrade");
+                let mandate_block = app_master_budget.as_ref().and_then(|(persona_id, budget)| {
+                    let holder_spend = crate::db::repos::execution::executions::get_monthly_rollup(
+                        pool, persona_id,
+                    )
+                    .map(|r| r.cost_usd)
+                    .unwrap_or(0.0);
+                    match budget_verdict(holder_spend, Some(*budget), projected) {
+                        BudgetVerdict::Block { overshoot_usd } => {
+                            Some((holder_spend, *budget, overshoot_usd))
                         }
-                        let msg = format!(
+                        _ => None,
+                    }
+                });
+                if let Some((holder_spend, budget, overshoot_usd)) = mandate_block {
+                    // Same degrade discipline as the app-wide ceiling below —
+                    // HARD refusal + LOUD, durable full → suggest.
+                    degraded = true;
+                    let key = autopilot::setting_key(project_id);
+                    if let Err(e) = crate::db::repos::core::settings::set(
+                        pool,
+                        &key,
+                        AutopilotMode::Suggest.as_str(),
+                    ) {
+                        tracing::error!(error = %e, project_id, "overnight: failed to persist full→suggest degrade");
+                    }
+                    let msg = format!(
+                        "App master budget refused tonight's dispatch for '{}': projected ${projected:.2}                          would cross the hire's monthly budget (${holder_spend:.2} settled by the holder,                          budget ${budget:.2}, overshoot ${overshoot_usd:.2}). Autopilot degraded full → suggest.",
+                        project.name,
+                    );
+                    tracing::warn!(project_id, "overnight: {msg}");
+                    crate::notifications::send(
+                        app,
+                        "Overnight engine: App master budget refused",
+                        &msg,
+                    );
+                    blocked_reason = Some(msg);
+                } else {
+                    match budget_verdict(month_spend, ceiling, projected) {
+                        BudgetVerdict::Block { overshoot_usd } => {
+                            // HARD refusal + LOUD degrade full → suggest. Durable:
+                            // the same setting the cockpit reads, so the UI shows it.
+                            degraded = true;
+                            let key = autopilot::setting_key(project_id);
+                            if let Err(e) = crate::db::repos::core::settings::set(
+                                pool,
+                                &key,
+                                AutopilotMode::Suggest.as_str(),
+                            ) {
+                                tracing::error!(error = %e, project_id, "overnight: failed to persist full→suggest degrade");
+                            }
+                            let msg = format!(
                             "Budget governor refused tonight's dispatch for '{}': projected ${projected:.2} \
                              would cross the monthly ceiling (${month_spend:.2} spent, ceiling ${:.2}, \
                              overshoot ${overshoot_usd:.2}). Autopilot degraded full → suggest.",
                             project.name,
                             ceiling.unwrap_or(0.0),
                         );
-                        tracing::warn!(project_id, "overnight: {msg}");
-                        crate::notifications::send(app, "Overnight engine: budget refused", &msg);
-                        blocked_reason = Some(msg);
-                    }
-                    BudgetVerdict::Allow => {
-                        let ids: Vec<String> = triage
-                            .accepted_idea_ids
-                            .iter()
-                            .take(capacity)
-                            .cloned()
-                            .collect();
-                        // Tag every session this night spawns as machine-
-                        // dispatched, using the run vocabulary the fleet
-                        // already stamps at spawn (`run_id`/`run_label`,
-                        // persisted with the row). That label is what lets the
-                        // fleet sweeper finish an unanswered question instead
-                        // of parking it forever — see
-                        // `personas_engine::unattended::is_overnight_run`.
-                        //
-                        // The active run is process-global, so `begin_run`
-                        // technically closes an operator's open run. At 03:00
-                        // on an unattended tick there is nobody holding one,
-                        // and `claim_run_for_spawn` would have opened an
-                        // implicit run for this burst regardless — the only
-                        // thing added is the label.
-                        crate::commands::fleet::run::begin_run(Some(
-                            personas_engine::unattended::overnight_run_label(&project.name),
-                        ));
-                        let outcome =
-                            dispatch_ideas_core(pool, app, ids, "fleet", None, true).await;
-                        crate::commands::fleet::run::end_run();
-                        match outcome {
-                            Ok(result) => {
-                                skipped = result.skipped.len();
-                                for d in &result.dispatched {
-                                    if let Some(sid) = &d.session_id {
-                                        session_ids.push(sid.clone());
+                            tracing::warn!(project_id, "overnight: {msg}");
+                            crate::notifications::send(
+                                app,
+                                "Overnight engine: budget refused",
+                                &msg,
+                            );
+                            blocked_reason = Some(msg);
+                        }
+                        BudgetVerdict::Allow => {
+                            let ids: Vec<String> = triage
+                                .accepted_idea_ids
+                                .iter()
+                                .take(capacity)
+                                .cloned()
+                                .collect();
+                            // Tag every session this night spawns as machine-
+                            // dispatched, using the run vocabulary the fleet
+                            // already stamps at spawn (`run_id`/`run_label`,
+                            // persisted with the row). That label is what lets the
+                            // fleet sweeper finish an unanswered question instead
+                            // of parking it forever — see
+                            // `personas_engine::unattended::is_overnight_run`.
+                            //
+                            // The active run is process-global, so `begin_run`
+                            // technically closes an operator's open run. At 03:00
+                            // on an unattended tick there is nobody holding one,
+                            // and `claim_run_for_spawn` would have opened an
+                            // implicit run for this burst regardless — the only
+                            // thing added is the label.
+                            crate::commands::fleet::run::begin_run(Some(
+                                personas_engine::unattended::overnight_run_label(&project.name),
+                            ));
+                            let outcome =
+                                dispatch_ideas_core(pool, app, ids, "fleet", None, true).await;
+                            crate::commands::fleet::run::end_run();
+                            match outcome {
+                                Ok(result) => {
+                                    skipped = result.skipped.len();
+                                    for d in &result.dispatched {
+                                        if let Some(sid) = &d.session_id {
+                                            session_ids.push(sid.clone());
+                                        }
                                     }
+                                    dispatched = session_ids.len();
                                 }
-                                dispatched = session_ids.len();
-                            }
-                            Err(e) => {
-                                blocked_reason = Some(format!("dispatch failed: {e}"));
-                                tracing::warn!(project_id, error = %e, "overnight: dispatch failed");
+                                Err(e) => {
+                                    blocked_reason = Some(format!("dispatch failed: {e}"));
+                                    tracing::warn!(project_id, error = %e, "overnight: dispatch failed");
+                                }
                             }
                         }
                     }
@@ -537,7 +592,13 @@ async fn run_project_night(
         degraded,
         projected,
         month_spend,
-        ceiling,
+        // Effective ceiling for the ledger: the tighter of the app-wide
+        // ceiling and the mandate budget, so the row never reads `null` while
+        // a hire's budget was in force.
+        match (ceiling, app_master_budget.as_ref().map(|(_, b)| *b)) {
+            (Some(g), Some(m)) => Some(g.min(m)),
+            (g, m) => g.or(m),
+        },
         &session_ids,
     )?;
 

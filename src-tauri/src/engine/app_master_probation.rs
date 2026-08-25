@@ -842,6 +842,7 @@ mod tests {
             probation_ends_at: "2026-09-22T00:00:00+00:00".into(),
             hired_at: "2026-08-23T00:00:00+00:00".into(),
             review_cadence_days: 30,
+            budget_monthly_usd: None,
             retire_criteria: vec!["no merged proposal in two windows".into()],
             probation_decided_at: None,
             probation_decision: None,

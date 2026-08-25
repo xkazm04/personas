@@ -911,6 +911,11 @@ fn persist_mandate(
         // (`personas_engine::app_master::tenure_window`).
         hired_at: approved_at.to_rfc3339(),
         review_cadence_days,
+        // The hire's own monthly ceiling — enforced by the overnight governor.
+        budget_monthly_usd: am
+            .pointer("/budget/monthlyUsd")
+            .and_then(|v| v.as_f64())
+            .filter(|b| *b > 0.0),
         retire_criteria,
         probation_decided_at: None,
         probation_decision: None,
