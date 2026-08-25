@@ -197,7 +197,7 @@
   "env_filter_label": "Môi trường",
   "env_labels": {
     "local": "Cục bộ",
-    "production": "Production",
+    "production": "Sản xuất",
     "test": "Kiểm thử"
   },
   "env_no_sim_series": "Chưa có chuỗi dữ liệu mô phỏng nào trong môi trường này — hãy chạy mô phỏng để lấp đầy.",

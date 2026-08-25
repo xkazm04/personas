@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "उच्च",
     "medium": "मध्यम",
-    "low": "Low"
+    "low": "कम"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "कम",
     "medium": "मध्यम",
     "high": "उच्च"
   },

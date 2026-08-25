@@ -1,7 +1,7 @@
 {
   "execution": {
-    "queued": "En Cola",
-    "running": "En Ejecución",
+    "queued": "En cola",
+    "running": "En ejecución",
     "completed": "Completado",
     "failed": "Fallido",
     "cancelled": "Cancelado",
@@ -16,10 +16,10 @@
   },
   "automation": {
     "pending": "Pendiente",
-    "running": "En Ejecución",
+    "running": "En ejecución",
     "completed": "Completado",
     "failed": "Fallido",
-    "timeout": "Tiempo Agotado"
+    "timeout": "Tiempo agotado"
   },
   "severity": {
     "info": "Info",
@@ -36,7 +36,7 @@
   },
   "healing_status": {
     "open": "Abierto",
-    "auto_fixed": "Corregido Automáticamente",
+    "auto_fixed": "Corregido automáticamente",
     "acknowledged": "Reconocido",
     "resolved": "Resuelto"
   },
@@ -44,14 +44,14 @@
     "config": "Configuración",
     "auth": "Autenticación",
     "network": "Red",
-    "timeout": "Tiempo Agotado",
+    "timeout": "Tiempo agotado",
     "quota": "Cuota"
   },
   "connector_status": {
     "ready": "Listo",
-    "untested": "Sin Probar",
+    "untested": "Sin probar",
     "failed": "Fallido",
-    "no_credential": "Sin Credencial",
+    "no_credential": "Sin credencial",
     "testing": "Probando"
   },
   "task_phase": {
@@ -72,18 +72,18 @@
   },
   "test": {
     "generating": "Generando",
-    "running": "En Ejecución",
+    "running": "En ejecución",
     "completed": "Completado",
     "failed": "Fallido",
     "pending": "Pendiente"
   },
   "dev": {
     "open": "Abierto",
-    "in_progress": "En Progreso",
+    "in_progress": "En progreso",
     "completed": "Completado",
     "blocked": "Bloqueado",
-    "queued": "En Cola",
-    "running": "En Ejecución",
+    "queued": "En cola",
+    "running": "En ejecución",
     "failed": "Fallido"
   },
   "circuit_breaker": {
@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "Alta",
     "medium": "Media",
-    "low": "Low"
+    "low": "Baja"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "bajo",
     "medium": "medio",
     "high": "alto"
   },

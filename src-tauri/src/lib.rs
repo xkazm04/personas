@@ -108,6 +108,12 @@ pub fn run() {
 
     tracing::info!("Starting Personas Desktop v{}", env!("CARGO_PKG_VERSION"));
 
+    // Resolve and announce the headless bridge test mode BEFORE anything can
+    // read the flag. The gate latches on this call, so an env var set later in
+    // the process (a plugin, a test helper) cannot turn it on.
+    // docs/architecture/cloud-integration-bridge.md §13.
+    personas_engine::headless::warn_at_boot();
+
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
@@ -1127,6 +1133,7 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_install_system,
             commands::infrastructure::skill_files::skill_files_install_preview,
             commands::infrastructure::skill_files::skill_files_stamp_provenance,
+            commands::infrastructure::skill_files::skill_files_registry_root,
             // Skill usage telemetry (Brainiac-adoption P1)
             commands::infrastructure::skill_usage::skill_usage_scan,
             commands::infrastructure::skill_usage::skill_usage_overview,

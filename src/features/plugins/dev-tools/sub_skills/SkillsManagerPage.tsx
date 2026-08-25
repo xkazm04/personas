@@ -37,6 +37,7 @@ const SkillsOverviewPanel = lazy(() => import('./SkillsOverviewPanel').then((m) 
 const SkillsAnalyticsTab = lazy(() => import('./analytics/SkillsAnalyticsTab').then((m) => ({ default: m.SkillsAnalyticsTab })));
 const RegistryTab = lazy(() => import('./registry/RegistryTab').then((m) => ({ default: m.RegistryTab })));
 const TraceTab = lazy(() => import('./trace/TraceTab').then((m) => ({ default: m.TraceTab })));
+const SkillLaunchTab = lazy(() => import('./launch/SkillLaunchTab').then((m) => ({ default: m.SkillLaunchTab })));
 
 // Row models moved to `skillsManagerRows` (the hook that builds them) and are
 // re-exported here so existing `from '../SkillsManagerPage'` type imports keep
@@ -64,7 +65,7 @@ export default function SkillsManagerPage() {
 
 function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   const { t } = useTranslation();
-  const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry' | 'trace'>('overview');
+  const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry' | 'launch' | 'trace'>('overview');
   // Registry + Analytics share the page's info-modal slot; Overview owns its own
   // (it lives inside SkillsOverviewPanel, which the canvas modal mounts too).
   const [infoSkill, setInfoSkill] = useState<string | null>(null);
@@ -81,11 +82,12 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
           tabs={[
             { id: 'overview', label: t.plugins.dev_tools.skills_tab_overview },
             { id: 'analytics', label: t.plugins.dev_tools.skills_tab_analytics },
-            { id: 'registry', label: 'Registry' },
+            { id: 'registry', label: t.plugins.dev_tools.skills_tab_registry },
+            { id: 'launch', label: t.plugins.dev_tools.skills_tab_launch },
             { id: 'trace', label: t.plugins.dev_tools.skills_tab_trace },
           ]}
           activeTab={pageTab}
-          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics' | 'registry' | 'trace')}
+          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics' | 'registry' | 'launch' | 'trace')}
           variant="segment"
           size="sm"
           fullWidth={false}
@@ -95,7 +97,9 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
 
       <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
         <Suspense fallback={<RouteChunkSkeleton />}>
-          {pageTab === 'trace' ? (
+          {pageTab === 'launch' ? (
+            <SkillLaunchTab />
+          ) : pageTab === 'trace' ? (
             <TraceTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
           ) : pageTab === 'registry' ? (
             <RegistryTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />

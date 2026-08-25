@@ -92,6 +92,10 @@ pub struct SkillEntry {
     /// the UI renders it as an implicit "1.0"). Malformed values normalize
     /// to `None` like the other closed-set frontmatter fields.
     pub version: Option<String>,
+    /// Frontmatter `argument-hint:` — the skill's declared invocation syntax
+    /// (e.g. "[context-or-path] [--budget <n>]"). `None` = no declared
+    /// arguments (or a pre-standard skill); consumers render "none declared".
+    pub argument_hint: Option<String>,
 }
 
 /// On-disk provenance sidecar ([`PROVENANCE_FILE`]). Internal — not exported to
@@ -389,6 +393,38 @@ pub(crate) fn classify_skill_entry(entry: &std::fs::DirEntry) -> SkillEntryKind 
     }
 }
 
+/// Resolve a TOP-LEVEL skills-dir entry that is a symlink/junction, accepting
+/// it only when it points at a real skill directory: the target exists, is a
+/// directory, and holds a readable `SKILL.md` (or lowercase `skill.md`).
+/// Broken links and links to non-skill targets return `None` (skipped).
+///
+/// This is the one deliberate exception to `classify_skill_entry`'s
+/// reject-all-links rule: a registry wires its `skills/` lane into a project
+/// via links (`.claude/skills/<name>` -> `<registry>/skills/.../<name>`), and
+/// rejecting those made every linked skill invisible to `skill_files_list`.
+/// Content *inside* a skill tree still goes through `classify_skill_entry`
+/// and keeps rejecting links, so the containment rule for skill content is
+/// unchanged. On Windows, junctions surface as symlinks from
+/// `DirEntry::file_type`, and `canonicalize` resolves both.
+fn resolve_linked_skill_dir(link: &Path) -> Option<PathBuf> {
+    let target = std::fs::canonicalize(link).ok()?;
+    if !std::fs::metadata(&target).ok()?.is_dir() {
+        return None;
+    }
+    let has_skill_md = ["SKILL.md", "skill.md"].iter().any(|name| {
+        std::fs::File::open(target.join(name))
+            .ok()
+            .and_then(|f| f.metadata().ok())
+            .map(|m| m.is_file())
+            .unwrap_or(false)
+    });
+    if has_skill_md {
+        Some(target)
+    } else {
+        None
+    }
+}
+
 /// Recursively copy `src` into `dst`, returning the count of files written.
 /// Creates `dst` (and parents) as needed. Used to install a skill directory
 /// (SKILL.md + reference files, possibly nested) into a target repo.
@@ -610,9 +646,23 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
 
     for entry in read_dir.flatten() {
         let path = entry.path();
-        // A symlinked skill entry would list (and later read) content from
-        // outside the library — see `classify_skill_entry`.
-        let kind = classify_skill_entry(&entry);
+        // A symlinked skill entry inside a skill's own tree is rejected — see
+        // `classify_skill_entry`. At the TOP level of the skills dir, however,
+        // a symlink/junction that resolves to a real skill directory is a
+        // registry link-adoption (`.claude/skills/<name>` -> a registry's
+        // `skills/` lane) and must be listed. The entry keeps the LINK path so
+        // callers read/write through it; broken links (target missing) are
+        // still skipped. A link-based adoption is by definition external, so
+        // the row is classified `source_kind = "registry"` regardless of where
+        // the link points.
+        let mut kind = classify_skill_entry(&entry);
+        let mut linked_registry = false;
+        if matches!(kind, SkillEntryKind::Rejected("symlink"))
+            && resolve_linked_skill_dir(&path).is_some()
+        {
+            linked_registry = true;
+            kind = SkillEntryKind::Dir;
+        }
         if matches!(kind, SkillEntryKind::Rejected(_)) {
             continue;
         }
@@ -633,6 +683,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     .map(extract_skill_context_tracked)
                     .unwrap_or(false);
                 let version = content.as_deref().and_then(extract_skill_version);
+                let argument_hint = content.as_deref().and_then(extract_skill_argument_hint);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -647,6 +698,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     memory,
                     context_tracked,
                     version,
+                    argument_hint,
                 });
             }
             continue;
@@ -668,10 +720,10 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let description = skill_md_path
             .as_ref()
             .and_then(|p| read_first_line_description(p));
-        let (category, memory, context_tracked, version) = skill_md_path
+        let (category, memory, context_tracked, version, argument_hint) = skill_md_path
             .as_ref()
             .map(|p| read_skill_meta(p))
-            .unwrap_or((None, None, false, None));
+            .unwrap_or((None, None, false, None, None));
 
         // Count reference files (everything except SKILL.md, the internal
         // provenance sidecar and the lessons log — the latter two are
@@ -692,7 +744,15 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             }
         }
 
-        let (sync_state, source_kind) = classify_sync_state(&path);
+        let (sync_state, source_kind) = if linked_registry {
+            // A link IS its target — there is no installed copy that can
+            // drift, so provenance-based sync classification does not apply:
+            // in-sync by construction, sourced from the registry lane the
+            // link points into.
+            (SYNC_IN_SYNC.to_string(), Some("registry".to_string()))
+        } else {
+            classify_sync_state(&path)
+        };
 
         entries.push(SkillEntry {
             name,
@@ -706,6 +766,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             memory,
             context_tracked,
             version,
+            argument_hint,
         });
     }
 
@@ -819,17 +880,33 @@ pub(crate) fn parse_skill_version(v: Option<&str>) -> (u32, u32) {
     }
 }
 
-/// Category + memory binding + context declaration + version over a SKILL.md
-/// path (one read, all fields).
-fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>, bool, Option<String>) {
+/// Frontmatter `argument-hint:` — free-form invocation syntax, passed through
+/// verbatim (unlike category/memory there is no closed vocabulary to
+/// normalize). Empty after trim → `None`.
+fn extract_skill_argument_hint(content: &str) -> Option<String> {
+    extract_frontmatter_value(content, "argument-hint").filter(|v| !v.is_empty())
+}
+
+/// Category + memory binding + context declaration + version + argument hint
+/// over a SKILL.md path (one read, all fields).
+type SkillMeta = (
+    Option<String>,
+    Option<String>,
+    bool,
+    Option<String>,
+    Option<String>,
+);
+
+fn read_skill_meta(skill_md_path: &Path) -> SkillMeta {
     match std::fs::read_to_string(skill_md_path) {
         Ok(content) => (
             extract_skill_category(&content),
             extract_skill_memory(&content),
             extract_skill_context_tracked(&content),
             extract_skill_version(&content),
+            extract_skill_argument_hint(&content),
         ),
-        Err(_) => (None, None, false, None),
+        Err(_) => (None, None, false, None, None),
     }
 }
 
@@ -933,6 +1010,79 @@ pub fn skill_files_list_global(
         return Ok(Vec::new());
     };
     Ok(scan_skills_dir(&dir))
+}
+
+/// Resolve the wired knowledge registry's `skills/` lane for a project, from
+/// `<project_root>/.ai/manifest.yaml` → `registry.local`. Returns `Ok(None)`
+/// when the manifest is missing, the key is absent, or the resolved registry
+/// has no `skills/` directory — those are all "no registry wired", not errors.
+/// The returned path is canonical with the Windows `\\?\` prefix stripped.
+#[tauri::command]
+pub fn skill_files_registry_root(
+    state: State<'_, Arc<AppState>>,
+    project_root: String,
+) -> Result<Option<String>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(resolve_registry_skills_root(Path::new(&project_root)))
+}
+
+/// Backend of [`skill_files_registry_root`] — separated so tests can drive it
+/// against a tempdir without `AppState`.
+fn resolve_registry_skills_root(project_root: &Path) -> Option<String> {
+    let manifest = project_root.join(".ai").join("manifest.yaml");
+    let content = std::fs::read_to_string(&manifest).ok()?;
+    let local = parse_manifest_registry_local(&content)?;
+    let registry = {
+        let p = PathBuf::from(&local);
+        if p.is_absolute() {
+            p
+        } else {
+            project_root.join(p)
+        }
+    };
+    let skills = registry.join("skills");
+    if !skills.is_dir() {
+        return None;
+    }
+    let resolved = std::fs::canonicalize(&skills).ok()?;
+    Some(strip_verbatim_prefix(&resolved))
+}
+
+/// Render a canonical path for the frontend, without the Windows verbatim
+/// (`\\?\`) prefix `std::fs::canonicalize` produces there.
+fn strip_verbatim_prefix(p: &Path) -> String {
+    let s = p.to_string_lossy();
+    s.strip_prefix(r"\\?\").unwrap_or(&s).to_string()
+}
+
+/// Subset-parse `registry.local` out of an `.ai/manifest.yaml` — a `local:`
+/// line indented inside a top-level `registry:` block. Deliberately NOT a yaml
+/// crate: the manifest is machine-written with a fixed shape, and a line-based
+/// subset parser is the established pattern for it (the registry's own
+/// `link-registry.mjs` reads it the same way). Comments are skipped; the block
+/// ends at the next top-level key.
+fn parse_manifest_registry_local(content: &str) -> Option<String> {
+    let mut in_registry = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let indented = line.starts_with(' ') || line.starts_with('\t');
+        if !indented {
+            in_registry = trimmed == "registry:";
+            continue;
+        }
+        if in_registry {
+            if let Some(rest) = trimmed.strip_prefix("local:") {
+                let v = rest.trim().trim_matches(['"', '\'']).trim();
+                if !v.is_empty() {
+                    return Some(v.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Install (copy) a skill into a target project's `.claude/skills`.
@@ -1566,6 +1716,50 @@ mod tests {
     }
 
     #[test]
+    fn extract_skill_argument_hint_passthrough() {
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+name: x
+argument-hint: \"[path] [--deep]\"
+---
+"
+            )
+            .as_deref(),
+            Some("[path] [--deep]"),
+        );
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+name: x
+argument-hint: <mode> [locale]
+---
+"
+            )
+            .as_deref(),
+            Some("<mode> [locale]"),
+        );
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+name: x
+---
+"
+            ),
+            None
+        );
+        assert_eq!(
+            extract_skill_argument_hint(
+                "---
+argument-hint:
+---
+"
+            ),
+            None
+        );
+    }
+
+    #[test]
     fn extract_skill_memory_normalizes_and_rejects() {
         let md = "---\nname: x\nmemory: Project\n---\nBody";
         assert_eq!(extract_skill_memory(md).as_deref(), Some("project"));
@@ -1871,5 +2065,128 @@ mod tests {
         )
         .unwrap();
         assert_eq!(classify_sync_state(&target).0, SYNC_DIVERGED);
+    }
+
+    #[test]
+    fn linked_skill_dir_is_listed_with_registry_source_kind() {
+        let tmp = tempfile::tempdir().unwrap();
+        // A registry lane holding a real skill dir...
+        let lane = tmp.path().join("registry").join("skills").join("spark");
+        std::fs::create_dir_all(&lane).unwrap();
+        std::fs::write(
+            lane.join("SKILL.md"),
+            "---\nname: spark\ndescription: linked skill\n---\nbody\n",
+        )
+        .unwrap();
+        std::fs::write(lane.join("references.md"), "refs").unwrap();
+
+        // ...linked into the project's skills dir.
+        let skills = tmp.path().join("skills");
+        std::fs::create_dir_all(&skills).unwrap();
+        let link = skills.join("spark");
+        if !try_symlink(&lane, &link, true) {
+            eprintln!("skipping: platform refused symlink creation");
+            return;
+        }
+
+        let entries = scan_skills_dir(&skills);
+        assert_eq!(entries.len(), 1, "linked skill must be listed");
+        let e = &entries[0];
+        assert_eq!(e.name, "spark");
+        assert_eq!(e.source_kind.as_deref(), Some("registry"));
+        assert_eq!(e.sync_state, SYNC_IN_SYNC);
+        assert_eq!(e.description.as_deref(), Some("linked skill"));
+        assert_eq!(e.reference_file_count, 1);
+        // The entry keeps the LINK path — callers read/write through it.
+        assert_eq!(
+            Path::new(&e.path),
+            &link,
+            "path must be the link inside the project, not the target"
+        );
+    }
+
+    #[test]
+    fn broken_link_in_skills_dir_is_skipped() {
+        let tmp = tempfile::tempdir().unwrap();
+        let skills = tmp.path().join("skills");
+        std::fs::create_dir_all(&skills).unwrap();
+        let missing = tmp.path().join("gone");
+        if !try_symlink(&missing, &skills.join("dead"), true) {
+            eprintln!("skipping: platform refused symlink creation");
+            return;
+        }
+        assert!(
+            scan_skills_dir(&skills).is_empty(),
+            "a link whose target is missing must be skipped, not listed"
+        );
+    }
+
+    #[test]
+    fn link_to_non_skill_dir_is_skipped() {
+        let tmp = tempfile::tempdir().unwrap();
+        let not_a_skill = tmp.path().join("plain");
+        std::fs::create_dir_all(&not_a_skill).unwrap();
+        std::fs::write(not_a_skill.join("notes.txt"), "no SKILL.md here").unwrap();
+        let skills = tmp.path().join("skills");
+        std::fs::create_dir_all(&skills).unwrap();
+        if !try_symlink(&not_a_skill, &skills.join("plain"), true) {
+            eprintln!("skipping: platform refused symlink creation");
+            return;
+        }
+        assert!(
+            scan_skills_dir(&skills).is_empty(),
+            "a linked dir without SKILL.md is not a skill"
+        );
+    }
+
+    #[test]
+    fn registry_root_missing_manifest_is_none() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert_eq!(resolve_registry_skills_root(tmp.path()), None);
+    }
+
+    #[test]
+    fn registry_root_resolves_relative_local_path() {
+        let tmp = tempfile::tempdir().unwrap();
+        let proj = tmp.path().join("proj");
+        std::fs::create_dir_all(proj.join(".ai")).unwrap();
+        std::fs::create_dir_all(tmp.path().join("ai-registry").join("skills")).unwrap();
+        std::fs::write(
+            proj.join(".ai").join("manifest.yaml"),
+            "version: 1\nregistry:\n  local: ../ai-registry\nknowledge:\n  domains: []\n",
+        )
+        .unwrap();
+
+        let got = resolve_registry_skills_root(&proj).expect("skills lane must resolve");
+        assert!(
+            !got.starts_with(r"\\?\"),
+            "verbatim prefix must be stripped: {got}"
+        );
+        let expected =
+            std::fs::canonicalize(tmp.path().join("ai-registry").join("skills")).unwrap();
+        assert_eq!(got, strip_verbatim_prefix(&expected));
+
+        // Same manifest, but the registry has no skills/ dir → None.
+        std::fs::remove_dir_all(tmp.path().join("ai-registry").join("skills")).unwrap();
+        assert_eq!(resolve_registry_skills_root(&proj), None);
+    }
+
+    #[test]
+    fn manifest_registry_local_subset_parser() {
+        // Key absent entirely.
+        assert_eq!(parse_manifest_registry_local("version: 1\n"), None);
+        // `local:` under a DIFFERENT top-level block must not match.
+        assert_eq!(
+            parse_manifest_registry_local("cache:\n  local: /tmp/x\n"),
+            None
+        );
+        // Quoted value, comments, and a following top-level key.
+        assert_eq!(
+            parse_manifest_registry_local(
+                "# manifest\nregistry:\n  # where the checkout lives\n  local: \"../ai-registry\"\nskills:\n  - research\n"
+            )
+            .as_deref(),
+            Some("../ai-registry")
+        );
     }
 }

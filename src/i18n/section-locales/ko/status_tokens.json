@@ -23,13 +23,13 @@
   },
   "severity": {
     "info": "정보",
-    "low": "Low",
+    "low": "낮음",
     "medium": "보통",
     "high": "높음",
     "critical": "심각"
   },
   "priority": {
-    "low": "Low",
+    "low": "낮음",
     "normal": "보통",
     "high": "높음",
     "urgent": "긴급"
@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "높음",
     "medium": "보통",
-    "low": "Low"
+    "low": "낮음"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "낮음",
     "medium": "보통",
     "high": "높음"
   },
@@ -105,7 +105,7 @@
     "production": "프로덕션",
     "promising": "유망",
     "not_ready": "준비 안 됨",
-    "broken": "오류"
+    "broken": "고장"
   },
   "deployment": {
     "active": "활성",
@@ -118,7 +118,7 @@
     "delivered": "전달됨",
     "failed": "실패",
     "pending": "대기 중",
-    "queued": "큐에 있음"
+    "queued": "대기 중"
   },
   "rotation": {
     "anomaly": "이상 감지",
@@ -160,14 +160,14 @@
     "predicate_unmet": "조건 미충족",
     "publish_failed": "게시 실패",
     "quarantined": "트리거 격리됨",
-    "healing_abandoned": "자가 치유 중단",
-    "healing_capped": "치유 재시도 소진"
+    "healing_abandoned": "자가 복구 중단",
+    "healing_capped": "복구 재시도 소진"
   },
   "build": {
     "analyzing": "분석 중",
     "awaiting_input": "입력 대기 중",
     "cancelled": "취소됨",
-    "completed": "완료됨",
+    "completed": "완료",
     "draft_ready": "초안 준비됨",
     "failed": "실패",
     "initializing": "초기화 중",
@@ -188,8 +188,8 @@
     "unsupported": "여기서 실행 불가"
   },
   "remote_job": {
-    "completed": "완료됨",
-    "failed": "실패함",
+    "completed": "완료",
+    "failed": "실패",
     "cancelled": "취소됨",
     "refused": "거절됨",
     "pending": "대기 중",

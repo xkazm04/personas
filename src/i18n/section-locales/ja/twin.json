@@ -42,7 +42,7 @@
     "refineWithAi": "AI でリファイン",
     "bioRefineHint": "AI は既存の声と事実を維持し、文章を整えるだけです。下のステアリングキーワードは任意です。",
     "bioRefineKeywordsPlaceholder": "(任意) 例: より簡潔に、堅苦しさを抑えて、ドライなユーモアを残す",
-    "refining": "リファイン中...",
+    "refining": "リファイン中…",
     "refineBio": "バイオをリファイン"
   },
   "channels": {

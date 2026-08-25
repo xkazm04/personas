@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "Vysoká",
     "medium": "Střední",
-    "low": "Low"
+    "low": "Nízká"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "nízké",
     "medium": "střední",
     "high": "vysoké"
   },

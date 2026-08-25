@@ -42,7 +42,7 @@
     "refineWithAi": "用 AI 润色",
     "bioRefineHint": "AI 会保留你已有的语气和事实 — 只是让文字更精炼。下面可选填引导关键词。",
     "bioRefineKeywordsPlaceholder": "（可选）例如：更简洁、少一点商务腔、保留冷幽默",
-    "refining": "润色中...",
+    "refining": "润色中…",
     "refineBio": "润色 bio"
   },
   "channels": {

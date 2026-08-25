@@ -633,5 +633,98 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             ON team_assignment_steps(execution_id);",
     );
 
+    // -- App master proposal + gate ledgers (P5a) ----------------------------
+    // The backbone kp scores an App master on wants three readings Personas had
+    // no ledger for: proposals MERGED, proposals REVERTED, and the pass rate on
+    // the repository's OWN declared gates. Reporter v2 sent all three as null
+    // because nothing recorded them. These two tables are that record.
+    //
+    // `app_master_proposals` — one row per proposal branch the reconciler has
+    // seen in a mandated project's checkout. `commits` is the branch's own
+    // commit list captured at discovery (JSON [{sha,subject}]) because after a
+    // merge the branch is an ancestor of main and the fork point no longer
+    // isolates them — revert detection needs the subjects it had BEFORE the
+    // merge. `merged_at` / `reverted_at` are NULL until observed; NULL means
+    // "not observed", never "did not happen".
+    //
+    // `app_master_gate_runs` — one row per (proposal branch × declared gate
+    // command). `outcome` is a THREE-valued reading: a command that timed out
+    // or could not be spawned is `did_not_run`, which is not a pass and is not
+    // a failure — it is a hole in the instrument, and the pass-rate denominator
+    // excludes it.
+    //
+    // Soft refs to dev_projects / personas (no FK), matching
+    // `autopilot_night_runs`: the audit trail outlives the project row.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "app_master_proposals",
+            description:
+                "Create app_master_proposals (App master proposal-branch ledger: merged/reverted)",
+            already_applied: |conn| has_table(conn, "app_master_proposals"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS app_master_proposals (
+                        id             TEXT PRIMARY KEY,
+                        project_id     TEXT NOT NULL,
+                        persona_id     TEXT NOT NULL DEFAULT '',
+                        branch         TEXT NOT NULL,
+                        head_sha       TEXT NOT NULL DEFAULT '',
+                        base_sha       TEXT,
+                        commits        TEXT NOT NULL DEFAULT '[]',
+                        first_seen_at  TEXT NOT NULL,
+                        merged_at      TEXT,
+                        merge_sha      TEXT,
+                        reverted_at    TEXT,
+                        revert_sha     TEXT,
+                        gates_ran_at   TEXT,
+                        UNIQUE(project_id, branch)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_app_master_proposals_project
+                        ON app_master_proposals(project_id, first_seen_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "app_master_gate_runs",
+            description:
+                "Create app_master_gate_runs (per-proposal runs of the repo's OWN declared gates)",
+            already_applied: |conn| has_table(conn, "app_master_gate_runs"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS app_master_gate_runs (
+                        id          TEXT PRIMARY KEY,
+                        project_id  TEXT NOT NULL,
+                        persona_id  TEXT NOT NULL DEFAULT '',
+                        branch      TEXT NOT NULL,
+                        command     TEXT NOT NULL,
+                        exit_code   INTEGER,
+                        outcome     TEXT NOT NULL
+                                    CHECK (outcome IN ('passed','failed','did_not_run')),
+                        duration_ms INTEGER NOT NULL DEFAULT 0,
+                        first_error TEXT,
+                        ran_at      TEXT NOT NULL
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_app_master_gate_runs_project
+                        ON app_master_gate_runs(project_id, ran_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }

@@ -622,6 +622,15 @@ async fn run_test_pass(
         }
     }
 
+    // kp hires only: narrow the built tool set to the surface the hire request
+    // asked for BEFORE the gate counts anything. An over-provisioned build used
+    // to reach the gate carrying tools nobody requested (`text_analysis`,
+    // `execute_sql`, …); they were reported available, never called, counted
+    // `unverified`, and held promotion. The gate was right — the fix is that
+    // those tools must never have been attached. No-op for every non-kp build.
+    // See `kp_surface` and `personas_engine::kp_tool_surface`.
+    super::apply_kp_tool_surface(&state.db, persona_id, &mut agent_ir, "verification");
+
     let report =
         super::run_tool_tests(&state.db, app_handle, session_id, persona_id, &agent_ir).await?;
 

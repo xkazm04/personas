@@ -27,6 +27,7 @@ export type { ApiRequestBody } from "./ApiRequestBody";
 export type { AppendMessageResult } from "./AppendMessageResult";
 export type { AppliedTriage } from "./AppliedTriage";
 export type { ApplyMemoryReviewProposalResult } from "./ApplyMemoryReviewProposalResult";
+export type { AppMasterLink } from "./AppMasterLink";
 export type { Archetype } from "./Archetype";
 export type { ArchetypeCatalog } from "./ArchetypeCatalog";
 export type { ArtistAsset } from "./ArtistAsset";

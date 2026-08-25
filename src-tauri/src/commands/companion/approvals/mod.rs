@@ -141,6 +141,7 @@ impl ExecuteResult {
 // Glob re-exports keep the public path surface identical to the former
 // single-file module: `commands::companion::approvals::<item>` still resolves
 // for lib.rs generate_handler, session.rs, fleet_bridge.rs and tests.
+mod app_master_hire;
 mod approval_autopilot;
 mod approval_exec_canvas;
 mod approval_exec_core;
@@ -150,8 +151,15 @@ mod approval_exec_fleet;
 mod approval_exec_knowledge;
 mod approval_exec_night;
 mod approval_exec_ship;
+mod approval_headless;
 mod approval_lifecycle;
 
+// The App master hire module is private, but the kp reporter needs ONE thing
+// from it: how a seeded KPI's `measure_config` carries kp's `kpiKey`. Re-export
+// that single reader rather than duplicating the JSON pointer at the read site
+// — two spellings of one envelope is how a rollup starts silently reporting
+// zero objectives.
+pub use app_master_hire::measure_config_kpi_key as app_master_measure_config_kpi_key;
 pub use approval_autopilot::*;
 pub(crate) use approval_exec_canvas::*;
 pub(crate) use approval_exec_core::*;
@@ -161,4 +169,5 @@ pub use approval_exec_fleet::*;
 pub(crate) use approval_exec_knowledge::*;
 pub(crate) use approval_exec_night::*;
 pub use approval_exec_ship::*;
+pub(crate) use approval_headless::*;
 pub use approval_lifecycle::*;

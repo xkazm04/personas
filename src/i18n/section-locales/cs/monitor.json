@@ -459,7 +459,7 @@
   "triage_summary_kind_value": "{accepted} z {decided}",
   "triage_summary_lost": "Ztraceno jinému",
   "triage_summary_pace": "Typická karta",
-  "triage_summary_pace_value": "{seconds}s",
+  "triage_summary_pace_value": "{seconds} s",
   "triage_summary_rate": "{percent}%",
   "triage_summary_title": "Tato relace",
   "triage_summary_undone": "Vráceno zpět",

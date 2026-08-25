@@ -287,6 +287,25 @@ pub fn start_loops(
         // persona is KP-linked (one LIKE-prefiltered scan per tick); leadership
         // default keeps multi-instance setups from double-reporting.
         Box::new(crate::engine::kp_reporter::KpReporterSubscription { pool: pool.clone() }),
+        // App master probation (P4) — raises the end-of-probation review packet
+        // once per hire. Free when no project carries an App master mandate
+        // (one settings-prefix query per tick and out).
+        Box::new(
+            crate::engine::app_master_probation::AppMasterProbationSubscription {
+                pool: pool.clone(),
+            },
+        ),
+        // App master proposal reconciler (P5a) — observes proposal branches,
+        // runs the repository's OWN declared gates against them, and records
+        // merges and reverts. Without it `proposalsMerged`,
+        // `proposalsReverted` and `gatePassRate` are structurally null and the
+        // probation verdict can never be anything but `incomplete`. Free when
+        // no project carries a mandate (one settings-prefix query and out).
+        Box::new(
+            crate::engine::app_master_reconcile::AppMasterReconcileSubscription {
+                pool: pool.clone(),
+            },
+        ),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context
@@ -492,6 +511,41 @@ pub fn start_loops(
                     waited_ms = MGMT_STATE_POLLS as u64 * MGMT_STATE_POLL_INTERVAL.as_millis() as u64,
                     "AppState never resolved — :9420 degrades to the webhook-only route                      table; /api/* (management API, KP bridge) and /pair/* will 404 for                      the life of this process"
                 );
+            }
+            // A restart races the dying instance for the port: its socket can
+            // linger (FIN_WAIT/CloseWait) for tens of seconds, the bind fails
+            // with 10048, and this task used to give up FOREVER — a process
+            // that looks healthy but serves nothing on :9420 (bench sweeps
+            // 2026-08-24, twice). Wait for the port to actually free up before
+            // starting; the probe listener is dropped immediately.
+            {
+                let port = crate::engine::webhook::webhook_port();
+                // 24 × 5 s = 2 min — the longest observed FIN_WAIT linger; the
+                // "2 min" in the log copy below is derived from this budget.
+                const PORT_PROBE_ATTEMPTS: u32 = 24;
+                for attempt in 0..PORT_PROBE_ATTEMPTS {
+                    match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
+                        Ok(probe) => {
+                            drop(probe);
+                            if attempt > 0 {
+                                tracing::info!(attempt, port, "webhook port freed up; binding");
+                            }
+                            break;
+                        }
+                        Err(_) if attempt + 1 < PORT_PROBE_ATTEMPTS => {
+                            if attempt == 0 {
+                                tracing::warn!(
+                                    port,
+                                    "webhook port busy (a dying instance?); waiting up to 2 min"
+                                );
+                            }
+                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                        }
+                        Err(e) => {
+                            tracing::error!(port, error = %e, "webhook port still busy after 2 min — the bind below will fail");
+                        }
+                    }
+                }
             }
             let result = if let Some(registry) = process_registry {
                 crate::engine::webhook::start_webhook_server_with_management(

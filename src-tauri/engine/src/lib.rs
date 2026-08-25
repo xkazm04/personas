@@ -51,6 +51,7 @@ pub mod api_definition;
 #[cfg(feature = "desktop")]
 pub mod app_focus;
 pub mod app_master;
+pub mod app_master_gates;
 pub mod archetype_catalog;
 pub mod auto_triage;
 pub mod autonomy;
@@ -106,6 +107,7 @@ pub mod file_watcher;
 pub mod fix_loop;
 pub mod git_checkpoint;
 pub mod google_oauth;
+pub mod headless;
 pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod hooks_sidecar;
@@ -114,6 +116,7 @@ pub mod identity;
 pub mod inflight_guard;
 pub mod intent_compiler;
 pub mod kb_index;
+pub mod kp_tool_surface;
 pub mod logger;
 pub mod oauth_refresh_lock;
 #[cfg(feature = "ollama")]

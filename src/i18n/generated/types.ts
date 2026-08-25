@@ -14781,6 +14781,33 @@ export type Translations = {
       skills_library_unwired_title: string;
       skills_library_unwired_body: string;
       skills_library_unwired_unassigned: string;
+      skills_tab_registry: string;
+      skills_tab_launch: string;
+      launch_select_skill: string;
+      launch_skill_meta: string;
+      launch_status_ready: string;
+      launch_status_needs_adopt: string;
+      launch_status_adopting: string;
+      launch_status_running: string;
+      launch_action_launch: string;
+      launch_action_adopt: string;
+      launch_no_registry_title: string;
+      launch_no_registry_hint: string;
+      launch_no_projects_title: string;
+      launch_no_projects_hint: string;
+      launch_pick_skill_title: string;
+      launch_pick_skill_hint: string;
+      launch_installed_version: string;
+      launch_library_version: string;
+      launch_running_hint: string;
+      launch_adopting_hint: string;
+      launch_needs_adopt_hint: string;
+      launch_via_athena_hint: string;
+      launch_sent_to_athena: string;
+      launch_ungrouped: string;
+      launch_args_label: string;
+      launch_args_none: string;
+      launch_not_installed: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -16044,6 +16071,7 @@ export type Translations = {
       global_hotkey_failed: string;
       ship_milestone_prose_label: string;
       ship_milestone_prose_placeholder: string;
+      fleet_plan_auto_approved: string;
     };
     artist_gallery: {
       loading_viewer: string;

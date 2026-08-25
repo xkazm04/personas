@@ -890,7 +890,26 @@ pub(crate) async fn execute_kp_hire_request(
     // the payload sat in the DB in between — fail closed on anything missing.
     let name = str_field(params, &["spec", "name"], "spec.name")?.to_string();
     let mission = str_field(params, &["spec", "mission"], "spec.mission")?.to_string();
-    let job_id = str_field(params, &["kp", "jobId"], "kp.jobId")?.to_string();
+    // An intake-originated App-master hire has NO kp job: the wire carries
+    // `jobId: ""` + `kp.intakeId` (accepted by validate_kp_persona_request since
+    // bench sweep #4/#5, 2026-08-24). Mirror that rule here — the payload sat in
+    // the DB in between, so this re-check must not be stricter than intake was.
+    let job_id = match str_field(params, &["kp", "jobId"], "kp.jobId") {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            let intake_id = params
+                .get("kp")
+                .and_then(|k| k.get("intakeId"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .unwrap_or("");
+            if params.get("appMaster").is_some() && !intake_id.is_empty() {
+                String::new()
+            } else {
+                return Err(e);
+            }
+        }
+    };
     let job_title = str_field(params, &["kp", "jobTitle"], "kp.jobTitle")?.to_string();
     let base_url = str_field(params, &["kp", "baseUrl"], "kp.baseUrl")?.to_string();
     let report_token = str_field(params, &["reportToken"], "reportToken")?.to_string();
@@ -930,11 +949,22 @@ pub(crate) async fn execute_kp_hire_request(
         .and_then(|v| v.as_str())
         .map(String::from);
 
+    // App master (P4): present ⇒ this hire binds an application, not just a
+    // job. The block is cloned out of `params` here because the binding pass
+    // runs after the persona exists and `params` is borrowed throughout.
+    let app_master: Option<serde_json::Value> =
+        super::app_master_hire::app_master_block(params).cloned();
+
     // Build intent: the mission plus enough hiring context for the one-shot
-    // design pass to pick sensible connectors and use cases.
-    let mut intent = format!(
-        "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
-    );
+    // design pass to pick sensible connectors and use cases. An App master
+    // gets the full mission + objectives + mandate + cadence instead — the
+    // design pass has to know the line before it picks the tools.
+    let mut intent = match &app_master {
+        Some(am) => super::app_master_hire::app_master_intent(&mission, &job_title, &job_id, am),
+        None => format!(
+            "{mission}\n\nThis persona is an AI hire for the external KP job '{job_title}' (job id {job_id})."
+        ),
+    };
     if !connectors.is_empty() {
         intent.push_str(&format!(
             "\nPreferred connectors: {}.",
@@ -957,13 +987,32 @@ pub(crate) async fn execute_kp_hire_request(
         }
     }
 
+    // The mandate's `approvalGates` are shell commands the App master must run
+    // before it may propose a diff (`npm run test:unit`, …). Gates present ⇒ a
+    // command runner is part of the surface this hire asked for; absent ⇒ it is
+    // not, and the build may not attach one. See `kp_tool_surface`.
+    let runs_commands = app_master
+        .as_ref()
+        .and_then(|am| am.pointer("/mandate/approvalGates"))
+        .and_then(|v| v.as_array())
+        .is_some_and(|gates| {
+            gates
+                .iter()
+                .any(|g| g.as_str().is_some_and(|s| !s.trim().is_empty()))
+        });
+
     // The typed link back to the KP job — the whole point of WP3's model change.
+    // It also carries the requested tool surface (`spec.connectors` + whether
+    // the mandate runs commands), because the constraint is enforced long after
+    // this payload is gone: at build verification and at promote.
     let design_context = crate::db::models::DesignContextData {
         kp_link: Some(crate::db::models::KpLink {
             job_id,
             job_title: job_title.clone(),
             base_url,
             report_token,
+            requested_connectors: connectors.clone(),
+            runs_commands,
         }),
         ..Default::default()
     };
@@ -1027,6 +1076,49 @@ pub(crate) async fn execute_kp_hire_request(
         return Err(spawn_err);
     }
 
+    // 2b. App master binding (P4). Deliberately AFTER the spawn: a spawn
+    //     failure above rolls the draft persona back, and binding first would
+    //     leave a project, a team and seeded KPIs behind for a persona that
+    //     never existed. Nothing here can fail the hire — the persona and its
+    //     build are already real — so every problem becomes a note on the
+    //     persona instead of an error the operator cannot act on.
+    let mut app_master_summary = String::new();
+    if let Some(am) = &app_master {
+        let outcome =
+            super::app_master_hire::bind_app_master(&state.db, &persona.id, &persona.name, am);
+        app_master_summary = format!(
+            " Bound to project {} — {} KPI(s) seeded, {} cadence trigger(s) installed{}. \
+             Autopilot is on `suggest` for probation.",
+            if outcome.project_id.is_empty() {
+                "(none — see the persona's setup detail)"
+            } else {
+                &outcome.project_id
+            },
+            outcome.kpi_ids.len(),
+            outcome.trigger_ids.len(),
+            if outcome.unsupported_triggers.is_empty() {
+                String::new()
+            } else {
+                // Never rounded up to "installed": the operator has to know
+                // which part of the cadence kp asked for is simply not running.
+                format!(
+                    ", {} UNSUPPORTED and NOT installed ({})",
+                    outcome.unsupported_triggers.len(),
+                    outcome.unsupported_triggers.join(", ")
+                )
+            }
+        );
+        if let Err(e) =
+            super::app_master_hire::stamp_app_master_link(&state.db, &persona.id, am, &outcome)
+        {
+            tracing::warn!(
+                persona_id = %persona.id,
+                error = %e,
+                "app_master: could not stamp the App master link onto the persona"
+            );
+        }
+    }
+
     // 3. Stamp the created persona + build session onto the approval row so
     //    `GET /api/kp/persona-requests/{id}` can report them. Best-effort —
     //    a failure only degrades the KP poll, never the hire itself.
@@ -1048,7 +1140,7 @@ pub(crate) async fn execute_kp_hire_request(
     );
 
     Ok(ExecuteResult::message(format!(
-        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.",
+        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{app_master_summary}",
         persona_name = persona.name,
     )))
 }

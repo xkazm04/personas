@@ -59,6 +59,8 @@ pub mod system_ops;
 /// it had to sit below both. Re-exported so the 6 existing
 /// `crate::engine::error_taxonomy::…` call sites resolve unchanged.
 pub use personas_core::error_taxonomy;
+pub mod app_master_probation;
+pub mod app_master_reconcile;
 pub mod evolution;
 pub mod failover;
 pub mod fitness_driver;

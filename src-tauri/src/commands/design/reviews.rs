@@ -1194,6 +1194,11 @@ pub fn update_manual_review_status(
         // GAP 5: mark the human decision on the linked goal timeline.
         record_review_goal_signal(&state, &review);
 
+        // App master probation (P4): approve ⇒ activate (suggest → full),
+        // reject ⇒ retire. Runs before the resume-loop because a probation
+        // packet never links a team assignment, so the two are disjoint.
+        react_to_app_master_probation(&state, &review, None, None);
+
         // Resume-loop (Phase 1): if this review gated a team step that is still
         // held, an APPROVAL resumes the blocked assignment. Shared with the
         // Athena path so resolution reacts identically regardless of who acted.
@@ -1201,6 +1206,273 @@ pub fn update_manual_review_status(
     }
 
     Ok(review)
+}
+
+/// Carry an **App master probation** decision to the autopilot mode and to kp
+/// (P4). Returns `true` when this review WAS a probation packet, so callers
+/// skip whatever they would otherwise do with an approval — in particular
+/// `dispatch_review_action`'s follow-up persona run, which would tell the App
+/// master to "carry out the chosen action" it has no business carrying out.
+///
+/// This function reads the **review** — is it a probation packet, and what did
+/// the answer say: `activate` (approve) ⇒ `activated`, `extend_30` ⇒
+/// `extended`, `retire` (reject) ⇒ `retired`. What each of those three then
+/// changes is [`apply_app_master_probation_decision`], which the headless
+/// bridge reaches too.
+///
+/// Retire disables rather than deletes: the persona, its project, its KPIs and
+/// its violation ledger stay readable. A retirement that erased the record
+/// would destroy the evidence for the decision at the moment it was made.
+/// `headless_incomplete_streak` is the headless bridge's consecutive
+/// `incomplete` counter, which the carry-out stamps onto the mandate. Every
+/// human call site passes `None`: nothing a person clicks ever writes it.
+pub(crate) fn react_to_app_master_probation(
+    state: &State<'_, Arc<AppState>>,
+    review: &crate::db::models::PersonaManualReview,
+    chosen_action: Option<&str>,
+    headless_incomplete_streak: Option<u32>,
+) -> bool {
+    use crate::db::models::ManualReviewStatus;
+    use crate::engine::app_master_probation as probation;
+
+    // Is this a probation packet at all? The typed check is the JSON `kind`;
+    // anything else is an ordinary review and this function does nothing.
+    let ctx: serde_json::Value = review
+        .context_data
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or(serde_json::Value::Null);
+    if ctx.get("kind").and_then(|k| k.as_str()) != Some(probation::PACKET_KIND) {
+        return false;
+    }
+    let Some(project_id) = ctx.get("projectId").and_then(|v| v.as_str()) else {
+        tracing::warn!(review_id = %review.id, "app_master: probation packet has no projectId");
+        return false;
+    };
+
+    // An explicitly chosen action wins; otherwise approve ⇒ activate,
+    // reject ⇒ retire. `Resolved` is treated as an approval, matching
+    // `react_to_review_decision`.
+    //
+    // An action this build does not recognise applies NOTHING. Falling through
+    // to the status (which on the action path is always `Approved`) would turn
+    // any unknown string into an activation — granting unattended spend on a
+    // real repository because a caller sent a typo. `true` is still returned so
+    // the caller does not dispatch its follow-up run either: the honest outcome
+    // of an unrecognised action is that nothing happened, loudly.
+    let decision: &'static str = match chosen_action {
+        Some(a) if a == probation::ACTION_EXTEND_30 => "extended",
+        Some(a) if a == probation::ACTION_RETIRE => "retired",
+        Some(a) if a == probation::ACTION_ACTIVATE => "activated",
+        Some(a) => {
+            tracing::warn!(
+                review_id = %review.id, project_id, action = %a,
+                "app_master: unrecognised probation action — NOTHING was applied. Expected {}, {} or {}",
+                probation::ACTION_ACTIVATE,
+                probation::ACTION_EXTEND_30,
+                probation::ACTION_RETIRE
+            );
+            return true;
+        }
+        None => match review.status {
+            ManualReviewStatus::Rejected => "retired",
+            ManualReviewStatus::Approved | ManualReviewStatus::Resolved => "activated",
+            // Still pending — nothing was decided, so nothing is applied.
+            ManualReviewStatus::Pending => return false,
+        },
+    };
+
+    apply_app_master_probation_decision(
+        state,
+        ProbationCarryOut {
+            project_id,
+            decision,
+            // The reviewer's own words when they wrote any; otherwise the
+            // carry-out's default sentence for the decision.
+            note: review
+                .reviewer_notes
+                .as_deref()
+                .filter(|n| !n.trim().is_empty())
+                .map(str::to_string),
+            headless_incomplete_streak,
+            review_id: Some(&review.id),
+        },
+    )
+}
+
+/// One probation decision, ready to be carried out. The **decision** is already
+/// taken — by a human's click, or by the headless bridge's backbone verdict —
+/// and this is the record of what to do about it.
+pub(crate) struct ProbationCarryOut<'a> {
+    /// The `dev_projects.id` the mandate is bound to.
+    pub project_id: &'a str,
+    /// `activated` | `extended` | `retired`.
+    pub decision: &'static str,
+    /// The note the kp lifecycle event carries. `None` ⇒ the default sentence
+    /// for this decision.
+    pub note: Option<String>,
+    /// Stamped onto the mandate when `Some` — the headless bridge's consecutive
+    /// `incomplete` counter, which is what makes its loop terminate. `None`
+    /// leaves whatever is on the record alone.
+    pub headless_incomplete_streak: Option<u32>,
+    /// The review this came from, for logs. `None` on the headless anchorless
+    /// path, where there deliberately is no review row.
+    pub review_id: Option<&'a str>,
+}
+
+/// **The carry-out.** Apply an already-taken App master probation decision to
+/// the autopilot mode, the mandate record, the cadence triggers and kp — and
+/// nothing else. Returns `false` only when the mandate record is gone, i.e.
+/// when there was nothing to apply the decision to.
+///
+/// Both decision paths reach this one function:
+///
+/// * [`react_to_app_master_probation`] — a human answered a review card;
+/// * `engine::app_master_probation::headless_probation_sweep` — the headless
+///   bridge decided, either from a raised review or (for a persona that has
+///   never executed, and so can never anchor one) from the backbone directly.
+///
+/// Which is the point of it existing: the mode changes *who decides*, never
+/// *what a decision does*.
+///
+/// | decision | autopilot | mandate record | kp lifecycle |
+/// | --- | --- | --- | --- |
+/// | activated | `suggest` → `full` | decided `activated` | `probation_review {activated}` |
+/// | extended | unchanged (`suggest`) | window +30 days, NOT decided | `probation_review {extended}` |
+/// | retired | → `off`, cadence triggers disabled | decided `retired` | `probation_review {retired}` |
+pub(crate) fn apply_app_master_probation_decision(
+    state: &State<'_, Arc<AppState>>,
+    carry: ProbationCarryOut<'_>,
+) -> bool {
+    use crate::engine::app_master_probation as probation;
+
+    let ProbationCarryOut {
+        project_id,
+        decision,
+        note,
+        headless_incomplete_streak,
+        review_id,
+    } = carry;
+
+    let Some(mut record) = personas_engine::app_master::get_mandate(&state.db, project_id) else {
+        tracing::warn!(
+            review_id,
+            project_id,
+            "app_master: probation decided but the mandate record is gone; nothing to apply"
+        );
+        return false;
+    };
+
+    let now = chrono::Utc::now();
+    let mode = match decision {
+        "activated" => Some(personas_engine::autopilot::AutopilotMode::Full),
+        "retired" => Some(personas_engine::autopilot::AutopilotMode::Off),
+        // Extending changes the clock, not the autonomy: the App master keeps
+        // proposing on `suggest` for another window. Flipping the mode here
+        // would make "give it more time" mean "give it more power".
+        _ => None,
+    };
+    if let Some(mode) = mode {
+        let key = personas_engine::autopilot::setting_key(project_id);
+        if let Err(e) = crate::db::repos::core::settings::set(&state.db, &key, mode.as_str()) {
+            tracing::error!(
+                review_id, project_id, error = %e,
+                "app_master: probation decided `{decision}` but the autopilot mode could NOT be \
+                 changed — the project keeps its previous mode"
+            );
+        }
+    }
+    if decision == "retired" {
+        disable_app_master_triggers(state, &record.persona_id);
+    }
+
+    match decision {
+        "extended" => {
+            record.probation_ends_at =
+                (now + chrono::Duration::days(probation::EXTEND_DAYS)).to_rfc3339();
+            // Cleared so the tick raises a FRESH packet when the new window
+            // closes; `probation_decided_at` stays None because extending is
+            // explicitly not a decision.
+            record.probation_review_id = None;
+        }
+        _ => {
+            record.probation_decided_at = Some(now.to_rfc3339());
+            record.probation_decision = Some(decision.to_string());
+        }
+    }
+    // Written HERE rather than by the caller: this function reloads the mandate
+    // record, so a streak stamped before the call would be silently clobbered
+    // by the write below.
+    if let Some(streak) = headless_incomplete_streak {
+        record.headless_incomplete_streak = streak;
+    }
+    if let Err(e) = personas_engine::app_master::set_mandate(&state.db, &record) {
+        tracing::error!(
+            review_id, project_id, error = %e,
+            "app_master: could not record the probation decision on the mandate"
+        );
+    }
+
+    // Tell kp. Best-effort and never blocking, like every other kp push.
+    if let Ok(persona) = crate::db::repos::core::personas::get_by_id(&state.db, &record.persona_id)
+    {
+        if let Some(link) = persona.parsed_design_context().kp_link {
+            let note = note.unwrap_or_else(|| match decision {
+                "extended" => format!(
+                    "probation extended by {} days; autopilot stays on `suggest`",
+                    probation::EXTEND_DAYS
+                ),
+                "retired" => "retired at probation review; autopilot off and cadence \
+                              triggers disabled"
+                    .to_string(),
+                _ => "activated at probation review; autopilot suggest → full".to_string(),
+            });
+            crate::engine::kp_reporter::push_probation_review(
+                &link,
+                &record.persona_id,
+                &persona.name,
+                decision,
+                &note,
+            );
+        }
+    }
+    tracing::info!(
+        review_id,
+        project_id,
+        persona_id = %record.persona_id,
+        decision,
+        anchor = if review_id.is_some() {
+            personas_engine::headless::ANCHOR_REVIEW
+        } else {
+            personas_engine::headless::ANCHOR_NONE
+        },
+        "app_master: applied the probation decision"
+    );
+    true
+}
+
+/// Disable a retired App master's cadence triggers so it genuinely stops
+/// waking up. Nothing is deleted — the wiring stays inspectable, and re-enabling
+/// is one toggle if the retirement is reconsidered.
+fn disable_app_master_triggers(state: &State<'_, Arc<AppState>>, persona_id: &str) {
+    use crate::db::repos::resources::triggers as trigger_repo;
+    match trigger_repo::get_by_persona_id(&state.db, persona_id) {
+        Ok(triggers) => {
+            for t in triggers.iter().filter(|t| t.enabled) {
+                if let Err(e) = trigger_repo::set_enabled(&state.db, &t.id, false) {
+                    tracing::warn!(
+                        persona_id, trigger_id = %t.id, error = %e,
+                        "app_master: could not disable a retired App master's trigger — it may \
+                         still fire"
+                    );
+                }
+            }
+        }
+        Err(e) => tracing::warn!(
+            persona_id, error = %e,
+            "app_master: could not read triggers to disable on retirement"
+        ),
+    }
 }
 
 /// Resume-loop reaction (Phase 1). On an APPROVAL whose review links a team step
@@ -1339,6 +1611,15 @@ pub async fn dispatch_review_action(
     bridge_review_decision_to_channel(&state, &review);
     // GAP 5: mark the human decision on the linked goal timeline.
     record_review_goal_signal(&state, &review);
+
+    // App master probation (P4): the chosen action IS the decision, and applying
+    // it (autopilot mode + mandate record + the kp lifecycle push) is the whole
+    // carry-out. Dispatching a follow-up run here would tell the App master to
+    // "carry out" its own activation or retirement, which is not its call to
+    // make — so this short-circuits both the resume-loop and the run below.
+    if react_to_app_master_probation(&state, &review, Some(action.as_str()), None) {
+        return Ok(review);
+    }
 
     // If this gated a held team step, resuming IS carrying out the action — don't
     // also spawn a standalone run. Otherwise dispatch a follow-up persona run.

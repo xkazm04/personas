@@ -2,15 +2,15 @@
   "title": "ডিপ্লয়মেন্ট",
   "orchestrator_url": "অর্কেস্ট্রেটর URL",
   "api_key": "API কী",
-  "connecting": "সংযুক্ত হচ্ছে...",
-  "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে...",
+  "connecting": "সংযুক্ত হচ্ছে…",
+  "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে…",
   "auth_code": "অথরাইজেশন কোড",
-  "deploying": "ডিপ্লয় হচ্ছে...",
+  "deploying": "ডিপ্লয় হচ্ছে…",
   "sr_deploying": "ক্লাউডে persona ডিপ্লয় হচ্ছে",
   "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
   "status": {
     "connected": "সংযুক্ত",
-    "loading": "ক্লাউড স্ট্যাটাস লোড হচ্ছে...",
+    "loading": "ক্লাউড স্ট্যাটাস লোড হচ্ছে…",
     "token_available": "টোকেন উপলব্ধ",
     "no_token": "কোনো টোকেন কনফিগার করা নেই",
     "no_token_configured": "কোনো টোকেন কনফিগার করা নেই",
@@ -21,7 +21,7 @@
     "request_body": "রিকোয়েস্ট বডি",
     "response_label": "রেসপন্স",
     "send_request": "রিকোয়েস্ট পাঠান",
-    "sending": "পাঠানো হচ্ছে...",
+    "sending": "পাঠানো হচ্ছে…",
     "empty_response": "(খালি রেসপন্স)",
     "snippets": "স্নিপেট",
     "request_body_placeholder": "{ \"message\": \"আপনার প্রম্পট এখানে…\" }"
@@ -35,7 +35,7 @@
     "connected": "সংযুক্ত",
     "disconnect": "সংযোগ বিচ্ছিন্ন করুন",
     "diagnose": "রোগ নির্ণয় করুন",
-    "diagnosing": "রোগ নির্ণয় হচ্ছে...",
+    "diagnosing": "রোগ নির্ণয় হচ্ছে…",
     "diagnostics_title": "ডায়াগনস্টিক্স",
     "url_protocol_error": "URL-এ http বা https ব্যবহার করতে হবে",
     "url_hostname_error": "URL-এ হোস্টনাম নেই",
@@ -49,7 +49,7 @@
     "active_deployments": "সক্রিয় ডিপ্লয়মেন্ট"
   },
   "exec_detail": {
-    "fetching_output": "আউটপুট আনা হচ্ছে...",
+    "fetching_output": "আউটপুট আনা হচ্ছে…",
     "no_output": "কোনো আউটপুট নেই",
     "label_status": "অবস্থা:",
     "label_duration": "সময়কাল:",
@@ -87,7 +87,7 @@
     "trigger_type": "ট্রিগার টাইপ",
     "schedule_cron": "শিডিউল (cron)",
     "create_trigger": "ট্রিগার তৈরি করুন",
-    "creating": "তৈরি হচ্ছে...",
+    "creating": "তৈরি হচ্ছে…",
     "cron_expression": "Cron এক্সপ্রেশন",
     "utc_suffix": "(UTC)",
     "webhook_info": "এই ট্রিগারের জন্য একটি webhook এন্ডপয়েন্ট তৈরি হবে। তৈরির পরে আপনি পেলোড ফিল্টারিং কনফিগার করতে পারেন।"
@@ -155,7 +155,7 @@
     "header": "ক্লাউড ট্রিগার ({count})",
     "add_trigger": "ট্রিগার যোগ",
     "deploy_first": "ক্লাউড ট্রিগার তৈরি করতে প্রথমে একটি persona ডিপ্লয় করুন।",
-    "loading": "ট্রিগার লোড হচ্ছে...",
+    "loading": "ট্রিগার লোড হচ্ছে…",
     "empty": "কোনো ক্লাউড ট্রিগার নেই। স্বয়ংক্রিয় রানের জন্য একটি তৈরি করুন।",
     "recent_firings": "সাম্প্রতিক ফায়ারিং",
     "no_firings": "কোনো সাম্প্রতিক ফায়ারিং নেই",
@@ -164,7 +164,7 @@
     "label_last_triggered": "শেষ ট্রিগার:",
     "label_next_trigger": "পরবর্তী ট্রিগার:",
     "label_cron": "Cron:",
-    "loading_firings": "লোড হচ্ছে..."
+    "loading_firings": "লোড হচ্ছে…"
   },
   "dashboard": {
     "title": "ডিপ্লয়মেন্ট",
@@ -191,7 +191,7 @@
     "deploy_hint": "ক্লাউড বা GitLab ট্যাব থেকে পার্সোনা ডিপ্লয় করুন।",
     "showing_of": "{total}টি স্থাপনার{plural} {showing} দেখানো হচ্ছে",
     "total_invocations": "মোট আহ্বান:",
-    "search_placeholder": "ডিপ্লয়মেন্ট অনুসন্ধান করুন...",
+    "search_placeholder": "ডিপ্লয়মেন্ট অনুসন্ধান করুন…",
     "filter": "ফিল্টার",
     "filter_target": "টার্গেট",
     "filter_status": "স্ট্যাটাস",

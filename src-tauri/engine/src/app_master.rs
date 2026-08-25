@@ -219,6 +219,20 @@ pub struct MandateRecord {
     /// the tick does not raise a second one every 300 s while it waits.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub probation_review_id: Option<String>,
+    /// How many consecutive `incomplete` probation reviews the **headless
+    /// bridge** (`crate::headless`) has already answered with an extension.
+    ///
+    /// It exists so the unattended loop terminates: `incomplete` means "extend",
+    /// and a driver that compresses a hundred nights into a hundred ticks would
+    /// otherwise produce a hundred extensions and never a decision. The second
+    /// consecutive one retires instead. Always `0` on the human path — nothing
+    /// but the headless sweep writes it.
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub headless_incomplete_streak: u32,
+}
+
+fn is_zero_u32(v: &u32) -> bool {
+    *v == 0
 }
 
 /// Why an action was refused. Typed so a call site reports the reason rather
@@ -329,12 +343,20 @@ pub struct ScanContext {
 
 const MAX_EVIDENCE_CHARS: usize = 160;
 
-/// Path substrings/suffixes that identify a **test** file.
+/// Does this path name a **test** file?
+///
+/// The `test_` prefix is matched at the start of the BASENAME only. As a bare
+/// substring it also matches `latest_run.rs`, `greatest_hits.py` and anything
+/// else containing "…test_…" — and a false positive here is not harmless: it
+/// makes the generic skip markers (`.skip(`, `.only(`) fire on production code
+/// and turns an ordinary line removal into a "deleted a test" violation.
 fn is_test_path(lower: &str) -> bool {
-    lower.contains(".test.")
+    let base = basename(lower);
+    base.starts_with("test_")
+        || lower.contains(".test.")
         || lower.contains(".spec.")
         || lower.contains("_test.")
-        || lower.contains("test_")
+        || lower.ends_with("_test")
         || lower.contains("/tests/")
         || lower.starts_with("tests/")
         || lower.contains("/__tests__/")
@@ -1156,6 +1178,32 @@ diff --git a/src-tauri/src/scoring.rs b/src-tauri/src/scoring.rs
     }
 
     #[test]
+    fn a_path_that_merely_contains_test_underscore_is_not_a_test_path() {
+        // `latest_run.rs` contains "test_". Read as a test path it would make
+        // every line removal in it a "deleted a test" violation.
+        assert!(!is_test_path("src/latest_run.rs"));
+        assert!(!is_test_path("pipeline/greatest_hits.py"));
+        assert!(!is_test_path("src/contest_view.tsx"));
+        // Real test paths still match, in every convention the repo uses.
+        assert!(is_test_path("tests/test_scoring.py"));
+        assert!(is_test_path("pipeline/jobfit/test_repo_scan.py"));
+        assert!(is_test_path("src/foo.test.ts"));
+        assert!(is_test_path("src/foo.spec.tsx"));
+        assert!(is_test_path("pkg/thing_test.go"));
+        assert!(is_test_path("src/__tests__/foo.tsx"));
+
+        // End to end: a removal in `latest_run.rs` is not a violation.
+        let diff = "diff --git a/src/latest_run.rs b/src/latest_run.rs
+--- a/src/latest_run.rs
++++ b/src/latest_run.rs
+@@
+-    let old = 1;
++    let next = queue.skip(2);
+";
+        assert!(scan(diff).is_empty(), "{:#?}", scan(diff));
+    }
+
+    #[test]
     fn removing_a_line_from_a_non_test_file_is_not_a_violation() {
         let diff = "\
 diff --git a/src/scoring.ts b/src/scoring.ts
@@ -1410,6 +1458,7 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
             probation_decided_at: None,
             probation_decision: None,
             probation_review_id: None,
+            headless_incomplete_streak: 0,
         };
         let json = serde_json::to_string(&rec).unwrap();
         assert!(json.contains("\"scopeRung\":2"), "{json}");

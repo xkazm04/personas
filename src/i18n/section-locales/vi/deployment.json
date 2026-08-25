@@ -2,15 +2,15 @@
   "title": "Triển khai",
   "orchestrator_url": "URL bộ điều phối",
   "api_key": "Khóa API",
-  "connecting": "Đang kết nối...",
-  "sr_connecting": "Đang kết nối đến bộ điều phối đám mây...",
+  "connecting": "Đang kết nối…",
+  "sr_connecting": "Đang kết nối đến bộ điều phối đám mây…",
   "auth_code": "Mã ủy quyền",
-  "deploying": "Đang triển khai...",
+  "deploying": "Đang triển khai…",
   "sr_deploying": "Đang triển khai tác tử lên đám mây",
   "no_targets": "Chưa kết nối mục tiêu triển khai",
   "status": {
     "connected": "Đã kết nối",
-    "loading": "Đang tải trạng thái đám mây...",
+    "loading": "Đang tải trạng thái đám mây…",
     "token_available": "Mã thông báo khả dụng",
     "no_token": "Chưa cấu hình mã thông báo",
     "no_token_configured": "Chưa cấu hình token",
@@ -21,7 +21,7 @@
     "request_body": "Nội dung yêu cầu",
     "response_label": "Phản hồi",
     "send_request": "Gửi yêu cầu",
-    "sending": "Đang gửi...",
+    "sending": "Đang gửi…",
     "empty_response": "(phản hồi trống)",
     "snippets": "Đoạn mã",
     "request_body_placeholder": "{ \"message\": \"Prompt của bạn ở đây…\" }"
@@ -35,7 +35,7 @@
     "connected": "Đã kết nối",
     "disconnect": "Ngắt kết nối",
     "diagnose": "Chẩn đoán",
-    "diagnosing": "Đang chẩn đoán...",
+    "diagnosing": "Đang chẩn đoán…",
     "diagnostics_title": "Chẩn đoán",
     "url_protocol_error": "URL phải dùng http hoặc https",
     "url_hostname_error": "URL thiếu tên máy chủ",
@@ -49,7 +49,7 @@
     "active_deployments": "Triển khai đang hoạt động"
   },
   "exec_detail": {
-    "fetching_output": "Đang lấy đầu ra...",
+    "fetching_output": "Đang lấy đầu ra…",
     "no_output": "Không có đầu ra",
     "label_status": "Trạng thái:",
     "label_duration": "Thời lượng:",
@@ -87,7 +87,7 @@
     "trigger_type": "Loại trình kích hoạt",
     "schedule_cron": "Lịch (cron)",
     "create_trigger": "Tạo trình kích hoạt",
-    "creating": "Đang tạo...",
+    "creating": "Đang tạo…",
     "cron_expression": "Biểu thức cron",
     "utc_suffix": "(UTC)",
     "webhook_info": "Một endpoint webhook sẽ được tạo cho trình kích hoạt này. Bạn có thể cấu hình lọc payload sau khi tạo."
@@ -155,7 +155,7 @@
     "header": "Trình kích hoạt đám mây ({count})",
     "add_trigger": "Thêm trình kích hoạt",
     "deploy_first": "Triển khai tác tử trước để tạo trình kích hoạt đám mây.",
-    "loading": "Đang tải trình kích hoạt...",
+    "loading": "Đang tải trình kích hoạt…",
     "empty": "Chưa có trình kích hoạt đám mây. Tạo một trình kích hoạt để lên lịch chạy tự động.",
     "recent_firings": "Lần kích hoạt gần đây",
     "no_firings": "Không có lần kích hoạt gần đây",
@@ -164,7 +164,7 @@
     "label_last_triggered": "Lần kích hoạt cuối:",
     "label_next_trigger": "Lần kích hoạt tiếp theo:",
     "label_cron": "Cron:",
-    "loading_firings": "Đang tải..."
+    "loading_firings": "Đang tải…"
   },
   "dashboard": {
     "title": "Triển khai",
@@ -191,7 +191,7 @@
     "deploy_hint": "Triển khai personas từ tab Đám mây hoặc GitLab.",
     "showing_of": "{total} {showing} Đang hiển thị trong tổng số hoạt động triển khai{plural}",
     "total_invocations": "Tổng số lần gọi:",
-    "search_placeholder": "Tìm kiếm triển khai...",
+    "search_placeholder": "Tìm kiếm triển khai…",
     "filter": "Lọc",
     "filter_target": "Mục tiêu",
     "filter_status": "Trạng thái",

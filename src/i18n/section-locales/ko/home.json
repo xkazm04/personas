@@ -5,8 +5,8 @@
     "pick_tool": "선호 도구 선택",
     "pick_tool_hint": "첫 번째 서비스 연결이 됩니다.",
     "describe_goal": "자동화하려는 것은 무엇인가요?",
-    "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
-    "goal_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화...",
+    "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 — 설정을 도와드립니다.",
+    "goal_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
     "ready_to_save": "저장 준비 완료",
     "step_role": "역할",
     "step_role_hint": "경험을 맞춤화하기 위해 역할을 알려주세요.",
@@ -17,7 +17,7 @@
     "select_role_first": "도구 옵션을 보려면 먼저 역할을 선택하세요.",
     "select_tool_first": "목표를 설정하려면 먼저 도구를 선택하세요.",
     "get_started": "시작하기",
-    "role_office_rat": "오피스 워커",
+    "role_office_rat": "일반 사용자",
     "role_office_rat_hint": "비기술 사용자",
     "role_developer": "개발자",
     "role_developer_hint": "기술 사용자",
@@ -29,7 +29,7 @@
   },
   "learning": {
     "title": "학습 센터",
-    "subtitle": "Personas 마스터를 위한 가이드 투어 및 빠른 팁",
+    "subtitle": "Personas 마스터를 위한 가이드 투어 및 파워 무브",
     "guided_tours": "가이드 투어",
     "tours_completed": "{completed}/{total} 완료",
     "done": "완료",
@@ -71,7 +71,7 @@
     "tool_hint": "첫 번째 커넥터 통합이 됩니다.",
     "automate_title": "자동화하려는 것은 무엇인가요?",
     "automate_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
-    "automate_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화...",
+    "automate_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화…",
     "min_chars": "최소 10자 ({current}/10)",
     "ready_to_save": "저장 준비 완료",
     "back": "뒤로",
@@ -88,20 +88,20 @@
     "edit": "{personaName} 계속 편집하기"
   },
   "nav_status": {
-    "incidents": "{count}개 진행 중인 인시던트",
-    "incidents_other": "{count}개 진행 중인 인시던트",
-    "reviews": "{count}개 대기 중인 검토",
-    "reviews_other": "{count}개 대기 중인 검토",
-    "teams": "{count}개 팀",
-    "teams_other": "{count}개 팀",
+    "incidents": "진행 중인 인시던트 {count}건",
+    "incidents_other": "진행 중인 인시던트 {count}건",
+    "reviews": "대기 중인 검토 {count}개",
+    "reviews_other": "대기 중인 검토 {count}개",
+    "teams": "팀 {count}개",
+    "teams_other": "팀 {count}개",
     "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
     "agents_active_other": "최근 24시간 동안 활성 에이전트 {count}개",
     "events_today": "최근 24시간 동안 이벤트 {count}개",
     "events_today_other": "최근 24시간 동안 이벤트 {count}개",
-    "connections_external": "{count}개 외부 연결",
-    "connections_external_other": "{count}개 외부 연결",
-    "connections_builtin": "{count}개 내장 커넥터",
-    "connections_builtin_other": "{count}개 내장 커넥터",
+    "connections_external": "외부 연결 {count}개",
+    "connections_external_other": "외부 연결 {count}개",
+    "connections_builtin": "내장 커넥터 {count}개",
+    "connections_builtin_other": "내장 커넥터 {count}개",
     "trend_up": "이전 24시간 대비 {pct}% 증가",
     "trend_down": "이전 24시간 대비 {pct}% 감소",
     "trend_flat": "이전 24시간 대비 변화 없음",
@@ -120,7 +120,7 @@
   "greeting_morning": "좋은 아침입니다",
   "greeting_afternoon": "좋은 오후입니다",
   "greeting_evening": "좋은 저녁입니다",
-  "operator": "운영자",
+  "operator": "사용자",
   "commander": "사령관",
   "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
   "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
@@ -150,7 +150,7 @@
   "nav": {
     "overview": {
       "label": "개요",
-      "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링"
+      "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링을 제공합니다."
     },
     "personas": {
       "label": "에이전트",
@@ -161,12 +161,12 @@
       "description": "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다"
     },
     "credentials": {
-      "label": "자격 증명",
+      "label": "연결",
       "description": "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다"
     },
     "design-reviews": {
       "label": "템플릿",
-      "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성"
+      "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성을 지원합니다."
     },
     "team": {
       "label": "팀",
@@ -174,7 +174,7 @@
     },
     "teams": {
       "label": "팀",
-      "description": "여러 에이전트를 팀으로 결합하여 다단계 워크플로를 함께 처리합니다"
+      "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다."
     },
     "cloud": {
       "label": "클라우드",
@@ -182,11 +182,11 @@
     },
     "settings": {
       "label": "설정",
-      "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정"
+      "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정을 관리합니다."
     },
     "plugins": {
       "label": "플러그인",
-      "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능 확장"
+      "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능을 확장합니다."
     }
   },
   "icon_showcase": {

@@ -94,10 +94,10 @@
   "forage_confidence": {
     "high": "Hoch",
     "medium": "Mittel",
-    "low": "Low"
+    "low": "Niedrig"
   },
   "capability_risk": {
-    "low": "low",
+    "low": "Niedrig",
     "medium": "Mittel",
     "high": "Hoch"
   },
@@ -118,7 +118,7 @@
     "delivered": "Zugestellt",
     "failed": "Fehlgeschlagen",
     "pending": "Ausstehend",
-    "queued": "In Warteschlange"
+    "queued": "Warteschlange"
   },
   "rotation": {
     "anomaly": "Anomalie",
@@ -156,7 +156,7 @@
     "depth_limit": "Tiefenlimit",
     "handoff_suppressed": "Übergabe unterdrückt",
     "malformed_config": "Ungültige Konfiguration",
-    "outside_window": "Außerhalb Aktivfenster",
+    "outside_window": "Außerhalb des Zeitfensters",
     "predicate_unmet": "Bedingung nicht erfüllt",
     "publish_failed": "Veröffentlichung fehlgeschlagen",
     "quarantined": "Trigger in Quarantäne",

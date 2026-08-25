@@ -32,13 +32,13 @@
   "get_started": "Bắt đầu",
   "install_nodejs": "Cài đặt Node.js",
   "install_cli": "Cài đặt Claude CLI",
-  "downloading": "Đang tải xuống...",
-  "installing": "Đang cài đặt...",
+  "downloading": "Đang tải xuống…",
+  "installing": "Đang cài đặt…",
   "installed_success": "Đã cài đặt thành công",
   "installation_failed": "Cài đặt thất bại",
   "try_manual": "Thử chạy thủ công:",
   "official_page": "Trang chính thức",
   "edit_key": "Sửa khóa",
   "edit_config": "Sửa cấu hình",
-  "signing_in": "Đang đăng nhập..."
+  "signing_in": "Đang đăng nhập…"
 }

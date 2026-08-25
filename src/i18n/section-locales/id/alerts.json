@@ -1,7 +1,7 @@
 {
-  "metric_error_rate": "Tingkat Error",
-  "metric_success_rate": "Tingkat Keberhasilan",
-  "metric_cost": "Total Biaya",
+  "metric_error_rate": "Tingkat error",
+  "metric_success_rate": "Tingkat keberhasilan",
+  "metric_cost": "Total biaya",
   "metric_cost_spike": "Biaya vs. Rata-rata",
   "metric_executions": "Eksekusi",
   "severity_info": "Informasi",

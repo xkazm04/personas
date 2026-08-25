@@ -2,15 +2,15 @@
   "title": "Despliegue",
   "orchestrator_url": "URL del orquestador",
   "api_key": "Clave de API",
-  "connecting": "Conectando...",
-  "sr_connecting": "Conectando al orquestador en la nube...",
+  "connecting": "Conectando…",
+  "sr_connecting": "Conectando al orquestador en la nube…",
   "auth_code": "Código de autorización",
-  "deploying": "Desplegando...",
+  "deploying": "Desplegando…",
   "sr_deploying": "Desplegando agente en la nube",
   "no_targets": "No hay destinos de despliegue conectados",
   "status": {
     "connected": "Conectado",
-    "loading": "Cargando estado de la nube...",
+    "loading": "Cargando estado de la nube…",
     "token_available": "Token disponible",
     "no_token": "No hay token configurado",
     "no_token_configured": "Sin token configurado",
@@ -21,7 +21,7 @@
     "request_body": "Cuerpo de la solicitud",
     "response_label": "Respuesta",
     "send_request": "Enviar solicitud",
-    "sending": "Enviando...",
+    "sending": "Enviando…",
     "empty_response": "(respuesta vacía)",
     "snippets": "Fragmentos",
     "request_body_placeholder": "{ \"message\": \"Su mensaje aquí…\" }"
@@ -35,7 +35,7 @@
     "connected": "Conectado",
     "disconnect": "Desconectar",
     "diagnose": "Diagnosticar",
-    "diagnosing": "Diagnosticando...",
+    "diagnosing": "Diagnosticando…",
     "diagnostics_title": "Diagnósticos",
     "url_protocol_error": "La URL debe usar http o https",
     "url_hostname_error": "La URL no tiene nombre de host",
@@ -49,7 +49,7 @@
     "active_deployments": "Despliegues Activos"
   },
   "exec_detail": {
-    "fetching_output": "Obteniendo salida...",
+    "fetching_output": "Obteniendo salida…",
     "no_output": "Sin salida",
     "label_status": "Estado:",
     "label_duration": "Duración:",
@@ -77,7 +77,7 @@
     "refresh_token": "Refrescar Token",
     "open_authorization_window": "Abrir Ventana de Autorización",
     "token_unknown_msg": "No se pudo verificar la validez del token. Refresca el token para confirmar que siga activo.",
-    "connect_anthropic_msg": "Conecta tu cuenta de Anthropic para habilitar la autenticación basada en OAuth para ejecuciones en la nube.",
+    "connect_anthropic_msg": "Conecte su cuenta de Anthropic para habilitar la autenticación basada en OAuth para ejecuciones en la nube.",
     "token_expired_msg_prefix": "Este token OAuth ha caducado"
   },
   "trigger_form": {
@@ -87,7 +87,7 @@
     "trigger_type": "Tipo de disparador",
     "schedule_cron": "Programación (cron)",
     "create_trigger": "Crear disparador",
-    "creating": "Creando...",
+    "creating": "Creando…",
     "cron_expression": "Expresión Cron",
     "utc_suffix": "(UTC)",
     "webhook_info": "Se creará un endpoint webhook para este disparador. Puedes configurar el filtrado de payload después de la creación."
@@ -155,7 +155,7 @@
     "header": "Disparadores en la nube ({count})",
     "add_trigger": "Agregar disparador",
     "deploy_first": "Despliega un agente primero para crear disparadores en la nube.",
-    "loading": "Cargando disparadores...",
+    "loading": "Cargando disparadores…",
     "empty": "Aún no hay disparadores en la nube. Crea uno para programar ejecuciones automatizadas.",
     "recent_firings": "Activaciones recientes",
     "no_firings": "Sin activaciones recientes",
@@ -164,7 +164,7 @@
     "label_last_triggered": "Último disparo:",
     "label_next_trigger": "Próximo disparo:",
     "label_cron": "Cron:",
-    "loading_firings": "Cargando..."
+    "loading_firings": "Cargando…"
   },
   "dashboard": {
     "title": "Despliegues",
@@ -187,11 +187,11 @@
     "no_targets_hint": "Conéctate a la ejecución en la nube o GitLab en las pestañas respectivas para ver los despliegues aquí.",
     "no_match_filters": "Ningún despliegue coincide con los filtros",
     "no_deployments": "Sin despliegues aún",
-    "adjust_filters": "Intenta ajustar tu búsqueda o filtros.",
+    "adjust_filters": "Intente ajustar su búsqueda o filtros.",
     "deploy_hint": "Despliega personas desde las pestañas Nube o GitLab.",
     "showing_of": "Mostrando {showing} de {total} despliegue{plural}",
     "total_invocations": "Total de invocaciones:",
-    "search_placeholder": "Buscar despliegues...",
+    "search_placeholder": "Buscar despliegues…",
     "filter": "Filtrar",
     "filter_target": "Destino",
     "filter_status": "Estado",

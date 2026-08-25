@@ -20,7 +20,7 @@
 //! See docs/architecture/cloud-integration-bridge.md §4.
 
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use axum::{
@@ -30,9 +30,12 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use personas_db::DbPool;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
+
+use crate::headless;
 
 /// How long a pending pairing lives before it's pruned.
 const PAIRING_TTL: Duration = Duration::from_secs(300);
@@ -186,6 +189,84 @@ pub fn set_rejected(nonce: &str) {
     }
 }
 
+// ============================================================================
+// Headless auto-approval (test mode — see `crate::headless`)
+// ============================================================================
+
+/// How the CORS allowlist learns about a newly-paired origin.
+///
+/// The allowlist lives in `app_lib`'s management API (it is read by that
+/// router's own CORS predicate), and this crate sits below it. Rather than
+/// move a static across a crate boundary for one caller, the owner installs
+/// itself here at server start. A missing hook is not an error: the pairing
+/// ceremony is complete without it, and a non-browser client (the kp driver
+/// is one) never consults CORS at all.
+static PAIRED_ORIGIN_HOOK: OnceLock<fn(&str)> = OnceLock::new();
+
+/// Install the CORS-allowlist notifier. Called once by
+/// `start_webhook_server_with_management`; later calls are ignored.
+pub fn set_paired_origin_hook(hook: fn(&str)) {
+    let _ = PAIRED_ORIGIN_HOOK.set(hook);
+}
+
+/// How long an auto-minted headless key lives. Short on purpose: this key is
+/// minted with no human in the loop, so it expires on the scale of a test run,
+/// not of a pairing.
+const HEADLESS_KEY_DAYS: i64 = 1;
+
+/// Auto-approve a pending pairing: mint the origin-bound key and stash it for
+/// the single-use claim, with **no desktop modal**.
+///
+/// The only thing that changes versus the human `approve_pairing` command is
+/// who decided. Everything the security model rests on is unchanged: the key is
+/// bound to the requesting `Origin`, the claim is single-use and origin-checked,
+/// and the nonce still has to be the one that was registered.
+///
+/// [`headless::TEST_SCOPE`] is added to whatever the caller asked for, so a
+/// key minted this way is identifiable and is the only kind that can drive the
+/// on-demand tick endpoint.
+///
+/// Returns the minted key's prefix (never the plaintext — that leaves only
+/// through `/pair/claim`).
+pub fn auto_approve_headless(
+    pool: &DbPool,
+    nonce: &str,
+    requested_scopes: &[String],
+) -> Result<String, String> {
+    let (origin, app_name) = pending_origin(nonce)
+        .ok_or_else(|| "pending pairing (expired or already resolved)".to_string())?;
+
+    let mut scopes: Vec<String> = requested_scopes.to_vec();
+    if !scopes.iter().any(|s| s == headless::TEST_SCOPE) {
+        scopes.push(headless::TEST_SCOPE.to_string());
+    }
+
+    let expires_at = (chrono::Utc::now() + chrono::Duration::days(HEADLESS_KEY_DAYS)).to_rfc3339();
+    let label = format!("Paired (headless bridge): {origin}");
+    let resp = personas_db::repos::resources::external_api_keys::create(
+        pool,
+        &app_name,
+        scopes,
+        Some(expires_at),
+        Some(origin.clone()),
+        Some(label),
+    )
+    .map_err(|e| e.to_string())?;
+
+    if let Some(hook) = PAIRED_ORIGIN_HOOK.get() {
+        hook(&origin);
+    }
+    set_approved(nonce, resp.plaintext_token)?;
+
+    tracing::warn!(
+        prefix = %resp.record.key_prefix,
+        origin = %origin,
+        actor = headless::ACTOR,
+        "HEADLESS BRIDGE: pairing AUTO-APPROVED with no human in the loop — origin-bound key minted"
+    );
+    Ok(resp.record.key_prefix)
+}
+
 enum ClaimResult {
     Token(String),
     Pending,
@@ -263,12 +344,26 @@ struct PairRequestBody {
     name: Option<String>,
 }
 
+/// State the pairing routes need: the app handle (to raise the approval modal)
+/// and the pool (to mint a key when the headless bridge auto-approves).
+#[derive(Clone)]
+pub struct PairingState {
+    pub app: AppHandle,
+    pub pool: DbPool,
+}
+
 /// `POST /pair/request` — a cloud app initiates pairing. The authoritative
 /// origin is the request's `Origin` header (NOT a body field), so a page can
 /// only ever pair itself. Creates a pending pairing and surfaces the approval
 /// modal. Nothing is minted here.
+///
+/// **Headless bridge exception** (`crate::headless`): with the mode on, the
+/// pairing is approved on the spot and the key is minted here — no modal is
+/// raised, because nobody is watching for one. The response says so
+/// (`status: "approved"`), and `/pair/claim` still hands the token over exactly
+/// once, to the approved origin only.
 async fn handle_pair_request(
-    State(app): State<AppHandle>,
+    State(state): State<Arc<PairingState>>,
     headers: HeaderMap,
     Json(body): Json<PairRequestBody>,
 ) -> impl IntoResponse {
@@ -281,9 +376,33 @@ async fn handle_pair_request(
         return (StatusCode::BAD_REQUEST, "Origin header required").into_response();
     }
     let name = body.name.unwrap_or_else(|| origin.clone());
+    let requested = body.scopes.clone();
     match register(&origin, body.scopes, &body.nonce, &name) {
         Ok(view) => {
-            let _ = app.emit(crate::event_registry::event_name::PAIRING_REQUESTED, &view);
+            if headless::enabled() {
+                return match auto_approve_headless(&state.pool, &body.nonce, &requested) {
+                    // No `PAIRING_REQUESTED` emit: the pairing is already
+                    // resolved, so a modal raised for it could never be acted
+                    // on (`pending_origin` returns None once it is approved).
+                    Ok(prefix) => (
+                        StatusCode::ACCEPTED,
+                        Json(serde_json::json!({
+                            "status": "approved",
+                            "autoApproved": true,
+                            "actor": headless::ACTOR,
+                            "keyPrefix": prefix,
+                        })),
+                    )
+                        .into_response(),
+                    Err(e) => {
+                        tracing::error!(error = %e, "headless bridge: auto-approval failed");
+                        (StatusCode::INTERNAL_SERVER_ERROR, e).into_response()
+                    }
+                };
+            }
+            let _ = state
+                .app
+                .emit(crate::event_registry::event_name::PAIRING_REQUESTED, &view);
             (
                 StatusCode::ACCEPTED,
                 Json(serde_json::json!({ "status": "pending" })),
@@ -328,12 +447,12 @@ async fn handle_pair_claim(headers: HeaderMap, Query(q): Query<ClaimQuery>) -> i
 /// cloud origin is not paired yet — the nonce + user approval + origin-checked
 /// single-use claim are the security, not CORS. Merged into the webhook server
 /// alongside the (restrictive-CORS) management router.
-pub fn pairing_router(app: AppHandle) -> Router {
+pub fn pairing_router(app: AppHandle, pool: DbPool) -> Router {
     use tower_http::cors::{Any, CorsLayer};
     Router::new()
         .route("/pair/request", post(handle_pair_request))
         .route("/pair/claim", get(handle_pair_claim))
-        .with_state(app)
+        .with_state(Arc::new(PairingState { app, pool }))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
@@ -397,6 +516,95 @@ mod tests {
             claim(&n, "https://r.example"),
             ClaimResult::Rejected
         ));
+    }
+
+    // ---------------------------------------------------------------------
+    // Headless bridge auto-approval (test mode)
+    // ---------------------------------------------------------------------
+
+    /// The whole point of the mode: one round-trip from `register` to a
+    /// claimable token, with no `approve_pairing` command in between.
+    #[test]
+    fn headless_auto_approval_mints_and_claims_in_one_round_trip() {
+        let _gate = crate::headless::test_gate::force(true);
+        let pool = personas_db::init_test_db().expect("test db");
+        let n = nonce("headless-ok");
+        register(
+            "https://kp.local",
+            vec!["personas:build".into()],
+            &n,
+            "kp driver",
+        )
+        .unwrap();
+
+        let prefix = auto_approve_headless(&pool, &n, &["personas:build".to_string()]).unwrap();
+        assert!(!prefix.is_empty());
+
+        // The token is claimable immediately — no human step ran.
+        let token = match claim(&n, "https://kp.local") {
+            ClaimResult::Token(t) => t,
+            other => panic!(
+                "expected a token on the first claim, got {:?}",
+                match other {
+                    ClaimResult::Pending => "pending",
+                    ClaimResult::Rejected => "rejected",
+                    ClaimResult::Gone => "gone",
+                    ClaimResult::NotFound => "not found",
+                    ClaimResult::OriginMismatch => "origin mismatch",
+                    ClaimResult::Token(_) => unreachable!(),
+                }
+            ),
+        };
+        assert!(token.starts_with("pk_"), "expected a pk_ key, got {token}");
+
+        // …and it is a REAL key: origin-bound, carrying the requested scopes
+        // plus `personas:test`.
+        let key = personas_db::repos::resources::external_api_keys::find_by_token(&pool, &token)
+            .expect("lookup")
+            .expect("the minted key is resolvable by its plaintext");
+        let scopes = key.parsed_scopes();
+        assert!(scopes.iter().any(|s| s == "personas:build"));
+        assert!(
+            scopes.iter().any(|s| s == crate::headless::TEST_SCOPE),
+            "every auto-minted key carries {} so the tick endpoint can demand it",
+            crate::headless::TEST_SCOPE
+        );
+        assert_eq!(key.bound_origin.as_deref(), Some("https://kp.local"));
+        assert!(key.expires_at.is_some(), "an unattended key must expire");
+
+        // Single-use is unchanged.
+        assert!(matches!(claim(&n, "https://kp.local"), ClaimResult::Gone));
+    }
+
+    /// Origin binding is not relaxed by the mode.
+    #[test]
+    fn headless_auto_approval_still_refuses_a_foreign_origin() {
+        let _gate = crate::headless::test_gate::force(true);
+        let pool = personas_db::init_test_db().expect("test db");
+        let n = nonce("headless-origin");
+        register("https://kp.local", vec![], &n, "kp driver").unwrap();
+        auto_approve_headless(&pool, &n, &[]).unwrap();
+        assert!(matches!(
+            claim(&n, "https://evil.example"),
+            ClaimResult::OriginMismatch
+        ));
+    }
+
+    /// With the gate off the behaviour is simply absent — a pending pairing
+    /// stays pending until a human approves it.
+    #[test]
+    fn without_the_env_gate_nothing_is_auto_approved() {
+        let _gate = crate::headless::test_gate::force(false);
+        assert!(!crate::headless::enabled());
+        let n = nonce("headless-off");
+        register("https://kp.local", vec![], &n, "kp driver").unwrap();
+        // The handler consults `headless::enabled()` before it ever reaches
+        // `auto_approve_headless`, so the pairing is still Pending here.
+        assert!(matches!(
+            claim(&n, "https://kp.local"),
+            ClaimResult::Pending
+        ));
+        assert!(pending_origin(&n).is_some(), "still awaiting a human");
     }
 
     #[test]

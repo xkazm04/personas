@@ -42,8 +42,8 @@
     "refineWithAi": "Sempurnakan dengan AI",
     "bioRefineHint": "AI akan mempertahankan suara dan fakta yang sudah ada — hanya merapikan prosa. Kata kunci pengarah opsional di bawah.",
     "bioRefineKeywordsPlaceholder": "(opsional) mis. lebih ringkas, kurang korporat, pertahankan humor kering",
-    "refining": "Menyempurnakan...",
-    "refineBio": "Sempurnakan Bio"
+    "refining": "Menyempurnakan…",
+    "refineBio": "Sempurnakan bio"
   },
   "channels": {
     "title": "Saluran",
@@ -51,7 +51,7 @@
     "addChannel": "Tambah saluran",
     "channelType": "Jenis saluran",
     "label": "Label",
-    "labelPlaceholder": "Server Discord Saya",
+    "labelPlaceholder": "Server Discord saya",
     "credential": "Kredensial",
     "credentialNoneFound": "tidak ditemukan — tambahkan di Kredensial",
     "credentialPlaceholder": "Pilih kredensial…",
@@ -69,7 +69,7 @@
     "remove": "Hapus",
     "removeConfirm": "Hapus \"{label}\"? Kredensial dan persona tidak akan dihapus.",
     "selectChannel": "Pilih saluran…",
-    "eyebrowAtelier": "Grid Antena",
+    "eyebrowAtelier": "Grid antena",
     "statActive": "aktif",
     "statPaused": "dijeda",
     "statSurfaces": "platform",
@@ -168,7 +168,7 @@
     "previewTooltip": "Sintesis sampel pendek dengan pengaturan saat ini",
     "previewNeedsConfig": "Atur voice ID dan credential ID sebelum melakukan pratinjau",
     "previewSample": "Beginilah suara twin Anda ketika berbicara melalui kanal suara.",
-    "eyebrowAtelier": "Studio Suara",
+    "eyebrowAtelier": "Studio suara",
     "atelierVariantLabel": "Atelier",
     "currentVariantLabel": "Saat ini",
     "stageEmptyHeadline": "Belum ada suara tersimpan",
@@ -186,7 +186,7 @@
     "sectionModel": "Pemilihan model"
   },
   "training": {
-    "title": "Ruang Pelatihan",
+    "title": "Ruang pelatihan",
     "subtitle": "Latih twin dengan menjawab pertanyaan memakai kata-kata Anda sendiri. Setiap jawaban akan menjadi memori.",
     "newSession": "Sesi baru",
     "whatToTrain": "Apa yang ingin kita latih?",
@@ -207,7 +207,7 @@
     "sessionComplete": "Sesi pelatihan selesai",
     "sessionCompleteDetail": "{saved} dari {total} jawaban tersimpan sebagai memori tertunda. Tinjau di tab Knowledge.",
     "trainMore": "Latih lagi",
-    "reviewMemories": "Tinjau Memori",
+    "reviewMemories": "Tinjau memori",
     "topicPromptBackground": "Tanyakan tentang latar belakang profesional saya, riwayat karier, dan peran saya saat ini.",
     "topicPromptOpinions": "Tanyakan tentang opini saya soal teknologi, alat, dan framework yang saya gunakan atau rekomendasikan.",
     "topicPromptCommunication": "Tanyakan bagaimana saya lebih suka berkomunikasi — formalitas, humor, keterusterangan, dan apa yang saya hindari.",
@@ -272,7 +272,7 @@
     "obsidianDescription": "Catatan yang mudah dibaca, dapat dijelajahi dan diedit langsung di Obsidian.",
     "obsidianTwinReadsFrom": "Twin membaca dari",
     "obsidianHint": "Hubungkan vault Anda di plugin Obsidian Brain. Jalur subfolder diatur di tab Identity. Tidak wajib — twin tetap berjalan hanya dengan basis pengetahuan.",
-    "knowledgeBase": "Basis Pengetahuan",
+    "knowledgeBase": "Basis pengetahuan",
     "requiredForRecall": "Diperlukan untuk pemanggilan memori",
     "kbDescription": "Penyimpanan terindeks-vektor yang mendukung pencarian semantik. Saat persona memanggil recall_memory, pencarian dilakukan di basis pengetahuan ini.",
     "loadingKb": "Memuat basis pengetahuan…",
@@ -302,7 +302,7 @@
   "knowledge": {
     "title": "Pengetahuan",
     "subtitle": "Tinjau apa yang diingat twin. Memori yang disetujui mendukung pemanggilan semantik; percakapan mencatat semua interaksi.",
-    "memoryInbox": "Kotak Masuk Memori",
+    "memoryInbox": "Kotak masuk memori",
     "filterPending": "tertunda",
     "filterApproved": "disetujui",
     "filterRejected": "ditolak",
@@ -328,7 +328,7 @@
     "rejectReasonCancel": "Batal",
     "rejectedReasonLabel": "Alasan: {reason}",
     "priority": "prioritas",
-    "conversationHistory": "Riwayat Percakapan",
+    "conversationHistory": "Riwayat percakapan",
     "conversationExplanation": "Setiap pesan yang dikirim atau diterima melalui konektor Twin dicatat di sini. Ini adalah jejak interaksi mentah — kotak masuk memori di atas adalah ekstrak yang telah dikurasi.",
     "noConversationsYet": "Belum ada percakapan",
     "conversationsHint": "Interaksi akan muncul di sini saat persona menggunakan konektor Twin di saluran mana pun.",
@@ -366,7 +366,7 @@
   "profiles": {
     "title": "Profil Twin",
     "subtitle": "Setiap twin adalah identitas digital yang diadopsi persona melalui konektor Twin.",
-    "newTwin": "Twin Baru",
+    "newTwin": "Twin baru",
     "namePlaceholder": "Nama (mis. Twin Pendiri)",
     "rolePlaceholder": "Peran (mis. Indie Dev)",
     "cancel": "Batal",
@@ -416,7 +416,7 @@
     "atelierHint": "Studio atmosferik · pita gradien · aksen dekoratif",
     "console": "Konsol",
     "consoleHint": "Log padat · ubin KPI · mengutamakan papan ketik",
-    "baseline": "Baseline",
+    "baseline": "Acuan",
     "baselineHint": "Tata letak yang sudah dirilis saat ini, sebagai referensi"
   },
   "wiki": {

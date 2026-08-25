@@ -1674,6 +1674,51 @@ fn route_verdicts(
     Ok(())
 }
 
+/// Create an **App master probation review** (P4) through the Director's own
+/// review path.
+///
+/// Same table, same `context_data.source = "director"` stamp and therefore the
+/// same downstream treatment as a coaching verdict: it appears in the Director
+/// review surfaces, and resolving it produces the synthesized memory
+/// `manual_reviews::update_status` writes for director-sourced rows. What
+/// differs is that the packet is **already decided** by arithmetic — the caller
+/// renders a deterministic backbone and its narration
+/// (`engine::app_master_probation::build_packet`); nothing here scores anything.
+///
+/// `severity` is `high`: a probation verdict decides whether an agent gains
+/// unattended spend on a real repository, which is not an `info` decision.
+pub(crate) fn create_probation_review(
+    pool: &DbPool,
+    persona_id: &str,
+    anchor_execution_id: &str,
+    title: &str,
+    context_data: &str,
+    suggested_actions: &str,
+) -> Result<String, AppError> {
+    let review = manual_reviews::create(
+        pool,
+        CreateManualReviewInput {
+            execution_id: anchor_execution_id.to_string(),
+            persona_id: persona_id.to_string(),
+            title: title.to_string(),
+            description: Some(
+                "The probation window for this App master has closed. Approve to activate it \
+                 (autopilot suggest → full), choose `extend_30` for another 30 days, or reject \
+                 / choose `retire` to stop it. The numbers in this packet are computed, not \
+                 judged."
+                    .to_string(),
+            ),
+            severity: Some("high".to_string()),
+            context_data: Some(context_data.to_string()),
+            suggested_actions: Some(suggested_actions.to_string()),
+            use_case_id: None,
+            assignment_id: None,
+            step_id: None,
+        },
+    )?;
+    Ok(review.id)
+}
+
 /// List Director-sourced manual reviews, optionally filtered to a single
 /// target persona. Reads the unified `persona_manual_reviews` table and
 /// keeps only rows whose `context_data.source == "director"`.

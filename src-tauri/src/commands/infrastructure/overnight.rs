@@ -399,8 +399,30 @@ async fn run_project_night(
     let month_spend = month_spend_usd(pool);
     let ceiling = monthly_ceiling_usd(pool);
 
+    // App master mandate (P4) — the SECOND gate, independent of autopilot mode.
+    // Dispatching authors a change, so it needs rung 2; a project whose App
+    // master holds rung 0 or 1 is refused here even on `full` autopilot. The
+    // refusal is typed and carries the owner to escalate to, so it lands in
+    // `blocked_reason` as a sentence the operator can act on rather than as a
+    // silent "0 dispatched" night.
+    let mandate_refusal = personas_engine::autonomy::mandate_permits_for(
+        pool,
+        project_id,
+        personas_engine::autonomy::Action::BacklogToGoal,
+    )
+    .err();
+
     if !triage.accepted_idea_ids.is_empty() {
-        if !mode.allows(Capability::DispatchFixes) {
+        if let Some(refusal) = &mandate_refusal {
+            blocked_reason = Some(format!(
+                "{refusal} ({} accepted idea(s) left for the morning)",
+                triage.accepted_idea_ids.len()
+            ));
+            tracing::warn!(
+                project_id,
+                "overnight: App master mandate refused dispatch: {refusal}"
+            );
+        } else if !mode.allows(Capability::DispatchFixes) {
             blocked_reason = Some(format!(
                 "mode `{}` triages but does not dispatch ({} accepted idea(s) left for the morning)",
                 mode.as_str(),
@@ -677,7 +699,26 @@ pub async fn dev_tools_run_overnight_now(
     project_id: String,
 ) -> Result<NightRun, AppError> {
     require_auth(&state).await?;
-    let modes = autopilot::load_modes(&state.db);
+    run_overnight_now_core(&state.db, &app, &project_id).await
+}
+
+/// The body of [`dev_tools_run_overnight_now`], without the IPC auth check and
+/// without `AppState` — so a non-IPC caller can drive one night on demand.
+///
+/// The **only** thing the command adds over this is `require_auth`. Everything
+/// that bounds a night run — the autopilot capability gate, the App master
+/// mandate, the budget governor, the fleet slot cap, the branch-only dispatch
+/// contract, the ledger row — lives inside `run_project_night` and applies
+/// identically here. The headless bridge's tick endpoint
+/// (`docs/architecture/cloud-integration-bridge.md` §13) calls this, so an
+/// unattended loop cannot get a *different* night than a human would.
+pub(crate) async fn run_overnight_now_core(
+    pool: &DbPool,
+    app: &AppHandle,
+    project_id: &str,
+) -> Result<NightRun, AppError> {
+    let project_id = project_id.to_string();
+    let modes = autopilot::load_modes(pool);
     let mode = modes
         .get(project_id.as_str())
         .copied()
@@ -690,10 +731,21 @@ pub async fn dev_tools_run_overnight_now(
     }
     let now = chrono::Local::now().naive_local();
     let key = format!("{}-manual-{}", now.format("%Y-%m-%d"), now.format("%H%M%S"));
-    let run_id = claim_night_run(&state.db, &project_id, &key, mode.as_str())?
+    let run_id = claim_night_run(pool, &project_id, &key, mode.as_str())?
         .ok_or_else(|| AppError::Internal("could not claim a manual night-run slot".into()))?;
-    run_project_night(&state.db, &app, &project_id, &run_id, mode).await?;
-    get_night_run(&state.db, &run_id)
+    run_project_night(pool, app, &project_id, &run_id, mode).await?;
+    get_night_run(pool, &run_id)
+}
+
+/// Every project whose autopilot mode grants `ScanAndTriage` — the eligibility
+/// the nightly subscription uses. Exposed so the headless tick can run "one
+/// night for every eligible project" without inventing its own eligibility.
+pub(crate) fn overnight_eligible_projects(pool: &DbPool) -> Vec<String> {
+    autopilot::load_modes(pool)
+        .into_iter()
+        .filter(|(_, m)| m.allows(Capability::ScanAndTriage))
+        .map(|(id, _)| id)
+        .collect()
 }
 
 #[cfg(test)]

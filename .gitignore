@@ -74,6 +74,7 @@ recordings/
 !.claude/active-runs.md
 !.claude/settings.json
 !.claude/skills/
+!.claude/rules/
 !.claude/perfect/
 !.claude/architect/
 !.claude/explorer/
@@ -198,4 +199,5 @@ practice-harvest/
 /.claude/rules/ai-registry-access.md
 /.claude/rules/ai-registry-software-engineering.md
 /.claude/rules/ai-registry-llm-observability.md
+/.claude/rules/ai-registry-localization.md
 # END ai-registry linked skills

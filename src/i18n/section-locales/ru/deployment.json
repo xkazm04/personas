@@ -2,15 +2,15 @@
   "title": "Развёртывание",
   "orchestrator_url": "URL оркестратора",
   "api_key": "Ключ API",
-  "connecting": "Подключение...",
-  "sr_connecting": "Подключение к облачному оркестратору...",
+  "connecting": "Подключение…",
+  "sr_connecting": "Подключение к облачному оркестратору…",
   "auth_code": "Код авторизации",
-  "deploying": "Развёртывание...",
+  "deploying": "Развёртывание…",
   "sr_deploying": "Развёртывание агента в облаке",
   "no_targets": "Нет подключённых целей развёртывания",
   "status": {
     "connected": "Подключено",
-    "loading": "Загрузка статуса облака...",
+    "loading": "Загрузка статуса облака…",
     "token_available": "Токен доступен",
     "no_token": "Токен не настроен",
     "no_token_configured": "Токен не настроен",
@@ -21,7 +21,7 @@
     "request_body": "Тело запроса",
     "response_label": "Ответ",
     "send_request": "Отправить запрос",
-    "sending": "Отправка...",
+    "sending": "Отправка…",
     "empty_response": "(пустой ответ)",
     "snippets": "Примеры кода",
     "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
@@ -35,7 +35,7 @@
     "connected": "Подключено",
     "disconnect": "Отключить",
     "diagnose": "Диагностика",
-    "diagnosing": "Диагностирование...",
+    "diagnosing": "Диагностирование…",
     "diagnostics_title": "Диагностика",
     "url_protocol_error": "URL должен использовать http или https",
     "url_hostname_error": "В URL отсутствует хост",
@@ -49,7 +49,7 @@
     "active_deployments": "Активные развёртывания"
   },
   "exec_detail": {
-    "fetching_output": "Получение вывода...",
+    "fetching_output": "Получение вывода…",
     "no_output": "Нет вывода",
     "label_status": "Статус:",
     "label_duration": "Длительность:",
@@ -87,7 +87,7 @@
     "trigger_type": "Тип триггера",
     "schedule_cron": "Расписание (cron)",
     "create_trigger": "Создать триггер",
-    "creating": "Создание...",
+    "creating": "Создание…",
     "cron_expression": "Выражение cron",
     "utc_suffix": "(UTC)",
     "webhook_info": "Для этого триггера будет создана webhook-точка. Настроить фильтрацию полезной нагрузки можно после создания."
@@ -155,7 +155,7 @@
     "header": "Облачные триггеры ({count})",
     "add_trigger": "Добавить триггер",
     "deploy_first": "Сначала разверните агента, чтобы создать облачные триггеры.",
-    "loading": "Загрузка триггеров...",
+    "loading": "Загрузка триггеров…",
     "empty": "Облачных триггеров пока нет. Создайте один для планирования автоматических запусков.",
     "recent_firings": "Последние запуски",
     "no_firings": "Последних запусков нет",
@@ -164,7 +164,7 @@
     "label_last_triggered": "Последний запуск:",
     "label_next_trigger": "Следующий запуск:",
     "label_cron": "Cron:",
-    "loading_firings": "Загрузка..."
+    "loading_firings": "Загрузка…"
   },
   "dashboard": {
     "title": "Развёртывания",
@@ -191,7 +191,7 @@
     "deploy_hint": "Развёртывайте агентов с вкладок Облако или GitLab.",
     "showing_of": "{total} {showing} {plural} Показ развертывания",
     "total_invocations": "Всего вызовов:",
-    "search_placeholder": "Поиск развёртываний...",
+    "search_placeholder": "Поиск развёртываний…",
     "filter": "Фильтр",
     "filter_target": "Цель",
     "filter_status": "Статус",

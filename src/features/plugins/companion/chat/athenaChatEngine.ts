@@ -41,7 +41,7 @@ export interface AthenaChatEngine {
   activeConversationId: string;
   /** Milliseconds since epoch of the last focused-thread stream event. */
   lastStreamEventAtRef: React.MutableRefObject<number>;
-  send: (text: string) => void;
+  send: (text: string, nonce?: string, source?: string) => void;
   sendOrQueue: (text: string, nonce: string) => void;
   interrupt: () => void;
 }

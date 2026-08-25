@@ -2,15 +2,15 @@
   "title": "डिप्लॉयमेंट",
   "orchestrator_url": "ऑर्केस्ट्रेटर URL",
   "api_key": "API कुंजी",
-  "connecting": "कनेक्ट हो रहा है...",
-  "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है...",
+  "connecting": "कनेक्ट हो रहा है…",
+  "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है…",
   "auth_code": "प्राधिकरण कोड",
-  "deploying": "डिप्लॉय हो रहा है...",
+  "deploying": "डिप्लॉय हो रहा है…",
   "sr_deploying": "Persona को क्लाउड पर डिप्लॉय किया जा रहा है",
   "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
   "status": {
     "connected": "कनेक्ट है",
-    "loading": "क्लाउड स्थिति लोड हो रही है...",
+    "loading": "क्लाउड स्थिति लोड हो रही है…",
     "token_available": "टोकन उपलब्ध है",
     "no_token": "कोई टोकन कॉन्फ़िगर नहीं है",
     "no_token_configured": "कोई टोकन कॉन्फ़िगर नहीं",
@@ -21,7 +21,7 @@
     "request_body": "अनुरोध बॉडी",
     "response_label": "प्रतिक्रिया",
     "send_request": "अनुरोध भेजें",
-    "sending": "भेजा जा रहा है...",
+    "sending": "भेजा जा रहा है…",
     "empty_response": "(खाली प्रतिक्रिया)",
     "snippets": "स्निपेट",
     "request_body_placeholder": "{ \"message\": \"अपना प्रॉम्प्ट यहाँ लिखें…\" }"
@@ -35,7 +35,7 @@
     "connected": "कनेक्टेड",
     "disconnect": "डिसकनेक्ट",
     "diagnose": "निदान करें",
-    "diagnosing": "निदान हो रहा है...",
+    "diagnosing": "निदान हो रहा है…",
     "diagnostics_title": "डायग्नोस्टिक्स",
     "url_protocol_error": "URL में http या https उपयोग होना चाहिए",
     "url_hostname_error": "URL में होस्टनाम अनुपस्थित है",
@@ -49,7 +49,7 @@
     "active_deployments": "सक्रिय Deployment"
   },
   "exec_detail": {
-    "fetching_output": "आउटपुट लोड हो रहा है...",
+    "fetching_output": "आउटपुट लोड हो रहा है…",
     "no_output": "कोई आउटपुट नहीं",
     "label_status": "स्थिति:",
     "label_duration": "अवधि:",
@@ -87,7 +87,7 @@
     "trigger_type": "ट्रिगर प्रकार",
     "schedule_cron": "शेड्यूल (cron)",
     "create_trigger": "ट्रिगर बनाएं",
-    "creating": "बनाया जा रहा है...",
+    "creating": "बनाया जा रहा है…",
     "cron_expression": "cron एक्सप्रेशन",
     "utc_suffix": "(UTC)",
     "webhook_info": "इस ट्रिगर के लिए एक webhook endpoint बनाया जाएगा। निर्माण के बाद आप payload फ़िल्टरिंग कॉन्फ़िगर कर सकते हैं।"
@@ -155,7 +155,7 @@
     "header": "क्लाउड ट्रिगर ({count})",
     "add_trigger": "ट्रिगर जोड़ें",
     "deploy_first": "क्लाउड ट्रिगर बनाने के लिए पहले एक Persona डिप्लॉय करें।",
-    "loading": "ट्रिगर लोड हो रहे हैं...",
+    "loading": "ट्रिगर लोड हो रहे हैं…",
     "empty": "अभी कोई क्लाउड ट्रिगर नहीं। स्वचालित रन शेड्यूल करने के लिए एक बनाएँ।",
     "recent_firings": "हाल की फायरिंग",
     "no_firings": "कोई हाल की फायरिंग नहीं",
@@ -164,7 +164,7 @@
     "label_last_triggered": "अंतिम ट्रिगर:",
     "label_next_trigger": "अगला ट्रिगर:",
     "label_cron": "Cron:",
-    "loading_firings": "लोड हो रहा है..."
+    "loading_firings": "लोड हो रहा है…"
   },
   "dashboard": {
     "title": "तैनाती",
@@ -191,7 +191,7 @@
     "deploy_hint": "क्लाउड या GitLab टैब से पर्सोना तैनात करें।",
     "showing_of": "{total} {showing} {plural} परिनियोजन का दिखाया जा रहा है",
     "total_invocations": "कुल आह्वान:",
-    "search_placeholder": "तैनाती खोजें...",
+    "search_placeholder": "तैनाती खोजें…",
     "filter": "फ़िल्टर",
     "filter_target": "लक्ष्य",
     "filter_status": "स्थिति",

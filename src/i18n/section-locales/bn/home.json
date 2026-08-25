@@ -6,7 +6,7 @@
     "pick_tool_hint": "এটি আপনার প্রথম সার্ভিস সংযোগ হবে।",
     "describe_goal": "আপনি কী স্বয়ংক্রিয় করতে চান?",
     "describe_goal_hint": "আপনার প্রথম অটোমেশন লক্ষ্য বর্ণনা করুন — আমরা সেটআপে সাহায্য করব।",
-    "goal_placeholder": "যেমন: নতুন Jira টিকিট স্বয়ংক্রিয়ভাবে Slack চ্যানেলে সিঙ্ক করুন...",
+    "goal_placeholder": "যেমন: নতুন Jira টিকিট স্বয়ংক্রিয়ভাবে Slack চ্যানেলে সিঙ্ক করুন…",
     "ready_to_save": "সংরক্ষণের জন্য প্রস্তুত",
     "step_role": "আপনার ভূমিকা",
     "step_role_hint": "অভিজ্ঞতা কাস্টমাইজ করতে আমাদের আপনার ভূমিকা জানান।",
@@ -71,8 +71,8 @@
     "tool_hint": "এটি আপনার প্রথম কানেক্টর ইন্টিগ্রেশন হবে।",
     "automate_title": "আপনি কী স্বয়ংক্রিয় করতে চান?",
     "automate_hint": "আপনার প্রথম অটোমেশন লক্ষ্য বর্ণনা করুন -- আমরা সেটআপে সাহায্য করব।",
-    "automate_placeholder": "যেমন: নতুন Jira টিকিট স্বয়ংক্রিয়ভাবে Slack চ্যানেলে সিঙ্ক করুন...",
-    "min_chars": "ন্যূনতম ১০ অক্ষর ({current}/10)",
+    "automate_placeholder": "যেমন: নতুন Jira টিকিট স্বয়ংক্রিয়ভাবে Slack চ্যানেলে সিঙ্ক করুন…",
+    "min_chars": "ন্যূনতম ১০ অক্ষর ({current}/১০)",
     "ready_to_save": "সংরক্ষণের জন্য প্রস্তুত",
     "back": "পিছনে",
     "next": "পরবর্তী",
@@ -123,7 +123,7 @@
   "operator": "অপারেটর",
   "commander": "কমান্ডার",
   "summary_empty": "প্রথম এজেন্ট তৈরি করে বা প্ল্যাটফর্ম ঘুরে দেখে শুরু করুন।",
-  "summary_stats": "আপনার {personasCount} এজেন্ট{personasPlural} এবং {credentialsCount} শংসাপত্র{credentialsPlural} কনফিগার করা আছে।",
+  "summary_stats": "আপনার {personasCount}টি এজেন্ট{personasPlural} এবং {credentialsCount}টি ক্রেডেনশিয়াল{credentialsPlural} কনফিগার করা আছে।",
   "quick_navigation": "দ্রুত নেভিগেশন",
   "platform_label": "personas প্ল্যাটফর্ম",
   "roadmap": {
@@ -150,7 +150,7 @@
   "nav": {
     "overview": {
       "label": "সারসংক্ষেপ",
-      "description": "ড্যাশবোর্ড বিশ্লেষণ, সম্পাদন ইতিহাস এবং রিয়েল-টাইম মনিটরিং"
+      "description": "ড্যাশবোর্ড বিশ্লেষণ, এক্সিকিউশন ইতিহাস এবং রিয়েল-টাইম মনিটরিং"
     },
     "personas": {
       "label": "এজেন্ট",
@@ -161,8 +161,8 @@
       "description": "ইভেন্ট ট্রিগার, webhook ও সময়সূচি অটোমেশন কনফিগার করুন"
     },
     "credentials": {
-      "label": "কী",
-      "description": "API শংসাপত্র, ডাটাবেস সংযোগ ও এনক্রিপ্টেড সিক্রেট পরিচালনা"
+      "label": "সংযোগ",
+      "description": "API ক্রেডেনশিয়াল, ডাটাবেস সংযোগ ও এনক্রিপ্টেড সিক্রেট পরিচালনা"
     },
     "design-reviews": {
       "label": "টেমপ্লেট",
@@ -170,7 +170,7 @@
     },
     "team": {
       "label": "দল",
-      "description": "মাল্টি-এজেন্ট টিম পাইপলাইন ড্র্যাগ-অ্যান্ড-ড্রপে তৈরি করুন"
+      "description": "একাধিক এজেন্টকে একটি দলে একত্রিত করুন যা বহু-ধাপের ওয়ার্কফ্লোতে একসাথে কাজ করে"
     },
     "teams": {
       "label": "দলসমূহ",
@@ -200,7 +200,7 @@
     "alerts_other": "{count}টি সতর্কতা জারি",
     "approvals": "{count}টি অনুমোদন অপেক্ষমাণ",
     "approvals_other": "{count}টি অনুমোদন অপেক্ষমাণ",
-    "dismiss": "বাতিল করুন",
+    "dismiss": "খারিজ করুন",
     "failed": "{count}টি ব্যর্থ",
     "failed_other": "{count}টি ব্যর্থ",
     "runs": "{count}টি রান",

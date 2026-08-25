@@ -4,7 +4,7 @@
     "selectTwin": "Seleccionar gemelo…",
     "pickerLabel": "Elige el gemelo activo",
     "searchPlaceholder": "Buscar por nombre o rol…",
-    "noMatches": "Ningún gemelo coincide con tu búsqueda.",
+    "noMatches": "Ningún gemelo coincide con su búsqueda.",
     "pinTwin": "Fijar arriba",
     "unpinTwin": "Desfijar"
   },
@@ -40,9 +40,9 @@
     "saving": "Guardando…",
     "saveIdentity": "Guardar identidad",
     "refineWithAi": "Refinar con IA",
-    "bioRefineHint": "La IA conservará tu voz y los datos existentes — solo afinará la prosa. Las palabras clave de orientación son opcionales.",
+    "bioRefineHint": "La IA conservará su voz y los datos existentes — solo afinará la prosa. Las palabras clave de orientación son opcionales.",
     "bioRefineKeywordsPlaceholder": "(opcional) p. ej. más conciso, menos corporativo, mantén el humor seco",
-    "refining": "Refinando...",
+    "refining": "Refinando…",
     "refineBio": "Refinar bio"
   },
   "channels": {
@@ -167,7 +167,7 @@
     "previewStop": "Detener",
     "previewTooltip": "Sintetiza una muestra corta con la configuración actual",
     "previewNeedsConfig": "Define un voice id y un credential id antes de la vista previa",
-    "previewSample": "Así sonará tu gemelo cuando hable por el canal de voz.",
+    "previewSample": "Así sonará su gemelo cuando hable por el canal de voz.",
     "eyebrowAtelier": "Estudio de voz",
     "atelierVariantLabel": "Atelier",
     "currentVariantLabel": "Actual",
@@ -251,7 +251,7 @@
     "studioSaveApproved": "Guardar {count} seleccionadas",
     "studioAddQuestion": "Añadir pregunta",
     "studioEmptyTitle": "Aún no hay preguntas",
-    "studioEmptyHint": "Define un tema y genera un lote, o añade tus propias preguntas.",
+    "studioEmptyHint": "Defina un tema y genere un lote, o añada sus propias preguntas.",
     "studioRunningAnswers": "Redactando respuestas… {completed}/{total}",
     "studioRunningQuestions": "Generando preguntas…",
     "studioBackgroundNote": "Se ejecuta en segundo plano: recibirás una notificación al terminar.",
@@ -399,7 +399,7 @@
     "openSection": "Abrir {section}",
     "nextStep": "Siguiente paso",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "Completa tu gemelo",
+    "checklistHeading": "Complete su gemelo",
     "rosterFoundations": "{twins} gemelos · {identities} con identidad · {brains} con base de conocimiento",
     "ready": "Listo",
     "satellites": "Satélites",
@@ -508,7 +508,7 @@
     "toneProgress": "{count} de {total} tonos configurados",
     "channelsActive": "{active} de {total} canales activos",
     "memoriesApproved": "{count} memorias aprobadas",
-    "celebrateComplete": "Tu gemelo está completamente entrenado — 100% listo",
+    "celebrateComplete": "Su gemelo está completamente entrenado — 100% listo",
     "celebrateProgress": "Hito completado — {pct}% listo"
   },
   "nudges": {
@@ -656,7 +656,7 @@
     "suggestedSeeds": {
       "voiceChange": "¿La voz del gemelo se está desviando de su bio? ¿Dónde y la deriva es intencional?",
       "commsCadence": "¿Cuál es la cadencia y el balance de entrantes vs salientes entre canales últimamente?",
-      "contactSurprises": "¿Hay contactos o hilos que te sorprendieron — temas inesperados, identificadores desconocidos, respuestas fuera de tono?"
+      "contactSurprises": "¿Hay contactos o hilos que le sorprendieron — temas inesperados, identificadores desconocidos, respuestas fuera de tono?"
     }
   },
   "recall": {

@@ -5,8 +5,8 @@
     "pick_tool": "Vyberte svůj oblíbený nástroj",
     "pick_tool_hint": "Toto bude vaše první připojení ke službě.",
     "describe_goal": "Co chcete automatizovat?",
-    "describe_goal_hint": "Popište svůj první cíl automatizace – pomůžeme vám jej nastavit.",
-    "goal_placeholder": "např. Automaticky synchronizovat nové Jira tikety do Slack kanálu...",
+    "describe_goal_hint": "Popište svůj první cíl automatizace — pomůžeme vám jej nastavit.",
+    "goal_placeholder": "např. Automaticky synchronizovat nové Jira tikety do Slack kanálu…",
     "ready_to_save": "Připraveno k uložení",
     "step_role": "Vaše role",
     "step_role_hint": "Řekněte nám svou roli, abychom vám mohli přizpůsobit prostředí.",
@@ -70,8 +70,8 @@
     "pick_tool": "Vyberte svůj oblíbený nástroj",
     "tool_hint": "Toto bude vaše první integrace konektoru.",
     "automate_title": "Co chcete automatizovat?",
-    "automate_hint": "Popište svůj první cíl automatizace – pomůžeme vám jej nastavit.",
-    "automate_placeholder": "např. Automaticky synchronizovat nové Jira tikety do Slack kanálu...",
+    "automate_hint": "Popište svůj první cíl automatizace — pomůžeme vám jej nastavit.",
+    "automate_placeholder": "např. Automaticky synchronizovat nové Jira tikety do Slack kanálu…",
     "min_chars": "Minimálně 10 znaků ({current}/10)",
     "ready_to_save": "Připraveno k uložení",
     "back": "Zpět",
@@ -94,17 +94,17 @@
     "reviews_other": "{count} čekajících přezkoumání",
     "teams": "{count} tým",
     "teams_other": "{count} týmů",
-    "agents_active": "{count} agent aktivní za posledních 24 h",
-    "agents_active_other": "{count} agentů aktivních za posledních 24 h",
-    "events_today": "{count} událost za posledních 24 h",
-    "events_today_other": "{count} událostí za posledních 24 h",
+    "agents_active": "{count} agent aktivní za posledních 24 h",
+    "agents_active_other": "{count} agentů aktivních za posledních 24 h",
+    "events_today": "{count} událost za posledních 24 h",
+    "events_today_other": "{count} událostí za posledních 24 h",
     "connections_external": "{count} externí připojení",
     "connections_external_other": "{count} externích připojení",
     "connections_builtin": "{count} vestavěný konektor",
     "connections_builtin_other": "{count} vestavěných konektorů",
-    "trend_up": "nahoru o {pct} % oproti předchozím 24 h",
-    "trend_down": "dolů o {pct} % oproti předchozím 24 h",
-    "trend_flat": "žádná změna oproti předchozím 24 h",
+    "trend_up": "nahoru o {pct} % oproti předchozím 24 h",
+    "trend_down": "dolů o {pct} % oproti předchozím 24 h",
+    "trend_flat": "žádná změna oproti předchozím 24 h",
     "agents_enabled": "{count} aktivní agent",
     "agents_enabled_other": "{count} aktivních agentů",
     "reports": "{count} nepřečtený report",
@@ -121,9 +121,9 @@
   "greeting_afternoon": "Dobré odpoledne",
   "greeting_evening": "Dobrý večer",
   "operator": "Operátor",
-  "commander": "Veliteli",
+  "commander": "Veliteli/Velitelko",
   "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
-  "summary_stats": "Máte nakonfigurované {personasCount} agenta{personasPlural} a {credentialsCount} pověření{credentialsPlural}.",
+  "summary_stats": "Máte nakonfigurováno {personasCount} agenta{personasPlural} a {credentialsCount} přihlašovacích údajů{credentialsPlural}.",
   "quick_navigation": "Rychlá navigace",
   "platform_label": "platforma personas",
   "roadmap": {
@@ -170,7 +170,7 @@
     },
     "team": {
       "label": "Týmy",
-      "description": "Sestavujte multi-agentní týmové pipeline s drag-and-drop orchestrací a směrováním"
+      "description": "Spojte více agentů do týmu, který spolupracuje na vícekrokových pracovních postupech."
     },
     "teams": {
       "label": "Týmy",
@@ -192,8 +192,8 @@
   "icon_showcase": {
     "lucide_tab": "Lucide (Knihovna)",
     "personas_tab": "Personas (Animované)",
-    "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
-    "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
+    "lucide_footer": "lucide-react — univerzální knihovna ikon — statická",
+    "personas_footer": "9 vlastních ikon — neuronové motivy — CSS animované — adaptivní téma"
   },
   "since_left": {
     "alerts": "{count} upozornění",

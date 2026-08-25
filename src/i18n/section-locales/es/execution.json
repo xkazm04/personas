@@ -10,7 +10,7 @@
   "unpin_mini_player": "Desanclar mini-reproductor",
   "pipeline": "Pipeline",
   "lines": "líneas",
-  "waiting_for_output": "Esperando salida...",
+  "waiting_for_output": "Esperando salida…",
   "no_output": "Sin salida",
   "background": "Segundo plano",
   "time_seconds_ago": "hace {count}s",

@@ -480,6 +480,83 @@ pub struct KpLink {
     pub base_url: String,
     /// Bearer-ish token for `POST {base_url}/api/agents/report/{token}`.
     pub report_token: String,
+    /// `spec.connectors` from the hire request, verbatim — the tool surface kp
+    /// actually asked for (typically `["github"]` for an App master).
+    ///
+    /// Carried here rather than re-read from the approval payload because the
+    /// payload is consumed at approval time and the constraint is needed much
+    /// later, at build verification and at promote. It is the *request*, not a
+    /// derived allow-list: `personas_engine::kp_tool_surface` turns it into the
+    /// set of tools a kp hire's build may attach, and drops the rest before the
+    /// verification gate can count an invented tool as unverified.
+    ///
+    /// `#[serde(default)]` — rows written before 2026-08-24 deserialize to an
+    /// empty list, which constrains a kp hire to the baseline + transport
+    /// tools only. That is the honest reading: a link that never recorded a
+    /// request cannot vouch for a connector.
+    #[serde(default)]
+    pub requested_connectors: Vec<String>,
+    /// The hire's `appMaster.mandate.approvalGates` named commands (e.g.
+    /// `npm run test:unit`), so a command runner is part of the mandated
+    /// surface. False for every hire whose mandate names no gates — and for
+    /// every ordinary (non-App-master) kp hire.
+    #[serde(default)]
+    pub runs_commands: bool,
+}
+
+/// Typed record of an **App master** hire (kp `docs/concepts/app-master.md`
+/// §4.2, P4). Written once by the `kp_hire_request` approval executor when the
+/// inbound request carried an `appMaster` block, alongside — never instead of —
+/// [`KpLink`]: an App master is still a kp hire, so the counters reporter keeps
+/// working through the same link.
+///
+/// This is the **provenance** record: what kp sent and what Personas did with
+/// it. It is deliberately NOT the enforcement authority. The mandate the
+/// autonomy gate and the diff chokepoint read lives in an `app_settings` row
+/// keyed by [`Self::mandate_key`], because enforcement happens per *project*
+/// and only the project id is in scope at those call sites. Two copies of a
+/// rung that could disagree is exactly the bug a single authority prevents —
+/// so the rung is not repeated here, only the key that finds it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AppMasterLink {
+    /// The `dev_projects.id` this App master owns.
+    pub project_id: String,
+    /// The team the persona was added to, bound to the project.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_id: Option<String>,
+    /// `dev_kpis.id` per objective seeded at hire, in spec order. An objective
+    /// that could not be seeded is absent — the list is what exists, not what
+    /// was asked for.
+    #[serde(default)]
+    pub kpi_ids: Vec<String>,
+    /// `persona_triggers.id` per installed cadence trigger.
+    #[serde(default)]
+    pub trigger_ids: Vec<String>,
+    /// Cadence trigger kinds kp asked for that Personas has no mapping for
+    /// (`pr`, `kpi_tick` as of P4). Recorded rather than approximated: a
+    /// trigger wired to the nearest-looking event would fire on the wrong
+    /// thing and read, from kp, as a working cadence.
+    #[serde(default)]
+    pub unsupported_triggers: Vec<String>,
+    /// RFC-3339 probation end — approval time + `tenure.probationDays`.
+    pub probation_ends_at: String,
+    /// The `app_settings` key holding the enforceable mandate record
+    /// (`app_master_mandate:<project_id>`).
+    pub mandate_key: String,
+    /// What the binding pass did and did not manage, in order. Duplicated from
+    /// `setup_detail` on purpose: `promote_build_draft` OVERWRITES
+    /// `setup_detail` from the connector-readiness pass, so the display copy
+    /// does not survive the build. A partial hire that silently reads complete
+    /// after promote is the exact failure this field prevents.
+    #[serde(default)]
+    pub setup_notes: Vec<String>,
+    /// The `AppMasterSpec` kp sent, verbatim. Kept whole so a later phase can
+    /// read a field this one does not know about, and so a review packet can
+    /// quote the spec rather than a lossy projection of it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spec: Option<serde_json::Value>,
 }
 
 /// Structured envelope for the `design_context` JSON column.
@@ -540,6 +617,13 @@ pub struct DesignContextData {
     /// rows deserialize unchanged.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kp_link: Option<KpLink>,
+    /// App master hire record (P4). `None` for every persona not hired through
+    /// a kp request carrying an `appMaster` block — including ordinary kp
+    /// hires, which keep `kp_link` alone. Typed + defaulted for the same
+    /// reason as `kp_link`: `DesignContextData` has no serde catch-all, so an
+    /// untyped key would be silently DROPPED on the next round-trip.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub app_master: Option<AppMasterLink>,
 }
 
 impl DesignContextData {
@@ -997,6 +1081,8 @@ mod kp_link_tests {
                 job_title: "Senior Rust Engineer".into(),
                 base_url: "http://localhost:3001".into(),
                 report_token: "tok_abc123".into(),
+                requested_connectors: vec!["github".into()],
+                runs_commands: true,
             }),
             ..Default::default()
         };
@@ -1023,5 +1109,19 @@ mod kp_link_tests {
             serde_json::from_str(r#"{"summary":"old row"}"#).expect("legacy parse");
         assert!(legacy.kp_link.is_none());
         assert!(!legacy.to_json_string().contains("kpLink"));
+    }
+
+    /// A `kpLink` written before the tool-surface fields existed must still
+    /// deserialize — and must read as "this link vouches for no connector",
+    /// not as an error and not as a wildcard.
+    #[test]
+    fn kp_link_without_tool_surface_fields_deserializes_to_an_empty_request() {
+        let legacy: DesignContextData = serde_json::from_str(
+            r#"{"kpLink":{"jobId":"j1","jobTitle":"t","baseUrl":"http://x","reportToken":"tok"}}"#,
+        )
+        .expect("legacy kpLink parse");
+        let link = legacy.kp_link.expect("kp_link present");
+        assert!(link.requested_connectors.is_empty());
+        assert!(!link.runs_commands);
     }
 }

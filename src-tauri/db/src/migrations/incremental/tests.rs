@@ -283,6 +283,11 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "workspace_knowledge",
         "workspace_practice_adoption",
         "dev_context_fingerprints",
+        // P5a — the App master proposal + gate ledgers. Without these two the
+        // rollup's proposalsMerged / proposalsReverted / gatePassRate go back
+        // to being structurally null, which is the exact bug P5a closed.
+        "app_master_proposals",
+        "app_master_gate_runs",
     ] {
         assert!(
             has_table(&conn, table).unwrap(),

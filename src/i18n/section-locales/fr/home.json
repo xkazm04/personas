@@ -1,21 +1,21 @@
 {
   "setup": {
     "choose_role": "Choisissez votre rôle",
-    "choose_role_hint": "Nous adapterons l'expérience à votre façon de travailler.",
+    "choose_role_hint": "Nous adapterons l’expérience à votre façon de travailler.",
     "pick_tool": "Choisissez votre outil préféré",
     "pick_tool_hint": "Ce sera votre première connexion de service.",
-    "describe_goal": "Que souhaitez-vous automatiser ?",
-    "describe_goal_hint": "Décrivez votre premier objectif d'automatisation — nous vous aiderons à le configurer.",
-    "goal_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack...",
+    "describe_goal": "Que souhaitez-vous automatiser ?",
+    "describe_goal_hint": "Décrivez votre premier objectif d’automatisation — nous vous aiderons à le configurer.",
+    "goal_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack…",
     "ready_to_save": "Prêt à enregistrer",
     "step_role": "Votre rôle",
-    "step_role_hint": "Indiquez-nous votre rôle pour adapter l'expérience.",
+    "step_role_hint": "Indiquez-nous votre rôle pour adapter l’expérience.",
     "step_tool": "Outil préféré",
     "step_tool_hint": "Choisissez le premier service à connecter.",
-    "step_goal": "Objectif d'automatisation",
+    "step_goal": "Objectif d’automatisation",
     "step_goal_hint": "Décrivez ce que vous souhaitez automatiser en premier.",
-    "select_role_first": "Sélectionnez d'abord un rôle pour débloquer les options d'outils.",
-    "select_tool_first": "Sélectionnez d'abord un outil pour définir votre objectif.",
+    "select_role_first": "Sélectionnez d’abord un rôle pour débloquer les options d’outils.",
+    "select_tool_first": "Sélectionnez d’abord un outil pour définir votre objectif.",
     "get_started": "Commencer",
     "role_office_rat": "Employé de bureau",
     "role_office_rat_hint": "Utilisateur non technique",
@@ -28,7 +28,7 @@
     "goal": "Objectif"
   },
   "learning": {
-    "title": "Centre d'apprentissage",
+    "title": "Centre d’apprentissage",
     "subtitle": "Visites guidées et astuces pour maîtriser Personas",
     "guided_tours": "Visites guidées",
     "tours_completed": "{completed}/{total} terminées",
@@ -50,28 +50,28 @@
     "pm_bulk_rerun_title": "Relancer en masse les exécutions échouées",
     "pm_dead_letter_title": "Récupérer les événements de la file morte",
     "pm_annotate_golden_title": "Marquer les exécutions réussies, annoter les régressions",
-    "pm_credential_health_title": "Laisser l'IA réparer les identifiants défaillants",
+    "pm_credential_health_title": "Laisser l’IA réparer les identifiants défaillants",
     "pm_lab_measure_title": "Mesurer les prompts sur plusieurs modèles",
     "pm_prompt_rollback_title": "Annuler un mauvais prompt en un clic",
     "pm_director_coaching_title": "Obtenir des conseils de portefeuille du Directeur",
-    "pm_event_chain_title": "Enchaîner des agents avec des écouteurs d'événements",
+    "pm_event_chain_title": "Enchaîner des agents avec des écouteurs d’événements",
     "pm_live_stream_title": "Observer les enchaînements en temps réel",
-    "pm_athena_fleet_title": "Demander à Athena d'analyser votre flotte",
+    "pm_athena_fleet_title": "Demander à Athena d’analyser votre flotte",
     "composed_tours": "Composées par Athena",
     "composed_badge": "Composé par Athena",
-    "composed_stale": "Peut-être obsolète — l'application a changé depuis sa composition",
-    "composed_empty": "Quand vous demandez à Athena de vous montrer comment quelque chose fonctionne, les visites guidées qu'elle compose arrivent ici."
+    "composed_stale": "Peut-être obsolète — l’application a changé depuis sa composition",
+    "composed_empty": "Quand vous demandez à Athena de vous montrer comment quelque chose fonctionne, les visites guidées qu’elle compose arrivent ici."
   },
   "setup_stepper": {
     "your_profile": "Votre profil",
     "choose_role": "Choisissez votre rôle",
-    "tailor_hint": "Nous adapterons l'expérience à votre façon de travailler.",
-    "simple_hint": "Nous avons configuré l'application pour un usage bureautique quotidien.",
+    "tailor_hint": "Nous adapterons l’expérience à votre façon de travailler.",
+    "simple_hint": "Nous avons configuré l’application pour un usage bureautique quotidien.",
     "pick_tool": "Choisissez votre outil préféré",
     "tool_hint": "Ce sera votre première intégration de connecteur.",
-    "automate_title": "Que souhaitez-vous automatiser ?",
-    "automate_hint": "Décrivez votre premier objectif d'automatisation -- nous vous aiderons à le configurer.",
-    "automate_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack...",
+    "automate_title": "Que souhaitez-vous automatiser ?",
+    "automate_hint": "Décrivez votre premier objectif d’automatisation — nous vous aiderons à le configurer.",
+    "automate_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack…",
     "min_chars": "Min. 10 caractères ({current}/10)",
     "ready_to_save": "Prêt à enregistrer",
     "back": "Retour",
@@ -102,8 +102,8 @@
     "connections_external_other": "{count} connexions externes",
     "connections_builtin": "{count} connecteur intégré",
     "connections_builtin_other": "{count} connecteurs intégrés",
-    "trend_up": "en hausse de {pct}% par rapport aux 24h précédentes",
-    "trend_down": "en baisse de {pct}% par rapport aux 24h précédentes",
+    "trend_up": "en hausse de {pct} % par rapport aux 24h précédentes",
+    "trend_down": "en baisse de {pct} % par rapport aux 24h précédentes",
     "trend_flat": "aucun changement par rapport aux 24h précédentes",
     "agents_enabled": "{count} agent actif",
     "agents_enabled_other": "{count} agents actifs",
@@ -111,9 +111,9 @@
     "reports_other": "{count} rapports non lus"
   },
   "get_started": {
-    "ask_cta": "Interroger l'assistant",
+    "ask_cta": "Interroger l’assistant",
     "build_cta": "Créer votre premier agent",
-    "subtitle": "Décrivez une tâche en langage courant et nous configurerons un agent opérationnel — ou demandez à l'assistant de le faire pour vous.",
+    "subtitle": "Décrivez une tâche en langage courant et nous configurerons un agent opérationnel — ou demandez à l’assistant de le faire pour vous.",
     "title": "Créez votre premier agent"
   },
   "welcome": "Bienvenue",
@@ -142,35 +142,35 @@
     "next_count": "{count} suivant"
   },
   "fleet": {
-    "executions_today": "Exécutions Aujourd'hui",
-    "success_rate": "Taux de Réussite",
-    "active_agents": "Agents Actifs",
+    "executions_today": "Exécutions aujourd’hui",
+    "success_rate": "Taux de réussite",
+    "active_agents": "Agents actifs",
     "credentials": "Identifiants"
   },
   "nav": {
     "overview": {
-      "label": "Vue d'ensemble",
-      "description": "Analyses du tableau de bord, historique des exécutions et surveillance en temps réel de tous les agents"
+      "label": "Vue d’ensemble",
+      "description": "Découvrez les performances de vos agents, ce qu’ils ont fait récemment, et surveillez tout depuis un seul endroit."
     },
     "personas": {
       "label": "Agents",
-      "description": "Créer, configurer et gérer des agents IA avec des comportements et capacités personnalisés"
+      "description": "Créez, configurez et gérez vos agents IA — donnez-leur des comportements personnalisés et connectez-les à vos outils."
     },
     "events": {
       "label": "Événements",
-      "description": "Configurer les déclencheurs d'événements, les écouteurs webhook et les automatisations planifiées"
+      "description": "Configurez ce qui déclenche l’exécution de vos agents — planifications, notifications entrantes ou changements que vous définissez."
     },
     "credentials": {
       "label": "Identifiants",
-      "description": "Gérer les identifiants API, les connexions aux bases de données, les jetons OAuth et les secrets chiffrés"
+      "description": "Gérez les identifiants de connexion à vos services, les connexions aux bases de données et les mots de passe qui permettent à vos agents d’accéder à vos outils."
     },
     "design-reviews": {
       "label": "Modèles",
-      "description": "Importer des workflows n8n, parcourir la galerie de modèles et générer des plans d'agents"
+      "description": "Parcourez des modèles d’agents prêts à l’emploi, importez des workflows et générez de nouveaux plans d’agents."
     },
     "team": {
       "label": "Équipes",
-      "description": "Construire des pipelines multi-agents avec orchestration et routage par glisser-déposer"
+      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes."
     },
     "teams": {
       "label": "Équipes",
@@ -178,11 +178,11 @@
     },
     "cloud": {
       "label": "Cloud",
-      "description": "Déployer des agents dans le cloud, gérer les planifications et intégrer GitLab CI"
+      "description": "Exécutez vos agents dans le cloud pour qu’ils continuent de fonctionner même lorsque votre ordinateur est éteint."
     },
     "settings": {
       "label": "Paramètres",
-      "description": "Préférences du compte, thèmes d'apparence, règles de notification et configuration du moteur"
+      "description": "Votre compte, l’apparence de l’application, les préférences de notification et les options avancées."
     },
     "plugins": {
       "label": "Extensions",
@@ -192,8 +192,8 @@
   "icon_showcase": {
     "lucide_tab": "Lucide (Bibliothèque)",
     "personas_tab": "Personas (Animés)",
-    "lucide_footer": "lucide-react -- bibliothèque icônes générique -- statique",
-    "personas_footer": "9 icônes personnalisées -- motifs neuronaux/circuits -- animées CSS -- adaptatives au thème"
+    "lucide_footer": "lucide-react — bibliothèque d’icônes générique — statique",
+    "personas_footer": "9 icônes personnalisées — motifs neuronaux/circuits — animées CSS — adaptatives au thème"
   },
   "since_left": {
     "alerts": "{count} alerte déclenchée",

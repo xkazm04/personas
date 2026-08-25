@@ -1,7 +1,7 @@
 {
   "completed": "Terminé",
   "failed": "Échoué",
-  "queued": "En file d'attente",
+  "queued": "En file d’attente",
   "running": "En cours",
   "cancelled": "Annulé",
   "error": "Erreur"

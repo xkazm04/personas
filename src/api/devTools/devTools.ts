@@ -1573,6 +1573,9 @@ export interface SkillEntry {
   /** Declared `version:` frontmatter ("major.minor"), or null = unversioned
    *  (pre-standard skill; render as an implicit "1.0"). */
   version: string | null;
+  /** Declared `argument-hint:` frontmatter — the skill's invocation syntax
+   *  (e.g. "[context-or-path] [--budget <n>]"), or null = no declared args. */
+  argumentHint: string | null;
 }
 
 export interface SkillFileContent {
@@ -1613,6 +1616,16 @@ export const listSkills = (projectId?: string | null) =>
  */
 export const listSkillsGlobal = (libraryRoot?: string | null) =>
   safeInvoke<SkillEntry[]>([], "skill_files_list_global", { libraryRoot: libraryRoot ?? null });
+
+/**
+ * Resolve the wired knowledge registry's `skills/` lane for a project, from
+ * `<projectRoot>/.ai/manifest.yaml` -> `registry.local`. Returns null when no
+ * manifest / key / `skills/` dir exists — "no registry wired" is a normal
+ * state, not an error.
+ */
+export async function skillFilesRegistryRoot(projectRoot: string): Promise<string | null> {
+  return safeInvoke<string | null>(null, "skill_files_registry_root", { projectRoot });
+}
 
 /**
  * Install (copy) a skill into a target project's `.claude/skills`.

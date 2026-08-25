@@ -1,5 +1,5 @@
 {
-  "metric_error_rate": "Taux d'erreur",
+  "metric_error_rate": "Taux d’erreur",
   "metric_success_rate": "Taux de réussite",
   "metric_cost": "Coût total",
   "metric_cost_spike": "Coût vs. Moyenne",
@@ -7,11 +7,11 @@
   "severity_info": "Information",
   "severity_warning": "Avertissement",
   "severity_critical": "Critique",
-  "error_create_rule": "Échec de la création de la règle d'alerte :",
-  "error_update_rule": "Échec de la mise à jour de la règle d'alerte :",
-  "error_delete_rule": "Échec de la suppression de la règle d'alerte :",
-  "error_toggle_rule": "Échec de la bascule de la règle d'alerte :",
-  "error_dismiss": "Échec de l'ignorance de l'alerte :",
-  "error_clear_history": "Échec de l'effacement de l'historique des alertes :",
-  "error_load_rules": "Échec du chargement des règles d'alerte :"
+  "error_create_rule": "Échec de la création de la règle d’alerte :",
+  "error_update_rule": "Échec de la mise à jour de la règle d’alerte :",
+  "error_delete_rule": "Échec de la suppression de la règle d’alerte :",
+  "error_toggle_rule": "Échec de la bascule de la règle d’alerte :",
+  "error_dismiss": "Échec de l’ignorance de l’alerte :",
+  "error_clear_history": "Échec de l’effacement de l’historique des alertes :",
+  "error_load_rules": "Échec du chargement des règles d’alerte :"
 }

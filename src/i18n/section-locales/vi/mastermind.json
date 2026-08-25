@@ -139,7 +139,7 @@
   "far_active_other": "{count} tiến trình đang chạy",
   "far_idle": "Không có gì đang chạy ở đây",
   "far_idle_hint": "Không có phiên Fleet hoặc persona nào đang hoạt động trên dự án này",
-  "far_personas_one": "{count} persona",
+  "far_personas_one": "{count} tác nhân",
   "far_personas_other": "{count} persona",
   "_comment_far_active_one": "Far-zoom island tooltip, headline when exactly 1 live process (Fleet session or persona) is running behind the project.",
   "_comment_far_active_other": "Far-zoom island tooltip, headline for 2+ live processes.",

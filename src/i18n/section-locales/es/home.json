@@ -1,21 +1,21 @@
 {
   "setup": {
-    "choose_role": "Elige tu rol",
-    "choose_role_hint": "Adaptaremos la experiencia a tu forma de trabajar.",
-    "pick_tool": "Elige tu herramienta favorita",
-    "pick_tool_hint": "Esta será tu primera conexión de servicio.",
-    "describe_goal": "¿Qué quieres automatizar?",
-    "describe_goal_hint": "Describe tu primer objetivo de automatización -- te ayudaremos a configurarlo.",
-    "goal_placeholder": "p. ej. Sincronizar automáticamente nuevos tickets de Jira con un canal de Slack...",
+    "choose_role": "Elija su rol",
+    "choose_role_hint": "Adaptaremos la experiencia a su forma de trabajar.",
+    "pick_tool": "Elija su herramienta favorita",
+    "pick_tool_hint": "Esta será su primera conexión de servicio.",
+    "describe_goal": "¿Qué desea automatizar?",
+    "describe_goal_hint": "Describa su primer objetivo de automatización -- le ayudaremos a configurarlo.",
+    "goal_placeholder": "p. ej. Sincronizar automáticamente nuevos tickets de Jira con un canal de Slack…",
     "ready_to_save": "Listo para guardar",
-    "step_role": "Tu rol",
-    "step_role_hint": "Indícanos tu rol para adaptar la experiencia.",
+    "step_role": "Su rol",
+    "step_role_hint": "Indíquenos su rol para adaptar la experiencia.",
     "step_tool": "Herramienta favorita",
-    "step_tool_hint": "Elige el primer servicio que deseas conectar.",
+    "step_tool_hint": "Elija el primer servicio que desea conectar.",
     "step_goal": "Objetivo de automatización",
-    "step_goal_hint": "Describe qué te gustaría automatizar primero.",
-    "select_role_first": "Selecciona un rol primero para desbloquear las opciones de herramientas.",
-    "select_tool_first": "Selecciona una herramienta primero para establecer tu objetivo.",
+    "step_goal_hint": "Describa qué le gustaría automatizar primero.",
+    "select_role_first": "Seleccione un rol primero para desbloquear las opciones de herramientas.",
+    "select_tool_first": "Seleccione una herramienta primero para establecer su objetivo.",
     "get_started": "Comenzar",
     "role_office_rat": "Oficinista",
     "role_office_rat_hint": "Usuario no técnico",
@@ -37,9 +37,9 @@
     "start_tour": "Iniciar recorrido",
     "steps_count": "{count} pasos",
     "tour_steps_label": "Lo que aprenderá",
-    "power_moves": "Movimientos Avanzados",
+    "power_moves": "Movimientos avanzados",
     "moves_used": "{used}/{total} usados",
-    "try_it": "Pruébalo",
+    "try_it": "Pruébelo",
     "used_badge": "Usado",
     "group_save_time": "Ahorrar tiempo",
     "group_prevent_failures": "Prevenir fallos",
@@ -56,22 +56,22 @@
     "pm_director_coaching_title": "Recibe asesoramiento de cartera del Director",
     "pm_event_chain_title": "Encadena agentes con detectores de eventos",
     "pm_live_stream_title": "Observa cómo se propagan las cadenas en tiempo real",
-    "pm_athena_fleet_title": "Pide a Athena que analice tu flota",
+    "pm_athena_fleet_title": "Pida a Athena que analice su flota",
     "composed_tours": "Compuestas por Athena",
     "composed_badge": "Compuesto por Athena",
     "composed_stale": "Puede estar desactualizado — la aplicación ha cambiado desde que se compuso",
-    "composed_empty": "Cuando le pides a Athena que te muestre cómo funciona algo, los recorridos que compone aparecen aquí."
+    "composed_empty": "Cuando le pide a Athena que le muestre cómo funciona algo, los recorridos que compone aparecen aquí."
   },
   "setup_stepper": {
-    "your_profile": "Tu perfil",
-    "choose_role": "Elige tu rol",
-    "tailor_hint": "Adaptaremos la experiencia a tu forma de trabajar.",
+    "your_profile": "Su perfil",
+    "choose_role": "Elija su rol",
+    "tailor_hint": "Adaptaremos la experiencia a su forma de trabajar.",
     "simple_hint": "Hemos configurado la aplicación para uso cotidiano en oficina.",
-    "pick_tool": "Elige tu herramienta favorita",
-    "tool_hint": "Esta será tu primera integración de conector.",
-    "automate_title": "¿Qué quieres automatizar?",
-    "automate_hint": "Describe tu primer objetivo de automatización -- te ayudaremos a configurarlo.",
-    "automate_placeholder": "p. ej. Sincronizar automáticamente nuevos tickets de Jira con un canal de Slack...",
+    "pick_tool": "Elija su herramienta favorita",
+    "tool_hint": "Esta será su primera integración de conector.",
+    "automate_title": "¿Qué desea automatizar?",
+    "automate_hint": "Describa su primer objetivo de automatización -- le ayudaremos a configurarlo.",
+    "automate_placeholder": "p. ej. Sincronizar automáticamente nuevos tickets de Jira con un canal de Slack…",
     "min_chars": "Mín. 10 caracteres ({current}/10)",
     "ready_to_save": "Listo para guardar",
     "back": "Atrás",
@@ -112,9 +112,9 @@
   },
   "get_started": {
     "ask_cta": "Pregunta al asistente",
-    "build_cta": "Crea tu primer agente",
-    "subtitle": "Describe una tarea en lenguaje sencillo y configuraremos un agente funcional — o pide al asistente que lo haga por ti.",
-    "title": "Crea tu primer agente"
+    "build_cta": "Cree su primer agente",
+    "subtitle": "Describa una tarea en lenguaje sencillo y configuraremos un agente funcional — o pida al asistente que lo haga por usted.",
+    "title": "Cree su primer agente"
   },
   "welcome": "Bienvenido",
   "greeting_morning": "Buenos días",
@@ -122,15 +122,15 @@
   "greeting_evening": "Buenas noches",
   "operator": "Operador",
   "commander": "Comandante",
-  "summary_empty": "Comienza creando tu primer agente o explorando la plataforma.",
-  "summary_stats": "Tienes {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",
+  "summary_empty": "Comience creando su primer agente o explorando la plataforma.",
+  "summary_stats": "Tiene {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",
   "quick_navigation": "Navegación rápida",
   "platform_label": "plataforma Personas",
   "roadmap": {
     "title": "Hoja de ruta del producto",
     "subtitle": "Lo que estamos construyendo ahora y lo que viene después.",
     "unavailable": "Hoja de ruta no disponible",
-    "unavailable_hint": "No se pudo cargar la hoja de ruta. Verifica tu conexión e inténtalo de nuevo.",
+    "unavailable_hint": "No se pudo cargar la hoja de ruta. Verifique su conexión e inténtelo de nuevo.",
     "status_in_progress": "En progreso",
     "status_next": "Siguiente",
     "status_planned": "Planificado",
@@ -142,9 +142,9 @@
     "next_count": "{count} siguiente"
   },
   "fleet": {
-    "executions_today": "Ejecuciones Hoy",
-    "success_rate": "Tasa de Éxito",
-    "active_agents": "Agentes Activos",
+    "executions_today": "Ejecuciones hoy",
+    "success_rate": "Tasa de éxito",
+    "active_agents": "Agentes activos",
     "credentials": "Credenciales"
   },
   "nav": {
@@ -154,15 +154,15 @@
     },
     "personas": {
       "label": "Agentes",
-      "description": "Crea, configura y gestiona agentes de IA con comportamientos y capacidades personalizadas"
+      "description": "Cree, configure y gestione sus agentes de IA — deles comportamientos personalizados y conéctelos con sus herramientas."
     },
     "events": {
       "label": "Eventos",
-      "description": "Configura disparadores de eventos, receptores de webhook y automatizaciones programadas"
+      "description": "Configure qué activa a sus agentes: horarios, notificaciones entrantes o cambios que usted defina."
     },
     "credentials": {
       "label": "Credenciales",
-      "description": "Gestiona credenciales de API, conexiones a bases de datos, tokens OAuth y secretos cifrados"
+      "description": "Gestione credenciales de API, conexiones a bases de datos, tokens OAuth y secretos cifrados"
     },
     "design-reviews": {
       "label": "Plantillas",
@@ -170,15 +170,15 @@
     },
     "team": {
       "label": "Equipos",
-      "description": "Construye pipelines de equipos multi-agente con orquestación visual y enrutamiento"
+      "description": "Combine varios agentes en un equipo que trabaja en conjunto en flujos de trabajo de varios pasos."
     },
     "teams": {
       "label": "Equipos",
-      "description": "Combina múltiples agentes en un equipo que trabaja en conjunto en flujos de trabajo de varios pasos"
+      "description": "Combine múltiples agentes en un equipo que trabaja en conjunto en flujos de trabajo de varios pasos."
     },
     "cloud": {
       "label": "Nube",
-      "description": "Despliega agentes en infraestructura en la nube, gestiona programaciones e integra GitLab CI"
+      "description": "Despliegue agentes en infraestructura en la nube, gestione programaciones e integre GitLab CI"
     },
     "settings": {
       "label": "Ajustes",
@@ -186,7 +186,7 @@
     },
     "plugins": {
       "label": "Plugins",
-      "description": "Amplía tus agentes con plugins de terceros y extensiones personalizadas"
+      "description": "Amplíe sus agentes con plugins de terceros y extensiones personalizadas"
     }
   },
   "icon_showcase": {
@@ -205,6 +205,6 @@
     "failed_other": "{count} fallidas",
     "runs": "{count} ejecución",
     "runs_other": "{count} ejecuciones",
-    "title": "Desde que te fuiste"
+    "title": "Desde que se fue"
   }
 }

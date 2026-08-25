@@ -10,7 +10,7 @@
   "unpin_mini_player": "Odepnout mini-player",
   "pipeline": "Pipeline",
   "lines": "řádků",
-  "waiting_for_output": "Čekání na výstup...",
+  "waiting_for_output": "Čekání na výstup…",
   "no_output": "Žádný výstup",
   "background": "Na pozadí",
   "time_seconds_ago": "před {count}s",

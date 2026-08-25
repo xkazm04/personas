@@ -32,13 +32,13 @@
   "get_started": "はじめる",
   "install_nodejs": "Node.jsをインストール",
   "install_cli": "Claude CLIをインストール",
-  "downloading": "ダウンロード中...",
-  "installing": "インストール中...",
+  "downloading": "ダウンロード中…",
+  "installing": "インストール中…",
   "installed_success": "インストール成功",
   "installation_failed": "インストール失敗",
   "try_manual": "手動で実行してみてください:",
   "official_page": "公式ページ",
   "edit_key": "キーを編集",
   "edit_config": "設定を編集",
-  "signing_in": "サインイン中..."
+  "signing_in": "サインイン中…"
 }

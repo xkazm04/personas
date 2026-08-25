@@ -5,8 +5,8 @@
     "pick_tool": "お気に入りツールを選択",
     "pick_tool_hint": "これが最初のサービス接続になります。",
     "describe_goal": "何を自動化したいですか？",
-    "describe_goal_hint": "最初の自動化目標を説明してください -- セットアップを手伝います。",
-    "goal_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する...",
+    "describe_goal_hint": "最初の自動化目標を説明してください — セットアップを手伝います。",
+    "goal_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する…",
     "ready_to_save": "保存準備完了",
     "step_role": "あなたの役割",
     "step_role_hint": "体験をカスタマイズするために役割を教えてください。",
@@ -70,8 +70,8 @@
     "pick_tool": "お気に入りツールを選択",
     "tool_hint": "これが最初のコネクタ統合になります。",
     "automate_title": "何を自動化したいですか？",
-    "automate_hint": "最初の自動化目標を説明してください -- セットアップを手伝います。",
-    "automate_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する...",
+    "automate_hint": "最初の自動化目標を説明してください — セットアップを手伝います。",
+    "automate_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する…",
     "min_chars": "最低10文字 ({current}/10)",
     "ready_to_save": "保存準備完了",
     "back": "戻る",
@@ -100,8 +100,8 @@
     "events_today_other": "過去24時間で{count}件のイベント",
     "connections_external": "{count}件の外部接続",
     "connections_external_other": "{count}件の外部接続",
-    "connections_builtin": "{count}件の組み込みコネクター",
-    "connections_builtin_other": "{count}件の組み込みコネクター",
+    "connections_builtin": "{count}件の組み込みコネクタ",
+    "connections_builtin_other": "{count}件の組み込みコネクタ",
     "trend_up": "前の24時間比で{pct}%増",
     "trend_down": "前の24時間比で{pct}%減",
     "trend_flat": "前の24時間比で変化なし",
@@ -120,7 +120,7 @@
   "greeting_morning": "おはようございます",
   "greeting_afternoon": "こんにちは",
   "greeting_evening": "こんばんは",
-  "operator": "オペレーター",
+  "operator": "ユーザー",
   "commander": "指揮官",
   "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
   "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
@@ -145,7 +145,7 @@
     "executions_today": "本日の実行",
     "success_rate": "成功率",
     "active_agents": "アクティブエージェント",
-    "credentials": "クレデンシャル"
+    "credentials": "認証情報"
   },
   "nav": {
     "overview": {
@@ -192,8 +192,8 @@
   "icon_showcase": {
     "lucide_tab": "Lucide（ライブラリ）",
     "personas_tab": "Personas（アニメーション）",
-    "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
-    "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
+    "lucide_footer": "lucide-react — 汎用アイコンライブラリ — 静的",
+    "personas_footer": "9つのカスタムアイコン — ニューラル/サーキットモチーフ — CSSアニメーション — テーマ適応"
   },
   "since_left": {
     "alerts": "{count} 件のアラート",

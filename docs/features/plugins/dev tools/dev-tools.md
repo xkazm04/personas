@@ -134,7 +134,27 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 > scan lane (`idea_scanner.rs`, `dev_tools_run_scan`, `dev_scans`/`dev_ideas`) is
 > **kept** — Context Map, Mastermind and the triage sweeps still drive it.
 
-The **Skills** tab (`sub_skills/`) now has two page tabs:
+The **Skills** tab (`sub_skills/`) now has five page tabs (Overview | Analytics | Registry | Launch | Trace):
+
+**Launch** (2026-08-23; consolidated to the Circuit winner 2026-08-24) — a skill-first
+launch surface: pick ONE registry skill from a name-sorted dropdown (source = the
+workspace's paired ai-registry clone's `skills/` lane, falling back to the active
+project's `.ai/manifest.yaml` `registry.local` via `skill_files_registry_root`), and the
+workspace's projects render as a wired circuit board scored against it. A wide source
+panel on the left carries the skill's description and its **declared argument syntax**
+(the `argument-hint:` frontmatter, now parsed into `SkillEntry.argumentHint`; the
+registry lane is 26/26 hinted). Project nodes are two-row cards — row 1 identity +
+status icon, row 2 action + versions — at the end of status-toned SVG wires: **ready**
+(lit, click to launch), **needs adopt** (dashed stub, enabled adopt affordance running
+the direct-install lane behind `SkillActionConfirm`), **adopting** / **running**
+(disabled; running derives from live fleet sessions whose cwd + `/skill` args match).
+Clicking a ready node hands the run to **Athena** as a provenance-tagged turn: the chat
+opens with a short, non-leading system note (`TurnOrigin::External`, source
+"Skills Launch" — rendered as a margin note, never a user bubble) stating what the user
+requested plus the declared argument syntax; she gathers anything missing and composes
+the audited `show_fleet_plan` herself. `launch/` = SkillLaunchTab + CircuitVariant +
+CircuitNode + CircuitWires.
+
 
 **Overview (default)** — the workspace library and the active project's skills side by side.
 The library panel has a **Custom | Preset** switcher: Custom lists user-authored skills from
