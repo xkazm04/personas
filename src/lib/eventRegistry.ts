@@ -148,6 +148,15 @@ export const EventName = {
   // (not the direct context-gen channel) so it surfaces in the Live Stream.
   DEV_TOOLS_CONTEXT_SCAN_STARTED: 'dev_tools.context_scan_started',
   DEV_TOOLS_CONTEXT_SCAN_COMPLETED: 'dev_tools.context_scan_completed',
+  /**
+   * A write landed on ANY of the four Ship-planner tables (dev_goals,
+   * dev_milestones, dev_milestone_items, dev_use_cases), whoever the writer
+   * was. Pushed by the SQLite update hook in `db/src/cdc.rs`, so an Athena
+   * approval executor, a Fleet session through the management API and the CLI
+   * ingest door all reach it without any of them knowing the planner exists.
+   * ONE name for four tables: the unit of invalidation is the Ship slice.
+   */
+  DEV_TOOLS_SHIP_CHANGED: 'dev-tools-ship-changed',
   // Findings-loop SIGNAL events (docs/plans/dev-findings-loop.md) — published on
   // the persona-event bus from the repo layer (create_finding / verify-state
   // writes), so triggers and the dispatch ops can route off them.
@@ -890,6 +899,19 @@ export interface EventPayloadMap {
   // Bus events (Live Stream), not the direct context-gen channel.
   [EventName.DEV_TOOLS_CONTEXT_SCAN_STARTED]: DevToolsContextScanStartedPayload;
   [EventName.DEV_TOOLS_CONTEXT_SCAN_COMPLETED]: DevToolsContextScanCompletedPayload;
+  /**
+   * The `CdcEvent` from `db/src/cdc.rs` verbatim — no bespoke payload struct
+   * exists for this event on purpose. `rowid` is SQLite's, deliberately NOT
+   * resolved to a domain id in Rust: that would cost a query per write and is
+   * impossible on DELETE (the row is already gone), which is precisely the
+   * unbind-a-goal case the planner most needs to see. Listeners refetch the
+   * slice; `table` is here for anyone who wants to narrow that.
+   */
+  [EventName.DEV_TOOLS_SHIP_CHANGED]: {
+    action: 'insert' | 'update' | 'delete';
+    table: string;
+    rowid: number;
+  };
   [EventName.SIGNAL_RAISED]: {
     idea_id: string;
     origin: string;

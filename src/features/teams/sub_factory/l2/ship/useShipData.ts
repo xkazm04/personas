@@ -3,7 +3,7 @@
 // use cases, KPIs, runtime errors, sensor wiring) into ShipMilestoneVM shapes.
 // All mutations go through the dev_tools_*_milestone* commands and refetch —
 // the backend stores decisions, every number on screen derives here.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { listGoals } from '@/api/devTools/devTools';
 import {
@@ -22,6 +22,7 @@ import { parseStringArray } from '../factoryL2Data';
 import { deriveCriteria } from './shipCriteria';
 import { deriveFootprint, deriveProgress } from './shipDerive';
 import { deriveDuality } from './shipDuality';
+import { useShipLiveRevision } from './useShipLive';
 import {
   featureState, type ContextTone, type ScopeBucket,
   type ShipContext, type ShipFeature, type ShipGoal, type ShipGroup,
@@ -75,11 +76,23 @@ export function useShipData(data: FactoryL2Data): ShipData {
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((n) => n + 1), []);
+  // Writes made OUTSIDE this tab (background agents, Athena, Fleet, CLI ingest)
+  // change this number; the fetch effect below lists it, so the planner
+  // repaints with no navigation and no timer. See `useShipLive.ts`.
+  const liveRevision = useShipLiveRevision();
+  // The project this hook has already painted at least once. A REFETCH must
+  // not blank a planner that is already showing rows (loading doctrine law 1),
+  // and here that is not a nicety: `ShipPlannerTab` returns `LoadingSpinner`
+  // while `loading` is true, and that component renders NOTHING. Before live
+  // refresh only the tab's own mutations re-ran this effect; now a background
+  // agent's write can, so a blank flash per outside write would make the
+  // surface the operator is watching unusable. Switching project still ghosts.
+  const paintedProject = useRef<string | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
     let alive = true;
-    setLoading(true);
+    if (paintedProject.current !== projectId) setLoading(true);
     void Promise.all([listMilestones(projectId), listGoals(projectId)])
       .then(async ([ms, gs]) => {
         const entries = await Promise.all(
@@ -89,6 +102,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         setMilestones(ms);
         setItemsByMs(new Map(entries));
         setDevGoals(gs);
+        paintedProject.current = projectId;
         setLoading(false);
       })
       .catch((e) => {
@@ -96,7 +110,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         if (alive) setLoading(false);
       });
     return () => { alive = false; };
-  }, [projectId, nonce]);
+  }, [projectId, nonce, liveRevision]);
 
   // -- the Ship lens over contexts / use cases / goals ------------------------
 

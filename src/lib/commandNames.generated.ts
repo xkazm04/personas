@@ -117,6 +117,7 @@ export type CommandName =
   | "cancel_test_run"
   | "cancel_workflow_job"
   | "capture_validation_screenshot"
+  | "cdc_dropped_count"
   | "check_auto_cred_playwright_available"
   | "check_claude_desktop_mcp"
   | "classify_db_query"
