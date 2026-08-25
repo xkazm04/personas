@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { buildShipAskPrompt } from '../shipAthena';
+import { buildShipAskPrompt, buildShipDecomposePrompt } from '../shipAthena';
 import { buildReadinessPayload, SHIP_READINESS_DOC_VERSION } from '../shipReadinessPublish';
 import type { ExitCriterion, ShipMilestoneVM } from '../shipModel';
 import { ctx, feature, member, milestone } from './shipFixtures';
@@ -105,6 +105,55 @@ describe('buildShipAskPrompt', () => {
 
   it('stays short — a pointer, not a briefing', () => {
     expect(buildShipAskPrompt(vm(), project).length).toBeLessThan(700);
+  });
+});
+
+describe('buildShipDecomposePrompt', () => {
+  // This message is a REQUEST, not a situation, so it may say what is wanted —
+  // that is the one licence it has over `buildShipAskPrompt`. Everything the
+  // round-1/round-2 rewrites established still holds, and these are the same
+  // ABSENCE assertions applied to the new case.
+  it('names both ops it needs her to call, and the milestone id for each', () => {
+    const out = buildShipDecomposePrompt(vm(), project);
+    expect(out).toContain('describe_ship_milestone');
+    expect(out).toContain('show_ship_goals');
+    expect(out).toContain('ms-1');
+    expect(out).toContain('gravitone');
+  });
+
+  it('POINTS at the brief and never pastes it', () => {
+    // The description is markdown he can have rewritten a minute ago. A copy
+    // here is a second copy that goes stale the moment it is composed, and the
+    // read op prints the field in full.
+    const out = buildShipDecomposePrompt(vm(), project);
+    expect(out).not.toContain('Deep research web resources');
+    expect(out).not.toContain('Out of scope: script to image');
+    expect(out).not.toContain('trailer storytelling');
+  });
+
+  it('proposes no goals of its own and asserts nothing about the cut', () => {
+    // What the deliverables are, how many there are and whether any already
+    // exist are readings SHE has to make. Handing her any of them is the same
+    // mistake the retired builder made with the verdict.
+    const out = buildShipDecomposePrompt(vm(), project);
+    expect(out).not.toMatch(/\d+\s*goals?/i);
+    expect(out).not.toMatch(/verdict is/i);
+    expect(out).not.toContain('login');
+  });
+
+  it('carries no response script', () => {
+    const out = buildShipDecomposePrompt(vm(), project).toLowerCase();
+    for (const phrase of ['short read', 'let him talk', 'then let', 'what he wants']) {
+      expect(out).not.toContain(phrase);
+    }
+  });
+
+  it('says the card is editable, because a proposal she thinks is a commitment under-proposes', () => {
+    expect(buildShipDecomposePrompt(vm(), project)).toMatch(/editable/i);
+  });
+
+  it('stays short — a pointer with a request, not a briefing', () => {
+    expect(buildShipDecomposePrompt(vm(), project).length).toBeLessThan(900);
   });
 });
 

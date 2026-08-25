@@ -15771,7 +15771,23 @@
       "global_hotkey_title": "Nói từ bất kỳ đâu",
       "ship_milestone_prose_label": "Phát hành nghĩa là gì",
       "ship_milestone_prose_placeholder": "Tùy chọn: phát hành cột mốc này thực sự nghĩa là gì",
-      "fleet_plan_auto_approved": "Kế hoạch fleet được tự động phê duyệt (chế độ tự hành)."
+      "fleet_plan_auto_approved": "Kế hoạch fleet được tự động phê duyệt (chế độ tự hành).",
+      "ship_goals_badge_existing": "Đã có sẵn",
+      "ship_goals_badge_new": "Mục tiêu mới",
+      "ship_goals_cancel": "Hủy",
+      "ship_goals_confirm": "Tạo mục tiêu",
+      "ship_goals_context_label": "Ngữ cảnh mà mục tiêu này thuộc về",
+      "ship_goals_core_note": "Mọi mục tiêu đều vào phạm vi lõi. Chuyển sang để sau hay không bao giờ vẫn là quyết định của bạn.",
+      "ship_goals_count_one": "{count} mục tiêu cho {name}",
+      "ship_goals_count_other": "{count} mục tiêu cho {name}",
+      "ship_goals_created": "Đã thêm vào {name}: tạo mới {created}, đã có sẵn {bound}.",
+      "ship_goals_description_label": "Mục tiêu này bao gồm những gì",
+      "ship_goals_description_placeholder": "Tùy chọn: mục tiêu này thực sự bao gồm những gì",
+      "ship_goals_empty": "Không còn gì để tạo. Hãy hủy, hoặc nhờ Athena đọc lại bản tóm tắt.",
+      "ship_goals_heading": "Mục tiêu rút ra từ bản tóm tắt",
+      "ship_goals_remove_row": "Bỏ mục tiêu này",
+      "ship_goals_title_label": "Tiêu đề mục tiêu",
+      "ship_goals_title_placeholder": "Vài từ thôi, ví dụ Dựng nên câu chuyện"
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",
@@ -20458,6 +20474,9 @@
     "description_placeholder": "Phát hành cột mốc này thực sự nghĩa là gì",
     "goals_rail_empty": "Chưa có mục tiêu nào — hãy viết một mục tiêu, Athena sẽ sắp xếp",
     "goals_rail_title": "Mục tiêu",
-    "description_editor_hint": "Ctrl+B để in đậm · bắt đầu dòng bằng “- ” để tạo danh sách"
+    "description_editor_hint": "Ctrl+B để in đậm · bắt đầu dòng bằng “- ” để tạo danh sách",
+    "decompose_brief": "Phân rã bản tóm tắt",
+    "decompose_brief_no_brief": "Cột mốc này chưa có bản tóm tắt. Hãy viết ra việc phát hành nó nghĩa là gì, rồi phân rã điều đó.",
+    "decompose_brief_tooltip": "Nhờ Athena đọc bản tóm tắt của cột mốc này và đề xuất các mục tiêu mà nó nêu. Không có gì được tạo cho đến khi bạn xác nhận thẻ của cô ấy."
   }
 }

@@ -140,5 +140,8 @@
   "description_placeholder": "Was das Ausliefern dieses Meilensteins wirklich bedeutet",
   "goals_rail_empty": "Noch keine Ziele — schreib eines, und Athena ordnet es ein",
   "goals_rail_title": "Ziele",
-  "description_editor_hint": "Strg+B für Fettdruck · Zeile mit „- “ beginnen für eine Liste"
+  "description_editor_hint": "Strg+B für Fettdruck · Zeile mit „- “ beginnen für eine Liste",
+  "decompose_brief": "Briefing aufschlüsseln",
+  "decompose_brief_no_brief": "Dieser Meilenstein hat noch kein Briefing. Schreib auf, was es heißt, ihn zu liefern, und schlüssle das auf.",
+  "decompose_brief_tooltip": "Bitte Athena, das Briefing dieses Meilensteins zu lesen und die darin genannten Ziele vorzuschlagen. Es wird nichts angelegt, bis du ihre Karte bestätigst."
 }

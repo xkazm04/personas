@@ -15771,7 +15771,23 @@
       "global_hotkey_title": "Говорите откуда угодно",
       "ship_milestone_prose_label": "Что значит выпустить",
       "ship_milestone_prose_placeholder": "Необязательно: что на самом деле означает выпустить эту веху",
-      "fleet_plan_auto_approved": "План флота одобрен автоматически (автономный режим)."
+      "fleet_plan_auto_approved": "План флота одобрен автоматически (автономный режим).",
+      "ship_goals_badge_existing": "Уже есть",
+      "ship_goals_badge_new": "Новая цель",
+      "ship_goals_cancel": "Отмена",
+      "ship_goals_confirm": "Создать цели",
+      "ship_goals_context_label": "Контекст, к которому отнесена эта цель",
+      "ship_goals_core_note": "Каждая цель попадает в основной срез. Перенести её в «позже» или «никогда» — по-прежнему ваше решение.",
+      "ship_goals_count_one": "{count} цель для {name}",
+      "ship_goals_count_other": "{count} целей для {name}",
+      "ship_goals_created": "Добавлено в {name}: создано {created}, уже существовало {bound}.",
+      "ship_goals_description_label": "Что охватывает эта цель",
+      "ship_goals_description_placeholder": "Необязательно: что эта цель охватывает на самом деле",
+      "ship_goals_empty": "Создавать больше нечего. Отмените это или попросите Athena перечитать бриф.",
+      "ship_goals_heading": "Цели из брифа",
+      "ship_goals_remove_row": "Убрать эту цель",
+      "ship_goals_title_label": "Название цели",
+      "ship_goals_title_placeholder": "Пара слов, например «Собрать историю»"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",
@@ -20458,6 +20474,9 @@
     "description_placeholder": "Что на самом деле означает выпустить эту веху",
     "goals_rail_empty": "Целей пока нет — напишите одну, и Athena её разместит",
     "goals_rail_title": "Цели",
-    "description_editor_hint": "Ctrl+B — полужирный · начните строку с «- » для списка"
+    "description_editor_hint": "Ctrl+B — полужирный · начните строку с «- » для списка",
+    "decompose_brief": "Разобрать бриф",
+    "decompose_brief_no_brief": "У этой вехи пока нет брифа. Напишите, что значит её выпустить, и разберите это.",
+    "decompose_brief_tooltip": "Попросите Athena прочитать бриф этой вехи и предложить названные в нём цели. Ничего не создаётся, пока вы не подтвердите её карточку."
   }
 }

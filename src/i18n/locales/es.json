@@ -15771,7 +15771,23 @@
       "global_hotkey_title": "Habla desde donde estés",
       "ship_milestone_prose_label": "Qué significa publicarlo",
       "ship_milestone_prose_placeholder": "Opcional: qué significa realmente publicar este hito",
-      "fleet_plan_auto_approved": "Plan de flota aprobado automáticamente (modo autónomo)."
+      "fleet_plan_auto_approved": "Plan de flota aprobado automáticamente (modo autónomo).",
+      "ship_goals_badge_existing": "Ya existe",
+      "ship_goals_badge_new": "Objetivo nuevo",
+      "ship_goals_cancel": "Cancelar",
+      "ship_goals_confirm": "Crear objetivos",
+      "ship_goals_context_label": "Contexto en el que se archiva este objetivo",
+      "ship_goals_core_note": "Todos los objetivos entran en el alcance principal. Moverlos a después o nunca sigue siendo cosa tuya.",
+      "ship_goals_count_one": "{count} objetivo para {name}",
+      "ship_goals_count_other": "{count} objetivos para {name}",
+      "ship_goals_created": "Añadido a {name}: {created} creados, {bound} ya existían.",
+      "ship_goals_description_label": "Qué cubre este objetivo",
+      "ship_goals_description_placeholder": "Opcional: qué cubre realmente este objetivo",
+      "ship_goals_empty": "No queda nada por crear. Cancela esto o pide a Athena que vuelva a leer el resumen.",
+      "ship_goals_heading": "Objetivos del resumen",
+      "ship_goals_remove_row": "Quitar este objetivo",
+      "ship_goals_title_label": "Título del objetivo",
+      "ship_goals_title_placeholder": "Unas pocas palabras, por ejemplo Componer la historia"
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",
@@ -20458,6 +20474,9 @@
     "description_placeholder": "Qué significa realmente publicar este hito",
     "goals_rail_empty": "Aún no hay objetivos: escribe uno y Athena lo situará",
     "goals_rail_title": "Objetivos",
-    "description_editor_hint": "Ctrl+B para negrita · empieza una línea con “- ” para una lista"
+    "description_editor_hint": "Ctrl+B para negrita · empieza una línea con “- ” para una lista",
+    "decompose_brief": "Descomponer el resumen",
+    "decompose_brief_no_brief": "Este hito aún no tiene resumen. Escribe qué significa entregarlo y descompón eso.",
+    "decompose_brief_tooltip": "Pide a Athena que lea el resumen de este hito y proponga los objetivos que nombra. No se crea nada hasta que confirmes su tarjeta."
   }
 }

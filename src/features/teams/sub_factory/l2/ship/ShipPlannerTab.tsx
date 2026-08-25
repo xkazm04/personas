@@ -15,7 +15,7 @@ import type { Translations } from '@/i18n/generated/types';
 
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
-import { buildShipAskPrompt } from './shipAthena';
+import { buildShipAskPrompt, buildShipDecomposePrompt } from './shipAthena';
 import { publishShipReadiness } from './shipReadinessPublish';
 import { ShipCertifyModal } from './ShipCertifyModal';
 import { ShipControlBar } from './ShipControlBar';
@@ -308,6 +308,15 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
     askAthena('Ship', buildShipAskPrompt(vm, data.project));
   };
 
+  // Decompose goes through the SAME channel as Ask Athena — deliberately.
+  // There is no second LLM path here: the brief is read by the read op and the
+  // goals come back as a `show_ship_goals` card, so everything this button
+  // does is ask her to do two things she can already do.
+  const decomposeBrief = () => {
+    if (!data.project) return;
+    askAthena('Ship', buildShipDecomposePrompt(vm, data.project));
+  };
+
   return (
     <div data-testid="factory-ship-planner">
       {/* full-width content header — objective, readings, and the control bar */}
@@ -337,6 +346,7 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
               onCertify={() => setCertifying(true)}
               onCompose={() => setComposing(true)}
               onAskAthena={openAthena}
+              onDecompose={decomposeBrief}
               onRun={runner.run}
               onIngest={runner.ingest}
               running={runner.spawning}

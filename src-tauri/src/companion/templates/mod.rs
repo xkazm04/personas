@@ -426,4 +426,26 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// the same door `mastermind.scene.v1` opened for the canvas. So the verdict
 /// still reaches her — pulled when she asks, instead of pushed ahead of the
 /// question, which is the whole difference between a tool and a conclusion.
-pub const CONSTITUTION_VERSION: u32 = 58;
+/// v59 (decompose the brief) adds `show_ship_goals` — the editable card that
+/// turns a milestone's written brief into goals — and closes a hole v58 made
+/// visible without naming. v58 told her to READ the brief and treat what it
+/// settles as decided; this section had been telling her, since the Ship layer
+/// shipped, that "an idea with no home yet is a GOAL bound to the milestone".
+/// Both were right and neither was actionable, because **she had no op that
+/// could create a goal.** `show_ship_milestone` and `set_ship_scope` resolve
+/// every id against the registry and refuse one that is not there — correct for
+/// keeping invented ids out of the database, and it meant the only route from a
+/// brief that names three deliverables to three trackable goals was for Michal
+/// to hand-author each one. The new op is the missing verb, in the same shape
+/// and the same consent posture as its two siblings: auto-fire, no approval
+/// row, the editable card IS the consent surface, and the confirm path
+/// re-validates the rows HE edited rather than the ones she proposed. The rules
+/// that needed teaching rather than listing: a goal title is a TITLE and the
+/// prose goes in `description` (the same correction v48's objective needed); a
+/// `context_hint` must name a context in that milestone's project and omitting
+/// it is the honest way to say an idea has no home yet; and a title that
+/// already exists BINDS that goal rather than creating a twin, so re-proposing
+/// is safe and the card says which rows are new. The project is never in the
+/// payload — it is read off the milestone row, so a proposal has no way to
+/// point at the wrong one.
+pub const CONSTITUTION_VERSION: u32 = 59;

@@ -15771,7 +15771,23 @@
       "global_hotkey_title": "Bicara dari mana saja",
       "ship_milestone_prose_label": "Arti merilis ini",
       "ship_milestone_prose_placeholder": "Opsional: apa arti sebenarnya merilis milestone ini",
-      "fleet_plan_auto_approved": "Rencana armada disetujui otomatis (mode otonom)."
+      "fleet_plan_auto_approved": "Rencana armada disetujui otomatis (mode otonom).",
+      "ship_goals_badge_existing": "Sudah ada",
+      "ship_goals_badge_new": "Sasaran baru",
+      "ship_goals_cancel": "Batal",
+      "ship_goals_confirm": "Buat sasaran",
+      "ship_goals_context_label": "Konteks tempat sasaran ini diarsipkan",
+      "ship_goals_core_note": "Setiap sasaran masuk ke cakupan inti. Memindahkannya ke nanti atau tidak pernah tetap keputusanmu.",
+      "ship_goals_count_one": "{count} sasaran untuk {name}",
+      "ship_goals_count_other": "{count} sasaran untuk {name}",
+      "ship_goals_created": "Ditambahkan ke {name}: {created} dibuat, {bound} sudah ada.",
+      "ship_goals_description_label": "Apa yang dicakup sasaran ini",
+      "ship_goals_description_placeholder": "Opsional: apa yang sebenarnya dicakup sasaran ini",
+      "ship_goals_empty": "Tidak ada lagi yang perlu dibuat. Batalkan, atau minta Athena membaca ringkasannya lagi.",
+      "ship_goals_heading": "Sasaran dari ringkasan",
+      "ship_goals_remove_row": "Hapus sasaran ini",
+      "ship_goals_title_label": "Judul sasaran",
+      "ship_goals_title_placeholder": "Beberapa kata saja, misalnya Menyusun ceritanya"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",
@@ -20458,6 +20474,9 @@
     "description_placeholder": "Apa arti sebenarnya merilis milestone ini",
     "goals_rail_empty": "Belum ada tujuan — tulis satu dan Athena akan menempatkannya",
     "goals_rail_title": "Tujuan",
-    "description_editor_hint": "Ctrl+B untuk tebal · awali baris dengan “- ” untuk daftar"
+    "description_editor_hint": "Ctrl+B untuk tebal · awali baris dengan “- ” untuk daftar",
+    "decompose_brief": "Uraikan ringkasan",
+    "decompose_brief_no_brief": "Milestone ini belum punya ringkasan. Tulis apa artinya merilisnya, lalu uraikan itu.",
+    "decompose_brief_tooltip": "Minta Athena membaca ringkasan milestone ini dan mengusulkan sasaran yang disebutkannya. Tidak ada yang dibuat sampai kamu mengonfirmasi kartunya."
   }
 }

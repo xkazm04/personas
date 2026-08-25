@@ -70,6 +70,8 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // own DB-checkable precondition in the executor rather than trusting a human
     // to be watching (`approval_exec_ship`). Creating a milestone stays the
     // editable `show_ship_milestone` card, which is not an ALLOWED_ACTIONS entry.
+    // Neither is `show_ship_goals` (2026-08-25) — the third card op, and the
+    // only one that can CREATE a goal rather than bind an existing one.
     "set_ship_scope",
     "ship_milestone_lifecycle",
     // Phase G — project registry + background jobs.

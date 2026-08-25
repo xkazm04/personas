@@ -395,6 +395,354 @@ pub async fn companion_create_ship_milestone(
     create_ship_milestone_inner(&state.db, &plan)
 }
 
+// ── show_ship_goals: turning a written BRIEF into trackable work ──────────
+//
+// `show_ship_milestone` and `set_ship_scope` can only BIND a goal that already
+// exists: `resolve_item` refuses an `item_id` that does not resolve, which is
+// exactly right for a card whose job is keeping invented ids out of the
+// database, and which left Athena with no op at all for the constitution's own
+// instruction — "an idea with no home yet is a GOAL bound to the milestone".
+// She could be told to file an idea as a goal and had no verb for it.
+//
+// This is that verb, aimed at the one place the gap actually hurt: a
+// milestone's `description` is the operator's brief, free markdown that
+// routinely names the deliverables. Until now the only route from that prose
+// to trackable work was for him to hand-author each goal and bind it.
+//
+// Same consent posture as the milestone card, deliberately: auto-fire, no
+// approval row, the editable card IS the consent surface, and the confirm
+// command re-runs THIS validator over the rows the OPERATOR edited rather than
+// the ones Athena proposed.
+
+/// Longest proposed goal title. Borrows [`SHIP_MILESTONE_NAME_MAX`] rather
+/// than inventing a number: a goal title and a milestone name are the same
+/// kind of thing — the single label the row is filed under, rendered as a
+/// heading in the Goals hub and in the Ship tab's goal rail.
+pub(crate) const SHIP_GOAL_TITLE_MAX: usize = SHIP_MILESTONE_NAME_MAX;
+
+/// Longest proposed goal description. Borrows the milestone's own prose bound:
+/// both are a brief, and neither is a document.
+pub(crate) const SHIP_GOAL_DESC_MAX: usize = SHIP_MILESTONE_DESC_MAX;
+
+/// The one `dev_milestone_items.item_kind` this op writes. Named rather than
+/// spelled inline at the write so the CHECK-constrained vocabulary keeps a
+/// single home in this file; `the_goal_kind_is_a_real_member_kind` pins it to
+/// [`SHIP_MILESTONE_ITEM_KINDS`].
+pub(crate) const SHIP_GOAL_ITEM_KIND: &str = "goal";
+
+/// One validated proposed goal.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct ShipGoalRow {
+    pub title: String,
+    pub description: Option<String>,
+    /// Resolved `dev_contexts.id`, when the proposal named a context. `None`
+    /// means the goal is deliberately unfiled — a legitimate state for an idea
+    /// with no home yet, which is the whole reason this op exists.
+    pub context_id: Option<String>,
+    /// `Some(id)` when a goal with this title ALREADY exists in the project.
+    /// Confirming then binds that row instead of creating a second one — see
+    /// [`validate_ship_goals`] for how the match is decided.
+    pub existing_id: Option<String>,
+}
+
+/// A validated decomposition, ready to create and bind.
+#[derive(Debug, Clone)]
+pub(crate) struct ShipGoalsPlan {
+    /// Resolved `dev_milestones.id` — the row that was proved to exist.
+    pub milestone_id: String,
+    pub milestone_name: String,
+    /// The MILESTONE's project. Every goal is created here; the payload never
+    /// gets to name a project of its own.
+    pub project_id: String,
+    pub rows: Vec<ShipGoalRow>,
+}
+
+/// Result of a confirmed decomposition. Hand-written on the TS side
+/// (`src/api/companion.ts`) like the rest of this module's Tauri-facing types
+/// — no ts-rs export, so the bindings tree stays untouched.
+///
+/// `created` and `bound` are reported separately on purpose: "8 goals" reads
+/// the same whether eight rows appeared or eight already existed, and that
+/// difference is the entire point of the idempotence rule.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShipGoalsCreated {
+    pub milestone_id: String,
+    /// Goals that did not exist and were created.
+    pub created: usize,
+    /// Goals that already existed and were bound to the milestone instead.
+    pub bound: usize,
+}
+
+/// Resolve whatever the model wrote for a context into a real
+/// `dev_contexts.id`, scoped to the milestone's project. Same generosity as
+/// [`resolve_project`] — id, exact name, or name substring — and a miss names
+/// real candidates rather than scolding, because that rejection is the
+/// discovery path.
+///
+/// A miss REFUSES rather than quietly dropping the hint: silently filing a
+/// goal under nothing while the card said otherwise is a difference the
+/// operator cannot see. Omitting `context_hint` entirely is how a genuinely
+/// unfiled goal is expressed, and the refusal says so.
+fn resolve_context(
+    conn: &rusqlite::Connection,
+    project_id: &str,
+    hint: &str,
+) -> Result<String, String> {
+    // Escaped, with an explicit ESCAPE clause. The hint is model-authored free
+    // text, and this SQLite build is compiled without ICU: unescaped, a hint
+    // containing `_` matches any single character, so `ship_ops` would resolve
+    // `shipXops`. `resolve_project` one function up has the same shape and is
+    // NOT escaped — that site is baselined by `unescaped-like-pattern` and
+    // fixing it here would be an unrelated change to a Ship approval path.
+    let like = format!("%{}%", crate::db::repos::utils::escape_like(hint));
+    conn.query_row(
+        "SELECT id FROM dev_contexts
+         WHERE project_id = ?1
+           AND (id = ?2 COLLATE NOCASE OR name = ?2 COLLATE NOCASE
+                OR name LIKE ?3 ESCAPE '\\' COLLATE NOCASE)
+         ORDER BY CASE WHEN id = ?2 COLLATE NOCASE THEN 0
+                       WHEN name = ?2 COLLATE NOCASE THEN 1 ELSE 2 END
+         LIMIT 1",
+        params![project_id, hint, like],
+        |r| r.get::<_, String>(0),
+    )
+    .map_err(|_| {
+        format!(
+            "no context matches `{hint}` in this milestone's project. Real contexts here: {}. \
+             Use one of those, or omit `context_hint` — a goal with no context is fine.",
+            candidates(
+                conn,
+                "SELECT name, id FROM dev_contexts WHERE project_id = ?1
+                 ORDER BY pinned DESC, updated_at DESC LIMIT ?2",
+                &[&project_id, &(READ_OP_SUGGESTIONS as i64)],
+            )
+        )
+    })
+}
+
+/// Validate a proposed goal decomposition against the REAL registry.
+///
+/// Rules, in order: a `milestone_id` that resolves (and its project comes from
+/// the ROW, never from the payload) · 1..=[`SHIP_MILESTONE_MAX_ROWS`] goals ·
+/// per goal a non-empty bounded title, a bounded optional description, an
+/// optional `context_hint` that resolves inside that project, and no duplicate
+/// title within the card.
+///
+/// **Idempotence.** Each title is looked up with [`resolve_item`] — the SAME
+/// helper `show_ship_milestone` uses to bind an existing member, so "does this
+/// goal already exist" is answered exactly once in this file and both ops
+/// agree. It matches `id = ?` OR `title = ?` under `COLLATE NOCASE` within the
+/// project, so proposing a title that is already there BINDS that goal rather
+/// than creating a second row with the same name. A hit is recorded on the row
+/// (`existing_id`) so the card can say so before the operator confirms, and it
+/// is recomputed here at confirm time because the registry can move while a
+/// card sits in the transcript.
+///
+/// The whole payload is validated before anything is written, for the reason
+/// `ship_ingest` states about a partially applied result: a decomposition that
+/// created three goals and then refused the fourth leaves a milestone whose
+/// scope is neither what Athena proposed nor what the operator agreed to.
+pub(crate) fn validate_ship_goals(
+    pool: &crate::db::DbPool,
+    milestone_id: &str,
+    rows: &[serde_json::Value],
+) -> Result<ShipGoalsPlan, String> {
+    let milestone_id = milestone_id.trim();
+    if milestone_id.is_empty() {
+        return Err("`milestone_id` is required".into());
+    }
+    if rows.is_empty() {
+        return Err("`goals` is empty — there is nothing to propose".into());
+    }
+    if rows.len() > SHIP_MILESTONE_MAX_ROWS {
+        return Err(format!(
+            "{} goals is more than the {SHIP_MILESTONE_MAX_ROWS} an operator can review in one \
+             card. A brief that decomposes into more than that is two milestones.",
+            rows.len()
+        ));
+    }
+    let conn = pool
+        .get()
+        .map_err(|e| format!("the project database is not reachable: {e}"))?;
+
+    // The project comes from the MILESTONE ROW. The payload never names one,
+    // so a proposal has no way to create goals in a project other than the one
+    // the operator is looking at.
+    let (project_id, milestone_name): (String, String) = conn
+        .query_row(
+            "SELECT project_id, name FROM dev_milestones WHERE id = ?1",
+            params![milestone_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .map_err(|_| {
+            format!(
+                "no milestone `{milestone_id}` — resolve it with `describe_ship_milestone` first"
+            )
+        })?;
+
+    let mut out: Vec<ShipGoalRow> = Vec::with_capacity(rows.len());
+    for (i, row) in rows.iter().enumerate() {
+        let n = i + 1;
+        let title = row
+            .get("title")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        if title.is_empty() {
+            return Err(format!("goal {n}: `title` must be a non-empty goal title"));
+        }
+        if title.chars().count() > SHIP_GOAL_TITLE_MAX {
+            return Err(format!(
+                "goal {n}: `title` is too long at {} characters (max {SHIP_GOAL_TITLE_MAX}). It \
+                 renders as the goal's heading, so a sentence there reads as a broken layout. \
+                 Put a handful of words here and the rest in `description`.",
+                title.chars().count()
+            ));
+        }
+        let description = match row
+            .get("description")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+        {
+            None | Some("") => None,
+            Some(d) => {
+                if d.chars().count() > SHIP_GOAL_DESC_MAX {
+                    return Err(format!(
+                        "goal {n}: `description` is too long (max {SHIP_GOAL_DESC_MAX} characters)"
+                    ));
+                }
+                Some(d.to_string())
+            }
+        };
+        let context_id = match row
+            .get("context_hint")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+        {
+            None | Some("") => None,
+            Some(hint) => Some(
+                resolve_context(&conn, &project_id, hint).map_err(|e| format!("goal {n}: {e}"))?,
+            ),
+        };
+
+        // Two rows proposing the same goal is a card that contradicts itself;
+        // whichever one won would be an accident of ordering.
+        // `eq_ignore_ascii_case` rather than a Unicode fold on purpose —
+        // SQLite's `COLLATE NOCASE` is ASCII-only, so this is exactly the
+        // comparison the lookup below makes.
+        if out.iter().any(|r| r.title.eq_ignore_ascii_case(title)) {
+            return Err(format!(
+                "goal {n}: `{title}` appears twice in this card — one row per goal"
+            ));
+        }
+
+        // Idempotence. A hit means BIND, not create. `resolve_item`'s Err is
+        // its candidate-naming rejection message, which is not a failure here:
+        // "no goal with that title" is the ordinary case for a new one.
+        let existing_id = resolve_item(&conn, &project_id, SHIP_GOAL_ITEM_KIND, title).ok();
+
+        out.push(ShipGoalRow {
+            title: title.to_string(),
+            description,
+            context_id,
+            existing_id,
+        });
+    }
+
+    Ok(ShipGoalsPlan {
+        milestone_id: milestone_id.to_string(),
+        milestone_name,
+        project_id,
+        rows: out,
+    })
+}
+
+/// Create (or adopt) each goal and bind it to the milestone, through the
+/// ordinary repo functions. Separate from the command so the written shape is
+/// testable without a Tauri `State`.
+///
+/// Goals are born with `create_goal`'s default status (`open`) — passing no
+/// status at all, because this path has no way to know a goal is further along
+/// than that and must not claim it is. Every membership lands in
+/// [`SHIP_MILESTONE_BUCKET`] for the same reason the milestone card does: a
+/// proposal IS the core cut, and `later` / `never` is a triage the operator
+/// performs afterwards in the Ship tab.
+///
+/// `description` and `rating` on the MEMBERSHIP are passed as `None`, not as
+/// the goal's own description: those two columns are the operator's note and
+/// his second opinion on the cut, and the repo's nullable-patch convention
+/// leaves an omitted field untouched. Re-binding a goal he already annotated
+/// must not erase what he wrote — the rule `execute_set_ship_scope` follows.
+pub(crate) fn create_ship_goals_inner(
+    db: &crate::db::DbPool,
+    plan: &ShipGoalsPlan,
+) -> Result<ShipGoalsCreated, AppError> {
+    let mut created = 0usize;
+    let mut bound = 0usize;
+    for row in &plan.rows {
+        let goal_id = match &row.existing_id {
+            Some(id) => {
+                bound += 1;
+                id.clone()
+            }
+            None => {
+                let goal = repo::create_goal(
+                    db,
+                    &plan.project_id,
+                    &row.title,
+                    row.description.as_deref(),
+                    row.context_id.as_deref(),
+                    None,
+                    None,
+                    None,
+                )?;
+                created += 1;
+                goal.id
+            }
+        };
+        repo::set_milestone_item(
+            db,
+            &plan.milestone_id,
+            SHIP_GOAL_ITEM_KIND,
+            &goal_id,
+            SHIP_MILESTONE_BUCKET,
+            None,
+            None,
+        )?;
+    }
+    Ok(ShipGoalsCreated {
+        milestone_id: plan.milestone_id.clone(),
+        created,
+        bound,
+    })
+}
+
+/// Confirm-and-create for the editable in-chat goal decomposition.
+///
+/// The card the operator just edited is the consent surface, so there is no
+/// second approval gate — but the whole proposal is re-validated here, because
+/// the rows arriving are the USER-EDITED ones. A title he rewrote into one
+/// that already exists binds that goal instead of creating a twin, and a row
+/// he broke refuses the whole operation with a reason the card shows.
+#[tauri::command]
+pub async fn companion_create_ship_goals(
+    state: State<'_, Arc<AppState>>,
+    milestone_id: String,
+    goals: Vec<serde_json::Value>,
+) -> Result<ShipGoalsCreated, AppError> {
+    ipc_auth::require_auth(&state).await?;
+    let plan =
+        validate_ship_goals(&state.db, &milestone_id, &goals).map_err(AppError::Validation)?;
+    tracing::info!(
+        milestone_id = %plan.milestone_id,
+        project_id = %plan.project_id,
+        goals = plan.rows.len(),
+        "companion: creating confirmed ship goals"
+    );
+    create_ship_goals_inner(&state.db, &plan)
+}
+
 // ── Scope + lifecycle: acting on a milestone that already exists ──────────
 //
 // `show_ship_milestone` creates a whole cut from nothing. These two are the
@@ -1295,5 +1643,301 @@ mod ship_scope_tests {
         assert!(ship_lifecycle_target(&pool, "ms_1", "unship")
             .expect_err("unknown transition")
             .contains("use `cut` or `ship`"));
+    }
+}
+
+// ── show_ship_goals ───────────────────────────────────────────────────────
+//
+// These run against `init_test_db()` — the REAL migrated schema — rather than
+// against the hand-rolled fixture the two modules above share. That is not a
+// stylistic preference: this path calls `repo::create_goal`, which writes ten
+// columns (`parent_goal_id`, `order_index`, `progress`, …) the hand-rolled
+// `dev_goals` does not have, and it must land inside the CHECK constraint the
+// migration chain puts on `dev_goals.status`. A fixture that cannot express
+// the constraint cannot prove the write satisfies it.
+
+#[cfg(test)]
+mod ship_goals_tests {
+    use super::*;
+    use crate::db::{init_test_db, PoolExt};
+
+    /// Check a connection out through the shared `PoolExt::conn` rather than
+    /// `pool.get().unwrap()`. `pool-get-unwrapped` counts test files too, on
+    /// the stated grounds that a fixture which panics on acquire hides the
+    /// same saturation the product would — and this is the destination that
+    /// rule routes callers to.
+    fn conn(pool: &crate::db::DbPool) -> impl std::ops::Deref<Target = rusqlite::Connection> {
+        pool.conn("ship goals test").expect("pooled connection")
+    }
+
+    /// One project, one context, one milestone, one goal that already exists.
+    ///
+    /// `p_other` and `ctx_other` are a SECOND project, so the cross-project
+    /// guards are tested against something real rather than against absence.
+    fn pool_with_milestone() -> crate::db::DbPool {
+        let pool = init_test_db().expect("test db");
+        let conn = conn(&pool);
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path, status)
+               VALUES ('p_1','Personas','C:/repo','active'),
+                      ('p_other','Other','C:/other','active');
+             INSERT INTO dev_contexts (id, project_id, name)
+               VALUES ('ctx_ship','p_1','teams/factory/ship'),
+                      ('ctx_other','p_other','somewhere else');
+             INSERT INTO dev_milestones (id, project_id, name, status)
+               VALUES ('ms_1','p_1','M1','planned');
+             INSERT INTO dev_goals (id, project_id, title, status)
+               VALUES ('g_existing','p_1','Compose the story','open');",
+        )
+        .expect("seed");
+        drop(conn);
+        pool
+    }
+
+    fn goal(title: &str) -> serde_json::Value {
+        serde_json::json!({ "title": title })
+    }
+
+    fn goal_count(pool: &crate::db::DbPool, project_id: &str) -> i64 {
+        conn(pool)
+            .query_row(
+                "SELECT COUNT(*) FROM dev_goals WHERE project_id = ?1",
+                params![project_id],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    /// The happy path, end to end: three proposed goals become three rows in
+    /// the milestone's project, each bound `core`, each carrying what the card
+    /// said it would.
+    #[test]
+    fn creates_the_proposed_goals_and_binds_them_to_the_milestone() {
+        let pool = pool_with_milestone();
+        let plan = validate_ship_goals(
+            &pool,
+            "  ms_1  ",
+            &[
+                serde_json::json!({
+                    "title": "  Project type: Trailer  ",
+                    "description": "  a new project type in the factory  ",
+                    "context_hint": "ship",
+                }),
+                goal("Decompose into scene stories"),
+            ],
+        )
+        .expect("plan validates");
+        assert_eq!(plan.project_id, "p_1");
+        assert_eq!(plan.milestone_name, "M1");
+        assert_eq!(plan.rows[0].title, "Project type: Trailer");
+        assert_eq!(
+            plan.rows[0].description.as_deref(),
+            Some("a new project type in the factory")
+        );
+        assert_eq!(
+            plan.rows[0].context_id.as_deref(),
+            Some("ctx_ship"),
+            "a substring hint resolves to the real context id"
+        );
+        assert_eq!(plan.rows[1].context_id, None, "an unfiled goal is fine");
+
+        let created = create_ship_goals_inner(&pool, &plan).expect("create");
+        assert_eq!((created.created, created.bound), (2, 0));
+
+        let db = conn(&pool);
+        let (kind, bucket): (String, String) = db
+            .query_row(
+                "SELECT i.item_kind, i.bucket FROM dev_milestone_items i
+                 JOIN dev_goals g ON g.id = i.item_id
+                 WHERE i.milestone_id = 'ms_1' AND g.title = 'Project type: Trailer'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .expect("the goal is bound to the milestone");
+        assert_eq!(kind, SHIP_GOAL_ITEM_KIND);
+        assert_eq!(bucket, SHIP_MILESTONE_BUCKET);
+
+        let status: String = db
+            .query_row(
+                "SELECT status FROM dev_goals WHERE title = 'Decompose into scene stories'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            status, "open",
+            "a goal is born open — this path never claims work is under way"
+        );
+    }
+
+    /// The idempotence rule, which is the whole reason the validator resolves
+    /// titles instead of trusting them: proposing a goal that is already there
+    /// BINDS it. A second `Compose the story` would make the Goals hub show
+    /// the same objective twice with different ids.
+    #[test]
+    fn an_existing_title_binds_rather_than_creating_a_duplicate() {
+        let pool = pool_with_milestone();
+        let before = goal_count(&pool, "p_1");
+        let plan = validate_ship_goals(
+            &pool,
+            "ms_1",
+            // Different case on purpose: the lookup is `COLLATE NOCASE`, so
+            // "compose the story" is the SAME goal.
+            &[goal("compose the story"), goal("A genuinely new one")],
+        )
+        .expect("plan validates");
+        assert_eq!(plan.rows[0].existing_id.as_deref(), Some("g_existing"));
+        assert_eq!(plan.rows[1].existing_id, None);
+
+        let created = create_ship_goals_inner(&pool, &plan).expect("create");
+        assert_eq!((created.created, created.bound), (1, 1));
+        assert_eq!(
+            goal_count(&pool, "p_1"),
+            before + 1,
+            "exactly one row appeared, not two"
+        );
+
+        let bound: i64 = conn(&pool)
+            .query_row(
+                "SELECT COUNT(*) FROM dev_milestone_items
+                  WHERE milestone_id = 'ms_1' AND item_id = 'g_existing'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(bound, 1, "the EXISTING goal is what got bound");
+    }
+
+    /// Re-binding never erases the operator's own note on the membership. The
+    /// nullable-patch convention is what makes that true, and this is where it
+    /// is pinned — passing the goal's description through as the member note
+    /// would silently overwrite his.
+    #[test]
+    fn re_binding_leaves_the_operators_note_on_the_membership_alone() {
+        let pool = pool_with_milestone();
+        conn(&pool)
+            .execute(
+                "INSERT INTO dev_milestone_items
+                   (milestone_id, item_kind, item_id, bucket, description)
+                 VALUES ('ms_1','goal','g_existing','core','his own reason')",
+                [],
+            )
+            .expect("pre-existing membership");
+
+        let plan = validate_ship_goals(
+            &pool,
+            "ms_1",
+            &[serde_json::json!({
+                "title": "Compose the story",
+                "description": "Athena's summary, which is NOT his note",
+            })],
+        )
+        .expect("plan validates");
+        create_ship_goals_inner(&pool, &plan).expect("create");
+
+        let note: Option<String> = conn(&pool)
+            .query_row(
+                "SELECT description FROM dev_milestone_items
+                  WHERE milestone_id = 'ms_1' AND item_id = 'g_existing'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(note.as_deref(), Some("his own reason"));
+    }
+
+    /// One bad row refuses the WHOLE batch, and nothing lands. The row that
+    /// fails is deliberately the LAST one, so a validator that wrote as it
+    /// went would already have created the first two by the time it noticed.
+    #[test]
+    fn one_bad_row_refuses_the_whole_batch_and_nothing_is_written() {
+        let pool = pool_with_milestone();
+        let before = goal_count(&pool, "p_1");
+        let err = validate_ship_goals(
+            &pool,
+            "ms_1",
+            &[
+                goal("First deliverable"),
+                goal("Second deliverable"),
+                serde_json::json!({ "title": "   " }),
+            ],
+        )
+        .expect_err("an empty title must refuse the batch");
+        assert!(err.contains("goal 3"), "the reason names the row: {err}");
+        assert_eq!(
+            goal_count(&pool, "p_1"),
+            before,
+            "validation is separate from writing, so nothing landed"
+        );
+    }
+
+    /// A context that belongs to ANOTHER project is refused, and the refusal
+    /// names the real ones. The payload cannot name a project, so this is the
+    /// only door through which a foreign id could have reached the write.
+    #[test]
+    fn refuses_a_context_from_another_project_and_names_the_real_ones() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_goals(
+            &pool,
+            "ms_1",
+            &[serde_json::json!({ "title": "Cross-project", "context_hint": "ctx_other" })],
+        )
+        .expect_err("a foreign context must be refused");
+        assert!(err.contains("ctx_other"), "{err}");
+        assert!(
+            err.contains("teams/factory/ship"),
+            "real candidates are named: {err}"
+        );
+        assert!(
+            err.contains("omit `context_hint`"),
+            "the refusal names the escape: {err}"
+        );
+    }
+
+    #[test]
+    fn refuses_an_unknown_milestone_and_points_at_the_read_op() {
+        let pool = pool_with_milestone();
+        let err = validate_ship_goals(&pool, "ms_nope", &[goal("Anything")])
+            .expect_err("an unknown milestone must be refused");
+        assert!(err.contains("describe_ship_milestone"), "{err}");
+        assert!(validate_ship_goals(&pool, "   ", &[goal("Anything")]).is_err());
+    }
+
+    #[test]
+    fn enforces_the_row_bounds_and_refuses_a_duplicate_title_in_one_card() {
+        let pool = pool_with_milestone();
+        assert!(validate_ship_goals(&pool, "ms_1", &[]).is_err(), "empty");
+
+        let many: Vec<serde_json::Value> = (0..SHIP_MILESTONE_MAX_ROWS + 1)
+            .map(|i| goal(&format!("Deliverable {i}")))
+            .collect();
+        let err = validate_ship_goals(&pool, "ms_1", &many).expect_err("the cap must hold");
+        assert!(err.contains(&SHIP_MILESTONE_MAX_ROWS.to_string()), "{err}");
+
+        let err = validate_ship_goals(&pool, "ms_1", &[goal("Same thing"), goal("SAME THING")])
+            .expect_err("a self-contradicting card must be refused");
+        assert!(err.contains("twice"), "{err}");
+
+        let long = "x".repeat(SHIP_GOAL_TITLE_MAX + 1);
+        let err = validate_ship_goals(&pool, "ms_1", &[goal(&long)]).expect_err("title bound");
+        assert!(err.contains("description"), "names the fix: {err}");
+
+        let prose = "x".repeat(SHIP_GOAL_DESC_MAX + 1);
+        assert!(validate_ship_goals(
+            &pool,
+            "ms_1",
+            &[serde_json::json!({ "title": "Fine", "description": prose })],
+        )
+        .is_err());
+    }
+
+    /// The caps are BORROWED, not copied, and the one kind this op writes is
+    /// one the CHECK constraint admits. Both are one-line assertions that stop
+    /// a second vocabulary growing beside the first.
+    #[test]
+    fn the_goal_kind_is_a_real_member_kind_and_the_caps_are_borrowed() {
+        assert!(SHIP_MILESTONE_ITEM_KINDS.contains(&SHIP_GOAL_ITEM_KIND));
+        assert_eq!(SHIP_GOAL_TITLE_MAX, SHIP_MILESTONE_NAME_MAX);
+        assert_eq!(SHIP_GOAL_DESC_MAX, SHIP_MILESTONE_DESC_MAX);
     }
 }

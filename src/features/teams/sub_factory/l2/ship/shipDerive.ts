@@ -9,7 +9,9 @@
 // name-keyed join silently drops contexts out of the footprint. That footprint
 // feeds two exit criteria and therefore the ship verdict: a milestone could
 // read GO because a context quietly vanished from its own scope.
-import type { ShipContext, ShipMember } from './shipModel';
+import { isComplete } from '@/features/teams/sub_goals/goalStatus';
+
+import type { ShipContext, ShipGoal, ShipMember } from './shipModel';
 
 /**
  * The derived context footprint: every context sliced by a CORE member,
@@ -39,4 +41,40 @@ export function deriveFootprint(core: ShipMember[], contexts: ShipContext[]): Sh
  */
 export function inContext<T extends { contextIds: string[] }>(items: T[], contextId: string): T[] {
   return items.filter((i) => i.contextIds.includes(contextId));
+}
+
+/**
+ * The milestone's progress percentage over its CORE cut.
+ *
+ * **Goals count, and until 2026-08-25 they did not.** This read
+ * `ready core FEATURES / total core features`, so a milestone whose cut was
+ * five goals and zero features reported 0% forever — and that is exactly the
+ * shape a milestone takes when its brief has just been decomposed into goals
+ * (`show_ship_goals`), before any of it exists as a use case. A number that
+ * cannot move is not a progress number.
+ *
+ * Both member kinds contribute one unit each, and each is "done" by its own
+ * reading, because they are genuinely different measurements:
+ *
+ *   - a FEATURE is done when the AUTOMATION says so (`feature.ready` —
+ *     measurable by ≥1 KPI and no critical context in its slice). Nobody types
+ *     it, which is the whole point of the layer.
+ *   - a GOAL is done when its `dev_goals.status` says so, through
+ *     `isComplete` — the shared normalizer, so `done` / `completed` /
+ *     `complete` / `skipped` all read the same here as they do in the Goals
+ *     hub and in the Rust `normalize_goal_status` mirror. Comparing the raw
+ *     string is what mis-laned every in-progress goal in the Goals module v1.
+ *
+ * Operator RATINGS still contribute nothing — that is `deriveDuality`'s
+ * subject, and wiring a second opinion into progress was rejected in design.
+ * An empty cut is 0, not 100: a milestone with nothing in it has not finished
+ * anything.
+ */
+export function deriveProgress(core: ShipMember[], coreGoals: ShipGoal[]): number {
+  const total = core.length + coreGoals.length;
+  if (total === 0) return 0;
+  const done =
+    core.filter((m) => m.feature.ready).length +
+    coreGoals.filter((g) => isComplete(g.status)).length;
+  return Math.round((done / total) * 100);
 }

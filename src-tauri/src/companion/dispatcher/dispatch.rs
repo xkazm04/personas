@@ -1548,6 +1548,91 @@ pub fn dispatch_with_sys(
                     }
                 }
             }
+            // ─────────────────────────────────────────────────────────────
+            // The editable goal decomposition (2026-08-25).
+            //
+            // Third card op, same contract as the two above, aimed at the one
+            // thing the Ship layer could not do: CREATE a goal. `resolve_item`
+            // refuses an id that does not resolve, so `show_ship_milestone`
+            // and `set_ship_scope` can only ever bind goals that already
+            // exist — while the constitution tells her that an idea with no
+            // home yet IS a goal bound to the milestone. This arm is the verb
+            // for that sentence.
+            //
+            // The project is never in the payload: it is read off the
+            // milestone row, inside the validator. So there is nothing here
+            // for a proposal to point at the wrong project with.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_ship_goals" => {
+                let milestone_id = env
+                    .params
+                    .get("milestone_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let goals = env
+                    .params
+                    .get("goals")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                // Resolving the milestone, its project and that project's
+                // existing goals all need the system DB. Without it there is
+                // no way to tell a NEW goal from one that already exists, so
+                // we fail CLOSED rather than render a card whose Confirm
+                // button would duplicate every objective it names.
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "show_ship_goals could not be validated: the project registry is not \
+                         reachable from this turn. Tell the user rather than proposing goals."
+                            .into(),
+                    );
+                    continue;
+                };
+                match crate::commands::companion::approvals::validate_ship_goals(
+                    db,
+                    milestone_id,
+                    &goals,
+                ) {
+                    Ok(plan) => {
+                        let rows_json: Vec<serde_json::Value> = plan
+                            .rows
+                            .iter()
+                            .map(|r| {
+                                serde_json::json!({
+                                    "title": r.title,
+                                    "description": r.description,
+                                    "context_id": r.context_id,
+                                    // Present so the card can say "this one
+                                    // already exists, confirming binds it"
+                                    // BEFORE he presses the button. It is
+                                    // recomputed at confirm time; this copy is
+                                    // display only.
+                                    "existing_id": r.existing_id,
+                                })
+                            })
+                            .collect();
+                        out.chat_cards.push(ChatCard {
+                            kind: "ship_goals".to_string(),
+                            title: env
+                                .params
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            config: serde_json::json!({
+                                "milestone_id": plan.milestone_id,
+                                "milestone_name": plan.milestone_name,
+                                "rows": rows_json,
+                            }),
+                        });
+                    }
+                    Err(reason) => {
+                        out.warnings
+                            .push(format!("rejected show_ship_goals: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
             Ok(env)
                 if env.op == "propose_action" && env.action == "show_persona_creation_offer" =>
             {
