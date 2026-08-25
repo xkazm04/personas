@@ -67,6 +67,19 @@ pub struct SharedEventChange {
     pub release_version: Option<String>,
 }
 
+/// One feed→project route: a shared-event feed pinned to a dev project so a
+/// firing can open the quick-dispatch door pre-scoped to that project. The
+/// composite key (catalog_entry_id, project_id) makes the pairing itself the
+/// row — routes are replaced as a set via `set_routes`, never edited in place.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedEventProjectRoute {
+    pub catalog_entry_id: String,
+    pub project_id: String,
+    pub created_at: String,
+}
+
 /// Per-feed change-activity rollup — the latest change + total count for one
 /// slug. Powers the "Latest change" column + Watchtower ordering in the
 /// Marketplace tables. `last_payload` is the newest change's JSON payload.

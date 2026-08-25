@@ -1870,6 +1870,13 @@ pub(crate) fn validate_fleet_plan(
 /// is the idempotency guard: a double-click, a replayed event, or a re-mounted
 /// card after a refresh can no longer start a second fleet of CLI sessions.
 /// A claim taken for a dispatch that then failed outright is released.
+///
+/// `origin` marks where the confirmed plan came from. `Some("quick_dispatch")`
+/// (the shared-events dispatch door) forces the `fleet_dispatch` executor even
+/// for a single row, so an Athena-owned Operation always exists to reconcile
+/// against, and the ledger row carries the `quick_dispatch` decision class.
+/// Absent/other values keep the historical behavior — existing callers are
+/// unaffected.
 #[tauri::command]
 pub async fn companion_dispatch_fleet_plan(
     state: State<'_, Arc<AppState>>,
@@ -1877,8 +1884,10 @@ pub async fn companion_dispatch_fleet_plan(
     operation_intent: String,
     rows: Vec<serde_json::Value>,
     card_id: Option<String>,
+    origin: Option<String>,
 ) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
+    let quick_dispatch = origin.as_deref() == Some("quick_dispatch");
     let (intent, plan) =
         validate_fleet_plan(&state.db, &operation_intent, &rows).map_err(AppError::Validation)?;
 
@@ -1892,11 +1901,12 @@ pub async fn companion_dispatch_fleet_plan(
         crate::commands::companion::chat_cards::claim_for_dispatch(&conn, id)?;
     }
 
-    let (action, params) = fleet_plan_dispatch_params(&intent, &plan);
+    let (action, params) = fleet_plan_dispatch_params(&intent, &plan, quick_dispatch);
     tracing::info!(
         intent = %intent,
         sessions = plan.len(),
         action = action,
+        quick_dispatch = quick_dispatch,
         "companion: dispatching confirmed fleet plan"
     );
     let result = match action {
@@ -1917,7 +1927,12 @@ pub async fn companion_dispatch_fleet_plan(
     } else {
         FLEET_PLAN_OUTCOME_CONFIRMED_FAILED
     };
-    record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome);
+    let decision_class = if quick_dispatch {
+        FLEET_PLAN_DECISION_CLASS_QUICK_DISPATCH
+    } else {
+        FLEET_PLAN_DECISION_CLASS
+    };
+    record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome, decision_class);
 
     // Settle the durable card in the same breath as the audit row: a
     // successful dispatch stores its outcome (so a re-hydrated card renders
@@ -1957,6 +1972,9 @@ pub(crate) const FLEET_PLAN_OUTCOME_CONFIRMED: &str = "operator_confirmed";
 pub(crate) const FLEET_PLAN_OUTCOME_CONFIRMED_FAILED: &str = "operator_confirmed_failed";
 /// Ledger `decision_class` marking the origin as the editable chat plan card.
 pub(crate) const FLEET_PLAN_DECISION_CLASS: &str = "operator_confirmed_plan";
+/// Ledger `decision_class` marking the origin as the shared-events quick-
+/// dispatch door (a firing's one-click dispatch, still operator-confirmed).
+pub(crate) const FLEET_PLAN_DECISION_CLASS_QUICK_DISPATCH: &str = "quick_dispatch";
 
 /// The audit payload for one confirmed plan: the operation intent, the row
 /// count, and per row the cwd plus the RESOLVED PROMPT that session actually
@@ -1985,11 +2003,12 @@ pub(crate) fn record_fleet_plan_decision(
     intent: &str,
     plan: &[FleetPlanRow],
     outcome: &str,
+    decision_class: &str,
 ) {
     let params = serde_json::json!({
         // No `session_id` / `confidence`: nothing existed to decide about and
         // nobody self-reported — a human confirmed a plan.
-        "decision_class": FLEET_PLAN_DECISION_CLASS,
+        "decision_class": decision_class,
         "rationale": fleet_plan_audit_rationale(intent, plan),
     });
     record_fleet_decision(db, action, &params.to_string(), outcome, None);
@@ -2001,6 +2020,11 @@ pub(crate) fn record_fleet_plan_decision(
 /// with N roles (`fleet_dispatch`). Pure so the selection and the assembled
 /// argv are testable without an `AppHandle`.
 ///
+/// `force_dispatch` (the quick-dispatch origin) routes even a single row
+/// through `fleet_dispatch` — a one-element `role_specs` is inside that
+/// executor's bounds (non-empty, ≤ 8) — so an Athena-owned Operation is
+/// always created for the reconciler to finalize against.
+///
 /// Each row contributes exactly ONE positional token (`FleetPlanRow::prompt`).
 /// No flags are assembled here: `fleet::pty::spawn_session` appends the
 /// variadic `--mcp-config` after the caller's args, and anything emitted after
@@ -2008,8 +2032,9 @@ pub(crate) fn record_fleet_plan_decision(
 pub(crate) fn fleet_plan_dispatch_params(
     intent: &str,
     plan: &[FleetPlanRow],
+    force_dispatch: bool,
 ) -> (&'static str, serde_json::Value) {
-    if plan.len() == 1 {
+    if plan.len() == 1 && !force_dispatch {
         let row = &plan[0];
         return (
             "fleet_spawn",
@@ -2113,7 +2138,7 @@ mod fleet_plan_tests {
             ]
         );
         // …and the single-row dispatch carries the label to the executor.
-        let (action, params) = fleet_plan_dispatch_params("intent", &plan);
+        let (action, params) = fleet_plan_dispatch_params("intent", &plan, false);
         assert_eq!(action, "fleet_spawn");
         assert_eq!(params["label"], "auth hardening");
     }
@@ -2249,7 +2274,7 @@ mod fleet_plan_tests {
 
         let (intent, one) =
             validate_fleet_plan(&pool, "single", &[row(&cwd, "objective one", None)]).unwrap();
-        let (action, params) = fleet_plan_dispatch_params(&intent, &one);
+        let (action, params) = fleet_plan_dispatch_params(&intent, &one, false);
         assert_eq!(action, "fleet_spawn");
         assert_eq!(params["cwd"], cwd);
         assert_eq!(params["args"][0], "objective one");
@@ -2264,7 +2289,7 @@ mod fleet_plan_tests {
             ],
         )
         .unwrap();
-        let (action, params) = fleet_plan_dispatch_params(&intent, &many);
+        let (action, params) = fleet_plan_dispatch_params(&intent, &many, false);
         assert_eq!(action, "fleet_dispatch");
         assert_eq!(params["operation_intent"], "an operation");
         assert_eq!(params["role_specs"].as_array().unwrap().len(), 2);
@@ -2284,7 +2309,7 @@ mod fleet_plan_tests {
             row(&cwd, "a second, different objective", None),
         ];
         let (intent, plan) = validate_fleet_plan(&pool, "edited plan", &edited).unwrap();
-        let (_, params) = fleet_plan_dispatch_params(&intent, &plan);
+        let (_, params) = fleet_plan_dispatch_params(&intent, &plan, false);
         let specs = params["role_specs"].as_array().unwrap();
         assert_eq!(
             specs[0]["args"][0],
@@ -2301,6 +2326,40 @@ mod fleet_plan_tests {
             assert!(!spec["args"][0].as_str().unwrap().starts_with("--"));
         }
     }
+    /// The quick-dispatch origin forces an Operation even for one row: the
+    /// same single-row plan selects `fleet_spawn` without it and
+    /// `fleet_dispatch` (a one-element `role_specs`) with it — inside that
+    /// executor's bounds (non-empty, ≤ 8), and Athena-owned by construction
+    /// since `execute_fleet_dispatch` begins a dispatched operation.
+    #[test]
+    fn quick_dispatch_origin_forces_an_operation_for_one_row() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let (intent, plan) =
+            validate_fleet_plan(&pool, "one firing", &[row(&cwd, "handle the change", None)])
+                .unwrap();
+        assert_eq!(plan.len(), 1);
+
+        // Unset origin: historical single-session shape.
+        let (action, params) = fleet_plan_dispatch_params(&intent, &plan, false);
+        assert_eq!(action, "fleet_spawn");
+        assert_eq!(params["cwd"], cwd);
+        assert_eq!(params["args"][0], "handle the change");
+        assert!(params.get("role_specs").is_none());
+
+        // Quick-dispatch origin: one Operation with a single role session,
+        // in the exact `role_specs` shape `execute_fleet_dispatch` consumes.
+        let (action, params) = fleet_plan_dispatch_params(&intent, &plan, true);
+        assert_eq!(action, "fleet_dispatch");
+        assert_eq!(params["operation_intent"], "one firing");
+        let specs = params["role_specs"].as_array().unwrap();
+        assert_eq!(specs.len(), 1);
+        assert_eq!(specs[0]["cwd"], cwd);
+        assert_eq!(specs[0]["args"][0], "handle the change");
+        assert_eq!(specs[0]["args"].as_array().unwrap().len(), 1);
+    }
+
     /// The confirm path's compensating control. The operator accepted that a
     /// typed or spoken request can start terminals with no click, so the durable
     /// ledger row IS the audit — assert it is written, that it carries the
@@ -2337,6 +2396,7 @@ mod fleet_plan_tests {
             &intent,
             &plan,
             FLEET_PLAN_OUTCOME_CONFIRMED,
+            FLEET_PLAN_DECISION_CLASS,
         );
 
         let conn = pool.get().unwrap();
@@ -2394,6 +2454,7 @@ mod fleet_plan_tests {
             &intent,
             &plan,
             FLEET_PLAN_OUTCOME_CONFIRMED_FAILED,
+            FLEET_PLAN_DECISION_CLASS,
         );
         assert_ne!(
             FLEET_PLAN_OUTCOME_CONFIRMED_FAILED,

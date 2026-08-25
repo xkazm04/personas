@@ -849,6 +849,7 @@ export type { SharedEventCatalogEntry } from "./SharedEventCatalogEntry";
 export type { SharedEventChange } from "./SharedEventChange";
 export type { SharedEventFeedActivity } from "./SharedEventFeedActivity";
 export type { SharedEventFiring } from "./SharedEventFiring";
+export type { SharedEventProjectRoute } from "./SharedEventProjectRoute";
 export type { SharedEventRelayStatus } from "./SharedEventRelayStatus";
 export type { SharedEventSubscription } from "./SharedEventSubscription";
 export type { SharedTechniqueRef } from "./SharedTechniqueRef";

@@ -4,6 +4,7 @@ pub mod events;
 pub mod manual_reviews;
 pub mod reports;
 pub mod reviews;
+pub mod shared_event_routes;
 pub mod shared_events;
 pub mod sla;
 pub mod smee_relays;

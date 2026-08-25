@@ -851,6 +851,9 @@ pub fn run() {
             commands::communication::shared_events::shared_events_list_subscriptions,
             commands::communication::shared_events::shared_events_list_firings,
             commands::communication::shared_events::shared_events_change_activity,
+            commands::communication::shared_events::shared_events_list_project_routes,
+            commands::communication::shared_events::shared_events_set_project_routes,
+            commands::communication::shared_events::shared_events_dev_insert_firing,
             // Communication -- Messages
             commands::communication::reports::list_reports,
             commands::communication::reports::get_report,

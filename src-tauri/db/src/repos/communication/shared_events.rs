@@ -202,6 +202,45 @@ pub fn list_firings(
     })
 }
 
+/// Insert one firing for a slug at the next `seq`. The MAX(seq) read informs
+/// the insert, so both run inside one Immediate transaction — two concurrent
+/// inserts serialize instead of racing to the same seq. Production caller is
+/// the dev-only simulate-firing command; tests use it to bake fixtures.
+pub fn insert_firing(
+    pool: &DbPool,
+    slug: &str,
+    title: &str,
+    payload: &str,
+    release_version: Option<&str>,
+) -> Result<SharedEventChange, AppError> {
+    timed_query!("shared_events", "shared_events::insert_firing", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let seq: i64 = tx.query_row(
+            "SELECT COALESCE(MAX(seq), 0) + 1 FROM shared_event_firings WHERE slug = ?1",
+            params![slug],
+            |r| r.get(0),
+        )?;
+        let id = Uuid::new_v4().to_string();
+        let fired_at = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO shared_event_firings (id, slug, seq, title, fired_at, payload, release_version)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![id, slug, seq, title, fired_at, payload, release_version],
+        )?;
+        tx.commit()?;
+        Ok(SharedEventChange {
+            id,
+            slug: slug.to_string(),
+            seq,
+            title: title.to_string(),
+            fired_at,
+            payload: payload.to_string(),
+            release_version: release_version.map(str::to_string),
+        })
+    })
+}
+
 /// Per-feed change-activity rollup: the newest change (payload + time) and total
 /// change count for every slug that has at least one firing. One query; feeds
 /// with no firings are simply absent (the UI shows "no changes yet").
@@ -372,22 +411,12 @@ mod tests {
     use super::*;
     use crate::init_test_db;
 
-    fn insert_firing(pool: &DbPool, slug: &str, seq: i64) {
-        let conn = pool.get().unwrap();
-        conn.execute(
-            "INSERT INTO shared_event_firings (id, slug, seq, title, fired_at, payload, release_version)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![
-                format!("caf-{slug}-{seq}"),
-                slug,
-                seq,
-                format!("{slug} updated"),
-                "2026-07-01T00:00:00Z",
-                "{}",
-                "0.0.0"
-            ],
-        )
-        .unwrap();
+    /// The repo's own `insert_firing` (also the production door behind the
+    /// dev-only simulate-firing command) — sequential seqs, no duplicated SQL.
+    fn bake_firing(pool: &DbPool, slug: &str) -> i64 {
+        insert_firing(pool, slug, &format!("{slug} updated"), "{}", Some("0.0.0"))
+            .unwrap()
+            .seq
     }
 
     /// Subscribing seeds the cursor at MAX(seq), so only *future-release*
@@ -397,9 +426,10 @@ mod tests {
         let pool = init_test_db().unwrap();
         let slug = "connector.elevenlabs.api"; // seeded builtin catalog feed
 
-        // Two historical firings already baked in this release.
-        insert_firing(&pool, slug, 1);
-        insert_firing(&pool, slug, 2);
+        // Two historical firings already baked in this release. insert_firing
+        // assigns the next seq itself: 1, then 2.
+        assert_eq!(bake_firing(&pool, slug), 1);
+        assert_eq!(bake_firing(&pool, slug), 2);
         assert_eq!(max_firing_seq(&pool, slug).unwrap(), 2);
 
         // Subscribe → cursor should be "2" (skip history).
@@ -419,7 +449,7 @@ mod tests {
             .is_empty());
 
         // A future-release firing (seq 3) IS delivered.
-        insert_firing(&pool, slug, 3);
+        assert_eq!(bake_firing(&pool, slug), 3);
         let due = list_firings_after(&pool, slug, cursor, 50).unwrap();
         assert_eq!(due.len(), 1);
         assert_eq!(due[0].seq, 3);

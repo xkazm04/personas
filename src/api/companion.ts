@@ -167,11 +167,16 @@ export async function companionDispatchFleetPlan(
   operationIntent: string,
   rows: FleetPlanRow[],
   cardId?: string | null,
+  origin?: string | null,
 ): Promise<string> {
   return invoke<string>('companion_dispatch_fleet_plan', {
     operationIntent,
     rows,
     cardId: cardId ?? null,
+    // 'quick_dispatch' (the shared-events dispatch door) forces the
+    // fleet_dispatch executor even for one row, so an Athena-owned Operation
+    // is always created. Omitted/null keeps the historical behavior.
+    origin: origin ?? null,
   });
 }
 

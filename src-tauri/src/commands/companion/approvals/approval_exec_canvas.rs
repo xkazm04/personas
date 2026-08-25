@@ -96,7 +96,7 @@ fn dispatch_rows(
     // slug-shaped skill, and `validate_fleet_cwd_in_db` per row.
     let (intent, plan) =
         validate_fleet_plan(&state.db, intent, &rows).map_err(AppError::Validation)?;
-    let (action, params) = fleet_plan_dispatch_params(&intent, &plan);
+    let (action, params) = fleet_plan_dispatch_params(&intent, &plan, false);
     tracing::info!(
         intent = %intent,
         sessions = plan.len(),
@@ -117,7 +117,14 @@ fn dispatch_rows(
     // ONE ledger writer. `record_fleet_plan_decision` funnels into
     // `record_fleet_decision`, the choke point every fleet verdict passes
     // through; a second writer here is how an audit trail splits in half.
-    record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome);
+    record_fleet_plan_decision(
+        &state.db,
+        action,
+        &intent,
+        &plan,
+        outcome,
+        FLEET_PLAN_DECISION_CLASS,
+    );
     result
 }
 
@@ -404,7 +411,7 @@ mod tests {
                 effort: None,
             },
         ];
-        let (action, params) = fleet_plan_dispatch_params("canvas group", &plan);
+        let (action, params) = fleet_plan_dispatch_params("canvas group", &plan, false);
         assert_eq!(action, "fleet_dispatch");
         assert!(params.get("parallel").is_none());
         assert!(params.get("concurrency").is_none());

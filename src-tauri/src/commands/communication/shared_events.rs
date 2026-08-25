@@ -3,8 +3,9 @@ use tauri::State;
 
 use crate::db::models::{
     CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventChange,
-    SharedEventFeedActivity, SharedEventSubscription,
+    SharedEventFeedActivity, SharedEventProjectRoute, SharedEventSubscription,
 };
+use crate::db::repos::communication::shared_event_routes as routes_repo;
 use crate::db::repos::communication::shared_events as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -122,4 +123,53 @@ pub fn shared_events_change_activity(
 ) -> Result<Vec<SharedEventFeedActivity>, AppError> {
     require_auth_sync(&state)?;
     repo::change_activity(&state.db)
+}
+
+/// Every feed→project quick-dispatch route. Powers the routing column in the
+/// Marketplace tables (which project a firing's dispatch door pre-selects).
+#[tauri::command]
+pub fn shared_events_list_project_routes(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<SharedEventProjectRoute>, AppError> {
+    require_auth_sync(&state)?;
+    routes_repo::list_routes(&state.db)
+}
+
+/// Replace one feed's project routes with the given set (transactional
+/// delete-and-insert; an empty list clears the entry's routes).
+#[tauri::command]
+pub fn shared_events_set_project_routes(
+    state: State<'_, Arc<AppState>>,
+    entry_id: String,
+    project_ids: Vec<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    routes_repo::set_routes(&state.db, &entry_id, &project_ids)
+}
+
+/// Dev-only: bake a synthetic firing for a slug at the next seq, so the
+/// quick-dispatch flow can be exercised without waiting for a real curated
+/// connector-API change. Refused outright in release builds.
+#[tauri::command]
+pub fn shared_events_dev_insert_firing(
+    state: State<'_, Arc<AppState>>,
+    slug: String,
+    title: String,
+    payload: String,
+    release_version: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    if !cfg!(debug_assertions) {
+        return Err(AppError::Forbidden(
+            "shared_events_dev_insert_firing is dev-only".into(),
+        ));
+    }
+    repo::insert_firing(
+        &state.db,
+        &slug,
+        &title,
+        &payload,
+        release_version.as_deref(),
+    )
+    .map(|_| ())
 }

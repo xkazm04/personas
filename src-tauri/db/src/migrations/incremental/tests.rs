@@ -288,6 +288,8 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         // to being structurally null, which is the exact bug P5a closed.
         "app_master_proposals",
         "app_master_gate_runs",
+        // e12 — shared-event feed → project quick-dispatch routes.
+        "shared_event_project_routes",
     ] {
         assert!(
             has_table(&conn, table).unwrap(),

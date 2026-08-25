@@ -30,6 +30,7 @@ mod e08_sla_and_dev_tools;
 mod e09_devices_and_provenance;
 mod e10_reports_rename;
 mod e11_persona_channel;
+mod e12_shared_event_routes;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -57,6 +58,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e09_devices_and_provenance::run(conn)?;
     e10_reports_rename::run(conn)?;
     e11_persona_channel::run(conn)?;
+    e12_shared_event_routes::run(conn)?;
 
     Ok(())
 }
