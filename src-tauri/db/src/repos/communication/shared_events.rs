@@ -128,6 +128,38 @@ pub fn get_catalog_entry(pool: &DbPool, id: &str) -> Result<SharedEventCatalogEn
     })
 }
 
+/// Named projection for `shared_event_catalog` — kept next to `row_to_catalog`
+/// so the column list and the mapping drift together (never `SELECT *`, which
+/// binds the read to CREATE TABLE order).
+const CATALOG_COLUMNS: &str = "id, slug, name, description, category, publisher, icon, color, \
+     sample_payload, event_schema, subscriber_count, is_featured, status, \
+     cloud_updated_at, cached_at";
+
+/// Catalog entry by feed slug — `None` when no active entry carries it. The
+/// event bus names feeds by slug (`shared:<slug>`), while routes and impact
+/// runs key on the entry id; this is the join between the two vocabularies.
+pub fn get_catalog_entry_by_slug(
+    pool: &DbPool,
+    slug: &str,
+) -> Result<Option<SharedEventCatalogEntry>, AppError> {
+    timed_query!(
+        "shared_events",
+        "shared_events::get_catalog_entry_by_slug",
+        {
+            let conn = pool.get()?;
+            match conn.query_row(
+                &format!("SELECT {CATALOG_COLUMNS} FROM shared_event_catalog WHERE slug = ?1"),
+                params![slug],
+                row_to_catalog,
+            ) {
+                Ok(entry) => Ok(Some(entry)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
+        }
+    )
+}
+
 // ---------------------------------------------------------------------------
 // Baked firing operations (local-first curated connector-API-change events)
 // ---------------------------------------------------------------------------
@@ -453,6 +485,19 @@ mod tests {
         let due = list_firings_after(&pool, slug, cursor, 50).unwrap();
         assert_eq!(due.len(), 1);
         assert_eq!(due[0].seq, 3);
+    }
+
+    /// Slug lookup joins the bus vocabulary (`shared:<slug>`) to the entry id.
+    #[test]
+    fn get_catalog_entry_by_slug_finds_seeded_entry_and_says_none_otherwise() {
+        let pool = init_test_db().unwrap();
+        let entry = get_catalog_entry_by_slug(&pool, "connector.elevenlabs.api")
+            .unwrap()
+            .expect("seeded builtin feed should resolve by slug");
+        assert_eq!(entry.id, "shared-connector-elevenlabs");
+        assert!(get_catalog_entry_by_slug(&pool, "no.such.feed")
+            .unwrap()
+            .is_none());
     }
 
     /// A slug with no baked firings subscribes cleanly with cursor "0".

@@ -56,6 +56,14 @@ pub const EVENT_HEALTH_INGEST_REQUESTED: &str =
 pub const OP_SIGNAL_DISPATCH_RUNNER: &str = "signal_dispatch_runner";
 pub const OP_SIGNAL_DISPATCH_FLEET: &str = "signal_dispatch_fleet";
 
+/// The autonomous feed→fleet pipeline (spark: fleet dispatch UX, WP4). Bound
+/// to a `shared:<slug>` event, it dispatches one impact-assessment Fleet
+/// session into each project routed to that feed
+/// (`shared_event_project_routes`). Unlike the two signal-dispatch ops it does
+/// the spawning backend-side (`commands::infrastructure::feed_impact`) — no
+/// frontend delegation, so it also works with every window closed.
+pub const OP_FEED_IMPACT_DISPATCH: &str = "feed_impact_dispatch";
+
 /// Asks the frontend to dispatch a finding. Same delegation rationale as
 /// `EVENT_HEALTH_INGEST_REQUESTED`: the task-execute path and the Fleet spawn path are
 /// both async frontend APIs, and reimplementing them here would duplicate logic that
@@ -103,6 +111,14 @@ pub fn list_kinds() -> Vec<SystemOpKindMeta> {
             requires_project: false,
             requires_persona_or_team: false,
         },
+        SystemOpKindMeta {
+            kind: OP_FEED_IMPACT_DISPATCH.to_string(),
+            label: "Feed Change → Impact Sessions".to_string(),
+            description: "Autonomous: on a shared-feed firing, open one Claude Code session per routed project to assess and, gates-green, commit the adaptation. Bind to shared:<slug>."
+                .to_string(),
+            requires_project: false, // the feed's routes carry the projects
+            requires_persona_or_team: false,
+        },
     ]
 }
 
@@ -127,7 +143,10 @@ pub fn initial_status(op_kind: &str) -> &'static str {
 /// Whether `kind` is one of the two dispatch ops — the ops that act on
 /// production signal and therefore honor `unattended_mode`.
 pub fn is_dispatch_kind(kind: &str) -> bool {
-    matches!(kind, OP_SIGNAL_DISPATCH_RUNNER | OP_SIGNAL_DISPATCH_FLEET)
+    matches!(
+        kind,
+        OP_SIGNAL_DISPATCH_RUNNER | OP_SIGNAL_DISPATCH_FLEET | OP_FEED_IMPACT_DISPATCH
+    )
 }
 
 /// The approval gate: an `approval`-mode automation on a dispatch op holds its
@@ -177,6 +196,11 @@ pub fn run_op(
         OP_HEALTH_INGEST => run_health_ingest(app, params, source),
         OP_SIGNAL_DISPATCH_RUNNER => run_signal_dispatch(app, params, source, "runner"),
         OP_SIGNAL_DISPATCH_FLEET => run_signal_dispatch(app, params, source, "fleet"),
+        OP_FEED_IMPACT_DISPATCH => {
+            crate::commands::infrastructure::feed_impact::run_feed_impact_dispatch(
+                app, pool, params,
+            )
+        }
         other => Err(AppError::Validation(format!("Unknown system op: {other}"))),
     }
 }

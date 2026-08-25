@@ -853,6 +853,7 @@ pub fn run() {
             commands::communication::shared_events::shared_events_change_activity,
             commands::communication::shared_events::shared_events_list_project_routes,
             commands::communication::shared_events::shared_events_set_project_routes,
+            commands::communication::shared_events::shared_events_list_impact_runs,
             commands::communication::shared_events::shared_events_dev_insert_firing,
             // Communication -- Messages
             commands::communication::reports::list_reports,
@@ -1652,6 +1653,7 @@ pub fn run() {
             commands::infrastructure::kpi_scan::dev_tools_scan_kpis,
             commands::infrastructure::kpi_sim::dev_tools_kpi_sim_prepare,
             commands::infrastructure::kpi_sim::dev_tools_kpi_sim_ingest,
+            commands::infrastructure::feed_impact::dev_tools_feed_impact_ingest,
             commands::infrastructure::memory_ledger::dev_tools_memory_ingest,
             commands::infrastructure::context_map_export::dev_tools_export_backlog_digest,
             commands::infrastructure::memory_ledger::dev_tools_memory_list,

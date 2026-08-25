@@ -137,6 +137,29 @@ tags[], severity, release_version }`. This is independent of the cloud relay
 (`engine/shared_event_relay.rs`), which remains as a secondary path for
 cloud-fed feeds. Full design: [`docs/plans/curated-connector-events.md`](../../plans/curated-connector-events.md).
 
+### Feed → project routing + autonomous impact sessions
+
+The Watchtower table carries a **Routing** column: a per-feed pill showing how
+many dev projects the feed is pinned to (click → `FeedRoutingPopover`, a
+checkbox multi-select over registered projects saved as a whole set via
+`shared_events_set_project_routes` into `shared_event_project_routes`).
+
+Routing powers the **`feed_impact_dispatch`** system op (Chain Studio →
+System events). Bound to a `shared:<slug>` event, a firing dispatches one
+Fleet Claude Code session per routed project (cap 8 per wave, deduped by the
+`feed:<entry>:<project>` session-name key) that assesses the change's impact
+on that repo, implements the adaptation when warranted, runs the repo's own
+gates, and commits to its main branch only when gates are green. Each session
+writes `<root>/feed-impact/runs/<id>/result.json`
+(`{feed_slug, firing_id, project_id, verdict, summary, commit_sha, details_md}`,
+verdict ∈ `no_impact | assessed | committed | gates_red | failed`); the gated
+ingest door `dev_tools_feed_impact_ingest` validates it into
+`shared_event_impact_runs`, a background sweeper on the fleet ticker ingests
+finished waves with no UI open and raises one "<feed>: impact wave complete"
+notification, and the per-feed **event-history modal** shows each firing's
+impact runs as verdict chips. As a dispatch-class op it honors
+`unattended_mode` (`approval` holds the fire).
+
 ## Scraper Signals (local scraper → Signals)
 
 The **local scraper** (Plugins → Scraper) is an event *producer*, not a

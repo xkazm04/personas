@@ -400,6 +400,10 @@ fn tick_once(app: &AppHandle) {
     // executor registered a pending harvest; rides this ticker because the
     // 30s cadence and the AppHandle are already here.
     crate::commands::infrastructure::workspace_harvest::sweep_pending_harvest_ingests(app);
+    // Feed-impact watcher — same contract for `feed_impact_dispatch` waves:
+    // ingest finished impact runs + raise the wave-complete notification
+    // without any UI open. No-op unless the op registered a pending wave.
+    crate::commands::infrastructure::feed_impact::sweep_pending_feed_impact_ingests(app);
     let now = now_ms();
     let stale_secs = effective_secs(
         "PERSONAS_FLEET_STALE_SECS",

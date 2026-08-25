@@ -80,6 +80,27 @@ pub struct SharedEventProjectRoute {
     pub created_at: String,
 }
 
+/// One ingested feed-impact run: the durable record of what a dispatched
+/// `feed_impact_dispatch` Fleet session concluded (or committed) for one
+/// (firing, project) pair. Written only through the gated ingest door
+/// (`dev_tools_feed_impact_ingest`) — the CLI session itself never writes
+/// the database; it writes `<root>/feed-impact/runs/<id>/result.json`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedEventImpactRun {
+    pub id: String,
+    pub firing_id: String,
+    pub catalog_entry_id: String,
+    pub project_id: String,
+    /// no_impact | assessed | committed | gates_red | failed
+    pub verdict: String,
+    pub summary: String,
+    pub commit_sha: Option<String>,
+    pub details_md: Option<String>,
+    pub created_at: String,
+}
+
 /// Per-feed change-activity rollup — the latest change + total count for one
 /// slug. Powers the "Latest change" column + Watchtower ordering in the
 /// Marketplace tables. `last_payload` is the newest change's JSON payload.

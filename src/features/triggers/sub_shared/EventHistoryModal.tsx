@@ -9,7 +9,36 @@ import { silentCatch } from '@/lib/silentCatch';
 import * as api from '@/api/events/sharedEvents';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import type { SharedEventChange } from '@/lib/bindings/SharedEventChange';
+import type { SharedEventImpactRun } from '@/lib/bindings/SharedEventImpactRun';
+import type { Translations } from '@/i18n/generated/types';
 import { FeedIcon, SeverityBadge, parseChangePayload, severityLabel } from './sharedEventsUi';
+
+/** Chip styling per impact verdict: committed emerald, assessed amber, red for
+ * gates_red/failed, muted no_impact — painted through status tokens. */
+function verdictStyle(verdict: string): string {
+  switch (verdict) {
+    case 'committed':
+      return 'bg-status-success/10 text-status-success border-status-success/25';
+    case 'assessed':
+      return 'bg-status-warning/10 text-status-warning border-status-warning/25';
+    case 'gates_red':
+    case 'failed':
+      return 'bg-status-error/10 text-status-error border-status-error/25';
+    default:
+      return 'bg-secondary/40 text-foreground/90 border-primary/10';
+  }
+}
+
+function verdictLabel(t: Translations, verdict: string): string {
+  const m = t.triggers.marketplace;
+  switch (verdict) {
+    case 'committed': return m.verdict_committed;
+    case 'assessed': return m.verdict_assessed;
+    case 'gates_red': return m.verdict_gates_red;
+    case 'failed': return m.verdict_failed;
+    default: return m.verdict_no_impact;
+  }
+}
 
 interface Props {
   entry: SharedEventCatalogEntry;
@@ -24,6 +53,8 @@ export function EventHistoryModal({ entry, onClose }: Props) {
   const { t, tx } = useTranslation();
   const m = t.triggers.marketplace;
   const [changes, setChanges] = useState<SharedEventChange[] | null>(null);
+  // Impact runs (verdicts of dispatched fleet sessions), grouped per firing.
+  const [runsByFiring, setRunsByFiring] = useState<Map<string, SharedEventImpactRun[]>>(new Map());
 
   useEffect(() => {
     let alive = true;
@@ -34,8 +65,23 @@ export function EventHistoryModal({ entry, onClose }: Props) {
         silentCatch('features/triggers/sub_shared/EventHistoryModal:load')(e);
         if (alive) setChanges([]);
       });
+    api
+      .listImpactRuns(entry.id, 200)
+      .then((rows) => {
+        if (!alive) return;
+        const map = new Map<string, SharedEventImpactRun[]>();
+        for (const r of rows) {
+          const list = map.get(r.firingId) ?? [];
+          list.push(r);
+          map.set(r.firingId, list);
+        }
+        setRunsByFiring(map);
+      })
+      .catch((e) => {
+        silentCatch('features/triggers/sub_shared/EventHistoryModal:loadImpact')(e);
+      });
     return () => { alive = false; };
-  }, [entry.slug]);
+  }, [entry.slug, entry.id]);
 
   return (
     <DetailModal
@@ -67,6 +113,7 @@ export function EventHistoryModal({ entry, onClose }: Props) {
           <ol className="relative flex flex-col gap-4 pl-5 border-l border-primary/15">
             {changes.map((c) => {
               const p = parseChangePayload(c.payload);
+              const runs = runsByFiring.get(c.id) ?? [];
               return (
                 <li key={c.id} className="relative">
                   {/* timeline node */}
@@ -109,6 +156,25 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                         </a>
                       )}
                     </div>
+                    {runs.length > 0 && (
+                      <div className="flex flex-col gap-1.5 pt-1.5 border-t border-primary/10">
+                        <span className="typo-caption font-medium text-foreground">{m.impact_title}</span>
+                        {runs.map((r) => (
+                          <div key={r.id} className="flex items-center flex-wrap gap-x-2.5 gap-y-1 min-w-0">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full typo-caption font-medium border ${verdictStyle(r.verdict)}`}
+                            >
+                              {verdictLabel(t, r.verdict)}
+                            </span>
+                            {r.commitSha && (
+                              <code className="typo-caption text-foreground/90 font-mono">{r.commitSha.slice(0, 7)}</code>
+                            )}
+                            <span className="typo-caption text-foreground/90 truncate flex-1 min-w-0">{r.summary}</span>
+                            <RelativeTime timestamp={r.createdAt} className="typo-caption text-foreground/90 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </li>
               );

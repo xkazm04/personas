@@ -550,6 +550,7 @@
   "cs:plugins.drive_label",
   "cs:plugins.fleet.athena_label",
   "cs:plugins.fleet.monitor_aria",
+  "cs:plugins.fleet_quick_dispatch.model_chip",
   "cs:plugins.obsidian.vault_path_agent_placeholder",
   "cs:plugins.obsidian.vault_path_note_example",
   "cs:plugins.obsidian_brain.revitalize_history_col_vault",
@@ -1215,6 +1216,7 @@
   "de:triggers.list.budget",
   "de:triggers.live_label",
   "de:triggers.marketplace.col_feed",
+  "de:triggers.marketplace.col_routing",
   "de:triggers.marketplace.col_status",
   "de:triggers.marketplace.sev_breaking",
   "de:triggers.marketplace.sev_patch",
@@ -2705,6 +2707,7 @@
   "id:plugins.fleet.monitor_aria",
   "id:plugins.fleet.settings_terminal_title",
   "id:plugins.fleet.view_terminal",
+  "id:plugins.fleet_quick_dispatch.model_chip",
   "id:plugins.obsidian.vault_path_agent_placeholder",
   "id:plugins.obsidian.vault_path_note_example",
   "id:plugins.obsidian_brain.title",
@@ -3655,7 +3658,5 @@
   "zh:vault.playground.path_placeholder",
   "zh:vault.schema_configs.database.subtype_convex_label",
   "zh:vault.schema_configs.database.subtype_postgresql_label",
-  "zh:vault.shared.api_path_placeholder",
-  "cs:plugins.fleet_quick_dispatch.model_chip",
-  "id:plugins.fleet_quick_dispatch.model_chip"
+  "zh:vault.shared.api_path_placeholder"
 ]

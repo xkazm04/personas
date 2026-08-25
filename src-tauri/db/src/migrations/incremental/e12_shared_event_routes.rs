@@ -33,5 +33,31 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "shared_event_impact_runs",
+            description:
+                "Create shared_event_impact_runs (ingested feed-impact verdicts per firing × project)",
+            already_applied: |conn| has_table(conn, "shared_event_impact_runs"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS shared_event_impact_runs (
+                        id               TEXT PRIMARY KEY,
+                        firing_id        TEXT NOT NULL,
+                        catalog_entry_id TEXT NOT NULL,
+                        project_id       TEXT NOT NULL,
+                        verdict          TEXT NOT NULL,
+                        summary          TEXT NOT NULL,
+                        commit_sha       TEXT,
+                        details_md       TEXT,
+                        created_at       TEXT NOT NULL
+                    );",
+                )
+            },
+        },
+    )?;
+
     Ok(())
 }

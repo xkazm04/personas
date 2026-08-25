@@ -1159,6 +1159,21 @@ pub fn notify_healing_issue(
     deliver_to_channels(app, channels, &heading, &body, &delivery_ctx);
 }
 
+/// One OS notification per completed feed-impact wave (spark WP4): raised by
+/// the feed-impact sweeper when the wave's last pending ingest lands. `summary`
+/// is the verdict rollup, e.g. "2 committed, 1 no impact".
+pub fn notify_feed_impact_wave(app: &AppHandle, feed_name: &str, summary: &str) {
+    send(
+        app,
+        &format!("{feed_name}: impact wave complete"),
+        &if summary.is_empty() {
+            "Impact sessions finished.".to_string()
+        } else {
+            summary.to_string()
+        },
+    );
+}
+
 pub fn notify_n8n_transform_completed(app: &AppHandle, workflow_name: &str, success: bool) {
     if success {
         send(

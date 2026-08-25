@@ -3,8 +3,10 @@ use tauri::State;
 
 use crate::db::models::{
     CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventChange,
-    SharedEventFeedActivity, SharedEventProjectRoute, SharedEventSubscription,
+    SharedEventFeedActivity, SharedEventImpactRun, SharedEventProjectRoute,
+    SharedEventSubscription,
 };
+use crate::db::repos::communication::shared_event_impact_runs as impact_repo;
 use crate::db::repos::communication::shared_event_routes as routes_repo;
 use crate::db::repos::communication::shared_events as repo;
 use crate::error::AppError;
@@ -145,6 +147,19 @@ pub fn shared_events_set_project_routes(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     routes_repo::set_routes(&state.db, &entry_id, &project_ids)
+}
+
+/// Impact runs recorded for one feed (newest first) — what the dispatched
+/// `feed_impact_dispatch` sessions concluded per firing × project. Powers the
+/// impact section of the Marketplace event-history modal.
+#[tauri::command]
+pub fn shared_events_list_impact_runs(
+    state: State<'_, Arc<AppState>>,
+    entry_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<SharedEventImpactRun>, AppError> {
+    require_auth_sync(&state)?;
+    impact_repo::list_impact_runs_for_entry(&state.db, &entry_id, limit.unwrap_or(100))
 }
 
 /// Dev-only: bake a synthetic firing for a slug at the next seq, so the

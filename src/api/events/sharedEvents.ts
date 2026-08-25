@@ -3,6 +3,9 @@ import type { SharedEventCatalogEntry } from "@/lib/bindings/SharedEventCatalogE
 import type { SharedEventSubscription } from "@/lib/bindings/SharedEventSubscription";
 import type { SharedEventChange } from "@/lib/bindings/SharedEventChange";
 import type { SharedEventFeedActivity } from "@/lib/bindings/SharedEventFeedActivity";
+import type { SharedEventProjectRoute } from "@/lib/bindings/SharedEventProjectRoute";
+import type { SharedEventImpactRun } from "@/lib/bindings/SharedEventImpactRun";
+import type { FeedImpactIngestSummary } from "@/lib/bindings/FeedImpactIngestSummary";
 
 export const browseCatalog = (category?: string, search?: string) =>
   invoke<SharedEventCatalogEntry[]>("shared_events_browse_catalog", { category, search });
@@ -26,3 +29,19 @@ export const listFirings = (slug: string, limit?: number) =>
 /** Per-feed change-activity rollup (latest change + count per slug). */
 export const changeActivity = () =>
   invoke<SharedEventFeedActivity[]>("shared_events_change_activity");
+
+/** Every feed→project quick-dispatch route (Watchtower routing column). */
+export const listProjectRoutes = () =>
+  invoke<SharedEventProjectRoute[]>("shared_events_list_project_routes");
+
+/** Replace one feed's routed-project set (empty array clears it). */
+export const setProjectRoutes = (entryId: string, projectIds: string[]) =>
+  invoke<void>("shared_events_set_project_routes", { entryId, projectIds });
+
+/** Impact runs recorded for one feed (newest first) — verdicts per firing × project. */
+export const listImpactRuns = (entryId: string, limit?: number) =>
+  invoke<SharedEventImpactRun[]>("shared_events_list_impact_runs", { entryId, limit });
+
+/** Ingest finished feed-impact runs for one project through the gated door. */
+export const ingestFeedImpact = (projectId: string) =>
+  invoke<FeedImpactIngestSummary>("dev_tools_feed_impact_ingest", { projectId });

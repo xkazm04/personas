@@ -1,14 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Search, X } from 'lucide-react';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { FEEDS_GLYPH } from '@/features/shared/glyph/glyphs/feedsGlyph';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import * as api from '@/api/events/sharedEvents';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { useSharedEvents } from './useSharedEvents';
 import { FeedIcon, LastChangeCell } from './sharedEventsUi';
 import { WatchToggle, HistoryButton } from './SubscribeControls';
 import { EventHistoryModal } from './EventHistoryModal';
+import { FeedRoutingPopover } from './FeedRoutingPopover';
 
 /**
  * Marketplace — the Watchtower table: a change-activity monitor over the shared
@@ -30,6 +33,26 @@ export function SharedEventsTab() {
   const [catFilter, setCatFilter] = useState('all');
   const [watchingOnly, setWatchingOnly] = useState(false);
   const [historyEntry, setHistoryEntry] = useState<SharedEventCatalogEntry | null>(null);
+
+  // Feed→project routes: which dev projects a firing dispatches impact
+  // sessions into. Loaded once; refreshed locally on popover save.
+  const [routesByEntry, setRoutesByEntry] = useState<Map<string, string[]>>(new Map());
+  const loadRoutes = useCallback(() => {
+    api
+      .listProjectRoutes()
+      .then((rows) => {
+        const map = new Map<string, string[]>();
+        for (const r of rows) {
+          const list = map.get(r.catalogEntryId) ?? [];
+          list.push(r.projectId);
+          map.set(r.catalogEntryId, list);
+        }
+        setRoutesByEntry(map);
+      })
+      .catch(silentCatch('features/triggers/sub_shared/SharedEventsTab:loadRoutes'));
+  }, []);
+  useEffect(() => { loadRoutes(); }, [loadRoutes]);
+  const [routingFor, setRoutingFor] = useState<{ entry: SharedEventCatalogEntry; anchor: DOMRect } | null>(null);
 
   const data = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -73,6 +96,34 @@ export function SharedEventsTab() {
       render: (e) => <span className="typo-caption text-foreground/80 capitalize">{e.category}</span>,
     },
     {
+      key: 'routing',
+      label: m.col_routing,
+      width: '110px',
+      sortable: true,
+      sortFn: (a, b) =>
+        (routesByEntry.get(a.id)?.length ?? 0) - (routesByEntry.get(b.id)?.length ?? 0),
+      render: (e) => {
+        const count = routesByEntry.get(e.id)?.length ?? 0;
+        return (
+          <button
+            type="button"
+            aria-label={`${m.routing_title} — ${e.name}`}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setRoutingFor({ entry: e, anchor: ev.currentTarget.getBoundingClientRect() });
+            }}
+            className={`inline-flex items-center justify-center min-w-7 px-2 py-0.5 rounded-full typo-caption font-medium border transition-colors ${
+              count > 0
+                ? 'bg-primary/10 text-primary border-primary/25 hover:bg-primary/20'
+                : 'bg-secondary/40 text-foreground/90 border-primary/10 hover:bg-secondary/60'
+            }`}
+          >
+            {count > 0 ? count : '—'}
+          </button>
+        );
+      },
+    },
+    {
       key: 'last_change',
       label: m.col_last_change,
       width: 'minmax(240px, 1.7fr)',
@@ -103,7 +154,7 @@ export function SharedEventsTab() {
       align: 'right',
       render: (e) => <HistoryButton onOpen={() => setHistoryEntry(e)} />,
     },
-  ], [m, t.common.all, categories, catFilter, activityBySlug, subByEntryId, subscribe, unsubscribe]);
+  ], [m, t.common.all, categories, catFilter, activityBySlug, subByEntryId, subscribe, unsubscribe, routesByEntry]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -165,6 +216,21 @@ export function SharedEventsTab() {
       </div>
       {historyEntry && (
         <EventHistoryModal entry={historyEntry} onClose={() => setHistoryEntry(null)} />
+      )}
+      {routingFor && (
+        <FeedRoutingPopover
+          entry={routingFor.entry}
+          anchor={routingFor.anchor}
+          routedProjectIds={routesByEntry.get(routingFor.entry.id) ?? []}
+          onClose={() => setRoutingFor(null)}
+          onSaved={(ids) => {
+            setRoutesByEntry((prev) => {
+              const next = new Map(prev);
+              next.set(routingFor.entry.id, ids);
+              return next;
+            });
+          }}
+        />
       )}
     </div>
   );
