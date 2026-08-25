@@ -24,11 +24,9 @@ const MemoriesPage = lazyRetry(() => import('@/features/overview/sub_memories/co
 const PatternsPanel = lazyRetry(() => import('@/features/overview/sub_patterns/PatternsPanel'));
 const KnowledgeGraphDashboard = lazyRetry(() => import('@/features/overview/sub_knowledge'));
 const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPageGraph'));
-const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/components/SLADashboard'));
-
-const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
+// The former Reliability (SLA), Health and Leaderboard tabs were consolidated
+// into Mission Control (2026-08-25) — their best sections render there now.
 const CertificationCommandCenter = lazyRetry(() => import('@/features/overview/sub_certification/CertificationCommandCenter'));
-const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderboard'));
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
 const DirectorCoachingTab = lazyRetry(() => import('@/features/overview/sub_director'));
 
@@ -85,12 +83,8 @@ function OverviewContent() {
           overviewTab === 'patterns' ? <PatternsPanel /> :
           overviewTab === 'extracted' ? <KnowledgeGraphDashboard /> :
           overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
-          overviewTab === 'sla' ? <SLADashboard /> :
-
-          overviewTab === 'health' ? <PersonaHealthDashboard /> :
           overviewTab === 'director' ? <DirectorCoachingTab /> :
           overviewTab === 'certification' ? <CertificationCommandCenter /> :
-          overviewTab === 'leaderboard' ? <LeaderboardPage /> :
           <DashboardWithSubtabs />}
         </Suspense>
         </ErrorBoundary>

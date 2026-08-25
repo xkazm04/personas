@@ -2,10 +2,10 @@ import {
   BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare,
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
-  Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
+  Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload,
   FolderKanban, Map, Lightbulb, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Store, Archive, Layers,
-  GraduationCap, BookOpen, Trophy, AlertOctagon,
+  GraduationCap, BookOpen, AlertOctagon,
   User, Mic, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
@@ -87,14 +87,11 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'patterns', icon: Library, label: 'Patterns', minTier: TIERS.TEAM },
   { id: 'extracted', icon: Network, label: 'Extracted', minTier: TIERS.TEAM },
   { id: 'memory-graph', icon: GitFork, label: 'Graph', minTier: TIERS.TEAM },
-  // Reliability (SLA) dashboard — has a live OverviewPage router case
-  // (`overviewTab === 'sla'` → SLADashboard) and real content; surfaced in the
-  // rail alongside its TEAM-tier analytics neighbors.
-  { id: 'sla', icon: Gauge, label: 'Reliability', minTier: TIERS.TEAM },
-
-  { id: 'health', icon: Heart, label: 'Health' },
+  // Reliability (SLA), Health and Leaderboard were consolidated into the
+  // Mission Control dashboard on 2026-08-25 — their best sections (daily
+  // success trend, status monitor, self-healing panel, leaderboard matrix)
+  // render there now.
   { id: 'director', icon: Clapperboard, label: 'Director', minTier: TIERS.TEAM },
-  { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
   // Dev-only: in-app viewer over the team-autonomy eval/certification bundles
   // (docs/test/runs/). Never shipped in packaged installers.
   { id: 'certification', icon: ShieldCheck, label: 'Certification', devOnly: true },
@@ -232,7 +229,7 @@ export interface SidebarItemGroupDef {
 
 /** Overview → Monitoring / Operations / Memory. */
 export const overviewGroups: SidebarItemGroupDef[] = [
-  { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'health', 'leaderboard', 'home', 'sla'] },
+  { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
   { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'certification', 'director', 'incidents', 'messages'] },
   { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'extracted', 'memory-graph'] },
 ];

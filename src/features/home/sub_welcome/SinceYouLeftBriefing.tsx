@@ -42,9 +42,9 @@ export default function SinceYouLeftBriefing() {
       return {
         icon: Bell,
         label: tx(line.count === 1 ? sl.alerts : sl.alerts_other, { count: line.count }),
-        // Alerts live on the Health tab ('observability' was removed from the
-        // OverviewTab union — it never had a router case).
-        onClick: goTo('health'),
+        // Alerts surface on the Mission Control dashboard since the
+        // 2026-08-25 monitoring consolidation (the Health tab is gone).
+        onClick: goTo('home'),
         accent: 'text-amber-400',
       };
     }
