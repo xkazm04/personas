@@ -161,7 +161,13 @@ pub(crate) fn app_master_intent(
         0 => out.push_str(
             "- Rung 0 (read). Observe, measure and report. You may NOT write to the \
              repository at all — not a branch, not a retry. Everything else is a proposal \
-             you hand to your owner.\n",
+             you hand to your owner. \
+             BUILD NOTE for the design pass: this is an OBSERVATION role - design the \
+             persona around reading, measuring and reporting use cases ONLY. Do NOT \
+             include fix-proposal, code-change or authoring use cases and do not attach \
+             write-capable tools: the mandate forbids them, and a design that keeps \
+             reaching for them cannot converge (first live rung-0 hire, 2026-08-25: \
+             the one-shot looped 12 turns unresolved on exactly that contradiction).\n",
         ),
         1 => out.push_str(
             "- Rung 1 (retry). You may re-run existing work (a failed job, a flaky gate). \
