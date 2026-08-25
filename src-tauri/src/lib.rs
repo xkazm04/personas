@@ -1390,6 +1390,7 @@ pub fn run() {
             commands::infrastructure::system::health_check_circuit_breaker,
             commands::infrastructure::system::health_check_subscriptions,
             commands::infrastructure::system::health_check_environment,
+            commands::infrastructure::system::cdc_dropped_count,
             commands::infrastructure::system::storage_usage,
             commands::infrastructure::system::prune_storage,
             commands::infrastructure::system::open_external_url,

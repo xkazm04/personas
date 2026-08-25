@@ -19,6 +19,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
 import { useImproveActivityStore } from "@/stores/improveActivityStore";
+import { useDevToolsLiveStore } from "@/stores/devToolsLiveStore";
 import { createLogger } from "@/lib/log";
 import { silentCatch } from '@/lib/silentCatch';
 import { getActiveTranslations } from "@/i18n/useTranslation";
@@ -51,6 +52,28 @@ const EVENT_BRIDGE_TIMING = {
    * past the point the user expects to see it.
    */
   PERSONA_HEALTH_DEBOUNCE_MS: 300,
+  /**
+   * Debounce for `DEV_TOOLS_SHIP_CHANGED`.
+   *
+   * **This one is a CORRECTNESS knob, not just an efficiency knob.** The
+   * SQLite `update_hook` behind this event fires SYNCHRONOUSLY INSIDE the
+   * write transaction, BEFORE COMMIT (`CdcCustomizer::on_acquire`,
+   * `db/src/cdc.rs`). A listener that refetched on the first event could
+   * therefore read pre-commit state — and then never receive another event,
+   * because the write it missed already fired its only notification. That is a
+   * permanently stale view produced by a SUCCESSFUL write, and nothing else in
+   * the design would correct it. A debounce that RESETS on every event lands
+   * after the commit, which is what makes the refetch see the new rows.
+   *
+   * Efficiency is the secondary reason: decomposing one brief into 6 goals
+   * fires ~12 hook events, and the planner needs exactly one refetch for them.
+   *
+   * Halving to 125ms narrows the margin over a slow commit (WAL fsync under
+   * concurrent load) and starts splitting a multi-row write into several
+   * refetches of the same slice. Doubling to 500ms makes a change the operator
+   * is watching for visibly lag his own screen.
+   */
+  DEV_TOOLS_SHIP_DEBOUNCE_MS: 250,
   /**
    * Throttle for `NETWORK_SNAPSHOT_UPDATED`. The Rust P2P engine can emit
    * snapshots faster than React can re-render them. Halving causes dropped
@@ -832,6 +855,32 @@ const registry: EventRegistration[] = [
             debounceTimer = null;
             useAgentStore.getState().fetchPersonaSummaries();
           }, EVENT_BRIDGE_TIMING.PERSONA_HEALTH_DEBOUNCE_MS);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Ship-table write landed (CDC push) -----------------------------------
+  //
+  // The Ship planner is watched while background agents and Athena change goals
+  // underneath it. This is the only path by which a write those writers made —
+  // none of which know the planner exists — reaches it without navigation and
+  // without a timer. See `DEV_TOOLS_SHIP_DEBOUNCE_MS` for why the debounce is a
+  // correctness fix rather than a nicety.
+  {
+    event: EventName.DEV_TOOLS_SHIP_CHANGED,
+    setup: async () => {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const unlisten = await typedListen(
+        EventName.DEV_TOOLS_SHIP_CHANGED,
+        () => {
+          if (debounceTimer !== null) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            debounceTimer = null;
+            useDevToolsLiveStore.getState().markShipChanged();
+          }, EVENT_BRIDGE_TIMING.DEV_TOOLS_SHIP_DEBOUNCE_MS);
         },
       );
       return [unlisten];

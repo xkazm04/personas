@@ -537,3 +537,85 @@ Moves members between `core` / `later` / `never`, or `remove`s the membership. C
 Both are ordinary approval actions: with autonomous mode off they wait on a click, with it on they fire (the autoapprove allowlist was retired 2026-08-10). That is exactly why the `ship` arm carries the DB-checkable precondition described in §11 rather than trusting a human to be watching.
 
 Tests: `approval_exec_ship.rs::ship_scope_tests` (11).
+
+## 14. Live refresh — the planner repaints when someone else writes
+
+The Ship planner is a surface that gets **watched while work happens somewhere
+else**: background agents, an Athena approval executor, a Fleet session through
+the management API, the CLI ingest door. None of those writers know the planner
+exists, and until 2026-08-25 none of them reached it — `useShipData`'s `reload()`
+ran only after the tab's **own** mutations, so a goal changed underneath the
+operator stayed invisible until he navigated away and back.
+
+**There is no polling here, and adding some would be a regression.** No
+`setInterval`, no watermark query loop. Two paths, and only two:
+
+### Push — the SQLite update hook, already installed
+
+`db/src/cdc.rs` registers a `rusqlite` `update_hook` on **every pooled
+connection** via `CdcCustomizer` (`db/src/lib.rs`). It is a real chokepoint —
+registered at connection *acquire*, so no writer can forget it — and every one
+of the writers above goes through that pool. The only thing missing was the
+table map: `table_to_event` covered 13 tables and not one of them was a dev-tools
+table.
+
+The four Ship tables — `dev_goals`, `dev_milestones`, `dev_milestone_items`,
+`dev_use_cases` — now map to **one** event, `dev-tools-ship-changed`
+(`event_name::DEV_TOOLS_SHIP_CHANGED`). One name for four tables because the
+frontend's unit of invalidation is the Ship **slice**, not a table; the payload
+is the existing `CdcEvent` (`{action, table, rowid}`), so `table` is there for
+any listener that wants to narrow.
+
+Scope is Ship-only **on purpose**. `dev_kpis` / `dev_contexts` / `dev_ideas` are
+written in bulk by scans, and that is exactly the traffic that saturates CDC's
+bounded channel and starts costing *other* tables their events.
+`cdc.rs::ship_tables_all_map_to_one_event_and_neighbours_stay_untracked` asserts
+both halves, so widening the map has to be a deliberate act.
+
+The `rowid` is deliberately **not** resolved to a domain id in Rust: that costs a
+query per write, and on DELETE it is impossible because the row is already gone
+— which is precisely the unbind-a-goal case the planner most needs to see. The
+frontend refetches the slice instead.
+
+### Coalescing — a correctness fix, not an optimisation
+
+`eventBridge` debounces the event by `EVENT_BRIDGE_TIMING.DEV_TOOLS_SHIP_DEBOUNCE_MS`
+(250 ms). The reason is not efficiency: **the update hook fires synchronously
+inside the write transaction, before commit.** A listener refetching on the first
+event could read pre-commit state and then never receive another event — a
+permanently stale view produced by a *successful* write. A debounce that resets
+on each event lands after commit. (The efficiency is real but secondary:
+decomposing one brief into six goals fires ~12 hook events and needs one
+refetch.)
+
+### Reconcile — on evidence, not on a clock
+
+CDC's channel is bounded and **drops** events when its drain falls behind, so a
+pure-push design is lossy by construction. `cdc_dropped_count` (a thin
+auth-guarded command over the counter that already existed in `cdc.rs` and had no
+reader) exposes the process-wide drop total. `useShipLive` reads it on mount /
+window focus / `visibilitychange → visible` and refetches **only if the number
+moved** since the last reading — one IPC returning an integer, and zero work in
+the overwhelming case where nothing was dropped. The first reading is a baseline
+and never triggers a refetch.
+
+### A refetch never blanks the planner
+
+`ShipPlannerTab` returns `LoadingSpinner` while `ship.loading` is true, and that
+component renders **nothing**. Before live refresh only the operator's own
+mutations re-ran the fetch; now a background agent's write can, so `useShipData`
+sets `loading` only when it has not yet painted the current project. Switching
+project still ghosts. (Loading doctrine law 1: a fetch never hides rendered rows.)
+
+### Files
+
+| File | Responsibility |
+| --- | --- |
+| `src-tauri/db/src/cdc.rs` | `table_to_event` maps the four Ship tables; the end-to-end test drives a real `dev_goals` INSERT/UPDATE/DELETE through a CDC-instrumented pool and observes it on the channel |
+| `src-tauri/core/src/events.rs` | `DEV_TOOLS_SHIP_CHANGED` |
+| `src-tauri/src/commands/infrastructure/system/health.rs` | `cdc_dropped_count` — the thin command over CDC backpressure |
+| `src/lib/eventRegistry.ts` | The TS half of the name + the `CdcEvent` payload shape |
+| `src/lib/eventBridge.ts` | The debounced listener and `DEV_TOOLS_SHIP_DEBOUNCE_MS` |
+| `src/stores/devToolsLiveStore.ts` | `shipRevision` + the evidence-based `reconcileShip` |
+| `.../ship/useShipLive.ts` | `useShipLiveRevision` — mount / focus / visibility reconcile, returns the revision |
+| `src/api/system/system.ts` | `cdcDroppedCount` |
