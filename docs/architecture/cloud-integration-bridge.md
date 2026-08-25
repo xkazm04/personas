@@ -1367,6 +1367,32 @@ Each of those tick bodies now returns a counted summary; the subscriptions
 discard it. A phase that ran and found nothing to do is `ran: true` with zero
 counts — "nothing happened" and "nothing was attempted" are different findings.
 
+**The `overnight` phase's slot bound counts only genuinely live work.** Bench
+sweep #18 (2026-08-25) refused an App-master dispatch with *"no free fleet live
+slots tonight"* against an idle fleet: the count was "every registry session not
+`Exited`/`Hibernated`", which included an `awaiting_input` session parked for
+days on another project and a previously bench-dispatched worker that had
+finished its edit and then ended its turn with a question. The soft-cap sweeper
+deliberately never evicts `AwaitingInput`, so those tickets would have starved
+every future night. Both halves are now closed
+(`personas_engine::unattended`):
+
+- **Prompt** — [`UNATTENDED_DISPATCH_GUARDRAILS`] carries two extra rules: the
+  session is unattended and must **never end a turn on a question**; a blocker
+  is a result (`FLEET:BLOCKED — …`) and the turn ends anyway.
+- **Structure** — an overnight dispatch opens a run labelled `overnight: <project>`
+  (the existing `fleet_sessions.run_id`/`run_label` vocabulary, no new column), and
+  `commands::fleet::stale::overnight_awaiting_pass` finishes such a session once it
+  has sat in `awaiting_input` past 30 min (`PERSONAS_FLEET_OVERNIGHT_AWAITING_SECS`),
+  with a `state_reason` quoting the unanswered question. It is **never** auto-answered,
+  and the reason deliberately avoids the `Task complete: ` prefix the run harvest reads
+  as a declared `FLEET:DONE`.
+- **Capacity** — `holds_overnight_slot` counts `running`/`spawning` always, an
+  `awaiting_input` only while fresher than that cutoff, and nothing else. The
+  production soft cap (`live_slot_evictions`) is unchanged — "must not be evicted"
+  and "is doing live work" are different claims, and only the night's arithmetic
+  was conflating them.
+
 ### 13.7 Where it runs: the desktop process, and why not the daemon
 
 **The mode runs in the desktop process (`personas-desktop`). `personas-daemon`

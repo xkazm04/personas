@@ -1033,21 +1033,13 @@ pub async fn dev_tools_dispatch_ideas(
     Ok(result)
 }
 
-/// Guardrail block appended to every UNATTENDED fleet dispatch prompt. The
-/// package-level invariant (batch-2 "safe autonomy"): overnight work never
-/// touches a repo's default branch — branch-only writes, human merges.
-const UNATTENDED_DISPATCH_GUARDRAILS: &str = "\
---- Unattended dispatch guardrails (Overnight Portfolio Engine) ---\n\
-You are running UNATTENDED overnight. Hard rules:\n\
-1. NEVER commit to the repository's default branch (main/master). Create and \
-work on a dedicated branch named `autopilot/<short-slug>` before changing any file.\n\
-2. Do NOT push, do NOT merge, do NOT open pull requests. Your branch is \
-reviewed by a human in the morning.\n\
-3. Do NOT run destructive commands (force-push, reset --hard on shared \
-branches, deletions outside your change scope).\n\
-4. If the fix requires a decision you cannot verify from the evidence, stop \
-and summarize instead of guessing.\n\
-When done, end your final message with `FLEET:DONE — <one-line summary>`.";
+// The guardrail block appended to every UNATTENDED fleet dispatch prompt now
+// lives in `personas_engine::unattended` (with the composer
+// `unattended_task_text`), so the two package-level invariants it carries are
+// covered by a test binary that actually launches:
+//   • branch-only writes, human merges (batch-2 "safe autonomy"); and
+//   • an overnight worker FINISHES — it never ends its turn on a question no
+//     one is awake to answer (bench sweep #18, 2026-08-25).
 
 /// The IPC-free dispatch core — compose + (for `fleet`) spawn, no auth gate,
 /// no runner batch start (the command wrapper owns that; the overnight tick
@@ -1182,7 +1174,7 @@ pub async fn dispatch_ideas_core(
                 continue;
             };
             let task_text = if unattended {
-                format!("{}\n\n{}", d.prompt, UNATTENDED_DISPATCH_GUARDRAILS)
+                personas_engine::unattended::unattended_task_text(&d.prompt)
             } else {
                 d.prompt.clone()
             };
