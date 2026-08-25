@@ -7,7 +7,8 @@
 use rusqlite::params;
 
 use super::catalog::{
-    LIST_TEAMS_FOOTER_RESERVE, LIST_TEAMS_MAX_ROWS, READ_OP_DETAIL_CHARS, READ_OP_SUGGESTIONS,
+    read_op_detail_budget, LIST_TEAMS_FOOTER_RESERVE, LIST_TEAMS_MAX_ROWS, READ_OP_DETAIL_CHARS,
+    READ_OP_SUGGESTIONS,
 };
 use crate::db::UserDbPool;
 
@@ -60,7 +61,10 @@ pub(super) fn note_read_op_result(
          user instead of guessing an id.",
         action = action,
         target = target,
-        body = clip(body, READ_OP_DETAIL_CHARS),
+        // Per-op, not a single global number: `describe_ship_milestone`
+        // answers with a whole milestone and was losing its entire tail to a
+        // cap sized for one-entity lookups. See `read_op_detail_budget`.
+        body = clip(body, read_op_detail_budget(action)),
     );
     if let Err(e) = crate::companion::brain::episodic::append_episode(
         pool,

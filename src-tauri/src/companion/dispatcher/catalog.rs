@@ -274,6 +274,39 @@ pub(super) const READ_OP_QUERY_MAX: usize = 200;
 /// is only cheaper than a fat prompt if the answer is itself bounded.
 pub(super) const READ_OP_DETAIL_CHARS: usize = 1600;
 
+/// The one read op that answers with more than a lookup, and its own budget.
+///
+/// 1600 was sized for "what is this thing, exactly" — one persona, one context,
+/// one skill. `describe_ship_milestone` is a different shape by design: it
+/// REPLACED a ~100-line briefing that the Ship tab used to paste into the turn,
+/// so it carries the objective's prose, the live exit-criteria verdicts, the cut
+/// by bucket, the bound goals and the doctrine for acting on all of it.
+///
+/// Measured 2026-08-25 on a realistic milestone (a 430-character brief, five
+/// criteria, an empty cut): **3,092 characters against a 1,600 cap**. What the
+/// envelope was cutting was the entire tail — the `set_ship_scope` /
+/// `ship_milestone_lifecycle` op list, the DECOMPOSING IT doctrine, and the
+/// investigate-before-you-ask rule. That truncation was silent, it predates the
+/// 2026-08-25 work, and it meant the op's closing guidance had likely never
+/// reached a turn in its life.
+///
+/// This is still a bound, not an exemption. The op caps its own two unbounded
+/// inputs (the brief and each member's note) so a realistic answer fits here
+/// with room to spare; see `ship_ops::answer_fits_its_budget`.
+pub(crate) const READ_OP_DETAIL_CHARS_SHIP: usize = 6000;
+
+/// How many characters a given read op's answer may carry into the next turn.
+///
+/// A match rather than a constant because the answers are genuinely different
+/// shapes, and a single number sized for the smallest one silently guillotines
+/// the largest.
+pub(crate) fn read_op_detail_budget(action: &str) -> usize {
+    match action {
+        "describe_ship_milestone" => READ_OP_DETAIL_CHARS_SHIP,
+        _ => READ_OP_DETAIL_CHARS,
+    }
+}
+
 /// Rows a single `list_teams` answer may carry.
 pub(super) const LIST_TEAMS_MAX_ROWS: usize = 25;
 

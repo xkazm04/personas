@@ -40,6 +40,34 @@ use crate::db::DbPool;
 /// the truncation lands somewhere legible instead of guillotining mid-row.
 const LIST_CAP: usize = 14;
 
+/// Longest brief the answer renders verbatim.
+///
+/// The objective's prose is operator-authored markdown with no length limit, and
+/// it is the one section of this answer that could be arbitrarily long. Cutting
+/// it HERE, visibly, is the whole point: the alternative is the dispatcher's
+/// envelope cutting the answer's TAIL instead — silently, and taking the
+/// doctrine with it, which is what it did until 2026-08-25.
+const BRIEF_CAP: usize = 1000;
+
+/// Longest per-member note the answer renders.
+///
+/// The other unbounded input: the ingest door accepts a 1,200-character
+/// description per member, and fourteen of those would be the entire budget
+/// spent on one section. A member's note is context for its bucket, not a
+/// document, so the first 140 characters carry it.
+const MEMBER_NOTE_CAP: usize = 140;
+
+/// Truncate on a CHARACTER boundary with an ellipsis. Slicing a `String` by
+/// bytes panics mid-codepoint, and every input here is operator-authored prose
+/// that routinely contains em dashes and accented text.
+fn clip_chars(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let head: String = s.chars().take(max).collect();
+    format!("{head}…")
+}
+
 // ── the readiness snapshot ───────────────────────────────────────────────────
 //
 // The exit criteria are derived in `useShipData` from signals this database
@@ -243,6 +271,38 @@ fn resolve(conn: &rusqlite::Connection, query: &str) -> Option<Resolved> {
     )
 }
 
+/// Characters ONE list section may spend.
+///
+/// `LIST_CAP` bounds a section by ROW COUNT, which bounds nothing: a member's
+/// note can be 1,200 characters (the ingest door's own limit), so fourteen rows
+/// is anywhere from 800 characters to 17,000. Measured 2026-08-25, a worst-case
+/// cut produced a 7,912-character answer against a 4,200 budget — and the
+/// dispatcher's clip would have taken the difference off the END, which is
+/// where the doctrine lives.
+///
+/// So each section spends at most this, and `cap` announces what that cost.
+/// The answer decides what to drop, from the middle, out loud; the envelope
+/// never gets to decide, silently, from the tail.
+const LIST_SECTION_CHARS: usize = 550;
+
+/// Keep rows while the section's character allowance lasts.
+///
+/// Always keeps at least one row: a section that renders nothing tells the
+/// reader the milestone is empty, which is a different and much worse claim
+/// than telling them it is long.
+fn take_within(lines: Vec<String>, budget: usize) -> Vec<String> {
+    let mut spent = 0usize;
+    let mut kept: Vec<String> = Vec::new();
+    for l in lines {
+        spent += l.chars().count() + 1;
+        if spent > budget && !kept.is_empty() {
+            break;
+        }
+        kept.push(l);
+    }
+    kept
+}
+
 fn cap(mut lines: Vec<String>, total: usize) -> Vec<String> {
     if total > lines.len() {
         // Truncation is ANNOUNCED, never silent: a clipped cut would have her
@@ -308,10 +368,21 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
         .filter(|d| !d.is_empty())
     {
         Some(d) => {
+            let shown = clip_chars(d, BRIEF_CAP);
+            let truncated = d.chars().count() > BRIEF_CAP;
             out.push(String::new());
             out.push("WHAT SHIPPING THIS MEANS — the operator's own words:".to_string());
-            for line in d.lines() {
+            for line in shown.lines() {
                 out.push(format!("  {line}"));
+            }
+            if truncated {
+                // Say it here rather than letting the envelope do it further
+                // down, unannounced. A brief this long means there is more
+                // intent than fits, which is itself worth knowing.
+                out.push(format!(
+                    "  (brief shown to {BRIEF_CAP} of {} characters — the rest is on his screen, so ask about the part you cannot see rather than assuming it says nothing)",
+                    d.chars().count()
+                ));
             }
             out.push(
                 "Read that as the brief. If it names deliverables, research, a target path or an out-of-scope, those are DECIDED — do not ask him to restate them, and do not propose anything he put out of scope."
@@ -422,12 +493,12 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
                     bits.push("JOINED AFTER THE CUT".into());
                 }
                 if let Some(d) = &f.description {
-                    bits.push(format!("note: \"{d}\""));
+                    bits.push(format!("note: \"{}\"", clip_chars(d, MEMBER_NOTE_CAP)));
                 }
                 bits.join(" · ")
             })
             .collect();
-        out.extend(cap(lines, rows.len()));
+        out.extend(cap(take_within(lines, LIST_SECTION_CHARS), rows.len()));
     }
 
     // ── bound goals ───────────────────────────────────────────────────────
@@ -476,7 +547,13 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
         );
     } else {
         let n = goals.len();
-        out.extend(cap(goals.into_iter().take(LIST_CAP).collect(), n));
+        out.extend(cap(
+            take_within(
+                goals.into_iter().take(LIST_CAP).collect(),
+                LIST_SECTION_CHARS,
+            ),
+            n,
+        ));
     }
 
     // ── the live reading, from the tab's own derivation ───────────────────
@@ -519,7 +596,7 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
                         )
                     })
                     .collect();
-                out.extend(cap(lines, total));
+                out.extend(cap(take_within(lines, LIST_SECTION_CHARS), total));
             }
             // Per-context health is the half of this the database genuinely
             // cannot see. `errors: None` means monitoring is not wired, which
@@ -546,7 +623,7 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
                         )
                     })
                     .collect();
-                out.extend(cap(lines, total));
+                out.extend(cap(take_within(lines, LIST_SECTION_CHARS), total));
             }
             out.push(
                 "These are the Ship tab's OWN numbers, republished as it derived them — \
@@ -784,28 +861,80 @@ mod tests {
         assert!(out.contains("canvas_dispatch"), "{out}");
     }
 
-    /// MEASUREMENT, not an assertion of intent — see the note in the real test
-    /// below. Prints where the 1600-char envelope cap lands in a realistic
-    /// answer.
+    /// THE ENVELOPE IS PART OF THE ANSWER.
+    ///
+    /// Measured 2026-08-25, before this test existed: a realistic milestone
+    /// produced **3,092 characters against the dispatcher's 1,600-character
+    /// cap**, so 48% of the answer was thrown away on the way into the turn —
+    /// silently, from the tail, taking the op list and every line of doctrine
+    /// with it. The op had been written as though it controlled its own output
+    /// and it did not, and nothing anywhere compared the two numbers.
+    ///
+    /// This test is that comparison. It builds the worst REALISTIC answer —
+    /// an over-long brief, a full core cut with long notes, five criteria, a
+    /// footprint — and asserts the whole thing fits the budget the dispatcher
+    /// will actually allow it.
     #[test]
-    fn measure_answer_length() {
+    fn answer_fits_its_budget() {
+        use crate::companion::dispatcher::read_op_detail_budget;
+
         let db = crate::db::init_test_db().unwrap();
-        let brief = "For the trailer composition app lacks best knowledge how to compose scenes in trailers to achieve highest quality results\n- Deep research possible web resources\n- Update AI registry if gained knowledge\n- Identify impact on the app how to leverage the knowledge\na) Having project with type 'Trailer'\nb) Having features to compose trailer's story\nc) Decompose into scene stories\n\nOut of scope: Script to image, image to video";
-        let id = seed(&db, Some(brief));
+        // A brief twice the render cap, so the visible-truncation path runs.
+        let brief = "x".repeat(BRIEF_CAP * 2);
+        let id = seed(&db, Some(&brief));
+        {
+            let conn = db.get().unwrap();
+            for n in 0..LIST_CAP {
+                let uc = format!("uc-{n}");
+                conn.execute(
+                    "INSERT INTO dev_use_cases (id, project_id, slug, name, created_at, updated_at)
+                     VALUES (?1, 'p1', ?2, ?3, '2026-08-01', '2026-08-01')",
+                    params![
+                        uc,
+                        format!("uc-slug-{n}"),
+                        format!("a use case with a reasonably long name {n}")
+                    ],
+                )
+                .unwrap();
+                conn.execute(
+                    "INSERT INTO dev_milestone_items
+                         (milestone_id, item_kind, item_id, bucket, added_after_cut,
+                          order_index, created_at, description, rating)
+                     VALUES (?1, 'use_case', ?2, 'core', 1, ?3, '2026-08-01', ?4, 2)",
+                    params![id, uc, n as i64, "n".repeat(MEMBER_NOTE_CAP * 4)],
+                )
+                .unwrap();
+            }
+        }
         crate::db::repos::core::settings::set(
             &db,
             crate::db::settings_keys::SHIP_READINESS,
-            r#"{"version":1,"publishedAt":"2026-08-25T10:00:00Z","milestones":[{"id":"ms-1","verdict":"setup","progress":0,"criteria":[{"label":"Objective bound","state":"nogo","evidence":"no goal bound","done":0,"total":1},{"label":"Scope frozen","state":"setup","evidence":"not cut","done":0,"total":1},{"label":"Contexts healthy","state":"setup","evidence":"no core members","done":0,"total":0},{"label":"KPI coverage","state":"setup","evidence":"no KPIs","done":0,"total":0},{"label":"Sensors wired","state":"nogo","evidence":"monitoring unbound","done":0,"total":1}],"contexts":[]}]}"#,
+            r#"{"version":1,"publishedAt":"2026-08-25T10:00:00Z","milestones":[{"id":"ms-1",
+               "verdict":"setup","progress":0,
+               "criteria":[{"label":"Objective bound","state":"nogo","evidence":"no goal bound","done":0,"total":1},
+                           {"label":"Scope frozen","state":"setup","evidence":"not cut","done":0,"total":1},
+                           {"label":"Contexts healthy","state":"setup","evidence":"no signal","done":0,"total":0},
+                           {"label":"KPI coverage","state":"setup","evidence":"no KPIs","done":0,"total":0},
+                           {"label":"Sensors wired","state":"nogo","evidence":"monitoring unbound","done":0,"total":1}],
+               "contexts":[{"name":"auth","tone":"ok","kpis":2,"errors":0},
+                           {"name":"ingest","tone":"setup","kpis":0,"errors":null}]}]}"#,
         )
         .unwrap();
+
         let out = describe_ship_milestone(&db, &id);
-        let cap = 1600usize;
-        println!("ANSWER LENGTH = {} bytes (envelope cap {cap})", out.len());
-        println!("--- WHAT SURVIVES THE CLIP ---");
-        println!("{}", &out[..cap.min(out.len())]);
-        println!("--- WHAT IS LOST ---");
-        if out.len() > cap {
-            println!("{}", &out[cap..]);
-        }
+        let budget = read_op_detail_budget("describe_ship_milestone");
+        assert!(
+            out.chars().count() <= budget,
+            "answer is {} chars against a {budget}-char budget — the dispatcher              would clip the tail, which is where the doctrine lives",
+            out.chars().count()
+        );
+
+        // And the parts that must survive are all present at that length.
+        assert!(out.contains("WHAT SHIPPING THIS MEANS"), "{out}");
+        assert!(out.contains("brief shown to"), "the cut must be announced");
+        assert!(out.contains("BEFORE YOU ASK HIM ANYTHING"), "{out}");
+        assert!(out.contains("LIVE READING"), "{out}");
+        assert!(out.contains("DECOMPOSING IT"), "{out}");
+        assert!(out.contains("set_ship_scope"), "{out}");
     }
 }
