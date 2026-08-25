@@ -426,8 +426,7 @@ pub fn first_error_line(stdout: &str, stderr: &str) -> Option<String> {
             stdout
                 .lines()
                 .map(str::trim)
-                .filter(|l| !l.is_empty())
-                .next_back()
+                .rfind(|l| !l.is_empty())
                 .map(|l| truncate(l, MAX_FIRST_ERROR_CHARS))
         })
 }
@@ -1166,7 +1165,6 @@ pub fn borrow_installed_deps(source_root: &Path, worktree: &Path) -> BorrowedEnv
 /// themselves.
 pub fn is_node_package_manager_command(command: &str) -> bool {
     let first = command
-        .trim_start()
         .split_whitespace()
         .next()
         .unwrap_or("")

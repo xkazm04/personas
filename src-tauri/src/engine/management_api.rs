@@ -3055,6 +3055,16 @@ async fn kp_create_persona_request(
         let app = state.app.clone();
         // `app_state` borrows the AppHandle; drop it before the await so the
         // non-Send `tauri::State` guard does not cross a suspension point.
+        //
+        // INVARIANT: this `drop` is load-bearing and `clippy::drop_non_drop` is
+        // wrong about it. The lint fires because `tauri::State` has no `Drop`
+        // impl, and its advice ("dropping only extends contained lifetimes")
+        // is about destructors — but what this call actually does is MOVE the
+        // value out of scope, which removes it from the set the async block
+        // holds across the `.await` below. axum requires a `Send` future and
+        // `tauri::State` is not `Send`, so removing this line does not tidy
+        // anything: it stops the handler compiling.
+        #[allow(clippy::drop_non_drop)]
         drop(app_state);
         return match crate::commands::companion::approvals::auto_execute_kp_hire(&app, &request_id)
             .await
