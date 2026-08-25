@@ -249,9 +249,9 @@ pub fn insert_firing(
         let mut conn = pool.get()?;
         let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let seq: i64 = tx.query_row(
-            "SELECT COALESCE(MAX(seq), 0) + 1 FROM shared_event_firings WHERE slug = ?1",
+            "SELECT COALESCE(MAX(seq), 0) + 1 AS next_seq FROM shared_event_firings WHERE slug = ?1",
             params![slug],
-            |r| r.get(0),
+            |r| r.get("next_seq"),
         )?;
         let id = Uuid::new_v4().to_string();
         let fired_at = chrono::Utc::now().to_rfc3339();
