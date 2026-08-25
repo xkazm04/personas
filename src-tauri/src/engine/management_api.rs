@@ -3016,8 +3016,23 @@ pub(crate) fn insert_kp_hire_approval(
 /// `POST /api/kp/persona-requests` — queue a hire request for human approval.
 async fn kp_create_persona_request(
     AxumState(state): AxumState<Arc<ManagementState>>,
-    Json(body): Json<KpPersonaRequestBody>,
+    Json(raw_body): Json<serde_json::Value>,
 ) -> Response {
+    // Deserialize the TYPED body from the raw JSON instead of letting axum do
+    // it, because the approval payload must persist the RAW request: kp owns
+    // the AppMasterSpec schema and ships fields this struct does not model
+    // (budget, role, agent, human, …). Serializing the typed struct back into
+    // the payload silently DROPPED all of them — the first enforced-budget
+    // night (2026-08-25) read `budget: null` off the stored payload while kp
+    // had sent `budget.monthlyUsd: 5`, so the mandate ceiling was never
+    // persisted. Validation stays typed; storage stays verbatim.
+    let body: KpPersonaRequestBody = match serde_json::from_value(raw_body.clone()) {
+        Ok(b) => b,
+        Err(e) => {
+            return err_json(StatusCode::BAD_REQUEST, &format!("malformed body: {e}"))
+                .into_response();
+        }
+    };
     if let Err(msg) = validate_kp_persona_request(&body) {
         return err_json(StatusCode::BAD_REQUEST, &msg).into_response();
     }
@@ -3032,12 +3047,8 @@ async fn kp_create_persona_request(
     // Params = the full validated request body PLUS the approval row's own id
     // (`requestId`) so the approval executor can stamp the created persona /
     // build session back onto this row for the status GET below.
-    let mut params = match serde_json::to_value(&body) {
-        Ok(v) => v,
-        Err(e) => {
-            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
-        }
-    };
+    // The RAW body (see above) — every field kp sent, modeled here or not.
+    let mut params = raw_body;
     params["requestId"] = serde_json::Value::String(request_id.clone());
     if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
