@@ -3,7 +3,7 @@
 // for the whole scope. Buckets/creep/status are real rows; progress, footprint
 // and exit criteria derive in useShipData from the signals the Factory already
 // trusts. Composition opens per milestone (ShipMilestoneComposer).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowUp, Check, Plus, Rocket, Sparkles, Telescope } from 'lucide-react';
 
@@ -16,6 +16,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
 import { buildShipAskPrompt } from './shipAthena';
+import { publishShipReadiness } from './shipReadinessPublish';
 import { ShipCertifyModal } from './ShipCertifyModal';
 import { ShipControlBar } from './ShipControlBar';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
@@ -271,6 +272,18 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
 
   const runner = useShipMilestoneRun(vm?.id ?? '', data.project?.root_path ?? null);
 
+  // Publish what this tab DERIVED so `describe_ship_milestone` can serve it.
+  // The exit criteria and the ship verdict are computed here from signals
+  // SQLite cannot reproduce (per-context Sentry counts, bound credentials), and
+  // until this existed the only way to get them to Athena was to paste them
+  // into the Ask-Athena message — which handed her a conclusion before she had
+  // read anything. Debounced and deduped in the publisher, so an unchanged
+  // roadmap costs no IPC. Runs on the whole roadmap, not the selected
+  // milestone: switching selection must not narrow what she can answer about.
+  useEffect(() => {
+    publishShipReadiness(ship.roadmap);
+  }, [ship.roadmap]);
+
   if (ship.loading) {
     return <div className="flex justify-center py-10" data-testid="factory-ship-loading"><LoadingSpinner size="md" /></div>;
   }
@@ -287,8 +300,9 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
 
   const editable = vm.status !== 'shipped';
 
-  // Point her at the milestone and the op that reads it — do not paste the
-  // milestone. See shipAthena.ts for why the briefing was retired.
+  // Point her at the milestone and the op that reads it. Do not paste the
+  // milestone, do not paste the verdict, and do not tell her what to say — see
+  // shipAthena.ts for what each of those cost.
   const openAthena = () => {
     if (!data.project) return;
     askAthena('Ship', buildShipAskPrompt(vm, data.project));

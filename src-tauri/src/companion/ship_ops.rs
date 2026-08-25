@@ -31,6 +31,7 @@
 //! live readings into a conversation (`shipAthena.buildShipBriefing`).
 
 use rusqlite::params;
+use serde::Deserialize;
 
 use crate::db::DbPool;
 
@@ -38,6 +39,114 @@ use crate::db::DbPool;
 /// whole body at `READ_OP_DETAIL_CHARS` anyway; capping per-list first means
 /// the truncation lands somewhere legible instead of guillotining mid-row.
 const LIST_CAP: usize = 14;
+
+// ── the readiness snapshot ───────────────────────────────────────────────────
+//
+// The exit criteria are derived in `useShipData` from signals this database
+// cannot reproduce (this week's Sentry error counts per context, which
+// connector credentials are bound), so for a while this op simply refused to
+// answer about them and the Ship tab's "Ask Athena" button pasted the verdict
+// into its opening message instead.
+//
+// That paste is what made the message LEADING: it handed a conclusion to a
+// model that had not yet read the milestone, and the model then wrote the
+// conclusion back as if it were a finding. So the tab now PUBLISHES what it
+// derived to `SHIP_READINESS` and this op serves it — the same door the
+// Mastermind canvas opened with `MASTERMIND_SCENE`, for the same reason: one
+// derivation, read live, rather than a second Rust implementation that drifts
+// or a snapshot that goes stale the instant a button is pressed.
+//
+// Field names mirror `shipReadinessPublish.ts` exactly (camelCase, everything
+// optional but `id`, unknown fields ignored).
+
+/// One exit criterion as the Ship tab derived it.
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+struct SnapCriterion {
+    label: String,
+    /// `go` | `warn` | `nogo` | `setup`.
+    state: String,
+    /// The derived "why" line. Never hand-typed on the tab either.
+    evidence: String,
+    done: i64,
+    total: i64,
+}
+
+/// One context in the milestone's footprint, with the health only the tab sees.
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+struct SnapContext {
+    name: String,
+    /// `ok` | `warn` | `crit` | `setup`.
+    tone: String,
+    kpis: i64,
+    /// Sentry errors this week. `None` = monitoring is not wired, which is a
+    /// different fact from zero errors and must never be flattened into one.
+    errors: Option<i64>,
+}
+
+/// The published reading for ONE milestone.
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+struct SnapMilestone {
+    id: String,
+    /// The overall fold: `nogo` > `setup` > `warn` > `go`.
+    verdict: String,
+    progress: i64,
+    criteria: Vec<SnapCriterion>,
+    contexts: Vec<SnapContext>,
+}
+
+/// The whole document under [`SHIP_READINESS`].
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+struct SnapDoc {
+    version: i64,
+    published_at: Option<String>,
+    milestones: Vec<SnapMilestone>,
+}
+
+/// Load the published readiness for one milestone id.
+///
+/// Every failure path returns `None` and the caller says plainly that it has no
+/// verdict — which is the honest answer and the one this op gave for its whole
+/// life before the snapshot existed. Inventing a verdict from the shape of the
+/// cut is the one thing that must never happen here.
+fn load_readiness(sys_db: &DbPool, milestone_id: &str) -> Option<(SnapMilestone, Option<String>)> {
+    let raw =
+        crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::SHIP_READINESS)
+            .ok()
+            .flatten()?;
+    let doc: SnapDoc = match serde_json::from_str(&raw) {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!(error = %e, "companion::ship_ops: ship readiness snapshot is unparseable");
+            return None;
+        }
+    };
+    if doc.version != 1 {
+        tracing::warn!(
+            version = doc.version,
+            "companion::ship_ops: ignoring a ship readiness snapshot of an unknown version"
+        );
+        return None;
+    }
+    let published = doc.published_at.clone();
+    doc.milestones
+        .into_iter()
+        .find(|m| m.id == milestone_id)
+        .map(|m| (m, published))
+}
+
+/// Whole hours since the snapshot was published, when the stamp parses.
+fn snapshot_age_hours(published_at: Option<&str>) -> Option<i64> {
+    let then = chrono::DateTime::parse_from_rfc3339(published_at?).ok()?;
+    Some(
+        (chrono::Utc::now() - then.with_timezone(&chrono::Utc))
+            .num_hours()
+            .max(0),
+    )
+}
 
 /// A resolved milestone: its row, plus the project it belongs to.
 struct Resolved {
@@ -182,6 +291,41 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
             m.goal.as_deref().unwrap_or("(not written)")
         ),
     ];
+
+    // The objective's PROSE. This field was read from SQL into `Resolved` and
+    // then never rendered — for four days the answer carried the objective's
+    // short TITLE and dropped the paragraph under it, which is where the
+    // operator writes what shipping actually means: the deliverables, the
+    // research he wants done, the explicit out-of-scope. A model reading that
+    // answer had no way to know any of it existed, so it asked him to restate
+    // in chat what it was already holding. Never truncate this: it is the
+    // statement of intent every decomposition works FROM, and the whole cut
+    // below is meaningless without it.
+    match m
+        .description
+        .as_deref()
+        .map(str::trim)
+        .filter(|d| !d.is_empty())
+    {
+        Some(d) => {
+            out.push(String::new());
+            out.push("WHAT SHIPPING THIS MEANS — the operator's own words:".to_string());
+            for line in d.lines() {
+                out.push(format!("  {line}"));
+            }
+            out.push(
+                "Read that as the brief. If it names deliverables, research, a target path or an out-of-scope, those are DECIDED — do not ask him to restate them, and do not propose anything he put out of scope."
+                    .to_string(),
+            );
+        }
+        None => {
+            out.push(String::new());
+            out.push(
+                "WHAT SHIPPING THIS MEANS — not written. The objective above is a title with no prose under it, so the intent behind this cut is genuinely unstated. This is the one case where asking him what he means is the right move."
+                    .to_string(),
+            );
+        }
+    }
 
     // ── scope members, by bucket ──────────────────────────────────────────
     // `item_id` is polymorphic with no FK (see the migration's own note), so a
@@ -335,18 +479,94 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
         out.extend(cap(goals.into_iter().take(LIST_CAP).collect(), n));
     }
 
-    // ── what this op deliberately does not know ───────────────────────────
+    // ── the live reading, from the tab's own derivation ───────────────────
+    // This used to be a paragraph saying the verdicts were unknowable here and
+    // that the operator should press "Ask Athena" to be handed them. That was
+    // true, and it was exactly why the button pasted a conclusion into its
+    // opening message. Now the tab publishes what it derived and this reads it,
+    // so the verdict arrives THROUGH the op like everything else — pulled when
+    // it is needed, never pushed ahead of the question.
     out.push(String::new());
-    out.push(
-        "NOT IN THIS ANSWER, and do not guess at it: the exit-criteria verdicts, \
-         per-context health and the overall ship verdict are derived live in the \
-         Ship tab from runtime signals this read cannot see (this week's error \
-         counts, which connector credentials are bound). If you need them, the \
-         operator can press \"Ask Athena\" in the Ship control bar — that hands you \
-         the whole live reading. Say you do not have them rather than inferring \
-         them from the cut."
-            .to_string(),
-    );
+    match load_readiness(sys_db, &m.id) {
+        Some((snap, published_at)) => {
+            let age = match snapshot_age_hours(published_at.as_deref()) {
+                None => "publish time unknown".to_string(),
+                Some(0) => "derived within the hour".to_string(),
+                Some(1) => "derived 1 hour ago".to_string(),
+                Some(h) => format!("derived {h} hours ago"),
+            };
+            out.push(format!(
+                "LIVE READING — ship verdict {} · {}% of the core cut ready ({age})",
+                if snap.verdict.is_empty() {
+                    "unknown"
+                } else {
+                    &snap.verdict
+                },
+                snap.progress,
+            ));
+            if snap.criteria.is_empty() {
+                out.push("  (the snapshot carries no exit criteria)".to_string());
+            } else {
+                let total = snap.criteria.len();
+                let lines: Vec<String> = snap
+                    .criteria
+                    .iter()
+                    .take(LIST_CAP)
+                    .map(|c| {
+                        format!(
+                            "  - {} [{}] {}/{} — {}",
+                            c.label, c.state, c.done, c.total, c.evidence
+                        )
+                    })
+                    .collect();
+                out.extend(cap(lines, total));
+            }
+            // Per-context health is the half of this the database genuinely
+            // cannot see. `errors: None` means monitoring is not wired, which
+            // is a different fact from zero errors — never fold them together.
+            if !snap.contexts.is_empty() {
+                let total = snap.contexts.len();
+                out.push("  contexts in the footprint:".to_string());
+                let lines: Vec<String> = snap
+                    .contexts
+                    .iter()
+                    .take(LIST_CAP)
+                    .map(|c| {
+                        format!(
+                            "  - {} [{}] · {} active KPI(s) · {}",
+                            c.name,
+                            c.tone,
+                            c.kpis,
+                            match c.errors {
+                                None => "monitoring not wired".to_string(),
+                                Some(0) => "no errors this week".to_string(),
+                                Some(1) => "1 error this week".to_string(),
+                                Some(n) => format!("{n} errors this week"),
+                            }
+                        )
+                    })
+                    .collect();
+                out.extend(cap(lines, total));
+            }
+            out.push(
+                "These are the Ship tab's OWN numbers, republished as it derived them — \
+                 the same ones on his screen. Do not recompute them and do not \
+                 contradict them; if one looks wrong, say which criterion and why."
+                    .to_string(),
+            );
+        }
+        None => {
+            out.push(
+                "LIVE READING — not available. The exit-criteria verdicts, per-context \
+                 health and the overall ship verdict derive in the Ship tab from runtime \
+                 signals this read cannot see (this week's error counts, which connector \
+                 credentials are bound), and no snapshot has been published for this \
+                 milestone — the tab has not been opened since this build. Say you do not \
+                 have the verdict rather than inferring one from the shape of the cut."
+                    .to_string(),
+            );
+        }
+    }
     out.push(
         "To act on this: `set_ship_scope` moves members between core/later/never \
          or drops them, `ship_milestone_lifecycle` cuts or ships it, and \
@@ -366,6 +586,226 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
          Propose few and concrete over many and vague."
             .to_string(),
     );
+    out.push(
+        "BEFORE YOU ASK HIM ANYTHING. Compare what the brief above already \
+         settles against what you were about to ask. An objective that names a \
+         SUBJECT rather than a deliverable (\"knowledge for X\", \"support for Y\") \
+         is not a signal to ask him what he means — it is a signal that the work \
+         starts with INVESTIGATION. Read the project: `describe_context` over its \
+         contexts, and where the answer is not in this database, dispatch \
+         sessions that go and find out (`canvas_dispatch` into that project, \
+         `show_fleet_plan` for real work, `enqueue_runner_task` for the queue). \
+         Come back with what you found and, at most, the two or three questions \
+         only he can answer. A question you could have answered by reading costs \
+         him a turn and tells him you did not look."
+            .to_string(),
+    );
 
     out.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A project + milestone straight into the production schema. Never
+    /// `CREATE TABLE` here: a hand-built fixture is not the schema the answer
+    /// is read from, and the whole point of these tests is that the answer
+    /// reflects real rows.
+    fn seed(db: &DbPool, description: Option<&str>) -> String {
+        let conn = db.get().unwrap();
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path, status, created_at, updated_at)
+             VALUES ('p1', 'gravitone', 'C:/repo', 'active', '2026-08-01', '2026-08-01')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO dev_milestones
+                 (id, project_id, name, goal, description, status, order_index,
+                  created_at, updated_at)
+             VALUES ('ms-1', 'p1', 'Test milestone',
+                     'Gathering knowledge for trailer storytelling', ?1,
+                     'planned', 0, '2026-08-24', '2026-08-24')",
+            params![description],
+        )
+        .unwrap();
+        "ms-1".to_string()
+    }
+
+    /// THE REGRESSION THIS FILE EXISTS FOR.
+    ///
+    /// `Resolved.description` was selected from SQL and stored in the struct
+    /// from the day the field was added — with a doc comment saying an answer
+    /// that omits it "leaves the model guessing at what the milestone is for" —
+    /// and never rendered. So the answer carried the objective's short TITLE
+    /// and silently dropped the paragraph underneath it, which is where the
+    /// operator writes the deliverables, the research he wants run and the
+    /// out-of-scope. A model reading that answer could not know any of it
+    /// existed, and asked him to restate in chat what it was already holding.
+    #[test]
+    fn the_objectives_prose_is_rendered_in_full() {
+        let db = crate::db::init_test_db().unwrap();
+        let brief = "Deep research possible web resources\n- Update AI registry if gained knowledge\nOut of scope: Script to image, image to video";
+        let id = seed(&db, Some(brief));
+
+        let out = describe_ship_milestone(&db, &id);
+
+        // Every line of the brief survives — not a summary, not a prefix.
+        for line in brief.lines() {
+            assert!(
+                out.contains(line.trim()),
+                "brief line missing: {line}\n---\n{out}"
+            );
+        }
+        // And it is labelled, so the reader knows it is the operator's own words
+        // rather than something the op derived.
+        assert!(out.contains("WHAT SHIPPING THIS MEANS"), "{out}");
+        assert!(out.contains("do not ask him to restate"), "{out}");
+    }
+
+    /// The absence case is a different fact and must read differently. A
+    /// milestone with a title and no prose is the ONE case where asking the
+    /// operator what he means is the right move, so the answer says so —
+    /// otherwise the doctrine "do not ask, read the brief" would suppress the
+    /// question in the only situation that needs it.
+    #[test]
+    fn a_missing_brief_says_so_and_licenses_the_question() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, None);
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("not written"), "{out}");
+        assert!(
+            out.contains("asking him what he means is the right move"),
+            "{out}"
+        );
+        assert!(!out.contains("do not ask him to restate"), "{out}");
+    }
+
+    /// Whitespace-only is absence, not content. Without the `.filter()` an
+    /// operator who typed a newline into the field would get a "brief" heading
+    /// over nothing, and the answer would then tell the reader that a blank
+    /// paragraph had DECIDED things.
+    #[test]
+    fn a_blank_brief_counts_as_missing() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("   \n  "));
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("not written"), "{out}");
+    }
+
+    /// With no published snapshot the op must say it has no verdict. This is
+    /// the state every install starts in, and it is the state in which
+    /// inventing a verdict from the shape of the cut does the most damage.
+    #[test]
+    fn no_snapshot_means_no_verdict_and_says_so() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("ship it"));
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("LIVE READING — not available"), "{out}");
+        assert!(out.contains("rather than inferring one"), "{out}");
+        assert!(!out.contains("ship verdict setup"), "{out}");
+    }
+
+    /// The happy path: what the tab published is what the op serves. The
+    /// `errors: null` row is the one to watch — "monitoring not wired" and "no
+    /// errors this week" are different facts, and a reader that folded them
+    /// together would state a measurement nobody took.
+    #[test]
+    fn a_published_snapshot_is_served_back_verbatim() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("ship it"));
+        let doc = r#"{"version":1,"publishedAt":"2026-08-25T10:00:00Z","milestones":[
+            {"id":"ms-1","verdict":"setup","progress":42,
+             "criteria":[{"label":"Objective bound","state":"nogo","evidence":"no goal bound","done":0,"total":1}],
+             "contexts":[{"name":"auth","tone":"ok","kpis":2,"errors":0},
+                         {"name":"ingest","tone":"setup","kpis":0,"errors":null}]}]}"#;
+        crate::db::repos::core::settings::set(&db, crate::db::settings_keys::SHIP_READINESS, doc)
+            .unwrap();
+
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("ship verdict setup"), "{out}");
+        assert!(out.contains("42%"), "{out}");
+        assert!(out.contains("Objective bound"), "{out}");
+        assert!(out.contains("no goal bound"), "{out}");
+        assert!(out.contains("no errors this week"), "{out}");
+        assert!(out.contains("monitoring not wired"), "{out}");
+        assert!(!out.contains("LIVE READING — not available"), "{out}");
+    }
+
+    /// A snapshot that carries other milestones must not answer for THIS one.
+    /// Serving a neighbour's verdict is worse than serving none: it is
+    /// confidently wrong, and nothing downstream could tell.
+    #[test]
+    fn a_snapshot_without_this_milestone_reports_no_verdict() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("ship it"));
+        crate::db::repos::core::settings::set(
+            &db,
+            crate::db::settings_keys::SHIP_READINESS,
+            r#"{"version":1,"milestones":[{"id":"ms-OTHER","verdict":"go","progress":100}]}"#,
+        )
+        .unwrap();
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("LIVE READING — not available"), "{out}");
+        assert!(
+            !out.contains("verdict go"),
+            "a neighbour's verdict must not leak: {out}"
+        );
+    }
+
+    /// An unknown document version is ignored, not guessed at. The version
+    /// exists so a future shape change fails closed.
+    #[test]
+    fn an_unknown_snapshot_version_is_ignored() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("ship it"));
+        crate::db::repos::core::settings::set(
+            &db,
+            crate::db::settings_keys::SHIP_READINESS,
+            r#"{"version":2,"milestones":[{"id":"ms-1","verdict":"go","progress":100}]}"#,
+        )
+        .unwrap();
+        assert!(
+            describe_ship_milestone(&db, &id).contains("LIVE READING — not available"),
+            "a v2 document must not be read as v1"
+        );
+    }
+
+    /// The closing doctrine has to arrive WITH the data, not only in the
+    /// constitution — this is the paragraph she reads at the moment she is
+    /// deciding whether to ask a question or go and look.
+    #[test]
+    fn the_answer_closes_by_teaching_investigation_before_questions() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("ship it"));
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("BEFORE YOU ASK HIM ANYTHING"), "{out}");
+        assert!(out.contains("canvas_dispatch"), "{out}");
+    }
+
+    /// MEASUREMENT, not an assertion of intent — see the note in the real test
+    /// below. Prints where the 1600-char envelope cap lands in a realistic
+    /// answer.
+    #[test]
+    fn measure_answer_length() {
+        let db = crate::db::init_test_db().unwrap();
+        let brief = "For the trailer composition app lacks best knowledge how to compose scenes in trailers to achieve highest quality results\n- Deep research possible web resources\n- Update AI registry if gained knowledge\n- Identify impact on the app how to leverage the knowledge\na) Having project with type 'Trailer'\nb) Having features to compose trailer's story\nc) Decompose into scene stories\n\nOut of scope: Script to image, image to video";
+        let id = seed(&db, Some(brief));
+        crate::db::repos::core::settings::set(
+            &db,
+            crate::db::settings_keys::SHIP_READINESS,
+            r#"{"version":1,"publishedAt":"2026-08-25T10:00:00Z","milestones":[{"id":"ms-1","verdict":"setup","progress":0,"criteria":[{"label":"Objective bound","state":"nogo","evidence":"no goal bound","done":0,"total":1},{"label":"Scope frozen","state":"setup","evidence":"not cut","done":0,"total":1},{"label":"Contexts healthy","state":"setup","evidence":"no core members","done":0,"total":0},{"label":"KPI coverage","state":"setup","evidence":"no KPIs","done":0,"total":0},{"label":"Sensors wired","state":"nogo","evidence":"monitoring unbound","done":0,"total":1}],"contexts":[]}]}"#,
+        )
+        .unwrap();
+        let out = describe_ship_milestone(&db, &id);
+        let cap = 1600usize;
+        println!("ANSWER LENGTH = {} bytes (envelope cap {cap})", out.len());
+        println!("--- WHAT SURVIVES THE CLIP ---");
+        println!("{}", &out[..cap.min(out.len())]);
+        println!("--- WHAT IS LOST ---");
+        if out.len() > cap {
+            println!("{}", &out[cap..]);
+        }
+    }
 }

@@ -2,6 +2,11 @@
 
 ## Active
 
+### ship-athena-nonleading — Ship→Athena prompt de-leading + research-first doctrine + Gravitone trailer-knowledge exercise
+- **[2026-08-25 10:19]**
+- **Paths:** `src/features/teams/sub_factory/l2/ship/**` · `src-tauri/src/companion/**` · `src-tauri/db/src/settings_keys.rs`
+- **Status:** started
+
 ### prototype-subjects-lane — /prototype 3 directional variants on Patterns → Subjects (hierarchy view) — session fable-5 — started
 - 2026-08-24. Operator brief: content model is right, visual representation is hard to read and poor to look at; 3 variants behind a tab switcher, winner/fusion after review.
 - **Declared paths:** `src/features/overview/sub_patterns/hierarchy/SubjectsView.tsx` · `src/features/overview/sub_patterns/hierarchy/SubjectDetail.tsx` (shared-parts extraction only) · `src/features/overview/sub_patterns/hierarchy/variants/**` (new) · `.claude/active-runs.md`
@@ -19,7 +24,6 @@
 - Round 2 (`790553673`) also DELETED `ShipLibraryTree.tsx` + `ShipContextDrawer.tsx` and `createFeature`/`scanContexts`/`ctxScanning` from `useShipData` — the drawer had no opener left once the tree went. 20 orphaned i18n keys removed across 14 locales.
 
 
-### channels-lane-b — Lane B: persona channels + Messages->Reports rebrand + follow-up loop
 - **[2026-08-24 12:31]**
 - **Paths:** `src-tauri/src/commands/**` · `src-tauri/db/src/**` · `src-tauri/engine/**` · `src/features/fleet/monitor/channels/**` · `src/api/pipeline/**` · `src/stores/slices/pipeline/**`
 - **Status:** started
@@ -418,6 +422,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### channels-lane-b — Lane B: persona channels + Messages->Reports rebrand + follow-up loop
 
 ### channels-v2-w5 — channels-v2 W5: persona conversations UI (store+api+sidebar+conversation)
 

@@ -1,69 +1,63 @@
 // What the Ship control bar's "Ask Athena" button actually sends.
 //
-// IT USED TO SEND THE WHOLE MILESTONE. `buildShipBriefing` rendered the cut,
-// the outside pool, the context footprint, every exit criterion with its
-// evidence and the duality conflicts into ~100 lines of prose and pushed all of
-// it into the turn. That was wrong in three ways, and the operator named the
-// first on 2026-08-24:
+// # Round 1 (2026-08-24) — it stopped pasting the milestone
 //
-//   1. It is a WALL. The point of giving her a read op was that she can fetch
-//      what she needs; handing her everything up front makes the tool
-//      redundant and the turn expensive whether or not the question needed it.
-//   2. It goes STALE the instant it is composed. A pasted snapshot describes
-//      the milestone as it was when the button was pressed. A tool call
-//      describes it now — which matters most in exactly the case this button
-//      exists for, a conversation that changes the thing being discussed.
-//   3. It taught her to reason from the message instead of from the registry,
-//      which is the habit that produces confident answers about stale state.
+// `buildShipBriefing` rendered the cut, the outside pool, the context
+// footprint, every exit criterion with its evidence and the duality conflicts
+// into ~100 lines of prose and pushed all of it into the turn. That was a WALL;
+// it went stale the instant it was composed; and it taught her to reason from
+// the message instead of from the registry. So it became a pointer: who the
+// operator is, which milestone, which op reads it.
 //
-// So this is a POINTER: who the operator is, which milestone, which tool reads
-// it, and what he wants done. `describe_ship_milestone` carries the objective
-// title, its markdown description, the cut by bucket, the bound goals and the
-// per-member readings — everything the briefing used to paste, kept in one
-// place and fetched live.
+// # Round 2 (2026-08-25) — it stopped telling her what to do
 //
-// WHAT THE POINTER STILL CARRIES, and why it is not zero: the exit-criteria
-// verdicts derive client-side from runtime signals the database cannot see, so
-// the read op says plainly that it does not have them. The one line below is
-// the honest bridge — it hands her the verdict she would otherwise have to
-// guess at, and nothing else.
+// The pointer still carried two things it should not have, and the operator
+// named both after a turn where she read a milestone whose description named
+// the deliverables, the research to run, the target path and the out-of-scope,
+// and then asked him to explain what he meant.
+//
+//   1. **The VERDICT.** The pointer pasted "the ship verdict is **setup**"
+//      because the read op could not see it. She restated that word back as her
+//      finding. A conclusion handed to a model before it has read anything is a
+//      conclusion it will report as its own. The verdict is now PUBLISHED by
+//      this tab (`shipReadinessPublish.ts`) and SERVED by the read op, so it
+//      arrives when she asks for it rather than ahead of the question — the
+//      same door the Mastermind canvas opened with `mastermind.scene.v1`.
+//   2. **THE SCRIPT.** The last paragraph read "help him turn the objective
+//      into deliverables. Read it, give him a SHORT read of where the milestone
+//      stands and the one thing you would look at first, then let him talk."
+//      That names the output shape before the input is known, and "then let him
+//      talk" is an instruction to STOP INVESTIGATING — which is why the turn
+//      ended in an open question instead of a finding. How she should work a
+//      milestone is doctrine and belongs in the constitution, where it is one
+//      statement that survives; a per-message script is neither.
+//
+// So what remains is genuinely a pointer: WHO is looking at WHAT, and nothing
+// about what to conclude or how to answer. Everything else is fetched.
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { shipVerdict, type ShipMilestoneVM } from './shipModel';
-
-/** How the overall verdict reads to a human. Mirrors `shipVerdict`'s fold. */
-const VERDICT_WORD: Record<ReturnType<typeof shipVerdict>, string> = {
-  go: 'all exit criteria met',
-  warn: 'some criteria partially met',
-  nogo: 'at least one criterion is BLOCKING',
-  setup: 'at least one criterion has no sensor or scope wired yet',
-};
+import type { ShipMilestoneVM } from './shipModel';
 
 /**
- * The Ask-Athena message: a pointer at the tool, plus the one reading the tool
- * cannot see.
+ * The Ask-Athena message: the operator's location, and the id.
  *
  * Sent through `useAskAthena` tagged `system_source: 'Ship'`, so she is told the
  * surface handed her a situation rather than the operator asking a question —
- * his question is whatever he types next.
+ * his question is whatever he types next, and what she does about the situation
+ * before he types is hers to decide.
+ *
+ * Deliberately carries NO verdict, NO summary of the cut, and NO instruction
+ * about what to say. `describe_ship_milestone` answers all three, live.
  */
 export function buildShipAskPrompt(vm: ShipMilestoneVM, project: DevProject): string {
-  const verdict = shipVerdict(vm.criteria);
-  const unmet = vm.criteria.filter((c) => c.state !== 'go');
-
   return [
     `The operator is on the Ship tab for "${project.name}", looking at milestone \`${vm.id}\` ("${vm.name}").`,
     '',
-    `Read it with \`describe_ship_milestone\` (query: \`${vm.id}\`) before you say anything about it — that op carries the objective, its description, the cut by bucket, the bound goals, and each member's contexts and KPI coverage, all live.`,
+    `Read it with \`describe_ship_milestone\` (query: \`${vm.id}\`) before you say anything about it. That op is the whole picture: the objective and the prose under it, the live exit-criteria verdicts and ship verdict as this tab derived them, the cut by bucket with his notes and ratings, the bound goals, and each member's contexts and KPI coverage.`,
     '',
-    // The live half. Named as coming from his screen so she knows why it is
-    // here and does not go looking for it in the read op, which says it has no
-    // verdicts.
-    `From his screen, and NOT available to that op: the ship verdict is **${verdict}** — ${VERDICT_WORD[verdict]}.`,
-    unmet.length > 0
-      ? `Unmet criteria: ${unmet.map((c) => `${c.label} (${c.done}/${c.total})`).join(' · ')}.`
-      : 'Every exit criterion is currently met.',
-    '',
-    'What he wants from you here: help him turn the objective into deliverables. Read it, give him a SHORT read of where the milestone stands and the one thing you would look at first, then let him talk — he often arrives with a direction rather than a feature name, and pulling it into shape is the job. He must never be asked which context or use case an idea belongs to; that mapping is yours. An idea with no home yet is a GOAL bound to this milestone.',
+    // The one thing left worth saying, and it is about STALENESS, not content:
+    // he pressed a button, and the milestone may have moved since. Everything
+    // else the message used to assert is now something she can go and read.
+    'He pressed a button; the milestone is whatever the op says it is now.',
   ].join('\n');
 }

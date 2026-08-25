@@ -259,6 +259,26 @@ pub const MASTERMIND_LAYOUT: &str = "mastermind.layout.v1";
 /// rather than inventing a scene.
 pub const MASTERMIND_SCENE: &str = "mastermind.scene.v1";
 
+/// Ship-tab READINESS snapshot (JSON-encoded, versioned document).
+/// The exit-criteria verdicts and the overall ship verdict are derived
+/// client-side in `useShipData` from signals this database cannot reproduce —
+/// this week's Sentry error counts per context, which connector credentials are
+/// bound. Athena therefore had no way to READ them: `describe_ship_milestone`
+/// says plainly that it has no verdict, and the Ship tab's "Ask Athena" button
+/// pasted the verdict into its opening message to close the gap.
+///
+/// Pasting it made the message LEADING — it handed her a conclusion before she
+/// had read the milestone, and a milestone read is what the op exists for. So
+/// this key is the same door `MASTERMIND_SCENE` opened for the canvas: the tab
+/// publishes what it derived, and the read op serves it. One derivation, fetched
+/// live, on demand — instead of a second Rust implementation that would drift,
+/// or a pasted snapshot that goes stale the instant the button is pressed.
+///
+/// Written by `ShipPlannerTab` after each derive (debounced + deduped); read by
+/// `companion::ship_ops`. Absent until the Ship tab has been opened at least
+/// once, which the reader states plainly rather than inventing a verdict.
+pub const SHIP_READINESS: &str = "ship.readiness.v1";
+
 /// Phase 5 v1: persisted global gate for the Claude CLI session-resume
 /// awareness feature. Set by the SetupPanel desktop-awareness toggle;
 /// read by both the windowed runner (in-memory `AmbientContextFusion`
@@ -781,6 +801,7 @@ const ALLOWED_KEYS: &[&str] = &[
     ONBOARDING_QUEST_STATE,
     MASTERMIND_LAYOUT,
     MASTERMIND_SCENE,
+    SHIP_READINESS,
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_DEV_MODE,
@@ -1059,7 +1080,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | DEV_TOOLS_CROSS_PROJECT_METADATA
         | ONBOARDING_QUEST_STATE
         | MASTERMIND_LAYOUT
-        | MASTERMIND_SCENE => validate_json_wellformed(key, value),
+        | MASTERMIND_SCENE
+        | SHIP_READINESS => validate_json_wellformed(key, value),
         _ => Ok(()),
     }
 }
@@ -1168,6 +1190,9 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     // Mastermind scene snapshot: republished on every canvas derive. Derived
     // view state, not a config change the History tab should carry.
     MASTERMIND_SCENE,
+    // Ship readiness snapshot: republished on every Ship-tab derive. Same
+    // reason as the scene — it is what the tab COMPUTED, not what anyone set.
+    SHIP_READINESS,
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
@@ -1337,6 +1362,20 @@ mod tests {
         assert!(validate_value(MASTERMIND_SCENE, r#"{"version":1,"projects":[]}"#).is_ok());
         assert!(validate_value(MASTERMIND_SCENE, "{not json").is_err());
         assert_eq!(audit_category(MASTERMIND_SCENE), None);
+    }
+
+    #[test]
+    fn ship_readiness_key_registered_validated_and_unaudited() {
+        // The Ship tab's derived verdicts, published for `companion::ship_ops`.
+        // Same three-part contract as the scene snapshot: an unregistered key
+        // is rejected on write, and a silent rejection here would leave the
+        // read op permanently answering "no verdict" while the tab believed it
+        // had published one.
+        assert_eq!(SHIP_READINESS, "ship.readiness.v1");
+        assert!(validate_key(SHIP_READINESS).is_ok());
+        assert!(validate_value(SHIP_READINESS, r#"{"version":1,"milestones":[]}"#).is_ok());
+        assert!(validate_value(SHIP_READINESS, "{not json").is_err());
+        assert_eq!(audit_category(SHIP_READINESS), None);
     }
 
     #[test]

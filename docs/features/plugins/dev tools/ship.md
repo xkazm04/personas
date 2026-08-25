@@ -211,9 +211,37 @@ Before 2026-08-20 these lived in four places (the lifecycle button and Compose f
 
 **Certify carries the criteria reading on its own face** — a `met/total` badge in the verdict's colour — which is what the five permanent chips were spending a header row to say.
 
-**Ask Athena** POINTS at the milestone; it does not paste it. `buildShipAskPrompt` (`shipAthena.ts`) sends the project, the milestone id, an instruction to read it with `describe_ship_milestone`, and the one reading that op cannot see — the ship verdict and the unmet criteria, which derive client-side from runtime signals.
+**Ask Athena POINTS, and says nothing else.** `buildShipAskPrompt` (`shipAthena.ts`) sends the project, the milestone id, and an instruction to read it with `describe_ship_milestone`. That is the whole message. No verdict, no summary of the cut, and no instruction about what to answer.
 
-It used to send `buildShipBriefing`: the cut, the outside pool, the footprint, every criterion with its evidence and the duality conflicts, ~100 lines pushed into the turn. Retired 2026-08-24 for three reasons — it made the read op redundant, it went stale the instant it was composed (which matters most in the one case this button exists for, a conversation that changes the thing being discussed), and it taught reasoning from the message rather than from the registry.
+
+
+It got there in two rounds, and the second is the interesting one.
+
+
+
+**Round 1 (2026-08-24) — it stopped pasting the milestone.** It used to send `buildShipBriefing`: the cut, the outside pool, the footprint, every criterion with its evidence and the duality conflicts, ~100 lines pushed into the turn. Retired for three reasons — it made the read op redundant, it went stale the instant it was composed (which matters most in the one case this button exists for, a conversation that changes the thing being discussed), and it taught reasoning from the message rather than from the registry.
+
+
+
+**Round 2 (2026-08-25) — it stopped pasting the VERDICT and it stopped scripting the reply.** The pointer still carried two things, and both did damage on the same turn:
+
+
+
+- **The verdict.** The read op could not see the exit criteria (they derive here from runtime signals SQLite cannot reproduce), so the message pasted `the ship verdict is **setup**` plus a roll-up of unmet criteria. Athena restated that word back as her finding. A conclusion handed to a model before it has read anything is a conclusion it reports as its own.
+
+- **The script.** The closing line read *"help him turn the objective into deliverables. Read it, give him a SHORT read of where the milestone stands and the one thing you would look at first, then let him talk."* That names the output's shape before the input is known, and `then let him talk` is an instruction to stop investigating — which is why the turn ended in an open question instead of a finding.
+
+
+
+The verdict was not dropped; it moved to where it belonged. The tab now publishes what it derived to **`ship.readiness.v1`** (`shipReadinessPublish.ts`) and `describe_ship_milestone` serves it — the same door `mastermind.scene.v1` opened for the Mastermind canvas, and for the same reason: one derivation, read live on demand, rather than a second Rust implementation that drifts or a snapshot that goes stale the instant a button is pressed. The publisher is debounced 500 ms and deduped by content, publishes the **whole roadmap** (so switching selection cannot narrow what she can answer about), and publishes nothing at all when the roadmap is empty rather than overwriting a good snapshot with a blank one. `errors: null` — monitoring not wired — survives the trip as `null`, because the reader renders it as a different sentence from zero errors.
+
+
+
+The script was not moved anywhere; it was deleted. How Athena works a milestone is constitution doctrine (v58), which is one statement that survives, rather than a sentence in a message that only exists on the turn the button is pressed.
+
+
+
+**The same commit fixed the reason the turn went wrong in the first place.** `describe_ship_milestone` had been reading the milestone's `description` out of SQL into its `Resolved` struct — with a doc comment saying an answer that omits it "leaves the model guessing at what the milestone is for" — and then never rendering it. It landed that way in `a5a38373a`, the very commit that retired the pasted briefing on the grounds that she should read live. So for four days the answer carried the objective's short TITLE and dropped the paragraph underneath, which is where the operator writes the deliverables, the research he wants run, the paths to write to and the out-of-scope. The op now prints it in full under **WHAT SHIPPING THIS MEANS**, and says in the same breath that anything the brief settles is decided.
 
 Either way the message goes through `useAskAthena` tagged `system_source: 'Ship'`. That tag is load-bearing: the backend files the turn as `TurnOrigin::External`, so Athena is told the surface handed her a situation rather than the operator asking a question. See §13.
 
@@ -312,7 +340,8 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | `.../ship/ShipPlannerTab.tsx` | The surface: content header (goal, criterion chips, lifecycle + compose buttons), roadmap spine, workspace switch, dispatch and terminal modals |
 | `.../ship/ShipControlBar.tsx` | The unified toolbar: Certify (with the criteria badge), Compose scope, Run, Ingest, Ask Athena |
 | `.../ship/ShipCertifyModal.tsx` | The certify panel — every criterion's evidence, its dispatch arm, and the commit |
-| `.../ship/shipAthena.ts` | `buildShipBriefing` — the live milestone as prose for the Ask-Athena handoff |
+| `.../ship/shipAthena.ts` | `buildShipAskPrompt` — the Ask-Athena pointer: project, milestone id, read-it-with-this-op. Nothing else |
+| `.../ship/shipReadinessPublish.ts` | Publishes the derived verdicts to `ship.readiness.v1` so the read op can serve them |
 | `.../ship/ShipMilestoneRun.tsx` | `useShipMilestoneRun` (the two actions + their busy flags) and `ShipRunSummary` |
 | `src/features/plugins/companion/useAskAthena.ts` | The one door an app surface uses to start a conversation, provenance-tagged |
 | `src-tauri/src/companion/ship_ops.rs` | `describe_ship_milestone` — Athena's read op over a live cut |

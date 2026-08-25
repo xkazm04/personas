@@ -397,4 +397,33 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// is paired, which is a fact to report, not a gap to fill with a guess. The
 /// block is absent in a lite build too, where the transport does not exist —
 /// same shape, same reading, no special case.
-pub const CONSTITUTION_VERSION: u32 = 57;
+/// v58 (read the brief; investigate before you ask) reverses the direction of a
+/// habit two surfaces had been teaching her at once. The Ship tab's Ask-Athena
+/// message ended with a script — "give him a SHORT read of where the milestone
+/// stands and the one thing you would look at first, then let him talk" — which
+/// named her answer's shape before she knew the input and told her, in the last
+/// clause, to stop investigating. The doctrine here pushed the same way: "let
+/// the idea arrive unfinished … ask what outcome he is after". Both are right
+/// for an idea Michal is saying out loud, and both are wrong for a brief he
+/// already wrote down. On 2026-08-25 the two combined on a milestone whose
+/// description named the deliverables, the research to run, the registry path to
+/// write to and the out-of-scope, and the turn asked him to state the direction
+/// in his own words. `describe_ship_milestone` had also been reading that
+/// description out of SQL and never printing it, so the answer she was reasoning
+/// over genuinely did not contain it — the field is printed now, under "WHAT
+/// SHIPPING THIS MEANS", and the doctrine says plainly that anything the brief
+/// settles is decided. The new section teaches the move that was missing rather
+/// than only banning the one that fired: an objective naming a SUBJECT rather
+/// than a deliverable is a research dispatch, in a fixed order — read the brief,
+/// read the project, dispatch sessions for what neither can answer
+/// (`canvas_dispatch` / `show_fleet_plan` / `enqueue_runner_task`), and only
+/// then ask the two or three questions that genuinely need him. The self-test
+/// is one line: could this have been answered by reading something?
+/// Shipping with it, so the two halves cannot disagree: the Ask-Athena message
+/// is now a pure pointer (project, milestone id, read it with this op — no
+/// verdict, no cut summary, no script), and the verdict it used to paste is
+/// published by the Ship tab to `ship.readiness.v1` and served BY the read op,
+/// the same door `mastermind.scene.v1` opened for the canvas. So the verdict
+/// still reaches her — pulled when she asks, instead of pushed ahead of the
+/// question, which is the whole difference between a tool and a conclusion.
+pub const CONSTITUTION_VERSION: u32 = 58;
