@@ -53,7 +53,11 @@ function makeStore() {
     executionDashboard: {
       daily_points: [],
       top_personas: [{ persona_id: 'p1', total_executions: 10 }],
-      overall_success_rate: 92,
+      // 0-1 FRACTION per the Rust contract (metrics.rs computes
+      // total_completed / total_executions). The slice scales it ×100; this
+      // fixture said `92` from before the 2026-08-15 100x fix and the test
+      // had been red on master since.
+      overall_success_rate: 0.92,
       avg_latency_ms: 120,
       cost_anomalies: [],
     },
