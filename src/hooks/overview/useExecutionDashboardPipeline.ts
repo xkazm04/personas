@@ -175,7 +175,10 @@ export function useExecutionDashboardPipeline() {
 
   // Debounce filter-driven refreshes to avoid redundant fetches when
   // the user clicks through day ranges or toggles compare mode rapidly.
+  // The very first run of a mount fires immediately: on a cold load the
+  // debounce only added 250ms of dead time before wave 1 even started.
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstRunRef = useRef(true);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -185,7 +188,12 @@ export function useExecutionDashboardPipeline() {
     // fetches never ran again and lastPipelineRun was never written.
     const token = { cancelled: false };
     mountedRef.current = token;
-    debounceRef.current = setTimeout(() => { void refresh(); }, 250);
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+      void refresh();
+    } else {
+      debounceRef.current = setTimeout(() => { void refresh(); }, 250);
+    }
     const debounce = debounceRef;
     return () => {
       if (debounce.current) clearTimeout(debounce.current);

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Bot } from 'lucide-react';
 import { resolveAgentIconSprite, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { resolvePersonaIcon, type ResolvedIcon } from '@/lib/icons/resolvePersonaIcon';
@@ -104,10 +105,24 @@ export function PersonaIcon({
   // Hook must run unconditionally; passes null for non-custom icons.
   const customSrc = useCustomIconSrc(resolved.kind === 'custom' ? resolved.assetId : null);
 
+  // A broken image source (missing builtin asset, dead remote URL, deleted
+  // custom upload) must never paint the browser's broken-image frame. Track
+  // the failed src so that exact source falls through to the initials/Bot
+  // fallback; a prop change to a different icon naturally re-attempts.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+
   // A custom icon whose file URL hasn't resolved yet renders as the fallback
   // until it's ready (the app-data dir is warmed at startup, so this is rare).
-  const effectiveKind: ResolvedIcon['kind'] =
+  let effectiveKind: ResolvedIcon['kind'] =
     resolved.kind === 'custom' && !customSrc ? 'fallback' : resolved.kind;
+  if (failedSrc !== null) {
+    const currentSrc =
+      effectiveKind === 'custom' ? customSrc
+      : effectiveKind === 'url' ? (resolved as Extract<ResolvedIcon, { kind: 'url' }>).url
+      : effectiveKind === 'builtin' ? resolveAgentIconSrc((resolved as Extract<ResolvedIcon, { kind: 'builtin' }>).value, isDark)
+      : null;
+    if (currentSrc !== null && currentSrc === failedSrc) effectiveKind = 'fallback';
+  }
 
   // Backwards compat: framed without display → treat as "framed"
   const requestedDisplay = display ?? (framed ? 'framed' : undefined);
@@ -147,6 +162,7 @@ export function PersonaIcon({
         alt=""
         className={isWrapped ? undefined : `${size} flex-shrink-0 object-contain ${className}`.trim()}
         loading="lazy"
+        onError={() => setFailedSrc(resolveAgentIconSrc(value, isDark))}
       />
     );
   } else if (effectiveKind === 'custom') {
@@ -156,6 +172,7 @@ export function PersonaIcon({
         alt=""
         className={isWrapped ? undefined : `${size} flex-shrink-0 object-contain ${className}`.trim()}
         loading="lazy"
+        onError={() => setFailedSrc(customSrc!)}
       />
     );
   } else if (effectiveKind === 'url') {
@@ -168,6 +185,7 @@ export function PersonaIcon({
         referrerPolicy="no-referrer"
         crossOrigin="anonymous"
         loading="lazy"
+        onError={() => setFailedSrc(url)}
       />
     );
   } else if (effectiveKind === 'emoji') {

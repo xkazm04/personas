@@ -1,61 +1,25 @@
-import { useState, useCallback, useMemo } from 'react';
-import { Zap, RefreshCw, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle, BellOff } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Zap, RefreshCw, Plus, BookOpen, Loader2, BellOff } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useSystemStore } from '@/stores/systemStore';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
-import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
-import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
-import { eventTypeLabel } from '../libs/eventTypeLabel';
-import { getEventStatusIcon } from '@/lib/design/eventTokens';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
 import { EventDetailContent } from './EventDetailContent';
+import { EventLogToolbar } from './EventLogToolbar';
+import { useEventLogColumns } from './eventLogColumns';
 import { createLogger } from "@/lib/log";
-import { debtText } from '@/i18n/DebtText';
 
 
 const logger = createLogger("event-log");
 
-// Status options and source type labels are built inside the component to use translations
-
-const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
-
 const EVENT_ROW_HEIGHT = 44;
-
-const TRIGGER_ICON_MAP: Record<string, { icon: LucideIcon; tone: string }> = {
-  persona:         { icon: Bot,            tone: 'text-violet-400' },
-  user:            { icon: User,           tone: 'text-sky-400' },
-  system:          { icon: Cog,            tone: 'text-foreground' },
-  scheduler:       { icon: CalendarClock,  tone: 'text-amber-400' },
-  local_drive:     { icon: HardDrive,      tone: 'text-emerald-400' },
-  webhook:         { icon: Webhook,        tone: 'text-cyan-400' },
-  trigger_engine:  { icon: Workflow,       tone: 'text-amber-400' },
-  vault:           { icon: KeyRound,       tone: 'text-amber-300' },
-  health_monitor:  { icon: HeartPulse,     tone: 'text-rose-400' },
-  cloud_deploy:    { icon: CloudUpload,    tone: 'text-blue-400' },
-  memory_engine:   { icon: Brain,          tone: 'text-fuchsia-400' },
-  review_pipeline: { icon: ClipboardCheck, tone: 'text-emerald-400' },
-  manual_review:   { icon: UserCheck,      tone: 'text-emerald-400' },
-  test:            { icon: FlaskConical,   tone: 'text-foreground' },
-};
-
-const FALLBACK_TRIGGER_ICON = { icon: HelpCircle, tone: 'text-foreground' };
-
-function resolveTriggerIcon(sourceType: string): { icon: LucideIcon; tone: string } {
-  if (sourceType.startsWith('persona:')) return TRIGGER_ICON_MAP.persona ?? FALLBACK_TRIGGER_ICON;
-  if (sourceType.startsWith('trigger:')) return TRIGGER_ICON_MAP.trigger_engine ?? FALLBACK_TRIGGER_ICON;
-  return TRIGGER_ICON_MAP[sourceType] ?? FALLBACK_TRIGGER_ICON;
-}
 
 export default function EventLogList() {
   const { t, tx } = useTranslation();
@@ -77,7 +41,6 @@ export default function EventLogList() {
   const {
     recentEvents, personas, availableTypes, skippedStats,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
-    sortDirection: _sortDirection, toggleSortDirection: _toggleSortDirection,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId,
     isFetching, isRefreshing, isSearching,
@@ -91,8 +54,6 @@ export default function EventLogList() {
     savedViews, activeViewId, saveCurrentView, applySavedView, removeSavedView, clearFilters,
   } = useEventLog();
 
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [viewName, setViewName] = useState('');
   const [triggerFilter, setTriggerFilter] = useState<string>('all');
 
   const handleSeedEvent = useCallback(async () => {
@@ -116,20 +77,12 @@ export default function EventLogList() {
     return [{ value: 'all', label: t.overview.events.all_triggers }, ...items];
   }, [SOURCE_TYPE_LABELS, filteredEvents, t.overview.events.all_triggers]);
 
-  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim() || triggerFilter !== 'all';
+  const hasActiveFilters = !!(statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim() || triggerFilter !== 'all');
 
-  const handleSaveView = async () => {
-    if (!viewName.trim()) return;
-    await saveCurrentView(viewName.trim());
-    setViewName('');
-    setShowSaveDialog(false);
-  };
-
-  const typeOptions = [
+  const typeOptions = useMemo(() => [
     { value: 'all', label: t.overview.events.all_types },
-    ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
-  ];
-
+    ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((v) => ({ value: v, label: v.replace(/_/g, ' ') })),
+  ], [availableTypes, t.overview.events.all_types]);
 
   // Bucket the event stream under sticky day headers (Today / Yesterday / …)
   // for temporal wayfinding. Grouping runs over UnifiedTable's already-sorted
@@ -143,127 +96,16 @@ export default function EventLogList() {
     [groupLabels],
   );
 
-  const columns: TableColumn<PersonaEvent>[] = [
-    {
-      key: 'trigger',
-      label: 'Trigger',
-      width: 'minmax(100px, 0.6fr)',
-      filterComponent: (
-        <ColumnDropdownFilter
-          label="Trigger"
-          value={triggerFilter}
-          options={triggerOptions}
-          onChange={setTriggerFilter}
-        />
-      ),
-      render: (event) => {
-        const raw = event.source_type || '';
-        const baseKey = raw.startsWith('persona:')
-          ? 'persona'
-          : raw.startsWith('trigger:')
-            ? 'trigger_engine'
-            : raw;
-        const label = SOURCE_TYPE_LABELS[baseKey] ?? baseKey.replace(/_/g, ' ');
-        const { icon: Icon, tone } = resolveTriggerIcon(raw);
-        return (
-          <span
-            className={`inline-flex items-center justify-center w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 ${tone}`}
-            title={label}
-            aria-label={label}
-          >
-            <Icon className="w-3.5 h-3.5" />
-          </span>
-        );
-      },
-    },
-    {
-      key: 'persona',
-      // Widened (was minmax(160px, 1fr)) so roughly twice as much of a
-      // persona's name is visible before the cell truncates.
-      label: 'Persona',
-      width: 'minmax(320px, 2fr)',
-      filterComponent: (
-        <PersonaColumnFilter
-          value={selectedPersonaId}
-          onChange={(v) => setSelectedPersonaId(v)}
-          personas={personas}
-        />
-      ),
-      render: (event) => {
-        const raw = event.source_type || '';
-        const isPersonaTrigger = raw === 'persona' || raw.startsWith('persona:');
-        if (!isPersonaTrigger) {
-          return <span className="typo-body text-foreground">—</span>;
-        }
-
-        const personaId = raw.startsWith('persona:')
-          ? raw.slice('persona:'.length)
-          : event.source_id;
-        const persona = getPersona(personaId ?? null);
-        if (persona) {
-          // No truncation — the full persona name is always shown (wraps if
-          // the column is too narrow). Users can drag the column wider.
-          return <span className="typo-body text-foreground break-words">{persona.name}</span>;
-        }
-        if (personaId) {
-          // Show the full id — the column is wide (minmax(320px, 2fr)), so long
-          // ids wrap rather than truncate, matching the resolved-name case above.
-          return (
-            <span className="typo-body text-foreground font-mono break-all" title={personaId}>
-              {personaId}
-            </span>
-          );
-        }
-        return <span className="typo-body text-foreground">—</span>;
-      },
-    },
-    {
-      key: 'type',
-      label: 'Event Name',
-      width: 'minmax(180px, 1.2fr)',
-      filterOptions: typeOptions,
-      filterValue: typeFilter,
-      onFilterChange: setTypeFilter,
-      render: (event) => {
-        const typeColor = getEventTypeColor(event.event_type).tailwind;
-        return (
-          <span className={`typo-heading truncate ${typeColor}`} title={event.event_type}>
-            {eventTypeLabel(t, event.event_type)}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      width: 'minmax(140px, 0.8fr)',
-      filterOptions: STATUS_OPTIONS,
-      filterValue: statusFilter,
-      onFilterChange: setStatusFilter,
-      render: (event) => {
-        const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-        const StatusIcon = getEventStatusIcon(event.status);
-        return (
-          <span className={`inline-flex items-center gap-1.5 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-            {event.status === 'processing'
-              ? <LoadingSpinner size="xs" />
-              : <StatusIcon className="w-3 h-3" />}
-            {event.status}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'created',
-      label: 'Created',
-      width: 'minmax(120px, 0.8fr)',
-      sortable: true,
-      align: 'right' as const,
-      render: (event) => (
-        <RelativeTime timestamp={event.created_at} className="typo-body text-foreground" />
-      ),
-    },
-  ];
+  const columns = useEventLogColumns({
+    t,
+    sourceTypeLabels: SOURCE_TYPE_LABELS,
+    personas,
+    getPersona,
+    triggerFilter, setTriggerFilter, triggerOptions,
+    typeOptions, typeFilter, setTypeFilter,
+    statusOptions: STATUS_OPTIONS, statusFilter, setStatusFilter,
+    selectedPersonaId, setSelectedPersonaId,
+  });
 
   // ── Loading choreography (docs/design/overview-loading.md, law 1) ──
   // `isFetching` is handed straight to UnifiedTable, which owns the whole
@@ -318,110 +160,18 @@ export default function EventLogList() {
         }
       />
 
-      {/* Search bar + saved views */}
-      <div className="px-4 pb-2 flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
-            <input
-              type="text"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder={t.overview.events.search_placeholder}
-              className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
-            />
-            {searchText && (
-              <button
-                type="button"
-                onClick={() => setSearchText('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          {isSearching && <LoadingSpinner size="xs" />}
-          {hasActiveFilters && (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowSaveDialog(true)}
-                className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
-                title={debtText("auto_save_current_filters_as_a_view_1680b016")}
-              >
-                <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
-              </button>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
-                title={debtText("auto_clear_all_filters_7dd6d199")}
-              >
-                <X className="w-3 h-3" /> {t.common.clear}
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Saved views chips */}
-        {savedViews.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="typo-caption text-foreground">{t.overview.events.views_label}</span>
-            {savedViews.map((view) => (
-              <button
-                type="button"
-                key={view.id}
-                onClick={() => applySavedView(view)}
-                className={`group flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
-                    ? 'bg-primary/15 text-primary border-primary/30'
-                    : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
-                  }`}
-              >
-                <Bookmark className="w-2.5 h-2.5" />
-                {view.name}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); removeSavedView(view.id); }}
-                  className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground hover:text-status-error transition-opacity"
-                  title={t.overview.events.delete_view}
-                >
-                  <BookmarkX className="w-2.5 h-2.5" />
-                </button>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Save view dialog */}
-        {showSaveDialog && (
-          <div className="flex items-center gap-2 p-2 rounded-card bg-secondary/40 border border-primary/10">
-            <input
-              type="text"
-              value={viewName}
-              onChange={(e) => setViewName(e.target.value)}
-              placeholder={t.overview.events.view_name_placeholder}
-              className="flex-1 px-2 py-1 typo-body rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30"
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={handleSaveView}
-              disabled={!viewName.trim()}
-              className="px-3 py-1 typo-caption rounded-card bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
-            >
-              {t.common.save}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowSaveDialog(false); setViewName(''); }}
-              className="px-2 py-1 typo-caption rounded-card text-foreground hover:text-foreground transition-colors"
-            >
-              {t.common.cancel}
-            </button>
-          </div>
-        )}
-      </div>
+      <EventLogToolbar
+        searchText={searchText}
+        setSearchText={setSearchText}
+        isSearching={isSearching}
+        hasActiveFilters={hasActiveFilters}
+        clearFilters={clearFilters}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        saveCurrentView={saveCurrentView}
+        applySavedView={applySavedView}
+        removeSavedView={removeSavedView}
+      />
 
       <ContentBody flex>
         {showRichEmpty ? (
