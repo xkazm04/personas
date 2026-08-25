@@ -147,5 +147,11 @@
   "member_kind_goal": "Objetivo",
   "certify_criteria_summary": "{met} de {total} criterios de salida cumplidos: la evidencia de cada uno está en el hito detrás de este diálogo.",
   "exit_criteria": "Criterios de salida",
-  "exit_criteria_aside": "derivados, nunca escritos a mano"
+  "exit_criteria_aside": "derivados, nunca escritos a mano",
+  "crit_skill_coverage": "Cobertura de habilidades",
+  "crit_skill_coverage_empty": "El corte no tiene contextos, así que no hay código que una habilidad pudiera haber cubierto.",
+  "crit_skill_coverage_evidence": "{covered} de {total} contextos del corte tienen información reciente de habilidades: {skills}.",
+  "crit_skill_coverage_none": "Ninguna habilidad ha dejado información en este proyecto en los últimos 30 días, así que todavía no hay nada con lo que medir la cobertura.",
+  "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+  "crit_skill_coverage_uncovered": " Nada reciente en: {names}."
 }

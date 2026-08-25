@@ -20522,6 +20522,12 @@
     "member_kind_goal": "Mục tiêu",
     "certify_criteria_summary": "Đã đạt {met} trên {total} tiêu chí hoàn thành — bằng chứng cho từng tiêu chí nằm trên cột mốc phía sau hộp thoại này.",
     "exit_criteria": "Tiêu chí hoàn thành",
-    "exit_criteria_aside": "được suy ra — không nhập tay"
+    "exit_criteria_aside": "được suy ra — không nhập tay",
+    "crit_skill_coverage": "Độ bao phủ của kỹ năng",
+    "crit_skill_coverage_empty": "Bản cắt không có ngữ cảnh nào, nên không có mã nào để một kỹ năng bao phủ.",
+    "crit_skill_coverage_evidence": "{covered} trên {total} ngữ cảnh trong bản cắt có hiểu biết mới từ kỹ năng — {skills}.",
+    "crit_skill_coverage_none": "Trong 30 ngày qua chưa có kỹ năng nào để lại hiểu biết cho dự án này, nên chưa có gì để đo độ bao phủ.",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " Không có gì mới ở: {names}."
   }
 }

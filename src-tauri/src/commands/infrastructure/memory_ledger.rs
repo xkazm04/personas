@@ -1096,6 +1096,69 @@ pub fn dev_tools_memory_skill_contexts(
     Ok(rows)
 }
 
+/// One (skill, context) pair with fresh coverage.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillContextPair {
+    /// Skill name, from `skill:<name>` attribution.
+    pub skill: String,
+    pub context_id: String,
+}
+
+/// Every (skill, context) pair in a project that carries fresh insight.
+///
+/// The two neighbours above answer "how much has each skill covered" and "which
+/// contexts has ONE skill covered". Neither answers "which contexts are covered,
+/// by which skills" in one read, and the Ship layer's `skill-coverage` exit
+/// criterion needs exactly that: it intersects these pairs with the milestone's
+/// derived footprint, which is a different set of contexts on every milestone.
+///
+/// Doing it with the per-skill command would mean one IPC round trip per skill
+/// on every Ship render — and the skill list is itself a query result, so the
+/// count is not even knowable in advance.
+///
+/// DISTINCT pairs, not counts: the criterion asks whether a context is covered
+/// at all, and a context with forty nodes from one skill is no more covered than
+/// one with a single node. Counting here would invite a threshold nobody has
+/// measured. Same 30-day freshness window as its neighbours — coverage is a
+/// claim about what is known NOW, and a two-year-old scan is not that.
+#[tauri::command]
+pub fn dev_tools_memory_skill_context_pairs(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<SkillContextPair>, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT DISTINCT SUBSTR(source, 7) AS skill, context_id
+             FROM memory_nodes
+             WHERE project_id = ?1 AND status = 'active'
+               AND context_id IS NOT NULL
+               AND source LIKE 'skill:%' AND source != 'skill:outbox'
+               AND datetime(updated_at) >= datetime('now', ?2)
+             ORDER BY skill, context_id",
+        )
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let rows = stmt
+        .query_map(
+            rusqlite::params![project_id, format!("-{FRESH_DAYS} days")],
+            |r| {
+                Ok(SkillContextPair {
+                    skill: r.get(0)?,
+                    context_id: r.get(1)?,
+                })
+            },
+        )
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .flatten()
+        .collect();
+    Ok(rows)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

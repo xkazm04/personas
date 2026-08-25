@@ -20522,6 +20522,12 @@
     "member_kind_goal": "লক্ষ্য",
     "certify_criteria_summary": "{total}টির মধ্যে {met}টি প্রস্থান মানদণ্ড পূরণ হয়েছে — প্রতিটির প্রমাণ এই ডায়ালগের পিছনে মাইলফলকে রয়েছে।",
     "exit_criteria": "প্রস্থান মানদণ্ড",
-    "exit_criteria_aside": "উদ্ভূত — কখনও হাতে লেখা নয়"
+    "exit_criteria_aside": "উদ্ভূত — কখনও হাতে লেখা নয়",
+    "crit_skill_coverage": "দক্ষতার কভারেজ",
+    "crit_skill_coverage_empty": "কাটে কোনো প্রেক্ষাপট নেই, তাই কোনো দক্ষতার ঢেকে রাখার মতো কোড নেই।",
+    "crit_skill_coverage_evidence": "কাটের {total}টি প্রেক্ষাপটের মধ্যে {covered}টিতে সাম্প্রতিক দক্ষতা-অন্তর্দৃষ্টি রয়েছে — {skills}।",
+    "crit_skill_coverage_none": "গত ৩০ দিনে কোনো দক্ষতা এই প্রকল্পে অন্তর্দৃষ্টি রাখেনি, তাই কভারেজ মাপার মতো কিছু এখনও নেই।",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " সাম্প্রতিক কিছু নেই: {names}।"
   }
 }

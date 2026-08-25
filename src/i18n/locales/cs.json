@@ -20522,6 +20522,12 @@
     "member_kind_goal": "Cíl",
     "certify_criteria_summary": "Splněno {met} z {total} výstupních kritérií — doklad ke každému je na milníku za tímto dialogem.",
     "exit_criteria": "Výstupní kritéria",
-    "exit_criteria_aside": "odvozeno — nikdy nezadáno ručně"
+    "exit_criteria_aside": "odvozeno — nikdy nezadáno ručně",
+    "crit_skill_coverage": "Pokrytí dovednostmi",
+    "crit_skill_coverage_empty": "Řez neobsahuje žádné kontexty, takže neexistuje kód, který by dovednost mohla pokrýt.",
+    "crit_skill_coverage_evidence": "{covered} z {total} kontextů v řezu nese čerstvé poznatky z dovedností — {skills}.",
+    "crit_skill_coverage_none": "Za posledních 30 dní nezanechala na tomto projektu poznatky žádná dovednost, takže zatím není vůči čemu pokrytí měřit.",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " Nic nedávného u: {names}."
   }
 }

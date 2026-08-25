@@ -147,5 +147,11 @@
   "member_kind_goal": "लक्ष्य",
   "certify_criteria_summary": "{total} में से {met} निकास मानदंड पूरे — प्रत्येक का प्रमाण इस संवाद के पीछे माइलस्टोन पर है।",
   "exit_criteria": "निकास मानदंड",
-  "exit_criteria_aside": "व्युत्पन्न — कभी टाइप नहीं किया गया"
+  "exit_criteria_aside": "व्युत्पन्न — कभी टाइप नहीं किया गया",
+  "crit_skill_coverage": "स्किल कवरेज",
+  "crit_skill_coverage_empty": "कट में कोई संदर्भ नहीं है, इसलिए ऐसा कोई कोड नहीं जिसे स्किल ने कवर किया हो।",
+  "crit_skill_coverage_evidence": "कट के {total} में से {covered} संदर्भों में हाल की स्किल-अंतर्दृष्टि है — {skills}।",
+  "crit_skill_coverage_none": "पिछले 30 दिनों में किसी स्किल ने इस प्रोजेक्ट पर अंतर्दृष्टि नहीं छोड़ी, इसलिए अभी कवरेज मापने के लिए कुछ नहीं है।",
+  "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+  "crit_skill_coverage_uncovered": " इन पर कुछ हालिया नहीं: {names}।"
 }

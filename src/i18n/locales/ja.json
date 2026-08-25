@@ -20522,6 +20522,12 @@
     "member_kind_goal": "目標",
     "certify_criteria_summary": "{total} 件中 {met} 件の終了基準を満たしています。各根拠はこのダイアログの背後のマイルストーンにあります。",
     "exit_criteria": "終了基準",
-    "exit_criteria_aside": "導出値 — 手入力しない"
+    "exit_criteria_aside": "導出値 — 手入力しない",
+    "crit_skill_coverage": "スキルカバレッジ",
+    "crit_skill_coverage_empty": "カットにコンテキストがないため、スキルが対象にできるコードがありません。",
+    "crit_skill_coverage_evidence": "カットに含まれる {total} 件のコンテキストのうち {covered} 件に最近のスキル知見があります — {skills}。",
+    "crit_skill_coverage_none": "過去 30 日間にこのプロジェクトへ知見を残したスキルがないため、カバレッジを測る対象がまだありません。",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " 最近の情報がありません: {names}。"
   }
 }

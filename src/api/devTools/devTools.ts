@@ -1334,6 +1334,23 @@ export const memorySkillCoverage = (projectId: string) =>
 export const memorySkillContexts = (projectId: string, skill: string) =>
   invoke<SkillContextRow[]>("dev_tools_memory_skill_contexts", { projectId, skill });
 
+/** One (skill, context) pair carrying fresh insight. Mirrors `SkillContextPair`. */
+export interface SkillContextPair {
+  skill: string;
+  contextId: string;
+}
+
+/**
+ * Every (skill, context) pair in the project with fresh coverage, in ONE read.
+ *
+ * `memorySkillContexts` answers for a single skill, and the Ship layer's
+ * skill-coverage criterion needs the whole matrix intersected with a
+ * per-milestone footprint — which would otherwise be one round trip per skill,
+ * over a skill list that is itself a query result.
+ */
+export const memorySkillContextPairs = (projectId: string): Promise<SkillContextPair[]> =>
+  invoke<SkillContextPair[]>("dev_tools_memory_skill_context_pairs", { projectId });
+
 /**
  * Execute a queued Dev-runner task. `model` optionally overrides the model for
  * THIS run (e.g. skill adopt/share pins "claude-sonnet-5"); omit to keep the

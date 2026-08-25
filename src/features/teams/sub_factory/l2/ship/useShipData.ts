@@ -5,7 +5,7 @@
 // the backend stores decisions, every number on screen derives here.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { listGoals } from '@/api/devTools/devTools';
+import { listGoals, memorySkillContextPairs, type SkillContextPair } from '@/api/devTools/devTools';
 import {
   createMilestone, listMilestoneItems, listMilestones, removeMilestoneItem,
   setMilestoneItem, updateMilestone,
@@ -19,7 +19,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import type { FactoryL2Data } from '../factoryL2Data';
 import { parseStringArray } from '../factoryL2Data';
-import { deriveCriteria } from './shipCriteria';
+import { deriveCriteria, type SkillCoverage } from './shipCriteria';
 import { deriveFootprint, deriveProgress } from './shipDerive';
 import { deriveDuality } from './shipDuality';
 import { useShipLiveRevision } from './useShipLive';
@@ -73,6 +73,10 @@ export function useShipData(data: FactoryL2Data): ShipData {
   const [milestones, setMilestones] = useState<DevMilestone[]>([]);
   const [itemsByMs, setItemsByMs] = useState<Map<string, DevMilestoneItem[]>>(new Map());
   const [devGoals, setDevGoals] = useState<DevGoal[]>([]);
+  // (skill, context) pairs with fresh insight — the `skill-coverage` criterion's
+  // only input. Empty is a real answer (no skill has run on this project yet)
+  // and the criterion reports it as `setup`, never as a failure.
+  const [skillPairs, setSkillPairs] = useState<SkillContextPair[]>([]);
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((n) => n + 1), []);
@@ -93,8 +97,16 @@ export function useShipData(data: FactoryL2Data): ShipData {
     if (!projectId) return;
     let alive = true;
     if (paintedProject.current !== projectId) setLoading(true);
-    void Promise.all([listMilestones(projectId), listGoals(projectId)])
-      .then(async ([ms, gs]) => {
+    void Promise.all([
+      listMilestones(projectId),
+      listGoals(projectId),
+      // Best effort and deliberately not in the failure path below: skill
+      // coverage is ONE criterion's input, and a milestone whose cut and goals
+      // loaded fine should not read as a failed load because the memory ledger
+      // was unreachable. An empty list degrades that criterion to `setup`.
+      memorySkillContextPairs(projectId).catch(() => [] as SkillContextPair[]),
+    ])
+      .then(async ([ms, gs, pairs]) => {
         const entries = await Promise.all(
           ms.map(async (m) => [m.id, await listMilestoneItems(m.id)] as const),
         );
@@ -102,6 +114,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         setMilestones(ms);
         setItemsByMs(new Map(entries));
         setDevGoals(gs);
+        setSkillPairs(pairs);
         paintedProject.current = projectId;
         setLoading(false);
       })
@@ -158,6 +171,22 @@ export function useShipData(data: FactoryL2Data): ShipData {
       };
     });
   }, [data.useCaseState.active, data.kpis, ctxById, t, tx]);
+
+  // Pairs → one entry per skill with the set of contexts it has reached. Built
+  // once here rather than inside the per-milestone loop: the pairs are a
+  // project-wide fact and every milestone intersects the same map with its own
+  // footprint.
+  const skillCoverage = useMemo<SkillCoverage[]>(() => {
+    const bySkill = new Map<string, Set<string>>();
+    for (const p of skillPairs) {
+      const set = bySkill.get(p.skill) ?? new Set<string>();
+      set.add(p.contextId);
+      bySkill.set(p.skill, set);
+    }
+    return [...bySkill.entries()]
+      .map(([skill, contextIds]) => ({ skill, contextIds }))
+      .sort((a, b) => b.contextIds.size - a.contextIds.size || a.skill.localeCompare(b.skill));
+  }, [skillPairs]);
 
   const goals = useMemo<ShipGoal[]>(
     () => devGoals
@@ -239,6 +268,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         footprint,
         monitoringWired: data.monitoringWired,
         llmWired: data.llmWired,
+        skillCoverage,
         t,
         tx,
       });
@@ -263,6 +293,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         goalMembers,
         boundGoals,
         footprint,
+        skillCoverage,
         criteria,
         progress,
         duality: deriveDuality(core),

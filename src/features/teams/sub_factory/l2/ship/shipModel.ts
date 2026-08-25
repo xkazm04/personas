@@ -12,6 +12,7 @@ import type { Translations } from '@/i18n/generated/types';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
 import { INK } from '../../passport/passportInk';
+import type { SkillCoverage } from './shipCriteria';
 import type { DualitySummary } from './shipDuality';
 
 export type ScopeBucket = 'core' | 'later' | 'never';
@@ -161,6 +162,13 @@ export interface ShipMilestoneVM {
   boundGoals: ShipGoal[];
   /** Derived from CORE members' slices — never hand-picked. */
   footprint: ShipContext[];
+  /**
+   * Project-wide (skill → contexts) coverage, as the `skill-coverage` criterion
+   * saw it. Carried on the VM so the criterion's Fleet dispatch can name the
+   * uncovered contexts from data rather than parsing them back out of the
+   * evidence sentence.
+   */
+  skillCoverage: SkillCoverage[];
   criteria: ExitCriterion[];
   /**
    * Done core members / total core members, 0-100 (100 once shipped). BOTH

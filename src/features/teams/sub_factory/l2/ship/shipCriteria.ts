@@ -18,6 +18,13 @@ import type { CritState, ExitCriterion, ShipContext, ShipGoal, ShipMember } from
 /** `tx` from useTranslation (or `interpolate` directly in tests). */
 export type Interpolator = (template: string, vars: Record<string, string | number>) => string;
 
+/** One skill and the contexts it has reached with fresh insight. */
+export interface SkillCoverage {
+  /** Skill name as attributed in `memory_nodes.source` (`skill:<name>`). */
+  skill: string;
+  contextIds: Set<string>;
+}
+
 export interface CriteriaInput {
   /** The milestone row: `cut_at` is the scope-creep baseline. */
   row: DevMilestone;
@@ -28,6 +35,12 @@ export interface CriteriaInput {
   footprint: ShipContext[];
   monitoringWired: boolean;
   llmWired: boolean;
+  /**
+   * Project-wide (skill → contexts) coverage, 30-day window. Empty means no
+   * skill has run here yet, which the criterion reports as `setup` — an
+   * unmeasured surface, not a failing one.
+   */
+  skillCoverage: SkillCoverage[];
   t: Translations;
   tx: Interpolator;
 }
@@ -144,6 +157,73 @@ export const SHIP_CRITERIA: readonly CriterionSpec[] = [
         done,
         total,
         state: 'warn',
+      };
+    },
+  },
+  {
+    // SKILL COVERAGE — "has anything been learned, recently, about the code this
+    // milestone touches?"
+    //
+    // The operator's framing (2026-08-25) was per-skill: "/perfect or
+    // /scan-sweep with 100% coverage". The GATE here is deliberately the
+    // aggregate — a footprint context counts as covered when ANY skill has left
+    // fresh insight on it — and the per-skill reading rides in the evidence
+    // line. Two reasons, both about the gate meaning something:
+    //
+    //   * The registry's own rule (top of this file) is that every criterion is
+    //     active for every milestone and per-milestone opt-in is not built. A
+    //     per-skill gate needs a declared skill set to be a gate at all, and
+    //     "every skill that ever ran here" is not that: one skill run once on
+    //     one context would hold every milestone at ~0% forever.
+    //   * Coverage is DISTINCT contexts, never node counts. A context with
+    //     forty nodes from one skill is no more covered than one with a single
+    //     node, and counting would invite a threshold nobody has measured.
+    //
+    // The footprint is the denominator, not the whole project: this asks about
+    // the code the CUT touches. A milestone whose cut is all goals has no
+    // footprint and honestly reports that it has nothing to measure.
+    id: 'skill-coverage',
+    label: (t) => t.ship.crit_skill_coverage,
+    derive: ({ footprint, skillCoverage, t, tx }) => {
+      if (footprint.length === 0) {
+        return { evidence: t.ship.crit_skill_coverage_empty, done: 0, total: 0, state: 'setup' };
+      }
+      if (skillCoverage.length === 0) {
+        // No skill has run on this project inside the freshness window. That is
+        // an UNMEASURED surface, not a failing one — `setup`, the same state the
+        // other criteria use for "no sensor wired yet".
+        return {
+          evidence: t.ship.crit_skill_coverage_none,
+          done: 0,
+          total: footprint.length,
+          state: 'setup',
+        };
+      }
+      const ids = footprint.map((c) => c.id);
+      const covered = ids.filter((id) => skillCoverage.some((s) => s.contextIds.has(id)));
+      // The per-skill reading the operator asked for — each skill measured
+      // against THIS milestone's footprint, worst-covered last so the gap is
+      // what the line ends on.
+      const perSkill = skillCoverage
+        .map((s) => ({ skill: s.skill, n: ids.filter((id) => s.contextIds.has(id)).length }))
+        .filter((x) => x.n > 0)
+        .map((x) => tx(t.ship.crit_skill_coverage_per_skill, {
+          skill: x.skill,
+          n: x.n,
+          total: footprint.length,
+        }));
+      const uncovered = footprint.filter((c) => !skillCoverage.some((s) => s.contextIds.has(c.id)));
+      return {
+        evidence: tx(t.ship.crit_skill_coverage_evidence, {
+          covered: covered.length,
+          total: footprint.length,
+          skills: perSkill.join(' · '),
+        }) + (uncovered.length > 0
+          ? tx(t.ship.crit_skill_coverage_uncovered, { names: uncovered.map((c) => c.name).join(', ') })
+          : ''),
+        done: covered.length,
+        total: footprint.length,
+        state: covered.length === footprint.length ? 'go' : 'warn',
       };
     },
   },

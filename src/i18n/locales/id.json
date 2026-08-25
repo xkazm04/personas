@@ -20522,6 +20522,12 @@
     "member_kind_goal": "Tujuan",
     "certify_criteria_summary": "{met} dari {total} kriteria keluar terpenuhi — buktinya ada pada milestone di balik dialog ini.",
     "exit_criteria": "Kriteria keluar",
-    "exit_criteria_aside": "diturunkan — tidak pernah diketik"
+    "exit_criteria_aside": "diturunkan — tidak pernah diketik",
+    "crit_skill_coverage": "Cakupan skill",
+    "crit_skill_coverage_empty": "Potongan ini tidak memiliki konteks, jadi tidak ada kode yang bisa dicakup oleh sebuah skill.",
+    "crit_skill_coverage_evidence": "{covered} dari {total} konteks dalam potongan memuat wawasan skill terbaru — {skills}.",
+    "crit_skill_coverage_none": "Tidak ada skill yang meninggalkan wawasan pada proyek ini dalam 30 hari terakhir, jadi belum ada pembanding untuk mengukur cakupan.",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " Tidak ada yang baru pada: {names}."
   }
 }

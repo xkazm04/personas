@@ -20522,6 +20522,12 @@
     "member_kind_goal": "الهدف",
     "certify_criteria_summary": "تم استيفاء {met} من {total} من معايير الإطلاق — الدليل على كل منها موجود على المرحلة خلف هذا المربع.",
     "exit_criteria": "معايير الإطلاق",
-    "exit_criteria_aside": "مشتقة — لا تُكتب يدويًا"
+    "exit_criteria_aside": "مشتقة — لا تُكتب يدويًا",
+    "crit_skill_coverage": "تغطية المهارات",
+    "crit_skill_coverage_empty": "لا تحتوي القطع على أي سياقات، لذا لا يوجد كود كان يمكن للمهارة أن تغطيه.",
+    "crit_skill_coverage_evidence": "{covered} من {total} سياقات في القطع تحمل رؤى حديثة من المهارات — {skills}.",
+    "crit_skill_coverage_none": "لم تترك أي مهارة رؤى على هذا المشروع خلال آخر 30 يومًا، لذا لا يوجد ما يمكن قياس التغطية مقابله بعد.",
+    "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
+    "crit_skill_coverage_uncovered": " لا يوجد شيء حديث على: {names}."
   }
 }

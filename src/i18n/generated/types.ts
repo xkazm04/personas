@@ -20417,6 +20417,12 @@ export type Translations = {
     certify_criteria_summary: string;
     exit_criteria: string;
     exit_criteria_aside: string;
+    crit_skill_coverage: string;
+    crit_skill_coverage_evidence: string;
+    crit_skill_coverage_per_skill: string;
+    crit_skill_coverage_uncovered: string;
+    crit_skill_coverage_none: string;
+    crit_skill_coverage_empty: string;
     unassigned: string;
     crit_contexts: string;
     crit_contexts_empty: string;
