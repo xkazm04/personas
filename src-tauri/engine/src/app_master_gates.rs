@@ -316,28 +316,49 @@ pub fn pass_rate(outcomes: &[GateOutcome]) -> Option<f64> {
     Some(passed as f64 / counted.len() as f64)
 }
 
-/// Every gate outcome recorded for a project since `since` (RFC-3339).
+/// The SQL fragment that attributes a project-scoped ledger row to ONE holder.
+///
+/// `NULL` persona means "do not filter" (the caller could not name a holder).
+/// A row whose `persona_id` is `''` predates per-holder attribution — it cannot
+/// belong to somebody else, so excluding it would delete a real reading rather
+/// than reattribute it.
+const PERSONA_PREDICATE: &str = "(?3 IS NULL OR persona_id = ?3 OR persona_id = '')";
+
+/// Every gate outcome recorded for a project since `since` (RFC-3339),
+/// optionally narrowed to one holder.
+///
+/// `since` is the [`crate::app_master::TenureWindow`]'s lower bound, not the
+/// calendar month: a gate that ran for the PREVIOUS holder of this project is
+/// not evidence about the current one (bench sweep #17).
 pub fn gate_outcomes_since(
     pool: &DbPool,
     project_id: &str,
+    persona_id: Option<&str>,
     since: &str,
 ) -> Result<Vec<GateOutcome>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
+    let mut stmt = conn.prepare(&format!(
         "SELECT outcome FROM app_master_gate_runs
-         WHERE project_id = ?1 AND ran_at >= ?2",
-    )?;
-    let rows = stmt.query_map(params![project_id, since], |r| r.get::<_, String>(0))?;
+         WHERE project_id = ?1 AND ran_at >= ?2 AND {PERSONA_PREDICATE}"
+    ))?;
+    let rows = stmt.query_map(params![project_id, since, persona_id], |r| {
+        r.get::<_, String>(0)
+    })?;
     Ok(rows
         .flatten()
         .filter_map(|s| GateOutcome::parse(&s))
         .collect())
 }
 
-/// The project's gate pass rate over the window, or `None` when no gate
+/// The holder's gate pass rate over the window, or `None` when no gate
 /// command actually ran in it (never `0.0`).
-pub fn gate_pass_rate_since(pool: &DbPool, project_id: &str, since: &str) -> Option<f64> {
-    let outcomes = gate_outcomes_since(pool, project_id, since).ok()?;
+pub fn gate_pass_rate_since(
+    pool: &DbPool,
+    project_id: &str,
+    persona_id: Option<&str>,
+    since: &str,
+) -> Option<f64> {
+    let outcomes = gate_outcomes_since(pool, project_id, persona_id, since).ok()?;
     pass_rate(&outcomes)
 }
 
@@ -641,46 +662,35 @@ pub struct ProposalCounts {
 /// The window is applied to the *observation* (`merged_at` / `reverted_at`),
 /// not to the proposal's first sighting: a branch opened last month and merged
 /// this month is this month's merge.
+///
+/// `persona_id` narrows every count — including the "does a ledger exist at
+/// all" probe — to one holder. A brand-new hire on a project whose only
+/// proposals belong to its predecessor therefore reads `None` (no record of its
+/// own), not the predecessor's numbers (bench sweep #17).
 pub fn proposal_counts_since(
     pool: &DbPool,
     project_id: &str,
+    persona_id: Option<&str>,
     since: &str,
 ) -> Option<ProposalCounts> {
     let conn = pool.get().ok()?;
-    let total: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM app_master_proposals WHERE project_id = ?1",
-            params![project_id],
-            |r| r.get(0),
-        )
-        .ok()?;
+    // `?2` (the window bound) is always supplied; the unwindowed `total` shape
+    // simply does not reference it, which SQLite allows.
+    let count = |window_clause: &str| -> Option<i64> {
+        let sql = format!(
+            "SELECT COUNT(*) FROM app_master_proposals
+             WHERE project_id = ?1 AND {PERSONA_PREDICATE}{window_clause}"
+        );
+        conn.query_row(&sql, params![project_id, since, persona_id], |r| r.get(0))
+            .ok()
+    };
+    let total: i64 = count("")?;
     if total == 0 {
         return None;
     }
-    let seen: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM app_master_proposals
-             WHERE project_id = ?1 AND first_seen_at >= ?2",
-            params![project_id, since],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    let merged: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM app_master_proposals
-             WHERE project_id = ?1 AND merged_at IS NOT NULL AND merged_at >= ?2",
-            params![project_id, since],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    let reverted: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM app_master_proposals
-             WHERE project_id = ?1 AND reverted_at IS NOT NULL AND reverted_at >= ?2",
-            params![project_id, since],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
+    let seen = count(" AND first_seen_at >= ?2").unwrap_or(0);
+    let merged = count(" AND merged_at IS NOT NULL AND merged_at >= ?2").unwrap_or(0);
+    let reverted = count(" AND reverted_at IS NOT NULL AND reverted_at >= ?2").unwrap_or(0);
     Some(ProposalCounts {
         seen,
         merged,
@@ -1626,6 +1636,7 @@ mod tests {
                 owner: "owner@example.com".into(),
             },
             probation_ends_at: chrono::Utc::now().to_rfc3339(),
+            hired_at: chrono::Utc::now().to_rfc3339(),
             review_cadence_days: 30,
             retire_criteria: vec![],
             probation_decided_at: None,
@@ -1667,7 +1678,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let since = "2000-01-01T00:00:00+00:00";
         // Nothing recorded -> no rate at all.
-        assert_eq!(gate_pass_rate_since(&pool, "proj-3", since), None);
+        assert_eq!(gate_pass_rate_since(&pool, "proj-3", None, since), None);
 
         for (cmd, outcome, exit) in [
             ("npm run lint", GateOutcome::Passed, Some(0)),
@@ -1694,7 +1705,10 @@ mod tests {
             .unwrap();
         }
         // 1 passed / 2 that ran. The did_not_run is in neither half.
-        assert_eq!(gate_pass_rate_since(&pool, "proj-3", since), Some(0.5));
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-3", None, since),
+            Some(0.5)
+        );
 
         let runs = gate_runs_for_branch(&pool, "proj-3", "autopilot/x").unwrap();
         assert_eq!(runs.len(), 3);
@@ -1720,13 +1734,150 @@ mod tests {
         record_gate_run(&pool, &old).unwrap();
         // A window that starts after the only run has no rate — not 0.0.
         assert_eq!(
-            gate_pass_rate_since(&pool, "proj-4", "2020-01-01T00:00:00+00:00"),
+            gate_pass_rate_since(&pool, "proj-4", None, "2020-01-01T00:00:00+00:00"),
             None
         );
         assert_eq!(
-            gate_pass_rate_since(&pool, "proj-4", "2000-01-01T00:00:00+00:00"),
+            gate_pass_rate_since(&pool, "proj-4", None, "2000-01-01T00:00:00+00:00"),
             Some(0.0)
         );
+    }
+
+    // -- tenure attribution (bench sweep #17) --------------------------------
+
+    fn gate_run_at(pool: &DbPool, project: &str, persona: &str, at: &str, outcome: GateOutcome) {
+        let mut run = GateRun::new(
+            project,
+            persona,
+            "autopilot/x",
+            "npm test",
+            outcome,
+            Some(0),
+            5,
+            None,
+        );
+        run.ran_at = at.into();
+        record_gate_run(pool, &run).unwrap();
+    }
+
+    /// The regression: a gate run from the PREVIOUS holder's tenure is not
+    /// evidence about the new hire, even on the same project in the same month.
+    #[test]
+    fn gate_runs_before_the_tenure_start_are_excluded_and_after_it_are_counted() {
+        let pool = init_test_db().unwrap();
+        let month = "2026-08-01T00:00:00+00:00";
+        let tenure = "2026-08-25T00:00:00+00:00";
+        // The predecessor's month: two passes.
+        gate_run_at(
+            &pool,
+            "proj-ten",
+            "p-old",
+            "2026-08-10T00:00:00+00:00",
+            GateOutcome::Passed,
+        );
+        gate_run_at(
+            &pool,
+            "proj-ten",
+            "p-old",
+            "2026-08-11T00:00:00+00:00",
+            GateOutcome::Passed,
+        );
+
+        // Over the calendar month the new hire would inherit a perfect record.
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-ten", None, month),
+            Some(1.0)
+        );
+        // Over its own tenure it has no record at all — not 1.0, and not 0.0.
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-ten", Some("p-new"), tenure),
+            None
+        );
+
+        // Its own first gate fails; that, and only that, is its rate.
+        gate_run_at(
+            &pool,
+            "proj-ten",
+            "p-new",
+            "2026-08-26T00:00:00+00:00",
+            GateOutcome::Failed,
+        );
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-ten", Some("p-new"), tenure),
+            Some(0.0)
+        );
+        // The predecessor's own reading is untouched by any of this.
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-ten", Some("p-old"), month),
+            Some(1.0)
+        );
+    }
+
+    /// Rows written before per-holder attribution carry `persona_id = ''`.
+    /// They cannot belong to anybody else, so they stay in the reading.
+    #[test]
+    fn unattributed_legacy_gate_runs_are_still_counted() {
+        let pool = init_test_db().unwrap();
+        gate_run_at(
+            &pool,
+            "proj-legacy",
+            "",
+            "2026-08-26T00:00:00+00:00",
+            GateOutcome::Passed,
+        );
+        assert_eq!(
+            gate_pass_rate_since(
+                &pool,
+                "proj-legacy",
+                Some("p-new"),
+                "2026-08-25T00:00:00+00:00"
+            ),
+            Some(1.0)
+        );
+    }
+
+    /// The proposal ledger's "does a record exist" probe is per holder too, so
+    /// a new hire reads `None` rather than the predecessor's merges.
+    #[test]
+    fn the_proposal_ledger_is_read_per_holder() {
+        let pool = init_test_db().unwrap();
+        let p = upsert_proposal(
+            &pool,
+            "proj-prop",
+            "p-old",
+            "autopilot/old",
+            "sha-o",
+            None,
+            &[c("sha-o", "fix: o")],
+        )
+        .unwrap();
+        mark_merged(&pool, &p.id, "2026-08-10T00:00:00+00:00", Some("merge-1")).unwrap();
+        let month = "2026-08-01T00:00:00+00:00";
+        let tenure = "2026-08-25T00:00:00+00:00";
+
+        // Project-wide, the month shows a merge.
+        assert_eq!(
+            proposal_counts_since(&pool, "proj-prop", None, month)
+                .unwrap()
+                .merged,
+            1
+        );
+        // The new hire has no proposal ledger of its own.
+        assert!(proposal_counts_since(&pool, "proj-prop", Some("p-new"), tenure).is_none());
+
+        // Once it authors one, a 0 merged is its own real reading.
+        upsert_proposal(
+            &pool,
+            "proj-prop",
+            "p-new",
+            "autopilot/new",
+            "sha-n",
+            None,
+            &[c("sha-n", "fix: n")],
+        )
+        .unwrap();
+        let mine = proposal_counts_since(&pool, "proj-prop", Some("p-new"), month).unwrap();
+        assert_eq!((mine.seen, mine.merged, mine.reverted), (1, 0, 0));
     }
 
     #[test]
@@ -1827,7 +1978,7 @@ mod tests {
     fn no_proposals_at_all_is_none_not_zero() {
         let pool = init_test_db().unwrap();
         assert_eq!(
-            proposal_counts_since(&pool, "proj-6", "2000-01-01T00:00:00+00:00"),
+            proposal_counts_since(&pool, "proj-6", None, "2000-01-01T00:00:00+00:00"),
             None
         );
     }
@@ -1845,7 +1996,8 @@ mod tests {
             &[c("sha-a", "fix: a")],
         )
         .unwrap();
-        let counts = proposal_counts_since(&pool, "proj-7", "2000-01-01T00:00:00+00:00").unwrap();
+        let counts =
+            proposal_counts_since(&pool, "proj-7", None, "2000-01-01T00:00:00+00:00").unwrap();
         assert_eq!(counts.merged, 0);
         assert_eq!(counts.reverted, 0);
         assert_eq!(counts.seen, 1);
@@ -1877,11 +2029,13 @@ mod tests {
         assert_eq!(stored.merge_sha.as_deref(), Some("merge-1"));
 
         mark_reverted(&pool, &p.id, "2026-08-12T00:00:00+00:00", "revert-1").unwrap();
-        let counts = proposal_counts_since(&pool, "proj-8", "2026-08-01T00:00:00+00:00").unwrap();
+        let counts =
+            proposal_counts_since(&pool, "proj-8", None, "2026-08-01T00:00:00+00:00").unwrap();
         assert_eq!((counts.merged, counts.reverted), (1, 1));
         // A window that opens after both observations sees neither — but the
         // project still HAS proposals, so it is 0, not None.
-        let later = proposal_counts_since(&pool, "proj-8", "2026-09-01T00:00:00+00:00").unwrap();
+        let later =
+            proposal_counts_since(&pool, "proj-8", None, "2026-09-01T00:00:00+00:00").unwrap();
         assert_eq!((later.merged, later.reverted), (0, 0));
     }
 
@@ -2216,7 +2370,7 @@ mod tests {
         assert_eq!(sweep.runs[1].outcome, GateOutcome::Failed);
         assert!(sweep.runs[1].first_error.is_some());
         assert_eq!(
-            gate_pass_rate_since(&pool, "proj-gate", "2000-01-01T00:00:00+00:00"),
+            gate_pass_rate_since(&pool, "proj-gate", None, "2000-01-01T00:00:00+00:00"),
             Some(0.5)
         );
         // The shared checkout is untouched: the branch was never checked out
@@ -2256,7 +2410,7 @@ mod tests {
         assert_eq!(sweep.source, GateSource::NotConfigured);
         assert!(sweep.runs.is_empty());
         assert_eq!(
-            gate_pass_rate_since(&pool, "proj-none", "2000-01-01T00:00:00+00:00"),
+            gate_pass_rate_since(&pool, "proj-none", None, "2000-01-01T00:00:00+00:00"),
             None
         );
     }
@@ -2293,7 +2447,7 @@ mod tests {
         // The only recorded run did not run, so there is NO rate — not 0.0,
         // and emphatically not 1.0.
         assert_eq!(
-            gate_pass_rate_since(&pool, "proj-timeout", "2000-01-01T00:00:00+00:00"),
+            gate_pass_rate_since(&pool, "proj-timeout", None, "2000-01-01T00:00:00+00:00"),
             None
         );
     }
@@ -2409,7 +2563,7 @@ mod tests {
         assert!(sweep.linked_deps.is_empty());
         // did_not_run is in neither half: one pass out of one that ran.
         assert_eq!(
-            gate_pass_rate_since(&pool, "proj-nodeps", "2000-01-01T00:00:00+00:00"),
+            gate_pass_rate_since(&pool, "proj-nodeps", None, "2000-01-01T00:00:00+00:00"),
             Some(1.0)
         );
     }

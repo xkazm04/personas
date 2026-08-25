@@ -828,6 +828,13 @@ fn set_probation_autopilot(db: &crate::db::DbPool, project_id: &str, notes: &mut
 }
 
 /// Persist the enforceable mandate + tenure for `project_id`.
+///
+/// A project holds at most ONE mandate (`app_master_mandate:<project_id>` is a
+/// single settings key), so a new hire on a project that already had one
+/// **replaces** it: the record is built from scratch here, which is what resets
+/// `headless_incomplete_streak`, `probation_decided_at` and the tenure start.
+/// Inheriting any of those would let a fresh hire be retired on its first
+/// `incomplete` because its predecessor had already been extended once.
 fn persist_mandate(
     db: &crate::db::DbPool,
     project_id: &str,
@@ -883,6 +890,9 @@ fn persist_mandate(
         })
         .unwrap_or_default();
 
+    // One instant for both clocks: the probation deadline and the tenure start
+    // are the same approval, and reading `now()` twice would let them disagree.
+    let approved_at = chrono::Utc::now();
     let record = MandateRecord {
         persona_id: persona_id.to_string(),
         project_id: project_id.to_string(),
@@ -894,8 +904,12 @@ fn persist_mandate(
         },
         // Probation is measured from the APPROVAL, not from the dispatch: the
         // clock the human agreed to starts when they clicked.
-        probation_ends_at: (chrono::Utc::now() + chrono::Duration::days(probation_days))
-            .to_rfc3339(),
+        probation_ends_at: (approved_at + chrono::Duration::days(probation_days)).to_rfc3339(),
+        // The tenure starts here too. Every backbone reading about this hire is
+        // bounded by it, so a re-hire on a project that already ran nights
+        // starts from zero instead of inheriting the previous holder's ledger
+        // (`personas_engine::app_master::tenure_window`).
+        hired_at: approved_at.to_rfc3339(),
         review_cadence_days,
         retire_criteria,
         probation_decided_at: None,

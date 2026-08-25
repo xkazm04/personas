@@ -531,6 +531,111 @@ Limits worth knowing:
 Tested in `personas-engine` (11 checks in `kp_tool_surface`), where the crate's
 test binary actually runs — see §13.8 for why the pure logic lives there.
 
+### 10.6 Design-pass hygiene — a suggested trigger never fails the hire build (2026-08-25)
+
+The one-shot build's design pass proposes triggers. `promote_build_draft_inner`
+then validates them (step 3, `validate_triggers`) and, until this change, a
+proposal it did not like failed the **whole build**. Bench sweep #17 lost two
+live kp hire sessions — 20–40 minutes of Claude session each — to two strings:
+
+| Session | Refusal | What the design pass actually wrote |
+| --- | --- | --- |
+| `b18ae540…` (one-shot kp hire) | `Validation error: Invalid cron expression: Invalid value: {{param.daily_audit_hour}}` | the placeholder it had been *shown*, un-substituted |
+| kp-tight-budget | `Validation error: Invalid cron expression: Expected 5 fields, got 1` | a bare cadence word / number where a 5-field cron belongs |
+
+Neither validator was wrong. The blast radius was: every tool test, every fix
+pass and every row that would have been promoted went with one advisory field on
+one trigger. The same log lines also carried
+`missing_cap=uc_baseline_scan missing_field=suggested_trigger` — capabilities the
+design pass gave no trigger suggestion at all (see the last bullet below).
+
+**The rule.** `personas_core::validation::design_pass_hygiene` runs **once**, in
+`promote_build_draft_inner`, on the built IR — after adoption answers and recipe
+parameters are applied, **before** `ensure_webhook_secrets` and therefore before
+`validate_triggers`. A cadence suggestion that cannot be honoured costs the
+*trigger*; it never costs the *build*.
+
+Unresolved `{{…}}` placeholders, in any string in a trigger config (recursed
+through nested objects and arrays) and in `agent_ir.events[]`, keyed on the
+field's own name:
+
+| Field | Rule |
+| --- | --- |
+| `cron`, `cron_expression` | → `0 2 * * *` — the same nightly default `app_master_hire::install_triggers` already applies to a kp `schedule` trigger arriving without a cron |
+| `timezone`, `time_zone`, `tz` | → `UTC` — the only zone guaranteed to parse |
+| `url`, `endpoint`, `webhook_url`, `callback_url`, `event_type`, `listen_event_type` | demote the trigger — a poller aimed at a guessed URL is worse than no poller |
+| `trigger_type` itself | demote the trigger — the kind is unknowable |
+| everything else (`interval_seconds`, `window_seconds`, `webhook_secret`, numeric params) | drop the field |
+| `events[].event_type` | drop the whole event subscription |
+| `events[].source_filter` | drop the field — the subscription keeps its event type and stops filtering by source |
+
+A `schedule` trigger's **cron** is then checked for real, in order:
+
+1. it parses (`personas_core::cron::parse_cron`, Jenkins-`H` forms included) →
+   untouched;
+2. it is a recognised shorthand → coerced: `daily` / `nightly` / `@daily` /
+   `every day` → `0 2 * * *`, `@midnight` → `0 0 * * *`, `hourly` →
+   `0 * * * *`, `weekly` → `0 2 * * 1`, `monthly` → `0 2 1 * *`, `yearly` →
+   `0 2 1 1 *`, and a bare hour `0`–`23` → `0 <n> * * *`. A design pass that
+   wrote `daily` communicated a real cadence and only got the notation wrong;
+3. anything else → the trigger is demoted, with a note quoting the raw value
+   verbatim so a reviewer sees what the model actually proposed.
+
+A `schedule` trigger's **timezone** that `scheduler::resolve_schedule_tz` cannot
+parse (`"local"`, a city name) becomes `UTC`. Left alone it is worse than a
+validation error: `compute_next_from_config` returns `None` and
+`create_triggers_in_tx` raises the "born dead" refusal one step further along.
+
+**Demote, not delete.** `ir.triggers[i]` is positionally aligned with
+`ir.use_cases[i]` — `build_structured_use_cases` reads `ir.triggers.get(idx)`,
+and the capability-exclusion pass filters both arrays in lock-step. Removing an
+element from the middle would hand every later capability the wrong trigger. So a
+doomed trigger is rewritten **in place** to `manual` with an empty config,
+keeping its description and its `use_case_id`: the capability stays and becomes
+on-demand, which is exactly what the vocabulary already means by "no trigger".
+
+**The leniency is scoped to model output.** This pass runs on a build session's
+IR and nowhere else. `trigger_repo::create` / `update` — the IPC commands behind
+the trigger UI — are untouched and stay strict, because a human who types `daily`
+into the Add-trigger form is told so immediately and for free. The validators
+themselves were not relaxed at all: `validate_config` still rejects `daily` and
+`* * *`, asserted by
+`a_human_authored_bad_cron_is_still_refused_by_the_validator`.
+
+**Where a reviewer sees it.** Every change is logged one line at a time at
+`warn`, naming the field and the raw value, plus a summary line. The full note
+list is written to `personas.setup_detail.notes` (new `PersonaSetup` field,
+`#[serde(default)]`, carried forward by `recompute_persona_setup` so a later
+credential recompute cannot erase it), and the counts ride back on the promote
+result as `design_hygiene_normalized` / `design_hygiene_dropped`. A build that
+silently dropped a schedule and then reported a persona that "runs on its own" is
+the drift this list closes.
+
+Limits worth knowing:
+
+- A **missing** `suggested_trigger` was already non-fatal and still is. In
+  one-shot mode `runner.rs` logs `missing_cap=… missing_field=suggested_trigger`
+  at `warn` and lets the `agent_ir` through deliberately (the user cannot answer
+  a clarifying question in an autonomous build); promote then reads
+  `ir.triggers.get(idx) → None`, writes `suggested_trigger: null` on the
+  capability and creates no trigger row. The capability is on-demand — the same
+  end state a demotion produces.
+- The pass only **adds** a field to a trigger it already changed. A schedule that
+  arrives with neither cron nor interval and nothing else wrong with it is still
+  the pre-existing `validate_schedule_has_cron_or_interval` refusal, asserted by
+  `an_untouched_schedule_with_no_cadence_keeps_its_pre_existing_refusal`.
+- A cron that **parses but has no future fire time** (`0 0 30 2 *`) still reaches
+  `create_triggers_in_tx` and still raises the "born dead" refusal. Open — the
+  hygiene pass checks syntax, not reachability.
+- `interval_seconds` is only repaired when it was a *placeholder*. A malformed
+  literal interval still fails `validate_config`. The bench evidence named cron
+  twice; widening the coercion is a separate change.
+
+Tested in `personas-core` (33 checks in `validation::design_pass_hygiene`) —
+`app_lib`'s test binary cannot launch on the operator's machine
+(`STATUS_ENTRYPOINT_NOT_FOUND`), so the pure logic lives where the tests run, the
+same reasoning as §10.5.
+
 ---
 
 ## 11. App master (P4) — the mandated hire
@@ -671,23 +776,79 @@ persona — the v1 payload is unchanged, byte for byte.
 
 **Every field is optional and every `None` is omitted from the wire**, because
 kp's backbone treats an absent reading as a coverage gap and a present `0` as a
-measurement. What is real today, and what is not:
+measurement.
+
+**Every reading below is windowed to the holder's TENURE, not the project's
+month** — see §11.4.1. "This month" in the table means "this month, from this
+hire onwards". What is real today, and what is not:
 
 | Field | State | Source / why |
 | --- | --- | --- |
-| `proposalsOpened` | **real** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` this month. Each dispatch carries the branch-only guardrail, so this counts sessions dispatched to author a branch — not branches confirmed on a remote. `None` when the engine has not run for the project (no ledger, not zero). |
-| `proposalsMerged` | **real (P5a)** | `COUNT` over `app_master_proposals` where `merged_at` falls in the month. Set by the reconciler when `git merge-base --is-ancestor <branch> <main_branch>` says the tip landed; the date is the committer date of the earliest main-branch commit that descends from it. `None` **only** when the project has no proposal row at all — with no ledger there is nothing to be right about. Once one proposal exists, `0` is a real reading. |
-| `proposalsReverted` | **real (P5a)** | `COUNT` over `app_master_proposals` where `reverted_at` falls in the month. A merged proposal is reverted when a later main-branch commit says `Revert "<subject>"` or `This reverts commit <sha>` about one of the commits captured on the branch at discovery. Same `None` rule. |
-| `gatePassRate` | **real (P5a)** | `passed / (passed + failed)` over `app_master_gate_runs` this month — runs of the repository's **own declared gate commands** against proposal branches. A command that timed out or could not be spawned is recorded `did_not_run` and sits in **neither** half. `None` when no gate command ran in the window, including the *not configured* case (a mandate that declares none), which is not a pass. |
-| `forbiddenClassViolations` | **real** | `COUNT` over `app_master.forbidden_class_violation` events for the project this month. A `0` here is a genuine reading. |
-| `kpiDeltas[]` | **real** | The project's App-master-seeded KPIs. `measured` is `current_value.is_some() && last_measured_at.is_some()` — a value with no reading time is a leftover, not a reading. |
-| `budgetReservedUsd` | **real** | `SUM(projected_cost_usd)` over the month's night runs. That projection **is** the reservation: it is taken before any session spawns and it is what the ceiling is checked against. `None` when no night run happened. |
-| `budgetSettledUsd` | **real** | The persona's settled month-to-date spend, sharing `MONTHLY_SPEND_PREDICATE` with the budget UI. |
+| `proposalsOpened` | **real** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` **since the hire** (§11.4.1; the table carries no actor column, so the window is the whole attribution). Each dispatch carries the branch-only guardrail, so this counts sessions dispatched to author a branch — not branches confirmed on a remote. `None` when the engine has not run for the project (no ledger, not zero). |
+| `proposalsMerged` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `merged_at` falls in the tenure window. Set by the reconciler when `git merge-base --is-ancestor <branch> <main_branch>` says the tip landed; the date is the committer date of the earliest main-branch commit that descends from it. `None` **only** when this holder has no proposal row at all — with no ledger there is nothing to be right about. Once one of its proposals exists, `0` is a real reading. |
+| `proposalsReverted` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `reverted_at` falls in the tenure window. A merged proposal is reverted when a later main-branch commit says `Revert "<subject>"` or `This reverts commit <sha>` about one of the commits captured on the branch at discovery. Same `None` rule. |
+| `gatePassRate` | **real (P5a)** | `passed / (passed + failed)` over **this persona's** `app_master_gate_runs` in the tenure window — runs of the repository's **own declared gate commands** against proposal branches. A command that timed out or could not be spawned is recorded `did_not_run` and sits in **neither** half. `None` when no gate command ran in the window, including the *not configured* case (a mandate that declares none), which is not a pass. |
+| `forbiddenClassViolations` | **real** | `COUNT` over `app_master.forbidden_class_violation` events for the project in the tenure window. A `0` here is a genuine reading. The holder is named only inside the event's **encrypted** payload, so there is no persona predicate to add — the window *is* the attribution here. |
+| `kpiDeltas[]` | **real** | The project's App-master-seeded KPIs. `baseline` is re-anchored to the last **production** `dev_kpi_measurements` reading at or before `hiredAt` when one exists, so a re-hire is not measured from its predecessor's starting line; with no such reading the stored `baseline_value` stands (a missing history is not a reason to invent a start). `measured` is `current_value.is_some() && last_measured_at.is_some()` — a value with no reading time is a leftover, not a reading. |
+| `budgetReservedUsd` | **real** | `SUM(projected_cost_usd)` over the tenure window's night runs. That projection **is** the reservation: it is taken before any session spawns and it is what the ceiling is checked against. `None` when no night run happened. |
+| `budgetSettledUsd` | **real** | The persona's settled month-to-date spend, sharing `MONTHLY_SPEND_PREDICATE` with the budget UI. Already **per persona**, so it never carried another holder's spend; it stays on the calendar-month boundary so it keeps matching the v1 `costUsd` in the same payload, and a persona is created at hire anyway. |
 | `budgetUnmeasured` | **real** | `runs > 0 && cost_usd == 0.0` — the subscription-auth case. "It cost nothing" and "nobody was counting" are opposite findings that look identical in a number. |
-| `ledgerConsistent` | **real** | Cross-ledger check: every session the night-run ledger claims to have dispatched must have a `dev_tasks` row, written by a different function on the same path. `None` when nothing was dispatched — there is no honest verdict on an empty set. |
+| `ledgerConsistent` | **real** | Cross-ledger check over the tenure window's dispatched sessions: every session the night-run ledger claims to have dispatched must have a `dev_tasks` row, written by a different function on the same path. `None` when nothing was dispatched — there is no honest verdict on an empty set. |
 | `autopilotMode` | **real** | The project's `autopilot_mode:<id>` row; `off` when there is none (the honest floor). |
 
 Lifecycle gains `probation_review` with `{decision, note}`.
+
+#### 11.4.1 The tenure window — a hire never inherits the last one's ledger
+
+> Found by **bench sweep #17 (2026-08-25)**, fixed the same day.
+
+Every ledger the rollup reads is scoped to the **project**, and a project
+outlives its App masters. The kp bench binds every scenario to the *same*
+`DevProject` (they are matched by `root_path`), so the readings accumulated
+across hires: a previous holder's **3** dispatched proposals were reported as a
+brand-new rung-0 hire's `proposalsOpened`, while that hire's own night had
+correctly recorded `blocked: 1, dispatched: 0`. The same inheritance applied to
+merges, reverts, gate runs, violations and the reserved budget. The number was
+about the project; the probation decision it feeds is about the holder.
+
+The record now carries the tenure start, and one helper decides the bounds:
+
+- `MandateRecord.hiredAt` (RFC-3339) is written by `persist_mandate` at hire,
+  from the same instant as `probationEndsAt` — the approval, not the dispatch.
+  It is an **additive** serde field: a record written before this change carries
+  `""`, which means *unknown start* and falls back to the reporting period's own
+  start, the pre-fix behaviour.
+- `personas_engine::app_master::tenure_window(period_start, record, persona_id)`
+  returns `since = max(period_start, hiredAt)` plus the persona to filter by.
+  Instants are **parsed**, not string-compared, so `Z` and `+00:00` cannot order
+  wrongly. The bound only ever moves **in**, so the payload still describes one
+  calendar month.
+- The tenure bound applies only when the project's current mandate is *this
+  persona's own*. A former holder is separated from its successor by the persona
+  filter, not by being clipped to a start date that was never its own.
+- Ledgers that carry an actor (`app_master_proposals`, `app_master_gate_runs`)
+  are filtered by `persona_id` as well — including the "does a record exist at
+  all" probe, so a new hire on a project full of its predecessor's proposals
+  reads `null` (no record of its own) rather than the predecessor's numbers. A
+  row with `persona_id = ''` predates per-holder attribution and cannot belong
+  to anybody else, so it stays in the reading instead of being deleted from it.
+- `autopilot_night_runs` has **no** actor column, and the violation event names
+  its holder only inside an encrypted payload; for those two the window is the
+  entire attribution.
+
+**One helper, one window.** The probation packet does not re-derive any of this:
+`engine::app_master_probation::collect_backbone` reads its backbone through the
+same `kp_reporter::app_master_rollup`, so the review card, the headless
+anchorless decision and the bench cannot disagree about which hire a number
+belongs to.
+
+**A re-hire starts from zero.** `app_master_mandate:<project_id>` is a single
+settings key and `persist_mandate` builds a fresh record, so a new hire on a
+project that already had one *replaces* the mandate — resetting the tenure
+start, `headless_incomplete_streak`, `probation_decided_at` and the pending
+review id. Inheriting the streak would let a fresh hire be retired on its first
+`incomplete` because its predecessor had already been extended once.
+
 
 ### 11.5 Probation review
 
@@ -912,6 +1073,11 @@ app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
 - **A proposal that never becomes a local branch is never seen.** The dispatch
   ledger still counts it under `proposalsOpened`; the gap between the two
   numbers is itself a reading (a dispatched session that authored nothing).
+- **A gate run is attributed by `persona_id` + the tenure window** (§11.4.1), not
+  by the calendar month: a run recorded before the current holder was hired is
+  not evidence about it, even on the same project in the same month. Runs
+  written before per-holder attribution carry `persona_id = ''` and are still
+  counted — they cannot belong to anybody else.
 - **A project with no declared gates reports `gatePassRate: null` forever.**
   That is correct — there is nothing to run — but it means kp's `gates` rule
   stays unmeasured for that hire. The fix is on kp's side of the wire: send the

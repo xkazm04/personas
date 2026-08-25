@@ -202,6 +202,16 @@ pub struct MandateRecord {
     pub mandate: Mandate,
     /// RFC-3339. Approval time + `tenure.probationDays`.
     pub probation_ends_at: String,
+    /// RFC-3339 **hire (approval) time** — the start of this holder's tenure,
+    /// and the lower bound of every backbone reading taken about it (see
+    /// [`tenure_window`]).
+    ///
+    /// Additive: legacy rows written before the tenure window existed carry
+    /// `""`, which means "unknown tenure start" and falls back to the reporting
+    /// period's own start — the pre-P6f behaviour, for records that cannot say
+    /// anything better.
+    #[serde(default)]
+    pub hired_at: String,
     /// `tenure.reviewCadenceDays`.
     #[serde(default)]
     pub review_cadence_days: i64,
@@ -875,6 +885,144 @@ pub fn set_mandate(pool: &DbPool, record: &MandateRecord) -> Result<(), AppError
 }
 
 // ---------------------------------------------------------------------------
+// The tenure window — the ONE place a backbone reading's bounds are decided
+// ---------------------------------------------------------------------------
+
+/// The bounds every App-master backbone reading is taken over.
+///
+/// # Why this exists (bench sweep #17, 2026-08-25)
+///
+/// Every kp bench scenario binds the **same** `DevProject` (they are matched by
+/// `root_path`), so the project-scoped ledgers — night runs, the proposal
+/// ledger, gate runs, the violation events — accumulate across hires. The
+/// rollup used to read them over the calendar month, which counted a PREVIOUS
+/// holder's three dispatched proposals against a brand-new rung-0 hire whose
+/// own night was correctly `blocked: 1, dispatched: 0`. The reading was about
+/// the *project*; the review it feeds is about the *holder*.
+///
+/// So a reading is bounded by the LATER of the reporting period's start and the
+/// holder's own hire time, and — wherever the ledger row carries an actor — by
+/// the holder's persona id as well. A re-hire starts from zero.
+///
+/// The upper bound stays open (`now`): a mandate is replaced, never
+/// co-held, so "since this holder was hired" is already "this holder's rows".
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TenureWindow {
+    /// RFC-3339 lower bound for every ledger read.
+    pub since: String,
+    /// The holder to filter by on ledgers that carry an actor column. `None`
+    /// when the caller could not name one.
+    pub persona_id: Option<String>,
+    /// True when the hire time actually moved the bound in from the period
+    /// start — i.e. this holder's tenure began inside the reporting period.
+    /// Reported rather than inferred, so a packet can say which it is.
+    pub tenure_bounded: bool,
+}
+
+/// Later of two RFC-3339 instants. Parsed rather than compared as strings so
+/// two different UTC spellings (`Z` and `+00:00`) cannot order wrongly;
+/// an unparseable side loses (the caller's fallback wins).
+fn later_rfc3339(period_start: &str, hired_at: &str) -> Option<String> {
+    let a = chrono::DateTime::parse_from_rfc3339(period_start).ok()?;
+    let b = chrono::DateTime::parse_from_rfc3339(hired_at).ok()?;
+    Some(if b > a {
+        hired_at.to_string()
+    } else {
+        period_start.to_string()
+    })
+}
+
+/// Build the window for one holder's readings over one reporting period.
+///
+/// `record` is the project's CURRENT mandate. The tenure bound is applied only
+/// when that mandate is the reporting persona's own — a former holder's numbers
+/// must not be clipped to its successor's start date, and clipping them to
+/// nothing would be a claim rather than a reading. Ledger filtering by persona
+/// still applies in that case, which is what actually separates the two.
+///
+/// This is the single windowing helper: the reporter and the probation packet
+/// (`engine::app_master_probation::collect_backbone`, which reads its backbone
+/// through the same `app_master_rollup`) both bound their readings here.
+pub fn tenure_window(
+    period_start: &str,
+    record: Option<&MandateRecord>,
+    persona_id: &str,
+) -> TenureWindow {
+    let holder = record.filter(|r| r.persona_id == persona_id && !persona_id.is_empty());
+    let since = holder
+        .map(|r| r.hired_at.trim())
+        .filter(|h| !h.is_empty())
+        .and_then(|h| later_rfc3339(period_start, h))
+        .unwrap_or_else(|| period_start.to_string());
+    TenureWindow {
+        tenure_bounded: since != period_start,
+        since,
+        persona_id: (!persona_id.is_empty()).then(|| persona_id.to_string()),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Night-run ledger (the `proposalsOpened` / `budgetReservedUsd` reading)
+// ---------------------------------------------------------------------------
+
+/// What the overnight ledger recorded for one project inside a window.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct NightRunTotals {
+    /// Unattended fix sessions dispatched — the `proposalsOpened` reading.
+    pub dispatched: i64,
+    /// The governor's pre-dispatch projection, which IS the reservation.
+    pub reserved_usd: f64,
+    /// Session ids the ledger claims to have dispatched (cross-ledger check).
+    pub session_ids: Vec<String>,
+}
+
+/// Night-run aggregates for one project since `since` (RFC-3339).
+///
+/// `autopilot_night_runs` carries **no actor column** — a night belongs to the
+/// project, and the mandate holder at the time is not recorded on the row — so
+/// the tenure window is the only thing that separates one holder's nights from
+/// another's. That is exactly what it was introduced for; see [`TenureWindow`].
+///
+/// `None` when no night ran in the window: nothing was dispatched *and* nothing
+/// was reserved is not the same finding as "the engine never ran here".
+pub fn night_run_totals_since(
+    pool: &DbPool,
+    project_id: &str,
+    since: &str,
+) -> Option<NightRunTotals> {
+    let conn = pool.get().ok()?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT dispatched_count, projected_cost_usd, session_ids
+             FROM autopilot_night_runs
+             WHERE project_id = ?1 AND started_at >= ?2",
+        )
+        .ok()?;
+    let rows = stmt
+        .query_map(rusqlite::params![project_id, since], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, f64>(1)?,
+                r.get::<_, Option<String>>(2)?,
+            ))
+        })
+        .ok()?;
+    let mut totals = NightRunTotals::default();
+    let mut any = false;
+    for row in rows.flatten() {
+        any = true;
+        totals.dispatched += row.0;
+        totals.reserved_usd += row.1;
+        if let Some(json) = row.2 {
+            if let Ok(ids) = serde_json::from_str::<Vec<String>>(&json) {
+                totals.session_ids.extend(ids);
+            }
+        }
+    }
+    any.then_some(totals)
+}
+
+// ---------------------------------------------------------------------------
 // Violation ledger
 // ---------------------------------------------------------------------------
 
@@ -927,6 +1075,13 @@ pub fn record_violations(pool: &DbPool, record: &MandateRecord, violations: &[Vi
 }
 
 /// Count recorded violations for a project since `since` (RFC-3339).
+///
+/// The holder is named in the event's `payload`, which is **encrypted at rest**
+/// (`persona_events` payloads are — see
+/// `personas_db::repos::communication::events`), so there is no persona
+/// predicate to put in this WHERE clause. The [`TenureWindow`]'s `since` is
+/// therefore the whole of the attribution here: violations recorded before this
+/// holder was hired are outside the window and are not counted against it.
 pub fn count_violations_since(pool: &DbPool, project_id: &str, since: &str) -> Option<i64> {
     personas_db::repos::communication::events::count_by_type_and_source_since(
         pool,
@@ -1453,6 +1608,7 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
                 owner: "ana@example.com".into(),
             },
             probation_ends_at: "2026-09-22T10:00:00Z".into(),
+            hired_at: "2026-08-23T10:00:00+00:00".into(),
             review_cadence_days: 30,
             retire_criteria: vec!["no merged proposal in two windows".into()],
             probation_decided_at: None,
@@ -1464,7 +1620,25 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
         assert!(json.contains("\"scopeRung\":2"), "{json}");
         assert!(json.contains("\"test_deletion_or_skip\""), "{json}");
         assert!(json.contains("\"probationEndsAt\""), "{json}");
+        assert!(json.contains("\"hiredAt\""), "{json}");
         assert_eq!(serde_json::from_str::<MandateRecord>(&json).unwrap(), rec);
+    }
+
+    /// A record written before the tenure window existed must still parse — and
+    /// must say "unknown", not invent a hire date.
+    #[test]
+    fn a_legacy_mandate_row_without_hired_at_still_parses_as_unknown() {
+        let legacy = r#"{
+            "personaId": "p1", "projectId": "proj1",
+            "mandate": {"scopeRung": 2, "forbiddenClasses": [], "approvalGates": [], "owner": ""},
+            "probationEndsAt": "2026-09-22T10:00:00Z"
+        }"#;
+        let rec: MandateRecord = serde_json::from_str(legacy).unwrap();
+        assert_eq!(rec.hired_at, "");
+        // …and it falls back to the period start rather than clipping anything.
+        let w = tenure_window("2026-08-01T00:00:00+00:00", Some(&rec), "p1");
+        assert_eq!(w.since, "2026-08-01T00:00:00+00:00");
+        assert!(!w.tenure_bounded);
     }
 
     #[test]
@@ -1480,5 +1654,184 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
             personas_db::settings_keys::validate_value(&key, "{ truncated").is_err(),
             "a truncated record must be rejected at write time, not read as an empty mandate"
         );
+    }
+
+    // -- the tenure window -----------------------------------------------------
+
+    fn hired(persona: &str, at: &str) -> MandateRecord {
+        MandateRecord {
+            persona_id: persona.into(),
+            project_id: "proj-t".into(),
+            mandate: Mandate::default(),
+            probation_ends_at: "2026-09-30T00:00:00+00:00".into(),
+            hired_at: at.into(),
+            review_cadence_days: 30,
+            retire_criteria: vec![],
+            probation_decided_at: None,
+            probation_decision: None,
+            probation_review_id: None,
+            headless_incomplete_streak: 0,
+        }
+    }
+
+    const MONTH: &str = "2026-08-01T00:00:00+00:00";
+
+    #[test]
+    fn a_hire_inside_the_period_moves_the_window_in_to_the_hire() {
+        let rec = hired("p1", "2026-08-25T09:30:00+00:00");
+        let w = tenure_window(MONTH, Some(&rec), "p1");
+        assert_eq!(w.since, "2026-08-25T09:30:00+00:00");
+        assert!(w.tenure_bounded);
+        assert_eq!(w.persona_id.as_deref(), Some("p1"));
+    }
+
+    #[test]
+    fn a_hire_before_the_period_leaves_the_period_start_alone() {
+        let rec = hired("p1", "2026-07-02T00:00:00+00:00");
+        let w = tenure_window(MONTH, Some(&rec), "p1");
+        assert_eq!(w.since, MONTH, "the payload covers ONE period, not two");
+        assert!(!w.tenure_bounded);
+    }
+
+    /// Z and +00:00 are the same instant; a string compare would order them
+    /// wrongly ('Z' > '+'), so the helper parses.
+    #[test]
+    fn utc_spellings_do_not_change_the_ordering() {
+        let rec = hired("p1", "2026-07-31T23:59:59Z");
+        assert_eq!(tenure_window(MONTH, Some(&rec), "p1").since, MONTH);
+    }
+
+    #[test]
+    fn a_mandate_held_by_someone_else_does_not_clip_this_persona() {
+        // The successor's start date says nothing about the former holder's
+        // window — persona filtering, not clipping, separates the two.
+        let rec = hired("p2", "2026-08-25T09:30:00+00:00");
+        let w = tenure_window(MONTH, Some(&rec), "p1");
+        assert_eq!(w.since, MONTH);
+        assert!(!w.tenure_bounded);
+        assert_eq!(w.persona_id.as_deref(), Some("p1"));
+    }
+
+    #[test]
+    fn no_mandate_at_all_falls_back_to_the_period() {
+        let w = tenure_window(MONTH, None, "p1");
+        assert_eq!(w.since, MONTH);
+        assert_eq!(w.persona_id.as_deref(), Some("p1"));
+    }
+
+    // -- the night-run ledger reading -----------------------------------------
+
+    fn insert_night(
+        pool: &DbPool,
+        project_id: &str,
+        night: &str,
+        started_at: &str,
+        dispatched: i64,
+        projected: f64,
+        sessions: &[&str],
+    ) {
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO autopilot_night_runs
+                (id, project_id, night, mode, status, dispatched_count,
+                 projected_cost_usd, session_ids, started_at)
+             VALUES (?1, ?2, ?3, 'full', 'done', ?4, ?5, ?6, ?7)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                project_id,
+                night,
+                dispatched,
+                projected,
+                serde_json::to_string(sessions).unwrap(),
+                started_at,
+            ],
+        )
+        .unwrap();
+    }
+
+    /// The bench-sweep-#17 regression, at the ledger: the previous holder's
+    /// dispatched proposals must not be counted against the new hire.
+    #[test]
+    fn night_runs_before_the_tenure_start_are_excluded() {
+        let pool = personas_db::init_test_db().unwrap();
+        insert_night(
+            &pool,
+            "proj-n",
+            "2026-08-20",
+            "2026-08-20T02:00:00+00:00",
+            3,
+            6.0,
+            &["sess-old"],
+        );
+        let rec = hired("p-new", "2026-08-25T00:00:00+00:00");
+        let w = tenure_window(MONTH, Some(&rec), "p-new");
+        assert!(
+            night_run_totals_since(&pool, "proj-n", &w.since).is_none(),
+            "the previous holder's night is not this holder's record"
+        );
+        // Over the calendar month — the pre-P6f window — it WAS counted.
+        let month = night_run_totals_since(&pool, "proj-n", MONTH).unwrap();
+        assert_eq!(month.dispatched, 3);
+
+        // The new hire's own night, correctly blocked, is the whole reading.
+        insert_night(
+            &pool,
+            "proj-n",
+            "2026-08-26",
+            "2026-08-26T02:00:00+00:00",
+            0,
+            0.0,
+            &[],
+        );
+        let mine = night_run_totals_since(&pool, "proj-n", &w.since).unwrap();
+        assert_eq!(mine.dispatched, 0, "blocked night, nothing dispatched");
+        assert_eq!(mine.reserved_usd, 0.0);
+        assert!(mine.session_ids.is_empty());
+    }
+
+    #[test]
+    fn night_runs_after_the_tenure_start_are_counted_with_their_reservation() {
+        let pool = personas_db::init_test_db().unwrap();
+        let rec = hired("p-new", "2026-08-25T00:00:00+00:00");
+        let w = tenure_window(MONTH, Some(&rec), "p-new");
+        insert_night(
+            &pool,
+            "proj-m",
+            "2026-08-26",
+            "2026-08-26T02:00:00+00:00",
+            2,
+            4.5,
+            &["sess-a", "sess-b"],
+        );
+        let t = night_run_totals_since(&pool, "proj-m", &w.since).unwrap();
+        assert_eq!(t.dispatched, 2);
+        assert_eq!(t.reserved_usd, 4.5);
+        assert_eq!(t.session_ids, vec!["sess-a", "sess-b"]);
+    }
+
+    /// A new hire REPLACES the project's mandate: the successor must not
+    /// inherit the headless extension streak or the decided-at stamp, or the
+    /// unattended loop would retire it on its first `incomplete`.
+    #[test]
+    fn a_rehire_replaces_the_mandate_and_resets_the_probation_state() {
+        let pool = personas_db::init_test_db().unwrap();
+        let mut first = hired("p-old", "2026-07-01T00:00:00+00:00");
+        first.headless_incomplete_streak = 1;
+        first.probation_decided_at = Some("2026-07-30T00:00:00+00:00".into());
+        first.probation_decision = Some("extended".into());
+        first.probation_review_id = Some("rev-1".into());
+        set_mandate(&pool, &first).unwrap();
+
+        let second = hired("p-new", "2026-08-25T00:00:00+00:00");
+        set_mandate(&pool, &second).unwrap();
+
+        let back = get_mandate(&pool, "proj-t").unwrap();
+        assert_eq!(back.persona_id, "p-new");
+        assert_eq!(back.hired_at, "2026-08-25T00:00:00+00:00");
+        assert_eq!(back.headless_incomplete_streak, 0);
+        assert_eq!(back.probation_decided_at, None);
+        assert_eq!(back.probation_decision, None);
+        assert_eq!(back.probation_review_id, None);
+        assert_eq!(back, second, "one key per project — a write REPLACES");
     }
 }
