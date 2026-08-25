@@ -373,6 +373,7 @@ struct ImpactResult {
 /// What one ingest pass recorded — returned by the command and rolled into the
 /// wave-complete notification by the sweeper.
 #[derive(Debug, Default, serde::Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct FeedImpactIngestSummary {
     pub ingested: u32,
