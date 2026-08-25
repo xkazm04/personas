@@ -6869,7 +6869,8 @@
       "hint_speed": "Senken Sie die Latenz mit schlankeren Prompts oder einem schnelleren Modell.",
       "hint_cost": "Senken Sie die Kosten pro Lauf mit einem günstigeren Modell oder kürzerem Kontext.",
       "hint_activity": "Lösen oder planen Sie diesen Agenten häufiger aus, um die Aktivität zu steigern.",
-      "improve_agent": "Diesen Agenten verbessern"
+      "improve_agent": "Diesen Agenten verbessern",
+      "section_subtitle": "{count} Agenten · Flotten-Durchschnitt {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "Automatische Aktualisierung ein",
@@ -7229,7 +7230,8 @@
       "open": "{count} offen",
       "sla_compliance": "SLA-Konformität",
       "consecutive_failures": "{count} aufeinanderfolgende Fehler",
-      "consecutive_failure": "{count} aufeinanderfolgender Fehler"
+      "consecutive_failure": "{count} aufeinanderfolgender Fehler",
+      "unknown": "Unbekannt"
     },
     "system_health": {
       "title": "Systemprüfungen",
@@ -15810,7 +15812,23 @@
       "global_hotkey_title": "Von überall sprechen",
       "ship_milestone_prose_label": "Was das Ausliefern bedeutet",
       "ship_milestone_prose_placeholder": "Optional: was das Ausliefern dieses Meilensteins wirklich bedeutet",
-      "fleet_plan_auto_approved": "Flottenplan automatisch genehmigt (autonomer Modus)."
+      "fleet_plan_auto_approved": "Flottenplan automatisch genehmigt (autonomer Modus).",
+      "ship_goals_badge_existing": "Existiert bereits",
+      "ship_goals_badge_new": "Neues Ziel",
+      "ship_goals_cancel": "Abbrechen",
+      "ship_goals_confirm": "Ziele anlegen",
+      "ship_goals_context_label": "Kontext, unter dem dieses Ziel abgelegt ist",
+      "ship_goals_core_note": "Jedes Ziel kommt in den Kern-Umfang. Es auf Später oder Nie zu verschieben, bleibt deine Sache.",
+      "ship_goals_count_one": "{count} Ziel für {name}",
+      "ship_goals_count_other": "{count} Ziele für {name}",
+      "ship_goals_created": "Zu {name} hinzugefügt: {created} angelegt, {bound} gab es schon.",
+      "ship_goals_description_label": "Was dieses Ziel abdeckt",
+      "ship_goals_description_placeholder": "Optional: was dieses Ziel tatsächlich abdeckt",
+      "ship_goals_empty": "Es bleibt nichts anzulegen. Brich ab oder bitte Athena, das Briefing noch einmal zu lesen.",
+      "ship_goals_heading": "Ziele aus dem Briefing",
+      "ship_goals_remove_row": "Dieses Ziel entfernen",
+      "ship_goals_title_label": "Zieltitel",
+      "ship_goals_title_placeholder": "Ein paar Worte, zum Beispiel Die Story aufbauen"
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",
@@ -20497,6 +20515,9 @@
     "description_placeholder": "Was das Ausliefern dieses Meilensteins wirklich bedeutet",
     "goals_rail_empty": "Noch keine Ziele — schreib eines, und Athena ordnet es ein",
     "goals_rail_title": "Ziele",
-    "description_editor_hint": "Strg+B für Fettdruck · Zeile mit „- “ beginnen für eine Liste"
+    "description_editor_hint": "Strg+B für Fettdruck · Zeile mit „- “ beginnen für eine Liste",
+    "decompose_brief": "Briefing aufschlüsseln",
+    "decompose_brief_no_brief": "Dieser Meilenstein hat noch kein Briefing. Schreib auf, was es heißt, ihn zu liefern, und schlüssle das auf.",
+    "decompose_brief_tooltip": "Bitte Athena, das Briefing dieses Meilensteins zu lesen und die darin genannten Ziele vorzuschlagen. Es wird nichts angelegt, bis du ihre Karte bestätigst."
   }
 }

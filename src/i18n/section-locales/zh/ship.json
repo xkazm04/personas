@@ -140,5 +140,8 @@
   "description_placeholder": "发布这个里程碑究竟意味着什么",
   "goals_rail_empty": "还没有目标——写一个，Athena 会把它归位",
   "goals_rail_title": "目标",
-  "description_editor_hint": "Ctrl+B 加粗 · 行首输入“- ”创建列表"
+  "description_editor_hint": "Ctrl+B 加粗 · 行首输入“- ”创建列表",
+  "decompose_brief": "拆解简报",
+  "decompose_brief_no_brief": "这个里程碑还没有简报。先写清楚交付它意味着什么，再来拆解。",
+  "decompose_brief_tooltip": "让 Athena 读这个里程碑的简报，并提出其中点名的目标。在你确认她的卡片之前，不会创建任何东西。"
 }

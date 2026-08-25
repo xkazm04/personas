@@ -140,5 +140,8 @@
   "description_placeholder": "このマイルストーンをリリースするとは実際どういうことか",
   "goals_rail_empty": "目標はまだありません。書けば Athena が配置します",
   "goals_rail_title": "目標",
-  "description_editor_hint": "Ctrl+B で太字 · 行頭に「- 」でリスト"
+  "description_editor_hint": "Ctrl+B で太字 · 行頭に「- 」でリスト",
+  "decompose_brief": "ブリーフを分解",
+  "decompose_brief_no_brief": "このマイルストーンにはまだブリーフがありません。出荷が何を意味するかを書いてから分解してください。",
+  "decompose_brief_tooltip": "このマイルストーンのブリーフを Athena に読ませ、そこに書かれたゴールを提案させます。カードを確定するまで何も作成されません。"
 }

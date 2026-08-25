@@ -140,5 +140,8 @@
   "description_placeholder": "Apa arti sebenarnya merilis milestone ini",
   "goals_rail_empty": "Belum ada tujuan — tulis satu dan Athena akan menempatkannya",
   "goals_rail_title": "Tujuan",
-  "description_editor_hint": "Ctrl+B untuk tebal · awali baris dengan “- ” untuk daftar"
+  "description_editor_hint": "Ctrl+B untuk tebal · awali baris dengan “- ” untuk daftar",
+  "decompose_brief": "Uraikan ringkasan",
+  "decompose_brief_no_brief": "Milestone ini belum punya ringkasan. Tulis apa artinya merilisnya, lalu uraikan itu.",
+  "decompose_brief_tooltip": "Minta Athena membaca ringkasan milestone ini dan mengusulkan sasaran yang disebutkannya. Tidak ada yang dibuat sampai kamu mengonfirmasi kartunya."
 }

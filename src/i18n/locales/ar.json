@@ -6869,7 +6869,8 @@
       "hint_speed": "قلّل زمن الاستجابة بمطالبات أبسط أو نموذج أسرع.",
       "hint_cost": "اخفض تكلفة التشغيل بنموذج أرخص أو سياق أقصر.",
       "hint_activity": "شغّل أو جدوِل هذا الوكيل بوتيرة أكبر لرفع النشاط.",
-      "improve_agent": "حسّن هذا الوكيل"
+      "improve_agent": "حسّن هذا الوكيل",
+      "section_subtitle": "{count} وكلاء · متوسط الأسطول {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "التحديث التلقائي مفعّل",
@@ -7229,7 +7230,8 @@
       "open": "{count} مفتوح",
       "sla_compliance": "امتثال SLA",
       "consecutive_failures": "{count} حالات فشل متتالية",
-      "consecutive_failure": "{count} فشل متتالٍ"
+      "consecutive_failure": "{count} فشل متتالٍ",
+      "unknown": "غير معروف"
     },
     "system_health": {
       "title": "فحوصات النظام",
@@ -15810,7 +15812,23 @@
       "global_hotkey_title": "تحدّث من أي مكان",
       "ship_milestone_prose_label": "ما الذي يعنيه الإطلاق",
       "ship_milestone_prose_placeholder": "اختياري: ما الذي يعنيه إطلاق هذا المعلم فعليًا",
-      "fleet_plan_auto_approved": "تمت الموافقة تلقائيًا على خطة الأسطول (الوضع المستقل)."
+      "fleet_plan_auto_approved": "تمت الموافقة تلقائيًا على خطة الأسطول (الوضع المستقل).",
+      "ship_goals_badge_existing": "موجود بالفعل",
+      "ship_goals_badge_new": "هدف جديد",
+      "ship_goals_cancel": "إلغاء",
+      "ship_goals_confirm": "إنشاء الأهداف",
+      "ship_goals_context_label": "السياق الذي يُصنَّف تحته هذا الهدف",
+      "ship_goals_core_note": "تُضاف كل الأهداف إلى النطاق الأساسي. نقل أي منها إلى لاحقًا أو أبدًا يبقى قرارك.",
+      "ship_goals_count_one": "{count} هدف لـ {name}",
+      "ship_goals_count_other": "{count} أهداف لـ {name}",
+      "ship_goals_created": "أُضيف إلى {name}: {created} أُنشئت، {bound} كانت موجودة بالفعل.",
+      "ship_goals_description_label": "ما الذي يغطيه هذا الهدف",
+      "ship_goals_description_placeholder": "اختياري: ما الذي يغطيه هذا الهدف فعليًا",
+      "ship_goals_empty": "لم يتبقَّ شيء لإنشائه. ألغِ هذا، أو اطلب من Athena قراءة الموجز مرة أخرى.",
+      "ship_goals_heading": "أهداف من الموجز",
+      "ship_goals_remove_row": "إزالة هذا الهدف",
+      "ship_goals_title_label": "عنوان الهدف",
+      "ship_goals_title_placeholder": "بضع كلمات، مثل: صياغة القصة"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",
@@ -20497,6 +20515,9 @@
     "description_placeholder": "ما الذي يعنيه إطلاق هذا المعلم فعليًا",
     "goals_rail_empty": "لا توجد أهداف بعد — اكتب هدفًا وستتولى Athena تصنيفه",
     "goals_rail_title": "الأهداف",
-    "description_editor_hint": "Ctrl+B للخط العريض · ابدأ السطر بـ ”- “ لإنشاء قائمة"
+    "description_editor_hint": "Ctrl+B للخط العريض · ابدأ السطر بـ ”- “ لإنشاء قائمة",
+    "decompose_brief": "تفكيك الموجز",
+    "decompose_brief_no_brief": "لا يحتوي هذا المعلم على موجز بعد. اكتب ما يعنيه إطلاقه، ثم فكّك ذلك.",
+    "decompose_brief_tooltip": "اطلب من Athena قراءة موجز هذا المعلم واقتراح الأهداف التي يذكرها. لا يُنشأ شيء حتى تؤكد بطاقتها."
   }
 }

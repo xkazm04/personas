@@ -229,6 +229,25 @@ pub fn health_check_environment(
     Ok(build_environment_section(&state.db))
 }
 
+/// Total CDC change events dropped since process start because the bounded
+/// channel was full when the (synchronous, non-blocking) SQLite update hook
+/// fired — `db::cdc::cdc_dropped_count()`.
+///
+/// This is the evidence a push-based frontend needs to know it is stale.
+/// CDC is lossy BY CONSTRUCTION: a drain that falls behind the write rate
+/// drops events silently, and a listener that only ever reacts to pushes has
+/// no way to notice. A surface that reads this on focus / route entry and
+/// refetches only when the number MOVED reconciles on evidence instead of on a
+/// clock — zero cost when nothing was dropped, which is the overwhelming case.
+///
+/// Monotonic and process-scoped; compare successive readings, never the
+/// absolute value.
+#[tauri::command]
+pub fn cdc_dropped_count(state: State<'_, Arc<AppState>>) -> Result<u64, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::db::cdc::cdc_dropped_count())
+}
+
 // =============================================================================
 // Section Builders
 // =============================================================================

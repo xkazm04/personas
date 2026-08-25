@@ -99,7 +99,9 @@ Primary key `(milestone_id, item_kind, item_id)`, so an item belongs to at most 
 
 - `ShipContext.tone`: `crit` at 25 or more attributed errors, `warn` above 0, `setup` when the context has zero active KPIs, otherwise `ok` (`useShipData.ts:103-107`). Errors come from `useContextRuntime`'s `errorsByContext`, which attributes **unresolved Sentry issues** to contexts by matching the issue culprit against the context's file paths. The UI copy calls these "errors this week"; the underlying source is the unresolved-issue list, not a strict 7-day window, so treat that label as approximate.
 - `ShipFeature.ready`: true when the feature has at least one active KPI **and** no `crit` context in its slice. A `crit` context yields `Blocked`; zero KPIs yields `No KPI yet` (`shipModel.ts:138-146`). A feature's KPI count includes KPIs bound directly to the use case plus KPIs bound to any context it slices.
-- `ShipMilestoneVM.progress`: `100` once shipped, otherwise ready CORE members / total CORE members, rounded. Zero core members means 0 percent, and the timeline card renders a dash rather than "0%" for a planned milestone with no members at all.
+- `ShipMilestoneVM.progress`: `100` once shipped, otherwise **done core members / total core members**, rounded, via the pure `deriveProgress` in `shipDerive.ts`. **Both member kinds count, and each is done by its own reading**: a core FEATURE is done when `feature.ready` says so (the automation's reading — nobody types it); a core GOAL is done when its `dev_goals.status` says so, through the shared `isComplete` normalizer, so `done` / `completed` / `complete` / `skipped` all read here exactly as they do in the Goals hub and in the Rust `normalize_goal_status` mirror. Operator ratings still contribute nothing — that is `deriveDuality`'s subject. Zero core members means 0 percent, and the timeline card renders a dash rather than "0%" for a planned milestone with no members at all.
+
+  > **Corrected 2026-08-25.** This read `ready core FEATURES / total core features`, so a milestone whose cut was five goals and zero features reported 0% forever — which is exactly the shape a milestone takes right after its brief is decomposed with `show_ship_goals`, before any of it exists as a use case. A number that cannot move is not a progress number. Note the asymmetry that stayed: `boundGoals` (which feeds the `objective` exit criterion) is deliberately bucket-blind, because that criterion asks whether the milestone has anything to be FOR and a goal parked in `later` still answers that; progress reads a separate `core`-filtered list. The **exit criteria were not changed** — only progress.
 
 ## 4. Lifecycle
 
@@ -205,11 +207,13 @@ One toolbar carries every milestone verb, ordered by how far each reaches:
 | --- | --- | --- |
 | 1 | Certify · Compose scope | the milestone itself |
 | 2 | Run milestone · Ingest run | hand the cut to a CLI skill and read the result back |
-| 3 | Ask Athena | nothing — it starts a conversation |
+| 3 | Decompose brief · Ask Athena | nothing directly — both start a conversation; Decompose ends in a card that writes on confirm |
 
 Before 2026-08-20 these lived in four places (the lifecycle button and Compose floated right of the header, Run/Ingest sat in their own strip, the criteria were a permanent chip row) and there was no single answer to "what can I do to this milestone".
 
 **Certify carries the criteria reading on its own face** — a `met/total` badge in the verdict's colour — which is what the five permanent chips were spending a header row to say.
+
+**Decompose brief (2026-08-25) turns the written brief into goals.** A milestone's `description` is the operator's brief — free markdown that routinely names the deliverables ("a) project type Trailer, b) features to compose the story, c) decompose into scene stories"). This button asks Athena to read it with `describe_ship_milestone` and propose those deliverables as goals with `show_ship_goals`, which draws an editable card; nothing is written until Create. It is **not a second LLM path** — `buildShipDecomposePrompt` goes through the same `useAskAthena` channel as the button below it. The rules from Ask Athena's two rewrites still hold: it POINTS at the brief rather than pasting it, names the ops rather than the answer, and carries no reply script. What it does add is a REQUEST, which is the one licence it has over Ask Athena, plus the fact that the card is editable — a proposal she thinks is a commitment is a proposal she under-proposes. Disabled when the milestone has no `description`, with a tooltip saying which of the two reasons applies (`triggerFocusable`, because `is-disabled` sets `pointer-events: none` and a dead control must still be able to say why). Backend contract: [companion/README.md § `show_ship_goals`](../../companion/README.md).
 
 **Ask Athena POINTS, and says nothing else.** `buildShipAskPrompt` (`shipAthena.ts`) sends the project, the milestone id, and an instruction to read it with `describe_ship_milestone`. That is the whole message. No verdict, no summary of the cut, and no instruction about what to answer.
 
@@ -338,9 +342,11 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | --- | --- |
 | `src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx` | Tab wrapper, `data-testid="factory-ship-tab"` |
 | `.../ship/ShipPlannerTab.tsx` | The surface: content header (goal, criterion chips, lifecycle + compose buttons), roadmap spine, workspace switch, dispatch and terminal modals |
-| `.../ship/ShipControlBar.tsx` | The unified toolbar: Certify (with the criteria badge), Compose scope, Run, Ingest, Ask Athena |
+| `.../ship/ShipControlBar.tsx` | The unified toolbar: Certify (with the criteria badge), Compose scope, Run, Ingest, Decompose brief, Ask Athena |
 | `.../ship/ShipCertifyModal.tsx` | The certify panel — every criterion's evidence, its dispatch arm, and the commit |
-| `.../ship/shipAthena.ts` | `buildShipAskPrompt` — the Ask-Athena pointer: project, milestone id, read-it-with-this-op. Nothing else |
+| `.../ship/shipAthena.ts` | `buildShipAskPrompt` — the Ask-Athena pointer: project, milestone id, read-it-with-this-op. Nothing else. Plus `buildShipDecomposePrompt`, the same pointer with one request added |
+| `.../ship/shipDerive.ts` | `deriveFootprint`, `inContext`, `deriveProgress` — the pure derivations lifted out of `useShipData`'s useMemo |
+| `src/features/plugins/companion/ship/AthenaShipGoalsCard.tsx` | The editable `ship_goals` card and `parseGoalRows`; row editor in `AthenaShipGoalsRow.tsx` |
 | `.../ship/shipReadinessPublish.ts` | Publishes the derived verdicts to `ship.readiness.v1` so the read op can serve them |
 | `.../ship/ShipMilestoneRun.tsx` | `useShipMilestoneRun` (the two actions + their busy flags) and `ShipRunSummary` |
 | `src/features/plugins/companion/useAskAthena.ts` | The one door an app surface uses to start a conversation, provenance-tagged |
@@ -537,3 +543,85 @@ Moves members between `core` / `later` / `never`, or `remove`s the membership. C
 Both are ordinary approval actions: with autonomous mode off they wait on a click, with it on they fire (the autoapprove allowlist was retired 2026-08-10). That is exactly why the `ship` arm carries the DB-checkable precondition described in §11 rather than trusting a human to be watching.
 
 Tests: `approval_exec_ship.rs::ship_scope_tests` (11).
+
+## 14. Live refresh — the planner repaints when someone else writes
+
+The Ship planner is a surface that gets **watched while work happens somewhere
+else**: background agents, an Athena approval executor, a Fleet session through
+the management API, the CLI ingest door. None of those writers know the planner
+exists, and until 2026-08-25 none of them reached it — `useShipData`'s `reload()`
+ran only after the tab's **own** mutations, so a goal changed underneath the
+operator stayed invisible until he navigated away and back.
+
+**There is no polling here, and adding some would be a regression.** No
+`setInterval`, no watermark query loop. Two paths, and only two:
+
+### Push — the SQLite update hook, already installed
+
+`db/src/cdc.rs` registers a `rusqlite` `update_hook` on **every pooled
+connection** via `CdcCustomizer` (`db/src/lib.rs`). It is a real chokepoint —
+registered at connection *acquire*, so no writer can forget it — and every one
+of the writers above goes through that pool. The only thing missing was the
+table map: `table_to_event` covered 13 tables and not one of them was a dev-tools
+table.
+
+The four Ship tables — `dev_goals`, `dev_milestones`, `dev_milestone_items`,
+`dev_use_cases` — now map to **one** event, `dev-tools-ship-changed`
+(`event_name::DEV_TOOLS_SHIP_CHANGED`). One name for four tables because the
+frontend's unit of invalidation is the Ship **slice**, not a table; the payload
+is the existing `CdcEvent` (`{action, table, rowid}`), so `table` is there for
+any listener that wants to narrow.
+
+Scope is Ship-only **on purpose**. `dev_kpis` / `dev_contexts` / `dev_ideas` are
+written in bulk by scans, and that is exactly the traffic that saturates CDC's
+bounded channel and starts costing *other* tables their events.
+`cdc.rs::ship_tables_all_map_to_one_event_and_neighbours_stay_untracked` asserts
+both halves, so widening the map has to be a deliberate act.
+
+The `rowid` is deliberately **not** resolved to a domain id in Rust: that costs a
+query per write, and on DELETE it is impossible because the row is already gone
+— which is precisely the unbind-a-goal case the planner most needs to see. The
+frontend refetches the slice instead.
+
+### Coalescing — a correctness fix, not an optimisation
+
+`eventBridge` debounces the event by `EVENT_BRIDGE_TIMING.DEV_TOOLS_SHIP_DEBOUNCE_MS`
+(250 ms). The reason is not efficiency: **the update hook fires synchronously
+inside the write transaction, before commit.** A listener refetching on the first
+event could read pre-commit state and then never receive another event — a
+permanently stale view produced by a *successful* write. A debounce that resets
+on each event lands after commit. (The efficiency is real but secondary:
+decomposing one brief into six goals fires ~12 hook events and needs one
+refetch.)
+
+### Reconcile — on evidence, not on a clock
+
+CDC's channel is bounded and **drops** events when its drain falls behind, so a
+pure-push design is lossy by construction. `cdc_dropped_count` (a thin
+auth-guarded command over the counter that already existed in `cdc.rs` and had no
+reader) exposes the process-wide drop total. `useShipLive` reads it on mount /
+window focus / `visibilitychange → visible` and refetches **only if the number
+moved** since the last reading — one IPC returning an integer, and zero work in
+the overwhelming case where nothing was dropped. The first reading is a baseline
+and never triggers a refetch.
+
+### A refetch never blanks the planner
+
+`ShipPlannerTab` returns `LoadingSpinner` while `ship.loading` is true, and that
+component renders **nothing**. Before live refresh only the operator's own
+mutations re-ran the fetch; now a background agent's write can, so `useShipData`
+sets `loading` only when it has not yet painted the current project. Switching
+project still ghosts. (Loading doctrine law 1: a fetch never hides rendered rows.)
+
+### Files
+
+| File | Responsibility |
+| --- | --- |
+| `src-tauri/db/src/cdc.rs` | `table_to_event` maps the four Ship tables; the end-to-end test drives a real `dev_goals` INSERT/UPDATE/DELETE through a CDC-instrumented pool and observes it on the channel |
+| `src-tauri/core/src/events.rs` | `DEV_TOOLS_SHIP_CHANGED` |
+| `src-tauri/src/commands/infrastructure/system/health.rs` | `cdc_dropped_count` — the thin command over CDC backpressure |
+| `src/lib/eventRegistry.ts` | The TS half of the name + the `CdcEvent` payload shape |
+| `src/lib/eventBridge.ts` | The debounced listener and `DEV_TOOLS_SHIP_DEBOUNCE_MS` |
+| `src/stores/devToolsLiveStore.ts` | `shipRevision` + the evidence-based `reconcileShip` |
+| `.../ship/useShipLive.ts` | `useShipLiveRevision` — mount / focus / visibility reconcile, returns the revision |
+| `src/api/system/system.ts` | `cdcDroppedCount` |

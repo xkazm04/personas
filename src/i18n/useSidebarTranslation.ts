@@ -49,9 +49,7 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     // Deliberately NOT keyed 'graph' — that id already means "Dependencies"
     // under Connections and this map is global across sections.
     ['memory-graph', sb.memory_graph],
-    ['sla', sb.sla],
     ['schedules', sb.schedules],
-    ['health', sb.health],
 
     // Credential sub-items
     ['databases', sb.databases],

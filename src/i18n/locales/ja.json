@@ -6869,7 +6869,8 @@
       "hint_speed": "プロンプトを簡潔にするか高速なモデルでレイテンシを短縮。",
       "hint_cost": "安価なモデルや短いコンテキストで実行あたりのコストを削減。",
       "hint_activity": "このエージェントをより頻繁に実行・スケジュールして活動量を上げる。",
-      "improve_agent": "このエージェントを改善"
+      "improve_agent": "このエージェントを改善",
+      "section_subtitle": "{count} エージェント · フリート平均 {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "自動更新オン",
@@ -7229,7 +7230,8 @@
       "open": "{count}件未解決",
       "sla_compliance": "SLAコンプライアンス",
       "consecutive_failures": "{count}回連続失敗",
-      "consecutive_failure": "{count}回連続失敗"
+      "consecutive_failure": "{count}回連続失敗",
+      "unknown": "不明"
     },
     "system_health": {
       "title": "システムチェック",
@@ -15810,7 +15812,23 @@
       "global_hotkey_title": "どこからでも話しかける",
       "ship_milestone_prose_label": "リリースの意味",
       "ship_milestone_prose_placeholder": "任意：このマイルストーンをリリースするとは実際どういうことか",
-      "fleet_plan_auto_approved": "フリートプランを自動承認しました（自律モード）。"
+      "fleet_plan_auto_approved": "フリートプランを自動承認しました（自律モード）。",
+      "ship_goals_badge_existing": "すでに存在",
+      "ship_goals_badge_new": "新しいゴール",
+      "ship_goals_cancel": "キャンセル",
+      "ship_goals_confirm": "ゴールを作成",
+      "ship_goals_context_label": "このゴールが属するコンテキスト",
+      "ship_goals_core_note": "すべてのゴールはコアのスコープに入ります。後で・対象外へ移すかはあなたの判断です。",
+      "ship_goals_count_one": "{name} のゴール {count} 件",
+      "ship_goals_count_other": "{name} のゴール {count} 件",
+      "ship_goals_created": "{name} に追加しました: {created} 件を作成、{bound} 件は既存です。",
+      "ship_goals_description_label": "このゴールが扱う範囲",
+      "ship_goals_description_placeholder": "任意: このゴールが実際に扱う範囲",
+      "ship_goals_empty": "作成するものが残っていません。キャンセルするか、Athena にブリーフをもう一度読ませてください。",
+      "ship_goals_heading": "ブリーフから起こしたゴール",
+      "ship_goals_remove_row": "このゴールを削除",
+      "ship_goals_title_label": "ゴールのタイトル",
+      "ship_goals_title_placeholder": "ひと言で、例: ストーリーを組み立てる"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",
@@ -20497,6 +20515,9 @@
     "description_placeholder": "このマイルストーンをリリースするとは実際どういうことか",
     "goals_rail_empty": "目標はまだありません。書けば Athena が配置します",
     "goals_rail_title": "目標",
-    "description_editor_hint": "Ctrl+B で太字 · 行頭に「- 」でリスト"
+    "description_editor_hint": "Ctrl+B で太字 · 行頭に「- 」でリスト",
+    "decompose_brief": "ブリーフを分解",
+    "decompose_brief_no_brief": "このマイルストーンにはまだブリーフがありません。出荷が何を意味するかを書いてから分解してください。",
+    "decompose_brief_tooltip": "このマイルストーンのブリーフを Athena に読ませ、そこに書かれたゴールを提案させます。カードを確定するまで何も作成されません。"
   }
 }

@@ -30,6 +30,18 @@ export const healthCheckSubscriptions = () =>
 export const healthCheckEnvironment = () =>
   invoke<HealthCheckSection>("health_check_environment");
 
+/**
+ * Total CDC change events dropped since process start because the bounded
+ * channel was full when the SQLite update hook fired.
+ *
+ * The push side of live-refresh is lossy BY CONSTRUCTION — a drain that falls
+ * behind the write rate drops events and nothing downstream can tell. This
+ * counter is the evidence a push-only surface needs to know it is stale.
+ * Monotonic and process-scoped: compare successive readings, never the
+ * absolute value.
+ */
+export const cdcDroppedCount = () => invoke<number>("cdc_dropped_count");
+
 export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });
 

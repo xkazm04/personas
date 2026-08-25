@@ -99,8 +99,8 @@
         }
       ],
       "baseline": {
-        "files": 181,
-        "matches": 248
+        "files": 179,
+        "matches": 246
       },
       "floor": 2500
     },
@@ -151,8 +151,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 39,
-        "matches": 109
+        "files": 38,
+        "matches": 107
       },
       "floor": 4000
     },
@@ -188,8 +188,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 38
+        "files": 35,
+        "matches": 37
       },
       "floor": 2500
     },
@@ -555,8 +555,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 820,
-        "matches": 1995
+        "files": 817,
+        "matches": 1991
       },
       "floor": 2000
     },
@@ -584,8 +584,8 @@
         }
       ],
       "baseline": {
-        "files": 357,
-        "matches": 806
+        "files": 356,
+        "matches": 804
       },
       "floor": 4000
     },
@@ -676,8 +676,8 @@
         }
       ],
       "baseline": {
-        "files": 49,
-        "matches": 94
+        "files": 48,
+        "matches": 93
       },
       "floor": 4000
     },
@@ -1190,8 +1190,8 @@
         }
       ],
       "baseline": {
-        "files": 52,
-        "matches": 74
+        "files": 51,
+        "matches": 72
       },
       "floor": 4000
     },
@@ -1294,8 +1294,8 @@
         }
       ],
       "baseline": {
-        "files": 16,
-        "matches": 18
+        "files": 15,
+        "matches": 17
       },
       "floor": 4000
     },
@@ -1318,7 +1318,7 @@
       },
       "baseline": {
         "files": 54,
-        "matches": 68
+        "matches": 67
       },
       "floor": 4000
     },
@@ -1340,8 +1340,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 16,
-        "matches": 47
+        "files": 14,
+        "matches": 43
       },
       "floor": 4000
     },
@@ -1407,8 +1407,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 559,
-        "matches": 1085
+        "files": 558,
+        "matches": 1078
       },
       "floor": 2000
     },
@@ -1823,6 +1823,10 @@
           "reason": "same compliant shape - :101 stores the raw string, :177 renders resolveErrorTranslated(t, error).message at the edge"
         },
         {
+          "path": "src/features/plugins/companion/ship/AthenaShipGoalsCard.tsx",
+          "reason": "same compliant shape as its two siblings above - :100 stores the raw string in state, :157 renders resolveErrorTranslated(t, error).message at the edge"
+        },
+        {
           "path": "src/features/teams/sub_kpis/KPIConnectWizard.tsx",
           "reason": "compliant - :137 is `extractMessage(err) || resolveErrorTranslated(t, null).message`, i.e. the resolver supplies the fallback sentence when the producer had nothing to say; the file imports resolveErrorTranslated for exactly this"
         }
@@ -2094,8 +2098,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 54,
-        "matches": 57
+        "files": 53,
+        "matches": 56
       },
       "floor": 2000
     },
@@ -2117,8 +2121,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 189,
-        "matches": 399
+        "files": 188,
+        "matches": 398
       },
       "floor": 4000
     },
@@ -3696,8 +3700,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 51
+        "files": 32,
+        "matches": 42
       },
       "floor": 2000
     },
@@ -4141,8 +4145,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 48,
-        "matches": 55
+        "files": 47,
+        "matches": 54
       },
       "floor": 3000
     },
@@ -5097,8 +5101,8 @@
         "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
       },
       "baseline": {
-        "files": 39,
-        "matches": 46
+        "files": 40,
+        "matches": 47
       },
       "floor": 900
     },
@@ -5398,7 +5402,7 @@
       },
       "baseline": {
         "files": 103,
-        "matches": 348
+        "matches": 349
       },
       "floor": 900
     }

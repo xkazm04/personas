@@ -3,11 +3,13 @@ import type { Translations } from '@/i18n/en';
 /**
  * Human-readable, translated label for a bus event type.
  *
- * Most `persona_events.event_type` values are free-form technical identifiers
- * emitted by the fleet (recipe/LLM contracts) and render raw — translating them
- * would be wrong. Only the small set of code-owned reliability events carry a
- * curated, translated label here. Unknown types fall back to the raw identifier,
- * preserving prior events-feed behavior.
+ * The small set of code-owned reliability events carry a curated, translated
+ * label. Everything else is a free-form technical identifier emitted by the
+ * fleet (recipe/LLM contracts) — no display-name registry exists for those
+ * (`EventVocabularyEntry` stores only type/category/source), so they are
+ * humanized mechanically: separators become spaces and the first letter is
+ * capitalized (`execution.retry_scheduled` → "Execution retry scheduled").
+ * The raw identifier stays available via the cell's `title` tooltip.
  */
 export function eventTypeLabel(t: Translations, eventType: string): string {
   const labels = t.overview.events.type_labels;
@@ -21,6 +23,18 @@ export function eventTypeLabel(t: Translations, eventType: string): string {
     case 'schedule.skipped.overlap':
       return labels.schedule_skipped_overlap;
     default:
-      return eventType;
+      return humanizeEventType(eventType);
   }
+}
+
+/**
+ * Mechanical display form of a technical event-type identifier: `.`, `_`, `-`
+ * and `:` become spaces, runs of whitespace collapse, and the first character
+ * is uppercased. Purely typographic — never translated, so free-form fleet
+ * identifiers keep their meaning verbatim.
+ */
+export function humanizeEventType(eventType: string): string {
+  const spaced = eventType.replace(/[._:-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!spaced) return eventType;
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }

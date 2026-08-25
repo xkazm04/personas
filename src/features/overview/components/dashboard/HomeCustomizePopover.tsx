@@ -10,15 +10,15 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
  * Ids of the below-the-fold Home sections that can be toggled. Order here is
  * purely the order they appear in the Customize popover; the page renders them
  * in its own layout order and only consults membership in `homeHiddenSections`.
- * Shared with DashboardHomeMissionControl so the gate and the toggle list can
- * never drift.
+ * Shared with MissionControlHome so the gate and the toggle list can
+ * never drift. ('instruments' was retired with the 2026-08-25 monitoring
+ * consolidation — a persisted hidden entry for it is simply ignored.)
  */
-export const HOME_SECTION_IDS = ['heatmap', 'instruments', 'memory', 'fleet', 'routines'] as const;
+export const HOME_SECTION_IDS = ['heatmap', 'memory', 'fleet', 'routines'] as const;
 export type HomeSectionId = (typeof HOME_SECTION_IDS)[number];
 
 const SECTION_LABEL: Record<HomeSectionId, (t: Translations) => string> = {
   heatmap: (t) => t.overview.dashboard.section_heatmap,
-  instruments: (t) => t.overview.dashboard.section_instruments,
   memory: (t) => t.overview.dashboard.section_memory,
   fleet: (t) => t.overview.dashboard.section_fleet,
   routines: (t) => t.overview.dashboard.section_routines,

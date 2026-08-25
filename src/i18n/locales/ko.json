@@ -6869,7 +6869,8 @@
       "hint_speed": "더 간결한 프롬프트나 빠른 모델로 지연을 줄이세요.",
       "hint_cost": "더 저렴한 모델이나 짧은 컨텍스트로 실행당 비용을 낮추세요.",
       "hint_activity": "이 에이전트를 더 자주 실행하거나 예약해 활동량을 높이세요.",
-      "improve_agent": "이 에이전트 개선"
+      "improve_agent": "이 에이전트 개선",
+      "section_subtitle": "에이전트 {count}개 · 전체 평균 {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "자동 새로 고침 켜짐",
@@ -7229,7 +7230,8 @@
       "open": "{count}개 열림",
       "sla_compliance": "SLA 준수",
       "consecutive_failures": "{count}회 연속 실패",
-      "consecutive_failure": "{count}회 연속 실패"
+      "consecutive_failure": "{count}회 연속 실패",
+      "unknown": "알 수 없음"
     },
     "system_health": {
       "title": "시스템 점검",
@@ -15810,7 +15812,23 @@
       "global_hotkey_title": "어디서나 말하기",
       "ship_milestone_prose_label": "출시의 의미",
       "ship_milestone_prose_placeholder": "선택 사항: 이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지",
-      "fleet_plan_auto_approved": "플릿 플랜 자동 승인됨 (자율 모드)."
+      "fleet_plan_auto_approved": "플릿 플랜 자동 승인됨 (자율 모드).",
+      "ship_goals_badge_existing": "이미 있음",
+      "ship_goals_badge_new": "새 목표",
+      "ship_goals_cancel": "취소",
+      "ship_goals_confirm": "목표 만들기",
+      "ship_goals_context_label": "이 목표가 속한 컨텍스트",
+      "ship_goals_core_note": "모든 목표는 핵심 범위에 추가됩니다. 나중에나 제외로 옮기는 건 여전히 당신 몫입니다.",
+      "ship_goals_count_one": "{name}의 목표 {count}개",
+      "ship_goals_count_other": "{name}의 목표 {count}개",
+      "ship_goals_created": "{name}에 추가함: {created}개 생성, {bound}개는 이미 있었음.",
+      "ship_goals_description_label": "이 목표가 다루는 범위",
+      "ship_goals_description_placeholder": "선택: 이 목표가 실제로 다루는 범위",
+      "ship_goals_empty": "만들 것이 남지 않았습니다. 취소하거나 Athena에게 브리프를 다시 읽어 달라고 하세요.",
+      "ship_goals_heading": "브리프에서 뽑은 목표",
+      "ship_goals_remove_row": "이 목표 제거",
+      "ship_goals_title_label": "목표 제목",
+      "ship_goals_title_placeholder": "몇 단어로, 예: 이야기 구성하기"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",
@@ -20497,6 +20515,9 @@
     "description_placeholder": "이 마일스톤을 출시한다는 것이 실제로 무엇을 뜻하는지",
     "goals_rail_empty": "아직 목표가 없습니다 — 하나 작성하면 Athena가 배치합니다",
     "goals_rail_title": "목표",
-    "description_editor_hint": "Ctrl+B 굵게 · 줄 앞에 “- ” 입력하면 목록"
+    "description_editor_hint": "Ctrl+B 굵게 · 줄 앞에 “- ” 입력하면 목록",
+    "decompose_brief": "브리프 분해",
+    "decompose_brief_no_brief": "이 마일스톤에는 아직 브리프가 없습니다. 출시가 무엇을 뜻하는지 쓴 다음 그것을 분해하세요.",
+    "decompose_brief_tooltip": "Athena에게 이 마일스톤의 브리프를 읽고 거기 적힌 목표를 제안하도록 요청합니다. 카드를 확인하기 전까지는 아무것도 생성되지 않습니다."
   }
 }

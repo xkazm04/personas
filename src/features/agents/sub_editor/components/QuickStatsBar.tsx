@@ -91,8 +91,10 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
         icon={<Trophy className="w-3 h-3" />}
         onClick={() => {
           useSystemStore.getState().setSidebarSection('overview');
+          // The leaderboard matrix lives on the Mission Control dashboard
+          // since the 2026-08-25 monitoring consolidation.
           void import('@/stores/overviewStore').then(({ useOverviewStore }) =>
-            useOverviewStore.getState().setOverviewTab('leaderboard'),
+            useOverviewStore.getState().setOverviewTab('home'),
           );
         }}
         title={t.agents.editor_ui.view_in_leaderboard}

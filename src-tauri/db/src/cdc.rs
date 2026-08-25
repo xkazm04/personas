@@ -246,6 +246,21 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
         // Tool definitions: tool registry changes
         "persona_tool_definitions" => Some("tool-updated"),
 
+        // Ship planner (Factory L2 → Ship): the four tables the planner reads.
+        // All four map to ONE event — the frontend invalidates the Ship SLICE,
+        // not a table, and `table` rides in the payload for any listener that
+        // wants to filter. This is what makes a goal changed by an Athena
+        // approval executor / a Fleet session / the CLI ingest door repaint a
+        // planner the operator is watching, with no navigation and no timer.
+        //
+        // Deliberately Ship-only. `dev_kpis` / `dev_contexts` / `dev_ideas` are
+        // written in BULK by scans (hundreds of rows per pass) and are exactly
+        // the traffic that saturates the bounded channel and starts costing
+        // other tables their events (see `note_cdc_drop`).
+        "dev_goals" | "dev_milestones" | "dev_milestone_items" | "dev_use_cases" => {
+            Some(event_name::DEV_TOOLS_SHIP_CHANGED)
+        }
+
         _ => None,
     }
 }
@@ -623,6 +638,33 @@ mod tests {
         assert_eq!(table_to_event("some_random_table", CdcAction::Insert), None);
     }
 
+    #[test]
+    fn ship_tables_all_map_to_one_event_and_neighbours_stay_untracked() {
+        // All four Ship tables collapse onto ONE event name on every action —
+        // including DELETE, which is the unbind-a-goal case.
+        for table in [
+            "dev_goals",
+            "dev_milestones",
+            "dev_milestone_items",
+            "dev_use_cases",
+        ] {
+            for action in [CdcAction::Insert, CdcAction::Update, CdcAction::Delete] {
+                assert_eq!(
+                    table_to_event(table, action),
+                    Some(event_name::DEV_TOOLS_SHIP_CHANGED),
+                    "{table} / {action:?} must reach the Ship slice"
+                );
+            }
+        }
+        // The bulk-written dev tables stay OUT: a scan writing hundreds of rows
+        // is what saturates the bounded channel and costs OTHER tables their
+        // events. Widening the match above is a deliberate decision, not a
+        // convenience — this assertion is the tripwire.
+        for table in ["dev_kpis", "dev_contexts", "dev_ideas"] {
+            assert_eq!(table_to_event(table, CdcAction::Insert), None, "{table}");
+        }
+    }
+
     // --- drop path ----------------------------------------------------------
 
     #[test]
@@ -643,8 +685,17 @@ mod tests {
         let tmp =
             std::env::temp_dir().join(format!("personas_cdc_drop_{}.db", uuid::Uuid::new_v4()));
         let manager = SqliteConnectionManager::file(&tmp);
+        // max_size(2), not 1. `events::publish` holds a checked-out connection
+        // and then calls `get_by_id(pool, ..)`, which acquires a SECOND one —
+        // so on a single-connection pool every one of the 50 iterations below
+        // self-deadlocked until r2d2's 30s default acquire timeout. The test
+        // still PASSED (the INSERT lands, and its hook fires, before the nested
+        // acquire blocks) — it just took ~25 minutes, silently, inside
+        // `npm run test:rust:crates`. Two connections break the nesting; the
+        // capacity-1 CDC channel is what this test is actually about and is
+        // untouched, so it still overflows and still records drops.
         let pool: DbPool = Pool::builder()
-            .max_size(1)
+            .max_size(2)
             .connection_customizer(Box::new(CdcCustomizer::new(sender)))
             .build(manager)
             .expect("build cdc pool");
@@ -749,5 +800,129 @@ mod tests {
     fn max_rowid_is_zero_on_empty_table() {
         let pool = crate::init_test_db().expect("init test db");
         assert_eq!(max_persona_event_rowid(&pool), 0);
+    }
+
+    // --- end-to-end: a real dev_goals write reaches the CDC channel ----------
+
+    /// A CDC-instrumented pool over a fully-migrated temp DB, plus the LIVE
+    /// receiver. The customizer is the production one — `init_db_with_journal`
+    /// installs this exact type on every pooled connection at boot — so what is
+    /// exercised below is the real update hook, not a stand-in.
+    ///
+    /// Two deliberate departures from `repos::execution::change_journal`'s
+    /// `journaled_pool()`, which is otherwise the same fixture:
+    ///
+    /// 1. The schema comes from `init_test_db`'s already-migrated TEMPLATE
+    ///    rather than from running the chain through this pool. Migrations
+    ///    write to tracked tables, so migrating through the hooked pool would
+    ///    stuff the channel with boot noise every assertion here then has to
+    ///    drain past — and it re-runs a chain that is already built once per
+    ///    process.
+    /// 2. `max_size` is >1 because the dev repo fns used below hold a
+    ///    connection and then call a sibling that acquires a SECOND one
+    ///    (`create_project` → `get_project_by_id`, `create_goal` →
+    ///    `get_goal_by_id`). On a single-connection pool that self-deadlocks
+    ///    until r2d2's acquire timeout and surfaces as `Pool(Error(None))`.
+    ///    Production runs `max_size(12)`, so this is a fixture constraint, not
+    ///    a finding about the hook.
+    fn cdc_pool() -> (DbPool, CdcReceiver) {
+        let (sender, receiver) = create_cdc_channel(4096);
+        let template = crate::migrated_template().expect("migrated template");
+        let tmp =
+            std::env::temp_dir().join(format!("personas_cdc_ship_{}.db", uuid::Uuid::new_v4()));
+        std::fs::copy(&template, &tmp).expect("copy migrated template");
+        let manager = SqliteConnectionManager::file(&tmp);
+        let pool: DbPool = Pool::builder()
+            .max_size(4)
+            .connection_customizer(Box::new(CdcCustomizer::new(sender)))
+            .build(manager)
+            .expect("build cdc pool");
+        (pool, receiver)
+    }
+
+    /// Drain every event currently queued, as `(table, action)` pairs.
+    /// `recv_timeout` rather than `try_recv`: the hook runs synchronously on the
+    /// writing thread, so the events are already queued when the write call
+    /// returns — the timeout only bounds the wait if that ever stops holding.
+    fn drain(receiver: &CdcReceiver) -> Vec<(String, CdcAction)> {
+        let mut out = Vec::new();
+        while let Ok(ev) = receiver.recv_timeout(std::time::Duration::from_millis(500)) {
+            out.push((ev.table.clone(), ev.action));
+        }
+        out
+    }
+
+    #[test]
+    fn dev_goal_write_reaches_the_cdc_channel() {
+        use crate::repos::dev::{goals as goal_repo, projects as project_repo};
+
+        let (pool, receiver) = cdc_pool();
+
+        // A dev project to hang goals off (dev_goals.project_id is a FK).
+        let project = project_repo::create_project(
+            &pool,
+            "cdc-ship-test",
+            &format!("/tmp/cdc-ship-{}", uuid::Uuid::new_v4()),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("create project");
+        // dev_projects is NOT a tracked table — proves the hook FILTERS rather
+        // than forwarding every write it sees.
+        assert!(
+            !drain(&receiver).iter().any(|(t, _)| t == "dev_projects"),
+            "dev_projects must not be forwarded"
+        );
+
+        // INSERT — the write a background agent / Athena executor performs.
+        let goal =
+            goal_repo::create_goal(&pool, &project.id, "ship it", None, None, None, None, None)
+                .expect("create goal");
+        let events = drain(&receiver);
+        assert!(
+            events.contains(&("dev_goals".to_string(), CdcAction::Insert)),
+            "expected a dev_goals INSERT on the channel, got {events:?}"
+        );
+        // Every event that arrived resolves to the Ship event name — i.e. what a
+        // DEV_TOOLS_SHIP_CHANGED listener receives is exactly this write, and
+        // nothing else rides in on that channel.
+        for (table, action) in &events {
+            assert_eq!(
+                table_to_event(table, *action),
+                Some(event_name::DEV_TOOLS_SHIP_CHANGED),
+                "{table} leaked onto the Ship channel"
+            );
+        }
+
+        // UPDATE — a status change made outside the planner.
+        goal_repo::update_goal(
+            &pool,
+            &goal.id,
+            None,
+            None,
+            Some("in_progress"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("update goal");
+        assert!(
+            drain(&receiver).contains(&("dev_goals".to_string(), CdcAction::Update)),
+            "expected a dev_goals UPDATE on the channel"
+        );
+
+        // DELETE — the unbind case, the one where a rowid→id lookup in Rust
+        // would be impossible because the row is already gone.
+        assert!(goal_repo::delete_goal(&pool, &goal.id).expect("delete goal"));
+        assert!(
+            drain(&receiver).contains(&("dev_goals".to_string(), CdcAction::Delete)),
+            "expected a dev_goals DELETE on the channel"
+        );
     }
 }

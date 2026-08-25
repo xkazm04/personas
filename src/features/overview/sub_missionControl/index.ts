@@ -1,5 +1,6 @@
-// Mission Control — the overview "Mission control" tab (formerly "Home").
-// Operator's cockpit dashboard: triage / vitals / stream + fleet activity,
-// fleet optimization, and upcoming routines.
-export { default } from './DashboardHomeMissionControl';
-export { default as DashboardHomeMissionControl } from './DashboardHomeMissionControl';
+// Mission Control — the overview "Mission control" tab (formerly "Home"), and
+// since the 2026-08-25 monitoring consolidation the ONE monitoring surface:
+// vitals + daily success trend, status monitor, leaderboard matrix,
+// self-healing panel, heatmap, ticker, routines.
+export { default } from './MissionControlHome';
+export { default as MissionControlHome } from './MissionControlHome';

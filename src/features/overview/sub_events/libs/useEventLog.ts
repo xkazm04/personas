@@ -17,6 +17,9 @@ const logger = createLogger('event-log');
 
 export type SortDirection = 'desc' | 'asc';
 
+/** First-paint page: enough rows to fill the fold, small enough that the
+ *  cold-start query returns fast. The full window streams in right after. */
+const FIRST_PAINT_LIMIT = 10;
 const INITIAL_LIMIT = 50;
 const LOAD_MORE_LIMIT = 50;
 const SAVED_VIEW_TYPE = 'event_log';
@@ -83,12 +86,23 @@ export function useEventLog() {
 
   useEffect(() => {
     let active = true;
+    // Two-stage cold load: paint the first FIRST_PAINT_LIMIT rows as soon as
+    // the fast small query lands, then backfill the full INITIAL_LIMIT window
+    // in an idle slot. fetchRecentEvents replaces the store list wholesale, so
+    // stage 2 is a superset swap — rows already on screen never disappear.
     const load = async () => {
       setIsFetching(true);
       try {
-        await fetchRecentEvents(INITIAL_LIMIT);
+        await fetchRecentEvents(FIRST_PAINT_LIMIT);
       } finally {
         if (active) setIsFetching(false);
+      }
+      if (!active) return;
+      const backfill = () => { if (active) void fetchRecentEvents(INITIAL_LIMIT); };
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(backfill, { timeout: 500 });
+      } else {
+        setTimeout(backfill, 0);
       }
     };
     load();

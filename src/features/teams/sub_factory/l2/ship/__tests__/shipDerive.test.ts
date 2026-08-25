@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SHIP_CRITERIA, deriveCriteria } from '../shipCriteria';
-import { deriveFootprint } from '../shipDerive';
+import { deriveFootprint, deriveProgress } from '../shipDerive';
 import { shipVerdict, type ExitCriterion } from '../shipModel';
 
 import { T, TX, ctx, feature, goal, member, milestone } from './shipFixtures';
@@ -183,5 +183,60 @@ describe('scope-frozen', () => {
     });
     expect(shipVerdict(legacyOnly(all))).toBe('go');
     expect(shipVerdict(all)).toBe('warn');
+  });
+});
+
+describe('deriveProgress', () => {
+  // The defect this function exists to fix. A milestone whose cut is five
+  // goals and zero features is exactly what `show_ship_goals` produces from a
+  // brief, and the old derivation (ready features / total features) reported
+  // 0% for it forever — a number that could not move whatever happened.
+  it('counts a goals-only cut instead of reporting 0% forever', () => {
+    const goals = [
+      goal('g1', 'Project type: Trailer', [], 'done'),
+      goal('g2', 'Compose the story'),
+      goal('g3', 'Decompose into scene stories'),
+      goal('g4', 'Research the references', [], 'done'),
+    ];
+    expect(deriveProgress([], goals)).toBe(50);
+  });
+
+  it('counts features by the AUTOMATION and goals by their status, in one tally', () => {
+    const core = [
+      member(feature('f1', 'login', [auth], true)),
+      member(feature('f2', 'invoice', [auth], false)),
+    ];
+    // 1 ready feature + 1 done goal out of 4 members.
+    expect(deriveProgress(core, [goal('g1', 'a', [], 'done'), goal('g2', 'b')])).toBe(50);
+  });
+
+  it('reads goal status through the shared normalizer, not a raw string compare', () => {
+    // v1 of the Goals module compared raw strings and mis-laned every
+    // in-progress goal. These four aliases all mean done; the rest do not.
+    for (const done of ['done', 'completed', 'complete', 'skipped']) {
+      expect(deriveProgress([], [goal('g', 'x', [], done)])).toBe(100);
+    }
+    for (const open of ['open', 'in_progress', 'in-progress', 'blocked', 'awaiting_acceptance']) {
+      expect(deriveProgress([], [goal('g', 'x', [], open)])).toBe(0);
+    }
+  });
+
+  it('is 0 for an empty cut — a milestone with nothing in it finished nothing', () => {
+    expect(deriveProgress([], [])).toBe(0);
+  });
+
+  it('still ignores the operator rating, which is a second opinion and not a gate', () => {
+    const distrusted = member(feature('f1', 'login', [auth], true), 'core', false, { rating: 1 });
+    const vouched = member(feature('f2', 'invoice', [auth], false), 'core', false, { rating: 5 });
+    expect(deriveProgress([distrusted, vouched], [])).toBe(50);
+  });
+
+  it('preserves the feature-only behaviour it replaced', () => {
+    const core = [
+      member(feature('f1', 'a', [auth], true)),
+      member(feature('f2', 'b', [auth], true)),
+      member(feature('f3', 'c', [auth], false)),
+    ];
+    expect(deriveProgress(core, [])).toBe(67);
   });
 });

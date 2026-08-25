@@ -6869,7 +6869,8 @@
       "hint_speed": "Réduisez la latence avec des prompts plus légers ou un modèle plus rapide.",
       "hint_cost": "Réduisez le coût par exécution avec un modèle moins cher ou un contexte plus court.",
       "hint_activity": "Déclenchez ou planifiez cet agent plus souvent pour augmenter l’activité.",
-      "improve_agent": "Améliorer cet agent"
+      "improve_agent": "Améliorer cet agent",
+      "section_subtitle": "{count} agents · moyenne de la flotte {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "Actualisation auto activée",
@@ -7229,7 +7230,8 @@
       "open": "{count} ouvert(s)",
       "sla_compliance": "Conformité SLA",
       "consecutive_failures": "{count} échecs consécutifs",
-      "consecutive_failure": "{count} échec consécutif"
+      "consecutive_failure": "{count} échec consécutif",
+      "unknown": "Inconnu"
     },
     "system_health": {
       "title": "Vérifications du système",
@@ -15810,7 +15812,23 @@
       "global_hotkey_title": "Parlez depuis n’importe où",
       "ship_milestone_prose_label": "Ce que livrer signifie",
       "ship_milestone_prose_placeholder": "Facultatif : ce que livrer ce jalon signifie vraiment",
-      "fleet_plan_auto_approved": "Plan de flotte approuvé automatiquement (mode autonome)."
+      "fleet_plan_auto_approved": "Plan de flotte approuvé automatiquement (mode autonome).",
+      "ship_goals_badge_existing": "Existe déjà",
+      "ship_goals_badge_new": "Nouvel objectif",
+      "ship_goals_cancel": "Annuler",
+      "ship_goals_confirm": "Créer les objectifs",
+      "ship_goals_context_label": "Contexte auquel cet objectif est rattaché",
+      "ship_goals_core_note": "Chaque objectif rejoint le périmètre principal. Le passer en plus tard ou jamais reste ton choix.",
+      "ship_goals_count_one": "{count} objectif pour {name}",
+      "ship_goals_count_other": "{count} objectifs pour {name}",
+      "ship_goals_created": "Ajouté à {name} : {created} créés, {bound} existaient déjà.",
+      "ship_goals_description_label": "Ce que couvre cet objectif",
+      "ship_goals_description_placeholder": "Facultatif : ce que cet objectif couvre réellement",
+      "ship_goals_empty": "Il ne reste rien à créer. Annule, ou demande à Athena de relire le brief.",
+      "ship_goals_heading": "Objectifs issus du brief",
+      "ship_goals_remove_row": "Retirer cet objectif",
+      "ship_goals_title_label": "Titre de l’objectif",
+      "ship_goals_title_placeholder": "Quelques mots, par exemple Composer l’histoire"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",
@@ -20497,6 +20515,9 @@
     "description_placeholder": "Ce que livrer ce jalon signifie vraiment",
     "goals_rail_empty": "Aucun objectif pour l'instant — écrivez-en un et Athena le placera",
     "goals_rail_title": "Objectifs",
-    "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste"
+    "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste",
+    "decompose_brief": "Décomposer le brief",
+    "decompose_brief_no_brief": "Ce jalon n’a pas encore de brief. Écris ce que le livrer signifie, puis décompose-le.",
+    "decompose_brief_tooltip": "Demande à Athena de lire le brief de ce jalon et de proposer les objectifs qu’il nomme. Rien n’est créé tant que tu n’as pas validé sa carte."
   }
 }

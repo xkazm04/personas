@@ -1,1 +1,0 @@
-export { InsightBand } from './InsightBand';

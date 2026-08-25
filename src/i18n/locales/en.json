@@ -7254,7 +7254,8 @@
       "hint_speed": "Trim latency with leaner prompts or a faster model.",
       "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
       "hint_activity": "Trigger or schedule this agent more often to raise activity.",
-      "improve_agent": "Improve this agent"
+      "improve_agent": "Improve this agent",
+      "section_subtitle": "{count} agents · fleet avg {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "Auto-refresh on",
@@ -7692,7 +7693,8 @@
       "open": "{count} open",
       "sla_compliance": "SLA Compliance",
       "consecutive_failures": "{count} consecutive failures",
-      "consecutive_failure": "{count} consecutive failure"
+      "consecutive_failure": "{count} consecutive failure",
+      "unknown": "Unknown"
     },
     "system_health": {
       "title": "System Checks",
@@ -16104,7 +16106,23 @@
       "global_hotkey_failed": "Another app is already using that shortcut, so it could not be enabled.",
       "ship_milestone_prose_label": "What shipping this means",
       "ship_milestone_prose_placeholder": "Optional: what shipping this milestone actually means",
-      "fleet_plan_auto_approved": "Fleet plan auto-approved (autonomous mode)."
+      "fleet_plan_auto_approved": "Fleet plan auto-approved (autonomous mode).",
+      "ship_goals_heading": "Goals from the brief",
+      "ship_goals_count_one": "{count} goal for {name}",
+      "ship_goals_count_other": "{count} goals for {name}",
+      "ship_goals_empty": "Nothing left to create. Cancel this, or ask Athena to read the brief again.",
+      "ship_goals_badge_new": "New goal",
+      "ship_goals_badge_existing": "Already exists",
+      "ship_goals_context_label": "Context this goal is filed under",
+      "ship_goals_title_label": "Goal title",
+      "ship_goals_title_placeholder": "A handful of words, for example Compose the story",
+      "ship_goals_description_label": "What this goal covers",
+      "ship_goals_description_placeholder": "Optional: what this goal actually covers",
+      "ship_goals_remove_row": "Remove this goal",
+      "ship_goals_core_note": "Every goal is added to the core cut. Moving one to later or never stays yours.",
+      "ship_goals_cancel": "Cancel",
+      "ship_goals_confirm": "Create goals",
+      "ship_goals_created": "Added to {name}: {created} created, {bound} already existed."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",
@@ -20497,6 +20515,9 @@
     "description_edit_aria": "Edit the description of {name}",
     "goals_rail_title": "Goals",
     "goals_rail_empty": "No goals yet — write one and Athena will place it",
-    "description_editor_hint": "Ctrl+B for bold · start a line with “- ” for a list"
+    "description_editor_hint": "Ctrl+B for bold · start a line with “- ” for a list",
+    "decompose_brief": "Decompose brief",
+    "decompose_brief_tooltip": "Ask Athena to read this milestone’s brief and propose the goals it names. Nothing is created until you confirm her card.",
+    "decompose_brief_no_brief": "This milestone has no brief yet. Write what shipping it means, then decompose that."
   }
 }

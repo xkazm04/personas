@@ -6869,7 +6869,8 @@
       "hint_speed": "通过精简提示或更快的模型来降低延迟。",
       "hint_cost": "使用更便宜的模型或更短的上下文来降低单次运行成本。",
       "hint_activity": "更频繁地触发或调度该智能体以提升活跃度。",
-      "improve_agent": "改进此智能体"
+      "improve_agent": "改进此智能体",
+      "section_subtitle": "{count} 个智能体 · 舰队平均 {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "自动刷新开启",
@@ -7229,7 +7230,8 @@
       "open": "{count} 个未处理",
       "sla_compliance": "SLA 合规性",
       "consecutive_failures": "{count} 次连续失败",
-      "consecutive_failure": "{count} 次连续失败"
+      "consecutive_failure": "{count} 次连续失败",
+      "unknown": "未知"
     },
     "system_health": {
       "title": "系统检查",
@@ -15810,7 +15812,23 @@
       "global_hotkey_title": "随时随地开口",
       "ship_milestone_prose_label": "发布意味着什么",
       "ship_milestone_prose_placeholder": "可选：发布这个里程碑究竟意味着什么",
-      "fleet_plan_auto_approved": "舰队计划已自动批准（自主模式）。"
+      "fleet_plan_auto_approved": "舰队计划已自动批准（自主模式）。",
+      "ship_goals_badge_existing": "已存在",
+      "ship_goals_badge_new": "新目标",
+      "ship_goals_cancel": "取消",
+      "ship_goals_confirm": "创建目标",
+      "ship_goals_context_label": "该目标归属的上下文",
+      "ship_goals_core_note": "所有目标都会进入核心范围。要不要挪到「稍后」或「不做」，仍由你决定。",
+      "ship_goals_count_one": "{name} 的 {count} 个目标",
+      "ship_goals_count_other": "{name} 的 {count} 个目标",
+      "ship_goals_created": "已添加到 {name}：新建 {created} 个，已有 {bound} 个。",
+      "ship_goals_description_label": "这个目标涵盖什么",
+      "ship_goals_description_placeholder": "可选：这个目标实际涵盖什么",
+      "ship_goals_empty": "没有可创建的内容了。取消，或让 Athena 重新读一遍简报。",
+      "ship_goals_heading": "来自简报的目标",
+      "ship_goals_remove_row": "移除这个目标",
+      "ship_goals_title_label": "目标标题",
+      "ship_goals_title_placeholder": "几个词就好，例如「构建故事」"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",
@@ -20497,6 +20515,9 @@
     "description_placeholder": "发布这个里程碑究竟意味着什么",
     "goals_rail_empty": "还没有目标——写一个，Athena 会把它归位",
     "goals_rail_title": "目标",
-    "description_editor_hint": "Ctrl+B 加粗 · 行首输入“- ”创建列表"
+    "description_editor_hint": "Ctrl+B 加粗 · 行首输入“- ”创建列表",
+    "decompose_brief": "拆解简报",
+    "decompose_brief_no_brief": "这个里程碑还没有简报。先写清楚交付它意味着什么，再来拆解。",
+    "decompose_brief_tooltip": "让 Athena 读这个里程碑的简报，并提出其中点名的目标。在你确认她的卡片之前，不会创建任何东西。"
   }
 }

@@ -140,5 +140,8 @@
   "description_placeholder": "Co ve skutečnosti znamená vydat tento milník",
   "goals_rail_empty": "Zatím žádné cíle — napište jeden a Athéna ho zařadí",
   "goals_rail_title": "Cíle",
-  "description_editor_hint": "Ctrl+B pro tučné písmo · řádek začněte „- “ pro odrážky"
+  "description_editor_hint": "Ctrl+B pro tučné písmo · řádek začněte „- “ pro odrážky",
+  "decompose_brief": "Rozložit zadání",
+  "decompose_brief_no_brief": "Tento milník zatím nemá zadání. Napište, co znamená ho dodat, a pak to rozložte.",
+  "decompose_brief_tooltip": "Požádejte Athenu, ať přečte zadání tohoto milníku a navrhne cíle, které pojmenovává. Nic nevznikne, dokud její kartu nepotvrdíte."
 }

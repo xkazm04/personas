@@ -151,6 +151,19 @@ event_names! {
     // (not the direct context-gen channel) so it surfaces in the Live Stream.
     DEV_TOOLS_CONTEXT_SCAN_STARTED   => "dev_tools.context_scan_started",
     DEV_TOOLS_CONTEXT_SCAN_COMPLETED => "dev_tools.context_scan_completed",
+    // Ship planner live-refresh signal. Emitted by `db::cdc` for a write to ANY
+    // of the four Ship tables (dev_goals, dev_milestones, dev_milestone_items,
+    // dev_use_cases), whoever the writer was — an Athena approval executor, a
+    // Fleet session through the management API, the CLI ingest door, or the
+    // Ship tab itself. ONE name for four tables on purpose: the frontend's unit
+    // of invalidation is the Ship slice, not a table, and the payload (the
+    // `CdcEvent` itself: `{action, table, rowid}`) already carries `table` for
+    // any listener that wants to filter.
+    //
+    // The rowid is deliberately NOT resolved to an id in Rust: that costs a
+    // query per write and is impossible on DELETE, which is the unbind-a-goal
+    // case the planner most needs to see.
+    DEV_TOOLS_SHIP_CHANGED     => "dev-tools-ship-changed",
     // The findings loop's SIGNAL events (docs/plans/dev-findings-loop.md). A sensor
     // raised a finding, or a verdict landed on one that shipped. Published on every
     // create_finding / set_finding_verify_state — i.e. from the repo, so no caller

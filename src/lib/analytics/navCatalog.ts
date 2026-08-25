@@ -82,7 +82,7 @@ const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 
 // fails when a completed observability surface is never mounted, so a comment
 // asserting it is mounted is the only thing standing where the check should be.
 // See docs/concepts/golden-paths/query-latency-instrumentation.md.
-const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, extracted: true, 'memory-graph': true, sla: true, health: true, leaderboard: true, director: true, certification: true });
+const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, extracted: true, 'memory-graph': true, director: true, certification: true });
 const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, competition: true, mastermind: true });
 const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true, missions: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
