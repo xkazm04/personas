@@ -2,7 +2,7 @@
   "filters": {
     "start_date": "開始日",
     "end_date": "終了日",
-    "all_personas": "全エージェント"
+    "all_personas": "全ペルソナ"
   },
   "messages": {
     "priority_high": "高",
@@ -12,7 +12,7 @@
     "no_messages": "メッセージはまだありません",
     "switch_to_all": "「すべて」に切り替えて全メッセージを表示",
     "columns": {
-      "persona": "エージェント",
+      "persona": "ペルソナ",
       "title": "タイトル",
       "priority": "優先度",
       "status": "ステータス",
@@ -144,8 +144,8 @@
     "col_incident": "インシデント",
     "guidance_mcp_sidecar": "personas-mcp バイナリが見つからなかったため、エージェントは組み込みの MCP ツールなしで実行されました。デスクトップアプリに同梱されるよう、アプリを再インストールまたは修復してください。",
     "source_mcp_sidecar": "MCP ツールベルト",
-    "list_truncated": "最初の{limit}件のインシデントを表示しています——残りを見るにはフィルターを絞り込んでください。",
-    "action_refused": "操作は適用されませんでした——インシデントのステータスがすでに変わっている可能性があります。",
+    "list_truncated": "最初の{limit}件のインシデントを表示しています — 残りを見るにはフィルターを絞り込んでください。",
+    "action_refused": "操作は適用されませんでした — インシデントのステータスがすでに変わっている可能性があります。",
     "noc_diagnosis_title": "根本原因",
     "noc_diagnosed_by": "Athena が診断",
     "noc_handled_by": "Athena が対応",
@@ -166,7 +166,7 @@
     "subtitle": "エージェント全体の実行ヘルス、コスト、異常を監視",
     "alert_rules": "アラートルール",
     "refresh_metrics": "メトリクスを更新",
-    "metrics_unavailable": "メトリクスが利用不可 -- 表示データは古い可能性があります",
+    "metrics_unavailable": "メトリクスが利用不可 — 表示データは古い可能性があります",
     "error_recovery": {
       "panel_loaded": "読み込み済み",
       "panel_failed": "読み込み失敗",
@@ -240,7 +240,7 @@
     "circuit_breakers": "{count}件のサーキットブレーカー",
     "auto_healed": "自動復旧",
     "known_patterns": "{count}件の既知パターン",
-    "daily_success_rate": "日次成功率 -- {days}日間",
+    "daily_success_rate": "日次成功率 — {days}日間",
     "per_agent": "エージェント別信頼性",
     "no_agent_data": "この期間に実行されたエージェントはありません。",
     "success_rate_tooltip": "成功率 = 成功数 ÷ （成功数 + 失敗数）。キャンセルされた実行は、ユーザーが自ら中断したものであり、システムの信頼性を反映しないため除外されます。",
@@ -278,11 +278,11 @@
     "failure_patterns_hint": "既知のエラーシグネチャ",
     "model_insights": "モデルインサイト",
     "model_insights_hint": "モデル別パフォーマンス",
-    "all_personas": "全エージェント（グローバル）",
+    "all_personas": "全ペルソナ（グローバル）",
     "all_types": "全タイプ",
     "failure_drilldown": "失敗ドリルダウン: {date}",
     "failure_drilldown_hint": "この日付以降に有効な失敗パターンを表示しています。",
-    "failure_drilldown_empty": "一致するパターンが見つかりません -- 上で特定のエージェントを選択してください。",
+    "failure_drilldown_empty": "一致するパターンが見つかりません — 上で特定のペルソナを選択してください。",
     "unavailable": "ナレッジデータが利用できません",
     "empty": "ナレッジパターンはまだありません",
     "empty_hint": "実行を重ねることでナレッジグラフが構築されます。ツールシーケンス、失敗パターン、コスト品質のトレードオフを学習します。",
@@ -394,7 +394,7 @@
     "cloud_badge": "クラウド",
     "execution_link": "実行",
     "context_label": "コンテキスト",
-    "you": "あなた",
+    "you": "自分",
     "agent": "エージェント",
     "review_status": "レビュー {status}",
     "decisions_label": "決定",
@@ -1071,8 +1071,8 @@
     "score_prefix": "スコア:",
     "uptime_30d_prefix": "30日アップタイム:",
     "updated_prefix": "更新",
-    "consecutive_failures_one": "{count} 回連続失敗",
-    "consecutive_failures_other": "{count} 回連続失敗",
+    "consecutive_failures_one": "{count}回連続失敗",
+    "consecutive_failures_other": "{count}回連続失敗",
     "score_label": "スコア",
     "uptime_30d": "30日間稼働率",
     "updated": "{time}に更新",
@@ -1095,7 +1095,7 @@
     "title": "システムチェック",
     "subtitle": "環境が準備できているか確認",
     "re_run_checks": "チェックを再実行",
-    "ollama_title": "Ollama クラウドAPIキー",
+    "ollama_title": "OllamaクラウドAPIキー",
     "ollama_subtitle": "任意 — すべてのエージェントに対して無料のクラウドモデル（Qwen3 Coder、GLM-5、Kimi K2.5）を解放します。",
     "litellm_title": "LiteLLMプロキシ設定",
     "litellm_subtitle": "任意 — モデル管理とコスト追跡のためにLiteLLMプロキシ経由でエージェントをルーティングします。",
@@ -1175,7 +1175,7 @@
     "budget_exhaustion_warnings": "予算枯渇の警告",
     "exhausted": "枯渇",
     "days_left": "残り{days}日",
-    "active_personas_subtitle": "{count} 件のアクティブなペルソナ · ローカル月境界"
+    "active_personas_subtitle": "{count}件のアクティブなペルソナ ・ ローカル月境界"
   },
   "cascade": {
     "title": "チェーンカスケードマップ",
@@ -1223,7 +1223,7 @@
   },
   "knowledge_graph": {
     "mock_pattern": "モックパターン",
-    "seed_tooltip": "モックパターンをシード (dev専用)",
+    "seed_tooltip": "モックパターンをシード（開発専用）",
     "all_types": "すべてのタイプ",
     "all_scopes": "すべてのスコープ",
     "failure_drilldown_prefix": "失敗のドリルダウン:",
@@ -1276,7 +1276,7 @@
     "derived_from_label": "統合元",
     "claim_error_toast": "異議を更新できませんでした",
     "claim_filed_toast": "異議を提出しました — 解決までメモリは想起で降格されます",
-    "claim_note_placeholder": "このメモリが誤り・古い理由は?(任意)",
+    "claim_note_placeholder": "このメモリが誤り・古い理由は？（任意）",
     "claim_outdated": "古い情報として報告",
     "claim_resolution_deprecated": "廃止済み",
     "claim_resolution_dismissed": "却下済み",
@@ -1291,7 +1291,7 @@
     "claim_wrong": "誤りとして報告",
     "claims_empty": "このメモリへの異議はありません。",
     "claims_label": "異議",
-    "claims_open_badge": "{count} 件未解決"
+    "claims_open_badge": "{count}件未解決"
   },
   "memory_table": {
     "agent": "エージェント",
@@ -1347,7 +1347,7 @@
     "diagnosis_label": "診断:",
     "fixes_applied": "適用された修正",
     "alert_history_title": "アラート履歴",
-    "all_agents_global": "すべてのエージェント (グローバル)",
+    "all_agents_global": "すべてのエージェント（グローバル）",
     "add_rule": "ルールを追加",
     "no_rules_configured": "アラートルールが設定されていません。監視を開始するにはルールを追加してください。",
     "confidence_pct_suffix": "% 信頼度",
@@ -1408,7 +1408,7 @@
   },
   "event_detail_drawer": {
     "event_id_label": "イベントID",
-    "broadcast": "(ブロードキャスト)"
+    "broadcast": "（ブロードキャスト）"
   },
   "realtime_stats": {
     "events_per_min": "イベント/分",
@@ -1468,8 +1468,8 @@
   "heatmap": {
     "title_persona": "過去1年間のアクティビティ",
     "title_global": "過去1年間のフリートアクティビティ",
-    "subtitle_executions": "{count} 件の実行",
-    "subtitle_executions_with_cost": "{count} 件の実行 · 合計 ${cost}",
+    "subtitle_executions": "{count}件の実行",
+    "subtitle_executions_with_cost": "{count}件の実行 ・ 合計 ${cost}",
     "no_activity": "過去1年間のアクティビティはありません",
     "less": "少ない",
     "more": "多い",
@@ -1478,13 +1478,13 @@
     "tooltip_runs": "{date}に{count}件実行",
     "tooltip_with_cost": " · ${cost}",
     "insights_streak": "最長連続日数",
-    "insights_streak_days": "{days}d",
+    "insights_streak_days": "{days}日",
     "insights_dormant": "休止中",
-    "insights_dormant_days": "{days}d",
+    "insights_dormant_days": "{days}日",
     "insights_dormant_active": "本日アクティブ",
     "insights_dormant_never": "未実行",
     "insights_peak": "ピーク日",
-    "insights_peak_value": "{count} on {date}",
+    "insights_peak_value": "{date}に{count}件",
     "insights_wow": "前週比",
     "insights_wow_up": "前週比 +{pct}%",
     "insights_wow_down": "前週比 {pct}%",
@@ -1505,7 +1505,7 @@
     "aria_year_activity": "過去1年間の実行アクティビティ"
   },
   "trend": {
-    "up": "Up",
+    "up": "上昇",
     "down": "低下",
     "stable": "安定 — 大きな変化なし",
     "vs_previous": "前期間比"
@@ -1544,7 +1544,7 @@
     "linked_decisions_reject": "却下",
     "linked_memories_title": "リンクされたメモリー",
     "linked_memories_empty": "この実行に記録されたメモリーはありません。",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my ペルソナs — show their status, recent activity, and anything that needs my attention.",
+    "compose_personas_prompt": "すべてのペルソナの概要を含むコックピットを作成してください — ステータス、最近のアクティビティ、対応が必要な項目を表示してください。",
     "subtitle_explaining": "Athena があなたのためにこの説明を作成しました — 終了すると自分のコックピットに戻ります。",
     "context_explaining": "Athena が説明中: {title}",
     "widget_empty": "表示するものがありません。",
@@ -1591,7 +1591,7 @@
     "default_attention_title": "要対応",
     "default_callout_body": "これはフリートの状態から作成されたスターター表示です。Athena に、あなたが重視することに合わせたコックピットを構成するよう依頼してください — 自動的に置き換わります。",
     "default_callout_title": "スターターコックピット",
-    "default_roster_title": "あなたのペルソナ",
+    "default_roster_title": "ペルソナ",
     "default_stat_active_personas": "アクティブなペルソナ",
     "default_stat_executions": "実行数（7日間）",
     "default_stat_needs_attention": "要対応",
@@ -1687,12 +1687,12 @@
   },
   "fleet_optimization": {
     "title": "フリート最適化",
-    "open_lab": "Labを開く",
+    "open_lab": "ラボを開く",
     "open_lab_hint": "Labで{persona}の代替モデルをテストする",
     "ask_athena": "Athenaに質問",
     "ask_athena_hint": "この提案をAthenaに転送して調査させる",
-    "ask_athena_prompt": "エージェントのフリート最適化の提案を確認しています：「{title}」。{description} 推奨アクション：{action}。{focus}",
-    "ask_athena_focus_persona": "エージェント「{persona}」を調査し、役立つ場合はそのLabを開いて代替モデルをテストし、結果を報告してください。",
+    "ask_athena_prompt": "エージェントのフリート最適化の提案を確認しています:「{title}」。{description} 推奨アクション:{action}。{focus}",
+    "ask_athena_focus_persona": "エージェント「{persona}」を調査し、役立つ場合はそのラボを開いて代替モデルをテストし、結果を報告してください。",
     "ask_athena_focus_general": "これを調査して、何を変更すべきか推奨してください。"
   },
   "athena": {
@@ -1786,7 +1786,7 @@
     "unsourced_tip": "このレポートには数値が含まれていますが、Sources セクションがないため、出所を遡ることができません。"
   },
   "llm_spend": {
-    "by_source": "ティア別コスト",
+    "by_source": "種別別コスト",
     "by_trigger": "タスク別コスト",
     "calls": "呼び出し回数",
     "cost_per_day": "1日あたりのコスト",
@@ -1805,9 +1805,9 @@
   "title": "概要",
   "no_output": "出力はまだありません",
   "no_background_jobs": "実行中または最近のバックグラウンドジョブはありません",
-  "background_jobs_hint": "N8n変換、テンプレート採用、テンプレート生成、クエリデバッグを実行するとここに表示されます",
+  "background_jobs_hint": "ワークフローのインポート、テンプレートの設定、エージェントの生成、診断の実行を行うとここに表示されます",
   "realtime": {
-    "idle": "待機中 -- {action}をクリックしてトラフィックをシミュレート",
+    "idle": "待機中 — {action}をクリックしてトラフィックをシミュレート",
     "test_flow": "テストフロー",
     "events_per_min": "イベント/分",
     "pending": "保留",
@@ -1838,8 +1838,8 @@
     "subtitle": "全エージェントのスケジュール実行の集約ビュー",
     "engine_on": "エンジンON",
     "engine_off": "エンジンOFF",
-    "engine_on_tooltip": "スケジューラー稼働中 -- クリックで一時停止",
-    "engine_off_tooltip": "スケジューラー停止中 -- クリックで開始",
+    "engine_on_tooltip": "スケジューラー稼働中 — クリックで一時停止",
+    "engine_off_tooltip": "スケジューラー停止中 — クリックで開始",
     "active_count": "{count}件有効",
     "paused_count": "{count}件一時停止",
     "view_grouped": "グループ",
@@ -1884,7 +1884,7 @@
     "recover": "リカバリ",
     "run_once": "1回実行",
     "run_once_tooltip": "今すぐ1回実行",
-    "skip_tooltip": "スキップ -- リカバリしない",
+    "skip_tooltip": "スキップ — リカバリしない",
     "dismiss_all": "すべて非表示",
     "recover_selected": "{count}件をリカバリ"
   },
@@ -2037,15 +2037,15 @@
     "continue_label": "続行"
   },
   "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count} 件の保留中のレビューが選択されました",
-    "pending_reviews_selected_other": "{count} 件の保留中のレビューが選択されました"
+    "pending_reviews_selected_one": "{count}件の保留中のレビューが選択されました",
+    "pending_reviews_selected_other": "{count}件の保留中のレビューが選択されました"
   },
   "review_inbox": {
     "drag_to_resize": "ドラッグしてサイズ変更"
   },
   "event_bus_overlay": {
-    "earlier_events_not_shown_one": "以前のイベント {count} 件は表示されていません",
-    "earlier_events_not_shown_other": "以前のイベント {count} 件は表示されていません"
+    "earlier_events_not_shown_one": "以前のイベント{count}件は表示されていません",
+    "earlier_events_not_shown_other": "以前のイベント{count}件は表示されていません"
   },
   "event_bus_filter": {
     "search_placeholder": "イベントを検索…"
@@ -2060,7 +2060,7 @@
     "clear_filters_tooltip": "すべてのフィルターをクリア"
   },
   "dashboard_home": {
-    "you_have": "あなたには"
+    "you_have": "保有中"
   },
   "fleet_optimization_card": {
     "title": "フリート最適化"
@@ -2121,23 +2121,23 @@
     "tab_legacy": "レガシー",
     "tab_techniques": "テクニック",
     "techniques_empty": "このサブジェクトはまだテクニックを宣言していません。",
-    "warnings_badge": "{count} 件の警告",
+    "warnings_badge": "{count}件の警告",
     "warnings_title": "コーパス警告",
     "graph_back_home_aria": "グラフ概要に戻る",
     "graph_breadcrumb_aria": "グラフ フォーカスのパンくずリスト",
     "graph_canvas_aria": "知識階層グラフ",
-    "graph_crest_counts": "サブジェクト {subjects} 件 · テクニック {techniques} 件",
+    "graph_crest_counts": "サブジェクト{subjects}件 ・ テクニック{techniques}件",
     "laws_lens_aria": "原則でグラフを絞り込む",
-    "laws_lens_citing": "サブジェクト {count} 件",
+    "laws_lens_citing": "サブジェクト{count}件",
     "laws_lens_clear": "原則フィルターを解除",
     "laws_lens_empty": "_laws.md から解析された原則がありません。",
     "laws_lens_label": "原則",
     "legend_aria": "ノード状態リングの凡例",
-    "modal_applications_empty": "このテクニックの適用事例はまだありません。",
-    "modal_applications_heading": "適用事例",
+    "modal_applications_empty": "このテクニックの応用ドキュメントはまだありません。",
+    "modal_applications_heading": "応用",
     "modal_laws_heading": "原則",
     "open_in_subjects": "サブジェクトで開く",
-    "search_kind_application": "適用事例",
+    "search_kind_application": "応用",
     "search_kind_category": "カテゴリ",
     "search_kind_subject": "サブジェクト",
     "search_kind_technique": "テクニック",

@@ -6227,7 +6227,7 @@
     "filters": {
       "start_date": "শুরুর তারিখ",
       "end_date": "শেষ তারিখ",
-      "all_personas": "সব Persona"
+      "all_personas": "সব পার্সোনা"
     },
     "messages": {
       "priority_high": "উচ্চ",
@@ -6235,7 +6235,7 @@
       "priority_low": "নিম্ন",
       "loading": "বার্তা লোড হচ্ছে…",
       "no_messages": "কোনো বার্তা নেই",
-      "switch_to_all": "সব বার্তা দেখতে \\\\\\\"সব\\\\\\\" এ যান",
+      "switch_to_all": "সব বার্তা দেখতে \"সব\" এ যান",
       "columns": {
         "persona": "পার্সোনা",
         "title": "শিরোনাম",
@@ -6503,11 +6503,11 @@
       "failure_patterns_hint": "পরিচিত ত্রুটি স্বাক্ষর",
       "model_insights": "মডেল ইনসাইট",
       "model_insights_hint": "মডেল অনুযায়ী কর্মক্ষমতা",
-      "all_personas": "সব Persona (গ্লোবাল)",
+      "all_personas": "সব পার্সোনা (গ্লোবাল)",
       "all_types": "সব ধরন",
       "failure_drilldown": "ব্যর্থতা ড্রিল-ডাউন: {date}",
       "failure_drilldown_hint": "এই তারিখে বা পরে সক্রিয় ব্যর্থতা প্যাটার্ন দেখাচ্ছে।",
-      "failure_drilldown_empty": "কোনো মিল নেই -- উপরে নির্দিষ্ট persona নির্বাচন করুন।",
+      "failure_drilldown_empty": "কোনো মিল নেই -- উপরে নির্দিষ্ট পার্সোনা নির্বাচন করুন।",
       "unavailable": "জ্ঞান ডাটা অনুপলব্ধ",
       "empty": "কোনো জ্ঞান প্যাটার্ন নেই",
       "empty_hint": "জ্ঞান গ্রাফ তৈরি করতে সম্পাদন চালান। প্রতিটি সম্পাদন সিস্টেমকে টুল সিকোয়েন্স, ব্যর্থতা প্যাটার্ন ও খরচ-মান ট্রেড-অফ শেখায়।",
@@ -6942,7 +6942,7 @@
       "dim_cost": "খরচ",
       "dim_activity": "কার্যকলাপ",
       "stat_total_runs": "মোট রান",
-      "stat_recent_7d": "সাম্প্রতিক (৭দি)",
+      "stat_recent_7d": "সাম্প্রতিক (৭ দিন)",
       "stat_avg_latency": "গড় বিলম্ব",
       "stat_daily_burn": "দৈনিক খরচ",
       "fleet_average": "ফ্লিট গড়",
@@ -7294,14 +7294,14 @@
       "loading_status": "স্ট্যাটাস পেজ ডেটা লোড হচ্ছে…",
       "no_personas": "দেখানোর জন্য কোনো পার্সোনা নেই।",
       "score_prefix": "স্কোর:",
-      "uptime_30d_prefix": "30d আপটাইম:",
+      "uptime_30d_prefix": "৩০ দিনের আপটাইম:",
       "updated_prefix": "আপডেট",
       "consecutive_failures_one": "{count}টি ধারাবাহিক ব্যর্থতা",
       "consecutive_failures_other": "{count}টি ধারাবাহিক ব্যর্থতা",
       "score_label": "স্কোর",
       "uptime_30d": "৩০ দিনের আপটাইম",
       "updated": "{time}-এ আপডেট হয়েছে",
-      "legend": "কিংবদন্তি:",
+      "legend": "লেজেন্ড:",
       "operational": "কার্যকর",
       "degraded": "অবনতি হয়েছে",
       "outage": "বিভ্রাট",
@@ -7394,7 +7394,7 @@
     "burn_rate_extra": {
       "title": "বার্ন রেট প্রজেকশন",
       "daily_burn": "দৈনিক বার্ন",
-      "projected_monthly": "প্রজেক্টেড মাসিক",
+      "projected_monthly": "প্রত্যাশিত মাসিক",
       "at_risk": "ঝুঁকিতে",
       "top_cost_drivers": "শীর্ষ খরচের কারণ",
       "budget_exhaustion_warnings": "বাজেট শেষের সতর্কতা",
@@ -7480,7 +7480,7 @@
       "reject_all": "সব প্রত্যাখ্যান করুন",
       "accept_all": "সব গ্রহণ করুন",
       "retry_with_changes": "পরিবর্তন সহ পুনরায় চেষ্টা করুন",
-      "carry_out_hint": "রিভিউ অনুমোদন করে এবং এটি সম্পন্ন করতে persona চালায়",
+      "carry_out_hint": "রিভিউ অনুমোদন করে এবং এটি সম্পন্ন করতে পার্সোনা চালায়",
       "clear": "সাফ করুন",
       "video_not_supported": "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।"
     },
@@ -7715,22 +7715,22 @@
       "insights_wow_down": "গত সপ্তাহের তুলনায় {pct}%",
       "insights_wow_flat": "গত সপ্তাহের তুলনায় কোনো পরিবর্তন নেই",
       "insights_wow_new": "নতুন কার্যকলাপ",
-      "month_jan": "Jan",
-      "month_feb": "Feb",
-      "month_mar": "Mar",
-      "month_apr": "Apr",
-      "month_may": "May",
-      "month_jun": "Jun",
-      "month_jul": "Jul",
-      "month_aug": "Aug",
-      "month_sep": "Sep",
-      "month_oct": "Oct",
-      "month_nov": "Nov",
-      "month_dec": "Dec",
+      "month_jan": "জানু",
+      "month_feb": "ফেব্রু",
+      "month_mar": "মার্চ",
+      "month_apr": "এপ্রিল",
+      "month_may": "মে",
+      "month_jun": "জুন",
+      "month_jul": "জুলাই",
+      "month_aug": "আগস্ট",
+      "month_sep": "সেপ্টে",
+      "month_oct": "অক্টো",
+      "month_nov": "নভে",
+      "month_dec": "ডিসে",
       "aria_year_activity": "গত এক বছরের এক্সিকিউশন কার্যকলাপ"
     },
     "trend": {
-      "up": "Up",
+      "up": "ঊর্ধ্বমুখী",
       "down": "নিম্নমুখী",
       "stable": "স্থিতিশীল — উল্লেখযোগ্য পরিবর্তন নেই",
       "vs_previous": "পূর্ববর্তী সময়ের তুলনায়"
@@ -7769,7 +7769,7 @@
       "linked_decisions_reject": "প্রত্যাখ্যান করুন",
       "linked_memories_title": "লিংক করা মেমোরি",
       "linked_memories_empty": "এই এক্সিকিউশনের জন্য কোনো মেমোরি রেকর্ড করা হয়নি।",
-      "compose_personas_prompt": "Compose a cockpit with an overview of all my পারসোনাs — show their status, recent activity, and anything that needs my attention.",
+      "compose_personas_prompt": "সব পার্সোনার একটি ওভারভিউ সহ একটি ককপিট তৈরি করুন — তাদের অবস্থা, সাম্প্রতিক কার্যক্রম এবং আমার মনোযোগ প্রয়োজন এমন যেকোনো কিছু দেখান।",
       "subtitle_explaining": "Athena আপনার জন্য এই ব্যাখ্যাটি তৈরি করেছে — আপনার নিজের কক্পিটে ফিরতে এটি বন্ধ করুন।",
       "context_explaining": "Athena ব্যাখ্যা করছে: {title}",
       "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
@@ -7797,7 +7797,7 @@
       "briefing_stat_alerts": "সতর্কতা",
       "briefing_stat_approvals": "অপেক্ষমাণ অনুমোদন",
       "briefing_stat_incidents": "খোলা ইনসিডেন্ট",
-      "briefing_attention_title": "ব্যর্থ হওয়া পারসোনা",
+      "briefing_attention_title": "ব্যর্থ হওয়া পার্সোনা",
       "briefing_failed_sublabel": "আপনি চলে যাওয়ার পর {count}টি ব্যর্থ",
       "briefing_approval_title": "আপনার অপেক্ষায়",
       "briefing_approval_headline": "একটি প্রস্তাব আপনার সিদ্ধান্তের অপেক্ষায় আছে",
@@ -7807,9 +7807,9 @@
       "action_decline": "প্রত্যাখ্যান করুন",
       "action_done": "সম্পন্ন",
       "action_failed": "ব্যর্থ — আবার চেষ্টা করুন",
-      "action_confirm_rerun_title": "এই পারসোনাটি পুনরায় চালাবেন?",
+      "action_confirm_rerun_title": "এই পার্সোনাটি পুনরায় চালাবেন?",
       "action_confirm_rerun_body": "এটি একটি নতুন এক্সিকিউশন শুরু করবে এবং বাজেট খরচ হতে পারে।",
-      "action_confirm_pause_title": "এই পারসোনাটি বিরতি দেবেন?",
+      "action_confirm_pause_title": "এই পার্সোনাটি বিরতি দেবেন?",
       "action_confirm_pause_body": "আপনি পুনরায় সক্রিয় না করা পর্যন্ত এটি ট্রিগারে সাড়া দেবে না।",
       "default_attention_paused": "থামানো",
       "default_attention_setup": "সেটআপ প্রয়োজন",
@@ -8040,12 +8040,12 @@
       "in_window": "উইন্ডোতে"
     },
     "executions": {
-      "title": "সম্পাদন",
-      "loading": "সম্পাদন লোড হচ্ছে…",
+      "title": "এক্সিকিউশন",
+      "loading": "এক্সিকিউশন লোড হচ্ছে…",
       "no_agents": "কোনো এজেন্ট তৈরি হয়নি",
-      "create_first": "সম্পাদন কার্যকলাপ দেখতে প্রথম এজেন্ট তৈরি করুন",
-      "no_executions": "কোনো সম্পাদন নেই",
-      "run_agent": "সম্পাদন কার্যকলাপ দেখতে একটি এজেন্ট চালান"
+      "create_first": "এক্সিকিউশন কার্যকলাপ দেখতে আপনার প্রথম এজেন্ট তৈরি করুন",
+      "no_executions": "এখনও কোনো এক্সিকিউশন নেই",
+      "run_agent": "এক্সিকিউশন কার্যকলাপ দেখতে একটি এজেন্ট চালান"
     },
     "workflows": {
       "loading": "ওয়ার্কফ্লো লোড হচ্ছে…",
@@ -8060,13 +8060,13 @@
     },
     "schedules": {
       "title": "সময়সূচি টাইমলাইন",
-      "subtitle": "সব নির্ধারিত এজেন্ট সম্পাদনের সমন্বিত দৃশ্য",
+      "subtitle": "সব নির্ধারিত এজেন্ট এক্সিকিউশনের সমন্বিত দৃশ্য",
       "engine_on": "ইঞ্জিন চালু",
       "engine_off": "ইঞ্জিন বন্ধ",
       "engine_on_tooltip": "শিডিউলার চলছে -- থামাতে ক্লিক করুন",
       "engine_off_tooltip": "শিডিউলার থামানো -- শুরু করতে ক্লিক করুন",
-      "active_count": "{count} সক্রিয়",
-      "paused_count": "{count} বিরতিতে",
+      "active_count": "{count}টি সক্রিয়",
+      "paused_count": "{count}টি বিরতিতে",
       "view_grouped": "গ্রুপভিত্তিক",
       "view_timeline": "টাইমলাইন",
       "triggers_fired": "ট্রিগার ফায়ার: ",
@@ -8087,7 +8087,7 @@
       "change_frequency": "ফ্রিকোয়েন্সি পরিবর্তন",
       "pause_schedule": "সময়সূচি বিরতি",
       "resume_schedule": "সময়সূচি পুনরায় শুরু",
-      "headless_badge": "headless"
+      "headless_badge": "ব্যাকগ্রাউন্ড"
     },
     "frequency_editor": {
       "title": "ফ্রিকোয়েন্সি পরিবর্তন",
@@ -8100,8 +8100,8 @@
       "invalid_cron": "অবৈধ cron এক্সপ্রেশন"
     },
     "recovery": {
-      "agents_missed_one": "{count} এজেন্ট সম্পাদন মিস করেছে",
-      "agents_missed_other": "{count} এজেন্ট সম্পাদন মিস করেছে",
+      "agents_missed_one": "{count}জন এজেন্ট এক্সিকিউশন মিস করেছে",
+      "agents_missed_other": "{count}জন এজেন্ট এক্সিকিউশন মিস করেছে",
       "total_skipped": "অ্যাপ অফলাইনে ~{count} রান এড়িয়ে গেছে",
       "missed_since": "{time} থেকে {count} মিস",
       "every_interval": "প্রতি {interval}",
@@ -8111,14 +8111,14 @@
       "run_once_tooltip": "এখন একবার চালান",
       "skip_tooltip": "এড়িয়ে যান",
       "dismiss_all": "সব বাতিল",
-      "recover_selected": "{count} নির্বাচিত পুনরুদ্ধার"
+      "recover_selected": "{count}টি নির্বাচিত পুনরুদ্ধার করুন"
     },
     "conflicts": {
       "dismissed": "দ্বন্দ্ব বাতিল",
       "resolved": "দ্বন্দ্ব সমাধান",
       "resolve_failed": "দ্বন্দ্ব সমাধান ব্যর্থ",
-      "conflict_count_one": "{count} দ্বন্দ্ব",
-      "conflict_count_other": "{count} দ্বন্দ্ব"
+      "conflict_count_one": "{count}টি দ্বন্দ্ব",
+      "conflict_count_other": "{count}টি দ্বন্দ্ব"
     },
     "execution_metrics": {
       "title": "এক্সিকিউশন মেট্রিক্স",
@@ -8269,8 +8269,8 @@
       "drag_to_resize": "আকার পরিবর্তন করতে টেনে আনুন"
     },
     "event_bus_overlay": {
-      "earlier_events_not_shown_one": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি",
-      "earlier_events_not_shown_other": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি"
+      "earlier_events_not_shown_one": "{count}টি পূর্ববর্তী ইভেন্ট দেখানো হয়নি",
+      "earlier_events_not_shown_other": "{count}টি পূর্ববর্তী ইভেন্ট দেখানো হয়নি"
     },
     "event_bus_filter": {
       "search_placeholder": "ইভেন্ট খুঁজুন…"
@@ -8346,9 +8346,9 @@
       "tab_legacy": "লিগ্যাসি",
       "tab_techniques": "কৌশল",
       "techniques_empty": "এই বিষয়ে এখনও কোনো কৌশল ঘোষণা করা হয়নি।",
-      "warnings_badge": "{count} সতর্কতা",
+      "warnings_badge": "{count}টি সতর্কতা",
       "warnings_title": "কর্পাস সতর্কতা",
-      "graph_back_home_aria": "গ্রাফ ওভারভিউতে ফিরুন",
+      "graph_back_home_aria": "গ্রাফের সারসংক্ষেপে ফিরুন",
       "graph_breadcrumb_aria": "গ্রাফ ফোকাস ব্রেডক্রাম্ব",
       "graph_canvas_aria": "জ্ঞান-স্তরবিন্যাস গ্রাফ",
       "graph_crest_counts": "{subjects} বিষয় · {techniques} কৌশল",
