@@ -119,7 +119,11 @@ export interface ShipMilestoneVM {
   /** Derived from CORE members' slices — never hand-picked. */
   footprint: ShipContext[];
   criteria: ExitCriterion[];
-  /** Ready core members / total core members (100 once shipped). */
+  /**
+   * Done core members / total core members, 0-100 (100 once shipped). BOTH
+   * kinds count: a core feature is done when the automation calls it ready, a
+   * core goal when its status does. See `deriveProgress`.
+   */
   progress: number;
   /**
    * How the operator's ratings line up against the automation's readiness on

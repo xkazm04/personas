@@ -140,5 +140,8 @@
   "description_placeholder": "Phát hành cột mốc này thực sự nghĩa là gì",
   "goals_rail_empty": "Chưa có mục tiêu nào — hãy viết một mục tiêu, Athena sẽ sắp xếp",
   "goals_rail_title": "Mục tiêu",
-  "description_editor_hint": "Ctrl+B để in đậm · bắt đầu dòng bằng “- ” để tạo danh sách"
+  "description_editor_hint": "Ctrl+B để in đậm · bắt đầu dòng bằng “- ” để tạo danh sách",
+  "decompose_brief": "Phân rã bản tóm tắt",
+  "decompose_brief_no_brief": "Cột mốc này chưa có bản tóm tắt. Hãy viết ra việc phát hành nó nghĩa là gì, rồi phân rã điều đó.",
+  "decompose_brief_tooltip": "Nhờ Athena đọc bản tóm tắt của cột mốc này và đề xuất các mục tiêu mà nó nêu. Không có gì được tạo cho đến khi bạn xác nhận thẻ của cô ấy."
 }

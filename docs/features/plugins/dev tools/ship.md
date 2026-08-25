@@ -99,7 +99,9 @@ Primary key `(milestone_id, item_kind, item_id)`, so an item belongs to at most 
 
 - `ShipContext.tone`: `crit` at 25 or more attributed errors, `warn` above 0, `setup` when the context has zero active KPIs, otherwise `ok` (`useShipData.ts:103-107`). Errors come from `useContextRuntime`'s `errorsByContext`, which attributes **unresolved Sentry issues** to contexts by matching the issue culprit against the context's file paths. The UI copy calls these "errors this week"; the underlying source is the unresolved-issue list, not a strict 7-day window, so treat that label as approximate.
 - `ShipFeature.ready`: true when the feature has at least one active KPI **and** no `crit` context in its slice. A `crit` context yields `Blocked`; zero KPIs yields `No KPI yet` (`shipModel.ts:138-146`). A feature's KPI count includes KPIs bound directly to the use case plus KPIs bound to any context it slices.
-- `ShipMilestoneVM.progress`: `100` once shipped, otherwise ready CORE members / total CORE members, rounded. Zero core members means 0 percent, and the timeline card renders a dash rather than "0%" for a planned milestone with no members at all.
+- `ShipMilestoneVM.progress`: `100` once shipped, otherwise **done core members / total core members**, rounded, via the pure `deriveProgress` in `shipDerive.ts`. **Both member kinds count, and each is done by its own reading**: a core FEATURE is done when `feature.ready` says so (the automation's reading — nobody types it); a core GOAL is done when its `dev_goals.status` says so, through the shared `isComplete` normalizer, so `done` / `completed` / `complete` / `skipped` all read here exactly as they do in the Goals hub and in the Rust `normalize_goal_status` mirror. Operator ratings still contribute nothing — that is `deriveDuality`'s subject. Zero core members means 0 percent, and the timeline card renders a dash rather than "0%" for a planned milestone with no members at all.
+
+  > **Corrected 2026-08-25.** This read `ready core FEATURES / total core features`, so a milestone whose cut was five goals and zero features reported 0% forever — which is exactly the shape a milestone takes right after its brief is decomposed with `show_ship_goals`, before any of it exists as a use case. A number that cannot move is not a progress number. Note the asymmetry that stayed: `boundGoals` (which feeds the `objective` exit criterion) is deliberately bucket-blind, because that criterion asks whether the milestone has anything to be FOR and a goal parked in `later` still answers that; progress reads a separate `core`-filtered list. The **exit criteria were not changed** — only progress.
 
 ## 4. Lifecycle
 
@@ -205,11 +207,13 @@ One toolbar carries every milestone verb, ordered by how far each reaches:
 | --- | --- | --- |
 | 1 | Certify · Compose scope | the milestone itself |
 | 2 | Run milestone · Ingest run | hand the cut to a CLI skill and read the result back |
-| 3 | Ask Athena | nothing — it starts a conversation |
+| 3 | Decompose brief · Ask Athena | nothing directly — both start a conversation; Decompose ends in a card that writes on confirm |
 
 Before 2026-08-20 these lived in four places (the lifecycle button and Compose floated right of the header, Run/Ingest sat in their own strip, the criteria were a permanent chip row) and there was no single answer to "what can I do to this milestone".
 
 **Certify carries the criteria reading on its own face** — a `met/total` badge in the verdict's colour — which is what the five permanent chips were spending a header row to say.
+
+**Decompose brief (2026-08-25) turns the written brief into goals.** A milestone's `description` is the operator's brief — free markdown that routinely names the deliverables ("a) project type Trailer, b) features to compose the story, c) decompose into scene stories"). This button asks Athena to read it with `describe_ship_milestone` and propose those deliverables as goals with `show_ship_goals`, which draws an editable card; nothing is written until Create. It is **not a second LLM path** — `buildShipDecomposePrompt` goes through the same `useAskAthena` channel as the button below it. The rules from Ask Athena's two rewrites still hold: it POINTS at the brief rather than pasting it, names the ops rather than the answer, and carries no reply script. What it does add is a REQUEST, which is the one licence it has over Ask Athena, plus the fact that the card is editable — a proposal she thinks is a commitment is a proposal she under-proposes. Disabled when the milestone has no `description`, with a tooltip saying which of the two reasons applies (`triggerFocusable`, because `is-disabled` sets `pointer-events: none` and a dead control must still be able to say why). Backend contract: [companion/README.md § `show_ship_goals`](../../companion/README.md).
 
 **Ask Athena POINTS, and says nothing else.** `buildShipAskPrompt` (`shipAthena.ts`) sends the project, the milestone id, and an instruction to read it with `describe_ship_milestone`. That is the whole message. No verdict, no summary of the cut, and no instruction about what to answer.
 
@@ -338,9 +342,11 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | --- | --- |
 | `src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx` | Tab wrapper, `data-testid="factory-ship-tab"` |
 | `.../ship/ShipPlannerTab.tsx` | The surface: content header (goal, criterion chips, lifecycle + compose buttons), roadmap spine, workspace switch, dispatch and terminal modals |
-| `.../ship/ShipControlBar.tsx` | The unified toolbar: Certify (with the criteria badge), Compose scope, Run, Ingest, Ask Athena |
+| `.../ship/ShipControlBar.tsx` | The unified toolbar: Certify (with the criteria badge), Compose scope, Run, Ingest, Decompose brief, Ask Athena |
 | `.../ship/ShipCertifyModal.tsx` | The certify panel — every criterion's evidence, its dispatch arm, and the commit |
-| `.../ship/shipAthena.ts` | `buildShipAskPrompt` — the Ask-Athena pointer: project, milestone id, read-it-with-this-op. Nothing else |
+| `.../ship/shipAthena.ts` | `buildShipAskPrompt` — the Ask-Athena pointer: project, milestone id, read-it-with-this-op. Nothing else. Plus `buildShipDecomposePrompt`, the same pointer with one request added |
+| `.../ship/shipDerive.ts` | `deriveFootprint`, `inContext`, `deriveProgress` — the pure derivations lifted out of `useShipData`'s useMemo |
+| `src/features/plugins/companion/ship/AthenaShipGoalsCard.tsx` | The editable `ship_goals` card and `parseGoalRows`; row editor in `AthenaShipGoalsRow.tsx` |
 | `.../ship/shipReadinessPublish.ts` | Publishes the derived verdicts to `ship.readiness.v1` so the read op can serve them |
 | `.../ship/ShipMilestoneRun.tsx` | `useShipMilestoneRun` (the two actions + their busy flags) and `ShipRunSummary` |
 | `src/features/plugins/companion/useAskAthena.ts` | The one door an app surface uses to start a conversation, provenance-tagged |

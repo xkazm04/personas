@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { AthenaFleetPlanCard } from './fleet/AthenaFleetPlanCard';
 import { AthenaShipMilestoneCard } from './ship/AthenaShipMilestoneCard';
+import { AthenaShipGoalsCard } from './ship/AthenaShipGoalsCard';
 
 /**
  * Kinds that render long-form content and should NOT be height-clamped
@@ -78,6 +79,13 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
     return (
       <AthenaShipMilestoneCard config={card.config} title={card.title} cardId={card.id} />
     );
+  }
+
+  // `ship_goals` joins the same family for the same reason: confirming it
+  // CREATES `dev_goals` rows and binds them to a milestone. A pinned copy
+  // would be a create button with no conversation behind it.
+  if (card.kind === 'ship_goals') {
+    return <AthenaShipGoalsCard config={card.config} title={card.title} cardId={card.id} />;
   }
 
   const Component = cockpitWidgetRegistry[card.kind];

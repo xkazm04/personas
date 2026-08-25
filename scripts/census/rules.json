@@ -1823,6 +1823,10 @@
           "reason": "same compliant shape - :101 stores the raw string, :177 renders resolveErrorTranslated(t, error).message at the edge"
         },
         {
+          "path": "src/features/plugins/companion/ship/AthenaShipGoalsCard.tsx",
+          "reason": "same compliant shape as its two siblings above - :100 stores the raw string in state, :157 renders resolveErrorTranslated(t, error).message at the edge"
+        },
+        {
           "path": "src/features/teams/sub_kpis/KPIConnectWizard.tsx",
           "reason": "compliant - :137 is `extractMessage(err) || resolveErrorTranslated(t, null).message`, i.e. the resolver supplies the fallback sentence when the producer had nothing to say; the file imports resolveErrorTranslated for exactly this"
         }

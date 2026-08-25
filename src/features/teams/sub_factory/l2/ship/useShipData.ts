@@ -20,7 +20,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { FactoryL2Data } from '../factoryL2Data';
 import { parseStringArray } from '../factoryL2Data';
 import { deriveCriteria } from './shipCriteria';
-import { deriveFootprint } from './shipDerive';
+import { deriveFootprint, deriveProgress } from './shipDerive';
 import { deriveDuality } from './shipDuality';
 import {
   featureState, type ContextTone, type ScopeBucket,
@@ -186,8 +186,16 @@ export function useShipData(data: FactoryL2Data): ShipData {
             : null;
         })
         .filter((x): x is ShipMember => x !== null);
-      const boundGoals = items
-        .filter((it) => it.itemKind === 'goal')
+      const goalItems = items.filter((it) => it.itemKind === 'goal');
+      const boundGoals = goalItems
+        .map((it) => goalById.get(it.itemId))
+        .filter((g): g is ShipGoal => Boolean(g));
+      // Progress counts the CORE cut only, so goals need their bucket the same
+      // way features do. `boundGoals` deliberately stays bucket-blind: it feeds
+      // the `objective` exit criterion, which asks whether the milestone has
+      // anything to be FOR, and a goal parked in `later` still answers that.
+      const coreGoals = goalItems
+        .filter((it) => it.bucket === 'core')
         .map((it) => goalById.get(it.itemId))
         .filter((g): g is ShipGoal => Boolean(g));
 
@@ -204,12 +212,11 @@ export function useShipData(data: FactoryL2Data): ShipData {
         tx,
       });
 
-      // Progress reads the AUTOMATION only. Ratings are reported beside it
-      // (deriveDuality) and deliberately do not move this number.
-      const ready = core.filter((mm) => mm.feature.ready).length;
-      const progress = m.status === 'shipped'
-        ? 100
-        : core.length === 0 ? 0 : Math.round((ready / core.length) * 100);
+      // Progress counts BOTH member kinds — core features by the automation's
+      // reading, core goals by their status. Ratings are reported beside it
+      // (deriveDuality) and deliberately do not move this number. See
+      // `deriveProgress` for why a goals-only cut used to read 0% forever.
+      const progress = m.status === 'shipped' ? 100 : deriveProgress(core, coreGoals);
 
       return {
         row: m,

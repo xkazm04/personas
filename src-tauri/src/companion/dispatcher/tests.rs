@@ -160,6 +160,32 @@ fn show_ship_milestone_is_a_card_op_not_an_action_or_a_read_op() {
     assert!(!READ_OPS.contains(&"show_ship_milestone"));
 }
 
+// ── show_ship_goals ─────────────────────────────────────────────────
+
+/// Same doctrine as its two siblings, and for a sharper reason: without the
+/// registry there is no way to tell a NEW goal from one that already exists,
+/// so a rendered card's Confirm button would duplicate every objective it
+/// names. `dispatch_op` builds a user pool only, so this is that path.
+#[test]
+fn show_ship_goals_fails_closed_without_the_project_registry() {
+    let op = r###"{"op":"propose_action","action":"show_ship_goals","params":{"milestone_id":"ms_1","goals":[{"title":"Compose the story"}]}}"###;
+    let out = dispatch_op(op);
+    assert!(
+        out.chat_cards.is_empty(),
+        "no card without a way to tell a new goal from an existing one"
+    );
+    assert!(out
+        .warnings
+        .iter()
+        .any(|w| w.contains("show_ship_goals") || w.contains("project registry")));
+}
+
+#[test]
+fn show_ship_goals_is_a_card_op_not_an_action_or_a_read_op() {
+    assert!(!ALLOWED_ACTIONS.contains(&"show_ship_goals"));
+    assert!(!READ_OPS.contains(&"show_ship_goals"));
+}
+
 /// The other three Ship ops, each on the list that gives it its behaviour.
 ///
 /// An entry here is not decoration: an action with no `ALLOWED_ACTIONS` entry

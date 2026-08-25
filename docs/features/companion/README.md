@@ -1198,6 +1198,63 @@ Constitution bumped to **v48**. Test ids: `athena-ship-card`,
 `athena-ship-row-<i>`, `athena-ship-confirm`, `athena-ship-cancel`,
 `athena-ship-error`.
 
+## `show_ship_goals` — the editable goal decomposition (2026-08-25)
+
+The third card op, and the only one in the whole Ship surface that can **create**
+a goal. `show_ship_milestone` and `set_ship_scope` resolve every `item_id`
+against the registry and refuse one that is not there — right for keeping
+invented ids out of the database, and it meant the constitution's own instruction
+("an idea with no home yet is a GOAL bound to the milestone") named a move Athena
+had no verb for. The route from a milestone's written brief to trackable work was
+the operator hand-authoring each goal and binding it.
+
+Athena emits `show_ship_goals { milestone_id, goals: [{ title, description?,
+context_hint? }], title? }`; the dispatcher validates it and pushes a `ship_goals`
+chat card; `AthenaShipGoalsCard` renders each proposed goal with its **title and
+description editable** and every row removable; **Create goals** calls
+`companion_create_ship_goals`, which re-validates and goes through the ordinary
+`create_goal` + `set_milestone_item` repo functions.
+
+- **The project comes from the milestone row, never from the payload.** There is
+  no `project_slug` param, so a proposal cannot create goals anywhere but the
+  project the operator is looking at.
+- **Idempotent by title.** Each title is looked up with the same `resolve_item`
+  helper `show_ship_milestone` uses to bind a member — `id = ?` OR `title = ?`
+  under `COLLATE NOCASE`, within the project. A hit BINDS the existing goal
+  instead of creating a twin; the card shows *"Already exists"* on that row
+  before the button is pressed, and the result reports `created` and `bound`
+  separately. The match is recomputed at confirm time, because the registry can
+  move while a card sits in the transcript.
+- **Whole-payload validation.** One bad row refuses the operation and nothing is
+  written — the rule `ship_ingest` states for a partially applied result: a
+  decomposition that created three goals and then refused the fourth leaves a cut
+  that is neither what Athena proposed nor what the operator agreed to. Caps are
+  borrowed, not copied (`SHIP_MILESTONE_MAX_ROWS` = 8 rows,
+  `SHIP_GOAL_TITLE_MAX = SHIP_MILESTONE_NAME_MAX`,
+  `SHIP_GOAL_DESC_MAX = SHIP_MILESTONE_DESC_MAX`).
+- **`context_hint` is optional and refuses a miss.** It resolves against
+  `dev_contexts` in that project (id, exact name or substring) and a miss names
+  real candidates. Omitting it entirely is how a genuinely unfiled goal is
+  expressed — which is exactly what an idea with no home yet looks like.
+- **Every goal lands in the `core` bucket** and is born `open`; the membership's
+  `description`/`rating` are passed as `None`, so re-binding a goal the operator
+  already annotated never erases his note.
+- Chat-only, not pinnable, for the same reason as its two siblings.
+
+**The Ship tab's entry point** is *Decompose brief* in `ShipControlBar`, next to
+Ask Athena. It is **not a second LLM path**: it sends a message through the same
+`useAskAthena` channel, pointing at `describe_ship_milestone` and then
+`show_ship_goals`. It never pastes the brief and carries no reply script — see
+`shipAthena.ts` for what each pasted thing cost. The button is disabled when the
+milestone has no `description`, and the tooltip says which of the two reasons
+applies.
+
+Constitution bumped to **v59**. Test ids: `ship-decompose-brief`,
+`athena-ship-goals-card`, `athena-ship-goal-row-<i>`,
+`athena-ship-goal-title-<i>`, `athena-ship-goal-description-<i>`,
+`athena-ship-goal-remove-<i>`, `athena-ship-goals-confirm`,
+`athena-ship-goals-cancel`, `athena-ship-goals-error`.
+
 ### Containment posture (2026-08-04, operator's explicit call)
 
 `fleet_spawn` and `fleet_dispatch` auto-fire under autonomous mode, so they

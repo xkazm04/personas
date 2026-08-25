@@ -227,6 +227,59 @@ export async function companionCreateShipMilestone(
   });
 }
 
+/**
+ * One proposed goal in a `ship_goals` card.
+ *
+ * `existingId` is DISPLAY-ONLY: the backend recomputes the title match at
+ * confirm time, because the registry can move while a card sits in the
+ * transcript. It is here so the card can say "this one already exists,
+ * confirming binds it" before the operator presses the button.
+ */
+export interface ShipGoalProposal {
+  /** The goal title. A SHORT TITLE — the backend refuses a paragraph. */
+  title: string;
+  /** What the goal covers, in prose. Editable in the card; may be blank. */
+  description?: string | null;
+  /** Resolved `dev_contexts.id`, or null for a goal with no home yet. */
+  contextId?: string | null;
+  /** Real `dev_goals.id` when a goal of this title already exists. */
+  existingId?: string | null;
+}
+
+/** What the backend reports after a confirmed decomposition. */
+export interface ShipGoalsCreated {
+  milestoneId: string;
+  /** Goals that did not exist and were created. */
+  created: number;
+  /** Goals that already existed and were bound to the milestone instead. */
+  bound: number;
+}
+
+/**
+ * Confirm an edited goal decomposition: create each goal that does not exist
+ * yet, and bind every one of them to the milestone as a `core` scope member.
+ *
+ * The backend re-validates the whole payload (the milestone resolves, each
+ * title is bounded and unique in the card, each `contextId` belongs to that
+ * milestone's project) and refuses the WHOLE batch on one bad row — so a
+ * refusal never leaves half a decomposition behind. `contextId` is deliberately
+ * not editable in the card: it was resolved against the real registry when the
+ * proposal was drafted.
+ */
+export async function companionCreateShipGoals(
+  milestoneId: string,
+  goals: ShipGoalProposal[],
+): Promise<ShipGoalsCreated> {
+  return invoke<ShipGoalsCreated>('companion_create_ship_goals', {
+    milestoneId,
+    goals: goals.map((g) => ({
+      title: g.title,
+      description: g.description ?? null,
+      context_hint: g.contextId ?? null,
+    })),
+  });
+}
+
 // ── Browser testing (Athena × browser tester arc) ──────────────────────────
 
 /** Pairing + connection status for the Companion Setup → Browser panel. */
@@ -1814,7 +1867,7 @@ export interface ChatCard {
   title?: string;
   config?: Record<string, unknown>;
   /** Durable `companion_chat_card` row id. Present ONLY for actionable kinds
-   *  (`fleet_plan`, `ship_milestone`) — informational cards stay transient by
+   *  (`fleet_plan`, `ship_milestone`, `ship_goals`) — informational cards stay transient by
    *  design. This id is what makes a proposal survive a refresh, and what the
    *  dispatch path claims to stop a double-confirm from spawning twice. */
   id?: string;

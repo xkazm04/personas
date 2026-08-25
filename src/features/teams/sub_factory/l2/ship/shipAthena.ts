@@ -61,3 +61,36 @@ export function buildShipAskPrompt(vm: ShipMilestoneVM, project: DevProject): st
     'He pressed a button; the milestone is whatever the op says it is now.',
   ].join('\n');
 }
+
+/**
+ * The Decompose-brief message: the same pointer, plus the one thing that makes
+ * this button different from Ask Athena — a specific request.
+ *
+ * Ask Athena hands her a SITUATION and says nothing about what to do with it.
+ * This button hands her a REQUEST, so it may say what is wanted. That is the
+ * whole licence it has, and the two round-1/round-2 rules above still hold:
+ *
+ *   - It POINTS at the brief; it never pastes it. The description is markdown
+ *     the operator wrote and may have rewritten a minute ago, and a copy in
+ *     this string is a second copy that goes stale the moment it is composed.
+ *     `describe_ship_milestone` prints it in full.
+ *   - It names the OP, never the answer. What the deliverables are, how many
+ *     there are, which contexts they touch and whether any of them already
+ *     exist as goals are all readings she has to make — stating any of them
+ *     here would hand her a conclusion before she had read anything, which is
+ *     exactly what the retired Ask-Athena builder did with the verdict.
+ *   - It carries no reply script. It does not say how long to be, what to lead
+ *     with, or when to stop investigating.
+ *
+ * What it DOES say is that a card exists and that he will edit it — because a
+ * proposal she thinks is a commitment is a proposal she under-proposes.
+ */
+export function buildShipDecomposePrompt(vm: ShipMilestoneVM, project: DevProject): string {
+  return [
+    `The operator is on the Ship tab for "${project.name}", looking at milestone \`${vm.id}\` ("${vm.name}"), and asked to decompose its brief into goals.`,
+    '',
+    `Read it with \`describe_ship_milestone\` (query: \`${vm.id}\`). Its description is the brief he wrote — the deliverables, the research, the target paths and what he ruled out of scope.`,
+    '',
+    `Then propose the goals with \`show_ship_goals\` (milestone_id: \`${vm.id}\`). That draws an editable card: he rewrites titles, drops rows, and nothing is written until he presses Create. A title that already exists in the project binds that goal instead of creating a second one.`,
+  ].join('\n');
+}

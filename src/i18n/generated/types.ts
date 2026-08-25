@@ -16072,6 +16072,22 @@ export type Translations = {
       ship_milestone_prose_label: string;
       ship_milestone_prose_placeholder: string;
       fleet_plan_auto_approved: string;
+      ship_goals_heading: string;
+      ship_goals_count_one: string;
+      ship_goals_count_other: string;
+      ship_goals_empty: string;
+      ship_goals_badge_new: string;
+      ship_goals_badge_existing: string;
+      ship_goals_context_label: string;
+      ship_goals_title_label: string;
+      ship_goals_title_placeholder: string;
+      ship_goals_description_label: string;
+      ship_goals_description_placeholder: string;
+      ship_goals_remove_row: string;
+      ship_goals_core_note: string;
+      ship_goals_cancel: string;
+      ship_goals_confirm: string;
+      ship_goals_created: string;
     };
     artist_gallery: {
       loading_viewer: string;
@@ -20465,5 +20481,8 @@ export type Translations = {
     goals_rail_title: string;
     goals_rail_empty: string;
     description_editor_hint: string;
+    decompose_brief: string;
+    decompose_brief_tooltip: string;
+    decompose_brief_no_brief: string;
   };
 };

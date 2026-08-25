@@ -12,7 +12,7 @@ import { useCompanionStore } from './companionStore';
 /**
  * Durable chat-cards — the read/write bridge.
  *
- * Actionable cards (`fleet_plan`, `ship_milestone`) are proposals the operator
+ * Actionable cards (`fleet_plan`, `ship_milestone`, `ship_goals`) are proposals the operator
  * is expected to confirm, and their plan JSON is stripped from the assistant
  * text before episode persistence. While they lived only in the transient
  * Zustand array, a dev refresh (or the next send) destroyed them with no way

@@ -140,5 +140,8 @@
   "description_placeholder": "Ce que livrer ce jalon signifie vraiment",
   "goals_rail_empty": "Aucun objectif pour l'instant — écrivez-en un et Athena le placera",
   "goals_rail_title": "Objectifs",
-  "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste"
+  "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste",
+  "decompose_brief": "Décomposer le brief",
+  "decompose_brief_no_brief": "Ce jalon n’a pas encore de brief. Écris ce que le livrer signifie, puis décompose-le.",
+  "decompose_brief_tooltip": "Demande à Athena de lire le brief de ce jalon et de proposer les objectifs qu’il nomme. Rien n’est créé tant que tu n’as pas validé sa carte."
 }

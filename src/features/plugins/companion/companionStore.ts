@@ -51,11 +51,16 @@ export const DEFAULT_CONVERSATION_ID = 'default';
 
 /**
  * Chat-card kinds that are ACTIONABLE — a proposal that WRITES on confirm
- * (spawns CLI sessions, creates a milestone). Mirrors `ACTIONABLE_KINDS` in
+ * (spawns CLI sessions, creates a milestone, creates goals). Mirrors
+ * `ACTIONABLE_KINDS` in
  * `src-tauri/src/commands/companion/chat_cards.rs`; only these get a durable
  * row, survive a send/refresh, and carry a `card.id`.
  */
-export const ACTIONABLE_CHAT_CARD_KINDS = ['fleet_plan', 'ship_milestone'] as const;
+export const ACTIONABLE_CHAT_CARD_KINDS = [
+  'fleet_plan',
+  'ship_milestone',
+  'ship_goals',
+] as const;
 
 /** True when a card is an unresolved actionable proposal worth preserving. */
 export function isActionableChatCard(card: Pick<ChatCard, 'kind' | 'id'>): boolean {
@@ -322,7 +327,7 @@ interface CompanionStore {
   /** Drop one card from the transcript, by id (Cancel on an actionable card). */
   removeChatCard: (id: string) => void;
   /** Clear the one-shot INFORMATIONAL cards at send time while leaving pending
-   *  actionable proposals (fleet_plan / ship_milestone) standing. Clearing
+   *  actionable proposals (fleet_plan / ship_milestone / ship_goals) standing. Clearing
    *  those was the data-loss bug: they are decisions the operator still owes an
    *  answer to, not snippets that expire with the turn. */
   clearTransientChatCards: () => void;

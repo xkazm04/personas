@@ -1272,6 +1272,7 @@ pub fn run() {
             commands::companion::approvals::companion_analyze_fleet,
             commands::companion::approvals::companion_dispatch_fleet_plan,
             commands::companion::approvals::companion_create_ship_milestone,
+            commands::companion::approvals::companion_create_ship_goals,
             commands::companion::approvals::companion_daily_brief,
             commands::companion::browser_test::browser_bridge_status,
             commands::companion::browser_test::browser_bridge_regenerate_token,

@@ -45,12 +45,20 @@ export function member(
   };
 }
 
-export function goal(id: string, name: string, slice: ShipContext[] = []): ShipGoal {
+/** `status` defaults to `active`, which normalizes to `in-progress` — NOT
+ *  done. Pass `'done'` (or any alias the shared normalizer folds) to make a
+ *  goal count as complete for progress. */
+export function goal(
+  id: string,
+  name: string,
+  slice: ShipContext[] = [],
+  status = 'active',
+): ShipGoal {
   return {
     id,
     name,
     description: null,
-    status: 'active',
+    status,
     contexts: slice.map((c) => c.name),
     contextIds: slice.map((c) => c.id),
   };

@@ -140,5 +140,8 @@
   "description_placeholder": "Qué significa realmente publicar este hito",
   "goals_rail_empty": "Aún no hay objetivos: escribe uno y Athena lo situará",
   "goals_rail_title": "Objetivos",
-  "description_editor_hint": "Ctrl+B para negrita · empieza una línea con “- ” para una lista"
+  "description_editor_hint": "Ctrl+B para negrita · empieza una línea con “- ” para una lista",
+  "decompose_brief": "Descomponer el resumen",
+  "decompose_brief_no_brief": "Este hito aún no tiene resumen. Escribe qué significa entregarlo y descompón eso.",
+  "decompose_brief_tooltip": "Pide a Athena que lea el resumen de este hito y proponga los objetivos que nombra. No se crea nada hasta que confirmes su tarjeta."
 }
