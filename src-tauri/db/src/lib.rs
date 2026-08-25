@@ -61,6 +61,7 @@ pub mod memory_recall;
 pub mod migrations;
 pub mod model_routing;
 pub mod policy_tuning;
+pub mod project_identity;
 pub mod quality_gate;
 #[cfg(feature = "ml")]
 pub mod vector_store;

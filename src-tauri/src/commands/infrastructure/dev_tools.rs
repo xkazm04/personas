@@ -63,7 +63,10 @@ pub fn dev_tools_create_project(
     team_id: Option<String>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
-    repo::create_project(
+    // Identity-aware: idempotent on an already-registered path, re-points a
+    // moved repo through its `.personas/project.json` marker, refuses a
+    // clone that carries another checkout's identity.
+    crate::db::project_identity::register_project(
         &state.db,
         &name,
         &root_path,

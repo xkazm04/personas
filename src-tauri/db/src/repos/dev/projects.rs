@@ -208,6 +208,25 @@ pub fn create_project(
     })
 }
 
+/// Re-point a project at a new folder. Only `crate::project_identity` calls
+/// this, after the folder's `.personas/project.json` marker proved the move;
+/// nothing in the UI edits `root_path` directly.
+pub fn update_root_path(pool: &DbPool, id: &str, root_path: &str) -> Result<DevProject, AppError> {
+    if root_path.trim().is_empty() {
+        return Err(AppError::Validation("Root path cannot be empty".into()));
+    }
+    timed_query!("dev_projects", "dev_projects::update_root_path", {
+        get_project_by_id(pool, id)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_projects SET root_path = ?2, updated_at = ?3 WHERE id = ?1",
+            params![id, root_path, now],
+        )?;
+        get_project_by_id(pool, id)
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn update_project(
     pool: &DbPool,
