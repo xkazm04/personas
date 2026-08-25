@@ -21,7 +21,7 @@ pub fn tier_slug_to_model_id(slug: &str) -> Option<&'static str> {
 /// without this fallback a profile-less persona silently rides the CLI
 /// ACCOUNT default — observed live as opus-4-8[1m] on every team step,
 /// the dominant fleet cost driver (2026-06-12 cost review).
-pub const DEFAULT_CAPABILITY_MODEL: &str = "claude-sonnet-4-6";
+pub const DEFAULT_CAPABILITY_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
 
 /// Resolve a capability's `model_override` value into a ModelProfile.
 /// Accepts BOTH shapes that exist in the wild:

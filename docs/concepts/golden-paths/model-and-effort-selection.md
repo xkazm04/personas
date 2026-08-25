@@ -1252,3 +1252,33 @@ word "selection", "routing", "precedence" or "override".
 | 16 | Correct the four docstrings that enumerate three effort levels instead of four | `core/src/types.rs:431`, `test_runner.rs:125`, `cli_args.rs:31`, `modelCatalog.ts:65` | S |
 | 17 | A boot diagnostic logging which of the six model-resolution layers is populated (§0 was invisible from source) | `runner/mod.rs` or boot | S |
 | 18 | Decide the `BUILD_TURN_EFFORT` / Studio `xhigh` default against the bench, or record why it stands | `session.rs:1789`, `studioStore.ts:221` | S |
+
+---
+
+## 13. Model identity is data, not a literal — 2026-08-25
+
+> Added by `/research` against Apache Maka's `model-metadata` (a committed models.dev snapshot,
+> generated consumers, and a `refresh` that fails closed when a committed model disappears).
+> Personas is subscription-CLI-first, so the shape is smaller: no fetch, one door.
+
+**Measured 2026-08-25, before the change:** a double-quoted `claude-<family>-<n>` literal appeared in
+**54 production `.rs` files** (55 files / 120 matches once inline test fixtures are counted, which is
+what the census sees). Five of them declared the same default-judge string independently —
+`auto_triage.rs:268`, `eval.rs:607`, `prompt/capabilities.rs:24`, `test_runner/lab.rs:21`,
+`settings_keys.rs:169/175`. This is why the retired `*-20250514` ids stayed live in the failover
+ladder after the vendor removed them (`failover.rs:634`): there was no single file to patch.
+
+**The one way:** `src-tauri/core/src/model_ids.rs`.
+
+- A `claude` subprocess spawn names a model by **CLI alias** (`ALIAS_SONNET` = `"sonnet"`). The CLI
+  resolves the alias to its current model; aliases never retire.
+- An API-shaped caller that must pin a version reads the dated id from the same file
+  (`SONNET_CURRENT`, …). A vendor bump is a one-line diff there.
+- A job names its **tier**, not its family: `DEFAULT_FAST` / `DEFAULT_BALANCED` / `DEFAULT_STRONG`.
+- `is_retired(id)` lets a failover ladder, a stored `model_profile`, or an imported bundle refuse a dead
+  id before the 404.
+
+**The gate:** census rule `bare-model-id-literal` (baseline 55 files / 120 matches), ratcheting down.
+Migrate a site when you touch it; do not bulk-migrate. Backlog item #13 above (fold
+`CLAUDE_MODEL_CHAIN` into `tier_slug_to_model_id`) is the natural next site, because the ladder is where
+a stale id does the most damage.

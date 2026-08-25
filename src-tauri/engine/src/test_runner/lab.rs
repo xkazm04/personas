@@ -18,7 +18,7 @@ use crate::prompt;
 /// (typically Opus 4.8), making cost neither predictable nor aligned with the
 /// rest of the headless tier. Mirrors `DEFAULT_CAPABILITY_MODEL` /
 /// `SYNTHESIS_MODEL` (tiger finding: lab tier rode account-default).
-pub(crate) const LAB_MODEL: &str = "claude-sonnet-4-6";
+pub(crate) const LAB_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
 
 /// Maximum number of lab cells (model × variant × scenario executions) allowed to
 /// run their CLI child concurrently within a single run. `run_lab_loop` used to

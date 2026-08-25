@@ -166,13 +166,13 @@ pub const QUALITY_GATE_CONFIG: &str = "quality_gate_config";
 /// Value: model ID string.
 pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
 /// Default model ID for [`SMART_SEARCH_MODEL`] when unset.
-pub const SMART_SEARCH_MODEL_DEFAULT: &str = "claude-haiku-4-5-20251001";
+pub const SMART_SEARCH_MODEL_DEFAULT: &str = personas_core::model_ids::DEFAULT_FAST;
 
 /// Model override for the LLM-assisted semantic vault lint.
 /// Value: model ID string.
 pub const SEMANTIC_LINT_MODEL: &str = "semantic_lint_model";
 /// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset.
-pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = "claude-haiku-4-5-20251001";
+pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = personas_core::model_ids::DEFAULT_FAST;
 
 /// ISO 8601 timestamp of the last completed daily credential healthcheck sweep.
 /// Written by the in-process `CredentialHealthcheckSubscription` to gate the
