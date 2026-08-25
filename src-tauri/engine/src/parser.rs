@@ -394,9 +394,25 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                 .get("session_id")
                 .and_then(|s| s.as_str())
                 .map(String::from);
+            // The terminal fact. `is_error` is the CLI's own verdict on the
+            // turn; `subtype` names why (`error_max_turns`, …). Both were
+            // dropped on the floor until 2026-08-25 — see `terminal_verdict`.
+            let is_error = value
+                .get("is_error")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false);
+            let subtype = value
+                .get("subtype")
+                .and_then(|s| s.as_str())
+                .map(String::from);
 
             let mut display = String::new();
-            if let Some(ms) = duration_ms {
+            if is_error {
+                display.push_str(&format!(
+                    "Turn ended with error ({})",
+                    subtype.as_deref().unwrap_or("unspecified")
+                ));
+            } else if let Some(ms) = duration_ms {
                 let secs = ms as f64 / 1000.0;
                 display.push_str(&format!("Completed in {secs:.1}s"));
             } else {
@@ -416,6 +432,8 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     cache_creation_input_tokens,
                     model,
                     session_id,
+                    is_error,
+                    subtype,
                 },
                 Some(display),
             )
@@ -735,6 +753,60 @@ pub fn parse_outcome_assessment(text: &str) -> Option<(bool, String, Option<Stri
 // Utility functions
 // ---------------------------------------------------------------------------
 
+/// Message stored on an execution whose stream ended without a `result` line.
+/// Stable machine token in parentheses so dashboards and the healing
+/// classifier can key on it while the prose changes.
+pub const MISSING_TERMINAL_EVENT_MESSAGE: &str =
+    "Stream ended without a result line (missing_terminal_event)";
+
+/// What the stream's terminal fact says about the turn — computed from
+/// `ExecutionMetrics` after the process exits, consumed by the runner BEFORE
+/// it looks at the exit code.
+///
+/// The three arms are deliberately not a bool: a missing fact is a different
+/// situation from a negative one, and the runner treats them differently
+/// (Incomplete vs Failed).
+#[derive(Debug, Clone, PartialEq)]
+pub enum TerminalVerdict {
+    /// A `result` line arrived and `is_error` was false.
+    Clean,
+    /// A `result` line arrived and the CLI reported the turn broke.
+    ErrorReported { subtype: Option<String> },
+    /// No `result` line was seen. The exit code alone cannot prove the turn
+    /// finished (killed mid-flight, truncated pipe, CLI crash after the last
+    /// message).
+    MissingTerminalFact,
+}
+
+/// Fold the result-line facts accumulated in `metrics` into one verdict.
+pub fn terminal_verdict(metrics: &ExecutionMetrics) -> TerminalVerdict {
+    if !metrics.result_seen {
+        return TerminalVerdict::MissingTerminalFact;
+    }
+    if metrics.result_is_error {
+        return TerminalVerdict::ErrorReported {
+            subtype: metrics.result_subtype.clone(),
+        };
+    }
+    TerminalVerdict::Clean
+}
+
+/// User-facing error text for an `is_error: true` result line, keyed on the
+/// CLI's subtype so `error_max_turns` stops reading like a silent success.
+/// The subtype token is kept verbatim in parentheses for classifiers.
+pub fn terminal_error_message(subtype: Option<&str>) -> String {
+    match subtype {
+        Some("error_max_turns") => {
+            "Turn limit reached before the task finished (error_max_turns)".to_string()
+        }
+        Some("error_during_execution") => {
+            "Claude reported an error during execution (error_during_execution)".to_string()
+        }
+        Some(other) => format!("Claude reported the turn ended with an error ({other})"),
+        None => "Claude reported the turn ended with an error".to_string(),
+    }
+}
+
 /// Update accumulated execution metrics from a Result stream line.
 pub fn update_metrics_from_result(metrics: &mut ExecutionMetrics, line_type: &StreamLineType) {
     if let StreamLineType::Result {
@@ -745,9 +817,14 @@ pub fn update_metrics_from_result(metrics: &mut ExecutionMetrics, line_type: &St
         cache_creation_input_tokens,
         model,
         session_id,
+        is_error,
+        subtype,
         ..
     } = line_type
     {
+        metrics.result_seen = true;
+        metrics.result_is_error = *is_error;
+        metrics.result_subtype = subtype.clone();
         if let Some(cost) = total_cost_usd {
             metrics.cost_usd = *cost;
         }
@@ -1131,7 +1208,11 @@ mod tests {
                 cache_creation_input_tokens,
                 model,
                 session_id,
+                is_error,
+                subtype,
             } => {
+                assert!(!is_error);
+                assert_eq!(subtype, None);
                 assert_eq!(duration_ms, Some(5200));
                 assert_eq!(total_cost_usd, Some(0.0123));
                 assert_eq!(total_input_tokens, Some(1500));
@@ -1537,9 +1618,14 @@ Finished."#;
             cache_creation_input_tokens: Some(300),
             model: Some("claude-sonnet-4-20250514".to_string()),
             session_id: Some("sess-789".to_string()),
+            is_error: false,
+            subtype: Some("success".to_string()),
         };
 
         update_metrics_from_result(&mut metrics, &result);
+        assert!(metrics.result_seen);
+        assert!(!metrics.result_is_error);
+        assert_eq!(metrics.result_subtype.as_deref(), Some("success"));
 
         assert_eq!(metrics.cost_usd, 0.05);
         assert_eq!(metrics.input_tokens, 2000);
@@ -1610,5 +1696,71 @@ Finished."#;
     fn test_parse_outcome_assessment_absent() {
         let text = "Just some output\nNo assessment here\nDone.";
         assert!(parse_outcome_assessment(text).is_none());
+    }
+
+    #[test]
+    fn test_parse_result_error_max_turns_keeps_the_terminal_fact() {
+        let line = r#"{"type":"result","subtype":"error_max_turns","is_error":true,"duration_ms":900,"session_id":"sess-e1"}"#;
+        let (st, display) = parse_stream_line(line);
+        match st {
+            StreamLineType::Result {
+                is_error, subtype, ..
+            } => {
+                assert!(is_error);
+                assert_eq!(subtype.as_deref(), Some("error_max_turns"));
+            }
+            _ => panic!("Expected Result, got {st:?}"),
+        }
+        assert!(display.unwrap().contains("error_max_turns"));
+    }
+
+    #[test]
+    fn terminal_verdict_distinguishes_missing_from_negative() {
+        let mut m = ExecutionMetrics::default();
+        assert_eq!(terminal_verdict(&m), TerminalVerdict::MissingTerminalFact);
+
+        let ok = StreamLineType::Result {
+            duration_ms: Some(10),
+            total_cost_usd: None,
+            total_input_tokens: None,
+            total_output_tokens: None,
+            cache_read_input_tokens: None,
+            cache_creation_input_tokens: None,
+            model: None,
+            session_id: None,
+            is_error: false,
+            subtype: Some("success".into()),
+        };
+        update_metrics_from_result(&mut m, &ok);
+        assert_eq!(terminal_verdict(&m), TerminalVerdict::Clean);
+
+        let bad = StreamLineType::Result {
+            duration_ms: None,
+            total_cost_usd: None,
+            total_input_tokens: None,
+            total_output_tokens: None,
+            cache_read_input_tokens: None,
+            cache_creation_input_tokens: None,
+            model: None,
+            session_id: None,
+            is_error: true,
+            subtype: Some("error_max_turns".into()),
+        };
+        update_metrics_from_result(&mut m, &bad);
+        assert_eq!(
+            terminal_verdict(&m),
+            TerminalVerdict::ErrorReported {
+                subtype: Some("error_max_turns".into())
+            }
+        );
+    }
+
+    #[test]
+    fn terminal_error_message_names_the_subtype() {
+        assert!(terminal_error_message(Some("error_max_turns")).contains("error_max_turns"));
+        assert!(terminal_error_message(Some("error_during_execution"))
+            .contains("error_during_execution"));
+        assert!(terminal_error_message(Some("weird")).contains("(weird)"));
+        assert!(!terminal_error_message(None).contains("("));
     }
 }

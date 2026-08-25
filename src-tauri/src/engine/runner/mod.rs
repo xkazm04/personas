@@ -2352,7 +2352,7 @@ pub async fn run_execution(
                                         session_id: session_id.clone(),
                                     })
                                 }
-                                StreamLineType::Result { duration_ms, total_cost_usd, total_input_tokens, total_output_tokens, cache_read_input_tokens, cache_creation_input_tokens, model, session_id } => Some(StructuredExecutionEvent::ExecutionResult {
+                                StreamLineType::Result { duration_ms, total_cost_usd, total_input_tokens, total_output_tokens, cache_read_input_tokens, cache_creation_input_tokens, model, session_id, .. } => Some(StructuredExecutionEvent::ExecutionResult {
                                     execution_id: exec_id_for_stream.clone(),
                                     duration_ms: *duration_ms,
                                     cost_usd: *total_cost_usd,
@@ -2828,8 +2828,19 @@ pub async fn run_execution(
     // across executions for Claude Code memory and workspace files).
     // Only per-execution fallback dirs are cleaned up.
 
-    // Build result
-    let success = !timed_out && exit_code == 0;
+    // Build result — the terminal FACT first, the exit code second.
+    //
+    // The stream's `result` line is the CLI's own verdict on the turn
+    // (`is_error`, `subtype`). Until 2026-08-25 it was parsed for cost and
+    // tokens only, and status came from the exit code plus substring
+    // heuristics over the assistant text — so `error_max_turns` on an exit-0
+    // process read as "completed", and a stream that died before its `result`
+    // line read exactly like a clean finish. A terminal header must be
+    // supported by a terminal fact (research: apache/maka, runtime-core ch.1).
+    let verdict = parser::terminal_verdict(&metrics);
+    let success = !timed_out
+        && exit_code == 0
+        && !matches!(verdict, parser::TerminalVerdict::ErrorReported { .. });
     // Usage-limit details can land on stderr (CLI errors) or in the streamed
     // assistant/result text (stream-json runs) — check both on failure.
     let usage_limit = if !timed_out && exit_code != 0 {
@@ -2863,9 +2874,14 @@ pub async fn run_execution(
                 stderr_text.trim()
             ))
         }
+    } else if let parser::TerminalVerdict::ErrorReported { ref subtype } = verdict {
+        // Exit 0, but the CLI said the turn broke. Name the subtype: this is
+        // the message the user (and the healing classifier) will read.
+        Some(parser::terminal_error_message(subtype.as_deref()))
     } else {
         None
     };
+    let mut error = error;
 
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
     let mut final_status = if success {
@@ -2912,6 +2928,19 @@ pub async fn run_execution(
                 logger.log("[OUTCOME] No assessment found, error indicators detected -- marking as incomplete");
             }
         }
+    }
+
+    // No `result` line at all on a clean exit: the stream lost its terminal
+    // fact (killed mid-flight, truncated pipe, CLI crash after the last
+    // message). Exit 0 cannot prove the turn finished, so this is Incomplete
+    // — never Completed — and the reason is recorded where a human and the
+    // zombie/healing sweeps can read it.
+    if success && matches!(verdict, parser::TerminalVerdict::MissingTerminalFact) {
+        final_status = ExecutionState::Incomplete;
+        if error.is_none() {
+            error = Some(parser::MISSING_TERMINAL_EVENT_MESSAGE.to_string());
+        }
+        logger.log("[OUTCOME] Stream ended without a result line -- marking as incomplete (missing_terminal_event)");
     }
 
     let session_limit_reached = usage_limit.is_some()

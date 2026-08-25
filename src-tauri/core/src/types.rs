@@ -119,6 +119,14 @@ pub enum StreamLineType {
         cache_creation_input_tokens: Option<u64>,
         model: Option<String>,
         session_id: Option<String>,
+        /// The CLI's own verdict on the turn. `true` for `error_max_turns`,
+        /// `error_during_execution`, … — the terminal FACT, which outranks the
+        /// process exit code (a `result` line with `is_error: true` can arrive
+        /// on an exit-0 process). Discarded until 2026-08-25, which made a turn
+        /// that broke indistinguishable from one that finished with no text.
+        is_error: bool,
+        /// `"success"`, `"error_max_turns"`, `"error_during_execution"`, …
+        subtype: Option<String>,
     },
     /// A `Task`/`Workflow` subagent was launched (CLI `system/task_started`).
     /// `tool_use_id` links it to the parent Task tool call (P4 fan-out tree).
@@ -418,6 +426,14 @@ pub struct ExecutionMetrics {
     pub cache_creation_tokens: u64,
     pub cost_usd: f64,
     pub session_id: Option<String>,
+    /// A `result` line was observed. When false at process exit the stream
+    /// ended without its terminal fact (crash, kill, truncated pipe) and the
+    /// exit code alone cannot prove the turn finished.
+    pub result_seen: bool,
+    /// `is_error` from the last `result` line seen.
+    pub result_is_error: bool,
+    /// `subtype` from the last `result` line seen.
+    pub result_subtype: Option<String>,
 }
 
 /// Parsed model profile from persona.model_profile JSON
