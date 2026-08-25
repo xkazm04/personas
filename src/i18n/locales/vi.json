@@ -6867,7 +6867,8 @@
       "hint_speed": "Giảm độ trễ bằng prompt gọn hơn hoặc mô hình nhanh hơn.",
       "hint_cost": "Giảm chi phí mỗi lần chạy bằng mô hình rẻ hơn hoặc ngữ cảnh ngắn hơn.",
       "hint_activity": "Kích hoạt hoặc lên lịch tác nhân này thường xuyên hơn để tăng hoạt động.",
-      "improve_agent": "Cải thiện tác nhân này"
+      "improve_agent": "Cải thiện tác nhân này",
+      "section_subtitle": "{count} tác nhân · trung bình đội {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "Tự động làm mới bật",
@@ -7227,7 +7228,8 @@
       "open": "{count} mở",
       "sla_compliance": "Tuân thủ SLA",
       "consecutive_failures": "{count} lần thất bại liên tiếp",
-      "consecutive_failure": "{count} lần thất bại liên tiếp"
+      "consecutive_failure": "{count} lần thất bại liên tiếp",
+      "unknown": "Không xác định"
     },
     "system_health": {
       "title": "Kiểm tra hệ thống",

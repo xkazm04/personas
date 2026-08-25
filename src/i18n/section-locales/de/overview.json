@@ -627,7 +627,8 @@
     "hint_speed": "Senken Sie die Latenz mit schlankeren Prompts oder einem schnelleren Modell.",
     "hint_cost": "Senken Sie die Kosten pro Lauf mit einem günstigeren Modell oder kürzerem Kontext.",
     "hint_activity": "Lösen oder planen Sie diesen Agenten häufiger aus, um die Aktivität zu steigern.",
-    "improve_agent": "Diesen Agenten verbessern"
+    "improve_agent": "Diesen Agenten verbessern",
+    "section_subtitle": "{count} Agenten · Flotten-Durchschnitt {avg}"
   },
   "observability_extra": {
     "auto_refresh_on": "Automatische Aktualisierung ein",
@@ -987,7 +988,8 @@
     "open": "{count} offen",
     "sla_compliance": "SLA-Konformität",
     "consecutive_failures": "{count} aufeinanderfolgende Fehler",
-    "consecutive_failure": "{count} aufeinanderfolgender Fehler"
+    "consecutive_failure": "{count} aufeinanderfolgender Fehler",
+    "unknown": "Unbekannt"
   },
   "system_health": {
     "title": "Systemprüfungen",

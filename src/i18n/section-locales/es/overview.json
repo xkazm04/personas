@@ -627,7 +627,8 @@
     "hint_speed": "Reduce la latencia con prompts más concisos o un modelo más rápido.",
     "hint_cost": "Reduce el costo por ejecución con un modelo más barato o un contexto más corto.",
     "hint_activity": "Activa o programa este agente con más frecuencia para aumentar la actividad.",
-    "improve_agent": "Mejorar este agente"
+    "improve_agent": "Mejorar este agente",
+    "section_subtitle": "{count} agentes · media de la flota {avg}"
   },
   "observability_extra": {
     "auto_refresh_on": "Actualización automática activada",
@@ -987,7 +988,8 @@
     "open": "{count} abiertos",
     "sla_compliance": "Cumplimiento de SLA",
     "consecutive_failures": "{count} fallas consecutivas",
-    "consecutive_failure": "{count} falla consecutiva"
+    "consecutive_failure": "{count} falla consecutiva",
+    "unknown": "Desconocido"
   },
   "system_health": {
     "title": "Verificaciones del sistema",

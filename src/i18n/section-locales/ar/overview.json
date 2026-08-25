@@ -627,7 +627,8 @@
     "hint_speed": "قلّل زمن الاستجابة بمطالبات أبسط أو نموذج أسرع.",
     "hint_cost": "اخفض تكلفة التشغيل بنموذج أرخص أو سياق أقصر.",
     "hint_activity": "شغّل أو جدوِل هذا الوكيل بوتيرة أكبر لرفع النشاط.",
-    "improve_agent": "حسّن هذا الوكيل"
+    "improve_agent": "حسّن هذا الوكيل",
+    "section_subtitle": "{count} وكلاء · متوسط الأسطول {avg}"
   },
   "observability_extra": {
     "auto_refresh_on": "التحديث التلقائي مفعّل",
@@ -987,7 +988,8 @@
     "open": "{count} مفتوح",
     "sla_compliance": "امتثال SLA",
     "consecutive_failures": "{count} حالات فشل متتالية",
-    "consecutive_failure": "{count} فشل متتالٍ"
+    "consecutive_failure": "{count} فشل متتالٍ",
+    "unknown": "غير معروف"
   },
   "system_health": {
     "title": "فحوصات النظام",

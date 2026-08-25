@@ -7252,7 +7252,8 @@
       "hint_speed": "Trim latency with leaner prompts or a faster model.",
       "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
       "hint_activity": "Trigger or schedule this agent more often to raise activity.",
-      "improve_agent": "Improve this agent"
+      "improve_agent": "Improve this agent",
+      "section_subtitle": "{count} agents · fleet avg {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "Auto-refresh on",
@@ -7690,7 +7691,8 @@
       "open": "{count} open",
       "sla_compliance": "SLA Compliance",
       "consecutive_failures": "{count} consecutive failures",
-      "consecutive_failure": "{count} consecutive failure"
+      "consecutive_failure": "{count} consecutive failure",
+      "unknown": "Unknown"
     },
     "system_health": {
       "title": "System Checks",

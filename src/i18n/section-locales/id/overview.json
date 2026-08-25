@@ -627,7 +627,8 @@
     "hint_speed": "Kurangi latensi dengan prompt yang lebih ringkas atau model yang lebih cepat.",
     "hint_cost": "Turunkan biaya per proses dengan model lebih murah atau konteks lebih pendek.",
     "hint_activity": "Picu atau jadwalkan agen ini lebih sering untuk menaikkan aktivitas.",
-    "improve_agent": "Tingkatkan agen ini"
+    "improve_agent": "Tingkatkan agen ini",
+    "section_subtitle": "{count} agen · rata-rata armada {avg}"
   },
   "observability_extra": {
     "auto_refresh_on": "Penyegaran otomatis aktif",
@@ -987,7 +988,8 @@
     "open": "{count} terbuka",
     "sla_compliance": "Kepatuhan SLA",
     "consecutive_failures": "{count} kegagalan berturut-turut",
-    "consecutive_failure": "{count} kegagalan berturut-turut"
+    "consecutive_failure": "{count} kegagalan berturut-turut",
+    "unknown": "Tidak diketahui"
   },
   "system_health": {
     "title": "Pemeriksaan sistem",

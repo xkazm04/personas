@@ -6867,7 +6867,8 @@
       "hint_speed": "Snižte latenci stručnějšími prompty nebo rychlejším modelem.",
       "hint_cost": "Snižte náklady na běh levnějším modelem nebo kratším kontextem.",
       "hint_activity": "Spouštějte nebo plánujte tohoto agenta častěji pro vyšší aktivitu.",
-      "improve_agent": "Vylepšit tohoto agenta"
+      "improve_agent": "Vylepšit tohoto agenta",
+      "section_subtitle": "{count} agentů · průměr flotily {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "Automatické obnovení zapnuto",
@@ -7227,7 +7228,8 @@
       "open": "{count} otevřených",
       "sla_compliance": "Shoda se SLA",
       "consecutive_failures": "{count} selhání po sobě",
-      "consecutive_failure": "{count} selhání po sobě"
+      "consecutive_failure": "{count} selhání po sobě",
+      "unknown": "Neznámý"
     },
     "system_health": {
       "title": "Systémové kontroly",

@@ -1,35 +1,29 @@
-// Prototype variant piece — "Consolidated Mission Control".
-//
-// The Leaderboard tab's scorecard matrix (its one best section) hosted as a
-// standalone Mission Control section. Data comes from the same healthSignals-
-// derived leaderboard the tab uses; the section auto-loads health data once
-// on an idle slot if the store is cold, exactly like LeaderboardPage does.
-//
-// Copy is prototype-local (same convention as the Mission Control baseline);
-// extracted to i18n at consolidation.
+// LeaderboardSection — the Leaderboard tab's scorecard matrix (its one best
+// section) hosted as a standalone Mission Control section (2026-08-25
+// monitoring consolidation). Data comes from the same healthSignals-derived
+// leaderboard the tab used; the section auto-loads health data once on an
+// idle slot if the store is cold.
 
 import { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useLeaderboardData } from '@/features/overview/sub_leaderboard/libs/useLeaderboardData';
 import { LeaderboardMatrixView, LeaderboardMatrixPlaceholder } from '@/features/overview/sub_leaderboard/components/LeaderboardMatrixView';
 import { PaneHeader } from '../PaneHeader';
 
-const COPY = {
-  pane: 'LEADERBOARD',
-  agents: 'agents',
-  fleetAvg: 'fleet avg',
-};
-
 /**
  * Renders nothing until the fleet has ≥2 ranked agents — a one-row matrix is
- * noise, and the empty/single-agent narratives stay on the dedicated tab.
+ * noise, and the empty/single-agent story is already told by the Vitals pane.
  */
 export function LeaderboardSection() {
+  const { t, tx } = useTranslation();
   const { leaderboard, loading, isEmpty, fleetAvgScore, fleetBenchmark, refresh } = useLeaderboardData();
 
-  // One-shot idle auto-load when the health store is cold (mirrors
-  // LeaderboardPage — see its comment on the attempted-guard).
+  // One-shot idle auto-load when the health store is cold. Attempted-guard:
+  // an empty fleet (or persistently failing health compute) still ends with
+  // isEmpty true after the refresh, so without it this would re-schedule
+  // refresh() forever.
   const autoLoadAttemptedRef = useRef(false);
   useEffect(() => {
     if (!isEmpty || loading || autoLoadAttemptedRef.current) return;
@@ -54,8 +48,10 @@ export function LeaderboardSection() {
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
       <PaneHeader
-        label={COPY.pane}
-        subtitle={leaderboard.length > 1 ? `${leaderboard.length} ${COPY.agents} · ${COPY.fleetAvg} ${fleetAvgScore}` : undefined}
+        label={t.overview.leaderboard.title}
+        subtitle={leaderboard.length > 1
+          ? tx(t.overview.leaderboard.section_subtitle, { count: leaderboard.length, avg: fleetAvgScore })
+          : undefined}
       />
       <div className="p-3">
         {loading && leaderboard.length === 0 ? (

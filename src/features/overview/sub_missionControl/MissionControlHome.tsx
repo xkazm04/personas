@@ -1,14 +1,11 @@
-// Prototype variant — "Consolidated Mission Control"
-//
-// One monitoring surface instead of five. Direction per the consolidation
-// brief: Instruments / Todos / Stream are gone; Vitals gains the SLA-style
-// daily success-rate trend (derived from the pipeline's daily points — no
-// extra fetch); the Leaderboard matrix and the Health tab's status monitor +
-// self-healing panel move in as standalone sections. Triage counts survive
-// as the Vitals alert/review tiles.
-//
-// Section labels are prototype-local mono captions (baseline convention);
-// extracted to i18n at consolidation.
+// Mission Control — the one consolidated monitoring surface (2026-08-25).
+// Vitals (success ring, KPI tiles, sparkline, daily success-rate trend),
+// status monitor (from the former Health→Status Page), leaderboard matrix
+// (from the former Leaderboard tab), self-healing panel (from Health→
+// Heartbeats), execution heatmap, status ticker, memory suggestions, and
+// routine/vault cards. The former Instruments / Todos / Stream panes and the
+// Reliability (SLA), Health and Leaderboard tabs were consolidated into this
+// view — triage counts live on as the Vitals alert/review tiles.
 
 import { Suspense, useMemo, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -30,27 +27,25 @@ import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/
 import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { DailyTrendChart } from '@/features/overview/sub_sla/components/SLACard';
 import { HealingEffectivenessPanel } from '@/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel';
+import { DashboardRangeSwitch } from '@/features/overview/components/dashboard/widgets/DashboardRangeSwitch';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
 import { DashboardEmptyState } from '@/features/overview/components/dashboard/DashboardEmptyState';
 import { HomeCustomizePopover } from '@/features/overview/components/dashboard/HomeCustomizePopover';
-import FleetOptimizationCard from '../cards/FleetOptimizationCard';
-import { PaneHeader } from '../PaneHeader';
-import { VitalsConsole, StatusTicker } from '../DashboardHomeMissionControl';
-import { MissionStatusMonitor } from './MissionStatusMonitor';
-import { LeaderboardSection } from './LeaderboardSection';
+import FleetOptimizationCard from './cards/FleetOptimizationCard';
+import { PaneHeader } from './PaneHeader';
+import { VitalsConsole } from './VitalsConsole';
+import { StatusTicker } from './StatusTicker';
+import { MissionStatusMonitor } from './sections/MissionStatusMonitor';
+import { LeaderboardSection } from './sections/LeaderboardSection';
 
-const UpcomingRoutinesCard = lazyRetry(() => import('../cards/UpcomingRoutinesCard'));
-const VaultRecentChangesCard = lazyRetry(() => import('../cards/VaultRecentChangesCard'));
+const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
+const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
 
-const COPY = {
-  successTrend: 'SUCCESS RATE',
-};
-
-// Suspense fallback for the lazy routine/vault cards — same delayed-invisible
-// silhouette contract as the baseline (docs/design/overview-loading.md §D).
+// Suspense fallback for the lazy routine/vault cards — delayed-invisible
+// silhouette (docs/design/overview-loading.md §D): a warm chunk never paints it.
 function CardFrameSkeleton({ rows = 4, rowHeight = 40 }: { rows?: number; rowHeight?: number }) {
   return (
     <div
@@ -67,7 +62,7 @@ function CardFrameSkeleton({ rows = 4, rowHeight = 40 }: { rows?: number; rowHei
   );
 }
 
-export default function MissionControlConsolidated() {
+export default function MissionControlHome() {
   const { t, tx } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
@@ -109,9 +104,9 @@ export default function MissionControlConsolidated() {
     return { successRate, activeAgents: personas.length };
   }, [globalExecutions, personas, selectedPersonaId]);
 
-  // Same persona-scoped upgrade path as the baseline: when a persona is
-  // selected, the pipeline's observabilityMetrics carry the accurate
-  // full-period numbers; fleet view uses executionDashboard daily points.
+  // Persona-scoped upgrade path: when a persona is selected, the pipeline's
+  // observabilityMetrics carry the accurate full-period numbers; fleet view
+  // uses executionDashboard daily points. Same fetch, no duplicates.
   const vitals = useMemo(() => {
     const fleetPoints = executionDashboard?.daily_points ?? [];
     if (!selectedPersonaId || !observabilityMetrics) {
@@ -128,9 +123,9 @@ export default function MissionControlConsolidated() {
     return { successRate, points };
   }, [selectedPersonaId, observabilityMetrics, executionDashboard, stats.successRate]);
 
-  // Daily success-rate trend for the Vitals pane (consolidation item a).
-  // Derived from the SAME daily points the sparkline draws — zero extra
-  // fetches. DailyTrendChart expects a 0–1 fraction (SLA convention).
+  // Daily success-rate trend for the Vitals pane, derived from the SAME daily
+  // points the sparkline draws — zero extra fetches. DailyTrendChart expects
+  // a 0–1 fraction (SLA convention).
   const successTrendPoints = useMemo(
     () => vitals.points.map((p) => ({
       date: p.date,
@@ -163,7 +158,6 @@ export default function MissionControlConsolidated() {
   const enterInitial = reduceMotion ? false : 'hidden';
 
   const goToExecutions = useCallback(() => setOverviewTab('executions'), [setOverviewTab]);
-  const goToHealth = useCallback(() => setOverviewTab('health'), [setOverviewTab]);
 
   return (
     <ContentBox>
@@ -175,6 +169,7 @@ export default function MissionControlConsolidated() {
         actions={
           <div className="flex items-center gap-2">
             <HomeCustomizePopover />
+            <DashboardRangeSwitch />
             <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
           </div>
         }
@@ -225,14 +220,14 @@ export default function MissionControlConsolidated() {
                   trend={successTrendPoints.length > 0 && (
                     <div className="w-full pt-3 border-t border-primary/10">
                       <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
-                        <span>{COPY.successTrend}</span>
+                        <span>{t.overview.sla.success_rate}</span>
                         <span>{successTrendPoints.length}d</span>
                       </div>
                       <DailyTrendChart points={successTrendPoints} />
                     </div>
                   )}
                 />
-                <MissionStatusMonitor onOpenStatusPage={goToHealth} />
+                <MissionStatusMonitor />
               </div>
             )}
           </motion.div>

@@ -7259,6 +7259,7 @@ export type Translations = {
       hint_cost: string;
       hint_activity: string;
       improve_agent: string;
+      section_subtitle: string;
     };
     observability_extra: {
       auto_refresh_on: string;
@@ -7697,6 +7698,7 @@ export type Translations = {
       sla_compliance: string;
       consecutive_failures: string;
       consecutive_failure: string;
+      unknown: string;
     };
     system_health: {
       title: string;

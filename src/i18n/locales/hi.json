@@ -6867,7 +6867,8 @@
       "hint_speed": "कम प्रॉम्प्ट या तेज़ मॉडल से विलंबता घटाएँ।",
       "hint_cost": "सस्ते मॉडल या छोटे संदर्भ से प्रति-रन लागत घटाएँ।",
       "hint_activity": "गतिविधि बढ़ाने के लिए इस एजेंट को अधिक बार ट्रिगर या शेड्यूल करें।",
-      "improve_agent": "इस एजेंट को सुधारें"
+      "improve_agent": "इस एजेंट को सुधारें",
+      "section_subtitle": "{count} एजेंट · फ़्लीट औसत {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "ऑटो-ताज़ा चालू",
@@ -7227,7 +7228,8 @@
       "open": "{count} खुली",
       "sla_compliance": "SLA अनुपालन",
       "consecutive_failures": "{count} लगातार विफलताएं",
-      "consecutive_failure": "{count} लगातार विफलता"
+      "consecutive_failure": "{count} लगातार विफलता",
+      "unknown": "अज्ञात"
     },
     "system_health": {
       "title": "सिस्टम जाँच",

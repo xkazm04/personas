@@ -1,17 +1,14 @@
-// Prototype variant piece — "Consolidated Mission Control".
-//
-// Compact status monitor: StatusPageView's uptime-history table transformed
-// into a Mission Control pane. Global grade chip + the fleet's worst rows
-// first, each with the per-day uptime strip. Deep-links to the full Health
-// status page for the expandable score breakdowns.
-//
-// Copy is prototype-local (same convention as the Mission Control baseline);
-// extracted to i18n at consolidation.
+// MissionStatusMonitor — the Health tab's status monitor transformed into a
+// Mission Control section (2026-08-25 monitoring consolidation). Global grade
+// chip + the fleet's worst rows first, each with the per-day uptime strip.
+// Rows deep-link to the persona; the standalone status page no longer exists.
 
-import { useMemo } from 'react';
-import { ArrowRight, CheckCircle2, AlertCircle, XCircle, Circle } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { CheckCircle2, AlertCircle, XCircle, Circle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
@@ -23,19 +20,11 @@ import { GRADE_THEME } from '@/features/overview/sub_health/components/heartbeat
 import { GradeDot } from '@/features/overview/sub_health/components/heartbeats/primitives';
 import { PaneHeader } from '../PaneHeader';
 
-const COPY = {
-  pane: 'STATUS',
-  subtitle: 'fleet uptime',
-  fullPage: 'Full status page',
-  uptime30d: '30d uptime',
-  score: 'score',
-};
-
-const GRADE_META: Record<HealthGrade, { label: string; Icon: LucideIcon }> = {
-  healthy: { label: 'Operational', Icon: CheckCircle2 },
-  degraded: { label: 'Degraded', Icon: AlertCircle },
-  critical: { label: 'Outage', Icon: XCircle },
-  unknown: { label: 'Unknown', Icon: Circle },
+const GRADE_ICON: Record<HealthGrade, LucideIcon> = {
+  healthy: CheckCircle2,
+  degraded: AlertCircle,
+  critical: XCircle,
+  unknown: Circle,
 };
 
 const DAY_STATUS_BAR: Record<DayStatus, string> = {
@@ -52,9 +41,17 @@ const GRADE_RANK: Record<HealthGrade, number> = {
 
 const MAX_ROWS = 6;
 
-export function MissionStatusMonitor({ onOpenStatusPage }: { onOpenStatusPage: () => void }) {
+export function MissionStatusMonitor() {
   const { t } = useTranslation();
+  const he = t.overview.health_extra;
   const { entries, loading, error, globalScore, globalUptime, refresh } = useStatusPageData();
+
+  const gradeLabel: Record<HealthGrade, string> = useMemo(() => ({
+    healthy: he.operational,
+    degraded: he.degraded,
+    critical: he.outage,
+    unknown: he.unknown,
+  }), [he.operational, he.degraded, he.outage, he.unknown]);
 
   const globalGrade = useMemo(
     (): HealthGrade => (globalScore == null ? 'unknown' : computeGrade(globalScore)),
@@ -67,35 +64,32 @@ export function MissionStatusMonitor({ onOpenStatusPage }: { onOpenStatusPage: (
       .slice(0, MAX_ROWS);
   }, [entries]);
 
-  const meta = GRADE_META[globalGrade];
+  const openPersona = useCallback((personaId: string) => {
+    useSystemStore.getState().setSidebarSection('personas');
+    useAgentStore.getState().selectPersona(personaId);
+  }, []);
+
+  const GlobalIcon = GRADE_ICON[globalGrade];
   const gth = GRADE_THEME[globalGrade];
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
       <div className={`h-0.5 ${gth.bar} opacity-60`} />
-      <PaneHeader label={COPY.pane} subtitle={COPY.subtitle}>
-        <button
-          type="button"
-          onClick={onOpenStatusPage}
-          className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest focus-ring rounded-interactive"
-        >
-          {COPY.fullPage} <ArrowRight className="w-3 h-3" />
-        </button>
-      </PaneHeader>
+      <PaneHeader label={t.overview.dashboard.status_label} subtitle={he.uptime_30d} />
 
       {/* Global readout */}
       <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-primary/5">
         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card border ${gth.chip}`}>
-          <meta.Icon className="w-3.5 h-3.5" />
-          <span className="typo-caption font-medium">{meta.label}</span>
+          <GlobalIcon className="w-3.5 h-3.5" />
+          <span className="typo-caption font-medium">{gradeLabel[globalGrade]}</span>
         </span>
         <div className="flex items-baseline gap-3">
           <span className="typo-caption text-foreground">
-            {COPY.score} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{globalScore ?? '—'}</span>/100
+            {he.score_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{globalScore ?? '—'}</span>/100
           </span>
           <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
           <span className="typo-caption text-foreground">
-            {COPY.uptime30d} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-foreground/90 font-semibold" />
+            {he.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-foreground/90 font-semibold" />
           </span>
         </div>
       </div>
@@ -113,12 +107,12 @@ export function MissionStatusMonitor({ onOpenStatusPage }: { onOpenStatusPage: (
         <ListSkeleton calm rows={4} rowHeight={40} leading={false} />
       ) : topEntries.length === 0 ? (
         <div className="flex-1 flex items-center justify-center py-8 typo-caption text-foreground">
-          {t.overview.health_extra.no_personas}
+          {he.no_personas}
         </div>
       ) : (
         <div className="flex-1 min-h-0 divide-y divide-primary/5">
           {topEntries.map((entry) => (
-            <MonitorRow key={entry.personaId} entry={entry} onClick={onOpenStatusPage} />
+            <MonitorRow key={entry.personaId} entry={entry} onClick={() => openPersona(entry.personaId)} />
           ))}
         </div>
       )}

@@ -6867,7 +6867,8 @@
       "hint_speed": "সংক্ষিপ্ত প্রম্পট বা দ্রুততর মডেল দিয়ে বিলম্ব কমান।",
       "hint_cost": "সস্তা মডেল বা ছোট কনটেক্সট দিয়ে প্রতি-রান খরচ কমান।",
       "hint_activity": "কার্যকলাপ বাড়াতে এই এজেন্টকে আরও ঘন ঘন ট্রিগার বা শিডিউল করুন।",
-      "improve_agent": "এই এজেন্ট উন্নত করুন"
+      "improve_agent": "এই এজেন্ট উন্নত করুন",
+      "section_subtitle": "{count}টি এজেন্ট · ফ্লিট গড় {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "অটো-রিফ্রেশ চালু",
@@ -7227,7 +7228,8 @@
       "open": "{count}টি খোলা",
       "sla_compliance": "SLA সম্মতি",
       "consecutive_failures": "{count}টি ক্রমাগত ব্যর্থতা",
-      "consecutive_failure": "{count}টি ক্রমাগত ব্যর্থতা"
+      "consecutive_failure": "{count}টি ক্রমাগত ব্যর্থতা",
+      "unknown": "অজানা"
     },
     "system_health": {
       "title": "সিস্টেম যাচাই",

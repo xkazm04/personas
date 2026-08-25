@@ -1,6 +1,6 @@
-// Mission Control — the overview "Mission control" tab (formerly "Home").
-// PROTOTYPE IN FLIGHT: the default export is a throwaway A/B switcher between
-// the baseline cockpit and the "Consolidated" monitoring-surface direction.
-// The switcher (and this comment) is removed at consolidation.
-export { default } from './MissionControlSwitcher';
-export { default as DashboardHomeMissionControl } from './DashboardHomeMissionControl';
+// Mission Control — the overview "Mission control" tab (formerly "Home"), and
+// since the 2026-08-25 monitoring consolidation the ONE monitoring surface:
+// vitals + daily success trend, status monitor, leaderboard matrix,
+// self-healing panel, heatmap, ticker, routines.
+export { default } from './MissionControlHome';
+export { default as MissionControlHome } from './MissionControlHome';

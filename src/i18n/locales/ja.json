@@ -6867,7 +6867,8 @@
       "hint_speed": "プロンプトを簡潔にするか高速なモデルでレイテンシを短縮。",
       "hint_cost": "安価なモデルや短いコンテキストで実行あたりのコストを削減。",
       "hint_activity": "このエージェントをより頻繁に実行・スケジュールして活動量を上げる。",
-      "improve_agent": "このエージェントを改善"
+      "improve_agent": "このエージェントを改善",
+      "section_subtitle": "{count} エージェント · フリート平均 {avg}"
     },
     "observability_extra": {
       "auto_refresh_on": "自動更新オン",
@@ -7227,7 +7228,8 @@
       "open": "{count}件未解決",
       "sla_compliance": "SLAコンプライアンス",
       "consecutive_failures": "{count}回連続失敗",
-      "consecutive_failure": "{count}回連続失敗"
+      "consecutive_failure": "{count}回連続失敗",
+      "unknown": "不明"
     },
     "system_health": {
       "title": "システムチェック",
