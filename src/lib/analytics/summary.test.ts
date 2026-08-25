@@ -55,7 +55,9 @@ describe('buildSessionSummary', () => {
 
     expect(s.tabsVisited).toContain(tabCountKey('overviewTab', 'incidents'));
     expect(s.tabsVisited).toContain(tabCountKey('settingsTab', 'account'));
-    expect(s.tabsIgnored).toContain(tabCountKey('overviewTab', 'health'));
+    // 'director' — an existing tab that the fixture never visits ('health'
+    // was retired with the 2026-08-25 monitoring consolidation).
+    expect(s.tabsIgnored).toContain(tabCountKey('overviewTab', 'director'));
     expect(s.tabsVisited.length + s.tabsIgnored.length).toBe(s.tabsTotal);
   });
 
