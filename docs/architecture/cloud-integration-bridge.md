@@ -1275,3 +1275,170 @@ fallback deliberately, or run where the keychain is real.
   driver ticked.
 - **The mode cannot be turned off without a restart.** That is the latch working
   as intended, in the direction that matters: it also cannot be turned *on*.
+
+### 13.9 The seed endpoint — giving the night something to dispatch (P6e)
+
+`POST /api/kp/test/seed-work`. Same two gates as the tick (§13.6): the route is
+**added** only while `personas_engine::headless::enabled()`, so with the mode off
+it 404s rather than 403s, and `authorize` demands `personas:test` for the whole
+`/api/kp/test/` prefix.
+
+**Why it exists.** Bench sweeps #11 and #12 (2026-08-24) drove the whole loop —
+pair, hire, activate, night, reconcile, report, probation — and every Overnight
+night dispatched **zero**, because the bound project had no accepted ideas. The
+bench protocol says to seed five known-answer tasks
+(`docs/tests/appmaster-bench/run-protocol.md` §4) and nothing automated it. With
+nothing dispatched, the backbone's delivery, durability, gate, violation and
+budget lanes are all structurally unmeasured and no scenario can pass on
+evidence. This endpoint is §4, executable.
+
+#### What "an accepted idea ready for dispatch" actually is
+
+Narrower than it reads. Follow the night:
+
+```text
+overnight::run_project_night(project)
+  └─ dev_tools::run_triage_rules_core(project)
+        reads dev_ideas WHERE status = 'pending'
+        first MATCHING ENABLED rule wins (dev_triage_rules, ORDER BY created_at)
+        an `accept` rule ⇒ the id lands in TriageRunOutcome::accepted_idea_ids
+  └─ dispatch is offered ONLY triage.accepted_idea_ids
+```
+
+A row already sitting at `status = 'accepted'` is therefore **never dispatched by
+a night**: the night dispatches the ids *this pass* accepted, not the backlog's
+standing accepted set. So seeding has two halves and both are load-bearing:
+
+1. one `dev_ideas` row per item, written **`pending`**, through
+   `personas_db::repos::dev::ideas::create_idea_deduped` — the same guarded door
+   every generated idea uses, so the findings spine's idempotency guard governs a
+   seed exactly as it governs a scan;
+2. one enabled `dev_triage_rules` row, action `accept`, conditions
+   `[{"field":"scan_type","op":"eq","value":"headless_bench_seed"}]` — the
+   mechanical form of the protocol's "or let the project's triage rules accept
+   them". Ensured by NAME, so a second seed call reuses it instead of stacking a
+   duplicate.
+
+The row shape written, verbatim:
+
+| column | value | why |
+| --- | --- | --- |
+| `status` | `pending` | the status the triage pass reads; anything else is inert |
+| `scan_type` | `headless_bench_seed` | the provenance tag **and** the field the rule keys on |
+| `dedup_key` | `scan:headless_bench_seed:bench:<normalized-title>` | minted by the shared `scan_dedup_key`, so seeds live in the same key space as scanner ideas and findings |
+| `category` | `technical` | canonical vocabulary; seeds are engineering work |
+| `project_id` | the resolved project | — |
+| `title` / `description` | the item's, trimmed | the only two fields that reach the agent |
+| `reasoning` / `evidence` / `context_id` | `NULL` | see below |
+| `effort` / `impact` / `risk` | `NULL` | so a numeric triage rule written for the real backlog cannot sweep a seed up on a score this endpoint invented |
+
+`scan_type` carries the provenance rather than `origin` on purpose: it is one of
+the five fields `evaluate_conditions` can key a rule on, so the column that
+records where the idea came from is the column that makes it dispatchable.
+(`origin` would also persist, but `create_finding` validates it against
+`FINDING_ORIGINS` and hands the row's lifecycle to a sensor sweep that would
+keep re-measuring a one-off bench task forever.) Both `scan_type` and
+`dedup_key` are durable, so a seeded idea stays distinguishable from a scanned
+one for the life of the row — after dispatch, after merge, after the rollup.
+
+#### It creates work, never permission
+
+Everything that decides whether a seeded idea becomes a proposal is untouched
+and still runs on the next tick's `overnight` phase: the autopilot capability
+gate (`DispatchFixes`), the App-master mandate rung (`BacklogToGoal` — rung 0
+and 1 are refused here even on `full`), the budget governor and its
+`full → suggest` degrade, the fleet live-slot cap, and the branch-only unattended
+prompt. A `suggest`-mode project still leaves its seeds "for the morning" with a
+`blocked_reason` saying so, which is the correct reading, not a bug in seeding.
+
+#### What is deliberately not stored
+
+An item may carry `acceptance` (the command the scorecard will run) and `trap`
+(which forbidden class the cheap route walks into). **Neither is written to the
+idea.** `dev_tools::dispatch_prompt` renders `title`, `description`, `reasoning`
+and `evidence` into the prompt the agent receives, and run-protocol §4.1 and §8
+are explicit: an agent told which assertion will be run is being graded on a
+different task, and a run whose operator leaked it is **invalid**. Both fields
+are validated, echoed back in the response — the driver's journal is where the
+seed→idea mapping belongs — and stored nowhere. The response says
+`acceptanceStored: false` so no caller has to infer it.
+
+#### The wire
+
+```jsonc
+// request
+{ "projectId": "…",     // exactly one of these two is REQUIRED — seeding will not
+  "personaId": "…",     // guess a repository. personaId resolves through the
+                        // App-master mandate records (the same binding the
+                        // overnight / reconcile / probation phases read).
+  "items": [ { "title": "…",            // required, <= 200 chars
+               "description": "…",      // optional, <= 4000
+               "acceptance": "…",       // optional, <= 2000 — echoed, never stored
+               "trap": "…" } ]          // optional, <= 400  — echoed, never stored
+}                                       // <= 16 items
+```
+
+```jsonc
+// response (200) — inside the standard { success, data } envelope
+{ "headlessBridge": true, "actor": "headless_bridge",
+  "acceptanceStored": false,
+  "note": "items are written `pending`; the next tick's overnight triage pass …",
+  "seed": {
+    "projectId": "…", "projectName": "kp", "scanType": "headless_bench_seed",
+    "seeded": 4, "skipped": 1,
+    "items": [
+      { "index": 0, "title": "…", "id": "…", "accepted": true,
+        "dedupKey": "scan:headless_bench_seed:bench:document-kp-trusted-proxy-env-example",
+        "ideaStatus": "pending" },
+      { "index": 1, "title": "…", "id": "<the row it collided with>",
+        "accepted": false, "dedupKey": "…", "ideaStatus": "accepted",
+        "skippedReason": "this project already holds an idea with this dedup key …" }
+    ],
+    "triageRule": { "id": "…", "name": "Headless bench seed — auto-accept",
+                    "conditions": "[…]", "action": "accept", "enabled": true,
+                    "created": true, "rulesAhead": 0, "willAccept": true },
+    "notes": [ /* only when something needs reading */ ]
+  } }
+```
+
+**Never silent.** Every submitted item produces exactly one answer, in order,
+carrying its `index` — written (`accepted: true`) or skipped with a reason and
+the `id` of the row it collided with. A seed that vanished quietly would leave a
+bench reading zero dispatches and blaming the agent.
+
+Refusals: `400` for an unknown/absent target, an empty batch, a batch past the
+cap, or any length violation — validation is **all-or-nothing and lists every
+problem**, so a refused batch leaves neither half-seeded ideas nor an orphan
+rule. `404` for a project id that does not exist, or a persona holding no
+App-master mandate.
+
+**Two hazards are reported rather than worked around**, because both are human
+decisions this endpoint has no business reversing:
+
+- `willAccept: false` — the rule exists but was disabled or flipped to `reject`.
+  Seeding does **not** re-arm it; the response carries a note saying tonight will
+  dispatch nothing and where to fix it.
+- `rulesAhead > 0` — other enabled rules are evaluated first, and triage is
+  first-match-wins, so one of them can decide a seeded idea instead.
+
+#### Tests
+
+`personas-db`, `repos::dev::bench_seed` — 12 tests against a real temp DB
+(`cargo test -p personas-db --lib bench_seed`). They pin: the row lands `pending`
+where `list_ideas(project, "pending")` — the exact read `run_triage_rules_core`
+performs — finds it; the rule's condition triple (`scan_type` / `eq` / the tag)
+matches the column the row carries, pinning the *join* without duplicating
+`evaluate_conditions`; the rule is ensured once, never stacked; a disabled rule
+is reported and never re-enabled; `rulesAhead` counts only earlier *enabled*
+rules and the seed's effort/impact/risk stay `NULL`; a repeat seed is skipped
+naming the id it collided with; an in-batch duplicate names `items[N]`; the
+dedup key carries the provenance tag; acceptance and trap are echoed and reach
+none of the four prompt-visible fields; validation lists every problem and writes
+nothing; the batch cap and the empty batch are both refused; an unknown project
+is a `NotFound`.
+
+The writer lives in `personas-db` rather than `app_lib` for the reason §13.8
+gives: the `app_lib` test binary does not launch on this machine
+(`STATUS_ENTRYPOINT_NOT_FOUND`). What stays untested there is the thin HTTP
+adapter — body deserialization, the persona→project resolution walk, the
+status-code mapping and the route-registration `if`. The bench exercises those.
