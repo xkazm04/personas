@@ -2,6 +2,7 @@
 
 pub mod chat;
 pub mod contract;
+pub mod design_pass_hygiene;
 pub mod memory;
 pub mod persona;
 pub mod trigger;

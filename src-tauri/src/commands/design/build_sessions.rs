@@ -2767,6 +2767,50 @@ pub async fn promote_build_draft_inner(
         &recipe_capability_params,
     );
 
+    // Design-pass hygiene — the ONE place a build's *suggested* triggers are
+    // made safe for the validators that run below. A cadence suggestion that
+    // cannot be honoured costs the trigger; it must never cost the build.
+    //
+    // Bench sweep #17 (2026-08-25) lost two one-shot kp hire sessions here,
+    // 20–40 minutes of Claude session each, to two strings:
+    // `Invalid cron expression: Invalid value: {{param.daily_audit_hour}}` (an
+    // unresolved template) and `Invalid cron expression: Expected 5 fields,
+    // got 1` (a bare shorthand). Both came out of `validate_triggers` below.
+    //
+    // `{{param.*}}` stays legitimate in prose — the capability-parameters
+    // section injected just above is meant to carry it, and
+    // `engine::prompt::variables` resolves it against `persona.parameters` at
+    // run time. It is only ever scrubbed out of fields a validator parses.
+    //
+    // The leniency is scoped HERE, to model output. `trigger_repo::create` /
+    // `update` (the trigger UI) stay strict: a human who types `daily` is told
+    // so immediately and for free.
+    //
+    // Ordered BEFORE `ensure_webhook_secrets` on purpose: a templated
+    // `webhook_secret` is dropped here and minted for real one line down.
+    // See docs/architecture/cloud-integration-bridge.md §10.6.
+    let design_hygiene = crate::validation::design_pass_hygiene::normalize_design_output(&mut ir);
+    if !design_hygiene.is_empty() {
+        // One line per change — a build that quietly lost a schedule has to
+        // leave a trail that names the field and the raw value, not just a count.
+        for note in design_hygiene.notes() {
+            tracing::warn!(
+                session_id = %session_id,
+                persona_id = %persona_id,
+                note = %note,
+                "design-pass hygiene: repaired the design output before validation"
+            );
+        }
+        tracing::warn!(
+            session_id = %session_id,
+            persona_id = %persona_id,
+            normalized = design_hygiene.normalized_count(),
+            dropped = design_hygiene.dropped_count(),
+            summary = %design_hygiene.summary(),
+            "design-pass hygiene: the design output would not have validated — normalized instead of failing the build"
+        );
+    }
+
     // Auto-generate webhook_secret for webhook triggers that lack one.
     // Templates and adoption flows produce webhook triggers without a secret
     // since the user has no UI to set one before promotion.
@@ -3037,7 +3081,14 @@ pub async fn promote_build_draft_inner(
                     .unwrap_or_else(|| "manual".to_string())
             })
             .collect();
-        let setup = super::connector_readiness::build_persona_setup(blockers, trigger_types);
+        // …plus what the design-pass hygiene pass had to change. A build that
+        // silently demoted a schedule to manual and then reported a persona
+        // that "runs on its own" is the exact drift this list closes.
+        let setup = super::connector_readiness::build_persona_setup(
+            blockers,
+            trigger_types,
+            design_hygiene.notes(),
+        );
         match serde_json::to_string(&setup) {
             Ok(json) => {
                 if let Ok(conn) = state.db.get() {
@@ -3113,6 +3164,12 @@ pub async fn promote_build_draft_inner(
         "assertions_created": assertions_created,
         "smee_relays_created": smee_relays_created,
         "connectors_needing_setup": connectors_needing_setup,
+        // Design-pass hygiene counts, so the caller that logs this result
+        // (`oneshot::run_promote_pass`, the CLI bridge, the bench) sees at a
+        // glance that a build was repaired rather than clean. Detail lives in
+        // `setup_detail.notes`.
+        "design_hygiene_normalized": design_hygiene.normalized_count(),
+        "design_hygiene_dropped": design_hygiene.dropped_count(),
     }))
 }
 
