@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Folder, Wand2, X } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
@@ -9,7 +8,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useQuickDispatchStore } from '@/stores/quickDispatchStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { companionDispatchFleetPlan } from '@/api/companion';
-import { spawnHeadlessSession } from '@/api/fleet/fleet';
+import { renameSession, spawnHeadlessSession } from '@/api/fleet/fleet';
 import {
   listProjects,
   listSkills,
@@ -76,7 +75,10 @@ export default function QuickDispatchOverlay() {
   const open = useQuickDispatchStore((s) => s.open);
   const closeQuickDispatch = useQuickDispatchStore((s) => s.closeQuickDispatch);
 
-  const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
+  // No useShallow here (zustand-domain-slices golden path, deviation A): the
+  // selector is a bare property access, and a refetched session list holds
+  // fresh objects, so a shallow compare could never match anyway.
+  const sessions = useSystemStore((s) => s.fleetSessions);
   const fleetSessionsLoading = useSystemStore((s) => s.fleetSessionsLoading);
   const fleetStartSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
@@ -94,7 +96,11 @@ export default function QuickDispatchOverlay() {
   const [effort, setEffort] = useState<string | null>(null);
   const [headless, setHeadless] = useState(false);
   const [sending, setSending] = useState(false);
-  const [rawError, setRawError] = useState<string | null>(null);
+  // The rejection value is kept as-is and only coerced at the resolver
+  // boundary (error-message-resolution golden path): stringifying in the catch
+  // would destroy whatever discriminant the producer sent before the resolver
+  // ever sees it.
+  const [rawError, setRawError] = useState<unknown>(null);
   const [justDispatched, setJustDispatched] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -325,10 +331,17 @@ export default function QuickDispatchOverlay() {
           ...(model ? ['--model', model] : []),
           ...(effort ? ['--effort', effort] : []),
         ];
-        await spawnHeadlessSession(
+        const sessionId = await spawnHeadlessSession(
           projectChip.root_path,
           prompt,
           args.length > 0 ? args : undefined,
+        );
+        // Keep an address for the session we just started (agent-dispatch
+        // golden path): a key recomputable from the entity ids, stamped into
+        // the session name so the Fleet grid and the recent list can find it.
+        await renameSession(
+          sessionId,
+          `quick:${projectChip.id}${skillChip ? `:${skillChip.name}` : ''}`,
         );
       } else {
         await companionDispatchFleetPlan(
@@ -356,7 +369,7 @@ export default function QuickDispatchOverlay() {
     } catch (err) {
       // Inline (not a toast): the overlay floats above everything, so a toast
       // behind it is invisible. The draft is kept for correction.
-      setRawError(String(err));
+      setRawError(err);
     } finally {
       setSending(false);
     }
@@ -384,7 +397,10 @@ export default function QuickDispatchOverlay() {
 
   if (!open) return null;
 
-  const translatedError = rawError ? resolveErrorTranslated(t, rawError) : null;
+  const translatedError =
+    rawError == null
+      ? null
+      : resolveErrorTranslated(t, typeof rawError === 'string' ? rawError : String(rawError));
 
   // Studio's stateShadow idiom (StudioChatInput): a blue inner glow on the
   // input pill while a dispatch is in flight, plain otherwise.
@@ -428,7 +444,7 @@ export default function QuickDispatchOverlay() {
             only once the snapshot settles). */}
         {recent.length > 0 ? (
           <div className="mb-2">
-            <div className="px-1 pb-1 typo-caption font-medium text-primary">
+            <div className="px-1 pb-1 typo-caption text-primary">
               {quickT.recent_title}
             </div>
             <ul className="flex flex-col" data-testid="quick-dispatch-recent-list">
@@ -571,15 +587,16 @@ export default function QuickDispatchOverlay() {
           <p className="mt-1 typo-caption text-foreground">{quickT.syntax_hint}</p>
         )}
 
-        {justDispatched && (
-          <p
-            className="mt-1 typo-caption text-emerald-300"
-            role="status"
-            data-testid="quick-dispatch-success"
-          >
-            {quickT.dispatched}
-          </p>
-        )}
+        {/* Permanently mounted live region (screen-reader-announcements golden
+            path): a region that only exists once it has a message is one nothing
+            can ever observe changing — swap the text, never the element. */}
+        <p
+          className={justDispatched ? 'mt-1 typo-caption text-emerald-300' : 'sr-only'}
+          role="status"
+          data-testid="quick-dispatch-success"
+        >
+          {justDispatched ? quickT.dispatched : ''}
+        </p>
 
         {translatedError && (
           <p

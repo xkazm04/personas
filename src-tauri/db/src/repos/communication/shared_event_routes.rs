@@ -25,7 +25,7 @@ pub fn list_routes(pool: &DbPool) -> Result<Vec<SharedEventProjectRoute>, AppErr
              ORDER BY catalog_entry_id ASC, project_id ASC"
         ))?;
         let rows = stmt.query_map([], row_to_route)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     })
 }
 
@@ -45,7 +45,7 @@ pub fn list_routes_for_entry(
                  ORDER BY project_id ASC"
             ))?;
             let rows = stmt.query_map(params![entry_id], row_to_route)?;
-            Ok(rows.filter_map(|r| r.ok()).collect())
+            rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
         }
     )
 }
@@ -63,12 +63,15 @@ pub fn set_routes(pool: &DbPool, entry_id: &str, project_ids: &[String]) -> Resu
         )?;
         let now = chrono::Utc::now().to_rfc3339();
         for project_id in project_ids {
-            // OR IGNORE: a duplicate project id in the incoming list is a
-            // caller quirk, not an error worth aborting the whole save over.
+            // DO NOTHING on the named key: a duplicate project id in the
+            // incoming list is a caller quirk, not an error worth aborting the
+            // whole save over — and unlike OR IGNORE this still raises NOT
+            // NULL/CHECK violations (docs/concepts/golden-paths/upsert.md).
             tx.execute(
-                "INSERT OR IGNORE INTO shared_event_project_routes
+                "INSERT INTO shared_event_project_routes
                  (catalog_entry_id, project_id, created_at)
-                 VALUES (?1, ?2, ?3)",
+                 VALUES (?1, ?2, ?3)
+                 ON CONFLICT(catalog_entry_id, project_id) DO NOTHING",
                 params![entry_id, project_id, now],
             )?;
         }

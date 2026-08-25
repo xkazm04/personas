@@ -44,7 +44,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                 ddl_step(
                     conn,
                     "CREATE TABLE IF NOT EXISTS shared_event_impact_runs (
-                        id               TEXT PRIMARY KEY,
+                        id               TEXT PRIMARY KEY NOT NULL,
                         firing_id        TEXT NOT NULL,
                         catalog_entry_id TEXT NOT NULL,
                         project_id       TEXT NOT NULL,

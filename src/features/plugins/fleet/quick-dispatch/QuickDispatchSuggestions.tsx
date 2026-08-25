@@ -91,7 +91,7 @@ export function QuickDispatchSuggestions({
               data-testid="quick-dispatch-suggestion-item"
               data-active={active ? 'true' : 'false'}
             >
-              <span className="typo-caption font-medium text-foreground block truncate">
+              <span className="typo-caption text-foreground block truncate">
                 {item.label}
               </span>
               {item.description && (

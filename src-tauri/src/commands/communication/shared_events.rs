@@ -138,15 +138,18 @@ pub fn shared_events_list_project_routes(
 }
 
 /// Replace one feed's project routes with the given set (transactional
-/// delete-and-insert; an empty list clears the entry's routes).
+/// delete-and-insert; an empty list clears the entry's routes). Returns the
+/// route set as it now stands, so the caller renders the server's truth
+/// (deduplicated, reconciled) rather than echoing its own input back.
 #[tauri::command]
 pub fn shared_events_set_project_routes(
     state: State<'_, Arc<AppState>>,
     entry_id: String,
     project_ids: Vec<String>,
-) -> Result<(), AppError> {
+) -> Result<Vec<SharedEventProjectRoute>, AppError> {
     require_auth_sync(&state)?;
-    routes_repo::set_routes(&state.db, &entry_id, &project_ids)
+    routes_repo::set_routes(&state.db, &entry_id, &project_ids)?;
+    routes_repo::list_routes_for_entry(&state.db, &entry_id)
 }
 
 /// Impact runs recorded for one feed (newest first) — what the dispatched

@@ -158,11 +158,11 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                     </div>
                     {runs.length > 0 && (
                       <div className="flex flex-col gap-1.5 pt-1.5 border-t border-primary/10">
-                        <span className="typo-caption font-medium text-foreground">{m.impact_title}</span>
+                        <span className="typo-caption text-foreground">{m.impact_title}</span>
                         {runs.map((r) => (
                           <div key={r.id} className="flex items-center flex-wrap gap-x-2.5 gap-y-1 min-w-0">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full typo-caption font-medium border ${verdictStyle(r.verdict)}`}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full typo-caption border ${verdictStyle(r.verdict)}`}
                             >
                               {verdictLabel(t, r.verdict)}
                             </span>

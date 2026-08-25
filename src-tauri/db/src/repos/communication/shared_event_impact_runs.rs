@@ -89,11 +89,11 @@ pub fn list_impact_runs_for_entry(
             let mut stmt = conn.prepare(&format!(
                 "SELECT {COLUMNS} FROM shared_event_impact_runs
                  WHERE catalog_entry_id = ?1
-                 ORDER BY created_at DESC
+                 ORDER BY created_at DESC, id DESC
                  LIMIT ?2"
             ))?;
             let rows = stmt.query_map(params![entry_id, limit], row_to_run)?;
-            Ok(rows.filter_map(|r| r.ok()).collect())
+            rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
         }
     )
 }
@@ -111,10 +111,10 @@ pub fn list_impact_runs_for_firing(
             let mut stmt = conn.prepare(&format!(
                 "SELECT {COLUMNS} FROM shared_event_impact_runs
                  WHERE firing_id = ?1
-                 ORDER BY created_at DESC"
+                 ORDER BY created_at DESC, id DESC"
             ))?;
             let rows = stmt.query_map(params![firing_id], row_to_run)?;
-            Ok(rows.filter_map(|r| r.ok()).collect())
+            rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
         }
     )
 }

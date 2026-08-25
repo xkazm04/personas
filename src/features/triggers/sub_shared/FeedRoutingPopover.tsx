@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { Route, X } from 'lucide-react';
 
 import { listProjects } from '@/api/devTools/devTools';
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import * as api from '@/api/events/sharedEvents';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -49,15 +50,24 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
   }, []);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(routedProjectIds));
 
+  // Escape goes through the app keyboard ladder (focus-management golden path)
+  // at BaseModal's overlay priority, so the press closes only this popover and
+  // never a second surface underneath it.
+  useAppKeyboard(
+    (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return true;
+      }
+    },
+    { priority: 80 },
+  );
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     const onDown = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
     };
-    window.addEventListener('keydown', onKey);
     const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
     return () => {
-      window.removeEventListener('keydown', onKey);
       window.clearTimeout(id);
       document.removeEventListener('mousedown', onDown);
     };
@@ -75,11 +85,15 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
   }, [anchor, projects]);
 
   const save = async () => {
-    const ids = [...selected];
+    // Reconcile the selection against the live roster (bulk-selection-actions
+    // golden path): a checked id whose project no longer exists must not be
+    // re-saved as a route. The button is disabled until the roster loads, so
+    // `projects` is non-null here in practice.
+    const ids = (projects ?? []).filter((p) => selected.has(p.id)).map((p) => p.id);
     try {
-      await api.setProjectRoutes(entry.id, ids);
+      const saved = await api.setProjectRoutes(entry.id, ids);
       addToast(m.routing_saved, 'success');
-      onSaved(ids);
+      onSaved(saved.map((r) => r.projectId));
       onClose();
     } catch (err) {
       silentCatch('features/triggers/sub_shared/FeedRoutingPopover:save')(err);
@@ -97,7 +111,7 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <Route className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">{m.routing_title} — {entry.name}</span>
+        <span className="typo-caption text-foreground truncate">{m.routing_title} — {entry.name}</span>
         <button
           type="button"
           onClick={onClose}
@@ -132,7 +146,7 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
                   className="w-3.5 h-3.5 flex-shrink-0 cursor-pointer"
                   style={{ accentColor: 'var(--primary)' }}
                 />
-                <span className="typo-caption font-medium text-foreground truncate">{r.name}</span>
+                <span className="typo-caption text-foreground truncate">{r.name}</span>
               </label>
             </li>
           ))}
@@ -140,7 +154,7 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
       )}
 
       <div className="flex items-center justify-end gap-1.5 px-3 py-2 border-t border-primary/10 bg-secondary/10">
-        <AsyncButton size="xs" variant="primary" onClick={save} loadingText={m.routing_saving}>
+        <AsyncButton size="xs" variant="primary" onClick={save} disabled={projects === null} loadingText={m.routing_saving}>
           {m.routing_save}
         </AsyncButton>
       </div>

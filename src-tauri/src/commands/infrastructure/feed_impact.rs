@@ -35,6 +35,7 @@ use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+use personas_core::validation::require_non_empty;
 
 /// Projects one firing wave may dispatch into — same posture as the
 /// fleet-dispatch cap: parallel spawns beyond this stall the machine.
@@ -86,18 +87,14 @@ pub(crate) fn parse_feed_event(params: &Value) -> Result<FeedChange, AppError> {
             "feed_impact_dispatch fired by `{event_type}` — it only handles `shared:<slug>` events"
         ))
     })?;
-    if slug.trim().is_empty() {
-        return Err(AppError::Validation(
-            "feed_impact_dispatch: event carries an empty feed slug".into(),
-        ));
-    }
+    require_non_empty("feed_impact_dispatch feed slug", slug)?;
     let firing_id = ev
         .get("source_id")
         .and_then(|v| v.as_str())
-        .filter(|s| !s.trim().is_empty())
         .ok_or_else(|| {
             AppError::Validation("feed_impact_dispatch: event has no source_id (firing id)".into())
         })?;
+    require_non_empty("feed_impact_dispatch source_id (firing id)", firing_id)?;
 
     // Firing payload: `{connector, label, docs_url, detected_at, summary,
     // tags[], severity, release_version}` as a JSON string. Lenient — a

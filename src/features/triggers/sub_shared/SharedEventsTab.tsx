@@ -112,7 +112,7 @@ export function SharedEventsTab() {
               ev.stopPropagation();
               setRoutingFor({ entry: e, anchor: ev.currentTarget.getBoundingClientRect() });
             }}
-            className={`inline-flex items-center justify-center min-w-7 px-2 py-0.5 rounded-full typo-caption font-medium border transition-colors ${
+            className={`inline-flex items-center justify-center min-w-7 px-2 py-0.5 rounded-full typo-caption border transition-colors ${
               count > 0
                 ? 'bg-primary/10 text-primary border-primary/25 hover:bg-primary/20'
                 : 'bg-secondary/40 text-foreground/90 border-primary/10 hover:bg-secondary/60'

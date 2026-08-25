@@ -34,9 +34,10 @@ export const changeActivity = () =>
 export const listProjectRoutes = () =>
   invoke<SharedEventProjectRoute[]>("shared_events_list_project_routes");
 
-/** Replace one feed's routed-project set (empty array clears it). */
+/** Replace one feed's routed-project set (empty array clears it). Resolves
+ *  with the route set as it now stands server-side. */
 export const setProjectRoutes = (entryId: string, projectIds: string[]) =>
-  invoke<void>("shared_events_set_project_routes", { entryId, projectIds });
+  invoke<SharedEventProjectRoute[]>("shared_events_set_project_routes", { entryId, projectIds });
 
 /** Impact runs recorded for one feed (newest first) — verdicts per firing × project. */
 export const listImpactRuns = (entryId: string, limit?: number) =>
