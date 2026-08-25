@@ -1148,8 +1148,12 @@ pub fn dev_tools_memory_skill_context_pairs(
             rusqlite::params![project_id, format!("-{FRESH_DAYS} days")],
             |r| {
                 Ok(SkillContextPair {
-                    skill: r.get(0)?,
-                    context_id: r.get(1)?,
+                    // BY NAME, not by index. The neighbours in this file read
+                    // positionally and are baselined for it; a new one does not
+                    // get to join them. `SUBSTR(...) AS skill` is what makes the
+                    // first one addressable.
+                    skill: r.get("skill")?,
+                    context_id: r.get("context_id")?,
                 })
             },
         )

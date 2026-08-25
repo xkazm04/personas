@@ -2,6 +2,7 @@
 //! `mod tests` wrapper became this file, so every test body is unchanged
 //! apart from four columns of indentation.
 
+use personas_db::PoolExt;
 use rusqlite::params;
 
 use super::catalog::*;
@@ -179,7 +180,7 @@ fn show_ship_milestone_is_a_card_op_not_an_action_or_a_read_op() {
 fn the_ship_milestone_card_carries_the_objectives_prose() {
     let sys = crate::db::init_test_db().expect("system db");
     {
-        let conn = sys.get().expect("conn");
+        let conn = sys.conn("dispatcher_test").expect("conn");
         conn.execute(
             "INSERT INTO dev_projects (id, name, root_path, status, created_at, updated_at)
              VALUES ('p1', 'personas', 'C:/repo', 'active', '2026-08-01', '2026-08-01')",
@@ -231,7 +232,7 @@ fn the_ship_milestone_card_carries_the_objectives_prose() {
 fn a_milestone_proposed_without_prose_carries_null_not_empty_string() {
     let sys = crate::db::init_test_db().expect("system db");
     {
-        let conn = sys.get().expect("conn");
+        let conn = sys.conn("dispatcher_test").expect("conn");
         conn.execute(
             "INSERT INTO dev_projects (id, name, root_path, status, created_at, updated_at)
              VALUES ('p1', 'personas', 'C:/repo', 'active', '2026-08-01', '2026-08-01')",
