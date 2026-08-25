@@ -522,7 +522,7 @@ pub fn start_loops(
                 let port = crate::engine::webhook::webhook_port();
                 // 24 × 5 s = 2 min — the longest observed FIN_WAIT linger; the
                 // "2 min" in the log copy below is derived from this budget.
-                const PORT_PROBE_ATTEMPTS: u32 = 24;
+                const PORT_PROBE_ATTEMPTS: u32 = 72;
                 for attempt in 0..PORT_PROBE_ATTEMPTS {
                     match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
                         Ok(probe) => {
@@ -536,7 +536,7 @@ pub fn start_loops(
                             if attempt == 0 {
                                 tracing::warn!(
                                     port,
-                                    "webhook port busy (a dying instance?); waiting up to 2 min"
+                                    "webhook port busy (a dying instance?); waiting up to 6 min"
                                 );
                             }
                             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
