@@ -685,8 +685,17 @@ mod tests {
         let tmp =
             std::env::temp_dir().join(format!("personas_cdc_drop_{}.db", uuid::Uuid::new_v4()));
         let manager = SqliteConnectionManager::file(&tmp);
+        // max_size(2), not 1. `events::publish` holds a checked-out connection
+        // and then calls `get_by_id(pool, ..)`, which acquires a SECOND one —
+        // so on a single-connection pool every one of the 50 iterations below
+        // self-deadlocked until r2d2's 30s default acquire timeout. The test
+        // still PASSED (the INSERT lands, and its hook fires, before the nested
+        // acquire blocks) — it just took ~25 minutes, silently, inside
+        // `npm run test:rust:crates`. Two connections break the nesting; the
+        // capacity-1 CDC channel is what this test is actually about and is
+        // untouched, so it still overflows and still records drops.
         let pool: DbPool = Pool::builder()
-            .max_size(1)
+            .max_size(2)
             .connection_customizer(Box::new(CdcCustomizer::new(sender)))
             .build(manager)
             .expect("build cdc pool");
