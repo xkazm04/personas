@@ -212,9 +212,7 @@ pub fn create_project(
 /// this, after the folder's `.personas/project.json` marker proved the move;
 /// nothing in the UI edits `root_path` directly.
 pub fn update_root_path(pool: &DbPool, id: &str, root_path: &str) -> Result<DevProject, AppError> {
-    if root_path.trim().is_empty() {
-        return Err(AppError::Validation("Root path cannot be empty".into()));
-    }
+    personas_core::validation::require_non_empty("Root path", root_path)?;
     timed_query!("dev_projects", "dev_projects::update_root_path", {
         get_project_by_id(pool, id)?;
         let now = chrono::Utc::now().to_rfc3339();

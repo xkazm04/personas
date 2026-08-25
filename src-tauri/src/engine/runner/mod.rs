@@ -2843,9 +2843,19 @@ pub async fn run_execution(
         && !matches!(verdict, parser::TerminalVerdict::ErrorReported { .. });
     // Usage-limit details can land on stderr (CLI errors) or in the streamed
     // assistant/result text (stream-json runs) — check both on failure.
-    let usage_limit = if !timed_out && exit_code != 0 {
+    let usage_limit = if timed_out {
+        None
+    } else if exit_code != 0 {
         parser::parse_usage_limit(&stderr_text)
             .or_else(|| parser::parse_usage_limit(&assistant_text))
+    } else if let parser::TerminalVerdict::ErrorReported {
+        text: Some(ref t), ..
+    } = verdict
+    {
+        // Exit 0 but the result line said the turn broke — on this path the
+        // usage-limit hit announces itself in the result text ("You've hit
+        // your limit · resets 7pm"), measured against the captured corpus.
+        parser::parse_usage_limit(t)
     } else {
         None
     };
@@ -2874,10 +2884,33 @@ pub async fn run_execution(
                 stderr_text.trim()
             ))
         }
-    } else if let parser::TerminalVerdict::ErrorReported { ref subtype } = verdict {
-        // Exit 0, but the CLI said the turn broke. Name the subtype: this is
+    } else if let parser::TerminalVerdict::ErrorReported {
+        ref subtype,
+        ref text,
+    } = verdict
+    {
+        // Exit 0, but the CLI said the turn broke. Prefer the shared
+        // usage-limit classification, then the CLI's own reason text — this is
         // the message the user (and the healing classifier) will read.
-        Some(parser::terminal_error_message(subtype.as_deref()))
+        if let Some(ul) = &usage_limit {
+            let resets = ul
+                .resets_at
+                .map(|ts| format!(" — resets at {}", ts.to_rfc3339()))
+                .unwrap_or_default();
+            Some(match ul.scope {
+                crate::engine::error_taxonomy::UsageLimitScope::Weekly => {
+                    format!("Claude weekly usage limit reached{resets}")
+                }
+                crate::engine::error_taxonomy::UsageLimitScope::Window => {
+                    format!("Claude usage limit reached (rolling window){resets}")
+                }
+            })
+        } else {
+            Some(parser::terminal_error_message(
+                subtype.as_deref(),
+                text.as_deref(),
+            ))
+        }
     } else {
         None
     };

@@ -126,7 +126,13 @@ pub enum StreamLineType {
         /// that broke indistinguishable from one that finished with no text.
         is_error: bool,
         /// `"success"`, `"error_max_turns"`, `"error_during_execution"`, …
+        /// Measured 2026-08-25 against 3,680 captured logs: real error results
+        /// carry `subtype: "success"` with `is_error: true` — never trust the
+        /// subtype without the flag.
         subtype: Option<String>,
+        /// The `result` text, kept only when `is_error` (bounded to 500 chars):
+        /// the CLI's own reason, e.g. "You've hit your limit · resets 7pm".
+        error_text: Option<String>,
     },
     /// A `Task`/`Workflow` subagent was launched (CLI `system/task_started`).
     /// `tool_use_id` links it to the parent Task tool call (P4 fan-out tree).
@@ -434,6 +440,9 @@ pub struct ExecutionMetrics {
     pub result_is_error: bool,
     /// `subtype` from the last `result` line seen.
     pub result_subtype: Option<String>,
+    /// The error `result` text from the last `result` line seen, when
+    /// `is_error` was true — the CLI's own reason for the failure.
+    pub result_error_text: Option<String>,
 }
 
 /// Parsed model profile from persona.model_profile JSON
