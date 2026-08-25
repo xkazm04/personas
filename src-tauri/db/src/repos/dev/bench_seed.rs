@@ -367,11 +367,15 @@ pub fn seed_bench_work_salted(
 
     for (index, item) in items.iter().enumerate() {
         let title = item.title.trim();
-        let salted_title = match salt {
-            Some(salt) if !salt.trim().is_empty() => format!("{title} salt {}", salt.trim()),
-            _ => title.to_string(),
+        // The salt is appended to the COMPUTED key, never to the title fed
+        // into normalization: the normalizer strips digits/stamps, so a salt
+        // inside the title survives for some titles and vanishes for others
+        // (sweep #19 seeded 2/4 with an in-title salt).
+        let base_key = scan_dedup_key(BENCH_SEED_SCAN_TYPE, Some(BENCH_SEED_SCOPE), title);
+        let dedup_key = match salt {
+            Some(salt) if !salt.trim().is_empty() => format!("{base_key}:{}", salt.trim()),
+            _ => base_key,
         };
-        let dedup_key = scan_dedup_key(BENCH_SEED_SCAN_TYPE, Some(BENCH_SEED_SCOPE), &salted_title);
         let acceptance = item.acceptance.clone();
         let trap = item.trap.clone();
 
