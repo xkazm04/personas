@@ -109,6 +109,7 @@ class SilentErrorBoundary extends Component<
 // forever and brick the overlay until a full page reload.
 const BackgroundServices = lazyRetry(() => import("@/features/shared/chrome/BackgroundServices"));
 const CommandPalette = lazyRetry(() => import("@/features/shared/chrome/CommandPalette"));
+const QuickDispatchOverlay = lazyRetry(() => import("@/features/plugins/fleet/quick-dispatch/QuickDispatchOverlay"));
 const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazyRetry(() => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"));
@@ -145,6 +146,7 @@ const TourHandoffOffer = lazyRetry(() => import("@/features/onboarding/component
 const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/chrome/BackgroundServices"),
   () => import("@/features/shared/chrome/CommandPalette"),
+  () => import("@/features/plugins/fleet/quick-dispatch/QuickDispatchOverlay"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
   () => import("@/features/onboarding/components/OnboardingOverlay"),
@@ -397,6 +399,7 @@ export default function App() {
                   <TourHandoffOffer />
                   <ExecutionMiniPlayer />
                   <CommandPalette />
+                  <QuickDispatchOverlay />
                   <NotificationCenter />
                   <ShareLinkHandler />
                   <CompanionPanel />

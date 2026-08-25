@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "Envoi rapide",
+    "placeholder": "Décrivez la tâche à envoyer…",
+    "close": "Fermer l'envoi rapide"
+  },
   "fleet": {
     "search_placeholder": "Filtrer les sessions…",
     "search_no_matches": "Aucune session correspondante",

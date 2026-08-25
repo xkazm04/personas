@@ -45,6 +45,8 @@
     "mode_toggle_title": "Chế độ phím tắt — nhấp để chuyển · nhấp phải để trợ giúp",
     "nav_mode_monitor": "Bật/tắt màn hình persona (ở chế độ điều hướng)",
     "nav_mode_notifications": "Bật/tắt thông báo (ở chế độ điều hướng)",
+    "nav_mode_dispatch_tray": "Bật/tắt khay công việc đã duyệt (ở chế độ điều hướng)",
+    "nav_mode_quick_dispatch": "Điều phối nhanh một phiên Fleet (ở chế độ điều hướng)",
     "nav_mode_review": "Bật/tắt đánh giá của người dùng (ở chế độ điều hướng)",
     "nav_mode_schedules": "Bật/tắt lịch trình (ở chế độ điều hướng)",
     "nav_mode_search": "Mở tìm kiếm (ở chế độ điều hướng)",

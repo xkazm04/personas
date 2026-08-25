@@ -45,6 +45,8 @@
     "mode_toggle_title": "Mode pintasan — klik untuk beralih · klik kanan untuk bantuan",
     "nav_mode_monitor": "Alihkan monitor persona (mode nav)",
     "nav_mode_notifications": "Alihkan notifikasi (mode nav)",
+    "nav_mode_dispatch_tray": "Alihkan baki pekerjaan disetujui (mode nav)",
+    "nav_mode_quick_dispatch": "Kirim cepat sesi armada (mode nav)",
     "nav_mode_review": "Alihkan tinjauan manusia (mode nav)",
     "nav_mode_schedules": "Alihkan jadwal (mode nav)",
     "nav_mode_search": "Buka pencarian (mode nav)",

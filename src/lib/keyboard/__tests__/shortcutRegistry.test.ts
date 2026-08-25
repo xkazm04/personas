@@ -62,6 +62,8 @@ describe('shortcutRegistry', () => {
           nav_mode_back: 'Go back one page (in nav mode)',
           nav_mode_search: 'Open search (in nav mode)',
           nav_mode_schedules: 'Toggle schedules (in nav mode)',
+          nav_mode_dispatch_tray: 'Toggle the approved-work tray (in nav mode)',
+          nav_mode_quick_dispatch: 'Quick dispatch a fleet session (in nav mode)',
           nav_mode_review: 'Toggle human review (in nav mode)',
           nav_mode_monitor: 'Toggle persona monitor (in nav mode)',
           nav_mode_notifications: 'Toggle notifications (in nav mode)',

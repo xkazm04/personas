@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "त्वरित डिस्पैच",
+    "placeholder": "डिस्पैच करने वाले कार्य का वर्णन करें…",
+    "close": "त्वरित डिस्पैच बंद करें"
+  },
   "fleet": {
     "search_placeholder": "सत्र फ़िल्टर करें…",
     "search_no_matches": "कोई सत्र मेल नहीं खाता",

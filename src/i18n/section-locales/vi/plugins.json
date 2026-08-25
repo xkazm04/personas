@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "Điều phối nhanh",
+    "placeholder": "Mô tả tác vụ cần điều phối…",
+    "close": "Đóng điều phối nhanh"
+  },
   "fleet": {
     "search_placeholder": "Lọc phiên…",
     "search_no_matches": "Không có phiên nào khớp",

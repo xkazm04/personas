@@ -6,6 +6,7 @@ import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { ActivityPulseIcon } from '@/features/shared/components/icons/ActivityPulseIcon';
 import { useSystemStore } from '@/stores/systemStore';
+import { useQuickDispatchStore } from '@/stores/quickDispatchStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitleBarTray';
 
@@ -21,8 +22,9 @@ import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitle
  * single instrument.
  *
  * Keyboard: while `;` keyboard-nav mode is active (see `KeyboardNavMode`),
- * each capsule shows its key on a hint chip below the bar and S / C / R / D /
- * M / N toggle the matching surface. Surface keys keep the mode armed — it
+ * each capsule shows its key on a hint chip below the bar and S / T / R / D /
+ * M / N toggle the matching surface; C opens the Quick Dispatch overlay
+ * (keyboard-only — it has no capsule). Surface keys keep the mode armed — it
  * stays on until `;` / Esc / the footer switch. The keys do nothing outside
  * nav mode.
  */
@@ -31,6 +33,7 @@ export default function TitleBarDock() {
   const tray = useTitleBarTray();
   const prefersReducedMotion = useReducedMotion();
   const keyboardNavActive = useSystemStore((s) => s.keyboardNavActive);
+  const toggleQuickDispatch = useQuickDispatchStore((s) => s.toggleQuickDispatch);
 
   useAppKeyboard(
     (e) => {
@@ -45,6 +48,10 @@ export default function TitleBarDock() {
           // user switches it off (`;` / Esc / footer switch), not per-shortcut.
           return true;
         case 'c':
+          e.preventDefault();
+          toggleQuickDispatch();
+          return true;
+        case 't':
           e.preventDefault();
           tray.toggleSchedules();
           return true;
@@ -95,7 +102,7 @@ export default function TitleBarDock() {
           label={tray.todayScheduleCount > 0 ? tx(t.chrome.tray_schedules_today, { count: tray.todayScheduleCount }) : t.chrome.tray_schedules}
           title={tray.todayScheduleCount > 0 ? tx(t.chrome.tray_schedules_today, { count: tray.todayScheduleCount }) : t.chrome.tray_schedules}
           testId="titlebar-schedules"
-          hintKey="C"
+          hintKey="T"
           showHint={keyboardNavActive}
         >
           <CalendarClock size={17} strokeWidth={1.6} />

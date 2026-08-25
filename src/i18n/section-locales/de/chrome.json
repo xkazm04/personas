@@ -45,6 +45,8 @@
     "mode_toggle_title": "Kürzel-Modus — klicken zum Umschalten · Rechtsklick für Hilfe",
     "nav_mode_monitor": "Persona-Monitor umschalten (im Nav-Modus)",
     "nav_mode_notifications": "Benachrichtigungen umschalten (im Nav-Modus)",
+    "nav_mode_dispatch_tray": "Ablage genehmigter Arbeiten umschalten (im Nav-Modus)",
+    "nav_mode_quick_dispatch": "Flotten-Sitzung schnell starten (im Nav-Modus)",
     "nav_mode_review": "Manuelle Prüfung umschalten (im Nav-Modus)",
     "nav_mode_schedules": "Zeitpläne umschalten (im Nav-Modus)",
     "nav_mode_search": "Suche öffnen (im Nav-Modus)",

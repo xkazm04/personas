@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "Kirim cepat",
+    "placeholder": "Jelaskan tugas yang akan dikirim…",
+    "close": "Tutup kirim cepat"
+  },
   "fleet": {
     "search_placeholder": "Filter sesi…",
     "search_no_matches": "Tidak ada sesi yang cocok",

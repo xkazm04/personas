@@ -45,6 +45,8 @@
     "mode_toggle_title": "ショートカットモード — クリックで切り替え · 右クリックでヘルプ",
     "nav_mode_monitor": "ペルソナモニターを切り替え（ナビゲーションモード）",
     "nav_mode_notifications": "通知を切り替え（ナビゲーションモード）",
+    "nav_mode_dispatch_tray": "承認済み作業トレイを切り替え（ナビゲーションモード）",
+    "nav_mode_quick_dispatch": "フリートセッションをクイックディスパッチ（ナビゲーションモード）",
     "nav_mode_review": "ヒューマンレビューを切り替え（ナビゲーションモード）",
     "nav_mode_schedules": "スケジュールを切り替え（ナビゲーションモード）",
     "nav_mode_search": "検索を開く（ナビゲーションモード）",

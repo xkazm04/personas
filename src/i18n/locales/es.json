@@ -739,6 +739,8 @@
       "mode_toggle_title": "Modo de atajos — clic para cambiar · clic derecho para ayuda",
       "nav_mode_monitor": "Alternar monitor de persona (en modo navegación)",
       "nav_mode_notifications": "Alternar notificaciones (en modo navegación)",
+      "nav_mode_dispatch_tray": "Alternar la bandeja de trabajo aprobado (en modo navegación)",
+      "nav_mode_quick_dispatch": "Despachar rápidamente una sesión de flota (en modo navegación)",
       "nav_mode_review": "Alternar revisión humana (en modo navegación)",
       "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
       "nav_mode_search": "Abrir búsqueda (en modo navegación)",
@@ -12787,6 +12789,11 @@
     "connections_heading": "Conexiones"
   },
   "plugins": {
+    "fleet_quick_dispatch": {
+      "title": "Despacho rápido",
+      "placeholder": "Describe la tarea a despachar…",
+      "close": "Cerrar el despacho rápido"
+    },
     "fleet": {
       "search_placeholder": "Filtrar sesiones…",
       "search_no_matches": "Ninguna sesión coincide",

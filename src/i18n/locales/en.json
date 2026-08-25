@@ -793,6 +793,8 @@
       "nav_mode_review": "Toggle human review (in nav mode)",
       "nav_mode_monitor": "Toggle persona monitor (in nav mode)",
       "nav_mode_notifications": "Toggle notifications (in nav mode)",
+      "nav_mode_dispatch_tray": "Toggle the approved-work tray (in nav mode)",
+      "nav_mode_quick_dispatch": "Quick dispatch a fleet session (in nav mode)",
       "toggle_sidebar": "Collapse / expand sidebar",
       "toggle_monitor": "Open / close Persona Monitor",
       "toggle_athena": "Open / close Athena chat",
@@ -13079,6 +13081,11 @@
     "connections_heading": "Connections"
   },
   "plugins": {
+    "fleet_quick_dispatch": {
+      "title": "Quick dispatch",
+      "placeholder": "Describe the task to dispatch…",
+      "close": "Close quick dispatch"
+    },
     "fleet": {
       "search_placeholder": "Filter sessions…",
       "search_no_matches": "No sessions match",

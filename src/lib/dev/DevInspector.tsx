@@ -53,7 +53,7 @@ export function DevInspector() {
     (e) => {
       if (!import.meta.env.DEV) return false;
       // Enter via the `;` special mode (nav mode), then `i` (Inspect) to
-      // arm/disarm. `i` is a free key inside nav mode (S/C/R/M/N/G are taken).
+      // arm/disarm. `i` is a free key inside nav mode (S/T/R/D/M/N/C are taken).
       if (
         navActive &&
         (e.key === "i" || e.key === "I") &&

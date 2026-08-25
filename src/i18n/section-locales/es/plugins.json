@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "Despacho rápido",
+    "placeholder": "Describe la tarea a despachar…",
+    "close": "Cerrar el despacho rápido"
+  },
   "fleet": {
     "search_placeholder": "Filtrar sesiones…",
     "search_no_matches": "Ninguna sesión coincide",

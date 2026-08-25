@@ -739,6 +739,8 @@
       "mode_toggle_title": "快捷键模式 — 点击切换 · 右键查看帮助",
       "nav_mode_monitor": "切换角色监控（导航模式）",
       "nav_mode_notifications": "切换通知（导航模式）",
+      "nav_mode_dispatch_tray": "切换已批准工作托盘（导航模式）",
+      "nav_mode_quick_dispatch": "快速分发舰队会话（导航模式）",
       "nav_mode_review": "切换人工审核（导航模式）",
       "nav_mode_schedules": "切换计划（导航模式）",
       "nav_mode_search": "打开搜索（导航模式）",
@@ -12787,6 +12789,11 @@
     "connections_heading": "连接"
   },
   "plugins": {
+    "fleet_quick_dispatch": {
+      "title": "快速分发",
+      "placeholder": "描述要分发的任务…",
+      "close": "关闭快速分发"
+    },
     "fleet": {
       "search_placeholder": "筛选会话…",
       "search_no_matches": "没有匹配的会话",

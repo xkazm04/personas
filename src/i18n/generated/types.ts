@@ -799,6 +799,8 @@ export type Translations = {
       nav_mode_review: string;
       nav_mode_monitor: string;
       nav_mode_notifications: string;
+      nav_mode_dispatch_tray: string;
+      nav_mode_quick_dispatch: string;
       toggle_sidebar: string;
       toggle_monitor: string;
       toggle_athena: string;
@@ -13085,6 +13087,11 @@ export type Translations = {
     connections_heading: string;
   };
   plugins: {
+    fleet_quick_dispatch: {
+      title: string;
+      placeholder: string;
+      close: string;
+    };
     fleet: {
       search_placeholder: string;
       search_no_matches: string;

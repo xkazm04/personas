@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "Schnellstart",
+    "placeholder": "Beschreibe die Aufgabe, die gestartet werden soll…",
+    "close": "Schnellstart schließen"
+  },
   "fleet": {
     "search_placeholder": "Sitzungen filtern…",
     "search_no_matches": "Keine passenden Sitzungen",

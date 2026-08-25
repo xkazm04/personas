@@ -739,6 +739,8 @@
       "mode_toggle_title": "Kürzel-Modus — klicken zum Umschalten · Rechtsklick für Hilfe",
       "nav_mode_monitor": "Persona-Monitor umschalten (im Nav-Modus)",
       "nav_mode_notifications": "Benachrichtigungen umschalten (im Nav-Modus)",
+      "nav_mode_dispatch_tray": "Ablage genehmigter Arbeiten umschalten (im Nav-Modus)",
+      "nav_mode_quick_dispatch": "Flotten-Sitzung schnell starten (im Nav-Modus)",
       "nav_mode_review": "Manuelle Prüfung umschalten (im Nav-Modus)",
       "nav_mode_schedules": "Zeitpläne umschalten (im Nav-Modus)",
       "nav_mode_search": "Suche öffnen (im Nav-Modus)",
@@ -12787,6 +12789,11 @@
     "connections_heading": "Verbindungen"
   },
   "plugins": {
+    "fleet_quick_dispatch": {
+      "title": "Schnellstart",
+      "placeholder": "Beschreibe die Aufgabe, die gestartet werden soll…",
+      "close": "Schnellstart schließen"
+    },
     "fleet": {
       "search_placeholder": "Sitzungen filtern…",
       "search_no_matches": "Keine passenden Sitzungen",

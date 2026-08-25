@@ -45,6 +45,8 @@
     "mode_toggle_title": "Modo de atajos — clic para cambiar · clic derecho para ayuda",
     "nav_mode_monitor": "Alternar monitor de persona (en modo navegación)",
     "nav_mode_notifications": "Alternar notificaciones (en modo navegación)",
+    "nav_mode_dispatch_tray": "Alternar la bandeja de trabajo aprobado (en modo navegación)",
+    "nav_mode_quick_dispatch": "Despachar rápidamente una sesión de flota (en modo navegación)",
     "nav_mode_review": "Alternar revisión humana (en modo navegación)",
     "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
     "nav_mode_search": "Abrir búsqueda (en modo navegación)",

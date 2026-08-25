@@ -739,6 +739,8 @@
       "mode_toggle_title": "শর্টকাট মোড — টগল করতে ক্লিক করুন · সাহায্যের জন্য রাইট-ক্লিক করুন",
       "nav_mode_monitor": "পার্সোনা মনিটর টগল করুন (নেভ মোডে)",
       "nav_mode_notifications": "নোটিফিকেশন টগল করুন (নেভ মোডে)",
+      "nav_mode_dispatch_tray": "অনুমোদিত কাজের ট্রে টগল করুন (নেভ মোডে)",
+      "nav_mode_quick_dispatch": "দ্রুত একটি ফ্লিট সেশন ডিসপ্যাচ করুন (নেভ মোডে)",
       "nav_mode_review": "মানব পর্যালোচনা টগল করুন (নেভ মোডে)",
       "nav_mode_schedules": "সময়সূচি টগল করুন (নেভ মোডে)",
       "nav_mode_search": "অনুসন্ধান খুলুন (নেভ মোডে)",
@@ -12787,6 +12789,11 @@
     "connections_heading": "সংযোগ"
   },
   "plugins": {
+    "fleet_quick_dispatch": {
+      "title": "দ্রুত ডিসপ্যাচ",
+      "placeholder": "ডিসপ্যাচ করার কাজটি বর্ণনা করুন…",
+      "close": "দ্রুত ডিসপ্যাচ বন্ধ করুন"
+    },
     "fleet": {
       "search_placeholder": "সেশন ফিল্টার করুন…",
       "search_no_matches": "কোনো সেশন মেলে না",

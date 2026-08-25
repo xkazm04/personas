@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "빠른 디스패치",
+    "placeholder": "디스패치할 작업을 설명하세요…",
+    "close": "빠른 디스패치 닫기"
+  },
   "fleet": {
     "search_placeholder": "세션 필터…",
     "search_no_matches": "일치하는 세션 없음",

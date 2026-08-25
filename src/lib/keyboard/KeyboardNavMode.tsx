@@ -9,9 +9,10 @@ import { useSystemStore } from '@/stores/systemStore';
  *   - `←` (ArrowLeft) → go back one page, mirroring the titlebar Back button
  *     (`useSystemStore().navigateBack` — closes an open header overlay, runs a
  *     registered back-interceptor, or pops the sidebar nav history).
- *   - `S` / `C` / `R` / `M` / `N` → toggle the title-bar dock surfaces. The
- *     dock (`TitleBarDock`) owns those handlers and renders a key hint under
- *     each capsule; this component only owns the mode flag itself.
+ *   - `S` / `T` / `R` / `D` / `M` / `N` → toggle the title-bar dock surfaces,
+ *     and `C` → open the Quick Dispatch overlay (keyboard-only, no capsule).
+ *     The dock (`TitleBarDock`) owns those handlers and renders a key hint
+ *     under each capsule; this component only owns the mode flag itself.
  *   - `;` again, or `Esc`, exits the mode.
  *
  * The active flag lives in the system store (`keyboardNavActive`) so hint

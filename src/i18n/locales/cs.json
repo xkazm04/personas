@@ -739,6 +739,8 @@
       "mode_toggle_title": "Režim zkratek — kliknutím přepněte · pravé tlačítko pro nápovědu",
       "nav_mode_monitor": "Přepnout monitor person (v navigačním režimu)",
       "nav_mode_notifications": "Přepnout oznámení (v navigačním režimu)",
+      "nav_mode_dispatch_tray": "Přepnout zásobník schválené práce (v navigačním režimu)",
+      "nav_mode_quick_dispatch": "Rychle vyslat relaci flotily (v navigačním režimu)",
       "nav_mode_review": "Přepnout ruční kontrolu (v navigačním režimu)",
       "nav_mode_schedules": "Přepnout plány (v navigačním režimu)",
       "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)",
@@ -12787,6 +12789,11 @@
     "connections_heading": "Připojení"
   },
   "plugins": {
+    "fleet_quick_dispatch": {
+      "title": "Rychlé vyslání",
+      "placeholder": "Popište úkol k vyslání…",
+      "close": "Zavřít rychlé vyslání"
+    },
     "fleet": {
       "search_placeholder": "Filtrovat relace…",
       "search_no_matches": "Žádné odpovídající relace",

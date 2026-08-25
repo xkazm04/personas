@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "إرسال سريع",
+    "placeholder": "صف المهمة المراد إرسالها…",
+    "close": "إغلاق الإرسال السريع"
+  },
   "fleet": {
     "search_placeholder": "تصفية الجلسات…",
     "search_no_matches": "لا توجد جلسات مطابقة",

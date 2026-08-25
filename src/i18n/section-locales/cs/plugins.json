@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "Rychlé vyslání",
+    "placeholder": "Popište úkol k vyslání…",
+    "close": "Zavřít rychlé vyslání"
+  },
   "fleet": {
     "search_placeholder": "Filtrovat relace…",
     "search_no_matches": "Žádné odpovídající relace",

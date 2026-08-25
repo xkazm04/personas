@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "クイックディスパッチ",
+    "placeholder": "ディスパッチするタスクを入力…",
+    "close": "クイックディスパッチを閉じる"
+  },
   "fleet": {
     "search_placeholder": "セッションを絞り込み…",
     "search_no_matches": "一致するセッションがありません",

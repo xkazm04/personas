@@ -1,4 +1,9 @@
 {
+  "fleet_quick_dispatch": {
+    "title": "দ্রুত ডিসপ্যাচ",
+    "placeholder": "ডিসপ্যাচ করার কাজটি বর্ণনা করুন…",
+    "close": "দ্রুত ডিসপ্যাচ বন্ধ করুন"
+  },
   "fleet": {
     "search_placeholder": "সেশন ফিল্টার করুন…",
     "search_no_matches": "কোনো সেশন মেলে না",

@@ -45,6 +45,8 @@
     "mode_toggle_title": "Mode raccourci — cliquer pour basculer · clic droit pour l’aide",
     "nav_mode_monitor": "Afficher/masquer le moniteur de persona (mode navigation)",
     "nav_mode_notifications": "Afficher/masquer les notifications (mode navigation)",
+    "nav_mode_dispatch_tray": "Afficher/masquer le travail approuvé (mode navigation)",
+    "nav_mode_quick_dispatch": "Envoyer rapidement une session de flotte (mode navigation)",
     "nav_mode_review": "Afficher/masquer la revue humaine (mode navigation)",
     "nav_mode_schedules": "Afficher/masquer les planifications (mode navigation)",
     "nav_mode_search": "Ouvrir la recherche (mode navigation)",
