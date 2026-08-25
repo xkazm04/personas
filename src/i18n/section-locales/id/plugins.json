@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "Kirim cepat",
     "placeholder": "Jelaskan tugas yang akan dikirim…",
-    "close": "Tutup kirim cepat"
+    "close": "Tutup kirim cepat",
+    "chip_remove": "Hapus {label}",
+    "dispatched": "Terkirim — sesi muncul di atas",
+    "effort_chip": "Upaya: {effort}",
+    "effort_chip_unset": "Upaya: bawaan",
+    "headless_caption": "Sesi latar belakang melewati jalur operasi dan notifikasi",
+    "headless_label": "Latar belakang (headless)",
+    "model_chip": "Model: {model}",
+    "model_chip_unset": "Model: bawaan",
+    "no_project_matches": "Tidak ada proyek yang cocok",
+    "no_skill_matches": "Tidak ada skill yang cocok",
+    "recent_empty": "Belum ada yang dikirim",
+    "recent_open_aria": "Buka halaman Fleet",
+    "recent_title": "Pengiriman terbaru",
+    "send": "Kirim",
+    "skill_needs_project": "Pilih @proyek terlebih dahulu — skill terdaftar per proyek",
+    "syntax_hint": "Ketik @ untuk memilih proyek, / untuk memilih skill"
   },
   "fleet": {
     "search_placeholder": "Filter sesi…",

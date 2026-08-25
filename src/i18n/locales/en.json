@@ -13084,7 +13084,23 @@
     "fleet_quick_dispatch": {
       "title": "Quick dispatch",
       "placeholder": "Describe the task to dispatch…",
-      "close": "Close quick dispatch"
+      "close": "Close quick dispatch",
+      "syntax_hint": "Type @ to pick a project, / to pick a skill",
+      "chip_remove": "Remove {label}",
+      "skill_needs_project": "Pick a @project first — skills are listed per project",
+      "no_project_matches": "No matching projects",
+      "no_skill_matches": "No matching skills",
+      "model_chip_unset": "Model: default",
+      "model_chip": "Model: {model}",
+      "effort_chip_unset": "Effort: default",
+      "effort_chip": "Effort: {effort}",
+      "headless_label": "Background (headless)",
+      "headless_caption": "Background sessions skip the operation and notify lane",
+      "send": "Dispatch",
+      "dispatched": "Dispatched — the session appears above",
+      "recent_title": "Recent dispatches",
+      "recent_empty": "Nothing dispatched yet",
+      "recent_open_aria": "Open the Fleet page"
     },
     "fleet": {
       "search_placeholder": "Filter sessions…",

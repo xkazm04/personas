@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "Rychlé vyslání",
     "placeholder": "Popište úkol k vyslání…",
-    "close": "Zavřít rychlé vyslání"
+    "close": "Zavřít rychlé vyslání",
+    "chip_remove": "Odebrat {label}",
+    "dispatched": "Odesláno — relace se zobrazí výše",
+    "effort_chip": "Úsilí: {effort}",
+    "effort_chip_unset": "Úsilí: výchozí",
+    "headless_caption": "Relace na pozadí vynechávají operační a notifikační dráhu",
+    "headless_label": "Na pozadí (headless)",
+    "model_chip": "Model: {model}",
+    "model_chip_unset": "Model: výchozí",
+    "no_project_matches": "Žádné odpovídající projekty",
+    "no_skill_matches": "Žádné odpovídající dovednosti",
+    "recent_empty": "Zatím nic neodesláno",
+    "recent_open_aria": "Otevřít stránku Fleet",
+    "recent_title": "Nedávná odeslání",
+    "send": "Odeslat",
+    "skill_needs_project": "Nejdřív vyberte @projekt — dovednosti se načítají podle projektu",
+    "syntax_hint": "Napište @ pro výběr projektu, / pro výběr dovednosti"
   },
   "fleet": {
     "search_placeholder": "Filtrovat relace…",

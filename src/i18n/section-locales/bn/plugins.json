@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "দ্রুত ডিসপ্যাচ",
     "placeholder": "ডিসপ্যাচ করার কাজটি বর্ণনা করুন…",
-    "close": "দ্রুত ডিসপ্যাচ বন্ধ করুন"
+    "close": "দ্রুত ডিসপ্যাচ বন্ধ করুন",
+    "chip_remove": "{label} সরান",
+    "dispatched": "পাঠানো হয়েছে — সেশনটি উপরে দেখা যাবে",
+    "effort_chip": "প্রচেষ্টা: {effort}",
+    "effort_chip_unset": "প্রচেষ্টা: ডিফল্ট",
+    "headless_caption": "ব্যাকগ্রাউন্ড সেশন অপারেশন ও নোটিফিকেশন লেন এড়িয়ে যায়",
+    "headless_label": "ব্যাকগ্রাউন্ড (headless)",
+    "model_chip": "মডেল: {model}",
+    "model_chip_unset": "মডেল: ডিফল্ট",
+    "no_project_matches": "কোনো মিল থাকা প্রজেক্ট নেই",
+    "no_skill_matches": "কোনো মিল থাকা স্কিল নেই",
+    "recent_empty": "এখনও কিছু পাঠানো হয়নি",
+    "recent_open_aria": "Fleet পেজ খুলুন",
+    "recent_title": "সাম্প্রতিক ডিসপ্যাচ",
+    "send": "পাঠান",
+    "skill_needs_project": "আগে একটি @প্রজেক্ট বেছে নিন — স্কিল প্রজেক্ট অনুযায়ী তালিকাভুক্ত হয়",
+    "syntax_hint": "প্রজেক্ট বাছতে @ লিখুন, স্কিল বাছতে / লিখুন"
   },
   "fleet": {
     "search_placeholder": "সেশন ফিল্টার করুন…",

@@ -12792,7 +12792,23 @@
     "fleet_quick_dispatch": {
       "title": "Điều phối nhanh",
       "placeholder": "Mô tả tác vụ cần điều phối…",
-      "close": "Đóng điều phối nhanh"
+      "close": "Đóng điều phối nhanh",
+      "chip_remove": "Xóa {label}",
+      "dispatched": "Đã gửi — phiên hiển thị ở trên",
+      "effort_chip": "Mức suy luận: {effort}",
+      "effort_chip_unset": "Mức suy luận: mặc định",
+      "headless_caption": "Phiên chạy nền bỏ qua luồng vận hành và thông báo",
+      "headless_label": "Chạy nền (headless)",
+      "model_chip": "Mô hình: {model}",
+      "model_chip_unset": "Mô hình: mặc định",
+      "no_project_matches": "Không có dự án phù hợp",
+      "no_skill_matches": "Không có kỹ năng phù hợp",
+      "recent_empty": "Chưa gửi gì cả",
+      "recent_open_aria": "Mở trang Fleet",
+      "recent_title": "Lần gửi gần đây",
+      "send": "Gửi",
+      "skill_needs_project": "Hãy chọn một @dự án trước — kỹ năng được liệt kê theo dự án",
+      "syntax_hint": "Gõ @ để chọn dự án, / để chọn kỹ năng"
     },
     "fleet": {
       "search_placeholder": "Lọc phiên…",

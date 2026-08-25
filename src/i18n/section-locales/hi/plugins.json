@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "त्वरित डिस्पैच",
     "placeholder": "डिस्पैच करने वाले कार्य का वर्णन करें…",
-    "close": "त्वरित डिस्पैच बंद करें"
+    "close": "त्वरित डिस्पैच बंद करें",
+    "chip_remove": "{label} हटाएं",
+    "dispatched": "भेज दिया गया — सत्र ऊपर दिखाई देगा",
+    "effort_chip": "प्रयास: {effort}",
+    "effort_chip_unset": "प्रयास: डिफ़ॉल्ट",
+    "headless_caption": "बैकग्राउंड सत्र ऑपरेशन और सूचना लेन को छोड़ देते हैं",
+    "headless_label": "बैकग्राउंड (headless)",
+    "model_chip": "मॉडल: {model}",
+    "model_chip_unset": "मॉडल: डिफ़ॉल्ट",
+    "no_project_matches": "कोई मेल खाता प्रोजेक्ट नहीं",
+    "no_skill_matches": "कोई मेल खाती स्किल नहीं",
+    "recent_empty": "अभी तक कुछ नहीं भेजा गया",
+    "recent_open_aria": "Fleet पेज खोलें",
+    "recent_title": "हाल के डिस्पैच",
+    "send": "भेजें",
+    "skill_needs_project": "पहले कोई @प्रोजेक्ट चुनें — स्किल प्रोजेक्ट के अनुसार सूचीबद्ध होती हैं",
+    "syntax_hint": "प्रोजेक्ट चुनने के लिए @ लिखें, स्किल चुनने के लिए /"
   },
   "fleet": {
     "search_placeholder": "सत्र फ़िल्टर करें…",

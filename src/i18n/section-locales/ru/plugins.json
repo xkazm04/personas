@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "Быстрый запуск",
     "placeholder": "Опишите задачу для запуска…",
-    "close": "Закрыть быстрый запуск"
+    "close": "Закрыть быстрый запуск",
+    "chip_remove": "Убрать {label}",
+    "dispatched": "Отправлено — сессия появится выше",
+    "effort_chip": "Усилие: {effort}",
+    "effort_chip_unset": "Усилие: по умолчанию",
+    "headless_caption": "Фоновые сессии пропускают контур операций и уведомлений",
+    "headless_label": "Фоновый режим (headless)",
+    "model_chip": "Модель: {model}",
+    "model_chip_unset": "Модель: по умолчанию",
+    "no_project_matches": "Нет подходящих проектов",
+    "no_skill_matches": "Нет подходящих навыков",
+    "recent_empty": "Пока ничего не отправлено",
+    "recent_open_aria": "Открыть страницу Fleet",
+    "recent_title": "Недавние запуски",
+    "send": "Отправить",
+    "skill_needs_project": "Сначала выберите @проект — навыки перечисляются по проекту",
+    "syntax_hint": "Введите @ для выбора проекта, / для выбора навыка"
   },
   "fleet": {
     "search_placeholder": "Фильтр сессий…",

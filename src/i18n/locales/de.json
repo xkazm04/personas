@@ -12792,7 +12792,23 @@
     "fleet_quick_dispatch": {
       "title": "Schnellstart",
       "placeholder": "Beschreibe die Aufgabe, die gestartet werden soll…",
-      "close": "Schnellstart schließen"
+      "close": "Schnellstart schließen",
+      "chip_remove": "{label} entfernen",
+      "dispatched": "Gestartet — die Session erscheint oben",
+      "effort_chip": "Aufwand: {effort}",
+      "effort_chip_unset": "Aufwand: Standard",
+      "headless_caption": "Hintergrund-Sessions überspringen die Operations- und Benachrichtigungsschiene",
+      "headless_label": "Hintergrund (headless)",
+      "model_chip": "Modell: {model}",
+      "model_chip_unset": "Modell: Standard",
+      "no_project_matches": "Keine passenden Projekte",
+      "no_skill_matches": "Keine passenden Skills",
+      "recent_empty": "Noch nichts gestartet",
+      "recent_open_aria": "Fleet-Seite öffnen",
+      "recent_title": "Letzte Starts",
+      "send": "Starten",
+      "skill_needs_project": "Wähle zuerst ein @Projekt — Skills werden pro Projekt gelistet",
+      "syntax_hint": "@ wählt ein Projekt, / wählt einen Skill"
     },
     "fleet": {
       "search_placeholder": "Sitzungen filtern…",

@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "Envoi rapide",
     "placeholder": "Décrivez la tâche à envoyer…",
-    "close": "Fermer l'envoi rapide"
+    "close": "Fermer l'envoi rapide",
+    "chip_remove": "Retirer {label}",
+    "dispatched": "Lancé — la session apparaît ci-dessus",
+    "effort_chip": "Effort : {effort}",
+    "effort_chip_unset": "Effort : par défaut",
+    "headless_caption": "Les sessions en arrière-plan ignorent la voie opération et notifications",
+    "headless_label": "Arrière-plan (headless)",
+    "model_chip": "Modèle : {model}",
+    "model_chip_unset": "Modèle : par défaut",
+    "no_project_matches": "Aucun projet correspondant",
+    "no_skill_matches": "Aucune compétence correspondante",
+    "recent_empty": "Rien de lancé pour l'instant",
+    "recent_open_aria": "Ouvrir la page Fleet",
+    "recent_title": "Lancements récents",
+    "send": "Lancer",
+    "skill_needs_project": "Choisissez d'abord un @projet — les compétences sont listées par projet",
+    "syntax_hint": "Tapez @ pour choisir un projet, / pour choisir une compétence"
   },
   "fleet": {
     "search_placeholder": "Filtrer les sessions…",

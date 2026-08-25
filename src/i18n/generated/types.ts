@@ -13091,6 +13091,22 @@ export type Translations = {
       title: string;
       placeholder: string;
       close: string;
+      syntax_hint: string;
+      chip_remove: string;
+      skill_needs_project: string;
+      no_project_matches: string;
+      no_skill_matches: string;
+      model_chip_unset: string;
+      model_chip: string;
+      effort_chip_unset: string;
+      effort_chip: string;
+      headless_label: string;
+      headless_caption: string;
+      send: string;
+      dispatched: string;
+      recent_title: string;
+      recent_empty: string;
+      recent_open_aria: string;
     };
     fleet: {
       search_placeholder: string;

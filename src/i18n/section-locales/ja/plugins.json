@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "クイックディスパッチ",
     "placeholder": "ディスパッチするタスクを入力…",
-    "close": "クイックディスパッチを閉じる"
+    "close": "クイックディスパッチを閉じる",
+    "chip_remove": "{label} を削除",
+    "dispatched": "ディスパッチしました — セッションは上に表示されます",
+    "effort_chip": "推論レベル: {effort}",
+    "effort_chip_unset": "推論レベル: デフォルト",
+    "headless_caption": "バックグラウンドセッションはオペレーション・通知レーンをスキップします",
+    "headless_label": "バックグラウンド（headless）",
+    "model_chip": "モデル: {model}",
+    "model_chip_unset": "モデル: デフォルト",
+    "no_project_matches": "一致するプロジェクトがありません",
+    "no_skill_matches": "一致するスキルがありません",
+    "recent_empty": "まだ何もディスパッチされていません",
+    "recent_open_aria": "Fleet ページを開く",
+    "recent_title": "最近のディスパッチ",
+    "send": "ディスパッチ",
+    "skill_needs_project": "先に @プロジェクト を選択してください — スキルはプロジェクトごとに表示されます",
+    "syntax_hint": "@ でプロジェクトを、/ でスキルを選択"
   },
   "fleet": {
     "search_placeholder": "セッションを絞り込み…",

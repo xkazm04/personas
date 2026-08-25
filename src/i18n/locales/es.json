@@ -12792,7 +12792,23 @@
     "fleet_quick_dispatch": {
       "title": "Despacho rápido",
       "placeholder": "Describe la tarea a despachar…",
-      "close": "Cerrar el despacho rápido"
+      "close": "Cerrar el despacho rápido",
+      "chip_remove": "Quitar {label}",
+      "dispatched": "Enviado — la sesión aparece arriba",
+      "effort_chip": "Esfuerzo: {effort}",
+      "effort_chip_unset": "Esfuerzo: predeterminado",
+      "headless_caption": "Las sesiones en segundo plano omiten el carril de operación y notificaciones",
+      "headless_label": "Segundo plano (headless)",
+      "model_chip": "Modelo: {model}",
+      "model_chip_unset": "Modelo: predeterminado",
+      "no_project_matches": "No hay proyectos coincidentes",
+      "no_skill_matches": "No hay habilidades coincidentes",
+      "recent_empty": "Aún no se ha enviado nada",
+      "recent_open_aria": "Abrir la página de Fleet",
+      "recent_title": "Envíos recientes",
+      "send": "Enviar",
+      "skill_needs_project": "Elige primero un @proyecto — las habilidades se listan por proyecto",
+      "syntax_hint": "Escribe @ para elegir un proyecto, / para elegir una habilidad"
     },
     "fleet": {
       "search_placeholder": "Filtrar sesiones…",

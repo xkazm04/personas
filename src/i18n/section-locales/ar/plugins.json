@@ -2,7 +2,23 @@
   "fleet_quick_dispatch": {
     "title": "إرسال سريع",
     "placeholder": "صف المهمة المراد إرسالها…",
-    "close": "إغلاق الإرسال السريع"
+    "close": "إغلاق الإرسال السريع",
+    "chip_remove": "إزالة {label}",
+    "dispatched": "تم الإرسال — تظهر الجلسة في الأعلى",
+    "effort_chip": "الجهد: {effort}",
+    "effort_chip_unset": "الجهد: افتراضي",
+    "headless_caption": "جلسات الخلفية تتخطى مسار العمليات والإشعارات",
+    "headless_label": "خلفية (headless)",
+    "model_chip": "النموذج: {model}",
+    "model_chip_unset": "النموذج: افتراضي",
+    "no_project_matches": "لا توجد مشاريع مطابقة",
+    "no_skill_matches": "لا توجد مهارات مطابقة",
+    "recent_empty": "لم يتم إرسال أي شيء بعد",
+    "recent_open_aria": "فتح صفحة Fleet",
+    "recent_title": "الإرسالات الأخيرة",
+    "send": "إرسال",
+    "skill_needs_project": "اختر @مشروعًا أولاً — تُعرض المهارات حسب المشروع",
+    "syntax_hint": "اكتب @ لاختيار مشروع و / لاختيار مهارة"
   },
   "fleet": {
     "search_placeholder": "تصفية الجلسات…",

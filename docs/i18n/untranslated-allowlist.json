@@ -3655,5 +3655,7 @@
   "zh:vault.playground.path_placeholder",
   "zh:vault.schema_configs.database.subtype_convex_label",
   "zh:vault.schema_configs.database.subtype_postgresql_label",
-  "zh:vault.shared.api_path_placeholder"
+  "zh:vault.shared.api_path_placeholder",
+  "cs:plugins.fleet_quick_dispatch.model_chip",
+  "id:plugins.fleet_quick_dispatch.model_chip"
 ]
