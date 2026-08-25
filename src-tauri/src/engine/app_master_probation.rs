@@ -86,8 +86,15 @@ pub(crate) fn collect_backbone(
             .map(|r| (r.runs, r.cost_usd))
             .unwrap_or((0, 0.0));
 
+    // Same call, same window: the packet's numbers are the reporter's numbers,
+    // bounded to THIS holder's tenure by the one helper both sides go through
+    // (`personas_engine::app_master::tenure_window`). A second collection here
+    // would be a second thing to keep in sync — and the first time they
+    // disagreed, the review card and the bench would be judging different
+    // hires on the same project.
     let backbone = crate::engine::kp_reporter::app_master_rollup(
         pool,
+        persona_id,
         design_context.as_deref(),
         runs,
         cost_usd,
@@ -833,7 +840,9 @@ mod tests {
                 ..Default::default()
             },
             probation_ends_at: "2026-09-22T00:00:00+00:00".into(),
+            hired_at: "2026-08-23T00:00:00+00:00".into(),
             review_cadence_days: 30,
+            budget_monthly_usd: None,
             retire_criteria: vec!["no merged proposal in two windows".into()],
             probation_decided_at: None,
             probation_decision: None,

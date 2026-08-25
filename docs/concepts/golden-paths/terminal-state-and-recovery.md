@@ -1111,3 +1111,41 @@ which was composed at `2a874e692`; `master` is now `8766c6c41`.
    `types.rs:41`, pinned by `terminal_set_matches_expected` (`types.rs:824`) —
    the one place in this whole document where the two sides are actually held
    together, and it works.
+
+---
+
+## 13 Correction 2026-08-25 — the terminal fact was being discarded
+
+> Added by `/research` against Apache Maka's runtime-core chapter, whose load-bearing invariant is
+> *"a terminal Run header must be supported by a terminal RuntimeEvent; a stream that exhausts without
+> one converges to `missing_terminal_event`."* Personas failed it, and the failure was invisible from
+> the schema because `ExecutionState` was fine — the defect was in what fed it.
+
+**Measured before the fix.** `engine/src/parser.rs` parsed the stream's `result` line for duration,
+cost and tokens only: `is_error` had **0** reads in the file, and `is_error | subtype | error_max_turns`
+had **0** reads in `runner/mod.rs` (both uncapped). Status was `exit_code == 0` (`runner/mod.rs:2832`)
+refined by substring heuristics (`"error:"`, `"failed to"`). Two consequences: `error_max_turns` on an
+exit-0 process wrote `completed`, and a stream that died before its `result` line was indistinguishable
+from a clean finish. `build_session/parser.rs:104-117` had already fixed exactly this for the build
+path ("dropping it made a turn that BROKE look identical to a turn that simply had nothing to add") —
+the execution path was the unfixed twin.
+
+**The one way now.** `StreamLineType::Result` carries `is_error` + `subtype`; `ExecutionMetrics`
+records `result_seen / result_is_error / result_subtype`; `parser::terminal_verdict()` folds them into
+`Clean | ErrorReported { subtype } | MissingTerminalFact`, and the runner consults it **before** the
+exit code:
+
+| Verdict | Exit 0 | Status written |
+|---|---|---|
+| `Clean` | yes | `completed` (then the existing outcome-assessment pass) |
+| `ErrorReported` | any | `failed`, `error` = `terminal_error_message(subtype)` — the subtype token stays verbatim in parentheses for classifiers |
+| `MissingTerminalFact` | yes | `incomplete`, `error` = `MISSING_TERMINAL_EVENT_MESSAGE` — never `completed`, because exit 0 cannot prove the turn finished |
+
+Missing-fact lands on `incomplete` rather than `failed` on purpose: `incomplete` is already the
+state this repo uses for "cannot prove success" (§7 D4), and it keeps the healing retry ladder from
+treating a truncated pipe as a model failure.
+
+**Still open.** The zombie sweep (`background/executions.rs:39`) converges a crashed app's
+`running` rows to `incomplete` only after `DEFAULT_STALE_RUNNING_SECS` (10 min) of missing heartbeats;
+Maka repairs at startup, before any model call. A boot-time pass over `running` rows with no live PID
+is the natural next site.

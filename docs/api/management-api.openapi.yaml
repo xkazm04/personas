@@ -304,6 +304,129 @@ paths:
         "403": { description: "The key lacks the personas:test scope" }
         "404": { description: The headless bridge test mode is off on this process }
 
+  /api/kp/test/seed-work:
+    post:
+      summary: "Headless bridge only: seed dispatchable backlog work onto a project"
+      description: |
+        **Exists only while `PERSONAS_HEADLESS_BRIDGE=1`** — with the mode off the
+        route is not registered and answers **404**, not 403. Requires the
+        `personas:test` scope, exactly like `/api/kp/test/tick`.
+
+        The executable form of the App-master bench protocol's §4 ("create one
+        backlog idea per seed … and accept them"). See §13.9 of
+        `docs/architecture/cloud-integration-bridge.md` for the full reasoning.
+
+        **It creates work, never permission.** Each item becomes one `dev_ideas`
+        row written **`pending`** (through the same deduped door every generated
+        idea uses), plus one idempotently-ensured enabled `accept` triage rule
+        keyed on `scan_type == headless_bench_seed`. That pair is what "an
+        accepted idea ready for dispatch" concretely means: the overnight engine
+        dispatches only the ids **its own triage pass** accepted, so a row
+        pre-set to `accepted` would never be dispatched at all. The autopilot
+        capability gate, the App-master mandate rung, the budget governor and its
+        `full → suggest` degrade, and the fleet slot cap all still stand between a
+        seeded idea and a proposal branch — the next tick's `overnight` phase
+        runs them unchanged.
+
+        `scan_type` and the `dedup_key`
+        (`scan:headless_bench_seed:bench:<normalized-title>`) are the durable
+        provenance: a seeded idea stays distinguishable from a scanned one for the
+        life of the row.
+
+        **`acceptance` and `trap` are echoed and stored nowhere.**
+        `dispatch_prompt` renders `title`/`description`/`reasoning`/`evidence` into
+        the agent's prompt, and run-protocol §4.1 + §8 make a run whose operator
+        leaked the acceptance command **invalid**. The response says
+        `acceptanceStored: false` so no caller has to infer it.
+
+        **Never silent:** every submitted item produces exactly one answer, in
+        order, carrying its `index` — written (`accepted: true`) or skipped with a
+        reason and the id of the row it collided with. Validation is
+        all-or-nothing and lists every problem, so a refused batch leaves neither
+        half-seeded ideas nor an orphan rule.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                projectId:
+                  type: string
+                  description: The `dev_projects.id` to seed. Exactly one of this and `personaId` is required — seeding will not guess a repository.
+                personaId:
+                  type: string
+                  description: Resolve the project through this persona's App-master mandate record (the same binding the overnight / reconcile / probation phases read).
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 16
+                  items:
+                    type: object
+                    required: [title]
+                    properties:
+                      title: { type: string, maxLength: 200 }
+                      description: { type: string, maxLength: 4000 }
+                      acceptance:
+                        type: string
+                        maxLength: 2000
+                        description: Bench bookkeeping. Echoed back, NEVER persisted — an agent told its acceptance command is graded on a different task.
+                      trap:
+                        type: string
+                        maxLength: 400
+                        description: Which forbidden class the cheap route walks into. Echoed back, NEVER persisted.
+      responses:
+        "200":
+          description: The batch was accepted (individual items may still be dedup skips)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  headlessBridge: { type: boolean, const: true }
+                  actor: { type: string, const: headless_bridge }
+                  acceptanceStored: { type: boolean, const: false }
+                  note: { type: string }
+                  seed:
+                    type: object
+                    properties:
+                      projectId: { type: string }
+                      projectName: { type: string }
+                      scanType: { type: string, const: headless_bench_seed }
+                      seeded: { type: integer }
+                      skipped: { type: integer }
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            index: { type: integer, description: Position in the submitted array }
+                            title: { type: string }
+                            id: { type: string, description: "The dev_ideas.id — present for a written row AND for a dedup skip (the row it collided with)" }
+                            accepted: { type: boolean, description: True ⇒ this call wrote the row }
+                            dedupKey: { type: string }
+                            ideaStatus: { type: string, description: "Always `pending` for a written row — the night's triage pass is what accepts it" }
+                            skippedReason: { type: string }
+                            acceptance: { type: string, description: Echoed input, not stored }
+                            trap: { type: string, description: Echoed input, not stored }
+                      triageRule:
+                        type: object
+                        description: The auto-accept rule the seeds depend on. Ensured by name; an existing rule is REPORTED, never rewritten.
+                        properties:
+                          id: { type: string }
+                          name: { type: string }
+                          conditions: { type: string }
+                          action: { type: string }
+                          enabled: { type: boolean }
+                          created: { type: boolean, description: True ⇒ this call created it }
+                          rulesAhead: { type: integer, description: "Enabled rules evaluated BEFORE this one — triage is first-match-wins, so one of them can decide a seeded idea instead" }
+                          willAccept: { type: boolean, description: "False is a loud finding: the rule as it stands will not accept these seeds" }
+                      notes: { type: array, items: { type: string } }
+        "400": { description: "Neither projectId nor personaId, an empty or over-cap batch, or a length violation (every problem is listed)" }
+        "403": { description: "The key lacks the personas:test scope" }
+        "404": { description: "The mode is off, the project id does not exist, or the persona holds no App-master mandate" }
+
   /api/kp/connector-catalog:
     get:
       summary: Connectors a KP hire form may offer

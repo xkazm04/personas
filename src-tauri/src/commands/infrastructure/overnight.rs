@@ -15,8 +15,12 @@
 //!    rules auto-accepted are dispatched to unattended headless fleet sessions
 //!    via [`super::dev_tools::dispatch_ideas_core`], capped by the fleet
 //!    live-slot budget and a per-project nightly maximum. Every prompt carries
-//!    the branch-only guardrail block: **no default-branch writes, no push, no
-//!    merge** — the morning human does that.
+//!    the unattended guardrail block
+//!    ([`personas_engine::unattended::UNATTENDED_DISPATCH_GUARDRAILS`]):
+//!    **no default-branch writes, no push, no merge** — the morning human does
+//!    that — and **finish, never ask**, because nothing can answer a question
+//!    at 03:00. The sessions are tagged as an `overnight:` run so the fleet
+//!    sweeper can terminate one that asked anyway.
 //! 4. **Morning digest** — one durable `autopilot_night_runs` ledger row +
 //!    one `autopilot.night_digest` persona event per project per night (the
 //!    webhook notifier delivers it to any matching `notification_subscriptions`
@@ -70,13 +74,11 @@ const NIGHT_END_HOUR: u32 = 6;
 /// ONLY by the pre-dispatch governor (real spend lands in `dev_llm_spend`).
 const EST_COST_PER_SESSION_USD: f64 = 1.5;
 
-/// Hard per-project-per-night dispatch cap — bounds the unattended spend ramp
-/// independently of fleet slots.
-const MAX_DISPATCH_PER_PROJECT_PER_NIGHT: usize = 3;
-
-/// Fallback concurrent-session budget when the frontend has not pushed a
-/// live-slot cap (cap 0 = "uncapped" for humans; unattended never is).
-const FALLBACK_NIGHT_LIVE_CAP: u64 = 4;
+// The nightly caps and the capacity arithmetic live in
+// `personas_engine::unattended` — pure, and therefore reachable by `cargo
+// test` in a crate whose test binary actually launches. Re-exported here so
+// every existing `overnight::dispatch_capacity` path resolves unchanged.
+pub use personas_engine::unattended::dispatch_capacity;
 
 /// Digest event type — matched by `notification_subscriptions` patterns
 /// (`autopilot.*` or exact).
@@ -140,19 +142,6 @@ pub fn budget_verdict(
             }
         }
     }
-}
-
-/// How many sessions the night may actually spawn: bounded by free fleet
-/// slots (cap − live, with the unattended fallback when the cap is unset)
-/// AND the per-project nightly maximum AND how many ideas want dispatching.
-pub fn dispatch_capacity(live_slot_cap: u64, live_sessions: u64, want: usize) -> usize {
-    let cap = if live_slot_cap == 0 {
-        FALLBACK_NIGHT_LIVE_CAP
-    } else {
-        live_slot_cap
-    };
-    let free = cap.saturating_sub(live_sessions) as usize;
-    want.min(free).min(MAX_DISPATCH_PER_PROJECT_PER_NIGHT)
 }
 
 // ============================================================================
@@ -335,15 +324,38 @@ fn monthly_ceiling_usd(pool: &DbPool) -> Option<f64> {
         .filter(|v| *v > 0.0)
 }
 
-/// Fleet sessions currently holding a live slot (everything not terminal and
-/// not sleeping — matches the live-slot scheduler's notion of "live").
-fn live_fleet_sessions() -> u64 {
-    use crate::commands::fleet::types::FleetSessionState as S;
-    crate::commands::fleet::registry::registry()
-        .list_dto()
-        .into_iter()
-        .filter(|s| !matches!(s.state, S::Exited | S::Hibernated))
-        .count() as u64
+/// Fleet sessions holding a live slot **against an unattended dispatch**.
+///
+/// This used to be "everything not `Exited`/`Hibernated`", borrowed from the
+/// live-slot scheduler's notion of "live". That notion answers a different
+/// question — *may I evict this to make room* — and its answer for
+/// `AwaitingInput` is a deliberate **never**: a session a human may be
+/// mid-answer on must not be slept. Reading that as "is doing live work" is
+/// what refused an App-master dispatch on 2026-08-25 (bench sweep #18) with
+/// "no free fleet live slots tonight" while the fleet was, in fact, idle: two
+/// of the four slots were held by questions nobody was ever going to answer
+/// (one of them days old, from another project), plus finished-but-not-exited
+/// rows.
+///
+/// The eviction rule is untouched — production soft-cap semantics still hold
+/// for everything else. Only the night's own arithmetic changed, per
+/// [`personas_engine::unattended::holds_overnight_slot`]: `Running`/`Spawning`
+/// occupy, an `AwaitingInput` older than the cutoff does not, and resting or
+/// terminal rows never did real work to lose.
+fn overnight_occupied_sessions() -> u64 {
+    use crate::commands::fleet::types::state_to_token;
+    let now = crate::commands::fleet::registry::now_ms();
+    let cutoff_ms = crate::commands::fleet::stale::overnight_awaiting_cutoff_ms();
+    let sessions = crate::commands::fleet::registry::registry().list_dto();
+    personas_engine::unattended::overnight_live_occupancy(
+        sessions.iter().map(|s| {
+            (
+                state_to_token(s.state),
+                now.saturating_sub(s.last_activity_ms),
+            )
+        }),
+        cutoff_ms,
+    )
 }
 
 // ============================================================================
@@ -398,6 +410,19 @@ async fn run_project_night(
     let mut projected = 0.0f64;
     let month_spend = month_spend_usd(pool);
     let ceiling = monthly_ceiling_usd(pool);
+    // The App master's OWN monthly budget (mandate `budget.monthlyUsd`), if the
+    // project has a hire. First live tight-budget night (2026-08-25): a $5
+    // mandate sailed straight past the governor because only the app-wide
+    // ceiling was consulted — the ledger row showed `ceilingUsd: null` while
+    // the project had $28 of month spend. The mandate ceiling is checked
+    // against the HOLDER's settled month spend (per-persona rollup), never the
+    // project aggregate — two ceilings, two denominators.
+    let app_master_budget: Option<(String, f64)> =
+        personas_engine::app_master::get_mandate(pool, project_id).and_then(|r| {
+            r.budget_monthly_usd
+                .filter(|b| *b > 0.0)
+                .map(|b| (r.persona_id.clone(), b))
+        });
 
     // App master mandate (P4) — the SECOND gate, independent of autopilot mode.
     // Dispatching authors a change, so it needs rung 2; a project whose App
@@ -431,57 +456,119 @@ async fn run_project_night(
         } else {
             let capacity = dispatch_capacity(
                 crate::commands::fleet::stale::live_slot_cap(),
-                live_fleet_sessions(),
+                overnight_occupied_sessions(),
                 triage.accepted_idea_ids.len(),
             );
             if capacity == 0 {
                 blocked_reason = Some("no free fleet live slots tonight".into());
             } else {
                 projected = capacity as f64 * EST_COST_PER_SESSION_USD;
-                match budget_verdict(month_spend, ceiling, projected) {
-                    BudgetVerdict::Block { overshoot_usd } => {
-                        // HARD refusal + LOUD degrade full → suggest. Durable:
-                        // the same setting the cockpit reads, so the UI shows it.
-                        degraded = true;
-                        let key = autopilot::setting_key(project_id);
-                        if let Err(e) = crate::db::repos::core::settings::set(
-                            pool,
-                            &key,
-                            AutopilotMode::Suggest.as_str(),
-                        ) {
-                            tracing::error!(error = %e, project_id, "overnight: failed to persist full→suggest degrade");
+                let mandate_block = app_master_budget.as_ref().and_then(|(persona_id, budget)| {
+                    let holder_spend = crate::db::repos::execution::executions::get_monthly_rollup(
+                        pool, persona_id,
+                    )
+                    .map(|r| r.cost_usd)
+                    .unwrap_or(0.0);
+                    match budget_verdict(holder_spend, Some(*budget), projected) {
+                        BudgetVerdict::Block { overshoot_usd } => {
+                            Some((holder_spend, *budget, overshoot_usd))
                         }
-                        let msg = format!(
+                        _ => None,
+                    }
+                });
+                if let Some((holder_spend, budget, overshoot_usd)) = mandate_block {
+                    // Same degrade discipline as the app-wide ceiling below —
+                    // HARD refusal + LOUD, durable full → suggest.
+                    degraded = true;
+                    let key = autopilot::setting_key(project_id);
+                    if let Err(e) = crate::db::repos::core::settings::set(
+                        pool,
+                        &key,
+                        AutopilotMode::Suggest.as_str(),
+                    ) {
+                        tracing::error!(error = %e, project_id, "overnight: failed to persist full→suggest degrade");
+                    }
+                    let msg = format!(
+                        "App master budget refused tonight's dispatch for '{}': projected ${projected:.2}                          would cross the hire's monthly budget (${holder_spend:.2} settled by the holder,                          budget ${budget:.2}, overshoot ${overshoot_usd:.2}). Autopilot degraded full → suggest.",
+                        project.name,
+                    );
+                    tracing::warn!(project_id, "overnight: {msg}");
+                    crate::notifications::send(
+                        app,
+                        "Overnight engine: App master budget refused",
+                        &msg,
+                    );
+                    blocked_reason = Some(msg);
+                } else {
+                    match budget_verdict(month_spend, ceiling, projected) {
+                        BudgetVerdict::Block { overshoot_usd } => {
+                            // HARD refusal + LOUD degrade full → suggest. Durable:
+                            // the same setting the cockpit reads, so the UI shows it.
+                            degraded = true;
+                            let key = autopilot::setting_key(project_id);
+                            if let Err(e) = crate::db::repos::core::settings::set(
+                                pool,
+                                &key,
+                                AutopilotMode::Suggest.as_str(),
+                            ) {
+                                tracing::error!(error = %e, project_id, "overnight: failed to persist full→suggest degrade");
+                            }
+                            let msg = format!(
                             "Budget governor refused tonight's dispatch for '{}': projected ${projected:.2} \
                              would cross the monthly ceiling (${month_spend:.2} spent, ceiling ${:.2}, \
                              overshoot ${overshoot_usd:.2}). Autopilot degraded full → suggest.",
                             project.name,
                             ceiling.unwrap_or(0.0),
                         );
-                        tracing::warn!(project_id, "overnight: {msg}");
-                        crate::notifications::send(app, "Overnight engine: budget refused", &msg);
-                        blocked_reason = Some(msg);
-                    }
-                    BudgetVerdict::Allow => {
-                        let ids: Vec<String> = triage
-                            .accepted_idea_ids
-                            .iter()
-                            .take(capacity)
-                            .cloned()
-                            .collect();
-                        match dispatch_ideas_core(pool, app, ids, "fleet", None, true).await {
-                            Ok(result) => {
-                                skipped = result.skipped.len();
-                                for d in &result.dispatched {
-                                    if let Some(sid) = &d.session_id {
-                                        session_ids.push(sid.clone());
+                            tracing::warn!(project_id, "overnight: {msg}");
+                            crate::notifications::send(
+                                app,
+                                "Overnight engine: budget refused",
+                                &msg,
+                            );
+                            blocked_reason = Some(msg);
+                        }
+                        BudgetVerdict::Allow => {
+                            let ids: Vec<String> = triage
+                                .accepted_idea_ids
+                                .iter()
+                                .take(capacity)
+                                .cloned()
+                                .collect();
+                            // Tag every session this night spawns as machine-
+                            // dispatched, using the run vocabulary the fleet
+                            // already stamps at spawn (`run_id`/`run_label`,
+                            // persisted with the row). That label is what lets the
+                            // fleet sweeper finish an unanswered question instead
+                            // of parking it forever — see
+                            // `personas_engine::unattended::is_overnight_run`.
+                            //
+                            // The active run is process-global, so `begin_run`
+                            // technically closes an operator's open run. At 03:00
+                            // on an unattended tick there is nobody holding one,
+                            // and `claim_run_for_spawn` would have opened an
+                            // implicit run for this burst regardless — the only
+                            // thing added is the label.
+                            crate::commands::fleet::run::begin_run(Some(
+                                personas_engine::unattended::overnight_run_label(&project.name),
+                            ));
+                            let outcome =
+                                dispatch_ideas_core(pool, app, ids, "fleet", None, true).await;
+                            crate::commands::fleet::run::end_run();
+                            match outcome {
+                                Ok(result) => {
+                                    skipped = result.skipped.len();
+                                    for d in &result.dispatched {
+                                        if let Some(sid) = &d.session_id {
+                                            session_ids.push(sid.clone());
+                                        }
                                     }
+                                    dispatched = session_ids.len();
                                 }
-                                dispatched = session_ids.len();
-                            }
-                            Err(e) => {
-                                blocked_reason = Some(format!("dispatch failed: {e}"));
-                                tracing::warn!(project_id, error = %e, "overnight: dispatch failed");
+                                Err(e) => {
+                                    blocked_reason = Some(format!("dispatch failed: {e}"));
+                                    tracing::warn!(project_id, error = %e, "overnight: dispatch failed");
+                                }
                             }
                         }
                     }
@@ -505,7 +592,13 @@ async fn run_project_night(
         degraded,
         projected,
         month_spend,
-        ceiling,
+        // Effective ceiling for the ledger: the tighter of the app-wide
+        // ceiling and the mandate budget, so the row never reads `null` while
+        // a hire's budget was in force.
+        match (ceiling, app_master_budget.as_ref().map(|(_, b)| *b)) {
+            (Some(g), Some(m)) => Some(g.min(m)),
+            (g, m) => g.or(m),
+        },
         &session_ids,
     )?;
 
@@ -813,25 +906,19 @@ mod tests {
         ));
     }
 
+    /// The capacity arithmetic itself (including how a stale `awaiting_input`
+    /// session stops holding a slot) is tested where it now lives and where a
+    /// test binary actually launches: `personas_engine::unattended`.
     #[test]
-    fn dispatch_capacity_is_min_of_all_bounds() {
-        // Free slots bound it.
+    fn dispatch_capacity_reexport_still_resolves() {
+        use personas_engine::unattended::{
+            FALLBACK_NIGHT_LIVE_CAP, MAX_DISPATCH_PER_PROJECT_PER_NIGHT,
+        };
         assert_eq!(dispatch_capacity(10, 9, 5), 1);
-        // Fleet full → zero.
-        assert_eq!(dispatch_capacity(4, 4, 5), 0);
-        assert_eq!(dispatch_capacity(4, 9, 5), 0);
-        // The per-night cap bounds it even with a huge fleet.
+        assert_eq!(dispatch_capacity(0, FALLBACK_NIGHT_LIVE_CAP, 5), 0);
         assert_eq!(
             dispatch_capacity(100, 0, 50),
             MAX_DISPATCH_PER_PROJECT_PER_NIGHT
         );
-        // Want bounds it.
-        assert_eq!(dispatch_capacity(100, 0, 1), 1);
-        // Cap 0 = frontend "uncapped" → unattended fallback applies.
-        assert_eq!(
-            dispatch_capacity(0, 0, 50),
-            (FALLBACK_NIGHT_LIVE_CAP as usize).min(MAX_DISPATCH_PER_PROJECT_PER_NIGHT)
-        );
-        assert_eq!(dispatch_capacity(0, FALLBACK_NIGHT_LIVE_CAP, 5), 0);
     }
 }

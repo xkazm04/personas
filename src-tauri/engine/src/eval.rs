@@ -604,7 +604,7 @@ Respond with ONLY a JSON object:
 /// Model for the LLM test-result evaluator. Pinned deliberately so scoring runs
 /// on a consistent judge rather than the undeclared account default (typically
 /// Opus 4.8). (tiger finding: lab/eval tier rode account-default.)
-const LLM_EVAL_MODEL: &str = "claude-sonnet-4-6";
+const LLM_EVAL_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
 
 async fn run_llm_eval(
     prompt_text: &str,

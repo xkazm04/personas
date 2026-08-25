@@ -148,11 +148,14 @@ pub fn management_router(state: ManagementState) -> Router {
     // affirmative check.
     let router = if personas_engine::headless::enabled() {
         tracing::warn!(
-            "HEADLESS BRIDGE: serving POST /api/kp/test/tick — an on-demand run of the \
-             overnight / reconcile / report / probation loop, gated on the {} scope",
+            "HEADLESS BRIDGE: serving POST /api/kp/test/tick and POST /api/kp/test/seed-work — \
+             an on-demand run of the overnight / reconcile / report / probation loop and the \
+             backlog seeding it needs to have anything to dispatch, both gated on the {} scope",
             personas_engine::headless::TEST_SCOPE
         );
-        router.route("/api/kp/test/tick", post(kp_test_tick))
+        router
+            .route("/api/kp/test/tick", post(kp_test_tick))
+            .route("/api/kp/test/seed-work", post(kp_test_seed_work))
     } else {
         router
     };
@@ -3462,6 +3465,142 @@ fn tick_phase_probation(
         "notes": raised.notes,
     }));
     out
+}
+
+// =============================================================================
+// Headless bridge seeding (§13.9) — give the night something to dispatch
+// =============================================================================
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KpTestSeedWorkBody {
+    /// The `dev_projects.id` to seed. Exactly one of this and `personaId` is
+    /// required — a seed that guessed its target would be a seed that can put a
+    /// bench task on the wrong repository.
+    #[serde(default)]
+    project_id: Option<String>,
+    /// The App-master persona whose bound project should be seeded. Resolved
+    /// through the mandate records, which are the same rows the overnight,
+    /// reconcile and probation phases read the binding from.
+    #[serde(default)]
+    persona_id: Option<String>,
+    /// The tasks. Capped at
+    /// [`crate::db::repos::dev::bench_seed::MAX_SEED_ITEMS`].
+    items: Vec<crate::db::repos::dev::bench_seed::BenchSeedItem>,
+    /// Optional run salt folded verbatim into each item's dedup key, so the
+    /// same seed titles can be re-seeded by a later bench run. Titles cannot
+    /// carry this: the ideas normalizer strips bracketed run stamps.
+    #[serde(default)]
+    dedupe_salt: Option<String>,
+}
+
+/// `POST /api/kp/test/seed-work` — write bench tasks into the backlog the
+/// overnight engine dispatches from.
+///
+/// Same gating as [`kp_test_tick`]: the route exists only while
+/// `personas_engine::headless::enabled()` (so with the mode off it 404s rather
+/// than 403s), and `authorize` demands `personas:test` for the whole
+/// `/api/kp/test/` prefix.
+///
+/// **This endpoint creates work, never permission.** It writes `pending`
+/// `dev_ideas` rows plus the one auto-accept triage rule that makes them
+/// dispatchable — the mechanical equivalent of run-protocol §4's "create one
+/// backlog idea per seed … and accept them". The autopilot capability gate, the
+/// App-master mandate rung, the budget governor and the fleet slot cap all
+/// still stand between a seeded idea and a proposal branch, and the next
+/// `/api/kp/test/tick` overnight phase is what runs them.
+///
+/// Every submitted item gets exactly one answer — written or skipped, with the
+/// id it collided with. A seed that silently vanished would leave a bench
+/// reading zero dispatches and blaming the agent.
+async fn kp_test_seed_work(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Json(body): Json<KpTestSeedWorkBody>,
+) -> Response {
+    use crate::db::repos::dev::bench_seed;
+
+    // Second gate. The route only exists while the mode is on, but a stale
+    // router is not a thing this handler is willing to assume.
+    if !personas_engine::headless::enabled() {
+        return err_json(StatusCode::NOT_FOUND, "not found").into_response();
+    }
+
+    let pool = state.pool.clone();
+
+    // -- Resolve the target project ------------------------------------------
+    let project_id = match (
+        body.project_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty()),
+        body.persona_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty()),
+    ) {
+        (Some(pid), _) => pid.to_string(),
+        (None, Some(persona_id)) => {
+            let mandates = personas_engine::app_master::load_mandates(&pool);
+            match mandates
+                .into_iter()
+                .find(|(_, record)| record.persona_id == persona_id)
+            {
+                Some((project_id, _)) => project_id,
+                None => {
+                    return err_json(
+                        StatusCode::NOT_FOUND,
+                        &format!(
+                            "persona `{persona_id}` holds no App master mandate, so there is no \
+                             project to seed. Pass `projectId` explicitly, or hire first."
+                        ),
+                    )
+                    .into_response();
+                }
+            }
+        }
+        (None, None) => {
+            return err_json(
+                StatusCode::BAD_REQUEST,
+                "one of `projectId` or `personaId` is required — seeding will not guess which \
+                 repository the tasks belong to",
+            )
+            .into_response();
+        }
+    };
+
+    // -- Write ---------------------------------------------------------------
+    match bench_seed::seed_bench_work_salted(
+        &pool,
+        &project_id,
+        &body.items,
+        body.dedupe_salt.as_deref(),
+    ) {
+        Ok(outcome) => {
+            tracing::warn!(
+                project_id = %outcome.project_id,
+                seeded = outcome.seeded,
+                skipped = outcome.skipped,
+                "HEADLESS BRIDGE: seeded bench work onto the backlog"
+            );
+            ok_json(serde_json::json!({
+                "headlessBridge": true,
+                "actor": personas_engine::headless::ACTOR,
+                "seed": outcome,
+                // Said once, here, so a driver never has to infer it: the
+                // acceptance command and the trap note are echoed and stored
+                // nowhere, because `dispatch_prompt` would put them in front of
+                // the agent and run-protocol §8 makes that run invalid.
+                "acceptanceStored": false,
+                "note": "items are written `pending`; the next tick's overnight triage pass is what accepts and dispatches them, under the unchanged mandate + budget gates",
+            }))
+            .into_response()
+        }
+        Err(AppError::Validation(msg)) => err_json(StatusCode::BAD_REQUEST, &msg).into_response(),
+        Err(AppError::NotFound(msg)) => {
+            err_json(StatusCode::NOT_FOUND, &format!("{msg} not found")).into_response()
+        }
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
 }
 
 // =============================================================================

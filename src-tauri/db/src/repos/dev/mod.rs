@@ -12,6 +12,10 @@
 pub mod attention;
 /// `dev_auto_runs` — durable record of a backlog-draining wave.
 pub mod auto_runs;
+/// Headless bench seeding — writes `dev_ideas` rows (plus the one auto-accept
+/// `dev_triage_rules` row) in exactly the shape the overnight engine's triage
+/// pass reads, so a bench night has real work to dispatch.
+pub mod bench_seed;
 /// `dev_competitions` and `dev_competition_slots`.
 pub mod competitions;
 /// `dev_contexts` and its caches: groups, relationships, file hashes, fingerprints,

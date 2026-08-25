@@ -191,6 +191,10 @@ pub fn worker_prompt(item: &PlanItem, plan_id: &str, date: &str) -> String {
            overnight these are parked, so treat a denial as final and continue safe work.\n\
          - Run the repo's own checks/tests before finishing; leave the working tree clean \
            (everything committed on your branch).\n\
+         - Before ending, check the OBJECTIVE against what actually landed on the branch \
+           (the log and diff, not your memory of the work): say which parts are done, which \
+           are not, and why. A stop condition that fired is reported as a stop, never as \
+           completion.\n\
          - When the objective is done (or a stop condition hits), summarize what you did and \
            end the session.\n\n\
          STOP CONDITIONS:\n{stops}\n",
@@ -325,5 +329,9 @@ mod tests {
         assert!(p.contains("NEVER push"));
         assert!(p.contains("night/2026-07-30-shift"));
         assert!(p.contains("athena.request_approval"));
+        // The worker self-checks the objective against the branch, not memory
+        // (registry technique task-envelope), and reports a fired stop as a stop.
+        assert!(p.contains("check the OBJECTIVE against what actually landed"));
+        assert!(p.contains("never as completion"));
     }
 }

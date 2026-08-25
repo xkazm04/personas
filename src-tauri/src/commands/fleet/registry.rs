@@ -1247,6 +1247,34 @@ impl FleetRegistry {
         Some(prev)
     }
 
+    /// Terminal-finish a session parked in `AwaitingInput` that provably has
+    /// nobody to answer it — an overnight-tagged worker past the unattended
+    /// cutoff (see `super::stale::overnight_awaiting_pass`).
+    ///
+    /// Deliberately NOT [`Self::mark_finished`]: that stamps the
+    /// `Task complete: ` prefix which `super::run::summary_from_reason` reads
+    /// as a *declared* `FLEET:DONE` summary. A session that ended on a
+    /// question declared nothing, and the run harvest must not report an
+    /// outcome it never claimed. `reason` reports what happened and carries
+    /// the unanswered question verbatim — the question is preserved, never
+    /// answered.
+    ///
+    /// Only `AwaitingInput` transitions: a session that went back to work
+    /// between the sweeper's snapshot and this call keeps its fresher truth.
+    /// Returns the previous state token on success.
+    pub fn finish_unanswered(&self, session_id: &str, reason: &str) -> Option<&'static str> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if !matches!(session.state, FleetSessionState::AwaitingInput) {
+            return None;
+        }
+        let prev = state_to_token(session.state);
+        session.athena_active_until_ms = 0;
+        session.state = FleetSessionState::Finished;
+        session.state_reason = Some(reason.to_string());
+        Some(prev)
+    }
+
     /// Stamp (or clear, with `None`) the parsed limit-reset time. Returns true
     /// when the value actually changed, so the caller can emit a
     /// registry-changed only on a real transition rather than every tick.

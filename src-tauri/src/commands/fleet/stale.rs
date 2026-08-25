@@ -194,6 +194,23 @@ fn effective_secs(env_key: &str, override_atomic: &AtomicU64, default: i64) -> i
     env_secs(env_key, base)
 }
 
+/// How long an OVERNIGHT-dispatched session may sit in `AwaitingInput` before
+/// the fleet accepts that nobody is coming — in ms.
+///
+/// Rides the same env-knob plumbing as the other cutoffs but deliberately gets
+/// no user-tunable slider: the two Fleet → Settings cutoffs answer "is this
+/// process still producing output", a fast reversible judgement an operator
+/// legitimately tunes. This one answers "will anyone answer this question",
+/// and for a session the machine spawned unattended the answer is structural,
+/// not a matter of taste. See
+/// [`personas_engine::unattended::OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS`].
+pub fn overnight_awaiting_cutoff_ms() -> i64 {
+    env_secs(
+        "PERSONAS_FLEET_OVERNIGHT_AWAITING_SECS",
+        personas_engine::unattended::OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS,
+    ) * 1000
+}
+
 /// Spawn the staleness ticker. Idempotent — the caller should call this
 /// at most once (in `setup()`).
 ///
@@ -779,10 +796,71 @@ fn tick_once(app: &AppHandle) {
     }
 
     limit_retry_pass(app, now);
+    overnight_awaiting_pass(app, now);
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
     auto_forget_pass(app);
+}
+
+/// Unanswered-question sweep: an OVERNIGHT-dispatched worker that ends its
+/// turn asking something has asked an empty room. Past the unattended cutoff
+/// this pass makes that terminal — the session is finished with a
+/// `state_reason` naming the question, and the question is **never answered**.
+///
+/// Why here and not in Athena's assessment: the staleness ticker is always on,
+/// while `fleet_bridge::reassess_stale_awaiting` only runs in autonomous mode.
+/// A night that dispatched must be reclaimable on a plain install too. Athena
+/// still gets first refusal — she runs on the `AwaitingInput` transition and
+/// on her own timer, both far inside this cutoff, and a session she revives to
+/// `Running` is no longer a candidate.
+///
+/// Scoped hard, mirroring `auto_forget_pass`:
+///   • only sessions the Overnight Portfolio Engine spawned (the run label —
+///     `personas_engine::unattended::is_overnight_run`); an operator's own
+///     parked session is never touched, whatever its age,
+///   • only `AwaitingInput`, re-validated inside `finish_unanswered`'s lock,
+///   • only past [`overnight_awaiting_cutoff_ms`].
+fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
+    let cutoff_ms = overnight_awaiting_cutoff_ms();
+
+    // Pass A — snapshot under the lock; no IO while it is held.
+    let candidates: Vec<(String, String)> = {
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                matches!(s.state, FleetSessionState::AwaitingInput)
+                    && personas_engine::unattended::is_overnight_run(s.run_label.as_deref())
+                    && now - s.last_activity_ms >= cutoff_ms
+            })
+            .map(|s| {
+                // The AwaitingInput `state_reason` is the notification message
+                // Claude raised — i.e. the question itself, verbatim (see
+                // `hooks.rs`). Falling back to the OSC title keeps the row
+                // legible when no message came through.
+                let question = s.state_reason.clone().or_else(|| s.title.clone());
+                (
+                    s.id.clone(),
+                    personas_engine::unattended::unanswered_finish_reason(question.as_deref()),
+                )
+            })
+            .collect()
+    };
+
+    // Pass B — act outside the lock; `finish_unanswered` re-validates.
+    for (sid, reason) in candidates {
+        if let Some(prev) = registry().finish_unanswered(&sid, &reason) {
+            tracing::info!(
+                session_id = %sid,
+                cutoff_secs = cutoff_ms / 1000,
+                "fleet overnight sweep: finished an unattended session that ended on a question"
+            );
+            super::pty::emit_session_state(app, &sid, Some(prev), "finished", Some(reason));
+        }
+    }
 }
 
 /// Auto-maintenance (Mechanism 1): forget Athena-owned sessions that have
