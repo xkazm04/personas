@@ -25,7 +25,7 @@ import { deriveDuality } from './shipDuality';
 import { useShipLiveRevision } from './useShipLive';
 import {
   featureState, type ContextTone, type ScopeBucket,
-  type ShipContext, type ShipFeature, type ShipGoal, type ShipGroup,
+  type ShipContext, type ShipFeature, type ShipGoal, type ShipGoalMember, type ShipGroup,
   type ShipMember, type ShipMilestoneVM,
 } from './shipModel';
 
@@ -208,10 +208,27 @@ export function useShipData(data: FactoryL2Data): ShipData {
       // way features do. `boundGoals` deliberately stays bucket-blind: it feeds
       // the `objective` exit criterion, which asks whether the milestone has
       // anything to be FOR, and a goal parked in `later` still answers that.
-      const coreGoals = goalItems
-        .filter((it) => it.bucket === 'core')
-        .map((it) => goalById.get(it.itemId))
-        .filter((g): g is ShipGoal => Boolean(g));
+      // The same goals AS MEMBERS — carrying the bucket, the creep flag and the
+      // operator's note and rating off their `dev_milestone_items` row. The cut
+      // renders these; `boundGoals` above stays membership-free for the
+      // criterion that does not care which bucket a goal sits in.
+      const goalMembers = goalItems
+        .map((it) => {
+          const g = goalById.get(it.itemId);
+          return g
+            ? {
+              goal: g,
+              bucket: it.bucket as ScopeBucket,
+              afterCut: it.addedAfterCut,
+              description: it.description,
+              rating: it.rating,
+            }
+            : null;
+        })
+        .filter((x): x is ShipGoalMember => x !== null);
+      const coreGoals = goalMembers
+        .filter((gm) => gm.bucket === 'core')
+        .map((gm) => gm.goal);
 
       const core = members.filter((mm) => mm.bucket === 'core');
       const footprint = deriveFootprint(core, contexts);
@@ -243,6 +260,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
           ? tx(t.ship.target_shipped, { date: dateLabel(m.shippedAt) ?? '' }).trim()
           : m.targetDate ? tx(t.ship.target_date, { date: m.targetDate }) : null,
         members,
+        goalMembers,
         boundGoals,
         footprint,
         criteria,

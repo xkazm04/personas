@@ -71,10 +71,25 @@ export function inContext<T extends { contextIds: string[] }>(items: T[], contex
  * anything.
  */
 export function deriveProgress(core: ShipMember[], coreGoals: ShipGoal[]): number {
-  const total = core.length + coreGoals.length;
+  const { done, total } = deriveCutTally(core, coreGoals);
   if (total === 0) return 0;
-  const done =
-    core.filter((m) => m.feature.ready).length +
-    coreGoals.filter((g) => isComplete(g.status)).length;
   return Math.round((done / total) * 100);
+}
+
+/**
+ * The cut's size and how much of it is done — the counts `deriveProgress`
+ * folds into a percentage, exposed because the ledger header shows them as a
+ * fraction rather than a percent.
+ *
+ * It exists so those two readings cannot disagree. The header used to count
+ * `core.length` in the component while progress counted core + goals in here;
+ * the same cut then read "2 of 3" beside a 40% bar, and nothing connected them.
+ */
+export function deriveCutTally(core: ShipMember[], coreGoals: ShipGoal[]): { done: number; total: number } {
+  return {
+    done:
+      core.filter((m) => m.feature.ready).length +
+      coreGoals.filter((g) => isComplete(g.status)).length,
+    total: core.length + coreGoals.length,
+  };
 }

@@ -143,5 +143,9 @@
   "description_editor_hint": "Ctrl+B untuk tebal · awali baris dengan “- ” untuk daftar",
   "decompose_brief": "Uraikan ringkasan",
   "decompose_brief_no_brief": "Milestone ini belum punya ringkasan. Tulis apa artinya merilisnya, lalu uraikan itu.",
-  "decompose_brief_tooltip": "Minta Athena membaca ringkasan milestone ini dan mengusulkan sasaran yang disebutkannya. Tidak ada yang dibuat sampai kamu mengonfirmasi kartunya."
+  "decompose_brief_tooltip": "Minta Athena membaca ringkasan milestone ini dan mengusulkan sasaran yang disebutkannya. Tidak ada yang dibuat sampai kamu mengonfirmasi kartunya.",
+  "member_kind_goal": "Tujuan",
+  "certify_criteria_summary": "{met} dari {total} kriteria keluar terpenuhi — buktinya ada pada milestone di balik dialog ini.",
+  "exit_criteria": "Kriteria keluar",
+  "exit_criteria_aside": "diturunkan — tidak pernah diketik"
 }

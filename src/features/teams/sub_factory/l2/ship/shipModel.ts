@@ -78,8 +78,30 @@ export interface ShipGoal {
   contextIds: string[];
 }
 
+/**
+ * What EVERY cut member carries, whatever kind it is.
+ *
+ * `dev_milestone_items` is one table with an `item_kind` of `use_case` or
+ * `goal`, and the bucket, the creep flag, the operator's note and the operator's
+ * rating are columns on that row — they belong to the MEMBERSHIP, not to the
+ * thing being made a member. Splitting them out is what lets the cut render a
+ * goal beside a feature without either kind pretending to be the other.
+ */
+export interface ShipMembership {
+  bucket: ScopeBucket;
+  /** Joined after the cut — scope creep awaiting triage. */
+  afterCut: boolean;
+  /** Operator's note on why this member sits in this bucket. */
+  description: string | null;
+  /**
+   * Operator's own 1..5 read on the member. `null` is UNRATED — a state of its
+   * own, never a zero and never equivalent to a 1.
+   */
+  rating: number | null;
+}
+
 /** A milestone scope member (feature kind). */
-export interface ShipMember {
+export interface ShipMember extends ShipMembership {
   feature: ShipFeature;
   bucket: ScopeBucket;
   /** Joined after the cut — scope creep awaiting triage. */
@@ -92,6 +114,20 @@ export interface ShipMember {
    * touches the ship verdict or progress; it is a second opinion, not a gate.
    */
   rating: number | null;
+}
+
+/**
+ * A milestone scope member (goal kind).
+ *
+ * A goal has no `ready`: readiness is the automation's reading of a FEATURE
+ * (KPI coverage + context health), and a goal has neither. Its state is its
+ * own `status`, which a human or an agent moves. That asymmetry is real and is
+ * why this is a second type rather than a widened `ShipMember` — a shared shape
+ * would have needed a `ready` that means nothing here, and something would
+ * eventually have read it.
+ */
+export interface ShipGoalMember extends ShipMembership {
+  goal: ShipGoal;
 }
 
 export interface ExitCriterion {
@@ -115,6 +151,13 @@ export interface ShipMilestoneVM {
   status: MilestoneStatus;
   targetLabel: string | null;
   members: ShipMember[];
+  /**
+   * The bound goals AS CUT MEMBERS — with the bucket, note and rating the
+   * membership row carries. `boundGoals` below is the same goals without that
+   * membership, kept because the `objective` criterion asks only whether the
+   * milestone has anything to be FOR (a `later` goal still answers that).
+   */
+  goalMembers: ShipGoalMember[];
   boundGoals: ShipGoal[];
   /** Derived from CORE members' slices — never hand-picked. */
   footprint: ShipContext[];

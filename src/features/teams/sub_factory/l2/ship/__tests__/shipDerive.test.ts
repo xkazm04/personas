@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { SHIP_CRITERIA, deriveCriteria } from '../shipCriteria';
-import { deriveFootprint, deriveProgress } from '../shipDerive';
-import { shipVerdict, type ExitCriterion } from '../shipModel';
+import { deriveCutTally, deriveFootprint, deriveProgress } from '../shipDerive';
+import { shipVerdict, type ExitCriterion, type ShipGoal, type ShipMember } from '../shipModel';
 
 import { T, TX, ctx, feature, goal, member, milestone } from './shipFixtures';
 
@@ -240,3 +240,57 @@ describe('deriveProgress', () => {
     expect(deriveProgress(core, [])).toBe(67);
   });
 });
+
+describe('deriveCutTally', () => {
+  // The header renders a fraction and the bar renders a percent. Before this
+  // was one function they were computed in two places over two different member
+  // sets, so a goals-only cut showed "0 of 0" beside a bar that had at least
+  // been taught to count goals. These assert they cannot diverge again.
+  it('counts both member kinds, each done by its own reading', () => {
+    const ready = member(feature('f1', 'login', [], true));
+    const notReady = member(feature('f2', 'billing', [], false));
+    const done = goal('g1', 'ship the brief');
+    const open = goal('g2', 'research it');
+    const tally = deriveCutTally(
+      [ready, notReady],
+      [{ ...done, status: 'done' }, { ...open, status: 'in-progress' }],
+    );
+    expect(tally).toEqual({ done: 2, total: 4 });
+  });
+
+  it('agrees with deriveProgress, always', () => {
+    const cases: [ShipMember[], ShipGoal[]][] = [
+      [[], []],
+      [[member(feature('f1', 'a', [], true))], []],
+      [[], [{ ...goal('g1', 'g'), status: 'done' }]],
+      [[member(feature('f1', 'a', [], false))], [{ ...goal('g1', 'g'), status: 'done' }]],
+    ];
+    for (const [core, goals] of cases) {
+      const { done, total } = deriveCutTally(core, goals);
+      const expected = total === 0 ? 0 : Math.round((done / total) * 100);
+      expect(deriveProgress(core, goals)).toBe(expected);
+    }
+  });
+
+  it('reads a goals-only cut as real work, not as nothing', () => {
+    // The shape a milestone takes the moment its brief is decomposed.
+    const goals = [
+      { ...goal('g1', 'research'), status: 'done' },
+      { ...goal('g2', 'registry'), status: 'done' },
+      { ...goal('g3', 'project type'), status: 'open' },
+    ];
+    expect(deriveCutTally([], goals)).toEqual({ done: 2, total: 3 });
+    expect(deriveProgress([], goals)).toBe(67);
+  });
+
+  it('counts every non-done status as not done, through the normalizer', () => {
+    for (const status of ['open', 'in-progress', 'awaiting_acceptance', 'blocked']) {
+      expect(deriveCutTally([], [{ ...goal('g', 'g'), status }]).done).toBe(0);
+    }
+    // and every alias of done as done
+    for (const status of ['done', 'completed', 'complete', 'skipped']) {
+      expect(deriveCutTally([], [{ ...goal('g', 'g'), status }]).done).toBe(1);
+    }
+  });
+});
+

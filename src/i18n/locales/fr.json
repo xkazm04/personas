@@ -20518,6 +20518,10 @@
     "description_editor_hint": "Ctrl+B pour le gras · commencez une ligne par « - » pour une liste",
     "decompose_brief": "Décomposer le brief",
     "decompose_brief_no_brief": "Ce jalon n’a pas encore de brief. Écris ce que le livrer signifie, puis décompose-le.",
-    "decompose_brief_tooltip": "Demande à Athena de lire le brief de ce jalon et de proposer les objectifs qu’il nomme. Rien n’est créé tant que tu n’as pas validé sa carte."
+    "decompose_brief_tooltip": "Demande à Athena de lire le brief de ce jalon et de proposer les objectifs qu’il nomme. Rien n’est créé tant que tu n’as pas validé sa carte.",
+    "member_kind_goal": "Objectif",
+    "certify_criteria_summary": "{met} sur {total} critères de sortie remplis — les preuves de chacun figurent sur le jalon derrière cette boîte de dialogue.",
+    "exit_criteria": "Critères de sortie",
+    "exit_criteria_aside": "dérivés — jamais saisis"
   }
 }

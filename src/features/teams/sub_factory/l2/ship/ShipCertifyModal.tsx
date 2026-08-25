@@ -1,109 +1,30 @@
-// Where the exit criteria live now.
+// The COMMIT half of certification, and only that.
 //
-// They used to sit as a permanent chip row in the milestone header — five
-// pills, every one of them showing a fraction, on screen at all times whether
-// or not anyone was about to certify anything. That is the wrong altitude for
-// them twice over: the header is for what the milestone IS, and the criteria
-// only matter at the moment you ask "can this ship?". Worse, the chips had to
-// compress a whole derived evidence line into a native `title=` tooltip, which
-// is the one channel that reaches neither keyboard nor touch.
+// The criteria moved out to `ShipCriteria.tsx` and now render inline in the
+// planner, beside the cut they are measured against (operator ruling,
+// 2026-08-25). This modal used to carry both, which meant the only way to READ
+// where a milestone stood was to open the dialog that also COMMITS it — a
+// reading surface behind an action gate.
 //
-// So certification became a two-beat act. The toolbar button asks the question;
-// this panel answers it with the full evidence, offers the resolution arm for
-// the gaps an agent can actually close, and puts the commit at the bottom where
-// a decision belongs. The verdict gate is unchanged — `shipVerdict` over the
-// criteria registry, and nothing else.
-import { useState } from 'react';
-import { Check, Rocket, SquareTerminal, Zap } from 'lucide-react';
+// What is left is the decision: the question, the standing verdict in one line,
+// and the button. The gate itself is unchanged — `shipVerdict` over the criteria
+// registry, and nothing else.
+import { Check, Rocket } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { BaseModal } from '@/features/shared/components/modals';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { DevProject } from '@/lib/bindings/DevProject';
 
-import {
-  PASSPORT_FLEET_INK, PassportTerminalModal, usePassportFleetSessions,
-} from '../../passport/passportFleet';
 import { INK } from '../../passport/passportInk';
-import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
-import { CRIT_HUE, shipVerdict, type ExitCriterion, type ShipMilestoneVM } from './shipModel';
+import { shipVerdict, type ShipMilestoneVM } from './shipModel';
 
-/** One criterion, with its evidence readable instead of hidden in a tooltip. */
-function CriterionRow({ c, vm, project, onDispatch, onOpenTerminal }: {
-  c: ExitCriterion;
+export function ShipCertifyModal({ vm, onCertify, onClose }: {
   vm: ShipMilestoneVM;
-  project: DevProject | null;
-  onDispatch: (c: ExitCriterion) => void;
-  onOpenTerminal: (key: string) => void;
-}) {
-  const { t, tx } = useTranslation();
-  const fleetSessions = usePassportFleetSessions();
-  const key = project ? shipDispatchKey(c.id, project.id) : null;
-  const session = key ? fleetSessions.get(key) : undefined;
-  // A criterion only grows a resolution arm when the gap is work an agent can
-  // do. `objective`, `sensors` and `scope-frozen` are human scoping decisions
-  // and deliberately return null from `buildCriterionPrompt`.
-  const dispatchable = c.state !== 'go' && project !== null && buildCriterionPrompt(vm, c, project) !== null;
-  const hue = CRIT_HUE[c.state];
-
-  return (
-    <li
-      className="flex items-start gap-3 rounded-card border px-3 py-2.5"
-      style={{ borderColor: `${hue}33`, background: `color-mix(in srgb, ${hue} 4%, transparent)` }}
-      data-testid={`ship-criterion-${c.id}`}
-    >
-      <span className="mt-1 w-2 h-2 rounded-full shrink-0" style={{ background: hue }} aria-hidden />
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-2">
-          <span className="typo-title">{c.label}</span>
-          <span className="typo-data tabular-nums shrink-0" style={{ color: hue }}>{c.done}/{c.total}</span>
-        </span>
-        {/* The evidence line is DERIVED prose, never hand-typed (shipCriteria.ts).
-            It is the answer to "why is this criterion where it is", so it reads
-            in the layout rather than on hover. */}
-        <span className="typo-caption block mt-0.5">{c.evidence}</span>
-      </span>
-      {session && key ? (
-        <Tooltip content={tx(t.ship.session_open_tooltip, { state: String(session.state).replace('_', ' ') })}>
-          <button
-            type="button"
-            onClick={() => onOpenTerminal(key)}
-            aria-label={tx(t.ship.session_open_aria, { label: c.label })}
-            className="shrink-0 p-1.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
-          >
-            <SquareTerminal className="w-4 h-4" style={{ color: PASSPORT_FLEET_INK[String(session.state)] ?? 'rgba(148,163,184,.6)' }} aria-hidden />
-          </button>
-        </Tooltip>
-      ) : dispatchable ? (
-        <Tooltip content={t.ship.dispatch_gap_tooltip}>
-          <button
-            type="button"
-            onClick={() => onDispatch(c)}
-            aria-label={tx(t.ship.dispatch_gap_aria, { label: c.label })}
-            className="shrink-0 p-1.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
-            data-testid={`ship-dispatch-${c.id}`}
-          >
-            <Zap className="w-4 h-4" style={{ color: INK.violet }} aria-hidden />
-          </button>
-        </Tooltip>
-      ) : null}
-    </li>
-  );
-}
-
-export function ShipCertifyModal({ vm, project, onCertify, onClose }: {
-  vm: ShipMilestoneVM;
-  project: DevProject | null;
   /** Advance the lifecycle: planned → active (cut), active → shipped. */
   onCertify: () => void;
   onClose: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const [dispatchCrit, setDispatchCrit] = useState<ExitCriterion | null>(null);
-  const [terminalKey, setTerminalKey] = useState<string | null>(null);
-  const fleetSessions = usePassportFleetSessions();
-
   const verdict = shipVerdict(vm.criteria);
   const cutting = vm.status === 'planned';
   // Cutting FREEZES the scope (it stamps `cut_at`, which is what makes
@@ -123,18 +44,15 @@ export function ShipCertifyModal({ vm, project, onCertify, onClose }: {
             {cutting ? t.ship.certify_cut_intro : t.ship.certify_ship_intro}
           </p>
 
-          <ul className="flex flex-col gap-2 mb-4" data-testid="ship-criteria-list">
-            {vm.criteria.map((c) => (
-              <CriterionRow
-                key={c.id}
-                c={c}
-                vm={vm}
-                project={project}
-                onDispatch={setDispatchCrit}
-                onOpenTerminal={setTerminalKey}
-              />
-            ))}
-          </ul>
+          {/* The standing verdict, in one line. The evidence for it is on the
+              page behind this dialog; repeating it here is what made the modal
+              the only place a milestone could be read. */}
+          <p className="typo-caption mb-4" style={{ color: blocked ? INK.amber : undefined }}>
+            {tx(t.ship.certify_criteria_summary, {
+              met: vm.criteria.filter((c) => c.state === 'go').length,
+              total: vm.criteria.length,
+            })}
+          </p>
 
           <div className="flex items-center justify-between gap-3">
             <p className="typo-caption min-w-0" style={{ color: blocked ? INK.amber : undefined }}>
@@ -161,22 +79,6 @@ export function ShipCertifyModal({ vm, project, onCertify, onClose }: {
         </div>
       </BaseModal>
 
-      {dispatchCrit && project && (
-        <ShipDispatchModal
-          vm={vm}
-          criterion={dispatchCrit}
-          project={project}
-          onDispatched={(key) => { setDispatchCrit(null); setTerminalKey(key); }}
-          onClose={() => setDispatchCrit(null)}
-        />
-      )}
-      {terminalKey && (
-        <PassportTerminalModal
-          sessionId={fleetSessions.get(terminalKey)?.id ?? ''}
-          session={fleetSessions.get(terminalKey) ?? null}
-          onClose={() => setTerminalKey(null)}
-        />
-      )}
     </>
   );
 }

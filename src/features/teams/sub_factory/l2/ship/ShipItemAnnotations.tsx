@@ -16,7 +16,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
 import { itemVerdict } from './shipDuality';
-import type { ShipMember } from './shipModel';
 
 const STARS = [1, 2, 3, 4, 5] as const;
 
@@ -116,22 +115,34 @@ function NoteEditor({ name, testid, description, onSave, disabled }: {
  * One member's annotation strip. `onPatch` receives ONLY the changed key, which
  * the caller forwards straight into `setItem`'s annotations patch.
  */
-export function ShipItemAnnotations({ member, editable, onPatch }: {
-  member: ShipMember;
+export function ShipItemAnnotations({ kind, id, name, ready, description, rating, editable, onPatch }: {
+  /** The membership's `item_kind` — only used to key the testids apart. */
+  kind: 'use_case' | 'goal';
+  id: string;
+  name: string;
+  /**
+   * The AUTOMATION's reading, when there is one. `null` means this kind has no
+   * automated readiness to disagree with — which is the honest state for a
+   * goal: readiness is derived from KPI coverage and context health, and a goal
+   * has neither. With no automation reading there is no duality, so the
+   * conflict chip is not merely hidden, it is undefined; `shipDuality` folds
+   * over features alone for the same reason and is deliberately unchanged.
+   */
+  ready: boolean | null;
+  description: string | null;
+  rating: number | null;
   editable: boolean;
   onPatch: (patch: { description?: string | null; rating?: number | null }) => void;
 }) {
   const { t } = useTranslation();
-  const kind = 'use_case';
-  const id = member.feature.id;
-  const conflict = itemVerdict(member.feature.ready, member.rating) === 'disagree';
+  const conflict = ready !== null && itemVerdict(ready, rating) === 'disagree';
 
   return (
     <span className="flex items-center gap-2 mt-1.5 pl-[15px] min-w-0">
       <NoteEditor
-        name={member.feature.name}
+        name={name}
         testid={`ship-item-description-${kind}-${id}`}
-        description={member.description}
+        description={description}
         onSave={(description) => onPatch({ description })}
         disabled={!editable}
       />
@@ -144,9 +155,9 @@ export function ShipItemAnnotations({ member, editable, onPatch }: {
         </Tooltip>
       )}
       <StarRating
-        name={member.feature.name}
+        name={name}
         testid={`ship-item-rating-${kind}-${id}`}
-        rating={member.rating}
+        rating={rating}
         onRate={(rating) => onPatch({ rating })}
         disabled={!editable}
       />

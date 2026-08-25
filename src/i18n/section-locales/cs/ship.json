@@ -143,5 +143,9 @@
   "description_editor_hint": "Ctrl+B pro tučné písmo · řádek začněte „- “ pro odrážky",
   "decompose_brief": "Rozložit zadání",
   "decompose_brief_no_brief": "Tento milník zatím nemá zadání. Napište, co znamená ho dodat, a pak to rozložte.",
-  "decompose_brief_tooltip": "Požádejte Athenu, ať přečte zadání tohoto milníku a navrhne cíle, které pojmenovává. Nic nevznikne, dokud její kartu nepotvrdíte."
+  "decompose_brief_tooltip": "Požádejte Athenu, ať přečte zadání tohoto milníku a navrhne cíle, které pojmenovává. Nic nevznikne, dokud její kartu nepotvrdíte.",
+  "member_kind_goal": "Cíl",
+  "certify_criteria_summary": "Splněno {met} z {total} výstupních kritérií — doklad ke každému je na milníku za tímto dialogem.",
+  "exit_criteria": "Výstupní kritéria",
+  "exit_criteria_aside": "odvozeno — nikdy nezadáno ručně"
 }

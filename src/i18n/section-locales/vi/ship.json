@@ -143,5 +143,9 @@
   "description_editor_hint": "Ctrl+B để in đậm · bắt đầu dòng bằng “- ” để tạo danh sách",
   "decompose_brief": "Phân rã bản tóm tắt",
   "decompose_brief_no_brief": "Cột mốc này chưa có bản tóm tắt. Hãy viết ra việc phát hành nó nghĩa là gì, rồi phân rã điều đó.",
-  "decompose_brief_tooltip": "Nhờ Athena đọc bản tóm tắt của cột mốc này và đề xuất các mục tiêu mà nó nêu. Không có gì được tạo cho đến khi bạn xác nhận thẻ của cô ấy."
+  "decompose_brief_tooltip": "Nhờ Athena đọc bản tóm tắt của cột mốc này và đề xuất các mục tiêu mà nó nêu. Không có gì được tạo cho đến khi bạn xác nhận thẻ của cô ấy.",
+  "member_kind_goal": "Mục tiêu",
+  "certify_criteria_summary": "Đã đạt {met} trên {total} tiêu chí hoàn thành — bằng chứng cho từng tiêu chí nằm trên cột mốc phía sau hộp thoại này.",
+  "exit_criteria": "Tiêu chí hoàn thành",
+  "exit_criteria_aside": "được suy ra — không nhập tay"
 }

@@ -143,5 +143,9 @@
   "description_editor_hint": "Ctrl+B para negrita · empieza una línea con “- ” para una lista",
   "decompose_brief": "Descomponer el resumen",
   "decompose_brief_no_brief": "Este hito aún no tiene resumen. Escribe qué significa entregarlo y descompón eso.",
-  "decompose_brief_tooltip": "Pide a Athena que lea el resumen de este hito y proponga los objetivos que nombra. No se crea nada hasta que confirmes su tarjeta."
+  "decompose_brief_tooltip": "Pide a Athena que lea el resumen de este hito y proponga los objetivos que nombra. No se crea nada hasta que confirmes su tarjeta.",
+  "member_kind_goal": "Objetivo",
+  "certify_criteria_summary": "{met} de {total} criterios de salida cumplidos: la evidencia de cada uno está en el hito detrás de este diálogo.",
+  "exit_criteria": "Criterios de salida",
+  "exit_criteria_aside": "derivados, nunca escritos a mano"
 }
