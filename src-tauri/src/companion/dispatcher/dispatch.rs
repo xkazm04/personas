@@ -1536,6 +1536,20 @@ pub fn dispatch_with_sys(
                                 "project_id": plan.project_id,
                                 "name": plan.name,
                                 "goal": plan.goal,
+                                // The PROSE. It was read from the params, length-
+                                // checked, carried through validation into
+                                // `plan.description` — whose own doc comment says
+                                // "where the paragraph goes now" — and then dropped
+                                // right here, so `AthenaShipMilestoneCard`'s
+                                // `config?.description` was always undefined and the
+                                // card's description box always rendered empty.
+                                //
+                                // The same field's READ path had the same defect on
+                                // the same day: `describe_ship_milestone` selected
+                                // `m.description` into its struct and never printed
+                                // it. Broken in both directions, independently,
+                                // neither able to see the other.
+                                "description": plan.description,
                                 "rows": rows_json,
                             }),
                         });

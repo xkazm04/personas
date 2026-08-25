@@ -160,6 +160,110 @@ fn show_ship_milestone_is_a_card_op_not_an_action_or_a_read_op() {
     assert!(!READ_OPS.contains(&"show_ship_milestone"));
 }
 
+/// THE PROSE MUST REACH THE CARD.
+///
+/// `description` was read from the op's params, length-checked, and carried
+/// through `validate_ship_milestone` into `ShipMilestonePlan.description` —
+/// whose own doc comment reads "What shipping this means, in prose. Where the
+/// paragraph goes now." — and was then omitted from the `config` JSON the card
+/// is built from. `AthenaShipMilestoneCard` reads `config?.description`, so the
+/// card's description box rendered empty every single time, and whatever Athena
+/// proposed as the milestone's brief was silently discarded at the last hop.
+///
+/// The same field's READ path carried the same defect on the same day:
+/// `describe_ship_milestone` selected `m.description` into its struct and never
+/// printed it. Two independent breaks of one field, in opposite directions,
+/// neither visible from the other. This test closes the write half; the read
+/// half is closed by `ship_ops::tests::the_objectives_prose_is_rendered_in_full`.
+#[test]
+fn the_ship_milestone_card_carries_the_objectives_prose() {
+    let sys = crate::db::init_test_db().expect("system db");
+    {
+        let conn = sys.get().expect("conn");
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path, status, created_at, updated_at)
+             VALUES ('p1', 'personas', 'C:/repo', 'active', '2026-08-01', '2026-08-01')",
+            [],
+        )
+        .expect("project");
+        conn.execute(
+            "INSERT INTO dev_use_cases (id, project_id, slug, name, created_at, updated_at)
+             VALUES ('uc_1', 'p1', 'uc-one', 'Compose the story', '2026-08-01', '2026-08-01')",
+            [],
+        )
+        .expect("use case");
+    }
+
+    let brief = "Deep research the web resources.\nOut of scope: script to image.";
+    let op = format!(
+        r###"{{"op":"propose_action","action":"show_ship_milestone","params":{{"project_slug":"personas","name":"M1","goal":"cut it","description":{},"rows":[{{"item_kind":"use_case","item_id":"uc_1"}}]}}}}"###,
+        serde_json::to_string(brief).expect("json")
+    );
+    let text = format!("Some prose.\nOP: {op}\nMore prose.");
+
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+
+    let card = out
+        .chat_cards
+        .iter()
+        .find(|c| c.kind == "ship_milestone")
+        .unwrap_or_else(|| panic!("no ship_milestone card; warnings: {:?}", out.warnings));
+
+    // The goal is the heading and was never the problem …
+    assert_eq!(
+        card.config.get("goal").and_then(|v| v.as_str()),
+        Some("cut it"),
+    );
+    // … the prose under it is.
+    assert_eq!(
+        card.config.get("description").and_then(|v| v.as_str()),
+        Some(brief),
+        "the card config dropped the brief: {:?}",
+        card.config
+    );
+}
+
+/// Absence stays absence. An op that proposes no prose must not put an empty
+/// string in the card — the field is `Option`, the card renders a placeholder
+/// for null, and "" would make an unwritten brief look like a written blank one.
+#[test]
+fn a_milestone_proposed_without_prose_carries_null_not_empty_string() {
+    let sys = crate::db::init_test_db().expect("system db");
+    {
+        let conn = sys.get().expect("conn");
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path, status, created_at, updated_at)
+             VALUES ('p1', 'personas', 'C:/repo', 'active', '2026-08-01', '2026-08-01')",
+            [],
+        )
+        .expect("project");
+        conn.execute(
+            "INSERT INTO dev_use_cases (id, project_id, slug, name, created_at, updated_at)
+             VALUES ('uc_1', 'p1', 'uc-one', 'Compose the story', '2026-08-01', '2026-08-01')",
+            [],
+        )
+        .expect("use case");
+    }
+    let op = r###"{"op":"propose_action","action":"show_ship_milestone","params":{"project_slug":"personas","name":"M1","goal":"cut it","rows":[{"item_kind":"use_case","item_id":"uc_1"}]}}"###;
+    let text = format!("Some prose.\nOP: {op}\nMore prose.");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+
+    let card = out
+        .chat_cards
+        .iter()
+        .find(|c| c.kind == "ship_milestone")
+        .unwrap_or_else(|| panic!("no ship_milestone card; warnings: {:?}", out.warnings));
+    assert!(
+        card.config
+            .get("description")
+            .is_none_or(serde_json::Value::is_null),
+        "an unproposed brief must be null, not \"\": {:?}",
+        card.config
+    );
+}
+
 // ── show_ship_goals ─────────────────────────────────────────────────
 
 /// Same doctrine as its two siblings, and for a sharper reason: without the
