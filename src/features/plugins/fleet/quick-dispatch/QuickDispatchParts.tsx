@@ -113,11 +113,3 @@ export function QuickDispatchMetaLine({ c }: { c: QuickDispatchController }) {
     </div>
   );
 }
-
-/** Model / effort cycle-chips + headless toggle label styling helper. */
-export const controlChipClass = (isSet: string | null) =>
-  `px-2 py-0.5 rounded-full border typo-caption transition-colors ${
-    isSet
-      ? 'bg-primary/10 border-primary/20 text-primary'
-      : 'border-foreground/10 text-foreground hover:bg-secondary/60'
-  }`;

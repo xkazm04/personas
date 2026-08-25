@@ -10,10 +10,11 @@ import {
 } from './QuickDispatchParts';
 
 /**
- * CONSOLE — a bottom-docked command deck (the Studio-dock / OrbQuickInputBar
+ * CONSOLE — the Quick Dispatch deck (the Studio-dock / OrbQuickInputBar
  * family, with a terminal accent: mono values, a prompt caret, a status rail).
+ * Winner of the 2026-08-25 /prototype round.
  *
- * Anti-shake by construction, model 1 — BOTTOM ANCHORING + OUT-OF-FLOW PANELS:
+ * Anti-shake by construction — BOTTOM ANCHORING + OUT-OF-FLOW PANELS:
  * the deck is pinned to the bottom edge, so its own rows can never be pushed
  * around by content above; everything volatile (suggestions, the recent list)
  * renders in ONE absolutely-positioned panel above the deck (`bottom-full`),

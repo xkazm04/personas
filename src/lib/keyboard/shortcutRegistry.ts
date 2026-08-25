@@ -71,7 +71,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: [['D']], describe: (t) => t.chrome.shortcuts.nav_mode_dispatch_tray },
       { combos: [['M']], describe: (t) => t.chrome.shortcuts.nav_mode_monitor },
       { combos: [['N']], describe: (t) => t.chrome.shortcuts.nav_mode_notifications },
-      // Quick Dispatch overlay — keyboard-only, no titlebar capsule.
+      // Quick Dispatch overlay — also reachable via the titlebar console capsule.
       { combos: [['C']], describe: (t) => t.chrome.shortcuts.nav_mode_quick_dispatch },
       { combos: [['Esc']], describe: (t) => t.chrome.shortcuts.close_overlay },
     ],

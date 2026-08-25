@@ -123,6 +123,9 @@ vi.mock('@/i18n/useTranslation', () => ({
         tray_dispatch: 'Approved work',
         tray_dispatch_waiting: '{count} approved ideas never dispatched',
       },
+      plugins: {
+        fleet_quick_dispatch: { title: 'Quick dispatch' },
+      },
       monitor: {
         review_titlebar: 'Human review & questions',
         review_titlebar_attention: '{count} waiting for your answer',
@@ -301,7 +304,7 @@ describe('the dispatch capsule counts approved work nothing acted on', () => {
   });
 });
 
-describe('the tray offers six actions and no Goals button', () => {
+describe('the tray offers seven actions and no Goals button', () => {
   it('renders exactly the dock item set', () => {
     render(<TitleBarDock />);
 
@@ -313,6 +316,7 @@ describe('the tray offers six actions and no Goals button', () => {
       'titlebar-dispatch',
       'titlebar-process-activity',
       'titlebar-notifications',
+      'titlebar-quick-dispatch',
     ]);
   });
 

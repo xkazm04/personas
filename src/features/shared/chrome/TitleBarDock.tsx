@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CalendarClock, ClipboardCheck, Rocket, Search } from 'lucide-react';
+import { Bell, CalendarClock, ClipboardCheck, Rocket, Search, SquareTerminal } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
@@ -24,7 +24,7 @@ import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitle
  * Keyboard: while `;` keyboard-nav mode is active (see `KeyboardNavMode`),
  * each capsule shows its key on a hint chip below the bar and S / T / R / D /
  * M / N toggle the matching surface; C opens the Quick Dispatch overlay
- * (keyboard-only — it has no capsule). Surface keys keep the mode armed — it
+ * (also reachable via the console capsule right of the bell). Surface keys keep the mode armed — it
  * stays on until `;` / Esc / the footer switch. The keys do nothing outside
  * nav mode.
  */
@@ -34,6 +34,7 @@ export default function TitleBarDock() {
   const prefersReducedMotion = useReducedMotion();
   const keyboardNavActive = useSystemStore((s) => s.keyboardNavActive);
   const toggleQuickDispatch = useQuickDispatchStore((s) => s.toggleQuickDispatch);
+  const quickDispatchOpen = useQuickDispatchStore((s) => s.open);
 
   useAppKeyboard(
     (e) => {
@@ -186,6 +187,20 @@ export default function TitleBarDock() {
           showHint={keyboardNavActive}
         >
           <Bell size={17} strokeWidth={1.6} />
+        </DockAction>
+
+        {/* Quick Dispatch — the mouse door onto the console deck; the same
+            surface nav-mode C summons. */}
+        <DockAction
+          onClick={toggleQuickDispatch}
+          active={quickDispatchOpen}
+          label={t.plugins.fleet_quick_dispatch.title}
+          title={t.plugins.fleet_quick_dispatch.title}
+          testId="titlebar-quick-dispatch"
+          hintKey="C"
+          showHint={keyboardNavActive}
+        >
+          <SquareTerminal size={17} strokeWidth={1.6} />
         </DockAction>
       </div>
       <TrayOverlays />
