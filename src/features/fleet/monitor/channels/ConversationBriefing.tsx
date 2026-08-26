@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AlertCircle, MessagesSquare, Scale, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody';
@@ -45,7 +45,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 type RailTab = 'focus' | 'reviews' | 'quick';
 
 export function ConversationBriefing({
-  teams, personas, bridges,
+  teams, personas, bridges, layoutControl,
 }: {
   teams: StreamTeam[];
   /** The workspace roster — feeds the sidebar's Personas group (W5). */
@@ -53,6 +53,10 @@ export function ConversationBriefing({
   /** Slack bridges keyed by team id — derived once by the workspace host (see
    *  `lib/channel/teamBridge`). Absent = nothing is bridged. */
   bridges?: Record<string, TeamSlackBridge>;
+  /** The layout switcher, rendered in THIS view's own header rather than above
+   *  all of them — one header strip instead of two. Owned and built by
+   *  `MonitorChannelGrid`; each view only places it. */
+  layoutControl?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -225,6 +229,7 @@ export function ConversationBriefing({
         <span className="typo-body font-semibold text-foreground">{t.monitor.conv_title}</span>
         {/* Passive: the active project's Slack bridge, if it has one. */}
         <LinkedChannelChip bridge={activeId ? bridges?.[activeId] : undefined} />
+        {layoutControl && <span className="ml-auto flex items-center">{layoutControl}</span>}
       </div>
 
       <div className="flex-1 min-h-0 flex">

@@ -2,7 +2,30 @@
 
 ## Active
 
-### ship-athena-nonleading — Ship→Athena prompt de-leading + research-first doctrine + Gravitone trailer-knowledge exercise
+- **[2026-08-26 10:14]**
+- **Paths:** `src-tauri/db/src/migrations/incremental/**` · `src-tauri/db/src/repos/execution/executions.rs` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-08-26 10:06]**
+- **Paths:** `src/features/overview/**` · `src/features/shared/components/layout/**`
+- **Status:** started
+
+- **[2026-08-26 10:01]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/teams/sub_collab/ChannelDetailModal.tsx` · `src-tauri/src/engine/dispatch.rs` · `src-tauri/engine/src/prompt/**` · `src-tauri/src/commands/teams/team_channel.rs` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-08-25 18:59]**
+- **Paths:** `src/features/plugins/fleet/quick-dispatch/**`
+- **Status:** started
+
+- **[2026-08-25 15:18]**
+- **Paths:** `src/features/overview/**`
+- **Status:** started
+
+- **[2026-08-25 14:07]**
+- **Paths:** `src/features/plugins/fleet/**` · `src/features/triggers/**` · `src/lib/keyboard/**` · `src/features/shared/chrome/**` · `src-tauri/src/commands/fleet/**` · `src-tauri/src/companion/**`
+- **Status:** started
+
 - **[2026-08-25 10:19]**
 - **Paths:** `src/features/teams/sub_factory/l2/ship/**` · `src-tauri/src/companion/**` · `src-tauri/db/src/settings_keys.rs`
 - **Status:** started
@@ -426,6 +449,20 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### exec-text-column-fix — Fix rusqlite Invalid column type Text at index 15 (persona_executions.cache_read_tokens)
+
+### monitor-restructure — Persona Monitor shell restructure: header router, columns descope, conversations fixes, msg-vs-report contract
+
+### overview-followups — Vault log card in Mission Control + header skeleton removal
+
+### prototype-quick-dispatch — Prototype: QuickDispatchOverlay design variants (fix input shake)
+
+### spark-fleet-dispatch-ux — Spark: fleet dispatch & orchestration UX (design waves + build)
+
+### overview-consolidation — Overview fixes: cold-load, EventLogList, PersonaIcon fallback, Mission Control consolidation
+
+### ship-athena-nonleading — Ship→Athena prompt de-leading + research-first doctrine + Gravitone trailer-knowledge exercise
 
 ### channels-lane-b — Lane B: persona channels + Messages->Reports rebrand + follow-up loop
 

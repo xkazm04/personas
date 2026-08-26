@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Orbit } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -53,11 +53,15 @@ function trimmed(a: MapNode, b: MapNode, rA: number, rB: number) {
 }
 
 export function ChannelMap({
-  teams, onDrillIn,
+  teams, onDrillIn, layoutControl,
 }: {
   teams: StreamTeam[];
   /** Node click — open the Timeline scoped to this speaker. */
   onDrillIn: (teamId: string, personaId: string) => void;
+  /** The layout switcher, rendered in THIS view's own header rather than above
+   *  all of them — one header strip instead of two. Owned and built by
+   *  `MonitorChannelGrid`; each view only places it. */
+  layoutControl?: ReactNode;
 }) {
   const { t } = useTranslation();
   const reducedMotion = useReducedMotion() ?? false;
@@ -144,6 +148,7 @@ export function ChannelMap({
           <Orbit className="w-3.5 h-3.5 text-foreground" />
         </div>
         <span className="typo-body font-semibold text-foreground">{t.monitor.channels_layout_map}</span>
+        {layoutControl && <span className="ml-auto flex items-center order-last">{layoutControl}</span>}
 
         {/* Team switcher — one constellation at a time. */}
         <div className="ml-2 flex items-center gap-1 overflow-x-auto">

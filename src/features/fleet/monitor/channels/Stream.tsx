@@ -115,9 +115,14 @@ export interface StreamProps {
   onSetAll: (on: boolean) => void;
   /** Deep-link scope: open with the callsign lens pre-set to this persona. */
   initialCallsign?: string;
+  /** The Activity/Timeline/Conversations/Map switcher, rendered in THIS view's
+   *  own header rather than above all of them — so the header row is one strip
+   *  instead of two. Owned and built by `MonitorChannelGrid`; each view only
+   *  places it. */
+  layoutControl?: ReactNode;
 }
 
-export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign }: StreamProps) {
+export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layoutControl }: StreamProps) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [lens, setLens] = useState<LensState>(() =>
@@ -203,6 +208,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign }: St
         {loading && <span className="typo-caption text-foreground opacity-45">{t.monitor.stream_loading}</span>}
 
         <div className="ml-auto flex items-center gap-2">
+          {layoutControl}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground opacity-45 pointer-events-none" />
             <input
