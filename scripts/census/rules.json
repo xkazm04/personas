@@ -67,7 +67,7 @@
       ],
       "baseline": {
         "files": 76,
-        "matches": 194
+        "matches": 187
       },
       "floor": 4000
     },
@@ -555,8 +555,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 816,
-        "matches": 1990
+        "files": 814,
+        "matches": 1987
       },
       "floor": 2000
     },
@@ -1407,8 +1407,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 561,
-        "matches": 1081
+        "files": 560,
+        "matches": 1077
       },
       "floor": 2000
     },
@@ -1993,8 +1993,8 @@
         "$falsePositiveNote": "Verified through two independently written implementations. A TypeScript-compiler AST pass counting AsExpression nodes whose `type` text is a destination vocabulary returned 52; this text matcher returns 54. BOTH disagreements were run down and the AST pass was wrong twice over: (1) it omitted HeaderOverlay and FactoryL2Tab from its vocabulary list, which is +2; (2) the text matcher additionally sees 2 matches on comment-only lines, which `ignoreCommentLines` correctly drops - and both of those comments (TwinPage.tsx:63, sidebarData.ts:164) are prose ABOUT this exact defect, the precise 35%-prose trap the engine's own docstring records from raw-web-storage. The `(?![A-Za-z0-9_$\\\\[])` tail is load-bearing: without the `\\\\[` it also matches `as SidebarSection[]` at registry.test.ts:49, an Object.keys() widening that is correct by TypeScript's design. After that tail the two implementations agree exactly at 54."
       },
       "baseline": {
-        "files": 19,
-        "matches": 54
+        "files": 18,
+        "matches": 53
       },
       "floor": 4000
     },
@@ -4884,7 +4884,7 @@
       ],
       "baseline": {
         "files": 12,
-        "matches": 16
+        "matches": 13
       },
       "floor": 4000
     },
@@ -5241,8 +5241,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 44,
-        "matches": 49
+        "files": 43,
+        "matches": 48
       },
       "floor": 4000
     },

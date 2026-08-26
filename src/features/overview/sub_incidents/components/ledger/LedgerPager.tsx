@@ -2,6 +2,8 @@
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Button } from '@/features/shared/components/buttons';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PAGE_SIZES, type PageSize } from '../../libs/useIncidentLedger';
 
 interface Props {
@@ -37,16 +39,19 @@ export function LedgerPager({
       </span>
 
       <div className="flex items-center gap-3">
+        {/* ThemedSelect, not a native select element — native options render
+            OS-styled. `hideSearch` because three fixed sizes need no
+            type-ahead. */}
         <label className="flex items-center gap-1.5 typo-caption text-foreground">
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
-            className="rounded-input border border-primary/15 bg-secondary/40 px-1.5 py-0.5 typo-caption text-foreground focus-ring"
-          >
-            {PAGE_SIZES.map((size) => (
-              <option key={size} value={size}>{size}</option>
-            ))}
-          </select>
+          <ThemedSelect
+            filterable
+            hideSearch
+            value={String(pageSize)}
+            onValueChange={(v) => onPageSizeChange(Number(v) as PageSize)}
+            options={PAGE_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
+            wrapperClassName="w-16"
+            aria-label={l.per_page}
+          />
           {l.per_page}
         </label>
 
@@ -72,19 +77,20 @@ export function LedgerPager({
   );
 }
 
+/** Shared Button owns the disabled treatment — no hand-rolled `disabled:` classes. */
 function PagerButton({
   label, disabled, onClick, children,
 }: { label: string; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="icon-sm"
       onClick={onClick}
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="rounded-card border border-primary/15 p-1 text-foreground transition-colors hover:bg-secondary/50 disabled:opacity-35 disabled:hover:bg-transparent focus-ring"
     >
       {children}
-    </button>
+    </Button>
   );
 }
