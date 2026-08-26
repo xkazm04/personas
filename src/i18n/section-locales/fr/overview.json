@@ -150,7 +150,8 @@
       "trail_handled_total": "traités sans vous",
       "trail_most_recent": "le plus récent",
       "trail_sources": "sources"
-    }
+    },
+    "kpi_autonomous": "Autonome"
   },
   "observability": {
     "title": "Observabilité",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "Aucun tableau de score census pour ce dépôt pour le moment.",
     "adherence_predicate": "{clean} contextes applicables propres sur {applicable} · {sites} sites",
     "adherence_uncontexted": "Hors de tout contexte",
-    "lane_coverage": "Couverture"
+    "lane_coverage": "Couverture",
+    "codex_contents": "Sommaire"
   },
   "registry_coverage": {
     "catalog_generated": "Catalogue généré",

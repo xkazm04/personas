@@ -1,13 +1,11 @@
-// VARIANT: Codex — the subject as a single, beautifully typeset document.
+// Subjects lane body — the subject as a single, beautifully typeset document
+// (the "Codex" direction, promoted 2026-08-26 over Baseline / Atlas / Console).
 //
-// Metaphor: a reading room. The baseline chops one coherent piece of doctrine
-// into five tabs and renders markdown wall-to-wall; the Codex lays the whole
-// subject out as ONE continuous scroll with a measured line length (~72ch),
+// Metaphor: a reading room. One coherent piece of doctrine is laid out as ONE
+// continuous scroll with a measured line length (~72ch),
 // chapter-numbered techniques, and an appendix — because the corpus IS prose,
 // and prose is read top-to-bottom, not tab-by-tab. A sticky Contents rail on
 // the right gives the map; a slim category spine on the left gives the shelf.
-/* eslint-disable custom/no-hardcoded-jsx-text -- prototype-only labels; the
-   winner's strings are extracted to i18n at consolidation */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 
@@ -321,8 +319,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
             {/* ── Contents rail (sticky) ─────────────────────────────────── */}
             <aside className="hidden xl:block w-[200px] flex-shrink-0">
               <div className="sticky top-0 pt-1">
-                {/* prototype-only label */}
-                <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">Contents</h3>
+                <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">{p.codex_contents}</h3>
                 <ul className="space-y-1 border-l border-border/50">
                   <li>
                     <button type="button" onClick={() => jump('codex-golden-path')} className="w-full text-left typo-body text-foreground/70 hover:text-foreground pl-3 py-0.5 border-l-2 border-transparent hover:border-primary/50 -ml-px transition-colors">

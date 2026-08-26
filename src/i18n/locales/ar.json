@@ -6398,7 +6398,8 @@
         "trail_handled_total": "عولجت دون تدخلك",
         "trail_most_recent": "الأحدث",
         "trail_sources": "مصادر"
-      }
+      },
+      "kpi_autonomous": "ذاتي"
     },
     "observability": {
       "title": "المراقبة",
@@ -8296,7 +8297,8 @@
       "adherence_no_scorecard": "لا يوجد بطاقة تقييم census لهذا المستودع بعد.",
       "adherence_predicate": "{clean} من أصل {applicable} سياقات قابلة للتطبيق نظيفة · {sites} مواقع",
       "adherence_uncontexted": "خارج أي سياق",
-      "lane_coverage": "التغطية"
+      "lane_coverage": "التغطية",
+      "codex_contents": "المحتويات"
     },
     "registry_coverage": {
       "catalog_generated": "تاريخ إنشاء الكتالوج",

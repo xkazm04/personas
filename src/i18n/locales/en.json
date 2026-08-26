@@ -6615,7 +6615,8 @@
         "trail_handled_total": "handled without you",
         "trail_most_recent": "most recent",
         "trail_sources": "sources"
-      }
+      },
+      "kpi_autonomous": "Autonomous"
     },
     "observability": {
       "title": "Observability",
@@ -8513,7 +8514,8 @@
       "adherence_col_sites": "Sites",
       "adherence_col_rules": "Top rules",
       "adherence_more_rules": "…and {count} more rules",
-      "adherence_uncontexted": "Outside any context"
+      "adherence_uncontexted": "Outside any context",
+      "codex_contents": "Contents"
     },
     "registry_coverage": {
       "multiple_note": "Multiple registries are paired — showing {name}.",

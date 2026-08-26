@@ -101,11 +101,10 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       />
       {autonomous && (
         <Tile
-          label={t.overview.incidents.noc_handled_title}
+          label={t.overview.incidents.kpi_autonomous}
           value={autonomous.count}
           Icon={ShieldCheck}
           tone="success"
-          sublabel={t.overview.incidents.noc_handled_by}
           active={autonomous.active}
           onClick={autonomous.onToggle}
         />

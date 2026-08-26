@@ -150,7 +150,8 @@
       "trail_handled_total": "আপনাকে ছাড়াই সামলানো",
       "trail_most_recent": "সাম্প্রতিকতম",
       "trail_sources": "উৎস"
-    }
+    },
+    "kpi_autonomous": "স্বয়ংক্রিয়"
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "এই রিপোজিটরির জন্য এখনও কোনো census স্কোরকার্ড নেই।",
     "adherence_predicate": "{applicable}টি প্রযোজ্য কনটেক্সটের মধ্যে {clean}টি ক্লিন · {sites}টি সাইট",
     "adherence_uncontexted": "কোনো কনটেক্সটের বাইরে",
-    "lane_coverage": "কভারেজ"
+    "lane_coverage": "কভারেজ",
+    "codex_contents": "সূচিপত্র"
   },
   "registry_coverage": {
     "catalog_generated": "ক্যাটালগ তৈরি হয়েছে",

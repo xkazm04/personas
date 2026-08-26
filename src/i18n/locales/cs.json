@@ -6398,7 +6398,8 @@
         "trail_handled_total": "vyřešeno bez vás",
         "trail_most_recent": "naposledy",
         "trail_sources": "zdrojů"
-      }
+      },
+      "kpi_autonomous": "Autonomní"
     },
     "observability": {
       "title": "Pozorovatelnost",
@@ -8296,7 +8297,8 @@
       "adherence_no_scorecard": "Pro tento repozitář zatím neexistuje census scorecard.",
       "adherence_predicate": "{clean} z {applicable} relevantních kontextů čistých · {sites} výskytů",
       "adherence_uncontexted": "Mimo jakýkoli kontext",
-      "lane_coverage": "Pokrytí"
+      "lane_coverage": "Pokrytí",
+      "codex_contents": "Obsah"
     },
     "registry_coverage": {
       "catalog_generated": "Katalog vygenerován",

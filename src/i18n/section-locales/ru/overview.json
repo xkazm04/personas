@@ -150,7 +150,8 @@
       "trail_handled_total": "обработано без вас",
       "trail_most_recent": "последнее",
       "trail_sources": "источников"
-    }
+    },
+    "kpi_autonomous": "Автономно"
   },
   "observability": {
     "title": "Мониторинг",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "Для этого репозитория пока нет карточки census.",
     "adherence_predicate": "{clean} из {applicable} применимых контекстов чисты · {sites} сайтов",
     "adherence_uncontexted": "Вне контекста",
-    "lane_coverage": "Покрытие"
+    "lane_coverage": "Покрытие",
+    "codex_contents": "Содержание"
   },
   "registry_coverage": {
     "catalog_generated": "Каталог создан",

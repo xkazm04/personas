@@ -150,7 +150,8 @@
       "trail_handled_total": "ditangani tanpa Anda",
       "trail_most_recent": "terbaru",
       "trail_sources": "sumber"
-    }
+    },
+    "kpi_autonomous": "Otonom"
   },
   "observability": {
     "title": "Observabilitas",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "Belum ada kartu skor census untuk repositori ini.",
     "adherence_predicate": "{clean} dari {applicable} konteks yang berlaku bersih · {sites} situs",
     "adherence_uncontexted": "Di luar konteks manapun",
-    "lane_coverage": "Cakupan"
+    "lane_coverage": "Cakupan",
+    "codex_contents": "Daftar isi"
   },
   "registry_coverage": {
     "catalog_generated": "Katalog dibuat",

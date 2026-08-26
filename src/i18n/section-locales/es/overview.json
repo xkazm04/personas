@@ -150,7 +150,8 @@
       "trail_handled_total": "resueltas sin ti",
       "trail_most_recent": "más reciente",
       "trail_sources": "fuentes"
-    }
+    },
+    "kpi_autonomous": "Autónomo"
   },
   "observability": {
     "title": "Observabilidad",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "Aún no hay un scorecard de census para este repositorio.",
     "adherence_predicate": "{clean} de {applicable} contextos aplicables limpios · {sites} sitios",
     "adherence_uncontexted": "Fuera de cualquier contexto",
-    "lane_coverage": "Cobertura"
+    "lane_coverage": "Cobertura",
+    "codex_contents": "Contenido"
   },
   "registry_coverage": {
     "catalog_generated": "Catálogo generado",

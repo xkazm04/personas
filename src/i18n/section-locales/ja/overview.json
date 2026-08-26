@@ -150,7 +150,8 @@
       "trail_handled_total": "件を自動処理",
       "trail_most_recent": "最新",
       "trail_sources": "ソース"
-    }
+    },
+    "kpi_autonomous": "自律"
   },
   "observability": {
     "title": "オブザーバビリティ",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "このリポジトリのcensusスコアカードはまだありません。",
     "adherence_predicate": "対象{applicable}件中{clean}件のコンテキストがクリーン · {sites}サイト",
     "adherence_uncontexted": "コンテキスト外",
-    "lane_coverage": "カバレッジ"
+    "lane_coverage": "カバレッジ",
+    "codex_contents": "目次"
   },
   "registry_coverage": {
     "catalog_generated": "カタログ生成日時",

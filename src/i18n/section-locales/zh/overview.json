@@ -150,7 +150,8 @@
       "trail_handled_total": "件已自动处理",
       "trail_most_recent": "最近",
       "trail_sources": "个来源"
-    }
+    },
+    "kpi_autonomous": "自主"
   },
   "observability": {
     "title": "可观测性",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "此仓库尚无 census 评分记录。",
     "adherence_predicate": "{applicable} 个适用上下文中 {clean} 个合规 · {sites} 个匹配点",
     "adherence_uncontexted": "不属于任何上下文",
-    "lane_coverage": "覆盖率"
+    "lane_coverage": "覆盖率",
+    "codex_contents": "目录"
   },
   "registry_coverage": {
     "catalog_generated": "目录已生成",

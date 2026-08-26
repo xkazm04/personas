@@ -6398,7 +6398,8 @@
         "trail_handled_total": "건을 대신 처리",
         "trail_most_recent": "가장 최근",
         "trail_sources": "소스"
-      }
+      },
+      "kpi_autonomous": "자율"
     },
     "observability": {
       "title": "관측성",
@@ -8296,7 +8297,8 @@
       "adherence_no_scorecard": "이 저장소에 대한 census 스코어카드가 아직 없습니다.",
       "adherence_predicate": "적용 대상 {applicable}개 컨텍스트 중 {clean}개 클린 · {sites}개 사이트",
       "adherence_uncontexted": "컨텍스트 밖",
-      "lane_coverage": "커버리지"
+      "lane_coverage": "커버리지",
+      "codex_contents": "목차"
     },
     "registry_coverage": {
       "catalog_generated": "카탈로그 생성됨",

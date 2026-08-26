@@ -6622,6 +6622,7 @@ export type Translations = {
         trail_most_recent: string;
         trail_sources: string;
       };
+      kpi_autonomous: string;
     };
     observability: {
       title: string;
@@ -8520,6 +8521,7 @@ export type Translations = {
       adherence_col_rules: string;
       adherence_more_rules: string;
       adherence_uncontexted: string;
+      codex_contents: string;
     };
     registry_coverage: {
       multiple_note: string;

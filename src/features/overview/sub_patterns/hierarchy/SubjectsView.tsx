@@ -15,9 +15,7 @@ import { useSystemStore } from '@/stores/systemStore';
 
 import { CorpusWarningsBadge } from './CorpusWarningsBadge';
 import { DocViewer } from './DocViewer';
-import { SubjectsAtlas } from './variants/SubjectsAtlas';
 import { SubjectsCodex } from './variants/SubjectsCodex';
-import { SubjectsConsole } from './variants/SubjectsConsole';
 import type { SubjectsVariantProps } from './variants/shared';
 import {
   buildHierarchyIndex,
@@ -28,8 +26,7 @@ import {
 } from './hierarchyModel';
 import { initialHierarchyProjectId, persistHierarchyProjectId } from './projectSource';
 import { subjectScoreMap } from './scorecardModel';
-import { SubjectDetail, type DetailFocus } from './SubjectDetail';
-import { SubjectRail } from './SubjectRail';
+import type { DetailFocus } from './variants/shared';
 import { useHierarchyGraph } from './useHierarchyGraph';
 import { useHierarchyScorecard } from './useHierarchyScorecard';
 
@@ -38,17 +35,6 @@ import { useHierarchyScorecard } from './useHierarchyScorecard';
  *  personas layout when the graph is absent; a registry-shaped corpus carries
  *  `_laws.md` inside its bundle (`source.corpusRel`). */
 const LAWS_FILE_FALLBACK = 'docs/concepts/paths/_laws.md';
-
-/** PROTOTYPE SCAFFOLD (/prototype 2026-08-24) — design-variant switcher.
- *  Throwaway: consolidation keeps the winner as the sole render and deletes
- *  this strip plus the loser files. Labels deliberately not i18n'd. */
-type DesignVariant = 'baseline' | 'codex' | 'atlas' | 'console';
-const VARIANT_TABS: { id: DesignVariant; label: string }[] = [
-  { id: 'baseline', label: 'Baseline' },
-  { id: 'codex', label: 'Codex' },
-  { id: 'atlas', label: 'Atlas' },
-  { id: 'console', label: 'Console' },
-];
 
 export function SubjectsView() {
   const { t, tx } = useTranslation();
@@ -78,7 +64,7 @@ export function SubjectsView() {
     persistHierarchyProjectId(id);
   }, []);
 
-  const { graph, loading, error, refetch } = useHierarchyGraph(projectId);
+  const { graph, error, refetch } = useHierarchyGraph(projectId);
   // OPTIONAL census signal — the whole lane renders fully without it.
   const { scorecard } = useHierarchyScorecard(projectId);
   const adherence = useMemo(() => subjectScoreMap(scorecard), [scorecard]);
@@ -96,7 +82,6 @@ export function SubjectsView() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [focus, setFocus] = useState<DetailFocus | null>(null);
   const [docViewer, setDocViewer] = useState<{ file: string; anchor: string | null } | null>(null);
-  const [designVariant, setDesignVariant] = useState<DesignVariant>('baseline');
 
   // Default selection: first subject of the first group once the graph lands
   // (and re-validate when the project switches away from the current slug).
@@ -145,11 +130,6 @@ export function SubjectsView() {
       return true;
     },
     [graph, addToast, p.link_not_in_hierarchy],
-  );
-
-  const selectedSubject = useMemo(
-    () => (graph && selectedSlug ? graph.subjects.find((s) => s.slug === selectedSlug) ?? null : null),
-    [graph, selectedSlug],
   );
 
   const projectOptions = useMemo(
@@ -226,24 +206,6 @@ export function SubjectsView() {
 
         {graph && <CorpusWarningsBadge warnings={graph.warnings} />}
 
-        {/* PROTOTYPE SCAFFOLD — variant switcher (throwaway, see above). */}
-        <div className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border/50 bg-secondary/30 p-0.5">
-          {VARIANT_TABS.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => setDesignVariant(v.id)}
-              aria-pressed={designVariant === v.id}
-              className={`typo-caption rounded-interactive px-2 py-1 transition-colors ${
-                designVariant === v.id
-                  ? 'bg-primary/15 text-foreground font-medium'
-                  : 'text-foreground/60 hover:text-foreground'
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* A fetch failure with a warm copy keeps the warm copy under an honest
@@ -280,46 +242,10 @@ export function SubjectsView() {
             description={graph?.source.reason ?? p.empty_graph_desc}
           />
         </div>
-      ) : designVariant !== 'baseline' && variantProps ? (
-        designVariant === 'codex' ? (
-          <SubjectsCodex {...variantProps} />
-        ) : designVariant === 'atlas' ? (
-          <SubjectsAtlas {...variantProps} />
-        ) : (
-          <SubjectsConsole {...variantProps} />
-        )
+      ) : variantProps ? (
+        <SubjectsCodex {...variantProps} />
       ) : (
-        <div className="flex-1 min-h-0 flex rounded-card border border-border/40 bg-background/40 overflow-hidden">
-          <SubjectRail
-            groups={groups}
-            selectedSlug={selectedSlug}
-            onSelect={selectSubject}
-            matchMap={matchMap}
-            loading={loading && !graph}
-            adherence={adherence}
-          />
-          {selectedSubject && graph && projectId ? (
-            <SubjectDetail
-              key={selectedSubject.slug}
-              projectId={projectId}
-              graph={graph}
-              subject={selectedSubject}
-              scorecard={scorecard}
-              score={adherence?.get(selectedSubject.slug) ?? null}
-              focus={focus}
-              onLinkHref={handleLinkHref}
-              onSelectSubject={selectSubject}
-              onOpenDoc={(file, anchor) => setDocViewer({ file, anchor })}
-              onOpenLaw={(lawId) => setDocViewer({ file: lawsFile, anchor: lawId })}
-            />
-          ) : (
-            <div className="flex-1 min-w-0 flex items-center justify-center">
-              {!loading && graph && (
-                <p className="typo-body text-foreground">{p.select_subject_hint}</p>
-              )}
-            </div>
-          )}
-        </div>
+        <div className="flex-1 min-h-0 flex rounded-card border border-border/40 bg-background/40 overflow-hidden" />
       )}
 
       {docViewer && projectId && (

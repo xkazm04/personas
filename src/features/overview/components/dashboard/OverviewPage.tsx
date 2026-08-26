@@ -21,7 +21,7 @@ const EventLogList = lazyRetry(() => import('@/features/overview/sub_events/comp
 // navigation now, so each view is routed directly.
 const MemoriesPage = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPage'));
 const PatternsPanel = lazyRetry(() => import('@/features/overview/sub_patterns/PatternsPanel'));
-const KnowledgeGraphDashboard = lazyRetry(() => import('@/features/overview/sub_knowledge'));
+// The 'extracted' tab (execution-extracted knowledge graph) was retired 2026-08-26.
 const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPageGraph'));
 // The former Reliability (SLA), Health and Leaderboard tabs were consolidated
 // into Mission Control (2026-08-25) — their best sections render there now.
@@ -74,7 +74,6 @@ function OverviewContent() {
           overviewTab === 'events' ? <EventLogList /> :
           overviewTab === 'memories' ? <MemoriesPage /> :
           overviewTab === 'patterns' ? <PatternsPanel /> :
-          overviewTab === 'extracted' ? <KnowledgeGraphDashboard /> :
           overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
           overviewTab === 'director' ? <DirectorCoachingTab /> :
           overviewTab === 'certification' ? <CertificationCommandCenter /> :

@@ -6398,7 +6398,8 @@
         "trail_handled_total": "được xử lý thay bạn",
         "trail_most_recent": "gần nhất",
         "trail_sources": "nguồn"
-      }
+      },
+      "kpi_autonomous": "Tự động"
     },
     "observability": {
       "title": "Khả năng quan sát",
@@ -8296,7 +8297,8 @@
       "adherence_no_scorecard": "Chưa có bảng điểm census cho repository này.",
       "adherence_predicate": "{clean}/{applicable} bối cảnh áp dụng được sạch · {sites} vị trí",
       "adherence_uncontexted": "Ngoài mọi bối cảnh",
-      "lane_coverage": "Độ phủ"
+      "lane_coverage": "Độ phủ",
+      "codex_contents": "Mục lục"
     },
     "registry_coverage": {
       "catalog_generated": "Danh mục đã tạo",

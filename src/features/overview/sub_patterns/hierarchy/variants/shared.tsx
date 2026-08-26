@@ -30,7 +30,11 @@ import type { SubjectScore } from '@/lib/bindings/SubjectScore';
 import { silentCatch } from '@/lib/silentCatch';
 
 import type { CategoryGroup, SubjectMatchInfo } from '../hierarchyModel';
-import type { DetailFocus } from '../SubjectDetail';
+
+/** Cross-link target inside the selected subject (a chapter or a worked example). */
+export type DetailFocus =
+  | { kind: 'technique'; technique: string }
+  | { kind: 'application'; file: string };
 
 /** Semantic stack-badge tones — tokens only, one small map, neutral fallback. */
 export const STACK_CLASSES: Record<string, string> = {

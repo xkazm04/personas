@@ -420,7 +420,8 @@ export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" 
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
 // "sla" | "health" | "leaderboard" were retired 2026-08-25: those tabs were
 // consolidated into Mission Control ("home").
-export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "memories" | "patterns" | "extracted" | "memory-graph" | "director" | "certification";
+// "extracted" was retired 2026-08-26 (the execution-extracted knowledge graph page).
+export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "memories" | "patterns" | "memory-graph" | "director" | "certification";
 export type TemplateTab = "n8n" | "generated" | "explore" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "devices" | "admin" | "api-keys" | "history" | "limits";

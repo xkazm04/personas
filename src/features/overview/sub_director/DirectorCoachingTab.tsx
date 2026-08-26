@@ -167,14 +167,17 @@ export default function DirectorCoachingTab() {
              field instead of whatever the photo happens to be behind it. No
              backdrop-blur (WebView2 flicker; see the ContentHeader note). */
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-full max-w-xl rounded-modal border border-primary/15 bg-secondary/60 shadow-elevation-3 px-6 py-8">
-              <EmptyState
-                glyph={COACHING_GLYPH}
-                title={t.director.empty_title}
-                subtitle={t.director.empty_subtitle}
-                action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}
-              />
-            </div>
+            <EmptyState
+              glyph={COACHING_GLYPH}
+              title={t.director.empty_title}
+              action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}
+            >
+              {/* Only the description sits on the darker card — glyph, title
+                  and CTA stay on the stage. */}
+              <p className="typo-body-lg text-foreground max-w-[44ch] rounded-modal border border-primary/15 bg-secondary/60 shadow-elevation-2 px-5 py-4">
+                {t.director.empty_subtitle}
+              </p>
+            </EmptyState>
           </div>
         ) : (
           <div className="space-y-4 pb-6">

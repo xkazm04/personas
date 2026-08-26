@@ -45,7 +45,6 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['knowledge', sb.knowledge],
     ['memories', sb.memories],
     ['patterns', sb.patterns],
-    ['extracted', sb.extracted],
     // Deliberately NOT keyed 'graph' — that id already means "Dependencies"
     // under Connections and this map is global across sections.
     ['memory-graph', sb.memory_graph],

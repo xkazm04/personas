@@ -150,7 +150,8 @@
       "trail_handled_total": "ohne dich erledigt",
       "trail_most_recent": "zuletzt",
       "trail_sources": "Quellen"
-    }
+    },
+    "kpi_autonomous": "Autonom"
   },
   "observability": {
     "title": "Beobachtbarkeit",
@@ -2048,7 +2049,8 @@
     "adherence_no_scorecard": "Für dieses Repository liegt noch keine Census-Bewertung vor.",
     "adherence_predicate": "{clean} von {applicable} zutreffenden Kontexten sauber · {sites} Stellen",
     "adherence_uncontexted": "Außerhalb jedes Kontexts",
-    "lane_coverage": "Abdeckung"
+    "lane_coverage": "Abdeckung",
+    "codex_contents": "Inhalt"
   },
   "registry_coverage": {
     "catalog_generated": "Katalog erstellt",

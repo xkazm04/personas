@@ -6398,7 +6398,8 @@
         "trail_handled_total": "आपके बिना संभाला गया",
         "trail_most_recent": "सबसे हालिया",
         "trail_sources": "स्रोत"
-      }
+      },
+      "kpi_autonomous": "स्वायत्त"
     },
     "observability": {
       "title": "अवलोकनशीलता",
@@ -8296,7 +8297,8 @@
       "adherence_no_scorecard": "इस रिपॉज़िटरी के लिए अभी तक कोई census स्कोरकार्ड नहीं है।",
       "adherence_predicate": "{applicable} में से {clean} लागू संदर्भ स्वच्छ · {sites} साइटें",
       "adherence_uncontexted": "किसी संदर्भ से बाहर",
-      "lane_coverage": "कवरेज"
+      "lane_coverage": "कवरेज",
+      "codex_contents": "विषय-सूची"
     },
     "registry_coverage": {
       "catalog_generated": "कैटलॉग जनरेट किया गया",

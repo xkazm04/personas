@@ -60,13 +60,28 @@ export function filterByTier<T extends { minTier?: Tier; simpleHidden?: boolean 
   });
 }
 
-export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> = [
-  { id: 'welcome', icon: Compass, label: 'Welcome' },
+// Home L2 tabs. `devOnly` rows are hidden from production builds and rendered
+// with the golden dev ring in DEV (see the `overview` case in SidebarLevel2) so
+// they read as "not user-facing yet". The list itself stays complete in every
+// build — `useBreadcrumbTrail` resolves labels from it, and filtering happens at
+// the render site, not here.
+export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string; devOnly?: boolean }> = [
+  { id: 'welcome', icon: Compass, label: 'Welcome', devOnly: true },
   { id: 'cockpit', icon: GaugeIcon, label: 'Cockpit' },
   { id: 'learning', icon: GraduationCap, label: 'Learning' },
-  { id: 'roadmap', icon: Map, label: "What's New" },
-  ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
+  { id: 'roadmap', icon: Map, label: "What's New", devOnly: true },
+  { id: 'system-check', icon: Monitor, label: 'System Check', devOnly: true },
 ];
+
+/** The Home tab a production build lands on — the first non-`devOnly` row. */
+export const DEFAULT_HOME_TAB: HomeTab = 'cockpit';
+
+/** True when `tab` is visible in this build (dev-only rows exist only in DEV). */
+export function isHomeTabAvailable(tab: HomeTab): boolean {
+  const item = homeItems.find((i) => i.id === tab);
+  if (!item) return false;
+  return !item.devOnly || import.meta.env.DEV;
+}
 
 export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean; devOnly?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
@@ -85,7 +100,6 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   // Connections, and the shared label map is keyed by id.
   { id: 'memories', icon: Brain, label: 'Memories', minTier: TIERS.TEAM },
   { id: 'patterns', icon: Library, label: 'Patterns', minTier: TIERS.TEAM },
-  { id: 'extracted', icon: Network, label: 'Extracted', minTier: TIERS.TEAM },
   { id: 'memory-graph', icon: GitFork, label: 'Graph', minTier: TIERS.TEAM },
   // Reliability (SLA), Health and Leaderboard were consolidated into the
   // Mission Control dashboard on 2026-08-25 — their best sections (daily
@@ -231,7 +245,7 @@ export interface SidebarItemGroupDef {
 export const overviewGroups: SidebarItemGroupDef[] = [
   { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
   { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'certification', 'director', 'incidents', 'messages'] },
-  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'extracted', 'memory-graph'] },
+  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'memory-graph'] },
 ];
 
 /** Home → a single group holding every home tab. */

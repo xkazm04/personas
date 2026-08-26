@@ -347,7 +347,10 @@ function ColumnHeader<T>({
 
   return (
     <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
-      <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
+      {/* Same typo-label the filter-bearing headers get from their filter
+          component's trigger — one header type scale across every column,
+          whether or not it filters. */}
+      <span className="typo-label text-foreground">{col.label}</span>
 
       {/* Sort icon */}
       {col.sortable && (
