@@ -107,6 +107,11 @@ pub fn adopt_team_preset(
     // every member — the default. The preview modal passes the user's
     // current selection here.
     roles: Option<Vec<String>>,
+    // Optional EXISTING team to add the members to — a dev project's own
+    // team, in practice, since a project owns exactly one. When set, no team
+    // row is created and the preset's team naming is skipped. Omit for the
+    // legacy standalone-team behaviour.
+    target_team_id: Option<String>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;
     team_preset_adopter::adopt_preset(
@@ -116,6 +121,7 @@ pub fn adopt_team_preset(
         language.as_deref(),
         parameter_overrides.as_ref(),
         roles.as_deref(),
+        target_team_id.as_deref(),
     )
 }
 

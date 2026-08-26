@@ -148,7 +148,9 @@ pub fn resolve_identity(pool: &DbPool, root_path: &str) -> Result<IdentityResolu
 
 /// Register a project at `root_path`: idempotent on an existing path, heals a
 /// moved repo through its marker, otherwise creates the row — and in every
-/// case leaves a current marker in the folder (best-effort).
+/// case guarantees the project owns exactly one team (see
+/// [`crate::project_team`]) and leaves a current marker in the folder
+/// (best-effort).
 #[allow(clippy::too_many_arguments)]
 pub fn register_project(
     pool: &DbPool,
@@ -173,6 +175,11 @@ pub fn register_project(
             team_id,
         )?,
     };
+    // A dev project automatically owns exactly one team. This is the live door
+    // for that invariant (the migration backfill is the other); it runs on
+    // re-registration too, so a project whose team was deleted heals here
+    // rather than at the next boot.
+    let project = crate::project_team::ensure_project_team(pool, &project)?;
     if let Err(e) = write_marker(Path::new(root_path), &project) {
         // A read-only or vanished folder must not fail registration — the
         // row is the authority; the marker is the breadcrumb.
@@ -225,6 +232,33 @@ mod tests {
             again.id, first.id,
             "same path → same project, no duplicate row"
         );
+    }
+
+    /// The one-team-per-project invariant's live door: `dev_tools_create_project`
+    /// goes through here, so a project created with no `team_id` must come back
+    /// already owning a team named after itself — and a second registration of
+    /// the same folder must not mint a second one.
+    #[test]
+    fn registration_gives_the_project_a_team_named_after_it() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("autoteam");
+        let project = register(&pool, "Autoteam", root.s());
+
+        let team_id = project.team_id.clone().expect("a team was created");
+        let team = crate::repos::resources::teams::get_by_id(&pool, &team_id).unwrap();
+        assert_eq!(team.name, "Autoteam");
+
+        let again = register(&pool, "Autoteam", root.s());
+        assert_eq!(again.team_id, project.team_id, "re-registration reuses it");
+        // `pool.conn(label)` rather than a bare `pool.get()`, and the count is
+        // read BY NAME — the same two rules production code follows.
+        let teams: i64 = crate::PoolExt::conn(&pool, "test:autoteam_count")
+            .unwrap()
+            .query_row("SELECT COUNT(*) AS n FROM persona_teams", [], |r| {
+                r.get("n")
+            })
+            .unwrap();
+        assert_eq!(teams, 1);
     }
 
     #[test]

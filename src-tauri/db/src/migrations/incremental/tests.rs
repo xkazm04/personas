@@ -1211,3 +1211,66 @@ fn numeric_repair_fixes_text_in_execution_columns_and_keeps_real_numbers() {
         .unwrap();
     assert_eq!(clean, (7, 9, 0.5, Some(1200), 33), "honest rows untouched");
 }
+
+/// A dev project registered before the one-team-per-project rule existed has
+/// `team_id` NULL; one whose team was later deleted has a **dangling** id (the
+/// column carries no FK). Both are the same defect from the reader's side, so
+/// the backfill must repair both, name each team after its own project, and
+/// converge — a second and third replay must not mint a second team.
+#[test]
+fn every_dev_project_owns_a_team_named_after_it_after_the_backfill() {
+    use crate::PoolExt;
+    let pool = crate::init_test_db().unwrap();
+    // `pool.conn(label)` rather than a bare `pool.get()` — the repo's own
+    // instrumented checkout (`connection-pool-pragmas`).
+    let conn = pool.conn("test:project_team_backfill").unwrap();
+    // Legacy shape: written directly, bypassing `register_project` (which is
+    // the live door for the invariant) exactly as a pre-rule install would.
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p-null', 'Personas', '/tmp/p-null');
+         INSERT INTO dev_projects (id, name, root_path, team_id) VALUES ('p-dangling', 'Brainiac', '/tmp/p-dangling', 'team-that-was-deleted');
+         INSERT INTO dev_projects (id, name, root_path) VALUES ('p-blank', '   ', '/tmp/p-blank');",
+    )
+    .unwrap();
+
+    run_incremental(&conn).expect("backfill must run");
+    // Replay twice more — the whole point of a self-probing step.
+    run_incremental(&conn).expect("2nd replay");
+    run_incremental(&conn).expect("3rd replay");
+
+    let team_of = |project: &str| -> (String, String) {
+        conn.query_row(
+            "SELECT t.id, t.name FROM dev_projects p JOIN persona_teams t ON t.id = p.team_id
+              WHERE p.id = ?1",
+            [project],
+            |r| Ok((r.get("id")?, r.get("name")?)),
+        )
+        .unwrap_or_else(|e| panic!("{project} has no resolvable team: {e}"))
+    };
+
+    assert_eq!(team_of("p-null").1, "Personas");
+    assert_eq!(team_of("p-dangling").1, "Brainiac");
+    assert_eq!(
+        team_of("p-blank").1,
+        "Project",
+        "a whitespace-only project name still yields a team the name validator accepts"
+    );
+
+    let unlinked: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM dev_projects p
+              WHERE p.team_id IS NULL OR TRIM(p.team_id) = ''
+                 OR NOT EXISTS (SELECT 1 FROM persona_teams t WHERE t.id = p.team_id)",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(unlinked, 0, "the step's own postcondition");
+
+    let teams: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM persona_teams", [], |r| {
+            r.get("n")
+        })
+        .unwrap();
+    assert_eq!(teams, 3, "three replays must mint exactly three teams");
+}

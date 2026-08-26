@@ -1576,6 +1576,12 @@ pub(crate) fn execute_register_project(
                 github,
                 None,
             )?;
+            // A dev project owns exactly one team (see `db::project_team`).
+            // This path builds the row through the repo rather than
+            // `project_identity::register_project`, so it closes the invariant
+            // itself — the boot backfill would otherwise be the first thing to
+            // notice, a whole app launch later.
+            let project = crate::db::project_team::ensure_project_team(&state.db, &project)?;
             // 3. Auto-launch the real context scan (Claude-CLI → dev_contexts) so
             //    the team's codebase tools return rich results. Best-effort: a
             //    bad path / missing CLI logs and continues; the project + codebase

@@ -1,11 +1,15 @@
-import { useCallback, useState } from 'react';
-import { CheckCircle2, CheckSquare, Layers, Loader2, RotateCcw, Settings2, Square, Users, Wrench, X, AlertCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, CheckSquare, FolderGit2, Layers, Loader2, RotateCcw, Settings2, Square, Users, Wrench, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { Collapse } from '@/features/shared/components/display/Collapse';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
+import type { AdoptedTeamPresetResult } from '@/lib/bindings/AdoptedTeamPresetResult';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { PresetGraphAdapter } from './PresetGraphAdapter';
 import {
@@ -19,6 +23,16 @@ interface PresetPreviewModalProps {
   preset: TeamPreset;
   onClose: () => void;
 }
+
+/**
+ * Sentinel for the "don't target a project" option — a preset adopted this way
+ * mints its own standalone team from the manifest, which is what every
+ * adoption did before projects owned their roster. Kept as a real option
+ * rather than removed: the engine + templates surfaces still exercise the
+ * legacy path, and a user with no dev projects registered needs somewhere to
+ * put a preset.
+ */
+const STANDALONE = '__standalone__';
 
 /**
  * Preview + adoption modal for a single TeamPreset manifest — the
@@ -35,13 +49,51 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
   const { t, tx } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
+  // ── Adoption target ────────────────────────────────────────────────────
+  // A dev project owns exactly one team, so "which project?" is the whole
+  // question — the team follows from it. Only projects that actually resolve a
+  // team can be targets; the boot backfill guarantees every project has one,
+  // but a row written by a build that predates it would otherwise offer a
+  // target the backend must reject.
+  const projects = useSystemStore((s) => s.projects);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  useEffect(() => {
+    if (projects.length === 0) void fetchProjects().catch(silentCatch('PresetPreviewModal:fetchProjects'));
+    // Cold-load once per open; the store is the cache for every later open.
+  }, [projects.length, fetchProjects]);
+
+  const targetableProjects = useMemo(
+    () => projects.filter((p) => !!p.team_id),
+    [projects],
+  );
+  // `null` = the user has not chosen, so follow the active project as it
+  // resolves. An explicit choice (including STANDALONE) sticks.
+  const [chosenTarget, setChosenTarget] = useState<string | null>(null);
+  const target =
+    chosenTarget ??
+    (activeProjectId && targetableProjects.some((p) => p.id === activeProjectId)
+      ? activeProjectId
+      : STANDALONE);
+  const targetTeamId =
+    target === STANDALONE
+      ? null
+      : (targetableProjects.find((p) => p.id === target)?.team_id ?? null);
+
   const a = usePresetAdoption(preset, {
-    onOpenTeam: useCallback(() => {
-      setSidebarSection('personas');
-      useSystemStore.getState().setSidebarSection('teams');
-      useSystemStore.getState().setTeamsTab('workspace');
-      onClose();
-    }, [setSidebarSection, onClose]),
+    targetTeamId,
+    onOpenTeam: useCallback(
+      (result: AdoptedTeamPresetResult) => {
+        // `teamsTab: 'workspace'` is detail-only — with no team selected it
+        // redirects back to Manage, so the selection must land first.
+        usePipelineStore.getState().selectTeam(result.team_id);
+        setSidebarSection('personas');
+        useSystemStore.getState().setSidebarSection('teams');
+        useSystemStore.getState().setTeamsTab('workspace');
+        onClose();
+      },
+      [setSidebarSection, onClose],
+    ),
   });
 
   const [customizing, setCustomizing] = useState(false);
@@ -84,7 +136,38 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
         <PresetGraphAdapter preset={preset} />
 
-        {preset.group && (
+        {/* Where the members land. Preview-stage only — once adoption starts
+            the target is decided and a live control would only invite a
+            change that cannot take effect. */}
+        {a.stage === 'preview' && (
+          <section
+            className="rounded-card border border-primary/10 bg-secondary/15 px-3 py-2 flex items-center gap-2.5"
+            data-testid="preset-target-picker"
+          >
+            <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: teamColor }} />
+            <span className="typo-label text-foreground flex-shrink-0">
+              {t.overview.events.project}
+            </span>
+            <ThemedSelect
+              filterable
+              hideSearch={targetableProjects.length <= 6}
+              wrapperClassName="flex-1 min-w-0"
+              aria-label={t.plugins.dev_tools.select_project}
+              placeholder={t.plugins.dev_tools.select_project}
+              value={target}
+              onValueChange={setChosenTarget}
+              options={[
+                ...targetableProjects.map((p) => ({ value: p.id, label: p.name })),
+                { value: STANDALONE, label: t.pipeline.new_team },
+              ]}
+            />
+          </section>
+        )}
+
+        {/* The manifest's workspace facet is only stamped when the preset
+            mints its own team — a project's team keeps its own instructions,
+            so don't promise a binding that additive mode deliberately skips. */}
+        {preset.group && !targetTeamId && (
           <section className="rounded-card border border-primary/10 bg-secondary/15 px-3 py-2 flex items-center gap-2">
             <Users
               className="w-3.5 h-3.5 flex-shrink-0"

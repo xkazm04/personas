@@ -32,6 +32,7 @@ mod e10_reports_rename;
 mod e11_persona_channel;
 mod e12_shared_event_routes;
 mod e13_execution_numeric_repair;
+mod e14_project_team_invariant;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -61,6 +62,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e11_persona_channel::run(conn)?;
     e12_shared_event_routes::run(conn)?;
     e13_execution_numeric_repair::run(conn)?;
+    e14_project_team_invariant::run(conn)?;
 
     Ok(())
 }

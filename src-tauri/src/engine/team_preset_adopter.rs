@@ -28,6 +28,16 @@
 //!      maps the role strings to the freshly-created member ids and
 //!      writes the edge.
 //!
+//! **Additive mode (`target_team_id`, 2026-08-26).** A dev project owns
+//! exactly one team, so adopting a preset "for a project" must ADD members to
+//! that team rather than mint a new named one. When `target_team_id` is
+//! `Some`, step 2 resolves the existing team instead of creating one, the
+//! preset's team/group NAMING and workspace stamping are skipped entirely (the
+//! target's own name and shared instructions belong to the project, not to the
+//! preset), and the empty-shell rollback below is disabled — you never delete a
+//! team you did not create. `None` keeps the legacy standalone behaviour that
+//! the engine + templates surfaces already depend on.
+//!
 //! Partial-success semantics:
 //!
 //!   The team itself is created in step 2 and never rolled back — even
@@ -195,6 +205,63 @@ fn persona_id_from_adopt_value(value: &serde_json::Value) -> Result<String, AppE
         })
 }
 
+/// Decide which team a preset's members land in — the one branch that
+/// separates additive adoption from the legacy standalone path.
+///
+/// `Some(team_id)` resolves that EXISTING team and mints nothing;
+/// `get_by_id` raising `NotFound` is the whole validation, because a caller
+/// must never be able to name a team into existence and adopting into a team
+/// that was deleted mid-flow has to fail loudly rather than silently create a
+/// replacement under the preset's name.
+///
+/// `None` creates the standalone shell from the manifest's team spec.
+///
+/// Extracted from `adopt_preset` so it can be tested against a real database:
+/// `adopt_preset` itself takes an `Arc<AppState>` no unit test can build.
+pub(crate) fn resolve_adoption_team(
+    db: &crate::db::DbPool,
+    preset: &TeamPreset,
+    target_team_id: Option<&str>,
+) -> Result<crate::db::models::PersonaTeam, AppError> {
+    match target_team_id {
+        Some(team_id) => team_repo::get_by_id(db, team_id),
+        None => team_repo::create(
+            db,
+            CreateTeamInput {
+                name: preset.team.name.clone(),
+                project_id: None,
+                parent_team_id: None,
+                description: preset.team.description.clone(),
+                canvas_data: None,
+                team_config: None,
+                icon: preset.icon.clone(),
+                color: preset
+                    .team
+                    .color
+                    .clone()
+                    .or_else(|| Some(preset.color.clone())),
+                enabled: Some(true),
+            },
+        ),
+    }
+}
+
+/// Whether an adoption in which every selected member failed should DELETE the
+/// team it was working against.
+///
+/// Only ever true for a shell this call created moments earlier and left
+/// empty. A team supplied by the caller (additive mode) is the project's
+/// roster: it may already hold members this adoption knows nothing about, and
+/// deleting it would cascade them away. The failure is still raised either
+/// way — this decides the cleanup, not the verdict.
+pub(crate) fn should_delete_empty_shell(
+    adding_to_existing_team: bool,
+    members_landed: usize,
+    failures: usize,
+) -> bool {
+    !adding_to_existing_team && members_landed == 0 && failures > 0
+}
+
 /// Run a preset's full adoption flow. `app` is optional so unit tests can
 /// invoke the adopter without a real Tauri AppHandle — when `None`, no
 /// progress events are emitted but the rest of the flow runs.
@@ -225,10 +292,22 @@ pub fn adopt_preset(
     // are wired only between members that BOTH landed, so deselecting an
     // endpoint silently drops its edges (existing endpoint-missing skip).
     roles_filter: Option<&[String]>,
+    // ADDITIVE MODE. `Some(team_id)` adds the preset's members to that
+    // EXISTING team — typically a dev project's own team, which is the only
+    // team a project has. No team row is minted and the preset's team naming
+    // is skipped. `None` is the legacy standalone path.
+    target_team_id: Option<&str>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
-    // Refuse a concurrent/double adoption of the same preset. The RAII handle
-    // releases the key on every return path below (including `?` early-returns).
-    let _inflight = ADOPT_INFLIGHT.guard(preset_id).ok_or_else(|| {
+    // Refuse a concurrent/double adoption of the same preset INTO THE SAME
+    // TARGET. The key carries the target because two projects adopting the
+    // same preset at once are independent operations — keying on the preset
+    // alone would fail one of them for no reason. The RAII handle releases the
+    // key on every return path below (including `?` early-returns).
+    let inflight_key = match target_team_id {
+        Some(t) => format!("{preset_id}->{t}"),
+        None => preset_id.to_string(),
+    };
+    let _inflight = ADOPT_INFLIGHT.guard(&inflight_key).ok_or_else(|| {
         AppError::RateLimited(format!(
             "Preset '{preset_id}' is already being adopted — wait for it to finish"
         ))
@@ -258,34 +337,33 @@ pub fn adopt_preset(
         );
     }
 
-    // 1. Team shell — created unconditionally so the user keeps it on
-    //    partial failure. The team IS the workspace now (Groups→Teams
-    //    consolidation): a manifest `group` spec folds its workspace
-    //    settings onto this team rather than creating a separate group.
-    let team = team_repo::create(
-        &state.db,
-        CreateTeamInput {
-            name: preset.team.name.clone(),
-            project_id: None,
-            parent_team_id: None,
-            description: preset.team.description.clone(),
-            canvas_data: None,
-            team_config: None,
-            icon: preset.icon.clone(),
-            color: preset
-                .team
-                .color
-                .clone()
-                .or_else(|| Some(preset.color.clone())),
-            enabled: Some(true),
-        },
-    )?;
+    // 1. The team the members land in.
+    //
+    //    ADDITIVE: resolve the caller's target. `get_by_id` raising NotFound
+    //    is the whole validation — a preset must never be able to invent a
+    //    team id, and adopting into a team that was deleted mid-flow has to
+    //    fail loudly rather than silently mint a replacement.
+    //
+    //    STANDALONE (legacy): create the shell unconditionally so the user
+    //    keeps it on partial failure. The team IS the workspace now
+    //    (Groups→Teams consolidation): a manifest `group` spec folds its
+    //    workspace settings onto this team rather than creating a group.
+    let adding_to_existing_team = target_team_id.is_some();
+    let team = resolve_adoption_team(&state.db, &preset, target_team_id)?;
 
     // 2. Optional workspace facet. When the manifest declares a `group`
     //    spec, stamp its shared instructions onto the team and anchor every
     //    adopted persona's `home_team_id` to this team. `home_team_id` ==
     //    the team id; `None` means the preset declared no workspace.
-    let home_team_id: Option<String> = if let Some(group_spec) = &preset.group {
+    //
+    //    ADDITIVE mode never stamps: the target team's shared instructions,
+    //    north star and name belong to the project that owns it, and a preset
+    //    dropped into it is a roster addition, not a re-configuration. The
+    //    members still anchor their `home_team_id` to the target — that is
+    //    what makes them the project's people rather than free-floating.
+    let home_team_id: Option<String> = if adding_to_existing_team {
+        Some(team.id.clone())
+    } else if let Some(group_spec) = &preset.group {
         if let Some(shared) = &group_spec.shared_instructions {
             let _ = team_repo::update(
                 &state.db,
@@ -485,12 +563,24 @@ pub fn adopt_preset(
     //     Roll back the shell and surface the failures loudly instead. (An
     //     empty `failures` with empty `members` means nothing was selected —
     //     not a failure — so guard on `!failures.is_empty()`.)
+    //
+    //     ADDITIVE mode never rolls back: the target team is the project's
+    //     roster and may already hold members this adoption knows nothing
+    //     about. You do not delete a team you did not create. The failure is
+    //     still raised — only the deletion is skipped.
     if members.is_empty() && !failures.is_empty() {
-        if let Err(e) = team_repo::delete(&state.db, &team.id) {
+        if should_delete_empty_shell(adding_to_existing_team, members.len(), failures.len()) {
+            if let Err(e) = team_repo::delete(&state.db, &team.id) {
+                tracing::warn!(
+                    team_id = %team.id,
+                    error = %e,
+                    "adopt_team_preset: failed to roll back empty team shell after all members failed"
+                );
+            }
+        } else {
             tracing::warn!(
                 team_id = %team.id,
-                error = %e,
-                "adopt_team_preset: failed to roll back empty team shell after all members failed"
+                "adopt_team_preset: every member failed against an existing team — nothing to roll back"
             );
         }
         let summary = failures
@@ -929,5 +1019,138 @@ mod tests {
             member_semantic_role(Some(r#"{"other":"x"}"#), "worker"),
             "worker"
         );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Additive-mode tests.
+//
+// `adopt_preset` itself takes an `Arc<AppState>` — a ~40-field struct with a
+// live engine, scheduler, session keypair and tokio handles — so no unit test
+// can call it. The two decisions that additive mode actually changes were
+// extracted (`resolve_adoption_team`, `should_delete_empty_shell`) precisely so
+// they can be exercised against a real database instead of being asserted only
+// by reading the code.
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod additive_mode_tests {
+    use super::*;
+    use crate::db::models::{TeamPresetGroupSpec, TeamPresetMember, TeamPresetTeamSpec};
+    use crate::db::repos::resources::teams as team_repo;
+
+    fn fixture_preset() -> TeamPreset {
+        TeamPreset {
+            id: "fixture".into(),
+            schema_version: 1,
+            name: "Fixture".into(),
+            description: "d".into(),
+            icon: None,
+            color: "#123456".into(),
+            category: vec![],
+            team: TeamPresetTeamSpec {
+                name: "Preset's Own Team Name".into(),
+                description: Some("preset description".into()),
+                color: Some("#abcdef".into()),
+            },
+            group: Some(TeamPresetGroupSpec {
+                name: "g".into(),
+                color: "#000000".into(),
+                shared_instructions: Some("preset instructions".into()),
+                north_star: None,
+            }),
+            members: vec![TeamPresetMember {
+                template_id: "t1".into(),
+                role: "capture".into(),
+                x: 0.0,
+                y: 0.0,
+            }],
+            connections: vec![],
+        }
+    }
+
+    /// Checks out through the db crate's instrumented `PoolExt::conn` and reads
+    /// the count BY NAME — the same two rules production code follows.
+    fn team_count(pool: &crate::db::DbPool) -> i64 {
+        crate::db::PoolExt::conn(pool, "test:preset_team_count")
+            .unwrap()
+            .query_row("SELECT COUNT(*) AS n FROM persona_teams", [], |r| {
+                r.get("n")
+            })
+            .unwrap()
+    }
+
+    /// The core of additive mode: adopting into a project's team resolves that
+    /// team and mints NOTHING. The preset's own team name never touches it.
+    #[test]
+    fn target_team_id_reuses_the_team_and_creates_no_row() {
+        let pool = crate::db::init_test_db().unwrap();
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Personas",
+            "/tmp/adopt-target",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let project = crate::db::project_team::ensure_project_team(&pool, &project).unwrap();
+        let team_id = project.team_id.clone().unwrap();
+        assert_eq!(team_count(&pool), 1);
+
+        let resolved =
+            resolve_adoption_team(&pool, &fixture_preset(), Some(team_id.as_str())).unwrap();
+
+        assert_eq!(resolved.id, team_id, "the project's own team");
+        assert_eq!(
+            resolved.name, "Personas",
+            "the preset must not rename the project's team"
+        );
+        assert_eq!(team_count(&pool), 1, "no second team was minted");
+    }
+
+    /// A caller cannot name a team into existence, and a team deleted between
+    /// the picker rendering and the adopt click must fail loudly.
+    #[test]
+    fn an_unknown_target_team_is_rejected_rather_than_created() {
+        let pool = crate::db::init_test_db().unwrap();
+        let err = resolve_adoption_team(&pool, &fixture_preset(), Some("no-such-team"))
+            .expect_err("must not invent a team");
+        assert!(
+            matches!(err, AppError::NotFound(_)),
+            "expected NotFound, got {err:?}"
+        );
+        assert_eq!(team_count(&pool), 0);
+    }
+
+    /// The legacy path is untouched: no target → a standalone team from the
+    /// manifest's own spec. Engine/templates surfaces still depend on this.
+    #[test]
+    fn no_target_still_creates_the_standalone_team_from_the_manifest() {
+        let pool = crate::db::init_test_db().unwrap();
+        let team = resolve_adoption_team(&pool, &fixture_preset(), None).unwrap();
+        assert_eq!(team.name, "Preset's Own Team Name");
+        assert_eq!(team.color, "#abcdef");
+        assert_eq!(team_count(&pool), 1);
+        // And it is a real row the members can be added to.
+        assert_eq!(team_repo::get_members(&pool, &team.id).unwrap().len(), 0);
+    }
+
+    /// You never delete a team you did not create. The all-members-failed
+    /// rollback exists to clean up a shell this call minted seconds earlier;
+    /// against a project's roster it would cascade away members the adoption
+    /// knows nothing about.
+    #[test]
+    fn the_empty_shell_rollback_never_touches_a_caller_supplied_team() {
+        // Standalone, everything failed → clean up the shell.
+        assert!(should_delete_empty_shell(false, 0, 3));
+        // Additive, everything failed → leave the project's team alone.
+        assert!(!should_delete_empty_shell(true, 0, 3));
+        // Partial success is not a rollback in either mode.
+        assert!(!should_delete_empty_shell(false, 2, 1));
+        assert!(!should_delete_empty_shell(true, 2, 1));
+        // Nothing selected (no members, no failures) is not a failure.
+        assert!(!should_delete_empty_shell(false, 0, 0));
     }
 }

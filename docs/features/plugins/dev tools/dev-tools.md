@@ -57,6 +57,23 @@ The tabs are sequenced so a new project can walk top-to-bottom exactly once, the
 4. A top-of-page **ProjectSelector** banner persists across every other tab so the active project is always visible. With zero projects it becomes a prompt → "Create Project" CTA; with one it collapses to a label; with many it becomes a dropdown.
 5. Each project row carries quick-action icons in the last column: **Open test environment** (when `test_env_url` is set), **Open in VS Code** (deep-links via the `vscode://file/<path>` URI handler — silently falls back if VS Code isn't installed), and **Open project folder** (`shell.open(path)` → OS file manager). All stop click propagation so they don't toggle row activation.
 6. **Bulk archive** — a leading checkbox column lets the user multi-select non-archived rows; the header checkbox toggles select-all-visible. When at least one row is selected, a sticky amber action bar appears above the table with a count + **Archive selected** button (loops `updateProject({ status: 'archived' })` per id and reports `Archived N` / `M failed` toasts). Archived rows render their checkbox disabled with an "Already archived" hint.
+> **Superseded (2026-08-26) — a project automatically owns exactly one team.**
+> Teams are no longer created by hand and no longer carry an independent name:
+> the team IS the project's roster (0..x members) and is named after the
+> project, because that is the label the legacy team surfaces (Channels, the
+> pipeline canvas) display. `dev_projects.team_id` is still the authority for
+> the link, but it is no longer an optional binding the operator picks:
+> `db::project_team::ensure_project_team` creates and links the team inside
+> `register_project` (so `dev_tools_create_project` can never produce a
+> teamless project), `dev_tools_update_project` renames the team whenever the
+> project is renamed, and the boot migration step
+> `dev_projects.one_team_per_project_backfill` converges every legacy row —
+> `team_id` NULL *or* dangling — on the next launch. Team presets adopt
+> **into** a project's team (see
+> [templates/08-team-presets.md](../../templates/08-team-presets.md#adopting-into-a-projects-team-additive-mode))
+> rather than minting a new named one. The step below describes the old
+> hand-bound model.
+
 8. **Bind a Team** (added 2026-05-22) — the project create/edit modal includes an optional **Bound Team** picker listing every `PersonaTeam` (pipeline). When set, the project row in the table shows a small color-stripe pill with the team's name inline. The binding is stored as `dev_projects.team_id` (nullable, no FK — orphan-tolerant per the same rationale as `use_case_id`); if the bound team is later deleted, the pill renders as a muted "team removed" label and the user can rebind. Stage 2 will surface the pipeline's canvas thumbnail + recent run summary inline in the project detail panel.
    > **Removed (2026-05):** a separate **Bind a Group** step (`dev_projects.group_id` → `PersonaGroup`) existed alongside the team binding until the Groups→Teams consolidation retired the PersonaGroup primitive. The team binding above is now the only project↔workspace binding; the group binding + its project-row pill were dropped and existing `dev_projects.group_id` values were re-pointed onto `team_id` by the migration.
 

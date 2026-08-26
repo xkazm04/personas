@@ -100,7 +100,8 @@ pub fn dev_tools_update_project(
     data_links: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
-    repo::update_project(
+    let renamed = name.is_some();
+    let updated = repo::update_project(
         &state.db,
         &id,
         name.as_deref(),
@@ -118,7 +119,16 @@ pub fn dev_tools_update_project(
         llm_tracking_credential_id.as_ref().map(|o| o.as_deref()),
         support_credential_id.as_ref().map(|o| o.as_deref()),
         data_links.as_ref().map(|o| o.as_deref()),
-    )
+    )?;
+    // A project's team carries the project's name (one team per project), so a
+    // rename here renames the roster too. Best-effort: the rename is already
+    // persisted, and a stale team label must not turn it into a failed call.
+    if renamed {
+        if let Err(e) = crate::db::project_team::sync_team_name(&state.db, &updated) {
+            tracing::warn!(project_id = %updated.id, error = %e, "could not sync the project's team name after rename");
+        }
+    }
+    Ok(updated)
 }
 
 /// Set or clear the project's standards & branching policy (Pipeline Stage 3).

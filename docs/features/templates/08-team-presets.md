@@ -44,11 +44,14 @@ Both surfaces show graph + per-member selection (toggle to include / exclude a
         │
         ▼ user clicks "Adopt N members" (label tracks the selection)
 adopt_team_preset IPC  (roles: Option<Vec<String>> — the selected subset,
-   or null to adopt every member)
+   or null to adopt every member;
+   target_team_id: Option<String> — an EXISTING team to add the members to)
         │
-        ├─ teams::create                (always — kept on partial failure)
-        ├─ if manifest has a `group` (workspace) spec: stamp the team's
-        │    shared_instructions + use the team as the members' home team
+        ├─ target_team_id set   → teams::get_by_id (NotFound if it's gone);
+        │    nothing is created and the manifest's team name is not used
+        ├─ target_team_id unset → teams::create    (kept on partial failure)
+        ├─ if manifest has a `group` (workspace) spec AND no target: stamp the
+        │    team's shared_instructions + use the team as the members' home team
         ├─ FOR each SELECTED member:
         │    instant_adopt_template_inner
         │    UPDATE personas.home_team_id (if the preset declared a workspace)
@@ -138,14 +141,44 @@ Invalid manifests are LOGGED (via `tracing::warn`) and SKIPPED by
 `list_presets` — one bad manifest doesn't take the whole gallery
 offline.
 
+## Adopting into a project's team (additive mode)
+
+A dev project automatically owns **exactly one team** — the team IS the
+project's roster, and it carries the project's own name. So "adopt this preset
+for project X" cannot mean "make a new team": it means **add these members to
+X's team**.
+
+`adopt_team_preset` takes an optional `target_team_id` for this. When it is
+set:
+
+- the team is **resolved, never created** — an unknown id is a `NotFound`, so a
+  caller can't name a team into existence;
+- the manifest's `team.name` / `team.color` and its `group` spec's
+  `shared_instructions` / `north_star` are **skipped entirely**. The target's
+  name and workspace settings belong to the project that owns it; a preset
+  dropped into it is a roster addition, not a re-configuration;
+- every adopted persona still anchors its `home_team_id` to the target — that
+  is what makes them the project's people;
+- the all-members-failed rollback is **disabled**. You never delete a team you
+  did not create, and the project's roster may already hold members this
+  adoption knows nothing about. The failure is still raised.
+
+Leaving `target_team_id` unset keeps the original standalone behaviour (a new
+team from the manifest), which the engine and templates surfaces still use.
+
+In the UI, the Presets preview modal shows a **project picker** above the
+member list. It defaults to the active project when one is set, and offers a
+"New Team" option for the standalone path.
+
 ## Partial-success semantics
 
 `adopt_team_preset` is explicitly not transactional across the
 whole flow — too many sub-IPCs to wrap in one tx. The contract:
 
-- **The team shell is created unconditionally.** Even if every member
-  fails, the user keeps the team so they can retry from the gallery
-  without losing the configured name/color.
+- **The team shell is created unconditionally** (standalone mode only). Even
+  if every member fails, the user keeps the team so they can retry from the
+  gallery without losing the configured name/color. In additive mode nothing
+  was created, so nothing is rolled back either.
 - **Each member adoption is independent.** A failure on member N
   doesn't abort member N+1; the failure is captured in
   `AdoptedTeamPresetResult.failed_members` with the underlying error

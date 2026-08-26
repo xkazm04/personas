@@ -85,12 +85,21 @@ export const adoptTeamPreset = (
   parameterOverrides: PresetParameterOverrides | null = null,
   /** Subset of manifest roles to adopt. `null` adopts every member. */
   roles: string[] | null = null,
+  /**
+   * ADDITIVE MODE. An existing team's id — in practice a dev project's own
+   * team, since a project owns exactly one. The preset's members are created
+   * and added INTO that team; no new team row is minted and the preset's team
+   * naming is skipped (the target's name belongs to the project). `null` keeps
+   * the legacy behaviour: a standalone team named by the manifest.
+   */
+  targetTeamId: string | null = null,
 ) =>
   invoke<AdoptedTeamPresetResult>("adopt_team_preset", {
     id,
     language: currentLanguage(),
     parameterOverrides,
     roles,
+    targetTeamId,
   });
 
 /**

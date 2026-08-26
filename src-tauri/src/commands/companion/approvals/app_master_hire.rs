@@ -428,6 +428,10 @@ fn ensure_project(
         url,
         None,
     )?;
+    // A dev project owns exactly one team (see `db::project_team`). The hire
+    // may later re-point `team_id` at the crew it forges; this guarantees the
+    // project is never teamless in between.
+    let project = crate::db::project_team::ensure_project_team(db, &project)?;
     // `create_project` cannot set `main_branch`; a second write does.
     if let Err(e) = repo::update_project(
         db,

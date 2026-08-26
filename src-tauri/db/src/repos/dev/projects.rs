@@ -225,6 +225,23 @@ pub fn update_root_path(pool: &DbPool, id: &str, root_path: &str) -> Result<DevP
     })
 }
 
+/// Link (or unlink) the project's team. Narrow on purpose: the one-team-per-
+/// project invariant in `crate::project_team` needs to write exactly this one
+/// column, and routing it through `update_project` would mean threading
+/// sixteen `None`s past a signature that is already at the argument limit.
+pub fn set_team_id(pool: &DbPool, id: &str, team_id: Option<&str>) -> Result<DevProject, AppError> {
+    timed_query!("dev_projects", "dev_projects::set_team_id", {
+        get_project_by_id(pool, id)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_projects SET team_id = ?2, updated_at = ?3 WHERE id = ?1",
+            params![id, team_id, now],
+        )?;
+        get_project_by_id(pool, id)
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn update_project(
     pool: &DbPool,

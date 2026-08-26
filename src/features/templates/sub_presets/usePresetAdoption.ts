@@ -38,6 +38,14 @@ interface UsePresetAdoptionOptions {
    * behaviour the original modal shipped with.
    */
   onOpenTeam?: (result: AdoptedTeamPresetResult) => void;
+  /**
+   * ADDITIVE MODE. When set, the preset's members are added INTO this
+   * existing team instead of a new standalone one — in practice a dev
+   * project's team, since a project owns exactly one. Read at adopt time via
+   * a ref, so a surface can let the user change the target while the preview
+   * is open without re-creating the state machine.
+   */
+  targetTeamId?: string | null;
 }
 
 /**
@@ -54,7 +62,7 @@ interface UsePresetAdoptionOptions {
  */
 export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOptions = {}) {
   const { t, tx } = useTranslation();
-  const { onOpenTeam } = opts;
+  const { onOpenTeam, targetTeamId = null } = opts;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
@@ -139,7 +147,12 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
       const overridePayload = Object.keys(overrides).length > 0 ? overrides : null;
       const rolesPayload =
         selectedRoles.size === preset.members.length ? null : Array.from(selectedRoles);
-      const res = await adoptTeamPreset(preset.id, overridePayload, rolesPayload);
+      const res = await adoptTeamPreset(
+        preset.id,
+        overridePayload,
+        rolesPayload,
+        targetTeamId,
+      );
       setResult(res);
       await Promise.all([
         fetchPersonas?.().catch(silentCatch('usePresetAdoption:fetchPersonas')),
@@ -173,7 +186,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     } finally {
       adoptingRef.current = false;
     }
-  }, [preset, overrides, selectedRoles, fetchPersonas, fetchTeams, addToast, t, tx]);
+  }, [preset, overrides, selectedRoles, targetTeamId, fetchPersonas, fetchTeams, addToast, t, tx]);
 
   const retry = useCallback(async () => {
     if (!result) return;
@@ -242,8 +255,11 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
       onOpenTeam(result);
       return;
     }
-    // Default: navigate the sidebar to Teams → workspace (the modal's
-    // original behaviour for the Templates surface).
+    // Default: navigate the sidebar to Teams → the adopted team's detail.
+    // `teamsTab: 'workspace'` is DETAIL-ONLY since the nav restructure — with
+    // no team selected it redirects straight back to Manage, so the selection
+    // has to land BEFORE the tab switch, not after.
+    if (result) usePipelineStore.getState().selectTeam(result.team_id);
     setSidebarSection('personas');
     useSystemStore.getState().setSidebarSection('teams');
     useSystemStore.getState().setTeamsTab('workspace');

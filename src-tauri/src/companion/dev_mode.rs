@@ -632,7 +632,15 @@ pub fn ensure_repo_registered(sys_db: &DbPool) {
                 None,
                 None,
             ) {
-                Ok(p) => tracing::info!(project_id = %p.id, "dev_mode: auto-registered the app repo as a Dev Tools project"),
+                // A dev project owns exactly one team (see `db::project_team`);
+                // best-effort here because auto-registration is itself
+                // best-effort and the boot backfill converges anything missed.
+                Ok(p) => {
+                    if let Err(e) = crate::db::project_team::ensure_project_team(sys_db, &p) {
+                        tracing::warn!(project_id = %p.id, error = %e, "dev_mode: could not create the project's team");
+                    }
+                    tracing::info!(project_id = %p.id, "dev_mode: auto-registered the app repo as a Dev Tools project");
+                }
                 Err(e) => tracing::warn!(error = %e, "dev_mode: repo auto-registration failed"),
             }
         }
