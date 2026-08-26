@@ -718,6 +718,31 @@ mod tests {
         let wt = prepare_authoring_worktree(repo.path(), &wt_root, "p", "fix the retry test", None)
             .await
             .unwrap();
+
+        // Sweep #23: a dispatch that authors NOTHING has a branch and no
+        // commits, and must not read as an opened proposal.
+        let pool = personas_db::init_test_db().unwrap();
+        let record = |branch: &str, commits: &[crate::app_master_gates::ProposalCommit]| {
+            let head = git_in(repo.path(), &["rev-parse", branch]).unwrap();
+            crate::app_master_gates::upsert_proposal(
+                &pool, "proj-wt", "p-1", branch, &head, None, commits,
+            )
+            .unwrap();
+        };
+        let (_, empty) = crate::app_master_gates::branch_commits(repo.path(), "main", &wt.branch)
+            .await
+            .unwrap();
+        assert!(empty.is_empty(), "nothing authored yet");
+        record(&wt.branch, &empty);
+        let counts = crate::app_master_gates::proposal_counts_since(
+            &pool,
+            "proj-wt",
+            Some("p-1"),
+            "2000-01-01T00:00:00+00:00",
+        )
+        .unwrap();
+        assert_eq!((counts.opened, counts.seen), (0, 1));
+
         // The worker commits, in its own worktree.
         std::fs::write(wt.path.join("retry.txt"), "fixed").unwrap();
         git_in(&wt.path, &["add", "retry.txt"]).unwrap();
@@ -741,6 +766,18 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["fix: the retry test"]
         );
+
+        // …and the work authored INSIDE the worktree is what the delivery
+        // reading counts, seen from the shared checkout.
+        record(&wt.branch, &commits);
+        let counts = crate::app_master_gates::proposal_counts_since(
+            &pool,
+            "proj-wt",
+            Some("p-1"),
+            "2000-01-01T00:00:00+00:00",
+        )
+        .unwrap();
+        assert_eq!((counts.opened, counts.seen), (1, 1));
 
         cleanup(&repo, &wt);
     }

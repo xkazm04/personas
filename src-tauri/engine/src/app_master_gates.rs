@@ -641,10 +641,20 @@ pub fn mark_gates_ran(pool: &DbPool, proposal_id: &str, at: &str) -> Result<(), 
     Ok(())
 }
 
-/// Merge / revert counts over a window.
+/// Opened / merge / revert counts over a window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProposalCounts {
-    /// Proposal branches first seen in the window.
+    /// Proposal branches first seen in the window that **carry at least one
+    /// commit** ahead of the project's main branch — the `proposalsOpened`
+    /// reading (bench sweep #23).
+    ///
+    /// A branch with no commits is not a proposal: `git switch -c` costs
+    /// nothing and delivers nothing, and the reconciler records such a branch
+    /// with an empty commit list precisely so this count can exclude it.
+    pub opened: i64,
+    /// Proposal branches first seen in the window, commit-less ones included.
+    /// The gap against [`Self::opened`] is itself a reading — a session that
+    /// created a branch and authored nothing on it.
     pub seen: i64,
     /// Of the project's proposals, how many merged **in** the window.
     pub merged: i64,
@@ -652,7 +662,7 @@ pub struct ProposalCounts {
     pub reverted: i64,
 }
 
-/// Count merges and reverts for the window.
+/// Count opened proposals, merges and reverts for the window.
 ///
 /// `None` when the project has **no proposal rows at all** — with no proposal
 /// ledger there is nothing to be right or wrong about, and a `0` would read in
@@ -661,7 +671,9 @@ pub struct ProposalCounts {
 ///
 /// The window is applied to the *observation* (`merged_at` / `reverted_at`),
 /// not to the proposal's first sighting: a branch opened last month and merged
-/// this month is this month's merge.
+/// this month is this month's merge. [`ProposalCounts::opened`] and
+/// [`ProposalCounts::seen`] are the exception and are windowed on
+/// `first_seen_at` — opening IS the observation there.
 ///
 /// `persona_id` narrows every count — including the "does a ledger exist at
 /// all" probe — to one holder. A brand-new hire on a project whose only
@@ -689,9 +701,14 @@ pub fn proposal_counts_since(
         return None;
     }
     let seen = count(" AND first_seen_at >= ?2").unwrap_or(0);
+    // A commit-less branch is recorded (so the reconciler stops re-gating it)
+    // but is NOT a proposal: `commits` is the captured commit list, `'[]'` when
+    // the branch carries nothing ahead of main.
+    let opened = count(" AND first_seen_at >= ?2 AND commits NOT IN ('', '[]')").unwrap_or(0);
     let merged = count(" AND merged_at IS NOT NULL AND merged_at >= ?2").unwrap_or(0);
     let reverted = count(" AND reverted_at IS NOT NULL AND reverted_at >= ?2").unwrap_or(0);
     Some(ProposalCounts {
+        opened,
         seen,
         merged,
         reverted,
@@ -1883,7 +1900,10 @@ mod tests {
         )
         .unwrap();
         let mine = proposal_counts_since(&pool, "proj-prop", Some("p-new"), month).unwrap();
-        assert_eq!((mine.seen, mine.merged, mine.reverted), (1, 0, 0));
+        assert_eq!(
+            (mine.opened, mine.seen, mine.merged, mine.reverted),
+            (1, 1, 0, 0)
+        );
     }
 
     #[test]
@@ -2007,6 +2027,98 @@ mod tests {
         assert_eq!(counts.merged, 0);
         assert_eq!(counts.reverted, 0);
         assert_eq!(counts.seen, 1);
+        assert_eq!(counts.opened, 1, "authored, with a commit on it");
+    }
+
+    /// Bench sweep #23 (2026-08-26): `proposalsOpened` counts authored
+    /// BRANCHES, and a branch nobody committed to is not one. `git switch -c`
+    /// costs nothing and delivers nothing.
+    #[test]
+    fn a_commit_less_branch_is_not_an_opened_proposal() {
+        let pool = init_test_db().unwrap();
+        // The reconciler still RECORDS it — that is how it stops re-gating the
+        // same empty branch every tick — with an empty commit list.
+        upsert_proposal(
+            &pool,
+            "proj-open",
+            "p-1",
+            "autopilot/empty",
+            "sha-main",
+            Some("sha-main"),
+            &[],
+        )
+        .unwrap();
+        let counts =
+            proposal_counts_since(&pool, "proj-open", Some("p-1"), "2000-01-01T00:00:00+00:00")
+                .unwrap();
+        assert_eq!(counts.seen, 1, "the branch exists and was seen");
+        assert_eq!(counts.opened, 0, "…and nothing was authored on it");
+
+        // A commit lands on the same branch: now it is a proposal.
+        upsert_proposal(
+            &pool,
+            "proj-open",
+            "p-1",
+            "autopilot/empty",
+            "sha-1",
+            Some("sha-main"),
+            &[c("sha-1", "fix: real work")],
+        )
+        .unwrap();
+        let counts =
+            proposal_counts_since(&pool, "proj-open", Some("p-1"), "2000-01-01T00:00:00+00:00")
+                .unwrap();
+        assert_eq!((counts.opened, counts.seen), (1, 1));
+    }
+
+    /// `opened` is windowed on the sighting, and the window is the holder's
+    /// tenure (§11.4.1) — a predecessor's branch is not this hire's delivery.
+    #[test]
+    fn opened_is_windowed_to_the_holders_tenure() {
+        let pool = init_test_db().unwrap();
+        let seen_at = |branch: &str, at: &str| {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE app_master_proposals SET first_seen_at = ?3
+                     WHERE project_id = ?1 AND branch = ?2",
+                    params!["proj-win", branch, at],
+                )
+                .unwrap();
+        };
+        upsert_proposal(
+            &pool,
+            "proj-win",
+            "p-1",
+            "autopilot/before",
+            "sha-b",
+            None,
+            &[c("sha-b", "fix: b")],
+        )
+        .unwrap();
+        seen_at("autopilot/before", "2026-08-01T00:00:00+00:00");
+        upsert_proposal(
+            &pool,
+            "proj-win",
+            "p-1",
+            "autopilot/after",
+            "sha-a",
+            None,
+            &[c("sha-a", "fix: a")],
+        )
+        .unwrap();
+        seen_at("autopilot/after", "2026-08-20T00:00:00+00:00");
+
+        let count_since = |since: &str| {
+            proposal_counts_since(&pool, "proj-win", Some("p-1"), since)
+                .unwrap()
+                .opened
+        };
+        assert_eq!(count_since("2026-08-01T00:00:00+00:00"), 2);
+        // Hired mid-month: only the branch authored under this hire counts.
+        assert_eq!(count_since("2026-08-15T00:00:00+00:00"), 1);
+        // A window that opens after both is a real 0 — the ledger exists.
+        assert_eq!(count_since("2026-09-01T00:00:00+00:00"), 0);
     }
 
     #[test]

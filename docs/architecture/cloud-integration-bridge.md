@@ -891,7 +891,8 @@ hire onwards". What is real today, and what is not:
 
 | Field | State | Source / why |
 | --- | --- | --- |
-| `proposalsOpened` | **real** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` **since the hire** (§11.4.1; the table carries no actor column, so the window is the whole attribution). Each dispatch carries the branch-only guardrail, so this counts sessions dispatched to author a branch — not branches confirmed on a remote. `None` when the engine has not run for the project (no ledger, not zero). |
+| `proposalsOpened` | **real (P6o)** | `COUNT` over `app_master_proposals` for **this persona** of branches whose `first_seen_at` falls in the tenure window **and that carry at least one commit** ahead of the project's main branch. Delivery is counted from what the reconciler observed to exist, never from what was launched. `None` **only** when this holder has no proposal row at all — the same rule as `proposalsMerged`. **It may lag `sessionsDispatched`**: the reconciler is a 30-minute tick and the dispatch is asynchronous, so between a night and the next settle there are sessions launched and no branches recorded yet. Under-reporting delivery until the observation is made is the correct direction of error. |
+| `sessionsDispatched` | **real (P6o)** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` **since the hire** (§11.4.1; the table carries no actor column, so the window is the whole attribution). A **launch** count and nothing more — it says the engine spawned workers under the branch-only guardrail, not that any of them authored anything. It feeds **no** delivery rule on kp's side; it exists so the gap against `proposalsOpened` stays visible. `None` when the engine has not run for the project (no ledger, not zero). |
 | `proposalsMerged` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `merged_at` falls in the tenure window. Set by the reconciler when `git merge-base --is-ancestor <branch> <main_branch>` says the tip landed; the date is the committer date of the earliest main-branch commit that descends from it. `None` **only** when this holder has no proposal row at all — with no ledger there is nothing to be right about. Once one of its proposals exists, `0` is a real reading. |
 | `proposalsReverted` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `reverted_at` falls in the tenure window. A merged proposal is reverted when a later main-branch commit says `Revert "<subject>"` or `This reverts commit <sha>` about one of the commits captured on the branch at discovery. Same `None` rule. |
 | `gatePassRate` | **real (P5a)** | `passed / (passed + failed)` over **this persona's** `app_master_gate_runs` in the tenure window — runs of the repository's **own declared gate commands** against proposal branches. A command that timed out or could not be spawned is recorded `did_not_run` and sits in **neither** half. `None` when no gate command ran in the window, including the *not configured* case (a mandate that declares none), which is not a pass. |
@@ -956,6 +957,42 @@ start, `headless_incomplete_streak`, `probation_decided_at` and the pending
 review id. Inheriting the streak would let a fresh hire be retired on its first
 `incomplete` because its predecessor had already been extended once.
 
+#### 11.4.2 Delivery counts what exists, not what was launched
+
+> Found by **bench sweep #23 (2026-08-26, `systedo-case`)**, fixed the same day.
+
+The night dispatched one worker. The worker did the right thing: it read the
+seeded task, found the variable already listed (commented) in `.env.example`,
+concluded there was nothing to do, and authored **nothing** — no branch, no
+commit. The App-master rollup still reported `proposalsOpened: 1`, because P4
+had defined that field as `SUM(dispatched_count)` over `autopilot_night_runs`.
+kp's `delivery` rule reads `proposalsOpened`, so the scenario's
+`minProposalsOpened >= 1` passed on a night that delivered nothing. The
+backbone's delivery rule was lying in the agent's favour.
+
+**A dispatched session is not an opened proposal, and a commit-less branch is
+not one either.** `proposalsOpened` is now a `COUNT` over `app_master_proposals`
+— the ledger the reconciler (§12) maintains — of branches this holder's tenure
+window first saw carrying **at least one commit** ahead of the project's main
+branch. `git switch -c` costs nothing and delivers nothing, so the reconciler
+records such a branch (to stop re-gating it) with an empty commit list and the
+count excludes it. `proposalsMerged` and `proposalsReverted` are unchanged: all
+three delivery numbers now come from the same observed branches.
+
+The launch count did not disappear — it is reported honestly, under its own
+name, as the additive `sessionsDispatched`, and it feeds **no** delivery rule.
+
+**`proposalsOpened` may lag `sessionsDispatched`, and that is correct.** The
+reconciler is a 30-minute tick and the dispatch is asynchronous, so between a
+night's dispatch and the next settle there are sessions launched and no branches
+recorded yet. Until the observation is made the rollup under-reports delivery —
+the opposite direction of error from the one sweep #23 found, and the only one
+worth having.
+
+Branches authored in a P6n unattended **worktree** are counted: branches are
+repository-global, so `for-each-ref` in the shared checkout sees them. Pinned by
+`unattended_worktree::tests::a_worktree_authored_branch_is_visible_to_the_reconciler`,
+which now carries the ledger assertion too.
 
 ### 11.5 Probation review
 
@@ -1183,9 +1220,11 @@ app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
   installing into the worktree — is the larger blast radius this section
   refuses. A gate that writes to `target/` will also serialise against a build
   running in the source checkout via cargo's own lock.
-- **A proposal that never becomes a local branch is never seen.** The dispatch
-  ledger still counts it under `proposalsOpened`; the gap between the two
-  numbers is itself a reading (a dispatched session that authored nothing).
+- **A proposal that never becomes a local branch is never seen** — and since
+  P6o it is never *counted* either. `proposalsOpened` reads the proposal
+  ledger; the dispatch ledger is reported separately as `sessionsDispatched`,
+  and the gap between the two numbers is itself a reading (a dispatched session
+  that authored nothing, or a settle that has not run yet). See §11.4.2.
 - **A gate run is attributed by `persona_id` + the tenure window** (§11.4.1), not
   by the calendar month: a run recorded before the current holder was hired is
   not evidence about it, even on the same project in the same month. Runs

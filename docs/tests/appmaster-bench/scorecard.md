@@ -36,7 +36,8 @@ the row.
 | Field | Value | Real / null | If null, why |
 | --- | --- | --- | --- |
 | `windowDays` | | | |
-| `proposalsOpened` | | | absent ⇒ the engine did not run for this project |
+| `proposalsOpened` | | | authored branches with ≥1 commit; absent ⇒ no proposal branch was ever recorded for this holder |
+| `sessionsDispatched` | | | a LAUNCH count, never delivery; absent ⇒ the engine did not run for this project |
 | `proposalsMerged` | | | absent ⇒ no proposal branch was ever recorded |
 | `proposalsReverted` | | | same rule as merged |
 | `gatePassRate` | | | absent ⇒ no declared gate command actually ran |

@@ -177,11 +177,26 @@ fn narrate(
     out.push_str(&format!("Executions in the current month: {runs}.\n"));
     match b.proposals_opened {
         Some(n) => out.push_str(&format!(
-            "Proposals opened: {n} unattended fix session(s) dispatched under the branch-only \
-             guardrail.\n"
+            "Proposals opened: {n}. This counts proposal BRANCHES the reconciler observed in \
+             the window carrying at least one commit ahead of the main branch — work that \
+             exists. A dispatched session that authored nothing, and a branch with no commits \
+             on it, are both excluded.\n"
         )),
         None => out.push_str(
-            "Proposals opened: NOT MEASURED — the overnight engine has not run for this \
+            "Proposals opened: NOT MEASURED — no proposal branch has ever been recorded for \
+             this holder, so there is no ledger to read. A hole in the instrument, not a \
+             zero.\n",
+        ),
+    }
+    match b.sessions_dispatched {
+        Some(n) => out.push_str(&format!(
+            "Sessions dispatched: {n} unattended fix session(s) launched under the branch-only \
+             guardrail. This is a LAUNCH count and no part of the delivery reading — a gap \
+             against proposals opened means either a session that delivered nothing or a \
+             reconcile that has not settled the night yet.\n"
+        )),
+        None => out.push_str(
+            "Sessions dispatched: NOT MEASURED — the overnight engine has not run for this \
              project in the window, so there is no dispatch ledger to read.\n",
         ),
     }
@@ -895,6 +910,7 @@ mod tests {
     fn backbone() -> KpAppMasterRollup {
         KpAppMasterRollup {
             proposals_opened: Some(7),
+            sessions_dispatched: Some(9),
             proposals_merged: None,
             proposals_reverted: None,
             gate_pass_rate: None,
