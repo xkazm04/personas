@@ -448,6 +448,17 @@ Two changes make it deterministic and observable (2026-08-23):
   A caller that needs `/api/kp/*` or `/pair/*` probes that flag instead of inferring a
   missing route from a 404. `webhook::management_routes_live()` is the in-process reader.
 
+What the full table serves beyond the webhook base, and the gate each surface
+carries on top of a valid key (`engine/management_api.rs` is the register; the
+headless row exists only on a boot with the mode on, so "full" is itself two
+shapes and the §39 route counts predate the test surface):
+
+| Surface | Routes | Extra gate | Described in |
+| --- | --- | --- | --- |
+| KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` | `personas:build` scope on the mutating POST; GETs follow the any-valid-key read rule | §10.1 |
+| Device pairing | `POST /pair/request` · `POST /pair/claim` | outside the api-key middleware — the nonce + human-approval ceremony is the gate (auto-approved only in headless mode, §13.3) | §4.2 |
+| Headless test surface | `POST /api/kp/test/tick` · `POST /api/kp/test/seed-work` | routes are **added** only while `PERSONAS_HEADLESS_BRIDGE=1` (§13.1) — with the mode off they 404 rather than 403 — and `authorize` demands `personas:test` for the whole `/api/kp/test/` prefix | §13.6 (tick) · §13.9 (seed-work) |
+
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
 
 ### 10.5 The hire's requested surface — a build attaches only what was asked for (2026-08-24, connectors 2026-08-26)
