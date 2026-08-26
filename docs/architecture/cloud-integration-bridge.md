@@ -391,7 +391,7 @@ back to kp.
 | Route | Scope | What it does |
 | --- | --- | --- |
 | `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox, returns `{requestId, status: "pending_approval"}`. Builds nothing. |
-| `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them. 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
+| `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them, and `buildFailureReason` when the build session ended `failed` (§10.7). 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
 | `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
 
 Authorization is one arm in `authorize()` (`management_api.rs:377`): mutating KP calls
@@ -743,6 +743,30 @@ Tested in `personas-core` (33 checks in `validation::design_pass_hygiene`) —
 (`STATUS_ENTRYPOINT_NOT_FOUND`), so the pure logic lives where the tests run, the
 same reasoning as §10.5.
 
+### 10.7 Build stalls fail fast — an unattended design pass that stops converging (2026-08-26)
+
+- **The burn.** Bench sweeps #21 / #23 / #24 caught one-shot hire builds looping:
+  session `7991b75d…` logged `Gate-pass entry … events=["Progress","Progress"] …
+  turn=N resolved=0 coverage_caps=0` for all **12** turns — each turn a real
+  Claude session, ~64 minutes total — and only then failed at `MAX_TURNS`. The
+  P6h retry built the same spec in ~15 minutes, so the loss was the looping, not
+  the work. Nothing compared a turn to the one before it.
+- **The guard.** `runner.rs` now fingerprints every turn on three signals —
+  `resolved_cells.len()`, `coverage.len()`, and a hash of the design output
+  (resolved cells + `agent_ir`, so a rewrite of an already-resolved cell still
+  counts as progress). `K` consecutive flat turns (default **3**, override
+  `PERSONAS_ONESHOT_STALL_TURNS`, `0` disables) end the session as `failed` with
+  `design_pass_stalled: N turns without resolution`. **Unattended builds only**
+  — an interactive session is *supposed* to sit flat while the human answers a
+  clarifying question, so `stall_turns` is 0 there.
+- **kp can read the reason.** `GET /api/kp/persona-requests/{id}` now returns
+  `buildFailureReason` alongside `buildPhase`: the session row's
+  `error_message`, and only when the phase is `failed`. Without it a bench driver
+  sees `buildPhase: "failed"` and cannot tell a stall from a validation refusal
+  or a dead CLI without opening the desktop app's log.
+- Tested in `personas-engine` (13 checks in `build_stall`) — the predicate is
+  pure (`stalled(history, k)`), same reasoning as §10.5 and §10.6.
+
 ---
 
 ## 11. App master (P4) — the mandated hire
@@ -885,9 +909,11 @@ persona — the v1 payload is unchanged, byte for byte.
 kp's backbone treats an absent reading as a coverage gap and a present `0` as a
 measurement.
 
-**Every reading below is windowed to the holder's TENURE, not the project's
+**Every reading about the HOLDER is windowed to its TENURE, not the project's
 month** — see §11.4.1. "This month" in the table means "this month, from this
-hire onwards". What is real today, and what is not:
+hire onwards". The one field that is *not* windowed is `baselineGateHealth`,
+which is a reading about the repository rather than the holder and says so.
+What is real today, and what is not:
 
 | Field | State | Source / why |
 | --- | --- | --- |
@@ -895,7 +921,8 @@ hire onwards". What is real today, and what is not:
 | `sessionsDispatched` | **real (P6o)** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` **since the hire** (§11.4.1; the table carries no actor column, so the window is the whole attribution). A **launch** count and nothing more — it says the engine spawned workers under the branch-only guardrail, not that any of them authored anything. It feeds **no** delivery rule on kp's side; it exists so the gap against `proposalsOpened` stays visible. `None` when the engine has not run for the project (no ledger, not zero). |
 | `proposalsMerged` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `merged_at` falls in the tenure window. Set by the reconciler when `git merge-base --is-ancestor <branch> <main_branch>` says the tip landed; the date is the committer date of the earliest main-branch commit that descends from it. `None` **only** when this holder has no proposal row at all — with no ledger there is nothing to be right about. Once one of its proposals exists, `0` is a real reading. |
 | `proposalsReverted` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `reverted_at` falls in the tenure window. A merged proposal is reverted when a later main-branch commit says `Revert "<subject>"` or `This reverts commit <sha>` about one of the commits captured on the branch at discovery. Same `None` rule. |
-| `gatePassRate` | **real (P5a)** | `passed / (passed + failed)` over **this persona's** `app_master_gate_runs` in the tenure window — runs of the repository's **own declared gate commands** against proposal branches. A command that timed out or could not be spawned is recorded `did_not_run` and sits in **neither** half. `None` when no gate command ran in the window, including the *not configured* case (a mandate that declares none), which is not a pass. |
+| `gatePassRate` | **real (P5a), baseline-relative (sweep #25)** | `passed / (passed + failed)` over **this persona's** `kind = 'proposal'` `app_master_gate_runs` in the tenure window — runs of the repository's **own declared gate commands** against proposal branches. Two things sit in **neither** half: a command that timed out or could not be spawned (`did_not_run`), and a command that was **already failing on the project's main branch** when the proposal was gated (`inherited_red`, §12.2.2) — a proposal cannot be held to a gate that was red before it existed. `None` when that denominator is 0, which now includes a window where every command was inherited-red, and the *not configured* case (a mandate that declares none), which is not a pass. |
+| `baselineGateHealth` | **real (sweep #25)** | `{commands, passed, failed, tipSha, ranAt}` — what the same declared commands say about the project's **own main branch** at its current tip (§12.2.2). Project-scoped and deliberately **not** windowed to the tenure: the repository's debt is a fact about the repository, and clipping it to a hire would make it read as something the hire did. It carries no rate of its own — the number a reader needs is "7 of 9 green on main" beside the holder's rate, because excusing a hire for inherited red is not the same as claiming the repository is healthy. `None` until a baseline sweep has run for the project (no declared gates, an unresolvable main tip, or a reconciler that has not reached it yet). |
 | `forbiddenClassViolations` | **real** | `COUNT` over `app_master.forbidden_class_violation` events for the project in the tenure window. A `0` here is a genuine reading. The holder is named only inside the event's **encrypted** payload, so there is no persona predicate to add — the window *is* the attribution here. |
 | `kpiDeltas[]` | **real** | The project's App-master-seeded KPIs. `baseline` is re-anchored to the last **production** `dev_kpi_measurements` reading at or before `hiredAt` when one exists, so a re-hire is not measured from its predecessor's starting line; with no such reading the stored `baseline_value` stands (a missing history is not a reason to invent a start). `measured` is `current_value.is_some() && last_measured_at.is_some()` — a value with no reading time is a leftover, not a reading. |
 | `budgetReservedUsd` | **real** | `SUM(projected_cost_usd)` over the tenure window's night runs. That projection **is** the reservation: it is taken before any session spawns and it is what the ceiling is checked against. `None` when no night run happened. |
@@ -1099,7 +1126,8 @@ Per mandated project with a real, git work-tree `root_path`:
 | Step | What happens |
 | --- | --- |
 | discover | `git for-each-ref refs/heads/autopilot/*` — the namespace the unattended dispatch guardrail *tells* the session to use, not a guess about naming. Each branch is upserted into `app_master_proposals` with its tip and the commits it carries relative to the main branch. |
-| gate | Up to 3 proposals per tick whose **current tip** has no gate run yet get §12.1's commands run against them, one `app_master_gate_runs` row each. A project that declares no gates is stamped `gates_ran_at` and answered once rather than retried forever. |
+| baseline | §12.1's commands are run against the project's **own main branch**, once per main tip, and recorded `kind = 'baseline'` (§12.2.2). The steady-state tick resolves the tip, finds a current baseline and spawns nothing. Ordered **before** the gate step so this tick's proposal runs are classified against a current baseline. |
+| gate | Up to 3 proposals per tick whose **current tip** has no gate run yet get §12.1's commands run against them, one `app_master_gate_runs` row each. A failure on a command that was already red on the baseline is stamped `inherited_red`. A project that declares no gates is stamped `gates_ran_at` and answered once rather than retried forever. |
 | merge | For a proposal that **carries commits**: `git merge-base --is-ancestor <tip> <main_branch>` ⇒ `merged_at` = the committer date of the earliest main-branch commit descending from the tip (the merge commit), falling back to the tip's own date on a fast-forward. |
 | revert | For a merged, not-yet-reverted proposal: `git log <main> --since=<merged_at>` scanned for `Revert "<subject>"` or `This reverts commit <sha>` naming one of the captured commits. |
 
@@ -1151,6 +1179,61 @@ regression itself, end to end),
 `an_empty_capture_never_overwrites_a_real_snapshot`,
 `a_real_merge_is_still_observed_and_keeps_its_pre_merge_commits` and
 `a_moved_tip_re_gates_once_and_an_unmoved_tip_does_not`.
+
+#### 12.2.2 The pass rate is baseline-relative (bench sweep #25)
+
+> Found by **bench sweep #25 (2026-08-26, `ascent`)**, fixed the same day.
+
+The App master's proposal recorded a `gatePassRate` of **0%**. It had broken
+nothing: `npm run lint` and `npm run test` **fail on that repository's `main`
+already** — 12 failing tests and a `react/no-unescaped-entities` error — and
+`personas` is in the same state (`census:check` red; `check:budget` needs a
+prior build). The proposal was being scored against gates that were red before
+it existed, and the backbone's `gates` rule (weight 20 in kp's
+`backbone_score()`) turned inherited debt into a verdict about a hire.
+
+**A gate judges what the change CHANGED.** That is what `gate-sees-target`
+means once the target has a history — a check that cannot distinguish "you
+broke this" from "this was already broken" is not seeing its target, it is
+seeing the repository. So the same declared commands are also run against the
+project's **own main branch**:
+
+| Rule | Where |
+| --- | --- |
+| **The baseline is taken once per main tip.** `run_baseline_gates` resolves `main_branch`'s tip, returns immediately when a baseline already exists for it (`baseline_ran_for_tip`), and otherwise runs §12.1's commands in the same throwaway worktree with the same borrowed environment (§12.4), recording rows with `branch = <main_branch>`, `head_sha = <main tip>` and `kind = 'baseline'`. It **refreshes when — and only when — main moves**, so the steady-state tick spawns nothing. | `run_baseline_gates`, `baseline_ran_for_tip` |
+| **A command red on the baseline is `inherited_red` on the proposal.** Before recording, each `failed` proposal run is checked against `baseline_red_commands` (the commands that failed on the project's *current* baseline). A match leaves the pass-rate denominator — it cannot be the proposal's fault — and the flag is stored on the row, so the exclusion is auditable rather than invisible. The stamp is fail-closed: it is only ever set on a `failed` **proposal** run. | `run_declared_gates`, `GateRun::marked_inherited_red` |
+| **A command green on the baseline and red on the proposal is a real failure.** Counted, exactly as before. The exclusion must not swallow a failure the holder caused, which is the failure mode the rule itself could introduce. | `GateTally` |
+| **`did_not_run` is unchanged** — still in neither half (§12.5). A baseline command that `did_not_run` is **not** evidence that the repository is red, so it excludes nothing: "we could not measure the baseline" and "the baseline was broken" are different findings. | `baseline_red_commands` |
+| **A baseline row never enters a holder's window.** Every window query filters `kind = 'proposal'` — including the tip-keyed gating selector. A red repository must not read as a hire with a 0% rate; that is the bug, inverted. | `gate_outcomes_since`, `gates_ran_for_tip` |
+
+The reading is therefore a four-way split, not a ratio with two holes hidden in
+it: `GateTally { passed, failed, inheritedRed, didNotRun }`, with
+`gatePassRate = passed / (passed + failed)` and **`null` when that denominator
+is 0** — a window in which every command was inherited-red or did-not-run has no
+rate, and `0.0` would be a verdict nobody measured.
+
+**The debt does not disappear because it was excluded.** Excusing a hire is not
+the same as claiming the repository is healthy, so the baseline is published
+beside the rate as `baselineGateHealth` (§11.4) and narrated in the probation
+packet — "the repository's OWN gates on its main branch (tip …): 7 of 9 green,
+2 red" — and when **no** baseline exists the packet says *that*, because it
+means nothing was excluded and every failure in the rate was charged to the
+holder.
+
+**What it costs.** One extra gate sweep per project on the tick after main
+moves, against a per-tick proposal cap of 3 (`MAX_PROPOSALS_GATED_PER_TICK`).
+On a repository whose main advances several times a day that is the dominant
+cost of this feature, and it is the price of the rate meaning anything.
+
+Pinned by seven tests in `app_master_gates::tests`, four against a real
+throwaway repository:
+`a_gate_already_red_on_main_is_inherited_not_charged_to_the_proposal`,
+`a_gate_green_on_main_and_red_on_the_proposal_is_a_real_failure`,
+`the_baseline_is_taken_once_per_main_tip_and_refreshed_when_main_moves`,
+`a_window_of_only_inherited_red_and_did_not_run_has_no_rate`,
+`baseline_rows_are_excluded_from_the_holders_window`,
+`inherited_red_is_refused_on_anything_but_a_failed_proposal_run` and
+`rows_written_before_the_baseline_rule_still_read_as_proposal_runs`.
 
 ### 12.3 Why the gates run there and not at dispatch
 
@@ -1227,6 +1310,14 @@ that a `0.0` would make identical. Each row keeps the exit code (null exactly
 when `did_not_run`), the duration, and the **first real error line**, bounded to
 400 characters: verdict first, first failure located, bounded detail.
 
+Since §12.2.2 a `failed` row carries one more bit, `inherited_red`, and it is a
+*second* kind of hole: `did_not_run` is a hole in the instrument, an inherited
+red is a hole in the premise. Both leave the denominator; only the second one
+means something failed. The four-way split is `GateTally { passed, failed,
+inheritedRed, didNotRun }` and the sweep's verdict prints an inherited failure
+as `INHERITED RED`, never as `FAIL` — the same reason *not configured* is
+printed distinctly from *passed*.
+
 ### 12.6 Schema
 
 Both tables are created in `db/src/migrations/incremental/c04_milestones_and_autopilot.rs`,
@@ -1240,13 +1331,25 @@ app_master_proposals(id, project_id, persona_id, branch, head_sha, base_sha,
                      UNIQUE(project_id, branch))
 app_master_gate_runs(id, project_id, persona_id, branch, head_sha, command,
                      exit_code, outcome CHECK(passed|failed|did_not_run),
-                     duration_ms, first_error, ran_at)
+                     duration_ms, first_error, ran_at,
+                     kind DEFAULT 'proposal', inherited_red DEFAULT 0)
 ```
 
 `app_master_gate_runs.head_sha` is added by the `app_master_gate_runs.head_sha`
 step (guarded on `has_column`, `''` on existing rows) together with
 `idx_app_master_gate_runs_branch_tip (project_id, branch, head_sha)` — the index
 behind the tip-keyed gating selector in §12.2.1.
+
+`kind` and `inherited_red` are added by two further steps of the same shape
+(§12.2.2), each guarded on its own `has_column` so a half-applied pair cannot
+report itself as done, plus
+`idx_app_master_gate_runs_kind_tip (project_id, kind, head_sha)` behind the
+baseline lookup. **Both defaults are the pre-existing behaviour**: every row
+written before this was a proposal run and nothing was excluded from a rate, so
+a legacy ledger reads exactly as it did. `kind` carries no `CHECK` — SQLite
+cannot add one by `ALTER TABLE` — so it is parsed defensively, and an
+unrecognised value reads as `proposal`: defaulting a row *out* of the holder's
+rate would silently delete a real reading.
 
 ### 12.7 What is still not measured
 
@@ -1274,6 +1377,20 @@ behind the tip-keyed gating selector in §12.2.1.
   not evidence about it, even on the same project in the same month. Runs
   written before per-holder attribution carry `persona_id = ''` and are still
   counted — they cannot belong to anybody else.
+- **A proposal is judged against the CURRENT baseline, not the one its branch
+  forked from.** The exclusion map is the newest main tip's, so a proposal
+  authored before main repaired one of its own gates is judged as if the repair
+  had always been there (the failure becomes the holder's). The alternative —
+  keeping a baseline per fork point — means gating every historical main tip a
+  branch might descend from, which is a build farm. The error is bounded by how
+  fast the reconciler re-baselines (one tick after main moves) and is stated
+  here rather than papered over.
+- **A baseline command that `did_not_run` excludes nothing.** A repository
+  whose gates cannot be run in this environment at all (no `node_modules` to
+  borrow, say) produces a baseline of pure `did_not_run`, so nothing is
+  excluded and the holder's own `did_not_run` rows carry the same silence.
+  `baselineGateHealth` shows it — `commands` minus `passed` minus `failed` is
+  how many could not be run — but no rule acts on it.
 - **A project with no declared gates reports `gatePassRate: null` forever.**
   That is correct — there is nothing to run — but it means kp's `gates` rule
   stays unmeasured for that hire. The fix is on kp's side of the wire: send the

@@ -58,6 +58,7 @@ pub mod autonomy;
 pub mod autopilot;
 #[cfg(feature = "desktop")]
 pub mod bridge_manifest;
+pub mod build_stall;
 pub mod bus;
 pub mod capability_contract;
 #[cfg(feature = "desktop")]

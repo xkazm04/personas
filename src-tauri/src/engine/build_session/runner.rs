@@ -24,6 +24,9 @@ use crate::db::DbPool;
 use crate::notifications;
 use crate::ActiveProcessRegistry;
 
+use super::super::build_stall::{
+    design_fingerprint, stall_reason, stall_turns_from_env, stalled, TurnProgress,
+};
 use super::super::cli_process::{read_line_within, CliProcessDriver, LineRead};
 use super::super::types::CliArgs;
 use super::events::{
@@ -599,6 +602,23 @@ pub(super) async fn run_session(
     let mut acc_cost_usd: f64 = 0.0;
     let mut acc_input_tokens: i64 = 0;
     let mut acc_output_tokens: i64 = 0;
+
+    // Unattended stall guard. An interactive build is allowed to sit flat —
+    // it is waiting on a human between turns — so this only arms for one_shot.
+    // See `personas_engine::build_stall` for the signals and the sweep evidence.
+    // `history[0]` is the pre-turn baseline (nothing resolved, no capabilities,
+    // empty design), so a build that never resolves anything is caught on turn
+    // `stall_turns` instead of one turn later.
+    let stall_turns = if one_shot { stall_turns_from_env() } else { 0 };
+    let mut progress_history: Vec<TurnProgress> = vec![TurnProgress {
+        resolved_count: 0,
+        coverage_caps: 0,
+        design_hash: design_fingerprint("{}", None),
+    }];
+    // Latest agent_ir seen this session — one half of the design fingerprint.
+    // `resolved_cells` never holds it (the CellUpdate arm branches on the key),
+    // so the counters alone cannot see an agent_ir being rewritten.
+    let mut latest_agent_ir: Option<String> = None;
 
     for turn in 0..MAX_TURNS {
         // Check cancellation
@@ -1389,6 +1409,7 @@ pub(super) async fn run_session(
                     if cell_key == "agent_ir" {
                         got_agent_ir = true;
                         let ir_str = serde_json::to_string(data).ok();
+                        latest_agent_ir.clone_from(&ir_str);
                         persist_or_fail!(
                             build_session_repo::update(
                                 &pool,
@@ -1506,6 +1527,54 @@ pub(super) async fn run_session(
             }
         }
         last_answered_cells.clear();
+
+        // -----------------------------------------------------------------
+        // Unattended stall guard — end a non-converging design pass early.
+        //
+        // Every turn is a real Claude session (~5 min). A one-shot build whose
+        // design pass stops converging used to run all MAX_TURNS and only then
+        // fail: bench sweeps #21/#23/#24 (2026-08-26) logged 12 consecutive
+        // turns of `resolved=0 coverage_caps=0` — ~64 minutes — before the cap
+        // did the failing. Retrying the same spec built it in ~15 minutes, so
+        // the cost was the looping, not the work.
+        //
+        // Interactive builds are untouched: they are *meant* to sit flat while
+        // the human answers, and `stall_turns` is 0 for them.
+        // -----------------------------------------------------------------
+        if stall_turns > 0 {
+            let cells_json =
+                serde_json::to_string(&serde_json::Value::Object(resolved_cells.clone()))
+                    .unwrap_or_else(|_| "{}".to_string());
+            progress_history.push(TurnProgress {
+                resolved_count,
+                coverage_caps: coverage.len(),
+                design_hash: design_fingerprint(&cells_json, latest_agent_ir.as_deref()),
+            });
+            if stalled(&progress_history, stall_turns) {
+                let reason = stall_reason(stall_turns, turn + 1);
+                tracing::error!(
+                    session_id = %session_id,
+                    turn = turn + 1,
+                    stall_turns = stall_turns,
+                    resolved_count = resolved_count,
+                    coverage_caps = coverage.len(),
+                    "OneShot design pass stalled; failing the build instead of burning the turn cap"
+                );
+                let _ = update_phase_with_error(&pool, &session_id, &reason);
+                cancel_if_emit_dropped!(emit_error(
+                    &pool,
+                    &channel,
+                    &app_handle,
+                    &session_id,
+                    &reason,
+                    // Retryable: the same spec has been observed to build fine
+                    // on the very next attempt (sweep #24's P6h retry).
+                    true,
+                ));
+                cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
+                return;
+            }
+        }
 
         // If question asked: wait for user answer, then continue to next turn.
         // Autonomous one-shot is the exception — it must never block on a human.

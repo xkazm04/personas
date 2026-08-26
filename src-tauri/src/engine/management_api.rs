@@ -3160,15 +3160,25 @@ async fn kp_get_persona_request(
     let result = payload.get("result").cloned().unwrap_or_default();
     let persona_id = result.get("personaId").and_then(|v| v.as_str());
     let persona_name = result.get("personaName").and_then(|v| v.as_str());
-    let build_phase = result
+    let build_session = result
         .get("buildSessionId")
         .and_then(|v| v.as_str())
         .and_then(|sid| {
             crate::db::repos::core::build_sessions::get_by_id(&state.pool, sid)
                 .ok()
                 .flatten()
-        })
-        .map(|s| s.phase.as_str().to_string());
+        });
+    let build_phase = build_session.as_ref().map(|s| s.phase.as_str().to_string());
+    // Why a build died, not just that it did. The runner stamps `error_message`
+    // on every terminal failure — including the unattended stall guard's
+    // `design_pass_stalled: N turns without resolution` (see
+    // `personas_engine::build_stall`). Without it kp's bench driver sees only
+    // `buildPhase: "failed"` and has to go read the desktop app's log to learn
+    // whether it hit a stall, a validation refusal or a dead CLI.
+    let build_failure_reason = build_session
+        .as_ref()
+        .filter(|s| s.phase == crate::db::models::BuildPhase::Failed)
+        .and_then(|s| s.error_message.clone());
     // A build that DIED after a successful approval must not read `approved`
     // forever — kp (and the bench driver) poll this status and would wait out
     // their whole activate window on a hire that can no longer arrive. The
@@ -3192,6 +3202,7 @@ async fn kp_get_persona_request(
         "personaId": persona_id,
         "personaName": persona_name,
         "buildPhase": build_phase,
+        "buildFailureReason": build_failure_reason,
     }))
     .into_response()
 }
