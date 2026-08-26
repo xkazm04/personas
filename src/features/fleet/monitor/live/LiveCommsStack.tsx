@@ -6,8 +6,9 @@
 // small tail) and the message itself is the hero. The header row is author +
 // acknowledge only — the team/project tag was dropped (the persona name carries
 // recognition; a per-project logo is the future affordance) and so was the
-// relative time. A standalone row shows the message TYPE as an icon (directive
-// / decision / channel) with the event text as its tooltip. Alerts tint the
+// relative time. The message TYPE rides beside the author name as an icon
+// (directive / decision / channel) with the event text as its tooltip — the
+// shared display/Tooltip, not an html title. Alerts tint the
 // bubble + tail warning. Newest sits nearest the corner; the latest 3 stay live
 // and older ones fold into a "+N more · clear all" chip.
 //
@@ -20,6 +21,7 @@ import { memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, MessagesSquare, Scale, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   LiveAvatar, authorAccent, authorName, liveMessageType, type LiveMessageType,
@@ -72,48 +74,46 @@ function BubbleRow({
             m.alert ? 'border-status-warning/30 bg-status-warning/15' : 'border-primary/12 bg-secondary/40'
           }`}
         />
-        <button
-          type="button"
-          onClick={() => onOpenTimeline(m.teamId)}
-          title={t.monitor.live_open_timeline}
-          className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
-            m.alert
-              ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
-              : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
-          }`}
-        >
-          {/* First row: the author only — no team/project tag (the persona
-              name carries recognition; a per-project logo is the future
-              affordance), no relative time (discarded with the timeout). */}
-          <div className="flex items-center gap-1.5 pr-6">
-            <span className="typo-caption font-semibold truncate" style={{ color: accent }}>{authorName(m)}</span>
-          </div>
-          {/* Standalone TYPE row — directive / decision / channel as an icon;
-              the event text survives as its tooltip and a11y name. */}
-          <span
-            className="mt-1 flex items-center"
-            role="img"
-            aria-label={m.event}
-            title={m.event}
+        <Tooltip content={t.monitor.live_open_timeline} placement="left">
+          <button
+            type="button"
+            onClick={() => onOpenTimeline(m.teamId)}
+            className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
+              m.alert
+                ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
+                : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
+            }`}
           >
-            <TypeGlyph.Icon className={`h-3.5 w-3.5 ${TypeGlyph.cls}`} aria-hidden />
-          </span>
-          {m.message && (
-            <p className="mt-1 typo-body text-foreground line-clamp-3">{m.message}</p>
-          )}
-        </button>
+            {/* First row: type icon beside the author name — no standalone
+                icon row, no team/project tag (the persona name carries
+                recognition; a per-project logo is the future affordance),
+                no relative time (discarded with the timeout). */}
+            <div className="flex items-center gap-1.5 pr-6">
+              <span className="typo-caption font-semibold truncate" style={{ color: accent }}>{authorName(m)}</span>
+              <Tooltip content={m.event} placement="top">
+                <span className="flex items-center" role="img" aria-label={m.event}>
+                  <TypeGlyph.Icon className={`h-3.5 w-3.5 flex-shrink-0 ${TypeGlyph.cls}`} aria-hidden />
+                </span>
+              </Tooltip>
+            </div>
+            {m.message && (
+              <p className="mt-1 typo-body text-foreground line-clamp-3">{m.message}</p>
+            )}
+          </button>
+        </Tooltip>
 
         {/* Acknowledge — always visible (no auto-timeout anymore): marks the
             message read and it is never displayed again. */}
-        <button
-          type="button"
-          onClick={() => onDismiss(m.id)}
-          aria-label={t.monitor.live_dismiss}
-          title={t.monitor.live_dismiss}
-          className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/90 text-foreground transition-colors hover:text-status-success hover:border-status-success/40 focus-visible:text-status-success"
-        >
-          <Check className="h-3 w-3" />
-        </button>
+        <Tooltip content={t.monitor.live_dismiss} placement="top">
+          <button
+            type="button"
+            onClick={() => onDismiss(m.id)}
+            aria-label={t.monitor.live_dismiss}
+            className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/90 text-foreground transition-colors hover:text-status-success hover:border-status-success/40 focus-visible:text-status-success"
+          >
+            <Check className="h-3 w-3" />
+          </button>
+        </Tooltip>
       </div>
     </motion.div>
   );
