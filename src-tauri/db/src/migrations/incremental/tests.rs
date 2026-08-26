@@ -325,6 +325,12 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         // "the branch". Without this column every moved tip re-gates (or,
         // worse, never gates) and the sweep-#24 race stays unfixable.
         ("app_master_gate_runs", "head_sha"),
+        // Bench sweep #25 — a proposal is judged on the gates that were green
+        // before it existed. Without these two the baseline rows cannot be
+        // told apart from the holder's own runs, and an inherited failure
+        // silently counts against the hire.
+        ("app_master_gate_runs", "kind"),
+        ("app_master_gate_runs", "inherited_red"),
     ] {
         assert!(
             has_column(&conn, table, column).unwrap(),
@@ -346,6 +352,7 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "idx_workspace_knowledge_dedup",
         "idx_dev_context_fingerprints_hash",
         "idx_app_master_gate_runs_branch_tip",
+        "idx_app_master_gate_runs_kind_tip",
     ] {
         assert!(
             has_index(&conn, index).unwrap(),

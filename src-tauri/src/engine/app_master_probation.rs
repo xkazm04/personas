@@ -149,6 +149,16 @@ pub(crate) fn build_packet(
     (title, context_data, suggested_actions)
 }
 
+/// A sha as a human reads it. Bounded to 12 characters, and never padded — a
+/// short sha stays exactly as short as it was recorded.
+fn short_sha(sha: &str) -> &str {
+    let sha = sha.trim();
+    match sha.char_indices().nth(12) {
+        Some((idx, _)) => &sha[..idx],
+        None => sha,
+    }
+}
+
 /// Restate the backbone in sentences. Generated FROM the numbers, so it cannot
 /// contradict them; every unmeasured input is said to be unmeasured.
 fn narrate(
@@ -220,15 +230,37 @@ fn narrate(
     }
     match b.gate_pass_rate {
         Some(rate) => out.push_str(&format!(
-            "Gate pass rate: {:.0}% on the repository's OWN declared gate commands, run \
-             against the proposal branches themselves. A command that timed out or could not \
-             be spawned was recorded DID NOT RUN and counted in neither half of the ratio.\n",
+            "Gate pass rate: {:.0}% on the gates this holder is ANSWERABLE for — the \
+             repository's own declared gate commands, run against the proposal branches \
+             themselves. Counted in neither half of the ratio: a command that timed out or \
+             could not be spawned (DID NOT RUN), and a command that was already failing on the \
+             main branch before the proposal existed (INHERITED RED).\n",
             rate * 100.0
         )),
         None => out.push_str(
-            "Gate pass rate: NOT MEASURED — no declared gate command actually ran in the \
-             window. Either the mandate declares none (which is `not configured`, and not a \
-             pass) or every attempt failed to run. With no denominator there is no rate.\n",
+            "Gate pass rate: NOT MEASURED — no declared gate command this holder is answerable \
+             for actually ran in the window. Either the mandate declares none (which is `not \
+             configured`, and not a pass), or every attempt failed to run, or every one that \
+             failed was already red on the main branch. With no denominator there is no rate.\n",
+        ),
+    }
+    // The debt does not disappear because it was excluded from the rate above.
+    match b.baseline_gate_health.as_ref() {
+        Some(h) => out.push_str(&format!(
+            "The repository's OWN gates on its main branch (tip {}, read {}): {} of {} green, \
+             {} red, {} could not be run. A proposal is judged against this, not against zero \
+             — and a red one here is the repository's debt to fix, not the holder's record.\n",
+            short_sha(&h.tip_sha),
+            h.ran_at,
+            h.passed,
+            h.commands,
+            h.failed,
+            h.commands - h.passed - h.failed,
+        )),
+        None => out.push_str(
+            "The repository's OWN gates on its main branch: NOT MEASURED — no baseline sweep \
+             has run for this project, so nothing was excluded from the rate above and every \
+             gate failure in it was attributed to the holder.\n",
         ),
     }
     match b.forbidden_class_violations {
@@ -940,6 +972,10 @@ mod tests {
             budget_unmeasured: false,
             ledger_consistent: Some(true),
             autopilot_mode: "suggest",
+            // No baseline sweep has run for this fixture's project — which the
+            // narration must say, because it means nothing was excluded from
+            // the rate on the holder's behalf.
+            baseline_gate_health: None,
         }
     }
 
@@ -989,6 +1025,37 @@ mod tests {
         assert!(!n.contains("Gate pass rate: NOT MEASURED"), "{n}");
         // The squash-merge blind spot is stated, not hidden.
         assert!(n.contains("squash merge"), "{n}");
+    }
+
+    /// Sweep #25: the repository's own gate debt is narrated beside the
+    /// holder's rate — and its ABSENCE is narrated too, because "nothing was
+    /// excluded" changes how the rate above should be read.
+    #[test]
+    fn the_repositorys_own_gate_debt_is_narrated_beside_the_holders_rate() {
+        let mut b = backbone();
+        b.gate_pass_rate = Some(1.0);
+        b.baseline_gate_health = Some(personas_engine::app_master_gates::BaselineGateHealth {
+            commands: 9,
+            passed: 7,
+            failed: 2,
+            tip_sha: "abc1234def5678901234".into(),
+            ran_at: "2026-08-26T21:00:00+00:00".into(),
+        });
+        let n = narrate("kp App Master", &record(), Some(&b), 12);
+        assert!(n.contains("7 of 9 green, 2 red, 0 could not be run"), "{n}");
+        // Long shas are shortened for a human, and not padded.
+        assert!(n.contains("tip abc1234def56"), "{n}");
+        assert!(n.contains("the repository's debt to fix"), "{n}");
+        // The exclusion is disclosed on the rate line itself.
+        assert!(n.contains("INHERITED RED"), "{n}");
+
+        // With no baseline, the packet says so rather than implying one.
+        let n = narrate("kp App Master", &record(), Some(&backbone()), 12);
+        assert!(n.contains("gates on its main branch: NOT MEASURED"), "{n}");
+        assert!(
+            n.contains("every gate failure in it was attributed to the holder"),
+            "{n}"
+        );
     }
 
     #[test]

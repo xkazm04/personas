@@ -217,8 +217,30 @@ pub(crate) struct KpAppMasterRollup {
     /// `did_not_run` and sits in **neither** half of the ratio. `None` when no
     /// gate command actually ran in the period — including the case where the
     /// mandate declares none, which is *not configured*, not a pass.
+    ///
+    /// **Baseline-relative since bench sweep #25.** A command that was already
+    /// failing on the project's main branch when the proposal was gated is
+    /// recorded `inherited_red` and sits in **neither** half either: a proposal
+    /// cannot be held to a gate that was red before it existed. That exclusion
+    /// never hides the debt — it is reported beside this number as
+    /// [`Self::baseline_gate_health`]. A window in which every command is
+    /// inherited-red or did-not-run therefore reads `None`, not `0.0`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gate_pass_rate: Option<f64>,
+    /// What the repository's OWN declared gates say about its **main branch**
+    /// at its current tip — `{commands, passed, failed, tipSha, ranAt}`.
+    ///
+    /// A fact about the repository, not about the holder: project-scoped, not
+    /// clipped to the tenure window, and carrying no rate of its own. It exists
+    /// so a reader can see "the repo's own gates: 7 of 9 green on main" beside
+    /// the holder's rate — excusing a hire for inherited red is not the same as
+    /// claiming the repository is healthy, and the rollup must say both.
+    ///
+    /// `None` until a baseline sweep has run for the project (no declared
+    /// gates, an unresolvable main tip, or a reconciler that has not reached it
+    /// yet). Absent means *not measured*, as everywhere else here.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub baseline_gate_health: Option<personas_engine::app_master_gates::BaselineGateHealth>,
     /// Real: a COUNT over `app_master.forbidden_class_violation` events for the
     /// project in the period. Zero here is a genuine reading — the ledger
     /// exists and was queried — not an absence.
@@ -715,6 +737,11 @@ pub(crate) fn app_master_rollup(
             persona,
             &since,
         ),
+        // Deliberately unwindowed and unfiltered: the repository's own gate
+        // health is a fact about the repository at its current main tip, and
+        // clipping it to a hire's tenure would make it read as something the
+        // hire did.
+        baseline_gate_health: personas_engine::app_master_gates::latest_baseline(pool, &project_id),
         // No persona predicate here, and none available: the violation event's
         // holder lives in an encrypted payload. The tenure window IS the
         // attribution for this one.
@@ -1000,6 +1027,16 @@ mod tests {
                 proposals_merged: Some(4),
                 proposals_reverted: Some(0),
                 gate_pass_rate: Some(0.75),
+                // Sweep #25: the rate above is over the gates this holder is
+                // answerable for; the repository's own debt travels beside it
+                // rather than inside it.
+                baseline_gate_health: Some(personas_engine::app_master_gates::BaselineGateHealth {
+                    commands: 9,
+                    passed: 7,
+                    failed: 2,
+                    tip_sha: "abc1234".into(),
+                    ran_at: "2026-08-26T21:00:00+00:00".into(),
+                }),
                 forbidden_class_violations: Some(2),
                 kpi_deltas: Some(vec![KpKpiDelta {
                     kpi_key: "gate_pass_rate".into(),
@@ -1038,6 +1075,13 @@ mod tests {
                 "proposalsMerged": 4,
                 "proposalsReverted": 0,
                 "gatePassRate": 0.75,
+                "baselineGateHealth": {
+                    "commands": 9,
+                    "passed": 7,
+                    "failed": 2,
+                    "tipSha": "abc1234",
+                    "ranAt": "2026-08-26T21:00:00+00:00",
+                },
                 "forbiddenClassViolations": 2,
                 "kpiDeltas": [{
                     "kpiKey": "gate_pass_rate",
@@ -1119,6 +1163,9 @@ mod tests {
             "proposalsMerged",
             "proposalsReverted",
             "gatePassRate",
+            // A project nothing has baselined says nothing about its main
+            // branch — it does not claim a green one.
+            "baselineGateHealth",
             "forbiddenClassViolations",
             "kpiDeltas",
             "budgetReservedUsd",

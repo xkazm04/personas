@@ -81,7 +81,34 @@
 //!   with reason [`NO_COMMITS_YET`], and run for real once commits arrive —
 //!   keyed by branch **and tip**, so a moved tip re-gates and an unmoved one
 //!   does not.
+//!
+//! # The rate is baseline-relative (bench sweep #25)
+//!
+//! Sweep #25 recorded a `gatePassRate` of **0%** for a proposal on `ascent`
+//! that had broken nothing: `npm run lint` and `npm run test` fail on that
+//! repository's own `main` (12 failing tests, a `react/no-unescaped-entities`
+//! error), and `personas` is no better (`census:check`; `check:budget` needs a
+//! prior build). A proposal was being scored against gates that were red before
+//! it existed.
+//!
+//! A gate judges what the change *changed* — that is what `gate-sees-target`
+//! means once the target has a history. So the same declared commands are also
+//! run against the project's **own main branch**, once per main tip
+//! ([`run_baseline_gates`], [`GateKind::Baseline`]), and:
+//!
+//! - a command that **failed on the baseline** and fails on the proposal is
+//!   recorded `inherited_red` and leaves the pass-rate denominator — it cannot
+//!   be the proposal's fault;
+//! - a command **green on the baseline** and red on the proposal is a real
+//!   failure, counted;
+//! - `did_not_run` stays in neither half, exactly as before;
+//! - and the debt is **published, not absorbed**: [`latest_baseline`] feeds
+//!   `baselineGateHealth` on the rollup and the probation packet, so a reader
+//!   sees "the repo's own gates: 7 of 9 green on main" next to the holder's
+//!   rate. Excusing a hire is not the same as pretending the repository is
+//!   healthy, and the instrument must say both.
 
+use std::collections::BTreeSet;
 use std::path::Path;
 use std::time::Duration;
 
@@ -248,6 +275,109 @@ impl GateOutcome {
     }
 }
 
+/// Which population a recorded gate run belongs to.
+///
+/// One ledger, two very different claims. A **proposal** run is evidence about
+/// the holder: it judged an `autopilot/*` branch the App master authored. A
+/// **baseline** run is evidence about the *repository*: the same declared
+/// commands, run against the project's own main branch at one tip, so a
+/// proposal can be judged on what it CHANGED rather than on the debt it
+/// inherited (bench sweep #25).
+///
+/// Every window rate query filters to [`Self::Proposal`]. A baseline row is
+/// never the holder's work and must never enter its rate — in either half.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GateKind {
+    Proposal,
+    Baseline,
+}
+
+impl GateKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Proposal => "proposal",
+            Self::Baseline => "baseline",
+        }
+    }
+
+    /// Unknown / legacy values parse as [`Self::Proposal`]: every row written
+    /// before sweep #25 was a proposal run, and defaulting a row *out* of the
+    /// holder's rate would silently delete a real reading.
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "baseline" => Self::Baseline,
+            _ => Self::Proposal,
+        }
+    }
+}
+
+/// The four-way split of a set of gate runs — the reading kp's `gates` rule is
+/// computed from.
+///
+/// `passed + failed + inherited_red + did_not_run` is the total number of runs.
+/// Only `passed + failed` is the pass-rate denominator:
+///
+/// - **`did_not_run`** is a hole in the instrument (P5a). It can neither raise
+///   nor lower the rate.
+/// - **`inherited_red`** is a hole in the *premise*: the command was already
+///   failing on the project's main branch before this proposal existed, so its
+///   failure here cannot be the proposal's fault. Excluded from the
+///   denominator, counted under its own name, and never hidden — the debt is
+///   reported through `baselineGateHealth` on the same rollup.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GateTally {
+    pub passed: i64,
+    /// Failures the proposal is answerable for: red here, **green on the
+    /// baseline**.
+    pub failed: i64,
+    /// Failures on commands that were already red on the baseline.
+    pub inherited_red: i64,
+    pub did_not_run: i64,
+}
+
+impl GateTally {
+    /// The pass-rate denominator.
+    pub fn counted(self) -> i64 {
+        self.passed + self.failed
+    }
+
+    pub fn total(self) -> i64 {
+        self.passed + self.failed + self.inherited_red + self.did_not_run
+    }
+
+    /// `passed / (passed + failed)`, or `None` when nothing counted — never
+    /// `0.0`, which kp reads as "every gate failed".
+    pub fn rate(self) -> Option<f64> {
+        let counted = self.counted();
+        if counted == 0 {
+            return None;
+        }
+        Some(self.passed as f64 / counted as f64)
+    }
+
+    fn add(&mut self, outcome: GateOutcome, inherited_red: bool) {
+        match outcome {
+            GateOutcome::Passed => self.passed += 1,
+            // An inherited red is a failure of the repository, recorded on the
+            // proposal's run. It is only ever set on a `failed` row.
+            GateOutcome::Failed if inherited_red => self.inherited_red += 1,
+            GateOutcome::Failed => self.failed += 1,
+            GateOutcome::DidNotRun => self.did_not_run += 1,
+        }
+    }
+}
+
+/// Tally a set of recorded runs.
+pub fn tally(runs: &[GateRun]) -> GateTally {
+    let mut t = GateTally::default();
+    for r in runs {
+        t.add(r.outcome, r.inherited_red);
+    }
+    t
+}
+
 /// One recorded run of one declared gate command against one proposal branch.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GateRun {
@@ -270,6 +400,15 @@ pub struct GateRun {
     /// First real error line, bounded. `None` on a pass.
     pub first_error: Option<String>,
     pub ran_at: String,
+    /// Which population this run belongs to. [`GateKind::Proposal`] on every
+    /// row written before bench sweep #25.
+    pub kind: GateKind,
+    /// This command was **already failing on the project's main branch** when
+    /// this run judged the proposal. Only ever true on a [`GateOutcome::Failed`]
+    /// proposal run. It leaves the pass-rate denominator — a proposal cannot be
+    /// held to a gate that was red before it existed — and stays on the row, so
+    /// the repository's debt is visible rather than erased.
+    pub inherited_red: bool,
 }
 
 impl GateRun {
@@ -295,6 +434,8 @@ impl GateRun {
             duration_ms,
             first_error: first_error.map(|e| truncate(&e, MAX_FIRST_ERROR_CHARS)),
             ran_at: chrono::Utc::now().to_rfc3339(),
+            kind: GateKind::Proposal,
+            inherited_red: false,
         }
     }
 
@@ -306,12 +447,35 @@ impl GateRun {
         self
     }
 
+    /// Record which population this run belongs to (default
+    /// [`GateKind::Proposal`]).
+    pub fn of_kind(mut self, kind: GateKind) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Mark this failure as one the project's main branch was already
+    /// carrying. Refused on anything but a [`GateOutcome::Failed`] proposal
+    /// run: a pass is not inherited red, a `did_not_run` is a different hole,
+    /// and a baseline run IS the repository's own reading.
+    pub fn marked_inherited_red(mut self) -> Self {
+        self.inherited_red = self.outcome == GateOutcome::Failed && self.kind == GateKind::Proposal;
+        self
+    }
+
     /// One line per stage, the way the technique's verdict contract asks for
     /// it — *not configured* and *did not run* are visibly distinct from
     /// *passed*.
     pub fn one_line(&self) -> String {
         match self.outcome {
             GateOutcome::Passed => format!("PASS  {} ({} ms)", self.command, self.duration_ms),
+            GateOutcome::Failed if self.inherited_red => format!(
+                "INHERITED RED  {} (exit {}) — already failing on the main branch before this \
+                 proposal existed; not counted against it. {}",
+                self.command,
+                self.exit_code.unwrap_or(-1),
+                self.first_error.as_deref().unwrap_or("(no error captured)")
+            ),
             GateOutcome::Failed => format!(
                 "FAIL  {} (exit {}) — {}",
                 self.command,
@@ -335,8 +499,8 @@ pub fn record_gate_run(pool: &DbPool, run: &GateRun) -> Result<(), AppError> {
     conn.execute(
         "INSERT OR REPLACE INTO app_master_gate_runs
             (id, project_id, persona_id, branch, head_sha, command, exit_code, outcome,
-             duration_ms, first_error, ran_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+             duration_ms, first_error, ran_at, kind, inherited_red)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         params![
             run.id,
             run.project_id,
@@ -349,6 +513,8 @@ pub fn record_gate_run(pool: &DbPool, run: &GateRun) -> Result<(), AppError> {
             run.duration_ms,
             run.first_error,
             run.ran_at,
+            run.kind.as_str(),
+            run.inherited_red as i64,
         ],
     )?;
     Ok(())
@@ -371,8 +537,121 @@ pub fn gates_ran_for_tip(pool: &DbPool, project_id: &str, branch: &str, head_sha
     };
     conn.query_row(
         "SELECT COUNT(*) FROM app_master_gate_runs
-         WHERE project_id = ?1 AND branch = ?2 AND head_sha = ?3",
+         WHERE project_id = ?1 AND branch = ?2 AND head_sha = ?3 AND kind = 'proposal'",
         params![project_id, branch, head_sha],
+        |r| r.get::<_, i64>(0),
+    )
+    .map(|n| n > 0)
+    .unwrap_or(false)
+}
+
+// ---------------------------------------------------------------------------
+// The baseline: what the repository's own gates say about main
+// ---------------------------------------------------------------------------
+
+/// The repository's own gate health at one main-branch tip — the premise a
+/// proposal is judged against.
+///
+/// `commands` is every declared command the baseline sweep recorded, so
+/// `commands - passed - failed` is how many could not be run at all. There is
+/// deliberately no rate here: this is a statement about the repository, and the
+/// point of publishing it is that a reader sees "7 of 9 green on main" rather
+/// than a percentage that invites comparison with the holder's own.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BaselineGateHealth {
+    pub commands: i64,
+    pub passed: i64,
+    pub failed: i64,
+    /// The main-branch tip these gates judged.
+    pub tip_sha: String,
+    /// When the newest command in this baseline ran (RFC-3339).
+    pub ran_at: String,
+}
+
+/// The project's CURRENT baseline — the newest main tip a baseline sweep has
+/// recorded — or `None` when no baseline exists yet.
+///
+/// Project-scoped and **not** windowed to a holder's tenure: the repository's
+/// debt is a fact about the repository, and clipping it to a hire would make it
+/// read as something the hire did.
+pub fn latest_baseline(pool: &DbPool, project_id: &str) -> Option<BaselineGateHealth> {
+    let conn = pool.get().ok()?;
+    let tip: String = conn
+        .query_row(
+            "SELECT head_sha FROM app_master_gate_runs
+             WHERE project_id = ?1 AND kind = 'baseline'
+             ORDER BY ran_at DESC LIMIT 1",
+            params![project_id],
+            |r| r.get(0),
+        )
+        .ok()?;
+    let (commands, passed, failed, ran_at): (i64, i64, i64, String) = conn
+        .query_row(
+            "SELECT COUNT(*),
+                    SUM(CASE WHEN outcome = 'passed' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN outcome = 'failed' THEN 1 ELSE 0 END),
+                    MAX(ran_at)
+             FROM app_master_gate_runs
+             WHERE project_id = ?1 AND kind = 'baseline' AND head_sha = ?2",
+            params![project_id, tip],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .ok()?;
+    if commands == 0 {
+        return None;
+    }
+    Some(BaselineGateHealth {
+        commands,
+        passed,
+        failed,
+        tip_sha: tip,
+        ran_at,
+    })
+}
+
+/// The declared commands that FAILED on the project's current baseline.
+///
+/// This is the whole exclusion rule's input. Note what is *not* in it: a
+/// baseline command that `did_not_run` is **not** evidence that the repository
+/// is red — "we could not measure the baseline" and "the baseline was broken"
+/// are different findings — so a proposal failing such a command is judged on
+/// its own, exactly as it was before sweep #25.
+pub fn baseline_red_commands(pool: &DbPool, project_id: &str) -> BTreeSet<String> {
+    let Some(baseline) = latest_baseline(pool, project_id) else {
+        return BTreeSet::new();
+    };
+    let Ok(conn) = pool.get() else {
+        return BTreeSet::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT command FROM app_master_gate_runs
+         WHERE project_id = ?1 AND kind = 'baseline' AND head_sha = ?2 AND outcome = 'failed'",
+    ) else {
+        return BTreeSet::new();
+    };
+    let Ok(rows) = stmt.query_map(params![project_id, baseline.tip_sha], |r| {
+        r.get::<_, String>(0)
+    }) else {
+        return BTreeSet::new();
+    };
+    rows.flatten().collect()
+}
+
+/// Has this exact main tip already been baselined? The baseline is refreshed
+/// when — and only when — main moves.
+pub fn baseline_ran_for_tip(pool: &DbPool, project_id: &str, tip_sha: &str) -> bool {
+    let tip_sha = tip_sha.trim();
+    if tip_sha.is_empty() {
+        return false;
+    }
+    let Ok(conn) = pool.get() else {
+        return false;
+    };
+    conn.query_row(
+        "SELECT COUNT(*) FROM app_master_gate_runs
+         WHERE project_id = ?1 AND kind = 'baseline' AND head_sha = ?2",
+        params![project_id, tip_sha],
         |r| r.get::<_, i64>(0),
     )
     .map(|n| n > 0)
@@ -412,42 +691,67 @@ pub fn pass_rate(outcomes: &[GateOutcome]) -> Option<f64> {
 /// than reattribute it.
 const PERSONA_PREDICATE: &str = "(?3 IS NULL OR persona_id = ?3 OR persona_id = '')";
 
-/// Every gate outcome recorded for a project since `since` (RFC-3339),
-/// optionally narrowed to one holder.
+/// Every **proposal** gate outcome recorded for a project since `since`
+/// (RFC-3339), with its inherited-red flag, optionally narrowed to one holder.
 ///
 /// `since` is the [`crate::app_master::TenureWindow`]'s lower bound, not the
 /// calendar month: a gate that ran for the PREVIOUS holder of this project is
 /// not evidence about the current one (bench sweep #17).
+///
+/// Baseline runs are excluded outright (`kind = 'proposal'`). They are the
+/// repository's own reading, not the holder's, and would otherwise land in the
+/// rate they exist to correct.
 pub fn gate_outcomes_since(
     pool: &DbPool,
     project_id: &str,
     persona_id: Option<&str>,
     since: &str,
-) -> Result<Vec<GateOutcome>, AppError> {
+) -> Result<Vec<(GateOutcome, bool)>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(&format!(
-        "SELECT outcome FROM app_master_gate_runs
-         WHERE project_id = ?1 AND ran_at >= ?2 AND {PERSONA_PREDICATE}"
+        "SELECT outcome, inherited_red FROM app_master_gate_runs
+         WHERE project_id = ?1 AND ran_at >= ?2 AND kind = 'proposal' AND {PERSONA_PREDICATE}"
     ))?;
     let rows = stmt.query_map(params![project_id, since, persona_id], |r| {
-        r.get::<_, String>(0)
+        Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)? != 0))
     })?;
     Ok(rows
         .flatten()
-        .filter_map(|s| GateOutcome::parse(&s))
+        .filter_map(|(o, inherited)| GateOutcome::parse(&o).map(|o| (o, inherited)))
         .collect())
 }
 
-/// The holder's gate pass rate over the window, or `None` when no gate
-/// command actually ran in it (never `0.0`).
+/// The holder's four-way gate split over the window.
+pub fn gate_tally_since(
+    pool: &DbPool,
+    project_id: &str,
+    persona_id: Option<&str>,
+    since: &str,
+) -> GateTally {
+    let mut t = GateTally::default();
+    for (outcome, inherited_red) in
+        gate_outcomes_since(pool, project_id, persona_id, since).unwrap_or_default()
+    {
+        t.add(outcome, inherited_red);
+    }
+    t
+}
+
+/// The holder's gate pass rate over the window, or `None` when no gate command
+/// it is answerable for ran in it (never `0.0`).
+///
+/// Answerable for: the command ran to an exit code (so not `did_not_run`) and
+/// was **not** already failing on the project's main branch (so not
+/// `inherited_red`). A window in which every command is one or the other has no
+/// rate at all — which is the honest reading of a repository whose own gates
+/// are red, and the sweep-#25 finding.
 pub fn gate_pass_rate_since(
     pool: &DbPool,
     project_id: &str,
     persona_id: Option<&str>,
     since: &str,
 ) -> Option<f64> {
-    let outcomes = gate_outcomes_since(pool, project_id, persona_id, since).ok()?;
-    pass_rate(&outcomes)
+    gate_tally_since(pool, project_id, persona_id, since).rate()
 }
 
 /// Gate runs for one branch, newest first — the review-packet / debug read.
@@ -459,7 +763,7 @@ pub fn gate_runs_for_branch(
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, project_id, persona_id, branch, head_sha, command, exit_code, outcome,
-                duration_ms, first_error, ran_at
+                duration_ms, first_error, ran_at, kind, inherited_red
          FROM app_master_gate_runs
          WHERE project_id = ?1 AND branch = ?2
          ORDER BY ran_at DESC",
@@ -477,6 +781,8 @@ pub fn gate_runs_for_branch(
             duration_ms: r.get(8)?,
             first_error: r.get(9)?,
             ran_at: r.get(10)?,
+            kind: GateKind::parse(&r.get::<_, String>(11)?),
+            inherited_red: r.get::<_, i64>(12)? != 0,
         })
     })?;
     Ok(rows.flatten().collect())
@@ -1426,11 +1732,20 @@ pub struct GateSweep {
     /// the gates actually saw. Empty when nothing was borrowed (including when
     /// the worktree could not be created at all).
     pub linked_deps: Vec<String>,
+    /// Which population this sweep judged: the holder's proposal branch, or
+    /// the repository's own main branch.
+    pub kind: GateKind,
 }
 
 impl GateSweep {
+    /// The four-way split of this sweep's runs.
+    pub fn tally(&self) -> GateTally {
+        tally(&self.runs)
+    }
+
     /// One line per stage plus one verdict, per the technique's output
-    /// contract. *Not configured* is visibly distinct from *passed*.
+    /// contract. *Not configured* is visibly distinct from *passed*, and an
+    /// inherited red from a failure the proposal is answerable for.
     pub fn verdict(&self) -> String {
         if self.source == GateSource::NotConfigured {
             return format!(
@@ -1450,22 +1765,37 @@ impl GateSweep {
             out.push_str(&r.one_line());
             out.push('\n');
         }
-        let rate = pass_rate(&self.runs.iter().map(|r| r.outcome).collect::<Vec<_>>());
-        let did_not_run = self
-            .runs
-            .iter()
-            .filter(|r| r.outcome == GateOutcome::DidNotRun)
-            .count();
-        match rate {
+        let t = self.tally();
+        if self.kind == GateKind::Baseline {
+            // Deliberately not a rate. This is the repository's own debt, and
+            // the number a reader needs is "how many of its declared gates are
+            // green on main", not a percentage that invites comparison with a
+            // holder's.
+            out.push_str(&format!(
+                "BASELINE {}: {} of {} declared gates green on the main branch \
+                 ({} red, {} could not be run). Proposals are judged against THIS, not against \
+                 zero.",
+                self.branch,
+                t.passed,
+                t.total(),
+                t.failed,
+                t.did_not_run
+            ));
+            return out;
+        }
+        match t.rate() {
             Some(r) => out.push_str(&format!(
-                "VERDICT {}: {:.0}% of the gates that ran passed ({} did not run)",
+                "VERDICT {}: {:.0}% of the gates this proposal is answerable for passed \
+                 ({} did not run, {} inherited red)",
                 self.branch,
                 r * 100.0,
-                did_not_run
+                t.did_not_run,
+                t.inherited_red
             )),
             None => out.push_str(&format!(
-                "VERDICT {}: NO GATE RAN ({did_not_run} could not be run) — no rate to report",
-                self.branch
+                "VERDICT {}: NO GATE THIS PROPOSAL IS ANSWERABLE FOR RAN ({} could not be run, \
+                 {} were already red on the main branch) — no rate to report",
+                self.branch, t.did_not_run, t.inherited_red
             )),
         }
         out
@@ -1510,6 +1840,13 @@ impl GateSweep {
 /// Every recorded run is pinned to the branch tip it judged
 /// ([`GateRun::at_tip`]), so [`gates_ran_for_tip`] can tell "already answered"
 /// from "moved, and nothing has judged the new work".
+///
+/// **A failure the repository was already carrying is not the proposal's**
+/// (bench sweep #25). Before recording, each `failed` run is checked against
+/// [`baseline_red_commands`] — the declared commands that were failing on the
+/// project's own main branch at its current tip — and a match is stamped
+/// `inherited_red`, which leaves the pass-rate denominator and stays on the
+/// row.
 pub async fn run_declared_gates(
     pool: &DbPool,
     project_id: &str,
@@ -1529,6 +1866,7 @@ pub async fn run_declared_gates(
             source,
             runs: Vec::new(),
             linked_deps: Vec::new(),
+            kind: GateKind::Proposal,
         };
     }
 
@@ -1549,11 +1887,133 @@ pub async fn run_declared_gates(
                 &tip,
                 &commands,
                 source,
+                GateKind::Proposal,
                 &no_commits_yet_reason(),
             );
         }
     }
 
+    let red_on_main = baseline_red_commands(pool, project_id);
+    run_commands_in_worktree(
+        pool,
+        project_id,
+        persona_id,
+        root_path,
+        branch,
+        &tip,
+        &commands,
+        source,
+        GateKind::Proposal,
+        &red_on_main,
+    )
+    .await
+}
+
+/// Run the project's declared gates against its **own main branch**, once per
+/// main tip — the premise every proposal on that tip is judged against.
+///
+/// # Why this exists (bench sweep #25, 2026-08-26)
+///
+/// The App master's proposal on `ascent` recorded a gate pass rate of **0%**.
+/// It had not broken anything: `npm run lint` and `npm run test` fail on that
+/// repository's `main` already (12 failing tests and a
+/// `react/no-unescaped-entities` error), and `personas` is in the same state
+/// (`census:check`; `check:budget` needs a prior build). The proposal was being
+/// scored against gates that were red before it existed — a verdict about
+/// inherited debt wearing a hire's name.
+///
+/// So the gates are run against `main_branch` too, in the same throwaway
+/// worktree with the same borrowed environment, and recorded with
+/// [`GateKind::Baseline`]. Two consequences, and they are the whole point:
+///
+/// 1. A command red on the baseline is **excluded from the proposal's
+///    pass-rate denominator** ([`GateTally::failed`] vs
+///    [`GateTally::inherited_red`]). It cannot be the proposal's fault.
+/// 2. The debt is **not hidden**. It is published as
+///    [`BaselineGateHealth`] on the rollup and the probation packet, so a
+///    reader sees "the repo's own gates: 7 of 9 green on main" beside the
+///    holder's rate instead of one number silently absorbing the other.
+///
+/// Keyed by the main tip: a baseline is taken once and refreshed when — and
+/// only when — main moves. Returns the sweep it ran, or `None` when nothing
+/// was done (no declared gates, an unresolvable tip, or a baseline that is
+/// already current); every `None` path logs its reason.
+pub async fn run_baseline_gates(
+    pool: &DbPool,
+    project_id: &str,
+    persona_id: &str,
+    root_path: &Path,
+    main_branch: &str,
+) -> Option<GateSweep> {
+    let (commands, source) = declared_gate_commands(pool, project_id);
+    if source == GateSource::NotConfigured {
+        // Nothing declared, so there is nothing to baseline — and nothing to
+        // judge a proposal with either. Silent: the proposal path already says
+        // *not configured* out loud once per tick.
+        return None;
+    }
+
+    let tip = git(root_path, &["rev-parse", main_branch])
+        .await
+        .unwrap_or_default();
+    if tip.trim().is_empty() {
+        tracing::warn!(
+            project_id,
+            main_branch,
+            "app_master_gates: could not resolve the main branch tip — no baseline taken, so \
+             proposals on it are judged on their own gates alone"
+        );
+        return None;
+    }
+    if baseline_ran_for_tip(pool, project_id, &tip) {
+        return None;
+    }
+
+    // No exclusion map for a baseline: it IS the map. Passing one would mean
+    // asking the repository to excuse itself.
+    let sweep = run_commands_in_worktree(
+        pool,
+        project_id,
+        persona_id,
+        root_path,
+        main_branch,
+        &tip,
+        &commands,
+        source,
+        GateKind::Baseline,
+        &BTreeSet::new(),
+    )
+    .await;
+
+    tracing::info!(
+        project_id,
+        main_branch,
+        tip = %tip,
+        "app_master_gates: {}",
+        sweep.verdict()
+    );
+    Some(sweep)
+}
+
+/// The shared body: check `branch` out detached in a throwaway worktree, borrow
+/// the source checkout's environment, run every command, record one row each.
+///
+/// `kind` decides what the rows claim — the holder's proposal or the
+/// repository's baseline — and `red_on_main` is the exclusion map applied to a
+/// proposal's failures (empty for a baseline).
+#[allow(clippy::too_many_arguments)]
+async fn run_commands_in_worktree(
+    pool: &DbPool,
+    project_id: &str,
+    persona_id: &str,
+    root_path: &Path,
+    branch: &str,
+    tip: &str,
+    commands: &[String],
+    source: GateSource,
+    kind: GateKind,
+    red_on_main: &BTreeSet<String>,
+) -> GateSweep {
     let wt_dir = match tempfile::Builder::new()
         .prefix("personas-app-master-gate-")
         .tempdir()
@@ -1565,9 +2025,10 @@ pub async fn run_declared_gates(
                 project_id,
                 persona_id,
                 branch,
-                &tip,
-                &commands,
+                tip,
+                commands,
                 source,
+                kind,
                 &format!("could not create a temp dir for the gate worktree: {e}"),
             )
         }
@@ -1577,7 +2038,7 @@ pub async fn run_declared_gates(
 
     if let Err(e) = git(root_path, &["worktree", "add", "--detach", &wt_str, branch]).await {
         return did_not_run_sweep(
-            pool, project_id, persona_id, branch, &tip, &commands, source, &e,
+            pool, project_id, persona_id, branch, tip, commands, source, kind, &e,
         );
     }
 
@@ -1596,7 +2057,7 @@ pub async fn run_declared_gates(
 
     let timeout = gate_timeout();
     let mut runs: Vec<GateRun> = Vec::new();
-    for cmd in &commands {
+    for cmd in commands {
         let run = match deps_missing_for(cmd, &borrowed) {
             // The source checkout has no such dependency either. Installing it
             // is a different blast radius (network, minutes, a lockfile write)
@@ -1617,7 +2078,16 @@ pub async fn run_declared_gates(
             ),
             None => run_one_gate(project_id, persona_id, branch, cmd, &wt_path, timeout).await,
         }
-        .at_tip(&tip);
+        .at_tip(tip)
+        .of_kind(kind);
+        // A failure the main branch was already carrying is the repository's,
+        // not this proposal's. `marked_inherited_red` is itself fail-closed —
+        // it only ever stamps a FAILED proposal run.
+        let run = if red_on_main.contains(cmd) {
+            run.marked_inherited_red()
+        } else {
+            run
+        };
         if let Err(e) = record_gate_run(pool, &run) {
             tracing::warn!(project_id, branch, error = %e,
                 "app_master_gates: could not record a gate run");
@@ -1644,6 +2114,7 @@ pub async fn run_declared_gates(
         source,
         runs,
         linked_deps: borrowed.linked,
+        kind,
     }
 }
 
@@ -1656,17 +2127,21 @@ fn did_not_run_sweep(
     head_sha: &str,
     commands: &[String],
     source: GateSource,
+    kind: GateKind,
     reason: &str,
 ) -> GateSweep {
     tracing::warn!(
         project_id,
         branch,
         reason,
-        "app_master_gates: gates could not be run against the proposal branch"
+        kind = kind.as_str(),
+        "app_master_gates: gates could not be run against the branch"
     );
     let runs: Vec<GateRun> = commands
         .iter()
         .map(|c| {
+            // Never `inherited_red`: nothing ran, so there is no failure to
+            // attribute to anybody. It is already in neither half.
             let run = GateRun::new(
                 project_id,
                 persona_id,
@@ -1677,7 +2152,8 @@ fn did_not_run_sweep(
                 0,
                 Some(reason.to_string()),
             )
-            .at_tip(head_sha);
+            .at_tip(head_sha)
+            .of_kind(kind);
             let _ = record_gate_run(pool, &run);
             run
         })
@@ -1687,6 +2163,7 @@ fn did_not_run_sweep(
         source,
         runs,
         linked_deps: Vec::new(),
+        kind,
     }
 }
 
@@ -2432,6 +2909,7 @@ mod tests {
             source: GateSource::NotConfigured,
             runs: vec![],
             linked_deps: vec![],
+            kind: GateKind::Proposal,
         };
         let v = sweep.verdict();
         assert!(v.contains("NOT CONFIGURED"));
@@ -2441,6 +2919,7 @@ mod tests {
             branch: "autopilot/x".into(),
             source: GateSource::Mandate,
             linked_deps: vec!["node_modules".into()],
+            kind: GateKind::Proposal,
             runs: vec![
                 GateRun::new(
                     "p",
@@ -2467,7 +2946,10 @@ mod tests {
         let v = sweep.verdict();
         assert!(v.contains("PASS  npm run lint"));
         assert!(v.contains("DID NOT RUN  npm test"));
-        assert!(v.contains("100% of the gates that ran passed (1 did not run)"));
+        assert!(
+            v.contains("100% of the gates this proposal is answerable for passed (1 did not run, 0 inherited red)"),
+            "{v}"
+        );
         // The reviewer can see the environment was borrowed, not rebuilt.
         assert!(v.contains("borrowed from the source checkout, not rebuilt: node_modules"));
     }
@@ -2931,6 +3413,10 @@ mod tests {
     async fn reconcile_pass(pool: &DbPool, root: &Path, project: &str, persona: &str) -> usize {
         let main = resolve_main_branch(root, Some("main")).await.unwrap();
         let branches = list_proposal_branches(root).await.unwrap();
+        // Step 1b (sweep #25), in the reconciler's own order: baseline the
+        // repository BEFORE gating proposals, so this pass's proposal runs are
+        // classified against a current baseline.
+        run_baseline_gates(pool, project, persona, root, &main).await;
         for branch in &branches {
             let head = git(root, &["rev-parse", branch]).await.unwrap();
             let (base, commits) = branch_commits(root, &main, branch)
@@ -3293,5 +3779,364 @@ mod tests {
             "deadbeefcafe"
         ));
         assert!(!gates_ran_for_tip(&pool, "proj-tip", BRANCH, ""));
+    }
+
+    // -- bench sweep #25: the rate is baseline-relative ----------------------
+    //
+    // A proposal is judged on the gates that were green before it existed. The
+    // sweep found the App master's proposal on `ascent` scored 0% while that
+    // repository's own `npm run lint` and `npm run test` were red on main.
+
+    /// A command red on main and red on the proposal is the repository's
+    /// failure, not the holder's: recorded, excluded from the denominator, and
+    /// the rate computed over what is left.
+    #[tokio::test]
+    async fn a_gate_already_red_on_main_is_inherited_not_charged_to_the_proposal() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const BRANCH: &str = "autopilot/inherits-a-red-gate";
+        // One command that fails everywhere (the repo's own debt) and one that
+        // passes everywhere. Before this rule the proposal's rate was 0.5;
+        // half of that denominator was never about the proposal.
+        const RED_EVERYWHERE: &str = "git ls-files --error-unmatch does-not-exist.txt";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-inherit", &[RED_EVERYWHERE, "git --version"]);
+
+        repo.git(&["checkout", "-b", BRANCH]).unwrap();
+        repo.commit("work.txt", "w", "feat: real work").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        reconcile_pass(&pool, repo.path(), "proj-inherit", "p-1").await;
+
+        // The baseline says what the repository itself is carrying.
+        let baseline = latest_baseline(&pool, "proj-inherit").expect("main was baselined");
+        assert_eq!(
+            (baseline.commands, baseline.passed, baseline.failed),
+            (2, 1, 1)
+        );
+        assert_eq!(
+            baseline.tip_sha,
+            repo.git(&["rev-parse", "main"]).unwrap(),
+            "the baseline is keyed to the main tip it judged"
+        );
+        assert_eq!(
+            baseline_red_commands(&pool, "proj-inherit"),
+            [RED_EVERYWHERE.to_string()].into_iter().collect()
+        );
+
+        // The proposal's own runs: the inherited failure is recorded, flagged,
+        // and visible in the verdict as something other than a FAIL.
+        let runs = gate_runs_for_branch(&pool, "proj-inherit", BRANCH).unwrap();
+        assert_eq!(runs.len(), 2);
+        let red = runs
+            .iter()
+            .find(|r| r.command == RED_EVERYWHERE)
+            .expect("the red gate ran against the proposal too");
+        assert_eq!(red.outcome, GateOutcome::Failed, "it really did fail here");
+        assert!(red.inherited_red, "…and it was already failing on main");
+        assert!(
+            red.one_line().starts_with("INHERITED RED"),
+            "{}",
+            red.one_line()
+        );
+
+        // The rate is over what is left: 1 of 1.
+        let t = gate_tally_since(&pool, "proj-inherit", Some("p-1"), EPOCH);
+        assert_eq!(
+            (t.passed, t.failed, t.inherited_red, t.did_not_run),
+            (1, 0, 1, 0)
+        );
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-inherit", Some("p-1"), EPOCH),
+            Some(1.0),
+            "the proposal broke nothing, so it must not read as half-broken"
+        );
+    }
+
+    /// The other half, and the one that keeps the instrument honest: a gate
+    /// that was GREEN on main and is red on the proposal is the proposal's.
+    #[tokio::test]
+    async fn a_gate_green_on_main_and_red_on_the_proposal_is_a_real_failure() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const BRANCH: &str = "autopilot/breaks-a-green-gate";
+        const NEEDS_OK: &str = "git ls-files --error-unmatch ok.txt";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-breaks", &[NEEDS_OK, "git --version"]);
+
+        // main is green: the file the gate wants exists there.
+        repo.commit("ok.txt", "ok", "chore: add ok.txt").unwrap();
+        // The proposal deletes it — the gate goes red, and this one is its own
+        // doing.
+        repo.git(&["checkout", "-b", BRANCH]).unwrap();
+        repo.git(&["rm", "-q", "ok.txt"]).unwrap();
+        repo.git(&["commit", "-m", "chore: drop ok.txt"]).unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        reconcile_pass(&pool, repo.path(), "proj-breaks", "p-1").await;
+
+        let baseline = latest_baseline(&pool, "proj-breaks").expect("main was baselined");
+        assert_eq!((baseline.passed, baseline.failed), (2, 0), "main is green");
+        assert!(baseline_red_commands(&pool, "proj-breaks").is_empty());
+
+        let runs = gate_runs_for_branch(&pool, "proj-breaks", BRANCH).unwrap();
+        let broken = runs.iter().find(|r| r.command == NEEDS_OK).unwrap();
+        assert_eq!(broken.outcome, GateOutcome::Failed);
+        assert!(
+            !broken.inherited_red,
+            "nothing to inherit — this gate was green on main"
+        );
+
+        let t = gate_tally_since(&pool, "proj-breaks", Some("p-1"), EPOCH);
+        assert_eq!(
+            (t.passed, t.failed, t.inherited_red, t.did_not_run),
+            (1, 1, 0, 0)
+        );
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-breaks", Some("p-1"), EPOCH),
+            Some(0.5),
+            "the exclusion must not swallow a failure the proposal caused"
+        );
+    }
+
+    /// The baseline is taken once per main tip and refreshed when main moves —
+    /// including when the move FIXES the debt, after which the same failure is
+    /// the holder's again.
+    #[tokio::test]
+    async fn the_baseline_is_taken_once_per_main_tip_and_refreshed_when_main_moves() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const NEEDS_OK: &str = "git ls-files --error-unmatch ok.txt";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-base", &[NEEDS_OK, "git --version"]);
+        let root = repo.path();
+
+        let tip1 = repo.git(&["rev-parse", "main"]).unwrap();
+        assert!(
+            run_baseline_gates(&pool, "proj-base", "p-1", root, "main")
+                .await
+                .is_some(),
+            "the first sweep on an unbaselined tip runs"
+        );
+        let first = latest_baseline(&pool, "proj-base").unwrap();
+        assert_eq!(first.tip_sha, tip1);
+        assert_eq!((first.commands, first.passed, first.failed), (2, 1, 1));
+        assert_eq!(
+            baseline_red_commands(&pool, "proj-base"),
+            [NEEDS_OK.to_string()].into_iter().collect()
+        );
+
+        // An unmoved tip is already answered: nothing runs, nothing is
+        // recorded. A gate suite per tick would be minutes for no new reading.
+        assert!(run_baseline_gates(&pool, "proj-base", "p-1", root, "main")
+            .await
+            .is_none());
+        assert!(baseline_ran_for_tip(&pool, "proj-base", &tip1));
+        assert_eq!(
+            gate_runs_for_branch(&pool, "proj-base", "main")
+                .unwrap()
+                .len(),
+            2
+        );
+
+        // main moves, and the move repairs the repository's own gate.
+        repo.commit("ok.txt", "ok", "fix: repair the repo's own gate")
+            .unwrap();
+        let tip2 = repo.git(&["rev-parse", "main"]).unwrap();
+        assert_ne!(tip1, tip2);
+        assert!(
+            run_baseline_gates(&pool, "proj-base", "p-1", root, "main")
+                .await
+                .is_some(),
+            "a moved tip re-baselines exactly once"
+        );
+
+        let second = latest_baseline(&pool, "proj-base").unwrap();
+        assert_eq!(second.tip_sha, tip2);
+        assert_eq!((second.commands, second.passed, second.failed), (2, 2, 0));
+        assert!(
+            baseline_red_commands(&pool, "proj-base").is_empty(),
+            "the exclusion map follows the newest baseline: the debt is paid, so \
+             a failure here is the holder's again"
+        );
+        assert_eq!(
+            gate_runs_for_branch(&pool, "proj-base", "main")
+                .unwrap()
+                .len(),
+            4,
+            "both baselines are kept — the old reading is still true of the old tip"
+        );
+
+        // And none of it enters the holder's rate.
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-base", Some("p-1"), EPOCH),
+            None,
+            "a baseline run is a reading about the repository, never about the hire"
+        );
+    }
+
+    /// Every command inherited-red or did-not-run ⇒ no rate. Not `0.0`, which
+    /// kp reads as "everything the holder touched failed", and not `1.0`.
+    #[tokio::test]
+    async fn a_window_of_only_inherited_red_and_did_not_run_has_no_rate() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const BRANCH: &str = "autopilot/nothing-answerable";
+        const RED_EVERYWHERE: &str = "git ls-files --error-unmatch does-not-exist.txt";
+        // No node_modules anywhere, so this one never gets an environment.
+        const NEEDS_DEPS: &str = "npm run test:unit";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-nothing", &[RED_EVERYWHERE, NEEDS_DEPS]);
+
+        repo.git(&["checkout", "-b", BRANCH]).unwrap();
+        repo.commit("work.txt", "w", "feat: work").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        reconcile_pass(&pool, repo.path(), "proj-nothing", "p-1").await;
+
+        let t = gate_tally_since(&pool, "proj-nothing", Some("p-1"), EPOCH);
+        assert_eq!(
+            (t.passed, t.failed, t.inherited_red, t.did_not_run),
+            (0, 0, 1, 1)
+        );
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-nothing", Some("p-1"), EPOCH),
+            None,
+            "an empty denominator has no rate — 0.0 would be a verdict nobody measured"
+        );
+        // …and the debt behind that silence is still on the record.
+        let baseline = latest_baseline(&pool, "proj-nothing").unwrap();
+        assert_eq!(
+            (baseline.commands, baseline.passed, baseline.failed),
+            (2, 0, 1)
+        );
+    }
+
+    /// A baseline row is the repository's reading and must never enter a
+    /// holder's window in either half — including the "is there a record at
+    /// all" probe.
+    #[test]
+    fn baseline_rows_are_excluded_from_the_holders_window() {
+        let pool = init_test_db().unwrap();
+        for (kind, outcome) in [
+            (GateKind::Baseline, GateOutcome::Failed),
+            (GateKind::Baseline, GateOutcome::Failed),
+        ] {
+            record_gate_run(
+                &pool,
+                &GateRun::new(
+                    "proj-only-baseline",
+                    "p-1",
+                    "main",
+                    "npm run lint",
+                    outcome,
+                    Some(1),
+                    9,
+                    Some("boom".into()),
+                )
+                .at_tip("tip-1")
+                .of_kind(kind),
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-only-baseline", Some("p-1"), EPOCH),
+            None,
+            "a red repository is not a hire with a 0% rate"
+        );
+        assert_eq!(
+            gate_tally_since(&pool, "proj-only-baseline", Some("p-1"), EPOCH),
+            GateTally::default()
+        );
+        // The proposal-gating selector does not see them either.
+        assert!(!gates_ran_for_tip(
+            &pool,
+            "proj-only-baseline",
+            "main",
+            "tip-1"
+        ));
+    }
+
+    /// The flag is only ever set where it means something.
+    #[test]
+    fn inherited_red_is_refused_on_anything_but_a_failed_proposal_run() {
+        let run = |outcome, kind| {
+            GateRun::new("p", "", "b", "cmd", outcome, Some(1), 1, None)
+                .of_kind(kind)
+                .marked_inherited_red()
+                .inherited_red
+        };
+        assert!(run(GateOutcome::Failed, GateKind::Proposal));
+        // A pass is not inherited red; nor is a hole in the instrument.
+        assert!(!run(GateOutcome::Passed, GateKind::Proposal));
+        assert!(!run(GateOutcome::DidNotRun, GateKind::Proposal));
+        // A baseline run IS the repository's own reading — it cannot inherit
+        // from itself.
+        assert!(!run(GateOutcome::Failed, GateKind::Baseline));
+    }
+
+    #[test]
+    fn the_tally_splits_the_two_kinds_of_hole_and_rates_over_neither() {
+        let mk = |outcome, inherited: bool| {
+            let r = GateRun::new("p", "", "b", "cmd", outcome, None, 0, None);
+            if inherited {
+                r.marked_inherited_red()
+            } else {
+                r
+            }
+        };
+        let t = tally(&[
+            mk(GateOutcome::Passed, false),
+            mk(GateOutcome::Failed, false),
+            mk(GateOutcome::Failed, true),
+            mk(GateOutcome::DidNotRun, false),
+        ]);
+        assert_eq!(
+            (t.passed, t.failed, t.inherited_red, t.did_not_run),
+            (1, 1, 1, 1)
+        );
+        assert_eq!(t.total(), 4);
+        assert_eq!(t.counted(), 2);
+        assert_eq!(t.rate(), Some(0.5));
+        assert_eq!(GateTally::default().rate(), None);
+    }
+
+    /// Legacy rows (written before sweep #25) carry `kind = 'proposal'` and
+    /// `inherited_red = 0` by DEFAULT, so an existing ledger keeps reading
+    /// exactly as it did.
+    #[test]
+    fn rows_written_before_the_baseline_rule_still_read_as_proposal_runs() {
+        let pool = init_test_db().unwrap();
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO app_master_gate_runs
+                    (id, project_id, persona_id, branch, head_sha, command, exit_code, outcome,
+                     duration_ms, first_error, ran_at)
+                 VALUES ('legacy-1', 'proj-legacy-kind', 'p-1', 'autopilot/x', 'tip',
+                         'npm test', 0, 'passed', 5, NULL, '2026-08-26T00:00:00+00:00')",
+                [],
+            )
+            .unwrap();
+        let runs = gate_runs_for_branch(&pool, "proj-legacy-kind", "autopilot/x").unwrap();
+        assert_eq!(runs[0].kind, GateKind::Proposal);
+        assert!(!runs[0].inherited_red);
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-legacy-kind", Some("p-1"), EPOCH),
+            Some(1.0)
+        );
+        assert_eq!(GateKind::parse("something-new"), GateKind::Proposal);
     }
 }

@@ -16,12 +16,19 @@
 //!    project's `root_path`, and record any new one in `app_master_proposals`
 //!    together with the commits it carries, captured now, while the fork point
 //!    still isolates them.
-//! 2. **Gate** each newly-recorded proposal by running the repository's OWN
-//!    declared gate commands against that branch in a throwaway worktree, and
-//!    record one three-valued row per command in `app_master_gate_runs`. The
-//!    commands come from the mandate's `approvalGates` (kp puts the dossier's
-//!    `declaredGates` there) and from nowhere else; with none declared,
-//!    nothing runs and the verdict is *not configured*.
+//! 2. **Baseline** the project's own main branch — the same declared commands,
+//!    run against `main_branch` once per main tip — so a proposal is judged on
+//!    what it CHANGED and not on debt the repository was already carrying
+//!    (bench sweep #25). Then **gate** each proposal whose current tip nothing
+//!    has judged, running the repository's OWN declared gate commands against
+//!    that branch in a throwaway worktree and recording one three-valued row
+//!    per command in `app_master_gate_runs`. A failure on a command that was
+//!    already red on the baseline is stamped `inherited_red` and leaves the
+//!    pass-rate denominator; the debt is reported separately as
+//!    `baselineGateHealth`. The commands come from the mandate's
+//!    `approvalGates` (kp puts the dossier's `declaredGates` there) and from
+//!    nowhere else; with none declared, nothing runs and the verdict is *not
+//!    configured*.
 //! 3. **Reconcile** every known proposal against the project's main branch:
 //!    an ancestor tip is a merge, a later `Revert "<subject>"` /
 //!    `This reverts commit <sha>` naming one of the proposal's commits is a
@@ -110,6 +117,11 @@ pub(crate) struct ReconcileSummary {
     pub newly_recorded: usize,
     /// Proposals whose declared gates were run this pass (capped per tick).
     pub gated: usize,
+    /// Projects whose **main branch** was baselined this pass — the declared
+    /// gates run against main itself, once per main tip, so a proposal is
+    /// judged on what it changed (bench sweep #25). `0` on a pass where every
+    /// main tip already had a current baseline, which is the steady state.
+    pub baselined: usize,
     pub errors: Vec<String>,
 }
 
@@ -138,6 +150,7 @@ pub(crate) async fn reconcile_tick_summary(
                 summary.branches_seen += counts.branches_seen;
                 summary.newly_recorded += counts.newly_recorded;
                 summary.gated += counts.gated;
+                summary.baselined += counts.baselined;
             }
             Err(e) => {
                 summary.errors.push(format!("{project_id}: {e}"));
@@ -158,6 +171,7 @@ struct ProjectCounts {
     branches_seen: usize,
     newly_recorded: usize,
     gated: usize,
+    baselined: usize,
 }
 
 /// Reconcile one project. Returns `Err` only for conditions worth logging;
@@ -236,6 +250,26 @@ async fn reconcile_project(
             newly_seen.push(branch.clone());
             counts.newly_recorded += 1;
         }
+    }
+
+    // -- 1b. Baseline the repository itself ----------------------------------
+    //
+    // Before judging a proposal, know what the repository's own gates say about
+    // its main branch (bench sweep #25). Without this, a repo whose `lint` and
+    // `test` are already red hands every proposal a 0% pass rate no change of
+    // its own could have avoided — a verdict about inherited debt wearing a
+    // hire's name.
+    //
+    // Once per main tip: the common tick resolves the tip, finds a current
+    // baseline and spawns nothing. It costs one extra gate sweep on the tick
+    // after main moves, which is the price of the number meaning anything.
+    // Ordered BEFORE the proposal gating below so this tick's proposal runs are
+    // classified against a current baseline rather than the previous tip's.
+    if gates::run_baseline_gates(pool, project_id, &record.persona_id, &root, &main_branch)
+        .await
+        .is_some()
+    {
+        counts.baselined += 1;
     }
 
     // -- 2. Gate whatever this tip has not answered for ----------------------
