@@ -216,12 +216,18 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
             )}
           </div>
 
-          <div className="flex items-center gap-2 px-6 py-3 border-t border-primary/10 bg-secondary/15 flex-shrink-0">
+          {/* Action band. `flex-wrap` + a wrapped action cluster so a narrow
+              modal breaks BETWEEN whole buttons; each button stays one row of
+              icon + label (the icon goes through Button's `icon` prop — passed
+              as a CHILD it lands inside Button's plain label <span>, where
+              preflight's `svg { display:block }` forces the label onto a
+              second line, which is the two-row band that was reported). */}
+          <div className="flex flex-wrap items-center gap-2 px-6 py-3 border-t border-primary/10 bg-secondary/15 flex-shrink-0">
             {/* Source reference: the assignment this row belongs to, when it
                 carries one — a quiet copyable handle, not a hyperlink (the
                 channel surfaces own navigation). */}
             {item.assignmentId && (
-              <span className="inline-flex items-center gap-1.5 min-w-0">
+              <span className="inline-flex items-center gap-1.5 min-w-0 whitespace-nowrap">
                 <span className="typo-label text-foreground">{t.monitor.conv_card_assignment}</span>
                 <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-secondary/50 border border-primary/10 text-foreground">
                   {item.assignmentId.slice(0, 8)}
@@ -229,20 +235,27 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                 <CopyButton text={item.assignmentId} tooltip={t.shared.copy_full_id} />
               </span>
             )}
-            <span className="flex-1" />
-            {copyText && <CopyButton text={copyText} label={t.monitor.channel_copy_message} />}
-            {onPin && item.kind !== 'memory' && (
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={pinned}
-                onClick={() => onPin(item)}
-                className={pinned ? 'text-amber-300/90' : undefined}
-              >
-                <Pin className="w-3.5 h-3.5" />
-                {pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
-              </Button>
-            )}
+            <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              {copyText && (
+                <CopyButton
+                  text={copyText}
+                  label={t.monitor.channel_copy_message}
+                  className="whitespace-nowrap"
+                />
+              )}
+              {onPin && item.kind !== 'memory' && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pinned}
+                  onClick={() => onPin(item)}
+                  icon={<Pin className="w-3.5 h-3.5" />}
+                  className={`whitespace-nowrap${pinned ? ' text-amber-300/90' : ''}`}
+                >
+                  {pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
+                </Button>
+              )}
+            </span>
           </div>
         </>
       )}

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertCircle, Bookmark, Check, ExternalLink, FileText, Loader2, Radio, Sparkles, X,
 } from 'lucide-react';
@@ -23,6 +23,16 @@ import { parseItemExtra, reviewStatusOf } from './personaConversationModel';
  * All rows are memo'd against C1's identity-preserving refresh — a quiet poll
  * re-renders nothing.
  * -------------------------------------------------------------------------- */
+
+/**
+ * Chat-tightened markdown rhythm: paragraph/list/heading spacing compressed so
+ * a two-line remark doesn't inherit document layout. Same set the team
+ * conversation's TalkBubble uses (ConversationCards.tsx) — the full document
+ * rhythm belongs to the detail modal, never to a bubble.
+ */
+const MD_CHAT_RHYTHM =
+  '[&_p]:mb-1.5 [&_p]:leading-normal [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 ' +
+  '[&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5';
 
 /* ── CHAT ──────────────────────────────────────────────────────────────────── */
 
@@ -63,7 +73,7 @@ export const PersonaChatBubble = memo(function PersonaChatBubble({
         )}
         <MarkdownRenderer
           content={item.body ?? ''}
-          className="typo-body text-foreground break-words [&_p]:mb-1.5 [&_p]:leading-normal [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 [&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5"
+          className={`typo-body text-foreground break-words ${MD_CHAT_RHYTHM}`}
         />
         {pending && (
           <span className="mt-0.5 flex items-center gap-1 typo-caption text-foreground opacity-45">
@@ -95,6 +105,16 @@ export const PersonaWorkingRow = memo(function PersonaWorkingRow({ personaName }
 
 /* ── REPORT — a compact bubble with an attachment chip ─────────────────────── */
 
+/**
+ * The preview's visual clamp. `line-clamp-*` needs `display:-webkit-box`,
+ * which collapses markdown's block children (lists, tables, fenced code) into
+ * one inline run — so the clamp is a max-height box instead, and the cut is
+ * softened with a MASK rather than a gradient overlay: the bubble sits on a
+ * translucent `bg-secondary/20` whose effective color no single `from-*` stop
+ * can match, and a mask fades whatever is actually behind it.
+ */
+const REPORT_PREVIEW_FADE = 'linear-gradient(to bottom, #000 65%, transparent 100%)';
+
 export const PersonaReportBubble = memo(function PersonaReportBubble({
   item, onOpenReport,
 }: {
@@ -103,6 +123,30 @@ export const PersonaReportBubble = memo(function PersonaReportBubble({
   onOpenReport: (reportId: string) => void;
 }) {
   const { t } = useTranslation();
+  const boxRef = useRef<HTMLDivElement>(null);
+  const inkRef = useRef<HTMLDivElement>(null);
+  // Fade only when the preview actually overflows — a two-line report must not
+  // render with its last line dissolving for no reason.
+  const [overflows, setOverflows] = useState(false);
+  const body = item.body ?? '';
+
+  useEffect(() => {
+    const box = boxRef.current;
+    const ink = inkRef.current;
+    if (!box || !ink) return;
+    const measure = () => setOverflows(ink.offsetHeight - box.clientHeight > 2);
+    measure();
+    // The markdown body reflows as the bubble's width settles (the row is
+    // virtualized and measured after mount), so watch the ink, not the clamp.
+    const ro = new ResizeObserver(measure);
+    ro.observe(ink);
+    return () => ro.disconnect();
+  }, [body]);
+
+  const openReport = useCallback(() => {
+    if (item.reportId) onOpenReport(item.reportId);
+  }, [item.reportId, onOpenReport]);
+
   return (
     <div className="py-1 flex justify-start">
       <div className="max-w-[78%] min-w-0 px-3 py-2 rounded-card border border-border bg-secondary/20">
@@ -114,18 +158,31 @@ export const PersonaReportBubble = memo(function PersonaReportBubble({
             <RelativeTime timestamp={item.at} />
           </span>
         </span>
-        {item.body && (
-          <p className="typo-caption text-foreground opacity-70 whitespace-pre-wrap line-clamp-3 break-words">
-            {item.body}
-          </p>
+        {body && (
+          <div
+            ref={boxRef}
+            className="max-h-28 overflow-hidden"
+            style={
+              overflows
+                ? { maskImage: REPORT_PREVIEW_FADE, WebkitMaskImage: REPORT_PREVIEW_FADE }
+                : undefined
+            }
+          >
+            <div ref={inkRef}>
+              <MarkdownRenderer
+                content={body}
+                className={`typo-caption text-foreground opacity-70 break-words ${MD_CHAT_RHYTHM}`}
+              />
+            </div>
+          </div>
         )}
         {item.reportId && (
           <button
             type="button"
-            onClick={() => onOpenReport(item.reportId!)}
-            className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/25 bg-primary/10 typo-caption text-foreground hover:bg-primary/20 transition-colors"
+            onClick={openReport}
+            className="mt-1.5 inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-full border border-primary/25 bg-primary/10 typo-caption text-foreground hover:bg-primary/20 transition-colors"
           >
-            <FileText className="w-3.5 h-3.5" aria-hidden />
+            <FileText className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
             {t.monitor.conv_persona_report_chip}
           </button>
         )}
@@ -227,7 +284,7 @@ export const PersonaReviewCard = memo(function PersonaReviewCard({
         )}
 
         {pending ? (
-          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+          <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
             {/* Choosing a suggested action records the branch AND dispatches
                 the follow-up run — the one door in rowWrites. */}
             {actions.map((a) => (
@@ -235,6 +292,7 @@ export const PersonaReviewCard = memo(function PersonaReviewCard({
                 key={a}
                 variant="secondary"
                 size="xs"
+                className="whitespace-nowrap"
                 loading={busy === a}
                 disabled={busy !== null && busy !== a}
                 onClick={() => run(a, () => dispatchReviewRowAction(row, a))}
@@ -242,37 +300,51 @@ export const PersonaReviewCard = memo(function PersonaReviewCard({
                 {a}
               </Button>
             ))}
-            <span className="ml-auto flex items-center gap-1.5">
+            {/* The verdict cluster is ONE flex item, so a crowded row wraps it
+                as a unit rather than orphaning "Open in reviews" on its own. */}
+            <span className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
               <Button
                 variant="danger"
                 size="xs"
+                className="whitespace-nowrap"
+                icon={<X className="w-3 h-3" aria-hidden />}
                 loading={busy === 'rejected'}
                 disabled={busy !== null && busy !== 'rejected'}
                 onClick={() => run('rejected', () => resolveReviewRow(row, 'rejected'))}
               >
-                <X className="w-3 h-3" aria-hidden />
                 {t.monitor.quick_reject}
               </Button>
               <Button
                 variant="primary"
                 size="xs"
+                className="whitespace-nowrap"
+                icon={<Check className="w-3 h-3" aria-hidden />}
                 loading={busy === 'approved'}
                 disabled={busy !== null && busy !== 'approved'}
                 onClick={() => run('approved', () => resolveReviewRow(row, 'approved'))}
               >
-                <Check className="w-3 h-3" aria-hidden />
                 {t.monitor.quick_approve}
               </Button>
-              <Button variant="ghost" size="xs" onClick={openInReviews}>
-                <ExternalLink className="w-3 h-3" aria-hidden />
+              <Button
+                variant="ghost"
+                size="xs"
+                className="whitespace-nowrap"
+                icon={<ExternalLink className="w-3 h-3" aria-hidden />}
+                onClick={openInReviews}
+              >
                 {t.monitor.conv_persona_review_open}
               </Button>
             </span>
           </div>
         ) : (
-          <div className="mt-1.5 flex items-center">
-            <Button variant="ghost" size="xs" onClick={openInReviews}>
-              <ExternalLink className="w-3 h-3" aria-hidden />
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="xs"
+              className="whitespace-nowrap"
+              icon={<ExternalLink className="w-3 h-3" aria-hidden />}
+              onClick={openInReviews}
+            >
               {t.monitor.conv_persona_review_open}
             </Button>
           </div>
