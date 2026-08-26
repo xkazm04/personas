@@ -3339,7 +3339,22 @@ async fn kp_test_tick(
         let t0 = std::time::Instant::now();
         let result = match phase {
             "overnight" => tick_phase_overnight(&pool, &app, body.project_id.as_deref()).await,
-            "reconcile" => tick_phase_reconcile(&pool, body.project_id.as_deref()).await,
+            "reconcile" => {
+                // The driver scopes by persona; reconcile is project-keyed.
+                // Resolve the persona's mandate project so a scoped tick never
+                // reconciles every mandated project (sweep #25: `projects: 4`
+                // and 16 stale branches "accounted" a dispatch in 3 minutes
+                // while the worker was still authoring).
+                let scoped_project: Option<String> = body.project_id.clone().or_else(|| {
+                    body.persona_id.as_deref().and_then(|pid| {
+                        personas_engine::app_master::load_mandates(&pool)
+                            .into_iter()
+                            .find(|(_, r)| r.persona_id == pid)
+                            .map(|(project_id, _)| project_id)
+                    })
+                });
+                tick_phase_reconcile(&pool, scoped_project.as_deref()).await
+            }
             "report" => tick_phase_report(&pool, body.persona_id.as_deref()).await,
             "probation" => tick_phase_probation(
                 &pool,
