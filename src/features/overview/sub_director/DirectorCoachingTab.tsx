@@ -144,24 +144,38 @@ export default function DirectorCoachingTab() {
         actions={headerActions}
       />
 
-      <ContentBody>
-       <div className="relative min-h-full">
+      {/* `flex` mode gives the scroll container a DEFINITE height (h-full flex
+          column), which is what lets the stage below stretch to the full
+          viewport height on short content — in the default mode the backdrop
+          was clipped to whatever the inner content happened to measure. The
+          padding ContentBody would have applied is re-applied on the stage, so
+          the backdrop covers the gutters too. */}
+      <ContentBody flex>
+       <div className="relative flex-1 flex flex-col py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5">
         {/* Decorative Athena backdrop — very low opacity, non-interactive, behind all content. */}
         <img
           aria-hidden
           src="/athena/athena_baseline.jpg"
           className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.05]"
         />
-        <div className="relative z-10">
+        <div className="relative z-10 flex-1 flex flex-col">
         {!d.ready ? (
           <DirectorScorecardPlaceholder />
         ) : !p || inScope === 0 ? (
-          <EmptyState
-            glyph={COACHING_GLYPH}
-            title={t.director.empty_title}
-            subtitle={t.director.empty_subtitle}
-            action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}
-          />
+          /* The empty state sits directly over the Athena backdrop, so it gets
+             its own darker, bordered surface — the copy reads against a flat
+             field instead of whatever the photo happens to be behind it. No
+             backdrop-blur (WebView2 flicker; see the ContentHeader note). */
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-full max-w-xl rounded-modal border border-primary/15 bg-secondary/60 shadow-elevation-3 px-6 py-8">
+              <EmptyState
+                glyph={COACHING_GLYPH}
+                title={t.director.empty_title}
+                subtitle={t.director.empty_subtitle}
+                action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}
+              />
+            </div>
+          </div>
         ) : (
           <div className="space-y-4 pb-6">
             {/* Thin subheader: secondary stats + Memory toggle */}

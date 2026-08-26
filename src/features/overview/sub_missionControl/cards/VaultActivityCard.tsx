@@ -144,25 +144,29 @@ export default function VaultActivityCard() {
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-      <PaneHeader label={va.title} subtitle={va.subtitle}>
+      {/* One row: the shield chip is icon + count only (the words "unhealthy" /
+          "all healthy" live in its title/aria-label, so the meaning survives
+          for screen readers without a second text run competing for width). */}
+      <PaneHeader label={va.title}>
         <div className="flex items-center gap-2">
           {loaded && (
             <span
-              className={`inline-flex items-center gap-1 typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive border ${
+              className={`inline-flex items-center gap-1 typo-caption font-mono tabular-nums px-1.5 py-0.5 rounded-interactive border ${
                 unhealthy > 0
                   ? 'border-status-error/30 bg-status-error/10 text-status-error'
                   : 'border-status-success/30 bg-status-success/10 text-status-success'
               }`}
               title={unhealthy > 0 ? va.unhealthy_hint : va.healthy_hint}
+              aria-label={unhealthy > 0 ? tx(va.unhealthy_count, { count: unhealthy }) : va.all_healthy}
             >
               {unhealthy > 0 ? <ShieldAlert className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
-              {unhealthy > 0 ? tx(va.unhealthy_count, { count: unhealthy }) : va.all_healthy}
+              {unhealthy > 0 && unhealthy}
             </span>
           )}
           <button
             type="button"
             onClick={openVault}
-            className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest focus-ring rounded-interactive"
+            className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest whitespace-nowrap focus-ring rounded-interactive"
           >
             {va.open_vault} <ArrowRight className="w-3 h-3" />
           </button>

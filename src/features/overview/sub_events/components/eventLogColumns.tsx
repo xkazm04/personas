@@ -136,8 +136,10 @@ export function useEventLogColumns({
         if (personaId) {
           // Show the full id — the column is wide (minmax(320px, 2fr)), so long
           // ids wrap rather than truncate, matching the resolved-name case above.
+          // Same typo-body as every other value cell: this table uses ONE type
+          // scale across columns (no mono/caption variance).
           return (
-            <span className="typo-body text-foreground font-mono break-all" title={personaId}>
+            <span className="typo-body text-foreground break-all" title={personaId}>
               {personaId}
             </span>
           );
@@ -159,7 +161,7 @@ export function useEventLogColumns({
         // matches every other column's value font — the raw technical id
         // stays reachable via the title tooltip.
         return (
-          <span className={`block max-w-full truncate typo-body font-medium ${typeColor}`} title={event.event_type}>
+          <span className={`block max-w-full truncate typo-body ${typeColor}`} title={event.event_type}>
             {eventTypeLabel(t, event.event_type)}
           </span>
         );
@@ -175,8 +177,10 @@ export function useEventLogColumns({
       render: (event) => {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
         const StatusIcon = getEventStatusIcon(event.status);
+        // typo-body like every other value cell — the pill carries the status
+        // colour, it does not need a second (smaller) type scale to do it.
         return (
-          <span className={`inline-flex items-center gap-1.5 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+          <span className={`inline-flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {event.status === 'processing'
               ? <LoadingSpinner size="xs" />
               : <StatusIcon className="w-3 h-3" />}
