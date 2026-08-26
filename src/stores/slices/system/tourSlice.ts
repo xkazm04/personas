@@ -212,7 +212,6 @@ export interface TourStepDef {
   };
   completeOn: TourEventKey;
   subSteps: TourSubStepDef[];
-  panelWidth?: number;
   highlightTestId?: string;
   /**
    * Spoken narration for this step, written for the ear rather than the
@@ -276,7 +275,6 @@ const GETTING_STARTED_STEPS: TourStepDef[] = [
     hint: "Describe your agent, then set its persona core.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:persona-promoted",
-    panelWidth: 360,
     highlightTestId: "agent-intent-input",
     narration: "Now for the fun part — building your first agent. Just say what you want it to do, in one line. Under the box, the persona-core badge sets its temperament — pick a mentality archetype, then tune Risk, Speed, Model, and Memory. Hit build and it asks a few clarifying questions, fills in the whole spec, runs a smoke test, and goes live.",
     subSteps: [
@@ -357,7 +355,6 @@ const EXECUTION_OBSERVABILITY_STEPS: TourStepDef[] = [
     hint: "Select an agent, open the Lab tab, and explore the versions table.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:lab-explored",
-    panelWidth: 360,
     subSteps: [
       { id: "select-agent", label: "Pick a promoted agent", hint: "Lab works on agents that already have a promoted build — click one in the list to open its editor." },
       { id: "open-lab", label: "Open the Lab tab", hint: "Click the flask icon in the editor tab bar. Lab is Team-tier and up.", highlightTestId: "editor-tab-lab" },
@@ -391,7 +388,6 @@ const ORCHESTRATION_EVENTS_STEPS: TourStepDef[] = [
     hint: "Look at how triggers are categorized, then see them wired on the Event Canvas.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:triggers-explored",
-    panelWidth: 360,
     subSteps: [
       { id: "trigger-categories", label: "Three trigger families", hint: "Schedule, polling, file watcher, clipboard and app focus = Pull. Webhook and event_listener = Push. Chain and composite = Compose. Each family answers \"what wakes this agent up?\"." },
       { id: "set-on-build", label: "Set on the Glyph", hint: "An agent's trigger is chosen during the build — the \"When\" row / Trigger sigil. Pick a schedule, a webhook, or an event to listen for; it's baked into the agent at promote time." },
@@ -461,7 +457,6 @@ const GETTING_STARTED_SIMPLE_STEPS: TourStepDef[] = [
     hint: "Type a simple description like \"Summarize my daily emails\" or \"Monitor Slack for urgent messages\".",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:persona-promoted",
-    panelWidth: 320,
     narration: "Time to create your first agent. Just describe what you'd like it to do in plain language — something like \"summarize my daily emails.\" I'll draft it, run a quick test, and you can promote it live when it looks good.",
     subSteps: [
       { id: "enter-intent", label: "Describe it", hint: "What should your agent do?", highlightTestId: "agent-intent-input" },
@@ -481,7 +476,6 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     nav: { sidebarSection: "plugins", subTab: "browse" },
     completeOn: "tour:plugins-browse-explored",
     highlightTestId: "plugin-browse-page",
-    panelWidth: 360,
     subSteps: [
       { id: "scan-catalog", label: "Scan the catalog", hint: "Each card shows what the plugin does in one line. Disabled cards are dimmed; enabled ones get a colored border." },
       { id: "toggle-plugin", label: "Toggle one on", hint: "Flip the switch on any plugin to add it to your workspace. The sidebar updates immediately." },
@@ -510,7 +504,6 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     nav: { sidebarSection: "plugins", subTab: "twin" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "twin-page",
-    panelWidth: 360,
     subSteps: [
       { id: "twin-profiles", label: "Profiles", hint: "Each profile is a distinct identity — \"work me\", \"weekend me\". Agents can pick which one to channel." },
       { id: "twin-tone", label: "Tone & voice", hint: "The Tone tab teaches the system how you write. The Voice tab handles audio cloning (Team+)." },
@@ -540,7 +533,6 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     nav: { sidebarSection: "plugins", subTab: "browse" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "plugin-browse-page",
-    panelWidth: 360,
     subSteps: [
       { id: "drive-obsidian", label: "Drive & Obsidian Brain", hint: "Drive syncs files; Obsidian Brain indexes your vault for knowledge retrieval and graph navigation." },
       { id: "dev-extras", label: "Dev-build extras", hint: "Artist (Leonardo + Blender + media studio) and Research Lab (structured literature reviews + experiments) ship in dev builds only — handy to know they exist." },
@@ -584,7 +576,6 @@ const SCHEDULES_MASTERY_STEPS: TourStepDef[] = [
     hint: "Open an agent's Use Cases tab and schedule one of its use cases.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:schedule-attached",
-    panelWidth: 360,
     subSteps: [
       { id: "open-agent", label: "Open an agent", hint: "Pick any agent from the list to enter its editor." },
       { id: "open-use-cases", label: "Open the Use Cases tab", hint: "Each capability can run on its own schedule. The Use Cases tab is where you wire that up.", highlightTestId: "design-subtab-use-cases" },
@@ -616,7 +607,6 @@ const TEMPLATES_RECIPES_STEPS: TourStepDef[] = [
     hint: "Click any generated template to start its adoption flow.",
     nav: { sidebarSection: "design-reviews", subTab: "generated", subTabSetter: "setTemplateTab" },
     completeOn: "tour:template-adopted",
-    panelWidth: 360,
     highlightTestId: "templates-page",
     subSteps: [
       { id: "pick-template", label: "Pick a template", hint: "Click the most relevant card. Filters at the top help narrow by capability." },
@@ -652,7 +642,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "Click \"New project\" and walk the three-stage stepper: Project → Source control → Standards.",
     nav: { sidebarSection: "teams", subTab: "projects", subTabSetter: "setTeamsTab" },
     completeOn: "tour:pipeline-project-explored",
-    panelWidth: 380,
     highlightTestId: "dev-project-new",
     narration: "Everything starts with a repo. Register your project here, point it at the folder, connect your source control, and it becomes something the whole fleet can read and reason about.",
     subSteps: [
@@ -668,7 +657,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "On the Context Map tab, run the scan — then look at the groups and contexts it produced.",
     nav: { sidebarSection: "plugins", subTab: "context-map", subTabSetter: "setDevToolsTab" },
     completeOn: "tour:pipeline-context-explored",
-    panelWidth: 380,
     highlightTestId: "context-scan-button",
     narration: "Next, map the code. The scan turns your repo into business-domain groups and per-feature contexts — the shared map your KPIs and your agents both read from.",
     subSteps: [
@@ -684,7 +672,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "In Teams › KPIs, run \"Scan for KPIs\" and review the proposals it files.",
     nav: { sidebarSection: "teams", subTab: "kpis", subTabSetter: "setTeamsTab" },
     completeOn: "tour:pipeline-kpis-explored",
-    panelWidth: 380,
     highlightTestId: "kpi-scan-button",
     narration: "Now define what success means. Scan for KPIs and Claude proposes measurable metrics from your codebase. These are the targets — an off-track KPI is what tells a team there's work to do.",
     subSteps: [
@@ -698,10 +685,8 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     title: "4 · Assemble a team from a preset",
     description: "Rather than wiring a team by hand, adopt a pre-wired preset — a best-practice roster with its connection graph already drawn (e.g. the Web Development Team). The blueprint graph is the include/exclude surface: tap a node to keep or drop a member, then adopt the subset in one pass. Pin the team to your project so every member reads the right repo.",
     hint: "Click \"Preset Team\" to open the preset studio, then adopt one (e.g. Web Development Team).",
-    nav: { sidebarSection: "teams", subTab: "workspace", subTabSetter: "setTeamsTab" },
+    nav: { sidebarSection: "teams", subTab: "projects", subTabSetter: "setTeamsTab" },
     completeOn: "tour:pipeline-team-explored",
-    panelWidth: 380,
-    highlightTestId: "team-preset-btn",
     narration: "You don't have to build a team from scratch. Adopt a preset — a best-practice roster already wired together — pick which members you want, and you've got a working team in one pass.",
     subSteps: [
       { id: "gallery", label: "Browse presets", hint: "Each preset is a pre-wired team of agents for a workflow (e.g. an SDLC web-dev team)." },
@@ -714,9 +699,8 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     title: "5 · Put the team to work",
     description: "With a team in place, open the Monitor (press M) → Channels → Conversations, pick the project, and just describe the work in the composer. It reads as work rather than chat, so instead of posting a remark it decomposes the goal into routed steps and drops a proposal card in the conversation — confirm it and the team runs. Shared team memory and the project's KPIs keep the team converging instead of repeating itself. You set direction; the team does the work.",
     hint: "Press M → Channels → Conversations. Describe a piece of work in the composer and confirm the proposal.",
-    nav: { sidebarSection: "teams", subTab: "workspace", subTabSetter: "setTeamsTab" },
+    nav: { sidebarSection: "teams", subTab: "projects", subTabSetter: "setTeamsTab" },
     completeOn: "tour:pipeline-orchestrate-explored",
-    panelWidth: 380,
     narration: "Finally, put the team to work. Open the Monitor, go to the team's conversation, and describe the job in your own words. It routes the steps to the right agents and asks you to confirm — then runs them in parallel, pausing only when it needs you.",
     subSteps: [
       { id: "goal", label: "Describe the work", hint: "Plain language — \"add tests for the billing module and open a PR\". The composer decomposes it instead of posting it." },
@@ -731,7 +715,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "Open a team and look at the canvas — nodes are agents, edges are handoffs.",
     nav: { sidebarSection: "teams" },
     completeOn: "tour:team-canvas-explored",
-    panelWidth: 360,
     narration: "A team is more than a folder of agents. It's the wiring — who runs, when, and what context they share. This canvas is where you compose that.",
     subSteps: [
       { id: "nodes", label: "Nodes are agents", hint: "Each node is a persona; its role and model overrides live in the node config." },
@@ -746,7 +729,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "Trace one chain: which agent kicks it off, and who listens for its completion?",
     nav: { sidebarSection: "teams" },
     completeOn: "tour:team-chaining-understood",
-    panelWidth: 360,
     narration: "Most teams run as event-chains. One agent finishes, emits an event, and the next agent — listening for it — wakes up. No central conductor, just a relay.",
     subSteps: [
       { id: "emit", label: "Finish → emit", hint: "A completed execution publishes an event (e.g. execution_completed) with its output." },
@@ -761,7 +743,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "Open Goals → Missions and read a goal → checklist breakdown.",
     nav: { sidebarSection: "teams" },
     completeOn: "tour:team-assignment-explored",
-    panelWidth: 360,
     narration: "Sometimes you don't want to wire every step. Give the team a goal in plain language, and it breaks the goal into a checklist, picks the right agent for each part, and runs them in parallel.",
     subSteps: [
       { id: "goal", label: "Describe a goal", hint: "\"Review these PRs and draft a changelog\" — the decompose step turns it into ordered, editable steps." },
@@ -776,7 +757,6 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     hint: "Open the team-memory panel; note how decisions persist across runs.",
     nav: { sidebarSection: "teams" },
     completeOn: "tour:team-memory-explored",
-    panelWidth: 360,
     narration: "Teams remember. Decisions land in shared memory and flow into every teammate's next run. Link the team to a goal, and you can stay high-level while it converges.",
     subSteps: [
       { id: "memory", label: "Shared team memory", hint: "A compact digest of the team's top decisions is injected into each member's prompt — shared context without manual hand-offs." },
@@ -901,7 +881,6 @@ const OBSIDIAN_BRAIN_STEPS: TourStepDef[] = [
     nav: { sidebarSection: "plugins", subTab: "setup", subTabSetter: "setObsidianBrainTab" },
     completeOn: "tour:obsidian-memory-understood",
     highlightTestId: "obsidian-knowledge-mirror",
-    panelWidth: 480,
     narration: "Here's the payoff. Agent memories become notes you co-author — your edits flow back into how agents reason. Agents can search the vault live. Research, execution knowledge, and Athena's brain can mirror into it. And the Director keeps its coaching history there. One vault, every memory dimension of the app.",
     subSteps: [
       { id: "curation-loop", label: "Curated agent memory", hint: "Agents write memories → they land as notes → you edit, link, and prune them in Obsidian → the next Pull feeds your curated version back into the agent's reasoning." },

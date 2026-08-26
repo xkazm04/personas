@@ -92,7 +92,13 @@ export interface UiSlice {
   goalsTab: GoalsTab;
   /** Sub-view within the KPIs hub (sidebar sub-items mirror GoalsTab). */
   kpisTab: KpisTab;
-  /** L2 inside the Teams section: workspace (canvas/Studio) or the Goals hub. */
+  /**
+   * L2 inside the Projects section. Defaults to `'projects'` (Manage — the
+   * project table, the section's landing page). `'workspace'` is ONLY ever the
+   * detail of a selected team: enter with
+   * `usePipelineStore.getState().selectTeam(id)` + `setTeamsTab('workspace')`,
+   * leave with `selectTeam(null)` + `setTeamsTab('projects')`.
+   */
   teamsTab: TeamsTab;
   /**
    * Selected release version on the Home → "What's New" surface. Driven by
@@ -389,7 +395,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
   kpisTab: "dashboard" as KpisTab,
-  teamsTab: "workspace" as TeamsTab,
+  // The section lands on Manage (the project table). 'workspace' is now
+  // exclusively the selected-team detail, so it is never a default.
+  teamsTab: "projects" as TeamsTab,
   homeReleaseVersion: "roadmap",
   whatsNewSeenVersion: null,
   templateTab: "generated" as TemplateTab,

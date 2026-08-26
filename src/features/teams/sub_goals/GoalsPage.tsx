@@ -16,7 +16,6 @@ import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
 import { GoalsProgress } from './GoalsProgress';
-import { GoalsMissions } from './GoalsMissions';
 import { GoalViewExplainer } from './GoalViewExplainer';
 import { isComplete } from './goalStatus';
 
@@ -201,9 +200,7 @@ export default function GoalsPage() {
             {scopeSwitch}
           </div>
         )}
-        {goalsTab === 'missions' ? (
-          <GoalsMissions />
-        ) : goalsTab === 'progress' ? (
+        {goalsTab === 'progress' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="progress" view="progress" text={dl.goal_explainer_progress} />
             <GoalsProgress />

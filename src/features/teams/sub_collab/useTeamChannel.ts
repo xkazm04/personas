@@ -17,7 +17,7 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * P0 (monitor consolidation): the state, the fetching, the poll and the push
  * listener all moved into `channelSlice` + `useChannelService`. What's left here
  * are the shared view helpers consumed by the monitor channels (Stream,
- * Conversation), the studio roster and TeamList. Subscribing is refcounted:
+ * Conversation), the studio roster. Subscribing is refcounted:
  * N surfaces watching the same team share one fetch instead of each running
  * its own poll + listener.
  * -------------------------------------------------------------------------- */

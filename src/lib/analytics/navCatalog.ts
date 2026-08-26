@@ -84,7 +84,7 @@ const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 
 // See docs/concepts/golden-paths/query-latency-instrumentation.md.
 const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, 'memory-graph': true, director: true, certification: true });
 const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, competition: true, mastermind: true });
-const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true, missions: true });
+const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
 const AGENT_TABS = exact<AgentTab>({ all: true, create: true, groups: true, cloud: true });
 const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true });

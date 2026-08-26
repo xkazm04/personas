@@ -28,7 +28,8 @@ export interface TeamSlice {
   /**
    * When true, the Teams content area renders the in-app preset-adoption
    * flow (`PresetStudio`) instead of the team list / studio. Routed by
-   * `TeamCanvas`; opened from the "Preset Team" entry points in `TeamList`.
+   * `TeamCanvas`. Its "Preset Team" entry point lived in the retired `TeamList`;
+   * a new one belongs on the Manage (project) surface.
    */
   presetFlowOpen: boolean;
 

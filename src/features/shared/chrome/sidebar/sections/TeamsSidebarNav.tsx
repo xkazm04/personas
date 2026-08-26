@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Rocket, Network } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -11,18 +11,19 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * L2 nav for the Projects section (rebranded from Teams; the store id and the
  * PersonaTeam domain are still "teams"). Four groups:
  *
- * - **Teams** — the team management table / canvas. The per-team roster that
- *   used to hang underneath was removed: the workspace table already lists
- *   every team, so the sidebar copy was redundant and grew unbounded.
+ * - **Manage** — the project/workspace management table (`teamsTab: 'projects'`)
+ *   and the section's landing page. The former "Teams" header button and its
+ *   management table were retired (2026-08-26): a project now owns exactly one
+ *   team, so the team list had nothing to list — team detail is entered from a
+ *   project row instead (`selectTeam(id)` + `setTeamsTab('workspace')`).
  * - **Goals** — the Goals hub + its view submenu (Board / Timeline / Progress).
  * - **KPIs** — the outcome layer + its view submenu.
- * - **Development** — a label-only group holding the project-engineering
- *   surfaces folded in from the retired Dev Tools tabs (Manage / Lifecycle /
- *   Factory / Competition). See DEV_ITEMS.
+ * - **Development** — a label-only group holding the remaining project-engineering
+ *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
+ *   Competition / Mastermind). See DEV_ITEMS.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' | 'goal_view_missions' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
-  { id: 'missions', icon: Rocket, labelKey: 'goal_view_missions' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
   { id: 'progress', icon: ChartNoAxesGantt, labelKey: 'goal_view_progress' },
 ];
@@ -36,14 +37,15 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 ];
 
 // "Development" group — the project-engineering surfaces folded in from the
-// retired Dev Tools tabs. Grouped rather than four sibling top-level entries.
+// retired Dev Tools tabs. Grouped rather than sibling top-level entries.
+// 'projects' (Manage) was promoted OUT of this group to the section's top
+// position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'projects' | 'lifecycle' | 'factory' | 'competition' | 'mastermind'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'manage' | 'lifecycle' | 'factory' | 'competition' | 'mastermind';
+  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind';
   testId: string;
 }> = [
-  { id: 'projects', icon: FolderKanban, labelKey: 'manage', testId: 'teams-projects-nav' },
   { id: 'lifecycle', icon: GitBranch, labelKey: 'lifecycle', testId: 'teams-lifecycle-nav' },
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
   { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav' },
@@ -59,19 +61,29 @@ export function TeamsSidebarNav() {
   const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
   const kpisTab = useSystemStore((s) => s.kpisTab);
   const setKpisTab = useSystemStore((s) => s.setKpisTab);
-  const teams = usePipelineStore((s) => s.teams);
-  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  // Dev projects back the Manage badge (the section's landing page is the
+  // project table, so the count that belongs at the top is projects, not teams).
+  const devProjects = useSystemStore((s) => s.projects);
+  const fetchDevProjects = useSystemStore((s) => s.fetchProjects);
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   // A golden-standard upgrade fired from the Factory readiness matrix is running.
   const factoryRunning = useImproveActivityStore(selectAnyImproveRunning);
 
+  // Teams are no longer listed here, but the store still backs the team detail
+  // entered from a project row — keep it warm so that hop paints instantly.
   useEffect(() => {
     void fetchTeams();
   }, [fetchTeams]);
+
+  // Projects back the Manage badge; they are NOT guaranteed warm (only the
+  // dev-tools surfaces fetch them), so fetch once when the store is empty.
+  useEffect(() => {
+    if (devProjects.length === 0) void fetchDevProjects?.();
+  }, [devProjects.length, fetchDevProjects]);
 
   // Goals are normally fetched by GoalsPage; fetch here too so the count
   // badge is populated before the user ever opens the Goals hub.
@@ -89,22 +101,26 @@ export function TeamsSidebarNav() {
 
   return (
     <nav className="space-y-1" aria-label={t.sidebar.teams}>
-      {/* Workspace header → management table (deselects any open team) */}
+      {/* Manage — the section's landing page (project/workspace table).
+          Deselects any open team, which is the "leaving the team detail" half
+          of the navigation contract (selectTeam(null) + teamsTab 'projects').
+          Keeps the `team-nav` test id: it is the section's front door, and the
+          tour anchor manifest + the live-app suites reach the section by it. */}
       <button
         type="button"
         data-testid="team-nav"
-        onClick={() => { selectTeam(null); go('workspace'); }}
-        aria-current={teamsTab === 'workspace' && !selectedTeamId ? 'page' : undefined}
+        onClick={() => { selectTeam(null); go('projects'); }}
+        aria-current={teamsTab === 'projects' ? 'page' : undefined}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-          teamsTab === 'workspace' && !selectedTeamId
+          teamsTab === 'projects'
             ? 'bg-primary/10 text-foreground font-semibold'
             : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
         }`}
       >
-        <Users className="w-4 h-4 flex-shrink-0" />
-        {t.shared.sidebar_extra.teams_label}
-        {teams.length > 0 && (
-          <span className="ml-auto typo-caption text-foreground font-mono">{teams.length}</span>
+        <FolderKanban className="w-4 h-4 flex-shrink-0" />
+        {t.sidebar.manage}
+        {devProjects.length > 0 && (
+          <span className="ml-auto typo-caption text-foreground font-mono">{devProjects.length}</span>
         )}
       </button>
 

@@ -1,12 +1,28 @@
 import { Check } from 'lucide-react';
-import { TEAM_COLORS } from './CreateTeamForm';
+
+/**
+ * Team identity palette. Lived in `CreateTeamForm` until team creation was
+ * retired (2026-08-26 — a project now owns exactly one team, created with it);
+ * moved here, its only remaining consumer.
+ */
+export const TEAM_COLORS: Record<string, string> = {
+  '#6366f1': 'Indigo',
+  '#8b5cf6': 'Violet',
+  '#ec4899': 'Pink',
+  '#f43f5e': 'Rose',
+  '#f97316': 'Orange',
+  '#eab308': 'Yellow',
+  '#22c55e': 'Green',
+  '#06b6d4': 'Cyan',
+  '#3b82f6': 'Blue',
+};
 
 interface TeamColorPickerProps {
   value: string;
   onChange: (hex: string) => void;
   /**
-   * 'md' (default) shows the color name as a caption below each swatch —
-   * used by CreateTeamForm. 'sm' is a compact grid with the name surfaced
+   * 'md' (default) shows the color name as a caption below each swatch.
+   * 'sm' is a compact grid with the name surfaced
    * only via title/aria-pressed — used by TeamWorkspacePane's identity panel.
    */
   size?: 'md' | 'sm';

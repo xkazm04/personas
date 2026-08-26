@@ -1,37 +1,51 @@
+import { useEffect } from 'react';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
-import TeamList from './TeamList';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { TeamStudioSplitVariant } from './teamStudio/TeamStudioSplitVariant';
 import { PresetStudio } from './presetStudio';
 
 /**
- * Selected-team view. The /prototype round (2026-05-23) replaced the
- * React Flow DAG canvas with the Split Studio — roster + per-member
- * capability toggles + a no-wiring orchestration console. The old
- * edge-wiring canvas (sub_canvas/, canvas/, AutoTeam) is no longer
- * rendered; those files are now orphaned and slated for removal in a
- * follow-up cleanup.
+ * Selected-team detail — the ONLY thing `teamsTab: 'workspace'` renders.
  *
- * - No team selected → the Teams management table (`TeamList`).
- * - Team selected   → `TeamStudioSplitVariant`.
+ * The Teams management table (`TeamList`) that used to fill this route when no
+ * team was selected was retired (2026-08-26): a project now owns exactly one
+ * team, so the section's landing page is Manage (`teamsTab: 'projects'`) and a
+ * team is entered from a project row. Landing here with nothing selected is
+ * therefore a stale-navigation case (a deep link, a persisted tab from an older
+ * build, a caller that still says "open the team list") — redirect to Manage
+ * rather than render a list that no longer exists.
+ *
+ * - Preset flow open → `PresetStudio` (unchanged).
+ * - No team selected → redirect to Manage.
+ * - Team selected    → `TeamStudioSplitVariant`.
  *
  * (Filename kept as TeamCanvas.tsx to avoid churning the single
- * PersonasPage import; it's no longer a canvas.)
+ * PersonasPage/sectionRouter import; it's no longer a canvas.)
  */
 export default function TeamCanvas() {
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const teams = usePipelineStore((s) => s.teams);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
   const presetFlowOpen = usePipelineStore((s) => s.presetFlowOpen);
+  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
 
-  // In-app preset-adoption flow takes over the content area when open
-  // (entered from the "Preset Team" affordances in TeamList).
+  // Redirect, not a render-time set: mutating another store during render is
+  // the classic cross-store tearing bug. The effect is a no-op on every normal
+  // visit (a team is always selected before this route is entered).
+  useEffect(() => {
+    if (!presetFlowOpen && !selectedTeamId) setTeamsTab('projects');
+  }, [presetFlowOpen, selectedTeamId, setTeamsTab]);
+
+  // In-app preset-adoption flow takes over the content area when open.
   if (presetFlowOpen) {
     return <PresetStudio />;
   }
 
   if (!selectedTeamId) {
-    return <TeamList />;
+    // One frame of calm chrome while the effect above swaps the tab.
+    return <RouteChunkSkeleton />;
   }
 
   const teamName = teams.find((t) => t.id === selectedTeamId)?.name ?? 'Team';
@@ -41,7 +55,7 @@ export default function TeamCanvas() {
       <TeamStudioSplitVariant
         teamId={selectedTeamId}
         teamName={teamName}
-        onBack={() => selectTeam(null)}
+        onBack={() => { selectTeam(null); setTeamsTab('projects'); }}
       />
     </ContentBox>
   );
