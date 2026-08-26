@@ -7601,12 +7601,6 @@
       "never_fired": "pendiente de la primera ejecución",
       "view_all": "Ver programaciones"
     },
-    "vault_recent_changes": {
-      "title": "Cambios en la bóveda",
-      "subtitle": "sincronización reciente con Obsidian",
-      "empty": "Sin actividad de sincronización reciente.",
-      "view_all": "Ver registro de sincronización"
-    },
     "heatmap": {
       "title_persona": "Actividad durante el último año",
       "title_global": "Actividad de la flota durante el último año",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} informe registrado",
       "seed_tooltip": "Generar un informe de prueba (solo desarrollo)",
       "title": "Informes"
+    },
+    "vault_activity": {
+      "title": "Actividad de la bóveda",
+      "subtitle": "auditoría de credenciales + rotaciones",
+      "empty": "Aún no hay actividad en la bóveda.",
+      "open_vault": "Abrir bóveda",
+      "all_healthy": "Todas las claves sanas",
+      "unhealthy_count": "{count} con problemas",
+      "unhealthy_hint": "Claves cuya última rotación falló o cuyas comprobaciones de salud detectan una anomalía",
+      "healthy_hint": "Sin rotaciones fallidas ni anomalías de salud",
+      "kind_rotation": "Rotar",
+      "kinds": {
+        "create": "Crear",
+        "update": "Editar",
+        "delete": "Borrar",
+        "decrypt": "Usar",
+        "healthcheck": "Chequeo"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} de {total} contextos del corte tienen información reciente de habilidades: {skills}.",
     "crit_skill_coverage_none": "Ninguna habilidad ha dejado información en este proyecto en los últimos 30 días, así que todavía no hay nada con lo que medir la cobertura.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " Nada reciente en: {names}."
+    "crit_skill_coverage_uncovered": " Nada reciente en: {names}.",
+    "cut_empty_has_brief": "Todavía no hay nada en el corte, y este proyecto no tiene objetivos ni funciones que promover, pero el objetivo de arriba sí tiene un resumen. Descomponlo en objetivos para llenar el corte.",
+    "cut_empty_nothing": "No hay nada en el corte ni nada que promover: este proyecto aún no tiene objetivos ni funciones. Escribe un resumen bajo el objetivo y descomponlo, o abre «Componer alcance» para trazar las funciones."
   }
 }

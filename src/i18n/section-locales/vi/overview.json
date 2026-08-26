@@ -1359,12 +1359,6 @@
     "never_fired": "đang chờ lần chạy đầu tiên",
     "view_all": "Xem lịch trình"
   },
-  "vault_recent_changes": {
-    "title": "Thay đổi kho",
-    "subtitle": "đồng bộ Obsidian gần đây",
-    "empty": "Không có hoạt động đồng bộ gần đây.",
-    "view_all": "Xem nhật ký đồng bộ"
-  },
   "heatmap": {
     "title_persona": "Hoạt động trong năm qua",
     "title_global": "Hoạt động của đội trong năm qua",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "Đã ghi nhận {count} báo cáo",
     "seed_tooltip": "Tạo báo cáo mẫu (chỉ dành cho phát triển)",
     "title": "Báo cáo"
+  },
+  "vault_activity": {
+    "title": "Hoạt động kho",
+    "subtitle": "kiểm toán thông tin xác thực + xoay vòng",
+    "empty": "Chưa có hoạt động kho.",
+    "open_vault": "Mở kho",
+    "all_healthy": "Tất cả khóa đều ổn",
+    "unhealthy_count": "{count} có vấn đề",
+    "unhealthy_hint": "Các khóa có lần xoay vòng gần nhất thất bại hoặc kiểm tra sức khỏe phát hiện bất thường",
+    "healthy_hint": "Không có xoay vòng thất bại hay bất thường kiểm tra sức khỏe",
+    "kind_rotation": "Xoay vòng",
+    "kinds": {
+      "create": "Tạo",
+      "update": "Sửa",
+      "delete": "Xóa",
+      "decrypt": "Dùng",
+      "healthcheck": "Kiểm tra"
+    }
   }
 }

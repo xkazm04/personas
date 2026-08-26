@@ -7601,12 +7601,6 @@
       "never_fired": "đang chờ lần chạy đầu tiên",
       "view_all": "Xem lịch trình"
     },
-    "vault_recent_changes": {
-      "title": "Thay đổi kho",
-      "subtitle": "đồng bộ Obsidian gần đây",
-      "empty": "Không có hoạt động đồng bộ gần đây.",
-      "view_all": "Xem nhật ký đồng bộ"
-    },
     "heatmap": {
       "title_persona": "Hoạt động trong năm qua",
       "title_global": "Hoạt động của đội trong năm qua",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "Đã ghi nhận {count} báo cáo",
       "seed_tooltip": "Tạo báo cáo mẫu (chỉ dành cho phát triển)",
       "title": "Báo cáo"
+    },
+    "vault_activity": {
+      "title": "Hoạt động kho",
+      "subtitle": "kiểm toán thông tin xác thực + xoay vòng",
+      "empty": "Chưa có hoạt động kho.",
+      "open_vault": "Mở kho",
+      "all_healthy": "Tất cả khóa đều ổn",
+      "unhealthy_count": "{count} có vấn đề",
+      "unhealthy_hint": "Các khóa có lần xoay vòng gần nhất thất bại hoặc kiểm tra sức khỏe phát hiện bất thường",
+      "healthy_hint": "Không có xoay vòng thất bại hay bất thường kiểm tra sức khỏe",
+      "kind_rotation": "Xoay vòng",
+      "kinds": {
+        "create": "Tạo",
+        "update": "Sửa",
+        "delete": "Xóa",
+        "decrypt": "Dùng",
+        "healthcheck": "Kiểm tra"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} trên {total} ngữ cảnh trong bản cắt có hiểu biết mới từ kỹ năng — {skills}.",
     "crit_skill_coverage_none": "Trong 30 ngày qua chưa có kỹ năng nào để lại hiểu biết cho dự án này, nên chưa có gì để đo độ bao phủ.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " Không có gì mới ở: {names}."
+    "crit_skill_coverage_uncovered": " Không có gì mới ở: {names}.",
+    "cut_empty_has_brief": "Chưa có gì trong bản cắt, và dự án này chưa có mục tiêu hay tính năng nào để đưa lên — nhưng mục tiêu ở trên đã có bản tóm tắt. Hãy phân rã nó thành các mục tiêu để lấp đầy bản cắt.",
+    "cut_empty_nothing": "Không có gì trong bản cắt và cũng không có gì để đưa lên — dự án này chưa có mục tiêu lẫn tính năng. Hãy viết bản tóm tắt dưới mục tiêu rồi phân rã, hoặc mở «Soạn phạm vi» để phác thảo tính năng."
   }
 }

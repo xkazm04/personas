@@ -4,8 +4,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
-import { ContentHeaderSkeleton } from '@/features/shared/components/layout/ContentHeaderSkeleton';
+import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { pageTransition } from '@/features/overview/libs/animations';
 
@@ -33,25 +32,19 @@ const DirectorCoachingTab = lazyRetry(() => import('@/features/overview/sub_dire
 /**
  * Suspense fallback while a tab's lazy chunk loads (hard refresh / first visit).
  *
- * Two rules (docs/design/overview-loading.md):
- * - **Invisible unless the chunk is genuinely slow.** The whole fallback sits
- *   behind a 150ms `animation-delay` with `fill-mode: both`, so a warm chunk
- *   resolves before a single pixel of it paints — no flash on tab switches.
- * - **Never fake the incoming layout.** Only the header band ghosts in: it is
- *   the one region every tab shares at the same position, so the swap to the
- *   real ContentHeader moves nothing. Body placeholders (the old three-panel
- *   dashboard silhouette) lied about every non-dashboard tab's geometry and
- *   produced exactly the skeleton→content blink this design forbids.
+ * No skeleton and no delay (2026-08-26): the header band is real chrome —
+ * its content comes from code, not a fetch — so the fallback paints the
+ * empty header band immediately at its true height, and the resolved tab
+ * fills in title/subtitle/actions in place. Placeholder bars only added a
+ * ghost→text swap on a region that was never waiting on data; the 150ms
+ * hold just made a blank gap on a genuinely cold chunk. Only the header
+ * ghosts — never the incoming body (docs/design/overview-loading.md §D).
  */
 function OverviewRouteSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="flex-1 min-h-0 flex flex-col animate-fade-in"
-      style={{ animationDelay: '150ms' }}
-    >
+    <div aria-hidden="true" className="flex-1 min-h-0 flex flex-col">
       <ContentBox>
-        <ContentHeaderSkeleton showActions calm />
+        <ContentHeader title="" />
       </ContentBox>
     </div>
   );

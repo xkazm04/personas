@@ -1359,12 +1359,6 @@
     "never_fired": "čeká na první spuštění",
     "view_all": "Zobrazit plány"
   },
-  "vault_recent_changes": {
-    "title": "Změny trezoru",
-    "subtitle": "Nedávná synchronizace s Obsidianem",
-    "empty": "V poslední době neproběhla žádná synchronizace.",
-    "view_all": "Zobrazit protokol synchronizace"
-  },
   "heatmap": {
     "title_persona": "Aktivita za poslední rok",
     "title_global": "Aktivita flotily za poslední rok",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "{count} zaznamenaný report",
     "seed_tooltip": "Vytvořit testovací report (pouze pro vývoj)",
     "title": "Reporty"
+  },
+  "vault_activity": {
+    "title": "Aktivita trezoru",
+    "subtitle": "audit přihlašovacích údajů + rotace",
+    "empty": "Zatím žádná aktivita trezoru.",
+    "open_vault": "Otevřít trezor",
+    "all_healthy": "Všechny klíče v pořádku",
+    "unhealthy_count": "{count} problémových",
+    "unhealthy_hint": "Klíče, jejichž poslední rotace selhala nebo jejichž kontroly stavu hlásí anomálii",
+    "healthy_hint": "Žádné neúspěšné rotace ani anomálie kontrol stavu",
+    "kind_rotation": "Rotace",
+    "kinds": {
+      "create": "Vytvořit",
+      "update": "Upravit",
+      "delete": "Smazat",
+      "decrypt": "Použít",
+      "healthcheck": "Kontrola"
+    }
   }
 }

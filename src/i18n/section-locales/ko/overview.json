@@ -1359,12 +1359,6 @@
     "never_fired": "첫 실행 대기 중",
     "view_all": "스케줄 보기"
   },
-  "vault_recent_changes": {
-    "title": "볼트 변경 사항",
-    "subtitle": "최근 Obsidian 동기화",
-    "empty": "최근 동기화 활동이 없습니다.",
-    "view_all": "동기화 로그 보기"
-  },
   "heatmap": {
     "title_persona": "지난 1년간의 활동",
     "title_global": "지난 1년간의 플리트 활동",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "보고서 {count}개 기록됨",
     "seed_tooltip": "모의 보고서 생성 (개발 전용)",
     "title": "보고서"
+  },
+  "vault_activity": {
+    "title": "볼트 활동",
+    "subtitle": "자격 증명 감사 + 순환",
+    "empty": "아직 볼트 활동이 없습니다.",
+    "open_vault": "볼트 열기",
+    "all_healthy": "모든 키 정상",
+    "unhealthy_count": "{count}개 비정상",
+    "unhealthy_hint": "마지막 순환이 실패했거나 상태 검사에서 이상이 감지된 키",
+    "healthy_hint": "실패한 순환이나 상태 검사 이상 없음",
+    "kind_rotation": "순환",
+    "kinds": {
+      "create": "생성",
+      "update": "수정",
+      "delete": "삭제",
+      "decrypt": "사용",
+      "healthcheck": "검사"
+    }
   }
 }

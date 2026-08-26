@@ -1359,12 +1359,6 @@
     "never_fired": "بانتظار أول تشغيل",
     "view_all": "عرض الجداول"
   },
-  "vault_recent_changes": {
-    "title": "تغييرات الخزنة",
-    "subtitle": "مزامنة Obsidian الأخيرة",
-    "empty": "لا يوجد نشاط مزامنة حديث.",
-    "view_all": "عرض سجل المزامنة"
-  },
   "heatmap": {
     "title_persona": "النشاط خلال العام الماضي",
     "title_global": "نشاط الأسطول خلال العام الماضي",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "{count} تقرير مسجل",
     "seed_tooltip": "إنشاء تقرير تجريبي (للتطوير فقط)",
     "title": "التقارير"
+  },
+  "vault_activity": {
+    "title": "نشاط الخزنة",
+    "subtitle": "تدقيق بيانات الاعتماد + التدوير",
+    "empty": "لا يوجد نشاط في الخزنة بعد.",
+    "open_vault": "فتح الخزنة",
+    "all_healthy": "جميع المفاتيح سليمة",
+    "unhealthy_count": "{count} غير سليمة",
+    "unhealthy_hint": "مفاتيح فشل آخر تدوير لها أو رصدت فحوصات صحتها شذوذًا",
+    "healthy_hint": "لا توجد عمليات تدوير فاشلة أو شذوذ في فحوصات الصحة",
+    "kind_rotation": "تدوير",
+    "kinds": {
+      "create": "إنشاء",
+      "update": "تحديث",
+      "delete": "حذف",
+      "decrypt": "استخدام",
+      "healthcheck": "فحص"
+    }
   }
 }

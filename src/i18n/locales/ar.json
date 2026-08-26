@@ -7601,12 +7601,6 @@
       "never_fired": "بانتظار أول تشغيل",
       "view_all": "عرض الجداول"
     },
-    "vault_recent_changes": {
-      "title": "تغييرات الخزنة",
-      "subtitle": "مزامنة Obsidian الأخيرة",
-      "empty": "لا يوجد نشاط مزامنة حديث.",
-      "view_all": "عرض سجل المزامنة"
-    },
     "heatmap": {
       "title_persona": "النشاط خلال العام الماضي",
       "title_global": "نشاط الأسطول خلال العام الماضي",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} تقرير مسجل",
       "seed_tooltip": "إنشاء تقرير تجريبي (للتطوير فقط)",
       "title": "التقارير"
+    },
+    "vault_activity": {
+      "title": "نشاط الخزنة",
+      "subtitle": "تدقيق بيانات الاعتماد + التدوير",
+      "empty": "لا يوجد نشاط في الخزنة بعد.",
+      "open_vault": "فتح الخزنة",
+      "all_healthy": "جميع المفاتيح سليمة",
+      "unhealthy_count": "{count} غير سليمة",
+      "unhealthy_hint": "مفاتيح فشل آخر تدوير لها أو رصدت فحوصات صحتها شذوذًا",
+      "healthy_hint": "لا توجد عمليات تدوير فاشلة أو شذوذ في فحوصات الصحة",
+      "kind_rotation": "تدوير",
+      "kinds": {
+        "create": "إنشاء",
+        "update": "تحديث",
+        "delete": "حذف",
+        "decrypt": "استخدام",
+        "healthcheck": "فحص"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} من {total} سياقات في القطع تحمل رؤى حديثة من المهارات — {skills}.",
     "crit_skill_coverage_none": "لم تترك أي مهارة رؤى على هذا المشروع خلال آخر 30 يومًا، لذا لا يوجد ما يمكن قياس التغطية مقابله بعد.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " لا يوجد شيء حديث على: {names}."
+    "crit_skill_coverage_uncovered": " لا يوجد شيء حديث على: {names}.",
+    "cut_empty_has_brief": "لا شيء في القطع بعد، ولا توجد في هذا المشروع أهداف أو ميزات للترقية — لكن الهدف أعلاه يحمل موجزًا. فكّكه إلى أهداف لملء القطع.",
+    "cut_empty_nothing": "لا شيء في القطع ولا شيء للترقية — لا يحتوي هذا المشروع على أهداف أو ميزات بعد. اكتب موجزًا تحت الهدف وفكّكه، أو افتح «تركيب النطاق» لرسم الميزات."
   }
 }

@@ -42,7 +42,7 @@ import { MissionStatusMonitor } from './sections/MissionStatusMonitor';
 import { LeaderboardSection } from './sections/LeaderboardSection';
 
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
-const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
+const VaultActivityCard = lazyRetry(() => import('./cards/VaultActivityCard'));
 
 // Suspense fallback for the lazy routine/vault cards — delayed-invisible
 // silhouette (docs/design/overview-loading.md §D): a warm chunk never paints it.
@@ -282,7 +282,7 @@ export default function MissionControlHome() {
                     <UpcomingRoutinesCard />
                   </Suspense>
                   <Suspense fallback={<CardFrameSkeleton rows={4} rowHeight={32} />}>
-                    <VaultRecentChangesCard />
+                    <VaultActivityCard />
                   </Suspense>
                 </motion.div>
               )}

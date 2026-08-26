@@ -1359,12 +1359,6 @@
     "never_fired": "menunggu proses pertama",
     "view_all": "Lihat jadwal"
   },
-  "vault_recent_changes": {
-    "title": "Perubahan brankas",
-    "subtitle": "sinkronisasi Obsidian terbaru",
-    "empty": "Tidak ada aktivitas sinkronisasi terbaru.",
-    "view_all": "Lihat log sinkronisasi"
-  },
   "heatmap": {
     "title_persona": "Aktivitas selama setahun terakhir",
     "title_global": "Aktivitas armada selama setahun terakhir",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "{count} laporan tercatat",
     "seed_tooltip": "Buat laporan contoh (khusus pengembangan)",
     "title": "Laporan"
+  },
+  "vault_activity": {
+    "title": "Aktivitas brankas",
+    "subtitle": "audit kredensial + rotasi",
+    "empty": "Belum ada aktivitas brankas.",
+    "open_vault": "Buka brankas",
+    "all_healthy": "Semua kunci sehat",
+    "unhealthy_count": "{count} bermasalah",
+    "unhealthy_hint": "Kunci yang rotasi terakhirnya gagal atau pemeriksaan kesehatannya mendeteksi anomali",
+    "healthy_hint": "Tidak ada rotasi gagal atau anomali pemeriksaan kesehatan",
+    "kind_rotation": "Rotasi",
+    "kinds": {
+      "create": "Buat",
+      "update": "Ubah",
+      "delete": "Hapus",
+      "decrypt": "Pakai",
+      "healthcheck": "Periksa"
+    }
   }
 }

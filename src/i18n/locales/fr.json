@@ -7601,12 +7601,6 @@
       "never_fired": "en attente de la première exécution",
       "view_all": "Voir les planifications"
     },
-    "vault_recent_changes": {
-      "title": "Modifications du coffre-fort",
-      "subtitle": "synchronisation Obsidian récente",
-      "empty": "Aucune activité de synchronisation récente.",
-      "view_all": "Voir le journal de synchronisation"
-    },
     "heatmap": {
       "title_persona": "Activité sur la dernière année",
       "title_global": "Activité de la flotte sur la dernière année",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} rapport enregistré",
       "seed_tooltip": "Générer un rapport fictif (dev uniquement)",
       "title": "Rapports"
+    },
+    "vault_activity": {
+      "title": "Activité du coffre",
+      "subtitle": "audit des identifiants + rotations",
+      "empty": "Aucune activité du coffre pour l’instant.",
+      "open_vault": "Ouvrir le coffre",
+      "all_healthy": "Toutes les clés sont saines",
+      "unhealthy_count": "{count} en défaut",
+      "unhealthy_hint": "Clés dont la dernière rotation a échoué ou dont les contrôles de santé signalent une anomalie",
+      "healthy_hint": "Aucune rotation échouée ni anomalie de santé",
+      "kind_rotation": "Rotation",
+      "kinds": {
+        "create": "Créer",
+        "update": "Modifier",
+        "delete": "Supprimer",
+        "decrypt": "Utiliser",
+        "healthcheck": "Contrôle"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} des {total} contextes du lot portent des informations récentes issues des compétences — {skills}.",
     "crit_skill_coverage_none": "Aucune compétence n'a laissé d'information sur ce projet au cours des 30 derniers jours ; il n'y a donc encore rien à quoi mesurer la couverture.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " Rien de récent sur : {names}."
+    "crit_skill_coverage_uncovered": " Rien de récent sur : {names}.",
+    "cut_empty_has_brief": "Rien dans le lot pour l'instant, et ce projet n'a ni objectifs ni fonctionnalités à promouvoir — mais l'objectif ci-dessus porte un brief. Décomposez-le en objectifs pour remplir le lot.",
+    "cut_empty_nothing": "Rien dans le lot et rien à promouvoir : ce projet n'a encore ni objectifs ni fonctionnalités. Écrivez un brief sous l'objectif et décomposez-le, ou ouvrez « Composer le scope » pour cartographier les fonctionnalités."
   }
 }

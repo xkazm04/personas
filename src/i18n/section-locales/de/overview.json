@@ -1359,12 +1359,6 @@
     "never_fired": "Erster Lauf ausstehend",
     "view_all": "Zeitpläne anzeigen"
   },
-  "vault_recent_changes": {
-    "title": "Tresor-Änderungen",
-    "subtitle": "aktuelle Obsidian-Synchronisierung",
-    "empty": "Keine aktuelle Synchronisierungsaktivität.",
-    "view_all": "Sync-Protokoll anzeigen"
-  },
   "heatmap": {
     "title_persona": "Aktivität im letzten Jahr",
     "title_global": "Flottenaktivität im letzten Jahr",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "{count} Bericht erfasst",
     "seed_tooltip": "Mock-Bericht erzeugen (nur Entwicklung)",
     "title": "Berichte"
+  },
+  "vault_activity": {
+    "title": "Tresor-Aktivität",
+    "subtitle": "Zugangsdaten-Audit + Rotationen",
+    "empty": "Noch keine Tresor-Aktivität.",
+    "open_vault": "Tresor öffnen",
+    "all_healthy": "Alle Schlüssel gesund",
+    "unhealthy_count": "{count} problematisch",
+    "unhealthy_hint": "Schlüssel, deren letzte Rotation fehlschlug oder deren Healthchecks eine Anomalie melden",
+    "healthy_hint": "Keine fehlgeschlagenen Rotationen oder Healthcheck-Anomalien",
+    "kind_rotation": "Rotation",
+    "kinds": {
+      "create": "Erstellt",
+      "update": "Geändert",
+      "delete": "Gelöscht",
+      "decrypt": "Genutzt",
+      "healthcheck": "Prüfung"
+    }
   }
 }

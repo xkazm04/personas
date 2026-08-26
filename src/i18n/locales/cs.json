@@ -7601,12 +7601,6 @@
       "never_fired": "čeká na první spuštění",
       "view_all": "Zobrazit plány"
     },
-    "vault_recent_changes": {
-      "title": "Změny trezoru",
-      "subtitle": "Nedávná synchronizace s Obsidianem",
-      "empty": "V poslední době neproběhla žádná synchronizace.",
-      "view_all": "Zobrazit protokol synchronizace"
-    },
     "heatmap": {
       "title_persona": "Aktivita za poslední rok",
       "title_global": "Aktivita flotily za poslední rok",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} zaznamenaný report",
       "seed_tooltip": "Vytvořit testovací report (pouze pro vývoj)",
       "title": "Reporty"
+    },
+    "vault_activity": {
+      "title": "Aktivita trezoru",
+      "subtitle": "audit přihlašovacích údajů + rotace",
+      "empty": "Zatím žádná aktivita trezoru.",
+      "open_vault": "Otevřít trezor",
+      "all_healthy": "Všechny klíče v pořádku",
+      "unhealthy_count": "{count} problémových",
+      "unhealthy_hint": "Klíče, jejichž poslední rotace selhala nebo jejichž kontroly stavu hlásí anomálii",
+      "healthy_hint": "Žádné neúspěšné rotace ani anomálie kontrol stavu",
+      "kind_rotation": "Rotace",
+      "kinds": {
+        "create": "Vytvořit",
+        "update": "Upravit",
+        "delete": "Smazat",
+        "decrypt": "Použít",
+        "healthcheck": "Kontrola"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} z {total} kontextů v řezu nese čerstvé poznatky z dovedností — {skills}.",
     "crit_skill_coverage_none": "Za posledních 30 dní nezanechala na tomto projektu poznatky žádná dovednost, takže zatím není vůči čemu pokrytí měřit.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " Nic nedávného u: {names}."
+    "crit_skill_coverage_uncovered": " Nic nedávného u: {names}.",
+    "cut_empty_has_brief": "V řezu zatím nic není a tento projekt nemá žádné cíle ani funkce k povýšení — ale objektiv výše nese zadání. Rozložte ho na cíle a řez se naplní.",
+    "cut_empty_nothing": "V řezu nic není a není co povýšit — tento projekt zatím nemá žádné cíle ani funkce. Napište pod objektiv zadání a rozložte ho, nebo otevřete «Sestavit rozsah» a zmapujte funkce."
   }
 }

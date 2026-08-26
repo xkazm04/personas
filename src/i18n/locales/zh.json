@@ -7601,12 +7601,6 @@
       "never_fired": "等待首次运行",
       "view_all": "查看计划"
     },
-    "vault_recent_changes": {
-      "title": "保险库变更",
-      "subtitle": "近期 Obsidian 同步",
-      "empty": "暂无近期同步活动。",
-      "view_all": "查看同步日志"
-    },
     "heatmap": {
       "title_persona": "过去一年的活动",
       "title_global": "过去一年的舰队活动",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "已记录 {count} 份报告",
       "seed_tooltip": "生成模拟报告（仅限开发）",
       "title": "报告"
+    },
+    "vault_activity": {
+      "title": "保险库活动",
+      "subtitle": "凭据审计 + 轮换",
+      "empty": "暂无保险库活动。",
+      "open_vault": "打开保险库",
+      "all_healthy": "所有密钥正常",
+      "unhealthy_count": "{count} 个异常",
+      "unhealthy_hint": "最近一次轮换失败或健康检查发现异常的密钥",
+      "healthy_hint": "没有失败的轮换或健康检查异常",
+      "kind_rotation": "轮换",
+      "kinds": {
+        "create": "创建",
+        "update": "更新",
+        "delete": "删除",
+        "decrypt": "使用",
+        "healthcheck": "检查"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "切片中 {total} 个上下文里有 {covered} 个带有近期技能洞察 —— {skills}。",
     "crit_skill_coverage_none": "过去 30 天内没有任何技能在此项目留下洞察，因此尚无可用于衡量覆盖的依据。",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " 以下没有近期记录：{names}。"
+    "crit_skill_coverage_uncovered": " 以下没有近期记录：{names}。",
+    "cut_empty_has_brief": "切片中暂时空着，本项目也没有可提升的目标或功能——但上方的目标带有简报。把它拆解成目标即可填充切片。",
+    "cut_empty_nothing": "切片是空的，也没有可提升的内容——本项目还没有目标，也没有功能。请在目标下方写一份简报并拆解它，或打开「编排范围」来梳理功能。"
   }
 }

@@ -7601,12 +7601,6 @@
       "never_fired": "menunggu proses pertama",
       "view_all": "Lihat jadwal"
     },
-    "vault_recent_changes": {
-      "title": "Perubahan brankas",
-      "subtitle": "sinkronisasi Obsidian terbaru",
-      "empty": "Tidak ada aktivitas sinkronisasi terbaru.",
-      "view_all": "Lihat log sinkronisasi"
-    },
     "heatmap": {
       "title_persona": "Aktivitas selama setahun terakhir",
       "title_global": "Aktivitas armada selama setahun terakhir",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} laporan tercatat",
       "seed_tooltip": "Buat laporan contoh (khusus pengembangan)",
       "title": "Laporan"
+    },
+    "vault_activity": {
+      "title": "Aktivitas brankas",
+      "subtitle": "audit kredensial + rotasi",
+      "empty": "Belum ada aktivitas brankas.",
+      "open_vault": "Buka brankas",
+      "all_healthy": "Semua kunci sehat",
+      "unhealthy_count": "{count} bermasalah",
+      "unhealthy_hint": "Kunci yang rotasi terakhirnya gagal atau pemeriksaan kesehatannya mendeteksi anomali",
+      "healthy_hint": "Tidak ada rotasi gagal atau anomali pemeriksaan kesehatan",
+      "kind_rotation": "Rotasi",
+      "kinds": {
+        "create": "Buat",
+        "update": "Ubah",
+        "delete": "Hapus",
+        "decrypt": "Pakai",
+        "healthcheck": "Periksa"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} dari {total} konteks dalam potongan memuat wawasan skill terbaru — {skills}.",
     "crit_skill_coverage_none": "Tidak ada skill yang meninggalkan wawasan pada proyek ini dalam 30 hari terakhir, jadi belum ada pembanding untuk mengukur cakupan.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " Tidak ada yang baru pada: {names}."
+    "crit_skill_coverage_uncovered": " Tidak ada yang baru pada: {names}.",
+    "cut_empty_has_brief": "Belum ada apa pun di potongan, dan proyek ini tidak punya sasaran atau fitur untuk dipromosikan — tetapi objektif di atas memuat ringkasan. Uraikan menjadi sasaran untuk mengisi potongan.",
+    "cut_empty_nothing": "Tidak ada apa pun di potongan dan tidak ada yang bisa dipromosikan — proyek ini belum punya sasaran maupun fitur. Tulis ringkasan di bawah objektif lalu uraikan, atau buka «Susun scope» untuk memetakan fiturnya."
   }
 }

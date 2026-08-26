@@ -1359,12 +1359,6 @@
     "never_fired": "en attente de la première exécution",
     "view_all": "Voir les planifications"
   },
-  "vault_recent_changes": {
-    "title": "Modifications du coffre-fort",
-    "subtitle": "synchronisation Obsidian récente",
-    "empty": "Aucune activité de synchronisation récente.",
-    "view_all": "Voir le journal de synchronisation"
-  },
   "heatmap": {
     "title_persona": "Activité sur la dernière année",
     "title_global": "Activité de la flotte sur la dernière année",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "{count} rapport enregistré",
     "seed_tooltip": "Générer un rapport fictif (dev uniquement)",
     "title": "Rapports"
+  },
+  "vault_activity": {
+    "title": "Activité du coffre",
+    "subtitle": "audit des identifiants + rotations",
+    "empty": "Aucune activité du coffre pour l’instant.",
+    "open_vault": "Ouvrir le coffre",
+    "all_healthy": "Toutes les clés sont saines",
+    "unhealthy_count": "{count} en défaut",
+    "unhealthy_hint": "Clés dont la dernière rotation a échoué ou dont les contrôles de santé signalent une anomalie",
+    "healthy_hint": "Aucune rotation échouée ni anomalie de santé",
+    "kind_rotation": "Rotation",
+    "kinds": {
+      "create": "Créer",
+      "update": "Modifier",
+      "delete": "Supprimer",
+      "decrypt": "Utiliser",
+      "healthcheck": "Contrôle"
+    }
   }
 }

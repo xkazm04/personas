@@ -1359,12 +1359,6 @@
     "never_fired": "पहला रन लंबित",
     "view_all": "शेड्यूल देखें"
   },
-  "vault_recent_changes": {
-    "title": "वॉल्ट में बदलाव",
-    "subtitle": "हाल का Obsidian सिंक",
-    "empty": "हाल में कोई सिंक गतिविधि नहीं।",
-    "view_all": "सिंक लॉग देखें"
-  },
   "heatmap": {
     "title_persona": "पिछले वर्ष में गतिविधि",
     "title_global": "पिछले वर्ष में फ्लीट गतिविधि",
@@ -2191,5 +2185,23 @@
     "reports_subtitle_one": "{count} रिपोर्ट दर्ज",
     "seed_tooltip": "मॉक रिपोर्ट बनाएँ (केवल विकास हेतु)",
     "title": "रिपोर्टें"
+  },
+  "vault_activity": {
+    "title": "वॉल्ट गतिविधि",
+    "subtitle": "क्रेडेंशियल ऑडिट + रोटेशन",
+    "empty": "अभी तक कोई वॉल्ट गतिविधि नहीं।",
+    "open_vault": "वॉल्ट खोलें",
+    "all_healthy": "सभी कुंजियाँ स्वस्थ",
+    "unhealthy_count": "{count} अस्वस्थ",
+    "unhealthy_hint": "वे कुंजियाँ जिनका अंतिम रोटेशन विफल रहा या जिनकी हेल्थचेक में विसंगति मिली",
+    "healthy_hint": "कोई विफल रोटेशन या हेल्थचेक विसंगति नहीं",
+    "kind_rotation": "रोटेट",
+    "kinds": {
+      "create": "बनाएँ",
+      "update": "अपडेट",
+      "delete": "हटाएँ",
+      "decrypt": "उपयोग",
+      "healthcheck": "जाँच"
+    }
   }
 }

@@ -8154,12 +8154,6 @@ export type Translations = {
       never_fired: string;
       view_all: string;
     };
-    vault_recent_changes: {
-      title: string;
-      subtitle: string;
-      empty: string;
-      view_all: string;
-    };
     trend: {
       up: string;
       down: string;
@@ -8656,6 +8650,24 @@ export type Translations = {
       no_reports_hint: string;
       report_label: string;
       show_read_reports: string;
+    };
+    vault_activity: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      open_vault: string;
+      all_healthy: string;
+      unhealthy_count: string;
+      unhealthy_hint: string;
+      healthy_hint: string;
+      kind_rotation: string;
+      kinds: {
+        create: string;
+        update: string;
+        delete: string;
+        decrypt: string;
+        healthcheck: string;
+      };
     };
   };
   matrix_v3: {
@@ -20404,6 +20416,8 @@ export type Translations = {
     session_open_tooltip: string;
     in_the_cut_count: string;
     cut_empty_planner: string;
+    cut_empty_has_brief: string;
+    cut_empty_nothing: string;
     outside_the_cut: string;
     outside_the_cut_aside: string;
     outside_empty_no_features: string;

@@ -7601,12 +7601,6 @@
       "never_fired": "첫 실행 대기 중",
       "view_all": "스케줄 보기"
     },
-    "vault_recent_changes": {
-      "title": "볼트 변경 사항",
-      "subtitle": "최근 Obsidian 동기화",
-      "empty": "최근 동기화 활동이 없습니다.",
-      "view_all": "동기화 로그 보기"
-    },
     "heatmap": {
       "title_persona": "지난 1년간의 활동",
       "title_global": "지난 1년간의 플리트 활동",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "보고서 {count}개 기록됨",
       "seed_tooltip": "모의 보고서 생성 (개발 전용)",
       "title": "보고서"
+    },
+    "vault_activity": {
+      "title": "볼트 활동",
+      "subtitle": "자격 증명 감사 + 순환",
+      "empty": "아직 볼트 활동이 없습니다.",
+      "open_vault": "볼트 열기",
+      "all_healthy": "모든 키 정상",
+      "unhealthy_count": "{count}개 비정상",
+      "unhealthy_hint": "마지막 순환이 실패했거나 상태 검사에서 이상이 감지된 키",
+      "healthy_hint": "실패한 순환이나 상태 검사 이상 없음",
+      "kind_rotation": "순환",
+      "kinds": {
+        "create": "생성",
+        "update": "수정",
+        "delete": "삭제",
+        "decrypt": "사용",
+        "healthcheck": "검사"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "컷에 포함된 컨텍스트 {total}개 중 {covered}개에 최신 스킬 인사이트가 있습니다 — {skills}.",
     "crit_skill_coverage_none": "지난 30일 동안 이 프로젝트에 인사이트를 남긴 스킬이 없어 아직 커버리지를 측정할 기준이 없습니다.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " 최근 정보 없음: {names}."
+    "crit_skill_coverage_uncovered": " 최근 정보 없음: {names}.",
+    "cut_empty_has_brief": "컷에 아직 아무것도 없고 이 프로젝트에는 올릴 목표도 기능도 없습니다 — 다만 위 목표에는 브리프가 있습니다. 이를 목표로 분해해 컷을 채우세요.",
+    "cut_empty_nothing": "컷에도 올릴 것에도 아무것도 없습니다 — 이 프로젝트에는 아직 목표도 기능도 없습니다. 목표 아래에 브리프를 작성해 분해하거나, 「스코프 구성」을 열어 기능을 정리하세요."
   }
 }

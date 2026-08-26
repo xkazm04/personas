@@ -7601,12 +7601,6 @@
       "never_fired": "Erster Lauf ausstehend",
       "view_all": "Zeitpläne anzeigen"
     },
-    "vault_recent_changes": {
-      "title": "Tresor-Änderungen",
-      "subtitle": "aktuelle Obsidian-Synchronisierung",
-      "empty": "Keine aktuelle Synchronisierungsaktivität.",
-      "view_all": "Sync-Protokoll anzeigen"
-    },
     "heatmap": {
       "title_persona": "Aktivität im letzten Jahr",
       "title_global": "Flottenaktivität im letzten Jahr",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} Bericht erfasst",
       "seed_tooltip": "Mock-Bericht erzeugen (nur Entwicklung)",
       "title": "Berichte"
+    },
+    "vault_activity": {
+      "title": "Tresor-Aktivität",
+      "subtitle": "Zugangsdaten-Audit + Rotationen",
+      "empty": "Noch keine Tresor-Aktivität.",
+      "open_vault": "Tresor öffnen",
+      "all_healthy": "Alle Schlüssel gesund",
+      "unhealthy_count": "{count} problematisch",
+      "unhealthy_hint": "Schlüssel, deren letzte Rotation fehlschlug oder deren Healthchecks eine Anomalie melden",
+      "healthy_hint": "Keine fehlgeschlagenen Rotationen oder Healthcheck-Anomalien",
+      "kind_rotation": "Rotation",
+      "kinds": {
+        "create": "Erstellt",
+        "update": "Geändert",
+        "delete": "Gelöscht",
+        "decrypt": "Genutzt",
+        "healthcheck": "Prüfung"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "{covered} von {total} Kontexten im Schnitt tragen frische Skill-Erkenntnisse — {skills}.",
     "crit_skill_coverage_none": "In den letzten 30 Tagen hat kein Skill Erkenntnisse zu diesem Projekt hinterlassen, es gibt also noch nichts, wogegen sich Abdeckung messen ließe.",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " Nichts Aktuelles zu: {names}."
+    "crit_skill_coverage_uncovered": " Nichts Aktuelles zu: {names}.",
+    "cut_empty_has_brief": "Noch nichts im Schnitt, und dieses Projekt hat weder Ziele noch Features zum Hochstufen — aber das Objective oben trägt ein Briefing. Schlüsseln Sie es in Ziele auf, um den Schnitt zu füllen.",
+    "cut_empty_nothing": "Nichts im Schnitt und nichts zum Hochstufen — dieses Projekt hat noch keine Ziele und keine Features. Schreiben Sie ein Briefing unter das Objective und schlüsseln Sie es auf, oder öffnen Sie «Scope zusammenstellen», um die Features zu kartieren."
   }
 }

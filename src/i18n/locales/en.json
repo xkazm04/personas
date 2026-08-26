@@ -8148,12 +8148,6 @@
       "never_fired": "pending first run",
       "view_all": "View schedules"
     },
-    "vault_recent_changes": {
-      "title": "Vault Changes",
-      "subtitle": "recent Obsidian sync",
-      "empty": "No recent sync activity.",
-      "view_all": "View sync log"
-    },
     "trend": {
       "up": "Up",
       "down": "Down",
@@ -8650,6 +8644,24 @@
       "no_reports_hint": "Reports are created when agents run and communicate with each other.",
       "report_label": "Report",
       "show_read_reports": "Show read"
+    },
+    "vault_activity": {
+      "title": "Vault Activity",
+      "subtitle": "credential audit + rotations",
+      "empty": "No vault activity yet.",
+      "open_vault": "Open vault",
+      "all_healthy": "All keys healthy",
+      "unhealthy_count": "{count} unhealthy",
+      "unhealthy_hint": "Keys whose last rotation failed or whose healthchecks flag an anomaly",
+      "healthy_hint": "No failed rotations or healthcheck anomalies",
+      "kind_rotation": "Rotate",
+      "kinds": {
+        "create": "Create",
+        "update": "Update",
+        "delete": "Delete",
+        "decrypt": "Use",
+        "healthcheck": "Check"
+      }
     }
   },
   "matrix_v3": {
@@ -20398,6 +20410,8 @@
     "session_open_tooltip": "Session {state}. Open terminal",
     "in_the_cut_count": "{done}/{total} ready",
     "cut_empty_planner": "No cut yet. Promote from the ledger below, or open the composer.",
+    "cut_empty_has_brief": "Nothing in the cut yet, and this project has no goals or features to promote — but the objective above has a brief. Decompose it into goals to fill the cut.",
+    "cut_empty_nothing": "Nothing in the cut, and nothing to promote — this project has no goals and no features yet. Write a brief under the objective and decompose it, or open Compose scope to chart the features.",
     "outside_the_cut": "Outside the cut",
     "outside_the_cut_aside": "the row's buttons are the decision",
     "outside_empty_no_features": "No features mapped yet. Open Compose scope to chart the project and add the first ones.",

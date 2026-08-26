@@ -7601,12 +7601,6 @@
       "never_fired": "初回実行待ち",
       "view_all": "スケジュールを表示"
     },
-    "vault_recent_changes": {
-      "title": "ボルトの変更",
-      "subtitle": "直近のObsidian同期",
-      "empty": "最近の同期アクティビティはありません。",
-      "view_all": "同期ログを表示"
-    },
     "heatmap": {
       "title_persona": "過去1年間のアクティビティ",
       "title_global": "過去1年間のフリートアクティビティ",
@@ -8433,6 +8427,24 @@
       "reports_subtitle_one": "{count} 件のレポートを記録済み",
       "seed_tooltip": "モックレポートを生成（開発専用）",
       "title": "レポート"
+    },
+    "vault_activity": {
+      "title": "ボルトアクティビティ",
+      "subtitle": "認証情報の監査 + ローテーション",
+      "empty": "ボルトのアクティビティはまだありません。",
+      "open_vault": "ボルトを開く",
+      "all_healthy": "すべてのキーが正常",
+      "unhealthy_count": "{count} 件に問題",
+      "unhealthy_hint": "最後のローテーションが失敗した、またはヘルスチェックで異常が検出されたキー",
+      "healthy_hint": "失敗したローテーションやヘルスチェックの異常はありません",
+      "kind_rotation": "更新",
+      "kinds": {
+        "create": "作成",
+        "update": "更新",
+        "delete": "削除",
+        "decrypt": "使用",
+        "healthcheck": "確認"
+      }
     }
   },
   "matrix_v3": {
@@ -20528,6 +20540,8 @@
     "crit_skill_coverage_evidence": "カットに含まれる {total} 件のコンテキストのうち {covered} 件に最近のスキル知見があります — {skills}。",
     "crit_skill_coverage_none": "過去 30 日間にこのプロジェクトへ知見を残したスキルがないため、カバレッジを測る対象がまだありません。",
     "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-    "crit_skill_coverage_uncovered": " 最近の情報がありません: {names}。"
+    "crit_skill_coverage_uncovered": " 最近の情報がありません: {names}。",
+    "cut_empty_has_brief": "カットにはまだ何もなく、このプロジェクトには昇格できるゴールも機能もありません。ただし上の目標にはブリーフがあります。それをゴールに分解してカットを埋めてください。",
+    "cut_empty_nothing": "カットにも昇格候補にも何もありません。このプロジェクトにはまだゴールも機能もありません。目標の下にブリーフを書いて分解するか、「スコープを構成」を開いて機能を洗い出してください。"
   }
 }
