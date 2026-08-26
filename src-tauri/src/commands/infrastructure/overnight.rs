@@ -20,7 +20,11 @@
 //!    **no default-branch writes, no push, no merge** — the morning human does
 //!    that — and **finish, never ask**, because nothing can answer a question
 //!    at 03:00. The sessions are tagged as an `overnight:` run so the fleet
-//!    sweeper can terminate one that asked anyway.
+//!    sweeper can terminate one that asked anyway. **Each one authors in its
+//!    own `git worktree`** ([`personas_engine::unattended_worktree`]), on a
+//!    branch prepared for it before spawn — never by switching the branch of
+//!    the project's shared checkout, which is what sweep #23 (2026-08-26) left
+//!    an operator's tree and dev server sitting on all night.
 //! 4. **Morning digest** — one durable `autopilot_night_runs` ledger row +
 //!    one `autopilot.night_digest` persona event per project per night (the
 //!    webhook notifier delivers it to any matching `notification_subscriptions`
@@ -398,6 +402,25 @@ async fn run_project_night(
         .map_err(|e| AppError::Internal(format!("overnight scan join error: {e}")))?
     };
 
+    // -- 1b. Retire finished authoring worktrees -----------------------------
+    // Every unattended dispatch since sweep #23 authors in its own worktree
+    // under the app data dir; without a sweeper they accumulate one working
+    // copy per proposal forever. Merged ones, and old clean ones, are removed
+    // here — before the night spawns more — and never their branches, which the
+    // proposal ledger keys on. Best-effort: a night that cannot prune still
+    // dispatches.
+    if let Some(pruned) = super::dev_tools::prune_project_worktrees(app, &project).await {
+        if !pruned.removed.is_empty() || !pruned.errors.is_empty() {
+            tracing::info!(
+                project_id,
+                removed = pruned.removed.len(),
+                kept = pruned.kept,
+                errors = pruned.errors.len(),
+                "overnight: authoring-worktree prune"
+            );
+        }
+    }
+
     // -- 2. Mechanical triage rules ------------------------------------------
     let triage = run_triage_rules_core(pool, project_id)?;
 
@@ -405,6 +428,11 @@ async fn run_project_night(
     let mut dispatched = 0usize;
     let mut skipped = 0usize;
     let mut session_ids: Vec<String> = Vec::new();
+    // `{branch, path, sessionId}` per dispatched worker — the durable record of
+    // where an unattended session authored, carried into the morning digest
+    // event. The branch alone is repo-global and discoverable; the worktree
+    // path is not, because it deliberately lives outside the checkout.
+    let mut worktrees: Vec<serde_json::Value> = Vec::new();
     let mut blocked_reason: Option<String> = None;
     let mut degraded = false;
     let mut projected = 0.0f64;
@@ -562,6 +590,28 @@ async fn run_project_night(
                                         if let Some(sid) = &d.session_id {
                                             session_ids.push(sid.clone());
                                         }
+                                        // Where tonight's work is being
+                                        // authored. The morning review needs
+                                        // the path (the branch is repo-global
+                                        // and the reconciler finds it either
+                                        // way, but the working copy is not in
+                                        // the checkout the operator is looking
+                                        // at).
+                                        if let (Some(branch), Some(path)) =
+                                            (d.branch.clone(), d.worktree_path.clone())
+                                        {
+                                            worktrees.push(serde_json::json!({
+                                                "branch": branch,
+                                                "path": path,
+                                                "sessionId": d.session_id,
+                                            }));
+                                            tracing::info!(
+                                                project_id,
+                                                branch = %branch,
+                                                worktree = %path,
+                                                "overnight: dispatched into an isolated authoring worktree"
+                                            );
+                                        }
                                     }
                                     dispatched = session_ids.len();
                                 }
@@ -618,6 +668,7 @@ async fn run_project_night(
         "degraded": run.degraded,
         "spend": { "monthUsd": run.month_spend_usd, "ceilingUsd": run.ceiling_usd, "projectedUsd": run.projected_cost_usd },
         "sessionIds": session_ids,
+        "worktrees": worktrees,
     });
     if let Err(e) = crate::db::repos::communication::events::publish(
         pool,

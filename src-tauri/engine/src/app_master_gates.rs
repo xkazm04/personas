@@ -1088,7 +1088,12 @@ fn link_dir(source: &Path, link: &Path) -> Result<(), String> {
 /// links: `symlink_metadata` does not follow them, and `remove_dir` on a
 /// reparse point / `remove_file` on a symlink unlinks the pointer only. A real
 /// directory found under a borrowed name is left alone — it was not ours.
-fn unlink_borrowed(worktree: &Path, name: &str) {
+///
+/// Public because the authoring worktrees of
+/// [`crate::unattended_worktree`] borrow through the same door and must
+/// unlink through the same one: a recursive delete that walked into a junction
+/// would delete the operator's real `node_modules`.
+pub fn unlink_borrowed(worktree: &Path, name: &str) {
     let path = worktree.join(name);
     let Ok(meta) = std::fs::symlink_metadata(&path) else {
         return;

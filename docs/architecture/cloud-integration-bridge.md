@@ -1133,6 +1133,12 @@ untouched. `a_gate_sees_the_source_checkouts_installed_dependencies` pins both
 halves: the gate resolves `node_modules/marker` inside the worktree, and the
 source's copy still exists afterwards.
 
+**Authoring had none of this until 2026-08-26 — and it is the more dangerous
+half.** Reading a branch in a worktree protects a shared checkout; *writing* one
+in it is what the unattended prompt was asking an agent to do in the operator's
+own tree. Bench sweep #23 collected the bill. The isolation rule, the worktree
+location and the prompt that goes with it are **§13.10**.
+
 ### 12.5 Three-valued outcomes
 
 `app_master_gate_runs.outcome` is `passed` | `failed` | `did_not_run`.
@@ -1741,3 +1747,137 @@ gives: the `app_lib` test binary does not launch on this machine
 (`STATUS_ENTRYPOINT_NOT_FOUND`). What stays untested there is the thin HTTP
 adapter — body deserialization, the persona→project resolution walk, the
 status-code mapping and the route-registration `if`. The bench exercises those.
+
+### 13.10 Unattended workers author in an isolated worktree (2026-08-26)
+
+> **The finding, bench sweep #23** — the first App-master night on the `ascent`
+> repository. The overnight-dispatched fleet worker did exactly what the
+> unattended guardrails told it to do (§13.6's rule 1: *"create and work on a
+> dedicated branch named `autopilot/<short-slug>`"*) and ran
+> `git checkout -b autopilot/env-example-alert-webhook` **inside the project's
+> shared checkout** (`dev_projects.root_path`). The proposal was good. The side
+> effect was not: the operator's working tree — and the `next dev` server
+> running against it — were left on the agent's branch for the rest of the
+> night.
+
+A branch switch is a whole-checkout event. In a repository a human works in, and
+in kp-style repos where several agent sessions share one tree, there is no such
+thing as an agent "just" creating a branch there. §12.4 had already concluded
+this for *reading* a branch and put every gate run in
+`git worktree add --detach`. Authoring — the half that writes — had no such
+protection.
+
+**The rule: an unattended dispatch authors in an isolated `git worktree`, or it
+does not dispatch.**
+
+```text
+before spawn:  git worktree add -b autopilot/<slug> <app_data>/worktrees/<project_id>/<slug> <main>
+               borrow_installed_deps(root_path, worktree)      ← §12.4's own door, reused
+spawn:         fleet headless session with cwd = the worktree
+prompt:        rule 1 becomes "you are ALREADY on branch X here; never git checkout/switch"
+```
+
+`personas_engine::unattended_worktree` (pure + git plumbing, in the crate whose
+test binary launches — §13.8), called from `dev_tools::dispatch_ideas_core`'s
+fleet arm.
+
+#### Where the worktrees live, and why not in the repo
+
+`<app_data>/worktrees/<project_id>/<slug>`, honoring `PERSONAS_DATA_DIR`. The
+in-repo alternative (`<root_path>/.personas-worktrees/<slug>`) was considered and
+rejected, in descending order of cost:
+
+1. **The night walks `root_path` itself.** `walk_project_files` hashes the
+   project tree every night for the scan delta (§13.6 phase 1). A second full
+   checkout under the root — with a junctioned `node_modules` inside it — would
+   be walked as project surface, and every delta and context-map fingerprint
+   would be measuring the agent's own scratch space.
+2. **It keeps the shared tree byte-identical.** Nothing new in the operator's
+   `git status`, nothing to be swept into someone's `git add -A`, and no
+   `.gitignore` edit in a repository we do not own. An unignored in-repo
+   worktree is the same "we changed the operator's tree" defect in a quieter
+   form.
+3. **`git clean -fdx` in one's own repo is routine**; having it delete an
+   agent's unreviewed branch working copy is not.
+4. **It follows `PERSONAS_DATA_DIR`**, so parallel test instances get isolated
+   worktree roots for the same reason they get isolated databases.
+
+The cost is that the worktree is not visible from inside the repository. Paid
+back three ways: `DispatchedIdea.worktreePath` / `.branch` on the dispatch
+result, a `worktrees: [{branch, path, sessionId}]` array in the morning digest
+event, and `git worktree list` in the shared checkout, which names every one.
+
+#### The branch is still repo-global — the reconciler is unaffected
+
+A worktree does not scope a branch. `git worktree add -b autopilot/x` writes
+`refs/heads/autopilot/x` in the **shared** repository, so §12.2's discovery
+(`for-each-ref refs/heads/autopilot/*` run in `root_path`) sees it unchanged,
+and so does everything downstream — `branch_commits`, the gate sweep, merge and
+revert detection. Verified rather than assumed:
+`a_worktree_authored_branch_is_visible_to_the_reconciler` commits in the
+worktree and then asserts the discovery and the commit capture from the shared
+checkout.
+
+#### The prompt
+
+`UNATTENDED_DISPATCH_GUARDRAILS` rule 1 is the sentence that caused this, so it
+is the sentence that is replaced — rules 2–6 (no push, no merge, no destructive
+commands, NOBODY IS THERE, `FLEET:BLOCKED`, `FLEET:DONE`) are inherited
+verbatim by `unattended_worktree_guardrails`, and
+`the_two_guardrail_variants_share_one_tail` fails the moment the two texts
+drift. The replacement tells the worker where it already is, forbids
+`git checkout` / `git switch` / `git branch -m` / `git worktree add|remove` and
+`cd`-ing out, and adds one thing rule 1 never had to say: the dependency
+directories here are **links to the operator's real ones** — use them, never
+install, upgrade or delete into them (§12.7's accepted borrow risk, now stated
+to the party that could trip it).
+
+#### Refusal, not fallback
+
+A dispatch that cannot get a worktree — the project is not a git work tree, no
+main branch resolves, the app data dir is unavailable — is recorded as a
+`DispatchSkip` (`no isolated authoring worktree: <reason>`) and **no session is
+spawned**. Falling back to `root_path` is the defect this section removes; a
+night that dispatches nothing and says why is the correct reading.
+
+#### Human-driven dispatch is unchanged
+
+`dispatch_ideas_core`'s `unattended` flag already chose the prompt; it now
+chooses the isolation too, and it is set **only** by the autopilot tick. A
+person dispatching from the Backlog still runs in the project's own checkout,
+under someone who can see what it does to their tree.
+
+#### Retiring finished worktrees
+
+One working copy per proposal accumulates. `prune_authoring_worktrees` runs at
+the top of each night run (before it spawns more), over `git worktree list
+--porcelain`, and considers only entries **under the worktrees root** on an
+`autopilot/*` branch — the operator's own worktrees and §12.4's detached gate
+temporaries are never candidates. Three conditions, all required:
+
+| Condition | Why |
+| --- | --- |
+| nothing uncommitted in it | unreviewed work is never deleted for being inconvenient |
+| not touched inside a 6 h grace window | **a freshly spawned worker's worktree is clean and its branch has no commits yet, so its tip is an ancestor of main — indistinguishable, by git alone, from a merged proposal.** Without the window the merge rule deletes a running agent's directory |
+| branch is an ancestor of main, **or** the worktree is older than 14 days | the human took it, or the session is long gone |
+
+Borrowed dependency directories are unlinked **before** the removal, exactly as
+in §12.4 — a recursive delete that walked into a junction would delete the
+operator's real `node_modules`. **Branches are never deleted:** the proposal
+ledger, the merge/revert observations and the reconciler all key on the branch;
+the working copy costs nothing to remove and the branch would erase the record.
+
+#### Tests
+
+`personas-engine`, `unattended_worktree` (8) + `unattended` (2), against a real
+throwaway `git init` repository — the claim is a claim about what git does to a
+checkout, and a mock would pin our belief rather than the behaviour that cost an
+operator a night. They pin: the shared checkout's branch **and** HEAD **and**
+`git status` are unchanged after a dispatch; the worktree is outside the
+repository, on a fresh branch at the main tip; `node_modules` is borrowed and
+the source's copy survives; the reconciler sees the branch and its commits from
+the shared checkout; two dispatches of the same title get different branches and
+directories; a non-git project is refused rather than dispatched into; prune
+retires a merged worktree, keeps in-flight work, keeps everything inside the
+grace window, and never considers a worktree outside its root; and the two
+guardrail variants share one tail.
