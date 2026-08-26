@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { AlertCircle, CheckCircle2, AlertTriangle, Activity } from 'lucide-react';
+import { AlertCircle, CheckCircle2, AlertTriangle, Activity, ShieldCheck } from 'lucide-react';
 import type { AuditIncidentSummary } from '@/lib/bindings/AuditIncidentSummary';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import { OPEN_ONLY_FILTERS as OPEN_FILTERS } from '../libs/incidentFilterDefaults';
@@ -10,6 +10,17 @@ interface Props {
   filters: IncidentFilters;
   /** Apply a tile's filter slice (clicking a KPI jumps the inbox to that view). */
   onApplyFilters: (next: IncidentFilters) => void;
+  /**
+   * Autonomous tile. Unlike the four KPI tiles (which narrow the SAME list),
+   * this one swaps the body for the autonomous log — so it is only rendered
+   * when the host passes a toggle, and it reads as pressed while that log is
+   * on screen.
+   */
+  autonomous?: {
+    count: number;
+    active: boolean;
+    onToggle: () => void;
+  };
 }
 
 // Each tile is a one-click jump to the exact slice its number counts. The
@@ -42,7 +53,7 @@ function filtersMatch(a: IncidentFilters, b: IncidentFilters): boolean {
   );
 }
 
-export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters }: Props) {
+export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, autonomous }: Props) {
   const { t } = useTranslation();
   const open = Number(summary?.open ?? 0);
   const ack = Number(summary?.acknowledged ?? 0);
@@ -54,7 +65,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters }: Pr
   const critical = bySeverity.get('critical') ?? 0;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className={`grid grid-cols-2 gap-3 ${autonomous ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
       <Tile
         label={t.overview.incidents.kpi_open}
         value={open}
@@ -88,6 +99,17 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters }: Pr
         active={filtersMatch(filters, RESOLVED_FILTERS)}
         onClick={() => onApplyFilters(RESOLVED_FILTERS)}
       />
+      {autonomous && (
+        <Tile
+          label={t.overview.incidents.noc_handled_title}
+          value={autonomous.count}
+          Icon={ShieldCheck}
+          tone="success"
+          sublabel={t.overview.incidents.noc_handled_by}
+          active={autonomous.active}
+          onClick={autonomous.onToggle}
+        />
+      )}
     </div>
   );
 }

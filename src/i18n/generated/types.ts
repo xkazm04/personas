@@ -7022,7 +7022,7 @@ export type Translations = {
       linked_memories_empty: string;
       compose_personas_prompt: string;
       subtitle_default: string;
-      subtitle_composed_prefix: string;
+      subtitle_composed: string;
       talk_to_athena: string;
       error_title: string;
       error_retry: string;
@@ -11884,6 +11884,10 @@ export type Translations = {
     tour_a11y_region: string;
     tour_substep_prev: string;
     tour_substep_next: string;
+    tour_steps_heading: string;
+    tour_deck_a11y: string;
+    tour_deck_collapse: string;
+    tour_deck_expand: string;
     tour_loading: string;
     tour_skip: string;
     what_to_explore: string;
