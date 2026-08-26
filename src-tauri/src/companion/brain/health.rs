@@ -597,6 +597,7 @@ fn embedder_probe() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::companion::brain::test_home::TestHome;
 
     /// The real companion schema, which is the point: `companion_embedding` is
     /// a vec0 virtual table created lazily at first embed, so a fresh workspace
@@ -633,11 +634,11 @@ mod tests {
     /// dropped, the health tests below start failing — which is the whole point
     /// of going through it instead of inserting the FTS row by hand.
     ///
-    /// `PERSONAS_HOME` is redirected at the temp dir so the episode markdown
-    /// never lands in the operator's real brain.
-    fn seed_indexed_episodes(pool: &UserDbPool, n: usize) -> tempfile::TempDir {
-        let home = tempfile::TempDir::new().expect("temp home");
-        std::env::set_var("PERSONAS_HOME", home.path());
+    /// Runs under [`TestHome`], which redirects `PERSONAS_HOME` at a temp dir
+    /// AND holds the shared lock — `brain_root()` reads a process-global, so an
+    /// unguarded redirect races every other brain test that needs one.
+    fn seed_indexed_episodes(pool: &UserDbPool, n: usize) -> TestHome {
+        let home = TestHome::new("health");
         for i in 0..n {
             crate::companion::brain::episodic::append_episode(
                 pool,

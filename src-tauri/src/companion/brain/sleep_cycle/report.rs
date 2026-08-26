@@ -116,10 +116,31 @@ pub(super) fn render_report(
         honesty.push(t.clone());
     }
     if stats.facts_dropped > 0 {
+        // The forgotten count is called out separately because it is the one
+        // drop reason that is the system obeying rather than the system
+        // hitting a limit, and folding it into a bare "dropped N" would read
+        // as a failure.
+        let forgotten = if stats.facts_dropped_forgotten > 0 {
+            format!(
+                ", {} because you had asked me to forget that key",
+                stats.facts_dropped_forgotten
+            )
+        } else {
+            String::new()
+        };
         honesty.push(format!(
-            "{} fact candidate(s) were dropped ({} of them for exceeding the {}-per-cycle cap).",
-            stats.facts_dropped, stats.facts_dropped_over_cap, MAX_FACTS_PER_CYCLE
+            "{} fact candidate(s) were dropped ({} of them for exceeding the {}-per-cycle cap{}).",
+            stats.facts_dropped, stats.facts_dropped_over_cap, MAX_FACTS_PER_CYCLE, forgotten
         ));
+    }
+    if !notes.refused_forgotten.is_empty() {
+        honesty.push(
+            "I re-derived these from the evidence and did not write them, because you              deleted them before:"
+                .to_string(),
+        );
+        for line in &notes.refused_forgotten {
+            honesty.push(format!("  - {line}"));
+        }
     }
     if stats.procedurals_dropped > 0 {
         honesty.push(format!(

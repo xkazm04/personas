@@ -15,8 +15,12 @@ import type { BrainKind, CompanionRecallLane } from '@/api/companion';
  * - a **relevance underline** under vector hits only, because only those have
  *   a distance. Inventing a bar for a keyword or always-on entry would make
  *   the row lie in the most plausible-looking way possible.
- * - **dimmer text** for `always` / `recency`, so "would have been here anyway"
- *   never reads at the same weight as "this matched what you asked".
+ * - **emphasis on what matched** (`text-primary` for vector / keyword), so
+ *   "this answered what you asked" outranks "would have been here anyway".
+ *   The hierarchy is built by promoting, never by fading: the repo's
+ *   `no-low-contrast-text-classes` rule bans both the opacity step and the
+ *   muted token, and an always-on entry is real context that should stay
+ *   fully legible.
  */
 export function RecallChip({
   entry,

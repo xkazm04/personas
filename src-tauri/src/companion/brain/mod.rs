@@ -33,4 +33,8 @@ pub mod semantic;
 pub mod sleep_cycle;
 pub mod sync_staging;
 pub mod taxonomy;
+/// Shared `PERSONAS_HOME` guard for brain tests. Test-only: nothing in the
+/// shipped binary redirects the brain root.
+#[cfg(test)]
+pub(crate) mod test_home;
 pub mod util;
