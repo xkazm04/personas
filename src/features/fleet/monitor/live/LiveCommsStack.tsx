@@ -3,37 +3,55 @@
 // Presentation: a MESSENGER BUBBLE (chosen via /prototype over a flat toast and
 // a Slack-transcript row). Each incoming channel message reads like an agent DM:
 // the avatar sits OUTSIDE a rounded speech bubble (bottom-left, anchored by a
-// small tail) and the message itself is the hero, with the author (in their
-// accent), a "# channel" pill, and a relative time in the header, and the event
-// ("needs your review", "handoff") as a small status label. Alerts tint the
+// small tail) and the message itself is the hero. The header row is author +
+// acknowledge only — the team/project tag was dropped (the persona name carries
+// recognition; a per-project logo is the future affordance) and so was the
+// relative time. A standalone row shows the message TYPE as an icon (directive
+// / decision / channel) with the event text as its tooltip. Alerts tint the
 // bubble + tail warning. Newest sits nearest the corner; the latest 3 stay live
-// and older ones fold into a "+N more · clear all" chip. Hover pauses the
-// natural timeout and reveals the dismiss control; the body opens the Timeline.
+// and older ones fold into a "+N more · clear all" chip.
+//
+// Lifecycle (redesigned 2026-08-26): NO auto-timeout — cards showed and hid
+// too quickly. A card stays until the operator ACKNOWLEDGES it via the check
+// icon button (marks it read persistently; it is never displayed again) or
+// clicks the body, which keeps opening the messaging UI.
 
 import { memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Check, MessagesSquare, Scale, User } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
-  LiveAvatar, authorAccent, authorName, LIVE_TTL_MS,
+  LiveAvatar, authorAccent, authorName, liveMessageType, type LiveMessageType,
   type LiveMessage, type LiveVariantProps,
 } from './liveModel';
 
 const MAX_VISIBLE = 3;
-const STACK_WIDTH = 352;
+// +20% over the original 352 (operator request) — the wider card gives the
+// message line room now that it is the only prose in the bubble.
+const STACK_WIDTH = 422;
+
+/** The standalone type row's icon per message type. Tone matches the event
+ *  label vocabulary the card used to spell out; the event text itself moves
+ *  into the tooltip so no information is lost. */
+const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
+  decision: { Icon: Scale, cls: 'text-status-warning' },
+  directive: { Icon: User, cls: 'text-emerald-400' },
+  channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
+};
 
 function BubbleRow({
-  m, onDismiss, onOpenTimeline, onHover, reducedMotion,
+  m, onDismiss, onOpenTimeline, reducedMotion,
 }: {
   m: LiveMessage;
   onDismiss: (id: string) => void;
   onOpenTimeline: (teamId?: string) => void;
-  onHover: (id: string, hovered: boolean) => void;
   reducedMotion: boolean;
 }) {
   const { t } = useTranslation();
   const accent = authorAccent(m);
+  const type = liveMessageType(m);
+  const TypeGlyph = TYPE_ICON[type];
   return (
     <motion.div
       layout={!reducedMotion}
@@ -41,8 +59,6 @@ function BubbleRow({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 40, scale: 0.96 }}
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-      onMouseEnter={() => onHover(m.id, true)}
-      onMouseLeave={() => onHover(m.id, false)}
       className="group pointer-events-auto flex w-full items-end gap-2"
     >
       {/* Avatar anchored to the bubble's bottom-left, like a chat thread. */}
@@ -66,50 +82,44 @@ function BubbleRow({
               : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
           }`}
         >
-          <div className="flex items-center gap-1.5">
+          {/* First row: the author only — no team/project tag (the persona
+              name carries recognition; a per-project logo is the future
+              affordance), no relative time (discarded with the timeout). */}
+          <div className="flex items-center gap-1.5 pr-6">
             <span className="typo-caption font-semibold truncate" style={{ color: accent }}>{authorName(m)}</span>
-            {/* Channel pill — anchors the message to its team channel. */}
-            <span className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-1.5 py-0.5 typo-caption text-foreground/70">
-              <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: m.teamColor }} />
-              <span className="max-w-[120px] truncate">{m.teamName}</span>
-            </span>
-            <span className="ml-auto flex-shrink-0 typo-caption text-foreground/55">
-              <RelativeTime timestamp={m.at} />
-            </span>
           </div>
-          <span className={`mt-1 inline-block typo-label ${m.tone}`}>{m.event}</span>
+          {/* Standalone TYPE row — directive / decision / channel as an icon;
+              the event text survives as its tooltip and a11y name. */}
+          <span
+            className="mt-1 flex items-center"
+            role="img"
+            aria-label={m.event}
+            title={m.event}
+          >
+            <TypeGlyph.Icon className={`h-3.5 w-3.5 ${TypeGlyph.cls}`} aria-hidden />
+          </span>
           {m.message && (
             <p className="mt-1 typo-body text-foreground line-clamp-3">{m.message}</p>
           )}
-
-          {/* Finite auto-dismiss rail (paused on hover by the host). */}
-          {!reducedMotion && (
-            <motion.span
-              className="absolute inset-x-0 bottom-0 block h-0.5 origin-left"
-              style={{ backgroundColor: accent, opacity: 0.5 }}
-              initial={{ scaleX: 1 }}
-              animate={{ scaleX: 0 }}
-              transition={{ duration: LIVE_TTL_MS / 1000, ease: 'linear' }}
-            />
-          )}
         </button>
 
-        {/* Dismiss — revealed on hover; skips the natural timeout. */}
+        {/* Acknowledge — always visible (no auto-timeout anymore): marks the
+            message read and it is never displayed again. */}
         <button
           type="button"
           onClick={() => onDismiss(m.id)}
           aria-label={t.monitor.live_dismiss}
           title={t.monitor.live_dismiss}
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/90 text-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+          className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/90 text-foreground transition-colors hover:text-status-success hover:border-status-success/40 focus-visible:text-status-success"
         >
-          <X className="h-3 w-3" />
+          <Check className="h-3 w-3" />
         </button>
       </div>
     </motion.div>
   );
 }
 
-function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline, onHover, reducedMotion }: LiveVariantProps) {
+function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline, reducedMotion }: LiveVariantProps) {
   const { t, tx } = useTranslation();
   if (messages.length === 0) return null;
   const visible = messages.slice(0, MAX_VISIBLE);
@@ -148,7 +158,6 @@ function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline,
               m={m}
               onDismiss={onDismiss}
               onOpenTimeline={onOpenTimeline}
-              onHover={onHover}
               reducedMotion={reducedMotion}
             />
           ))}
@@ -159,7 +168,7 @@ function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline,
 }
 
 /**
- * @catalog Bottom-right chat-bubble stack of live channel-message pop-ups (latest 3 + overflow chip) with click-to-dismiss, hover-paused auto-timeout, and open-in-Timeline.
+ * @catalog Bottom-right chat-bubble stack of live channel-message pop-ups (latest 3 + overflow chip): acknowledge-to-mark-read (persistent, no auto-timeout), type icon row, open-in-Timeline on body click.
  */
 export const LiveCommsStack = memo(LiveCommsStackImpl);
 export default LiveCommsStack;

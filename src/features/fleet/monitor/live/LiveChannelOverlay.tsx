@@ -13,17 +13,44 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { MergedChannels } from '../channels/mergedFeed';
 import type { FeedTeam, TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import { LiveCommsStack } from './LiveCommsStack';
 import { onMockLiveMessage } from './liveDevHarness';
-import { LIVE_TTL_MS, projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
+import { projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
 
 const CAP = 30;        // bound the accumulated window
-const TICK_MS = 300;   // auto-expire resolution
 const NEW_GRACE_MS = 8000; // an item this fresh at mount still pops (vs. silent history)
+
+/* -- Persistent read ledger ------------------------------------------------
+ * A pop-up dismissed via its acknowledge button is READ — it must never be
+ * displayed again, across live-mode re-enables and app restarts. A bounded
+ * id ring in localStorage (newest-last) is enough: the pop-up window only
+ * ever surfaces near-mount arrivals, so 400 ids comfortably outlives any id
+ * that could still resurface. */
+const READ_KEY = 'personas.live.readIds';
+const READ_CAP = 400;
+
+function loadReadIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function persistReadIds(ids: Set<string>): void {
+  try {
+    localStorage.setItem(READ_KEY, JSON.stringify([...ids].slice(-READ_CAP)));
+  } catch (e) {
+    // Private mode / quota: acknowledge still works this session.
+    silentCatch('live:read-ledger')(e);
+  }
+}
 
 /** Hidden diff sink — turns merged-feed deltas into new pop-up events. */
 function LiveFeedSink({
@@ -94,11 +121,10 @@ export function LiveChannelOverlay() {
 
   // ── Queue engine ──────────────────────────────────────────────────────────
   const [incoming, setIncoming] = useState<LiveMessage[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  // Read ledger — seeded from localStorage so acknowledged messages stay gone.
+  const [dismissed, setDismissed] = useState<Set<string>>(loadReadIds);
   const incomingRef = useRef(incoming);
   incomingRef.current = incoming;
-  const pauseStart = useRef(new Map<string, number>());
-  const pausedTotal = useRef(new Map<string, number>());
 
   const enqueue = useCallback((msgs: LiveMessage[]) => {
     setIncoming((prev) => [...msgs, ...prev].slice(0, CAP));
@@ -108,18 +134,22 @@ export function LiveChannelOverlay() {
   // fires "Mock pop-up". Lets the redesign be evaluated on demand without
   // waiting for live channel traffic. Remove with liveDevHarness.
   useEffect(() => onMockLiveMessage((m) => enqueue([m])), [enqueue]);
-  const onDismiss = useCallback((id: string) => setDismissed((p) => new Set(p).add(id)), []);
-  const onDismissAll = useCallback(() => setDismissed(new Set(incomingRef.current.map((m) => m.id))), []);
-  const onHover = useCallback((id: string, hovered: boolean) => {
-    if (hovered) {
-      pauseStart.current.set(id, Date.now());
-    } else {
-      const started = pauseStart.current.get(id);
-      if (started != null) {
-        pausedTotal.current.set(id, (pausedTotal.current.get(id) ?? 0) + (Date.now() - started));
-        pauseStart.current.delete(id);
-      }
-    }
+  // Acknowledge = mark read, forever. The click lives on the card's icon
+  // button; body clicks keep opening the messaging UI instead.
+  const onDismiss = useCallback((id: string) => {
+    setDismissed((p) => {
+      const next = new Set(p).add(id);
+      persistReadIds(next);
+      return next;
+    });
+  }, []);
+  const onDismissAll = useCallback(() => {
+    setDismissed((p) => {
+      const next = new Set(p);
+      for (const m of incomingRef.current) next.add(m.id);
+      persistReadIds(next);
+      return next;
+    });
   }, []);
   const onOpenTimeline = useCallback((teamId?: string) => {
     // Redirect into the Channels → Timeline view, scoped to the pop-up's team
@@ -130,33 +160,17 @@ export function LiveChannelOverlay() {
     s.setHeaderOverlay('monitor');
   }, []);
 
-  // Disabling clears the queue so stale pop-ups can't resurface on re-enable.
+  // Disabling clears the QUEUE so stale pop-ups can't resurface on re-enable
+  // — but the read ledger survives: acknowledged means acknowledged.
   useEffect(() => {
     if (enabled) return;
     setIncoming([]);
-    setDismissed(new Set());
-    pauseStart.current.clear();
-    pausedTotal.current.clear();
+    setDismissed(loadReadIds());
   }, [enabled]);
 
-  // Natural auto-timeout — expire non-paused messages past their TTL.
-  useEffect(() => {
-    if (!enabled) return;
-    const iv = setInterval(() => {
-      const now = Date.now();
-      setDismissed((prev) => {
-        let changed = false;
-        const next = new Set(prev);
-        for (const m of incomingRef.current) {
-          if (next.has(m.id) || pauseStart.current.has(m.id)) continue;
-          const age = now - m.receivedAt - (pausedTotal.current.get(m.id) ?? 0);
-          if (age >= LIVE_TTL_MS) { next.add(m.id); changed = true; }
-        }
-        return changed ? next : prev;
-      });
-    }, TICK_MS);
-    return () => clearInterval(iv);
-  }, [enabled]);
+  // No auto-timeout (redesigned 2026-08-26): pop-ups showed and hid too
+  // quickly. A card now stays until the operator acknowledges it (the icon
+  // button — marks it read persistently) or opens the messaging UI from it.
 
   // Prune the tombstone set whenever the live window shrinks (CAP eviction or
   // an enqueue) — otherwise `dismissed` is a permanent set that only grows,
@@ -176,7 +190,7 @@ export function LiveChannelOverlay() {
   }, [incoming]);
 
   const live = useMemo(() => incoming.filter((m) => !dismissed.has(m.id)), [incoming, dismissed]);
-  const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenTimeline, onHover, reducedMotion };
+  const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenTimeline, reducedMotion };
 
   if (!enabled) return null;
 

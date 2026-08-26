@@ -100,23 +100,33 @@ export function authorName(m: LiveMessage): string {
   return m.personaName;
 }
 
-/** How long (ms) a message lives before it auto-hides. Shared default. */
-export const LIVE_TTL_MS = 7000;
+/** The broad TYPE a pop-up communicates — what the standalone icon row shows.
+ *  `decision` = the message asks the operator to decide (review gates,
+ *  failures — anything the projector marked `alert`); `directive` = the
+ *  operator's own posts echoed back; `channel` = ordinary channel talk. */
+export type LiveMessageType = 'directive' | 'decision' | 'channel';
+
+export function liveMessageType(m: LiveMessage): LiveMessageType {
+  if (m.alert) return 'decision';
+  if (m.kind === 'directive') return 'directive';
+  return 'channel';
+}
 
 /** The contract every live-overlay variant renders against. The host owns the
- *  queue (accumulation, dismiss, auto-expire, hover-pause); a variant owns its
- *  own layout, grouping, and presentation timing. */
+ *  queue (accumulation + acknowledge bookkeeping); a variant owns its own
+ *  layout, grouping, and presentation. There is NO auto-timeout: a pop-up
+ *  stays until the operator acknowledges it (marking it read persistently)
+ *  or opens the messaging UI. */
 export interface LiveVariantProps {
   /** Non-dismissed messages, newest-first. */
   messages: LiveMessage[];
-  /** Dismiss one message now (click-to-dismiss, skips the natural timeout). */
+  /** Acknowledge one message: dismiss it AND persist it as read, so it is
+   *  never displayed again — across re-enables and app restarts. */
   onDismiss: (id: string) => void;
-  /** Dismiss everything currently shown. */
+  /** Acknowledge everything currently shown. */
   onDismissAll: () => void;
   /** Redirect into the Channels → Timeline view (optionally team-scoped). */
   onOpenTimeline: (teamId?: string) => void;
-  /** Report hover so the host can pause/resume that message's auto-expire. */
-  onHover: (id: string, hovered: boolean) => void;
   reducedMotion: boolean;
 }
 
