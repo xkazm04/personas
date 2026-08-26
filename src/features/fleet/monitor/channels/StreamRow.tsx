@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { Ear, ExternalLink } from 'lucide-react';
-import { memberColor, parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
+import { parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
-import { AUTHOR_KIND_META, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
+import { itemAccent, STEP_TONE } from '@/features/teams/sub_collab/collabRender';
 import type { TaggedItem } from './types';
-import { callsign, itemKind, rowFamily } from './lensModel';
+import { itemKind, rowCallsign, rowFamily, rowToken } from './lensModel';
 
 /* ----------------------------------------------------------------------------
  * STREAM ROW — one transmission. A dense 30px radio line, and only that.
@@ -73,20 +73,28 @@ export const StreamRow = memo(function StreamRow({
   const { item, team } = row;
   const kind = itemKind(item);
   const fam = rowFamily(item);
-  // A Slack row's speaker is an external human, not a persona: its callsign is
-  // the bridged display name and its colour is the Slack voice's accent, so the
-  // log never signs an outsider's line with a team member's identity (or with
-  // the "SYSTEM" fallback `memberColor`/`callsign` would otherwise produce).
-  const isSlack = item.kind === 'slack';
-  const sign = callsign(isSlack ? slackAuthorName(item) : persona?.name);
-  const color = isSlack ? AUTHOR_KIND_META.slack.accent : memberColor(persona, item.personaId);
+  // WHO SPOKE and WHAT KIND OF FACT this is both come from the shared model, so
+  // the log signs a row exactly the way the Conversation surface and the lens
+  // filters do. A Slack row keeps its bridged human's name and accent (never a
+  // team member's identity); You / Athena / Director keep theirs instead of all
+  // collapsing into the "SYSTEM" fallback.
+  const sign = rowCallsign(item, persona?.name);
+  const color = itemAccent(item, persona);
   const parsed = kind === 'event' ? parsePayload(item.extra) : null;
   const summary = parsed?.summary ?? item.body ?? '';
   const heard = item.consumers?.length ?? 0;
 
-  // The event's raw type is the machine token; other kinds show their kind.
-  const token = kind === 'event' ? item.label : kind;
-  const tokenClass = kind === 'event' ? (FAMILY_TEXT[fam ?? 'other'] ?? '') : (KIND_TEXT[kind] ?? '');
+  // Events and steps show their raw machine token (`event_type` / step kind) —
+  // a step's `step_running` and `step_done` carry the SAME body, so the token is
+  // the only thing that tells the two rows apart. Step tokens wear the step
+  // lifecycle tone (running/done/failed) rather than one flat kind colour.
+  const token = rowToken(item);
+  const tokenClass =
+    kind === 'event'
+      ? (FAMILY_TEXT[fam ?? 'other'] ?? '')
+      : item.kind === 'step'
+        ? (STEP_TONE[item.label] ?? KIND_TEXT.step ?? '')
+        : (KIND_TEXT[kind] ?? '');
 
   const railColor = team.teamColor;
 

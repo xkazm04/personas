@@ -1,4 +1,5 @@
 import { eventFamily, type EventFamily } from '@/lib/channel/eventModel';
+import { slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { TaggedItem } from './types';
 
@@ -81,6 +82,84 @@ export function callsign(name: string | undefined): string {
     .slice(0, 14);
 }
 
+/** The voices that speak WITHOUT a persona behind them. Mirrors `authorName`
+ *  (collabRender), which the Conversation surface has always used — the Stream
+ *  was the one surface that resolved none of them, so a user directive, an
+ *  Athena post, a Director step-advance and a machine notice all signed
+ *  "SYSTEM" and read as the same speaker repeating himself. */
+const VOICELESS_NAME: Record<string, string> = {
+  directive: 'You',
+  athena: 'Athena',
+  director: 'Director',
+};
+
+/**
+ * WHO SPOKE — the log's callsign for any row.
+ *
+ * A persona name wins when one resolves; a bridged Slack human keeps his own
+ * name; the remaining internal voices come from the row's own `kind`. Only a
+ * genuinely unattributed machine row (a step transition, a memory write, a
+ * `system` notice) falls back to SYSTEM.
+ *
+ * `name` is the resolved persona name — StreamRow passes `persona?.name`, the
+ * lens passes `nameOf(item.personaId)`, so the log and the filters agree on
+ * who is talking.
+ */
+export function rowCallsign(item: TaggedItem['item'], name: string | undefined): string {
+  if (item.kind === 'slack') return callsign(slackAuthorName(item));
+  if (name) return callsign(name);
+  return callsign(VOICELESS_NAME[item.kind]);
+}
+
+/**
+ * THE MACHINE TOKEN — the badge between the callsign and the summary.
+ *
+ * Events show their raw `event_type` and steps show their raw step kind, because
+ * both are LIFECYCLE rows: one step emits `step_running` then `step_done` (then
+ * maybe `step_failed`, `qa_changes_requested_rework`) and every one of them
+ * carries the same body — the step title. Rendering the lens kind ("step") for
+ * all of them threw away the only field that told them apart, so the log showed
+ * the same line twice. Measured on the dev database: 231 adjacent pairs of
+ * byte-identical rows, 185 of them a `step_done` sitting directly under its own
+ * `step_running`.
+ *
+ * The other kinds are one row per fact, so their kind IS their token.
+ */
+export function rowToken(item: TaggedItem['item']): string {
+  const kind = itemKind(item);
+  if (kind === 'event') return item.label;
+  if (item.kind === 'step') return item.label;
+  return kind;
+}
+
+/**
+ * THE CROSS-TEAM MERGE — every subscribed team's page flattened into one
+ * newest-first log, ranked by the same (at, id) comparator the server pages on.
+ *
+ * Deduped by row id, because the per-team caches are NOT disjoint: the read
+ * model scopes `persona_events` by team MEMBERSHIP (`persona_team_members`,
+ * a many-to-many), so one bus event authored by a persona who belongs to two
+ * teams is returned — correctly, and under the SAME `pe-<id>` — in both teams'
+ * pages. Concatenating them rendered that one fact twice. Two rows sharing an
+ * id are always the same fact: ids are namespaced per source (`tae-` / `pe-` /
+ * `tm-` / `tcm-`) and unique within it.
+ */
+export function mergeTaggedRows(groups: TaggedItem[][]): TaggedItem[] {
+  const flat: TaggedItem[] = [];
+  const seen = new Set<string>();
+  for (const group of groups) {
+    for (const row of group) {
+      if (seen.has(row.item.id)) continue;
+      seen.add(row.item.id);
+      flat.push(row);
+    }
+  }
+  // Same comparator the server ranks by — (at, id) desc. The merge must sort
+  // identically or paging would interleave wrongly.
+  flat.sort((a, b) => b.item.at.localeCompare(a.item.at) || b.item.id.localeCompare(a.item.id));
+  return flat;
+}
+
 /**
  * The kind lens is enforced SERVER-side (it decides which source queries run).
  * Family / callsign / search narrow within whatever came back, so they apply
@@ -109,7 +188,7 @@ export function matchesLens(
   if (q) {
     // assignmentId is in the haystack so the row's assignment chip can filter
     // by setting the search to the full id — and so a pasted id just works.
-    const hay = `${item.body ?? ''} ${item.label} ${callsign(nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
+    const hay = `${item.body ?? ''} ${item.label} ${rowCallsign(item, nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
     if (!hay.includes(q)) return false;
   }
 
@@ -179,7 +258,7 @@ export function facetCounts(
     let mSearch = true;
     if (q) {
       const hay =
-        `${item.body ?? ''} ${item.label} ${callsign(nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
+        `${item.body ?? ''} ${item.label} ${rowCallsign(item, nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
       mSearch = hay.includes(q);
     }
 

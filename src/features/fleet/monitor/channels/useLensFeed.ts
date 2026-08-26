@@ -5,6 +5,7 @@ import { channelKey, mergeHorizon, type ChannelTeamState } from '@/stores/slices
 import { useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { ChannelKindCounts } from '@/lib/bindings/ChannelKindCounts';
+import { mergeTaggedRows } from './lensModel';
 import type { FeedTeam, TaggedItem } from './types';
 
 /* ----------------------------------------------------------------------------
@@ -73,7 +74,7 @@ export function useLensFeed(teams: FeedTeam[], kinds: ChannelKind[] | undefined)
 
   const { rows, loading, hasMore } = useMemo(() => {
     const live: ChannelTeamState[] = [];
-    const flat: TaggedItem[] = [];
+    const groups: TaggedItem[][] = [];
     const cache = tagCache.current;
     const seen = new Set<string>();
 
@@ -90,15 +91,14 @@ export function useLensFeed(teams: FeedTeam[], kinds: ChannelKind[] | undefined)
         tagged = st.items.map((item) => ({ item, team }));
         cache.set(team.teamId, { items: st.items, team, rows: tagged });
       }
-      for (const r of tagged) flat.push(r);
+      groups.push(tagged);
     });
     for (const k of cache.keys()) if (!seen.has(k)) cache.delete(k);
 
-    // Same comparator the server ranks by — (at, id) desc. The merge must sort
-    // identically or paging would interleave wrongly. (A k-way head merge was
-    // considered and declined: this only runs when something actually changed
-    // now, and the loaded window is a few hundred rows.)
-    flat.sort((a, b) => b.item.at.localeCompare(a.item.at) || b.item.id.localeCompare(a.item.id));
+    // Flatten + rank + dedup by row id. (A k-way head merge was considered and
+    // declined: this only runs when something actually changed now, and the
+    // loaded window is a few hundred rows.)
+    const flat = mergeTaggedRows(groups);
 
     const horizon = mergeHorizon(live);
     const visible = horizon === null ? flat : flat.filter((r) => r.item.at >= horizon);
