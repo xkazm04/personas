@@ -151,8 +151,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 38,
-        "matches": 107
+        "files": 37,
+        "matches": 106
       },
       "floor": 4000
     },
@@ -555,8 +555,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 817,
-        "matches": 1991
+        "files": 816,
+        "matches": 1990
       },
       "floor": 2000
     },
@@ -1235,8 +1235,8 @@
         "description": "useShallow() wrapping a selector whose body is a bare property-access chain. It constructs nothing, so the shallow compare can only ever be a workaround for a slice that replaces a collection reference whose contents are unchanged — and when the collection is refetched over IPC, every element is a fresh object and the compare can never match. PROXY FOR the stack-free condition: subscription-side compensation for writer-side identity churn. The fix is in the writing slice; see Gaps #2."
       },
       "baseline": {
-        "files": 10,
-        "matches": 14
+        "files": 11,
+        "matches": 16
       },
       "floor": 4000
     },
@@ -1407,8 +1407,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 558,
-        "matches": 1078
+        "files": 561,
+        "matches": 1081
       },
       "floor": 2000
     },
@@ -1451,8 +1451,8 @@
         "description": "a polite live region (aria-live=, or role=\"status\", whose implicit politeness is polite) whose opening tag is reached DIRECTLY from a conditional operator - `{cond && <div aria-live=...>}` or `{cond ? (<span role=\"status\">…)}` - with only whitespace, parentheses and comments in between. PROXY FOR the stack-free condition: the live-region node and the text it exists to announce enter the accessibility tree in the SAME commit, so there is no change for the assistive technology to observe and the announcement the author wrote never fires. Grounded in the specification, not in taste: MDN's live-region guide states the attribute 'works as long as you add the attribute before the changes occur ... Start with an empty live region, then - in a separate step - change the content inside the region.' role=\"alert\" is DELIBERATELY EXCLUDED from the pattern (the negated run cannot cross role=\"alert\") because it is the documented exception - alert content 'is announced, even when the region ... is injected dynamically into the page' - so gating it would flag a correct construct; the 14 conditionally-mounted role=\"alert\" regions in this repo are therefore not counted. PRECONDITION (measured, must be re-derived per repo): this repo spells conditional rendering as JSX && / ternary inside braces. RECALL IS PARTIAL AND THE SHORTFALL IS STRUCTURAL: the identical defect also appears as a component that early-returns null above its region (9 further sites here - EstimatedProgressBar.tsx:96, CharBudget.tsx:56, BulkRerunStrip.tsx:24, LabProgress.tsx:38, NarrationThread.tsx:77, DataHealthBar.tsx:23, RemoteJobNoticeChip.tsx:81, AthenaOrbLayer.tsx:173, TourPanelBody.tsx:90, plus LoadingSpinner.tsx:15 whose return null sits AFTER the region). A whole-file regex cannot see a control-flow guard, so the gate ratchets the lexically-visible half and section 7 names the rest. Measured against a brace/quote-aware JSX opening-tag parser over all 2,104 .tsx files: recall 17/17 = 100% of the JSX-conditional sub-population, 17/26 = 65% of the full condition; precision 15/17 - the two false positives are Composer.tsx:359 and Listbox.tsx:185, where the outer condition is a STATIC CAPABILITY flag (dictation.supported, searchable) rather than the message's own presence, so the region really is mounted for the surface's lifetime and its text swaps inside it. Both were hand-verified rather than assumed. CONVERGENCE: this defect is reinvented in both sibling repos at a HIGHER rate than here - personas-web 20 of 28 regions, brainiac/console 6 of 7 - which makes it a hazard in the problem rather than carelessness in one team. LEGAL FIX: render the region unconditionally and put the condition on its TEXT (`<span className=\"sr-only\" aria-live=\"polite\">{busy ? label : ''}</span>`), or delete the local region and call useAnnounce()/announceImperative() from the app-wide AriaLiveProvider, which is persistent by construction."
       },
       "baseline": {
-        "files": 17,
-        "matches": 17
+        "files": 16,
+        "matches": 16
       },
       "floor": 2000
     },
@@ -1688,8 +1688,8 @@
         }
       ],
       "baseline": {
-        "files": 56,
-        "matches": 119
+        "files": 55,
+        "matches": 118
       },
       "floor": 4000
     },
@@ -2121,8 +2121,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 188,
-        "matches": 398
+        "files": 187,
+        "matches": 397
       },
       "floor": 4000
     },
@@ -5356,8 +5356,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 103,
-        "matches": 891
+        "files": 104,
+        "matches": 892
       },
       "floor": 100
     },
@@ -5402,7 +5402,7 @@
       },
       "baseline": {
         "files": 105,
-        "matches": 351
+        "matches": 354
       },
       "floor": 900
     },
