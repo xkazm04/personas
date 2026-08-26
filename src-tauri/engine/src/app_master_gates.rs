@@ -50,6 +50,37 @@
 //! After a merge the branch is an ancestor of main and the fork point no
 //! longer isolates its commits — revert detection needs the subjects it had
 //! beforehand.
+//!
+//! # An empty snapshot is a race, not an observation (bench sweep #24)
+//!
+//! Sweep #24 caught the reconciler mid-authorship: the worktree worker created
+//! `autopilot/document-alert-webhook-url-in-env-example-bench` at 20:26 and
+//! committed at 20:27:33; the settle poll saw the branch at 20:26:16 — *before
+//! the commit* — and recorded it with `commits: '[]'`. An empty branch is
+//! trivially an ancestor of main, so `merged_at` was stamped too (at a moment
+//! earlier than `first_seen_at`), and the "re-seeing a branch never clears an
+//! observation" rule then froze that snapshot forever: `proposalsOpened` read
+//! 0, `proposalsMerged` read 1 for a branch nobody merged, and the gates had run
+//! against a commit-less branch, i.e. against main. The night delivered a real
+//! proposal and the backbone recorded the opposite.
+//!
+//! Three rules follow, and they are what the stickiness invariant was actually
+//! protecting all along:
+//!
+//! - **Commits are re-captured while the branch is unmerged.** An empty stored
+//!   snapshot, or a moved tip on an unmerged branch, is refreshed from
+//!   [`branch_commits`]. What stays sticky is the last-known commit list of a
+//!   branch that **disappeared or merged** — that is the snapshot revert
+//!   detection needs, and the only one the old rule ever had to guard.
+//! - **A branch with no commits ahead of main is never merged.**
+//!   [`mark_merged`] refuses a commit-less row outright and
+//!   [`proposal_counts_since`] excludes one, so a row corrupted before this fix
+//!   stops reading as a delivery without a data migration.
+//! - **A commit-less branch is not gate-worthy.** Gating it would gate *main*
+//!   under a proposal's name. The declared gates are recorded `did_not_run`
+//!   with reason [`NO_COMMITS_YET`], and run for real once commits arrive —
+//!   keyed by branch **and tip**, so a moved tip re-gates and an unmoved one
+//!   does not.
 
 use std::path::Path;
 use std::time::Duration;
@@ -97,6 +128,22 @@ pub const MAX_PROPOSAL_COMMITS: usize = 50;
 /// prefix because it is the contract the prompt states — not a guess about
 /// what an agent might have named things.
 pub const PROPOSAL_BRANCH_PREFIX: &str = "autopilot/";
+
+/// The `first_error` reason stamped on a gate run that was skipped because the
+/// proposal branch carries no commit ahead of the main branch (bench sweep
+/// #24). Machine-readable prefix, in the shape of `deps_missing:<dir>` — a
+/// reader must be able to tell "we gated nothing because there was nothing to
+/// gate" from "we gated it and it failed".
+pub const NO_COMMITS_YET: &str = "no_commits_yet";
+
+/// The full recorded reason behind [`NO_COMMITS_YET`].
+pub fn no_commits_yet_reason() -> String {
+    format!(
+        "{NO_COMMITS_YET} — the branch carries no commit ahead of the main branch, so gating it \
+         would gate main under a proposal's name. Not a pass and not a failure; the declared \
+         gates run on a later reconcile, once work lands on the branch."
+    )
+}
 
 pub fn gate_timeout() -> Duration {
     let secs = std::env::var(GATE_TIMEOUT_ENV)
@@ -208,6 +255,12 @@ pub struct GateRun {
     pub project_id: String,
     pub persona_id: String,
     pub branch: String,
+    /// The branch **tip** this run judged. Gate runs are keyed by
+    /// `(branch, head_sha)`: a tip that moved is different work and re-gates, a
+    /// tip that did not is already answered. `''` on rows written before sweep
+    /// #24, which is why the reconciler treats an empty tip as "no answer for
+    /// this tip yet" rather than as a match.
+    pub head_sha: String,
     pub command: String,
     /// `None` exactly when [`GateOutcome::DidNotRun`] — there was no exit code
     /// to read.
@@ -235,6 +288,7 @@ impl GateRun {
             project_id: project_id.to_string(),
             persona_id: persona_id.to_string(),
             branch: branch.to_string(),
+            head_sha: String::new(),
             command: command.to_string(),
             exit_code,
             outcome,
@@ -242,6 +296,14 @@ impl GateRun {
             first_error: first_error.map(|e| truncate(&e, MAX_FIRST_ERROR_CHARS)),
             ran_at: chrono::Utc::now().to_rfc3339(),
         }
+    }
+
+    /// Pin this run to the branch tip it judged. Without it the run answers for
+    /// "the branch", which is not a thing that holds still — the tip that was
+    /// gated is the only tip the reading is about.
+    pub fn at_tip(mut self, head_sha: &str) -> Self {
+        self.head_sha = head_sha.trim().to_string();
+        self
     }
 
     /// One line per stage, the way the technique's verdict contract asks for
@@ -272,14 +334,15 @@ pub fn record_gate_run(pool: &DbPool, run: &GateRun) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
         "INSERT OR REPLACE INTO app_master_gate_runs
-            (id, project_id, persona_id, branch, command, exit_code, outcome,
+            (id, project_id, persona_id, branch, head_sha, command, exit_code, outcome,
              duration_ms, first_error, ran_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         params![
             run.id,
             run.project_id,
             run.persona_id,
             run.branch,
+            run.head_sha,
             run.command,
             run.exit_code,
             run.outcome.as_str(),
@@ -289,6 +352,31 @@ pub fn record_gate_run(pool: &DbPool, run: &GateRun) -> Result<(), AppError> {
         ],
     )?;
     Ok(())
+}
+
+/// Has this exact branch **tip** already been gated?
+///
+/// The gating key is `(project, branch, tip)`, not the branch alone: a branch
+/// whose tip moved carries work nothing has judged yet, and a branch whose tip
+/// did not move is already answered. An empty `head_sha` is never a match —
+/// neither the argument (we could not resolve the tip, so we know nothing) nor
+/// a stored `''` (a pre-sweep-#24 row, which answers for an unknown tip).
+pub fn gates_ran_for_tip(pool: &DbPool, project_id: &str, branch: &str, head_sha: &str) -> bool {
+    let head_sha = head_sha.trim();
+    if head_sha.is_empty() {
+        return false;
+    }
+    let Ok(conn) = pool.get() else {
+        return false;
+    };
+    conn.query_row(
+        "SELECT COUNT(*) FROM app_master_gate_runs
+         WHERE project_id = ?1 AND branch = ?2 AND head_sha = ?3",
+        params![project_id, branch, head_sha],
+        |r| r.get::<_, i64>(0),
+    )
+    .map(|n| n > 0)
+    .unwrap_or(false)
 }
 
 /// Pure pass-rate math: passed / (passed + failed).
@@ -370,7 +458,7 @@ pub fn gate_runs_for_branch(
 ) -> Result<Vec<GateRun>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT id, project_id, persona_id, branch, command, exit_code, outcome,
+        "SELECT id, project_id, persona_id, branch, head_sha, command, exit_code, outcome,
                 duration_ms, first_error, ran_at
          FROM app_master_gate_runs
          WHERE project_id = ?1 AND branch = ?2
@@ -382,12 +470,13 @@ pub fn gate_runs_for_branch(
             project_id: r.get(1)?,
             persona_id: r.get(2)?,
             branch: r.get(3)?,
-            command: r.get(4)?,
-            exit_code: r.get(5)?,
-            outcome: GateOutcome::parse(&r.get::<_, String>(6)?).unwrap_or(GateOutcome::DidNotRun),
-            duration_ms: r.get(7)?,
-            first_error: r.get(8)?,
-            ran_at: r.get(9)?,
+            head_sha: r.get(4)?,
+            command: r.get(5)?,
+            exit_code: r.get(6)?,
+            outcome: GateOutcome::parse(&r.get::<_, String>(7)?).unwrap_or(GateOutcome::DidNotRun),
+            duration_ms: r.get(8)?,
+            first_error: r.get(9)?,
+            ran_at: r.get(10)?,
         })
     })?;
     Ok(rows.flatten().collect())
@@ -494,6 +583,21 @@ pub struct Proposal {
     pub gates_ran_at: Option<String>,
 }
 
+impl Proposal {
+    /// Does this branch carry work — at least one commit ahead of the main
+    /// branch?
+    ///
+    /// `false` is the sweep-#24 shape: `git switch -c` costs nothing and
+    /// delivers nothing, and such a branch *is* main. It is therefore never
+    /// merged (it is trivially an ancestor of main, which is not the same
+    /// claim), never reverted, and never gate-worthy — gating it would run the
+    /// repository's gates against main and file the answer under a proposal's
+    /// name.
+    pub fn carries_work(&self) -> bool {
+        !self.commits.is_empty()
+    }
+}
+
 fn row_to_proposal(r: &rusqlite::Row<'_>) -> rusqlite::Result<Proposal> {
     let commits_json: String = r.get(6)?;
     Ok(Proposal {
@@ -517,9 +621,35 @@ const PROPOSAL_COLUMNS: &str = "id, project_id, persona_id, branch, head_sha, ba
      first_seen_at, merged_at, merge_sha, reverted_at, revert_sha, gates_ran_at";
 
 /// Record a newly-discovered proposal branch. Idempotent on
-/// `(project_id, branch)`: re-seeing a known branch refreshes its head sha and
-/// commit list but **never** clears an observation already made (a merge seen
-/// once stays seen).
+/// `(project_id, branch)`.
+///
+/// # What is sticky, and what is a race (bench sweep #24)
+///
+/// A merge or a revert **observation** stays: seen once, seen forever, and a
+/// second sighting never moves the date. The captured commit list is a
+/// different thing — it is a *snapshot*, and P5a made it sticky to protect one
+/// case: after a merge (or after the branch is deleted) the fork point no
+/// longer isolates the branch's commits, and revert detection needs the
+/// subjects it had beforehand. That case is preserved exactly.
+///
+/// An **empty** snapshot protects nothing. It is what the reconciler records
+/// when it polls a branch the worker has created but not yet committed to, and
+/// freezing it means the proposal reads `opened: 0` for the rest of its life.
+/// So the stored commit list is refreshed when:
+///
+/// - it is empty (`''` / `'[]'`) — there is nothing to protect; or
+/// - the branch tip moved **and the branch is neither merged nor reverted** —
+///   the fork point still isolates the commits, so the fresh capture is the
+///   better one.
+///
+/// A capture that came back empty never overwrites a non-empty one: a failed
+/// `git log` must not read as "the work vanished".
+///
+/// Finally, refreshing an empty snapshot into a real one **clears a merge
+/// stamped on the empty one**. Under this function's own rules a commit-less
+/// row can no longer be marked merged at all ([`mark_merged`] refuses), so the
+/// only way that shape exists is the sweep-#24 race — and a merge observed
+/// against an empty branch is an observation of main, not of this proposal.
 pub fn upsert_proposal(
     pool: &DbPool,
     project_id: &str,
@@ -547,10 +677,41 @@ pub fn upsert_proposal(
             head_sha = excluded.head_sha,
             base_sha = COALESCE(app_master_proposals.base_sha, excluded.base_sha),
             commits  = CASE
+                         -- A capture that came back empty never overwrites a
+                         -- real snapshot: a failed `git log` is not a delivery
+                         -- that vanished.
+                         WHEN excluded.commits IN ('', '[]')
+                         THEN app_master_proposals.commits
+                         -- An empty stored snapshot is a race, not an
+                         -- observation. Nothing to protect; take the fresh one.
                          WHEN app_master_proposals.commits IN ('', '[]')
                          THEN excluded.commits
+                         -- The tip moved on a branch that has NOT landed: the
+                         -- fork point still isolates its commits, so the fresh
+                         -- capture is the better one.
+                         WHEN app_master_proposals.merged_at IS NULL
+                          AND app_master_proposals.reverted_at IS NULL
+                          AND app_master_proposals.head_sha <> excluded.head_sha
+                         THEN excluded.commits
+                         -- Merged (or gone): keep the pre-merge subjects revert
+                         -- detection needs. THIS is what stickiness was for.
                          ELSE app_master_proposals.commits
                        END,
+            -- A merge stamped while the snapshot was empty was an observation
+            -- of main, not of this proposal (sweep #24). Filling the snapshot
+            -- in retires it.
+            merged_at = CASE
+                          WHEN app_master_proposals.commits IN ('', '[]')
+                           AND excluded.commits NOT IN ('', '[]')
+                          THEN NULL
+                          ELSE app_master_proposals.merged_at
+                        END,
+            merge_sha = CASE
+                          WHEN app_master_proposals.commits IN ('', '[]')
+                           AND excluded.commits NOT IN ('', '[]')
+                          THEN NULL
+                          ELSE app_master_proposals.merge_sha
+                        END,
             persona_id = CASE
                            WHEN app_master_proposals.persona_id = ''
                            THEN excluded.persona_id
@@ -598,23 +759,38 @@ pub fn list_proposals(pool: &DbPool, project_id: &str) -> Result<Vec<Proposal>, 
 }
 
 /// Mark a proposal observed on the main branch.
+///
+/// **Fail-closed on a commit-less row.** A branch with nothing ahead of main is
+/// trivially an ancestor of main; reading that as a merge is reading main's own
+/// history as this proposal's delivery, which is exactly what sweep #24
+/// recorded. The guard lives in the ledger, not only at the call site, so no
+/// future caller can re-open the hole.
+///
+/// Returns whether the ledger accepted the observation. `false` = refused,
+/// because the proposal carries no commits. A re-observation is accepted and
+/// changes nothing: `COALESCE` keeps the first date and the first sha.
 pub fn mark_merged(
     pool: &DbPool,
     proposal_id: &str,
     merged_at: &str,
     merge_sha: Option<&str>,
-) -> Result<(), AppError> {
+) -> Result<bool, AppError> {
     let conn = pool.get()?;
-    conn.execute(
+    let changed = conn.execute(
         "UPDATE app_master_proposals
          SET merged_at = COALESCE(merged_at, ?2), merge_sha = COALESCE(merge_sha, ?3)
-         WHERE id = ?1",
+         WHERE id = ?1 AND commits NOT IN ('', '[]')",
         params![proposal_id, merged_at, merge_sha],
     )?;
-    Ok(())
+    Ok(changed > 0)
 }
 
 /// Mark a merged proposal observed as reverted.
+///
+/// Guarded the same way as [`mark_merged`]: a revert is a claim about *this
+/// proposal's commits*, and a row that has none cannot have had any of them
+/// taken back. ([`find_revert`] already answers `None` for an empty commit
+/// list; this is the ledger-side half of the same rule.)
 pub fn mark_reverted(
     pool: &DbPool,
     proposal_id: &str,
@@ -625,7 +801,7 @@ pub fn mark_reverted(
     conn.execute(
         "UPDATE app_master_proposals
          SET reverted_at = COALESCE(reverted_at, ?2), revert_sha = COALESCE(revert_sha, ?3)
-         WHERE id = ?1",
+         WHERE id = ?1 AND commits NOT IN ('', '[]')",
         params![proposal_id, reverted_at, revert_sha],
     )?;
     Ok(())
@@ -657,8 +833,13 @@ pub struct ProposalCounts {
     /// created a branch and authored nothing on it.
     pub seen: i64,
     /// Of the project's proposals, how many merged **in** the window.
+    ///
+    /// Commit-less rows are excluded here too (bench sweep #24): a branch with
+    /// nothing ahead of main is trivially an ancestor of main, so a `merged_at`
+    /// on such a row observed main, not a delivery.
     pub merged: i64,
     /// Of the project's proposals, how many were reverted **in** the window.
+    /// Commit-less rows excluded, as for [`Self::merged`].
     pub reverted: i64,
 }
 
@@ -705,8 +886,16 @@ pub fn proposal_counts_since(
     // but is NOT a proposal: `commits` is the captured commit list, `'[]'` when
     // the branch carries nothing ahead of main.
     let opened = count(" AND first_seen_at >= ?2 AND commits NOT IN ('', '[]')").unwrap_or(0);
-    let merged = count(" AND merged_at IS NOT NULL AND merged_at >= ?2").unwrap_or(0);
-    let reverted = count(" AND reverted_at IS NOT NULL AND reverted_at >= ?2").unwrap_or(0);
+    // The same commit-less exclusion applies to landings, and for the same
+    // reason: a branch with nothing on it is trivially an ancestor of main, so
+    // a `merged_at` on such a row is an observation of main (bench sweep #24).
+    // Reading it out here retires already-corrupted rows without a migration.
+    let merged =
+        count(" AND merged_at IS NOT NULL AND merged_at >= ?2 AND commits NOT IN ('', '[]')")
+            .unwrap_or(0);
+    let reverted =
+        count(" AND reverted_at IS NOT NULL AND reverted_at >= ?2 AND commits NOT IN ('', '[]')")
+            .unwrap_or(0);
     Some(ProposalCounts {
         opened,
         seen,
@@ -1307,6 +1496,20 @@ impl GateSweep {
 /// that obviously needs a dependency the **source** checkout does not have
 /// either (`deps_missing:<dir>`): it was never given an environment, so it is
 /// not a failure of the proposal.
+///
+/// **A branch with no commits ahead of main is not gated at all** (bench sweep
+/// #24). Such a branch *is* main: running the repository's suite against it and
+/// filing the answer under a proposal's name is a reading about main dressed as
+/// a reading about a hire. Every declared command is recorded `did_not_run`
+/// with reason [`NO_COMMITS_YET`] — in neither half of the pass rate — and the
+/// gates run for real on a later reconcile, once the tip moves. The commit list
+/// is read from the proposal ledger, which the reconciler refreshes immediately
+/// before gating; a branch with **no ledger row at all** is gated as before,
+/// because nothing here knows what it carries.
+///
+/// Every recorded run is pinned to the branch tip it judged
+/// ([`GateRun::at_tip`]), so [`gates_ran_for_tip`] can tell "already answered"
+/// from "moved, and nothing has judged the new work".
 pub async fn run_declared_gates(
     pool: &DbPool,
     project_id: &str,
@@ -1329,6 +1532,28 @@ pub async fn run_declared_gates(
         };
     }
 
+    // The tip under judgement, resolved now rather than taken from the ledger:
+    // it is what the worktree will actually check out.
+    let tip = git(root_path, &["rev-parse", branch])
+        .await
+        .unwrap_or_default();
+
+    // Nothing ahead of main? Then there is nothing to gate but main itself.
+    if let Ok(Some(recorded)) = get_proposal(pool, project_id, branch) {
+        if !recorded.carries_work() {
+            return did_not_run_sweep(
+                pool,
+                project_id,
+                persona_id,
+                branch,
+                &tip,
+                &commands,
+                source,
+                &no_commits_yet_reason(),
+            );
+        }
+    }
+
     let wt_dir = match tempfile::Builder::new()
         .prefix("personas-app-master-gate-")
         .tempdir()
@@ -1340,6 +1565,7 @@ pub async fn run_declared_gates(
                 project_id,
                 persona_id,
                 branch,
+                &tip,
                 &commands,
                 source,
                 &format!("could not create a temp dir for the gate worktree: {e}"),
@@ -1350,7 +1576,9 @@ pub async fn run_declared_gates(
     let wt_str = wt_path.to_string_lossy().to_string();
 
     if let Err(e) = git(root_path, &["worktree", "add", "--detach", &wt_str, branch]).await {
-        return did_not_run_sweep(pool, project_id, persona_id, branch, &commands, source, &e);
+        return did_not_run_sweep(
+            pool, project_id, persona_id, branch, &tip, &commands, source, &e,
+        );
     }
 
     // The gates must see the repository's own resolved environment, so borrow
@@ -1388,7 +1616,8 @@ pub async fn run_declared_gates(
                 )),
             ),
             None => run_one_gate(project_id, persona_id, branch, cmd, &wt_path, timeout).await,
-        };
+        }
+        .at_tip(&tip);
         if let Err(e) = record_gate_run(pool, &run) {
             tracing::warn!(project_id, branch, error = %e,
                 "app_master_gates: could not record a gate run");
@@ -1418,11 +1647,13 @@ pub async fn run_declared_gates(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn did_not_run_sweep(
     pool: &DbPool,
     project_id: &str,
     persona_id: &str,
     branch: &str,
+    head_sha: &str,
     commands: &[String],
     source: GateSource,
     reason: &str,
@@ -1445,7 +1676,8 @@ fn did_not_run_sweep(
                 None,
                 0,
                 Some(reason.to_string()),
-            );
+            )
+            .at_tip(head_sha);
             let _ = record_gate_run(pool, &run);
             run
         })
@@ -2684,5 +2916,382 @@ mod tests {
             gate_pass_rate_since(&pool, "proj-nodeps", None, "2000-01-01T00:00:00+00:00"),
             Some(1.0)
         );
+    }
+
+    // -- bench sweep #24: the settle poll races authorship -------------------
+
+    const EPOCH: &str = "2000-01-01T00:00:00+00:00";
+
+    /// The reconciler's three steps — discover, gate, reconcile — driven
+    /// against a real repository in the order
+    /// `app_master_reconcile::reconcile_project` drives them. The tick itself
+    /// lives in the desktop crate; every rule it depends on lives here, and
+    /// this is the crate where a throwaway git repository can be pointed at
+    /// them. Returns how many proposals this pass gated.
+    async fn reconcile_pass(pool: &DbPool, root: &Path, project: &str, persona: &str) -> usize {
+        let main = resolve_main_branch(root, Some("main")).await.unwrap();
+        let branches = list_proposal_branches(root).await.unwrap();
+        for branch in &branches {
+            let head = git(root, &["rev-parse", branch]).await.unwrap();
+            let (base, commits) = branch_commits(root, &main, branch)
+                .await
+                .unwrap_or((None, Vec::new()));
+            upsert_proposal(
+                pool,
+                project,
+                persona,
+                branch,
+                &head,
+                base.as_deref(),
+                &commits,
+            )
+            .unwrap();
+        }
+
+        let mut gated = 0usize;
+        for p in list_proposals(pool, project).unwrap() {
+            if !branches.contains(&p.branch)
+                || gates_ran_for_tip(pool, project, &p.branch, &p.head_sha)
+            {
+                continue;
+            }
+            run_declared_gates(pool, project, persona, root, &p.branch).await;
+            mark_gates_ran(pool, &p.id, &chrono::Utc::now().to_rfc3339()).unwrap();
+            gated += 1;
+        }
+
+        for p in list_proposals(pool, project).unwrap() {
+            if !p.carries_work() || p.merged_at.is_some() {
+                continue;
+            }
+            if is_merged(root, &main, &p.head_sha).await {
+                let (at, sha) = merge_point(root, &main, &p.head_sha)
+                    .await
+                    .unwrap_or_else(|| (chrono::Utc::now().to_rfc3339(), None));
+                mark_merged(pool, &p.id, &at, sha.as_deref()).unwrap();
+            }
+        }
+        gated
+    }
+
+    /// The regression itself. Sweep #24's settle poll saw the branch at
+    /// 20:26:16 and the worker committed at 20:27:33. Before the fix that one
+    /// sighting was the proposal's whole life: `opened` 0 forever, `merged` 1
+    /// for a branch nobody merged, and a gate suite that had run against main.
+    #[tokio::test]
+    async fn a_branch_seen_before_its_first_commit_is_re_captured_not_frozen() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const BRANCH: &str = "autopilot/document-alert-webhook-url-in-env-example-bench";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-race", &["git --version"]);
+
+        // 20:26 — the worker has a branch and has authored nothing on it.
+        repo.git(&["branch", BRANCH, "main"]).unwrap();
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-race", "p-1").await,
+            1
+        );
+
+        let counts = proposal_counts_since(&pool, "proj-race", Some("p-1"), EPOCH).unwrap();
+        assert_eq!(
+            (counts.seen, counts.opened, counts.merged),
+            (1, 0, 0),
+            "a branch with nothing on it is seen, not opened, and never merged"
+        );
+        let stored = get_proposal(&pool, "proj-race", BRANCH).unwrap().unwrap();
+        assert!(
+            stored.merged_at.is_none(),
+            "an empty branch is trivially an ancestor of main; that is not a merge"
+        );
+
+        // The gates did NOT run against main under the proposal's name.
+        let runs = gate_runs_for_branch(&pool, "proj-race", BRANCH).unwrap();
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].outcome, GateOutcome::DidNotRun);
+        assert!(
+            runs[0]
+                .first_error
+                .as_deref()
+                .unwrap()
+                .starts_with(NO_COMMITS_YET),
+            "expected a no_commits_yet reason, got {:?}",
+            runs[0].first_error
+        );
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-race", None, EPOCH),
+            None,
+            "nothing ran, so there is no rate — not 1.0 and not 0.0"
+        );
+
+        // 20:27:33 — the commit lands on the branch.
+        repo.git(&["checkout", BRANCH]).unwrap();
+        repo.commit(
+            "env.example",
+            "ALERT_WEBHOOK_URL=\n",
+            "docs: document ALERT_WEBHOOK_URL in env.example",
+        )
+        .unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-race", "p-1").await,
+            1,
+            "the tip moved, so this tip has not been judged yet"
+        );
+
+        let counts = proposal_counts_since(&pool, "proj-race", Some("p-1"), EPOCH).unwrap();
+        assert_eq!(
+            (counts.seen, counts.opened, counts.merged),
+            (1, 1, 0),
+            "the delivered proposal reads as delivered, and still unmerged"
+        );
+        let stored = get_proposal(&pool, "proj-race", BRANCH).unwrap().unwrap();
+        assert_eq!(stored.commits.len(), 1, "the empty snapshot was refreshed");
+        assert_eq!(
+            stored.commits[0].subject,
+            "docs: document ALERT_WEBHOOK_URL in env.example"
+        );
+        assert!(stored.merged_at.is_none());
+        // …and this time the declared gate actually ran.
+        assert_eq!(
+            gate_pass_rate_since(&pool, "proj-race", None, EPOCH),
+            Some(1.0)
+        );
+
+        // A third pass over an unmoved tip re-gates nothing.
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-race", "p-1").await,
+            0
+        );
+        assert_eq!(
+            gate_runs_for_branch(&pool, "proj-race", BRANCH)
+                .unwrap()
+                .len(),
+            2
+        );
+    }
+
+    /// The ledger's own half of the rule, without git: a commit-less row cannot
+    /// be marked merged, cannot be counted as merged, and loses a stamp it
+    /// acquired before this fix as soon as its real commits arrive.
+    #[test]
+    fn the_ledger_refuses_a_merge_on_a_commit_less_proposal() {
+        let pool = init_test_db().unwrap();
+        let p = upsert_proposal(
+            &pool,
+            "proj-empty",
+            "p-1",
+            "autopilot/empty",
+            "sha-main",
+            Some("sha-main"),
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            !mark_merged(&pool, &p.id, "2026-08-26T20:26:16+00:00", Some("m")).unwrap(),
+            "the ledger must refuse a merge on a branch that carries nothing"
+        );
+        assert!(get_proposal(&pool, "proj-empty", "autopilot/empty")
+            .unwrap()
+            .unwrap()
+            .merged_at
+            .is_none());
+
+        // A row corrupted by the pre-fix race (stamped merged with an empty
+        // snapshot) is not counted as a delivery — no data migration needed.
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE app_master_proposals SET merged_at = ?2, merge_sha = 'm' WHERE id = ?1",
+                params![p.id, "2026-08-26T20:26:16+00:00"],
+            )
+            .unwrap();
+        let counts = proposal_counts_since(&pool, "proj-empty", Some("p-1"), EPOCH).unwrap();
+        assert_eq!((counts.seen, counts.opened, counts.merged), (1, 0, 0));
+
+        // …and filling the snapshot in retires the stamp outright.
+        upsert_proposal(
+            &pool,
+            "proj-empty",
+            "p-1",
+            "autopilot/empty",
+            "sha-1",
+            Some("sha-main"),
+            &[c("sha-1", "fix: real work")],
+        )
+        .unwrap();
+        let stored = get_proposal(&pool, "proj-empty", "autopilot/empty")
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.commits.len(), 1);
+        assert!(
+            stored.merged_at.is_none(),
+            "a merge observed against an empty branch observed main, not this proposal"
+        );
+    }
+
+    /// A capture that came back empty (a failed `git log`) must not read as
+    /// "the work vanished", and a merged branch keeps the subjects revert
+    /// detection needs.
+    #[test]
+    fn an_empty_capture_never_overwrites_a_real_snapshot() {
+        let pool = init_test_db().unwrap();
+        let p = upsert_proposal(
+            &pool,
+            "proj-keep",
+            "p-1",
+            "autopilot/keep",
+            "sha-1",
+            None,
+            &[c("sha-1", "fix: real work")],
+        )
+        .unwrap();
+        // Tip moved, capture failed.
+        upsert_proposal(
+            &pool,
+            "proj-keep",
+            "p-1",
+            "autopilot/keep",
+            "sha-2",
+            None,
+            &[],
+        )
+        .unwrap();
+        let stored = get_proposal(&pool, "proj-keep", "autopilot/keep")
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.commits, vec![c("sha-1", "fix: real work")]);
+        assert_eq!(stored.head_sha, "sha-2");
+
+        // Merged: the post-merge capture is empty (the fork point no longer
+        // isolates the commits) and the pre-merge snapshot stays.
+        assert!(mark_merged(&pool, &p.id, "2026-08-26T21:00:00+00:00", Some("m")).unwrap());
+        upsert_proposal(
+            &pool,
+            "proj-keep",
+            "p-1",
+            "autopilot/keep",
+            "sha-2",
+            None,
+            &[],
+        )
+        .unwrap();
+        let stored = get_proposal(&pool, "proj-keep", "autopilot/keep")
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.commits, vec![c("sha-1", "fix: real work")]);
+        assert_eq!(
+            stored.merged_at.as_deref(),
+            Some("2026-08-26T21:00:00+00:00")
+        );
+    }
+
+    /// The fix must not cost the reading it was protecting: a branch that
+    /// carries work and really does land is still observed as merged.
+    #[tokio::test]
+    async fn a_real_merge_is_still_observed_and_keeps_its_pre_merge_commits() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const BRANCH: &str = "autopilot/fix-the-real-thing";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-merge", &["git --version"]);
+
+        repo.git(&["checkout", "-b", BRANCH]).unwrap();
+        repo.commit("real.txt", "real", "fix: the real thing")
+            .unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        reconcile_pass(&pool, repo.path(), "proj-merge", "p-1").await;
+        let counts = proposal_counts_since(&pool, "proj-merge", Some("p-1"), EPOCH).unwrap();
+        assert_eq!(
+            (counts.opened, counts.merged),
+            (1, 0),
+            "authored, not landed"
+        );
+
+        repo.git(&["merge", "--no-ff", "-m", "Merge the real thing", BRANCH])
+            .unwrap();
+        reconcile_pass(&pool, repo.path(), "proj-merge", "p-1").await;
+
+        let counts = proposal_counts_since(&pool, "proj-merge", Some("p-1"), EPOCH).unwrap();
+        assert_eq!((counts.opened, counts.merged), (1, 1));
+        let stored = get_proposal(&pool, "proj-merge", BRANCH).unwrap().unwrap();
+        assert!(stored.merged_at.is_some());
+        assert!(stored.merge_sha.is_some());
+        assert_eq!(
+            stored.commits.len(),
+            1,
+            "the pre-merge subjects revert detection needs are still there"
+        );
+        assert_eq!(stored.commits[0].subject, "fix: the real thing");
+    }
+
+    /// Gate runs are keyed by branch AND tip.
+    #[tokio::test]
+    async fn a_moved_tip_re_gates_once_and_an_unmoved_tip_does_not() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        const BRANCH: &str = "autopilot/two-commits";
+
+        let pool = init_test_db().unwrap();
+        seed_mandate(&pool, "proj-tip", &["git --version"]);
+
+        repo.git(&["checkout", "-b", BRANCH]).unwrap();
+        let tip1 = repo.commit("one.txt", "1", "feat: one").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-tip", "p-1").await,
+            1
+        );
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-tip", "p-1").await,
+            0
+        );
+        let runs = gate_runs_for_branch(&pool, "proj-tip", BRANCH).unwrap();
+        assert_eq!(runs.len(), 1, "an unmoved tip is already answered");
+        assert_eq!(runs[0].head_sha, tip1);
+        assert!(gates_ran_for_tip(&pool, "proj-tip", BRANCH, &tip1));
+
+        // More work lands on the same branch.
+        repo.git(&["checkout", BRANCH]).unwrap();
+        let tip2 = repo.commit("two.txt", "2", "feat: two").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-tip", "p-1").await,
+            1
+        );
+        assert_eq!(
+            reconcile_pass(&pool, repo.path(), "proj-tip", "p-1").await,
+            0
+        );
+        let runs = gate_runs_for_branch(&pool, "proj-tip", BRANCH).unwrap();
+        assert_eq!(runs.len(), 2, "the moved tip re-gated exactly once");
+        assert!(runs.iter().any(|r| r.head_sha == tip2));
+
+        // The refreshed snapshot carries both commits, so a revert of EITHER is
+        // attributable to this proposal.
+        let stored = get_proposal(&pool, "proj-tip", BRANCH).unwrap().unwrap();
+        assert_eq!(stored.commits.len(), 2);
+
+        // An unknown tip, and the legacy `''` tip, are never a match.
+        assert!(!gates_ran_for_tip(
+            &pool,
+            "proj-tip",
+            BRANCH,
+            "deadbeefcafe"
+        ));
+        assert!(!gates_ran_for_tip(&pool, "proj-tip", BRANCH, ""));
     }
 }

@@ -1099,19 +1099,58 @@ Per mandated project with a real, git work-tree `root_path`:
 | Step | What happens |
 | --- | --- |
 | discover | `git for-each-ref refs/heads/autopilot/*` — the namespace the unattended dispatch guardrail *tells* the session to use, not a guess about naming. Each branch is upserted into `app_master_proposals` with its tip and the commits it carries relative to the main branch. |
-| gate | Up to 3 not-yet-gated proposals per tick get §12.1's commands run against them, one `app_master_gate_runs` row each. The attempt is stamped either way, so a *not configured* project is answered once rather than retried forever. |
-| merge | `git merge-base --is-ancestor <tip> <main_branch>` ⇒ `merged_at` = the committer date of the earliest main-branch commit descending from the tip (the merge commit), falling back to the tip's own date on a fast-forward. |
+| gate | Up to 3 proposals per tick whose **current tip** has no gate run yet get §12.1's commands run against them, one `app_master_gate_runs` row each. A project that declares no gates is stamped `gates_ran_at` and answered once rather than retried forever. |
+| merge | For a proposal that **carries commits**: `git merge-base --is-ancestor <tip> <main_branch>` ⇒ `merged_at` = the committer date of the earliest main-branch commit descending from the tip (the merge commit), falling back to the tip's own date on a fast-forward. |
 | revert | For a merged, not-yet-reverted proposal: `git log <main> --since=<merged_at>` scanned for `Revert "<subject>"` or `This reverts commit <sha>` naming one of the captured commits. |
 
 **The commit list is captured at discovery, before any merge.** After a merge
 the branch is an ancestor of main and the fork point no longer isolates its
-commits — revert detection needs the subjects it had beforehand. Re-seeing a
-branch refreshes its tip but never overwrites the captured commits and never
-clears an observation already made.
+commits — revert detection needs the subjects it had beforehand.
 
 **The main branch is resolved, not assumed**: `dev_projects.main_branch` if that
 ref exists, else `main`, else `master`. If none resolves the project is skipped
 with a warning rather than judged against a branch nobody merges into.
+
+#### 12.2.1 An empty snapshot is a race, not an observation (bench sweep #24)
+
+Sweep #24 (2026-08-26, `ascent`) caught the tick between `git switch -c` and the
+worker's first commit. The P6n worktree worker created
+`autopilot/document-alert-webhook-url-in-env-example-bench` at 20:26 and
+committed at 20:27:33; the settle poll saw the branch at **20:26:16** and
+recorded it with `commits: '[]'`. An empty branch is trivially an ancestor of
+main, so `merged_at` was stamped too — at a moment *earlier than
+`first_seen_at`* — and P5a's "re-seeing a branch never clears an observation"
+rule froze the whole snapshot. P6o's `proposalsOpened` (which requires non-empty
+commits) read **0** forever, `proposalsMerged` read **1** for a branch nobody
+merged, and the declared gates had been run against a commit-less branch, i.e.
+against main. The night delivered a real proposal and the backbone recorded the
+opposite.
+
+Three rules, in `engine/app_master_gates.rs`:
+
+| Rule | Where |
+| --- | --- |
+| **Commits are re-captured while the branch is unmerged.** `upsert_proposal` refreshes the stored list when it is empty, or when the tip moved on a branch that is neither merged nor reverted. A capture that came back empty never overwrites a real one — a failed `git log` is not work that vanished. A **merged or vanished** branch keeps its last-known commits: that snapshot is what revert detection needs, and is the only thing the stickiness rule ever had to guard. Filling an empty snapshot in also **clears a merge stamped on it**, retiring an already-corrupted row without a data migration. | `upsert_proposal` |
+| **A branch with zero commits ahead of main is never merged or reverted.** `mark_merged` / `mark_reverted` refuse a commit-less row outright (the guard is in the ledger, not only at the call site), the reconciler skips such a proposal before it asks git anything, and `proposal_counts_since` excludes commit-less rows from `merged`/`reverted` the way it already excluded them from `opened`. `merged_at` stays `NULL`, which keeps meaning *not observed*. | `mark_merged`, `mark_reverted`, `proposal_counts_since`, `reconcile_one` |
+| **A commit-less branch is not gate-worthy.** `run_declared_gates` reads the proposal ledger (refreshed moments earlier by the discovery step) and, when the branch carries nothing, records every declared command `did_not_run` with reason `no_commits_yet` — in neither half of the pass rate — instead of gating main under a proposal's name. A branch with no ledger row at all is gated as before: nothing there knows what it carries. | `run_declared_gates` |
+
+**Gate runs are keyed by branch × tip.** `app_master_gate_runs.head_sha` records
+the tip a run judged, and the reconciler selects proposals whose *current* tip
+has no run yet (`gates_ran_for_tip`) rather than proposals that were never gated
+(`gates_ran_at IS NULL`). A moved tip re-gates exactly once; an unmoved tip is
+already answered. `gates_ran_at` survives as the last-attempt stamp and as the
+short-circuit for *not configured*, where nothing is recorded and there is no
+tip-keyed row to carry the answer. Rows written before this carry `head_sha =
+''`, which `gates_ran_for_tip` deliberately never matches.
+
+Pinned by five tests in `app_master_gates::tests`, four of them against a real
+throwaway repository:
+`a_branch_seen_before_its_first_commit_is_re_captured_not_frozen` (the
+regression itself, end to end),
+`the_ledger_refuses_a_merge_on_a_commit_less_proposal`,
+`an_empty_capture_never_overwrites_a_real_snapshot`,
+`a_real_merge_is_still_observed_and_keeps_its_pre_merge_commits` and
+`a_moved_tip_re_gates_once_and_an_unmoved_tip_does_not`.
 
 ### 12.3 Why the gates run there and not at dispatch
 
@@ -1199,10 +1238,15 @@ app_master_proposals(id, project_id, persona_id, branch, head_sha, base_sha,
                      commits JSON, first_seen_at, merged_at, merge_sha,
                      reverted_at, revert_sha, gates_ran_at,
                      UNIQUE(project_id, branch))
-app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
-                     outcome CHECK(passed|failed|did_not_run), duration_ms,
-                     first_error, ran_at)
+app_master_gate_runs(id, project_id, persona_id, branch, head_sha, command,
+                     exit_code, outcome CHECK(passed|failed|did_not_run),
+                     duration_ms, first_error, ran_at)
 ```
+
+`app_master_gate_runs.head_sha` is added by the `app_master_gate_runs.head_sha`
+step (guarded on `has_column`, `''` on existing rows) together with
+`idx_app_master_gate_runs_branch_tip (project_id, branch, head_sha)` — the index
+behind the tip-keyed gating selector in §12.2.1.
 
 ### 12.7 What is still not measured
 
@@ -1240,6 +1284,14 @@ app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
   passes the detector and is caught only by a human reading the diff. See
   `docs/tests/appmaster-bench/seeds/kp-05.md`, which exists to measure exactly
   that.
+- **A branch created and never committed to reads `seen` but never `opened`,
+  forever — and that is the answer, not a gap.** Since §12.2.1 the reconciler
+  re-checks it on every tick, so the moment a commit lands the proposal is
+  re-captured and gated; while nothing lands, its declared gates stay
+  `did_not_run` / `no_commits_yet` and its `merged_at` stays `NULL`. What is
+  still unmeasured is *why* the branch is empty — an abandoned session, a
+  crashed worker and a session still authoring are indistinguishable from the
+  ledger alone.
 - **The probation narration is still deterministic.** `narrationSource` remains
   `"deterministic"`; it now restates the P5a numbers (and distinguishes a
   measured `0` from an absent reading in words), but no LLM narrates the packet.

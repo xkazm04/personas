@@ -703,5 +703,40 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- app_master_gate_runs.head_sha (bench sweep #24) ---------------------
+    // A gate run answered for "the branch", which is not a thing that holds
+    // still: the reconciler gated a branch once (`gates_ran_at IS NULL`) and
+    // never again, so work committed AFTER that first sighting was never gated
+    // — and in sweep #24 the one sighting was of a commit-less branch, i.e. of
+    // main. Recording the tip a run judged makes the gating key
+    // (branch × tip): a moved tip re-gates, an unmoved one does not. `''` on
+    // pre-existing rows, which `gates_ran_for_tip` deliberately never matches.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "app_master_gate_runs.head_sha",
+            description: "Pin each App-master gate run to the branch TIP it judged, so a moved tip re-gates and an unmoved one does not (bench sweep #24)",
+            already_applied: |conn| {
+                if !has_table(conn, "app_master_gate_runs")? {
+                    return Ok(true);
+                }
+                has_column(conn, "app_master_gate_runs", "head_sha")
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE app_master_gate_runs
+                        ADD COLUMN head_sha TEXT NOT NULL DEFAULT '';",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_app_master_gate_runs_branch_tip
+                        ON app_master_gate_runs(project_id, branch, head_sha);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }

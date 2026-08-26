@@ -321,6 +321,10 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         ("workspace_knowledge", "topic"),
         ("workspace_knowledge", "abstraction"),
         ("workspace_knowledge", "durability"),
+        // Bench sweep #24 — a gate run answers for one branch TIP, not for
+        // "the branch". Without this column every moved tip re-gates (or,
+        // worse, never gates) and the sweep-#24 race stays unfixable.
+        ("app_master_gate_runs", "head_sha"),
     ] {
         assert!(
             has_column(&conn, table, column).unwrap(),
@@ -341,6 +345,7 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "idx_workspace_knowledge_ws_status",
         "idx_workspace_knowledge_dedup",
         "idx_dev_context_fingerprints_hash",
+        "idx_app_master_gate_runs_branch_tip",
     ] {
         assert!(
             has_index(&conn, index).unwrap(),

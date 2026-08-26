@@ -27,6 +27,23 @@
 //!    `This reverts commit <sha>` naming one of the proposal's commits is a
 //!    revert.
 //!
+//! # The settle poll races authorship (bench sweep #24)
+//!
+//! A tick can land between `git switch -c` and the worker's first commit. The
+//! branch is then real and carries nothing, and every step above has a wrong
+//! answer ready for it: an empty commit capture, a trivially-ancestral tip that
+//! reads as *merged*, and a gate suite that would run against main under the
+//! proposal's name. Three rules, all of them in
+//! [`personas_engine::app_master_gates`]:
+//!
+//! - the commit capture is **refreshed** while the branch is unmerged (empty
+//!   snapshot, or moved tip) — only a merged or vanished branch keeps its last
+//!   known commits, which is the case stickiness was ever for;
+//! - a proposal with no commits ahead of main is **never** marked merged or
+//!   reverted — `NULL` keeps meaning *not observed*;
+//! - gating is keyed by branch **and tip**, and a commit-less branch records
+//!   `did_not_run` / `no_commits_yet` instead of gating main.
+//!
 //! # Why here and not at dispatch
 //!
 //! The Overnight engine's dispatch is **asynchronous**: it spawns headless
@@ -221,11 +238,28 @@ async fn reconcile_project(
         }
     }
 
-    // -- 2. Gate the ungated -------------------------------------------------
+    // -- 2. Gate whatever this tip has not answered for ----------------------
+    //
+    // The selector used to be `gates_ran_at IS NULL` — gate a branch once, ever.
+    // Sweep #24 showed what that costs when the one sighting lands mid-
+    // authorship: the branch was gated while it was still commit-less (so the
+    // gates ran against main) and never gated again once the real commit
+    // arrived. The key is the branch TIP: a tip nothing has judged is gated, a
+    // tip already answered is not. `gates_ran_at` stays as the "last attempt"
+    // stamp, not as the selector — except for a project that declares no gate
+    // commands at all: nothing runs and nothing is recorded, so there is no
+    // tip-keyed row to carry the answer, and the stamp is the only thing
+    // keeping *not configured* from being re-asked every tick forever.
+    let (_, gate_source) = gates::declared_gate_commands(pool, project_id);
+    let not_configured = gate_source == gates::GateSource::NotConfigured;
     let ungated: Vec<gates::Proposal> = gates::list_proposals(pool, project_id)
         .unwrap_or_default()
         .into_iter()
-        .filter(|p| p.gates_ran_at.is_none() && branches.contains(&p.branch))
+        .filter(|p| {
+            branches.contains(&p.branch)
+                && !gates::gates_ran_for_tip(pool, project_id, &p.branch, &p.head_sha)
+                && !(not_configured && p.gates_ran_at.is_some())
+        })
         .take(MAX_GATED_PER_TICK)
         .collect();
     for proposal in ungated {
@@ -269,6 +303,14 @@ async fn reconcile_project(
 
 /// Observe one proposal's fate on the main branch.
 async fn reconcile_one(pool: &DbPool, root: &Path, main_branch: &str, proposal: &gates::Proposal) {
+    // A branch with nothing ahead of main IS main: `merge-base --is-ancestor`
+    // says "merged" about it every single time, and about a branch that has
+    // delivered nothing (bench sweep #24). No merge verdict, and no revert
+    // verdict either — a revert is a claim about commits this row does not
+    // have. Both stay NULL, which reads as *not observed*, which is the truth.
+    if !proposal.carries_work() {
+        return;
+    }
     if proposal.merged_at.is_none() {
         if !gates::is_merged(root, main_branch, &proposal.head_sha).await {
             return;
@@ -280,10 +322,21 @@ async fn reconcile_one(pool: &DbPool, root: &Path, main_branch: &str, proposal: 
             // is recorded at the observation time and the sha left null —
             // "we saw it land, we cannot say exactly when".
             .unwrap_or_else(|| (chrono::Utc::now().to_rfc3339(), None));
-        if let Err(e) = gates::mark_merged(pool, &proposal.id, &at, sha.as_deref()) {
-            tracing::warn!(branch = %proposal.branch, error = %e,
-                "app_master_reconcile: could not record a merge");
-            return;
+        match gates::mark_merged(pool, &proposal.id, &at, sha.as_deref()) {
+            Err(e) => {
+                tracing::warn!(branch = %proposal.branch, error = %e,
+                    "app_master_reconcile: could not record a merge");
+                return;
+            }
+            // The ledger's own fail-closed guard: it refuses a merge on a
+            // commit-less row. Reaching it means the snapshot went empty
+            // between the read above and the write — leave it unobserved.
+            Ok(false) => {
+                tracing::warn!(branch = %proposal.branch,
+                    "app_master_reconcile: the ledger refused a merge on a commit-less proposal");
+                return;
+            }
+            Ok(true) => {}
         }
         tracing::info!(
             branch = %proposal.branch,
