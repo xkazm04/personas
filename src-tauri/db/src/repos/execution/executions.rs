@@ -117,6 +117,64 @@ fn columns_for(alias: &str) -> String {
         .join(", ")
 }
 
+// ---------------------------------------------------------------------------
+// Lenient numeric reads
+// ---------------------------------------------------------------------------
+//
+// SQLite's INTEGER/REAL affinity converts a bound string only when the
+// conversion is LOSSLESS, so `'mock'` sits happily in a column declared
+// `INTEGER NOT NULL DEFAULT 0`. rusqlite is strict on the way back out and
+// raises `InvalidColumnType(15, "cache_read_tokens", Text)` — and because this
+// mapper is behind EVERY full-row read of `persona_executions`, one poisoned
+// row blanks the whole list rather than itself. That is a bad trade for a
+// counter: a token count nobody can parse is 0, not a dead page.
+//
+// `e13_execution_numeric_repair` cleans what is already stored; these three
+// keep the next hand-rolled INSERT from taking the surface down before the
+// next boot repairs it. Deliberately scoped to the numeric/boolean columns —
+// a TEXT id or status is a different failure and must still be loud.
+
+/// Read an integer column that may have been stored as TEXT or REAL.
+/// `None` for NULL; `Some(0)` for text that is not a number.
+fn coerce_i64(row: &Row, name: &str) -> rusqlite::Result<Option<i64>> {
+    use rusqlite::types::ValueRef;
+    Ok(match row.get_ref(name)? {
+        ValueRef::Null => None,
+        ValueRef::Integer(i) => Some(i),
+        ValueRef::Real(f) => Some(f as i64),
+        ValueRef::Text(t) => Some(
+            std::str::from_utf8(t)
+                .ok()
+                .and_then(|s| s.trim().parse::<i64>().ok())
+                .unwrap_or(0),
+        ),
+        ValueRef::Blob(_) => Some(0),
+    })
+}
+
+/// Read a float column that may have been stored as TEXT or INTEGER.
+fn coerce_f64(row: &Row, name: &str) -> rusqlite::Result<Option<f64>> {
+    use rusqlite::types::ValueRef;
+    Ok(match row.get_ref(name)? {
+        ValueRef::Null => None,
+        ValueRef::Integer(i) => Some(i as f64),
+        ValueRef::Real(f) => Some(f),
+        ValueRef::Text(t) => Some(
+            std::str::from_utf8(t)
+                .ok()
+                .and_then(|s| s.trim().parse::<f64>().ok())
+                .unwrap_or(0.0),
+        ),
+        ValueRef::Blob(_) => Some(0.0),
+    })
+}
+
+/// Read a boolean column stored as INTEGER. A non-numeric TEXT value is
+/// corruption, never truth — it reads as `false`, matching the column default.
+fn coerce_bool(row: &Row, name: &str) -> rusqlite::Result<bool> {
+    Ok(coerce_i64(row, name)?.unwrap_or(0) != 0)
+}
+
 fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
     Ok(PersonaExecution {
         id: row.get("id")?,
@@ -131,32 +189,26 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         execution_flows: row.get("execution_flows")?,
         model_used: row.get("model_used")?,
         thinking_level: row.get("thinking_level").unwrap_or(None),
-        input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
-        output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-        cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
-        cache_read_tokens: row.get::<_, Option<i64>>("cache_read_tokens")?.unwrap_or(0),
-        cache_creation_tokens: row
-            .get::<_, Option<i64>>("cache_creation_tokens")?
-            .unwrap_or(0),
+        input_tokens: coerce_i64(row, "input_tokens")?.unwrap_or(0),
+        output_tokens: coerce_i64(row, "output_tokens")?.unwrap_or(0),
+        cost_usd: coerce_f64(row, "cost_usd")?.unwrap_or(0.0),
+        cache_read_tokens: coerce_i64(row, "cache_read_tokens")?.unwrap_or(0),
+        cache_creation_tokens: coerce_i64(row, "cache_creation_tokens")?.unwrap_or(0),
         error_message: row.get("error_message")?,
-        duration_ms: row.get("duration_ms")?,
+        duration_ms: coerce_i64(row, "duration_ms")?,
         tool_steps: row.get("tool_steps")?,
         retry_of_execution_id: row.get("retry_of_execution_id")?,
-        retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
+        retry_count: coerce_i64(row, "retry_count")?.unwrap_or(0),
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
         execution_config: row.get("execution_config").unwrap_or(None),
-        log_truncated: row
-            .get::<_, Option<bool>>("log_truncated")?
-            .unwrap_or(false),
-        is_simulation: row
-            .get::<_, Option<bool>>("is_simulation")?
-            .unwrap_or(false),
+        log_truncated: coerce_bool(row, "log_truncated")?,
+        is_simulation: coerce_bool(row, "is_simulation")?,
         business_outcome: row
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
-        director_score: row.get::<_, Option<i64>>("director_score").unwrap_or(None),
+        director_score: coerce_i64(row, "director_score").unwrap_or(None),
         director_review_md: row
             .get::<_, Option<String>>("director_review_md")
             .unwrap_or(None),
@@ -169,19 +221,17 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
         persona_id: row.get("persona_id")?,
         use_case_id: row.get("use_case_id")?,
         status: row.get("status")?,
-        input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
-        output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-        cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
+        input_tokens: coerce_i64(row, "input_tokens")?.unwrap_or(0),
+        output_tokens: coerce_i64(row, "output_tokens")?.unwrap_or(0),
+        cost_usd: coerce_f64(row, "cost_usd")?.unwrap_or(0.0),
         error_message: row.get("error_message")?,
-        duration_ms: row.get("duration_ms")?,
+        duration_ms: coerce_i64(row, "duration_ms")?,
         retry_of_execution_id: row.get("retry_of_execution_id")?,
-        retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
+        retry_count: coerce_i64(row, "retry_count")?.unwrap_or(0),
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
-        is_simulation: row
-            .get::<_, Option<bool>>("is_simulation")?
-            .unwrap_or(false),
+        is_simulation: coerce_bool(row, "is_simulation")?,
         business_outcome: row
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
@@ -2238,6 +2288,70 @@ mod tests {
         assert_eq!(item.id, created.id);
         assert_eq!(item.persona_id, persona_id);
         assert_eq!(item.business_outcome, "unknown");
+    }
+
+    /// SQLite stores `'mock'` verbatim in a column declared
+    /// `INTEGER NOT NULL DEFAULT 0` — affinity only converts what converts
+    /// losslessly — and rusqlite then refuses the read with
+    /// `InvalidColumnType(15, "cache_read_tokens", Text)`. Because
+    /// `row_to_execution` is behind every full-row read of the table, ONE such
+    /// row (written here by hand-rolled SQL that no longer exists in the tree)
+    /// blanked every execution surface at startup.
+    ///
+    /// Before `coerce_i64`/`coerce_f64`/`coerce_bool` this panicked on the
+    /// `get_by_id`. The reader now reads a number it cannot parse as 0 and a
+    /// corrupt boolean as false, and — separately — a numeric string still
+    /// round-trips as the number it is.
+    #[test]
+    fn text_in_a_numeric_column_does_not_kill_the_row_read() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Poisoned Row Agent");
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO persona_executions
+                (id, persona_id, status, created_at, input_tokens, output_tokens, cost_usd,
+                 duration_ms, retry_count, log_truncated, is_simulation,
+                 cache_read_tokens, cache_creation_tokens)
+             VALUES (?1, ?2, 'completed', '2026-08-24 15:07:05',
+                     '512', 'mock', 'mock', 'mock', 'mock', '2026-08-24 15:07:05',
+                     '2026-08-24 15:07:05', 'mock', '2026-08-24 15:07:05')",
+            params!["mock-poisoned", persona_id],
+        )
+        .unwrap();
+        // The hazard itself, pinned: the STRICT read this mapper used to do
+        // still fails on this row. If SQLite ever started coercing here, or
+        // rusqlite ever started tolerating it, the rest of this test would
+        // pass for the wrong reason.
+        let strict = conn.query_row(
+            "SELECT cache_read_tokens FROM persona_executions WHERE id = 'mock-poisoned'",
+            [],
+            |r| r.get::<_, Option<i64>>("cache_read_tokens"),
+        );
+        assert!(
+            matches!(strict, Err(rusqlite::Error::InvalidColumnType(_, _, _))),
+            "precondition: a strict i64 read of this column must still fail, got {strict:?}"
+        );
+        drop(conn);
+
+        let exec = get_by_id(&pool, "mock-poisoned")
+            .expect("a TEXT value in a numeric column must not fail the read");
+        assert_eq!(exec.cache_read_tokens, 0, "'mock' is not a token count");
+        assert_eq!(exec.cache_creation_tokens, 0, "a timestamp is not a count");
+        assert_eq!(exec.output_tokens, 0);
+        assert_eq!(exec.cost_usd, 0.0);
+        assert_eq!(exec.duration_ms, Some(0));
+        assert_eq!(exec.retry_count, 0);
+        assert!(!exec.log_truncated, "corrupt text is never truth");
+        assert!(!exec.is_simulation, "corrupt text is never truth");
+        // A genuinely mis-bound NUMBER is still the number it is.
+        assert_eq!(exec.input_tokens, 512);
+
+        // The list projection shares the hazard and the fix.
+        let items = list_items_by_persona_id(&pool, &persona_id, None, None)
+            .expect("the list mapper must survive the same row");
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].output_tokens, 0);
+        assert_eq!(items[0].input_tokens, 512);
     }
     use crate::init_test_db;
     use crate::models::{CreatePersonaInput, Json};

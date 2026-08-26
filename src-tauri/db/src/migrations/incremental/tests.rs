@@ -1114,3 +1114,100 @@ fn reports_rename_copies_legacy_rows_and_drops_old_tables() {
     assert!(has_index(&conn, "idx_prpt_created").unwrap());
     assert!(!has_index(&conn, "idx_pmsg_created").unwrap());
 }
+
+/// `e13_execution_numeric_repair`: SQLite's INTEGER affinity converts a bound
+/// string only when the conversion is LOSSLESS, so `'mock'` and a timestamp sit
+/// unconverted in columns declared `INTEGER NOT NULL DEFAULT 0`. rusqlite then
+/// refuses the read (`InvalidColumnType(15, "cache_read_tokens", Text)`), and
+/// because `row_to_execution` is behind every full-row read, one poisoned row
+/// blanks every execution surface.
+///
+/// The repair must (a) collapse un-parseable text to the column's own default,
+/// (b) PRESERVE a genuinely mis-bound number rather than zeroing it, (c) leave
+/// honest rows untouched, and (d) be a no-op on replay — the chain runs on
+/// every boot.
+#[test]
+fn numeric_repair_fixes_text_in_execution_columns_and_keeps_real_numbers() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch(
+        "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+            VALUES ('p-poison', 'P', 'sp', datetime('now'), datetime('now'));
+         INSERT INTO persona_executions
+            (id, persona_id, status, created_at, input_tokens, output_tokens, cost_usd,
+             duration_ms, retry_count, log_truncated, is_simulation,
+             cache_read_tokens, cache_creation_tokens)
+            VALUES ('x-poison', 'p-poison', 'completed', '2026-08-24 15:07:05',
+                    '512', 'mock', 'mock', 'mock', 'mock', '2026-08-24 15:07:05',
+                    '2026-08-24 15:07:05', 'mock', '2026-08-24 15:07:05');
+         INSERT INTO persona_executions
+            (id, persona_id, status, created_at, input_tokens, output_tokens, cost_usd,
+             duration_ms, cache_read_tokens)
+            VALUES ('x-clean', 'p-poison', 'completed', '2026-08-24 15:07:05',
+                    7, 9, 0.5, 1200, 33);",
+    )
+    .unwrap();
+
+    // The columns really did keep TEXT — if SQLite had coerced them there
+    // would be nothing to repair and this test would prove nothing.
+    let text_cols: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM persona_executions
+              WHERE id = 'x-poison' AND typeof(cache_read_tokens) = 'text'",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(text_cols, 1, "precondition: the column holds TEXT");
+
+    run_incremental(&conn).unwrap();
+    // Replay — the chain runs at every boot and must not re-fire or drift.
+    run_incremental(&conn).unwrap();
+
+    let poisoned: (i64, i64, f64, Option<i64>, i64, i64, i64, i64) = conn
+        .query_row(
+            "SELECT input_tokens, output_tokens, cost_usd, duration_ms, retry_count,
+                    log_truncated, is_simulation, cache_read_tokens
+               FROM persona_executions WHERE id = 'x-poison'",
+            [],
+            |r| {
+                Ok((
+                    r.get("input_tokens")?,
+                    r.get("output_tokens")?,
+                    r.get("cost_usd")?,
+                    r.get("duration_ms")?,
+                    r.get("retry_count")?,
+                    r.get("log_truncated")?,
+                    r.get("is_simulation")?,
+                    r.get("cache_read_tokens")?,
+                ))
+            },
+        )
+        .expect("every numeric column must read back as a number");
+    assert_eq!(poisoned.0, 512, "a canonical numeric string is preserved");
+    assert_eq!(poisoned.1, 0, "'mock' collapses to the column default");
+    assert_eq!(poisoned.2, 0.0);
+    assert_eq!(poisoned.3, None, "a nullable column collapses to NULL");
+    assert_eq!(poisoned.4, 0);
+    assert_eq!(poisoned.5, 0, "a timestamp is not a truthy boolean");
+    assert_eq!(poisoned.6, 0);
+    assert_eq!(poisoned.7, 0);
+
+    let clean: (i64, i64, f64, Option<i64>, i64) = conn
+        .query_row(
+            "SELECT input_tokens, output_tokens, cost_usd, duration_ms, cache_read_tokens
+               FROM persona_executions WHERE id = 'x-clean'",
+            [],
+            |r| {
+                Ok((
+                    r.get("input_tokens")?,
+                    r.get("output_tokens")?,
+                    r.get("cost_usd")?,
+                    r.get("duration_ms")?,
+                    r.get("cache_read_tokens")?,
+                ))
+            },
+        )
+        .unwrap();
+    assert_eq!(clean, (7, 9, 0.5, Some(1200), 33), "honest rows untouched");
+}
