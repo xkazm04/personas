@@ -22,6 +22,7 @@ use crate::companion::brain::backlog;
 use crate::companion::brain::decisions;
 use crate::companion::brain::doctrine;
 use crate::companion::brain::goals;
+use crate::companion::brain::health;
 use crate::companion::brain::identity;
 use crate::companion::brain::procedural::{self, ProceduralScope};
 use crate::companion::brain::reflection;
@@ -1202,4 +1203,31 @@ fn slugify(s: &str) -> String {
     } else {
         out
     }
+}
+
+/// One-shot diagnostic for the brain's recall pipeline.
+///
+/// Answers the question the Brain Viewer could never answer: recall came back
+/// empty — is the brain cold, is the embedder dark, did consolidation never
+/// run, or is this simply a `lite` build with no vector lane? Every one of
+/// those looked identical from the UI, and each has a different fix.
+///
+/// Async over `spawn_blocking` because the report runs eight counting queries;
+/// a sync command would run them on the IPC worker thread.
+#[tauri::command]
+pub async fn companion_brain_health(
+    state: State<'_, Arc<AppState>>,
+) -> Result<health::BrainHealth, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let pool = state.user_db.clone();
+    // The embedder is the one input the report cannot probe for itself, and it
+    // only exists on an `ml` build.
+    #[cfg(feature = "ml")]
+    let embedder_loaded = state.embedding_manager.is_some();
+    #[cfg(not(feature = "ml"))]
+    let embedder_loaded = false;
+
+    tauri::async_runtime::spawn_blocking(move || health::run(&pool, embedder_loaded))
+        .await
+        .map_err(|e| AppError::Internal(format!("brain health task join failed: {e}")))
 }

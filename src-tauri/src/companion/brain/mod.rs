@@ -19,6 +19,7 @@ pub mod episodic;
 pub mod fleet;
 pub mod goals;
 pub mod graph;
+pub mod health;
 pub mod identity;
 pub mod keyword;
 pub mod oneshot;
