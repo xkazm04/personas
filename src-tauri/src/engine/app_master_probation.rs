@@ -358,7 +358,7 @@ pub(crate) fn probation_tick(pool: &DbPool) {
 
 /// [`probation_tick`], counted.
 pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
-    probation_tick_summary_with(pool, false)
+    probation_tick_summary_with(pool, false, ProbationScope::default())
 }
 
 /// `force_due` (headless bench only — the tick endpoint's `forceProbation`)
@@ -366,7 +366,36 @@ pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
 /// probation decision without waiting out `probationDays` of wall clock.
 /// Everything else — the no-double-raise guard, the needs-an-execution
 /// deferral, the decision policy — is exactly the production path.
-pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> ProbationSummary {
+/// Scope for a bench tick: when either field is set, FORCING and DECIDING are
+/// confined to the matching mandate — a scenario's forced probation must never
+/// decide another project's hire. Sweep #21 (2026-08-26): personas-self's
+/// forced final phase retired the KP project's fresh hire (streak 1→2) and the
+/// driver mis-attributed the decision. `None`/`None` = unscoped (the
+/// background tick), which forces nothing and decides whatever is naturally
+/// due or raised.
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct ProbationScope<'a> {
+    pub project_id: Option<&'a str>,
+    pub persona_id: Option<&'a str>,
+}
+
+impl ProbationScope<'_> {
+    fn matches(&self, project_id: &str, persona_id: &str) -> bool {
+        match (self.project_id, self.persona_id) {
+            (None, None) => true,
+            (p, pe) => p == Some(project_id) || pe == Some(persona_id),
+        }
+    }
+    fn scoped(&self) -> bool {
+        self.project_id.is_some() || self.persona_id.is_some()
+    }
+}
+
+pub(crate) fn probation_tick_summary_with(
+    pool: &DbPool,
+    force_due: bool,
+    scope: ProbationScope<'_>,
+) -> ProbationSummary {
     let mut summary = ProbationSummary::default();
     let mandates = personas_engine::app_master::load_mandates(pool);
     if mandates.is_empty() {
@@ -382,6 +411,9 @@ pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> Pro
         if record.probation_decided_at.is_some() || record.probation_review_id.is_some() {
             continue;
         }
+        if scope.scoped() && !scope.matches(&project_id, &record.persona_id) {
+            continue; // another project's hire — not this tick's business
+        }
         let Ok(ends) = chrono::DateTime::parse_from_rfc3339(&record.probation_ends_at) else {
             tracing::warn!(
                 project_id,
@@ -395,7 +427,8 @@ pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> Pro
             ));
             continue;
         };
-        if !force_due && now < ends.with_timezone(&chrono::Utc) {
+        let forced = force_due && scope.matches(&project_id, &record.persona_id);
+        if !forced && now < ends.with_timezone(&chrono::Utc) {
             continue;
         }
         summary.due += 1;
@@ -550,6 +583,7 @@ pub(crate) fn headless_probation_sweep(
     app: &tauri::AppHandle,
     pool: &DbPool,
     force_due: bool,
+    scope: ProbationScope<'_>,
 ) -> Vec<HeadlessProbationOutcome> {
     use personas_engine::headless;
 
@@ -557,6 +591,9 @@ pub(crate) fn headless_probation_sweep(
     for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
         if record.probation_decided_at.is_some() {
             continue;
+        }
+        if scope.scoped() && !scope.matches(&project_id, &record.persona_id) {
+            continue; // out of this tick's scope — never decide another hire
         }
         let Some(review_id) = record.probation_review_id.clone() else {
             continue; // nothing has been raised for this hire yet
@@ -665,7 +702,7 @@ pub(crate) fn headless_probation_sweep(
         });
     }
 
-    out.extend(anchorless_probation_sweep(app, pool, force_due));
+    out.extend(anchorless_probation_sweep(app, pool, force_due, scope));
     out
 }
 
@@ -688,6 +725,7 @@ fn anchorless_probation_sweep(
     app: &tauri::AppHandle,
     pool: &DbPool,
     force_due: bool,
+    scope: ProbationScope<'_>,
 ) -> Vec<HeadlessProbationOutcome> {
     use personas_engine::headless;
 
@@ -696,6 +734,9 @@ fn anchorless_probation_sweep(
     for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
         if record.probation_decided_at.is_some() {
             continue;
+        }
+        if scope.scoped() && !scope.matches(&project_id, &record.persona_id) {
+            continue; // out of this tick's scope — never decide another hire
         }
         let window_closed = chrono::DateTime::parse_from_rfc3339(&record.probation_ends_at)
             .map(|ends| now >= ends.with_timezone(&chrono::Utc))

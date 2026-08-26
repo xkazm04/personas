@@ -3330,7 +3330,13 @@ async fn kp_test_tick(
             "overnight" => tick_phase_overnight(&pool, &app, body.project_id.as_deref()).await,
             "reconcile" => tick_phase_reconcile(&pool, body.project_id.as_deref()).await,
             "report" => tick_phase_report(&pool, body.persona_id.as_deref()).await,
-            "probation" => tick_phase_probation(&pool, &app, body.force_probation),
+            "probation" => tick_phase_probation(
+                &pool,
+                &app,
+                body.force_probation,
+                body.project_id.as_deref(),
+                body.persona_id.as_deref(),
+            ),
             _ => unreachable!("phase list is closed"),
         };
         results.push(KpTestPhaseResult {
@@ -3440,8 +3446,14 @@ fn tick_phase_probation(
     pool: &crate::db::DbPool,
     app: &AppHandle,
     force_due: bool,
+    scope_project: Option<&str>,
+    scope_persona: Option<&str>,
 ) -> KpTestPhaseResult {
     use crate::engine::app_master_probation as probation;
+    let scope = probation::ProbationScope {
+        project_id: scope_project,
+        persona_id: scope_persona,
+    };
 
     // Raise first, then decide: a window that closed during this very tick gets
     // its packet and its answer in the same call, which is the whole point of
@@ -3450,8 +3462,8 @@ fn tick_phase_probation(
     // (never executed, so no review row can anchor) is decided anchorless by
     // the sweep, and it has to agree with the raise pass about what "due" means
     // or a forced tick would raise nothing and decide nothing.
-    let raised = probation::probation_tick_summary_with(pool, force_due);
-    let decided = probation::headless_probation_sweep(app, pool, force_due);
+    let raised = probation::probation_tick_summary_with(pool, force_due, scope);
+    let decided = probation::headless_probation_sweep(app, pool, force_due, scope);
     let mut out = phase_stub();
     out.details = decided
         .iter()
