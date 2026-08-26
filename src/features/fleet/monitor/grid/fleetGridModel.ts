@@ -9,10 +9,14 @@
 //
 // No JSX, no i18n → trivially unit-testable; the variants own the markup.
 
+import { AlertOctagon, FileText, Mail, MessageSquareDot, type LucideIcon } from 'lucide-react';
 import { personaInitials } from '@/lib/icons/personaInitials';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
-import { pillarStateKey, type PersonaCardModel } from '../monitorModel';
+import {
+  pillarStateKey, SEVERITY_META,
+  type PersonaCardModel, type SeverityBucket,
+} from '../monitorModel';
 
 /** The four square states the grid paints. */
 export type SquareState = 'running' | 'failed' | 'attention' | 'idle';
@@ -111,4 +115,97 @@ export function tallyStates(cards: PersonaCardModel[]): Record<SquareState, numb
   const t: Record<SquareState, number> = { running: 0, failed: 0, attention: 0, idle: 0 };
   for (const c of cards) t[squareState(c)] += 1;
   return t;
+}
+
+// ---------------------------------------------------------------------------
+// Operation badges
+//
+// The square answers "what state is this persona in"; the badge answers "what
+// KIND of operation is waiting on me" — a report to read, a review to clear, an
+// input gate, a ready draft, a failed run. Moved here (2026-08-26) from the
+// retired `triage/triageModel.ts`, whose only consumer — the Project-columns
+// view — was deleted when the Monitor header became a router. The Activity grid
+// is the consumer now, so the logic lives beside the rest of the grid model.
+// ---------------------------------------------------------------------------
+
+/** The kinds of pending operation a square can advertise. */
+export type ActionKind = 'failed' | 'review' | 'input' | 'draft' | 'message';
+
+/** One actionable signal on a card, with its corner-chip styling. */
+export interface ActionBadge {
+  key: ActionKind;
+  /** 0 means "show the icon only" — `failed` is a state, not a countable queue. */
+  count: number;
+  icon: LucideIcon;
+  /** Solid chip classes (see CHIP). */
+  tone: string;
+}
+
+/**
+ * Chip tones. These are SOLID status tokens paired with `text-background`, not
+ * the tinted `*-500/15 text-*-300` pills the old triage pills used: a 14px chip
+ * riding on a coloured square has no room for a wash, and `--status-*` +
+ * `--background` invert together across themes, so the same two classes stay
+ * legible in light and dark. Colour carries urgency; the icon carries the kind.
+ */
+const CHIP = {
+  error: 'bg-status-error text-background',
+  warning: 'bg-status-warning text-background',
+  info: 'bg-status-info text-background',
+  processing: 'bg-status-processing text-background',
+} as const;
+
+const SEVERITY_CHIP: Record<SeverityBucket, string> = {
+  critical: CHIP.error,
+  warning: CHIP.warning,
+  info: CHIP.info,
+};
+
+/**
+ * The actionable badges for a card, **highest-priority first** — a failed run
+ * outranks a review, which outranks a blocking input gate, a ready draft and
+ * finally an unread report. `dominantBadge` takes the head of this list, so the
+ * order here IS the weighting.
+ */
+export function actionBadges(card: PersonaCardModel): ActionBadge[] {
+  const out: ActionBadge[] = [];
+  if (card.execState === 'failed') {
+    out.push({ key: 'failed', count: 0, icon: AlertOctagon, tone: CHIP.error });
+  }
+  if (card.reviews.length > 0 && card.topReviewSeverity) {
+    const sev = SEVERITY_META[card.topReviewSeverity];
+    out.push({
+      key: 'review',
+      count: card.reviews.length,
+      icon: sev.icon as LucideIcon,
+      tone: SEVERITY_CHIP[card.topReviewSeverity],
+    });
+  }
+  if (card.inputRequired > 0) {
+    out.push({ key: 'input', count: card.inputRequired, icon: MessageSquareDot, tone: CHIP.warning });
+  }
+  if (card.draftReady > 0) {
+    out.push({ key: 'draft', count: card.draftReady, icon: FileText, tone: CHIP.processing });
+  }
+  if (card.messages.length > 0) {
+    out.push({ key: 'message', count: card.messages.length, icon: Mail, tone: CHIP.info });
+  }
+  return out;
+}
+
+/**
+ * The single badge a 38px square has room for: the highest-priority pending
+ * operation, or `null` when nothing is waiting on the user. The rest of the
+ * breakdown goes in the square's title tooltip.
+ */
+export function dominantBadge(card: PersonaCardModel): ActionBadge | null {
+  return actionBadges(card)[0] ?? null;
+}
+
+/** Total count of actionable items on a card (column / tooltip rollups). */
+export function actionWeight(card: PersonaCardModel): number {
+  return (
+    (card.execState === 'failed' ? 1 : 0) +
+    card.reviews.length + card.messages.length + card.inputRequired + card.draftReady
+  );
 }

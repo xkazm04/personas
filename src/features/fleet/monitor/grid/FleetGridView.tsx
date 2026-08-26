@@ -8,6 +8,12 @@
 // tray below, wrapped into rows. A compact legend keys the four states in the
 // team section's bottom-right corner, out of the way of the squares themselves.
 //
+// Under each team's roster, a divider separates the personas from the LIVE
+// CLAUDE SESSIONS dispatched into that team's projects (cwd → DevProject →
+// team_id). Those are temporary processes, not fleet members, so they are
+// smaller, hollow, and coloured on the border by session state — see
+// fleetSessionModel. A column with no sessions shows no divider.
+//
 // State + grouping logic is shared (fleetGridModel) with the rest of the Monitor
 // so a square's colour always agrees with the columns view. Clicking a square
 // selects the persona and opens the Monitor drawer — the wired-in entry point
@@ -15,6 +21,7 @@
 
 import { memo, useMemo } from 'react';
 import { Users } from 'lucide-react';
+import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -25,10 +32,18 @@ import {
 } from './fleetGridModel';
 import { TeamBadge } from './TeamBadge';
 import { PersonaSquare } from './PersonaSquare';
+import { SessionSquare } from './SessionSquare';
+import { useFleetSessions } from './useFleetSessions';
 
 // 20% larger than the round-1 prototype (was 32) — easier targets, legible
 // two-letter initials, still slim enough to fit a fleet on one board.
 const SQUARE = 38;
+// Sessions are visibly subordinate to the personas above them — same grid, not
+// the same kind of citizen.
+const SESSION_SQUARE = 30;
+
+/** Stable empty list so a session-less column never hands SessionStrip a new array. */
+const EMPTY_SESSIONS: FleetSession[] = [];
 
 interface Props {
   cards: PersonaCardModel[];
@@ -53,10 +68,43 @@ function Legend({ totals, labels }: { totals: Record<SquareState, number>; label
   );
 }
 
+/**
+ * The divider + session squares under one column's roster. Renders NOTHING when
+ * the column has no live sessions — an empty divider would read as "this team
+ * has a session lane and it is empty", which is a different claim.
+ */
+function SessionStrip({ sessions, label }: { sessions: FleetSession[]; label: string }) {
+  if (sessions.length === 0) return null;
+  return (
+    <>
+      <span aria-hidden className="my-0.5 h-0 w-7 border-t border-dashed border-foreground/25" />
+      <div className="flex flex-col items-center gap-1.5" title={label} data-testid="fleet-grid-session-strip">
+        {sessions.map((s) => (
+          <SessionSquare key={s.id} session={s} size={SESSION_SQUARE} />
+        ))}
+      </div>
+    </>
+  );
+}
+
 function FleetGridViewImpl({ cards, personas, teams, selectedPersonaId, onSelect }: Props) {
   const { t } = useTranslation();
   const grouped = useMemo(() => groupFleet(cards, personas, teams), [cards, personas, teams]);
   const totals = useMemo(() => tallyStates(cards), [cards]);
+
+  // Live Claude sessions, already grouped by team. Sessions bound to a team
+  // that has no rendered column (every one of its personas is missing from the
+  // fleet) would otherwise vanish, so they fall back into the Ungrouped tray
+  // rather than being silently dropped.
+  const sessionGroups = useFleetSessions();
+  const traySessions = useMemo(() => {
+    const rendered = new Set(grouped.teams.map((g) => g.teamId));
+    const orphans: FleetSession[] = [];
+    for (const [teamId, list] of sessionGroups.byTeam) {
+      if (!rendered.has(teamId)) orphans.push(...list);
+    }
+    return orphans.length > 0 ? [...sessionGroups.ungrouped, ...orphans] : sessionGroups.ungrouped;
+  }, [sessionGroups, grouped.teams]);
   const stateLabels: Record<SquareState, string> = {
     running: t.monitor.grid_state_running,
     attention: t.monitor.grid_state_attention,
@@ -64,7 +112,7 @@ function FleetGridViewImpl({ cards, personas, teams, selectedPersonaId, onSelect
     idle: t.monitor.grid_state_idle,
   };
 
-  if (grouped.teams.length === 0 && grouped.ungrouped.length === 0) {
+  if (grouped.teams.length === 0 && grouped.ungrouped.length === 0 && traySessions.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
         <Users className="h-8 w-8 text-foreground/40" />
@@ -101,8 +149,12 @@ function FleetGridViewImpl({ cards, personas, teams, selectedPersonaId, onSelect
                   />
                 </div>
                 {/* Roster — one-wide stack of squares. */}
-                <div className="flex flex-col gap-1.5 pb-2">
+                <div className="flex flex-col items-center gap-1.5 pb-2">
                   {g.cards.map(renderSquare)}
+                  <SessionStrip
+                    sessions={sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS}
+                    label={t.monitor.grid_sessions}
+                  />
                 </div>
               </section>
             ))}
@@ -112,14 +164,24 @@ function FleetGridViewImpl({ cards, personas, teams, selectedPersonaId, onSelect
       </div>
 
       {/* Ungrouped tray — wrapped rows. */}
-      {grouped.ungrouped.length > 0 && (
+      {(grouped.ungrouped.length > 0 || traySessions.length > 0) && (
         <div className="flex max-h-[32%] flex-shrink-0 flex-col gap-2 border-t border-primary/10 pt-2.5">
           <div className="flex items-center gap-1.5">
             <Users className="h-3 w-3 text-foreground/40" />
             <span className="typo-label text-foreground/50">{t.monitor.grid_ungrouped}</span>
           </div>
-          <div className="flex flex-wrap content-start gap-1.5 overflow-auto pb-1">
+          <div className="flex flex-wrap content-start items-center gap-1.5 overflow-auto pb-1">
             {grouped.ungrouped.map(renderSquare)}
+            {traySessions.length > 0 && (
+              <>
+                {grouped.ungrouped.length > 0 && (
+                  <span aria-hidden className="mx-1 h-7 w-0 self-center border-l border-dashed border-foreground/25" />
+                )}
+                {traySessions.map((s) => (
+                  <SessionSquare key={s.id} session={s} size={SESSION_SQUARE} />
+                ))}
+              </>
+            )}
           </div>
         </div>
       )}
