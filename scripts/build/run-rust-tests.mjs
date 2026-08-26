@@ -54,7 +54,8 @@
 //   node scripts/build/run-rust-tests.mjs -- --nocapture healing::
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -193,6 +194,8 @@ const cargoArgs = cratesLane
     ]
   : ['test', '--manifest-path', CARGO_TOML, '--features', 'desktop', '--lib'];
 
+// Stamped before the build so every database this run creates sorts after it.
+const RUN_STARTED_AT = Date.now();
 console.log(`> cargo ${cargoArgs.join(' ')}`);
 const executables = buildTestExecutables(cargoArgs);
 if (executables.length === 0) {
@@ -233,4 +236,61 @@ for (const exe of executables) {
     }
   }
 }
+/**
+ * Reclaim the temp databases this run created.
+ *
+ * `personas_db::init_test_db` copies a migrated template to
+ * `%TEMP%/personas_test_<uuid>.db` for every call, and nothing in the process
+ * ever deletes it — a full suite leaks thousands of ~4.5 MB files. Measured
+ * 2026-08-25 before this existed: **15,669 files / 70 GB accumulated in five
+ * days**, the largest single reclaimable item on a volume that had just hit
+ * zero bytes free.
+ *
+ * The crate sweeps at startup (`sweep_stale_test_dbs`), which bounds growth to
+ * roughly one run. This closes the other half for the sanctioned path: the
+ * files are dead the instant their test binary exits, and this script is the
+ * one place that knows the run is over.
+ *
+ * Deliberately time-boxed rather than exhaustive, and deliberately silent about
+ * individual failures: a file another process still holds is skipped, not
+ * retried, because a cleanup step that can fail a green test run is worse than
+ * the disk it reclaims.
+ */
+function sweepTestDatabases(startedAt) {
+  const prefixes = [
+    'personas_test_',
+    'personas_user_test_',
+    'personas_journal_',
+    'personas_cdc_drop_',
+    'mgmt_api_test_',
+  ];
+  const dir = tmpdir();
+  let removed = 0;
+  let bytes = 0;
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!prefixes.some((p) => name.startsWith(p))) continue;
+      const full = join(dir, name);
+      try {
+        const st = statSync(full);
+        if (!st.isFile()) continue;
+        // Only this run's files. An older one belongs to a process that may
+        // still be alive; the crate-side sweep reclaims those on its own clock.
+        if (st.mtimeMs < startedAt) continue;
+        rmSync(full, { force: true });
+        removed++;
+        bytes += st.size;
+      } catch {
+        // Held, vanished, or denied — leave it for the next sweep.
+      }
+    }
+  } catch {
+    // No temp dir to read is not a test failure.
+  }
+  if (removed > 0) {
+    console.log(`  cleaned ${removed} temp test database(s), ${(bytes / 1024 / 1024).toFixed(0)} MB`);
+  }
+}
+
+sweepTestDatabases(RUN_STARTED_AT);
 process.exit(failed === 0 ? 0 : 1);

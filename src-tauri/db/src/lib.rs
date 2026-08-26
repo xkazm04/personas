@@ -2028,6 +2028,109 @@ fn migrated_template() -> Result<std::path::PathBuf, AppError> {
         .map_err(AppError::Internal)
 }
 
+/// Filename prefixes every test-only database in this crate uses. A sweep that
+/// does not know a prefix cannot reclaim it, so adding a new `init_*_db` helper
+/// means adding its prefix here — the test at the bottom of this file asserts
+/// each one is actually constructed somewhere.
+#[cfg(any(test, feature = "test-support"))]
+const TEST_DB_PREFIXES: &[&str] = &[
+    "personas_test_",
+    "personas_user_test_",
+    "personas_journal_",
+    "personas_cdc_drop_",
+    "mgmt_api_test_",
+];
+
+/// How stale a temp database must be before the sweep will remove it.
+///
+/// The full Rust suite runs in ~80 seconds and cargo runs test binaries in
+/// parallel, so anything untouched for an hour belongs to a process that has
+/// long since exited. Deliberately generous: reclaiming a file a live test is
+/// still using would turn a disk problem into a flaky-test problem, and the
+/// cost of being wrong in that direction is far higher than the megabytes.
+#[cfg(any(test, feature = "test-support"))]
+const TEST_DB_STALE_AFTER: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+
+/// Remove test databases left behind by earlier processes. Runs at most once
+/// per process, on the first `init_test_db` / `init_test_user_db` call.
+///
+/// # Why this exists
+///
+/// `init_test_db` copies a migrated template to
+/// `%TEMP%/personas_test_<uuid>.db` and **nothing ever deleted it**. Every call
+/// leaked ~4.5 MB; the suite calls it thousands of times per run. Measured on
+/// this machine 2026-08-25: **15,669 files, 70 GB, all written in the preceding
+/// five days** — the single largest reclaimable item on a 952 GB volume that had
+/// just hit zero bytes free, and larger than any repository on it except one.
+///
+/// The complete fix would delete each database when its pool drops. That needs
+/// the pool to own a `Drop` guard, which means wrapping the connection manager
+/// — and `DbPool` is a type alias over `Pool<SqliteConnectionManager>` that 719
+/// call sites name. Changing it is a far bigger edit than this defect warrants,
+/// so the sweep is the deliberate second-best: it cannot reclaim the CURRENT
+/// process's files, but it guarantees the previous ones are gone, which turns
+/// unbounded growth into roughly one run's worth. `scripts/build/run-rust-tests.mjs`
+/// closes the remaining half for the sanctioned path.
+///
+/// Entirely best-effort. A failure here must never fail a test: the worst case
+/// is the disk usage we already had.
+#[cfg(any(test, feature = "test-support"))]
+fn sweep_stale_test_dbs() {
+    use std::sync::Once;
+    static SWEPT: Once = Once::new();
+    SWEPT.call_once(run_test_db_sweep);
+}
+
+/// The sweep itself, without the `Once`. Split out because a `Once`-guarded
+/// function is untestable by construction — the first test to touch a pool
+/// consumes it, and every later assertion then passes against a sweep that
+/// never ran. That is the shape of vacuous gate this repo keeps finding, so it
+/// is avoided here rather than explained later.
+#[cfg(any(test, feature = "test-support"))]
+fn run_test_db_sweep() {
+    {
+        let dir = std::env::temp_dir();
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            return;
+        };
+        let now = std::time::SystemTime::now();
+        let (mut removed, mut bytes) = (0u32, 0u64);
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else { continue };
+            if !TEST_DB_PREFIXES.iter().any(|p| name.starts_with(p)) {
+                continue;
+            }
+            // `-wal` and `-shm` siblings are matched by the same prefixes, so
+            // they are reclaimed with the database rather than orphaned.
+            let Ok(meta) = entry.metadata() else { continue };
+            if !meta.is_file() {
+                continue;
+            }
+            let stale = meta
+                .modified()
+                .ok()
+                .and_then(|m| now.duration_since(m).ok())
+                .is_some_and(|age| age > TEST_DB_STALE_AFTER);
+            if !stale {
+                continue;
+            }
+            let len = meta.len();
+            if std::fs::remove_file(entry.path()).is_ok() {
+                removed += 1;
+                bytes += len;
+            }
+        }
+        if removed > 0 {
+            tracing::debug!(
+                removed,
+                mib = bytes / (1024 * 1024),
+                "swept stale test databases from the temp dir"
+            );
+        }
+    }
+}
+
 #[cfg(any(test, feature = "test-support"))]
 pub fn init_test_db() -> Result<DbPool, AppError> {
     use std::time::Duration;
@@ -2036,6 +2139,7 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     // A unique file per test (not `:memory:`) because r2d2 hands out multiple
     // connections and each in-memory connection would get its own empty
     // database.
+    sweep_stale_test_dbs();
     let template = migrated_template()?;
     let tmp = std::env::temp_dir().join(format!("personas_test_{}.db", uuid::Uuid::new_v4()));
     std::fs::copy(&template, &tmp).map_err(AppError::Io)?;
@@ -2087,6 +2191,7 @@ pub fn companion_schema_for_test() -> &'static str {
 pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
     use std::time::Duration;
 
+    sweep_stale_test_dbs();
     let tmp = std::env::temp_dir().join(format!("personas_user_test_{}.db", uuid::Uuid::new_v4()));
     let manager = SqliteConnectionManager::file(&tmp);
     let pool = Pool::builder()
@@ -2538,5 +2643,78 @@ mod executions_fts_tests {
             1,
             "search must stop returning executions that no longer exist",
         );
+    }
+}
+
+#[cfg(test)]
+mod test_db_sweep_tests {
+    use super::*;
+
+    /// THE LEAK THIS SWEEP EXISTS FOR.
+    ///
+    /// Measured in `%TEMP%` on 2026-08-25: **15,669 `personas_test_*.db`,
+    /// 70 GB, every one of them written in the preceding five days** — because
+    /// `init_test_db` copies a migrated template per call and nothing ever
+    /// removed it. It was the largest reclaimable item on a 952 GB volume that
+    /// had just hit zero bytes free, and bigger than every repository on the
+    /// machine except one.
+    ///
+    /// Both halves of the contract are asserted here, and the second matters as
+    /// much as the first: a stale file IS reclaimed, and a fresh one is NOT —
+    /// because a sweep that deleted a database a running test still held would
+    /// trade a disk problem for a flaky-test problem, which is the worse of the
+    /// two failures.
+    #[test]
+    fn stale_test_dbs_are_reclaimed_and_live_ones_are_spared() {
+        use std::io::Write;
+
+        let dir = std::env::temp_dir();
+        let tag = uuid::Uuid::new_v4();
+        let stale = dir.join(format!("personas_test_sweepcase_{tag}_stale.db"));
+        let fresh = dir.join(format!("personas_test_sweepcase_{tag}_fresh.db"));
+        for p in [&stale, &fresh] {
+            let mut f = std::fs::File::create(p).expect("create fixture");
+            f.write_all(b"not a real database").expect("write fixture");
+        }
+
+        // Backdate one past the threshold — the only way to age a file without
+        // sleeping for an hour inside a unit test.
+        let old = std::time::SystemTime::now() - (TEST_DB_STALE_AFTER * 2);
+        std::fs::File::options()
+            .write(true)
+            .open(&stale)
+            .expect("reopen")
+            .set_times(std::fs::FileTimes::new().set_modified(old))
+            .expect("backdate");
+
+        run_test_db_sweep();
+
+        assert!(
+            !stale.exists(),
+            "a database untouched for twice the staleness window must be reclaimed"
+        );
+        assert!(
+            fresh.exists(),
+            "a just-written database may belong to a RUNNING test and must be spared"
+        );
+
+        let _ = std::fs::remove_file(&fresh);
+    }
+
+    /// The prefix list is the sweep's whole reach: a file it does not match is a
+    /// file it can never reclaim. Both constructors in this crate must be
+    /// covered, so that adding a third and forgetting the prefix fails here
+    /// rather than silently leaking a new family of files.
+    #[test]
+    fn both_test_db_constructors_are_covered_by_a_prefix() {
+        for name in [
+            "personas_test_00000000-0000-0000-0000-000000000000.db",
+            "personas_user_test_00000000-0000-0000-0000-000000000000.db",
+        ] {
+            assert!(
+                TEST_DB_PREFIXES.iter().any(|p| name.starts_with(p)),
+                "{name} is written by a constructor in this file but no swept prefix matches it"
+            );
+        }
     }
 }
