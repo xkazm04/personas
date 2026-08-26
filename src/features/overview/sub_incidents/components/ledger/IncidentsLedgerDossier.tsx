@@ -1,4 +1,5 @@
-// Prototype variant B — "Dossier"
+// The incidents ledger — "Dossier" (won the 2026-08-26 round-2 A/B over
+// Signal / Columns and the round-1 Ledger).
 //
 // Strategy: SYMBOLS carry the metadata, text carries the incident. Every fact
 // on line 2 is an icon-led chip with its own colour family (severity = tonal
@@ -105,7 +106,9 @@ const DossierRow = memo(function DossierRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-3">
-          <span className={`typo-heading ${isClosed ? 'text-foreground/70' : 'text-foreground'}`}>{incident.title}</span>
+          {/* Body-lg at NORMAL weight: the source tile and the stamps carry the
+              emphasis, so the title reads as prose above them, not a headline. */}
+          <span className={`typo-body-lg font-normal ${isClosed ? 'text-foreground/70' : 'text-foreground'}`}>{incident.title}</span>
           <span className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             {isOpen && <Act icon={Check} label={t.overview.incidents.action_acknowledge} onClick={() => onAcknowledge(incident.id)} />}
             {(isOpen || isAck) && <Act icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={() => onResolve(incident.id)} />}

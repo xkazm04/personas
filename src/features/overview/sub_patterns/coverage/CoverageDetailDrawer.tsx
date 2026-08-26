@@ -8,7 +8,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 
-import { CoverageStateChip } from './CoverageTileCard';
+import { CoverageStateChip } from './CoverageStateChip';
 import type { TileView } from './coverageModel';
 
 function Section({ heading, children }: { heading: string; children: React.ReactNode }) {

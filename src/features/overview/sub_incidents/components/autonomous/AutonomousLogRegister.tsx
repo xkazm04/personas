@@ -1,22 +1,23 @@
-// Prototype variant C — "Register"
+// The autonomous log — "Register" (won the 2026-08-26 round-2 A/B over
+// Timeline / Receipts and the round-1 Trail).
 //
 // Strategy: a STRICT register with a loud left-hand latency column. Every row
 // is one line; the first column is the resume latency as a big green
 // tabular numeral (the metric this log exists to show), then the source
-// glyph tile, then the title at body weight, then agent in bold, then the
-// two clocks in a quiet mono column. Header cells align over the same grid
-// so columns scan top-to-bottom. Maximum density without the sameness — the
-// numeral column and the bold agent column give the eye two anchors.
+// glyph tile, then the title at body weight given the whole remaining width,
+// then agent in bold. The Raised / Resumed clocks were dropped at
+// consolidation — the latency numeral already states their difference, and
+// the width buys the title room it was losing to truncation. Header cells
+// align over the same grid so columns scan top-to-bottom.
 
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
 import { severityBadgeClass, sourceTableIcon, sourceTableLabel } from '../../libs/incidentTaxonomy';
 import { resumeLatencyLabel, type AutonomousLogProps } from './autonomousLogTypes';
 import { AutonomousLogFrame } from './autonomousLogShared';
 
-const GRID = '64px 32px minmax(220px, 2fr) minmax(110px, 1fr) minmax(90px, 0.8fr) minmax(90px, 0.8fr) 28px';
+const GRID = '64px 32px minmax(280px, 3fr) minmax(120px, 1fr) 28px';
 
 export function AutonomousLogRegister(props: AutonomousLogProps) {
   const { t } = useTranslation();
@@ -37,7 +38,7 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
             <AthenaComposedBadge variant="handled" label={t.overview.incidents.noc_handled_by} />
           </div>
           <div className="sticky top-0 z-10 grid items-center gap-3 border-b border-primary/10 bg-background/95 px-4 py-1.5" style={{ gridTemplateColumns: GRID }} role="row">
-            <H right>{l.col_resumed}</H><span /><H>{t.overview.incidents.col_incident}</H><H>{t.overview.incidents.filter_persona_label}</H><H>{l.col_raised}</H><H>{l.col_resumed}</H><span />
+            <H right>{l.col_resumed}</H><span /><H>{t.overview.incidents.col_incident}</H><H>{t.overview.incidents.filter_persona_label}</H><span />
           </div>
         </>
       }
@@ -51,10 +52,8 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
             <span className={`flex h-7 w-7 items-center justify-center rounded-card border ${severityBadgeClass(inc.severity)}`} title={sourceTableLabel(t, inc.sourceTable)}>
               <SourceIcon className="h-3.5 w-3.5" />
             </span>
-            <span className="truncate typo-body text-foreground">{inc.title}</span>
+            <span className="truncate typo-body text-foreground" title={inc.title}>{inc.title}</span>
             <span className="truncate typo-body font-semibold text-foreground">{inc.personaName ?? '—'}</span>
-            <RelativeTime timestamp={inc.createdAt} className="typo-caption font-mono text-foreground/70" />
-            <span className="typo-caption font-mono text-foreground/70">{inc.continuedAt ? <RelativeTime timestamp={inc.continuedAt} /> : '—'}</span>
             <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-foreground/40 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
           </button>
         );

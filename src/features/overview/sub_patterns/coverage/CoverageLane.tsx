@@ -1,4 +1,6 @@
-// Coverage lane — Project × registry-status grid (registry-coverage-ui R2).
+// Coverage lane — one pipeline row per project (registry → extracted →
+// applied → fresh), registry-coverage-ui R2 data, "Ledger" direction won the
+// 2026-08-26 A/B.
 //
 // Loading-v2 laws: the header chrome always renders once a registry is
 // resolved; geometry-matched ghost tiles appear (delayed) ONLY while loading
@@ -16,41 +18,30 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 
 import { CoverageDetailDrawer } from './CoverageDetailDrawer';
-import { CoverageTileCard } from './CoverageTileCard';
 import type { TileView } from './coverageModel';
 import { useRegistryCoverage } from './useRegistryCoverage';
-// PROTOTYPE SCAFFOLD (/prototype 2026-08-26) — three redesign directions
-// behind a switcher; the baseline tile grid stays as the reference. The
-// switcher and losers are deleted at consolidation.
-import { CoverageMatrix } from './variants/CoverageMatrix';
-import { CoverageGauges } from './variants/CoverageGauges';
 import { CoverageLedger } from './variants/CoverageLedger';
 
-type CoverageVariant = 'matrix' | 'gauges' | 'ledger' | 'baseline';
-const COVERAGE_TABS: { id: CoverageVariant; label: string; sub: string }[] = [
-  { id: 'matrix', label: 'Matrix', sub: 'projects × dimensions heat grid — scan a column to compare' },
-  { id: 'gauges', label: 'Gauges', sub: 'instrument cards — four-arc health ring per project' },
-  { id: 'ledger', label: 'Ledger', sub: 'pipeline rows — registry → extracted → applied → fresh' },
-  { id: 'baseline', label: 'Baseline', sub: 'current tile grid' },
-];
-
-/** Calm, static ghost tile (never pulsing — loading doctrine law 3) matching
- *  the real tile's geometry: name line + four dimension rows. */
-function GhostTile() {
+/** Calm, static ghost ROW (never pulsing — loading doctrine law 3) matching
+ *  the ledger row's geometry: dot + name gutter, four stage pills on a track,
+ *  debt numeral. Same silhouette the real rows swap into — no resize on reveal. */
+function GhostRow() {
   const bar = 'bg-primary/[0.06]';
   return (
-    <div
-      aria-hidden="true"
-      className="rounded-card border border-primary/10 bg-secondary/10 p-3 flex flex-col gap-3"
-    >
-      <div className={`h-[0.9em] w-32 rounded ${bar}`} />
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center gap-2">
-          <div className={`w-3.5 h-3.5 rounded ${bar}`} />
-          <div className={`h-[0.7em] w-20 rounded ${bar}`} />
-          <div className={`h-[0.7em] w-28 rounded ${bar}`} />
-        </div>
-      ))}
+    <div aria-hidden="true" className="flex items-center gap-4 rounded-card border border-primary/10 bg-secondary/10 px-3.5 py-2.5">
+      <div className="flex w-48 shrink-0 items-center gap-2.5">
+        <div className={`h-2.5 w-2.5 rounded-full ${bar}`} />
+        <div className={`h-[0.8em] w-28 rounded ${bar}`} />
+      </div>
+      <div className="flex flex-1 items-center">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex flex-1 items-center">
+            <div className={`h-6 w-24 rounded-pill ${bar}`} />
+            {i < 3 && <div className="h-px flex-1 min-w-3 bg-primary/10" />}
+          </div>
+        ))}
+      </div>
+      <div className={`h-[0.9em] w-6 rounded ${bar}`} />
     </div>
   );
 }
@@ -62,7 +53,6 @@ export function CoverageLane() {
   const addToast = useToastStore((s) => s.addToast);
   const { registry, othersCount, data, loading, error, refetch } = useRegistryCoverage();
   const [openTile, setOpenTile] = useState<TileView | null>(null);
-  const [variant, setVariant] = useState<CoverageVariant>('matrix');
 
   // No paired registry: point at the wiring surface (Dev Tools → Workspaces).
   if (!registry) {
@@ -118,20 +108,11 @@ export function CoverageLane() {
               <RelativeTime timestamp={coverage.generatedAt} />
             </span>
           )}
-          {/* PROTOTYPE SCAFFOLD — variant switcher (throwaway). */}
-          <span className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border/50 bg-secondary/30 p-0.5">
-            {COVERAGE_TABS.map((v) => (
-              <button key={v.id} type="button" onClick={() => setVariant(v.id)} aria-pressed={variant === v.id} title={v.sub}
-                className={`typo-caption rounded-interactive px-2 py-1 transition-colors ${
-                  variant === v.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/60 hover:text-foreground'
-                }`}>
-                {v.label}
-              </button>
-            ))}
-          </span>
+          <span className="ml-auto">
           <AsyncButton size="sm" variant="secondary" icon={<RefreshCw className="w-3.5 h-3.5" aria-hidden />} onClick={onSync}>
             {tc.sync_action}
           </AsyncButton>
+          </span>
         </div>
 
         {coverage !== null && coverage.laneDates.length > 0 && (
@@ -185,34 +166,15 @@ export function CoverageLane() {
         </div>
       ) : (
         <>
-          {/* Tile grid — ghosts only while loading with nothing warm. */}
+          {/* Ledger — ghost rows only while loading with nothing warm. */}
           {data === null && loading ? (
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 animate-fade-in"
-              style={{ animationDelay: '150ms' }}
-            >
+            <div className="flex flex-col gap-1.5 animate-fade-in" style={{ animationDelay: '150ms' }}>
               {[0, 1, 2, 3, 4, 5].map((i) => (
-                <GhostTile key={i} />
+                <GhostRow key={i} />
               ))}
             </div>
           ) : data !== null ? (
-            variant === 'matrix' ? (
-              <CoverageMatrix tiles={data.tiles} onOpen={setOpenTile} />
-            ) : variant === 'gauges' ? (
-              <CoverageGauges tiles={data.tiles} onOpen={setOpenTile} />
-            ) : variant === 'ledger' ? (
-              <CoverageLedger tiles={data.tiles} onOpen={setOpenTile} />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {data.tiles.map((view) => (
-                  <CoverageTileCard
-                    key={view.tile.projectId}
-                    view={view}
-                    onOpen={() => setOpenTile(view)}
-                  />
-                ))}
-              </div>
-            )
+            <CoverageLedger tiles={data.tiles} onOpen={setOpenTile} />
           ) : null}
 
           {/* Registry-only slugs — rendered, never guessed away (plan D3). */}

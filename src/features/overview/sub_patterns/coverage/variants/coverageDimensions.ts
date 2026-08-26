@@ -48,6 +48,8 @@ export const TONE_CHIP: Record<DimTone, string> = {
   muted: 'border-border/60 bg-secondary/40 text-foreground/60',
 };
 
+export type ChipTone = DimTone;
+
 /** Worst tone across a project's dimensions — drives the project-level accent. */
 export function worstTone(readings: DimReading[]): DimTone {
   const rank: Record<DimTone, number> = { error: 0, warning: 1, muted: 2, info: 3, success: 4 };

@@ -1,4 +1,6 @@
-// Prototype variant C — "Ledger"
+// The Coverage lane — "Ledger" (won the 2026-08-26 A/B over Matrix / Gauges
+// and the baseline tile grid). Carries Matrix's column header strip so each
+// pipeline stage is named once at the top instead of only on hover.
 //
 // Strategy: a PIPELINE read left-to-right. Each project is one row whose four
 // dimensions are drawn as connected stage pills — registry → extracted →
@@ -17,8 +19,24 @@ import { TONE_BG, TONE_CHIP, readDimensions, worstTone } from './coverageDimensi
 export function CoverageLedger({ tiles, onOpen }: { tiles: TileView[]; onOpen: (v: TileView) => void }) {
   const { t, tx } = useTranslation();
   const tc = t.overview.registry_coverage;
+  const headers = [tc.dim_registry, tc.dim_extracted, tc.dim_applied, tc.dim_freshness];
   return (
     <div className="flex flex-col gap-1.5">
+      {/* Column titles over the pipeline — same widths as the row below:
+          w-48 name gutter, four equal stage tracks, then the debts/chevron
+          block. Named once here so the pills can stay short. */}
+      <div className="flex items-center gap-4 px-3.5 py-1.5" role="row">
+        <span className="w-48 shrink-0" />
+        <span className="flex flex-1 items-center">
+          {headers.map((h) => (
+            <span key={h} className="flex-1 typo-caption font-mono uppercase tracking-widest text-foreground">{h}</span>
+          ))}
+        </span>
+        <span className="flex shrink-0 items-center gap-3">
+          <span className="typo-caption font-mono uppercase tracking-widest text-foreground">{tc.drawer_debts}</span>
+          <span className="w-4" />
+        </span>
+      </div>
       {tiles.map((view) => {
         const dims = readDimensions(view, t, tx);
         const worst = worstTone(dims);
