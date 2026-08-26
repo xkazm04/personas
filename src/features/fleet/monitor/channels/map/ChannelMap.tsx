@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Orbit } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -53,12 +53,11 @@ function trimmed(a: MapNode, b: MapNode, rA: number, rB: number) {
 }
 
 export function ChannelMap({
-  teams, onDrillIn, layoutControl,
+  teams, onDrillIn,
 }: {
   teams: StreamTeam[];
   /** Node click — open the Timeline scoped to this speaker. */
   onDrillIn: (teamId: string, personaId: string) => void;
-  layoutControl?: ReactNode;
 }) {
   const { t } = useTranslation();
   const reducedMotion = useReducedMotion() ?? false;
@@ -167,7 +166,6 @@ export function ChannelMap({
           })}
         </div>
 
-        <div className="ml-auto">{layoutControl}</div>
       </div>
 
       <div className="relative flex-1 min-h-0">

@@ -1,5 +1,10 @@
 // triageModel — pure helpers for the compact "actionable-only" Persona Monitor
-// variants (Action grid + Project columns). No JSX; the variants own markup.
+// variants. No JSX; the variants own markup.
+//
+// KEPT DELIBERATELY UNCONSUMED: the Project-columns view that used to call
+// isActionable / actionBadges / actionWeight was retired when the Monitor
+// header became a four-way router. These exports stay because the Activity
+// grid is picking them up next (phase 2) — do not delete them as dead code.
 
 import { AlertOctagon, Mail, MessageSquareDot, FileText, type LucideIcon } from 'lucide-react';
 import { SEVERITY_META, type PersonaCardModel } from '../monitorModel';

@@ -1,27 +1,32 @@
 // PersonaMonitor — the full-screen fleet monitor.
 //
-// Fleet view is a project overview: a column per team/dev project, each listing
-// that team's active goals and the personas needing manual attention (see
-// MonitorProjectColumns). A persona-fulltext search narrows the columns; a
-// drawer layers over for detail. The Channels view (multi-team timeline) and a
-// live-mode pop-up toggle sit in the header. The global fleet pulse lives in
-// the app chrome (see FleetActivityStrip), not here.
+// The header is the ROUTER: four peer views, one click apart, no nesting.
+//   Activity      — every persona as a state-coloured square (FleetGridView)
+//   Timeline      — the merged cross-team transmission log (Stream)
+//   Conversations — the messenger, one project at a time (ConversationBriefing)
+//   Map           — the live constellation of one project (ChannelMap)
+// The old two-level switching (a "Channels" mode that then nested its own
+// stream/conversations/map pill) is retired: the three channel surfaces are
+// top-level destinations now, and the project-columns fleet view is gone.
+// A live-mode pop-up toggle sits at the right of the router. The global fleet
+// pulse lives in the app chrome (see FleetActivityStrip), not here.
 
 import { memo, useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Search, MessagesSquare, Bell, LayoutGrid } from 'lucide-react';
+import { X, Activity, MessagesSquare, Bell, LayoutGrid, Radio, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
-import { MonitorChannelGrid } from './channels';
-import { MonitorProjectColumns } from './triage/MonitorProjectColumns';
+import { useChannelWorkspace } from './channels';
+import { Stream } from './channels/Stream';
+import { ConversationBriefing } from './channels/ConversationBriefing';
+import { ChannelMap } from './channels/map/ChannelMap';
 import { FleetGridView } from './grid/FleetGridView';
 import {
   buildMonitorModel,
@@ -40,6 +45,16 @@ interface PersonaMonitorProps {
 // into a bail-out at this boundary.
 const MemoFleetActivityStrip = memo(FleetActivityStrip);
 
+/** The four top-level Monitor destinations. */
+type MonitorView = 'activity' | 'timeline' | 'conversations' | 'map';
+
+/**
+ * Last-selected tab, remembered for the life of the session (the Monitor is a
+ * header overlay that fully unmounts on close, so component state cannot carry
+ * this). Deliberately module-scoped and NOT persisted — a fresh app launch
+ * should land on Activity.
+ */
+let lastView: MonitorView = 'activity';
 
 interface Selection {
   personaId: string;
@@ -50,9 +65,9 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const { t, tx } = useTranslation();
   // All four feeds stay ON regardless of the active view — deliberately, not
   // as a leftover: the footer's review count and the header's attention badges
-  // render in every view, the channel grid needs the roster the health feed
+  // render in every view, the channel surfaces need the roster the health feed
   // fills, and gating `feeds` per view would tear pollers down and refetch on
-  // every toggle. The per-surface gating this hook supports is for OTHER
+  // every tab switch. The per-surface gating this hook supports is for OTHER
   // mounts (the triage deck passes DECK_FEEDS); the Monitor is the one surface
   // that legitimately renders everything.
   const {
@@ -65,19 +80,25 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     [personas, reviews, unreadMessages, activeProcesses, healthMap],
   );
 
-  // View mode — the fleet persona grid, or "channel mode" (multiple team
-  // channels watched in parallel). A live-mode pop-up can deep-link here via the
-  // transient `monitorInitialView` signal, landing straight on the Timeline.
+  // A live pop-up can deep-link straight into the Timeline via the transient
+  // `monitorInitialView` signal. The store's vocabulary predates the router and
+  // is left untouched: 'channels' means "the merged Timeline", 'fleet' means
+  // "the fleet board", which is Activity now.
   const monitorInitialView = useSystemStore((s) => s.monitorInitialView);
   const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
-  const [viewMode, setViewMode] = useState<'fleet' | 'channels' | 'grid'>(monitorInitialView ?? 'fleet');
+  const [view, setView] = useState<MonitorView>(() =>
+    monitorInitialView ? (monitorInitialView === 'channels' ? 'timeline' : 'activity') : lastView,
+  );
+  useEffect(() => {
+    lastView = view;
+  }, [view]);
   useEffect(() => {
     if (!monitorInitialView) return;
-    setViewMode(monitorInitialView);
+    setView(monitorInitialView === 'channels' ? 'timeline' : 'activity');
     setMonitorInitialView(null);
   }, [monitorInitialView, setMonitorInitialView]);
 
-  // The lens preset riding along with a 'channels' deep-link (team/persona
+  // The lens preset riding along with a Timeline deep-link (team/persona
   // scope). Captured once per mount, then cleared — the same transient
   // contract as monitorInitialView.
   const monitorChannelPreset = useSystemStore((s) => s.monitorChannelPreset);
@@ -89,30 +110,37 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     setMonitorChannelPreset(null);
   }, [monitorChannelPreset, setMonitorChannelPreset]);
 
-  // Live-mode pop-ups on/off — surfaced in the header so it's always reachable
-  // (the Channels -> Timeline toggle requires teams + navigating in).
+  // Live-mode pop-ups on/off — surfaced in the header so it's always reachable.
   const liveMode = useSystemStore((s) => s.monitorLiveMode);
   const toggleLiveMode = useSystemStore((s) => s.toggleMonitorLiveMode);
 
-  // Persona fulltext search — replaces the old Dev-Tools project filter. The
-  // monitor defaults to showing ALL personas; the search narrows the grid by
-  // persona name, debounced for a smooth typing experience.
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 200).trim().toLowerCase();
-  const displayCards = useMemo(
-    () =>
-      debouncedSearch
-        ? cards.filter((c) => c.personaName.toLowerCase().includes(debouncedSearch))
-        : cards,
-    [cards, debouncedSearch],
-  );
-
-  // Teams power the project columns + the Channels view.
+  // Teams power the Activity board's grouping + the three channel surfaces.
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   useEffect(() => {
     void fetchTeams();
   }, [fetchTeams]);
+
+  // Everything the three channel surfaces share (roster, team filter, Slack
+  // bridges, map drill-in). Bridges are only fetched once Conversations is up.
+  const {
+    workspaceTeams, bridges, toggle, allOn, setAll,
+    drillCallsign, scopeToPersona, clearDrill, hasChannels,
+  } = useChannelWorkspace({
+    teams,
+    personas,
+    preset: channelPreset,
+    needBridges: view === 'conversations',
+  });
+
+  // Map node click → Timeline scoped to that speaker.
+  const handleDrillIn = useCallback(
+    (teamId: string, personaId: string) => {
+      scopeToPersona(teamId, personaId);
+      setView('timeline');
+    },
+    [scopeToPersona],
+  );
 
   // Tick once a second only while something is running.
   const anyRunning = useMemo(
@@ -121,16 +149,16 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    // `now` drives elapsed-time on fleet cards / SystemBand and the drawer's
-    // live timers (shared by fleet + grid). Channel view consumes none of it, so
-    // ticking there would re-render the whole channel workspace for nothing.
-    if (!anyRunning || viewMode === 'channels') return;
+    // `now` drives the SystemBand's elapsed times and the drawer's live timers,
+    // both of which are Activity-only. The channel surfaces consume none of it,
+    // so ticking there would re-render the whole workspace for nothing.
+    if (!anyRunning || view !== 'activity') return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [anyRunning, viewMode]);
+  }, [anyRunning, view]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
-  // Stable open handler (takes personaId) so the memoized column rows don't
+  // Stable open handler (takes personaId) so the memoized grid squares don't
   // re-render just because an inline onSelect closure changed identity.
   const handleCardSelect = useCallback(
     (personaId: string, section: DrawerSection) => setSelection({ personaId, section }),
@@ -174,10 +202,34 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
   const closeDrawer = useCallback(() => setSelection(null), []);
 
+  // The header router. Each destination keeps the icon its own surface header
+  // uses, so the tab and the view it opens read as the same thing.
+  const VIEWS: Array<{ id: MonitorView; label: string; hint: string; icon: typeof LayoutGrid }> = [
+    { id: 'activity', label: t.monitor.activity_mode, hint: t.monitor.activity_mode_title, icon: LayoutGrid },
+    { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint, icon: Radio },
+    { id: 'conversations', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint, icon: MessagesSquare },
+    { id: 'map', label: t.monitor.channels_layout_map, hint: t.monitor.channels_layout_map_hint, icon: Orbit },
+  ];
+  const selectView = useCallback(
+    (next: MonitorView) => {
+      // Only the map's node click should carry a callsign into the Timeline.
+      clearDrill();
+      setView(next);
+    },
+    [clearDrill],
+  );
+
   // Faint network-of-agents backdrop — dark mode only (the light-theme
   // alternative is a follow-up). Rendered behind everything at low opacity so
   // it reads as premium texture, not a competing foreground.
   const isDark = useIsDarkTheme();
+
+  const channelEmpty = (
+    <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground">
+      <MessagesSquare className="w-8 h-8 text-foreground" />
+      <span className="typo-body">{t.monitor.channels_no_teams}</span>
+    </div>
+  );
 
   // The overlay is fully opaque (was bg-background/98 + backdrop-blur-xl): the
   // blur was invisible at 98% opacity but forced the GPU to re-composite the
@@ -203,7 +255,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         />
       )}
 
-      {/* Header (z-20 so the project-picker dropdown floats above the grid) */}
+      {/* Header (z-20 so any floating child menu clears the body) */}
       <div className="relative z-20 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -214,82 +266,50 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {viewMode !== 'channels' && (
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t.monitor.search_personas_placeholder}
-                className="w-44 pl-8 pr-7 py-1 rounded-full bg-secondary/20 border border-primary/15 typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40 transition-colors"
-                data-testid="monitor-persona-search"
-              />
-              {search && (
+          {/* The router: four peer destinations. */}
+          <div className="flex items-center gap-1" role="group" data-testid="monitor-view-tabs">
+            {VIEWS.map((v) => {
+              const Icon = v.icon;
+              const on = view === v.id;
+              return (
                 <button
+                  key={v.id}
                   type="button"
-                  onClick={() => setSearch('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground/80 transition-colors"
-                  aria-label={t.monitor.clear_filter}
+                  onClick={() => selectView(v.id)}
+                  aria-pressed={on}
+                  title={v.hint}
+                  data-testid={`monitor-view-${v.id}`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
+                    on
+                      ? 'border-primary/45 bg-primary/15 text-primary'
+                      : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Icon className="w-3 h-3" />
+                  {v.label}
                 </button>
-              )}
-            </div>
-          )}
-          {/* Activity: the whole fleet as state-coloured persona squares,
-              grouped by team — the control-panel read for hundreds of personas.
-              Sits next to Channels; toggles back to the columns fleet view. */}
-          <button
-            type="button"
-            onClick={() => setViewMode((v) => (v === 'grid' ? 'fleet' : 'grid'))}
-            aria-pressed={viewMode === 'grid'}
-            title={t.monitor.activity_mode_title}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
-              viewMode === 'grid'
-                ? 'border-primary/45 bg-primary/15 text-primary'
-                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
-            }`}
-          >
-            <LayoutGrid className="w-3 h-3" />
-            {t.monitor.activity_mode}
-          </button>
-          {/* Channels → Timeline: the 3-zone all-team channel workspace (team
-              filter · merged stream · Quick Answer). Always reachable so the
-              entry never disappears when no teams are loaded. */}
-          <button
-            type="button"
-            onClick={() => setViewMode((v) => (v === 'channels' ? 'fleet' : 'channels'))}
-            aria-pressed={viewMode === 'channels'}
-            title={t.monitor.channels_mode_title}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
-              viewMode === 'channels'
-                ? 'border-status-error/40 bg-status-error/15 text-status-error'
-                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
-            }`}
-          >
-            <MessagesSquare className="w-3 h-3" />
-            {t.monitor.channels_mode}
-          </button>
-          {/* Live-mode pop-ups on/off — always reachable here. */}
+              );
+            })}
+          </div>
+          {/* Live-mode pop-ups on/off — icon-only, always reachable here. */}
           <button
             type="button"
             onClick={toggleLiveMode}
             aria-pressed={liveMode}
+            aria-label={t.monitor.live_toggle}
             title={t.monitor.live_toggle_hint}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
+            className={`ml-1 inline-flex items-center justify-center p-1.5 rounded-full border transition-colors ${
               liveMode
                 ? 'border-status-success/40 bg-status-success/15 text-status-success'
                 : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
             }`}
           >
-            <Bell className="w-3 h-3" />
-            {t.monitor.live_toggle}
+            <Bell className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="ml-1 p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
+            className="p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
             aria-label={t.monitor.close}
             title={t.monitor.close_hint}
           >
@@ -305,79 +325,88 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         <MemoFleetActivityStrip />
       </div>
 
-      {/* System band — app-level activity with no persona (fleet view only) */}
-      {viewMode === 'fleet' && <SystemBand processes={systemProcesses} now={now} />}
+      {/* System band — app-level activity with no persona. It belongs above the
+          Activity board (the fleet read); the channel surfaces own their full
+          height and carry no persona-less work. */}
+      {view === 'activity' && <SystemBand processes={systemProcesses} now={now} />}
 
-      {/* Channel mode — multiple team channels in parallel */}
-      {viewMode === 'channels' ? (
-        <div className="relative z-10 flex-1 min-h-0">
-          <MonitorChannelGrid teams={teams} personas={personas} preset={channelPreset} />
+      {view === 'activity' ? (
+        /* Body — the fleet board with the drawer layered over it */
+        <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden px-5 py-4">
+            {loading && cards.length === 0 ? (
+              // First-ever cold open only (the warm cache in useMonitorData makes
+              // every re-open paint the last-known fleet immediately): permanent
+              // chrome above stays, and the body shows the shared delayed ghost
+              // instead of the view's settled empty state — "all clear" before
+              // the first read lands would be an empty-flash lie (law 1 / law 3).
+              <RouteChunkSkeleton showIcon showActions={false} />
+            ) : (
+              <FleetGridView
+                cards={cards}
+                personas={personas}
+                teams={teams}
+                selectedPersonaId={selection?.personaId ?? null}
+                onSelect={handleCardSelect}
+              />
+            )}
+          </div>
+
+          <AnimatePresence>
+            {selectedCard && selection && (
+              <>
+                <motion.div
+                  key="backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16 }}
+                  onClick={() => setSelection(null)}
+                  className="absolute inset-0 z-10 bg-background/55 backdrop-blur-sm"
+                />
+                <motion.div
+                  key="drawer"
+                  initial={{ y: '-100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '-100%' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 34 }}
+                  className="absolute inset-x-0 top-0 z-20 max-h-full flex flex-col rounded-b-modal border-b border-x border-primary/15 bg-background shadow-elevation-4"
+                >
+                  <MonitorDrawer
+                    card={selectedCard}
+                    initialSection={selection.section}
+                    designContext={selectedPersona?.design_context ?? null}
+                    isProcessing={isProcessing}
+                    now={now}
+                    onReviewAction={handleDrawerReviewAction}
+                    onMarkRead={handleDrawerMarkRead}
+                    onClose={closeDrawer}
+                  />
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
       ) : (
-      /* Body — project columns overview with the drawer layered over it */
-      <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden px-5 py-4">
-          {loading && displayCards.length === 0 ? (
-            // First-ever cold open only (the warm cache in useMonitorData makes
-            // every re-open paint the last-known fleet immediately): permanent
-            // chrome above stays, and the body shows the shared delayed ghost
-            // instead of the views' settled empty states — "all clear" before
-            // the first read lands would be an empty-flash lie (law 1 / law 3).
-            <RouteChunkSkeleton showIcon showActions={false} />
-          ) : viewMode === 'grid' ? (
-            <FleetGridView
-              cards={displayCards}
-              personas={personas}
-              teams={teams}
-              selectedPersonaId={selection?.personaId ?? null}
-              onSelect={handleCardSelect}
-            />
-          ) : (
-            <MonitorProjectColumns
-              cards={displayCards}
-              personas={personas}
-              teams={teams}
-              selectedPersonaId={selection?.personaId ?? null}
-              onSelect={handleCardSelect}
-            />
-          )}
-        </div>
-
-        <AnimatePresence>
-          {selectedCard && selection && (
-            <>
-              <motion.div
-                key="backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.16 }}
-                onClick={() => setSelection(null)}
-                className="absolute inset-0 z-10 bg-background/55 backdrop-blur-sm"
+        <div className="relative z-10 flex-1 min-h-0">
+          <div className="h-full p-2 hud-atmosphere">
+            {!hasChannels ? (
+              channelEmpty
+            ) : view === 'timeline' ? (
+              <Stream
+                teams={workspaceTeams}
+                onToggle={toggle}
+                allOn={allOn}
+                onSetAll={setAll}
+                initialCallsign={drillCallsign}
               />
-              <motion.div
-                key="drawer"
-                initial={{ y: '-100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '-100%' }}
-                transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-                className="absolute inset-x-0 top-0 z-20 max-h-full flex flex-col rounded-b-modal border-b border-x border-primary/15 bg-background shadow-elevation-4"
-              >
-                <MonitorDrawer
-                  card={selectedCard}
-                  initialSection={selection.section}
-                  designContext={selectedPersona?.design_context ?? null}
-                  isProcessing={isProcessing}
-                  now={now}
-                  onReviewAction={handleDrawerReviewAction}
-                  onMarkRead={handleDrawerMarkRead}
-                  onClose={closeDrawer}
-                />
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
+            ) : view === 'map' ? (
+              <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
+            ) : (
+              <ConversationBriefing teams={workspaceTeams} personas={personas} bridges={bridges} />
+            )}
+          </div>
+        </div>
       )}
 
       {/* Footer hint */}

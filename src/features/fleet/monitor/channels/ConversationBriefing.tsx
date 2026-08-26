@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, MessagesSquare, Scale, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody';
@@ -45,7 +45,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 type RailTab = 'focus' | 'reviews' | 'quick';
 
 export function ConversationBriefing({
-  teams, personas, bridges, layoutControl,
+  teams, personas, bridges,
 }: {
   teams: StreamTeam[];
   /** The workspace roster — feeds the sidebar's Personas group (W5). */
@@ -53,7 +53,6 @@ export function ConversationBriefing({
   /** Slack bridges keyed by team id — derived once by the workspace host (see
    *  `lib/channel/teamBridge`). Absent = nothing is bridged. */
   bridges?: Record<string, TeamSlackBridge>;
-  layoutControl?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -219,17 +218,14 @@ export function ConversationBriefing({
 
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
-      {layoutControl && (
-        <div className="flex-shrink-0 h-11 px-3 flex items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
-          <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-            <MessagesSquare className="w-3.5 h-3.5 text-foreground" />
-          </div>
-          <span className="typo-body font-semibold text-foreground">{t.monitor.conv_title}</span>
-          {/* Passive: the active project's Slack bridge, if it has one. */}
-          <LinkedChannelChip bridge={activeId ? bridges?.[activeId] : undefined} />
-          <div className="ml-auto">{layoutControl}</div>
+      <div className="flex-shrink-0 h-11 px-3 flex items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
+        <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+          <MessagesSquare className="w-3.5 h-3.5 text-foreground" />
         </div>
-      )}
+        <span className="typo-body font-semibold text-foreground">{t.monitor.conv_title}</span>
+        {/* Passive: the active project's Slack bridge, if it has one. */}
+        <LinkedChannelChip bridge={activeId ? bridges?.[activeId] : undefined} />
+      </div>
 
       <div className="flex-1 min-h-0 flex">
         <div className="flex-shrink-0 w-[280px] min-h-0">

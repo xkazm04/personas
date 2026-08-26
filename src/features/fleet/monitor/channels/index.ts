@@ -1,1 +1,1 @@
-export { MonitorChannelGrid } from './MonitorChannelGrid';
+export { useChannelWorkspace, type ChannelPreset } from './useChannelWorkspace';

@@ -113,12 +113,11 @@ export interface StreamProps {
   onToggle: (teamId: string) => void;
   allOn: boolean;
   onSetAll: (on: boolean) => void;
-  layoutControl?: ReactNode;
   /** Deep-link scope: open with the callsign lens pre-set to this persona. */
   initialCallsign?: string;
 }
 
-export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl, initialCallsign }: StreamProps) {
+export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign }: StreamProps) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [lens, setLens] = useState<LensState>(() =>
@@ -223,7 +222,6 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl, initia
               {tx(active === 1 ? t.monitor.stream_lens_one : t.monitor.stream_lens_other, { count: active })}
             </button>
           )}
-          {layoutControl}
         </div>
       </div>
 
