@@ -21,8 +21,8 @@ import { ProjectModal } from './ProjectModal';
 import { ProjectRowMenu } from './ProjectManagerParts';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { Users } from 'lucide-react';
-import { ProjectTeamPreviewModal } from './ProjectTeamPreviewModal';
-import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import { PersonaStack, usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
+import { useProjectTeamRosters } from './useProjectTeamRosters';
 // Workspace layer above projects (tabs direction, chosen 2026-07-24): the
 // strip files the page by workspace and the table keeps the full window width.
 import { MoveToWorkspaceButton } from '../sub_workspaces/MoveToWorkspaceButton';
@@ -44,7 +44,7 @@ import { scopeProjects, setActiveWorkspace, useWorkspaces } from '../sub_workspa
  * zero-projects CTA, which waits for the fetch to settle (law 5).
  */
 export default function ProjectManagerPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Store bindings
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const storeProjects = useSystemStore((s) => s.projects);
@@ -71,18 +71,23 @@ export default function ProjectManagerPage() {
     [allProjects, workspaces, activeWorkspaceId],
   );
 
-  // Teams roster for the bound-binding badges in the project table
-  // (cycle 5). Fetched on mount so the pills resolve immediately without
-  // per-row async lookups.
-  const teamsList = usePipelineStore((s) => s.teams);
+  // Each dev project owns exactly ONE team, so the table's Members column is
+  // the team: `fetchTeams()` fills BOTH `teams` and `teamCounts` in one pass,
+  // which is where the member NUMBER comes from — no per-row IPC for it.
   const fetchTeamsForBadge = usePipelineStore((s) => s.fetchTeams);
   useEffect(() => { void fetchTeamsForBadge(); }, [fetchTeamsForBadge]);
-  const teamNameById = new Map(teamsList.map((tm) => [tm.id, { name: tm.name, color: tm.color }]));
-  const teamFullById = new Map<string, PersonaTeam>(teamsList.map((tm) => [tm.id, tm]));
+  const teamCounts = usePipelineStore((s) => s.teamCounts);
 
-  // Click-to-open team preview (cycle 11). Holds the team whose preview
-  // modal is open; closing nulls it.
-  const [previewingTeam, setPreviewingTeam] = useState<PersonaTeam | null>(null);
+  // ...and the persona ICONS come from one shared, batched roster cache keyed
+  // by teamId (see useProjectTeamRosters). Distinct ids only, memoised so the
+  // batch pass fires on a real change of the set and not on every render.
+  const visibleTeamIds = useMemo(
+    () => [...new Set(projects.map((p) => p.teamId).filter((id): id is string => !!id))].sort(),
+    [projects],
+  );
+  const rosters = useProjectTeamRosters(visibleTeamIds);
+  const personaIndex = usePersonaIndex();
+
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
   const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
@@ -216,15 +221,25 @@ export default function ProjectManagerPage() {
     setEditingProject(null);
   }, []);
 
+  // Navigation contract into the team detail — the project's team IS the
+  // Teams → Workspace surface. Store getState() rather than subscribing: this
+  // fires from a click, and subscribing would re-render the table on every
+  // unrelated selection change.
+  const enterTeam = useCallback((teamId: string) => {
+    usePipelineStore.getState().selectTeam(teamId);
+    useSystemStore.getState().setTeamsTab('workspace');
+  }, []);
+
   const handleSetActive = useCallback((id: string) => {
     setLocalActiveProject(id);
     setActiveProject?.(id);
   }, [setActiveProject]);
 
-  // Shared-table columns. Only the project name is bold; every other column is
-  // rendered at normal weight per the data-density pass. Row actions and the
-  // per-row / select-all checkboxes stop propagation so they never trigger the
-  // row's set-active click.
+  // Shared-table columns. Every column renders at normal weight — the name
+  // included (it was `typo-heading`/700 until the Projects consolidation; a
+  // bold value in every row of a peer list emphasises nothing). Row actions,
+  // the members button and the per-row / select-all checkboxes stop
+  // propagation so they never trigger the row's set-active click.
   const columns: TableColumn<Project>[] = [
     {
       key: 'select',
@@ -266,48 +281,49 @@ export default function ProjectManagerPage() {
       width: 'minmax(180px, 1.4fr)',
       sortable: true,
       sortFn: (a, b) => a.name.localeCompare(b.name),
+      // Normal weight, like the Teams table it replaces: the row is a list of
+      // peers, and a bolded name in every row emphasises nothing. The team tag
+      // that used to ride alongside is gone — the Members column below IS the
+      // team now, and says something the tag never did (who is on it).
       render: (project) => (
-        // typo-heading carries font-weight:700 and is defined un-layered, so it
-        // wins over the Tailwind weight utilities (which lose to the un-layered
-        // typo-* classes). This makes the name the genuinely-heaviest cell; the
-        // other columns stay on muted typo-caption (500) so they read lighter.
-        <span className="typo-heading text-foreground flex items-center gap-2 min-w-0">
+        <span className="typo-body text-foreground flex items-center gap-2 min-w-0">
           <span className="truncate">{project.name}</span>
-          {project.teamId && (() => {
-            const teamMeta = teamNameById.get(project.teamId);
-            const teamFull = teamFullById.get(project.teamId);
-            const baseClass =
-              'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-normal flex-shrink-0';
-            const style = teamMeta?.color
-              ? { backgroundColor: `${teamMeta.color}1a`, borderColor: `${teamMeta.color}66`, color: teamMeta.color }
-              : undefined;
-            if (teamFull) {
-              return (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setPreviewingTeam(teamFull); }}
-                  className={`${baseClass} cursor-pointer hover:scale-105 active:scale-95 transition-transform`}
-                  style={style}
-                  title={t.plugins.dev_projects.team_binding_preview_title}
-                >
-                  <Users className="w-3 h-3" />
-                  {teamMeta?.name}
-                </button>
-              );
-            }
-            return (
-              <span
-                className={baseClass}
-                style={style}
-                title={t.plugins.dev_projects.team_binding_orphan}
-              >
-                <Users className="w-3 h-3" />
-                {t.plugins.dev_projects.team_binding_orphan_label}
-              </span>
-            );
-          })()}
         </span>
       ),
+    },
+    {
+      key: 'members',
+      label: t.pipeline.team_studio.col_members,
+      width: '120px',
+      // The project's one team, rendered as its roster. Clicking enters the
+      // team detail (Teams → Workspace). The row itself is a plain `div` with
+      // an onClick (UnifiedTable), not a button — so a real <button> here is
+      // valid markup; it just has to stop the row's set-active click.
+      render: (project) => {
+        const teamId = project.teamId;
+        // Auto-created teams are backfilled asynchronously, so a project can
+        // legitimately have no team yet. Inert em-dash, never a broken button.
+        if (!teamId) {
+          return <span className="typo-caption text-foreground opacity-40">&mdash;</span>;
+        }
+        const roster = rosters.get(teamId);
+        // Count paints on the first frame from `teamCounts`; the roster refines
+        // it once the batched fetch lands.
+        const count = roster?.length ?? teamCounts[teamId]?.members ?? 0;
+        return (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); enterTeam(teamId); }}
+            aria-label={tx(count === 1 ? t.pipeline.team_studio.members_count_one : t.pipeline.team_studio.members_count_other, { count })}
+            className="inline-flex items-center gap-1.5 h-7 px-1.5 rounded-interactive text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            {roster && roster.length > 0
+              ? <PersonaStack ids={[...roster]} index={personaIndex} max={3} />
+              : <Users className={`w-3.5 h-3.5 ${count === 0 ? 'opacity-40' : ''}`} />}
+            <span className={`typo-caption tabular-nums text-foreground ${count === 0 ? 'opacity-40' : ''}`}>{count}</span>
+          </button>
+        );
+      },
     },
     {
       key: 'tech',
@@ -516,13 +532,6 @@ export default function ProjectManagerPage() {
         onClose={() => setShowCrossProjectMap(false)}
       />
 
-      {previewingTeam && (
-        <ProjectTeamPreviewModal
-          open
-          team={previewingTeam}
-          onClose={() => setPreviewingTeam(null)}
-        />
-      )}
     </ContentBox>
   );
 }

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SlidersHorizontal, ArrowLeft, Users, Settings, Brain } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTeamStudioData } from './useTeamStudioData';
 import { TeamWorkspacePane } from './TeamWorkspacePane';
 import { useTeamPresence, type PresenceStatus } from '../../sub_collab/useTeamChannel';
@@ -37,7 +38,13 @@ import { TeamPublishButton } from './TeamPublishButton';
 interface TeamStudioSplitVariantProps {
   teamId: string;
   teamName: string;
-  /** Return to the Teams table (deselect the team). */
+  /**
+   * Host-specific extra to run AFTER the studio has left. Leaving is NOT the
+   * host's decision any more: a dev project owns exactly one team, so "back"
+   * always means the Projects (Manage) table, and the studio performs that
+   * navigation itself (`selectTeam(null)` + `setTeamsTab('projects')`). This
+   * stays for any host that needs to clean up on top of it.
+   */
   onBack?: () => void;
 }
 
@@ -67,13 +74,26 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
     if (mode.kind === 'workspace' && workspaceDirty.current && next.kind !== 'workspace') setPendingNav(next);
     else setMode(next);
   };
+  /**
+   * The single exit. Projects are the first page of this module and each
+   * project owns one team, so leaving the studio always lands back on the
+   * Manage table — deselect the team, then switch the Teams sub-tab to
+   * `projects`. `selectTeam(null)` is idempotent, so a host's own `onBack`
+   * repeating it is harmless.
+   */
+  const leaveToProjects = useCallback(() => {
+    usePipelineStore.getState().selectTeam(null);
+    useSystemStore.getState().setTeamsTab('projects');
+    onBack?.();
+  }, [onBack]);
+
   const requestBack = () => {
     if (mode.kind === 'workspace' && workspaceDirty.current) setPendingNav('back');
-    else onBack?.();
+    else leaveToProjects();
   };
   const confirmNav = () => {
     workspaceDirty.current = false;
-    if (pendingNav === 'back') onBack?.();
+    if (pendingNav === 'back') leaveToProjects();
     else if (pendingNav) setMode(pendingNav);
     setPendingNav(null);
   };
@@ -119,7 +139,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {ts.teams_header_label}
+                {t.plugins.dev_tools.projects_title}
               </button>
             ) : null}
           </div>
