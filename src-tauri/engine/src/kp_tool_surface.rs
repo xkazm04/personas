@@ -1,8 +1,9 @@
-//! kp-bridge tool surface — the allowed-tool constraint a kp hire carries.
+//! kp-bridge requested surface — the allowed-tool **and allowed-connector**
+//! constraint a kp hire carries.
 //!
 //! # Why this exists
 //!
-//! A kp hire request names the tool surface it wants: `spec.connectors` is
+//! A kp hire request names the surface it wants: `spec.connectors` is
 //! typically `["github"]` for an App master. The one-shot build's design pass
 //! is free-running though — it reads the intent and invents whatever tool
 //! vocabulary it likes, and on the 2026-08-24 live bench two of five real
@@ -16,13 +17,49 @@
 //! The gate was right. The build was over-provisioning.
 //!
 //! The fix is subtractive and lives in data, not in prompt wording: a kp hire
-//! stamps what it asked for onto [`KpLink`], and the build's two tool-consuming
+//! stamps what it asked for onto [`KpLink`], and the build's two IR-consuming
 //! chokepoints — the verification pass and the promote-time attach — run the
-//! IR through [`constrain_agent_ir`] first. Tools outside the requested surface
-//! are dropped before they can be counted, so the gate exercises a small, real
-//! surface instead of holding on an invented one.
+//! IR through [`constrain_agent_ir`] first. Entries outside the requested
+//! surface are dropped before they can be counted, so the gate exercises a
+//! small, real surface instead of holding on an invented one.
 //!
-//! # The allowed set
+//! # Connectors, and why they came second (2026-08-26)
+//!
+//! The 2026-08-24 pass deliberately stopped at tools and left
+//! `required_connectors` alone — the bench evidence named tools, and
+//! connectors additionally drive credential injection, connector readiness and
+//! `setup_detail`. Bench sweep #23 (2026-08-26, the first hire on the `ascent`
+//! repo) then produced the connector-shaped version of the same defect: the
+//! codebase mentions GCP, so the design pass attached a **Google** connector,
+//! and the build died outright on
+//!
+//! ```text
+//! Validation error: Google OAuth client credentials are missing.
+//! Set one of: GCP_DESKTOP_CLIENT_ID/… — the hire only asked for ["github"].
+//! ```
+//!
+//! An over-provisioned *tool* costs a held promotion. An over-provisioned
+//! *connector* costs more, because the connector is what carries a **credential
+//! requirement** into every downstream pass: `run_tool_tests`' connector-driven
+//! injection walks `required_connectors` and reaches the OAuth resolvers per
+//! connector, and promote resolves the same list into `credentialLinks`,
+//! `setup_status` and `setup_detail`.
+//!
+//! One honest limit on that post-mortem, so nobody reads more into this module
+//! than it earns: the frame that *propagated* sweep #23's string was never
+//! pinned down (most of the build path `.ok()`s the OAuth resolver's error, and
+//! the one chain that propagates it sits behind `PERSONAS_SCRIPTED_TOOL_TESTS`,
+//! set nowhere in the repo). The fix is not "we found the `?`" — it is that a
+//! connector the hire never requested has no business being in the IR on any of
+//! those paths.
+//!
+//! So the same rule now applies to `required_connectors` — and to the
+//! `service_flow` steps
+//! [`AgentIr::effective_connectors_json`] falls back to when
+//! `required_connectors` is empty, which would otherwise re-mint the connector
+//! the trim had just removed.
+//!
+//! # The allowed set — tools
 //!
 //! A tool survives when **any** of these holds:
 //!
@@ -49,20 +86,36 @@
 //!
 //! Everything else is dropped.
 //!
+//! # The allowed set — connectors
+//!
+//! A connector (`agent_ir.required_connectors[]`, and the `service_flow` steps
+//! that stand in for it) survives when **either**:
+//!
+//! 1. it belongs to a **requested connector** — its name or its declared
+//!    `service_type` matches one of `spec.connectors`, by the same
+//!    [`matches_connector`] rule the tool pass uses, so "a github connector"
+//!    and "a github tool" mean the same thing; or
+//! 2. it **binds no user credential**, and therefore cannot reach the
+//!    credential/OAuth validation this constraint exists to keep off a hire's
+//!    path. Two sources, unioned: the code-authored [`BASELINE_CONNECTORS`]
+//!    (platform-internal names the backend recognises itself), and whatever
+//!    the caller resolved out of the live connector catalog as non-`Credential`
+//!    class — `codebase`, `local_drive`, `twin`, … See
+//!    [`KpToolSurface::with_credential_free_connectors`]. A name the catalog
+//!    does not know is treated as credential-bearing and dropped: fail closed,
+//!    because a model-invented connector name is exactly the case that
+//!    produced sweep #23.
+//!
 //! # What this deliberately does NOT do
 //!
-//! * It never **adds** a tool. The pass is purely subtractive: an allowed name
-//!   that the design pass did not emit stays absent.
-//! * It does not touch `required_connectors`. An over-provisioned *connector*
-//!   can also produce an unverified entry, but the bench evidence named tools,
-//!   and connectors additionally drive credential injection, connector
-//!   readiness and `setup_detail`. Narrowing them is a separate, larger change.
+//! * It never **adds** anything. The pass is purely subtractive: an allowed
+//!   name that the design pass did not emit stays absent.
 //! * It does nothing at all without a [`KpLink`]. A build that did not
 //!   originate from a kp hire is untouched, by construction: the caller has no
 //!   surface to hand this function.
 
 use personas_core::models::{parse_design_context, KpLink};
-use personas_db::models::agent_ir::{AgentIr, AgentIrTool, AgentIrUseCase};
+use personas_db::models::agent_ir::{AgentIr, AgentIrConnector, AgentIrTool, AgentIrUseCase};
 
 // ============================================================================
 // The policy lists
@@ -105,6 +158,27 @@ pub const COMMAND_TOOLS: &[&str] = &[
     "shell",
 ];
 
+/// Platform-internal connector names that never bind a user credential.
+///
+/// Mirrors `build_session::tool_tests::PLATFORM_CONNECTORS`, which is the
+/// verification gate's own copy of the same idea (it uses the list to decide
+/// which connectors are the backend's rather than the user's). Kept separate
+/// for the same reason as [`TRANSPORT_TOOLS`] — this one is a *policy* about
+/// what a kp hire may declare, not a mechanism — but the two are meant to name
+/// the same connectors, so change them together.
+///
+/// Matched EXACTLY, deliberately: the gate's list carries the same warning,
+/// because a prefix test let a model-authored `personas_gmail` mint itself an
+/// auto-pass.
+pub const BASELINE_CONNECTORS: &[&str] = &[
+    "personas_database",
+    "personas_messages",
+    "personas_vector_db",
+    "messaging",
+    "database",
+    "builtin",
+];
+
 // ============================================================================
 // The surface
 // ============================================================================
@@ -121,6 +195,17 @@ pub struct KpToolSurface {
     /// The mandate named approval-gate commands, so a command runner is part
     /// of the mandated surface.
     pub runs_commands: bool,
+    /// Connector names that bind no user credential, resolved by the caller
+    /// from the live connector catalog (`ConnectorClass` other than
+    /// `Credential`: `codebase`, `local_drive`, `twin`, …).
+    ///
+    /// Not part of what the hire *requested* — part of what the constraint has
+    /// no reason to take away. This module is pure and the catalog lives in
+    /// SQLite, so the DB glue fills it via
+    /// [`Self::with_credential_free_connectors`]. Empty is the safe default:
+    /// the constraint then falls back to [`BASELINE_CONNECTORS`] alone and
+    /// drops more, never less.
+    pub credential_free_connectors: Vec<String>,
 }
 
 impl KpToolSurface {
@@ -134,7 +219,26 @@ impl KpToolSurface {
                 .filter(|c| !c.is_empty())
                 .collect(),
             runs_commands: link.runs_commands,
+            credential_free_connectors: Vec::new(),
         }
+    }
+
+    /// Add the catalog-resolved credential-free connector names.
+    ///
+    /// Builder-shaped because [`Self::from_design_context`] is the parse step
+    /// and this is the DB step: the caller that has a pool attaches it, and a
+    /// caller that does not simply constrains harder.
+    pub fn with_credential_free_connectors<I, S>(mut self, names: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        self.credential_free_connectors = names
+            .into_iter()
+            .map(|n| n.as_ref().trim().to_lowercase())
+            .filter(|n| !n.is_empty())
+            .collect();
+        self
     }
 
     /// Does this persona's `design_context` carry a kp hire's tool surface?
@@ -175,7 +279,94 @@ impl KpToolSurface {
             .iter()
             .any(|connector| matches_connector(&lower, cred.as_deref(), connector))
     }
+
+    /// Is this **connector** (with its optional declared `service_type`) inside
+    /// the set?
+    ///
+    /// Same matching rule as [`Self::allows`] — connector name or credential
+    /// type, bidirectional substring, short-name guard — over a different
+    /// baseline: a connector is never "transport" and never a command runner,
+    /// but it *is* allowed when it binds no user credential and so can never
+    /// reach the credential validation this constraint protects.
+    pub fn allows_connector(&self, name: &str, service_type: Option<&str>) -> bool {
+        let lower = normalize_connector_name(name);
+        if lower.is_empty() {
+            // An unnamed connector is not a connector — and it is exactly what
+            // `SetupKind::Misconfigured` exists to fail closed on downstream.
+            return false;
+        }
+
+        if self.is_credential_free(&lower) {
+            return true;
+        }
+
+        let service = service_type
+            .map(normalize_connector_name)
+            .filter(|s| !s.is_empty());
+        if service
+            .as_deref()
+            .is_some_and(|s| self.is_credential_free(s))
+        {
+            return true;
+        }
+
+        self.requested_connectors
+            .iter()
+            .any(|connector| matches_connector(&lower, service.as_deref(), connector))
+    }
+
+    /// Does this connector name bind no user credential?
+    fn is_credential_free(&self, lower: &str) -> bool {
+        BASELINE_CONNECTORS.contains(&lower)
+            || self.credential_free_connectors.iter().any(|c| c == lower)
+    }
 }
+
+/// Fold a connector name to the form the rest of the pipeline uses.
+///
+/// `AgentIr::effective_connectors_json` derives a connector from a
+/// `service_flow` step with exactly this normalization (`"Google Drive"` →
+/// `google_drive`), so matching on anything else would let a flow step and the
+/// connector it mints disagree about whether they were requested.
+fn normalize_connector_name(raw: &str) -> String {
+    raw.trim().to_lowercase().replace(' ', "_")
+}
+
+/// The connector a `service_flow` step names, if it names one.
+///
+/// Two shapes reach here. The current design prompt emits objects
+/// (`{"connector_name": "...", "action_label": ..., "order": ...}`); legacy
+/// payloads emit bare service strings, which is the shape
+/// `effective_connectors_json` reads. A step that names nothing is left alone —
+/// it declares no connector, so it cannot over-provision one.
+fn flow_step_connector(step: &serde_json::Value) -> Option<String> {
+    let raw = if let Some(s) = step.as_str() {
+        s.to_string()
+    } else {
+        let mut found = None;
+        for key in ["connector_name", "connector", "name", "service"] {
+            if let Some(s) = step.get(key).and_then(|v| v.as_str()) {
+                if !s.trim().is_empty() {
+                    found = Some(s.to_string());
+                    break;
+                }
+            }
+        }
+        found?
+    };
+    // The two names `effective_connectors_json` itself refuses to derive a
+    // connector from. A step that mints no connector cannot over-provision
+    // one, so it is not this pass's business.
+    if FLOW_STEPS_WITHOUT_CONNECTORS.contains(&normalize_connector_name(&raw).as_str()) {
+        return None;
+    }
+    Some(raw)
+}
+
+/// `service_flow` steps that name a platform capability rather than a
+/// connector. Mirrors the two exclusions in
+/// `AgentIr::effective_connectors_json`.
+const FLOW_STEPS_WITHOUT_CONNECTORS: &[&str] = &["local_database", "in-app_messaging"];
 
 /// Does this tool belong to `connector`?
 ///
@@ -216,26 +407,99 @@ pub struct ToolSurfaceTrim {
     /// it tests — a hint left behind would re-introduce the tool the gate then
     /// holds on.
     pub removed_tool_hints: Vec<String>,
+    /// `agent_ir.required_connectors[]` entries dropped, by name. These are the
+    /// expensive ones: a connector reaches credential injection and connector
+    /// readiness, and an unrequested OAuth connector can fail the hire outright
+    /// (bench sweep #23).
+    pub removed_connectors: Vec<String>,
+    /// `agent_ir.service_flow[]` steps dropped, by the connector they named.
+    /// Reported separately because `effective_connectors_json` derives
+    /// connectors from these when `required_connectors` is empty — a step left
+    /// behind would re-mint the connector this pass had just removed.
+    pub removed_flow_steps: Vec<String>,
 }
 
 impl ToolSurfaceTrim {
     /// Nothing was outside the allowed set.
     pub fn is_empty(&self) -> bool {
-        self.removed_tools.is_empty() && self.removed_tool_hints.is_empty()
+        self.removed_tools.is_empty()
+            && self.removed_tool_hints.is_empty()
+            && self.removed_connectors.is_empty()
+            && self.removed_flow_steps.is_empty()
     }
 
-    /// Total entries dropped across both lists.
+    /// Total entries dropped across every list.
     pub fn len(&self) -> usize {
-        self.removed_tools.len() + self.removed_tool_hints.len()
+        self.removed_tools.len()
+            + self.removed_tool_hints.len()
+            + self.removed_connectors.len()
+            + self.removed_flow_steps.len()
+    }
+
+    /// Operator-readable lines for `setup_detail.notes`.
+    ///
+    /// Same shape as `DesignHygieneReport::notes()`: one flat list of "what the
+    /// build had to change on your behalf". Only connectors and flow steps are
+    /// reported here — a dropped *tool* is invisible to the operator's setup
+    /// decisions, while a dropped connector is precisely the thing that would
+    /// otherwise show up as a credential blocker they are being asked to fix.
+    pub fn notes(&self) -> Vec<String> {
+        let mut out =
+            Vec::with_capacity(self.removed_connectors.len() + self.removed_flow_steps.len());
+        for name in &self.removed_connectors {
+            out.push(format!(
+                "kp hire: dropped connector `{name}` — the hire request did not ask for it"
+            ));
+        }
+        for name in &self.removed_flow_steps {
+            out.push(format!(
+                "kp hire: dropped service-flow step for `{name}` — the hire request did not ask for it"
+            ));
+        }
+        out
     }
 }
 
-/// Constrain a kp hire's built IR to the tool surface the request asked for.
+/// Constrain a kp hire's built IR to the surface the request asked for.
 ///
-/// Subtractive only — see the module docs for the allowed set. Returns what was
-/// dropped so the caller can log and count it.
+/// Subtractive only — see the module docs for the allowed sets. Returns what
+/// was dropped so the caller can log, count and report it.
+///
+/// Order matters: connectors are trimmed **before** `service_flow`, so that a
+/// build whose `required_connectors` the trim empties cannot fall back through
+/// [`AgentIr::effective_connectors_json`] onto flow steps that name the
+/// connector just removed.
 pub fn constrain_agent_ir(ir: &mut AgentIr, surface: &KpToolSurface) -> ToolSurfaceTrim {
     let mut trim = ToolSurfaceTrim::default();
+
+    ir.required_connectors.retain(|connector| {
+        let (name, service_type) = match connector {
+            AgentIrConnector::Simple(s) => (s.clone(), None),
+            AgentIrConnector::Structured(d) => (
+                d.name.clone().unwrap_or_default(),
+                d.service_type.as_deref(),
+            ),
+        };
+        if surface.allows_connector(&name, service_type) {
+            true
+        } else {
+            trim.removed_connectors.push(name);
+            false
+        }
+    });
+
+    ir.service_flow
+        .retain(|step| match flow_step_connector(step) {
+            None => true,
+            Some(name) => {
+                if surface.allows_connector(&name, None) {
+                    true
+                } else {
+                    trim.removed_flow_steps.push(name);
+                    false
+                }
+            }
+        });
 
     ir.tools.retain(|tool| {
         let name = tool.name().to_string();
@@ -284,13 +548,24 @@ pub fn constrain_agent_ir(ir: &mut AgentIr, surface: &KpToolSurface) -> ToolSurf
 #[cfg(test)]
 mod tests {
     use super::*;
-    use personas_db::models::agent_ir::{AgentIrToolData, AgentIrUseCaseData};
+    use personas_db::models::agent_ir::{
+        AgentIrConnectorData, AgentIrToolData, AgentIrUseCaseData,
+    };
 
     fn github_surface() -> KpToolSurface {
         KpToolSurface {
             requested_connectors: vec!["github".to_string()],
             runs_commands: false,
+            credential_free_connectors: Vec::new(),
         }
+    }
+
+    fn connector(name: &str, service_type: Option<&str>) -> AgentIrConnector {
+        AgentIrConnector::Structured(AgentIrConnectorData {
+            name: Some(name.to_string()),
+            service_type: service_type.map(str::to_string),
+            ..Default::default()
+        })
     }
 
     fn simple(name: &str) -> AgentIrTool {
@@ -381,6 +656,7 @@ mod tests {
         let with = KpToolSurface {
             requested_connectors: vec!["github".to_string()],
             runs_commands: true,
+            ..Default::default()
         };
         assert!(with.allows("run_command", None));
         assert!(with.allows("bash", None));
@@ -436,15 +712,130 @@ mod tests {
         assert_eq!(ir.tools.len(), before);
     }
 
+    // ------------------------------------------------------------------
+    // Connectors (sweep #23)
+    // ------------------------------------------------------------------
+
+    /// The live shape of bench sweep #23: the hire asked for `["github"]`, the
+    /// `ascent` codebase mentions GCP, and the design pass attached a Google
+    /// connector on top. The build then died on
+    /// `Google OAuth client credentials are missing`.
+    #[test]
+    fn sweep_23_shape_drops_the_unrequested_google_connector() {
+        let mut ir = AgentIr {
+            required_connectors: vec![
+                connector("github", Some("github")),
+                connector("google_calendar", Some("google")),
+            ],
+            tools: vec![simple("github_create_pr"), simple("file_read")],
+            ..Default::default()
+        };
+        let trim = constrain_agent_ir(&mut ir, &github_surface());
+
+        let kept: Vec<&str> = ir
+            .required_connectors
+            .iter()
+            .filter_map(|c| c.name())
+            .collect();
+        assert_eq!(kept, vec!["github"]);
+        assert_eq!(trim.removed_connectors, vec!["google_calendar"]);
+        // The tools the hire DID ask for are untouched by the connector pass.
+        assert_eq!(ir.tools.len(), 2);
+        // And the operator is told, in the surface they read setup from.
+        assert_eq!(
+            trim.notes(),
+            vec![
+                "kp hire: dropped connector `google_calendar` — the hire request did not ask for it"
+            ]
+        );
+    }
+
+    #[test]
+    fn connector_match_reads_the_declared_service_type() {
+        let s = github_surface();
+        // Name says nothing; the declared service_type does.
+        assert!(s.allows_connector("source_control", Some("github")));
+        assert!(!s.allows_connector("source_control", None));
+        // Bidirectional substring, same as the tool rule.
+        assert!(s.allows_connector("github_enterprise", None));
+        assert!(!s.allows_connector("gmail", None));
+        assert!(!s.allows_connector("google_drive", Some("google")));
+        // Blank names are dropped, not waved through.
+        assert!(!s.allows_connector("", None));
+        assert!(!s.allows_connector("   ", None));
+    }
+
+    #[test]
+    fn credential_free_connectors_are_never_taken_away() {
+        // Code-authored baseline (mirrors tool_tests::PLATFORM_CONNECTORS).
+        let s = github_surface();
+        assert!(s.allows_connector("personas_messages", None));
+        assert!(s.allows_connector("database", None));
+        // …and whatever the caller resolved out of the catalog as non-Credential.
+        let with_catalog =
+            github_surface().with_credential_free_connectors(["Codebase", "local_drive", "  "]);
+        assert_eq!(
+            with_catalog.credential_free_connectors,
+            vec!["codebase", "local_drive"]
+        );
+        assert!(with_catalog.allows_connector("codebase", None));
+        assert!(with_catalog.allows_connector("local_drive", None));
+        // Fail closed on a name no catalog knows.
+        assert!(!with_catalog.allows_connector("google_drive", None));
+        // Exact match only — a model-authored `personas_gmail` mints nothing.
+        assert!(!s.allows_connector("personas_gmail", None));
+    }
+
+    /// `AgentIr::effective_connectors_json` derives connectors from
+    /// `service_flow` when `required_connectors` is empty — so a flow step left
+    /// behind would re-mint exactly the connector the trim just removed.
+    #[test]
+    fn service_flow_cannot_re_mint_a_dropped_connector() {
+        let mut ir = AgentIr {
+            required_connectors: vec![connector("google_drive", Some("google"))],
+            service_flow: vec![
+                serde_json::json!("Google Drive"),
+                serde_json::json!("Local Database"),
+                serde_json::json!({"connector_name": "github", "action_label": "Open PR", "order": 0}),
+                serde_json::json!({"connector_name": "gmail", "action_label": "Send mail", "order": 1}),
+                serde_json::json!({"action_label": "Think", "order": 2}),
+            ],
+            ..Default::default()
+        };
+        let trim = constrain_agent_ir(&mut ir, &github_surface());
+
+        assert_eq!(trim.removed_connectors, vec!["google_drive"]);
+        assert_eq!(trim.removed_flow_steps, vec!["Google Drive", "gmail"]);
+        assert!(ir.required_connectors.is_empty());
+        // The fallback now derives nothing outside the requested surface.
+        let derived = ir.effective_connectors_json();
+        let names: Vec<String> = derived
+            .as_array()
+            .expect("array")
+            .iter()
+            .filter_map(|c| c.get("name").and_then(|n| n.as_str()).map(str::to_string))
+            .collect();
+        assert!(
+            !names.iter().any(|n| n.contains("google") || n == "gmail"),
+            "the service_flow fallback re-minted a dropped connector: {names:?}"
+        );
+        // The connector-less step and the platform step both survive.
+        assert_eq!(ir.service_flow.len(), 3);
+    }
+
     #[test]
     fn short_connector_names_do_not_wave_everything_through() {
         let s = KpToolSurface {
             requested_connectors: vec!["x".to_string()],
             runs_commands: false,
+            ..Default::default()
         };
         assert!(!s.allows("execute_sql", None));
         assert!(!s.allows("text_analysis", None));
         assert!(s.allows("x", None));
+        // Same guard on the connector side.
+        assert!(!s.allows_connector("google_drive", None));
+        assert!(s.allows_connector("x", None));
     }
 
     #[test]
@@ -477,12 +868,22 @@ mod tests {
         }
 
         // And the IR a non-kp build produces is byte-identical before/after,
-        // because the call site never gets a surface to pass.
+        // because the call site never gets a surface to pass — connectors and
+        // service flow included, which is what an ordinary Google-connector
+        // build depends on.
         let ir = AgentIr {
             tools: vec![
                 simple("text_analysis"),
                 simple("execute_sql"),
                 simple("slack_post_message"),
+            ],
+            required_connectors: vec![
+                connector("google_calendar", Some("google")),
+                connector("slack", None),
+            ],
+            service_flow: vec![
+                serde_json::json!("Google Drive"),
+                serde_json::json!({"connector_name": "slack", "order": 0}),
             ],
             use_cases: vec![uc_with_hints(&["ai_generation"])],
             ..Default::default()

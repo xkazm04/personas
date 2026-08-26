@@ -450,9 +450,9 @@ Two changes make it deterministic and observable (2026-08-23):
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
 
-### 10.5 The hire's tool surface — a build attaches only what was requested (2026-08-24)
+### 10.5 The hire's requested surface — a build attaches only what was asked for (2026-08-24, connectors 2026-08-26)
 
-A kp hire request names the tool surface it wants (`spec.connectors`, typically
+A kp hire request names the surface it wants (`spec.connectors`, typically
 `["github"]` for an App master). The one-shot build's design pass is free-running,
 so it used to invent whatever tool vocabulary it liked on top: the 2026-08-24 live
 bench had **two of five real builds** come back carrying `text_analysis`,
@@ -498,12 +498,79 @@ A tool survives when **any** of:
 
 Everything else is dropped.
 
+**The connectors (2026-08-26 — the gap this section used to leave open).** The
+first pass stopped at tools, on the reasoning that the bench evidence named tools
+and that connectors additionally drive credential injection, readiness and
+`setup_detail`. **Bench sweep #23** (2026-08-26, the first hire on the `ascent`
+repo) then produced the connector-shaped version of the same defect. The `ascent`
+codebase mentions GCP, so the design pass attached a **Google** connector on top
+of the `["github"]` the hire actually asked for, and the build died on
+
+```text
+Validation error: Google OAuth client credentials are missing.
+Set one of: GCP_DESKTOP_CLIENT_ID/GCP_DESKTOP_CLIENT_SECRET …
+```
+
+An over-provisioned *tool* costs a held promotion. An over-provisioned
+*connector* costs more, because a connector is the thing that carries a
+**credential requirement** into every downstream pass: `run_tool_tests`'
+connector-driven injection walks `agent_ir.required_connectors` and reaches the
+Google/Microsoft OAuth resolvers per connector (`engine/runner/credentials.rs`),
+and promote resolves the same list into `credentialLinks`, `setup_status` and
+`setup_detail`. A connector nobody asked for therefore turns a missing secret
+into the hire's problem.
+
+> Honest limit on the post-mortem: the frame that *propagated* sweep #23's string
+> was not pinned down. Most of the build path swallows the OAuth resolver's error
+> (`…().ok()` at `engine/runner/credentials.rs`), and the one chain that does
+> propagate it — `run_scripted_connector_tests` → `run_healthcheck` →
+> `resolve_oauth_token` — sits behind `PERSONAS_SCRIPTED_TOOL_TESTS`, which is set
+> nowhere in the repo. Do not read the fix as "we found the `?`". The fix is that
+> a connector the hire never requested has no business being in the IR at all, on
+> any of those paths.
+
+So `constrain_agent_ir` now trims connectors by the same rule. A connector
+survives when **either**:
+
+1. it belongs to a **requested connector** — its name or its declared
+   `service_type` matches, by the same bidirectional-substring rule with the same
+   short-name guard, so "a github connector" and "a github tool" mean the same
+   thing; or
+2. it **binds no user credential**, and so can never reach the validation this
+   exists to prevent. Two sources, unioned: the code-authored
+   `BASELINE_CONNECTORS` (mirrors `tool_tests::PLATFORM_CONNECTORS` —
+   `personas_database`, `messaging`, …, matched EXACTLY so a model-authored
+   `personas_gmail` mints nothing), plus whatever the DB glue resolved out of the
+   live catalog as `ConnectorClass` other than `Credential` — `codebase`,
+   `local_drive`, `twin`, `obsidian_memory`. An App master that lost `codebase`
+   would lose the project it was hired to own.
+
+A name the catalog does not know is credential-bearing and is dropped: fail
+closed, because a model-invented connector name is exactly what sweep #23 was.
+
+`service_flow` is trimmed in the same pass, and **before** it would matter:
+`AgentIr::effective_connectors_json` derives connectors from `service_flow` when
+`required_connectors` is empty, so a flow step left behind would re-mint the
+connector the trim had just removed. Both shapes are read (the current prompt's
+`{connector_name, action_label, order}` objects and legacy bare strings); a step
+that names no connector, and the two names the derivation itself excludes
+(`Local Database`, `In-App Messaging`), are left alone.
+
+Every connector and flow step dropped is logged one line per detach at `info`,
+counted in the summary line, **and** written into `setup_detail.notes` at promote
+next to the design-pass hygiene notes (§10.6) — a dropped connector is a fact
+about this persona's reach, and reach is what the operator reads that surface
+for.
+
 **The enforcement points.** `build_session::kp_surface::apply_kp_tool_surface` is
-the DB glue (read the link, log every detach) and is called at the two — and only
-two — places a build's tool set is consumed:
+the DB glue (read the link, resolve the credential-free connector names from the
+catalog, log every detach) and is called at the two — and only two — places a
+build's tool and connector sets are consumed:
 
 - `oneshot::run_test_pass`, **before** `run_tool_tests`, so the gate exercises a
-  small real surface instead of holding on an invented one;
+  small real surface instead of holding on an invented one — and so the
+  connector-driven credential injection inside `run_tool_tests` never reaches an
+  OAuth connector nobody requested;
 - `promote_build_draft_inner` (`commands/design/build_sessions.rs`), **before**
   `prepare_tool_actions`, so the persona is attached the same surface that was
   verified. Filtering only at test time would verify one set and ship another.
@@ -516,20 +583,24 @@ Limits worth knowing:
 
 - The pass is **purely subtractive**. An allowed name the design pass did not emit
   stays absent — nothing is injected to make a surface look complete.
-- It does **not** narrow `required_connectors`. An over-provisioned *connector*
-  can also produce an unverified entry, but connectors additionally drive
-  credential injection, connector readiness and `setup_detail`; the bench evidence
-  named tools. Open.
+- ~~It does **not** narrow `required_connectors`.~~ **Closed 2026-08-26** by the
+  connector rule above, after sweep #23 turned the open item into a dead build.
+- A legacy `kp_link` (written before 2026-08-24) carries an empty
+  `requested_connectors`, so it now vouches for **no connector at all** — the same
+  honest default the tool pass already applied. Such a hire keeps only its
+  credential-free connectors.
 - A hire whose design pass produces **nothing** inside the requested surface ends
   with zero tools, which `run_tool_tests` reports as the defensible empty pass.
   That is logged at `warn` rather than failed — it is a signal about the design
   pass, not about the persona.
-- The policy list `TRANSPORT_TOOLS` intentionally mirrors
-  `build_sessions::GENERIC_TOOL_NAMES`; they are meant to name the same tools, so
-  change them together.
+- The policy lists mirror lists elsewhere on purpose: `TRANSPORT_TOOLS` ↔
+  `build_sessions::GENERIC_TOOL_NAMES`, `BASELINE_CONNECTORS` ↔
+  `tool_tests::PLATFORM_CONNECTORS`. Each pair is meant to name the same things,
+  so change them together.
 
-Tested in `personas-engine` (11 checks in `kp_tool_surface`), where the crate's
-test binary actually runs — see §13.8 for why the pure logic lives there.
+Tested in `personas-engine` (15 checks in `kp_tool_surface`, 4 of them the
+connector rule), where the crate's test binary actually runs — see §13.8 for why
+the pure logic lives there.
 
 ### 10.6 Design-pass hygiene — a suggested trigger never fails the hire build (2026-08-25)
 
