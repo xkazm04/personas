@@ -358,7 +358,9 @@ mod tests {
                 ..Default::default()
             },
             probation_ends_at: "2026-09-22T00:00:00Z".into(),
+            hired_at: "2026-08-23T00:00:00Z".into(),
             review_cadence_days: 30,
+            budget_monthly_usd: None,
             retire_criteria: Vec::new(),
             probation_decided_at: None,
             probation_decision: None,

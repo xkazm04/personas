@@ -1022,6 +1022,10 @@ pub fn build_task_prompt(
          `npx tsc --noEmit`) are fine if quick.\n\
          - If the request is unclear or riskier than it looks, implement the smallest safe \
          first step and say what you'd do next — don't guess big.\n\
+         - Before that summary, verify against the request — from the files, not from \
+         memory: re-read each file you changed, confirm the change does what `## The change` \
+         asks and nothing it did not ask, and confirm every touched file is in a commit. \
+         Name anything you could not verify.\n\
          - Finish with a 2-4 sentence summary: what changed, which files, anything the \
          reviewer should look at.\n\
          - Then END THE SESSION: run /exit as your final action. You are an unattended \
@@ -1100,6 +1104,11 @@ mod tests {
         // awaiting-input and stalls the reflection (live finding 2026-07-04).
         assert!(backend.contains("/exit"));
         assert!(frontend.contains("/exit"));
+        // Both carry a self-check against the request (registry technique
+        // task-envelope: locate / done / check) — the check reads the files,
+        // not the model's memory of them.
+        assert!(backend.contains("verify against the request"));
+        assert!(frontend.contains("re-read each file you changed"));
     }
 
     fn test_pool() -> crate::db::UserDbPool {

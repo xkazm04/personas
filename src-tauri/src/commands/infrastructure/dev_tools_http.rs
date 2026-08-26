@@ -527,7 +527,9 @@ async fn create_project(
     // store its canonical form, so the confinement check downstream compares
     // against a real path rather than a string the caller invented.
     let root_path = canonical_project_root(&b.root_path).map_err(bad_request)?;
-    let p = repo::create_project(
+    // Same identity door as the Tauri command: idempotent re-register,
+    // marker-proven relocation, clone collision refused.
+    let p = crate::db::project_identity::register_project(
         &db(&s),
         &b.name,
         &root_path,

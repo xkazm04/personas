@@ -11,7 +11,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildSummariseChatPrompt } from "../../src/features/overview/sub_messages/libs/chatSeed";
+import { buildSummariseChatPrompt } from "../../src/features/overview/sub_reports/libs/chatSeed";
 import type { PersonaMessage } from "../../src/lib/types/types";
 import type { PersonaManualReview } from "../../src/lib/bindings/PersonaManualReview";
 

@@ -160,6 +160,7 @@ pub mod tier;
 pub mod tool_outcome;
 pub mod topology_heuristic;
 pub mod topology_types;
+pub mod unattended;
 pub mod verification_command;
 pub mod workflow_compiler;
 pub mod workspace_projection;

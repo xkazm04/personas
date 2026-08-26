@@ -265,7 +265,7 @@ pub fn extract_review_policy_context(
 /// on a consistent, capable judge rather than the undeclared account default
 /// (typically Opus 4.8) — explicit + cost-predictable, mirroring the other
 /// headless judges (`SYNTHESIS_MODEL`, idea-scanner). (tiger finding.)
-const EVALUATOR_MODEL: &str = "claude-sonnet-4-6";
+const EVALUATOR_MODEL: &str = personas_core::model_ids::DEFAULT_BALANCED;
 
 /// Spawn the Claude CLI in single-turn print mode and pipe the prompt to
 /// stdin. Returns the raw assistant text (or an error on timeout / spawn

@@ -379,6 +379,22 @@ This doc set covers pillar 3. For pillar 1 see
   tab). Previously reverts were invisible — a reverted issue drops back to `open`
   and loses its `auto_fixed` flag.
 
+### Terminal status: the result line beats the exit code
+
+The CLI's `result` line is the turn's terminal fact (`is_error`, `subtype`). Since
+2026-08-25 the runner reads it **before** the process exit code:
+
+- `is_error: true` → `failed`, with an error naming the subtype
+  (`error_max_turns`, `error_during_execution`, …) even when the process exited 0.
+- no `result` line at all on a clean exit → `incomplete`, error
+  `Stream ended without a result line (missing_terminal_event)`. Exit 0 cannot
+  prove the turn finished; a killed or truncated stream is not a completion.
+- `is_error: false` → `completed`, then the existing outcome-assessment pass.
+
+Logic: `parser::terminal_verdict` (`src-tauri/engine/src/parser.rs`), consumed in
+`runner/mod.rs` "Build result". Doctrine:
+[`terminal-state-and-recovery.md`](../../concepts/golden-paths/terminal-state-and-recovery.md) §13.
+
 ## Common operations
 
 ### Fire an execution manually

@@ -137,6 +137,11 @@ pub(crate) struct KpKpiDelta {
 /// coverage gap and a present `0` as a measurement, so a guessed zero would be
 /// scored as a real, bad result. Where Personas has no ledger to read, it says
 /// nothing rather than something convenient.
+///
+/// **"In the period" below means the holder's TENURE inside the period** — the
+/// later of the month's start and this hire's `hiredAt`, filtered to this
+/// persona wherever the ledger names an actor. See [`app_master_rollup`]; the
+/// ledgers are project-scoped and a project outlives its App masters.
 #[derive(Debug, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct KpAppMasterRollup {
@@ -196,6 +201,13 @@ pub(crate) struct KpAppMasterRollup {
     pub budget_reserved_usd: Option<f64>,
     /// Real: the persona's settled month-to-date spend, the same number the
     /// Personas budget UI shows (`MONTHLY_SPEND_PREDICATE`).
+    ///
+    /// Already per-**persona** (`executions::get_monthly_rollup(persona_id)`),
+    /// so unlike the project-scoped ledgers it never carried another holder's
+    /// spend. It stays on the calendar-month boundary rather than the tenure
+    /// bound so it keeps matching the v1 `costUsd` in the same payload — and a
+    /// persona is created at hire, so its month-to-date spend is tenure-bounded
+    /// in practice anyway.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub budget_settled_usd: Option<f64>,
     /// True when the period has terminal runs but recorded **$0** — the
@@ -472,51 +484,13 @@ pub(crate) fn push_probation_review(
 /// uses, so the App master numbers and the v1 cost/run numbers cover exactly
 /// the same window. Two periods in one payload would make every ratio kp
 /// computes from them quietly wrong.
+///
+/// This is the *reporting period's* start. The tenure window can only move it
+/// **in** (never out), so the payload still describes one month — it just stops
+/// describing a hire that ended before this one began.
 fn utc_month_start() -> String {
     let now = chrono::Utc::now();
     format!("{}-01T00:00:00+00:00", now.format("%Y-%m"))
-}
-
-/// Night-run aggregates for one project since `since`: dispatched sessions,
-/// the governor's pre-dispatch reservation, and the recorded session ids (for
-/// the cross-ledger check).
-fn night_run_totals(
-    pool: &DbPool,
-    project_id: &str,
-    since: &str,
-) -> Option<(i64, f64, Vec<String>)> {
-    let conn = pool.get().ok()?;
-    let mut stmt = conn
-        .prepare(
-            "SELECT dispatched_count, projected_cost_usd, session_ids
-             FROM autopilot_night_runs
-             WHERE project_id = ?1 AND started_at >= ?2",
-        )
-        .ok()?;
-    let rows = stmt
-        .query_map(rusqlite::params![project_id, since], |r| {
-            Ok((
-                r.get::<_, i64>(0)?,
-                r.get::<_, f64>(1)?,
-                r.get::<_, Option<String>>(2)?,
-            ))
-        })
-        .ok()?;
-    let mut dispatched = 0i64;
-    let mut reserved = 0.0f64;
-    let mut sessions: Vec<String> = Vec::new();
-    let mut any = false;
-    for row in rows.flatten() {
-        any = true;
-        dispatched += row.0;
-        reserved += row.1;
-        if let Some(json) = row.2 {
-            if let Ok(ids) = serde_json::from_str::<Vec<String>>(&json) {
-                sessions.extend(ids);
-            }
-        }
-    }
-    any.then_some((dispatched, reserved, sessions))
 }
 
 /// Every session the night-run ledger claims to have dispatched should have a
@@ -543,8 +517,41 @@ fn ledger_consistent(pool: &DbPool, sessions: &[String]) -> Option<bool> {
     Some(true)
 }
 
-/// Read the project's App-master-seeded KPIs back as `kpiDeltas`.
-fn kpi_deltas(pool: &DbPool, project_id: &str) -> Vec<KpKpiDelta> {
+/// The KPI's value as it stood when this holder was hired, when the measurement
+/// history can say — the honest baseline for "what did THIS holder move".
+///
+/// `dev_kpis.baseline_value` is the number the hire dossier proposed and it is
+/// never rewritten, so on a re-hired project it is the PREVIOUS holder's
+/// starting line. The measurement series can do better: the last production
+/// reading at or before the hire is where the new holder actually started.
+///
+/// `None` — keep the stored baseline — when no reading predates the hire. A
+/// missing history is not a reason to invent a starting point.
+///
+/// `measured_at` is written by `datetime('now')` (space-separated, no offset)
+/// while `hired_at` is RFC-3339, so the comparison goes through SQLite's
+/// `datetime()` rather than string ordering. Simulated readings (`env` `local`
+/// / `test`) are excluded: they never rolled `current_value` forward, so they
+/// would be a baseline the current value is not comparable to.
+fn kpi_value_at(pool: &DbPool, kpi_id: &str, hired_at: &str) -> Option<f64> {
+    if hired_at.trim().is_empty() {
+        return None;
+    }
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT value FROM dev_kpi_measurements
+         WHERE kpi_id = ?1 AND env = 'production'
+           AND datetime(measured_at) <= datetime(?2)
+         ORDER BY datetime(measured_at) DESC LIMIT 1",
+        rusqlite::params![kpi_id, hired_at],
+        |r| r.get::<_, f64>(0),
+    )
+    .ok()
+}
+
+/// Read the project's App-master-seeded KPIs back as `kpiDeltas`, with each
+/// baseline re-anchored to the holder's hire time where the history allows.
+fn kpi_deltas(pool: &DbPool, project_id: &str, hired_at: &str) -> Vec<KpKpiDelta> {
     use crate::commands::companion::approvals::app_master_measure_config_kpi_key as kpi_key_of;
 
     crate::db::repos::dev_tools::list_kpis(pool, project_id, None)
@@ -557,8 +564,8 @@ fn kpi_deltas(pool: &DbPool, project_id: &str) -> Vec<KpKpiDelta> {
                 .and_then(|v| v.pointer("/appMaster/windowDays")?.as_i64())
                 .unwrap_or(30);
             Some(KpKpiDelta {
+                baseline: kpi_value_at(pool, &k.id, hired_at).or(k.baseline_value),
                 kpi_key: key,
-                baseline: k.baseline_value,
                 current: k.current_value,
                 target: k.target_value,
                 // Undo the seed-time `gte→up` / `lte→down` mapping.
@@ -576,8 +583,26 @@ fn kpi_deltas(pool: &DbPool, project_id: &str) -> Vec<KpKpiDelta> {
 /// Compute the v2 App master block for `persona_id`, or `None` when the persona
 /// is not an App master (the overwhelmingly common case: one design_context
 /// parse and out).
+///
+/// # The window (P6f, bench sweep #17 — 2026-08-25)
+///
+/// Every ledger this reads is scoped to the **project**, and a project outlives
+/// its App masters: the kp bench binds every scenario to the same `DevProject`
+/// (matched by `root_path`), so a previous hire's three dispatched proposals
+/// were being counted against a brand-new rung-0 hire whose own night was
+/// correctly `blocked: 1, dispatched: 0`.
+///
+/// So the readings are taken over the holder's **tenure**, not the project's
+/// month: `personas_engine::app_master::tenure_window` bounds them at the later
+/// of the reporting period's start and this holder's `hiredAt`, and every
+/// ledger that carries an actor column is filtered by the persona as well. This
+/// is the ONLY place that window is decided — the probation packet reads its
+/// backbone through this same function
+/// (`engine::app_master_probation::collect_backbone`), so the review card and
+/// the bench cannot disagree about which hire a number belongs to.
 pub(crate) fn app_master_rollup(
     pool: &DbPool,
+    persona_id: &str,
     design_context: Option<&str>,
     monthly_runs: i64,
     monthly_cost_usd: f64,
@@ -594,13 +619,26 @@ pub(crate) fn app_master_rollup(
             ..Default::default()
         });
     }
-    let since = utc_month_start();
+    // The one windowing decision. `record` is the project's CURRENT mandate;
+    // the tenure bound applies only when it is this persona's own (a former
+    // holder is separated from its successor by the persona filter, not by
+    // being clipped to a start date that was never its own).
+    let record = personas_engine::app_master::get_mandate(pool, &project_id);
+    let window =
+        personas_engine::app_master::tenure_window(&utc_month_start(), record.as_ref(), persona_id);
+    let since = window.since.clone();
+    let persona = window.persona_id.as_deref();
+    let hired_at = record
+        .as_ref()
+        .filter(|r| r.persona_id == persona_id)
+        .map(|r| r.hired_at.as_str())
+        .unwrap_or_default();
 
     let (proposals_opened, budget_reserved_usd, sessions) =
-        match night_run_totals(pool, &project_id, &since) {
-            Some((d, r, s)) => (Some(d), Some(r), s),
-            // No night run in the period: the engine has not run for this
-            // project, so there is no reservation ledger to read. Not zero.
+        match personas_engine::app_master::night_run_totals_since(pool, &project_id, &since) {
+            Some(t) => (Some(t.dispatched), Some(t.reserved_usd), t.session_ids),
+            // No night run in the window: the engine has not run for this
+            // holder, so there is no reservation ledger to read. Not zero.
             None => (None, None, Vec::new()),
         };
 
@@ -619,8 +657,12 @@ pub(crate) fn app_master_rollup(
 
     // P5a: the two ledgers that closed the three structural nulls. Both hand
     // back `None` for "no record exists", never a convenient zero.
-    let counts =
-        personas_engine::app_master_gates::proposal_counts_since(pool, &project_id, &since);
+    let counts = personas_engine::app_master_gates::proposal_counts_since(
+        pool,
+        &project_id,
+        persona,
+        &since,
+    );
 
     Some(KpAppMasterRollup {
         proposals_opened,
@@ -629,14 +671,18 @@ pub(crate) fn app_master_rollup(
         gate_pass_rate: personas_engine::app_master_gates::gate_pass_rate_since(
             pool,
             &project_id,
+            persona,
             &since,
         ),
+        // No persona predicate here, and none available: the violation event's
+        // holder lives in an encrypted payload. The tenure window IS the
+        // attribution for this one.
         forbidden_class_violations: personas_engine::app_master::count_violations_since(
             pool,
             &project_id,
             &since,
         ),
-        kpi_deltas: Some(kpi_deltas(pool, &project_id)),
+        kpi_deltas: Some(kpi_deltas(pool, &project_id, hired_at)),
         budget_reserved_usd,
         budget_settled_usd: Some(monthly_cost_usd),
         budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
@@ -791,6 +837,7 @@ pub(crate) async fn kp_rollup_tick_summary(
             connector_uses,
             app_master: app_master_rollup(
                 pool,
+                &persona_id,
                 design_context.as_deref(),
                 rollup.runs,
                 rollup.cost_usd,

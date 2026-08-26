@@ -24,4 +24,17 @@ triggers: Array<string>,
 /**
  * A plain-language summary of what the persona needs and when it runs.
  */
-preview: string, };
+preview: string, 
+/**
+ * What the build had to change on the operator's behalf, in order —
+ * today, the design-pass hygiene pass
+ * (`validation::design_pass_hygiene`): every field whose unresolved
+ * `{{…}}` placeholder was defaulted, and every trigger that lost its
+ * autonomy because no honest default existed. A build that silently drops
+ * a schedule and then reads "runs on its own" is the failure this list
+ * prevents.
+ *
+ * `#[serde(default)]` — rows written before 2026-08-25 have no `notes`
+ * key and deserialize to an empty list.
+ */
+notes: Array<string>, };

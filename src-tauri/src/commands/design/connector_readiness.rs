@@ -190,6 +190,18 @@ pub struct PersonaSetup {
     pub triggers: Vec<String>,
     /// A plain-language summary of what the persona needs and when it runs.
     pub preview: String,
+    /// What the build had to change on the operator's behalf, in order —
+    /// today, the design-pass hygiene pass
+    /// (`validation::design_pass_hygiene`): every field whose unresolved
+    /// `{{…}}` placeholder was defaulted, and every trigger that lost its
+    /// autonomy because no honest default existed. A build that silently drops
+    /// a schedule and then reads "runs on its own" is the failure this list
+    /// prevents.
+    ///
+    /// `#[serde(default)]` — rows written before 2026-08-25 have no `notes`
+    /// key and deserialize to an empty list.
+    #[serde(default)]
+    pub notes: Vec<String>,
 }
 
 /// Capabilities Claude Code provides natively (WebSearch, WebFetch, Bash,
@@ -656,10 +668,12 @@ fn assemble_preview(
 
 /// Build the structured `PersonaSetup` written to `personas.setup_detail`.
 /// `blockers` is the not-ready connector set (from `missing_connectors`);
-/// `trigger_types` is the persona's wired trigger types.
+/// `trigger_types` is the persona's wired trigger types; `notes` is what the
+/// build had to change on the operator's behalf (see [`PersonaSetup::notes`]).
 pub fn build_persona_setup(
     blockers: Vec<SetupBlocker>,
     trigger_types: Vec<String>,
+    notes: Vec<String>,
 ) -> PersonaSetup {
     let has_autonomous_trigger = trigger_types.iter().any(|t| t.as_str() != "manual");
     let preview = assemble_preview(&blockers, &trigger_types, has_autonomous_trigger);
@@ -668,6 +682,7 @@ pub fn build_persona_setup(
         has_autonomous_trigger,
         triggers: trigger_types,
         preview,
+        notes,
     }
 }
 
@@ -791,12 +806,23 @@ pub fn recompute_persona_setup(pool: &DbPool, persona_id: &str) -> Result<(), Ap
         rows.filter_map(|r| r.ok()).collect()
     };
 
+    // `notes` records what the BUILD changed on the operator's behalf, which a
+    // credential mutation cannot re-derive. Carry the prior list forward
+    // instead of blanking it — recomputing readiness must not erase the record
+    // that a trigger lost its schedule at promote time.
+    let notes: Vec<String> = persona
+        .setup_detail
+        .as_deref()
+        .and_then(|raw| serde_json::from_str::<PersonaSetup>(raw).ok())
+        .map(|prior| prior.notes)
+        .unwrap_or_default();
+
     let new_status = if blockers.is_empty() {
         "ready"
     } else {
         "needs_credentials"
     };
-    let setup = build_persona_setup(blockers, trigger_types);
+    let setup = build_persona_setup(blockers, trigger_types, notes);
     let setup_json = serde_json::to_string(&setup)
         .map_err(|e| AppError::Internal(format!("serialize setup_detail: {e}")))?;
 

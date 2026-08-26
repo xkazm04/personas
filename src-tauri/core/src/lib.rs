@@ -55,6 +55,7 @@ pub mod ipc_gauge;
 pub mod lifecycle;
 pub mod limits;
 pub mod mcp_config;
+pub mod model_ids;
 pub mod models;
 pub mod pool;
 pub mod redact;
