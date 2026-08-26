@@ -5,17 +5,20 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { ActivityPulseIcon } from '@/features/shared/components/icons/ActivityPulseIcon';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useQuickDispatchStore } from '@/stores/quickDispatchStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitleBarTray';
 
+const ICON_SIZE = 21;
+
 /**
- * @catalog Title-bar quick-action dock — capsule tray (search / schedules / review / dispatch / monitor / notifications) with inline counts and keyboard-nav key hints.
+ * @catalog Title-bar quick-action dock — key strip (search / schedules / review / dispatch / monitor / notifications) with inline counts and keyboard-nav key hints.
  *
  * The title bar's quick-action tray. Counts are first-class data, not
- * stickers: every signal renders INLINE beside its glyph inside a capsule
- * button (icon + number side by side), so a number never overlaps an icon and
+ * stickers: every signal renders INLINE beside its glyph inside a 36px
+ * key (icon + number side by side), so a number never overlaps an icon and
  * every count shares one size/weight/position. Urgency is carried by semantic
  * colour alone: info (scheduled), warning (needs you), primary (news). The
  * whole tray sits in one containment ring so the five actions read as a
@@ -81,131 +84,131 @@ export default function TitleBarDock() {
     { priority: 29 },
   );
 
+  const icon = ICON_SIZE;
+  const common = { showHint: keyboardNavActive };
+
+  const search = (
+    <DockAction {...common} onClick={tray.openSearch} label={t.settings.search.trigger_aria} title={t.settings.search.trigger_hint} testId="titlebar-search" hintKey="S">
+      <Search size={icon} strokeWidth={1.6} />
+    </DockAction>
+  );
+  const schedules = (
+    <DockAction
+      {...common}
+      onClick={tray.toggleSchedules}
+      active={tray.isScheduleActive}
+      count={tray.todayScheduleCount}
+      countClass="text-status-info"
+      label={tray.todayScheduleCount > 0 ? tx(t.chrome.tray_schedules_today, { count: tray.todayScheduleCount }) : t.chrome.tray_schedules}
+      title={tray.todayScheduleCount > 0 ? tx(t.chrome.tray_schedules_today, { count: tray.todayScheduleCount }) : t.chrome.tray_schedules}
+      testId="titlebar-schedules"
+      hintKey="T"
+    >
+      <CalendarClock size={icon} strokeWidth={1.6} />
+    </DockAction>
+  );
+  const review = (
+    <DockAction
+      {...common}
+      onClick={tray.toggleReview}
+      active={tray.reviewOpen}
+      count={tray.quickCount}
+      countClass="text-status-warning"
+      label={tray.quickCount > 0 ? tx(t.monitor.review_titlebar_attention, { count: tray.quickCount }) : t.monitor.review_titlebar}
+      title={tray.quickCount > 0 ? tx(t.monitor.review_titlebar_attention, { count: tray.quickCount }) : t.monitor.review_titlebar}
+      testId="titlebar-human-review"
+      hintKey="R"
+      quickAnswerTrigger
+    >
+      <ClipboardCheck width={icon} height={icon} strokeWidth={1.6} />
+    </DockAction>
+  );
+  // Approved but never sent. Distinct from the review capsule on its left:
+  // that one counts decisions still owed, this one counts decisions already
+  // made that nothing acted on.
+  const dispatch = (
+    <DockAction
+      {...common}
+      onClick={tray.toggleDispatch}
+      active={tray.dispatchOpen}
+      count={tray.undispatchedCount}
+      countClass="text-status-warning"
+      label={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
+      title={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
+      testId="titlebar-dispatch"
+      hintKey="D"
+    >
+      <Rocket size={icon} strokeWidth={1.6} />
+    </DockAction>
+  );
+  const monitor = (
+    <DockAction
+      {...common}
+      onClick={tray.toggleMonitor}
+      active={tray.monitorOpen}
+      count={tray.monitorAttention}
+      countClass="text-status-warning"
+      label={tray.monitorAttention > 0 ? tx(t.monitor.titlebar_attention, { count: tray.monitorAttention }) : t.monitor.titlebar}
+      title={tray.monitorAttention > 0 ? tx(t.monitor.titlebar_tooltip, { count: tray.monitorAttention }) : t.monitor.titlebar}
+      testId="titlebar-process-activity"
+      hintKey="M"
+    >
+      {tray.running && (
+        prefersReducedMotion ? (
+          <span aria-hidden className={`pointer-events-none absolute inset-1 rounded-xl border border-primary/50 opacity-50`} />
+        ) : (
+          <motion.span
+            aria-hidden
+            className={`pointer-events-none absolute inset-1 rounded-xl border border-primary/50`}
+            animate={{ opacity: [0.15, 0.6, 0.15] }}
+            transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        )
+      )}
+      <ActivityPulseIcon width={icon} height={icon} strokeWidth={1.6} className={tray.running ? 'text-primary' : undefined} />
+    </DockAction>
+  );
+  const notifications = (
+    <DockAction
+      {...common}
+      onClick={tray.toggleNotifications}
+      active={tray.notificationsOpen}
+      count={tray.unreadCount}
+      countClass="text-primary"
+      label={tray.unreadCount > 0 ? tx(t.chrome.tray_notifications_unread, { count: tray.unreadCount }) : t.chrome.tray_notifications}
+      title={tray.unreadCount > 0 ? tx(t.chrome.tray_notifications_unread, { count: tray.unreadCount }) : t.chrome.tray_notifications}
+      testId="titlebar-notifications"
+      hintKey="N"
+    >
+      <Bell size={icon} strokeWidth={1.6} />
+    </DockAction>
+  );
+  // Quick Dispatch — the mouse door onto the console deck; the same surface
+  // nav-mode C summons.
+  const console = (
+    <DockAction {...common} onClick={toggleQuickDispatch} active={quickDispatchOpen} label={t.plugins.fleet_quick_dispatch.title} title={t.plugins.fleet_quick_dispatch.title} testId="titlebar-quick-dispatch" hintKey="C">
+      <SquareTerminal size={icon} strokeWidth={1.6} />
+    </DockAction>
+  );
+
   return (
     <>
-      <div className="titlebar-nodrag mr-2 flex h-8 items-center gap-0.5 rounded-full border border-primary/10 bg-secondary/40 px-1">
-        <DockAction
-          onClick={tray.openSearch}
-          label={t.settings.search.trigger_aria}
-          title={t.settings.search.trigger_hint}
-          testId="titlebar-search"
-          hintKey="S"
-          showHint={keyboardNavActive}
-        >
-          <Search size={17} strokeWidth={1.6} />
-        </DockAction>
-
-        <DockAction
-          onClick={tray.toggleSchedules}
-          active={tray.isScheduleActive}
-          count={tray.todayScheduleCount}
-          countClass="text-status-info"
-          label={tray.todayScheduleCount > 0 ? tx(t.chrome.tray_schedules_today, { count: tray.todayScheduleCount }) : t.chrome.tray_schedules}
-          title={tray.todayScheduleCount > 0 ? tx(t.chrome.tray_schedules_today, { count: tray.todayScheduleCount }) : t.chrome.tray_schedules}
-          testId="titlebar-schedules"
-          hintKey="T"
-          showHint={keyboardNavActive}
-        >
-          <CalendarClock size={17} strokeWidth={1.6} />
-        </DockAction>
-
-        <DockAction
-          onClick={tray.toggleReview}
-          active={tray.reviewOpen}
-          count={tray.quickCount}
-          countClass="text-status-warning"
-          label={tray.quickCount > 0 ? tx(t.monitor.review_titlebar_attention, { count: tray.quickCount }) : t.monitor.review_titlebar}
-          title={tray.quickCount > 0 ? tx(t.monitor.review_titlebar_attention, { count: tray.quickCount }) : t.monitor.review_titlebar}
-          testId="titlebar-human-review"
-          hintKey="R"
-          showHint={keyboardNavActive}
-          quickAnswerTrigger
-        >
-          <ClipboardCheck width={17} height={17} strokeWidth={1.6} />
-        </DockAction>
-
-        {/* Approved but never sent. Distinct from the review capsule on its
-            left: that one counts decisions still owed, this one counts
-            decisions already made that nothing acted on. */}
-        <DockAction
-          onClick={tray.toggleDispatch}
-          active={tray.dispatchOpen}
-          count={tray.undispatchedCount}
-          countClass="text-status-warning"
-          label={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
-          title={tray.undispatchedCount > 0 ? tx(t.chrome.tray_dispatch_waiting, { count: tray.undispatchedCount }) : t.chrome.tray_dispatch}
-          testId="titlebar-dispatch"
-          hintKey="D"
-          showHint={keyboardNavActive}
-        >
-          <Rocket size={17} strokeWidth={1.6} />
-        </DockAction>
-
-        <DockAction
-          onClick={tray.toggleMonitor}
-          active={tray.monitorOpen}
-          count={tray.monitorAttention}
-          countClass="text-status-warning"
-          label={tray.monitorAttention > 0 ? tx(t.monitor.titlebar_attention, { count: tray.monitorAttention }) : t.monitor.titlebar}
-          title={tray.monitorAttention > 0 ? tx(t.monitor.titlebar_tooltip, { count: tray.monitorAttention }) : t.monitor.titlebar}
-          testId="titlebar-process-activity"
-          hintKey="M"
-          showHint={keyboardNavActive}
-        >
-          {tray.running && (
-            prefersReducedMotion ? (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-1 rounded-full border border-primary/50 opacity-50"
-              />
-            ) : (
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute inset-1 rounded-full border border-primary/50"
-                animate={{ opacity: [0.15, 0.6, 0.15] }}
-                transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            )
-          )}
-          <ActivityPulseIcon
-            width={17}
-            height={17}
-            strokeWidth={1.6}
-            className={tray.running ? 'text-primary' : undefined}
-          />
-        </DockAction>
-
-        <DockAction
-          onClick={tray.toggleNotifications}
-          active={tray.notificationsOpen}
-          count={tray.unreadCount}
-          countClass="text-primary"
-          label={tray.unreadCount > 0 ? tx(t.chrome.tray_notifications_unread, { count: tray.unreadCount }) : t.chrome.tray_notifications}
-          title={tray.unreadCount > 0 ? tx(t.chrome.tray_notifications_unread, { count: tray.unreadCount }) : t.chrome.tray_notifications}
-          testId="titlebar-notifications"
-          hintKey="N"
-          showHint={keyboardNavActive}
-        >
-          <Bell size={17} strokeWidth={1.6} />
-        </DockAction>
-
-        {/* Quick Dispatch — the mouse door onto the console deck; the same
-            surface nav-mode C summons. */}
-        <DockAction
-          onClick={toggleQuickDispatch}
-          active={quickDispatchOpen}
-          label={t.plugins.fleet_quick_dispatch.title}
-          title={t.plugins.fleet_quick_dispatch.title}
-          testId="titlebar-quick-dispatch"
-          hintKey="C"
-          showHint={keyboardNavActive}
-        >
-          <SquareTerminal size={17} strokeWidth={1.6} />
-        </DockAction>
+      <div className="titlebar-nodrag mr-2 flex h-10 items-center gap-0.5 rounded-2xl border border-primary/15 bg-gradient-to-b from-secondary/60 to-secondary/25 px-1 shadow-elevation-1">
+        {search}
+        <DockDivider />
+        {schedules}{review}{dispatch}
+        <DockDivider />
+        {monitor}{notifications}
+        <DockDivider />
+        {console}
       </div>
       <TrayOverlays />
     </>
   );
+}
+
+function DockDivider() {
+  return <span aria-hidden className="mx-0.5 h-5 w-px bg-primary/15" />;
 }
 
 interface DockActionProps {
@@ -223,6 +226,12 @@ interface DockActionProps {
   showHint?: boolean;
 }
 
+// 36px key; grows with px when a count sits beside the glyph. Active state
+// adds an underline bar so the "selected" key reads at a glance.
+const ACTION_BASE = 'relative inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-xl px-2 transition-colors after:pointer-events-none after:absolute after:inset-x-2.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:transition-opacity';
+const ACTION_ACTIVE = 'bg-primary/15 text-primary after:opacity-100';
+const ACTION_IDLE = 'text-muted-foreground hover:bg-primary/10 hover:text-foreground after:opacity-0';
+
 function DockAction({
   children,
   onClick,
@@ -236,35 +245,33 @@ function DockAction({
   hintKey,
   showHint,
 }: DockActionProps) {
+  const countEl = count > 0 && (
+    <span className={`typo-caption font-semibold leading-none tabular-nums ${countClass ?? ''}`}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
   return (
-    <button
-      type="button"
-      className={`relative inline-flex h-7 items-center gap-1.5 rounded-full px-2 transition-colors ${
-        active
-          ? 'bg-primary/15 text-primary'
-          : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
-      }`}
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={label}
-      title={title}
-      data-testid={testId}
-      {...(quickAnswerTrigger ? { 'data-quick-answer-trigger': true } : {})}
-    >
-      {children}
-      {count > 0 && (
-        <span className={`text-xs font-semibold leading-none tabular-nums ${countClass ?? ''}`}>
-          {count > 99 ? '99+' : count}
-        </span>
-      )}
-      {hintKey && showHint && (
-        <kbd
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-full mt-1.5 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-input border border-primary/20 bg-background text-xs font-semibold text-foreground shadow-elevation-2"
-        >
-          {hintKey}
-        </kbd>
-      )}
-    </button>
+    <Tooltip content={title} placement="bottom">
+      <button
+        type="button"
+        className={`${ACTION_BASE} ${active ? ACTION_ACTIVE : ACTION_IDLE}`}
+        onClick={onClick}
+        aria-pressed={active}
+        aria-label={label}
+        data-testid={testId}
+        {...(quickAnswerTrigger ? { 'data-quick-answer-trigger': true } : {})}
+      >
+        {children}
+        {countEl}
+        {hintKey && showHint && (
+          <kbd
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-full mt-1.5 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-input border border-primary/20 bg-background typo-caption font-semibold text-foreground shadow-elevation-2"
+          >
+            {hintKey}
+          </kbd>
+        )}
+      </button>
+    </Tooltip>
   );
 }

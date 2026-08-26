@@ -55,6 +55,8 @@ export interface PipelineNotification {
 
 const STORAGE_KEY = 'pipeline_notification_history';
 const MAX_NOTIFICATIONS = 50;
+/** How long a read notification stays before it is pruned (mirrored in NotificationCenter). */
+export const READ_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
 function loadNotifications(): PipelineNotification[] {
   try {
@@ -62,7 +64,10 @@ function loadNotifications(): PipelineNotification[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.length > MAX_NOTIFICATIONS ? parsed.slice(0, MAX_NOTIFICATIONS) : parsed;
+    // Read notifications expire after 7 days; unread ones persist until acted on.
+    const cutoff = Date.now() - READ_RETENTION_MS;
+    const fresh = (parsed as PipelineNotification[]).filter((n) => !n.read || n.timestamp >= cutoff);
+    return fresh.length > MAX_NOTIFICATIONS ? fresh.slice(0, MAX_NOTIFICATIONS) : fresh;
   } catch {
     return [];
   }

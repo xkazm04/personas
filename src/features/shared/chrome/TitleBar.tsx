@@ -7,6 +7,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TitleBarAmbient } from '@/features/shared/chrome/TitleBarAmbient';
 import TitleBarDock from '@/features/shared/chrome/TitleBarDock';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 
@@ -64,16 +65,17 @@ export default function TitleBar() {
        *  Shown whenever there's somewhere to go back to: an open overlay OR a
        *  non-empty history. Sits next to the logo so nav controls cluster. */}
       {(headerOverlay !== 'none' || navigationHistory.length > 0 || backInterceptor !== null) && (
-        <button
-          type="button"
-          className="titlebar-btn ml-1"
-          data-testid="titlebar-back"
-          onClick={navigateBack}
-          aria-label={t.common.back}
-          title={t.common.back}
-        >
-          <ArrowLeft size={20} strokeWidth={1.5} />
-        </button>
+        <Tooltip content={t.common.back} placement="bottom">
+          <button
+            type="button"
+            className="titlebar-btn ml-1"
+            data-testid="titlebar-back"
+            onClick={navigateBack}
+            aria-label={t.common.back}
+          >
+            <ArrowLeft size={20} strokeWidth={1.5} />
+          </button>
+        </Tooltip>
       )}
 
       {/* Spacer -- entire middle area is draggable */}

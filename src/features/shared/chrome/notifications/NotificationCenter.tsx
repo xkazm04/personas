@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect } from 'react';
 import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight, MessageCircleQuestion } from 'lucide-react';
-import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
+import { useNotificationCenterStore, READ_RETENTION_MS, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon } from '@/features/plugins/gitlab/components/pipelineHelpers';
@@ -31,6 +31,10 @@ function statusLabel(status: string): string {
     case 'warning': return 'Completed with warning';
     default: return status;
   }
+}
+
+function isVisible(n: PipelineNotification): boolean {
+  return !n.read || Date.now() - n.timestamp < READ_RETENTION_MS;
 }
 
 /** Process notifications use pipelineId === 0 and encode processType in ref. */
@@ -145,7 +149,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group flex items-start gap-3 px-3 py-2.5 rounded-card border border-transparent hover:border-primary/10 hover:bg-secondary/30 transition-colors cursor-default ${
+      className={`animate-fade-slide-in relative group flex items-start gap-3 px-3 pt-2.5 pb-6 rounded-card border border-transparent hover:border-primary/10 hover:bg-secondary/30 transition-colors cursor-default ${
         !notification.read ? 'bg-secondary/15' : ''
       }`}
     >
@@ -159,12 +163,9 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
 
       {/* Two-row body */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">{headerTitle}</span>
-          {!notification.read && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
-          <span className="typo-caption text-foreground ml-auto flex-shrink-0">
-            {formatTimestamp(notification.timestamp)}
-          </span>
+        <div className="flex items-start gap-2">
+          <span className="typo-body font-medium text-primary break-words min-w-0">{headerTitle}</span>
+          {!notification.read && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
         </div>
         <div className="flex items-start gap-2 mt-0.5">
           {/* eslint-disable-next-line custom/no-low-contrast-text-classes -- body intentionally dimmer than the title for hierarchy (per request) */}
@@ -184,7 +185,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
       </div>
 
       {/* Actions column (hover-only): dismiss on top, ask-Athena beneath */}
-      <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-0.5">
+      <div className="flex-shrink-0 flex items-center gap-0.5">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
@@ -203,6 +204,11 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           <MessageCircleQuestion className="w-3 h-3" />
         </button>
       </div>
+      {/* Timestamp — pinned to the bottom-right corner so it never competes
+          with the title for width. */}
+      <span className="pointer-events-none absolute bottom-1.5 right-3 typo-caption text-muted-foreground tabular-nums">
+        {formatTimestamp(notification.timestamp)}
+      </span>
     </div>
   );
 }
@@ -245,7 +251,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group flex items-start gap-3 px-3 py-2.5 rounded-card border border-transparent hover:border-primary/10 hover:bg-secondary/30 transition-colors cursor-default ${
+      className={`animate-fade-slide-in relative group flex items-start gap-3 px-3 pt-2.5 pb-6 rounded-card border border-transparent hover:border-primary/10 hover:bg-secondary/30 transition-colors cursor-default ${
         !notification.read ? 'bg-secondary/15' : ''
       }`}
     >
@@ -254,12 +260,9 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">{pipelineTitle}</span>
-          {!notification.read && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
-          <span className="typo-caption text-foreground ml-auto flex-shrink-0">
-            {formatTimestamp(notification.timestamp)}
-          </span>
+        <div className="flex items-start gap-2">
+          <span className="typo-body font-medium text-primary break-words min-w-0">{pipelineTitle}</span>
+          {!notification.read && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
         </div>
         <div className="flex items-start gap-2 mt-0.5">
           {/* eslint-disable-next-line custom/no-low-contrast-text-classes -- body intentionally dimmer than the title for hierarchy (per request) */}
@@ -307,7 +310,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       </div>
 
       {/* Actions column (hover-only): dismiss on top, ask-Athena beneath */}
-      <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-0.5">
+      <div className="flex-shrink-0 flex items-center gap-0.5">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
@@ -326,6 +329,11 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           <MessageCircleQuestion className="w-3 h-3" />
         </button>
       </div>
+      {/* Timestamp — pinned to the bottom-right corner so it never competes
+          with the title for width. */}
+      <span className="pointer-events-none absolute bottom-1.5 right-3 typo-caption text-muted-foreground tabular-nums">
+        {formatTimestamp(notification.timestamp)}
+      </span>
     </div>
   );
 }
@@ -338,7 +346,10 @@ export function NotificationCenter() {
   const { t } = useTranslation();
   const isOpen = useSystemStore((s) => s.headerOverlay === 'notifications');
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
-  const notifications = useNotificationCenterStore((s) => s.notifications);
+  const allNotifications = useNotificationCenterStore((s) => s.notifications);
+  // Read notifications fall off the list after 7 days; unread ones stay
+  // until acted on. Store-level pruning (`pruneStale`) does the same on load.
+  const notifications = allNotifications.filter(isVisible);
   const clearAll = useNotificationCenterStore((s) => s.clearAll);
 
   // Esc closes the tray (parity with the Monitor overlay's Esc handling).
