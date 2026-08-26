@@ -23,7 +23,7 @@
 //! tail from what the other lanes actually returned makes the asymmetry
 //! structurally impossible rather than a tuning coincidence.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
@@ -107,10 +107,126 @@ pub struct Recall {
     pub procedurals: Vec<Procedural>,
     pub goals: Vec<Goal>,
     pub backlog: Vec<BacklogItem>,
+    /// Why each of the above is here, and what was measured and rejected.
+    pub trace: RecallTrace,
+}
+
+/// Which lane put a memory into this turn's recall.
+///
+/// Retrieval has always known this — it is the difference between a lane's
+/// `selected` list and the keyword union that follows it — but the answer was
+/// discarded one frame after it was computed, so nothing downstream could tell
+/// a semantic hit from a query-independent floor entry.
+///
+/// `Vector` is unreachable on a non-`ml` build — there is no vector lane to
+/// produce it — but the variant stays so the wire shape is identical across
+/// both builds and the UI needs no second case.
+#[cfg_attr(not(feature = "ml"), allow(dead_code))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecallLane {
+    /// Vector KNN hit that cleared the relevance floor.
+    Vector,
+    /// BM25 keyword hit over `companion_fts`.
+    Keyword,
+    /// A query-independent tier: top facts, active goals, open backlog. These
+    /// are in every turn's recall regardless of what was asked, and labelling
+    /// them as matches would overstate what retrieval actually found.
+    AlwaysOn,
+    /// The recency tail — recent conversation, included because it is recent.
+    Recency,
+}
+
+impl RecallLane {
+    /// Stable wire name. The UI keys on this, so it is never localised.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Vector => "vector",
+            Self::Keyword => "keyword",
+            Self::AlwaysOn => "always",
+            Self::Recency => "recency",
+        }
+    }
+}
+
+/// Per-turn provenance for the recall the prompt was built from.
+///
+/// The two numbers that matter are the ones that used to exist only inside a
+/// `tracing::debug!`: each hit's L2 distance, and how many hits were measured
+/// and then rejected for falling outside the relevance floor. Without the
+/// second, an operator tuning that floor is working blind — which is exactly
+/// how `MAX_VECTOR_DISTANCE` was set.
+#[derive(Debug, Clone, Default)]
+pub struct RecallTrace {
+    /// node id -> (lane, L2 distance when the vector lane produced it).
+    entries: HashMap<String, (RecallLane, Option<f32>)>,
+    /// Hits that were retrieved and then rejected by the relevance floor.
+    pub dropped_far: usize,
+    /// The floor they were measured against. `None` on a build with no vector
+    /// lane, where there is no threshold to report and showing one would be a
+    /// fiction.
+    pub floor: Option<f32>,
+}
+
+impl RecallTrace {
+    /// Record a vector hit and its distance. First write wins, so a node that
+    /// several lanes reach keeps its strongest provenance.
+    #[cfg_attr(not(feature = "ml"), allow(dead_code))]
+    pub fn record_vector(&mut self, id: &str, distance: f32) {
+        self.entries
+            .entry(id.to_string())
+            .or_insert((RecallLane::Vector, Some(distance)));
+    }
+
+    /// Record a non-vector lane, without displacing a vector hit.
+    pub fn record(&mut self, id: &str, lane: RecallLane) {
+        self.entries.entry(id.to_string()).or_insert((lane, None));
+    }
+
+    /// Record a whole tier at once.
+    pub fn record_all<'a>(&mut self, ids: impl IntoIterator<Item = &'a String>, lane: RecallLane) {
+        for id in ids {
+            self.record(id, lane);
+        }
+    }
+
+    /// The lane that produced `id`.
+    ///
+    /// Defaults to [`RecallLane::Keyword`] rather than to an "unknown" variant:
+    /// the keyword union is the last step of both retrieval arms, so anything
+    /// that reached the prompt without being recorded above came from it. An
+    /// `Unknown` here would show up in the UI as a shrug on the majority of
+    /// entries.
+    pub fn lane_of(&self, id: &str) -> RecallLane {
+        self.entries
+            .get(id)
+            .map_or(RecallLane::Keyword, |(lane, _)| *lane)
+    }
+
+    /// Relevance in `0.0..=1.0`, nearest-first, or `None` for a non-vector
+    /// entry.
+    ///
+    /// L2 distance is unbounded and smaller-is-better, which is the wrong
+    /// shape for a bar. This maps it against the floor the hit had to clear:
+    /// distance 0 reads 1.0, a hit sitting exactly on the floor reads 0.0. The
+    /// mapping is linear and monotone, so the ORDER shown is always the order
+    /// retrieval used — it is a rescale for display, never a re-rank.
+    pub fn relevance_of(&self, id: &str) -> Option<f32> {
+        let (_, distance) = self.entries.get(id)?;
+        let distance = (*distance)?;
+        let floor = self.floor?;
+        if floor <= 0.0 {
+            return None;
+        }
+        Some((1.0 - distance / floor).clamp(0.0, 1.0))
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct DoctrineHit {
+    /// The `companion_node` id this chunk was retrieved as. Read from SQL all
+    /// along and then dropped on the floor; it is the only key that joins a
+    /// hydrated chunk back to the lane and distance that selected it.
+    pub node_id: String,
     /// `<rel_path>#<heading_anchor>`, e.g.
     /// `concepts/persona-capabilities/00-vision.md#the-mental-model-we-want`.
     pub file_path: String,
@@ -176,6 +292,17 @@ pub async fn retrieve(
     // here). Doctrine rides its own kind-scoped lane below; goals/rituals/
     // backlog don't ride the vector lane at all.
     let (near_hits, dropped_far) = filter_by_distance_floor(&hits, MAX_VECTOR_DISTANCE);
+    // Start the provenance record here, at the one point where the distances
+    // and the rejection count both still exist. Everything below either adds a
+    // lane or hydrates rows, and neither can recover this.
+    let mut trace = RecallTrace {
+        floor: Some(MAX_VECTOR_DISTANCE),
+        dropped_far,
+        ..RecallTrace::default()
+    };
+    for (id, distance) in &near_hits {
+        trace.record_vector(id, *distance);
+    }
     // Clones, not moves: the same exclusion sets are needed again below as the
     // keyword lanes' dedupe guards (each holds ≤ a few dozen ids). Moving them
     // in here was an E0382 that only the `ml` arm ever compiled far enough to
@@ -202,13 +329,18 @@ pub async fn retrieve(
         embeddings::search_similar_kind(pool, embedder, query, "doctrine", VECTOR_DOCTRINE_FETCH)
             .await
             .unwrap_or_default();
-    let mut doctrine_ids: Vec<String> =
-        filter_by_distance_floor(&doctrine_hits, MAX_VECTOR_DISTANCE)
-            .0
-            .into_iter()
-            .take(VECTOR_DOCTRINE_TOPK)
-            .map(|(id, _)| id)
-            .collect();
+    let (doctrine_near, doctrine_dropped) =
+        filter_by_distance_floor(&doctrine_hits, MAX_VECTOR_DISTANCE);
+    // The doctrine lane is measured against the same floor, so its rejects
+    // belong in the same total — reporting only the episode lane's would
+    // understate what the floor is costing.
+    trace.dropped_far += doctrine_dropped;
+    let mut doctrine_ids: Vec<String> = doctrine_near
+        .into_iter()
+        .take(VECTOR_DOCTRINE_TOPK)
+        .inspect(|(id, distance)| trace.record_vector(id, *distance))
+        .map(|(id, _)| id)
+        .collect();
 
     // Keyword floor. The vector lane can only reach nodes that have a vector,
     // and today essentially none of the episode corpus does; the keyword lane
@@ -289,6 +421,15 @@ pub async fn retrieve(
 
     touch_recalled(pool, &top_facts, &top_procedurals);
 
+    // The query-independent tiers, recorded last so they never displace a
+    // vector hit: a fact that is BOTH always-on and a strong semantic match
+    // should read as the match, which is the more informative of the two.
+    trace.record_all(&fact_ids_in_recall, RecallLane::AlwaysOn);
+    trace.record_all(&procedural_ids_in_recall, RecallLane::AlwaysOn);
+    trace.record_all(active_goals.iter().map(|g| &g.id), RecallLane::AlwaysOn);
+    trace.record_all(open_backlog.iter().map(|b| &b.id), RecallLane::AlwaysOn);
+    trace.record_all(&recent_ids, RecallLane::Recency);
+
     Ok(Recall {
         episodes,
         doctrine,
@@ -296,6 +437,7 @@ pub async fn retrieve(
         procedurals: top_procedurals,
         goals: active_goals,
         backlog: open_backlog,
+        trace,
     })
 }
 
@@ -391,6 +533,16 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
 
     touch_recalled(pool, &facts, &procedurals);
 
+    // No floor on this path: there is no vector lane, so there is no threshold
+    // anything was measured against. `floor: None` is what stops the UI from
+    // drawing a relevance scale that nothing on this build could have produced.
+    let mut trace = RecallTrace::default();
+    trace.record_all(&fact_ids_in_recall, RecallLane::AlwaysOn);
+    trace.record_all(&procedural_ids_in_recall, RecallLane::AlwaysOn);
+    trace.record_all(goals.iter().map(|g| &g.id), RecallLane::AlwaysOn);
+    trace.record_all(backlog.iter().map(|b| &b.id), RecallLane::AlwaysOn);
+    trace.record_all(&recent_ids, RecallLane::Recency);
+
     Recall {
         episodes,
         doctrine,
@@ -398,6 +550,7 @@ pub fn retrieve_keyword(pool: &UserDbPool, session_id: &str, query: &str) -> Rec
         procedurals,
         goals,
         backlog,
+        trace,
     }
 }
 
@@ -602,13 +755,17 @@ fn load_doctrine_chunks(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Doctrin
     // We always have a path here because read_curated_doc handles both.
     let docs_root = crate::companion::brain::doctrine::find_docs_root();
     let mut out = Vec::with_capacity(rows.len());
-    for (_id, file_path, excerpt) in rows {
+    for (node_id, file_path, excerpt) in rows {
         let (rel_path, anchor) = split_path_anchor(&file_path);
         let content =
             crate::companion::brain::doctrine::read_curated_doc(rel_path, docs_root.as_deref())
                 .and_then(|md| extract_section(&md, anchor))
                 .unwrap_or_else(|| excerpt.clone());
-        out.push(DoctrineHit { file_path, content });
+        out.push(DoctrineHit {
+            node_id,
+            file_path,
+            content,
+        });
     }
     Ok(out)
 }
@@ -672,4 +829,77 @@ fn parse_role_and_body(full: &str) -> (String, String) {
         }
     }
     (role, body)
+}
+
+#[cfg(test)]
+mod trace_tests {
+    use super::{RecallLane, RecallTrace};
+
+    /// The mapping that turns an unbounded, smaller-is-better L2 distance into
+    /// a 0..1 bar. It must be monotone, or the UI would show an order that
+    /// disagrees with the one retrieval actually used.
+    #[test]
+    fn relevance_is_monotone_and_anchored_to_the_floor() {
+        let mut trace = RecallTrace {
+            floor: Some(1.30),
+            ..RecallTrace::default()
+        };
+        trace.record_vector("near", 0.0);
+        trace.record_vector("mid", 0.65);
+        trace.record_vector("at_floor", 1.30);
+
+        assert_eq!(trace.relevance_of("near"), Some(1.0));
+        assert_eq!(trace.relevance_of("at_floor"), Some(0.0));
+        let mid = trace.relevance_of("mid").expect("mid scored");
+        assert!(
+            mid > 0.0 && mid < 1.0,
+            "a mid-distance hit sits strictly between the endpoints: {mid}"
+        );
+    }
+
+    /// A hit beyond the floor should never render as negative width. It cannot
+    /// normally reach the trace (the floor filters first), but a floor lowered
+    /// between retrieval and render would produce exactly this.
+    #[test]
+    fn relevance_clamps_rather_than_going_negative() {
+        let mut trace = RecallTrace {
+            floor: Some(1.0),
+            ..RecallTrace::default()
+        };
+        trace.record_vector("far", 5.0);
+        assert_eq!(trace.relevance_of("far"), Some(0.0));
+    }
+
+    /// With no vector lane there is no threshold, so there is no relevance to
+    /// report — the UI must get `None` and draw no scale.
+    #[test]
+    fn no_floor_means_no_relevance() {
+        let mut trace = RecallTrace::default();
+        trace.record_vector("x", 0.2);
+        assert_eq!(trace.relevance_of("x"), None);
+    }
+
+    /// First write wins, so a node that several lanes reach keeps the strongest
+    /// provenance. Recording the always-on tiers last must not downgrade a
+    /// fact that also matched semantically.
+    #[test]
+    fn a_vector_hit_survives_being_recorded_again_as_always_on() {
+        let mut trace = RecallTrace {
+            floor: Some(1.30),
+            ..RecallTrace::default()
+        };
+        trace.record_vector("f1", 0.1);
+        trace.record("f1", RecallLane::AlwaysOn);
+        assert_eq!(trace.lane_of("f1"), RecallLane::Vector);
+        assert!(trace.relevance_of("f1").is_some());
+    }
+
+    /// Anything that reached the prompt without being recorded came from the
+    /// keyword union, which is the last step of both retrieval arms.
+    #[test]
+    fn an_unrecorded_id_reads_as_the_keyword_lane() {
+        let trace = RecallTrace::default();
+        assert_eq!(trace.lane_of("never-seen"), RecallLane::Keyword);
+        assert_eq!(trace.relevance_of("never-seen"), None);
+    }
 }

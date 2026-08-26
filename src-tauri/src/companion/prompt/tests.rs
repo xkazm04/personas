@@ -469,6 +469,11 @@ fn empty_recall() -> Recall {
         procedurals: Vec::new(),
         goals: Vec::new(),
         backlog: Vec::new(),
+        // Empty trace: nothing was retrieved, so nothing was measured or
+        // rejected. The size-ledger tests below assert the composed prompt is
+        // byte-identical under instrumentation, and provenance must not enter
+        // the prompt at all — it is a UI payload, not context.
+        trace: Default::default(),
     }
 }
 

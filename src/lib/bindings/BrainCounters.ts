@@ -4,21 +4,21 @@
  * Raw counters behind the verdicts. Present regardless of health, so a
  * healthy report is still worth reading.
  */
-export type BrainCounters = { nodes: bigint, 
+export type BrainCounters = { nodes: number, 
 /**
  * Nodes carrying an `embedding_model` stamp.
  */
-embedded: bigint, 
+embedded: number, 
 /**
  * Nodes with no stamp — the vector lane cannot see these.
  */
-unembedded: bigint, 
+unembedded: number, 
 /**
  * Rows in the `companion_embedding` vec0 table, or `None` when that table
  * does not exist yet (never embedded) — which is itself the answer.
  */
-vectors: bigint | null, ftsRows: bigint, episodes: bigint, facts: bigint, procedurals: bigint, doctrineChunks: bigint, 
+vectors: number | null, ftsRows: number, episodes: number, facts: number, procedurals: number, doctrineChunks: number, 
 /**
  * Process-cumulative recall hits dropped by the embedding-model guard.
  */
-modelGuardExcluded: bigint, lastCycleAt: string | null, };
+modelGuardExcluded: number, lastCycleAt: string | null, };

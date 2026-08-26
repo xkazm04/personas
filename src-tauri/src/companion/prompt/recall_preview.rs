@@ -16,6 +16,16 @@ use crate::companion::brain::retrieval::Recall;
 pub struct RecallPreviewEntry {
     pub id: String,
     pub title: String,
+    /// Which lane produced this entry: `vector` | `keyword` | `always` |
+    /// `recency`. The distinction the strip could never draw — a semantic
+    /// match and a query-independent floor entry looked identical, so "Athena
+    /// consulted 11 memories" counted six that would have been there whatever
+    /// was asked.
+    pub lane: String,
+    /// Relevance in `0.0..=1.0`, nearest-first, for vector hits only. `None`
+    /// for every other lane, because a keyword or always-on entry has no
+    /// distance and inventing one would make the bars lie.
+    pub relevance: Option<f32>,
 }
 
 /// A per-turn rollup of what Athena's brain pulled into the system prompt.
@@ -36,6 +46,16 @@ pub struct RecallPreview {
     /// turn — useful to show in the strip ("synthesized 5000+ tokens
     /// into a focused brief").
     pub synthesized: bool,
+    /// How many retrieved hits were rejected for falling outside the relevance
+    /// floor. Retrieval has always counted these and then thrown the number
+    /// away into a debug log; it is the half of the story that explains an
+    /// unexpectedly thin recall, and the only feedback anyone tuning the floor
+    /// has ever had.
+    pub dropped_far: u32,
+    /// The floor those hits were measured against, or `None` on a build with
+    /// no vector lane — where there is no threshold and the UI must not draw
+    /// a scale.
+    pub relevance_floor: Option<f32>,
 }
 
 /// Max characters for any preview title before truncation. The strip is
@@ -69,19 +89,23 @@ fn doctrine_title(file_path: &str) -> String {
 /// Project a Recall into the slim UI shape. Cheap: zero DB, just borrows
 /// the fields we already have in memory.
 pub fn summarize_recall(recall: &Recall, synthesized: bool) -> RecallPreview {
-    let map_entry = |id: &str, title: &str| RecallPreviewEntry {
+    let trace = &recall.trace;
+    // `id` is what the UI deep-links with; `trace_id` is what the trace was
+    // keyed by. They are the same for every kind except doctrine, whose chip
+    // links by `<rel_path>#<anchor>` while retrieval selected it by node id.
+    let entry = |id: &str, trace_id: &str, title: &str| RecallPreviewEntry {
         id: id.to_string(),
         title: truncate_title(title),
+        lane: trace.lane_of(trace_id).as_str().to_string(),
+        relevance: trace.relevance_of(trace_id),
     };
+    let map_entry = |id: &str, title: &str| entry(id, id, title);
     RecallPreview {
         episode_count: recall.episodes.len() as u32,
         doctrine: recall
             .doctrine
             .iter()
-            .map(|d| RecallPreviewEntry {
-                id: d.file_path.clone(),
-                title: doctrine_title(&d.file_path),
-            })
+            .map(|d| entry(&d.file_path, &d.node_id, &doctrine_title(&d.file_path)))
             .collect(),
         facts: recall
             .facts
@@ -104,5 +128,7 @@ pub fn summarize_recall(recall: &Recall, synthesized: bool) -> RecallPreview {
             .map(|b| map_entry(&b.id, &b.summary))
             .collect(),
         synthesized,
+        dropped_far: trace.dropped_far as u32,
+        relevance_floor: trace.floor,
     }
 }

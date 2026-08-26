@@ -93,20 +93,36 @@ pub struct BlockingCause {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct BrainCounters {
+    // Every count below is pinned to `number` rather than left as ts-rs's
+    // default `bigint` for an i64/u64. `JSON.parse` cannot produce a `bigint`,
+    // so a `bigint`-typed field is a wire type the transport cannot carry: the
+    // TS side would declare a value it never receives, and any arithmetic on it
+    // throws at runtime. These are row counts in a local SQLite brain — many
+    // orders of magnitude under 2^53 — so `number` is the honest carrier.
+    #[ts(type = "number")]
     pub nodes: i64,
     /// Nodes carrying an `embedding_model` stamp.
+    #[ts(type = "number")]
     pub embedded: i64,
     /// Nodes with no stamp — the vector lane cannot see these.
+    #[ts(type = "number")]
     pub unembedded: i64,
     /// Rows in the `companion_embedding` vec0 table, or `None` when that table
     /// does not exist yet (never embedded) — which is itself the answer.
+    #[ts(type = "number | null")]
     pub vectors: Option<i64>,
+    #[ts(type = "number")]
     pub fts_rows: i64,
+    #[ts(type = "number")]
     pub episodes: i64,
+    #[ts(type = "number")]
     pub facts: i64,
+    #[ts(type = "number")]
     pub procedurals: i64,
+    #[ts(type = "number")]
     pub doctrine_chunks: i64,
     /// Process-cumulative recall hits dropped by the embedding-model guard.
+    #[ts(type = "number")]
     pub model_guard_excluded: u64,
     pub last_cycle_at: Option<String>,
 }
@@ -591,10 +607,15 @@ mod tests {
         crate::db::init_test_user_db().expect("test user db")
     }
 
-    /// Seed `n` nodes of `kind`, `embedded` of them carrying a model stamp, and
-    /// mirror each into the FTS index when `indexed`.
-    fn seed(pool: &UserDbPool, kind: &str, n: usize, embedded: usize, indexed: bool) {
-        let conn = pool.get().unwrap();
+    /// Seed `n` nodes of `kind`, `embedded` of them carrying a model stamp.
+    ///
+    /// Writes ONLY `companion_node`. The keyword index is populated separately
+    /// through the production writer (see [`seed_indexed_episodes`]) rather than
+    /// by a second hand-written INSERT here — `companion_fts` has no trigger, so
+    /// every mirror in this tree is hand-written, and a test that hand-syncs its
+    /// own is a test that cannot notice a writer which stopped mirroring.
+    fn seed(pool: &UserDbPool, kind: &str, n: usize, embedded: usize) {
+        let conn = pool.get().expect("test pool");
         for i in 0..n {
             let id = format!("{kind}-{i}");
             let model = (i < embedded).then_some("AllMiniLML6V2Q");
@@ -603,15 +624,30 @@ mod tests {
                  VALUES (?1, ?2, ?3, 'sha256:x', ?4)",
                 rusqlite::params![id, kind, format!("{kind}/{id}.md"), model],
             )
-            .unwrap();
-            if indexed {
-                conn.execute(
-                    "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, 'body', '')",
-                    rusqlite::params![id],
-                )
-                .unwrap();
-            }
+            .expect("seed node");
         }
+    }
+
+    /// Write `n` episodes through `episodic::append_episode`, the real writer,
+    /// which mirrors each one into `companion_fts`. If that mirror is ever
+    /// dropped, the health tests below start failing — which is the whole point
+    /// of going through it instead of inserting the FTS row by hand.
+    ///
+    /// `PERSONAS_HOME` is redirected at the temp dir so the episode markdown
+    /// never lands in the operator's real brain.
+    fn seed_indexed_episodes(pool: &UserDbPool, n: usize) -> tempfile::TempDir {
+        let home = tempfile::TempDir::new().expect("temp home");
+        std::env::set_var("PERSONAS_HOME", home.path());
+        for i in 0..n {
+            crate::companion::brain::episodic::append_episode(
+                pool,
+                "session-health",
+                crate::companion::brain::episodic::EpisodeRole::User,
+                &format!("indexed episode {i}"),
+            )
+            .expect("append episode");
+        }
+        home
     }
 
     fn cause_code(report: &BrainHealth) -> Option<&str> {
@@ -639,7 +675,7 @@ mod tests {
     #[test]
     fn populated_corpus_with_empty_fts_blocks_on_the_keyword_lane() {
         let pool = user_pool();
-        seed(&pool, "episode", 5, 5, false);
+        seed(&pool, "episode", 5, 5);
         let report = run(&pool, true);
         assert_eq!(cause_code(&report), Some("keyword_index_empty"));
         assert_eq!(report.counters.nodes, 5);
@@ -652,7 +688,7 @@ mod tests {
     #[test]
     fn indexed_corpus_reports_no_keyword_or_corpus_block() {
         let pool = user_pool();
-        seed(&pool, "episode", 3, 3, true);
+        let _home = seed_indexed_episodes(&pool, 3);
         let report = run(&pool, true);
         let blocked: Vec<&str> = report
             .stages
@@ -671,7 +707,7 @@ mod tests {
     #[test]
     fn episodes_without_a_completed_cycle_degrade_consolidation() {
         let pool = user_pool();
-        seed(&pool, "episode", 7, 7, true);
+        let _home = seed_indexed_episodes(&pool, 7);
         let report = run(&pool, true);
         let consolidation = report
             .stages
@@ -692,7 +728,7 @@ mod tests {
     #[test]
     fn absent_vector_table_answers_none_without_failing_the_report() {
         let pool = user_pool();
-        seed(&pool, "fact", 2, 0, true);
+        seed(&pool, "fact", 2, 0);
         let report = run(&pool, true);
         assert_eq!(report.counters.vectors, None);
         assert_eq!(report.stages.len(), 8, "every stage still reported");
