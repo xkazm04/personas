@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "Registri",
     "launch_args_label": "Argumen",
     "launch_args_none": "Tidak ada yang dideklarasikan - Athena akan bertanya jika keterampilan membutuhkannya.",
-    "launch_not_installed": "Belum terpasang"
+    "launch_not_installed": "Belum terpasang",
+    "back_to_projects": "Kembali ke Proyek"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani dokumen",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "Pindahkan ke…",
     "workspace_name_placeholder": "Nama ruang kerja",
     "workspace_new": "Ruang kerja baru",
-    "workspace_unassigned": "Belum ditetapkan"
+    "workspace_unassigned": "Belum ditetapkan",
+    "col_members_open_team": "Buka ruang kerja tim",
+    "no_team_yet": "Belum ada tim"
   },
   "dev_runner": {
     "self_healing": "Perbaikan mandiri",

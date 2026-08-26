@@ -14593,7 +14593,8 @@
       "skills_tab_registry": "Registr",
       "launch_args_label": "Argumenty",
       "launch_args_none": "Žádné deklarované - Athena se zeptá, pokud je dovednost potřebuje.",
-      "launch_not_installed": "Nenainstalováno"
+      "launch_not_installed": "Nenainstalováno",
+      "back_to_projects": "Zpět na projekty"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",
@@ -16415,7 +16416,9 @@
       "workspace_move_to": "Přesunout do…",
       "workspace_name_placeholder": "Název pracovního prostoru",
       "workspace_new": "Nový pracovní prostor",
-      "workspace_unassigned": "Nezařazené"
+      "workspace_unassigned": "Nezařazené",
+      "col_members_open_team": "Otevřít týmový workspace",
+      "no_team_yet": "Zatím žádný tým"
     },
     "dev_runner": {
       "self_healing": "Self-healing",

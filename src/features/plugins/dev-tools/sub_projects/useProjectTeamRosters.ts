@@ -1,3 +1,4 @@
+import { createTtlValueCache, type TtlValueCache } from '@/lib/async/createTtlValueCache';
 import { useEffect, useSyncExternalStore } from 'react';
 import { listTeamMembers } from '@/api/pipeline/teams';
 import { useAgentStore } from '@/stores/agentStore';
@@ -26,7 +27,11 @@ import { silentCatch } from '@/lib/silentCatch';
  * -------------------------------------------------------------------------- */
 
 /** teamId → the persona ids on that team, in membership order. */
-const rosterCache = new Map<string, string[]>();
+/** Roster TTL — a member change in the studio must show up in Manage within a
+ *  session without a reload; 5 minutes keeps the batched fetch rare while
+ *  giving the cache the freshness door a hand-rolled Map never has. */
+const ROSTER_TTL_MS = 5 * 60_000;
+const rosterCache = createTtlValueCache<string[]>(ROSTER_TTL_MS);
 const inflight = new Set<string>();
 const subscribers = new Set<() => void>();
 
@@ -63,7 +68,7 @@ let personasRequested = false;
  * @returns the live cache. Read it during render; a miss simply means the icons
  *   have not arrived yet, which is a legitimate paint (the count is already up).
  */
-export function useProjectTeamRosters(teamIds: readonly string[]): ReadonlyMap<string, readonly string[]> {
+export function useProjectTeamRosters(teamIds: readonly string[]): TtlValueCache<string[]> {
   useSyncExternalStore(subscribe, getVersion, getVersion);
 
   // A primitive key so the effect fires on a genuine change of the id SET, not
@@ -72,7 +77,7 @@ export function useProjectTeamRosters(teamIds: readonly string[]): ReadonlyMap<s
 
   useEffect(() => {
     const ids = key ? key.split(',') : [];
-    const missing = ids.filter((id) => !rosterCache.has(id) && !inflight.has(id));
+    const missing = ids.filter((id) => rosterCache.get(id) === undefined && !inflight.has(id));
     if (missing.length === 0) return;
     missing.forEach((id) => inflight.add(id));
     void Promise.all(

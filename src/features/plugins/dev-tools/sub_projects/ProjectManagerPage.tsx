@@ -21,6 +21,7 @@ import { ProjectModal } from './ProjectModal';
 import { ProjectRowMenu } from './ProjectManagerParts';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { Users } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaStack, usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { useProjectTeamRosters } from './useProjectTeamRosters';
 // Workspace layer above projects (tabs direction, chosen 2026-07-24): the
@@ -304,24 +305,31 @@ export default function ProjectManagerPage() {
         // Auto-created teams are backfilled asynchronously, so a project can
         // legitimately have no team yet. Inert em-dash, never a broken button.
         if (!teamId) {
-          return <span className="typo-caption text-foreground opacity-40">&mdash;</span>;
+          return (
+            <span className="typo-caption text-foreground opacity-40" aria-label={t.plugins.dev_projects.no_team_yet}>
+              &mdash;
+            </span>
+          );
         }
         const roster = rosters.get(teamId);
         // Count paints on the first frame from `teamCounts`; the roster refines
         // it once the batched fetch lands.
         const count = roster?.length ?? teamCounts[teamId]?.members ?? 0;
         return (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); enterTeam(teamId); }}
-            aria-label={tx(count === 1 ? t.pipeline.team_studio.members_count_one : t.pipeline.team_studio.members_count_other, { count })}
-            className="inline-flex items-center gap-1.5 h-7 px-1.5 rounded-interactive text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-          >
-            {roster && roster.length > 0
-              ? <PersonaStack ids={[...roster]} index={personaIndex} max={3} />
-              : <Users className={`w-3.5 h-3.5 ${count === 0 ? 'opacity-40' : ''}`} />}
-            <span className={`typo-caption tabular-nums text-foreground ${count === 0 ? 'opacity-40' : ''}`}>{count}</span>
-          </button>
+          <Tooltip content={t.plugins.dev_projects.col_members_open_team} placement="top">
+            <button
+              type="button"
+              data-testid={`project-members-${project.id}`}
+              onClick={(e) => { e.stopPropagation(); enterTeam(teamId); }}
+              aria-label={`${tx(count === 1 ? t.pipeline.team_studio.members_count_one : t.pipeline.team_studio.members_count_other, { count })} — ${t.plugins.dev_projects.col_members_open_team}`}
+              className="inline-flex items-center gap-1.5 h-7 px-1.5 rounded-interactive text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              {roster && roster.length > 0
+                ? <PersonaStack ids={[...roster]} index={personaIndex} max={3} />
+                : <Users className={`w-3.5 h-3.5 ${count === 0 ? 'opacity-40' : ''}`} />}
+              <span className={`typo-caption tabular-nums text-foreground ${count === 0 ? 'opacity-40' : ''}`}>{count}</span>
+            </button>
+          </Tooltip>
         );
       },
     },

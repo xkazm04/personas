@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "রেজিস্ট্রি",
     "launch_args_label": "আর্গুমেন্ট",
     "launch_args_none": "কিছু ঘোষণা করা হয়নি - স্কিলের প্রয়োজন হলে Athena জিজ্ঞাসা করবে।",
-    "launch_not_installed": "ইনস্টল করা নেই"
+    "launch_not_installed": "ইনস্টল করা নেই",
+    "back_to_projects": "প্রজেক্টে ফিরে যান"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "সরান…",
     "workspace_name_placeholder": "ওয়ার্কস্পেসের নাম",
     "workspace_new": "নতুন ওয়ার্কস্পেস",
-    "workspace_unassigned": "অনির্ধারিত"
+    "workspace_unassigned": "অনির্ধারিত",
+    "col_members_open_team": "টিম ওয়ার্কস্পেস খুলুন",
+    "no_team_yet": "এখনও কোনো টিম নেই"
   },
   "dev_runner": {
     "self_healing": "স্ব-নিরাময়",

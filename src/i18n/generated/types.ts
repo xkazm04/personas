@@ -14894,6 +14894,7 @@ export type Translations = {
       launch_args_label: string;
       launch_args_none: string;
       launch_not_installed: string;
+      back_to_projects: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -16716,6 +16717,8 @@ export type Translations = {
       group_binding_bound: string;
       group_binding_orphan: string;
       group_binding_orphan_label: string;
+      col_members_open_team: string;
+      no_team_yet: string;
     };
     dev_runner: {
       self_healing: string;

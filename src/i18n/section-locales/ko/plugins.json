@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "레지스트리",
     "launch_args_label": "인자",
     "launch_args_none": "선언된 것 없음 - 필요하면 Athena가 물어봅니다.",
-    "launch_not_installed": "설치되지 않음"
+    "launch_not_installed": "설치되지 않음",
+    "back_to_projects": "프로젝트로 돌아가기"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "이동…",
     "workspace_name_placeholder": "워크스페이스 이름",
     "workspace_new": "새 워크스페이스",
-    "workspace_unassigned": "미할당"
+    "workspace_unassigned": "미할당",
+    "col_members_open_team": "팀 워크스페이스 열기",
+    "no_team_yet": "아직 팀이 없습니다"
   },
   "dev_runner": {
     "self_healing": "자가 복구",

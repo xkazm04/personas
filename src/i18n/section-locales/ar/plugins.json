@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "السجل",
     "launch_args_label": "الوسائط",
     "launch_args_none": "لا شيء معلن - ستسأل Athena إذا احتاجت المهارة أي وسائط.",
-    "launch_not_installed": "غير مثبت"
+    "launch_not_installed": "غير مثبت",
+    "back_to_projects": "العودة إلى المشاريع"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "نقل إلى…",
     "workspace_name_placeholder": "اسم مساحة العمل",
     "workspace_new": "مساحة عمل جديدة",
-    "workspace_unassigned": "غير معيَّن"
+    "workspace_unassigned": "غير معيَّن",
+    "col_members_open_team": "فتح مساحة عمل الفريق",
+    "no_team_yet": "لا يوجد فريق بعد"
   },
   "dev_runner": {
     "self_healing": "المعالجة الذاتية",

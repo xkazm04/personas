@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "रजिस्ट्री",
     "launch_args_label": "आर्गुमेंट",
     "launch_args_none": "कोई घोषित नहीं - ज़रूरत होने पर Athena पूछेगी।",
-    "launch_not_installed": "इंस्टॉल नहीं है"
+    "launch_not_installed": "इंस्टॉल नहीं है",
+    "back_to_projects": "प्रोजेक्ट्स पर वापस जाएं"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "यहाँ ले जाएँ…",
     "workspace_name_placeholder": "वर्कस्पेस नाम",
     "workspace_new": "नया वर्कस्पेस",
-    "workspace_unassigned": "अनिर्दिष्ट"
+    "workspace_unassigned": "अनिर्दिष्ट",
+    "col_members_open_team": "टीम कार्यक्षेत्र खोलें",
+    "no_team_yet": "अभी कोई टीम नहीं"
   },
   "dev_runner": {
     "self_healing": "स्व-उपचार",

@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "注册表",
     "launch_args_label": "参数",
     "launch_args_none": "未声明 - 如技能需要，Athena 会询问。",
-    "launch_not_installed": "未安装"
+    "launch_not_installed": "未安装",
+    "back_to_projects": "返回项目"
   },
   "doc_signing": {
     "sign_heading": "签署文档",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "移动到…",
     "workspace_name_placeholder": "工作区名称",
     "workspace_new": "新建工作区",
-    "workspace_unassigned": "未分配"
+    "workspace_unassigned": "未分配",
+    "col_members_open_team": "打开团队工作区",
+    "no_team_yet": "暂无团队"
   },
   "dev_runner": {
     "self_healing": "自愈",

@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "レジストリ",
     "launch_args_label": "引数",
     "launch_args_none": "宣言なし - 必要な場合は Athena が確認します。",
-    "launch_not_installed": "未インストール"
+    "launch_not_installed": "未インストール",
+    "back_to_projects": "プロジェクトに戻る"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "移動先…",
     "workspace_name_placeholder": "ワークスペース名",
     "workspace_new": "新しいワークスペース",
-    "workspace_unassigned": "未割り当て"
+    "workspace_unassigned": "未割り当て",
+    "col_members_open_team": "チームワークスペースを開く",
+    "no_team_yet": "チームはまだありません"
   },
   "dev_runner": {
     "self_healing": "自己修復",

@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "Реестр",
     "launch_args_label": "Аргументы",
     "launch_args_none": "Не объявлены - Athena спросит, если навыку они нужны.",
-    "launch_not_installed": "Не установлено"
+    "launch_not_installed": "Не установлено",
+    "back_to_projects": "Назад к проектам"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "Переместить в…",
     "workspace_name_placeholder": "Название рабочего пространства",
     "workspace_new": "Новое рабочее пространство",
-    "workspace_unassigned": "Без назначения"
+    "workspace_unassigned": "Без назначения",
+    "col_members_open_team": "Открыть рабочее пространство команды",
+    "no_team_yet": "Команды пока нет"
   },
   "dev_runner": {
     "self_healing": "Самовосстановление",

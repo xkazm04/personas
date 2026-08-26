@@ -1740,7 +1740,8 @@
     "skills_tab_registry": "Registro",
     "launch_args_label": "Argumentos",
     "launch_args_none": "Ninguno declarado - Athena preguntará si la habilidad los necesita.",
-    "launch_not_installed": "No instalado"
+    "launch_not_installed": "No instalado",
+    "back_to_projects": "Volver a Proyectos"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",
@@ -3562,7 +3563,9 @@
     "workspace_move_to": "Mover a…",
     "workspace_name_placeholder": "Nombre del espacio de trabajo",
     "workspace_new": "Nuevo espacio de trabajo",
-    "workspace_unassigned": "Sin asignar"
+    "workspace_unassigned": "Sin asignar",
+    "col_members_open_team": "Abrir espacio del equipo",
+    "no_team_yet": "Aún sin equipo"
   },
   "dev_runner": {
     "self_healing": "Auto-Sanación",

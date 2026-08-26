@@ -29,16 +29,18 @@ let app: CompanionBridge;
 const GOAL = 'Draft a short launch announcement and review it for tone';
 
 async function openFirstTeam(app: CompanionBridge): Promise<void> {
+  // Projects consolidation (2026-08-26): team-nav now opens the Manage table;
+  // a team detail is entered through a project row's Members button.
   await app.navigate('personas');
   await app.clickTestId('team-nav');
-  await app.waitFor('[data-testid^="team-row-"]', 8_000).catch(() => {});
-  const rows = await app.query('[data-testid^="team-row-"]');
-  if (rows.length === 0) {
-    throw new Error('No teams found — create a team before running this suite.');
+  await app.waitFor('[data-testid^="project-members-"]', 8_000).catch(() => {});
+  const cells = await app.query('[data-testid^="project-members-"]');
+  if (cells.length === 0) {
+    throw new Error('No project with a team found — create a dev project before running this suite.');
   }
-  const teamTestId = rows[0]?.testId;
-  if (!teamTestId) throw new Error('team-row has no testId');
-  await app.clickTestId(teamTestId);
+  const membersTestId = cells[0]?.testId;
+  if (!membersTestId) throw new Error('project-members cell has no testId');
+  await app.clickTestId(membersTestId);
   await app.waitFor('[data-testid="team-mode-orchestrate"]', 8_000);
 }
 

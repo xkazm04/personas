@@ -139,7 +139,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {t.plugins.dev_tools.projects_title}
+                {t.plugins.dev_tools.back_to_projects}
               </button>
             ) : null}
           </div>

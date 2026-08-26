@@ -14887,7 +14887,8 @@
       "launch_ungrouped": "Ungrouped",
       "launch_args_label": "Arguments",
       "launch_args_none": "None declared - Athena will ask if the skill needs any.",
-      "launch_not_installed": "Not installed"
+      "launch_not_installed": "Not installed",
+      "back_to_projects": "Back to Projects"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
@@ -16709,7 +16710,9 @@
       "group_binding_empty": "No groups yet — create one under Agents → Groups to bind it here.",
       "group_binding_bound": "Project is bound to this PersonaGroup workspace",
       "group_binding_orphan": "Bound group has been deleted; open project to rebind",
-      "group_binding_orphan_label": "group removed"
+      "group_binding_orphan_label": "group removed",
+      "col_members_open_team": "Open team workspace",
+      "no_team_yet": "No team yet"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

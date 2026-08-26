@@ -14593,7 +14593,8 @@
       "skills_tab_registry": "Sổ đăng ký",
       "launch_args_label": "Tham số",
       "launch_args_none": "Không khai báo - Athena sẽ hỏi nếu kỹ năng cần.",
-      "launch_not_installed": "Chưa cài đặt"
+      "launch_not_installed": "Chưa cài đặt",
+      "back_to_projects": "Quay lại Dự án"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",
@@ -16415,7 +16416,9 @@
       "workspace_move_to": "Chuyển đến…",
       "workspace_name_placeholder": "Tên không gian làm việc",
       "workspace_new": "Không gian làm việc mới",
-      "workspace_unassigned": "Chưa gán"
+      "workspace_unassigned": "Chưa gán",
+      "col_members_open_team": "Mở không gian làm việc của nhóm",
+      "no_team_yet": "Chưa có nhóm"
     },
     "dev_runner": {
       "self_healing": "Tự phục hồi",
