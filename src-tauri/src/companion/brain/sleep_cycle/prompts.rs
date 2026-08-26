@@ -5,6 +5,8 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use chrono::Utc;
+
 use super::limits::RECONCILE_VALUE_CHARS;
 use super::parse::one_line;
 use crate::companion::brain::{episodic, semantic, taxonomy};
@@ -53,6 +55,14 @@ pub(super) fn build_compress_prompt(
          repeating — leaving the conversation itself in the archive.\n\n",
     );
 
+    // The model cannot turn "until October" into a date it does not know.
+    // An expiry it has to guess at is an expiry it will guess wrong, and
+    // this is one line against a whole class of silently mis-dated facts.
+    p.push_str(&format!(
+        "TODAY IS {}. Resolve any relative date against it.\n\n",
+        Utc::now().format("%Y-%m-%d")
+    ));
+
     p.push_str("RULES — non-negotiable:\n");
     p.push_str(
         "1. Every item MUST cite at least one episode id from the evidence block in \
@@ -61,6 +71,13 @@ pub(super) fn build_compress_prompt(
          2. Durable only. \"He asked about X today\" is an episode, not a fact. Preferences, \
          constraints, decisions, project state, relationships, ways of working — those are \
          facts.\n\
+         2b. Durable is not the same as forever. Some true, worth-keeping facts carry \
+         their own end date — a leave that runs until October, a freeze that lifts on \
+         the 14th, a role held until the migration ships. Emit those as facts AND set \
+         `expires_at` to the last calendar date they still hold, as YYYY-MM-DD. Set it \
+         ONLY when the evidence states or directly implies a boundary; if nothing said \
+         when it ends, leave it null. An invented date deletes a true fact, so null is \
+         always the safe answer.\n\
          3. A `fact` is something that IS. A `procedural` is something to DO: a trigger and \
          the behaviour it should produce.\n\
          4. Tag from the vocabulary below and nowhere else. A tag that is not on the list is \
@@ -99,7 +116,8 @@ pub(super) fn build_compress_prompt(
          \x20 \"facts\": [\n\
          \x20   {\"scope\":\"user\"|\"project\"|\"world\", \"key\":\"short_slug\", \
          \"value\":\"one paragraph\", \"tags\":[\"...\"], \"confidence\":0.0-1.0, \
-         \"provenance\":[\"ep_…\"], \"supersedes_id\":\"fact_…\"|null}\n\
+         \"provenance\":[\"ep_…\"], \"supersedes_id\":\"fact_…\"|null, \
+         \"expires_at\":\"YYYY-MM-DD\"|null}\n\
          \x20 ],\n\
          \x20 \"procedurals\": [\n\
          \x20   {\"scope\":\"chat\"|\"action\"|\"memory\"|\"build\", \"trigger\":\"when …\", \

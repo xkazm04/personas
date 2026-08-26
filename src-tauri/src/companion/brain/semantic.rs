@@ -73,6 +73,8 @@ pub struct Fact {
     pub supersedes_id: Option<String>,
     pub contradicts_id: Option<String>,
     pub updated_at: String,
+    /// Last calendar date (YYYY-MM-DD) this claim still holds, if it named one.
+    pub expires_at: Option<String>,
 }
 
 /// Input for writing a fact. `sources` non-empty is mandatory — caller
@@ -87,6 +89,10 @@ pub struct FactInput<'a> {
     pub confidence: f32, // 0..1
     pub supersedes_id: Option<&'a str>,
     pub contradicts_id: Option<&'a str>,
+    /// The last calendar date (YYYY-MM-DD) on which this claim still holds,
+    /// when the claim named one. `None` is the normal case; a caller must
+    /// never invent a boundary the source did not state.
+    pub expires_at: Option<&'a str>,
 }
 
 pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, AppError> {
@@ -135,8 +141,8 @@ pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, Ap
     )?;
 
     tx.execute(
-        "INSERT INTO companion_fact (id, scope, fact_key, confidence, supersedes_id, contradicts_id, last_seen_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO companion_fact (id, scope, fact_key, confidence, supersedes_id, contradicts_id, last_seen_at, expires_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             id,
             scope_s,
@@ -145,6 +151,7 @@ pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, Ap
             input.supersedes_id,
             input.contradicts_id,
             now,
+            input.expires_at,
         ],
     )?;
 
@@ -346,7 +353,7 @@ pub fn list_facts(
     let sql = format!(
         "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                 f.confidence, f.supersedes_id, f.contradicts_id,
-                n.updated_at
+                n.updated_at, f.expires_at
          FROM companion_fact f
          JOIN companion_node n ON n.id = f.id
          WHERE n.kind = 'fact' {scope_filter} {imp_filter}
@@ -382,7 +389,7 @@ pub fn get_fact(pool: &UserDbPool, id: &str) -> Result<Option<Fact>, AppError> {
         .query_row(
             "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                     f.confidence, f.supersedes_id, f.contradicts_id,
-                    n.updated_at
+                    n.updated_at, f.expires_at
              FROM companion_fact f
              JOIN companion_node n ON n.id = f.id
              WHERE n.id = ?1",
@@ -477,6 +484,7 @@ fn map_fact_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Fact> {
         supersedes_id: row.get(6)?,
         contradicts_id: row.get(7)?,
         updated_at: row.get(8)?,
+        expires_at: row.get(9)?,
         sources: Vec::new(),
     })
 }

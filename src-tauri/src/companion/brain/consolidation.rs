@@ -334,6 +334,7 @@ pub async fn apply_item(
         confidence,
         supersedes_id: supersedes,
         contradicts_id: None,
+        expires_at: None,
     };
 
     let fact_id = match embedder {
@@ -428,6 +429,7 @@ pub async fn apply_item(
         confidence,
         supersedes_id: supersedes,
         contradicts_id: None,
+        expires_at: None,
     };
 
     let fact_id = semantic::write_fact(pool, &input)?;
@@ -510,6 +512,56 @@ pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     Ok(updated as i64)
 }
 
+/// Retire facts whose own stated validity window has closed.
+///
+/// The third exit from the store, and the only one that needs no judgment.
+/// [`decay_unused_facts`] asks whether an item still *matters*; supersedence
+/// at the consolidation layer asks whether something *replaced* it. A fact
+/// that said "until October" answered both when it was written, and neither
+/// mechanism can see it:
+///
+/// - Supersedence never fires, because nothing arrives to supersede. October
+///   produces no replacement fact; the world moves past the claim and files no
+///   notice.
+/// - Decay never fires, because on every input the score reads the row looks
+///   healthy — recent, well-grounded, confident. Worse, `last_seen_at`
+///   actively protects it: a claim about the current quarter is exactly what
+///   queries about the current quarter match, so a time-boxed fact banks
+///   recency during the window in which it is true and spends it staying alive
+///   afterwards. Retrieval keeps the store's most confidently wrong rows in
+///   the recall set.
+///
+/// Demotion, not deletion: importance 0 is retrieval-ineligible while the SQL
+/// row, the markdown body and the provenance survive for audit — the same
+/// posture [`prune_low_value_facts`] takes, for the same reason.
+///
+/// One rule for whoever adds an operator-issued "forget this" lane later: an
+/// expiry must NOT be recorded through it. A deliberate forget is the one
+/// signal that has to suppress re-derivation of a key, or the next cycle reads
+/// the same episodes and reverses the correction. An expiry is the opposite —
+/// "on leave until October" closing is precisely the moment a fresh fact under
+/// that key becomes learnable again. Two different forget semantics with two
+/// different downstream obligations; collapsing them makes every expiry
+/// permanent and every expired key unlearnable.
+///
+/// Comparison is `expires_at < today` on `YYYY-MM-DD` strings, so a fact
+/// survives through the whole of the last day it named. Idempotent: rows
+/// already at importance 0 are excluded, so a re-run matches nothing.
+pub fn retire_expired_facts(pool: &UserDbPool) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    let today = Utc::now().format("%Y-%m-%d").to_string();
+    let now = Utc::now().to_rfc3339();
+    let n = conn.execute(
+        "UPDATE companion_node SET importance = 0, updated_at = ?1
+           WHERE kind = 'fact'
+             AND importance > 0
+             AND id IN (SELECT id FROM companion_fact
+                         WHERE expires_at IS NOT NULL AND expires_at < ?2)",
+        params![now, today],
+    )?;
+    Ok(n as i64)
+}
+
 /// Wall-clock timestamp of this process's last lifecycle sweep, 0 = never.
 /// Process-local rather than persisted on purpose: [`decay_unused_facts`] is
 /// already idempotent within its own `DECAY_THRESHOLD_DAYS` window (it guards
@@ -558,6 +610,19 @@ pub fn maybe_run_lifecycle_sweep(pool: &UserDbPool) {
         return;
     }
 
+    // Expiry runs FIRST. It is the cheapest and the least arguable of the
+    // three, and running it ahead of decay keeps a self-dated fact from
+    // spending another window's worth of recency on staying alive.
+    match retire_expired_facts(pool) {
+        Ok(n) if n > 0 => {
+            tracing::info!(
+                retired = n,
+                "companion: lifecycle sweep retired expired facts"
+            )
+        }
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "companion: fact expiry failed (continuing)"),
+    }
     match decay_unused_facts(pool) {
         Ok(n) if n > 0 => {
             tracing::info!(

@@ -174,6 +174,7 @@ pub(super) fn apply_candidates(
                     confidence: c.confidence,
                     supersedes_id: c.supersedes_id.as_deref(),
                     contradicts_id: None,
+                    expires_at: c.expires_at.as_deref(),
                 },
             )?;
             apply_tags(pool, &id, &c.tags)?;
@@ -243,6 +244,8 @@ struct FactCandidate {
     confidence: f32,
     sources: Vec<String>,
     supersedes_id: Option<String>,
+    /// Last calendar date this claim holds, when the claim named one itself.
+    expires_at: Option<String>,
 }
 
 struct ProceduralCandidate {
@@ -308,7 +311,39 @@ fn parse_fact_candidate(
         confidence,
         sources,
         supersedes_id,
+        expires_at: parse_expiry(&str_field(item, "expires_at")),
     }))
+}
+
+/// A self-declared expiry, or `None`.
+///
+/// Accepts exactly `YYYY-MM-DD` and nothing else. Everything looser — a bare
+/// month, "next spring", a full timestamp — is refused rather than coerced,
+/// because the failure mode of guessing here is silent and permanent: a
+/// boundary invented by the parser retires a true fact on a date nobody chose.
+/// An absent or unparseable value is not a default expiry, it is the absence
+/// of one, which is also the answer for the overwhelming majority of facts.
+fn parse_expiry(raw: &str) -> Option<String> {
+    let s = raw.trim();
+    let b = s.as_bytes();
+    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
+        return None;
+    }
+    if !s.char_indices().all(|(i, c)| {
+        if i == 4 || i == 7 {
+            c == '-'
+        } else {
+            c.is_ascii_digit()
+        }
+    }) {
+        return None;
+    }
+    let month: u8 = s[5..7].parse().ok()?;
+    let day: u8 = s[8..10].parse().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
+    Some(s.to_string())
 }
 
 fn parse_procedural_candidate(
@@ -475,4 +510,45 @@ fn apply_tags(pool: &UserDbPool, node_id: &str, tags: &[String]) -> Result<(), A
     )?;
     tx.commit()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod expiry_tests {
+    use super::parse_expiry;
+
+    #[test]
+    fn accepts_an_exact_iso_date_and_trims_it() {
+        assert_eq!(parse_expiry("2026-10-01").as_deref(), Some("2026-10-01"));
+        assert_eq!(
+            parse_expiry("  2026-12-31  ").as_deref(),
+            Some("2026-12-31")
+        );
+    }
+
+    /// Every one of these is a boundary the model *might* have meant, and
+    /// coercing any of them would invent a deletion date the evidence never
+    /// stated. Refusing is the whole contract: no boundary is not a boundary
+    /// of today.
+    #[test]
+    fn refuses_everything_it_would_have_to_guess_at() {
+        for raw in [
+            "",
+            "null",
+            "next spring",
+            "2026-10",
+            "2026/10/01",
+            "2026-10-01T00:00:00Z",
+            "20261001",
+            "abcd-ef-gh",
+        ] {
+            assert_eq!(parse_expiry(raw), None, "should refuse {raw:?}");
+        }
+    }
+
+    #[test]
+    fn refuses_a_well_shaped_date_that_is_not_a_date() {
+        for raw in ["2026-13-01", "2026-10-32", "2026-00-10", "2026-10-00"] {
+            assert_eq!(parse_expiry(raw), None, "should refuse {raw:?}");
+        }
+    }
 }

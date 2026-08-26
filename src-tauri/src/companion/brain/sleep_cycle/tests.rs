@@ -541,6 +541,7 @@ async fn the_supersede_cap_binds_and_bad_ids_are_refused() {
             confidence: 0.8,
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
         },
     )
     .unwrap();
@@ -555,6 +556,7 @@ async fn the_supersede_cap_binds_and_bad_ids_are_refused() {
             confidence: 0.9,
             supersedes_id: None,
             contradicts_id: None,
+            expires_at: None,
         },
     )
     .unwrap();

@@ -247,6 +247,7 @@ pub(crate) async fn execute_write_fact(
         confidence,
         supersedes_id: supersedes,
         contradicts_id: contradicts,
+        expires_at: None,
     };
 
     let pool = &state.user_db;
