@@ -19,6 +19,20 @@ import { CoverageDetailDrawer } from './CoverageDetailDrawer';
 import { CoverageTileCard } from './CoverageTileCard';
 import type { TileView } from './coverageModel';
 import { useRegistryCoverage } from './useRegistryCoverage';
+// PROTOTYPE SCAFFOLD (/prototype 2026-08-26) — three redesign directions
+// behind a switcher; the baseline tile grid stays as the reference. The
+// switcher and losers are deleted at consolidation.
+import { CoverageMatrix } from './variants/CoverageMatrix';
+import { CoverageGauges } from './variants/CoverageGauges';
+import { CoverageLedger } from './variants/CoverageLedger';
+
+type CoverageVariant = 'matrix' | 'gauges' | 'ledger' | 'baseline';
+const COVERAGE_TABS: { id: CoverageVariant; label: string; sub: string }[] = [
+  { id: 'matrix', label: 'Matrix', sub: 'projects × dimensions heat grid — scan a column to compare' },
+  { id: 'gauges', label: 'Gauges', sub: 'instrument cards — four-arc health ring per project' },
+  { id: 'ledger', label: 'Ledger', sub: 'pipeline rows — registry → extracted → applied → fresh' },
+  { id: 'baseline', label: 'Baseline', sub: 'current tile grid' },
+];
 
 /** Calm, static ghost tile (never pulsing — loading doctrine law 3) matching
  *  the real tile's geometry: name line + four dimension rows. */
@@ -48,6 +62,7 @@ export function CoverageLane() {
   const addToast = useToastStore((s) => s.addToast);
   const { registry, othersCount, data, loading, error, refetch } = useRegistryCoverage();
   const [openTile, setOpenTile] = useState<TileView | null>(null);
+  const [variant, setVariant] = useState<CoverageVariant>('matrix');
 
   // No paired registry: point at the wiring surface (Dev Tools → Workspaces).
   if (!registry) {
@@ -103,11 +118,20 @@ export function CoverageLane() {
               <RelativeTime timestamp={coverage.generatedAt} />
             </span>
           )}
-          <span className="ml-auto">
-            <AsyncButton size="sm" variant="secondary" icon={<RefreshCw className="w-3.5 h-3.5" aria-hidden />} onClick={onSync}>
-              {tc.sync_action}
-            </AsyncButton>
+          {/* PROTOTYPE SCAFFOLD — variant switcher (throwaway). */}
+          <span className="ml-auto flex items-center gap-0.5 rounded-interactive border border-border/50 bg-secondary/30 p-0.5">
+            {COVERAGE_TABS.map((v) => (
+              <button key={v.id} type="button" onClick={() => setVariant(v.id)} aria-pressed={variant === v.id} title={v.sub}
+                className={`typo-caption rounded-interactive px-2 py-1 transition-colors ${
+                  variant === v.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/60 hover:text-foreground'
+                }`}>
+                {v.label}
+              </button>
+            ))}
           </span>
+          <AsyncButton size="sm" variant="secondary" icon={<RefreshCw className="w-3.5 h-3.5" aria-hidden />} onClick={onSync}>
+            {tc.sync_action}
+          </AsyncButton>
         </div>
 
         {coverage !== null && coverage.laneDates.length > 0 && (
@@ -172,15 +196,23 @@ export function CoverageLane() {
               ))}
             </div>
           ) : data !== null ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {data.tiles.map((view) => (
-                <CoverageTileCard
-                  key={view.tile.projectId}
-                  view={view}
-                  onOpen={() => setOpenTile(view)}
-                />
-              ))}
-            </div>
+            variant === 'matrix' ? (
+              <CoverageMatrix tiles={data.tiles} onOpen={setOpenTile} />
+            ) : variant === 'gauges' ? (
+              <CoverageGauges tiles={data.tiles} onOpen={setOpenTile} />
+            ) : variant === 'ledger' ? (
+              <CoverageLedger tiles={data.tiles} onOpen={setOpenTile} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {data.tiles.map((view) => (
+                  <CoverageTileCard
+                    key={view.tile.projectId}
+                    view={view}
+                    onOpen={() => setOpenTile(view)}
+                  />
+                ))}
+              </div>
+            )
           ) : null}
 
           {/* Registry-only slugs — rendered, never guessed away (plan D3). */}

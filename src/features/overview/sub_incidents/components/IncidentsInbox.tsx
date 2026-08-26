@@ -23,7 +23,12 @@ import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentDetailModal } from './IncidentDetailModal';
 import { IncidentsLedgerView } from './ledger/IncidentsLedgerView';
+import { IncidentsLedgerSignal } from './ledger/IncidentsLedgerSignal';
+import { IncidentsLedgerDossier } from './ledger/IncidentsLedgerDossier';
+import { IncidentsLedgerColumns } from './ledger/IncidentsLedgerColumns';
 import { AutonomousLogPanel } from './autonomous/AutonomousLogPanel';
+// PROTOTYPE SCAFFOLD (round 2) — removed at consolidation.
+import { useIncidentsVariants, VariantStrip, TabGroup, INBOX_TABS, AUTONOMOUS_TABS } from './IncidentsVariantSwitch';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import { isNarrowedFilters } from '../libs/incidentFilterDefaults';
 
@@ -41,6 +46,7 @@ export default function IncidentsInbox() {
 
   const { incidents, summary, loading, error, refresh, truncated } = useIncidentsData(filters);
   const autonomous = useAutonomousIncidents();
+  const variants = useIncidentsVariants();
 
   const onAfterChange = useCallback(async () => {
     setClearedByAction(true);
@@ -123,6 +129,12 @@ export default function IncidentsInbox() {
       <ContentBody>
         <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
 
+        {/* PROTOTYPE SCAFFOLD (round 2) — removed at consolidation. */}
+        <VariantStrip>
+          <TabGroup legend="Inbox" tabs={INBOX_TABS} value={variants.inbox} onChange={variants.setInbox} />
+          <TabGroup legend="Autonomous" tabs={AUTONOMOUS_TABS} value={variants.autonomous} onChange={variants.setAutonomous} />
+        </VariantStrip>
+
         <div className="px-4 pt-3 pb-2">
           <IncidentsInboxKpiHeader
             summary={summary}
@@ -142,6 +154,7 @@ export default function IncidentsInbox() {
             loading={autonomous.loading}
             onOpenIncident={openDetail}
             onBack={() => setShowAutonomous(false)}
+            variant={variants.autonomous}
           />
         ) : (
           <>
@@ -185,6 +198,12 @@ export default function IncidentsInbox() {
                   />
                 )}
               </div>
+            ) : variants.inbox === 'signal' ? (
+              <IncidentsLedgerSignal {...ledgerProps} />
+            ) : variants.inbox === 'dossier' ? (
+              <IncidentsLedgerDossier {...ledgerProps} />
+            ) : variants.inbox === 'columns' ? (
+              <IncidentsLedgerColumns {...ledgerProps} />
             ) : (
               <IncidentsLedgerView {...ledgerProps} />
             )}

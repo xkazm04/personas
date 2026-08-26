@@ -1,16 +1,21 @@
 // The autonomous log as it appears inside the inbox: a way back, then the
-// trail itself. Separated from the inbox shell so the shell stays at
+// log itself. Separated from the inbox shell so the shell stays at
 // orchestration altitude and this surface can grow its own chrome.
 
 import { Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AutonomousLogTrail } from './AutonomousLogTrail';
+import { AutonomousLogTimeline } from './AutonomousLogTimeline';
+import { AutonomousLogReceipts } from './AutonomousLogReceipts';
+import { AutonomousLogRegister } from './AutonomousLogRegister';
 import type { AutonomousLogProps } from './autonomousLogTypes';
+import type { AutonomousVariant } from '../IncidentsVariantSwitch';
 
 export function AutonomousLogPanel({
-  incidents, loading, onOpenIncident, onBack,
-}: AutonomousLogProps & { onBack: () => void }) {
+  incidents, loading, onOpenIncident, onBack, variant,
+}: AutonomousLogProps & { onBack: () => void; variant: AutonomousVariant }) {
   const { t } = useTranslation();
+  const logProps = { incidents, loading, onOpenIncident };
   return (
     <div>
       <div className="flex items-center px-4 pb-2">
@@ -23,7 +28,11 @@ export function AutonomousLogPanel({
           {t.overview.incidents.ledger.back_to_inbox}
         </button>
       </div>
-      <AutonomousLogTrail incidents={incidents} loading={loading} onOpenIncident={onOpenIncident} />
+      {/* PROTOTYPE SCAFFOLD (round 2) — the variant prop is removed at consolidation. */}
+      {variant === 'timeline' ? <AutonomousLogTimeline {...logProps} />
+        : variant === 'receipts' ? <AutonomousLogReceipts {...logProps} />
+        : variant === 'register' ? <AutonomousLogRegister {...logProps} />
+        : <AutonomousLogTrail {...logProps} />}
     </div>
   );
 }
