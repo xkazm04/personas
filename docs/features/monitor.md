@@ -25,26 +25,13 @@ instant open/close.
 
 ### One coordinated header surface
 
-The three titlebar surfaces — **Schedule** (a route), **Notifications** (a
-right-side tray), and the **Persona Monitor** (a full-screen overlay) — are
-coordinated through a single mutually-exclusive controller
-(`uiSlice.headerOverlay`: `'none' | 'monitor' | 'notifications'`):
-
-- **Only one overlay is ever open.** Opening the Monitor closes the
-  Notifications tray and vice-versa — they can no longer stack and fight.
-- **Navigating anywhere closes the open overlay.** Clicking Schedule (or any
-  sidebar destination) dismisses the Monitor/Notifications and shows the route.
-- **Back and `Esc` close the active overlay first.** The titlebar **Back**
-  button closes whichever overlay is open (returning you to exactly the screen
-  it floated over) before it falls back to popping the section history; it is
-  shown whenever an overlay is open even if the history is empty.
-- **Each button carries a clear active state.** While its surface is open, the
-  Schedule / Notifications / Monitor button takes a theme-primary background
-  highlight (`.titlebar-btn-active`) — including the Monitor button, which
-  previously had no open-state indicator.
-
-Athena's "open monitor" pseudo-route and the `Ctrl/⌘+M` shortcut both flow
-through the same controller.
+> Restructured 2026-08-26: the header is now a ROUTER of four top-level views
+> — **Activity (default) | Timeline | Conversations | Map** — replacing the
+> old two-level switching (view-mode toggles + the Channels workspace's own
+> nested layout pills). The persona search input was removed with the columns
+> view it filtered; the Live pop-ups toggle is icon-only (Bell) with its label
+> in the tooltip. The last-selected tab persists across monitor opens within a
+> session.
 
 ## The global fleet activity strip
 
@@ -79,136 +66,46 @@ app body in `App.tsx`); its centre-out slot math lives in the pure, unit-tested
 `fleetStripModel.ts` (`centerOutOrder` / `layoutSlots`). Reduced-motion users
 get the populated state without the synchronized pulse animation.
 
-## The grid
+## Views
 
-One card per persona, fleet-wide — including idle personas.
+### Activity (default)
 
-### Card anatomy — the Pillar layout (v2)
+The whole fleet as state-coloured persona squares grouped by team into slim
+columns (running / attention / failed / idle, corner legend). Each square
+additionally wears its **dominant pending operation** as a corner icon+count
+badge — failed > review > input-required > draft > message — with the full
+breakdown in the tooltip. Below each team's personas, a divider introduces the
+**fleet-session lane**: one small hollow square per live Fleet session
+dispatched under that team's dev project (session → project by working
+directory, project → team by `team_id`), border-coloured by the canonical
+fleet state palette. Teamless sessions and personas share the Ungrouped tray.
+The System band (persona-less app-level processes) sits above the board.
 
-Each card has a hairline **1px top strip** carrying the state signal, with the
-title anchored to the top and caption + telemetry + health + badges + icon
-grouped at the bottom via flex justify-between:
+> The former per-project columns view (MonitorProjectColumns) was descoped
+> 2026-08-26; its operation badges migrated onto the Activity squares.
 
-```
-┌──────────────────────────┐
-│──────────────────────────│   1px top strip (state colour)
-│ Persona Name        🔧  │   title button (primary open) · hover quick-open
-│                          │
-│ running · 2m 14s         │   state caption (live elapsed, clickable)
-│ 12 tools · $0.030        │   live telemetry (running cards only)
-│ ▪▪▪▫▪▪▪  92%             │   recent-run health micro-bar + success rate
-│ [3⚠] [2✉]            🧠 │   badges left · persona icon bottom-right
-└──────────────────────────┘
-```
+### Timeline
 
-- **Top strip** — encodes execution state at the highest priority level
-  (running > failed > input_required > draft_ready > queued > attention >
-  idle). The strip pulses for live work (`running`, `input_required`).
-- **Title** — fills the full card width, clamps to two lines, anchors to the
-  top, and is itself a **button** that opens the card's most relevant drawer
-  section (activity for active states, reviews/messages for attention,
-  capabilities for idle) — so every card has a clear primary action.
-- **Hover quick-open** — a wrench affordance (top-right, on hover) jumps
-  straight to the **Capabilities** section to quick-fire the persona.
-- **State caption** — a short, colour-coded label (`running · 2m 14s`,
-  `Last run failed`, `Input needed`, …). When it refers to live work it is
-  clickable and opens the **Activity** section.
-- **Live telemetry** — running cards show live tool-call count and USD cost,
-  summed across that persona's running processes.
-- **Health micro-bar** — the last seven run outcomes as colour ticks
-  (green = completed, red = failed, amber = other), oldest→newest, with the
-  success-rate percent. Hovering shows `% success · runs today`. Hidden when
-  the persona has no run history.
-- **Attention badges** — bottom-left. Reviews (tinted by highest severity)
-  and unread messages each get their own badge; clicking opens the
-  corresponding drawer section.
-- **Persona icon** — bottom-right as a slightly muted signature mark; lifts
-  to full opacity on hover.
+The read-only cross-team log (formerly Channels → Timeline): virtualized
+30px radio rows, five composable lens dimensions in the left tuner rail
+(kind · event family · callsign · channel · search) with live counts. Rows
+sign with a real voice — persona callsign, You / Athena / Director, bridged
+Slack names — and step rows show their lifecycle label (step_running /
+step_done / ...), so consecutive lifecycle rows never read as duplicates.
 
-The card's visual/state mapping is resolved by pure, unit-tested helpers in
-`monitorModel.ts` (`pillarVisual`, `captionDescriptor`, `primaryDrawerSection`,
-`healthSegments`), keeping the component to markup + i18n.
+### Conversations
 
-Cards sort worst-first: failures → things needing you → just-busy → idle.
+The messenger, and the only place you write. Team channels (bands for
+assignments/deliberations interleaved with talk bubbles, composer with
+goal-routing) and **persona conversations** (chat bubbles with optimistic
+echo, Reports as clamped markdown previews with an attachment chip opening
+the full Report viewer, events/memories as subtle system lines, human
+reviews as inline quick-decide cards with an open-in-Reviews forward).
 
-### Header live chip
+### Map
 
-When any execution is running, the Monitor header shows a pulsing **live
-chip** — running count plus aggregate in-flight USD cost — derived from the
-`summarizeFleet` rollup.
-
-### Group by
-
-If any **teams** exist (see [personas](./personas/README.md) § Home team),
-the header shows a **By home team** toggle. When enabled, the grid is
-partitioned into sections — one per team that is some persona's home team,
-plus an **Unassigned** section for personas with `home_team_id = null`.
-Each section header carries the team's color stripe and a chevron to
-collapse the section locally (state is per-session, not persisted). Teams
-with no visible personas (after the active-project filter) are hidden so
-the header isn't padded with empty sections.
-
-### System band
-
-App-level activity not tied to a persona — idea scans, context maps, the task
-runner — appears in the **System band** above the grid.
-
-> A process is attributed to a persona via its `personaId`, navigation
-> target, or an exact `label === persona.name` match. Execution rows emitted
-> by the runner carry the persona name, so live runs land on the right card;
-> genuinely app-level work has no persona and shows in the System band.
-
-## Channels workspace
-
-The header's **Channels** button swaps the grid for the multi-team channel
-workspace — three switchable surfaces over the same shared channel feed:
-
-- **Timeline** — the read-only log: one virtualized cross-team stream with a
-  faceted "tuner" rail (kind · event family · callsign · channel · search,
-  each with live counts). Step rows end with an **assignment chip** (`#a1b2`)
-  linking the line to its unit of work — clicking it filters the log to that
-  assignment.
-- **Conversations** — the messenger, and the only place you write. The
-  projects sidebar carries a **member heartbeat strip**: one dot per persona,
-  pulsing while working, amber while awaiting review, dimmed when idle, with
-  name · status · last-seen in the tooltip.
-- **Map** — the live constellation of one project. The orchestrator sits at
-  the core; other members ring it in role sectors. Presence drives each node
-  (working pulses, waiting holds a dashed amber ring, idle dims) with a
-  last-seen heartbeat under the name. The team's declared connections form
-  the faint permanent geometry; recent event traffic (author → subscribed
-  consumers) draws over it as animated dashes that fade out over ten
-  minutes. Clicking a node jumps to the Timeline pre-filtered to that
-  speaker.
-
-Presence everywhere in the workspace is **staleness-guarded**: a persona
-counts as *working* only while its newest running-step row is under ten
-minutes old, so a crashed or abandoned run can't pin its roster as "working"
-forever. *Awaiting review* has no window — a review gate legitimately holds
-until a human acts.
-
-Live pop-ups (the corner comms stack) deep-link into this workspace: opening
-a pop-up's Timeline lands **pre-scoped to that pop-up's team** rather than
-the full blended feed.
-
-## Activity view
-
-The header's **Activity** button (next to **Channels**) swaps the card grid
-for a denser control-panel read built for hundreds of personas. Every persona
-becomes a small **square with its initials**, coloured by state:
-
-- **Dark gray** — idle (nothing running, nothing pending).
-- **Pulsing theme colour** — executing a task.
-- **Amber** — needs you (setup / human review / queued / draft).
-- **Red** — last execution failed.
-
-The colour reuses the same priority-resolved state as the card grid, so the
-two views always agree. Personas are grouped into slim **one-per-team
-columns** (the team shown as an initials chip with a colour divider, no
-count), with a teamless **Ungrouped** tray below. A compact legend keys the
-four states in the section's bottom-right corner. Clicking any square opens
-the same [drawer](#the-drawer) on the persona's most relevant section — the
-entry point for acting on a persona straight from the grid.
+The live constellation for one team — who is doing what to whom; a node
+click drills into the Timeline scoped to that persona.
 
 ## The drawer
 
