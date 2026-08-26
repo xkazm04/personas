@@ -126,6 +126,17 @@ pub(crate) fn apply_kp_tool_surface(
             "kp tool surface: DETACHED tool — outside the requested surface"
         );
     }
+    // Distinct message on purpose: these were INSIDE the surface. Reading them
+    // as "outside the requested surface" would send the next investigator to
+    // `spec.connectors`, which is not where the answer is.
+    for name in &trim.removed_duplicate_runners {
+        tracing::info!(
+            persona_id = %persona_id,
+            stage = %stage,
+            tool = %name,
+            "kp tool surface: DETACHED duplicate command runner — one canonical runner is kept"
+        );
+    }
     for name in &trim.removed_tool_hints {
         tracing::info!(
             persona_id = %persona_id,
@@ -139,6 +150,7 @@ pub(crate) fn apply_kp_tool_surface(
         stage = %stage,
         removed_tools = trim.removed_tools.len(),
         removed_tool_hints = trim.removed_tool_hints.len(),
+        removed_duplicate_runners = trim.removed_duplicate_runners.len(),
         removed_connectors = trim.removed_connectors.len(),
         removed_flow_steps = trim.removed_flow_steps.len(),
         remaining_tools = ir.tools.len(),

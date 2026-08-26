@@ -494,9 +494,45 @@ A tool survives when **any** of:
    they pass on a code-authored allow-list, not on a model-authored claim;
 4. it is a **command runner** (`run_command`, `bash`, …) **and** `runs_commands`
    is true. The approval gates are literally the commands the App master must run
-   before it may propose a diff (§12.1); with no gates declared, no runner.
+   before it may propose a diff (§12.1); with no gates declared, no runner. Only
+   **one** alias survives — see "One runner, not five" below.
 
 Everything else is dropped.
+
+**One runner, not five (2026-08-26).** Rule 4 admits a command runner, and
+`COMMAND_TOOLS` lists five spellings of it. Sweep #23's **kp-default** hire had
+the design pass emit two — `run_command` *and* `bash` — the verification pass ran
+its commands through one of them, and the gate held the build on
+`1 tool(s) reported as available but never actually called (bash)`. That is the
+same over-provisioning P6d removed, one level down: the build was not asking for
+two capabilities, it was spelling one twice.
+
+So exactly one runner now survives. `canonical_command_runner` scans every alias
+the build names — tools **and** `tool_hints`, because `run_tool_tests` unions the
+hints into the set it tests, so the two lists must not settle on different
+spellings — and keeps the winner by `COMMAND_TOOLS` order. The rest are dropped
+into `removed_duplicate_runners`, logged with a message distinct from the
+out-of-surface detaches (these were *inside* the surface; reading them as
+"outside the requested surface" would send the next investigator to
+`spec.connectors`, which is not where the answer is) and reported in
+`setup_detail.notes`.
+
+> **`run_command` leads the list on observed behaviour, not on a list
+> membership — and the lists disagree.** It is *not* on
+> `tool_tests::PLATFORM_BUILTIN_TOOLS`; neither is `bash`, so neither gets a
+> free pass from the gate. The code-authored list that *does* mention them,
+> `connector_readiness::is_native_cli_capability`, names `bash` and `shell` as
+> Claude Code natives and does **not** name `run_command` — i.e. it points the
+> other way. The order follows the one piece of direct evidence: in sweep #23
+> `run_command` is what actually got exercised and `bash` is what was left
+> uncalled. If a later sweep shows the reverse, reorder `COMMAND_TOOLS` — the
+> preference is a list order rather than an `if` precisely so that is a one-line
+> change.
+
+No other allowed family gets this treatment and none should invent one:
+`BASELINE_TOOLS` are on `PLATFORM_BUILTIN_TOOLS` and pass on a code-authored
+claim, and `TRANSPORT_TOOLS` are each exercised with a real curl — neither family
+can leave a sibling uncalled.
 
 **The connectors (2026-08-26 — the gap this section used to leave open).** The
 first pass stopped at tools, on the reasoning that the bench evidence named tools
@@ -598,9 +634,9 @@ Limits worth knowing:
   `tool_tests::PLATFORM_CONNECTORS`. Each pair is meant to name the same things,
   so change them together.
 
-Tested in `personas-engine` (15 checks in `kp_tool_surface`, 4 of them the
-connector rule), where the crate's test binary actually runs — see §13.8 for why
-the pure logic lives there.
+Tested in `personas-engine` (19 checks in `kp_tool_surface` — 4 for the connector
+rule, 4 for the canonical runner), where the crate's test binary actually runs —
+see §13.8 for why the pure logic lives there.
 
 ### 10.6 Design-pass hygiene — a suggested trigger never fails the hire build (2026-08-25)
 

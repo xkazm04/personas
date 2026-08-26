@@ -106,10 +106,28 @@
 //!    because a model-invented connector name is exactly the case that
 //!    produced sweep #23.
 //!
+//! # One runner, not five (2026-08-26)
+//!
+//! Rule 4 admits a command runner, and `COMMAND_TOOLS` lists five spellings of
+//! it. Sweep #23's kp-default hire had the design pass emit two — `run_command`
+//! *and* `bash` — and the verification pass ran its commands through one of
+//! them. The gate counted the other "reported as available but never actually
+//! called" and held the build: the same over-provisioning P6d removed, one level
+//! down. The build was not asking for two capabilities; it was spelling one
+//! twice.
+//!
+//! So exactly one runner survives — see [`canonical_command_runner`], which
+//! decides across tools and `tool_hints` together and picks by [`COMMAND_TOOLS`]
+//! order. No other allowed family gets this treatment, and none should invent
+//! one: [`BASELINE_TOOLS`] are on `PLATFORM_BUILTIN_TOOLS` and pass on a
+//! code-authored claim, and [`TRANSPORT_TOOLS`] are each exercised with a real
+//! curl, so neither family can leave a sibling uncalled.
+//!
 //! # What this deliberately does NOT do
 //!
 //! * It never **adds** anything. The pass is purely subtractive: an allowed
-//!   name that the design pass did not emit stays absent.
+//!   name that the design pass did not emit stays absent — including the
+//!   canonical runner, which is only ever *chosen from* what the build named.
 //! * It does nothing at all without a [`KpLink`]. A build that did not
 //!   originate from a kp hire is untouched, by construction: the caller has no
 //!   surface to hand this function.
@@ -149,7 +167,24 @@ pub const TRANSPORT_TOOLS: &[&str] = &[
 /// module exists to remove.
 pub const BASELINE_TOOLS: &[&str] = &["file_read", "file_write"];
 
-/// Command runners — allowed only when the mandate names approval gates.
+/// Command runners — allowed only when the mandate names approval gates, and
+/// then **only one of them** (see [`canonical_command_runner`]).
+///
+/// **Order is load-bearing.** These are aliases for one capability, and the
+/// earliest surviving entry is the one kept. `run_command` leads on the only
+/// direct evidence there is: in bench sweep #23 the design pass attached both
+/// `run_command` and `bash`, and the verification pass exercised `run_command`
+/// and left `bash` uncalled — which is what held the build.
+///
+/// Recorded because it cuts the other way and the next reader deserves it:
+/// `connector_readiness::is_native_cli_capability` — also code-authored — lists
+/// `bash` and `shell` as capabilities Claude Code provides natively and does
+/// **not** list `run_command`. Neither name is on
+/// `tool_tests::PLATFORM_BUILTIN_TOOLS`, so neither gets a free pass from the
+/// gate. The two lists disagree about which spelling is real; this order
+/// follows what was observed to actually run, not what a list asserts. If a
+/// later sweep shows the CLI exercising `bash` instead, reorder here — that is
+/// the whole reason the preference is a list order and not an `if`.
 pub const COMMAND_TOOLS: &[&str] = &[
     "run_command",
     "execute_command",
@@ -157,6 +192,12 @@ pub const COMMAND_TOOLS: &[&str] = &[
     "bash",
     "shell",
 ];
+
+/// Is this name one of the command-runner aliases? Exact match — a
+/// `github_run_command` is a github tool, not a runner.
+fn is_command_tool(lower: &str) -> bool {
+    COMMAND_TOOLS.contains(&lower)
+}
 
 /// Platform-internal connector names that never bind a user credential.
 ///
@@ -332,6 +373,46 @@ fn normalize_connector_name(raw: &str) -> String {
     raw.trim().to_lowercase().replace(' ', "_")
 }
 
+/// Which single command-runner alias this build gets to keep, if any.
+///
+/// `COMMAND_TOOLS` are five spellings of one capability. The design pass has no
+/// reason to prefer one, and on bench sweep #23's kp-default hire it emitted two
+/// — `run_command` and `bash`. The verification pass then ran the commands it
+/// had to run through **one** of them, and the gate counted the other
+/// "reported as available but never actually called", holding promotion. This is
+/// the same shape as the over-provisioning P6d removed, one level down: the
+/// build was not asking for two capabilities, it was spelling one twice.
+///
+/// So: scan every runner alias the build names — tools **and** `tool_hints`,
+/// because `run_tool_tests` unions the hints into the set it tests — and return
+/// the winner by [`COMMAND_TOOLS`] order. `None` when the mandate names no
+/// approval gates (no runner is allowed at all) or the build named none.
+fn canonical_command_runner(ir: &AgentIr, surface: &KpToolSurface) -> Option<String> {
+    if !surface.runs_commands {
+        return None;
+    }
+    let mut best: Option<usize> = None;
+    let mut consider = |name: &str| {
+        let lower = name.trim().to_lowercase();
+        if let Some(idx) = COMMAND_TOOLS.iter().position(|c| *c == lower) {
+            best = Some(best.map_or(idx, |b: usize| b.min(idx)));
+        }
+    };
+
+    for tool in &ir.tools {
+        consider(tool.name());
+    }
+    for uc in &ir.use_cases {
+        if let AgentIrUseCase::Structured(d) = uc {
+            for hint in d.tool_hints.iter().flatten() {
+                consider(hint);
+            }
+        }
+    }
+
+    best.map(|idx| COMMAND_TOOLS[idx].to_string())
+}
+
 /// The connector a `service_flow` step names, if it names one.
 ///
 /// Two shapes reach here. The current design prompt emits objects
@@ -412,6 +493,12 @@ pub struct ToolSurfaceTrim {
     /// readiness, and an unrequested OAuth connector can fail the hire outright
     /// (bench sweep #23).
     pub removed_connectors: Vec<String>,
+    /// Redundant command-runner aliases dropped, by name — everything but the
+    /// one canonical runner. Reported separately from `removed_tools` because
+    /// these were *inside* the requested surface: the hire is allowed a runner,
+    /// it was allowed too many spellings of it. See
+    /// [`canonical_command_runner`].
+    pub removed_duplicate_runners: Vec<String>,
     /// `agent_ir.service_flow[]` steps dropped, by the connector they named.
     /// Reported separately because `effective_connectors_json` derives
     /// connectors from these when `required_connectors` is empty — a step left
@@ -426,6 +513,7 @@ impl ToolSurfaceTrim {
             && self.removed_tool_hints.is_empty()
             && self.removed_connectors.is_empty()
             && self.removed_flow_steps.is_empty()
+            && self.removed_duplicate_runners.is_empty()
     }
 
     /// Total entries dropped across every list.
@@ -434,18 +522,29 @@ impl ToolSurfaceTrim {
             + self.removed_tool_hints.len()
             + self.removed_connectors.len()
             + self.removed_flow_steps.len()
+            + self.removed_duplicate_runners.len()
     }
 
     /// Operator-readable lines for `setup_detail.notes`.
     ///
     /// Same shape as `DesignHygieneReport::notes()`: one flat list of "what the
-    /// build had to change on your behalf". Only connectors and flow steps are
-    /// reported here — a dropped *tool* is invisible to the operator's setup
-    /// decisions, while a dropped connector is precisely the thing that would
-    /// otherwise show up as a credential blocker they are being asked to fix.
+    /// build had to change on your behalf". Three of the five lists are reported
+    /// — a dropped *tool* outside the requested surface is invisible to the
+    /// operator's setup decisions, while a dropped connector is precisely the
+    /// thing that would otherwise show up as a credential blocker they are being
+    /// asked to fix, and a dropped duplicate runner changes which spelling of
+    /// "run a command" the promoted persona actually carries.
     pub fn notes(&self) -> Vec<String> {
-        let mut out =
-            Vec::with_capacity(self.removed_connectors.len() + self.removed_flow_steps.len());
+        let mut out = Vec::with_capacity(
+            self.removed_connectors.len()
+                + self.removed_flow_steps.len()
+                + self.removed_duplicate_runners.len(),
+        );
+        for name in &self.removed_duplicate_runners {
+            out.push(format!(
+                "kp hire: dropped duplicate command runner `{name}` — one runner is kept so the verification pass exercises what it counts"
+            ));
+        }
         for name in &self.removed_connectors {
             out.push(format!(
                 "kp hire: dropped connector `{name}` — the hire request did not ask for it"
@@ -465,12 +564,15 @@ impl ToolSurfaceTrim {
 /// Subtractive only — see the module docs for the allowed sets. Returns what
 /// was dropped so the caller can log, count and report it.
 ///
-/// Order matters: connectors are trimmed **before** `service_flow`, so that a
+/// Order matters twice. Connectors are trimmed **before** `service_flow`, so a
 /// build whose `required_connectors` the trim empties cannot fall back through
 /// [`AgentIr::effective_connectors_json`] onto flow steps that name the
-/// connector just removed.
+/// connector just removed. And the canonical command runner is decided **before**
+/// anything is dropped, over tools and `tool_hints` together, so the two lists
+/// cannot settle on different spellings.
 pub fn constrain_agent_ir(ir: &mut AgentIr, surface: &KpToolSurface) -> ToolSurfaceTrim {
     let mut trim = ToolSurfaceTrim::default();
+    let canonical_runner = canonical_command_runner(ir, surface);
 
     ir.required_connectors.retain(|connector| {
         let (name, service_type) = match connector {
@@ -507,12 +609,18 @@ pub fn constrain_agent_ir(ir: &mut AgentIr, surface: &KpToolSurface) -> ToolSurf
             AgentIrTool::Structured(d) => d.requires_credential_type.as_deref(),
             AgentIrTool::Simple(_) => None,
         };
-        if surface.allows(&name, cred) {
-            true
-        } else {
+        if !surface.allows(&name, cred) {
             trim.removed_tools.push(name);
-            false
+            return false;
         }
+        // Inside the surface, but is it the second spelling of a capability the
+        // hire only has once? The gate counts every name it was told about.
+        let lower = name.trim().to_lowercase();
+        if is_command_tool(&lower) && canonical_runner.as_deref() != Some(lower.as_str()) {
+            trim.removed_duplicate_runners.push(name);
+            return false;
+        }
+        true
     });
 
     for uc in ir.use_cases.iter_mut() {
@@ -523,12 +631,19 @@ pub fn constrain_agent_ir(ir: &mut AgentIr, surface: &KpToolSurface) -> ToolSurf
             continue;
         };
         hints.retain(|hint| {
-            if surface.allows(hint, None) {
-                true
-            } else {
+            if !surface.allows(hint, None) {
                 trim.removed_tool_hints.push(hint.clone());
-                false
+                return false;
             }
+            // `run_tool_tests` unions hints into the set it tests, so a hint
+            // naming the runner alias the tools just lost would put the
+            // uncalled name straight back in front of the gate.
+            let lower = hint.trim().to_lowercase();
+            if is_command_tool(&lower) && canonical_runner.as_deref() != Some(lower.as_str()) {
+                trim.removed_duplicate_runners.push(hint.clone());
+                return false;
+            }
+            true
         });
         if hints.is_empty() {
             // `filter(|h| !h.is_empty())` is how the promote projection already
@@ -710,6 +825,119 @@ mod tests {
 
         assert!(trim.is_empty());
         assert_eq!(ir.tools.len(), before);
+    }
+
+    // ------------------------------------------------------------------
+    // One canonical command runner (sweep #23, kp-default)
+    // ------------------------------------------------------------------
+
+    /// The live shape: the mandate named approval gates, so a runner is
+    /// allowed — but the design pass emitted `run_command` AND `bash`, the
+    /// verification pass exercised one, and the gate held on
+    /// "1 tool(s) reported as available but never actually called (bash)".
+    #[test]
+    fn duplicate_command_runners_collapse_to_one() {
+        let surface = KpToolSurface {
+            requested_connectors: vec!["github".to_string()],
+            runs_commands: true,
+            ..Default::default()
+        };
+        let mut ir = AgentIr {
+            tools: vec![
+                simple("github_create_pr"),
+                simple("run_command"),
+                simple("bash"),
+            ],
+            ..Default::default()
+        };
+        let trim = constrain_agent_ir(&mut ir, &surface);
+
+        let kept: Vec<String> = ir.tools.iter().map(|t| t.name().to_string()).collect();
+        assert_eq!(kept, vec!["github_create_pr", "run_command"]);
+        assert_eq!(trim.removed_duplicate_runners, vec!["bash"]);
+        // Not an out-of-surface drop — it was allowed, just redundant.
+        assert!(trim.removed_tools.is_empty());
+        assert_eq!(
+            trim.notes(),
+            vec![
+                "kp hire: dropped duplicate command runner `bash` — one runner is kept so the verification pass exercises what it counts"
+            ]
+        );
+    }
+
+    /// No approval gates ⇒ rule 4 admits no runner at all, so neither alias
+    /// survives and neither is reported as a *duplicate*.
+    #[test]
+    fn without_gates_neither_runner_survives() {
+        let mut ir = AgentIr {
+            tools: vec![simple("run_command"), simple("bash")],
+            ..Default::default()
+        };
+        let trim = constrain_agent_ir(&mut ir, &github_surface());
+
+        assert!(ir.tools.is_empty());
+        assert_eq!(trim.removed_tools, vec!["run_command", "bash"]);
+        assert!(trim.removed_duplicate_runners.is_empty());
+    }
+
+    /// A single runner is left exactly as the build spelled it — the pass picks
+    /// a winner, it never renames or injects one.
+    #[test]
+    fn a_lone_runner_is_kept_whatever_its_spelling() {
+        for alias in ["bash", "shell", "execute_command", "shell_command"] {
+            let surface = KpToolSurface {
+                requested_connectors: vec!["github".to_string()],
+                runs_commands: true,
+                ..Default::default()
+            };
+            let mut ir = AgentIr {
+                tools: vec![simple(alias)],
+                ..Default::default()
+            };
+            let trim = constrain_agent_ir(&mut ir, &surface);
+            assert_eq!(
+                ir.tools.iter().map(|t| t.name()).collect::<Vec<_>>(),
+                vec![alias],
+                "a lone `{alias}` must survive"
+            );
+            assert!(trim.is_empty(), "a lone `{alias}` must not be trimmed");
+        }
+    }
+
+    /// `run_tool_tests` unions `tool_hints` into the set it tests, so the hints
+    /// have to agree with the tools about which spelling survived — including
+    /// when the alias appears ONLY as a hint.
+    #[test]
+    fn tool_hints_agree_with_tools_on_the_canonical_runner() {
+        let surface = KpToolSurface {
+            requested_connectors: vec!["github".to_string()],
+            runs_commands: true,
+            ..Default::default()
+        };
+        let mut ir = AgentIr {
+            tools: vec![simple("bash")],
+            // `run_command` is named only here — it still wins on list order,
+            // which is what stops the two lists disagreeing.
+            use_cases: vec![uc_with_hints(&["run_command", "bash", "shell"])],
+            ..Default::default()
+        };
+        let trim = constrain_agent_ir(&mut ir, &surface);
+
+        assert!(
+            ir.tools.is_empty(),
+            "the tool-side `bash` loses to the hint-side `run_command`"
+        );
+        match &ir.use_cases[0] {
+            AgentIrUseCase::Structured(d) => assert_eq!(
+                d.tool_hints.as_deref(),
+                Some(&["run_command".to_string()][..])
+            ),
+            _ => panic!("use case 0 should still be structured"),
+        }
+        assert_eq!(
+            trim.removed_duplicate_runners,
+            vec!["bash", "bash", "shell"]
+        );
     }
 
     // ------------------------------------------------------------------
