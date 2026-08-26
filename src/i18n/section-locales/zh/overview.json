@@ -129,7 +129,28 @@
     "noc_diagnose_action": "诊断",
     "noc_diagnosing": "正在分析根本原因…",
     "noc_no_diagnosis": "尚无诊断——我可以为您深入调查此事件。",
-    "noc_diagnose_failed": "诊断失败"
+    "noc_diagnose_failed": "诊断失败",
+    "ledger": {
+      "col_state": "状态",
+      "col_age": "存续",
+      "col_actions": "操作",
+      "col_raised": "发生",
+      "col_resumed": "恢复",
+      "empty_view": "此视图暂无内容。",
+      "new_badge": "新",
+      "showing_range": "显示第 {start}–{end} 条，共 {total} 条",
+      "per_page": "条/页",
+      "page_indicator": "第 {page}/{pages} 页",
+      "first_page": "首页",
+      "prev_page": "上一页",
+      "next_page": "下一页",
+      "last_page": "末页",
+      "back_to_inbox": "返回收件箱",
+      "open_incident": "打开事件",
+      "trail_handled_total": "件已自动处理",
+      "trail_most_recent": "最近",
+      "trail_sources": "个来源"
+    }
   },
   "observability": {
     "title": "可观测性",

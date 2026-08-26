@@ -6594,7 +6594,28 @@
       "noc_diagnose_action": "Diagnose",
       "noc_diagnosing": "Analyzing root cause…",
       "noc_no_diagnosis": "No diagnosis yet — I can dig into this incident for you.",
-      "noc_diagnose_failed": "Diagnosis failed"
+      "noc_diagnose_failed": "Diagnosis failed",
+      "ledger": {
+        "col_state": "State",
+        "col_age": "Age",
+        "col_actions": "Actions",
+        "col_raised": "Raised",
+        "col_resumed": "Resumed",
+        "empty_view": "Nothing to show in this view.",
+        "new_badge": "New",
+        "showing_range": "Showing {start}–{end} of {total}",
+        "per_page": "per page",
+        "page_indicator": "Page {page}/{pages}",
+        "first_page": "First page",
+        "prev_page": "Previous page",
+        "next_page": "Next page",
+        "last_page": "Last page",
+        "back_to_inbox": "Back to inbox",
+        "open_incident": "Open incident",
+        "trail_handled_total": "handled without you",
+        "trail_most_recent": "most recent",
+        "trail_sources": "sources"
+      }
     },
     "observability": {
       "title": "Observability",

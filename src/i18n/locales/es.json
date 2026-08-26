@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "Diagnosticar",
       "noc_diagnosing": "Analizando la causa raíz…",
       "noc_no_diagnosis": "Sin diagnóstico todavía — puedo investigar este incidente por usted.",
-      "noc_diagnose_failed": "Fallo en el diagnóstico"
+      "noc_diagnose_failed": "Fallo en el diagnóstico",
+      "ledger": {
+        "col_state": "Estado",
+        "col_age": "Antigüedad",
+        "col_actions": "Acciones",
+        "col_raised": "Detectado",
+        "col_resumed": "Reanudado",
+        "empty_view": "No hay nada que mostrar en esta vista.",
+        "new_badge": "Nuevo",
+        "showing_range": "Mostrando {start}–{end} de {total}",
+        "per_page": "por página",
+        "page_indicator": "Página {page}/{pages}",
+        "first_page": "Primera página",
+        "prev_page": "Página anterior",
+        "next_page": "Página siguiente",
+        "last_page": "Última página",
+        "back_to_inbox": "Volver a la bandeja",
+        "open_incident": "Abrir incidencia",
+        "trail_handled_total": "resueltas sin ti",
+        "trail_most_recent": "más reciente",
+        "trail_sources": "fuentes"
+      }
     },
     "observability": {
       "title": "Observabilidad",

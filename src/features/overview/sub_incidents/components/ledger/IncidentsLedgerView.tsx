@@ -1,10 +1,10 @@
-// Prototype variant A — "Ledger"
-//
-// Metaphor: an operations ledger / syslog. Flat (no grouping), one page at a
+// The incidents ledger — an operations log. Flat (no grouping), one page at a
 // time, zebra-striped, mono metadata, tight vertical rhythm. Each entry is two
 // rows: the incident title reads at full width on line 1, and the filterable /
 // sortable metadata sits in aligned columns on line 2 under a sticky header.
-// Optimised for scanning a lot of entries and acting fast.
+//
+// Won the 2026-08-26 A/B against a "Console" direction (surfaced bands with a
+// severity wash) — the ledger scans faster at inbox volume.
 
 import { memo, useEffect } from 'react';
 import { Check, CheckCheck, X, RotateCcw } from 'lucide-react';
@@ -22,7 +22,7 @@ import {
 import { useIncidentLedger } from '../../libs/useIncidentLedger';
 import { LedgerPager } from './LedgerPager';
 import {
-  LEDGER_COLUMNS, LEDGER_GRID, LEDGER_COPY, LedgerSortHeader,
+  LEDGER_COLUMNS, LEDGER_GRID, LedgerSortHeader,
   isNewSince, type IncidentLedgerViewProps,
 } from './ledgerModel';
 
@@ -41,6 +41,7 @@ export function IncidentsLedgerView({
   incidents, focusedId, lastSeenAt, onOpenDetail,
   onAcknowledge, onResolve, onDismiss, onReopen, onPageRowsChange,
 }: IncidentLedgerViewProps) {
+  const { t } = useTranslation();
   const ledger = useIncidentLedger(incidents, { initialSortKey: 'created', initialPageSize: 25 });
   const { page, sortKey, sortDir, toggleSort } = ledger;
 
@@ -64,16 +65,18 @@ export function IncidentsLedgerView({
           <LedgerSortHeader
             key={col.key}
             column={col}
+            label={col.label(t)}
             sortKey={sortKey}
             sortDir={sortDir}
             onToggle={toggleSort}
-            dense
           />
         ))}
       </div>
 
       {page.length === 0 ? (
-        <p className="px-4 py-10 text-center typo-body text-foreground">{LEDGER_COPY.empty}</p>
+        <p className="px-4 py-10 text-center typo-body text-foreground">
+          {t.overview.incidents.ledger.empty_view}
+        </p>
       ) : (
         <div>
           {page.map((incident, index) => (
@@ -161,7 +164,7 @@ const LedgerEntry = memo(function LedgerEntry({
         <span className="typo-body text-foreground">{incident.title}</span>
         {isNew && (
           <span className="shrink-0 rounded-card border border-primary/25 bg-primary/10 px-1.5 py-0.5 typo-caption text-primary">
-            {LEDGER_COPY.new}
+            {t.overview.incidents.ledger.new_badge}
           </span>
         )}
         {stale && (

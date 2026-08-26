@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "Diagnostiquer",
       "noc_diagnosing": "Analyse de la cause racine…",
       "noc_no_diagnosis": "Pas encore de diagnostic – je peux examiner cet incident pour vous.",
-      "noc_diagnose_failed": "Échec du diagnostic"
+      "noc_diagnose_failed": "Échec du diagnostic",
+      "ledger": {
+        "col_state": "État",
+        "col_age": "Ancienneté",
+        "col_actions": "Actions",
+        "col_raised": "Signalé",
+        "col_resumed": "Repris",
+        "empty_view": "Rien à afficher dans cette vue.",
+        "new_badge": "Nouveau",
+        "showing_range": "Affichage {start}–{end} sur {total}",
+        "per_page": "par page",
+        "page_indicator": "Page {page}/{pages}",
+        "first_page": "Première page",
+        "prev_page": "Page précédente",
+        "next_page": "Page suivante",
+        "last_page": "Dernière page",
+        "back_to_inbox": "Retour à la boîte",
+        "open_incident": "Ouvrir l’incident",
+        "trail_handled_total": "traités sans vous",
+        "trail_most_recent": "le plus récent",
+        "trail_sources": "sources"
+      }
     },
     "observability": {
       "title": "Observabilité",

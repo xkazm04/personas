@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "Chẩn đoán",
       "noc_diagnosing": "Đang phân tích nguyên nhân gốc…",
       "noc_no_diagnosis": "Chưa có chẩn đoán — tôi có thể điều tra sự cố này giúp bạn.",
-      "noc_diagnose_failed": "Chẩn đoán thất bại"
+      "noc_diagnose_failed": "Chẩn đoán thất bại",
+      "ledger": {
+        "col_state": "Trạng thái",
+        "col_age": "Tuổi",
+        "col_actions": "Hành động",
+        "col_raised": "Phát sinh",
+        "col_resumed": "Tiếp tục",
+        "empty_view": "Không có gì để hiển thị trong chế độ xem này.",
+        "new_badge": "Mới",
+        "showing_range": "Hiển thị {start}–{end} trong {total}",
+        "per_page": "mỗi trang",
+        "page_indicator": "Trang {page}/{pages}",
+        "first_page": "Trang đầu",
+        "prev_page": "Trang trước",
+        "next_page": "Trang sau",
+        "last_page": "Trang cuối",
+        "back_to_inbox": "Quay lại hộp thư",
+        "open_incident": "Mở sự cố",
+        "trail_handled_total": "được xử lý thay bạn",
+        "trail_most_recent": "gần nhất",
+        "trail_sources": "nguồn"
+      }
     },
     "observability": {
       "title": "Khả năng quan sát",

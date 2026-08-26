@@ -1,31 +1,29 @@
-// Shared model for the two incident-ledger variants: one grid template (so a
-// variant's header and its rows can never drift), the sortable column set, and
-// the sort-header cell both variants render.
-//
-// Prototype-local copy (COPY) per the /prototype convention — extracted to
-// i18n at consolidation.
+// Shared model for the incidents ledger: one grid template (so the column
+// header and the rows below it can never drift), the sortable column set, and
+// the sort-header cell.
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { Translations } from '@/i18n/generated/types';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import type { IncidentSortKey, SortDirection } from '../../libs/useIncidentLedger';
 
 /** Line 2's columns. Line 1 (the title) spans the full row above them. */
 export const LEDGER_GRID = 'minmax(96px, 0.7fr) minmax(120px, 1fr) minmax(120px, 1.1fr) 120px 72px minmax(116px, auto)';
 
-export const LEDGER_COLUMNS: { key: IncidentSortKey | 'actions'; label: string; align?: 'right' }[] = [
-  { key: 'severity', label: 'Severity' },
-  { key: 'source', label: 'Source' },
-  { key: 'persona', label: 'Agent' },
-  { key: 'state', label: 'State' },
-  { key: 'age', label: 'Age', align: 'right' },
-  { key: 'actions', label: 'Actions', align: 'right' },
-];
+export interface LedgerColumn {
+  key: IncidentSortKey | 'actions';
+  label: (t: Translations) => string;
+  align?: 'right';
+}
 
-export const LEDGER_COPY = {
-  titleColumn: 'Incident',
-  empty: 'Nothing to show in this view.',
-  new: 'New',
-};
+export const LEDGER_COLUMNS: LedgerColumn[] = [
+  { key: 'severity', label: (t) => t.overview.incidents.filter_severity_label },
+  { key: 'source', label: (t) => t.overview.incidents.filter_source_label },
+  { key: 'persona', label: (t) => t.overview.incidents.filter_persona_label },
+  { key: 'state', label: (t) => t.overview.incidents.ledger.col_state },
+  { key: 'age', label: (t) => t.overview.incidents.ledger.col_age, align: 'right' },
+  { key: 'actions', label: (t) => t.overview.incidents.ledger.col_actions, align: 'right' },
+];
 
 export interface IncidentLedgerViewProps {
   incidents: AuditIncident[];
@@ -54,24 +52,20 @@ export function isNewSince(incident: AuditIncident, lastSeenAt: string | null): 
  * direction arrow; `actions` is a plain label (nothing to order by).
  */
 export function LedgerSortHeader({
-  column, sortKey, sortDir, onToggle, dense,
+  column, label, sortKey, sortDir, onToggle,
 }: {
-  column: (typeof LEDGER_COLUMNS)[number];
+  column: LedgerColumn;
+  label: string;
   sortKey: IncidentSortKey;
   sortDir: SortDirection;
   onToggle: (key: IncidentSortKey) => void;
-  dense?: boolean;
 }) {
   const active = column.key === sortKey;
   const justify = column.align === 'right' ? 'justify-end' : 'justify-start';
-  const labelCls = dense
-    ? 'typo-caption font-mono uppercase tracking-widest'
-    : 'typo-caption uppercase tracking-wider font-semibold';
+  const labelCls = 'typo-caption font-mono uppercase tracking-widest';
 
   if (column.key === 'actions') {
-    return (
-      <span className={`flex items-center ${justify} ${labelCls} text-foreground`}>{column.label}</span>
-    );
+    return <span className={`flex items-center ${justify} ${labelCls} text-foreground`}>{label}</span>;
   }
 
   const Arrow = sortDir === 'asc' ? ChevronUp : ChevronDown;
@@ -79,12 +73,12 @@ export function LedgerSortHeader({
     <button
       type="button"
       onClick={() => onToggle(column.key as IncidentSortKey)}
-      aria-label={column.label}
+      aria-label={label}
       className={`flex items-center gap-1 ${justify} ${labelCls} rounded-interactive transition-colors focus-ring ${
         active ? 'text-primary' : 'text-foreground hover:text-primary/80'
       }`}
     >
-      {column.label}
+      {label}
       <Arrow className={`h-3 w-3 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />
     </button>
   );

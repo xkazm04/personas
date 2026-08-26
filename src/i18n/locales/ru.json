@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "Диагностировать",
       "noc_diagnosing": "Анализирую первопричину…",
       "noc_no_diagnosis": "Диагноза пока нет — я могу разобраться в этом инциденте за вас.",
-      "noc_diagnose_failed": "Сбой диагностики"
+      "noc_diagnose_failed": "Сбой диагностики",
+      "ledger": {
+        "col_state": "Состояние",
+        "col_age": "Возраст",
+        "col_actions": "Действия",
+        "col_raised": "Возникло",
+        "col_resumed": "Возобновлено",
+        "empty_view": "В этом представлении нечего показать.",
+        "new_badge": "Новое",
+        "showing_range": "Показано {start}–{end} из {total}",
+        "per_page": "на странице",
+        "page_indicator": "Страница {page}/{pages}",
+        "first_page": "Первая страница",
+        "prev_page": "Предыдущая страница",
+        "next_page": "Следующая страница",
+        "last_page": "Последняя страница",
+        "back_to_inbox": "Назад во входящие",
+        "open_incident": "Открыть инцидент",
+        "trail_handled_total": "обработано без вас",
+        "trail_most_recent": "последнее",
+        "trail_sources": "источников"
+      }
     },
     "observability": {
       "title": "Мониторинг",

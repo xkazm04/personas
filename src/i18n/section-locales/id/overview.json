@@ -129,7 +129,28 @@
     "noc_diagnose_action": "Diagnosis",
     "noc_diagnosing": "Menganalisis akar masalah…",
     "noc_no_diagnosis": "Belum ada diagnosis — saya bisa menyelidiki insiden ini untuk Anda.",
-    "noc_diagnose_failed": "Diagnosis gagal"
+    "noc_diagnose_failed": "Diagnosis gagal",
+    "ledger": {
+      "col_state": "Status",
+      "col_age": "Usia",
+      "col_actions": "Tindakan",
+      "col_raised": "Muncul",
+      "col_resumed": "Dilanjutkan",
+      "empty_view": "Tidak ada yang bisa ditampilkan di tampilan ini.",
+      "new_badge": "Baru",
+      "showing_range": "Menampilkan {start}–{end} dari {total}",
+      "per_page": "per halaman",
+      "page_indicator": "Halaman {page}/{pages}",
+      "first_page": "Halaman pertama",
+      "prev_page": "Halaman sebelumnya",
+      "next_page": "Halaman berikutnya",
+      "last_page": "Halaman terakhir",
+      "back_to_inbox": "Kembali ke kotak masuk",
+      "open_incident": "Buka insiden",
+      "trail_handled_total": "ditangani tanpa Anda",
+      "trail_most_recent": "terbaru",
+      "trail_sources": "sumber"
+    }
   },
   "observability": {
     "title": "Observabilitas",

@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "Diagnostikovat",
       "noc_diagnosing": "Analyzuji hlavní příčinu…",
       "noc_no_diagnosis": "Zatím žádná diagnóza — můžu se na incident podívat za vás.",
-      "noc_diagnose_failed": "Diagnóza selhala"
+      "noc_diagnose_failed": "Diagnóza selhala",
+      "ledger": {
+        "col_state": "Stav",
+        "col_age": "Stáří",
+        "col_actions": "Akce",
+        "col_raised": "Vzniklo",
+        "col_resumed": "Obnoveno",
+        "empty_view": "V tomto zobrazení není co ukázat.",
+        "new_badge": "Nové",
+        "showing_range": "Zobrazeno {start}–{end} z {total}",
+        "per_page": "na stránku",
+        "page_indicator": "Stránka {page}/{pages}",
+        "first_page": "První stránka",
+        "prev_page": "Předchozí stránka",
+        "next_page": "Další stránka",
+        "last_page": "Poslední stránka",
+        "back_to_inbox": "Zpět do schránky",
+        "open_incident": "Otevřít incident",
+        "trail_handled_total": "vyřešeno bez vás",
+        "trail_most_recent": "naposledy",
+        "trail_sources": "zdrojů"
+      }
     },
     "observability": {
       "title": "Pozorovatelnost",

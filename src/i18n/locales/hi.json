@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "निदान करें",
       "noc_diagnosing": "मूल कारण का विश्लेषण हो रहा है…",
       "noc_no_diagnosis": "अभी कोई निदान नहीं — मैं आपके लिए इस घटना की जाँच कर सकती हूँ।",
-      "noc_diagnose_failed": "निदान विफल"
+      "noc_diagnose_failed": "निदान विफल",
+      "ledger": {
+        "col_state": "स्थिति",
+        "col_age": "आयु",
+        "col_actions": "कार्रवाई",
+        "col_raised": "उठाया गया",
+        "col_resumed": "पुनः शुरू",
+        "empty_view": "इस दृश्य में दिखाने को कुछ नहीं है।",
+        "new_badge": "नया",
+        "showing_range": "{total} में से {start}–{end} दिखा रहे हैं",
+        "per_page": "प्रति पृष्ठ",
+        "page_indicator": "पृष्ठ {page}/{pages}",
+        "first_page": "पहला पृष्ठ",
+        "prev_page": "पिछला पृष्ठ",
+        "next_page": "अगला पृष्ठ",
+        "last_page": "अंतिम पृष्ठ",
+        "back_to_inbox": "इनबॉक्स पर लौटें",
+        "open_incident": "घटना खोलें",
+        "trail_handled_total": "आपके बिना संभाला गया",
+        "trail_most_recent": "सबसे हालिया",
+        "trail_sources": "स्रोत"
+      }
     },
     "observability": {
       "title": "अवलोकनशीलता",

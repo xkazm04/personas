@@ -1,12 +1,13 @@
-// Prototype variant B — "Autonomous log: audit trail"
+// The autonomous log — an audit trail of what the system handled on its own.
 //
-// Same flat, paginated ledger, but shaped to answer "what did the system do on
-// my behalf, and can I trust it?" A summary strip states the volume, the most
-// recent resumption and the sources involved; each entry is a two-row record
-// matching the inbox variants — title on line 1, provenance metadata on line 2
-// (source, agent, when it fired, when it was resumed, how long it sat).
+// Shaped to answer "what did it do on my behalf, and can I trust it?" A summary
+// strip states the volume, the most recent resumption and the sources involved;
+// each entry is a two-row record matching the inbox ledger — title on line 1,
+// provenance on line 2 (source, agent, when it fired, when it was resumed) plus
+// the latency chip showing how long it sat before the system stepped in.
 //
-// Prototype-local copy (COPY) — extracted to i18n at consolidation.
+// Reached from the Handled-autonomously KPI tile; won the 2026-08-26 A/B
+// against a one-row compact table.
 
 import { useMemo, useState } from 'react';
 import { ShieldCheck, ArrowUpRight } from 'lucide-react';
@@ -18,40 +19,16 @@ import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import { severityBadgeClass, sourceTableIcon, sourceTableLabel } from '../../libs/incidentTaxonomy';
 import { LedgerPager } from '../ledger/LedgerPager';
 import { PAGE_SIZES, type PageSize } from '../../libs/useIncidentLedger';
-import type { AutonomousLogProps } from './AutonomousLogTable';
+import { resumeLatencyLabel, type AutonomousLogProps } from './autonomousLogTypes';
 
 const GRID = 'minmax(96px, 0.6fr) minmax(140px, 1fr) minmax(120px, 1fr) minmax(110px, 0.9fr) minmax(110px, 0.9fr) 40px';
 
-const COPY = {
-  severity: 'Severity',
-  source: 'Source',
-  agent: 'Agent',
-  raised: 'Raised',
-  resumed: 'Resumed',
-  handledTotal: 'handled without you',
-  lastAt: 'most recent',
-  sources: 'sources',
-  open: 'Open incident',
-};
-
-/** Milliseconds between an incident being raised and the system resuming it. */
-function latencyLabel(inc: AuditIncident): string | null {
-  if (!inc.continuedAt) return null;
-  const ms = Date.parse(inc.continuedAt) - Date.parse(inc.createdAt);
-  if (!Number.isFinite(ms) || ms < 0) return null;
-  const mins = Math.round(ms / 60000);
-  if (mins < 1) return '<1m';
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.round(mins / 60);
-  return hours < 24 ? `${hours}h` : `${Math.round(hours / 24)}d`;
-}
-
 export function AutonomousLogTrail({ incidents, loading, onOpenIncident }: AutonomousLogProps) {
   const { t } = useTranslation();
+  const l = t.overview.incidents.ledger;
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
@@ -95,15 +72,15 @@ export function AutonomousLogTrail({ incidents, loading, onOpenIncident }: Auton
         </span>
         <AthenaComposedBadge variant="handled" label={t.overview.incidents.noc_handled_by} />
         <span className="typo-caption text-foreground">
-          <Numeric value={incidents.length} className="typo-body text-foreground tabular-nums" /> {COPY.handledTotal}
+          <Numeric value={incidents.length} className="typo-body text-foreground tabular-nums" /> {l.trail_handled_total}
         </span>
         {mostRecent && (
           <span className="typo-caption text-foreground">
-            {COPY.lastAt} <RelativeTime timestamp={mostRecent} className="typo-caption text-foreground" />
+            {l.trail_most_recent} <RelativeTime timestamp={mostRecent} className="typo-caption text-foreground" />
           </span>
         )}
         <span className="typo-caption text-foreground">
-          <Numeric value={distinctSources} className="typo-caption text-foreground tabular-nums" /> {COPY.sources}
+          <Numeric value={distinctSources} className="typo-caption text-foreground tabular-nums" /> {l.trail_sources}
         </span>
       </div>
 
@@ -112,8 +89,15 @@ export function AutonomousLogTrail({ incidents, loading, onOpenIncident }: Auton
         style={{ gridTemplateColumns: GRID }}
         role="row"
       >
-        {[COPY.severity, COPY.source, COPY.agent, COPY.raised, COPY.resumed, ''].map((label, i) => (
-          <span key={label || `col-${i}`} className="typo-caption uppercase tracking-wider font-semibold text-foreground">
+        {[
+          t.overview.incidents.filter_severity_label,
+          t.overview.incidents.filter_source_label,
+          t.overview.incidents.filter_persona_label,
+          l.col_raised,
+          l.col_resumed,
+          '',
+        ].map((label, i) => (
+          <span key={label || `col-${i}`} className="typo-caption font-mono uppercase tracking-widest text-foreground">
             {label}
           </span>
         ))}
@@ -122,7 +106,7 @@ export function AutonomousLogTrail({ incidents, loading, onOpenIncident }: Auton
       <div className="flex flex-col gap-1.5 px-3 py-2">
         {page.map((inc, index) => {
           const SourceIcon = sourceTableIcon(inc.sourceTable);
-          const latency = latencyLabel(inc);
+          const latency = resumeLatencyLabel(inc);
           return (
             <RevealItem
               key={inc.id}
@@ -145,7 +129,7 @@ export function AutonomousLogTrail({ incidents, loading, onOpenIncident }: Auton
                         {latency}
                       </span>
                     )}
-                    <ArrowUpRight className="h-3.5 w-3.5 text-foreground" aria-label={COPY.open} />
+                    <ArrowUpRight className="h-3.5 w-3.5 text-foreground" aria-label={l.open_incident} />
                   </span>
                 </div>
                 <div

@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "진단",
       "noc_diagnosing": "근본 원인 분석 중…",
       "noc_no_diagnosis": "아직 진단이 없습니다. 이 인시던트를 대신 조사해 드릴 수 있어요.",
-      "noc_diagnose_failed": "진단 실패"
+      "noc_diagnose_failed": "진단 실패",
+      "ledger": {
+        "col_state": "상태",
+        "col_age": "경과",
+        "col_actions": "작업",
+        "col_raised": "발생",
+        "col_resumed": "재개",
+        "empty_view": "이 화면에 표시할 항목이 없습니다.",
+        "new_badge": "신규",
+        "showing_range": "{total}개 중 {start}–{end}개 표시",
+        "per_page": "개씩",
+        "page_indicator": "{page}/{pages} 페이지",
+        "first_page": "첫 페이지",
+        "prev_page": "이전 페이지",
+        "next_page": "다음 페이지",
+        "last_page": "마지막 페이지",
+        "back_to_inbox": "수신함으로 돌아가기",
+        "open_incident": "인시던트 열기",
+        "trail_handled_total": "건을 대신 처리",
+        "trail_most_recent": "가장 최근",
+        "trail_sources": "소스"
+      }
     },
     "observability": {
       "title": "관측성",

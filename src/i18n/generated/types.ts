@@ -6601,6 +6601,27 @@ export type Translations = {
       noc_diagnosing: string;
       noc_no_diagnosis: string;
       noc_diagnose_failed: string;
+      ledger: {
+        col_state: string;
+        col_age: string;
+        col_actions: string;
+        col_raised: string;
+        col_resumed: string;
+        empty_view: string;
+        new_badge: string;
+        showing_range: string;
+        per_page: string;
+        page_indicator: string;
+        first_page: string;
+        prev_page: string;
+        next_page: string;
+        last_page: string;
+        back_to_inbox: string;
+        open_incident: string;
+        trail_handled_total: string;
+        trail_most_recent: string;
+        trail_sources: string;
+      };
     };
     observability: {
       title: string;

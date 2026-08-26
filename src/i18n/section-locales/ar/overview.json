@@ -129,7 +129,28 @@
     "noc_diagnose_action": "تشخيص",
     "noc_diagnosing": "جارٍ تحليل السبب الجذري…",
     "noc_no_diagnosis": "لا يوجد تشخيص بعد — يمكنني التحقيق في هذا الحادث نيابةً عنك.",
-    "noc_diagnose_failed": "فشل التشخيص"
+    "noc_diagnose_failed": "فشل التشخيص",
+    "ledger": {
+      "col_state": "الحالة",
+      "col_age": "العمر",
+      "col_actions": "الإجراءات",
+      "col_raised": "أُثير",
+      "col_resumed": "استؤنف",
+      "empty_view": "لا شيء لعرضه في هذا العرض.",
+      "new_badge": "جديد",
+      "showing_range": "عرض {start}–{end} من {total}",
+      "per_page": "لكل صفحة",
+      "page_indicator": "صفحة {page}/{pages}",
+      "first_page": "الصفحة الأولى",
+      "prev_page": "الصفحة السابقة",
+      "next_page": "الصفحة التالية",
+      "last_page": "الصفحة الأخيرة",
+      "back_to_inbox": "العودة إلى الوارد",
+      "open_incident": "فتح الحادثة",
+      "trail_handled_total": "عولجت دون تدخلك",
+      "trail_most_recent": "الأحدث",
+      "trail_sources": "مصادر"
+    }
   },
   "observability": {
     "title": "المراقبة",

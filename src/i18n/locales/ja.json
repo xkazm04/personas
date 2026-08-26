@@ -6377,7 +6377,28 @@
       "noc_diagnose_action": "診断する",
       "noc_diagnosing": "根本原因を分析中…",
       "noc_no_diagnosis": "まだ診断はありません。このインシデントを調べることができます。",
-      "noc_diagnose_failed": "診断に失敗しました"
+      "noc_diagnose_failed": "診断に失敗しました",
+      "ledger": {
+        "col_state": "状態",
+        "col_age": "経過",
+        "col_actions": "操作",
+        "col_raised": "発生",
+        "col_resumed": "再開",
+        "empty_view": "このビューに表示するものはありません。",
+        "new_badge": "新着",
+        "showing_range": "{total} 件中 {start}–{end} 件",
+        "per_page": "件/ページ",
+        "page_indicator": "ページ {page}/{pages}",
+        "first_page": "最初のページ",
+        "prev_page": "前のページ",
+        "next_page": "次のページ",
+        "last_page": "最後のページ",
+        "back_to_inbox": "受信トレイに戻る",
+        "open_incident": "インシデントを開く",
+        "trail_handled_total": "件を自動処理",
+        "trail_most_recent": "最新",
+        "trail_sources": "ソース"
+      }
     },
     "observability": {
       "title": "オブザーバビリティ",

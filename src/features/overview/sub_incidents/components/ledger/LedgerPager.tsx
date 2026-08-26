@@ -1,20 +1,8 @@
-// Shared pagination footer for the incident ledger variants.
-// Prototype-local copy (COPY) per the /prototype convention — extracted to
-// i18n at consolidation.
+// Pagination footer for the incidents ledger and the autonomous log.
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PAGE_SIZES, type PageSize } from '../../libs/useIncidentLedger';
-
-const COPY = {
-  showing: 'Showing',
-  of: 'of',
-  perPage: 'per page',
-  first: 'First page',
-  prev: 'Previous page',
-  next: 'Next page',
-  last: 'Last page',
-  page: 'Page',
-};
 
 interface Props {
   pageIndex: number;
@@ -25,7 +13,7 @@ interface Props {
   total: number;
   onPageChange: (index: number) => void;
   onPageSizeChange: (size: PageSize) => void;
-  /** Tighter padding + mono numerals for the dense ledger variant. */
+  /** Tighter padding for the dense ledger; roomier for the audit trail. */
   dense?: boolean;
 }
 
@@ -33,9 +21,10 @@ export function LedgerPager({
   pageIndex, pageCount, pageSize, rangeStart, rangeEnd, total,
   onPageChange, onPageSizeChange, dense = false,
 }: Props) {
+  const { t, tx } = useTranslation();
+  const l = t.overview.incidents.ledger;
   const atFirst = pageIndex <= 0;
   const atLast = pageIndex >= pageCount - 1;
-  const numeric = dense ? 'font-mono tabular-nums' : 'tabular-nums';
 
   return (
     <div
@@ -43,9 +32,8 @@ export function LedgerPager({
         dense ? 'px-3 py-1.5' : 'px-4 py-2.5'
       }`}
     >
-      <span className="typo-caption text-foreground">
-        {COPY.showing} <span className={numeric}>{rangeStart}–{rangeEnd}</span> {COPY.of}{' '}
-        <span className={numeric}>{total}</span>
+      <span className="typo-caption text-foreground tabular-nums">
+        {tx(l.showing_range, { start: rangeStart, end: rangeEnd, total })}
       </span>
 
       <div className="flex items-center gap-3">
@@ -59,23 +47,23 @@ export function LedgerPager({
               <option key={size} value={size}>{size}</option>
             ))}
           </select>
-          {COPY.perPage}
+          {l.per_page}
         </label>
 
         <div className="flex items-center gap-0.5">
-          <PagerButton label={COPY.first} disabled={atFirst} onClick={() => onPageChange(0)}>
+          <PagerButton label={l.first_page} disabled={atFirst} onClick={() => onPageChange(0)}>
             <ChevronsLeft className="h-3.5 w-3.5" />
           </PagerButton>
-          <PagerButton label={COPY.prev} disabled={atFirst} onClick={() => onPageChange(pageIndex - 1)}>
+          <PagerButton label={l.prev_page} disabled={atFirst} onClick={() => onPageChange(pageIndex - 1)}>
             <ChevronLeft className="h-3.5 w-3.5" />
           </PagerButton>
-          <span className={`px-2 typo-caption text-foreground ${numeric}`}>
-            {COPY.page} {pageIndex + 1}/{pageCount}
+          <span className="px-2 typo-caption text-foreground tabular-nums">
+            {tx(l.page_indicator, { page: pageIndex + 1, pages: pageCount })}
           </span>
-          <PagerButton label={COPY.next} disabled={atLast} onClick={() => onPageChange(pageIndex + 1)}>
+          <PagerButton label={l.next_page} disabled={atLast} onClick={() => onPageChange(pageIndex + 1)}>
             <ChevronRight className="h-3.5 w-3.5" />
           </PagerButton>
-          <PagerButton label={COPY.last} disabled={atLast} onClick={() => onPageChange(pageCount - 1)}>
+          <PagerButton label={l.last_page} disabled={atLast} onClick={() => onPageChange(pageCount - 1)}>
             <ChevronsRight className="h-3.5 w-3.5" />
           </PagerButton>
         </div>

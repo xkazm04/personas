@@ -129,7 +129,28 @@
     "noc_diagnose_action": "নির্ণয় করুন",
     "noc_diagnosing": "মূল কারণ বিশ্লেষণ চলছে…",
     "noc_no_diagnosis": "এখনও কোনো নির্ণয় নেই — আমি আপনার হয়ে এই ঘটনাটি খতিয়ে দেখতে পারি।",
-    "noc_diagnose_failed": "নির্ণয় ব্যর্থ হয়েছে"
+    "noc_diagnose_failed": "নির্ণয় ব্যর্থ হয়েছে",
+    "ledger": {
+      "col_state": "অবস্থা",
+      "col_age": "বয়স",
+      "col_actions": "ক্রিয়া",
+      "col_raised": "উত্থাপিত",
+      "col_resumed": "পুনরায় শুরু",
+      "empty_view": "এই ভিউতে দেখানোর কিছু নেই।",
+      "new_badge": "নতুন",
+      "showing_range": "{total}-এর মধ্যে {start}–{end} দেখানো হচ্ছে",
+      "per_page": "প্রতি পৃষ্ঠায়",
+      "page_indicator": "পৃষ্ঠা {page}/{pages}",
+      "first_page": "প্রথম পৃষ্ঠা",
+      "prev_page": "আগের পৃষ্ঠা",
+      "next_page": "পরের পৃষ্ঠা",
+      "last_page": "শেষ পৃষ্ঠা",
+      "back_to_inbox": "ইনবক্সে ফিরুন",
+      "open_incident": "ঘটনা খুলুন",
+      "trail_handled_total": "আপনাকে ছাড়াই সামলানো",
+      "trail_most_recent": "সাম্প্রতিকতম",
+      "trail_sources": "উৎস"
+    }
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",

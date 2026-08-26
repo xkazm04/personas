@@ -129,7 +129,28 @@
     "noc_diagnose_action": "Diagnostizieren",
     "noc_diagnosing": "Analysiere Grundursache…",
     "noc_no_diagnosis": "Noch keine Diagnose — ich kann mir den Vorfall für Sie ansehen.",
-    "noc_diagnose_failed": "Diagnose fehlgeschlagen"
+    "noc_diagnose_failed": "Diagnose fehlgeschlagen",
+    "ledger": {
+      "col_state": "Status",
+      "col_age": "Alter",
+      "col_actions": "Aktionen",
+      "col_raised": "Gemeldet",
+      "col_resumed": "Fortgesetzt",
+      "empty_view": "In dieser Ansicht gibt es nichts zu zeigen.",
+      "new_badge": "Neu",
+      "showing_range": "{start}–{end} von {total}",
+      "per_page": "pro Seite",
+      "page_indicator": "Seite {page}/{pages}",
+      "first_page": "Erste Seite",
+      "prev_page": "Vorherige Seite",
+      "next_page": "Nächste Seite",
+      "last_page": "Letzte Seite",
+      "back_to_inbox": "Zurück zum Posteingang",
+      "open_incident": "Vorfall öffnen",
+      "trail_handled_total": "ohne dich erledigt",
+      "trail_most_recent": "zuletzt",
+      "trail_sources": "Quellen"
+    }
   },
   "observability": {
     "title": "Beobachtbarkeit",

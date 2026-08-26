@@ -1,449 +1,104 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, Inbox, Sparkles } from 'lucide-react';
+// The incidents inbox — a flat, paginated ledger of everything that needs a
+// human, plus a one-click switch to the log of what the system handled itself.
+//
+// This shell owns everything that is NOT the row treatment: data, filters,
+// actions, deep-link, keyboard triage, the detail modal, the last-seen marker
+// and the autonomous toggle. Grouping is gone by construction — the shell never
+// groups, so the ledger below is a plain list with its own sort + pagination.
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshCw, Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import EmptyState, { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { storeBus } from '@/lib/storeBus';
-import { silentCatch } from '@/lib/silentCatch';
-import { getAuditIncident } from '@/api/overview/incidents';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useIncidentsData, DEFAULT_LIMIT } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
-import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
+import { useAutonomousIncidents } from '../libs/useAutonomousIncidents';
+import { useIncidentKeyboardTriage } from '../libs/useIncidentKeyboardTriage';
+import { useIncidentDeepLinkOpen } from '../libs/useIncidentDeepLinkOpen';
+import { useIncidentInboxPersistence } from '../libs/useIncidentInboxPersistence';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
-import { IncidentRow } from './IncidentRow';
-import { IncidentTableHeader } from './IncidentTableHeader';
-import { IncidentAgentGroup } from './IncidentAgentGroup';
-import { AutonomousLane } from './AutonomousLane';
-import { useAgentStore } from '@/stores/agentStore';
-import { useColumnWidths } from '@/features/shared/components/display/ColumnResize';
-import { INCIDENT_COLUMNS, INCIDENT_TABLE_ID } from '../libs/incidentColumns';
 import { IncidentDetailModal } from './IncidentDetailModal';
-import { groupIncidents, type IncidentGroupMode } from '../libs/groupIncidents';
-import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
+import { IncidentsLedgerView } from './ledger/IncidentsLedgerView';
+import { AutonomousLogPanel } from './autonomous/AutonomousLogPanel';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
-import { OPEN_ONLY_FILTERS as DEFAULT_FILTERS, isNarrowedFilters } from '../libs/incidentFilterDefaults';
-
-const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
-const GROUP_MODE_KEY = 'incidents:group-mode';
-const FILTERS_KEY = 'incidents:filters';
-const SORT_KEY = 'incidents:oldest-first';
-const LAST_SEEN_KEY = 'incidents:last-seen';
-const GROUP_MODES: IncidentGroupMode[] = ['agent', 'severity', 'source', 'none'];
-
-/**
- * Rows in the first viewport that play the one-shot entrance cascade when a
- * fresh result set lands (35ms stagger via RevealItem, id-guarded so polling,
- * refresh, and scrolling never replay it). Rows beyond this render plainly.
- */
-const CASCADE_ROWS = 14;
-
-/** Whether a persisted value is a valid group mode (guards against stale storage). */
-function isGroupMode(value: string): value is IncidentGroupMode {
-  return (GROUP_MODES as string[]).includes(value);
-}
-
-/**
- * Restore the persisted filter view, but only the stable dimensions
- * (status / severity / source). `since` is an absolute timestamp that would go
- * stale between sessions, and `persona_id` is a transient detail-modal drill-in
- * — both reset to null on load so the inbox never reopens into a stale or
- * surprising deep-filter.
- */
-function loadPersistedFilters(): IncidentFilters {
-  try {
-    const raw = localStorage.getItem(FILTERS_KEY);
-    if (!raw) return DEFAULT_FILTERS;
-    const saved = JSON.parse(raw) as Partial<IncidentFilters>;
-    return {
-      statuses: saved.statuses ?? DEFAULT_FILTERS.statuses,
-      severities: saved.severities ?? null,
-      source_tables: saved.source_tables ?? null,
-      persona_id: null,
-      since: null,
-    };
-  } catch {
-    return DEFAULT_FILTERS;
-  }
-}
-
-/** User-facing label for a group-by lens. */
-function groupModeLabel(t: ReturnType<typeof useTranslation>['t'], mode: IncidentGroupMode): string {
-  switch (mode) {
-    case 'agent': return t.overview.incidents.group_by_agent;
-    case 'severity': return t.overview.incidents.group_by_severity;
-    case 'source': return t.overview.incidents.group_by_source;
-    case 'none': return t.overview.incidents.group_by_none;
-  }
-}
+import { isNarrowedFilters } from '../libs/incidentFilterDefaults';
 
 export default function IncidentsInbox() {
   const { t } = useTranslation();
-  const [filters, setFilters] = useState<IncidentFilters>(loadPersistedFilters);
+  const { filters, setFilters, lastSeenAt } = useIncidentInboxPersistence();
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [justCleared, setJustCleared] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
-  const [oldestFirst, setOldestFirst] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(SORT_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  // The timestamp the user last marked the inbox "seen" — incidents created
-  // after it count as new. Null on first-ever visit (no marker shown).
-  const [lastSeenAt, setLastSeenAt] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(LAST_SEEN_KEY);
-    } catch {
-      return null;
-    }
-  });
-  const [groupMode, setGroupMode] = useState<IncidentGroupMode>(() => {
-    try {
-      const raw = localStorage.getItem(GROUP_MODE_KEY);
-      return raw && isGroupMode(raw) ? raw : 'agent';
-    } catch {
-      return 'agent';
-    }
-  });
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
-      return raw ? new Set<string>(JSON.parse(raw)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-  // Armed by an actual incident action (ack / resolve / dismiss) so a filter
-  // change that yields zero never triggers the celebration — only clearing the
-  // open inbox does.
-  const clearedByActionRef = useRef(false);
-
-  const personas = useAgentStore((s) => s.personas);
-  const colWidths = useColumnWidths(INCIDENT_TABLE_ID);
-  const gridTemplate = colWidths.template(INCIDENT_COLUMNS);
+  const [showAutonomous, setShowAutonomous] = useState(false);
+  // Armed by an actual incident action so a filter change that yields zero
+  // never triggers the inbox-zero celebration — only clearing the inbox does.
+  const [clearedByAction, setClearedByAction] = useState(false);
 
   const { incidents, summary, loading, error, refresh, truncated } = useIncidentsData(filters);
-  // Stable identity so `useIncidentActions`'s useCallback chain (and everything
-  // downstream that depends on `actions`) survives unrelated re-renders.
+  const autonomous = useAutonomousIncidents();
+
   const onAfterChange = useCallback(async () => {
-    clearedByActionRef.current = true;
+    setClearedByAction(true);
     await refresh();
   }, [refresh]);
   const actions = useIncidentActions({ onAfterChange });
 
-  // Keep the latest loaded incidents in a ref so the deep-link resolver can
-  // prefer the in-memory list without making the storeBus subscription depend
-  // on `incidents` (which would tear down / re-add the listener on every refresh).
-  const incidentsRef = useRef<AuditIncident[]>(incidents);
-  incidentsRef.current = incidents;
+  const openDetail = useCallback((incident: AuditIncident) => setDetailIncident(incident), []);
+  useIncidentDeepLinkOpen(incidents, openDetail);
 
-  // Deep-link: open a specific incident's detail modal when Athena's
-  // `incident_blocker` nudge is engaged. The engage handler navigates here
-  // (lazy-mounting this component) and both (a) latches the id via
-  // `incidentDeepLink` and (b) emits `incidents:open-detail`. We consume the
-  // latch on mount (covers the case where the emit fired before we subscribed)
-  // AND subscribe to the event (covers the already-mounted case). Resolve from
-  // the loaded list first; otherwise fetch by id.
-  useEffect(() => {
-    let cancelled = false;
+  // The ledger reports the rows it is actually showing (its current page, in
+  // its sort order) — keyboard triage then walks exactly what is on screen.
+  const [pageRows, setPageRows] = useState<AuditIncident[]>([]);
+  const onPageRowsChange = useCallback((rows: AuditIncident[]) => setPageRows(rows), []);
 
-    const openById = (incidentId: string) => {
-      const fromList = incidentsRef.current.find((i) => i.id === incidentId);
-      if (fromList) {
-        if (!cancelled) setDetailIncident(fromList);
-        return;
-      }
-      getAuditIncident(incidentId)
-        .then((incident) => {
-          if (!cancelled && incident) setDetailIncident(incident);
-        })
-        .catch(silentCatch('incidents.deep-link.get_audit_incident'));
-    };
-
-    // Late-subscriber bridge: the emit may have fired during lazy-mount.
-    const pending = consumePendingIncidentDeepLink();
-    if (pending) openById(pending);
-
-    const unsubscribe = storeBus.on('incidents:open-detail', ({ incidentId }) => {
-      openById(incidentId);
-    });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, []);
-
-  const toggleGroup = useCallback((key: string) => {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  }, []);
-
-  // Group incidents by the active lens — agent ("which of my agents needs me?"),
-  // severity ("what's most urgent?"), source ("what kind of thing is failing?"),
-  // or a flat recency list (none). Worst-severity groups float to the top.
-  const groups = useMemo(
-    () => groupIncidents(incidents, groupMode, oldestFirst),
-    [incidents, groupMode, oldestFirst],
-  );
-
-  // Persist collapsed groups so a tidied inbox stays tidy across refresh/reopen.
-  useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(Array.from(collapsedGroups)));
-    } catch (e) {
-      silentCatch('incidents.collapsed-groups.persist')(e);
-    }
-  }, [collapsedGroups]);
-
-  // Remember the chosen lens so the inbox reopens the way the user left it.
-  useEffect(() => {
-    try {
-      localStorage.setItem(GROUP_MODE_KEY, groupMode);
-    } catch (e) {
-      silentCatch('incidents.group-mode.persist')(e);
-    }
-  }, [groupMode]);
-
-  // Persist the stable filter view (status/severity/source) + sort order so the
-  // inbox reopens where the user left it. since/persona_id are intentionally
-  // excluded (see loadPersistedFilters).
-  useEffect(() => {
-    try {
-      const { statuses, severities, source_tables } = filters;
-      localStorage.setItem(FILTERS_KEY, JSON.stringify({ statuses, severities, source_tables }));
-    } catch (e) {
-      silentCatch('incidents.filters.persist')(e);
-    }
-  }, [filters]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(SORT_KEY, oldestFirst ? '1' : '0');
-    } catch (e) {
-      silentCatch('incidents.sort.persist')(e);
-    }
-  }, [oldestFirst]);
-
-  // On leaving the inbox, stamp "now" as the last-seen mark so the next visit
-  // highlights only what arrived while away. Runs once on unmount.
-  useEffect(() => {
-    return () => {
-      try {
-        localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
-      } catch (e) {
-        silentCatch('incidents.last-seen.persist')(e);
-      }
-    };
-  }, []);
-
-  const allCollapsed = groups.length > 0 && groups.every((g) => collapsedGroups.has(g.key));
-  const toggleAllGroups = useCallback(() => {
-    setCollapsedGroups(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)));
-  }, [allCollapsed, groups]);
-
-  // Flatten the rows the user can actually see (skipping collapsed groups) so
-  // keyboard navigation moves through exactly what's on screen.
-  const visibleIncidents = useMemo(
-    () => groups.filter((g) => !collapsedGroups.has(g.key)).flatMap((g) => g.incidents),
-    [groups, collapsedGroups],
-  );
-
-  // How many currently-listed incidents arrived after the user last marked the
-  // inbox seen — surfaced as a "N new since your last visit" marker.
-  const newCount = useMemo(() => {
-    if (!lastSeenAt) return 0;
-    const cutoff = new Date(lastSeenAt).getTime();
-    if (Number.isNaN(cutoff)) return 0;
-    return incidents.filter((i) => new Date(i.createdAt).getTime() > cutoff).length;
-  }, [incidents, lastSeenAt]);
-
-  const markSeen = useCallback(() => {
-    const now = new Date().toISOString();
-    setLastSeenAt(now);
-    try {
-      localStorage.setItem(LAST_SEEN_KEY, now);
-    } catch (e) {
-      silentCatch('incidents.last-seen.persist')(e);
-    }
-  }, []);
-
-  // Latest-value refs so the global keydown listener can stay mounted once
-  // without re-binding on every focus change or refresh.
-  const visibleRef = useRef(visibleIncidents);
-  visibleRef.current = visibleIncidents;
-  const focusedIdRef = useRef(focusedId);
-  focusedIdRef.current = focusedId;
-  const modalOpenRef = useRef(false);
-  modalOpenRef.current = detailIncident !== null;
-  const actionsRef = useRef(actions);
-  actionsRef.current = actions;
-  const tRef = useRef(t);
-  tRef.current = t;
-
-  // Keyboard triage: j/k (or arrows) move the cursor, Enter opens, A/R act on
-  // the focused incident, Esc clears. Ignored while typing or with the modal up.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (modalOpenRef.current) return;
-      const tgt = e.target as HTMLElement | null;
-      if (
-        tgt &&
-        (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT' || tgt.isContentEditable)
-      ) {
-        return;
-      }
-      const list = visibleRef.current;
-      if (list.length === 0) return;
-      const curIdx = list.findIndex((i) => i.id === focusedIdRef.current);
-      const focusAt = (idx: number) => {
-        const inc = list[idx];
-        if (!inc) return;
-        setFocusedId(inc.id);
-        document.getElementById(`incident-row-${inc.id}`)?.scrollIntoView({ block: 'nearest' });
-        const tt = tRef.current;
-        const sev = tokenLabel(tt, 'severity', inc.severity);
-        const pos = tt.overview.incidents.a11y_position
-          .replace('{current}', String(idx + 1))
-          .replace('{total}', String(list.length));
-        const persona = inc.personaName ? `, ${inc.personaName}` : '';
-        setAnnouncement(`${sev}, ${inc.title}${persona}. ${pos}`);
-      };
-      switch (e.key) {
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault();
-          focusAt(curIdx < 0 ? 0 : Math.min(list.length - 1, curIdx + 1));
-          break;
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault();
-          focusAt(curIdx < 0 ? list.length - 1 : Math.max(0, curIdx - 1));
-          break;
-        case 'Enter':
-          if (curIdx >= 0) {
-            e.preventDefault();
-            setDetailIncident(list[curIdx]!);
-          }
-          break;
-        case 'a':
-          if (curIdx >= 0 && list[curIdx]!.status === 'open') {
-            e.preventDefault();
-            const inc = list[curIdx]!;
-            void actionsRef.current.acknowledge(inc.id);
-            setAnnouncement(`${tRef.current.overview.incidents.a11y_acknowledged}: ${inc.title}`);
-          }
-          break;
-        case 'r':
-          if (curIdx >= 0 && (list[curIdx]!.status === 'open' || list[curIdx]!.status === 'acknowledged' || list[curIdx]!.status === 'in_progress')) {
-            e.preventDefault();
-            const inc = list[curIdx]!;
-            void actionsRef.current.resolve(inc.id).then((ok) => {
-              if (ok) setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
-            });
-          }
-          break;
-        case 'Escape':
-          setFocusedId(null);
-          break;
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  // Stable per-row handlers so the memoized IncidentRow can skip re-renders
-  // during keyboard triage (the focus cursor is threaded through
-  // IncidentAgentGroup as a per-row boolean instead of a renderRow dep).
-  // Depend on the individual callbacks — the `actions` container object gets a
-  // fresh identity each render even though its members are stable.
   const { acknowledge, resolve, dismiss, reopen } = actions;
+  useIncidentKeyboardTriage({
+    rows: pageRows,
+    focusedId,
+    setFocusedId,
+    enabled: detailIncident === null && !showAutonomous,
+    onOpenDetail: openDetail,
+    acknowledge,
+    resolve,
+    announce: setAnnouncement,
+  });
+
   const handleAcknowledge = useCallback((id: string) => void acknowledge(id), [acknowledge]);
   const handleResolve = useCallback((id: string) => void resolve(id), [resolve]);
   const handleDismiss = useCallback((id: string) => void dismiss(id), [dismiss]);
   const handleReopen = useCallback((id: string) => void reopen(id), [reopen]);
-  const openDetail = useCallback((incident: AuditIncident) => setDetailIncident(incident), []);
 
-  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
-  // A new filter/group/sort context replays the first-viewport cascade for the
-  // rows it produces; a refresh/poll re-delivering the same ids does not (their
-  // ids are already marked entered). Client-side grouping means a group-mode
-  // or sort switch shows its rows on the SAME frame — the cascade IS the response.
-  const revealResetKey = `${JSON.stringify(filters)}|${groupMode}|${oldestFirst}`;
-  const enter = useRevealTracker(revealResetKey);
-  const { hasEntered: trackerHasEntered, markEntered: trackerMarkEntered } = enter;
-
-  // Position of each visible incident within the flattened (post-collapse)
-  // list — drives the cascade's per-row stagger order and the CASCADE_ROWS cap.
-  const incidentIndexById = useMemo(() => {
-    const m = new Map<string, number>();
-    visibleIncidents.forEach((inc, i) => m.set(inc.id, i));
-    return m;
-  }, [visibleIncidents]);
-
-  const renderRow = useCallback(
-    (incident: AuditIncident, focused: boolean) => {
-      const index = incidentIndexById.get(incident.id) ?? 0;
-      return (
-        <RevealItem
-          key={incident.id}
-          revealId={incident.id}
-          order={index}
-          hasEntered={(id) => index >= CASCADE_ROWS || trackerHasEntered(id)}
-          markEntered={trackerMarkEntered}
-        >
-          <IncidentRow
-            incident={incident}
-            gridTemplate={gridTemplate}
-            focused={focused}
-            onAcknowledge={handleAcknowledge}
-            onResolve={handleResolve}
-            onDismiss={handleDismiss}
-            onReopen={handleReopen}
-            onOpenDetail={openDetail}
-          />
-        </RevealItem>
-      );
-    },
-    [gridTemplate, handleAcknowledge, handleResolve, handleDismiss, handleReopen, openDetail, incidentIndexById, trackerHasEntered, trackerMarkEntered],
-  );
-
-  // "Narrowed" = the user moved beyond the default open-only inbox view. The
-  // default (statuses: ['open'], nothing else) is NOT narrowed, so reaching
-  // zero there reads as a healthy "all clear" rather than a no-match result —
-  // and only that path earns the inbox-zero celebration.
   const isNarrowed = isNarrowedFilters(filters);
-
-  // Only the very first load (nothing on screen yet) earns a placeholder — a
-  // background refresh with rows already visible must never blank the body.
   const isInitialLoading = loading && incidents.length === 0;
 
-  // Detect an action-driven drain to zero. Evaluated once the refresh settles;
-  // a non-action path (filter change) leaves the ref unarmed, so no pop fires.
+  // Detect an action-driven drain to zero, evaluated once the refresh settles.
   useEffect(() => {
     if (loading) return;
     if (incidents.length > 0) {
       setJustCleared(false);
-      clearedByActionRef.current = false;
+      setClearedByAction(false);
       return;
     }
-    if (clearedByActionRef.current && !isNarrowed) setJustCleared(true);
-    clearedByActionRef.current = false;
-  }, [loading, incidents.length, isNarrowed]);
+    if (clearedByAction && !isNarrowed) setJustCleared(true);
+    setClearedByAction(false);
+  }, [loading, incidents.length, isNarrowed, clearedByAction]);
+
+  const ledgerProps = useMemo(() => ({
+    incidents,
+    focusedId,
+    lastSeenAt,
+    onOpenDetail: openDetail,
+    onAcknowledge: handleAcknowledge,
+    onResolve: handleResolve,
+    onDismiss: handleDismiss,
+    onReopen: handleReopen,
+    onPageRowsChange,
+  }), [incidents, focusedId, lastSeenAt, openDetail, handleAcknowledge, handleResolve, handleDismiss, handleReopen, onPageRowsChange]);
 
   return (
     <ContentBox data-testid="incidents-inbox">
@@ -455,7 +110,7 @@ export default function IncidentsInbox() {
         actions={
           <button
             type="button"
-            onClick={() => void refresh()}
+            onClick={() => { void refresh(); void autonomous.refresh(); }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
             aria-label={t.overview.incidents.refresh}
           >
@@ -466,135 +121,75 @@ export default function IncidentsInbox() {
       />
 
       <ContentBody>
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {announcement}
-        </div>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
 
         <div className="px-4 pt-3 pb-2">
-          <IncidentsInboxKpiHeader summary={summary} filters={filters} onApplyFilters={setFilters} />
+          <IncidentsInboxKpiHeader
+            summary={summary}
+            filters={filters}
+            onApplyFilters={(next) => { setFilters(next); setShowAutonomous(false); }}
+            autonomous={{
+              count: autonomous.incidents.length,
+              active: showAutonomous,
+              onToggle: () => setShowAutonomous((v) => !v),
+            }}
+          />
         </div>
 
-        {/* Autonomous NOC v1 — what the system fixed without a human. */}
-        <AutonomousLane onOpenIncident={openDetail} />
-
-        <IncidentsFilterBar filters={filters} onChange={setFilters} />
-
-        {error && (
-          <div className="px-4 py-3">
-            <InlineErrorBanner
-              message={`${t.overview.incidents.load_failed}: ${error}`}
-              onRetry={() => void refresh()}
-            />
-          </div>
-        )}
-
-        {/* Table header is permanent chrome (docs/design/overview-loading.md
-            law 5) — it never depends on load state, so it renders identically
-            above ghosts, the empty state, and real rows. */}
-        <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
-          <IncidentTableHeader
-            filters={filters}
-            onChange={setFilters}
-            personas={personas}
-            oldestFirst={oldestFirst}
-            onToggleSort={() => setOldestFirst((v) => !v)}
-            gridTemplate={gridTemplate}
-            colWidths={colWidths}
+        {showAutonomous ? (
+          <AutonomousLogPanel
+            incidents={autonomous.incidents}
+            loading={autonomous.loading}
+            onOpenIncident={openDetail}
+            onBack={() => setShowAutonomous(false)}
           />
+        ) : (
+          <>
+            <IncidentsFilterBar filters={filters} onChange={setFilters} />
 
-          {isInitialLoading ? (
-            /* Nothing to show yet + fetch in flight: ghost rows under the REAL
-               table header. Ghosts are invisible for their first ~120ms
-               (animation-delay + fill-mode both) so a fast fetch skips them
-               entirely; real rows replace them the frame they arrive and play
-               the same cascade — no gate, no held content. */
-            <IncidentGhostRows gridTemplate={gridTemplate} />
-          ) : !loading && incidents.length === 0 ? (
-            <div className="flex items-center justify-center py-16">
-              {isNarrowed ? (
-                <EmptyState
-                  icon={Inbox}
-                  title={t.overview.incidents.empty_filtered_title}
-                  subtitle={t.overview.incidents.empty_state_filtered}
+            {error && (
+              <div className="px-4 py-3">
+                <InlineErrorBanner
+                  message={`${t.overview.incidents.load_failed}: ${error}`}
+                  onRetry={() => void refresh()}
                 />
-              ) : (
-                <InboxZero
-                  title={t.overview.incidents.empty_open_title}
-                  subtitle={t.overview.incidents.empty_state_open}
-                  celebrate={justCleared}
-                />
-              )}
-            </div>
-          ) : (
-            <>
-              {truncated && (
-                <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
-                  <span className="typo-caption text-foreground">
-                    {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
-                  </span>
-                </div>
-              )}
-              {newCount > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
-                  <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="typo-caption text-primary">
-                    {t.overview.incidents.new_since_last_visit.replace('{count}', String(newCount))}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={markSeen}
-                    className="ml-auto px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
-                  >
-                    {t.overview.incidents.mark_seen}
-                  </button>
-                </div>
-              )}
-              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
-                <div className="flex flex-wrap items-center gap-1">
-                  <span className="typo-caption text-foreground mr-1">
-                    {t.overview.incidents.group_by_label}:
-                  </span>
-                  {GROUP_MODES.map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setGroupMode(mode)}
-                      aria-pressed={groupMode === mode}
-                      className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
-                        groupMode === mode
-                          ? 'bg-primary/15 text-primary border-primary/25'
-                          : 'text-foreground border-transparent hover:bg-secondary/40'
-                      }`}
-                    >
-                      {groupModeLabel(t, mode)}
-                    </button>
-                  ))}
-                </div>
-                {groups.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={toggleAllGroups}
-                    className="typo-caption text-foreground rounded-card px-2 py-0.5 hover:bg-secondary/40 transition-colors focus-ring"
-                  >
-                    {allCollapsed
-                      ? t.overview.incidents.groups_expand_all
-                      : t.overview.incidents.groups_collapse_all}
-                  </button>
+              </div>
+            )}
+
+            {truncated && (
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
+                <span className="typo-caption text-foreground">
+                  {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
+                </span>
+              </div>
+            )}
+
+            {/* Nothing on screen yet + a fetch in flight: calm ghost rows. A
+                background refresh with rows already visible never reaches this
+                branch (docs/design/overview-loading.md law 1). */}
+            {isInitialLoading ? (
+              <ListSkeleton calm rows={6} rowHeight={56} />
+            ) : !loading && incidents.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                {isNarrowed ? (
+                  <EmptyState
+                    icon={Inbox}
+                    title={t.overview.incidents.empty_filtered_title}
+                    subtitle={t.overview.incidents.empty_state_filtered}
+                  />
+                ) : (
+                  <InboxZero
+                    title={t.overview.incidents.empty_open_title}
+                    subtitle={t.overview.incidents.empty_state_open}
+                    celebrate={justCleared}
+                  />
                 )}
               </div>
-              {groups.map((group) => (
-                <IncidentAgentGroup
-                  key={group.key}
-                  group={group}
-                  collapsed={collapsedGroups.has(group.key)}
-                  onToggle={() => toggleGroup(group.key)}
-                  focusedId={focusedId}
-                  renderRow={renderRow}
-                />
-              ))}
-            </>
-          )}
-        </div>
+            ) : (
+              <IncidentsLedgerView {...ledgerProps} />
+            )}
+          </>
+        )}
       </ContentBody>
 
       {detailIncident && (
@@ -604,79 +199,10 @@ export default function IncidentsInbox() {
           onChanged={() => void refresh()}
           onOpenIncident={(inc) => setDetailIncident(inc)}
           onFilterPersona={(personaId) =>
-            setFilters({
-              statuses: null,
-              severities: null,
-              source_tables: null,
-              persona_id: personaId,
-              since: null,
-            })
+            setFilters({ statuses: null, severities: null, source_tables: null, persona_id: personaId, since: null })
           }
         />
       )}
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// IncidentGhostRows — calm ghost rows for the ONLY moment the row region has
-// nothing to show (a fetch with a cold store / empty filter context).
-//
-// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
-// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
-// the delay, so a fetch that resolves quickly never paints a single ghost.
-// The delay IS the anti-flash: no timers, no minimum display, and real rows
-// replace ghosts on the very frame data arrives, playing the same cascade in
-// the same geometry (identical grid template under the same header).
-// No `animate-pulse` — the entrance stagger is the only motion.
-// ---------------------------------------------------------------------------
-
-const GHOST_ROW_COUNT = 6;
-const GHOST_ROW_HEIGHT = 44;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
-/** Deterministic width variation so ghosts read as rows, not a barcode. */
-const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
-
-function IncidentGhostRows({ gridTemplate }: { gridTemplate: string }) {
-  return (
-    <div aria-hidden="true">
-      {/* group-header ghost — mirrors the sticky agent-group header's
-          silhouette (the default group-by lens is "agent"). */}
-      <div
-        className="flex items-center gap-2 border-b border-primary/10 bg-secondary px-4 py-2 animate-fade-in"
-        style={{ animationDelay: '120ms' }}
-      >
-        <span className="h-4 w-4 shrink-0 rounded bg-primary/[0.08]" />
-        <span className="h-4 w-4 shrink-0 rounded-full bg-primary/[0.08]" />
-        <span className="h-2.5 w-28 rounded bg-primary/[0.08]" />
-      </div>
-      {Array.from({ length: GHOST_ROW_COUNT }).map((_, i) => {
-        const titleW = GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length];
-        const delay = `${140 + i * 35}ms`;
-        return (
-          <div
-            key={i}
-            role="row"
-            className="grid items-center border-b border-primary/[0.06] border-l-2 border-l-transparent animate-fade-in"
-            style={{ gridTemplateColumns: gridTemplate, minHeight: GHOST_ROW_HEIGHT, animationDelay: delay }}
-          >
-            {/* Incident — severity shape + source glyph + title */}
-            <div className="flex items-center gap-2 px-4 py-2.5 min-w-0">
-              <span className="h-3.5 w-3.5 shrink-0 rounded-full bg-primary/[0.08]" />
-              <span className="h-6 w-6 shrink-0 rounded-card bg-primary/[0.06]" />
-              <span className={`h-3.5 ${titleW} max-w-full ${GHOST_BAR}`} />
-            </div>
-            {/* Persona */}
-            <div className="px-4"><span className={`inline-block h-3.5 w-20 ${GHOST_BAR}`} /></div>
-            {/* State */}
-            <div className="px-4"><span className={`inline-block h-3 w-16 ${GHOST_BAR}`} /></div>
-            {/* Days open */}
-            <div className="px-4 flex justify-end"><span className={`h-3.5 w-8 ${GHOST_BAR}`} /></div>
-            {/* Actions */}
-            <div className="px-4 flex justify-end"><span className={`h-3.5 w-16 ${GHOST_BAR}`} /></div>
-          </div>
-        );
-      })}
-    </div>
   );
 }
