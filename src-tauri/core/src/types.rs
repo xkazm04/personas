@@ -167,6 +167,15 @@ pub enum ProtocolMessage {
         content: String,
         content_type: Option<String>,
         priority: Option<String>,
+        /// Optional lane override emitted by the model: `"message"` forces the
+        /// persona chat lane, `"report"` forces the report artifact. Absent
+        /// (the common case) means the dispatcher classifies server-side from
+        /// title / length / structure / content_type. Additive and backward
+        /// compatible — the `user_message` block's existing fields are
+        /// unchanged, and an older model that never emits it behaves exactly
+        /// as before.
+        #[serde(default)]
+        channel: Option<String>,
     },
     PersonaAction {
         target: String,

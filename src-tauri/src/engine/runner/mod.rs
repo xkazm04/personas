@@ -2414,6 +2414,7 @@ pub async fn run_execution(
                                                 content: input_val.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                                                 content_type: input_val.get("content_type").and_then(|v| v.as_str()).map(String::from),
                                                 priority: input_val.get("priority").and_then(|v| v.as_str()).map(String::from),
+                                                channel: input_val.get("channel").and_then(|v| v.as_str()).map(String::from),
                                             }),
                                             "emit_event" => Some(ProtocolMessage::EmitEvent {
                                                 event_type: input_val.get("event_type").and_then(|v| v.as_str()).unwrap_or("custom").to_string(),

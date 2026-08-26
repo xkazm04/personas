@@ -35,15 +35,23 @@ Treat memory writes as compounding: every well-titled, well-categorized memory y
 "#;
 
 pub(super) const PROTOCOL_USER_MESSAGE: &str = r#"### User Message Protocol
-To send a message to the user, output a JSON object on its own line:
+To send output to the user, output a JSON object on its own line:
 ```json
 {"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "Message content here", "content_type": "info", "priority": "normal"}}
 ```
+
+**One protocol block, two shapes — choose by what you actually produced:**
+- **Short note** (a status line, a one-line answer, an acknowledgement, "nothing to report today"): omit `title`, keep `content` under ~400 characters of plain prose, no headings/tables/fenced blocks. It renders as a **chat message** in the persona's conversation — where a one-liner belongs.
+- **Substantial output** (a report, an analysis, a digest — anything with sections, a table, or code): give it a `title` and write `content` as markdown. It becomes a **Report artifact**: re-readable, citable, and eligible for delivery to Slack/email.
+
+Never title a one-liner just to have a title, and never squeeze a real report into an untitled note.
+
 Fields:
-- `title` (required): A **descriptive title** that identifies the use case and context at first sight. Examples: "Weekly Tech News - Jan 15-21, 2026", "Portfolio Performance Report - March 2026", "Security Audit Results - API Gateway". NEVER use generic titles like "Execution output" — always make the title meaningful.
-- `content` (required): The message body. Use markdown formatting. **Only include the final deliverable** — do not include your thinking process, internal reasoning, meta-information, or intermediate steps. The user wants the result, not how you got there.
+- `title` (required for a report, OMITTED for a short note): A **descriptive title** that identifies the use case and context at first sight. Examples: "Weekly Tech News - Jan 15-21, 2026", "Portfolio Performance Report - March 2026", "Security Audit Results - API Gateway". NEVER use generic titles like "Execution output" — always make the title meaningful.
+- `content` (required): The message body. Use markdown formatting for a report. **Only include the final deliverable** — do not include your thinking process, internal reasoning, meta-information, or intermediate steps. The user wants the result, not how you got there.
 - `content_type` (optional): "info", "warning", "error", "success" (default: "info")
 - `priority` (optional): "low", "normal", "high", "urgent" (default: "normal")
+- `channel` (optional): "message" or "report" — forces the shape when the automatic choice would be wrong (e.g. a short note you DO want kept as an artifact). Leave it out unless you need it.
 
 #### Rich Content Formatting
 Your message content supports full markdown plus these extensions:
@@ -193,7 +201,7 @@ pub(super) const EXECUTION_MODE_DIRECTIVE: &str = r#"## Execution Mode: AUTONOMO
 You MUST:
 1. **Execute your task immediately** — do not ask questions, wait for input, or say "I'm ready to help." Act proactively based on your instructions and available tools.
 2. **Produce concrete output** — fetch data, analyze it, generate reports, take actions. If no external data is available, work with what you have and explain what you found.
-3. **Send a user_message** — your main output/report MUST be sent as a `user_message` protocol JSON. This is how users receive your work. Without it, they see nothing.
+3. **Send a user_message** — your main output MUST be sent as a `user_message` protocol JSON. This is how users receive your work. Without it, they see nothing. Title it when it is a real report; omit the title when it is a short note.
 4. **Store memories** — record 1-3 key **business** learnings via `agent_memory` protocol (skip if execution failed due to operational issues like auth/credential errors).
 5. **Emit events** — signal completion via `emit_event` protocol so other systems can react.
 6. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
@@ -265,7 +273,7 @@ pub(super) const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r###"### REQUIRED: Pr
 
 You MUST use the following protocols during EVERY execution. This is mandatory — your output is consumed by an integrated dashboard that expects data from each protocol:
 
-1. **user_message** — Send your main output/report as a user_message at the end of execution. Use a **specific, descriptive title** (e.g. "Weekly Tech News - Jan 15-21, 2026") and include **only the final result** (no thinking process or meta-information).
+1. **user_message** — Send your main output as a user_message at the end of execution. A substantial deliverable gets a **specific, descriptive title** (e.g. "Weekly Tech News - Jan 15-21, 2026") and markdown content, and becomes a Report; a short status note or one-line answer omits `title` entirely and posts as a chat message. Either way include **only the final result** (no thinking process or meta-information).
    ```json
    {"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "Top Stories\n1. Story one\n2. Story two", "content_type": "success", "priority": "normal"}}
    ```

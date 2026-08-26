@@ -1,5 +1,15 @@
 # Execution — Technical Documentation
 
+> **Message vs Report (2026-08-26).** A persona's `user_message` output is now
+> classified server-side: a short, untitled, unstructured note becomes a CHAT
+> message in the persona's channel (one row, no delivery fan-out); a titled,
+> long (>400 chars), or structurally-markdown output becomes a Report artifact
+> (`persona_reports`, with delivery fan-out) as before. An explicit
+> `"channel": "message" | "report"` field on the block overrides the
+> heuristics. Persona-channel follow-up runs skip the chat write — the
+> follow-up loop owns that reply row.
+
+
 > How a persona actually runs. From the moment a trigger fires (or a
 > user clicks "Run"), through credential resolution, prompt assembly,
 > CLI spawn, streaming output, chain cascades, and finalization —

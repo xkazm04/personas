@@ -541,6 +541,9 @@ fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
         content: str_field_or(msg, "content", ""),
         content_type: str_field(msg, "content_type"),
         priority: str_field(msg, "priority"),
+        // Optional, additive lane override ("message" | "report"). Absent for
+        // every model that has not been taught it; the dispatcher classifies.
+        channel: str_field(msg, "channel"),
     })
 }
 
@@ -1212,11 +1215,27 @@ mod tests {
                 content,
                 content_type,
                 priority,
+                channel,
             } => {
                 assert_eq!(title, Some("Status Update".to_string()));
                 assert_eq!(content, "Task completed");
                 assert_eq!(content_type, Some("success".to_string()));
                 assert_eq!(priority, Some("normal".to_string()));
+                assert_eq!(channel, None, "absent `channel` stays None");
+            }
+            _ => panic!("Expected UserMessage, got {msg:?}"),
+        }
+    }
+
+    /// The optional lane override is additive: when the model emits it, the
+    /// parser carries it through untouched for the dispatcher to honor.
+    #[test]
+    fn test_extract_user_message_channel_override() {
+        let line = r#"{"user_message": {"content": "done", "channel": "report"}}"#;
+        let msg = extract_protocol_message(line).unwrap();
+        match msg {
+            ProtocolMessage::UserMessage { channel, .. } => {
+                assert_eq!(channel, Some("report".to_string()));
             }
             _ => panic!("Expected UserMessage, got {msg:?}"),
         }

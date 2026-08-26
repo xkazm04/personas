@@ -20,6 +20,7 @@ use crate::db::repos::communication::{
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::repos::execution::policy_events as policy_events_repo;
+use crate::db::repos::resources::team_channel as channel_repo;
 use crate::db::DbPool;
 
 // ---------------------------------------------------------------------------
@@ -105,6 +106,10 @@ pub struct DispatchContext<'a> {
     /// Cached generation policy for this execution's capability. Lazily
     /// computed on first artefact (memory/review/event) and reused. Phase C5b.
     policy_cache: Option<testable::GenerationPolicy>,
+    /// Cached answer to "does something else already own this execution's chat
+    /// lane?". Computed on the first chat-lane write and reused. See
+    /// [`DispatchContext::chat_lane_owned_externally`].
+    chat_lane_external_cache: Option<bool>,
 }
 
 impl<'a> DispatchContext<'a> {
@@ -141,7 +146,50 @@ impl<'a> DispatchContext<'a> {
             quality_gate_cache: gate_config,
             resolved_channels_cache: None,
             policy_cache: None,
+            chat_lane_external_cache: None,
         }
+    }
+
+    /// True when this execution is a **persona-channel follow-up** — the user
+    /// posted a chat message, `post_persona_channel_message` spawned the run,
+    /// and `run_channel_followup` will write the persona's reply row itself
+    /// once the execution reaches a terminal state.
+    ///
+    /// That waiter is the chat lane's owner for such runs, so dispatch must
+    /// NOT also insert a row: the same reply would appear twice. Detected from
+    /// the execution's `input_data` envelope (`{"source":"channel", ...}`),
+    /// which `post_persona_channel_message` mints and the Slack/Discord
+    /// pollers deliberately do not (their replies go to the transport, never
+    /// to `team_channel_messages`).
+    ///
+    /// One DB read per execution, cached — a run with ten chat notes queries
+    /// once.
+    fn chat_lane_owned_externally(&mut self) -> bool {
+        if let Some(cached) = self.chat_lane_external_cache {
+            return cached;
+        }
+        let resolved = self
+            .pool
+            .get()
+            .ok()
+            .and_then(|conn| {
+                conn.query_row(
+                    "SELECT input_data FROM persona_executions WHERE id = ?1",
+                    rusqlite::params![self.execution_id],
+                    |r| r.get::<_, Option<String>>(0),
+                )
+                .ok()
+                .flatten()
+            })
+            .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+            .and_then(|v| {
+                v.get("source")
+                    .and_then(|s| s.as_str())
+                    .map(|s| s == "channel")
+            })
+            .unwrap_or(false);
+        self.chat_lane_external_cache = Some(resolved);
+        resolved
     }
 
     /// Resolve and cache the generation policy for this execution. Reads
@@ -190,6 +238,177 @@ impl<'a> DispatchContext<'a> {
     }
 }
 
+// ---------------------------------------------------------------------------
+// `user_message` lane classification — message vs report
+// ---------------------------------------------------------------------------
+
+/// Where a `user_message` protocol block lands.
+///
+/// One wire block, two homes. A persona's short status note belongs in the
+/// conversation it is part of; a persona's structured deliverable belongs in
+/// the artifact store where it can be re-read, delivered and cited. Before
+/// this split every `user_message` became a report, so the persona channel
+/// rendered report bubbles for one-liners.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageLane {
+    /// A chat row in the persona channel (`team_channel_messages`, scoped by
+    /// `persona_id` with the `persona:<id>` team sentinel). No notification
+    /// fan-out — see [`dispatch_chat_note`].
+    Chat,
+    /// A report artifact (`persona_reports`) plus the notification-channel
+    /// fan-out. The pre-existing path, and still the default for anything
+    /// that looks like a deliverable.
+    Report,
+}
+
+/// Content longer than this (in characters, not bytes) is a report regardless
+/// of how it is shaped. A note that does not fit in a chat bubble is not a
+/// chat note. Sized so a few sentences of status still fit.
+pub const CHAT_NOTE_MAX_CHARS: usize = 400;
+
+/// `content_type` values that declare the payload an artifact. `info`,
+/// `success`, `warning` and `text` are deliberately absent: those are the
+/// types a short status note carries, and typing a one-liner `info` must not
+/// force it into the report store.
+const REPORT_CONTENT_TYPES: &[&str] = &["markdown", "code", "alert", "budget_alert", "error"];
+
+/// Classify one `user_message` block into its lane.
+///
+/// Pure — no DB, no clock, no IO — so the whole rule set is unit-testable
+/// without a pool or an emitter. Rules, in precedence order:
+///
+/// 1. An explicit `channel` override wins outright (`"message"`/`"chat"` →
+///    [`MessageLane::Chat`], `"report"` → [`MessageLane::Report`]). Any other
+///    value is ignored rather than trusted — an unknown lane name falls
+///    through to the heuristics instead of silently picking one.
+/// 2. A non-empty `title` → report. A title is the artifact's name; a chat
+///    note has none.
+/// 3. Content longer than [`CHAT_NOTE_MAX_CHARS`] → report.
+/// 4. A `content_type` in [`REPORT_CONTENT_TYPES`] → report.
+/// 5. Structural markdown (heading, table, fenced block) → report.
+/// 6. Otherwise → chat.
+///
+/// The bias is deliberate: every existing persona emits a title (the prompt
+/// has always called it required), so **existing behavior is unchanged** and
+/// only a model that deliberately omits the title reaches the new lane.
+pub fn classify_user_message(
+    title: Option<&str>,
+    content: &str,
+    content_type: Option<&str>,
+    channel: Option<&str>,
+) -> MessageLane {
+    // 1. Explicit override.
+    if let Some(lane) = channel.map(str::trim).filter(|c| !c.is_empty()) {
+        match lane.to_ascii_lowercase().as_str() {
+            "message" | "chat" => return MessageLane::Chat,
+            "report" => return MessageLane::Report,
+            _ => {} // unknown value: fall through to the heuristics
+        }
+    }
+    // 2. Titled output is an artifact.
+    if title.map(str::trim).is_some_and(|t| !t.is_empty()) {
+        return MessageLane::Report;
+    }
+    // 3. Too long to be a chat bubble.
+    if content.chars().count() > CHAT_NOTE_MAX_CHARS {
+        return MessageLane::Report;
+    }
+    // 4. Declared as an artifact by its content type.
+    if content_type
+        .map(|ct| ct.trim().to_ascii_lowercase())
+        .is_some_and(|ct| REPORT_CONTENT_TYPES.contains(&ct.as_str()))
+    {
+        return MessageLane::Report;
+    }
+    // 5. Shaped like a document.
+    if has_structural_markdown(content) {
+        return MessageLane::Report;
+    }
+    MessageLane::Chat
+}
+
+/// Cheap structural-markdown probe: a heading, a fenced block, or a table.
+///
+/// Deliberately narrow — bold, italics, links and a couple of bullets are
+/// ordinary chat punctuation and must NOT promote a note to an artifact. Hand
+/// -rolled rather than regex: three line-shaped predicates over a string that
+/// is at most a few hundred characters by the time this runs.
+fn has_structural_markdown(content: &str) -> bool {
+    let mut table_rows = 0usize;
+    for line in content.lines() {
+        let t = line.trim_start();
+        // Fenced code / chart block.
+        if t.starts_with("```") || t.starts_with("~~~") {
+            return true;
+        }
+        // ATX heading: 1–6 '#' followed by a space and some text. Counted in
+        // BYTES so the slice below is a byte index by construction ('#' is
+        // ASCII, so the two counts agree — this just makes that explicit).
+        let hashes = t.bytes().take_while(|b| *b == b'#').count();
+        if (1..=6).contains(&hashes)
+            && t[hashes..].starts_with(' ')
+            && !t[hashes..].trim().is_empty()
+        {
+            return true;
+        }
+        // Table row: a pipe-delimited line. Two of them (header + separator,
+        // at minimum) before it counts, so a single stray '|' is not a table.
+        if t.starts_with('|') && t.matches('|').count() >= 2 {
+            table_rows += 1;
+            if table_rows >= 2 {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Write a short persona note into the persona's chat lane and announce it.
+///
+/// **No notification fan-out, on purpose.** A chat note's home is the channel
+/// the user is already looking at; Slack/email/webhook delivery is a *report*
+/// affordance, driven by `persona_report_deliveries` and the resolved
+/// notification channels, and pushing every one-line status into it would turn
+/// the fan-out into noise. A persona that wants a note delivered externally
+/// gives it a title (or sets `"channel": "report"`) and it becomes a report,
+/// which is exactly the affordance that already exists.
+fn dispatch_chat_note(ctx: &mut DispatchContext<'_>, content: &str) {
+    // A persona-channel follow-up already writes the persona's reply row when
+    // the run finishes. Writing here too would double-post the same reply.
+    if ctx.chat_lane_owned_externally() {
+        ctx.logger
+            .log("[MESSAGE] Chat note skipped: channel follow-up owns this execution's reply row");
+        return;
+    }
+    match channel_repo::create_persona_channel_message(
+        ctx.pool,
+        channel_repo::CreatePersonaChannelMessageInput {
+            id: None,
+            persona_id: ctx.persona_id.to_string(),
+            author_kind: "persona".into(),
+            author_id: Some(ctx.persona_id.to_string()),
+            author_label: Some(ctx.persona_name.to_string()),
+            body: content.to_string(),
+            reply_to: None,
+            failed: false,
+        },
+    ) {
+        Ok((id, _at)) => {
+            ctx.logger.log(&format!(
+                "[MESSAGE] Chat note posted to persona channel ({id})"
+            ));
+            emit_to(
+                ctx.emitter,
+                event_name::PERSONA_CHANNEL_MESSAGE,
+                &serde_json::json!({ "persona_id": ctx.persona_id }),
+            );
+        }
+        Err(e) => ctx
+            .logger
+            .log(&format!("[MESSAGE] Failed to post chat note: {e}")),
+    }
+}
+
 /// Route a single protocol message to the appropriate DB repo and emit events.
 ///
 /// Backlog backpressure cap: a project with this many `pending` dev_ideas is
@@ -229,10 +448,27 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             content,
             content_type,
             priority,
+            channel,
         } => {
             // Skip empty or whitespace-only messages (prevents "unknown" entries)
             if content.trim().is_empty() {
                 ctx.logger.log("[MESSAGE] Skipped: empty content");
+                return;
+            }
+
+            // W-lane "message vs report": one wire block, two homes. A short
+            // untitled note is a CHAT message in the persona channel; anything
+            // titled, long, structurally formatted, or typed as an artifact is
+            // a REPORT. Exactly one row is written — a chat note never also
+            // becomes a report, and vice versa.
+            if classify_user_message(
+                title.as_deref(),
+                content,
+                content_type.as_deref(),
+                channel.as_deref(),
+            ) == MessageLane::Chat
+            {
+                dispatch_chat_note(ctx, content);
                 return;
             }
 
@@ -1649,6 +1885,411 @@ mod tests {
         // With None use_case_id, pick_capability_channels is never called,
         // so fallback_channels is returned as-is. Verified by the existing
         // test_resolve_falls_back_to_persona_wide test above.
+    }
+
+    // ------------------------------------------------------------------------
+    // W-lane "message vs report" — the classifier (pure) and the two writes
+    // ------------------------------------------------------------------------
+
+    /// A short, untitled, plain note is a chat message — the whole point of
+    /// the lane split.
+    #[test]
+    fn classify_short_untitled_note_is_chat() {
+        assert_eq!(
+            classify_user_message(None, "Nothing to report today.", None, None),
+            MessageLane::Chat
+        );
+        // An empty-string title is not a title.
+        assert_eq!(
+            classify_user_message(Some("   "), "checked, all green", Some("info"), None),
+            MessageLane::Chat
+        );
+    }
+
+    /// A title names an artifact — every persona shipped today emits one, so
+    /// this arm is what keeps existing behavior unchanged.
+    #[test]
+    fn classify_title_forces_report() {
+        assert_eq!(
+            classify_user_message(Some("Weekly digest"), "all good", Some("info"), None),
+            MessageLane::Report
+        );
+    }
+
+    /// Length alone promotes: a note too long for a chat bubble is a report.
+    #[test]
+    fn classify_long_content_is_report() {
+        let long = "a".repeat(CHAT_NOTE_MAX_CHARS + 1);
+        assert_eq!(
+            classify_user_message(None, &long, None, None),
+            MessageLane::Report
+        );
+        let exact = "a".repeat(CHAT_NOTE_MAX_CHARS);
+        assert_eq!(
+            classify_user_message(None, &exact, None, None),
+            MessageLane::Chat,
+            "the boundary itself still fits in a chat bubble"
+        );
+    }
+
+    /// Counted in CHARACTERS, not bytes — a note of multi-byte text must not
+    /// be promoted just for being non-ASCII.
+    #[test]
+    fn classify_length_counts_chars_not_bytes() {
+        // 300 chars, 900 bytes.
+        let multibyte = "日".repeat(300);
+        assert!(
+            multibyte.len() > CHAT_NOTE_MAX_CHARS,
+            "precondition: byte length exceeds the cap"
+        );
+        assert_eq!(
+            classify_user_message(None, &multibyte, None, None),
+            MessageLane::Chat
+        );
+    }
+
+    /// Artifact-ish content types promote; the status-note types do not.
+    #[test]
+    fn classify_content_type_split() {
+        for ct in [
+            "markdown",
+            "code",
+            "alert",
+            "budget_alert",
+            "error",
+            "MarkDown",
+        ] {
+            assert_eq!(
+                classify_user_message(None, "short", Some(ct), None),
+                MessageLane::Report,
+                "content_type {ct} must be a report"
+            );
+        }
+        for ct in ["info", "success", "warning", "text", ""] {
+            assert_eq!(
+                classify_user_message(None, "short", Some(ct), None),
+                MessageLane::Chat,
+                "content_type {ct} must stay a chat note"
+            );
+        }
+    }
+
+    /// Document structure promotes an untitled note.
+    #[test]
+    fn classify_structural_markdown_is_report() {
+        assert_eq!(
+            classify_user_message(None, "## Findings\nall clear", None, None),
+            MessageLane::Report,
+            "heading"
+        );
+        assert_eq!(
+            classify_user_message(None, "here:\n```\nx = 1\n```", None, None),
+            MessageLane::Report,
+            "fenced block"
+        );
+        assert_eq!(
+            classify_user_message(None, "| a | b |\n| - | - |\n| 1 | 2 |", None, None),
+            MessageLane::Report,
+            "table"
+        );
+    }
+
+    /// Ordinary chat punctuation does NOT promote.
+    #[test]
+    fn classify_chat_punctuation_stays_chat() {
+        assert_eq!(
+            classify_user_message(None, "**done** — 3 files, see PR #12", None, None),
+            MessageLane::Chat,
+            "bold is not structure"
+        );
+        assert_eq!(
+            classify_user_message(None, "done:\n- built\n- tested", None, None),
+            MessageLane::Chat,
+            "two bullets are not a document"
+        );
+        assert_eq!(
+            classify_user_message(None, "cost | latency were both fine", None, None),
+            MessageLane::Chat,
+            "a stray pipe is not a table"
+        );
+        assert_eq!(
+            classify_user_message(None, "#hashtag not a heading", None, None),
+            MessageLane::Chat,
+            "a hash without a space is not a heading"
+        );
+    }
+
+    /// The explicit override wins in BOTH directions, over every heuristic.
+    #[test]
+    fn classify_explicit_channel_override_wins() {
+        let long = "a".repeat(CHAT_NOTE_MAX_CHARS + 50);
+        assert_eq!(
+            classify_user_message(Some("Titled"), &long, Some("markdown"), Some("message")),
+            MessageLane::Chat,
+            "channel=message beats title + length + content_type"
+        );
+        assert_eq!(
+            classify_user_message(None, "ok", Some("info"), Some("report")),
+            MessageLane::Report,
+            "channel=report beats the short-untitled default"
+        );
+        assert_eq!(
+            classify_user_message(None, "ok", None, Some(" CHAT ")),
+            MessageLane::Chat,
+            "override is trimmed and case-insensitive"
+        );
+    }
+
+    /// An unrecognized override is ignored, not trusted — the heuristics still
+    /// decide, so a typo cannot silently reroute output.
+    #[test]
+    fn classify_unknown_channel_value_falls_through() {
+        assert_eq!(
+            classify_user_message(Some("Titled"), "body", None, Some("slack")),
+            MessageLane::Report
+        );
+        assert_eq!(
+            classify_user_message(None, "body", None, Some("slack")),
+            MessageLane::Chat
+        );
+    }
+
+    // ------------------------------------------------------------------------
+    // The two writes, against a real (temp-file) database
+    // ------------------------------------------------------------------------
+
+    struct CapturingEmitter {
+        events: std::sync::Mutex<Vec<String>>,
+    }
+
+    impl CapturingEmitter {
+        fn new() -> Self {
+            Self {
+                events: std::sync::Mutex::new(Vec::new()),
+            }
+        }
+        fn names(&self) -> Vec<String> {
+            self.events.lock().unwrap().clone()
+        }
+    }
+
+    impl ExecutionEventEmitter for CapturingEmitter {
+        fn emit_json(&self, event: &str, _payload: serde_json::Value) {
+            self.events.lock().unwrap().push(event.to_string());
+        }
+    }
+
+    fn mk_persona(pool: &DbPool, name: &str) -> String {
+        use crate::db::models::CreatePersonaInput;
+        crate::db::repos::core::personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn count_rows(pool: &DbPool, sql: &str, persona_id: &str) -> i64 {
+        pool.get()
+            .unwrap()
+            .query_row(sql, rusqlite::params![persona_id], |r| r.get(0))
+            .unwrap()
+    }
+
+    fn reports(pool: &DbPool, persona_id: &str) -> i64 {
+        count_rows(
+            pool,
+            "SELECT COUNT(*) FROM persona_reports WHERE persona_id = ?1",
+            persona_id,
+        )
+    }
+
+    fn chat_rows(pool: &DbPool, persona_id: &str) -> i64 {
+        count_rows(
+            pool,
+            "SELECT COUNT(*) FROM team_channel_messages WHERE persona_id = ?1",
+            persona_id,
+        )
+    }
+
+    /// Run one `user_message` through the real dispatcher; hand back the pool,
+    /// the persona id, and the event names that were emitted.
+    fn dispatch_one(
+        msg: ProtocolMessage,
+        seed_execution_input: Option<&str>,
+    ) -> (DbPool, String, Vec<String>) {
+        let pool = crate::db::init_test_db().unwrap();
+        let persona_id = mk_persona(&pool, "Note Taker");
+        let exec_id = format!("exec-{}", uuid::Uuid::new_v4());
+        if let Some(input) = seed_execution_input {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "INSERT INTO persona_executions (id, persona_id, status, input_data, created_at)
+                     VALUES (?1, ?2, 'running', ?3, datetime('now'))",
+                    rusqlite::params![exec_id, persona_id, input],
+                )
+                .unwrap();
+        }
+        let emitter = CapturingEmitter::new();
+        let log_dir = std::env::temp_dir().join(format!("personas_dispatch_test_{exec_id}"));
+        let mut logger = ExecutionLogger::new(&log_dir, &exec_id).unwrap();
+        {
+            let mut ctx = DispatchContext::new(
+                &emitter,
+                &pool,
+                &exec_id,
+                &persona_id,
+                "proj-1",
+                "Note Taker",
+                None,
+                &mut logger,
+                Some(QualityGateConfig::default()),
+            );
+            dispatch(&mut ctx, &msg);
+        }
+        let names = emitter.names();
+        let _ = std::fs::remove_dir_all(&log_dir);
+        (pool, persona_id, names)
+    }
+
+    fn note(title: Option<&str>, content: &str, channel: Option<&str>) -> ProtocolMessage {
+        ProtocolMessage::UserMessage {
+            title: title.map(String::from),
+            content: content.to_string(),
+            content_type: Some("info".into()),
+            priority: None,
+            channel: channel.map(String::from),
+        }
+    }
+
+    /// A short note lands in the chat lane, announces itself on the persona
+    /// channel event, and does NOT also become a report.
+    #[test]
+    fn short_note_writes_chat_row_only() {
+        let (pool, persona_id, events) = dispatch_one(note(None, "deploy is green", None), None);
+        assert_eq!(chat_rows(&pool, &persona_id), 1, "one chat row");
+        assert_eq!(
+            reports(&pool, &persona_id),
+            0,
+            "no report — never double-written"
+        );
+        assert!(
+            events
+                .iter()
+                .any(|e| e == event_name::PERSONA_CHANNEL_MESSAGE),
+            "chat note must announce on the persona-channel event, got {events:?}"
+        );
+        assert!(
+            !events.iter().any(|e| e == event_name::REPORT_CREATED),
+            "chat note must not emit report-created, got {events:?}"
+        );
+        // The row is persona-authored and carries the display name.
+        let (kind, label, body): (String, Option<String>, String) = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT author_kind, author_label, body FROM team_channel_messages
+                 WHERE persona_id = ?1",
+                rusqlite::params![persona_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(kind, "persona");
+        assert_eq!(label.as_deref(), Some("Note Taker"));
+        assert_eq!(body, "deploy is green");
+    }
+
+    /// A titled message stays on the report path exactly as before.
+    #[test]
+    fn titled_message_writes_report_only() {
+        let (pool, persona_id, events) = dispatch_one(
+            note(Some("Weekly digest"), "all systems nominal", None),
+            None,
+        );
+        assert_eq!(reports(&pool, &persona_id), 1, "one report");
+        assert_eq!(chat_rows(&pool, &persona_id), 0, "no chat row");
+        assert!(events.iter().any(|e| e == event_name::REPORT_CREATED));
+        assert!(!events
+            .iter()
+            .any(|e| e == event_name::PERSONA_CHANNEL_MESSAGE));
+    }
+
+    /// Structure promotes an untitled note to a report.
+    #[test]
+    fn structured_untitled_content_writes_report_only() {
+        let (pool, persona_id, _) =
+            dispatch_one(note(None, "## Results\n\n| a | b |\n| - | - |", None), None);
+        assert_eq!(reports(&pool, &persona_id), 1);
+        assert_eq!(chat_rows(&pool, &persona_id), 0);
+    }
+
+    /// The override is honored end-to-end, in both directions.
+    #[test]
+    fn explicit_channel_override_routes_the_write() {
+        let (pool, persona_id, _) = dispatch_one(
+            note(Some("Titled"), "but I want it in chat", Some("message")),
+            None,
+        );
+        assert_eq!(
+            chat_rows(&pool, &persona_id),
+            1,
+            "channel=message beats the title"
+        );
+        assert_eq!(reports(&pool, &persona_id), 0);
+
+        let (pool2, persona2, _) = dispatch_one(note(None, "keep this", Some("report")), None);
+        assert_eq!(
+            reports(&pool2, &persona2),
+            1,
+            "channel=report beats the short default"
+        );
+        assert_eq!(chat_rows(&pool2, &persona2), 0);
+    }
+
+    /// A persona-channel follow-up already writes the reply row when the run
+    /// finishes — dispatch must not post a second copy of the same note.
+    #[test]
+    fn chat_note_skipped_when_channel_followup_owns_the_lane() {
+        let input = r#"{"source":"channel","channelId":"p1","messageId":"m1"}"#;
+        let (pool, persona_id, events) = dispatch_one(note(None, "on it", None), Some(input));
+        assert_eq!(
+            chat_rows(&pool, &persona_id),
+            0,
+            "the follow-up waiter owns this execution's reply row"
+        );
+        assert_eq!(
+            reports(&pool, &persona_id),
+            0,
+            "and it is not promoted to a report either"
+        );
+        assert!(events.is_empty(), "nothing announced, got {events:?}");
+    }
+
+    /// A non-channel execution (a scheduled run, a Slack-poller run) keeps the
+    /// chat lane — the guard is narrow, not a blanket suppression.
+    #[test]
+    fn chat_note_written_for_non_channel_execution() {
+        let input = r#"{"source":"slack","channelId":"C123"}"#;
+        let (pool, persona_id, _) = dispatch_one(note(None, "posted", None), Some(input));
+        assert_eq!(chat_rows(&pool, &persona_id), 1);
     }
 
     #[test]
