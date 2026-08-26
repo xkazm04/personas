@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "{covered} von {total} Kontexten im Schnitt tragen frische Skill-Erkenntnisse — {skills}.",
   "crit_skill_coverage_none": "In den letzten 30 Tagen hat kein Skill Erkenntnisse zu diesem Projekt hinterlassen, es gibt also noch nichts, wogegen sich Abdeckung messen ließe.",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " Nichts Aktuelles zu: {names}."
+  "crit_skill_coverage_uncovered": " Nichts Aktuelles zu: {names}.",
+  "cut_empty_has_brief": "Noch nichts im Schnitt, und dieses Projekt hat weder Ziele noch Features zum Hochstufen — aber das Objective oben trägt ein Briefing. Schlüsseln Sie es in Ziele auf, um den Schnitt zu füllen.",
+  "cut_empty_nothing": "Nichts im Schnitt und nichts zum Hochstufen — dieses Projekt hat noch keine Ziele und keine Features. Schreiben Sie ein Briefing unter das Objective und schlüsseln Sie es auf, oder öffnen Sie «Scope zusammenstellen», um die Features zu kartieren."
 }

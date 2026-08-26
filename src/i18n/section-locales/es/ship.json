@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "{covered} de {total} contextos del corte tienen información reciente de habilidades: {skills}.",
   "crit_skill_coverage_none": "Ninguna habilidad ha dejado información en este proyecto en los últimos 30 días, así que todavía no hay nada con lo que medir la cobertura.",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " Nada reciente en: {names}."
+  "crit_skill_coverage_uncovered": " Nada reciente en: {names}.",
+  "cut_empty_has_brief": "Todavía no hay nada en el corte, y este proyecto no tiene objetivos ni funciones que promover, pero el objetivo de arriba sí tiene un resumen. Descomponlo en objetivos para llenar el corte.",
+  "cut_empty_nothing": "No hay nada en el corte ni nada que promover: este proyecto aún no tiene objetivos ni funciones. Escribe un resumen bajo el objetivo y descomponlo, o abre «Componer alcance» para trazar las funciones."
 }

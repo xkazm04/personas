@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "{covered} z {total} kontextů v řezu nese čerstvé poznatky z dovedností — {skills}.",
   "crit_skill_coverage_none": "Za posledních 30 dní nezanechala na tomto projektu poznatky žádná dovednost, takže zatím není vůči čemu pokrytí měřit.",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " Nic nedávného u: {names}."
+  "crit_skill_coverage_uncovered": " Nic nedávného u: {names}.",
+  "cut_empty_has_brief": "V řezu zatím nic není a tento projekt nemá žádné cíle ani funkce k povýšení — ale objektiv výše nese zadání. Rozložte ho na cíle a řez se naplní.",
+  "cut_empty_nothing": "V řezu nic není a není co povýšit — tento projekt zatím nemá žádné cíle ani funkce. Napište pod objektiv zadání a rozložte ho, nebo otevřete «Sestavit rozsah» a zmapujte funkce."
 }

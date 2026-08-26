@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "컷에 포함된 컨텍스트 {total}개 중 {covered}개에 최신 스킬 인사이트가 있습니다 — {skills}.",
   "crit_skill_coverage_none": "지난 30일 동안 이 프로젝트에 인사이트를 남긴 스킬이 없어 아직 커버리지를 측정할 기준이 없습니다.",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " 최근 정보 없음: {names}."
+  "crit_skill_coverage_uncovered": " 최근 정보 없음: {names}.",
+  "cut_empty_has_brief": "컷에 아직 아무것도 없고 이 프로젝트에는 올릴 목표도 기능도 없습니다 — 다만 위 목표에는 브리프가 있습니다. 이를 목표로 분해해 컷을 채우세요.",
+  "cut_empty_nothing": "컷에도 올릴 것에도 아무것도 없습니다 — 이 프로젝트에는 아직 목표도 기능도 없습니다. 목표 아래에 브리프를 작성해 분해하거나, 「스코프 구성」을 열어 기능을 정리하세요."
 }

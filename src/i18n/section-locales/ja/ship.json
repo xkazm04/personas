@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "カットに含まれる {total} 件のコンテキストのうち {covered} 件に最近のスキル知見があります — {skills}。",
   "crit_skill_coverage_none": "過去 30 日間にこのプロジェクトへ知見を残したスキルがないため、カバレッジを測る対象がまだありません。",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " 最近の情報がありません: {names}。"
+  "crit_skill_coverage_uncovered": " 最近の情報がありません: {names}。",
+  "cut_empty_has_brief": "カットにはまだ何もなく、このプロジェクトには昇格できるゴールも機能もありません。ただし上の目標にはブリーフがあります。それをゴールに分解してカットを埋めてください。",
+  "cut_empty_nothing": "カットにも昇格候補にも何もありません。このプロジェクトにはまだゴールも機能もありません。目標の下にブリーフを書いて分解するか、「スコープを構成」を開いて機能を洗い出してください。"
 }

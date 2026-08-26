@@ -122,15 +122,69 @@ function BucketBtn({ label, on, onClick, hue }: { label: string; on?: boolean; o
   );
 }
 
+/** One row of the outside-the-cut pool, whichever kind it is. `status` is
+ *  present only on goals — a feature's standing is the automation's readiness
+ *  verdict and is shown in the cut, not here. */
+interface PoolRow {
+  kind: 'use_case' | 'goal';
+  id: string;
+  name: string;
+  contexts: string[];
+  bucket: ScopeBucket | null;
+  afterCut: boolean;
+  status?: string;
+}
+
 function Workspace({ vm, ship, editable, t, tx }: {
   vm: ShipMilestoneVM; ship: ShipData; editable: boolean;
   t: Translations; tx: (s: string, v: Record<string, string | number>) => string;
 }) {
   const memberIds = new Set(vm.members.map((mm) => mm.feature.id));
+  const goalMemberIds = new Set(vm.goalMembers.map((gm) => gm.goal.id));
   const core = vm.members.filter((mm) => mm.bucket === 'core');
-  const outside = [
-    ...vm.members.filter((mm) => mm.bucket !== 'core').map((mm) => ({ f: mm.feature, bucket: mm.bucket as ScopeBucket | null, afterCut: mm.afterCut })),
-    ...ship.features.filter((f) => !memberIds.has(f.id)).map((f) => ({ f, bucket: null, afterCut: false })),
+  // THE POOL IS BOTH KINDS.
+  //
+  // It used to list features alone, so a project's goals were reachable only
+  // through the composer's rail — a surface you open to EDIT scope, not the one
+  // you read it on. A project with goals and no use cases (which is every
+  // project whose brief has just been decomposed, and several that will never
+  // have use cases at all) showed an empty ledger and the words "No features
+  // mapped yet", which is both the wrong vocabulary and a dead end.
+  const outside: PoolRow[] = [
+    ...vm.members.filter((mm) => mm.bucket !== 'core').map((mm) => ({
+      kind: 'use_case' as const,
+      id: mm.feature.id,
+      name: mm.feature.name,
+      contexts: mm.feature.contexts,
+      bucket: mm.bucket as ScopeBucket | null,
+      afterCut: mm.afterCut,
+    })),
+    ...ship.features.filter((f) => !memberIds.has(f.id)).map((f) => ({
+      kind: 'use_case' as const,
+      id: f.id,
+      name: f.name,
+      contexts: f.contexts,
+      bucket: null,
+      afterCut: false,
+    })),
+    ...vm.goalMembers.filter((gm) => gm.bucket !== 'core').map((gm) => ({
+      kind: 'goal' as const,
+      id: gm.goal.id,
+      name: gm.goal.name,
+      contexts: gm.goal.contexts,
+      bucket: gm.bucket as ScopeBucket | null,
+      afterCut: gm.afterCut,
+      status: gm.goal.status,
+    })),
+    ...ship.goals.filter((g) => !goalMemberIds.has(g.id)).map((g) => ({
+      kind: 'goal' as const,
+      id: g.id,
+      name: g.name,
+      contexts: g.contexts,
+      bucket: null,
+      afterCut: false,
+      status: g.status,
+    })),
   ];
   // The cut is BOTH kinds. It used to render `members` alone — features — so a
   // milestone whose whole cut was goals showed an empty ledger and a 0/0 count
@@ -261,7 +315,15 @@ function Workspace({ vm, ship, editable, t, tx }: {
           })}
           {cutSize === 0 && (
             <LedgerEmpty testid="ship-cut-empty">
-              {ship.features.length === 0 ? t.ship.outside_empty_no_features : t.ship.cut_empty_planner}
+              {/* Three different situations, and the old copy collapsed them
+                  into one sentence about features. A project with goals and no
+                  use cases was told "No features mapped yet", which is true,
+                  useless, and points at the wrong door. */}
+              {outside.length > 0
+                ? t.ship.cut_empty_planner
+                : vm.description
+                  ? t.ship.cut_empty_has_brief
+                  : t.ship.cut_empty_nothing}
             </LedgerEmpty>
           )}
         </LedgerList>
@@ -281,25 +343,39 @@ function Workspace({ vm, ship, editable, t, tx }: {
       <>
       <LedgerHeader title={t.ship.outside_the_cut} count={outside.length} aside={t.ship.outside_the_cut_aside} muted />
       <LedgerList testid="ship-outside-list">
-        {outside.map(({ f, bucket, afterCut }, i) => (
+        {outside.map((row, i) => (
           <LedgerRow
-            key={f.id}
+            key={`${row.kind}:${row.id}`}
             index={i}
-            name={f.name}
-            contexts={f.contexts}
-            dim={bucket === 'never'}
-            marker={afterCut ? <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden /> : undefined}
-            meta={afterCut
-              ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
-              : bucket === null
-                ? <span className="typo-caption shrink-0 text-foreground/35">{t.ship.unassigned}</span>
-                : undefined}
+            name={row.name}
+            contexts={row.contexts}
+            dim={row.bucket === 'never'}
+            marker={row.afterCut ? <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden /> : undefined}
+            meta={(
+              <span className="flex items-center gap-1.5 shrink-0">
+                {/* Which KIND this is, always — the pool mixes them now, and a
+                    goal beside a feature with no marking is unreadable. */}
+                {row.kind === 'goal' && (
+                  <span className="typo-caption" style={{ color: INK.teal }}>{t.ship.member_kind_goal}</span>
+                )}
+                {row.kind === 'goal' && row.status && (
+                  <span className="typo-caption" style={{ color: goalStatusMeta(row.status).map.fill }}>
+                    {goalStatusLabel(t.plugins.dev_lifecycle, row.status)}
+                  </span>
+                )}
+                {row.afterCut
+                  ? <span className="typo-caption" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
+                  : row.bucket === null
+                    ? <span className="typo-caption text-foreground/35">{t.ship.unassigned}</span>
+                    : null}
+              </span>
+            )}
             actions={editable && (
               <>
                 <Tooltip content={t.ship.promote_cut_tooltip}>
                   <button
                     type="button"
-                    onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')}
+                    onClick={() => ship.setItem(vm.id, row.kind, row.id, 'core')}
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
                     style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
                   >
@@ -308,8 +384,8 @@ function Workspace({ vm, ship, editable, t, tx }: {
                   </button>
                 </Tooltip>
                 {(['later', 'never'] as const).map((b) => (
-                  <BucketBtn key={b} label={bucketLabel(t, b)} on={bucket === b} hue={BUCKET_HUE[b]}
-                    onClick={() => ship.setItem(vm.id, 'use_case', f.id, b)} />
+                  <BucketBtn key={b} label={bucketLabel(t, b)} on={row.bucket === b} hue={BUCKET_HUE[b]}
+                    onClick={() => ship.setItem(vm.id, row.kind, row.id, b)} />
                 ))}
               </>
             )}

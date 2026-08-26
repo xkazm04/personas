@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "{covered} des {total} contextes du lot portent des informations récentes issues des compétences — {skills}.",
   "crit_skill_coverage_none": "Aucune compétence n'a laissé d'information sur ce projet au cours des 30 derniers jours ; il n'y a donc encore rien à quoi mesurer la couverture.",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " Rien de récent sur : {names}."
+  "crit_skill_coverage_uncovered": " Rien de récent sur : {names}.",
+  "cut_empty_has_brief": "Rien dans le lot pour l'instant, et ce projet n'a ni objectifs ni fonctionnalités à promouvoir — mais l'objectif ci-dessus porte un brief. Décomposez-le en objectifs pour remplir le lot.",
+  "cut_empty_nothing": "Rien dans le lot et rien à promouvoir : ce projet n'a encore ni objectifs ni fonctionnalités. Écrivez un brief sous l'objectif et décomposez-le, ou ouvrez « Composer le scope » pour cartographier les fonctionnalités."
 }

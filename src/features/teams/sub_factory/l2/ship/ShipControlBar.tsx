@@ -131,11 +131,24 @@ export function ShipControlBar({
           what is unmet, in the verdict's colour. The chip row was five
           permanent pills to say this; a badge on the button that opens them
           says it in the one place it changes a decision. */}
-      <Tooltip content={cutting ? t.ship.certify_cut_tooltip : verdict === 'go' ? t.ship.certify_ship_tooltip : t.ship.certify_blocked_tooltip}>
+      <Tooltip
+        content={cutting ? t.ship.certify_cut_tooltip : verdict === 'go' ? t.ship.certify_ship_tooltip : t.ship.certify_blocked_tooltip}
+        triggerFocusable={!cutting && verdict !== 'go'}
+        triggerClassName="inline-flex"
+      >
         <button
           type="button"
           onClick={onCertify}
-          className={BAR_BTN}
+          // Shipping is gated on the verdict; CUTTING never is (the criteria are
+          // measured against the cut, so they cannot be a precondition for
+          // making one). Disabling here rather than opening a dialog that
+          // refuses: the evidence is already on the page behind this bar, so a
+          // modal whose only message is "no" is a dead end. `BarButton`'s note
+          // applies — a disabled control still renders its tooltip, which is
+          // where the reason lives.
+          disabled={!cutting && verdict !== 'go'}
+          aria-disabled={!cutting && verdict !== 'go'}
+          className={`${BAR_BTN} disabled:is-disabled`}
           style={{ color: INK.emerald, borderColor: `${INK.emerald}55` }}
           data-testid="ship-lifecycle-action"
         >

@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "{covered} dari {total} konteks dalam potongan memuat wawasan skill terbaru — {skills}.",
   "crit_skill_coverage_none": "Tidak ada skill yang meninggalkan wawasan pada proyek ini dalam 30 hari terakhir, jadi belum ada pembanding untuk mengukur cakupan.",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " Tidak ada yang baru pada: {names}."
+  "crit_skill_coverage_uncovered": " Tidak ada yang baru pada: {names}.",
+  "cut_empty_has_brief": "Belum ada apa pun di potongan, dan proyek ini tidak punya sasaran atau fitur untuk dipromosikan — tetapi objektif di atas memuat ringkasan. Uraikan menjadi sasaran untuk mengisi potongan.",
+  "cut_empty_nothing": "Tidak ada apa pun di potongan dan tidak ada yang bisa dipromosikan — proyek ini belum punya sasaran maupun fitur. Tulis ringkasan di bawah objektif lalu uraikan, atau buka «Susun scope» untuk memetakan fiturnya."
 }

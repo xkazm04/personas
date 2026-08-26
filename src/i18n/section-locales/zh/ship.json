@@ -153,5 +153,7 @@
   "crit_skill_coverage_evidence": "切片中 {total} 个上下文里有 {covered} 个带有近期技能洞察 —— {skills}。",
   "crit_skill_coverage_none": "过去 30 天内没有任何技能在此项目留下洞察，因此尚无可用于衡量覆盖的依据。",
   "crit_skill_coverage_per_skill": "{skill} {n}/{total}",
-  "crit_skill_coverage_uncovered": " 以下没有近期记录：{names}。"
+  "crit_skill_coverage_uncovered": " 以下没有近期记录：{names}。",
+  "cut_empty_has_brief": "切片中暂时空着，本项目也没有可提升的目标或功能——但上方的目标带有简报。把它拆解成目标即可填充切片。",
+  "cut_empty_nothing": "切片是空的，也没有可提升的内容——本项目还没有目标，也没有功能。请在目标下方写一份简报并拆解它，或打开「编排范围」来梳理功能。"
 }
