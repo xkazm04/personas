@@ -46,7 +46,7 @@ export interface ReleasesTranslation {
   itemStatus: { in_progress: string; planned: string; completed: string };
   priority: { now: string; next: string; later: string };
   live: { updatedPrefix: string; sourceCache: string; sourceStale: string; sourceFallback: string };
-  /** Reserved for a roadmap with no displayable items — not wired to a surface yet. */
+  /** Shown by {@link HomeReleases} when the roadmap resolves zero displayable items. */
   empty: string;
   /** Caption under the empty-waypoint glyph in a NOW/NEXT/LATER lane with no items. */
   laneEmpty: string;

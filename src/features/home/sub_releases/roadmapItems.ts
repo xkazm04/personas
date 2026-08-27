@@ -84,6 +84,31 @@ function isDisplayable(item: DisplayItem): boolean {
   return item.title.trim().length > 0 && item.title !== `[roadmap.${item.id}]`;
 }
 
+/**
+ * Drop the items that have no content. `isDisplayable` used to be consulted
+ * only as an all-or-nothing question about the LIVE payload ("did it yield
+ * anything at all?"), which left both paths free to render individual
+ * content-less items as the literal marker `[roadmap.<id>]` — a live payload
+ * with one new item the locale bundle has not caught up with, or a bundled
+ * release item with no `release_roadmap_item_<id>_title` key. That exact
+ * class of leak has shipped here before: `useReleasesTranslation` carries the
+ * scar of `[0.0.2.21]` reaching every user. A marker is never content, so it
+ * is dropped rather than displayed, and the drop is instrumented — the empty
+ * result is an honest empty roadmap, not a wall of broken tokens.
+ */
+function keepDisplayable(items: DisplayItem[], source: 'live' | 'bundled'): DisplayItem[] {
+  const kept = items.filter(isDisplayable);
+  if (kept.length !== items.length) {
+    Sentry.addBreadcrumb({
+      category: 'live-roadmap',
+      message: `keepDisplayable: dropped ${items.length - kept.length} ${source} item(s) with no content`,
+      level: 'warning',
+      data: { ids: items.filter((i) => !isDisplayable(i)).map((i) => i.id) },
+    });
+  }
+  return kept;
+}
+
 function fromBundled(item: ReleaseItem, fallbackOrder: number, i18n: ItemI18n): DisplayItem {
   const entry = i18n?.[item.id];
   return {
@@ -133,12 +158,12 @@ export function buildDisplayItems(
     const built = dedupeById(
       liveOverride.release.items.map((item, idx) => fromLive(item, idx + 1, locale)),
     ).sort((a, b) => a.sort_order - b.sort_order);
-    if (built.some(isDisplayable)) return built;
+    if (built.some(isDisplayable)) return keepDisplayable(built, 'live');
     Sentry.addBreadcrumb({
       category: 'live-roadmap',
       message: 'buildDisplayItems: live payload yielded zero displayable items; falling back to bundled content',
       level: 'warning',
     });
   }
-  return buildBundledItems(release, bundledItems);
+  return keepDisplayable(buildBundledItems(release, bundledItems), 'bundled');
 }

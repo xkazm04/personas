@@ -13,6 +13,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import {
   getNavReleases,
@@ -115,8 +116,8 @@ function LaneColumn({ priority, items, enter, t }: { priority: ReleaseItemPriori
 /** Compact card for one shipped release: header + summary + flat item list. */
 function BundledReleaseCard({ release, t }: { release: Release; t: ReleasesTranslation }) {
   const meta = RELEASE_STATUS_META[release.status];
-  const i18n = t.releases[release.version as keyof typeof t.releases];
-  const items = i18n?.items as Record<string, { title: string; description: string }> | undefined;
+  const i18n = t.releases[release.version];
+  const items = i18n?.items;
   return (
     <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5">
       <div className="flex flex-wrap items-baseline gap-3">
@@ -170,9 +171,7 @@ export default function HomeReleases() {
         roadmap,
         live.roadmap,
         language,
-        t.releases[roadmap.version as keyof typeof t.releases]?.items as
-          | Record<string, { title: string; description: string }>
-          | undefined,
+        t.releases[roadmap.version]?.items,
       )
     : [];
   const hero = roadmapItems.find((i) => i.status === 'in_progress') ?? roadmapItems[0];
@@ -197,6 +196,21 @@ export default function HomeReleases() {
               </div>
               <RoadmapHero item={hero} enter={enter} t={t} />
             </div>
+          )}
+
+          {/* Nothing resolved for the roadmap at all — no live payload, and no
+              bundled item with content. Previously this rendered as a void
+              between the header and the shipped releases (or, before
+              `keepDisplayable`, as a wall of `[roadmap.<id>]` markers). The
+              `empty` string has existed and been translated into all 14
+              locales the whole time; it just had no surface. */}
+          {roadmapItems.length === 0 && (
+            <EmptyState
+              icon={Rocket}
+              title={t.empty}
+              iconColor="text-cyan-400/80"
+              iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
+            />
           )}
 
           {remaining.length > 0 && (
