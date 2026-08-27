@@ -113,7 +113,7 @@ class SilentErrorBoundary extends Component<
  */
 function OverlayIsland({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <SilentErrorBoundary name={`overlay:${name}`}>
+    <SilentErrorBoundary key={name} name={`overlay:${name}`}>
       <Suspense fallback={null}>{children}</Suspense>
     </SilentErrorBoundary>
   );
