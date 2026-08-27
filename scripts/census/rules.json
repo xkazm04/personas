@@ -96,6 +96,10 @@
         {
           "path": "src/features/shared/components/buttons/AsyncButton.tsx",
           "reason": "spinners are REQUIRED for actions and banned only for surfaces — AsyncButton is the destination this rule points at"
+        },
+        {
+          "path": "src/features/plugins/fleet/__tests__/FleetSpawnTaskModal.test.tsx",
+          "reason": "test asserts the REQUIRED action spinner on a pressed control (Button renders .animate-spin) — it names the class to prove the spinner is there, it does not hand-roll one"
         }
       ],
       "baseline": {
@@ -625,8 +629,8 @@
         }
       ],
       "baseline": {
-        "files": 78,
-        "matches": 116
+        "files": 77,
+        "matches": 115
       },
       "floor": 4000
     },
@@ -2967,7 +2971,12 @@
         "ignoreCommentLines": true,
         "description": "A `Promise.all` / `Promise.allSettled` whose first argument is NOT a literal array and reaches a `.map(`/`.flatMap(` — i.e. a fan-out whose WIDTH IS THE COLLECTION'S LENGTH. PROXY FOR the stack-free condition 'the number of things running at once is whatever the data happened to be, and nobody chose it'. The negative lookahead `(?!\\[)` is load-bearing and is what makes this precise rather than a `Promise.all` grep: 122 of this repo's 181 combinator call sites are literal tuples `Promise.all([a(), b()])` (the 103 `Promise.all` ones span arity 2-10), which are parallel-await, are correct, and MUST NOT be counted — a raw grep over-reports by 2-4x here and in all five sibling repos. WHAT THE MATCH COSTS, executed rather than reasoned: replaying `Promise.all(xs.map(f))` verbatim over 30 items with a rejection at item #2, all 30 items had ALREADY been dispatched before the first await resolved (started=30, finished=2 at the moment the caller saw the error) — so fail-fast does not save the work, it discards the results, and swapping in `allSettled` changes nothing about what runs or what it costs. Replaying the repo's own bounded pool (src/lib/concurrency.ts:18) under the same failure is WORSE: the caller resumed at started=6 and 400ms later 30 of 30 had started, 24 of them AFTER the rejection, unobserved. PRECISION 44/44 on the stated condition, hand-verified, with TWO INDEPENDENT IMPLEMENTATIONS RECONCILING EXACTLY AT 44 (this regex, and a balanced-paren argument extractor that classifies the extracted argument as literal-tuple vs collection-fan-out); they first disagreed 44 vs 43 because the parser fed RAW source to the paren matcher and a line comment containing an apostrophe (\"persona doesn't have one\", autoAssignIcons.ts:102) opened a string that never closed — stripping comments reconciled them, and the disagreement was a bug in the instrument, not in the rule. ONE MATCH IS KNOWINGLY COMPLIANT: src/lib/icons/autoAssignIcons.ts:91 awaits inside a serial chunk loop (measured peak concurrency 5 over 78 personas). It is listed on purpose — it is textually identical to the VIOLATING src/lib/eventBridge.ts:1114 apart from where the `await` sits, and a backwards-looking heuristic that tried to separate them mis-classified two other sites. LEGAL DESTINATIONS the pattern leaves unmatched, by construction: (1) `mapWithConcurrency(items, limit, fn)` from @/lib/concurrency — 14 production call sites, counted by the positive control; (2) a literal tuple of independent calls; (3) a chunk loop whose `Promise.all` argument is a variable. PORTABILITY WARNING, earned from the convergence sweep and NOT optional to restate: this signal keys on the syntax a widthless fan-out wears IN A REPO WHOSE LIMITER IS A NAMED FUNCTION. In `ascent`, which extracted `mapPool` (src/lib/pool.ts:14, 7 call sites), the seven BOUNDED fan-outs contain no `Promise.all` token at all, so this rule reports the cohort's best-behaved repo as its worst — the metric rewards inlining the fix. An adopting repo must re-key on its own raw form and pair it with its own limiter as the control. Do NOT silence a match by hoisting the `.map(` into a variable — that is hiding, not bounding; route it through the shared pool, or bound the items at the source."
       },
-      "exclude": [],
+      "exclude": [
+        {
+          "path": "src/hooks/utility/data/__tests__/settingsCoalescer.test.ts",
+          "reason": "test deliberately fans out BULK_READ_MAX_KEYS+40 reads to prove the coalescer chunks a wide batch — the fan-out is the thing under test"
+        }
+      ],
       "baseline": {
         "files": 36,
         "matches": 45
@@ -4145,8 +4154,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 46,
-        "matches": 53
+        "files": 45,
+        "matches": 52
       },
       "floor": 3000
     },

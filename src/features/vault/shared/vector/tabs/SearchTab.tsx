@@ -4,6 +4,7 @@ import { EmptyIllustration } from '@/features/shared/components/display/EmptyIll
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
 import { kbSearch } from '@/api/vault/database/vectorKb';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
 
 interface SearchTabProps {
@@ -25,7 +26,7 @@ export function SearchTab({ kb }: SearchTabProps) {
   // Only the most recently issued query may paint. Enter-to-search is not gated
   // on `searching`, so two requests can be in flight and the slower one would
   // otherwise overwrite the fresher results with staler ones.
-  const querySeqRef = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
 
   useEffect(() => {
     return () => { mountedRef.current = false; };
@@ -35,7 +36,7 @@ export function SearchTab({ kb }: SearchTabProps) {
     const trimmed = query.trim();
     if (!trimmed) return;
 
-    const seq = ++querySeqRef.current;
+    const seq = latestWins.next();
     setSearching(true);
     setError(null);
     const t0 = performance.now();
@@ -46,19 +47,19 @@ export function SearchTab({ kb }: SearchTabProps) {
         query: trimmed,
         topK: topK,
       });
-      if (!mountedRef.current || seq !== querySeqRef.current) return;
+      if (!mountedRef.current || !latestWins.isCurrent(seq)) return;
       setResults(res.results);
       setFloorFiltered(res.floorFiltered);
       setLastQuery(trimmed);
       setDurationMs(Math.round(performance.now() - t0));
     } catch (err) {
-      if (!mountedRef.current || seq !== querySeqRef.current) return;
+      if (!mountedRef.current || !latestWins.isCurrent(seq)) return;
       setError(err instanceof Error ? err.message : String(err));
       setResults(null);
     } finally {
-      if (mountedRef.current && seq === querySeqRef.current) setSearching(false);
+      if (mountedRef.current && latestWins.isCurrent(seq)) setSearching(false);
     }
-  }, [query, kb.id, topK]);
+  }, [query, kb.id, topK, latestWins]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

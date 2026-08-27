@@ -4,17 +4,7 @@
  * Both the Rust backend (`src-tauri/db/src/repos/core/personas.rs`) and all
  * frontend components should reference these constants so that colour coding,
  * status labels, and scoring logic stay in sync.  When changing a value here,
- * update the matching constants in the Rust repo module — they are
- * `TRUST_W_SUCCESS` / `TRUST_W_COST` / `TRUST_W_HEALING` / `TRUST_W_VOLUME`,
- * `HEALING_PENALTY_PER_FAILURE`, `VOLUME_FULL_CREDIT_RUNS` and
- * `HEALTH_FAILING_RATIO` (near the top of that file). Verified equal to the
- * values below on 2026-08-27.
- *
- * The two paths this header named — `src-tauri/src/db/...` here and at
- * `compute_trust_score` below — have not existed since `db` was extracted into
- * its own crate, and there is no `PERSONA_THRESHOLDS` block in Rust to update:
- * a reader following either pointer found nothing and had no way to check the
- * agreement this comment is the only enforcement of.
+ * update the matching Rust constants.
  */
 
 // ---------------------------------------------------------------------------
@@ -115,3 +105,13 @@ export function getTrustTier(score: number): TrustTier {
   }
   return TRUST_TIERS[0]!;
 }
+
+// History (2026-08-27): the header used to point at `src-tauri/src/db/...` and
+// a `PERSONA_THRESHOLDS` block — neither has existed since `db` was extracted
+// into its own crate, so a reader following the pointer found nothing and had
+// no way to check the agreement the header is the only enforcement of. The
+// mirror itself is still hand-kept (census: comment-kept-cross-language-mirror).
+// The Rust constants are `TRUST_W_SUCCESS` / `TRUST_W_COST` / `TRUST_W_HEALING` /
+// `TRUST_W_VOLUME`, `HEALING_PENALTY_PER_FAILURE`, `VOLUME_FULL_CREDIT_RUNS` and
+// `HEALTH_FAILING_RATIO` (near the top of that file) — verified equal to the
+// values above on 2026-08-27.
