@@ -726,5 +726,111 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- app_master_gate_runs.head_sha (bench sweep #24) ---------------------
+    // A gate run answered for "the branch", which is not a thing that holds
+    // still: the reconciler gated a branch once (`gates_ran_at IS NULL`) and
+    // never again, so work committed AFTER that first sighting was never gated
+    // — and in sweep #24 the one sighting was of a commit-less branch, i.e. of
+    // main. Recording the tip a run judged makes the gating key
+    // (branch × tip): a moved tip re-gates, an unmoved one does not. `''` on
+    // pre-existing rows, which `gates_ran_for_tip` deliberately never matches.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "app_master_gate_runs.head_sha",
+            description: "Pin each App-master gate run to the branch TIP it judged, so a moved tip re-gates and an unmoved one does not (bench sweep #24)",
+            already_applied: |conn| {
+                if !has_table(conn, "app_master_gate_runs")? {
+                    return Ok(true);
+                }
+                has_column(conn, "app_master_gate_runs", "head_sha")
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE app_master_gate_runs
+                        ADD COLUMN head_sha TEXT NOT NULL DEFAULT '';",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_app_master_gate_runs_branch_tip
+                        ON app_master_gate_runs(project_id, branch, head_sha);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- app_master_gate_runs.kind / .inherited_red (bench sweep #25) --------
+    // A proposal was being scored against gates that were red before it
+    // existed: on `ascent`, `npm run lint` and `npm run test` fail on MAIN, so
+    // every proposal branch inherited a 0% pass rate no change of its own could
+    // have avoided. The backbone's `gates` rule has to judge what the proposal
+    // CHANGED.
+    //
+    // `kind` separates the two populations of run in one ledger: `proposal`
+    // (a run against an `autopilot/*` branch — the holder's work) and
+    // `baseline` (the same declared commands run against the project's own
+    // main branch, once per main tip). A baseline row is a fact about the
+    // repository, never about the holder, so every window rate query filters
+    // to `kind = 'proposal'`.
+    //
+    // `inherited_red` marks a proposal run that FAILED on a command which was
+    // already failing on the baseline. It is excluded from the pass-rate
+    // denominator — it cannot be the proposal's fault — but it is recorded, not
+    // erased: the debt stays visible on the run and in `baselineGateHealth`.
+    // Stored rather than derived at read time, so the classification is the one
+    // that was true against the baseline in force when the gate ran.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "app_master_gate_runs.kind",
+            description: "Separate baseline gate runs (the repo's own main branch) from proposal gate runs, so a proposal is judged on gates that were green before it (bench sweep #25)",
+            already_applied: |conn| {
+                if !has_table(conn, "app_master_gate_runs")? {
+                    return Ok(true);
+                }
+                has_column(conn, "app_master_gate_runs", "kind")
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE app_master_gate_runs
+                        ADD COLUMN kind TEXT NOT NULL DEFAULT 'proposal';",
+                )?;
+                // The baseline lookup is "the newest baseline for this project,
+                // and every command in it" — project + kind + tip.
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_app_master_gate_runs_kind_tip
+                        ON app_master_gate_runs(project_id, kind, head_sha);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "app_master_gate_runs.inherited_red",
+            description: "Record a proposal gate failure that was already failing on main as inherited red — excluded from the pass rate, never hidden (bench sweep #25)",
+            already_applied: |conn| {
+                if !has_table(conn, "app_master_gate_runs")? {
+                    return Ok(true);
+                }
+                has_column(conn, "app_master_gate_runs", "inherited_red")
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE app_master_gate_runs
+                        ADD COLUMN inherited_red INTEGER NOT NULL DEFAULT 0;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }

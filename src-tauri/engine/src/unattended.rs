@@ -20,6 +20,13 @@
 //!   arithmetic ([`holds_overnight_slot`]) stops counting a parked ticket as
 //!   live work.
 //!
+//! - **The isolation half** — [`unattended_worktree_task_text`] is the variant
+//!   for a worker that was *given* its branch in an isolated worktree
+//!   ([`crate::unattended_worktree`]) instead of being told to go and make one
+//!   in the operator's checkout. Sweep #23 (2026-08-26) is why: a worker
+//!   obeyed rule 1 literally, ran `git checkout -b` in the shared tree, and
+//!   left the operator's working copy and dev server on the agent's branch.
+//!
 //! Everything here is pure and lives in `personas-engine` rather than beside
 //! its call sites in `app_lib` so it is actually reachable by `cargo test`.
 
@@ -59,12 +66,67 @@ missing input; the morning human reads your line and decides.\n\
 When done, end your final message with `FLEET:DONE — <one-line summary>` (or \
 the `FLEET:BLOCKED` line from rule 6). Either way, finish the turn.";
 
+/// Rule 1 of [`UNATTENDED_DISPATCH_GUARDRAILS`] verbatim — the instruction to
+/// go and make a branch, which is only safe in a checkout nobody else is
+/// standing in.
+///
+/// It is a separate const so the worktree variant can replace exactly this
+/// rule and inherit every other one; `the_two_guardrail_variants_share_one_tail`
+/// fails the moment the two texts drift apart.
+const RULE_1_MAKE_A_BRANCH: &str = "1. NEVER commit to the repository's default \
+branch (main/master). Create and work on a dedicated branch named \
+`autopilot/<short-slug>` before changing any file.\n";
+
+/// Rule 1 for a worker that was **given** its branch, already checked out in
+/// an isolated worktree.
+///
+/// The original rule 1 is a correct instruction and a dangerous one: an agent
+/// obeying it in a shared checkout runs `git checkout -b` there, and a branch
+/// switch is a whole-checkout event. Bench sweep #23 (2026-08-26) left an
+/// operator's tree — and the `next dev` server running against it — sitting on
+/// the agent's branch for the rest of the night. So the branch is created
+/// *for* the worker now, and the rule that used to ask for one forbids the
+/// command that would move anybody.
+pub fn worktree_branch_rule(branch: &str, worktree_path: &str) -> String {
+    format!(
+        "1. You are ALREADY on branch `{branch}`, checked out in an ISOLATED git \
+worktree at `{worktree_path}`, which is yours alone. Work and commit HERE. \
+NEVER run `git checkout`, `git switch`, `git branch -m`, `git worktree add` or \
+`git worktree remove`, and never `cd` out of this directory: the operator's own \
+checkout shares this repository and a branch switch would move it under a human \
+who is working in it. The dependency directories here (`node_modules`, `.venv`, \
+`target`, …) are LINKS to that operator's real ones — use them, never install, \
+upgrade or delete into them.\n"
+    )
+}
+
+/// The guardrail block for a worker authoring in an isolated worktree: every
+/// rule of [`UNATTENDED_DISPATCH_GUARDRAILS`] except rule 1, which becomes
+/// [`worktree_branch_rule`].
+pub fn unattended_worktree_guardrails(branch: &str, worktree_path: &str) -> String {
+    UNATTENDED_DISPATCH_GUARDRAILS.replacen(
+        RULE_1_MAKE_A_BRANCH,
+        &worktree_branch_rule(branch, worktree_path),
+        1,
+    )
+}
+
 /// Compose the full task text a headless unattended worker is seeded with.
 pub fn unattended_task_text(prompt: &str) -> String {
     format!(
         "{}\n\n{}",
         prompt.trim_end(),
         UNATTENDED_DISPATCH_GUARDRAILS
+    )
+}
+
+/// [`unattended_task_text`] for a worker spawned with its `cwd` inside a
+/// prepared authoring worktree (`crate::unattended_worktree`).
+pub fn unattended_worktree_task_text(prompt: &str, branch: &str, worktree_path: &str) -> String {
+    format!(
+        "{}\n\n{}",
+        prompt.trim_end(),
+        unattended_worktree_guardrails(branch, worktree_path)
     )
 }
 
@@ -246,6 +308,53 @@ mod tests {
         assert!(text.starts_with("Fix the flaky retry test."));
         assert!(text.contains(UNATTENDED_DISPATCH_GUARDRAILS));
         assert!(text.contains("NEVER end your turn with a question"));
+    }
+
+    #[test]
+    fn the_two_guardrail_variants_share_one_tail() {
+        // The worktree variant is the shared block with rule 1 swapped. If the
+        // literal in the big const is ever edited without editing
+        // `RULE_1_MAKE_A_BRANCH`, the replace becomes a no-op and this fails —
+        // which is the whole reason the rule is a separate const.
+        assert!(UNATTENDED_DISPATCH_GUARDRAILS.contains(RULE_1_MAKE_A_BRANCH));
+        let g = unattended_worktree_guardrails("autopilot/fix-a", "C:/data/worktrees/p/fix-a");
+        assert_ne!(g, UNATTENDED_DISPATCH_GUARDRAILS);
+        // Everything that is not rule 1 survives, verbatim.
+        for rule in [
+            "2. Do NOT push",
+            "3. Do NOT run destructive commands",
+            "4. If the fix requires a decision",
+            "NOBODY IS THERE",
+            "FLEET:BLOCKED",
+            "FLEET:DONE",
+        ] {
+            assert!(g.contains(rule), "missing: {rule}");
+        }
+    }
+
+    #[test]
+    fn a_worktree_worker_is_told_it_already_has_its_branch_and_must_not_switch() {
+        let g = unattended_worktree_guardrails("autopilot/fix-a", "C:/data/worktrees/p/fix-a");
+        // The instruction that made an agent run `git checkout -b` in the
+        // operator's own checkout (bench sweep #23) is GONE, not merely
+        // qualified.
+        assert!(!g.contains(RULE_1_MAKE_A_BRANCH));
+        assert!(!g.contains("Create and work on a dedicated branch"));
+        // …replaced by where it already is, and what it must never run.
+        assert!(g.contains("ALREADY on branch `autopilot/fix-a`"));
+        assert!(g.contains("C:/data/worktrees/p/fix-a"));
+        assert!(g.contains("NEVER run `git checkout`"));
+        assert!(g.contains("git switch"));
+        // The borrowed environment is shared with the operator — say so.
+        assert!(g.contains("never install"));
+
+        let text = unattended_worktree_task_text(
+            "Fix the flaky retry test.",
+            "autopilot/fix-a",
+            "C:/data/worktrees/p/fix-a",
+        );
+        assert!(text.starts_with("Fix the flaky retry test."));
+        assert!(text.contains("ALREADY on branch"));
     }
 
     // -- the structural half --------------------------------------------------

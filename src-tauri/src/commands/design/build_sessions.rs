@@ -2745,13 +2745,24 @@ pub async fn promote_build_draft_inner(
         }
     }
 
-    // kp hires only: narrow the tool set to the surface the hire asked for,
-    // before ANY of it is turned into `persona_tools` rows. This is the same
-    // constraint the verification pass applied in `oneshot::run_test_pass` —
-    // applied again here because the two must not disagree: filtering only at
-    // test time would verify one surface and attach another. No-op for every
-    // build without a `kp_link`.
-    crate::engine::build_session::apply_kp_tool_surface(&state.db, &persona_id, &mut ir, "promote");
+    // kp hires only: narrow the tool AND connector sets to the surface the hire
+    // asked for, before ANY of it is turned into `persona_tools` rows, resolved
+    // into `credentialLinks`, or counted by the connector-readiness pass. This
+    // is the same constraint the verification pass applied in
+    // `oneshot::run_test_pass` — applied again here because the two must not
+    // disagree: filtering only at test time would verify one surface and attach
+    // another. No-op for every build without a `kp_link`.
+    //
+    // The trim is kept because a dropped *connector* is operator-visible news:
+    // it is reported into `setup_detail.notes` below, next to the design-pass
+    // hygiene notes, so a hire that came back narrower than the design pass
+    // drew it says so instead of just looking small.
+    let kp_surface_trim = crate::engine::build_session::apply_kp_tool_surface(
+        &state.db,
+        &persona_id,
+        &mut ir,
+        "promote",
+    );
 
     // Recipe parameterization (Foundry arc, 2026-07): derive tunable params from
     // each capability's `input_schema` and synthesize a `## Capability
@@ -3084,11 +3095,16 @@ pub async fn promote_build_draft_inner(
         // …plus what the design-pass hygiene pass had to change. A build that
         // silently demoted a schedule to manual and then reported a persona
         // that "runs on its own" is the exact drift this list closes.
-        let setup = super::connector_readiness::build_persona_setup(
-            blockers,
-            trigger_types,
-            design_hygiene.notes(),
-        );
+        //
+        // …plus, for a kp hire, every connector the requested-surface
+        // constraint took off the build. Same reasoning one level up: a
+        // connector the design pass drew and the hire never asked for is a
+        // fact about this persona's reach, and the operator reads reach here.
+        let mut notes = design_hygiene.notes();
+        if let Some(trim) = kp_surface_trim.as_ref() {
+            notes.extend(trim.notes());
+        }
+        let setup = super::connector_readiness::build_persona_setup(blockers, trigger_types, notes);
         match serde_json::to_string(&setup) {
             Ok(json) => {
                 if let Ok(conn) = state.db.get() {

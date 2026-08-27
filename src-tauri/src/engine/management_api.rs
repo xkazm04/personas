@@ -3016,8 +3016,23 @@ pub(crate) fn insert_kp_hire_approval(
 /// `POST /api/kp/persona-requests` — queue a hire request for human approval.
 async fn kp_create_persona_request(
     AxumState(state): AxumState<Arc<ManagementState>>,
-    Json(body): Json<KpPersonaRequestBody>,
+    Json(raw_body): Json<serde_json::Value>,
 ) -> Response {
+    // Deserialize the TYPED body from the raw JSON instead of letting axum do
+    // it, because the approval payload must persist the RAW request: kp owns
+    // the AppMasterSpec schema and ships fields this struct does not model
+    // (budget, role, agent, human, …). Serializing the typed struct back into
+    // the payload silently DROPPED all of them — the first enforced-budget
+    // night (2026-08-25) read `budget: null` off the stored payload while kp
+    // had sent `budget.monthlyUsd: 5`, so the mandate ceiling was never
+    // persisted. Validation stays typed; storage stays verbatim.
+    let body: KpPersonaRequestBody = match serde_json::from_value(raw_body.clone()) {
+        Ok(b) => b,
+        Err(e) => {
+            return err_json(StatusCode::BAD_REQUEST, &format!("malformed body: {e}"))
+                .into_response();
+        }
+    };
     if let Err(msg) = validate_kp_persona_request(&body) {
         return err_json(StatusCode::BAD_REQUEST, &msg).into_response();
     }
@@ -3032,12 +3047,8 @@ async fn kp_create_persona_request(
     // Params = the full validated request body PLUS the approval row's own id
     // (`requestId`) so the approval executor can stamp the created persona /
     // build session back onto this row for the status GET below.
-    let mut params = match serde_json::to_value(&body) {
-        Ok(v) => v,
-        Err(e) => {
-            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
-        }
-    };
+    // The RAW body (see above) — every field kp sent, modeled here or not.
+    let mut params = raw_body;
     params["requestId"] = serde_json::Value::String(request_id.clone());
     if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
@@ -3159,15 +3170,25 @@ async fn kp_get_persona_request(
     let result = payload.get("result").cloned().unwrap_or_default();
     let persona_id = result.get("personaId").and_then(|v| v.as_str());
     let persona_name = result.get("personaName").and_then(|v| v.as_str());
-    let build_phase = result
+    let build_session = result
         .get("buildSessionId")
         .and_then(|v| v.as_str())
         .and_then(|sid| {
             crate::db::repos::core::build_sessions::get_by_id(&state.pool, sid)
                 .ok()
                 .flatten()
-        })
-        .map(|s| s.phase.as_str().to_string());
+        });
+    let build_phase = build_session.as_ref().map(|s| s.phase.as_str().to_string());
+    // Why a build died, not just that it did. The runner stamps `error_message`
+    // on every terminal failure — including the unattended stall guard's
+    // `design_pass_stalled: N turns without resolution` (see
+    // `personas_engine::build_stall`). Without it kp's bench driver sees only
+    // `buildPhase: "failed"` and has to go read the desktop app's log to learn
+    // whether it hit a stall, a validation refusal or a dead CLI.
+    let build_failure_reason = build_session
+        .as_ref()
+        .filter(|s| s.phase == crate::db::models::BuildPhase::Failed)
+        .and_then(|s| s.error_message.clone());
     // A build that DIED after a successful approval must not read `approved`
     // forever — kp (and the bench driver) poll this status and would wait out
     // their whole activate window on a hire that can no longer arrive. The
@@ -3191,6 +3212,7 @@ async fn kp_get_persona_request(
         "personaId": persona_id,
         "personaName": persona_name,
         "buildPhase": build_phase,
+        "buildFailureReason": build_failure_reason,
     }))
     .into_response()
 }
@@ -3327,9 +3349,30 @@ async fn kp_test_tick(
         let t0 = std::time::Instant::now();
         let result = match phase {
             "overnight" => tick_phase_overnight(&pool, &app, body.project_id.as_deref()).await,
-            "reconcile" => tick_phase_reconcile(&pool, body.project_id.as_deref()).await,
+            "reconcile" => {
+                // The driver scopes by persona; reconcile is project-keyed.
+                // Resolve the persona's mandate project so a scoped tick never
+                // reconciles every mandated project (sweep #25: `projects: 4`
+                // and 16 stale branches "accounted" a dispatch in 3 minutes
+                // while the worker was still authoring).
+                let scoped_project: Option<String> = body.project_id.clone().or_else(|| {
+                    body.persona_id.as_deref().and_then(|pid| {
+                        personas_engine::app_master::load_mandates(&pool)
+                            .into_iter()
+                            .find(|(_, r)| r.persona_id == pid)
+                            .map(|(project_id, _)| project_id)
+                    })
+                });
+                tick_phase_reconcile(&pool, scoped_project.as_deref()).await
+            }
             "report" => tick_phase_report(&pool, body.persona_id.as_deref()).await,
-            "probation" => tick_phase_probation(&pool, &app, body.force_probation),
+            "probation" => tick_phase_probation(
+                &pool,
+                &app,
+                body.force_probation,
+                body.project_id.as_deref(),
+                body.persona_id.as_deref(),
+            ),
             _ => unreachable!("phase list is closed"),
         };
         results.push(KpTestPhaseResult {
@@ -3439,8 +3482,14 @@ fn tick_phase_probation(
     pool: &crate::db::DbPool,
     app: &AppHandle,
     force_due: bool,
+    scope_project: Option<&str>,
+    scope_persona: Option<&str>,
 ) -> KpTestPhaseResult {
     use crate::engine::app_master_probation as probation;
+    let scope = probation::ProbationScope {
+        project_id: scope_project,
+        persona_id: scope_persona,
+    };
 
     // Raise first, then decide: a window that closed during this very tick gets
     // its packet and its answer in the same call, which is the whole point of
@@ -3449,8 +3498,8 @@ fn tick_phase_probation(
     // (never executed, so no review row can anchor) is decided anchorless by
     // the sweep, and it has to agree with the raise pass about what "due" means
     // or a forced tick would raise nothing and decide nothing.
-    let raised = probation::probation_tick_summary_with(pool, force_due);
-    let decided = probation::headless_probation_sweep(app, pool, force_due);
+    let raised = probation::probation_tick_summary_with(pool, force_due, scope);
+    let decided = probation::headless_probation_sweep(app, pool, force_due, scope);
     let mut out = phase_stub();
     out.details = decided
         .iter()

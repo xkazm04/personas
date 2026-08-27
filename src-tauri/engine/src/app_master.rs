@@ -969,13 +969,19 @@ pub fn tenure_window(
 }
 
 // ---------------------------------------------------------------------------
-// Night-run ledger (the `proposalsOpened` / `budgetReservedUsd` reading)
+// Night-run ledger (the `sessionsDispatched` / `budgetReservedUsd` reading)
 // ---------------------------------------------------------------------------
 
 /// What the overnight ledger recorded for one project inside a window.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NightRunTotals {
-    /// Unattended fix sessions dispatched — the `proposalsOpened` reading.
+    /// Unattended fix sessions dispatched — the `sessionsDispatched` reading.
+    ///
+    /// A **launch** count. It was `proposalsOpened` until bench sweep #23
+    /// (2026-08-26), when a night dispatched one worker that authored nothing
+    /// and the rollup still claimed a proposal. Delivery is read from the
+    /// proposal ledger (`app_master_gates::proposal_counts_since`); this ledger
+    /// only ever knew what was launched.
     pub dispatched: i64,
     /// The governor's pre-dispatch projection, which IS the reservation.
     pub reserved_usd: f64,
@@ -1816,6 +1822,71 @@ diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
         assert_eq!(t.dispatched, 2);
         assert_eq!(t.reserved_usd, 4.5);
         assert_eq!(t.session_ids, vec!["sess-a", "sess-b"]);
+    }
+
+    /// Bench sweep #23 (2026-08-26), at the two ledgers the rollup reads.
+    ///
+    /// A night dispatched one worker; the worker concluded the seeded task was
+    /// already done and authored nothing. The launch ledger says `1` — and
+    /// that is all it can ever say. Delivery is a question for the proposal
+    /// ledger, which has nothing to report, so the rollup's `proposalsOpened`
+    /// is absent (kp normalises that to `0`) while `sessionsDispatched` is 1.
+    #[test]
+    fn a_dispatched_night_that_authored_nothing_delivers_nothing() {
+        let pool = personas_db::init_test_db().unwrap();
+        let rec = hired("p-new", "2026-08-25T00:00:00+00:00");
+        let w = tenure_window(MONTH, Some(&rec), "p-new");
+        insert_night(
+            &pool,
+            "proj-t",
+            "2026-08-26",
+            "2026-08-26T02:00:00+00:00",
+            1,
+            0.4,
+            &["sess-x"],
+        );
+
+        // The launch count is real and stays visible.
+        let t = night_run_totals_since(&pool, "proj-t", &w.since).unwrap();
+        assert_eq!(t.dispatched, 1);
+
+        // The delivery count is read from the proposal ledger, which is empty:
+        // no branch was authored, so there is nothing to count.
+        assert_eq!(
+            crate::app_master_gates::proposal_counts_since(
+                &pool,
+                "proj-t",
+                w.persona_id.as_deref(),
+                &w.since,
+            ),
+            None,
+            "a dispatched session is not an opened proposal"
+        );
+
+        // Once the worker actually authors a branch with a commit on it, the
+        // same window reads one opened proposal.
+        crate::app_master_gates::upsert_proposal(
+            &pool,
+            "proj-t",
+            "p-new",
+            "autopilot/fix-the-retry-test",
+            "sha-1",
+            Some("sha-base"),
+            &[crate::app_master_gates::ProposalCommit {
+                sha: "sha-1".into(),
+                subject: "fix: the retry test".into(),
+            }],
+        )
+        .unwrap();
+        let counts = crate::app_master_gates::proposal_counts_since(
+            &pool,
+            "proj-t",
+            w.persona_id.as_deref(),
+            &w.since,
+        )
+        .unwrap();
+        assert_eq!(counts.opened, 1);
+        assert_eq!(counts.merged, 0, "authored is not landed");
     }
 
     /// A new hire REPLACES the project's mandate: the successor must not

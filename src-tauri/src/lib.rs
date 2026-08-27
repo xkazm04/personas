@@ -1288,6 +1288,7 @@ pub fn run() {
             commands::companion::brain::companion_save_identity,
             commands::companion::brain::companion_correct_identity_claim,
             commands::companion::brain::companion_reembed_missing,
+            commands::companion::brain::companion_brain_health,
             commands::companion::feedback::companion_beta_flags,
             commands::companion::feedback::companion_record_ux_signal,
             #[cfg(debug_assertions)]

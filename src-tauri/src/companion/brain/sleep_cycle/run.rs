@@ -101,6 +101,11 @@ pub(super) struct CycleStats {
     pub(super) facts_applied: usize,
     pub(super) facts_dropped: usize,
     pub(super) facts_dropped_over_cap: usize,
+    /// Fact candidates refused because the user had forgotten that key. A
+    /// subset of `facts_dropped`, broken out because it is the only drop
+    /// reason that represents the system doing what it was told rather than
+    /// hitting a limit.
+    pub(super) facts_dropped_forgotten: usize,
     pub(super) procedurals_applied: usize,
     pub(super) procedurals_dropped: usize,
     pub(super) procedurals_dropped_over_cap: usize,
@@ -135,6 +140,12 @@ pub(super) struct CycleNotes {
     pub(super) supersedes: Vec<String>,
     pub(super) contradictions: Vec<String>,
     pub(super) prune_candidates: Vec<String>,
+    /// Facts this cycle re-derived and then refused, because the user had
+    /// deleted that key. Reported rather than merely counted: the user is
+    /// entitled to see that the correction held, and to notice if the same
+    /// key keeps coming back (which means the evidence behind it is still
+    /// accumulating and the real fix is upstream).
+    pub(super) refused_forgotten: Vec<String>,
     pub(super) truncation: Option<String>,
     /// Non-fatal things that went sideways — a dropped candidate, an id that
     /// pointed at nothing. Surfaced so "dropped 3" in the stats has a why.

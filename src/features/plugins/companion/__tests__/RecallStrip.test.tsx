@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RecallStrip } from '../RecallStrip';
-import type { CompanionRecallPreview } from '@/api/companion';
+import type {
+  CompanionRecallLane,
+  CompanionRecallPreview,
+  CompanionRecallPreviewEntry,
+} from '@/api/companion';
 
 function preview(over: Partial<CompanionRecallPreview> = {}): CompanionRecallPreview {
   return {
@@ -12,8 +16,24 @@ function preview(over: Partial<CompanionRecallPreview> = {}): CompanionRecallPre
     goals: [],
     backlog: [],
     synthesized: false,
+    droppedFar: 0,
+    relevanceFloor: null,
     ...over,
   };
+}
+
+/**
+ * A chip entry. Defaults to the keyword lane with no score, which is the
+ * shape most entries have on the build that ships (no `ml` feature, so no
+ * vector lane and nothing carries a distance).
+ */
+function chip(
+  id: string,
+  title: string,
+  lane: CompanionRecallLane = 'keyword',
+  relevance: number | null = null,
+): CompanionRecallPreviewEntry {
+  return { id, title, lane, relevance };
 }
 
 describe('RecallStrip', () => {
@@ -34,8 +54,8 @@ describe('RecallStrip', () => {
       <RecallStrip
         preview={preview({
           episodeCount: 5,
-          facts: [{ id: 'fact_a', title: 'user_prefers_short_replies' }],
-          doctrine: [{ id: 'd', title: 'persona-design · best practices' }],
+          facts: [chip('fact_a', 'user_prefers_short_replies')],
+          doctrine: [chip('d', 'persona-design · best practices')],
         })}
       />,
     );
@@ -49,8 +69,8 @@ describe('RecallStrip', () => {
       <RecallStrip
         preview={preview({
           episodeCount: 1,
-          facts: [{ id: 'fact_a', title: 'fact-key-alpha' }],
-          procedurals: [{ id: 'p', title: 'when X then Y' }],
+          facts: [chip('fact_a', 'fact-key-alpha')],
+          procedurals: [chip('p', 'when X then Y')],
         })}
       />,
     );
@@ -82,7 +102,7 @@ describe('RecallStrip', () => {
       <RecallStrip
         preview={preview({
           episodeCount: 1,
-          facts: [{ id: 'fact_a', title: 'fact-key-alpha' }],
+          facts: [chip('fact_a', 'fact-key-alpha')],
         })}
       />,
     );
@@ -97,11 +117,11 @@ describe('RecallStrip', () => {
       <RecallStrip
         preview={preview({
           episodeCount: 1,
-          facts: [{ id: 'fact_a', title: 'fact-key-alpha' }],
-          procedurals: [{ id: 'p1', title: 'rule-x' }],
-          doctrine: [{ id: 'd1', title: 'persona-design' }],
-          goals: [{ id: 'g1', title: 'goal-y' }],
-          backlog: [{ id: 'b1', title: 'backlog-z' }],
+          facts: [chip('fact_a', 'fact-key-alpha')],
+          procedurals: [chip('p1', 'rule-x')],
+          doctrine: [chip('d1', 'persona-design')],
+          goals: [chip('g1', 'goal-y')],
+          backlog: [chip('b1', 'backlog-z')],
         })}
         onOpenInBrain={(kind, id) => calls.push({ kind, id })}
       />,
@@ -125,7 +145,7 @@ describe('RecallStrip', () => {
       <RecallStrip
         preview={preview({
           episodeCount: 1,
-          facts: [{ id: '', title: 'no-id-fact' }],
+          facts: [{ lane: 'keyword' as const, relevance: null, id: '', title: 'no-id-fact' }],
         })}
         onOpenInBrain={() => {}}
       />,
@@ -133,5 +153,96 @@ describe('RecallStrip', () => {
     fireEvent.click(screen.getByRole('button'));
     expect(screen.queryByTestId('companion-recall-chip')).toBeNull();
     expect(screen.getByText('no-id-fact').tagName).toBe('SPAN');
+  });
+});
+
+describe('RecallStrip provenance', () => {
+  it('tags each chip with the lane that produced it', () => {
+    render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [chip('f1', 'matched-fact', 'vector', 0.8)],
+          goals: [chip('g1', 'always-goal', 'always')],
+        })}
+        onOpenInBrain={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    const chips = screen.getAllByTestId('companion-recall-chip');
+    const lanes = chips.map((c) => c.getAttribute('data-lane'));
+    expect(lanes).toContain('vector');
+    expect(lanes).toContain('always');
+  });
+
+  it('draws a relevance bar for a vector hit and none for an always-on entry', () => {
+    const { container } = render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [chip('f1', 'matched-fact', 'vector', 0.5)],
+          goals: [chip('g1', 'always-goal', 'always')],
+        })}
+        onOpenInBrain={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    // Exactly one bar: the vector hit. An always-on entry has no distance, so
+    // inventing a bar for it would be the failure this whole feature exists to
+    // avoid.
+    const bars = container.querySelectorAll('[aria-hidden="true"] > span');
+    expect(bars).toHaveLength(1);
+    expect((bars[0] as HTMLElement).style.width).toBe('50%');
+  });
+
+  it('reports what the relevance floor rejected', () => {
+    render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [chip('f1', 'matched-fact', 'vector', 0.9)],
+          droppedFar: 7,
+          relevanceFloor: 1.3,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    const note = screen.getByTestId('companion-recall-floor-note');
+    expect(note.textContent).toContain('7');
+    expect(note.textContent).toContain('1.30');
+  });
+
+  it('hides the floor note on a build with no vector lane', () => {
+    render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [chip('f1', 'keyword-fact')],
+          droppedFar: 0,
+          relevanceFloor: null,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    expect(screen.queryByTestId('companion-recall-floor-note')).toBeNull();
+  });
+
+  it('survives a payload built before these fields existed', () => {
+    // The event is a plain JSON payload from Rust; an older build (or a
+    // replayed event) carries neither field. A diagnostic footer must never
+    // take the chat surface down.
+    const legacy = {
+      episodeCount: 1,
+      doctrine: [],
+      facts: [{ id: 'f1', title: 'legacy-fact' }],
+      procedurals: [],
+      goals: [],
+      backlog: [],
+      synthesized: false,
+    } as unknown as CompanionRecallPreview;
+    render(<RecallStrip preview={legacy} />);
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    expect(screen.getByText('legacy-fact')).toBeInTheDocument();
+    expect(screen.queryByTestId('companion-recall-floor-note')).toBeNull();
   });
 });
