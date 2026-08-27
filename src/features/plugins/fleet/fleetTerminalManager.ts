@@ -27,8 +27,14 @@
  *   - A shared `config` (font size, copy-on-select, theme) is applied to
  *     every live terminal and to all future ones (P4).
  *
- * Singleton survives Vite HMR by hanging off `globalThis` (same pattern as
- * executionBuffers / eventBus elsewhere in the app).
+ * Singleton survives Vite HMR by hanging off `globalThis`. This comment named
+ * `executionBuffers / eventBus` as the precedent until 2026-08-28; NEITHER
+ * IDENTIFIER EXISTS. Both appear in this tree only inside four comments citing
+ * each other (`.claude/CLAUDE.md` records the same measurement). The real
+ * neighbours are `executionSink` (`src/lib/execution/executionSink.ts`, a
+ * module const guarded by a `generation` counter, not a globalThis key) and
+ * `globalThis.__personasEventBridge` (`src/lib/eventBridge.ts`). Doctrine for
+ * choosing the rung: `docs/concepts/golden-paths/hmr-safe-singletons.md`.
  */
 import { Terminal } from '@xterm/xterm';
 import type { IDisposable, ITheme } from '@xterm/xterm';
@@ -161,6 +167,17 @@ interface ManagedTerminal {
   hydrating: boolean;
   pendingLive: string[];
   hydrationGen: number;
+  /**
+   * Last cols/rows actually pushed to the PTY. A resize delivered to the
+   * device makes the child reflow and repaint its whole screen, and layout
+   * churn (drags, grid density changes, panel animations) fires the
+   * ResizeObserver far more often than it changes the CHARACTER grid — so a
+   * push whose cols/rows are unchanged buys nothing and costs an IPC round
+   * trip plus a full-screen repaint arriving back through the ring. Cleared
+   * on detach so every attach reconciles the size once against its new slot.
+   */
+  lastCols: number;
+  lastRows: number;
 }
 
 // HMR-safe registry. Reusing the existing map across hot reloads keeps live
@@ -245,6 +262,10 @@ function pasteFromClipboard(sessionId: string): void {
 
 function pushResize(m: ManagedTerminal): void {
   const { cols, rows } = m.term;
+  // Skip the no-op: same grid, nothing for the child to reflow to.
+  if (cols === m.lastCols && rows === m.lastRows) return;
+  m.lastCols = cols;
+  m.lastRows = rows;
   resizeSession(m.sessionId, cols, rows).catch(silentCatch('fleetTerminal:resize'));
 }
 
@@ -348,6 +369,8 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     hydrating: false,
     pendingLive: [],
     hydrationGen: 0,
+    lastCols: 0,
+    lastRows: 0,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -475,6 +498,10 @@ export function detachTerminal(sessionId: string): void {
   unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
   disposeWebgl(m);
   m.attached = false;
+  // Forget the pushed grid so the next attach reconciles size once against
+  // whatever slot it lands in, even if that slot happens to match.
+  m.lastCols = 0;
+  m.lastRows = 0;
   m.holder.parentElement?.removeChild(m.holder);
 
   // Park it in LRU order and bound the population of off-screen terminals.
@@ -485,8 +512,14 @@ export function detachTerminal(sessionId: string): void {
   parked.push(sessionId);
   while (parked.length > MAX_PARKED) {
     const oldest = parked[0]!;
-    // disposeTerminal unparks it; guard against any inconsistent entry.
-    if (registry.get(oldest)?.attached) {
+    // Two inconsistent entries must both be shifted by hand, because
+    // disposeTerminal only unparks ids it actually finds in the registry:
+    //   - no registry entry (already disposed elsewhere) -> disposeTerminal
+    //     early-returns WITHOUT unparking, so the head never moves and the
+    //     loop spins forever, freezing the UI thread mid-detach;
+    //   - still attached -> it does not belong in the parked LRU at all.
+    const victim = registry.get(oldest);
+    if (!victim || victim.attached) {
       parked.shift();
       continue;
     }
@@ -500,6 +533,15 @@ export function disposeTerminal(sessionId: string): void {
   if (!m) return;
   registry.delete(sessionId);
   unpark(sessionId);
+  // Disposing an ATTACHED terminal (gcTerminals on a session the roster
+  // dropped while a pane still showed it) otherwise leaves the backend
+  // streaming this session over IPC forever: the map entry is gone, so the
+  // shared listener drops every chunk it is still being sent. The code that
+  // subscribed names the unsubscribe.
+  if (m.attached) {
+    m.attached = false;
+    unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
+  }
   if (m.rafId !== null) cancelAnimationFrame(m.rafId);
   try {
     m.resizeObs.disconnect();
