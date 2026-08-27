@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -83,7 +84,9 @@ export default function MemoriesPageDense() {
   const [selected, setSelected] = useState<PersonaMemory | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState<'memories' | 'conflicts'>('memories');
-  const latestRef = useRef(0);
+  // Latest-wins guard for the debounced search fetch — the shared primitive,
+  // not a hand-rolled counter (census: hand-rolled-stale-token).
+  const latest = useRef(createLatestWins()).current;
   // Covers the 300ms debounce window itself, which `memoriesLoading` (only
   // flipped by the store once the fetch actually starts) doesn't see — without
   // this, the pre-debounce window renders with stale/empty `memories` and
@@ -100,10 +103,10 @@ export default function MemoriesPageDense() {
   const [debouncePending, setDebouncePending] = useState(true);
 
   useEffect(() => {
-    const requestId = ++latestRef.current;
+    const requestId = latest.next();
     setDebouncePending(true);
     const timer = setTimeout(() => {
-      if (requestId !== latestRef.current) return;
+      if (!latest.isCurrent(requestId)) return;
       setDebouncePending(false);
       fetchMemories({ search: search || undefined, sort_column: 'created_at', sort_direction: 'desc' });
     }, 300);

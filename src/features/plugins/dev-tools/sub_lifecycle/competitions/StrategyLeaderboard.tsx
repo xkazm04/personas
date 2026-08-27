@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getStrategyLeaderboard } from '@/api/devTools/devTools';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { DevStrategyStats } from '@/lib/bindings/DevStrategyStats';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -17,14 +18,14 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
   // it collides under rapid dispatch, exactly when the guard matters) is
   // minted synchronously BEFORE the request leaves, and both the success and
   // the failure path check it. A stale completion is inert, not an error.
-  const requestSeq = useRef(0);
+  const requestGuard = useRef(createLatestWins()).current;
 
   const load = useCallback(async () => {
-    const token = ++requestSeq.current;
+    const token = requestGuard.next();
     setLoading(true);
     try {
       const data = await getStrategyLeaderboard(projectId);
-      if (token !== requestSeq.current) return;
+      if (!requestGuard.isCurrent(token)) return;
       setStats(data);
     } catch (err) {
       // Leave `stats` exactly as it is. A failed refresh must not erase a
@@ -36,7 +37,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
       // reached no error door at all; route it to a breadcrumb now.
       silentCatch('StrategyLeaderboard:load')(err);
     } finally {
-      if (token === requestSeq.current) setLoading(false);
+      if (requestGuard.isCurrent(token)) setLoading(false);
     }
   }, [projectId]);
 

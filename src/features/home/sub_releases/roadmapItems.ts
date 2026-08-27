@@ -7,12 +7,18 @@
  * schema-valid but content-empty live payload must not blank the roadmap)
  * is preserved here as part of the live-roadmap resilience contract.
  *
- * Framework-free + side-effect-light (only Sentry breadcrumbs) so it can be
+ * Framework-free + side-effect-light (only scoped log lines) so it can be
  * unit-tested independently of React.
  */
-import * as Sentry from '@sentry/react';
+import { createLogger } from '@/lib/log';
 import type { Release, ReleaseItem, ReleaseItemPriority, ReleaseItemStatus } from '@/data/releases';
 import type { LiveRoadmap, LiveRoadmapItem } from '@/api/liveRoadmap';
+
+// Diagnostics go through the scoped logger, not raw Sentry breadcrumbs:
+// telemetry egress is consent-gated at the boot door, and breadcrumb `data:`
+// bypasses the record scrubber (census: consent-bypassing-telemetry-import,
+// unscrubbed-telemetry-side-field).
+const log = createLogger('home/roadmapItems');
 
 export interface DisplayItem {
   id: string;
@@ -31,18 +37,13 @@ type ItemI18n = Record<string, { title: string; description: string }> | undefin
 
 /**
  * Narrow a server-supplied status to one this build knows. Unknown → 'planned'
- * (a visible demotion, not a drop) with a Sentry breadcrumb so schema drift is
+ * (a visible demotion, not a drop) with a log line so schema drift is
  * observable. Same forward-compat policy for {@link narrowPriority} → 'later'.
  */
 function narrowStatus(raw: string | null | undefined, itemId?: string): ReleaseItemStatus {
   if (raw && KNOWN_STATUSES.has(raw as ReleaseItemStatus)) return raw as ReleaseItemStatus;
   if (raw) {
-    Sentry.addBreadcrumb({
-      category: 'live-roadmap',
-      message: `narrowStatus: unknown value '${raw}' coerced to 'planned'`,
-      level: 'info',
-      data: itemId ? { itemId } : undefined,
-    });
+    log.info(`narrowStatus: unknown value '${raw}' coerced to 'planned'`, itemId ? { itemId } : undefined);
   }
   return 'planned';
 }
@@ -50,12 +51,7 @@ function narrowStatus(raw: string | null | undefined, itemId?: string): ReleaseI
 function narrowPriority(raw: string | null | undefined, itemId?: string): ReleaseItemPriority {
   if (raw && KNOWN_PRIORITIES.has(raw as ReleaseItemPriority)) return raw as ReleaseItemPriority;
   if (raw) {
-    Sentry.addBreadcrumb({
-      category: 'live-roadmap',
-      message: `narrowPriority: unknown value '${raw}' coerced to 'later'`,
-      level: 'info',
-      data: itemId ? { itemId } : undefined,
-    });
+    log.info(`narrowPriority: unknown value '${raw}' coerced to 'later'`, itemId ? { itemId } : undefined);
   }
   return 'later';
 }
@@ -66,11 +62,7 @@ function dedupeById(items: DisplayItem[]): DisplayItem[] {
   const out: DisplayItem[] = [];
   for (const item of items) {
     if (seen.has(item.id)) {
-      Sentry.addBreadcrumb({
-        category: 'live-roadmap',
-        message: `dedupeById: dropped duplicate id '${item.id}'`,
-        level: 'warning',
-      });
+      log.warn(`dedupeById: dropped duplicate id '${item.id}'`);
       continue;
     }
     seen.add(item.id);
@@ -99,11 +91,8 @@ function isDisplayable(item: DisplayItem): boolean {
 function keepDisplayable(items: DisplayItem[], source: 'live' | 'bundled'): DisplayItem[] {
   const kept = items.filter(isDisplayable);
   if (kept.length !== items.length) {
-    Sentry.addBreadcrumb({
-      category: 'live-roadmap',
-      message: `keepDisplayable: dropped ${items.length - kept.length} ${source} item(s) with no content`,
-      level: 'warning',
-      data: { ids: items.filter((i) => !isDisplayable(i)).map((i) => i.id) },
+    log.warn(`keepDisplayable: dropped ${items.length - kept.length} ${source} item(s) with no content`, {
+      ids: items.filter((i) => !isDisplayable(i)).map((i) => i.id),
     });
   }
   return kept;
@@ -159,11 +148,7 @@ export function buildDisplayItems(
       liveOverride.release.items.map((item, idx) => fromLive(item, idx + 1, locale)),
     ).sort((a, b) => a.sort_order - b.sort_order);
     if (built.some(isDisplayable)) return keepDisplayable(built, 'live');
-    Sentry.addBreadcrumb({
-      category: 'live-roadmap',
-      message: 'buildDisplayItems: live payload yielded zero displayable items; falling back to bundled content',
-      level: 'warning',
-    });
+    log.warn('buildDisplayItems: live payload yielded zero displayable items; falling back to bundled content');
   }
   return keepDisplayable(buildBundledItems(release, bundledItems), 'bundled');
 }

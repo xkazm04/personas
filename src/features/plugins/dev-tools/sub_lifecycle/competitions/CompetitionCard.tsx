@@ -9,6 +9,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
 import { RacingProgress } from './RacingProgress';
@@ -84,14 +85,14 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
   // rapid dispatch, exactly when the guard matters) is minted synchronously
   // before the request leaves, and both the success and the failure path check
   // it. A stale completion is inert, not an error.
-  const detailSeq = useRef(0);
+  const detailGuard = useRef(createLatestWins()).current;
 
   const loadDetail = useCallback(async () => {
-    const token = ++detailSeq.current;
+    const token = detailGuard.next();
     setLoading(true);
     try {
       const next = await getCompetition(competition.id);
-      if (token !== detailSeq.current) return;
+      if (!detailGuard.isCurrent(token)) return;
       setDetail(next);
     } catch (err) {
       // Do NOT blank `detail`. `setDetail(null)` here turned one transient IPC
@@ -103,7 +104,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
       // failure branch renders exactly as before.
       silentCatch('CompetitionCard:loadDetail')(err);
     } finally {
-      if (token === detailSeq.current) setLoading(false);
+      if (detailGuard.isCurrent(token)) setLoading(false);
     }
   }, [competition.id]);
 

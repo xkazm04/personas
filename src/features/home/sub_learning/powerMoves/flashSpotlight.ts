@@ -1,4 +1,5 @@
-import * as Sentry from '@sentry/react';
+import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const POLL_MS = 80;
 const WAIT_MS = 4000;
@@ -16,7 +17,8 @@ let activeFlash: HTMLDivElement | null = null;
  * the user has already navigated away from. Each call captures its number and
  * abandons at every resume point if a newer one has started.
  */
-let generation = 0;
+const flashes = createLatestWins();
+const log = createLogger('powerMoves/flashSpotlight');
 
 function removeActiveFlash() {
   activeFlash?.remove();
@@ -41,12 +43,11 @@ function isSafeTestId(id: string): boolean {
  * "instrument every skip", which it did not.
  */
 function noteDegradation(reason: string, testId: string): void {
-  Sentry.addBreadcrumb({
-    category: 'power-move-spotlight',
-    message: `flashSpotlight skipped: ${reason}`,
-    level: 'warning',
-    data: { testId },
-  });
+  // Scoped logger, not a raw Sentry breadcrumb: telemetry egress is consent-
+  // gated at the boot door and a side-field on a breadcrumb bypasses the
+  // record scrubber (census: consent-bypassing-telemetry-import,
+  // unscrubbed-telemetry-side-field).
+  log.warn(`flashSpotlight skipped: ${reason}`, { testId });
 }
 
 /**
@@ -114,17 +115,17 @@ function waitForTestId(testId: string): Promise<Element | null> {
  * affordance still marks the anchor, it just stops moving.
  */
 export async function flashSpotlight(testId: string): Promise<void> {
-  const mine = ++generation;
+  const mine = flashes.next();
   removeActiveFlash();
   const el = await waitForTestId(testId);
-  if (!el || mine !== generation) return;
+  if (!el || !flashes.isCurrent(mine)) return;
 
   const reduceMotion = prefersReducedMotion();
   el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   // An instant scroll still needs one macrotask for layout to settle before the
   // rect is read; it does not need the smooth-scroll settle window.
   await new Promise((r) => setTimeout(r, reduceMotion ? 0 : SCROLL_SETTLE_MS));
-  if (mine !== generation) return;
+  if (!flashes.isCurrent(mine)) return;
 
   // Re-query post-scroll: the node may have re-rendered into a new element.
   const live = document.querySelector(`[data-testid="${testId}"]`) ?? el;

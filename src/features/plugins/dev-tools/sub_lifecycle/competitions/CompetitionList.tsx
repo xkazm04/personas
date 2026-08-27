@@ -4,6 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCompetitions } from '@/api/devTools/devTools';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { CompetitionCard } from './CompetitionCard';
 import { StrategyLeaderboard } from './StrategyLeaderboard';
 import { WinningGeneProfile } from './WinningGeneProfile';
@@ -54,11 +55,11 @@ export function CompetitionList() {
   // last — project A's cards paint while project B is selected in the header,
   // and B's own cards disappear. A monotonic counter minted synchronously
   // before the request leaves; a stale completion is inert, not an error.
-  const requestSeq = useRef(0);
+  const requestGuard = useRef(createLatestWins()).current;
 
   const refresh = useCallback(async () => {
     if (!activeProjectId) return;
-    const token = ++requestSeq.current;
+    const token = requestGuard.next();
     setLoading(true);
     try {
       const list = await listCompetitions(activeProjectId);
@@ -66,7 +67,7 @@ export function CompetitionList() {
       // superseded flight; the SCREEN is not, so it is guarded.
       cachedProjectId = activeProjectId;
       cachedCompetitions = list;
-      if (token !== requestSeq.current) return;
+      if (!requestGuard.isCurrent(token)) return;
       setCompetitions(list);
     } catch (err) {
       // Do NOT blank the list. `setCompetitions([])` here turned one transient
@@ -77,7 +78,7 @@ export function CompetitionList() {
       // breadcrumb instead of being swallowed.
       silentCatch('CompetitionList:refresh')(err);
     } finally {
-      if (token === requestSeq.current) setLoading(false);
+      if (requestGuard.isCurrent(token)) setLoading(false);
     }
   }, [activeProjectId]);
 
