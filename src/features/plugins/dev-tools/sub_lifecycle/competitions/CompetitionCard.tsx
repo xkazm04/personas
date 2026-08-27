@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff, Trophy } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
@@ -77,11 +77,34 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     });
   }, []);
 
+  // Latest-wins guard for the detail slot. `loadDetail` is dispatched from the
+  // expand effect, the 8s poll, AND the Refresh button, so two flights are
+  // routinely open at once and without a token the SLOWER one wins simply by
+  // landing last. A monotonic counter (never a timestamp — it collides under
+  // rapid dispatch, exactly when the guard matters) is minted synchronously
+  // before the request leaves, and both the success and the failure path check
+  // it. A stale completion is inert, not an error.
+  const detailSeq = useRef(0);
+
   const loadDetail = useCallback(async () => {
+    const token = ++detailSeq.current;
     setLoading(true);
-    try { setDetail(await getCompetition(competition.id)); }
-    catch { setDetail(null); }
-    finally { setLoading(false); }
+    try {
+      const next = await getCompetition(competition.id);
+      if (token !== detailSeq.current) return;
+      setDetail(next);
+    } catch (err) {
+      // Do NOT blank `detail`. `setDetail(null)` here turned one transient IPC
+      // failure on the 8s poll into the "Failed to load detail." branch,
+      // replacing an expanded card that had been fully painted moments earlier
+      // (docs/design/overview-loading.md law 1: data on screen is sacred) — and
+      // the bare `catch {}` routed the real error to no door at all. A COLD
+      // failure needs no clear: `detail` is still the initial null, so the
+      // failure branch renders exactly as before.
+      silentCatch('CompetitionCard:loadDetail')(err);
+    } finally {
+      if (token === detailSeq.current) setLoading(false);
+    }
   }, [competition.id]);
 
   // Load detail on expand, auto-poll every 8s while competition is running
@@ -145,10 +168,18 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     addToast(dl.competition_cancelled_cleaning, 'success');
     onRefresh();
 
-    // Background cleanup (worktree removal, task cancellation)
+    // Background cleanup (worktree removal, task cancellation).
+    // The optimistic paint above is a promise made on the backend's behalf, so
+    // it has to be WITHDRAWN when the backend disagrees. Without the rollback
+    // this latch was one-way: a failed cancel toasted an error and then left
+    // the card badged "Cancelled" for the rest of the session, over a
+    // competition that is still running — and because `effectiveStatus`
+    // overrides the fetched status, even a refresh could not correct it.
     cancelCompetition(competition.id).catch((err) => {
       silentCatch('CompetitionCard:handleCancel:cleanup')(err);
+      setOptimisticCancelled(false);
       addToast(tx(dl.background_cleanup_issue, { error: err instanceof Error ? err.message : dl.unknown_error }), 'error');
+      onRefresh();
     });
   }, [competition.id, addToast, onRefresh, dl, tx]);
 
@@ -181,6 +212,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/5 transition-colors text-left"
       >
         <div className="w-8 h-8 rounded-interactive bg-violet-500/15 border border-violet-500/25 flex items-center justify-center shrink-0">
@@ -259,10 +291,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
 
               {/* Racing progress visualization — shown for active competitions */}
               {!isFinished && (
-                <RacingProgress
-                  slots={detail.slots}
-                  competitionStartedAt={detail.competition.created_at}
-                />
+                <RacingProgress slots={detail.slots} />
               )}
 
               {detail.slots.length >= 2 && (
