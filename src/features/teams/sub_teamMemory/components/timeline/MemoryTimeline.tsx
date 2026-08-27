@@ -102,6 +102,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
   }
 
   const totalRuns = runCounts.size;
+  const renderedRuns = runIdsChronological.length;
 
   return (
     <div className="space-y-1">
@@ -111,6 +112,15 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
           <span className="typo-body text-foreground">
             {tx(totalRuns === 1 ? pt.timeline_runs_one : pt.timeline_runs_other, { count: totalRuns })}
           </span>
+          {/* The run count comes from team-wide stats; the markers below are
+              built from the panel's PAGED memories. When the page does not
+              reach every run, saying "12 runs" above three markers asserts
+              nine runs contributed nothing. Disclose the cut where it happens. */}
+          {renderedRuns < totalRuns && (
+            <span className="typo-caption text-foreground">
+              {tx(t.pipeline.showing_count, { shown: renderedRuns, total: totalRuns })}
+            </span>
+          )}
           {activeRunFilter && (
             <button type="button" onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
               {pt.clear_filter}

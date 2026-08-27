@@ -9,7 +9,13 @@ import { useTeamMemories } from './useTeamMemories';
 export function TeamMemoryPane({ teamId, onClose }: { teamId: string; onClose: () => void }) {
   const data = useTeamMemories(teamId);
   return (
+    // Keyed by team: `useTeamMemories` clears its filters when `teamId` changes,
+    // but the panel owns the category chip / search box / run-filter state and
+    // kept showing the previous team's selections over an unfiltered query.
+    // The host keeps this pane mounted across team switches, so the desync is
+    // reachable without a remount.
     <TeamMemoryPanel
+      key={teamId}
       teamId={teamId}
       layout="pane"
       memories={data.memories}

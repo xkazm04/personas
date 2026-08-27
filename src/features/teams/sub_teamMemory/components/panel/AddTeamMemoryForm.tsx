@@ -59,8 +59,9 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         <span className="typo-body font-medium text-foreground">{t.pipeline.new_memory}</span>
         <button
           type="button"
-          className="p-0.5 rounded hover:bg-primary/10 text-foreground"
+          className="p-0.5 rounded-interactive hover:bg-primary/10 text-foreground"
           onClick={() => setExpanded(false)}
+          aria-label={t.common.cancel}
         >
           <X className="w-3.5 h-3.5" />
         </button>

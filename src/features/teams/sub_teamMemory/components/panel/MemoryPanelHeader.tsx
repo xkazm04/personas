@@ -43,6 +43,7 @@ export default function MemoryPanelHeader({
                   ? 'bg-violet-500/20 text-violet-400'
                   : 'text-foreground hover:text-muted-foreground/60'
               }`}
+              aria-pressed={viewMode === 'list'}
               title={t.pipeline.list_view}
             >
               <List className="w-3 h-3" />
@@ -55,6 +56,7 @@ export default function MemoryPanelHeader({
                   ? 'bg-violet-500/20 text-violet-400'
                   : 'text-foreground hover:text-muted-foreground/60'
               }`}
+              aria-pressed={viewMode === 'timeline'}
               title={t.pipeline.timeline_view}
             >
               <GitCommitVertical className="w-3 h-3" />
@@ -68,6 +70,7 @@ export default function MemoryPanelHeader({
                     ? 'bg-violet-500/20 text-violet-400'
                     : 'text-foreground hover:text-muted-foreground/60'
                 }`}
+                aria-pressed={viewMode === 'diff'}
                 title={t.pipeline.compare_runs}
               >
                 <GitCompareArrows className="w-3 h-3" />
@@ -75,10 +78,13 @@ export default function MemoryPanelHeader({
             )}
           </div>
         )}
+        {/* Icon-only, and it had no accessible name at all: a screen reader
+            announced it as an unlabelled button. */}
         <button
           type="button"
           className="p-1 rounded-card hover:bg-primary/10 text-foreground"
           onClick={onClose}
+          aria-label={t.common.close}
         >
           <ChevronDown className="w-4 h-4" />
         </button>

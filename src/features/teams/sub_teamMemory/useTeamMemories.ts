@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   listTeamMemories,
@@ -32,14 +33,23 @@ export function useTeamMemories(teamId: string) {
   // Filters live in a ref: the panel owns the filter UI state and calls
   // onFilter/onFilterByRun; we only need the current values for refetches.
   const filtersRef = useRef<{ category?: string; search?: string; runId?: string }>({});
+  // Every list-replacing fetch carries an identity minted at issue time. The
+  // search box refetches on a 300ms debounce and each category chip refetches
+  // immediately, so three IPCs are routinely in flight at once -- and without
+  // this guard whichever RESOLVES last won, which is not the same as whichever
+  // was ASKED last. The visible symptom is a filtered list re-populating with
+  // the previous filter's rows a beat after the user narrowed it.
+  const listWinsRef = useRef(createLatestWins());
 
   const refresh = useCallback(async () => {
     const { category, search, runId } = filtersRef.current;
+    const token = listWinsRef.current.next();
     const [rows, count, st] = await Promise.all([
       listTeamMemories(teamId, runId, category, search, PAGE_SIZE, 0),
       getTeamMemoryCount(teamId, runId, category, search),
       getTeamMemoryStats(teamId, category, search),
     ]);
+    if (!listWinsRef.current.isCurrent(token)) return;
     setMemories(rows);
     setTotal(count);
     setStats(st);
@@ -62,8 +72,12 @@ export function useTeamMemories(teamId: string) {
 
   const onLoadMore = useCallback(async () => {
     const { category, search, runId } = filtersRef.current;
+    const token = listWinsRef.current.next();
     try {
       const next = await listTeamMemories(teamId, runId, category, search, PAGE_SIZE, memories.length);
+      // A page computed against an offset the list no longer has would append
+      // duplicates (or rows from the previous filter) below the current ones.
+      if (!listWinsRef.current.isCurrent(token)) return;
       setMemories((prev) => [...prev, ...next]);
     } catch (err) {
       toastCatch('teamMemory/useTeamMemories:loadMore')(err);
