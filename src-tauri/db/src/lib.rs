@@ -857,6 +857,34 @@ CREATE TABLE IF NOT EXISTS companion_provenance (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_provenance_episode ON companion_provenance(episode_id);
 
+-- Forget tombstones. `semantic::delete_fact` is a HARD delete — it removes the
+-- fact, its provenance, its FTS row and its node row — but the source episodes
+-- it was derived from stay, and the sleep cycle reads those same episodes every
+-- night through `sleep_cycle::apply`. So "forget that I use VS Code" used to
+-- hold only until the next cycle re-derived it from the same evidence, with no
+-- record that the user had ever objected. The user's correction was silently
+-- reversed, and from their side it looked like Athena had ignored them.
+--
+-- A row here says: consolidation may not RE-derive this (scope, fact_key). It
+-- deliberately does not block an explicit write — Athena proposing the fact
+-- again and the user approving it is new evidence, not a re-derivation, and
+-- that path clears the tombstone (`semantic::clear_tombstone`).
+--
+-- `value_excerpt` is the forgotten value, kept for the audit trail only. It is
+-- never matched against: the user forgetting a key is forgetting the SUBJECT,
+-- and blocking only an exact value would let the next cycle re-derive the same
+-- fact in different words.
+--
+-- A new table rather than a `user_state` column on `companion_fact`, because a
+-- hard-deleted fact has no row left to carry one.
+CREATE TABLE IF NOT EXISTS companion_fact_tombstone (
+    scope         TEXT NOT NULL,
+    fact_key      TEXT NOT NULL,
+    value_excerpt TEXT,
+    forgotten_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (scope, fact_key)
+);
+
 -- Semantic-fact sidecar. The fact's display body and full provenance
 -- live in the corresponding `companion_node` row (kind='fact') and the
 -- markdown file under `semantic/<scope>/`. This sidecar holds the typed

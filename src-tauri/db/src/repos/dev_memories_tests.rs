@@ -237,3 +237,137 @@ fn rejects_invalid_input() {
         "unknown source kinds are refused, mirroring FINDING_ORIGINS"
     );
 }
+
+// ---------------------------------------------------------------------------
+// App master proposal episodes (kp `docs/concepts/app-master.md` §8.2)
+// ---------------------------------------------------------------------------
+
+/// The reconciler re-walks every known proposal branch every 30 minutes,
+/// forever. Each observed FATE must cost exactly one row, whatever the tick
+/// count — otherwise the App master's project memory fills with the same
+/// sentence and the injection budget is spent restating one merge.
+#[test]
+fn app_master_proposal_episodes_cost_one_row_per_fate() {
+    let pool = test_pool();
+    let branch = "autopilot/fix-retry";
+
+    let write = |source_id: &str, category: &str, title: &str| {
+        record(
+            &pool,
+            "proj-app-master",
+            category,
+            title,
+            "One factual sentence about what happened on the branch.",
+            6,
+            "app_master_proposal",
+            Some(source_id),
+        )
+    };
+
+    // Ten reconcile ticks over the same three fates.
+    for _ in 0..10 {
+        write(
+            &format!("{branch}:recorded"),
+            "decision",
+            "Proposal opened: autopilot/fix-retry",
+        )
+        .unwrap();
+        write(
+            &format!("{branch}:merged"),
+            "decision",
+            "Proposal merged: autopilot/fix-retry",
+        )
+        .unwrap();
+        write(
+            &format!("{branch}:reverted"),
+            "constraint",
+            "Proposal reverted: autopilot/fix-retry",
+        )
+        .unwrap();
+    }
+
+    let rows = list_recent_by_kind(&pool, "proj-app-master", "app_master_proposal", 50).unwrap();
+    assert_eq!(rows.len(), 3, "one row per fate, not per tick");
+
+    // A re-gate after the branch MOVES is a different observation and must land
+    // — the tip rides in the source_id precisely so it is not suppressed as a
+    // duplicate of the previous tip's tally.
+    write(
+        &format!("{branch}:gates@1111111"),
+        "decision",
+        "Gates green on autopilot/fix-retry",
+    )
+    .unwrap()
+    .expect("first tip's tally lands");
+    write(
+        &format!("{branch}:gates@2222222"),
+        "constraint",
+        "Gates failed on autopilot/fix-retry",
+    )
+    .unwrap()
+    .expect("the moved tip's tally is a NEW observation");
+    // …but re-gating the SAME tip is still one row.
+    assert!(
+        write(
+            &format!("{branch}:gates@1111111"),
+            "decision",
+            "Gates green on autopilot/fix-retry",
+        )
+        .unwrap()
+        .is_none(),
+        "the same tip gated twice must not inflate the record"
+    );
+
+    let rows = list_recent_by_kind(&pool, "proj-app-master", "app_master_proposal", 50).unwrap();
+    assert_eq!(rows.len(), 5);
+
+    // Two proposals on the same project never collide: the branch is the first
+    // half of the key.
+    write(
+        "autopilot/other:merged",
+        "decision",
+        "Proposal merged: autopilot/other",
+    )
+    .unwrap()
+    .expect("a different branch is a different episode");
+
+    // Constraints lead the injection order, so the revert — the most valuable
+    // thing this lane records — is what the next dispatch reads first.
+    let injected = get_for_injection(&pool, "proj-app-master", 12).unwrap();
+    assert_eq!(
+        injected.first().map(|m| m.category.as_str()),
+        Some("constraint")
+    );
+}
+
+/// `app_master_proposal` is a declared source kind, not a string a call site
+/// invented — the repo refuses anything outside `DEV_MEMORY_SOURCES`.
+#[test]
+fn app_master_proposal_is_a_declared_source_kind() {
+    let pool = test_pool();
+    assert!(record(
+        &pool,
+        "p",
+        "decision",
+        "Proposal opened: autopilot/x",
+        "Branch-only: nothing was pushed or merged.",
+        4,
+        "app_master_proposal",
+        Some("autopilot/x:recorded"),
+    )
+    .is_ok());
+    assert!(
+        record(
+            &pool,
+            "p",
+            "decision",
+            "T",
+            "C",
+            4,
+            "app_master_proposals",
+            None
+        )
+        .is_err(),
+        "a near-miss spelling is refused, not silently accepted"
+    );
+}

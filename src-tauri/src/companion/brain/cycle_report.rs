@@ -420,36 +420,13 @@ mod tests {
     use crate::companion::brain::keyword;
 
     /// Point `disk::brain_root()` at a throwaway directory for the duration of
-    /// a test. `PERSONAS_HOME` is process-global, so the guard also serializes
-    /// the disk-touching tests in this module against each other.
-    struct BrainHome {
-        _dir: std::path::PathBuf,
-        _guard: std::sync::MutexGuard<'static, ()>,
-    }
-
-    static HOME_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-    impl BrainHome {
-        fn new(tag: &str) -> Self {
-            let guard = HOME_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-            let dir = std::env::temp_dir().join(format!(
-                "personas_cycle_test_{tag}_{}",
-                uuid::Uuid::new_v4()
-            ));
-            std::fs::create_dir_all(&dir).unwrap();
-            std::env::set_var("PERSONAS_HOME", &dir);
-            Self {
-                _dir: dir,
-                _guard: guard,
-            }
-        }
-    }
-
-    impl Drop for BrainHome {
-        fn drop(&mut self) {
-            std::env::remove_var("PERSONAS_HOME");
-        }
-    }
+    /// a test.
+    ///
+    /// Was a private mutex here. `PERSONAS_HOME` is ONE process-global, so a
+    /// lock private to this module serialized these tests against each other
+    /// and against nothing else — a `sleep_cycle` test redirecting the same
+    /// variable never took it. [`TestHome`] is the shared lock.
+    use crate::companion::brain::test_home::TestHome as BrainHome;
 
     /// The whole lifecycle against the REAL schema (`init_test_user_db` applies
     /// `COMPANION_SCHEMA`), not a fixture the test wrote itself.

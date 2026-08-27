@@ -1282,6 +1282,18 @@ pub(crate) fn react_to_app_master_probation(
         },
     };
 
+    // The packet carries the backbone the human read. Re-derive the verdict and
+    // the unmeasured list from it with the same pure functions the headless
+    // path uses, so the memory row says the same thing whichever hand decided.
+    let reading = personas_engine::headless::backbone_reading_from_json(
+        ctx.get("backbone").unwrap_or(&serde_json::Value::Null),
+    );
+    let verdict = personas_engine::headless::backbone_verdict(&reading);
+    let unmeasured: Vec<String> = personas_engine::headless::unmeasured_rules(&reading)
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+
     apply_app_master_probation_decision(
         state,
         ProbationCarryOut {
@@ -1296,6 +1308,8 @@ pub(crate) fn react_to_app_master_probation(
                 .map(str::to_string),
             headless_incomplete_streak,
             review_id: Some(&review.id),
+            verdict: Some(verdict.as_str()),
+            unmeasured: &unmeasured,
         },
     )
 }
@@ -1318,6 +1332,14 @@ pub(crate) struct ProbationCarryOut<'a> {
     /// The review this came from, for logs. `None` on the headless anchorless
     /// path, where there deliberately is no review row.
     pub review_id: Option<&'a str>,
+    /// kp's three-valued backbone verdict behind the decision, when the path
+    /// that decided had one. `None` is written into the holder's memory as
+    /// *no verdict recorded* — never as a pass.
+    pub verdict: Option<&'a str>,
+    /// The backbone rules that had no reading. Carried verbatim into the
+    /// memory row rather than summarised into a count: an `incomplete` verdict
+    /// is only actionable if the holder can see WHAT was not measured.
+    pub unmeasured: &'a [String],
 }
 
 /// **The carry-out.** Apply an already-taken App master probation decision to
@@ -1352,6 +1374,8 @@ pub(crate) fn apply_app_master_probation_decision(
         note,
         headless_incomplete_streak,
         review_id,
+        verdict,
+        unmeasured,
     } = carry;
 
     let Some(mut record) = personas_engine::app_master::get_mandate(&state.db, project_id) else {
@@ -1413,6 +1437,24 @@ pub(crate) fn apply_app_master_probation_decision(
         );
     }
 
+    // What this decision taught the holder (App master §8.2 — episodic
+    // capture). ONE write site covers BOTH decision paths: the human's click
+    // reaches it through `react_to_app_master_probation`, and the headless
+    // anchorless sweep calls this function directly — which is exactly why the
+    // carry-out exists.
+    //
+    // Governance: `learned`, importance 4, tagged `probation`. Nothing here
+    // writes `core`, nothing writes a `preference` about the reviewer, and the
+    // row records what was decided — never what is henceforth permitted.
+    remember_probation_decision(
+        &state.db,
+        &record.persona_id,
+        project_id,
+        decision,
+        verdict,
+        unmeasured,
+    );
+
     // Tell kp. Best-effort and never blocking, like every other kp push.
     if let Ok(persona) = crate::db::repos::core::personas::get_by_id(&state.db, &record.persona_id)
     {
@@ -1449,6 +1491,58 @@ pub(crate) fn apply_app_master_probation_decision(
         "app_master: applied the probation decision"
     );
     true
+}
+
+/// Write one probation decision into the holder's own memory.
+///
+/// A probation verdict is the most consequential thing that happens to a
+/// tenure, and before this it existed only in a log line, a mandate field and a
+/// kp lifecycle push — none of which the App master's next prompt can read. The
+/// row is deliberately singular and factual: decision, verdict, and the list of
+/// backbone rules that had **no reading** (a coverage gap is not a zero).
+///
+/// Best-effort: the mandate record is the record of truth for the decision, and
+/// a memory that cannot be written must not stop one being applied.
+fn remember_probation_decision(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    project_id: &str,
+    decision: &str,
+    verdict: Option<&str>,
+    unmeasured: &[String],
+) {
+    // The project's name if it is readable, else its id — never a blank.
+    let project_name = crate::db::repos::dev_tools::get_project_by_id(pool, project_id)
+        .map(|p| p.name)
+        .unwrap_or_else(|_| project_id.to_string());
+    let draft = personas_engine::app_master_memory::probation_memory_row(
+        &project_name,
+        decision,
+        verdict,
+        unmeasured,
+    );
+    let input = crate::db::models::CreatePersonaMemoryInput {
+        persona_id: persona_id.to_string(),
+        title: draft.title,
+        content: draft.content,
+        category: Some(draft.category.to_string()),
+        source_execution_id: None,
+        importance: Some(draft.importance),
+        tags: Some(crate::db::models::Json(draft.tags)),
+        use_case_id: None,
+    };
+    match crate::db::repos::core::memories::batch_create(pool, vec![input]) {
+        Ok(r) if r.inserted == 0 => tracing::debug!(
+            persona_id,
+            project_id,
+            "app_master: probation memory was skipped (duplicate or invalid)"
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::warn!(
+            persona_id, project_id, error = %e,
+            "app_master: could not record the probation decision in the holder's memory"
+        ),
+    }
 }
 
 /// Disable a retired App master's cadence triggers so it genuinely stops

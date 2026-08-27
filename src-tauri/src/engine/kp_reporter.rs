@@ -145,13 +145,48 @@ pub(crate) struct KpKpiDelta {
 #[derive(Debug, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct KpAppMasterRollup {
-    /// Unattended fix sessions dispatched for this project in the period. Each
-    /// carries the branch-only guardrail contract (`autopilot/<slug>`, no push,
-    /// no merge), so this is "proposals opened" as far as Personas can witness
-    /// it: it counts sessions dispatched to author a branch, not branches
-    /// confirmed to exist on a remote.
+    /// Real since P6o: proposal **branches** authored in the period, from the
+    /// same `app_master_proposals` ledger as `proposals_merged` — a branch the
+    /// reconciler (`engine::app_master_reconcile`) first saw in the window
+    /// carrying **at least one commit** ahead of the project's main branch.
+    ///
+    /// Until bench sweep #23 (2026-08-26) this was `SUM(dispatched_count)` over
+    /// `autopilot_night_runs` — a count of sessions *launched*. That night
+    /// dispatched one worker which correctly concluded the seeded task was
+    /// already done and authored nothing: no branch, no commit. The rollup
+    /// still said `proposalsOpened: 1`, and kp's `delivery` rule read a night
+    /// that delivered nothing as delivery. A dispatched session is not an
+    /// opened proposal, and a commit-less branch is not one either. The launch
+    /// count is still reported — honestly, and under its own name — as
+    /// [`Self::sessions_dispatched`].
+    ///
+    /// `None` only when this holder has **no proposal row at all**, the same
+    /// rule as `proposals_merged`: with no ledger there is nothing to be right
+    /// about. Once one of its proposals exists, a `0` is a real reading.
+    ///
+    /// **This lags `sessions_dispatched` by design.** The reconciler is a
+    /// 30-minute tick and the dispatch is asynchronous, so between a night's
+    /// dispatch and the next settle there are sessions launched and no branches
+    /// recorded yet. Under-reporting delivery until the observation is made is
+    /// the correct direction of error; the alternative is the one sweep #23
+    /// found.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proposals_opened: Option<i64>,
+    /// Unattended fix sessions **dispatched** for this project in the period —
+    /// `SUM(dispatched_count)` over `autopilot_night_runs` in the tenure
+    /// window. Each carries the branch-only guardrail contract
+    /// (`autopilot/<slug>`, no push, no merge).
+    ///
+    /// This is a launch count and nothing more: it says the engine spawned
+    /// workers, not that any of them authored anything. It deliberately feeds
+    /// **no** delivery rule on kp's side — it exists so the gap against
+    /// [`Self::proposals_opened`] stays visible (a dispatched session that
+    /// delivered nothing, or a settle that has not run yet).
+    ///
+    /// `None` when no night ran in the window: nothing dispatched *and* nothing
+    /// reserved is a different finding from "the engine never ran here".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sessions_dispatched: Option<i64>,
     /// Real since P5a: proposals observed on the project's main branch in the
     /// period, from the `app_master_proposals` ledger the reconciler
     /// (`engine::app_master_reconcile`) maintains. `merged_at` is set when
@@ -182,8 +217,30 @@ pub(crate) struct KpAppMasterRollup {
     /// `did_not_run` and sits in **neither** half of the ratio. `None` when no
     /// gate command actually ran in the period — including the case where the
     /// mandate declares none, which is *not configured*, not a pass.
+    ///
+    /// **Baseline-relative since bench sweep #25.** A command that was already
+    /// failing on the project's main branch when the proposal was gated is
+    /// recorded `inherited_red` and sits in **neither** half either: a proposal
+    /// cannot be held to a gate that was red before it existed. That exclusion
+    /// never hides the debt — it is reported beside this number as
+    /// [`Self::baseline_gate_health`]. A window in which every command is
+    /// inherited-red or did-not-run therefore reads `None`, not `0.0`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gate_pass_rate: Option<f64>,
+    /// What the repository's OWN declared gates say about its **main branch**
+    /// at its current tip — `{commands, passed, failed, tipSha, ranAt}`.
+    ///
+    /// A fact about the repository, not about the holder: project-scoped, not
+    /// clipped to the tenure window, and carrying no rate of its own. It exists
+    /// so a reader can see "the repo's own gates: 7 of 9 green on main" beside
+    /// the holder's rate — excusing a hire for inherited red is not the same as
+    /// claiming the repository is healthy, and the rollup must say both.
+    ///
+    /// `None` until a baseline sweep has run for the project (no declared
+    /// gates, an unresolvable main tip, or a reconciler that has not reached it
+    /// yet). Absent means *not measured*, as everywhere else here.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub baseline_gate_health: Option<personas_engine::app_master_gates::BaselineGateHealth>,
     /// Real: a COUNT over `app_master.forbidden_class_violation` events for the
     /// project in the period. Zero here is a genuine reading — the ledger
     /// exists and was queried — not an absence.
@@ -225,6 +282,26 @@ pub(crate) struct KpAppMasterRollup {
     pub ledger_consistent: Option<bool>,
     /// Real: the project's current autopilot mode. `suggest` during probation.
     pub autopilot_mode: &'static str,
+    /// M3b: how many memories this App master holds, per tier — `{core, active,
+    /// working, archived}`. Tenure made visible: kp's roster can show that a
+    /// holder six months in has accumulated something, which is the one thing a
+    /// count of proposals cannot say.
+    ///
+    /// Per tier rather than as a total because the tiers are not comparable:
+    /// `core` is the always-included identity (one row per hire, by contract),
+    /// `active` is the recall workhorse, `working` is raw capture, and
+    /// `archive` never reaches a prompt at all. A single number would hide the
+    /// only distinction that matters.
+    ///
+    /// Persona-scoped and deliberately **not** windowed to the reporting
+    /// period: memory is what this holder has accumulated over its whole
+    /// tenure, not what it accumulated this month.
+    ///
+    /// `None` when the persona holds **nothing** — a hire whose memory seeding
+    /// failed, or one made before M3a. Four zeros would read as a measurement
+    /// of an accumulating agent; the absence reads as what it is.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory: Option<crate::db::repos::core::memories::MemoryTierCounts>,
 }
 
 #[derive(Debug, Serialize)]
@@ -609,6 +686,10 @@ pub(crate) fn app_master_rollup(
 ) -> Option<KpAppMasterRollup> {
     let link = crate::db::models::parse_design_context(design_context).app_master?;
     let project_id = link.project_id;
+    // Persona-scoped, so it is readable even for a hire whose project binding
+    // failed — and unwindowed, deliberately: memory is what this holder has
+    // accumulated over its whole tenure, not what it accumulated this month.
+    let memory = memory_counts(pool, persona_id);
     if project_id.trim().is_empty() {
         // A hire whose project binding failed. It is still an App master, and
         // saying so with everything unmeasured is more useful than silence.
@@ -616,6 +697,7 @@ pub(crate) fn app_master_rollup(
             budget_settled_usd: Some(monthly_cost_usd),
             budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
             autopilot_mode: "off",
+            memory,
             ..Default::default()
         });
     }
@@ -634,7 +716,10 @@ pub(crate) fn app_master_rollup(
         .map(|r| r.hired_at.as_str())
         .unwrap_or_default();
 
-    let (proposals_opened, budget_reserved_usd, sessions) =
+    // The night-run ledger is a LAUNCH ledger. It answers `sessionsDispatched`
+    // and `budgetReservedUsd`, and — since bench sweep #23 — nothing about
+    // delivery: `proposalsOpened` comes from the proposal ledger below.
+    let (sessions_dispatched, budget_reserved_usd, sessions) =
         match personas_engine::app_master::night_run_totals_since(pool, &project_id, &since) {
             Some(t) => (Some(t.dispatched), Some(t.reserved_usd), t.session_ids),
             // No night run in the window: the engine has not run for this
@@ -656,7 +741,9 @@ pub(crate) fn app_master_rollup(
     .unwrap_or("off");
 
     // P5a: the two ledgers that closed the three structural nulls. Both hand
-    // back `None` for "no record exists", never a convenient zero.
+    // back `None` for "no record exists", never a convenient zero. Since P6o
+    // this ledger also answers `proposalsOpened`, so all three delivery numbers
+    // come from the same observed branches.
     let counts = personas_engine::app_master_gates::proposal_counts_since(
         pool,
         &project_id,
@@ -665,7 +752,8 @@ pub(crate) fn app_master_rollup(
     );
 
     Some(KpAppMasterRollup {
-        proposals_opened,
+        proposals_opened: counts.map(|c| c.opened),
+        sessions_dispatched,
         proposals_merged: counts.map(|c| c.merged),
         proposals_reverted: counts.map(|c| c.reverted),
         gate_pass_rate: personas_engine::app_master_gates::gate_pass_rate_since(
@@ -674,6 +762,11 @@ pub(crate) fn app_master_rollup(
             persona,
             &since,
         ),
+        // Deliberately unwindowed and unfiltered: the repository's own gate
+        // health is a fact about the repository at its current main tip, and
+        // clipping it to a hire's tenure would make it read as something the
+        // hire did.
+        baseline_gate_health: personas_engine::app_master_gates::latest_baseline(pool, &project_id),
         // No persona predicate here, and none available: the violation event's
         // holder lives in an encrypted payload. The tenure window IS the
         // attribution for this one.
@@ -688,7 +781,28 @@ pub(crate) fn app_master_rollup(
         budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
         ledger_consistent: ledger_consistent(pool, &sessions),
         autopilot_mode,
+        memory,
     })
+}
+
+/// This holder's memory-tier counts, or `None` when it holds nothing.
+///
+/// A query failure is also `None` — the same reading as "nothing to report",
+/// and correctly so: both mean the rollup cannot say what this persona has
+/// accumulated, and sending four zeros for a DB error would be the one thing
+/// the whole payload is designed not to do.
+fn memory_counts(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Option<crate::db::repos::core::memories::MemoryTierCounts> {
+    match crate::db::repos::core::memories::count_by_tier(pool, persona_id) {
+        Ok(c) if c.is_empty() => None,
+        Ok(c) => Some(c),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "kp_reporter: memory tier counts unavailable");
+            None
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -952,12 +1066,23 @@ mod tests {
             connector_uses: vec![],
             app_master: Some(KpAppMasterRollup {
                 proposals_opened: Some(7),
+                sessions_dispatched: Some(9),
                 // P5a: real readings now. A measured 0 must reach kp as a 0 —
                 // it is the difference between "nothing landed" and "nobody
                 // watched", and kp's backbone scores them differently.
                 proposals_merged: Some(4),
                 proposals_reverted: Some(0),
                 gate_pass_rate: Some(0.75),
+                // Sweep #25: the rate above is over the gates this holder is
+                // answerable for; the repository's own debt travels beside it
+                // rather than inside it.
+                baseline_gate_health: Some(personas_engine::app_master_gates::BaselineGateHealth {
+                    commands: 9,
+                    passed: 7,
+                    failed: 2,
+                    tip_sha: "abc1234".into(),
+                    ran_at: "2026-08-26T21:00:00+00:00".into(),
+                }),
                 forbidden_class_violations: Some(2),
                 kpi_deltas: Some(vec![KpKpiDelta {
                     kpi_key: "gate_pass_rate".into(),
@@ -973,6 +1098,13 @@ mod tests {
                 budget_unmeasured: false,
                 ledger_consistent: Some(true),
                 autopilot_mode: "suggest",
+                // M3b: accumulated experience, per tier.
+                memory: Some(crate::db::repos::core::memories::MemoryTierCounts {
+                    core: 1,
+                    active: 12,
+                    working: 3,
+                    archived: 4,
+                }),
             }),
         };
         assert_eq!(
@@ -990,9 +1122,19 @@ mod tests {
                 "connectorUses": [],
                 // v2 fields, FLATTENED onto the same object (not nested).
                 "proposalsOpened": 7,
+                // P6o: the launch count, beside the delivery count and never
+                // standing in for it.
+                "sessionsDispatched": 9,
                 "proposalsMerged": 4,
                 "proposalsReverted": 0,
                 "gatePassRate": 0.75,
+                "baselineGateHealth": {
+                    "commands": 9,
+                    "passed": 7,
+                    "failed": 2,
+                    "tipSha": "abc1234",
+                    "ranAt": "2026-08-26T21:00:00+00:00",
+                },
                 "forbiddenClassViolations": 2,
                 "kpiDeltas": [{
                     "kpiKey": "gate_pass_rate",
@@ -1008,7 +1150,47 @@ mod tests {
                 "budgetUnmeasured": false,
                 "ledgerConsistent": true,
                 "autopilotMode": "suggest",
+                // M3b: a NESTED object (like `baselineGateHealth`, unlike every
+                // other v2 field), spelled `archived` on the wire where the
+                // column value is `archive`.
+                "memory": {"core": 1, "active": 12, "working": 3, "archived": 4},
             })
+        );
+    }
+
+    #[test]
+    fn a_persona_that_has_accumulated_nothing_omits_the_memory_block() {
+        // The same rule as every other reading here: absent means NOT MEASURED.
+        // Four zeros would read as "this holder has a memory and it is empty",
+        // which for a hire whose seeding failed is a claim, not a measurement.
+        let v = serde_json::to_value(KpAppMasterRollup {
+            proposals_opened: Some(3),
+            budget_settled_usd: Some(1.0),
+            autopilot_mode: "full",
+            memory: None,
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(
+            !v.as_object().unwrap().contains_key("memory"),
+            "memory must be omitted when there is nothing to count, got {v}"
+        );
+
+        // …and a holder with a single core row and nothing else reports that
+        // single row, zeros included: the query ran, and the empty tiers are
+        // real readings.
+        let seeded = serde_json::to_value(KpAppMasterRollup {
+            autopilot_mode: "full",
+            memory: Some(crate::db::repos::core::memories::MemoryTierCounts {
+                core: 1,
+                ..Default::default()
+            }),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            seeded.get("memory"),
+            Some(&serde_json::json!({"core": 1, "active": 0, "working": 0, "archived": 0}))
         );
     }
 
@@ -1070,9 +1252,13 @@ mod tests {
         // measurement.
         for absent in [
             "proposalsOpened",
+            "sessionsDispatched",
             "proposalsMerged",
             "proposalsReverted",
             "gatePassRate",
+            // A project nothing has baselined says nothing about its main
+            // branch — it does not claim a green one.
+            "baselineGateHealth",
             "forbiddenClassViolations",
             "kpiDeltas",
             "budgetReservedUsd",
@@ -1090,6 +1276,40 @@ mod tests {
         // "is the budget metered" always has an answer.
         assert!(obj.contains_key("autopilotMode"));
         assert!(obj.contains_key("budgetUnmeasured"));
+    }
+
+    /// Bench sweep #23 (2026-08-26, `systedo-case`). The night dispatched one
+    /// worker; it correctly concluded the seeded task was already done and
+    /// authored NOTHING — no branch, no commit. The rollup nevertheless
+    /// reported `proposalsOpened: 1`, so kp's `delivery` rule read a night that
+    /// delivered nothing as delivery and `minProposalsOpened >= 1` passed.
+    ///
+    /// The launch count is still reported, under its own name, and it feeds no
+    /// delivery rule.
+    #[test]
+    fn a_dispatched_session_that_authored_nothing_is_not_an_opened_proposal() {
+        let v = serde_json::to_value(KpAppMasterRollup {
+            // No proposal branch was ever recorded for this holder.
+            proposals_opened: None,
+            sessions_dispatched: Some(1),
+            budget_reserved_usd: Some(0.4),
+            budget_settled_usd: Some(0.4),
+            autopilot_mode: "suggest",
+            ..Default::default()
+        })
+        .unwrap();
+        let obj = v.as_object().unwrap();
+        assert_eq!(obj.get("sessionsDispatched"), Some(&serde_json::json!(1)));
+        assert!(
+            !obj.contains_key("proposalsOpened"),
+            "a launched session must not be reported as an opened proposal: {v}"
+        );
+
+        // Read back exactly as kp normalises it: the launch count is invisible
+        // to the backbone, so `delivery` stays unmeasured.
+        let reading = personas_engine::headless::backbone_reading_from_json(&v);
+        assert_eq!(reading.proposals_opened, 0);
+        assert!(personas_engine::headless::unmeasured_rules(&reading).contains(&"delivery"));
     }
 
     #[test]

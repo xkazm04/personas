@@ -97,6 +97,7 @@ pub async fn start_webhook_server(
 
     let addr = SocketAddr::from(([127, 0, 0, 1], webhook_port()));
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    unset_listener_inheritance(&listener);
     MANAGEMENT_ROUTES_LIVE.store(false, std::sync::atomic::Ordering::Relaxed);
     tracing::warn!(
         management = false,
@@ -168,6 +169,7 @@ pub async fn start_webhook_server_with_management(
 
     let addr = SocketAddr::from(([127, 0, 0, 1], webhook_port()));
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    unset_listener_inheritance(&listener);
     MANAGEMENT_ROUTES_LIVE.store(true, std::sync::atomic::Ordering::Relaxed);
     tracing::info!(
         management = true,
@@ -726,5 +728,31 @@ mod tests {
         assert!(!verify_hmac_sha256("secret", b"body", "deadbeef"));
         assert!(!verify_hmac_sha256("secret", b"body", "sha256=deadbeef"));
         assert!(!verify_hmac_sha256("secret", b"body", "not-hex"));
+    }
+}
+
+/// Windows: clear HANDLE_FLAG_INHERIT on the listener socket. Sockets are
+/// inheritable by default, the app spawns many children (claude sessions,
+/// shell helpers), and a child that outlives a killed desktop keeps the
+/// LISTEN handle alive — a ghost :9420/:9421 owned by a dead PID that no
+/// restart can bind past (bench nights 2026-08-25, twice, two ports). A
+/// listener no child can inherit dies with this process, always.
+fn unset_listener_inheritance(listener: &tokio::net::TcpListener) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawSocket;
+        use windows::Win32::Foundation::{
+            SetHandleInformation, HANDLE, HANDLE_FLAGS, HANDLE_FLAG_INHERIT,
+        };
+        let raw = listener.as_raw_socket();
+        // SAFETY: the raw socket is a valid handle for the lifetime of
+        // `listener`, and clearing the inherit flag does not invalidate it.
+        let _ = unsafe {
+            SetHandleInformation(HANDLE(raw as _), HANDLE_FLAG_INHERIT.0, HANDLE_FLAGS(0))
+        };
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = listener;
     }
 }

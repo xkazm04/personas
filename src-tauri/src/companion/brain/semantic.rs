@@ -172,6 +172,16 @@ pub fn write_fact(pool: &UserDbPool, input: &FactInput<'_>) -> Result<String, Ap
         demote_superseded(&tx, prior, &now)?;
     }
 
+    // A write that reaches here is deliberate: an approved proposal, a repair,
+    // or a user statement. That is new evidence about the subject, so it lifts
+    // any forget tombstone on the key. Consolidation never reaches this line
+    // for a tombstoned key — `sleep_cycle::apply` refuses first — so clearing
+    // here cannot be the silent re-learn the tombstone exists to prevent.
+    tx.execute(
+        "DELETE FROM companion_fact_tombstone WHERE scope = ?1 AND fact_key = ?2",
+        params![scope_s, input.key],
+    )?;
+
     tx.commit()?;
     Ok(id)
 }
@@ -399,9 +409,44 @@ pub fn get_fact(pool: &UserDbPool, id: &str) -> Result<Option<Fact>, AppError> {
     }
 }
 
+/// Has the user forgotten this `(scope, key)`?
+///
+/// The only way back is a deliberate [`write_fact`] on the same key, which
+/// clears the tombstone as part of its own transaction. There is no separate
+/// "un-forget" entry point, and deliberately so: an unused one would be a
+/// primitive built ahead of its callers, and the repo has enough of those.
+/// Add it the day a surface actually needs it.
+///
+/// Consulted by consolidation before it re-derives a fact. Answers `false` on
+/// any read error: a diagnostic query that cannot run must not be able to
+/// block learning outright, and the failure mode it would otherwise create
+/// (a brain that silently stops recording anything) is far worse than the one
+/// it guards against.
+pub fn is_forgotten(pool: &UserDbPool, scope: FactScope, key: &str) -> bool {
+    let Ok(conn) = pool.get() else {
+        return false;
+    };
+    conn.query_row(
+        "SELECT 1 FROM companion_fact_tombstone WHERE scope = ?1 AND fact_key = ?2",
+        params![scope.as_str(), key],
+        |_| Ok(()),
+    )
+    .optional()
+    .unwrap_or(None)
+    .is_some()
+}
+
 /// Delete a fact (rare, audit-trail only). The disk markdown moves to
 /// `semantic/_deleted/<id>.md` rather than being unlinked, so a recovery
 /// cycle can rebuild the index. SQL rows are removed.
+///
+/// **Leaves a tombstone.** The deletion removes the fact but not the episodes
+/// it was derived from, and the sleep cycle reads those episodes again every
+/// night — so without a record of the user's objection the next cycle simply
+/// re-derives what was just deleted, and the correction looks ignored. The
+/// tombstone is written inside the same transaction as the delete: a fact that
+/// disappeared without one would be exactly the silent-relearn case this
+/// exists to prevent.
 pub fn delete_fact(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
     let root = disk::brain_root()?;
     let conn = pool.get()?;
@@ -412,7 +457,29 @@ pub fn delete_fact(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
             |r| r.get::<_, String>(0),
         )
         .optional()?;
+    // Read the identity BEFORE the rows go away. `body_excerpt` carries the
+    // rendered value; it is audit-trail only and is never matched against.
+    let identity: Option<(String, String, Option<String>)> = conn
+        .query_row(
+            "SELECT f.scope, f.fact_key, n.body_excerpt
+             FROM companion_fact f
+             LEFT JOIN companion_node n ON n.id = f.id
+             WHERE f.id = ?1",
+            params![id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()?;
     let tx = conn.unchecked_transaction()?;
+    if let Some((scope, fact_key, excerpt)) = identity.as_ref() {
+        tx.execute(
+            "INSERT INTO companion_fact_tombstone (scope, fact_key, value_excerpt)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(scope, fact_key) DO UPDATE SET
+                 value_excerpt = excluded.value_excerpt,
+                 forgotten_at  = datetime('now')",
+            params![scope, fact_key, excerpt],
+        )?;
+    }
     tx.execute(
         "DELETE FROM companion_provenance WHERE fact_id = ?1",
         params![id],
@@ -540,4 +607,173 @@ fn excerpt_500(s: &str) -> String {
 
 fn short_uuid() -> String {
     util::short_id(8)
+}
+
+#[cfg(test)]
+mod tombstone_tests {
+    //! The forget contract: a fact the user deleted must not come back on its
+    //! own, and must still be re-learnable when the user says so.
+    //!
+    //! These run against the real companion schema (`init_test_user_db`) and
+    //! the real writers, through [`TestHome`] so the markdown a fact write puts
+    //! on disk lands in a temp dir and cannot race another brain test for the
+    //! process-global `PERSONAS_HOME`.
+
+    use super::*;
+    use crate::companion::brain::episodic::{self, EpisodeRole};
+    use crate::companion::brain::test_home::TestHome;
+
+    struct Brain {
+        pool: UserDbPool,
+        // Holds the shared `PERSONAS_HOME` lock for the test's lifetime.
+        _home: TestHome,
+    }
+
+    fn brain() -> Brain {
+        let home = TestHome::new("tombstone");
+        Brain {
+            pool: crate::db::init_test_user_db().expect("test user db"),
+            _home: home,
+        }
+    }
+
+    /// `write_fact` refuses a sourceless fact, so every test needs one real
+    /// episode to cite.
+    fn source_episode(pool: &UserDbPool) -> String {
+        episodic::append_episode(pool, "s1", EpisodeRole::User, "I use VS Code")
+            .expect("append episode")
+    }
+
+    fn write(pool: &UserDbPool, key: &str, value: &str, source: &str) -> String {
+        write_fact(
+            pool,
+            &FactInput {
+                scope: FactScope::User,
+                key,
+                value,
+                sources: std::slice::from_ref(&source.to_string()),
+                importance: 3,
+                confidence: 0.9,
+                supersedes_id: None,
+                contradicts_id: None,
+            },
+        )
+        .expect("write fact")
+    }
+
+    /// Every tombstone on `key`, as `(scope, value_excerpt)`.
+    ///
+    /// Propagates the pool checkout instead of unwrapping it: a fixture that
+    /// panics on acquire hides exactly the saturation the product would, which
+    /// is why the rule counts test files too.
+    fn tombstones_for(
+        pool: &UserDbPool,
+        key: &str,
+    ) -> Result<Vec<(String, Option<String>)>, AppError> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT scope, value_excerpt FROM companion_fact_tombstone WHERE fact_key = ?1",
+        )?;
+        let rows = stmt
+            .query_map(params![key], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    #[test]
+    fn a_fresh_key_is_not_forgotten() {
+        let b = brain();
+        assert!(!is_forgotten(&b.pool, FactScope::User, "preferred_editor"));
+    }
+
+    /// The finding this whole change exists for: deleting a fact must record
+    /// the objection, because the episodes it was derived from survive the
+    /// delete and consolidation reads them again.
+    #[test]
+    fn deleting_a_fact_leaves_a_tombstone_on_its_key() {
+        let b = brain();
+        let src = source_episode(&b.pool);
+        let id = write(&b.pool, "preferred_editor", "VS Code", &src);
+
+        assert!(!is_forgotten(&b.pool, FactScope::User, "preferred_editor"));
+        delete_fact(&b.pool, &id).expect("delete");
+        assert!(
+            is_forgotten(&b.pool, FactScope::User, "preferred_editor"),
+            "a deleted fact must leave a tombstone, or the next cycle re-derives it"
+        );
+    }
+
+    /// Scope is part of the key. Forgetting a user-scoped fact must not
+    /// silence the same key at project or world scope.
+    #[test]
+    fn a_tombstone_is_scoped() {
+        let b = brain();
+        let src = source_episode(&b.pool);
+        let id = write(&b.pool, "preferred_editor", "VS Code", &src);
+        delete_fact(&b.pool, &id).expect("delete");
+
+        assert!(is_forgotten(&b.pool, FactScope::User, "preferred_editor"));
+        assert!(
+            !is_forgotten(&b.pool, FactScope::Project, "preferred_editor"),
+            "forgetting at one scope must not silence another"
+        );
+    }
+
+    /// The other half of the contract. A deliberate write is new evidence, not
+    /// a re-derivation, so it lifts the tombstone — otherwise "forget that"
+    /// would permanently poison the key and the user could never correct it
+    /// back.
+    #[test]
+    fn a_deliberate_write_lifts_the_tombstone() {
+        let b = brain();
+        let src = source_episode(&b.pool);
+        let id = write(&b.pool, "preferred_editor", "VS Code", &src);
+        delete_fact(&b.pool, &id).expect("delete");
+        assert!(is_forgotten(&b.pool, FactScope::User, "preferred_editor"));
+
+        write(&b.pool, "preferred_editor", "Zed", &src);
+        assert!(
+            !is_forgotten(&b.pool, FactScope::User, "preferred_editor"),
+            "an explicit write is the user speaking again; it must clear the tombstone"
+        );
+    }
+
+    /// Forgetting the same key twice is not an error and must not duplicate —
+    /// the tombstone is keyed on (scope, key), and a second delete just
+    /// refreshes it.
+    #[test]
+    fn forgetting_twice_refreshes_rather_than_duplicating() {
+        let b = brain();
+        let src = source_episode(&b.pool);
+
+        let first = write(&b.pool, "preferred_editor", "VS Code", &src);
+        delete_fact(&b.pool, &first).expect("delete 1");
+        let second = write(&b.pool, "preferred_editor", "Zed", &src);
+        delete_fact(&b.pool, &second).expect("delete 2");
+
+        let rows = tombstones_for(&b.pool, "preferred_editor").expect("read tombstones");
+        assert_eq!(
+            rows.len(),
+            1,
+            "one tombstone per (scope, key), refreshed in place"
+        );
+        assert!(is_forgotten(&b.pool, FactScope::User, "preferred_editor"));
+    }
+
+    /// The tombstone records what was forgotten, for the audit trail. It is
+    /// never matched against — forgetting a key forgets the subject, and
+    /// matching on the value would let the next cycle re-derive the same fact
+    /// in different words.
+    #[test]
+    fn the_tombstone_records_the_forgotten_value() {
+        let b = brain();
+        let src = source_episode(&b.pool);
+        let id = write(&b.pool, "preferred_editor", "VS Code", &src);
+        delete_fact(&b.pool, &id).expect("delete");
+
+        let rows = tombstones_for(&b.pool, "preferred_editor").expect("read tombstones");
+        let (scope, excerpt) = rows.first().expect("a tombstone exists");
+        assert_eq!(scope, "user");
+        assert_eq!(excerpt.as_deref(), Some("VS Code"));
+    }
 }

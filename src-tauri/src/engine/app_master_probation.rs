@@ -149,6 +149,16 @@ pub(crate) fn build_packet(
     (title, context_data, suggested_actions)
 }
 
+/// A sha as a human reads it. Bounded to 12 characters, and never padded — a
+/// short sha stays exactly as short as it was recorded.
+fn short_sha(sha: &str) -> &str {
+    let sha = sha.trim();
+    match sha.char_indices().nth(12) {
+        Some((idx, _)) => &sha[..idx],
+        None => sha,
+    }
+}
+
 /// Restate the backbone in sentences. Generated FROM the numbers, so it cannot
 /// contradict them; every unmeasured input is said to be unmeasured.
 fn narrate(
@@ -177,11 +187,26 @@ fn narrate(
     out.push_str(&format!("Executions in the current month: {runs}.\n"));
     match b.proposals_opened {
         Some(n) => out.push_str(&format!(
-            "Proposals opened: {n} unattended fix session(s) dispatched under the branch-only \
-             guardrail.\n"
+            "Proposals opened: {n}. This counts proposal BRANCHES the reconciler observed in \
+             the window carrying at least one commit ahead of the main branch — work that \
+             exists. A dispatched session that authored nothing, and a branch with no commits \
+             on it, are both excluded.\n"
         )),
         None => out.push_str(
-            "Proposals opened: NOT MEASURED — the overnight engine has not run for this \
+            "Proposals opened: NOT MEASURED — no proposal branch has ever been recorded for \
+             this holder, so there is no ledger to read. A hole in the instrument, not a \
+             zero.\n",
+        ),
+    }
+    match b.sessions_dispatched {
+        Some(n) => out.push_str(&format!(
+            "Sessions dispatched: {n} unattended fix session(s) launched under the branch-only \
+             guardrail. This is a LAUNCH count and no part of the delivery reading — a gap \
+             against proposals opened means either a session that delivered nothing or a \
+             reconcile that has not settled the night yet.\n"
+        )),
+        None => out.push_str(
+            "Sessions dispatched: NOT MEASURED — the overnight engine has not run for this \
              project in the window, so there is no dispatch ledger to read.\n",
         ),
     }
@@ -205,15 +230,37 @@ fn narrate(
     }
     match b.gate_pass_rate {
         Some(rate) => out.push_str(&format!(
-            "Gate pass rate: {:.0}% on the repository's OWN declared gate commands, run \
-             against the proposal branches themselves. A command that timed out or could not \
-             be spawned was recorded DID NOT RUN and counted in neither half of the ratio.\n",
+            "Gate pass rate: {:.0}% on the gates this holder is ANSWERABLE for — the \
+             repository's own declared gate commands, run against the proposal branches \
+             themselves. Counted in neither half of the ratio: a command that timed out or \
+             could not be spawned (DID NOT RUN), and a command that was already failing on the \
+             main branch before the proposal existed (INHERITED RED).\n",
             rate * 100.0
         )),
         None => out.push_str(
-            "Gate pass rate: NOT MEASURED — no declared gate command actually ran in the \
-             window. Either the mandate declares none (which is `not configured`, and not a \
-             pass) or every attempt failed to run. With no denominator there is no rate.\n",
+            "Gate pass rate: NOT MEASURED — no declared gate command this holder is answerable \
+             for actually ran in the window. Either the mandate declares none (which is `not \
+             configured`, and not a pass), or every attempt failed to run, or every one that \
+             failed was already red on the main branch. With no denominator there is no rate.\n",
+        ),
+    }
+    // The debt does not disappear because it was excluded from the rate above.
+    match b.baseline_gate_health.as_ref() {
+        Some(h) => out.push_str(&format!(
+            "The repository's OWN gates on its main branch (tip {}, read {}): {} of {} green, \
+             {} red, {} could not be run. A proposal is judged against this, not against zero \
+             — and a red one here is the repository's debt to fix, not the holder's record.\n",
+            short_sha(&h.tip_sha),
+            h.ran_at,
+            h.passed,
+            h.commands,
+            h.failed,
+            h.commands - h.passed - h.failed,
+        )),
+        None => out.push_str(
+            "The repository's OWN gates on its main branch: NOT MEASURED — no baseline sweep \
+             has run for this project, so nothing was excluded from the rate above and every \
+             gate failure in it was attributed to the holder.\n",
         ),
     }
     match b.forbidden_class_violations {
@@ -358,7 +405,7 @@ pub(crate) fn probation_tick(pool: &DbPool) {
 
 /// [`probation_tick`], counted.
 pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
-    probation_tick_summary_with(pool, false)
+    probation_tick_summary_with(pool, false, ProbationScope::default())
 }
 
 /// `force_due` (headless bench only — the tick endpoint's `forceProbation`)
@@ -366,7 +413,36 @@ pub(crate) fn probation_tick_summary(pool: &DbPool) -> ProbationSummary {
 /// probation decision without waiting out `probationDays` of wall clock.
 /// Everything else — the no-double-raise guard, the needs-an-execution
 /// deferral, the decision policy — is exactly the production path.
-pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> ProbationSummary {
+/// Scope for a bench tick: when either field is set, FORCING and DECIDING are
+/// confined to the matching mandate — a scenario's forced probation must never
+/// decide another project's hire. Sweep #21 (2026-08-26): personas-self's
+/// forced final phase retired the KP project's fresh hire (streak 1→2) and the
+/// driver mis-attributed the decision. `None`/`None` = unscoped (the
+/// background tick), which forces nothing and decides whatever is naturally
+/// due or raised.
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct ProbationScope<'a> {
+    pub project_id: Option<&'a str>,
+    pub persona_id: Option<&'a str>,
+}
+
+impl ProbationScope<'_> {
+    fn matches(&self, project_id: &str, persona_id: &str) -> bool {
+        match (self.project_id, self.persona_id) {
+            (None, None) => true,
+            (p, pe) => p == Some(project_id) || pe == Some(persona_id),
+        }
+    }
+    fn scoped(&self) -> bool {
+        self.project_id.is_some() || self.persona_id.is_some()
+    }
+}
+
+pub(crate) fn probation_tick_summary_with(
+    pool: &DbPool,
+    force_due: bool,
+    scope: ProbationScope<'_>,
+) -> ProbationSummary {
     let mut summary = ProbationSummary::default();
     let mandates = personas_engine::app_master::load_mandates(pool);
     if mandates.is_empty() {
@@ -382,6 +458,9 @@ pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> Pro
         if record.probation_decided_at.is_some() || record.probation_review_id.is_some() {
             continue;
         }
+        if scope.scoped() && !scope.matches(&project_id, &record.persona_id) {
+            continue; // another project's hire — not this tick's business
+        }
         let Ok(ends) = chrono::DateTime::parse_from_rfc3339(&record.probation_ends_at) else {
             tracing::warn!(
                 project_id,
@@ -395,7 +474,8 @@ pub(crate) fn probation_tick_summary_with(pool: &DbPool, force_due: bool) -> Pro
             ));
             continue;
         };
-        if !force_due && now < ends.with_timezone(&chrono::Utc) {
+        let forced = force_due && scope.matches(&project_id, &record.persona_id);
+        if !forced && now < ends.with_timezone(&chrono::Utc) {
             continue;
         }
         summary.due += 1;
@@ -550,6 +630,7 @@ pub(crate) fn headless_probation_sweep(
     app: &tauri::AppHandle,
     pool: &DbPool,
     force_due: bool,
+    scope: ProbationScope<'_>,
 ) -> Vec<HeadlessProbationOutcome> {
     use personas_engine::headless;
 
@@ -557,6 +638,9 @@ pub(crate) fn headless_probation_sweep(
     for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
         if record.probation_decided_at.is_some() {
             continue;
+        }
+        if scope.scoped() && !scope.matches(&project_id, &record.persona_id) {
+            continue; // out of this tick's scope — never decide another hire
         }
         let Some(review_id) = record.probation_review_id.clone() else {
             continue; // nothing has been raised for this hire yet
@@ -665,7 +749,7 @@ pub(crate) fn headless_probation_sweep(
         });
     }
 
-    out.extend(anchorless_probation_sweep(app, pool, force_due));
+    out.extend(anchorless_probation_sweep(app, pool, force_due, scope));
     out
 }
 
@@ -688,6 +772,7 @@ fn anchorless_probation_sweep(
     app: &tauri::AppHandle,
     pool: &DbPool,
     force_due: bool,
+    scope: ProbationScope<'_>,
 ) -> Vec<HeadlessProbationOutcome> {
     use personas_engine::headless;
 
@@ -696,6 +781,9 @@ fn anchorless_probation_sweep(
     for (project_id, record) in personas_engine::app_master::load_mandates(pool) {
         if record.probation_decided_at.is_some() {
             continue;
+        }
+        if scope.scoped() && !scope.matches(&project_id, &record.persona_id) {
+            continue; // out of this tick's scope — never decide another hire
         }
         let window_closed = chrono::DateTime::parse_from_rfc3339(&record.probation_ends_at)
             .map(|ends| now >= ends.with_timezone(&chrono::Utc))
@@ -767,6 +855,12 @@ fn anchorless_probation_sweep(
                     _ => 0,
                 }),
                 review_id: None,
+                // The anchorless path has no review row, so the numbers behind
+                // the decision reach the holder's memory from here — otherwise
+                // the only decisions an App master could remember would be the
+                // ones a human happened to click.
+                verdict: Some(verdict.as_str()),
+                unmeasured: &unmeasured,
             },
         );
         if !applied {
@@ -854,6 +948,7 @@ mod tests {
     fn backbone() -> KpAppMasterRollup {
         KpAppMasterRollup {
             proposals_opened: Some(7),
+            sessions_dispatched: Some(9),
             proposals_merged: None,
             proposals_reverted: None,
             gate_pass_rate: None,
@@ -883,6 +978,14 @@ mod tests {
             budget_unmeasured: false,
             ledger_consistent: Some(true),
             autopilot_mode: "suggest",
+            // No baseline sweep has run for this fixture's project — which the
+            // narration must say, because it means nothing was excluded from
+            // the rate on the holder's behalf.
+            baseline_gate_health: None,
+            // M3b: the probation narration says nothing about memory, so the
+            // fixture leaves it unmeasured rather than asserting a shape the
+            // narrator does not read.
+            memory: None,
         }
     }
 
@@ -932,6 +1035,37 @@ mod tests {
         assert!(!n.contains("Gate pass rate: NOT MEASURED"), "{n}");
         // The squash-merge blind spot is stated, not hidden.
         assert!(n.contains("squash merge"), "{n}");
+    }
+
+    /// Sweep #25: the repository's own gate debt is narrated beside the
+    /// holder's rate — and its ABSENCE is narrated too, because "nothing was
+    /// excluded" changes how the rate above should be read.
+    #[test]
+    fn the_repositorys_own_gate_debt_is_narrated_beside_the_holders_rate() {
+        let mut b = backbone();
+        b.gate_pass_rate = Some(1.0);
+        b.baseline_gate_health = Some(personas_engine::app_master_gates::BaselineGateHealth {
+            commands: 9,
+            passed: 7,
+            failed: 2,
+            tip_sha: "abc1234def5678901234".into(),
+            ran_at: "2026-08-26T21:00:00+00:00".into(),
+        });
+        let n = narrate("kp App Master", &record(), Some(&b), 12);
+        assert!(n.contains("7 of 9 green, 2 red, 0 could not be run"), "{n}");
+        // Long shas are shortened for a human, and not padded.
+        assert!(n.contains("tip abc1234def56"), "{n}");
+        assert!(n.contains("the repository's debt to fix"), "{n}");
+        // The exclusion is disclosed on the rate line itself.
+        assert!(n.contains("INHERITED RED"), "{n}");
+
+        // With no baseline, the packet says so rather than implying one.
+        let n = narrate("kp App Master", &record(), Some(&backbone()), 12);
+        assert!(n.contains("gates on its main branch: NOT MEASURED"), "{n}");
+        assert!(
+            n.contains("every gate failure in it was attributed to the holder"),
+            "{n}"
+        );
     }
 
     #[test]

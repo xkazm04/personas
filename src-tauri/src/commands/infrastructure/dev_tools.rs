@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::State;
 
@@ -939,6 +940,12 @@ pub struct DispatchedIdea {
     /// The fleet session spawned for this idea (fleet target only; `None` for
     /// runner dispatches or when the spawn was skipped/failed — see `skipped`).
     pub session_id: Option<String>,
+    /// The isolated worktree an UNATTENDED worker was given to author in, and
+    /// the branch prepared for it there. `None` for a human-driven dispatch,
+    /// which still runs in the project's own checkout under a person who can
+    /// see what it does. See `personas_engine::unattended_worktree`.
+    pub worktree_path: Option<String>,
+    pub branch: Option<String>,
 }
 
 /// An idea that could not be dispatched, and why. Reported per item — a batch
@@ -1051,10 +1058,197 @@ pub async fn dev_tools_dispatch_ideas(
 //   • an overnight worker FINISHES — it never ends its turn on a question no
 //     one is awake to answer (bench sweep #18, 2026-08-25).
 
+/// Root of every project's unattended authoring worktrees:
+/// `<app_data>/worktrees`, honoring `PERSONAS_DATA_DIR` exactly as the DB and
+/// the engine-leader lock do — a parallel test instance gets its own worktree
+/// root for the same reason it gets its own database.
+///
+/// **Outside the repository, deliberately.** The reasoning (the night's own
+/// file walk, the operator's `git status`, `git clean`, test isolation) is in
+/// `personas_engine::unattended_worktree`'s module doc; it is not repeated
+/// here so there is one place to correct it.
+pub(crate) fn authoring_worktrees_root(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    use personas_engine::unattended_worktree::AUTHORING_WORKTREES_DIRNAME;
+    if let Ok(dir) = std::env::var("PERSONAS_DATA_DIR") {
+        if !dir.trim().is_empty() {
+            return Ok(PathBuf::from(dir.trim()).join(AUTHORING_WORKTREES_DIRNAME));
+        }
+    }
+    use tauri::Manager;
+    app.path()
+        .app_data_dir()
+        .map(|p| p.join(AUTHORING_WORKTREES_DIRNAME))
+        .map_err(|e| format!("app data directory unavailable: {e}"))
+}
+
+// ---------------------------------------------------------------------------
+// Recall into the night (App master §8.1)
+// ---------------------------------------------------------------------------
+
+/// Compose the prompt an UNATTENDED worker is actually seeded with: the idea,
+/// then whatever the project and (for an App-master project) the holder already
+/// know.
+///
+/// Until this existed the fleet arm dispatched an amnesiac: the task_executor
+/// arm has injected `dev_memories` since the backlog-memory loop shipped, and
+/// the unattended arm — the one that runs at 03:00 with nobody watching, and
+/// the only one an App master uses — injected nothing at all. A night could
+/// therefore re-attempt an approach that was reverted last week, or re-open a
+/// question the owner already answered.
+///
+/// Two budgeted blocks, both optional, composed by
+/// [`personas_engine::app_master_memory`]:
+///
+/// * **`## Project memory`** — every unattended dispatch, 12 rows / 1.5k chars,
+///   parity with the runner arm. Project memory is a fact about the repository
+///   and outlives any one tenure.
+/// * **`## Your memory (App master)`** — only when the project carries a
+///   mandate: 6 core rows verbatim (core is small by contract) plus the active
+///   tier packed into 2k chars by value, carrying its own "+N omitted" line.
+///
+/// Called BEFORE `unattended::unattended_worktree_task_text`, so the guardrails
+/// still land last and the blocks ride inside the worker task text between the
+/// task and the rules.
+///
+/// **Best-effort, never fatal.** Every failure path degrades to "no block":
+/// a night that cannot read its memory still dispatches, exactly as it did
+/// before this existed.
+fn compose_unattended_recall(
+    db: &crate::db::DbPool,
+    project_id: Option<&str>,
+    prompt: &str,
+) -> String {
+    use personas_engine::app_master_memory as amm;
+
+    let Some(project_id) = project_id.filter(|p| !p.trim().is_empty()) else {
+        return prompt.to_string();
+    };
+
+    let project_block = match crate::db::repos::dev_memories::get_for_injection(
+        db,
+        project_id,
+        amm::PROJECT_MEMORY_ROWS,
+    ) {
+        Ok(rows) => amm::project_block_from_rows(&rows),
+        Err(e) => {
+            tracing::warn!(project_id, error = %e,
+                "unattended recall: project memory unreadable; dispatching without it");
+            None
+        }
+    };
+
+    // The persona lane is App-master-only: an ordinary autopilot project has no
+    // holder, and there is no persona whose memory it would be.
+    let persona_block =
+        personas_engine::app_master::get_mandate(db, project_id).and_then(|record| {
+            let tiered = match crate::db::repos::core::memories::get_for_injection_v2(
+                db,
+                crate::db::repos::core::memories::InjectionScope::for_persona(&record.persona_id),
+                amm::PERSONA_CORE_ROWS,
+                amm::PERSONA_ACTIVE_ROWS,
+            ) {
+                Ok(t) => t,
+                Err(e) => {
+                    tracing::warn!(project_id, persona_id = %record.persona_id, error = %e,
+                    "unattended recall: persona memory unreadable; dispatching without it");
+                    return None;
+                }
+            };
+            let packed = personas_db::memory_recall::pack_by_budget(
+                tiered.active,
+                amm::PERSONA_ACTIVE_BUDGET_CHARS,
+                chrono::Utc::now(),
+            );
+            let block = amm::persona_memory_block(&tiered.core, &packed.selected, packed.omitted)?;
+
+            // The access counters ARE the decay signal: `decay_score` anchors a
+            // memory's age at `last_accessed_at` and boosts on `access_count`.
+            // Injecting without this write starves decay — every memory the App
+            // master actually uses would age as though it had never been read.
+            let ids = amm::injected_ids(&tiered.core, &packed.selected);
+            if let Err(e) = crate::db::repos::core::memories::increment_access_batch(db, &ids) {
+                tracing::warn!(persona_id = %record.persona_id, error = %e,
+                "unattended recall: could not record memory access; decay will under-count");
+            }
+            tracing::debug!(
+                project_id,
+                persona_id = %record.persona_id,
+                core = tiered.core.len(),
+                active = packed.selected.len(),
+                omitted = packed.omitted,
+                "unattended recall: App master memory injected"
+            );
+            Some(block)
+        });
+
+    amm::compose_dispatch_prompt(prompt, project_block.as_deref(), persona_block.as_deref())
+}
+
+/// Prepare the isolated worktree one unattended dispatch will author in.
+async fn prepare_unattended_worktree(
+    db: &crate::db::DbPool,
+    app: &tauri::AppHandle,
+    d: &DispatchedIdea,
+    root: &str,
+) -> Result<personas_engine::unattended_worktree::AuthoringWorktree, String> {
+    let project_id = d
+        .project_id
+        .clone()
+        .ok_or_else(|| "the idea carries no project".to_string())?;
+    let worktrees_root = authoring_worktrees_root(app)?;
+    let main_branch = repo::get_project_by_id(db, &project_id)
+        .ok()
+        .and_then(|p| p.main_branch);
+    personas_engine::unattended_worktree::prepare_authoring_worktree(
+        std::path::Path::new(root),
+        &worktrees_root,
+        &project_id,
+        &d.title,
+        main_branch.as_deref(),
+    )
+    .await
+}
+
+/// Retire the authoring worktrees of one project that have finished their job
+/// (branch merged, or old and clean). Best-effort and quiet: a night that
+/// cannot prune still dispatches.
+pub(crate) async fn prune_project_worktrees(
+    app: &tauri::AppHandle,
+    project: &DevProject,
+) -> Option<personas_engine::unattended_worktree::PruneReport> {
+    let root = std::path::PathBuf::from(&project.root_path);
+    if project.root_path.trim().is_empty() || !root.exists() {
+        return None;
+    }
+    let worktrees_root = authoring_worktrees_root(app).ok()?;
+    if !worktrees_root.exists() {
+        return None; // nothing has ever authored here
+    }
+    let main_branch = personas_engine::app_master_gates::resolve_main_branch(
+        &root,
+        project.main_branch.as_deref(),
+    )
+    .await?;
+    Some(
+        personas_engine::unattended_worktree::prune_authoring_worktrees(
+            &root,
+            &worktrees_root,
+            &main_branch,
+            personas_engine::unattended_worktree::PrunePolicy::default(),
+        )
+        .await,
+    )
+}
+
 /// The IPC-free dispatch core — compose + (for `fleet`) spawn, no auth gate,
 /// no runner batch start (the command wrapper owns that; the overnight tick
-/// only uses the fleet arm). `unattended` appends the branch-only guardrail
-/// block to every fleet prompt and is set ONLY by the autopilot tick.
+/// only uses the fleet arm). `unattended` is set ONLY by the autopilot tick,
+/// and it now decides **two** things, not one: the guardrail block appended to
+/// the fleet prompt, and — since bench sweep #23 — whether the session is
+/// spawned into an isolated authoring worktree
+/// (`personas_engine::unattended_worktree`) instead of the project's shared
+/// checkout. A human-driven dispatch keeps its existing behavior exactly: it
+/// runs in `root_path`, under a person who can see what it does to their tree.
 ///
 /// Per idea: **dispatching IS a decision**, so a still-pending idea is
 /// auto-accepted through [`apply_idea_verdict_by`] (never a raw status write —
@@ -1158,6 +1352,8 @@ pub async fn dispatch_ideas_core(
             root_path: project.as_ref().map(|p| p.root_path.clone()),
             prompt,
             session_id: None,
+            worktree_path: None,
+            branch: None,
         });
     }
 
@@ -1183,14 +1379,49 @@ pub async fn dispatch_ideas_core(
                 spawned.push(d);
                 continue;
             };
-            let task_text = if unattended {
-                personas_engine::unattended::unattended_task_text(&d.prompt)
+            // An UNATTENDED worker never authors in the shared checkout. It is
+            // handed a branch already checked out in an isolated worktree, and
+            // its `cwd` is that worktree — see the module doc of
+            // `personas_engine::unattended_worktree` for the night that made
+            // this non-negotiable. A human-driven dispatch is unchanged: a
+            // person is watching their own tree, and the same `unattended`
+            // flag that already picks the prompt picks the isolation.
+            let (spawn_cwd, task_text) = if unattended {
+                match prepare_unattended_worktree(db, app, &d, &root).await {
+                    Ok(wt) => {
+                        let wt_str = wt.path.to_string_lossy().to_string();
+                        // Recall FIRST, guardrails last: the worker reads the
+                        // idea, then what this project and this holder already
+                        // know, then the rules it may not break. `d.prompt` is
+                        // left as the idea alone — it is the task row's own
+                        // description, and a memory snapshot does not belong in
+                        // a durable record of what was asked for.
+                        let recalled =
+                            compose_unattended_recall(db, d.project_id.as_deref(), &d.prompt);
+                        let text = personas_engine::unattended::unattended_worktree_task_text(
+                            &recalled, &wt.branch, &wt_str,
+                        );
+                        d.worktree_path = Some(wt_str.clone());
+                        d.branch = Some(wt.branch);
+                        (wt_str, text)
+                    }
+                    Err(e) => {
+                        // Refuse, never fall back to the shared checkout — the
+                        // fallback IS the defect.
+                        skipped.push(DispatchSkip {
+                            idea_id: d.idea_id.clone(),
+                            reason: format!("no isolated authoring worktree: {e}"),
+                        });
+                        spawned.push(d);
+                        continue;
+                    }
+                }
             } else {
-                d.prompt.clone()
+                (root, d.prompt.clone())
             };
             match crate::commands::fleet::commands::fleet_spawn_headless_session(
                 app.clone(),
-                root,
+                spawn_cwd,
                 task_text,
                 None,
             )

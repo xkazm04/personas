@@ -163,6 +163,22 @@ pub(super) fn apply_candidates(
                 stats.facts_dropped += 1;
                 continue;
             };
+            // The user deleted this key. Deleting a fact does not delete the
+            // episodes it came from, and this cycle is reading those episodes
+            // again — so without this refusal the correction is reversed
+            // tonight and every night after, silently. Counted, not swallowed:
+            // a refusal nobody can see is indistinguishable from a cycle that
+            // simply learned nothing.
+            if semantic::is_forgotten(pool, c.scope, &c.key) {
+                stats.facts_dropped += 1;
+                stats.facts_dropped_forgotten += 1;
+                notes.refused_forgotten.push(format!(
+                    "**{}/{}** — re-derived from evidence, refused: you asked me to forget it.",
+                    c.scope.as_str(),
+                    c.key
+                ));
+                continue;
+            }
             let id = semantic::write_fact(
                 pool,
                 &semantic::FactInput {

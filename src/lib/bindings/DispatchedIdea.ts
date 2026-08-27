@@ -18,4 +18,11 @@ prompt: string,
  * The fleet session spawned for this idea (fleet target only; `None` for
  * runner dispatches or when the spawn was skipped/failed — see `skipped`).
  */
-sessionId: string | null, };
+sessionId: string | null, 
+/**
+ * The isolated worktree an UNATTENDED worker was given to author in, and
+ * the branch prepared for it there. `None` for a human-driven dispatch,
+ * which still runs in the project's own checkout under a person who can
+ * see what it does. See `personas_engine::unattended_worktree`.
+ */
+worktreePath: string | null, branch: string | null, };

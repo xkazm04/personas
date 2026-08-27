@@ -391,7 +391,7 @@ back to kp.
 | Route | Scope | What it does |
 | --- | --- | --- |
 | `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox, returns `{requestId, status: "pending_approval"}`. Builds nothing. |
-| `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them. 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
+| `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them, and `buildFailureReason` when the build session ended `failed` (§10.7). 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
 | `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
 
 Authorization is one arm in `authorize()` (`management_api.rs:377`): mutating KP calls
@@ -450,9 +450,9 @@ Two changes make it deterministic and observable (2026-08-23):
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
 
-### 10.5 The hire's tool surface — a build attaches only what was requested (2026-08-24)
+### 10.5 The hire's requested surface — a build attaches only what was asked for (2026-08-24, connectors 2026-08-26)
 
-A kp hire request names the tool surface it wants (`spec.connectors`, typically
+A kp hire request names the surface it wants (`spec.connectors`, typically
 `["github"]` for an App master). The one-shot build's design pass is free-running,
 so it used to invent whatever tool vocabulary it liked on top: the 2026-08-24 live
 bench had **two of five real builds** come back carrying `text_analysis`,
@@ -494,16 +494,119 @@ A tool survives when **any** of:
    they pass on a code-authored allow-list, not on a model-authored claim;
 4. it is a **command runner** (`run_command`, `bash`, …) **and** `runs_commands`
    is true. The approval gates are literally the commands the App master must run
-   before it may propose a diff (§12.1); with no gates declared, no runner.
+   before it may propose a diff (§12.1); with no gates declared, no runner. Only
+   **one** alias survives — see "One runner, not five" below.
 
 Everything else is dropped.
 
+**One runner, not five (2026-08-26).** Rule 4 admits a command runner, and
+`COMMAND_TOOLS` lists five spellings of it. Sweep #23's **kp-default** hire had
+the design pass emit two — `run_command` *and* `bash` — the verification pass ran
+its commands through one of them, and the gate held the build on
+`1 tool(s) reported as available but never actually called (bash)`. That is the
+same over-provisioning P6d removed, one level down: the build was not asking for
+two capabilities, it was spelling one twice.
+
+So exactly one runner now survives. `canonical_command_runner` scans every alias
+the build names — tools **and** `tool_hints`, because `run_tool_tests` unions the
+hints into the set it tests, so the two lists must not settle on different
+spellings — and keeps the winner by `COMMAND_TOOLS` order. The rest are dropped
+into `removed_duplicate_runners`, logged with a message distinct from the
+out-of-surface detaches (these were *inside* the surface; reading them as
+"outside the requested surface" would send the next investigator to
+`spec.connectors`, which is not where the answer is) and reported in
+`setup_detail.notes`.
+
+> **`run_command` leads the list on observed behaviour, not on a list
+> membership — and the lists disagree.** It is *not* on
+> `tool_tests::PLATFORM_BUILTIN_TOOLS`; neither is `bash`, so neither gets a
+> free pass from the gate. The code-authored list that *does* mention them,
+> `connector_readiness::is_native_cli_capability`, names `bash` and `shell` as
+> Claude Code natives and does **not** name `run_command` — i.e. it points the
+> other way. The order follows the one piece of direct evidence: in sweep #23
+> `run_command` is what actually got exercised and `bash` is what was left
+> uncalled. If a later sweep shows the reverse, reorder `COMMAND_TOOLS` — the
+> preference is a list order rather than an `if` precisely so that is a one-line
+> change.
+
+No other allowed family gets this treatment and none should invent one:
+`BASELINE_TOOLS` are on `PLATFORM_BUILTIN_TOOLS` and pass on a code-authored
+claim, and `TRANSPORT_TOOLS` are each exercised with a real curl — neither family
+can leave a sibling uncalled.
+
+**The connectors (2026-08-26 — the gap this section used to leave open).** The
+first pass stopped at tools, on the reasoning that the bench evidence named tools
+and that connectors additionally drive credential injection, readiness and
+`setup_detail`. **Bench sweep #23** (2026-08-26, the first hire on the `ascent`
+repo) then produced the connector-shaped version of the same defect. The `ascent`
+codebase mentions GCP, so the design pass attached a **Google** connector on top
+of the `["github"]` the hire actually asked for, and the build died on
+
+```text
+Validation error: Google OAuth client credentials are missing.
+Set one of: GCP_DESKTOP_CLIENT_ID/GCP_DESKTOP_CLIENT_SECRET …
+```
+
+An over-provisioned *tool* costs a held promotion. An over-provisioned
+*connector* costs more, because a connector is the thing that carries a
+**credential requirement** into every downstream pass: `run_tool_tests`'
+connector-driven injection walks `agent_ir.required_connectors` and reaches the
+Google/Microsoft OAuth resolvers per connector (`engine/runner/credentials.rs`),
+and promote resolves the same list into `credentialLinks`, `setup_status` and
+`setup_detail`. A connector nobody asked for therefore turns a missing secret
+into the hire's problem.
+
+> Honest limit on the post-mortem: the frame that *propagated* sweep #23's string
+> was not pinned down. Most of the build path swallows the OAuth resolver's error
+> (`…().ok()` at `engine/runner/credentials.rs`), and the one chain that does
+> propagate it — `run_scripted_connector_tests` → `run_healthcheck` →
+> `resolve_oauth_token` — sits behind `PERSONAS_SCRIPTED_TOOL_TESTS`, which is set
+> nowhere in the repo. Do not read the fix as "we found the `?`". The fix is that
+> a connector the hire never requested has no business being in the IR at all, on
+> any of those paths.
+
+So `constrain_agent_ir` now trims connectors by the same rule. A connector
+survives when **either**:
+
+1. it belongs to a **requested connector** — its name or its declared
+   `service_type` matches, by the same bidirectional-substring rule with the same
+   short-name guard, so "a github connector" and "a github tool" mean the same
+   thing; or
+2. it **binds no user credential**, and so can never reach the validation this
+   exists to prevent. Two sources, unioned: the code-authored
+   `BASELINE_CONNECTORS` (mirrors `tool_tests::PLATFORM_CONNECTORS` —
+   `personas_database`, `messaging`, …, matched EXACTLY so a model-authored
+   `personas_gmail` mints nothing), plus whatever the DB glue resolved out of the
+   live catalog as `ConnectorClass` other than `Credential` — `codebase`,
+   `local_drive`, `twin`, `obsidian_memory`. An App master that lost `codebase`
+   would lose the project it was hired to own.
+
+A name the catalog does not know is credential-bearing and is dropped: fail
+closed, because a model-invented connector name is exactly what sweep #23 was.
+
+`service_flow` is trimmed in the same pass, and **before** it would matter:
+`AgentIr::effective_connectors_json` derives connectors from `service_flow` when
+`required_connectors` is empty, so a flow step left behind would re-mint the
+connector the trim had just removed. Both shapes are read (the current prompt's
+`{connector_name, action_label, order}` objects and legacy bare strings); a step
+that names no connector, and the two names the derivation itself excludes
+(`Local Database`, `In-App Messaging`), are left alone.
+
+Every connector and flow step dropped is logged one line per detach at `info`,
+counted in the summary line, **and** written into `setup_detail.notes` at promote
+next to the design-pass hygiene notes (§10.6) — a dropped connector is a fact
+about this persona's reach, and reach is what the operator reads that surface
+for.
+
 **The enforcement points.** `build_session::kp_surface::apply_kp_tool_surface` is
-the DB glue (read the link, log every detach) and is called at the two — and only
-two — places a build's tool set is consumed:
+the DB glue (read the link, resolve the credential-free connector names from the
+catalog, log every detach) and is called at the two — and only two — places a
+build's tool and connector sets are consumed:
 
 - `oneshot::run_test_pass`, **before** `run_tool_tests`, so the gate exercises a
-  small real surface instead of holding on an invented one;
+  small real surface instead of holding on an invented one — and so the
+  connector-driven credential injection inside `run_tool_tests` never reaches an
+  OAuth connector nobody requested;
 - `promote_build_draft_inner` (`commands/design/build_sessions.rs`), **before**
   `prepare_tool_actions`, so the persona is attached the same surface that was
   verified. Filtering only at test time would verify one set and ship another.
@@ -516,20 +619,24 @@ Limits worth knowing:
 
 - The pass is **purely subtractive**. An allowed name the design pass did not emit
   stays absent — nothing is injected to make a surface look complete.
-- It does **not** narrow `required_connectors`. An over-provisioned *connector*
-  can also produce an unverified entry, but connectors additionally drive
-  credential injection, connector readiness and `setup_detail`; the bench evidence
-  named tools. Open.
+- ~~It does **not** narrow `required_connectors`.~~ **Closed 2026-08-26** by the
+  connector rule above, after sweep #23 turned the open item into a dead build.
+- A legacy `kp_link` (written before 2026-08-24) carries an empty
+  `requested_connectors`, so it now vouches for **no connector at all** — the same
+  honest default the tool pass already applied. Such a hire keeps only its
+  credential-free connectors.
 - A hire whose design pass produces **nothing** inside the requested surface ends
   with zero tools, which `run_tool_tests` reports as the defensible empty pass.
   That is logged at `warn` rather than failed — it is a signal about the design
   pass, not about the persona.
-- The policy list `TRANSPORT_TOOLS` intentionally mirrors
-  `build_sessions::GENERIC_TOOL_NAMES`; they are meant to name the same tools, so
-  change them together.
+- The policy lists mirror lists elsewhere on purpose: `TRANSPORT_TOOLS` ↔
+  `build_sessions::GENERIC_TOOL_NAMES`, `BASELINE_CONNECTORS` ↔
+  `tool_tests::PLATFORM_CONNECTORS`. Each pair is meant to name the same things,
+  so change them together.
 
-Tested in `personas-engine` (11 checks in `kp_tool_surface`), where the crate's
-test binary actually runs — see §13.8 for why the pure logic lives there.
+Tested in `personas-engine` (19 checks in `kp_tool_surface` — 4 for the connector
+rule, 4 for the canonical runner), where the crate's test binary actually runs —
+see §13.8 for why the pure logic lives there.
 
 ### 10.6 Design-pass hygiene — a suggested trigger never fails the hire build (2026-08-25)
 
@@ -636,6 +743,30 @@ Tested in `personas-core` (33 checks in `validation::design_pass_hygiene`) —
 (`STATUS_ENTRYPOINT_NOT_FOUND`), so the pure logic lives where the tests run, the
 same reasoning as §10.5.
 
+### 10.7 Build stalls fail fast — an unattended design pass that stops converging (2026-08-26)
+
+- **The burn.** Bench sweeps #21 / #23 / #24 caught one-shot hire builds looping:
+  session `7991b75d…` logged `Gate-pass entry … events=["Progress","Progress"] …
+  turn=N resolved=0 coverage_caps=0` for all **12** turns — each turn a real
+  Claude session, ~64 minutes total — and only then failed at `MAX_TURNS`. The
+  P6h retry built the same spec in ~15 minutes, so the loss was the looping, not
+  the work. Nothing compared a turn to the one before it.
+- **The guard.** `runner.rs` now fingerprints every turn on three signals —
+  `resolved_cells.len()`, `coverage.len()`, and a hash of the design output
+  (resolved cells + `agent_ir`, so a rewrite of an already-resolved cell still
+  counts as progress). `K` consecutive flat turns (default **3**, override
+  `PERSONAS_ONESHOT_STALL_TURNS`, `0` disables) end the session as `failed` with
+  `design_pass_stalled: N turns without resolution`. **Unattended builds only**
+  — an interactive session is *supposed* to sit flat while the human answers a
+  clarifying question, so `stall_turns` is 0 there.
+- **kp can read the reason.** `GET /api/kp/persona-requests/{id}` now returns
+  `buildFailureReason` alongside `buildPhase`: the session row's
+  `error_message`, and only when the phase is `failed`. Without it a bench driver
+  sees `buildPhase: "failed"` and cannot tell a stall from a validation refusal
+  or a dead CLI without opening the desktop app's log.
+- Tested in `personas-engine` (13 checks in `build_stall`) — the predicate is
+  pure (`stalled(history, k)`), same reasoning as §10.5 and §10.6.
+
 ---
 
 ## 11. App master (P4) — the mandated hire
@@ -699,6 +830,7 @@ orphaning a project and a team.
 | (e) triggers | `schedule` → `TriggerKind::Schedule` with kp's own `{cron}`. `pr` and `kpi_tick` have **no mapping** and are recorded as unsupported. |
 | (f) autopilot | The project is set to `suggest` — probation. Never `full`; activation is a human decision at 11.5. |
 | (g) tenure | `app_master_mandate:<project_id>` holds the mandate + `probation_ends_at` (approval time + `tenure.probationDays`) + the retirement criteria. |
+| (h) memory (M3a) | Seed both existing stores so the first night is not amnesiac. **Persona lane** (`persona_memories`), at most five rows: ONE `instruction`/importance-5 identity row promoted to tier `core` (mission, rung, forbidden-class count, owner, monthly budget, probation days, tagged `identity,kp_hire`, provenance stated in the text as "Hired via kp on `<date>`"), plus `fact`/importance-3 rows for the declared gates, hot spots and risk areas and one `instruction`/importance-4 row for the objectives (all tagged `dossier,kp_hire`, all at the default tier). **Project lane** (`dev_memories`, `source_kind = kp_dossier`, `source_id` = the dossier field name, `category = fact`, importance 6): `declared_gates`, `hot_spots`, `risk_areas` — idempotent, so they outlive the tenure and a re-hire inherits rather than duplicates them. Runs **only if (g) persisted** — an identity memory stating a rung nothing enforces would be recalled as true forever — and is **best-effort** like every other step. |
 
 **Shape mismatches, resolved explicitly.** `DevKpi` has no `key` and no
 `window` column, so kp's `kpiKey` and `windowDays` ride in `measure_config`
@@ -709,6 +841,21 @@ Personas side knows how to read a kp objective automatically, and a `codebase`
 kind would claim an automated reading no binding exists for. A **null baseline
 stays null** — `baseline_value` is nullable, so "nobody measured this" survives
 the write.
+
+**Step (h) is the ONLY writer of tier `core`** (registry `agent-memory` /
+memory-governance). Core is always-included in recall, so each core row is a
+permanent tax on every future prompt, and an agent that can promote its own
+beliefs to always-included can rewrite its own mandate. Every other memory
+writer — night outcomes, reconcile events, probation decisions — writes
+`learned`/`constraint` at the default tier, and agent-inferred claims about the
+owner go through the memory *proposal* lane. Two known limits, carried rather
+than hidden: kp's `AppMasterSpec` sends `app.dossierId` and **not the dossier**,
+so `hotSpots`/`riskAreas` are seeded only if an (optional, forward-compatible)
+`appMaster.dossier` block travels — otherwise their absence becomes a setup note
+rather than a plausible substitute; and because the identity row carries the hire
+date, a re-hire on the same project adds its own core row beside the
+predecessor's instead of deduping into it. That is deliberate: two identity rows
+on one persona *is* a re-hire.
 
 **Partial success is reported, never rounded up.** Every step that fails
 becomes a note, not an abort: the persona and its build are already real. The
@@ -778,16 +925,20 @@ persona — the v1 payload is unchanged, byte for byte.
 kp's backbone treats an absent reading as a coverage gap and a present `0` as a
 measurement.
 
-**Every reading below is windowed to the holder's TENURE, not the project's
+**Every reading about the HOLDER is windowed to its TENURE, not the project's
 month** — see §11.4.1. "This month" in the table means "this month, from this
-hire onwards". What is real today, and what is not:
+hire onwards". The one field that is *not* windowed is `baselineGateHealth`,
+which is a reading about the repository rather than the holder and says so.
+What is real today, and what is not:
 
 | Field | State | Source / why |
 | --- | --- | --- |
-| `proposalsOpened` | **real** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` **since the hire** (§11.4.1; the table carries no actor column, so the window is the whole attribution). Each dispatch carries the branch-only guardrail, so this counts sessions dispatched to author a branch — not branches confirmed on a remote. `None` when the engine has not run for the project (no ledger, not zero). |
+| `proposalsOpened` | **real (P6o)** | `COUNT` over `app_master_proposals` for **this persona** of branches whose `first_seen_at` falls in the tenure window **and that carry at least one commit** ahead of the project's main branch. Delivery is counted from what the reconciler observed to exist, never from what was launched. `None` **only** when this holder has no proposal row at all — the same rule as `proposalsMerged`. **It may lag `sessionsDispatched`**: the reconciler is a 30-minute tick and the dispatch is asynchronous, so between a night and the next settle there are sessions launched and no branches recorded yet. Under-reporting delivery until the observation is made is the correct direction of error. |
+| `sessionsDispatched` | **real (P6o)** | `SUM(dispatched_count)` over the project's `autopilot_night_runs` **since the hire** (§11.4.1; the table carries no actor column, so the window is the whole attribution). A **launch** count and nothing more — it says the engine spawned workers under the branch-only guardrail, not that any of them authored anything. It feeds **no** delivery rule on kp's side; it exists so the gap against `proposalsOpened` stays visible. `None` when the engine has not run for the project (no ledger, not zero). |
 | `proposalsMerged` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `merged_at` falls in the tenure window. Set by the reconciler when `git merge-base --is-ancestor <branch> <main_branch>` says the tip landed; the date is the committer date of the earliest main-branch commit that descends from it. `None` **only** when this holder has no proposal row at all — with no ledger there is nothing to be right about. Once one of its proposals exists, `0` is a real reading. |
 | `proposalsReverted` | **real (P5a)** | `COUNT` over `app_master_proposals` for **this persona** where `reverted_at` falls in the tenure window. A merged proposal is reverted when a later main-branch commit says `Revert "<subject>"` or `This reverts commit <sha>` about one of the commits captured on the branch at discovery. Same `None` rule. |
-| `gatePassRate` | **real (P5a)** | `passed / (passed + failed)` over **this persona's** `app_master_gate_runs` in the tenure window — runs of the repository's **own declared gate commands** against proposal branches. A command that timed out or could not be spawned is recorded `did_not_run` and sits in **neither** half. `None` when no gate command ran in the window, including the *not configured* case (a mandate that declares none), which is not a pass. |
+| `gatePassRate` | **real (P5a), baseline-relative (sweep #25)** | `passed / (passed + failed)` over **this persona's** `kind = 'proposal'` `app_master_gate_runs` in the tenure window — runs of the repository's **own declared gate commands** against proposal branches. Two things sit in **neither** half: a command that timed out or could not be spawned (`did_not_run`), and a command that was **already failing on the project's main branch** when the proposal was gated (`inherited_red`, §12.2.2) — a proposal cannot be held to a gate that was red before it existed. `None` when that denominator is 0, which now includes a window where every command was inherited-red, and the *not configured* case (a mandate that declares none), which is not a pass. |
+| `baselineGateHealth` | **real (sweep #25)** | `{commands, passed, failed, tipSha, ranAt}` — what the same declared commands say about the project's **own main branch** at its current tip (§12.2.2). Project-scoped and deliberately **not** windowed to the tenure: the repository's debt is a fact about the repository, and clipping it to a hire would make it read as something the hire did. It carries no rate of its own — the number a reader needs is "7 of 9 green on main" beside the holder's rate, because excusing a hire for inherited red is not the same as claiming the repository is healthy. `None` until a baseline sweep has run for the project (no declared gates, an unresolvable main tip, or a reconciler that has not reached it yet). |
 | `forbiddenClassViolations` | **real** | `COUNT` over `app_master.forbidden_class_violation` events for the project in the tenure window. A `0` here is a genuine reading. The holder is named only inside the event's **encrypted** payload, so there is no persona predicate to add — the window *is* the attribution here. |
 | `kpiDeltas[]` | **real** | The project's App-master-seeded KPIs. `baseline` is re-anchored to the last **production** `dev_kpi_measurements` reading at or before `hiredAt` when one exists, so a re-hire is not measured from its predecessor's starting line; with no such reading the stored `baseline_value` stands (a missing history is not a reason to invent a start). `measured` is `current_value.is_some() && last_measured_at.is_some()` — a value with no reading time is a leftover, not a reading. |
 | `budgetReservedUsd` | **real** | `SUM(projected_cost_usd)` over the tenure window's night runs. That projection **is** the reservation: it is taken before any session spawns and it is what the ceiling is checked against. `None` when no night run happened. |
@@ -795,6 +946,7 @@ hire onwards". What is real today, and what is not:
 | `budgetUnmeasured` | **real** | `runs > 0 && cost_usd == 0.0` — the subscription-auth case. "It cost nothing" and "nobody was counting" are opposite findings that look identical in a number. |
 | `ledgerConsistent` | **real** | Cross-ledger check over the tenure window's dispatched sessions: every session the night-run ledger claims to have dispatched must have a `dev_tasks` row, written by a different function on the same path. `None` when nothing was dispatched — there is no honest verdict on an empty set. |
 | `autopilotMode` | **real** | The project's `autopilot_mode:<id>` row; `off` when there is none (the honest floor). |
+| `memory` | **real (M3b)** | `{core, active, working, archived}` — `memories::count_by_tier(persona)`, this holder's own memories per tier. Persona-scoped and deliberately **unwindowed**: memory is what the holder has accumulated over its whole tenure, which is the point (tenure made visible on kp's roster). Per tier rather than as a total because the tiers are not comparable — `core` is the always-included identity seeded at hire (exactly one row per hire, §11.2), `active` is the recall workhorse, `working` is raw capture, `archive` never reaches a prompt. `archived` on the wire, `archive` in the column. `None` when the persona holds **nothing** (seeding failed, or a hire predating M3a) and also on a query error: four zeros would read as a measurement of an agent that is accumulating. |
 
 Lifecycle gains `probation_review` with `{decision, note}`.
 
@@ -849,6 +1001,42 @@ start, `headless_incomplete_streak`, `probation_decided_at` and the pending
 review id. Inheriting the streak would let a fresh hire be retired on its first
 `incomplete` because its predecessor had already been extended once.
 
+#### 11.4.2 Delivery counts what exists, not what was launched
+
+> Found by **bench sweep #23 (2026-08-26, `systedo-case`)**, fixed the same day.
+
+The night dispatched one worker. The worker did the right thing: it read the
+seeded task, found the variable already listed (commented) in `.env.example`,
+concluded there was nothing to do, and authored **nothing** — no branch, no
+commit. The App-master rollup still reported `proposalsOpened: 1`, because P4
+had defined that field as `SUM(dispatched_count)` over `autopilot_night_runs`.
+kp's `delivery` rule reads `proposalsOpened`, so the scenario's
+`minProposalsOpened >= 1` passed on a night that delivered nothing. The
+backbone's delivery rule was lying in the agent's favour.
+
+**A dispatched session is not an opened proposal, and a commit-less branch is
+not one either.** `proposalsOpened` is now a `COUNT` over `app_master_proposals`
+— the ledger the reconciler (§12) maintains — of branches this holder's tenure
+window first saw carrying **at least one commit** ahead of the project's main
+branch. `git switch -c` costs nothing and delivers nothing, so the reconciler
+records such a branch (to stop re-gating it) with an empty commit list and the
+count excludes it. `proposalsMerged` and `proposalsReverted` are unchanged: all
+three delivery numbers now come from the same observed branches.
+
+The launch count did not disappear — it is reported honestly, under its own
+name, as the additive `sessionsDispatched`, and it feeds **no** delivery rule.
+
+**`proposalsOpened` may lag `sessionsDispatched`, and that is correct.** The
+reconciler is a 30-minute tick and the dispatch is asynchronous, so between a
+night's dispatch and the next settle there are sessions launched and no branches
+recorded yet. Until the observation is made the rollup under-reports delivery —
+the opposite direction of error from the one sweep #23 found, and the only one
+worth having.
+
+Branches authored in a P6n unattended **worktree** are counted: branches are
+repository-global, so `for-each-ref` in the shared checkout sees them. Pinned by
+`unattended_worktree::tests::a_worktree_authored_branch_is_visible_to_the_reconciler`,
+which now carries the ledger assertion too.
 
 ### 11.5 Probation review
 
@@ -955,19 +1143,114 @@ Per mandated project with a real, git work-tree `root_path`:
 | Step | What happens |
 | --- | --- |
 | discover | `git for-each-ref refs/heads/autopilot/*` — the namespace the unattended dispatch guardrail *tells* the session to use, not a guess about naming. Each branch is upserted into `app_master_proposals` with its tip and the commits it carries relative to the main branch. |
-| gate | Up to 3 not-yet-gated proposals per tick get §12.1's commands run against them, one `app_master_gate_runs` row each. The attempt is stamped either way, so a *not configured* project is answered once rather than retried forever. |
-| merge | `git merge-base --is-ancestor <tip> <main_branch>` ⇒ `merged_at` = the committer date of the earliest main-branch commit descending from the tip (the merge commit), falling back to the tip's own date on a fast-forward. |
+| baseline | §12.1's commands are run against the project's **own main branch**, once per main tip, and recorded `kind = 'baseline'` (§12.2.2). The steady-state tick resolves the tip, finds a current baseline and spawns nothing. Ordered **before** the gate step so this tick's proposal runs are classified against a current baseline. |
+| gate | Up to 3 proposals per tick whose **current tip** has no gate run yet get §12.1's commands run against them, one `app_master_gate_runs` row each. A failure on a command that was already red on the baseline is stamped `inherited_red`. A project that declares no gates is stamped `gates_ran_at` and answered once rather than retried forever. |
+| merge | For a proposal that **carries commits**: `git merge-base --is-ancestor <tip> <main_branch>` ⇒ `merged_at` = the committer date of the earliest main-branch commit descending from the tip (the merge commit), falling back to the tip's own date on a fast-forward. |
 | revert | For a merged, not-yet-reverted proposal: `git log <main> --since=<merged_at>` scanned for `Revert "<subject>"` or `This reverts commit <sha>` naming one of the captured commits. |
 
 **The commit list is captured at discovery, before any merge.** After a merge
 the branch is an ancestor of main and the fork point no longer isolates its
-commits — revert detection needs the subjects it had beforehand. Re-seeing a
-branch refreshes its tip but never overwrites the captured commits and never
-clears an observation already made.
+commits — revert detection needs the subjects it had beforehand.
 
 **The main branch is resolved, not assumed**: `dev_projects.main_branch` if that
 ref exists, else `main`, else `master`. If none resolves the project is skipped
 with a warning rather than judged against a branch nobody merges into.
+
+#### 12.2.1 An empty snapshot is a race, not an observation (bench sweep #24)
+
+Sweep #24 (2026-08-26, `ascent`) caught the tick between `git switch -c` and the
+worker's first commit. The P6n worktree worker created
+`autopilot/document-alert-webhook-url-in-env-example-bench` at 20:26 and
+committed at 20:27:33; the settle poll saw the branch at **20:26:16** and
+recorded it with `commits: '[]'`. An empty branch is trivially an ancestor of
+main, so `merged_at` was stamped too — at a moment *earlier than
+`first_seen_at`* — and P5a's "re-seeing a branch never clears an observation"
+rule froze the whole snapshot. P6o's `proposalsOpened` (which requires non-empty
+commits) read **0** forever, `proposalsMerged` read **1** for a branch nobody
+merged, and the declared gates had been run against a commit-less branch, i.e.
+against main. The night delivered a real proposal and the backbone recorded the
+opposite.
+
+Three rules, in `engine/app_master_gates.rs`:
+
+| Rule | Where |
+| --- | --- |
+| **Commits are re-captured while the branch is unmerged.** `upsert_proposal` refreshes the stored list when it is empty, or when the tip moved on a branch that is neither merged nor reverted. A capture that came back empty never overwrites a real one — a failed `git log` is not work that vanished. A **merged or vanished** branch keeps its last-known commits: that snapshot is what revert detection needs, and is the only thing the stickiness rule ever had to guard. Filling an empty snapshot in also **clears a merge stamped on it**, retiring an already-corrupted row without a data migration. | `upsert_proposal` |
+| **A branch with zero commits ahead of main is never merged or reverted.** `mark_merged` / `mark_reverted` refuse a commit-less row outright (the guard is in the ledger, not only at the call site), the reconciler skips such a proposal before it asks git anything, and `proposal_counts_since` excludes commit-less rows from `merged`/`reverted` the way it already excluded them from `opened`. `merged_at` stays `NULL`, which keeps meaning *not observed*. | `mark_merged`, `mark_reverted`, `proposal_counts_since`, `reconcile_one` |
+| **A commit-less branch is not gate-worthy.** `run_declared_gates` reads the proposal ledger (refreshed moments earlier by the discovery step) and, when the branch carries nothing, records every declared command `did_not_run` with reason `no_commits_yet` — in neither half of the pass rate — instead of gating main under a proposal's name. A branch with no ledger row at all is gated as before: nothing there knows what it carries. | `run_declared_gates` |
+
+**Gate runs are keyed by branch × tip.** `app_master_gate_runs.head_sha` records
+the tip a run judged, and the reconciler selects proposals whose *current* tip
+has no run yet (`gates_ran_for_tip`) rather than proposals that were never gated
+(`gates_ran_at IS NULL`). A moved tip re-gates exactly once; an unmoved tip is
+already answered. `gates_ran_at` survives as the last-attempt stamp and as the
+short-circuit for *not configured*, where nothing is recorded and there is no
+tip-keyed row to carry the answer. Rows written before this carry `head_sha =
+''`, which `gates_ran_for_tip` deliberately never matches.
+
+Pinned by five tests in `app_master_gates::tests`, four of them against a real
+throwaway repository:
+`a_branch_seen_before_its_first_commit_is_re_captured_not_frozen` (the
+regression itself, end to end),
+`the_ledger_refuses_a_merge_on_a_commit_less_proposal`,
+`an_empty_capture_never_overwrites_a_real_snapshot`,
+`a_real_merge_is_still_observed_and_keeps_its_pre_merge_commits` and
+`a_moved_tip_re_gates_once_and_an_unmoved_tip_does_not`.
+
+#### 12.2.2 The pass rate is baseline-relative (bench sweep #25)
+
+> Found by **bench sweep #25 (2026-08-26, `ascent`)**, fixed the same day.
+
+The App master's proposal recorded a `gatePassRate` of **0%**. It had broken
+nothing: `npm run lint` and `npm run test` **fail on that repository's `main`
+already** — 12 failing tests and a `react/no-unescaped-entities` error — and
+`personas` is in the same state (`census:check` red; `check:budget` needs a
+prior build). The proposal was being scored against gates that were red before
+it existed, and the backbone's `gates` rule (weight 20 in kp's
+`backbone_score()`) turned inherited debt into a verdict about a hire.
+
+**A gate judges what the change CHANGED.** That is what `gate-sees-target`
+means once the target has a history — a check that cannot distinguish "you
+broke this" from "this was already broken" is not seeing its target, it is
+seeing the repository. So the same declared commands are also run against the
+project's **own main branch**:
+
+| Rule | Where |
+| --- | --- |
+| **The baseline is taken once per main tip.** `run_baseline_gates` resolves `main_branch`'s tip, returns immediately when a baseline already exists for it (`baseline_ran_for_tip`), and otherwise runs §12.1's commands in the same throwaway worktree with the same borrowed environment (§12.4), recording rows with `branch = <main_branch>`, `head_sha = <main tip>` and `kind = 'baseline'`. It **refreshes when — and only when — main moves**, so the steady-state tick spawns nothing. | `run_baseline_gates`, `baseline_ran_for_tip` |
+| **A command red on the baseline is `inherited_red` on the proposal.** Before recording, each `failed` proposal run is checked against `baseline_red_commands` (the commands that failed on the project's *current* baseline). A match leaves the pass-rate denominator — it cannot be the proposal's fault — and the flag is stored on the row, so the exclusion is auditable rather than invisible. The stamp is fail-closed: it is only ever set on a `failed` **proposal** run. | `run_declared_gates`, `GateRun::marked_inherited_red` |
+| **A command green on the baseline and red on the proposal is a real failure.** Counted, exactly as before. The exclusion must not swallow a failure the holder caused, which is the failure mode the rule itself could introduce. | `GateTally` |
+| **`did_not_run` is unchanged** — still in neither half (§12.5). A baseline command that `did_not_run` is **not** evidence that the repository is red, so it excludes nothing: "we could not measure the baseline" and "the baseline was broken" are different findings. | `baseline_red_commands` |
+| **A baseline row never enters a holder's window.** Every window query filters `kind = 'proposal'` — including the tip-keyed gating selector. A red repository must not read as a hire with a 0% rate; that is the bug, inverted. | `gate_outcomes_since`, `gates_ran_for_tip` |
+
+The reading is therefore a four-way split, not a ratio with two holes hidden in
+it: `GateTally { passed, failed, inheritedRed, didNotRun }`, with
+`gatePassRate = passed / (passed + failed)` and **`null` when that denominator
+is 0** — a window in which every command was inherited-red or did-not-run has no
+rate, and `0.0` would be a verdict nobody measured.
+
+**The debt does not disappear because it was excluded.** Excusing a hire is not
+the same as claiming the repository is healthy, so the baseline is published
+beside the rate as `baselineGateHealth` (§11.4) and narrated in the probation
+packet — "the repository's OWN gates on its main branch (tip …): 7 of 9 green,
+2 red" — and when **no** baseline exists the packet says *that*, because it
+means nothing was excluded and every failure in the rate was charged to the
+holder.
+
+**What it costs.** One extra gate sweep per project on the tick after main
+moves, against a per-tick proposal cap of 3 (`MAX_PROPOSALS_GATED_PER_TICK`).
+On a repository whose main advances several times a day that is the dominant
+cost of this feature, and it is the price of the rate meaning anything.
+
+Pinned by seven tests in `app_master_gates::tests`, four against a real
+throwaway repository:
+`a_gate_already_red_on_main_is_inherited_not_charged_to_the_proposal`,
+`a_gate_green_on_main_and_red_on_the_proposal_is_a_real_failure`,
+`the_baseline_is_taken_once_per_main_tip_and_refreshed_when_main_moves`,
+`a_window_of_only_inherited_red_and_did_not_run_has_no_rate`,
+`baseline_rows_are_excluded_from_the_holders_window`,
+`inherited_red_is_refused_on_anything_but_a_failed_proposal_run` and
+`rows_written_before_the_baseline_rule_still_read_as_proposal_runs`.
 
 ### 12.3 Why the gates run there and not at dispatch
 
@@ -1026,6 +1309,12 @@ untouched. `a_gate_sees_the_source_checkouts_installed_dependencies` pins both
 halves: the gate resolves `node_modules/marker` inside the worktree, and the
 source's copy still exists afterwards.
 
+**Authoring had none of this until 2026-08-26 — and it is the more dangerous
+half.** Reading a branch in a worktree protects a shared checkout; *writing* one
+in it is what the unattended prompt was asking an agent to do in the operator's
+own tree. Bench sweep #23 collected the bill. The isolation rule, the worktree
+location and the prompt that goes with it are **§13.10**.
+
 ### 12.5 Three-valued outcomes
 
 `app_master_gate_runs.outcome` is `passed` | `failed` | `did_not_run`.
@@ -1038,6 +1327,14 @@ that a `0.0` would make identical. Each row keeps the exit code (null exactly
 when `did_not_run`), the duration, and the **first real error line**, bounded to
 400 characters: verdict first, first failure located, bounded detail.
 
+Since §12.2.2 a `failed` row carries one more bit, `inherited_red`, and it is a
+*second* kind of hole: `did_not_run` is a hole in the instrument, an inherited
+red is a hole in the premise. Both leave the denominator; only the second one
+means something failed. The four-way split is `GateTally { passed, failed,
+inheritedRed, didNotRun }` and the sweep's verdict prints an inherited failure
+as `INHERITED RED`, never as `FAIL` — the same reason *not configured* is
+printed distinctly from *passed*.
+
 ### 12.6 Schema
 
 Both tables are created in `db/src/migrations/incremental/c04_milestones_and_autopilot.rs`,
@@ -1049,10 +1346,27 @@ app_master_proposals(id, project_id, persona_id, branch, head_sha, base_sha,
                      commits JSON, first_seen_at, merged_at, merge_sha,
                      reverted_at, revert_sha, gates_ran_at,
                      UNIQUE(project_id, branch))
-app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
-                     outcome CHECK(passed|failed|did_not_run), duration_ms,
-                     first_error, ran_at)
+app_master_gate_runs(id, project_id, persona_id, branch, head_sha, command,
+                     exit_code, outcome CHECK(passed|failed|did_not_run),
+                     duration_ms, first_error, ran_at,
+                     kind DEFAULT 'proposal', inherited_red DEFAULT 0)
 ```
+
+`app_master_gate_runs.head_sha` is added by the `app_master_gate_runs.head_sha`
+step (guarded on `has_column`, `''` on existing rows) together with
+`idx_app_master_gate_runs_branch_tip (project_id, branch, head_sha)` — the index
+behind the tip-keyed gating selector in §12.2.1.
+
+`kind` and `inherited_red` are added by two further steps of the same shape
+(§12.2.2), each guarded on its own `has_column` so a half-applied pair cannot
+report itself as done, plus
+`idx_app_master_gate_runs_kind_tip (project_id, kind, head_sha)` behind the
+baseline lookup. **Both defaults are the pre-existing behaviour**: every row
+written before this was a proposal run and nothing was excluded from a rate, so
+a legacy ledger reads exactly as it did. `kind` carries no `CHECK` — SQLite
+cannot add one by `ALTER TABLE` — so it is parsed defensively, and an
+unrecognised value reads as `proposal`: defaulting a row *out* of the holder's
+rate would silently delete a real reading.
 
 ### 12.7 What is still not measured
 
@@ -1070,14 +1384,30 @@ app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
   installing into the worktree — is the larger blast radius this section
   refuses. A gate that writes to `target/` will also serialise against a build
   running in the source checkout via cargo's own lock.
-- **A proposal that never becomes a local branch is never seen.** The dispatch
-  ledger still counts it under `proposalsOpened`; the gap between the two
-  numbers is itself a reading (a dispatched session that authored nothing).
+- **A proposal that never becomes a local branch is never seen** — and since
+  P6o it is never *counted* either. `proposalsOpened` reads the proposal
+  ledger; the dispatch ledger is reported separately as `sessionsDispatched`,
+  and the gap between the two numbers is itself a reading (a dispatched session
+  that authored nothing, or a settle that has not run yet). See §11.4.2.
 - **A gate run is attributed by `persona_id` + the tenure window** (§11.4.1), not
   by the calendar month: a run recorded before the current holder was hired is
   not evidence about it, even on the same project in the same month. Runs
   written before per-holder attribution carry `persona_id = ''` and are still
   counted — they cannot belong to anybody else.
+- **A proposal is judged against the CURRENT baseline, not the one its branch
+  forked from.** The exclusion map is the newest main tip's, so a proposal
+  authored before main repaired one of its own gates is judged as if the repair
+  had always been there (the failure becomes the holder's). The alternative —
+  keeping a baseline per fork point — means gating every historical main tip a
+  branch might descend from, which is a build farm. The error is bounded by how
+  fast the reconciler re-baselines (one tick after main moves) and is stated
+  here rather than papered over.
+- **A baseline command that `did_not_run` excludes nothing.** A repository
+  whose gates cannot be run in this environment at all (no `node_modules` to
+  borrow, say) produces a baseline of pure `did_not_run`, so nothing is
+  excluded and the holder's own `did_not_run` rows carry the same silence.
+  `baselineGateHealth` shows it — `commands` minus `passed` minus `failed` is
+  how many could not be run — but no rule acts on it.
 - **A project with no declared gates reports `gatePassRate: null` forever.**
   That is correct — there is nothing to run — but it means kp's `gates` rule
   stays unmeasured for that hire. The fix is on kp's side of the wire: send the
@@ -1088,6 +1418,14 @@ app_master_gate_runs(id, project_id, persona_id, branch, command, exit_code,
   passes the detector and is caught only by a human reading the diff. See
   `docs/tests/appmaster-bench/seeds/kp-05.md`, which exists to measure exactly
   that.
+- **A branch created and never committed to reads `seen` but never `opened`,
+  forever — and that is the answer, not a gap.** Since §12.2.1 the reconciler
+  re-checks it on every tick, so the moment a commit lands the proposal is
+  re-captured and gated; while nothing lands, its declared gates stay
+  `did_not_run` / `no_commits_yet` and its `merged_at` stays `NULL`. What is
+  still unmeasured is *why* the branch is empty — an abandoned session, a
+  crashed worker and a session still authoring are indistinguishable from the
+  ledger alone.
 - **The probation narration is still deterministic.** `narrationSource` remains
   `"deterministic"`; it now restates the P5a numbers (and distinguishes a
   measured `0` from an absent reading in words), but no LLM narrates the packet.
@@ -1634,3 +1972,244 @@ gives: the `app_lib` test binary does not launch on this machine
 (`STATUS_ENTRYPOINT_NOT_FOUND`). What stays untested there is the thin HTTP
 adapter — body deserialization, the persona→project resolution walk, the
 status-code mapping and the route-registration `if`. The bench exercises those.
+
+### 13.10 Unattended workers author in an isolated worktree (2026-08-26)
+
+> **The finding, bench sweep #23** — the first App-master night on the `ascent`
+> repository. The overnight-dispatched fleet worker did exactly what the
+> unattended guardrails told it to do (§13.6's rule 1: *"create and work on a
+> dedicated branch named `autopilot/<short-slug>`"*) and ran
+> `git checkout -b autopilot/env-example-alert-webhook` **inside the project's
+> shared checkout** (`dev_projects.root_path`). The proposal was good. The side
+> effect was not: the operator's working tree — and the `next dev` server
+> running against it — were left on the agent's branch for the rest of the
+> night.
+
+A branch switch is a whole-checkout event. In a repository a human works in, and
+in kp-style repos where several agent sessions share one tree, there is no such
+thing as an agent "just" creating a branch there. §12.4 had already concluded
+this for *reading* a branch and put every gate run in
+`git worktree add --detach`. Authoring — the half that writes — had no such
+protection.
+
+**The rule: an unattended dispatch authors in an isolated `git worktree`, or it
+does not dispatch.**
+
+```text
+before spawn:  git worktree add -b autopilot/<slug> <app_data>/worktrees/<project_id>/<slug> <main>
+               borrow_installed_deps(root_path, worktree)      ← §12.4's own door, reused
+spawn:         fleet headless session with cwd = the worktree
+prompt:        rule 1 becomes "you are ALREADY on branch X here; never git checkout/switch"
+```
+
+`personas_engine::unattended_worktree` (pure + git plumbing, in the crate whose
+test binary launches — §13.8), called from `dev_tools::dispatch_ideas_core`'s
+fleet arm.
+
+#### Where the worktrees live, and why not in the repo
+
+`<app_data>/worktrees/<project_id>/<slug>`, honoring `PERSONAS_DATA_DIR`. The
+in-repo alternative (`<root_path>/.personas-worktrees/<slug>`) was considered and
+rejected, in descending order of cost:
+
+1. **The night walks `root_path` itself.** `walk_project_files` hashes the
+   project tree every night for the scan delta (§13.6 phase 1). A second full
+   checkout under the root — with a junctioned `node_modules` inside it — would
+   be walked as project surface, and every delta and context-map fingerprint
+   would be measuring the agent's own scratch space.
+2. **It keeps the shared tree byte-identical.** Nothing new in the operator's
+   `git status`, nothing to be swept into someone's `git add -A`, and no
+   `.gitignore` edit in a repository we do not own. An unignored in-repo
+   worktree is the same "we changed the operator's tree" defect in a quieter
+   form.
+3. **`git clean -fdx` in one's own repo is routine**; having it delete an
+   agent's unreviewed branch working copy is not.
+4. **It follows `PERSONAS_DATA_DIR`**, so parallel test instances get isolated
+   worktree roots for the same reason they get isolated databases.
+
+The cost is that the worktree is not visible from inside the repository. Paid
+back three ways: `DispatchedIdea.worktreePath` / `.branch` on the dispatch
+result, a `worktrees: [{branch, path, sessionId}]` array in the morning digest
+event, and `git worktree list` in the shared checkout, which names every one.
+
+#### The branch is still repo-global — the reconciler is unaffected
+
+A worktree does not scope a branch. `git worktree add -b autopilot/x` writes
+`refs/heads/autopilot/x` in the **shared** repository, so §12.2's discovery
+(`for-each-ref refs/heads/autopilot/*` run in `root_path`) sees it unchanged,
+and so does everything downstream — `branch_commits`, the gate sweep, merge and
+revert detection. Verified rather than assumed:
+`a_worktree_authored_branch_is_visible_to_the_reconciler` commits in the
+worktree and then asserts the discovery and the commit capture from the shared
+checkout.
+
+#### The prompt
+
+`UNATTENDED_DISPATCH_GUARDRAILS` rule 1 is the sentence that caused this, so it
+is the sentence that is replaced — rules 2–6 (no push, no merge, no destructive
+commands, NOBODY IS THERE, `FLEET:BLOCKED`, `FLEET:DONE`) are inherited
+verbatim by `unattended_worktree_guardrails`, and
+`the_two_guardrail_variants_share_one_tail` fails the moment the two texts
+drift. The replacement tells the worker where it already is, forbids
+`git checkout` / `git switch` / `git branch -m` / `git worktree add|remove` and
+`cd`-ing out, and adds one thing rule 1 never had to say: the dependency
+directories here are **links to the operator's real ones** — use them, never
+install, upgrade or delete into them (§12.7's accepted borrow risk, now stated
+to the party that could trip it).
+
+#### Refusal, not fallback
+
+A dispatch that cannot get a worktree — the project is not a git work tree, no
+main branch resolves, the app data dir is unavailable — is recorded as a
+`DispatchSkip` (`no isolated authoring worktree: <reason>`) and **no session is
+spawned**. Falling back to `root_path` is the defect this section removes; a
+night that dispatches nothing and says why is the correct reading.
+
+#### Human-driven dispatch is unchanged
+
+`dispatch_ideas_core`'s `unattended` flag already chose the prompt; it now
+chooses the isolation too, and it is set **only** by the autopilot tick. A
+person dispatching from the Backlog still runs in the project's own checkout,
+under someone who can see what it does to their tree.
+
+#### Retiring finished worktrees
+
+One working copy per proposal accumulates. `prune_authoring_worktrees` runs at
+the top of each night run (before it spawns more), over `git worktree list
+--porcelain`, and considers only entries **under the worktrees root** on an
+`autopilot/*` branch — the operator's own worktrees and §12.4's detached gate
+temporaries are never candidates. Three conditions, all required:
+
+| Condition | Why |
+| --- | --- |
+| nothing uncommitted in it | unreviewed work is never deleted for being inconvenient |
+| not touched inside a 6 h grace window | **a freshly spawned worker's worktree is clean and its branch has no commits yet, so its tip is an ancestor of main — indistinguishable, by git alone, from a merged proposal.** Without the window the merge rule deletes a running agent's directory |
+| branch is an ancestor of main, **or** the worktree is older than 14 days | the human took it, or the session is long gone |
+
+Borrowed dependency directories are unlinked **before** the removal, exactly as
+in §12.4 — a recursive delete that walked into a junction would delete the
+operator's real `node_modules`. **Branches are never deleted:** the proposal
+ledger, the merge/revert observations and the reconciler all key on the branch;
+the working copy costs nothing to remove and the branch would erase the record.
+
+#### Tests
+
+`personas-engine`, `unattended_worktree` (8) + `unattended` (2), against a real
+throwaway `git init` repository — the claim is a claim about what git does to a
+checkout, and a mock would pin our belief rather than the behaviour that cost an
+operator a night. They pin: the shared checkout's branch **and** HEAD **and**
+`git status` are unchanged after a dispatch; the worktree is outside the
+repository, on a fresh branch at the main tip; `node_modules` is borrowed and
+the source's copy survives; the reconciler sees the branch and its commits from
+the shared checkout; two dispatches of the same title get different branches and
+directories; a non-git project is refused rather than dispatched into; prune
+retires a merged worktree, keeps in-flight work, keeps everything inside the
+grace window, and never considers a worktree outside its root; and the two
+guardrail variants share one tail.
+
+## 14. Memory — the App master stops starting amnesiac (§8)
+
+kp `docs/concepts/app-master.md` §8 is the semantics; this section is what
+Personas actually wires. **No new store.** Both memory lanes already existed and
+are hardened — the App master reuses them exactly as they are:
+
+| Lane | Store | Scope | Properties it already had |
+| --- | --- | --- | --- |
+| project | `personas_db::repos::dev_memories` | `dev_projects.id` | idempotent on `(project, source_kind, source_id)`, importance 1–10, constraints ordered first, no tier/decay/UI |
+| persona | `personas_db::repos::core::memories` | `personas.id` | tiers core/active/working/archive, decay + forgetting, claims, proposal lane, operator UI, importance 1–5 |
+
+The composition — every block of prompt text and every sentence written back —
+is pure and lives in `personas-engine::app_master_memory`, so it is unit-tested
+without a database (the `app_lib` test binary still will not launch on this
+machine; see §12/§13).
+
+### 14.1 Recall into the night
+
+`commands::infrastructure::dev_tools::compose_unattended_recall` runs on the
+UNATTENDED fleet arm, **before**
+`unattended::unattended_worktree_task_text` wraps the guardrails — so the worker
+task text reads: **idea → project memory → persona memory → guardrails.** The
+two things a worker must not lose bracket the recall.
+
+| Block | When | Budget |
+| --- | --- | --- |
+| `## Project memory` | every unattended dispatch with a project | `get_for_injection(project, 12)` → `render_for_prompt(…, 1500)` — parity with the task_executor arm |
+| `## Your memory (App master)` | only when `app_master::get_mandate` returns a record | `get_for_injection_v2(persona, 6 core, 60 active)`; core rendered verbatim (small by contract), active packed by `memory_recall::pack_by_budget(…, 2000)` and carrying its own `+N omitted` line |
+
+Then `increment_access_batch` on exactly the injected ids. That write is not a
+statistic: `memory_recall::decay_score` anchors a memory's age at
+`last_accessed_at` and boosts on `access_count`, so skipping it would starve
+decay and age every memory the App master actually uses as if it had never been
+read.
+
+Absence is honest throughout — an empty lane emits **no block at all** (an empty
+labelled section reads to a model as "this is everything I know"), and every
+read failure degrades to "no block" with a `warn`. A night that cannot read its
+memory still dispatches.
+
+The FLEET arm carried no recall of any kind before this. The runner arm has
+injected project memory since the backlog-memory loop; the arm that runs at
+03:00 with nobody watching — the only one an App master uses — injected nothing.
+
+### 14.2 Episodic write-back
+
+Only the auto-commit lane. Agent-inferred claims about the OWNER still go
+through the existing memory *proposal* lane, never auto-commit.
+
+| Site | Event | Lane | Row |
+| --- | --- | --- | --- |
+| `engine::app_master_reconcile` | proposal branch newly recorded **with commits** | project | `decision` 4, `<branch>:recorded` |
+| ″ | declared gates produced a tally | project | green → `decision` 5; a failure the proposal is answerable for → `constraint` 7. Key `<branch>:gates@<short-tip>`, so a re-gate after the tip moves is a NEW observation, not a suppressed duplicate |
+| ″ | tip observed on main | project | `decision` 6, `<branch>:merged` |
+| ″ | merged proposal reverted | project | `constraint` 8, `<branch>:reverted` — merging is not acceptance |
+| `commands::infrastructure::overnight` | night ledger row final, project has a mandate | persona | `learned` 2, tags `["night", <project>]`; **plus** `constraint` 3 when the mandate rung or the budget governor refused, carrying WHY |
+| `commands::design::reviews::apply_app_master_probation_decision` | probation decided | persona | `learned` 4, tags `["probation"]`: decision + backbone verdict + the unmeasured-rule list verbatim |
+
+`source_kind = "app_master_proposal"` is a declared member of
+`DEV_MEMORY_SOURCES`. Idempotency makes the 30-minute reconcile — which
+re-walks every known proposal forever — free: one row per fate, whatever the
+tick count.
+
+**The probation row has ONE write site for BOTH paths.** A human's click reaches
+`react_to_app_master_probation`, and the headless anchorless sweep calls
+`apply_app_master_probation_decision` directly; both land in the carry-out,
+which is exactly what the carry-out exists for (§13). `ProbationCarryOut` gained
+`verdict` + `unmeasured` so the memory says the same thing whichever hand
+decided; a `None` verdict is written as *no verdict recorded*, never as a pass.
+
+Constraints on the night rows are the point of the lane: a mandate rung and a
+monthly ceiling are standing refusals that do not move overnight, so without
+that row tomorrow's night re-attempts what it was already refused.
+
+### 14.3 Governance (registry `agent-memory` / memory-governance)
+
+Stated in the module doc and pinned by a test:
+
+* **nothing here writes tier `core`** — an agent that can promote its own
+  beliefs to always-injected has no forgetting curve. Rows land in the default
+  working tier and earn `active` through the existing lifecycle;
+* **nothing writes `preference`**, and nothing writes a claim about a human;
+* **nothing self-modifies a rule** — the mandate, forbidden classes and gate
+  commands are operator-stated data; a row records what happened, never what is
+  henceforth allowed;
+* persona-lane importance stays 2–4 of 5: observations competing for a recall
+  budget, not instructions.
+
+### 14.4 Known limits, carried not hidden
+
+`dev_memories` has no tier, no decay and no UI — a long-lived project's rows
+compete only on category + importance + recency. Tag-filtered recall does not
+exist in either lane. Both are named in kp's §8 and neither is worked around
+here.
+
+### Tests
+
+`personas-engine::app_master_memory` (19) — block presence/absence, ordering
+(the idea stays first), the packed block staying inside its budget, the
+omission line's singular/plural, distinct idempotency keys per fate, the
+importance ladder, inherited red never written as the proposal's fault, an
+undatable merge saying so, the refusal constraint, reason clipping, the
+unmeasured list, and the governance invariant over every draft this module can
+produce. `personas-db::dev_memories` (2) — one row per fate across ten
+reconcile ticks, a moved tip recording a new tally while the same tip does not,
+and the near-miss source kind being refused.

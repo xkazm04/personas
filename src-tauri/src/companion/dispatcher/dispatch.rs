@@ -1917,6 +1917,13 @@ pub fn dispatch_with_sys(
                 }
                 let body = match action {
                     "describe_skill" => describe_skill(sys_db, query),
+                    // Reads the companion pool, not the app DB, so it answers
+                    // even on a turn where `sys_db` is unreachable — which is
+                    // exactly a turn where knowing the brain's own state
+                    // matters most.
+                    "describe_brain_health" => {
+                        crate::companion::brain::health::describe_brain_health(pool)
+                    }
                     _ => match sys_db {
                         Some(db) => match action {
                             "describe_persona" => describe_persona(db, query),
