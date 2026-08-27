@@ -39,7 +39,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
     } finally {
       if (requestGuard.isCurrent(token)) setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, requestGuard]);
 
   useEffect(() => { load(); }, [load]);
 

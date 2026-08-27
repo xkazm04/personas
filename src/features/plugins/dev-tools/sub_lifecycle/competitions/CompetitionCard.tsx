@@ -106,7 +106,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     } finally {
       if (detailGuard.isCurrent(token)) setLoading(false);
     }
-  }, [competition.id]);
+  }, [competition.id, detailGuard]);
 
   // Load detail on expand, auto-poll every 8s while competition is running
   useEffect(() => {

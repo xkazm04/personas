@@ -111,7 +111,7 @@ export default function MemoriesPageDense() {
       fetchMemories({ search: search || undefined, sort_column: 'created_at', sort_direction: 'desc' });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search]);
+  }, [fetchMemories, search, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
   const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0;

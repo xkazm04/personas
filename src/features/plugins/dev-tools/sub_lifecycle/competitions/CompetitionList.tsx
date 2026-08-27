@@ -80,7 +80,7 @@ export function CompetitionList() {
     } finally {
       if (requestGuard.isCurrent(token)) setLoading(false);
     }
-  }, [activeProjectId]);
+  }, [activeProjectId, requestGuard]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
