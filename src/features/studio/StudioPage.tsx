@@ -84,6 +84,11 @@ export default function StudioPage() {
     }),
   );
   const activeNonce = activeId ? (iframeNonces[activeId] ?? 0) : 0;
+  // The window `message` listener is registered once (it must not be torn down
+  // and re-attached on every tab switch), so it reads the active tab through a
+  // ref rather than closing over a stale `activeId`.
+  const activeIdRef = useRef<string | null>(activeId);
+  activeIdRef.current = activeId;
 
   const refreshProjects = useCallback(async () => {
     try {
@@ -124,17 +129,24 @@ export default function StudioPage() {
           }
         | null;
       if (!d || d.source !== 'athena-agent') return;
+      // `source: 'athena-agent'` is a claim, not proof — window `message` fires
+      // for EVERY frame on the page, including anything the previewed site
+      // itself embeds. So attribute every report to a real preview frame by
+      // identity (contentWindow) before acting on it. The route branch already
+      // did this to know which tab reported; `located` did not, and would move
+      // the orb to a rect handed over by any nested frame.
+      const frame = Array.from(
+        document.querySelectorAll<HTMLIFrameElement>('iframe[data-tab]'),
+      ).find((f) => f.contentWindow === e.source);
+      const id = frame?.dataset.tab;
+      if (!id) return;
       if (d.type === 'located') {
+        // Only the tab the user is looking at may move the orb.
+        if (id !== activeIdRef.current) return;
         setPointerRect(d.found && d.rect ? d.rect : null);
       } else if (d.type === 'route' && typeof d.path === 'string') {
-        // Attribute the report to its tab by matching the source frame (every warm
-        // preview is mounted + reporting, so the source disambiguates them).
         const path = d.path;
-        const frame = Array.from(
-          document.querySelectorAll<HTMLIFrameElement>('iframe[data-tab]'),
-        ).find((f) => f.contentWindow === e.source);
-        const id = frame?.dataset.tab;
-        if (id) setCurrentPaths((m) => (m[id] === path ? m : { ...m, [id]: path }));
+        setCurrentPaths((m) => (m[id] === path ? m : { ...m, [id]: path }));
       }
     };
     window.addEventListener('message', onMsg);
@@ -151,7 +163,12 @@ export default function StudioPage() {
     const selector = active.decisionSelector;
     let tries = 0;
     const interval = window.setInterval(() => {
-      const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+      // Address the frame by its tab id, never by the `title` attribute: the
+      // title is display copy (and unlocalized copy at that), so a translation
+      // or a wording tweak would silently break the orb pointer.
+      const iframe = document.querySelector<HTMLIFrameElement>(
+        `iframe[data-tab="${CSS.escape(activeId ?? '')}"]`,
+      );
       iframe?.contentWindow?.postMessage(
         { source: 'athena', type: 'locate', selector, reqId: `${activeId}` },
         '*',
@@ -168,7 +185,9 @@ export default function StudioPage() {
   useEffect(() => {
     const setTarget = useCompanionStore.getState().setOrbGuideTarget;
     if (active?.question && pointerRect) {
-      const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+      const iframe = document.querySelector<HTMLIFrameElement>(
+        `iframe[data-tab="${CSS.escape(activeId ?? '')}"]`,
+      );
       const ir = iframe?.getBoundingClientRect();
       if (ir) {
         setTarget({ left: ir.left + pointerRect.x + pointerRect.width, top: ir.top + pointerRect.y });
@@ -177,7 +196,7 @@ export default function StudioPage() {
       setTarget(null);
     }
     return () => useCompanionStore.getState().setOrbGuideTarget(null);
-  }, [active?.question, pointerRect]);
+  }, [activeId, active?.question, pointerRect]);
 
   const onCreate = useCallback(
     async (name: string, vision: string) => {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Brain } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
@@ -31,15 +30,14 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
     }
   }, [executionId, executionStatus]);
 
-  if (!memoriesLoaded) {
-    return (
-      <div className="flex items-center gap-2 text-foreground typo-body py-1">
-        <LoadingSpinner size="sm" label={t.agents.executions.loading_memories} />
-      </div>
-    );
-  }
-
-  if (executionMemories.length === 0) return null;
+  // Render nothing until the list is known. The effect only fetches for a
+  // SETTLED, non-cancelled run, so for a queued/running/cancelled execution
+  // `memoriesLoaded` never flips — this branch used to hold an empty box open
+  // forever, and `feedback/LoadingSpinner` renders null, so it was an invisible
+  // loading state that could not resolve. Absence and "still loading" now look
+  // the same as the settled-empty case, which is what this optional disclosure
+  // already did.
+  if (!memoriesLoaded || executionMemories.length === 0) return null;
 
   return (
     <div>

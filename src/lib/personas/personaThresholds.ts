@@ -1,10 +1,20 @@
 /**
  * Centralised health, completeness, and trust thresholds for persona scoring.
  *
- * Both the Rust backend (`src-tauri/src/db/repos/core/personas.rs`) and all
+ * Both the Rust backend (`src-tauri/db/src/repos/core/personas.rs`) and all
  * frontend components should reference these constants so that colour coding,
  * status labels, and scoring logic stay in sync.  When changing a value here,
- * update the matching `PERSONA_THRESHOLDS` block in the Rust repo module.
+ * update the matching constants in the Rust repo module — they are
+ * `TRUST_W_SUCCESS` / `TRUST_W_COST` / `TRUST_W_HEALING` / `TRUST_W_VOLUME`,
+ * `HEALING_PENALTY_PER_FAILURE`, `VOLUME_FULL_CREDIT_RUNS` and
+ * `HEALTH_FAILING_RATIO` (near the top of that file). Verified equal to the
+ * values below on 2026-08-27.
+ *
+ * The two paths this header named — `src-tauri/src/db/...` here and at
+ * `compute_trust_score` below — have not existed since `db` was extracted into
+ * its own crate, and there is no `PERSONA_THRESHOLDS` block in Rust to update:
+ * a reader following either pointer found nothing and had no way to check the
+ * agreement this comment is the only enforcement of.
  */
 
 // ---------------------------------------------------------------------------
@@ -55,7 +65,7 @@ export const HEALTH_FAILING_MIN = 0.6;
  * Trust score is a 0–100 composite:
  *   success_rate × 50  +  cost_discipline × 20  +  healing × 15  +  volume × 15
  *
- * See `compute_trust_score` in `src-tauri/src/db/repos/core/personas.rs`.
+ * See `compute_trust_score` in `src-tauri/db/src/repos/core/personas.rs`.
  */
 export const TRUST_WEIGHTS = {
   successRate: 50,

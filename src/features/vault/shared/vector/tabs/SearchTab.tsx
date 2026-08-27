@@ -22,6 +22,10 @@ export function SearchTab({ kb }: SearchTabProps) {
   const [lastQuery, setLastQuery] = useState<string | null>(null);
   const [durationMs, setDurationMs] = useState<number | null>(null);
   const mountedRef = useRef(true);
+  // Only the most recently issued query may paint. Enter-to-search is not gated
+  // on `searching`, so two requests can be in flight and the slower one would
+  // otherwise overwrite the fresher results with staler ones.
+  const querySeqRef = useRef(0);
 
   useEffect(() => {
     return () => { mountedRef.current = false; };
@@ -31,6 +35,7 @@ export function SearchTab({ kb }: SearchTabProps) {
     const trimmed = query.trim();
     if (!trimmed) return;
 
+    const seq = ++querySeqRef.current;
     setSearching(true);
     setError(null);
     const t0 = performance.now();
@@ -41,17 +46,17 @@ export function SearchTab({ kb }: SearchTabProps) {
         query: trimmed,
         topK: topK,
       });
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || seq !== querySeqRef.current) return;
       setResults(res.results);
       setFloorFiltered(res.floorFiltered);
       setLastQuery(trimmed);
       setDurationMs(Math.round(performance.now() - t0));
     } catch (err) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || seq !== querySeqRef.current) return;
       setError(err instanceof Error ? err.message : String(err));
       setResults(null);
     } finally {
-      if (mountedRef.current) setSearching(false);
+      if (mountedRef.current && seq === querySeqRef.current) setSearching(false);
     }
   }, [query, kb.id, topK]);
 

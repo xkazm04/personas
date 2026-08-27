@@ -249,8 +249,13 @@ export async function previewPrompt(
 // -- Section Summaries ------------------------------------------
 
 /**
- * Extract short summaries (first 80 chars) for each standard section.
+ * Extract each standard section's text, keyed by its display label.
  * Used by prompt lab diff viewers and version displays.
+ *
+ * Returns the FULL section text — the diff viewers that consume this need it
+ * whole. This comment claimed "first 80 chars" and no truncation has ever
+ * happened here, so a caller trusting the doc would have sized a layout for 80
+ * characters and been handed a whole prompt section.
  */
 export function getSectionSummary(json: string | null): Record<string, string> {
   if (!json) return {};
@@ -268,8 +273,21 @@ export function getSectionSummary(json: string | null): Record<string, string> {
 
 // -- Editable Format (for draft editors) ------------------------
 
-/** Custom section format used by draft editors (adds `key` and `label` fields). */
+/**
+ * Custom section format used by draft editors (adds `key` and `label` fields).
+ *
+ * `id` is carried through so a section keeps the stable identity documented on
+ * {@link StructuredPromptSection}. It is optional because editors legitimately
+ * create sections that do not have one yet; `parseFromRecord` mints one on the
+ * next parse. What it must NOT do is LOSE one that already exists — this type
+ * had no `id` at all, so every `fromEditableStructuredPrompt(toEditableStructuredPrompt(x))`
+ * round-trip (n8nTypes.ts does exactly that on load and on save) dropped it and
+ * the next parse minted a fresh one. That silently defeats the React keying the
+ * id exists for: editor state — cursor, IME composition, undo stack — bleeds
+ * between sections on remove, which is the bug the id was introduced to fix.
+ */
 export type EditableCustomSection = {
+  id?: string;
   key: string;
   label: string;
   content: string;
@@ -304,6 +322,7 @@ export function toEditableStructuredPrompt(
     customSections: rawCustom
       .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object')
       .map((entry) => ({
+        ...(typeof entry.id === 'string' && entry.id ? { id: entry.id } : {}),
         key: asStr(entry.key),
         label: asStr(entry.label || entry.title),
         content: asStr(entry.content),
@@ -325,6 +344,7 @@ export function fromEditableStructuredPrompt(
     customSections: value.customSections
       .filter((section) => section.label.trim() || section.key.trim() || section.content.trim())
       .map((section) => ({
+        ...(section.id ? { id: section.id } : {}),
         key: section.key,
         label: section.label,
         content: section.content,

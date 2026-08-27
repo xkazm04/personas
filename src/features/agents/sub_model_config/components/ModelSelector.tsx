@@ -177,6 +177,7 @@ export function ModelSelector({
                   <button
                     key={model.value}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => onSelectModel(model.value)}
                     className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-card border transition-all transition-shadow duration-300 text-left ${
                       isSelected

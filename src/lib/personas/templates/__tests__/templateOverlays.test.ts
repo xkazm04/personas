@@ -1,12 +1,41 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
+import { LOCALE_CODES } from '@/i18n/locales.manifest';
 import { mergeTemplateOverlay, isOverlayFilename } from '../templateOverlays';
 
+/**
+ * The ground truth for "which languages ship" is `locales.manifest.ts`, so these
+ * assertions are derived from it. The previous version re-listed the same 13
+ * codes the implementation's regex listed — a test reading a copy of the
+ * implementation's own enumeration, which passes by construction and would have
+ * stayed green through a 15th locale being added with no overlay support.
+ */
+const OVERLAY_LOCALES = LOCALE_CODES.filter((c) => c !== 'en');
+
 describe('isOverlayFilename', () => {
-  it('matches every supported language suffix', () => {
-    const langs = ['ar', 'bn', 'cs', 'de', 'es', 'fr', 'hi', 'id', 'ja', 'ko', 'ru', 'vi', 'zh'];
-    for (const l of langs) {
+  it('matches every non-English locale in the manifest', () => {
+    expect(OVERLAY_LOCALES.length).toBeGreaterThan(0);
+    for (const l of OVERLAY_LOCALES) {
       expect(isOverlayFilename(`autonomous-issue-resolver.${l}.json`)).toBe(true);
     }
+  });
+
+  it('does not treat the canonical language as an overlay suffix', () => {
+    expect(isOverlayFilename('autonomous-issue-resolver.en.json')).toBe(false);
+  });
+
+  // The Vite glob in templateOverlays.ts must be literal (it is statically
+  // analysed at build time), so it is the one hand-maintained copy of the locale
+  // list that survives. Nothing at runtime notices a missing pattern — overlays
+  // for that language simply never load — so assert it here against the manifest.
+  it('the overlay glob declares a pattern for every non-English locale', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'src/lib/personas/templates/templateOverlays.ts'),
+      'utf8',
+    );
+    const missing = OVERLAY_LOCALES.filter((l) => !source.includes(`/**/*.${l}.json'`));
+    expect(missing).toEqual([]);
   });
 
   it('does not match canonical filenames', () => {
@@ -268,5 +297,23 @@ describe('mergeTemplateOverlay — template-specific invariants', () => {
   it('preserves canonical when overlay is empty', () => {
     const canon = { id: 't', name: 'Canon', description: 'Long desc' };
     expect(mergeTemplateOverlay(canon, {})).toEqual(canon);
+  });
+
+  // An empty overlay array used to satisfy the "every element is primitive"
+  // predicate vacuously and replace the canonical list with `[]` — a
+  // strings-only overlay silently deleting structure the canonical owns.
+  it('an empty overlay array does not erase a canonical array', () => {
+    const canon = {
+      id: 't',
+      payload: {
+        use_cases: [{ id: 'uc_1', title: 'Triage' }],
+        service_flow: ['gmail', 'slack'],
+      },
+    };
+    const result = mergeTemplateOverlay(canon, {
+      payload: { use_cases: [], service_flow: [] },
+    });
+    expect(result.payload.use_cases).toEqual([{ id: 'uc_1', title: 'Triage' }]);
+    expect(result.payload.service_flow).toEqual(['gmail', 'slack']);
   });
 });

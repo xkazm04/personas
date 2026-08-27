@@ -14,7 +14,18 @@ import { CostBreakdownBar } from './CostBreakdownBar';
  */
 const MAX_TRACE_SPANS = 10_000;
 
-export function TraceSummary({ trace, model }: { trace: ExecutionTrace; model?: string | null }) {
+/**
+ * `errorCount` is supplied by the caller and never recomputed here.
+ *
+ * The tile used to fold `trace.spans` itself while `TraceInspector` listed its
+ * error cards from the UNIFIED trace (pipeline spans merged in). Those are
+ * different span sets, so a run that failed in a frontend pipeline stage --
+ * `traceStage(trace, 'validate', undefined, String(err))` in
+ * `stores/slices/agents/executionSlice.ts:488` -- printed "0" in the Errors
+ * tile with the error card rendered directly beneath it. One number, one place
+ * that states the rule.
+ */
+export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTrace; model?: string | null; errorCount: number }) {
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const stats = useMemo(() => {
@@ -23,9 +34,8 @@ export function TraceSummary({ trace, model }: { trace: ExecutionTrace; model?: 
     const totalCost = rootSpan?.cost_usd ?? 0;
     const totalInput = rootSpan?.input_tokens ?? 0;
     const totalOutput = rootSpan?.output_tokens ?? 0;
-    const errors = trace.spans.filter(s => s.error != null);
 
-    return { totalCost, totalInput, totalOutput, toolCallCount: toolCalls.length, errorCount: errors.length };
+    return { totalCost, totalInput, totalOutput, toolCallCount: toolCalls.length };
   }, [trace.spans]);
 
   const evicted = trace.evicted_span_count ?? 0;
@@ -77,8 +87,8 @@ export function TraceSummary({ trace, model }: { trace: ExecutionTrace; model?: 
           <AlertCircle className="w-2.5 h-2.5" />
           {e.errors}
         </div>
-        <div className={`typo-code ${stats.errorCount > 0 ? 'text-red-400' : 'text-foreground/90'}`}>
-          {stats.errorCount}
+        <div className={`typo-code ${errorCount > 0 ? 'text-red-400' : 'text-foreground/90'}`} data-testid="trace-error-count">
+          {errorCount}
         </div>
       </div>
 

@@ -5,6 +5,15 @@ import { isTerminalState } from '@/lib/execution/executionState';
 
 export type DetailTab = 'detail' | 'director' | 'inspector' | 'trace' | 'pipeline' | 'replay' | 'chain';
 
+/**
+ * DOM ids wiring the tablist to its panel. Both are scoped by execution id
+ * because `ExecutionDetail` renders a NESTED copy of itself inside the chain
+ * drill-down modal -- an unscoped id would put two elements with the same id in
+ * the document and point every `aria-controls` at whichever one won.
+ */
+export const tabButtonId = (scope: string, tab: DetailTab) => `execution-detail-tab-${scope}-${tab}`;
+export const tabPanelId = (scope: string) => `execution-detail-panel-${scope}`;
+
 interface ExecutionDetailTabsProps {
   activeTab: DetailTab;
   setActiveTab: (tab: DetailTab) => void;
@@ -15,6 +24,8 @@ interface ExecutionDetailTabsProps {
   /** This run belongs to a multi-step chain — show the chain-trace tab. */
   hasChain: boolean;
   executionStatus: string;
+  /** Execution id -- scopes the tab/panel DOM ids (see `tabButtonId`). */
+  idScope: string;
 }
 
 interface TabDescriptor {
@@ -25,7 +36,7 @@ interface TabDescriptor {
   special?: boolean;
 }
 
-export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, hasPipeline, hasChain, executionStatus }: ExecutionDetailTabsProps) {
+export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, hasPipeline, hasChain, executionStatus, idScope }: ExecutionDetailTabsProps) {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +94,11 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
           key={tab.id}
           type="button"
           role="tab"
+          id={tabButtonId(idScope, tab.id)}
+          // A tablist whose tabs control nothing is an incomplete widget: a
+          // screen reader announces "tab 3 of 6" with no way to reach what it
+          // selected. The panel carries the matching id + aria-labelledby.
+          aria-controls={tabPanelId(idScope)}
           data-tab-id={tab.id}
           aria-selected={activeTab === tab.id}
           // Roving tabindex: the tab strip is a single tab stop, arrows move within it.

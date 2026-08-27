@@ -1,17 +1,50 @@
 //! Boot phase: reconcile rows an unclean shutdown left mid-flight.
 
+use std::path::Path;
+
 use crate::commands;
 use crate::db::{self, DbPool};
 use crate::engine;
 use crate::startup_timing::StartupTimer;
 
 // Mark any executions left in running/queued state as failed
-// (their processes died when the app last exited)
+// (their processes died when the app last exited).
+//
+// That premise — "their processes died" — holds only while this is the sole
+// process on the DB. Since engine leadership (ADR 2026-05-26) a windowed app,
+// the daemon binary and test instances can run against one local DB at once,
+// and every one of them boots through here. A follower reaches this phase
+// while the LEADER is mid-flight, and every pass below is a blanket sweep
+// keyed on state alone: `running` rows the leader is executing right now look
+// exactly like corpses from an unclean shutdown, so a follower's boot marks
+// the leader's live work failed. Note the asymmetry with the loop gating this
+// module already contemplates — a follower's loops merely duplicate work
+// going forward, while a follower's recovery sweep destroys work already in
+// flight, which makes this the one caller that cannot wait for a later phase.
+//
+// So: defer to a live leader. The lease is the same heartbeat lock the rest
+// of the engine uses, and this runs before acquisition, so an active lease is
+// necessarily another instance's. A lone process sees no lease and sweeps
+// exactly as it always has — the single-instance path is byte-for-byte
+// unchanged. The residual window is the protocol's own: for up to
+// STALE_THRESHOLD after an unclean exit the dead instance's lease still reads
+// fresh, so a fast restart skips this pass and reconciles on the next boot.
+// That is the same 90s trade this lock already makes everywhere else.
 pub fn recover_interrupted_work(
+    app_data_dir: &Path,
     pool: &DbPool,
     user_db_pool: &db::UserDbPool,
     st: &mut StartupTimer,
 ) {
+    if engine::leadership::another_instance_leads(app_data_dir) {
+        tracing::info!(
+            "Startup: another instance holds engine leadership - skipping \
+             interrupted-work recovery (its rows are live, not stale)"
+        );
+        st.checkpoint("recovery_skipped_follower");
+        return;
+    }
+
     engine::ExecutionEngine::recover_stale_executions(pool);
     st.checkpoint("stale_execution_recovery");
 

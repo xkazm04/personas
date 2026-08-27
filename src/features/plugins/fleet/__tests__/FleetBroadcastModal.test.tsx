@@ -24,6 +24,22 @@ const SESSIONS: FleetSession[] = [
     stateReason: null,
     name: null,
   } as unknown as FleetSession,
+  // Hibernate FREES the process, so this row has no PTY writer to receive a
+  // broadcast — it must never appear as a target.
+  {
+    id: 's-hib',
+    state: 'hibernated',
+    projectLabel: 'repo-hibernated',
+    stateReason: null,
+    name: null,
+  } as unknown as FleetSession,
+  {
+    id: 's-dead',
+    state: 'exited',
+    projectLabel: 'repo-exited',
+    stateReason: null,
+    name: null,
+  } as unknown as FleetSession,
 ];
 
 // Selector-form store mock — the modal reads `s.fleetSessions` plus the
@@ -80,5 +96,52 @@ describe('FleetBroadcastModal — Apply skill mode', () => {
   it('without initialText (plain broadcast) the composer starts empty', () => {
     render(<FleetBroadcastModal open onClose={() => {}} />);
     expect(screen.getByTestId('fleet-broadcast-text')).toHaveValue('');
+  });
+});
+
+describe('FleetBroadcastModal — target list and failure handling', () => {
+  beforeEach(() => {
+    vi.mocked(fleetApi.writeInput).mockClear().mockResolvedValue(undefined as never);
+  });
+
+  it('omits sessions with no PTY writer (exited AND hibernated) from the targets', () => {
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+
+    expect(screen.getByText('repo-a')).toBeInTheDocument();
+    expect(screen.queryByText('repo-exited')).not.toBeInTheDocument();
+    // Hibernated rows look alive in every other list; here they are dead ends.
+    expect(screen.queryByText('repo-hibernated')).not.toBeInTheDocument();
+    // Derived from the rendered rows, not from a label: one target checkbox
+    // plus the "Append Enter" toggle. Three sessions would give four.
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+  });
+
+  it('keeps the composed message and stays open when the broadcast reached nobody', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    vi.mocked(fleetApi.writeInput).mockRejectedValue(new Error('session writer dropped'));
+
+    render(<FleetBroadcastModal open onClose={onClose} />);
+    const box = screen.getByTestId('fleet-broadcast-text');
+    await user.type(box, 'expensive prompt');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalled());
+    // Nothing landed — the operator keeps their text and their modal.
+    expect(box).toHaveValue('expensive prompt');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('clears and closes when the broadcast did land', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(<FleetBroadcastModal open onClose={onClose} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'hello fleet');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 });

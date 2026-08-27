@@ -133,6 +133,13 @@ whole of what should happen next.
    tier *beneath* their seed — never fused as a peer. Evaluate on a labeled
    query set. If it does not move a metric, keep the relations as a record,
    write that down here, and stop.
+   - **The design for this is written and deliberately deferred:**
+     [relation-lane-experiment-plan.md](relation-lane-experiment-plan.md).
+     Its first gate needs no code at all and measures the ceiling — how often
+     recall misses something *for this specific reason* — but it needs a mass
+     of real companion turns we do not have yet. That is the revisit trigger.
+     Note what the plan establishes: the lane is the cheap half, and the
+     producer that would write the edges is where the risk actually lives.
    - **Fuse it as a tier, not a peer, and this is not a style preference.**
      A neighbour surfaced *because* its seed ranked is not independent
      evidence, so summing both contributions into RRF counts one signal twice

@@ -42,9 +42,36 @@ export function useAppSetting(
   const defaultValueRef = useRef(defaultValue);
   defaultValueRef.current = defaultValue;
 
+  // A key change starts a NEW load: the previous key's value must not stay on
+  // screen (callers switch keys live — `ProviderCredentialField` swaps
+  // `field.settingKey` when the provider changes, which showed the previous
+  // provider's stored credential until the new read resolved), `loaded` must
+  // go back to false so consumers don't treat the stale value as settled, and
+  // a late response for the superseded key must not clobber the new one.
+  // Tauri `invoke` has no abort, so the `cancelled` flag is the cancellation.
+  const isFirstLoadRef = useRef(true);
   useEffect(() => {
+    let cancelled = false;
+
+    if (!isFirstLoadRef.current) {
+      setValueRaw(defaultValueRef.current);
+      setLoaded(false);
+      setError(null);
+      setSaved(false);
+    }
+    isFirstLoadRef.current = false;
+
+    // An empty key is "no setting to read" (callers pass `field?.key ?? ''`).
+    // Sending it would put an unregistered key in the shared bulk batch, which
+    // the backend answers with null plus a warn breadcrumb.
+    if (!key) {
+      setLoaded(true);
+      return;
+    }
+
     getAppSettingCoalesced(key)
       .then((val) => {
+        if (cancelled) return;
         if (val) {
           const validateFn = validateRef.current;
           if (validateFn && !validateFn(val)) {
@@ -56,8 +83,19 @@ export function useAppSetting(
         }
       })
       .catch(silentCatch('hooks/utility/data/useAppSetting:loadAppSetting'))
-      .finally(() => setLoaded(true));
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+
+    return () => { cancelled = true; };
   }, [key]);
+
+  // The "Saved ✓" flash timer, so a rapid second save restarts it rather than
+  // stacking, and an unmount mid-flash does not leave it running.
+  const savedTimerRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
+  }, []);
 
   const setValue = useCallback((v: string) => {
     setValueRaw(v);
@@ -74,7 +112,11 @@ export function useAppSetting(
         await deleteAppSetting(key);
       }
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = window.setTimeout(() => {
+        savedTimerRef.current = null;
+        setSaved(false);
+      }, 2000);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error('Failed to save app setting', { key, err: message });

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { CheckCircle2, AlertCircle, Loader } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -50,34 +49,31 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
     };
   }, [jobId]);
 
-  if (!progress) {
-    return (
-      <div className="flex items-center gap-2 typo-body text-foreground">
-        <LoadingSpinner className="text-violet-400" />
-        <span>{sh.preparing_ingestion}</span>
-      </div>
-    );
-  }
-
-  const pct = progress.documentsTotal > 0
+  const pct = progress && progress.documentsTotal > 0
     ? Math.round((progress.documentsDone / progress.documentsTotal) * 100)
     : 0;
 
-  const hasError = progress.status === 'error' || !!progress.error;
+  const hasError = !!progress && (progress.status === 'error' || !!progress.error);
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 typo-body">
         {hasError ? (
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" aria-hidden />
         ) : done ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden />
         ) : (
-          <LoadingSpinner className="text-violet-400 shrink-0" />
+          <Loader className="w-4 h-4 text-violet-400/70 shrink-0" aria-hidden />
         )}
 
-        <span className={`flex-1 truncate ${hasError ? 'text-red-400' : 'text-foreground'}`}>
-          {hasError
+        <span
+          role="status"
+          aria-live="polite"
+          className={`flex-1 truncate ${hasError ? 'text-red-400' : 'text-foreground'}`}
+        >
+          {!progress
+            ? sh.preparing_ingestion
+            : hasError
             ? (progress.error || sh.ingestion_failed)
             : done
             ? tx(sh.ingestion_done, { chunks: progress.chunksCreated, docs: progress.documentsDone })
@@ -86,9 +82,11 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
             : sh.processing}
         </span>
 
-        <span className="typo-caption text-foreground shrink-0">
-          {tx(sh.file_progress, { done: progress.documentsDone, total: progress.documentsTotal })}
-        </span>
+        {progress && (
+          <span className="typo-caption text-foreground shrink-0">
+            {tx(sh.file_progress, { done: progress.documentsDone, total: progress.documentsTotal })}
+          </span>
+        )}
       </div>
 
       {/* Progress bar */}

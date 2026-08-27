@@ -62,7 +62,8 @@ export function ChatInput({
               ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
               : 'bg-violet-500/10 border-violet-500/20 text-violet-400 hover:bg-violet-500/20 disabled:opacity-30 disabled:cursor-not-allowed'
           }`}
-          title={generating ? 'Cancel' : 'Send'}
+          title={generating ? t.common.cancel : t.common.send}
+          aria-label={generating ? t.common.cancel : t.common.send}
         >
           {generating ? <X className="w-4 h-4" /> : <Send className="w-4 h-4" />}
         </button>

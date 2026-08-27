@@ -91,6 +91,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           <button
             type="button"
             onClick={onClose}
+            aria-label={sh.close}
             className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
           >
             <X className="w-4 h-4" />

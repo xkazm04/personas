@@ -18,6 +18,11 @@ export default function StudioDecision({
   useEffect(() => {
     if (options.length === 0) return;
     const onKey = (e: KeyboardEvent) => {
+      // A held modifier means the digit belongs to a shortcut, not to this card
+      // — Ctrl/Cmd+1..9 is "switch tab" everywhere, and answering Athena's
+      // question instead is both surprising and unrecoverable (the answer is
+      // sent immediately). Autorepeat likewise: one keypress, one answer.
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
       const el = document.activeElement as HTMLElement | null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
       const n = Number(e.key);

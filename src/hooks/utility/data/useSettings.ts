@@ -28,12 +28,12 @@ interface SettingsChangedPayload {
  * even though they all fire from the same React render.
  *
  * This module collects every read requested in a single tick and flushes
- * them as a single `get_app_settings_bulk` invoke at the end of the
- * microtask, so the IPC cost scales with the *number of distinct ticks*
- * rather than the number of subscribed keys.
+ * them as one `get_app_settings_bulk` invoke per {@link BULK_READ_MAX_KEYS}
+ * keys at the end of the microtask, so the IPC cost scales with the *number
+ * of distinct ticks* rather than the number of subscribed keys.
  *
- * Rejection of the underlying invoke fans out to every pending caller so
- * none silently hangs.
+ * Rejection of an invoke fans out to that chunk's pending callers so none
+ * silently hangs.
  */
 
 interface PendingRead {
@@ -44,6 +44,19 @@ interface PendingRead {
 let pendingByKey = new Map<string, PendingRead[]>();
 let scheduled = false;
 
+/**
+ * Hard ceiling the backend enforces on one `get_app_settings_bulk` call —
+ * `GET_BATCH_MAX_KEYS` in `src-tauri/db/src/repos/core/settings.rs`, checked in
+ * `commands/infrastructure/settings.rs` which returns `AppError::Validation`
+ * for anything larger. The coalescer aggregates across *every* reader mounting
+ * in the same tick, so its batch size is not bounded by any single call site:
+ * without this split, one busy tick would reject the whole batch and every
+ * waiter in it, turning a growth-driven overflow into "all settings read as
+ * absent" across unrelated panels. Chunking keeps the client's rule the same
+ * rule as the server's.
+ */
+export const BULK_READ_MAX_KEYS = 256;
+
 function flushBatch() {
   const batch = pendingByKey;
   pendingByKey = new Map();
@@ -51,23 +64,29 @@ function flushBatch() {
   if (batch.size === 0) return;
 
   const keys = Array.from(batch.keys());
-  getAppSettingsBulk(keys).then(
-    (result) => {
-      for (const [key, waiters] of batch) {
-        const value = result[key] ?? null;
-        for (const w of waiters) w.resolve(value);
-      }
-    },
-    (err) => {
-      logger.error('Bulk settings read failed', {
-        keyCount: keys.length,
-        err: err instanceof Error ? err.message : String(err),
-      });
-      for (const waiters of batch.values()) {
-        for (const w of waiters) w.reject(err);
-      }
-    },
-  );
+  for (let offset = 0; offset < keys.length; offset += BULK_READ_MAX_KEYS) {
+    const chunk = keys.slice(offset, offset + BULK_READ_MAX_KEYS);
+    getAppSettingsBulk(chunk).then(
+      (result) => {
+        for (const key of chunk) {
+          const value = result[key] ?? null;
+          for (const w of batch.get(key) ?? []) w.resolve(value);
+        }
+      },
+      (err) => {
+        logger.error('Bulk settings read failed', {
+          keyCount: chunk.length,
+          batchKeyCount: keys.length,
+          err: err instanceof Error ? err.message : String(err),
+        });
+        // Only this chunk's waiters fail — a sibling chunk that succeeded
+        // still resolves, so one bad key set cannot blank every panel.
+        for (const key of chunk) {
+          for (const w of batch.get(key) ?? []) w.reject(err);
+        }
+      },
+    );
+  }
 }
 
 /**
@@ -102,10 +121,15 @@ interface UseSettingsResult {
 }
 
 /**
- * Load several settings in a single Tauri invoke. The underlying batch is
- * shared with any concurrent `useAppSetting` calls in the same microtask
- * via {@link getAppSettingCoalesced}, so partial overlap with other panels
- * does not cost extra round-trips.
+ * Load several settings in a single Tauri invoke.
+ *
+ * NOTE: this hook issues its own `get_app_settings_bulk` call — it does NOT
+ * go through {@link getAppSettingCoalesced}, so a panel that mixes
+ * `useSettings` with sibling `useAppSetting` hooks still pays two round
+ * trips in that tick. (Rerouting it through the coalescer would merge the
+ * two, at the cost of merging their failure domains as well; that trade-off
+ * has not been taken. This comment previously claimed the sharing already
+ * happened.)
  *
  * The returned `values` map is empty until the read completes, then contains
  * an entry for every requested key (`null` if the key was absent or the

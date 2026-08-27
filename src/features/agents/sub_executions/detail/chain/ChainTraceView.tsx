@@ -1,7 +1,6 @@
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { ChainStopReason } from '@/lib/bindings/ChainStopReason';
 import { Link2, AlertCircle, CircleSlash } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { formatCost } from '@/lib/utils/formatters';
@@ -30,10 +29,34 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, c
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
 
+  // Cold load: the chain header stays put and the row region ghosts UNDER it
+  // (docs/design/overview-loading.md laws 3 + 5). This branch used to render a
+  // centred `feedback/LoadingSpinner`, which returns null -- so the whole tab
+  // was a blank 4rem box for the length of the fetch.
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-foreground">
-        <LoadingSpinner size="lg" label={e.chain_loading} />
+      <div className="space-y-3">
+        <ChainHeader title={e.chain_title} subtitle={e.chain_subtitle} />
+        <div
+          role="status"
+          aria-label={e.chain_loading}
+          className="rounded-modal border border-primary/20 bg-secondary/30 divide-y divide-primary/10 overflow-hidden"
+        >
+          {CHAIN_GHOST_ROWS.map((i) => (
+            <div
+              key={i}
+              aria-hidden="true"
+              className="flex items-center gap-3 px-3 py-2.5 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            >
+              <span className={`h-3 w-3 ${GHOST_BAR}`} />
+              <span className="h-4 w-4 rounded-full bg-primary/[0.06]" />
+              <span className={`h-3 w-24 ${GHOST_BAR}`} />
+              <span className={`h-3 w-14 ml-auto ${GHOST_BAR}`} />
+              <span className={`h-3 w-16 ${GHOST_BAR}`} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -60,12 +83,7 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, c
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="typo-heading text-foreground/90 flex items-center gap-2">
-            <Link2 className="w-4 h-4" />{e.chain_title}
-          </p>
-          <p className="typo-body text-foreground mt-0.5">{e.chain_subtitle}</p>
-        </div>
+        <ChainHeader title={e.chain_title} subtitle={e.chain_subtitle} />
         {chainCostUsd > 0 && (
           <div className="text-right flex-shrink-0">
             <p className="typo-caption text-foreground">{e.chain_total_cost}</p>
@@ -109,6 +127,22 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, c
           <AlertCircle className="w-4 h-4 flex-shrink-0" />{e.chain_partial}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Ghost row geometry mirrors ChainSpanRow's `px-3 py-2.5` chain rows. */
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const CHAIN_GHOST_ROWS = [0, 1, 2];
+
+/** The chain heading, rendered identically while loading and once settled. */
+function ChainHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div>
+      <p className="typo-heading text-foreground/90 flex items-center gap-2">
+        <Link2 className="w-4 h-4" />{title}
+      </p>
+      <p className="typo-body text-foreground mt-0.5">{subtitle}</p>
     </div>
   );
 }

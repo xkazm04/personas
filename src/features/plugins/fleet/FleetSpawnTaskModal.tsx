@@ -93,15 +93,22 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
               </p>
             )}
           </div>
+          {/* Spawning is an ACTION the operator just pressed, so the control
+              owes a real spinner — not just a swapped label, which on a slow
+              spawn is indistinguishable from a click that did not register.
+              `loading` also supplies aria-busy and keeps `isDisabled` true,
+              so the double-submit guard is unchanged. */}
           <Button
             data-testid="fleet-spawn-task-submit"
             variant="primary"
             size="sm"
             icon={<Play className="w-3.5 h-3.5" />}
-            disabled={!prompt.trim() || busy}
+            loading={busy}
+            loadingLabel={t.plugins.fleet.spawn_task_spawning}
+            disabled={!prompt.trim()}
             onClick={() => void submit()}
           >
-            {busy ? t.plugins.fleet.spawn_task_spawning : t.plugins.fleet.spawn_task_submit}
+            {t.plugins.fleet.spawn_task_submit}
           </Button>
         </div>
       </div>

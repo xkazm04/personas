@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Copy, Table2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -39,11 +39,26 @@ export function TableContextMenu({ menu, onCopyQuery, onCopyName, onClose }: Tab
     };
   }, [onClose]);
 
-  // Keep menu within viewport
+  // Keep the menu within the viewport: a right-click near the right or bottom
+  // edge would otherwise place it partly (or, in the corner, almost entirely)
+  // off-screen with no way to scroll to it, since the menu is position: fixed.
+  // Measured after mount because the size depends on the translated labels.
+  const [pos, setPos] = useState({ x: menu.x, y: menu.y });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const MARGIN = 8;
+    const { width, height } = el.getBoundingClientRect();
+    setPos({
+      x: Math.max(MARGIN, Math.min(menu.x, window.innerWidth - width - MARGIN)),
+      y: Math.max(MARGIN, Math.min(menu.y, window.innerHeight - height - MARGIN)),
+    });
+  }, [menu.x, menu.y]);
+
   const style: React.CSSProperties = {
     position: 'fixed',
-    left: menu.x,
-    top: menu.y,
+    left: pos.x,
+    top: pos.y,
     zIndex: 100,
   };
 
