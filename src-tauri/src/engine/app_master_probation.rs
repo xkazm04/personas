@@ -855,6 +855,12 @@ fn anchorless_probation_sweep(
                     _ => 0,
                 }),
                 review_id: None,
+                // The anchorless path has no review row, so the numbers behind
+                // the decision reach the holder's memory from here — otherwise
+                // the only decisions an App master could remember would be the
+                // ones a human happened to click.
+                verdict: Some(verdict.as_str()),
+                unmeasured: &unmeasured,
             },
         );
         if !applied {

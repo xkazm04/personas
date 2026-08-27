@@ -1071,6 +1071,109 @@ pub(crate) fn authoring_worktrees_root(app: &tauri::AppHandle) -> Result<PathBuf
         .map_err(|e| format!("app data directory unavailable: {e}"))
 }
 
+// ---------------------------------------------------------------------------
+// Recall into the night (App master §8.1)
+// ---------------------------------------------------------------------------
+
+/// Compose the prompt an UNATTENDED worker is actually seeded with: the idea,
+/// then whatever the project and (for an App-master project) the holder already
+/// know.
+///
+/// Until this existed the fleet arm dispatched an amnesiac: the task_executor
+/// arm has injected `dev_memories` since the backlog-memory loop shipped, and
+/// the unattended arm — the one that runs at 03:00 with nobody watching, and
+/// the only one an App master uses — injected nothing at all. A night could
+/// therefore re-attempt an approach that was reverted last week, or re-open a
+/// question the owner already answered.
+///
+/// Two budgeted blocks, both optional, composed by
+/// [`personas_engine::app_master_memory`]:
+///
+/// * **`## Project memory`** — every unattended dispatch, 12 rows / 1.5k chars,
+///   parity with the runner arm. Project memory is a fact about the repository
+///   and outlives any one tenure.
+/// * **`## Your memory (App master)`** — only when the project carries a
+///   mandate: 6 core rows verbatim (core is small by contract) plus the active
+///   tier packed into 2k chars by value, carrying its own "+N omitted" line.
+///
+/// Called BEFORE `unattended::unattended_worktree_task_text`, so the guardrails
+/// still land last and the blocks ride inside the worker task text between the
+/// task and the rules.
+///
+/// **Best-effort, never fatal.** Every failure path degrades to "no block":
+/// a night that cannot read its memory still dispatches, exactly as it did
+/// before this existed.
+fn compose_unattended_recall(
+    db: &crate::db::DbPool,
+    project_id: Option<&str>,
+    prompt: &str,
+) -> String {
+    use personas_engine::app_master_memory as amm;
+
+    let Some(project_id) = project_id.filter(|p| !p.trim().is_empty()) else {
+        return prompt.to_string();
+    };
+
+    let project_block = match crate::db::repos::dev_memories::get_for_injection(
+        db,
+        project_id,
+        amm::PROJECT_MEMORY_ROWS,
+    ) {
+        Ok(rows) => amm::project_block_from_rows(&rows),
+        Err(e) => {
+            tracing::warn!(project_id, error = %e,
+                "unattended recall: project memory unreadable; dispatching without it");
+            None
+        }
+    };
+
+    // The persona lane is App-master-only: an ordinary autopilot project has no
+    // holder, and there is no persona whose memory it would be.
+    let persona_block =
+        personas_engine::app_master::get_mandate(db, project_id).and_then(|record| {
+            let tiered = match crate::db::repos::core::memories::get_for_injection_v2(
+                db,
+                crate::db::repos::core::memories::InjectionScope::for_persona(&record.persona_id),
+                amm::PERSONA_CORE_ROWS,
+                amm::PERSONA_ACTIVE_ROWS,
+            ) {
+                Ok(t) => t,
+                Err(e) => {
+                    tracing::warn!(project_id, persona_id = %record.persona_id, error = %e,
+                    "unattended recall: persona memory unreadable; dispatching without it");
+                    return None;
+                }
+            };
+            let packed = personas_db::memory_recall::pack_by_budget(
+                tiered.active,
+                amm::PERSONA_ACTIVE_BUDGET_CHARS,
+                chrono::Utc::now(),
+            );
+            let block = amm::persona_memory_block(&tiered.core, &packed.selected, packed.omitted)?;
+
+            // The access counters ARE the decay signal: `decay_score` anchors a
+            // memory's age at `last_accessed_at` and boosts on `access_count`.
+            // Injecting without this write starves decay — every memory the App
+            // master actually uses would age as though it had never been read.
+            let ids = amm::injected_ids(&tiered.core, &packed.selected);
+            if let Err(e) = crate::db::repos::core::memories::increment_access_batch(db, &ids) {
+                tracing::warn!(persona_id = %record.persona_id, error = %e,
+                "unattended recall: could not record memory access; decay will under-count");
+            }
+            tracing::debug!(
+                project_id,
+                persona_id = %record.persona_id,
+                core = tiered.core.len(),
+                active = packed.selected.len(),
+                omitted = packed.omitted,
+                "unattended recall: App master memory injected"
+            );
+            Some(block)
+        });
+
+    amm::compose_dispatch_prompt(prompt, project_block.as_deref(), persona_block.as_deref())
+}
+
 /// Prepare the isolated worktree one unattended dispatch will author in.
 async fn prepare_unattended_worktree(
     db: &crate::db::DbPool,
@@ -1277,8 +1380,16 @@ pub async fn dispatch_ideas_core(
                 match prepare_unattended_worktree(db, app, &d, &root).await {
                     Ok(wt) => {
                         let wt_str = wt.path.to_string_lossy().to_string();
+                        // Recall FIRST, guardrails last: the worker reads the
+                        // idea, then what this project and this holder already
+                        // know, then the rules it may not break. `d.prompt` is
+                        // left as the idea alone — it is the task row's own
+                        // description, and a memory snapshot does not belong in
+                        // a durable record of what was asked for.
+                        let recalled =
+                            compose_unattended_recall(db, d.project_id.as_deref(), &d.prompt);
                         let text = personas_engine::unattended::unattended_worktree_task_text(
-                            &d.prompt, &wt.branch, &wt_str,
+                            &recalled, &wt.branch, &wt_str,
                         );
                         d.worktree_path = Some(wt_str.clone());
                         d.branch = Some(wt.branch);

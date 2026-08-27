@@ -1142,8 +1142,8 @@ pub struct DevContextGroupRelationship {
 // Dev Memories — the project-scoped memory of the development loop
 // ============================================================================
 
-/// What produced a `DevMemory`. The loop has exactly three learning moments,
-/// and each one is a source here:
+/// What produced a `DevMemory`. Each learning moment in the loop is a source
+/// here:
 ///   `idea_decision` — a human or the Strategist accepted/rejected a backlog
 ///                     idea. Rejections become CONSTRAINTS.
 ///   `task_outcome`  — a dev-runner task reached a terminal state. What shipped,
@@ -1157,8 +1157,21 @@ pub struct DevContextGroupRelationship {
 ///                     the same project re-states the same facts and writes
 ///                     nothing: repo knowledge outlives tenure, and a second
 ///                     tenure should inherit it rather than duplicate it.
-pub const DEV_MEMORY_SOURCES: &[&str] =
-    &["idea_decision", "task_outcome", "scan_funnel", "kp_dossier"];
+///   `app_master_proposal`
+///                   — an App master proposal branch's observed fate (opened /
+///                     gated / merged / reverted), written by the reconciler.
+///                     The `source_id` is `<branch>:<event>`, so the 30-minute
+///                     reconcile that re-walks every known proposal forever
+///                     costs one row per fate and never inflates the record.
+///                     Project-scoped on purpose: what a repository accepted or
+///                     took back outlives any one tenure.
+pub const DEV_MEMORY_SOURCES: &[&str] = &[
+    "idea_decision",
+    "task_outcome",
+    "scan_funnel",
+    "kp_dossier",
+    "app_master_proposal",
+];
 
 /// Project-scoped memory for the development loop (scan → triage → execute).
 ///

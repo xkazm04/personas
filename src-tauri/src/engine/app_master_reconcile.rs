@@ -77,10 +77,57 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use personas_engine::app_master_gates as gates;
+use personas_engine::app_master_memory::{self as amm, ProposalEvent};
 
 use crate::db::DbPool;
 
 use super::subscription::ReactiveSubscription;
+
+// ---------------------------------------------------------------------------
+// Episodic write-back (App master §8.2)
+// ---------------------------------------------------------------------------
+
+/// Record one observed proposal event in the PROJECT's memory.
+///
+/// Why here and not in `app_master_gates`: this module is where a fate is
+/// *witnessed*, and the engine crate's gate helpers are also the unit under
+/// test for git plumbing — a memory write inside them would need a database to
+/// test what is deliberately a pure git claim.
+///
+/// Idempotent by construction: `dev_memories` has a unique index on
+/// `(project_id, source_kind, source_id)` and [`amm::proposal_memory`] gives
+/// every fate its own `source_id`, so the 30-minute reconcile re-walking every
+/// known proposal forever is free. `Ok(None)` (already recorded) is the steady
+/// state and is deliberately silent.
+///
+/// Best-effort: a project that cannot write its memory still reconciles. The
+/// backbone reading is the record of truth; this is what the NEXT dispatch gets
+/// to read.
+fn remember_proposal(pool: &DbPool, project_id: &str, branch: &str, event: ProposalEvent) {
+    let draft = amm::proposal_memory(branch, &event);
+    match crate::db::repos::dev_memories::record(
+        pool,
+        project_id,
+        draft.category,
+        &draft.title,
+        &draft.content,
+        draft.importance,
+        amm::PROPOSAL_SOURCE_KIND,
+        Some(&draft.source_id),
+    ) {
+        Ok(Some(_)) => tracing::info!(
+            project_id,
+            branch,
+            source_id = %draft.source_id,
+            "app_master_reconcile: recorded a proposal episode in project memory"
+        ),
+        Ok(None) => {}
+        Err(e) => tracing::warn!(
+            project_id, branch, error = %e,
+            "app_master_reconcile: could not record a proposal episode"
+        ),
+    }
+}
 
 /// How often to reconcile. A human merging a morning's proposal is a
 /// day-scale event; 30 minutes is already far finer than the signal.
@@ -249,6 +296,21 @@ async fn reconcile_project(
         if !known {
             newly_seen.push(branch.clone());
             counts.newly_recorded += 1;
+            // Only a branch that CARRIES work is an episode. A commit-less
+            // branch is a worker mid-authorship (sweep #24) — recording "the
+            // App master opened a proposal with 0 commits" would freeze the
+            // race into the project's memory, and the idempotency key would
+            // then refuse the honest row when the commits arrive.
+            if !commits.is_empty() {
+                remember_proposal(
+                    pool,
+                    project_id,
+                    branch,
+                    ProposalEvent::Recorded {
+                        commits: commits.len(),
+                    },
+                );
+            }
         }
     }
 
@@ -310,6 +372,23 @@ async fn reconcile_project(
         // verdict is a real, recorded answer.
         let _ = gates::mark_gates_ran(pool, &proposal.id, &chrono::Utc::now().to_rfc3339());
         counts.gated += 1;
+        // A tally is an episode; "not configured" is not. Nothing ran, so
+        // there is nothing the next dispatch could learn from it — and writing
+        // a row would make an absent gate suite look like a measured one.
+        let tally = sweep.tally();
+        if sweep.source != gates::GateSource::NotConfigured && tally.total() > 0 {
+            remember_proposal(
+                pool,
+                project_id,
+                &proposal.branch,
+                ProposalEvent::Gated {
+                    tip: proposal.head_sha.clone(),
+                    passed: tally.passed,
+                    failed: tally.failed,
+                    inherited_red: tally.inherited_red,
+                },
+            );
+        }
         tracing::info!(
             project_id,
             branch = %proposal.branch,
@@ -377,6 +456,12 @@ async fn reconcile_one(pool: &DbPool, root: &Path, main_branch: &str, proposal: 
             merged_at = %at,
             "app_master_reconcile: proposal observed on the main branch"
         );
+        remember_proposal(
+            pool,
+            &proposal.project_id,
+            &proposal.branch,
+            ProposalEvent::Merged { merge_sha: sha },
+        );
     }
 
     // Reverts are only meaningful for merged work, and only until one is found.
@@ -400,6 +485,15 @@ async fn reconcile_one(pool: &DbPool, root: &Path, main_branch: &str, proposal: 
             reverted_at = %at,
             revert_sha = %sha,
             "app_master_reconcile: a merged proposal was reverted on the main branch"
+        );
+        // The most valuable row this module writes: merging is not acceptance,
+        // and a revert is the one signal that says an approach the repository
+        // took was later paid back out. Importance 8 in the project lane.
+        remember_proposal(
+            pool,
+            &proposal.project_id,
+            &proposal.branch,
+            ProposalEvent::Reverted { revert_sha: sha },
         );
     }
 }
