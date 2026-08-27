@@ -373,6 +373,63 @@ struct NightRunTotals {
     degraded: bool,
 }
 
+/// Write what a finished night taught the App master into the HOLDER's memory
+/// (App master §8.2 — episodic capture).
+///
+/// Before this, the persona accumulated nothing across nights: a mandate
+/// refusal or a budget cap was a log line and a ledger column, neither of which
+/// the next night's prompt can read. The learned row is the night itself; the
+/// constraint row (written only when a standing ceiling refused the dispatch)
+/// is the one that stops tomorrow re-attempting a thing it was already refused.
+///
+/// Governance (registry memory-governance, stated in
+/// [`personas_engine::app_master_memory`]'s module doc): these land in the
+/// default working tier at importance 2–3 — **nothing here writes `core`**,
+/// nothing writes a `preference` about a human, and nothing self-modifies a
+/// rule. `batch_create` validates the category, dedups on normalized content
+/// and reports per-row skips; the night key rides in the content precisely so
+/// two consecutive nights are not collapsed as duplicates.
+///
+/// Best-effort and never fatal: the ledger row is the record of truth.
+fn remember_night(
+    pool: &DbPool,
+    persona_id: &str,
+    outcome: personas_engine::app_master_memory::NightOutcome<'_>,
+) {
+    let drafts = personas_engine::app_master_memory::night_memory_rows(&outcome);
+    let inputs: Vec<crate::db::models::CreatePersonaMemoryInput> = drafts
+        .into_iter()
+        .map(|d| crate::db::models::CreatePersonaMemoryInput {
+            persona_id: persona_id.to_string(),
+            title: d.title,
+            content: d.content,
+            category: Some(d.category.to_string()),
+            source_execution_id: None,
+            importance: Some(d.importance),
+            tags: Some(crate::db::models::Json(d.tags)),
+            // Persona-wide, not capability-scoped: a night is about the app,
+            // not about one use case the persona happens to hold.
+            use_case_id: None,
+        })
+        .collect();
+    match crate::db::repos::core::memories::batch_create(pool, inputs) {
+        Ok(result) => {
+            if !result.skipped.is_empty() {
+                tracing::debug!(
+                    persona_id,
+                    inserted = result.inserted,
+                    skipped = result.skipped.len(),
+                    "overnight: some night memories were skipped (duplicate or invalid)"
+                );
+            }
+        }
+        Err(e) => tracing::warn!(
+            persona_id, error = %e,
+            "overnight: could not record the night in the App master's memory"
+        ),
+    }
+}
+
 /// Run one project's night: scan delta → triage rules → (maybe) dispatch →
 /// ledger + digest. `night` is the ledger key (pre-claimed by the caller).
 async fn run_project_night(
@@ -445,12 +502,15 @@ async fn run_project_night(
     // the project had $28 of month spend. The mandate ceiling is checked
     // against the HOLDER's settled month spend (per-persona rollup), never the
     // project aggregate — two ceilings, two denominators.
-    let app_master_budget: Option<(String, f64)> =
-        personas_engine::app_master::get_mandate(pool, project_id).and_then(|r| {
-            r.budget_monthly_usd
-                .filter(|b| *b > 0.0)
-                .map(|b| (r.persona_id.clone(), b))
-        });
+    // Read ONCE: the budget governor needs the ceiling, and the night's own
+    // memory write-back needs the holder. Two reads of the same setting row
+    // would be two chances to disagree about whether this project has a hire.
+    let app_master_mandate = personas_engine::app_master::get_mandate(pool, project_id);
+    let app_master_budget: Option<(String, f64)> = app_master_mandate.as_ref().and_then(|r| {
+        r.budget_monthly_usd
+            .filter(|b| *b > 0.0)
+            .map(|b| (r.persona_id.clone(), b))
+    });
 
     // App master mandate (P4) — the SECOND gate, independent of autopilot mode.
     // Dispatching authors a change, so it needs rung 2; a project whose App
@@ -652,8 +712,40 @@ async fn run_project_night(
         &session_ids,
     )?;
 
-    // -- 4. Morning digest (event → webhook notifier; + desktop toast) -------
+    // -- 3b. What tonight taught the holder (App master §8.2) ----------------
+    //
+    // Written from the FINAL ledger row, and only for a project that has a
+    // hire: this is the persona's own experience, and there is no persona to
+    // attribute it to otherwise. Best-effort — a night that cannot write its
+    // memory is still a night that ran.
     let run = get_night_run(pool, run_id)?;
+    if let Some(record) = app_master_mandate.as_ref() {
+        remember_night(
+            pool,
+            &record.persona_id,
+            personas_engine::app_master_memory::NightOutcome {
+                project_name: &project.name,
+                night: &run.night,
+                dispatched,
+                accepted: triage.accepted_idea_ids.len(),
+                blocked_reason: blocked_reason.as_deref(),
+                degraded,
+                // Which standing refusal, if any, stopped tonight. Both are
+                // operator-stated ceilings that do not move overnight, which is
+                // exactly what makes them worth remembering: without this row
+                // tomorrow's night re-attempts what it was already refused.
+                refusal: if blocked_reason.is_some() && mandate_refusal.is_some() {
+                    Some(personas_engine::app_master_memory::NightRefusal::Mandate)
+                } else if degraded {
+                    Some(personas_engine::app_master_memory::NightRefusal::Budget)
+                } else {
+                    None
+                },
+            },
+        );
+    }
+
+    // -- 4. Morning digest (event → webhook notifier; + desktop toast) -------
     let payload = serde_json::json!({
         "runId": run.id,
         "night": run.night,

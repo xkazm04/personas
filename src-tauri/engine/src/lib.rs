@@ -52,6 +52,7 @@ pub mod api_definition;
 pub mod app_focus;
 pub mod app_master;
 pub mod app_master_gates;
+pub mod app_master_memory;
 pub mod archetype_catalog;
 pub mod auto_triage;
 pub mod autonomy;

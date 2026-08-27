@@ -2089,3 +2089,110 @@ directories; a non-git project is refused rather than dispatched into; prune
 retires a merged worktree, keeps in-flight work, keeps everything inside the
 grace window, and never considers a worktree outside its root; and the two
 guardrail variants share one tail.
+
+## 14. Memory — the App master stops starting amnesiac (§8)
+
+kp `docs/concepts/app-master.md` §8 is the semantics; this section is what
+Personas actually wires. **No new store.** Both memory lanes already existed and
+are hardened — the App master reuses them exactly as they are:
+
+| Lane | Store | Scope | Properties it already had |
+| --- | --- | --- | --- |
+| project | `personas_db::repos::dev_memories` | `dev_projects.id` | idempotent on `(project, source_kind, source_id)`, importance 1–10, constraints ordered first, no tier/decay/UI |
+| persona | `personas_db::repos::core::memories` | `personas.id` | tiers core/active/working/archive, decay + forgetting, claims, proposal lane, operator UI, importance 1–5 |
+
+The composition — every block of prompt text and every sentence written back —
+is pure and lives in `personas-engine::app_master_memory`, so it is unit-tested
+without a database (the `app_lib` test binary still will not launch on this
+machine; see §12/§13).
+
+### 14.1 Recall into the night
+
+`commands::infrastructure::dev_tools::compose_unattended_recall` runs on the
+UNATTENDED fleet arm, **before**
+`unattended::unattended_worktree_task_text` wraps the guardrails — so the worker
+task text reads: **idea → project memory → persona memory → guardrails.** The
+two things a worker must not lose bracket the recall.
+
+| Block | When | Budget |
+| --- | --- | --- |
+| `## Project memory` | every unattended dispatch with a project | `get_for_injection(project, 12)` → `render_for_prompt(…, 1500)` — parity with the task_executor arm |
+| `## Your memory (App master)` | only when `app_master::get_mandate` returns a record | `get_for_injection_v2(persona, 6 core, 60 active)`; core rendered verbatim (small by contract), active packed by `memory_recall::pack_by_budget(…, 2000)` and carrying its own `+N omitted` line |
+
+Then `increment_access_batch` on exactly the injected ids. That write is not a
+statistic: `memory_recall::decay_score` anchors a memory's age at
+`last_accessed_at` and boosts on `access_count`, so skipping it would starve
+decay and age every memory the App master actually uses as if it had never been
+read.
+
+Absence is honest throughout — an empty lane emits **no block at all** (an empty
+labelled section reads to a model as "this is everything I know"), and every
+read failure degrades to "no block" with a `warn`. A night that cannot read its
+memory still dispatches.
+
+The FLEET arm carried no recall of any kind before this. The runner arm has
+injected project memory since the backlog-memory loop; the arm that runs at
+03:00 with nobody watching — the only one an App master uses — injected nothing.
+
+### 14.2 Episodic write-back
+
+Only the auto-commit lane. Agent-inferred claims about the OWNER still go
+through the existing memory *proposal* lane, never auto-commit.
+
+| Site | Event | Lane | Row |
+| --- | --- | --- | --- |
+| `engine::app_master_reconcile` | proposal branch newly recorded **with commits** | project | `decision` 4, `<branch>:recorded` |
+| ″ | declared gates produced a tally | project | green → `decision` 5; a failure the proposal is answerable for → `constraint` 7. Key `<branch>:gates@<short-tip>`, so a re-gate after the tip moves is a NEW observation, not a suppressed duplicate |
+| ″ | tip observed on main | project | `decision` 6, `<branch>:merged` |
+| ″ | merged proposal reverted | project | `constraint` 8, `<branch>:reverted` — merging is not acceptance |
+| `commands::infrastructure::overnight` | night ledger row final, project has a mandate | persona | `learned` 2, tags `["night", <project>]`; **plus** `constraint` 3 when the mandate rung or the budget governor refused, carrying WHY |
+| `commands::design::reviews::apply_app_master_probation_decision` | probation decided | persona | `learned` 4, tags `["probation"]`: decision + backbone verdict + the unmeasured-rule list verbatim |
+
+`source_kind = "app_master_proposal"` is a declared member of
+`DEV_MEMORY_SOURCES`. Idempotency makes the 30-minute reconcile — which
+re-walks every known proposal forever — free: one row per fate, whatever the
+tick count.
+
+**The probation row has ONE write site for BOTH paths.** A human's click reaches
+`react_to_app_master_probation`, and the headless anchorless sweep calls
+`apply_app_master_probation_decision` directly; both land in the carry-out,
+which is exactly what the carry-out exists for (§13). `ProbationCarryOut` gained
+`verdict` + `unmeasured` so the memory says the same thing whichever hand
+decided; a `None` verdict is written as *no verdict recorded*, never as a pass.
+
+Constraints on the night rows are the point of the lane: a mandate rung and a
+monthly ceiling are standing refusals that do not move overnight, so without
+that row tomorrow's night re-attempts what it was already refused.
+
+### 14.3 Governance (registry `agent-memory` / memory-governance)
+
+Stated in the module doc and pinned by a test:
+
+* **nothing here writes tier `core`** — an agent that can promote its own
+  beliefs to always-injected has no forgetting curve. Rows land in the default
+  working tier and earn `active` through the existing lifecycle;
+* **nothing writes `preference`**, and nothing writes a claim about a human;
+* **nothing self-modifies a rule** — the mandate, forbidden classes and gate
+  commands are operator-stated data; a row records what happened, never what is
+  henceforth allowed;
+* persona-lane importance stays 2–4 of 5: observations competing for a recall
+  budget, not instructions.
+
+### 14.4 Known limits, carried not hidden
+
+`dev_memories` has no tier, no decay and no UI — a long-lived project's rows
+compete only on category + importance + recency. Tag-filtered recall does not
+exist in either lane. Both are named in kp's §8 and neither is worked around
+here.
+
+### Tests
+
+`personas-engine::app_master_memory` (19) — block presence/absence, ordering
+(the idea stays first), the packed block staying inside its budget, the
+omission line's singular/plural, distinct idempotency keys per fate, the
+importance ladder, inherited red never written as the proposal's fault, an
+undatable merge saying so, the refusal constraint, reason clipping, the
+unmeasured list, and the governance invariant over every draft this module can
+produce. `personas-db::dev_memories` (2) — one row per fate across ten
+reconcile ticks, a moved tip recording a new tally while the same tip does not,
+and the near-miss source kind being refused.
