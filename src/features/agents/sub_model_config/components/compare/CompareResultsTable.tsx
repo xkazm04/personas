@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Trophy, Target, FileText, Shield } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import type { ModelOption, ModelMetrics } from '../../libs/compareHelpers';
 import { MetricCard, CompareBar } from './CompareMetrics';
 import { OutputPreviews } from './CompareOutputPreviews';
@@ -84,8 +84,8 @@ export function ComparisonResults({
               {scenarios.map((scenario) => {
                 const rA = scenarioMatrix[scenario]?.[modelA.id];
                 const rB = scenarioMatrix[scenario]?.[modelB.id];
-                const scoreA = rA ? compositeScore(rA.toolAccuracyScore ?? 0, rA.outputQualityScore ?? 0, rA.protocolCompliance ?? 0) : null;
-                const scoreB = rB ? compositeScore(rB.toolAccuracyScore ?? 0, rB.outputQualityScore ?? 0, rB.protocolCompliance ?? 0) : null;
+                const scoreA = rA ? compositeScoreFromRow(rA.toolAccuracyScore, rA.outputQualityScore, rA.protocolCompliance) : null;
+                const scoreB = rB ? compositeScoreFromRow(rB.toolAccuracyScore, rB.outputQualityScore, rB.protocolCompliance) : null;
                 const rowWinner = scoreA != null && scoreB != null ? (scoreA > scoreB ? 'A' : scoreA < scoreB ? 'B' : null) : null;
                 return (
                   <tr key={scenario} className="border-b border-primary/10">

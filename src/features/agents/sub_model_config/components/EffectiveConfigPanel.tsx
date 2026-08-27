@@ -47,7 +47,7 @@ function FieldRow({ label, field, workspaceName, mask }: {
 }
 
 export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const mc = t.agents.model_config;
   const [expanded, setExpanded] = useState(false);
 
@@ -80,9 +80,9 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
           {mc.effective_config}
           {hasInheritance && (
             <span className="text-[10px] text-foreground">
-              {inheritedCount > 0 && `${inheritedCount} ${mc.inherited}`}
+              {inheritedCount > 0 && tx(mc.inherited, { count: inheritedCount })}
               {inheritedCount > 0 && overriddenCount > 0 && ' \u00B7 '}
-              {overriddenCount > 0 && `${overriddenCount} ${mc.overridden}`}
+              {overriddenCount > 0 && tx(mc.overridden, { count: overriddenCount })}
             </span>
           )}
         </span>
