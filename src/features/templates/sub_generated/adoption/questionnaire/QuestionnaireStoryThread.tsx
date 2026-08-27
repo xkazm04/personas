@@ -49,6 +49,7 @@ function ThreadItem({
     <button
       type="button"
       onClick={onClick}
+      aria-current={state === 'current' ? 'step' : undefined}
       className={`w-full text-left rounded-card px-3 py-2.5 transition-colors group relative ${
         state === 'current'
           ? 'bg-primary/10 border border-primary/25'
@@ -72,7 +73,7 @@ function ThreadItem({
               {summarizeAnswer(answer, question.type, t)}
               {isAuto && (
                 <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80 font-semibold not-italic">
-                  auto
+                  {t.templates.adopt_modal.auto_badge}
                 </span>
               )}
               {isAnsweredCurrent && (

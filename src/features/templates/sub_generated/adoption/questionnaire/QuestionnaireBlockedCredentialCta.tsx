@@ -14,7 +14,7 @@ export function QuestionnaireBlockedCredentialCta({
   category: string;
   onAddCredential: (vaultCategory: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div className="rounded-card border border-status-error/30 bg-status-error/10 p-4">
       <div className="flex items-start gap-3 mb-3">
@@ -24,7 +24,7 @@ export function QuestionnaireBlockedCredentialCta({
             {t.templates.adopt_modal.credentials_required_title}
           </h4>
           <p className="typo-body text-status-error/80 leading-relaxed mt-1">
-            {t.templates.adopt_modal.credential_required.replace('{category}', category)}
+            {tx(t.templates.adopt_modal.credential_required, { category })}
           </p>
         </div>
       </div>
