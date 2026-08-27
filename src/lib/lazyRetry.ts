@@ -16,6 +16,42 @@ export function isChunkLoadError(error: unknown): boolean {
   );
 }
 
+/** The import specifier out of `() => import('...')`, for error messages. */
+function describeImport(importFn: () => Promise<unknown>): string {
+  const m = /import\(\s*["']([^"']+)["']/.exec(importFn.toString());
+  return m?.[1] ?? '<lazy module>';
+}
+
+/**
+ * True when a lazy module resolved but carried no component — the failure
+ * mode React otherwise reports as the cryptic "Element type is invalid.
+ * Received a promise that resolves to: undefined".
+ */
+export function isMissingComponentExport(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return message.startsWith('lazyRetry: ');
+}
+
+/**
+ * The module resolved — but is the default actually a component? Two real
+ * ways it is not: (1) a renamed/removed export behind a `.then(m => ({ default:
+ * m.X }))` adapter, and (2) a dev server serving a stale EMPTY transform of a
+ * file that was saved in two steps (observed 2026-08-27: NotificationCenter.tsx
+ * served as a 183-byte sourcemap stub, which took every global overlay down
+ * with it). Throwing a NAMED error here means the boundary log says which
+ * module, instead of React's element-type message that names nothing.
+ */
+function assertComponentModule<T>(mod: { default: T }, importFn: () => Promise<unknown>): { default: T } {
+  const d = mod?.default;
+  if (d == null) {
+    throw new Error(
+      `lazyRetry: ${describeImport(importFn)} resolved without a default export ` +
+        '(renamed export, or a stale/empty dev-server transform — reload the app if it persists)',
+    );
+  }
+  return mod;
+}
+
 /**
  * Import with one automatic retry after 1.5 s — handles transient network
  * blips and stale-chunk 404s after a deploy.
@@ -63,7 +99,11 @@ function importWithRetry<T>(importFn: () => Promise<T>): Promise<T> {
 export function lazyRetry<T extends ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
 ): React.FC<React.ComponentProps<T>> {
-  const LazyImpl = lazy<T>(() => importWithRetry<{ default: T }>(importFn));
+  // The export check sits INSIDE the retried thunk, so an empty module gets
+  // the same single 1.5 s retry a failed fetch does before it surfaces.
+  const LazyImpl = lazy<T>(() =>
+    importWithRetry<{ default: T }>(() => importFn().then((mod) => assertComponentModule(mod, importFn))),
+  );
 
   // Thin, stable wrapper — Suspense still works: the inner lazy throws its
   // thenable and the nearest <Suspense> catches it; on a permanent rejection it

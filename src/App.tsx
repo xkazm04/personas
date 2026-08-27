@@ -102,6 +102,23 @@ class SilentErrorBoundary extends Component<
   render() { return this.state.hasError ? null : this.props.children; }
 }
 
+/**
+ * One global overlay, isolated. Each overlay gets its OWN boundary + Suspense,
+ * so a single bad chunk (a stale empty dev-server transform, a renamed export,
+ * a render bug in one panel) unmounts that one overlay — not the orb, the
+ * palette, notifications and the tour together. The group boundary around
+ * them stays as the backstop against the whole-app crash (ship-loop item 27).
+ * Measured 2026-08-27: NotificationCenter served as an empty module took every
+ * overlay in the group down for the session; with islands it takes itself.
+ */
+function OverlayIsland({ name, children }: { name: string; children: ReactNode }) {
+  return (
+    <SilentErrorBoundary name={`overlay:${name}`}>
+      <Suspense fallback={null}>{children}</Suspense>
+    </SilentErrorBoundary>
+  );
+}
+
 // Lazy-load overlays and background services — none needed for first paint.
 // BackgroundServices hosts hooks that import domain stores (~300 KB deferred).
 // lazyRetry instead of raw React.lazy: a failed chunk fetch (dev-server
@@ -386,26 +403,27 @@ export default function App() {
                   crash in any one of them (tour, command palette, companion,
                   orb, notifications…) degrades to "overlays gone" instead of
                   propagating to the app-root boundary and unmounting the WHOLE
-                  app to the static Sentry fallback (ship-loop item 27). Per-
-                  overlay isolation is a follow-up; the group boundary already
-                  removes the whole-app-crash blast radius. */}
+                  app to the static Sentry fallback (ship-loop item 27). Each
+                  overlay is additionally its own OverlayIsland (boundary +
+                  Suspense), so one bad chunk takes only itself; the group
+                  boundary stays as the backstop. */}
               <SilentErrorBoundary name="GlobalOverlays">
                 <Suspense fallback={null}>
-                  <HealingToast />
-                  <AlertToastContainer />
-                  <GuidedTour />
-                  <TourSpotlight />
-                  <OnboardingOverlay />
-                  <TourHandoffOffer />
-                  <ExecutionMiniPlayer />
-                  <CommandPalette />
-                  <QuickDispatchOverlay />
-                  <NotificationCenter />
-                  <ShareLinkHandler />
-                  <CompanionPanel />
-                  <AthenaOrbLayer />
-                  <AthenaGuideLayer />
-                  {import.meta.env.DEV && <StudioAttention />}
+                  <OverlayIsland name="healing-toast"><HealingToast /></OverlayIsland>
+                  <OverlayIsland name="alert-toasts"><AlertToastContainer /></OverlayIsland>
+                  <OverlayIsland name="guided-tour"><GuidedTour /></OverlayIsland>
+                  <OverlayIsland name="tour-spotlight"><TourSpotlight /></OverlayIsland>
+                  <OverlayIsland name="onboarding"><OnboardingOverlay /></OverlayIsland>
+                  <OverlayIsland name="tour-handoff"><TourHandoffOffer /></OverlayIsland>
+                  <OverlayIsland name="execution-mini-player"><ExecutionMiniPlayer /></OverlayIsland>
+                  <OverlayIsland name="command-palette"><CommandPalette /></OverlayIsland>
+                  <OverlayIsland name="quick-dispatch"><QuickDispatchOverlay /></OverlayIsland>
+                  <OverlayIsland name="notification-center"><NotificationCenter /></OverlayIsland>
+                  <OverlayIsland name="share-link"><ShareLinkHandler /></OverlayIsland>
+                  <OverlayIsland name="companion-panel"><CompanionPanel /></OverlayIsland>
+                  <OverlayIsland name="athena-orb"><AthenaOrbLayer /></OverlayIsland>
+                  <OverlayIsland name="athena-guide"><AthenaGuideLayer /></OverlayIsland>
+                  {import.meta.env.DEV && <OverlayIsland name="studio-attention"><StudioAttention /></OverlayIsland>}
                   {/* Fleet is TWO mounts, and the split is load-bearing.
                       The grid OVERLAY is dev tooling, so it stays gated — in a
                       prod build `import.meta.env.DEV` folds to `false` and
@@ -417,8 +435,8 @@ export default function App() {
                       hibernate/live-slot policy. Gating them together silently
                       deleted the bootstrap from every shipped build; do not
                       re-fuse them. */}
-                  {import.meta.env.DEV && <FleetGridLayer />}
-                  <FleetBootstrap />
+                  {import.meta.env.DEV && <OverlayIsland name="fleet-grid"><FleetGridLayer /></OverlayIsland>}
+                  <OverlayIsland name="fleet-bootstrap"><FleetBootstrap /></OverlayIsland>
                 </Suspense>
               </SilentErrorBoundary>
             </>

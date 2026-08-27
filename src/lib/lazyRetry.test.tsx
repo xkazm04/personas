@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { Component, Suspense, type ReactNode } from 'react';
 import { render, screen, act, fireEvent, cleanup } from '@testing-library/react';
-import { isChunkLoadError, lazyRetry } from './lazyRetry';
+import { isChunkLoadError, isMissingComponentExport, lazyRetry } from './lazyRetry';
 
 describe('isChunkLoadError', () => {
   it('matches the Chromium/WebView2 dynamic-import failure', () => {
@@ -169,5 +169,47 @@ describe('lazyRetry recovery', () => {
     expect(screen.getByText('LOADED_CONTENT')).toBeTruthy();
     // Healthy impl reused — no rebuild, so no additional import round-trip.
     expect(importFn.mock.calls.length).toBe(callsAfterFirst);
+  });
+});
+
+describe('lazyRetry — a module without a component is a NAMED failure', () => {
+  afterEach(cleanup);
+
+  class Catcher extends Component<{ children: ReactNode; onError: (e: Error) => void }, { failed: boolean }> {
+    state = { failed: false };
+    static getDerivedStateFromError() { return { failed: true }; }
+    componentDidCatch(e: Error) { this.props.onError(e); }
+    render() { return this.state.failed ? <span>failed</span> : this.props.children; }
+  }
+
+  it('rejects with the import specifier when the default export is undefined', async () => {
+    vi.useFakeTimers();
+    const errors: Error[] = [];
+    // Shape of App.tsx's `.then(m => ({ default: m.Named }))` adapters when the
+    // named export vanished — and of a stale empty dev-server transform.
+    const Broken = lazyRetry(() =>
+      Promise.resolve({ default: undefined as unknown as React.FC }),
+    );
+    render(
+      <Catcher onError={(e) => errors.push(e)}>
+        <Suspense fallback={<span>loading</span>}>
+          <Broken />
+        </Suspense>
+      </Catcher>,
+    );
+    // first attempt fails -> 1.5 s retry -> fails again -> boundary
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1600); });
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByText('failed')).toBeTruthy();
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0]!.message).toMatch(/^lazyRetry: .*resolved without a default export/);
+    expect(isMissingComponentExport(errors[0])).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('is not confused with a chunk-load failure', () => {
+    expect(isMissingComponentExport(new Error('Failed to fetch dynamically imported module'))).toBe(false);
+    expect(isChunkLoadError(new Error('lazyRetry: x resolved without a default export'))).toBe(false);
   });
 });
