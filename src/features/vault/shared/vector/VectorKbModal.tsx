@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('vector-kb-modal');
-import { X, FileText, Search, Settings, Brain, Pencil, Check, Table2 } from 'lucide-react';
+import { X, FileText, Search, Settings, Brain, Pencil, Check, Table2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
@@ -38,16 +38,27 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
   const [visited, setVisited] = useState<Set<VectorTab>>(() => new Set(['documents']));
   const [kb, setKb] = useState<KnowledgeBase | null>(null);
   const [loading, setLoading] = useState(true);
+  // A failed load and an absent KB are different facts. Collapsing both into
+  // "not found" turns every backend outage into silent data loss and offers the
+  // user no way back (failure-not-empty-success).
+  const [loadFailed, setLoadFailed] = useState(false);
+  const hasKbRef = useRef(false);
 
   // Extract kb_id from credential metadata
   const kbId = extractKbId(credential);
 
   const refreshKb = useCallback(async () => {
     if (!kbId) return;
+    setLoadFailed(false);
+    // A refresh after an ingest must not hide the tab that is already painted;
+    // only the first (or a retried) load owns the loading state.
+    if (!hasKbRef.current) setLoading(true);
     try {
       const data = await getKnowledgeBase(kbId);
+      hasKbRef.current = true;
       setKb(data);
     } catch (err) {
+      setLoadFailed(true);
       logger.error('Failed to load knowledge base', { error: String(err) });
     } finally {
       setLoading(false);
@@ -64,6 +75,20 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
 
   const { isEditingName, editName, nameInputRef, setEditName, startEditing, saveName, handleKeyDown } =
     useCredentialRename(credential, 'features/vault/shared/vector/VectorKbModal:catch1');
+
+  // Arrow keys move between tabs (WAI-ARIA tabs pattern); only the selected tab
+  // is in the Tab order, so the keyboard reaches the panel in one press.
+  const handleTabKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const delta = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (delta === 0) return;
+    e.preventDefault();
+    const from = TABS.findIndex((tab) => tab.id === activeTab);
+    const next = TABS[(from + delta + TABS.length) % TABS.length];
+    if (!next) return;
+    setVisited((prev) => new Set([...prev, next.id]));
+    setActiveTab(next.id);
+    e.currentTarget.querySelector<HTMLButtonElement>(`#vector-kb-tab-${next.id}`)?.focus();
+  }, [activeTab]);
 
   const color = connector?.color || '#8B5CF6';
 
@@ -135,6 +160,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         <button
           type="button"
           onClick={onClose}
+          aria-label={sh.close}
           className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         >
           <X className="w-4 h-4" />
@@ -142,7 +168,12 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
+      <div
+        role="tablist"
+        aria-label={sh.vector_kb}
+        onKeyDown={handleTabKeyDown}
+        className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0"
+      >
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = tab.id === activeTab;
@@ -150,6 +181,11 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             <button
               type="button"
               key={tab.id}
+              role="tab"
+              id={`vector-kb-tab-${tab.id}`}
+              aria-selected={isActive}
+              aria-controls={`vector-kb-panel-${tab.id}`}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
               className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium transition-colors ${
                 isActive
@@ -182,32 +218,77 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         {!loading && kb && (
           <>
             {visited.has('documents') && (
-              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'documents' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div
+                role="tabpanel"
+                id={`vector-kb-panel-documents`}
+                aria-labelledby="vector-kb-tab-documents"
+                aria-hidden={activeTab !== 'documents'}
+                inert={activeTab !== 'documents' || undefined}
+                className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'documents' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
+              >
                 <DocumentsTab kb={kb} onRefresh={refreshKb} />
               </div>
             )}
             {visited.has('search') && (
-              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'search' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div
+                role="tabpanel"
+                id={`vector-kb-panel-search`}
+                aria-labelledby="vector-kb-tab-search"
+                aria-hidden={activeTab !== 'search'}
+                inert={activeTab !== 'search' || undefined}
+                className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'search' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
+              >
                 <SearchTab kb={kb} />
               </div>
             )}
             {visited.has('extract') && (
-              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'extract' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div
+                role="tabpanel"
+                id={`vector-kb-panel-extract`}
+                aria-labelledby="vector-kb-tab-extract"
+                aria-hidden={activeTab !== 'extract'}
+                inert={activeTab !== 'extract' || undefined}
+                className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'extract' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
+              >
                 <ExtractTab kb={kb} />
               </div>
             )}
             {visited.has('settings') && (
-              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'settings' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div
+                role="tabpanel"
+                id={`vector-kb-panel-settings`}
+                aria-labelledby="vector-kb-tab-settings"
+                aria-hidden={activeTab !== 'settings'}
+                inert={activeTab !== 'settings' || undefined}
+                className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'settings' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
+              >
                 <SettingsTab kb={kb} onRefresh={refreshKb} />
               </div>
             )}
           </>
         )}
 
-        {!loading && !kb && (
+        {!loading && !kb && loadFailed && (
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
-              <Brain className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
+              <AlertCircle className="w-10 h-10 text-red-400/40 mx-auto mb-3" aria-hidden />
+              <p className="typo-body text-foreground">{t.errors.boundary_title_generic}</p>
+              <button
+                type="button"
+                onClick={() => void refreshKb()}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors focus-ring"
+              >
+                <RefreshCw className="w-3 h-3" aria-hidden />
+                {t.common.retry}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!loading && !kb && !loadFailed && (
+          <div className="absolute inset-0 flex items-center justify-center text-center p-8">
+            <div>
+              <Brain className="w-10 h-10 text-violet-400/30 mx-auto mb-3" aria-hidden />
               <p className="typo-body text-foreground">{sh.kb_not_found}</p>
             </div>
           </div>

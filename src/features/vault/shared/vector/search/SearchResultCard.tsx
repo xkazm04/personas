@@ -52,7 +52,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
             </Tooltip>
           )}
           <ScoreBadge score={scorePercent} />
-          <CopyButton text={result.content} tooltip="Copy content" />
+          <CopyButton text={result.content} tooltip={t.common.copy} />
         </div>
       </div>
 
