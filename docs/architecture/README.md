@@ -11,5 +11,6 @@ Cross-cutting implementation contracts and system diagrams live here.
 | [mcp-desktop-integration.md](mcp-desktop-integration.md) | MCP and desktop integration |
 | [gitlab-integration.md](gitlab-integration.md) | GitLab integration architecture |
 | [pattern-source-definition.md](pattern-source-definition.md) | Pattern/source definition contract |
+| [memory-graph-and-storage-engine-assessment.md](memory-graph-and-storage-engine-assessment.md) | The retrieval lane roster, the two relation stores nothing queries, and why we are not adopting a graph engine |
 
 Archived root architecture notes were moved to [_archive/root/ARCHITECTURE.md](../_archive/root/ARCHITECTURE.md).
