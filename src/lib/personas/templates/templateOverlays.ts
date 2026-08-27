@@ -12,7 +12,7 @@
  * by the checksum on the English canonical (in templateCatalog.ts) —
  * overlays are not independently checksummed.
  */
-import type { LocaleCode } from '@/i18n/locales.manifest';
+import { LOCALE_CODES, type LocaleCode } from '@/i18n/locales.manifest';
 import { createLogger } from '@/lib/log';
 import * as Sentry from '@sentry/react';
 import { silentCatch } from '@/lib/silentCatch';
@@ -113,6 +113,14 @@ interface MergeCtx {
 }
 
 function mergeArray(canonical: Json[], overlay: Json[], ctx: MergeCtx): Json[] {
+  // An EMPTY overlay array carries no translation, so it means "not mentioned",
+  // never "delete this". Without this guard the `every(...)` predicate below is
+  // vacuously true for `[]` and the wholesale-replace branch returns `[]` — so a
+  // translator writing `"use_cases": []` (or a generator emitting an empty list
+  // for an untranslated section) silently erased structural content that this
+  // module's contract says stays single-sourced in the canonical file.
+  if (overlay.length === 0) return canonical;
+
   // Primitive array (strings, numbers): overlay wholly replaces.
   // This is how we handle principles[], constraints[], decision_principles[],
   // options[], etc. Overlay must provide the entire translated list.
@@ -229,7 +237,21 @@ export function mergeTemplateOverlay<T>(
 // Overlay file discovery + lazy loading
 // ---------------------------------------------------------------------------
 
-const OVERLAY_SUFFIX_RE = /\.(ar|bn|cs|de|es|fr|hi|id|ja|ko|ru|vi|zh)\.json$/;
+/**
+ * Every locale that can carry an overlay: the shipped locale set minus the
+ * canonical language. DERIVED from `locales.manifest.ts` rather than re-listed
+ * here — the manifest's own header calls itself the single source of truth and
+ * claims "no other file references a locale by code", which this file used to
+ * falsify with a hand-typed 13-code alternation. A hand copy of an enumeration
+ * drifts the moment the enumeration grows, and nothing would have said so.
+ *
+ * The Vite glob below still needs literal patterns (it is statically analysed
+ * at build time and cannot read this array), so it stays hand-written — and the
+ * test suite asserts it covers every code in here.
+ */
+const OVERLAY_LOCALES: readonly LocaleCode[] = LOCALE_CODES.filter((c) => c !== 'en');
+
+const OVERLAY_SUFFIX_RE = new RegExp(`\\.(${OVERLAY_LOCALES.join('|')})\\.json$`);
 
 /** Glob of every sibling overlay file under scripts/templates/. */
 const overlayLoaders = import.meta.glob<{ id: string } & Record<string, unknown>>(
