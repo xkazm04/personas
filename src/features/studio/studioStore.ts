@@ -126,13 +126,11 @@ interface StudioStore {
   /** Re-open the tabs that were open before a WebView reload (H10), re-attaching
    *  to their still-running dev servers instead of showing a blank Studio. */
   rehydrate: () => void;
-  clearCreateError: () => void;
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
   importExisting: (path: string) => Promise<void>;
   createWithVision: (name: string, vision: string) => Promise<void>;
-  reload: (id: string) => void;
   sendTurn: (id: string, text: string) => Promise<void>;
   setBuildSettings: (
     id: string,
@@ -183,7 +181,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
   // Best-effort human message from a Tauri/JS error (AppError serializes to a
   // plain object like {Validation:"…"} that String()s to "[object Object]").
-  const readErr = (e: unknown): string => {
+  // Returns null when nothing readable could be extracted, so each caller can
+  // supply the fallback that fits ITS operation instead of inheriting one
+  // written for a different one.
+  const readErr = (e: unknown): string | null => {
     if (e instanceof Error) return e.message;
     if (typeof e === 'string') return e;
     if (e && typeof e === 'object') {
@@ -191,7 +192,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       const v = o.message ?? o.error ?? Object.values(o)[0];
       if (typeof v === 'string') return v;
     }
-    return 'Something went wrong creating the project.';
+    return null;
   };
 
   const ensure = (id: string, name: string) => {
@@ -399,7 +400,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (q && cur?.autonomous) patch(id, { autonomous: false, resumeAuto: true });
       else if (!q && cur?.resumeAuto) patch(id, { resumeAuto: false, autonomous: true });
     } catch (e) {
-      const reply = 'Something went wrong with that change.';
+      // Keep the CAUSE in the conversation, not only in a toast that vanishes.
+      // A build turn can fail for reasons the user can act on (the CLI timed
+      // out, the project moved, the session was interrupted); a bare "something
+      // went wrong" bubble left the log with no record of which.
+      const detail = readErr(e);
+      const reply = detail
+        ? `Something went wrong with that change.\n\n${detail}`
+        : 'Something went wrong with that change.';
       patch(id, {
         reply,
         messages: [
@@ -457,9 +465,19 @@ export const useStudioStore = create<StudioStore>((set, get) => {
           const delta = extractAssistantTextDelta(ev.payload);
           if (delta) queueStreamDelta(id, delta);
         }
-      }).then((un) => {
-        streamUnlisten = un;
-      });
+      })
+        .then((un) => {
+          streamUnlisten = un;
+        })
+        .catch((err) => {
+          // The `streamUnlisten` sentinel above is what makes initStream
+          // idempotent; if the subscription never attached, releasing it lets a
+          // later mount retry. Without this the failure is permanent AND
+          // silent — every build turn renders with an empty live stream and
+          // nothing anywhere says why.
+          streamUnlisten = null;
+          silentCatch('studioStore:initStream')(err);
+        });
     },
 
     setActive: (id) => {
@@ -493,8 +511,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       })();
     },
 
-    clearCreateError: () => set({ lastCreateError: null }),
-
     setBuildSettings: (id, p) => patch(id, p),
 
     closeTab: (id) => {
@@ -502,6 +518,11 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       stopLiveness(id);
       stopAuto(id);
       pendingStream.delete(id);
+      // Closing a tab mid-build used to stop the dev server and leave the build
+      // turn itself running: the CLI process kept editing the project with no
+      // tab left to show it, and nothing would ever reap it (the turn's own
+      // timeout is 25 minutes). Interrupt the session first, then the server.
+      void webbuildSessionStop(id).catch(silentCatch('studioStore:closeTab:session'));
       void webbuildDevStop(id).catch(silentCatch('studioStore:closeTab'));
       set((s) => {
         const { [id]: _gone, ...rest } = s.runtimes;
@@ -546,7 +567,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       } catch (e) {
         // H9 — scaffold failure was previously a transient toast only; the
         // vision-start screen shows nothing about WHY (e.g. missing Bun). Keep it.
-        set({ lastCreateError: readErr(e) });
+        set({ lastCreateError: readErr(e) ?? 'Something went wrong creating the project.' });
         toastCatch('scaffold project')(e);
         return;
       }
@@ -557,8 +578,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       });
       await start(project.id);
     },
-
-    reload: (id) => patch(id, { status: get().runtimes[id]?.status ?? null }),
 
     sendTurn: (id, text) => runTurn(id, text),
 

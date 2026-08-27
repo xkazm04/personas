@@ -40,6 +40,8 @@ export default function StudioBuildSettings({ id }: { id: string }) {
         data-testid="studio-settings"
         onClick={() => setOpen((v) => !v)}
         aria-label="Build settings"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
           open
             ? 'bg-secondary/60 text-primary'
@@ -48,6 +50,10 @@ export default function StudioBuildSettings({ id }: { id: string }) {
       >
         <Settings2 className="h-4 w-4" />
       </button>
+      {/* Click-away dismissal. The panel floats over the live preview and every
+          other Studio popover (the tab picker) already closes this way; without
+          it the only exit was hitting the gear again. */}
+      {open && <div className="fixed inset-0 z-20" aria-hidden onClick={() => setOpen(false)} />}
       {open && (
         <div
           data-testid="studio-settings-panel"

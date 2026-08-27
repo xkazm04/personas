@@ -139,6 +139,9 @@ export default function StudioTabBar({
             <button
               type="button"
               onClick={() => setActive(id)}
+              // Which tab is active was carried by colour alone — a distinction
+              // no screen-reader user and no high-contrast setting can see.
+              aria-current={active ? 'true' : undefined}
               className={`flex items-center gap-1.5 py-1 pl-2.5 pr-1 text-md ${
                 active ? 'text-foreground' : 'text-foreground/60 group-hover:text-foreground'
               }`}
@@ -150,7 +153,10 @@ export default function StudioTabBar({
               type="button"
               onClick={() => closeTab(id)}
               aria-label={`Close ${name}`}
-              className="mr-1 shrink-0 rounded-interactive p-0.5 text-foreground/40 opacity-0 hover:text-foreground group-hover:opacity-100"
+              // `opacity-0` + `group-hover:opacity-100` alone makes this a
+              // control you can Tab to but cannot see — the focus ring lands on
+              // a fully transparent button. Reveal it on focus too.
+              className="mr-1 shrink-0 rounded-interactive p-0.5 text-foreground/40 opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
             >
               <X className="h-3 w-3" />
             </button>
@@ -163,6 +169,8 @@ export default function StudioTabBar({
         type="button"
         onClick={togglePicker}
         aria-label="Open or create a project"
+        aria-haspopup="menu"
+        aria-expanded={pickerOpen}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-foreground/60 hover:bg-secondary/40 hover:text-foreground"
       >
         <Plus className="h-4 w-4" />
