@@ -937,6 +937,157 @@ fn persist_mandate(
 }
 
 // ---------------------------------------------------------------------------
+// (h) the memory seed
+// ---------------------------------------------------------------------------
+
+/// Seed the two memory stores from the hire (M3a; kp `docs/concepts/
+/// app-master.md` §8, integration point 3).
+///
+/// An App master approved five minutes ago has two empty stores, so its first
+/// night recalls nothing and re-derives what the repository is from scratch —
+/// while the one artefact that already says all of it, the composed spec, sits
+/// unread on the approval row. This is the write of that artefact into recall.
+///
+/// The row shapes are decided by
+/// [`personas_engine::app_master_hire_memory::hire_memory_seeds`] (pure, tested
+/// without a DB); everything here is the I/O and its failure handling.
+///
+/// # `core` is written HERE and nowhere else
+///
+/// Exactly one row per hire reaches the `core` tier — the identity the kp
+/// operator composed. Core is always-included in every future recall, so each
+/// extra core row is a permanent tax on every prompt, and an agent that can
+/// promote its own beliefs to always-included can rewrite its own mandate.
+/// Every other writer in the system (night outcomes, reconcile events,
+/// probation decisions) writes `learned`/`constraint` at the default tier, and
+/// agent-inferred claims about the OWNER go through the memory *proposal* lane.
+/// That is the registry's memory-governance line; this function is its only
+/// sanctioned crossing.
+///
+/// # Best-effort, always
+///
+/// The persona, its build and its mandate are already real by the time this
+/// runs. A memory that failed to write is a degraded hire, not a failed one —
+/// so every problem becomes a note on `setup_detail`, exactly like the rest of
+/// the binding pass, and nothing here can return an error.
+///
+/// # Re-hire
+///
+/// The project rows are idempotent on `(project, source_kind, source_id)` and a
+/// second hire on the same project writes none of them again — the repository's
+/// facts outlive the tenure. `batch_create` dedups byte-identical persona rows
+/// too, but the identity row carries the hire DATE, so a re-hire adds its own
+/// and the predecessor's stays. That is deliberate: two identity rows on one
+/// persona is a re-hire, which is a true thing to remember.
+fn seed_memory(
+    db: &crate::db::DbPool,
+    persona_id: &str,
+    persona_name: &str,
+    project_id: &str,
+    am: &serde_json::Value,
+    notes: &mut Vec<String>,
+) {
+    use personas_engine::app_master_hire_memory as seeds;
+
+    let hired_on = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let plan = seeds::hire_memory_seeds(persona_id, persona_name, am, &hired_on);
+    notes.extend(plan.notes);
+
+    // -- the one core row ---------------------------------------------------
+    if let Some(identity) = plan.core_identity {
+        match crate::db::repos::core::memories::create(db, identity) {
+            Ok(row) => {
+                // `create` writes at the column default (`active`); the tier is
+                // a second, validated write. A failure here leaves a correct
+                // memory in the wrong tier — recall still finds it, it is just
+                // no longer unconditional — so it is a note, not a rollback.
+                match crate::db::repos::core::memories::update_tier(db, &row.id, "core") {
+                    Ok(true) => notes.push("seeded the core identity memory".into()),
+                    Ok(false) => notes.push(
+                        "the identity memory was written but could not be promoted to the `core` \
+                         tier (no row matched) — it will be recalled as an ordinary memory"
+                            .into(),
+                    ),
+                    Err(e) => notes.push(format!(
+                        "the identity memory was written but could not be promoted to `core` \
+                         ({e}) — it will be recalled as an ordinary memory"
+                    )),
+                }
+            }
+            Err(e) => notes.push(format!(
+                "the core identity memory could not be seeded ({e}) — the App master will not \
+                 recall its own mandate unprompted"
+            )),
+        }
+    }
+
+    // -- the dossier + objective rows --------------------------------------
+    if !plan.persona_rows.is_empty() {
+        let wanted = plan.persona_rows.len();
+        match crate::db::repos::core::memories::batch_create(db, plan.persona_rows) {
+            Ok(res) => {
+                notes.push(format!(
+                    "seeded {} of {wanted} dossier memories",
+                    res.inserted
+                ));
+                // `batch_create` reports its skips; a silently-missing memory
+                // is exactly the failure that signature exists to prevent, so
+                // the reason travels to the operator rather than to a log line.
+                for skip in res.skipped {
+                    notes.push(format!(
+                        "dossier memory #{} was not written: {}",
+                        skip.index, skip.reason
+                    ));
+                }
+            }
+            Err(e) => notes.push(format!("the dossier memories could not be seeded: {e}")),
+        }
+    }
+
+    // -- the project lane ---------------------------------------------------
+    // Needs a project. A hire whose project binding failed still gets its
+    // persona memory; there is simply nowhere to put the repo's facts.
+    if project_id.trim().is_empty() {
+        if !plan.project_rows.is_empty() {
+            notes.push(
+                "no project was bound, so the repo facts were not written to the project memory \
+                 lane — they live only on the persona and will not outlive this hire"
+                    .into(),
+            );
+        }
+        return;
+    }
+    let (mut written, mut already) = (0usize, 0usize);
+    for row in &plan.project_rows {
+        match crate::db::repos::dev_memories::record(
+            db,
+            project_id,
+            row.category,
+            &row.title,
+            &row.content,
+            row.importance,
+            seeds::KP_DOSSIER_SOURCE,
+            Some(row.source_id),
+        ) {
+            // `Ok(None)` is the idempotent no-op: this project already knows
+            // it, from this hire's predecessor. Not a failure and not a write.
+            Ok(Some(_)) => written += 1,
+            Ok(None) => already += 1,
+            Err(e) => notes.push(format!(
+                "project memory `{}` could not be recorded: {e}",
+                row.source_id
+            )),
+        }
+    }
+    if written > 0 || already > 0 {
+        notes.push(format!(
+            "project memory: {written} repo fact(s) recorded, {already} already known from a \
+             previous hire"
+        ));
+    }
+}
+
+// ---------------------------------------------------------------------------
 // The binding pass
 // ---------------------------------------------------------------------------
 
@@ -978,7 +1129,29 @@ pub(crate) fn bind_app_master(
     out.trigger_ids = trigger_ids;
     out.unsupported_triggers = unsupported;
     set_probation_autopilot(db, &project_id, &mut out.notes);
-    persist_mandate(db, &project_id, persona_id, am, &mut out.notes);
+    let mandate = persist_mandate(db, &project_id, persona_id, am, &mut out.notes);
+
+    // (h) LAST, and only once the mandate is durable. The core identity memory
+    // states the rung, the owner and the budget as facts about this hire; if
+    // the mandate did not persist, none of those are being enforced, and a
+    // memory the holder recalls forever would be describing a contract that
+    // does not exist. Better to have no memory than a confident wrong one.
+    if mandate.is_some() {
+        seed_memory(
+            db,
+            persona_id,
+            persona_name,
+            &project_id,
+            am,
+            &mut out.notes,
+        );
+    } else {
+        out.notes.push(
+            "memory was NOT seeded because the mandate did not persist — an identity memory \
+             stating a rung nothing enforces would be recalled as true forever"
+                .into(),
+        );
+    }
     out
 }
 

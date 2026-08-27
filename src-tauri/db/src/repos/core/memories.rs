@@ -295,6 +295,73 @@ pub fn get_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<Persona
     })
 }
 
+/// How many memories a persona holds in each tier.
+///
+/// One row per tier is the whole point: `core` is the always-included budget,
+/// `active` is the recall workhorse, `working` is the raw capture lane and
+/// `archive` never reaches a prompt. A single total would hide the only
+/// distinction that matters. Serialized to kp's roster as `memory` on the App
+/// master rollup (`engine::kp_reporter`), where it is how an operator sees
+/// accumulated experience: tenure made visible.
+///
+/// `archived` (not `archive`) on the wire: kp's field is an adjective about the
+/// rows, and the tier name is an internal enum value.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryTierCounts {
+    pub core: i64,
+    pub active: i64,
+    pub working: i64,
+    pub archived: i64,
+}
+
+impl MemoryTierCounts {
+    /// True when the persona holds nothing at all — the caller's cue to send
+    /// *nothing* rather than four zeros, since "no memory yet" and "four tiers
+    /// measured at zero" are the same number and different findings.
+    pub fn is_empty(&self) -> bool {
+        self.core == 0 && self.active == 0 && self.working == 0 && self.archived == 0
+    }
+}
+
+/// Count one persona's memories per tier in a single grouped query.
+///
+/// A tier the persona has none of is a `0`, not a missing key: the query ran,
+/// and an empty tier is a measurement. The distinction between "this persona
+/// has no core memories" and "nobody counted" is carried one level up, by
+/// whether the caller sends the block at all.
+pub fn count_by_tier(pool: &DbPool, persona_id: &str) -> Result<MemoryTierCounts, AppError> {
+    timed_query!("persona_memories", "persona_memories::count_by_tier", {
+        let conn = pool.conn("memories::count_by_tier")?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT tier, COUNT(*) AS n FROM persona_memories
+             WHERE persona_id = ?1 GROUP BY tier",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |row| {
+            Ok((row.get::<_, String>("tier")?, row.get::<_, i64>("n")?))
+        })?;
+        let mut out = MemoryTierCounts::default();
+        for row in rows {
+            let (tier, n) = row.map_err(AppError::Database)?;
+            match tier.as_str() {
+                "core" => out.core = n,
+                "active" => out.active = n,
+                "working" => out.working = n,
+                "archive" => out.archived = n,
+                // Unreachable through `update_tier`, which validates. A row
+                // written around it is counted nowhere rather than folded into
+                // a tier it does not belong to.
+                other => tracing::warn!(
+                    persona_id,
+                    tier = other,
+                    "memories::count_by_tier: unrecognised tier, not counted"
+                ),
+            }
+        }
+        Ok(out)
+    })
+}
+
 /// Count memories linked to a specific execution (used for post-mortem dedup check).
 pub fn count_by_execution(pool: &DbPool, execution_id: &str) -> Result<i64, AppError> {
     timed_query!(
@@ -3266,6 +3333,62 @@ mod tests {
             order,
             vec![important.as_str(), busy.as_str()],
             "importance must dominate the decayed access term"
+        );
+    }
+
+    /// The tier counts kp's roster reads as "accumulated experience". Every
+    /// tier is counted separately (`core` is the always-included budget,
+    /// `archive` never reaches a prompt at all), and one persona's rows never
+    /// reach another's total.
+    #[test]
+    fn tier_counts_are_per_tier_and_per_persona() {
+        let pool = init_test_db().unwrap();
+        let master = make_persona(&pool, "App master");
+        let other = make_persona(&pool, "Someone else");
+
+        let core = insert_scoped_memory(&pool, &master, "identity", "active", None);
+        update_tier(&pool, &core, "core").unwrap();
+        insert_scoped_memory(&pool, &master, "gates", "active", None);
+        insert_scoped_memory(&pool, &master, "risks", "active", None);
+        insert_scoped_memory(&pool, &master, "session capture", "working", None);
+        let old = insert_scoped_memory(&pool, &master, "retired lesson", "active", None);
+        update_tier(&pool, &old, "archive").unwrap();
+        insert_scoped_memory(&pool, &other, "not mine", "active", None);
+
+        let counts = count_by_tier(&pool, &master).unwrap();
+        assert_eq!(
+            counts,
+            MemoryTierCounts {
+                core: 1,
+                active: 2,
+                working: 1,
+                archived: 1,
+            }
+        );
+        assert!(!counts.is_empty());
+
+        // A persona with nothing reads as empty, so the caller can omit the
+        // block instead of sending four zeros that look like a measurement.
+        let fresh = make_persona(&pool, "Just hired");
+        let none = count_by_tier(&pool, &fresh).unwrap();
+        assert_eq!(none, MemoryTierCounts::default());
+        assert!(none.is_empty());
+    }
+
+    /// The wire spelling is pinned at the source: kp's roster reads `archived`,
+    /// while the tier value in the column is `archive`.
+    #[test]
+    fn tier_counts_serialize_with_the_names_kp_reads() {
+        let v = serde_json::to_value(MemoryTierCounts {
+            core: 1,
+            active: 12,
+            working: 3,
+            archived: 4,
+        })
+        .unwrap();
+        assert_eq!(
+            v,
+            serde_json::json!({"core": 1, "active": 12, "working": 3, "archived": 4})
         );
     }
 }

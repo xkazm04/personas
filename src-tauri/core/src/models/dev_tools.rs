@@ -1150,7 +1150,15 @@ pub struct DevContextGroupRelationship {
 ///                     or what failed and why.
 ///   `scan_funnel`   — a scan-and-decide run's funnel summary (reserved for the
 ///                     Phase 4 flow; see docs/plans/backlog-memory-loop.md).
-pub const DEV_MEMORY_SOURCES: &[&str] = &["idea_decision", "task_outcome", "scan_funnel"];
+///   `kp_dossier`    — what the kp repo dossier said about this repository at
+///                     hire time (declared gates, hot spots, risk areas),
+///                     seeded once per field by the App-master hire path. The
+///                     `source_id` is the dossier FIELD NAME, so a re-hire on
+///                     the same project re-states the same facts and writes
+///                     nothing: repo knowledge outlives tenure, and a second
+///                     tenure should inherit it rather than duplicate it.
+pub const DEV_MEMORY_SOURCES: &[&str] =
+    &["idea_decision", "task_outcome", "scan_funnel", "kp_dossier"];
 
 /// Project-scoped memory for the development loop (scan → triage → execute).
 ///

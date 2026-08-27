@@ -976,6 +976,10 @@ mod tests {
             // narration must say, because it means nothing was excluded from
             // the rate on the holder's behalf.
             baseline_gate_health: None,
+            // M3b: the probation narration says nothing about memory, so the
+            // fixture leaves it unmeasured rather than asserting a shape the
+            // narrator does not read.
+            memory: None,
         }
     }
 

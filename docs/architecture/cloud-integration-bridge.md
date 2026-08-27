@@ -830,6 +830,7 @@ orphaning a project and a team.
 | (e) triggers | `schedule` → `TriggerKind::Schedule` with kp's own `{cron}`. `pr` and `kpi_tick` have **no mapping** and are recorded as unsupported. |
 | (f) autopilot | The project is set to `suggest` — probation. Never `full`; activation is a human decision at 11.5. |
 | (g) tenure | `app_master_mandate:<project_id>` holds the mandate + `probation_ends_at` (approval time + `tenure.probationDays`) + the retirement criteria. |
+| (h) memory (M3a) | Seed both existing stores so the first night is not amnesiac. **Persona lane** (`persona_memories`), at most five rows: ONE `instruction`/importance-5 identity row promoted to tier `core` (mission, rung, forbidden-class count, owner, monthly budget, probation days, tagged `identity,kp_hire`, provenance stated in the text as "Hired via kp on `<date>`"), plus `fact`/importance-3 rows for the declared gates, hot spots and risk areas and one `instruction`/importance-4 row for the objectives (all tagged `dossier,kp_hire`, all at the default tier). **Project lane** (`dev_memories`, `source_kind = kp_dossier`, `source_id` = the dossier field name, `category = fact`, importance 6): `declared_gates`, `hot_spots`, `risk_areas` — idempotent, so they outlive the tenure and a re-hire inherits rather than duplicates them. Runs **only if (g) persisted** — an identity memory stating a rung nothing enforces would be recalled as true forever — and is **best-effort** like every other step. |
 
 **Shape mismatches, resolved explicitly.** `DevKpi` has no `key` and no
 `window` column, so kp's `kpiKey` and `windowDays` ride in `measure_config`
@@ -840,6 +841,21 @@ Personas side knows how to read a kp objective automatically, and a `codebase`
 kind would claim an automated reading no binding exists for. A **null baseline
 stays null** — `baseline_value` is nullable, so "nobody measured this" survives
 the write.
+
+**Step (h) is the ONLY writer of tier `core`** (registry `agent-memory` /
+memory-governance). Core is always-included in recall, so each core row is a
+permanent tax on every future prompt, and an agent that can promote its own
+beliefs to always-included can rewrite its own mandate. Every other memory
+writer — night outcomes, reconcile events, probation decisions — writes
+`learned`/`constraint` at the default tier, and agent-inferred claims about the
+owner go through the memory *proposal* lane. Two known limits, carried rather
+than hidden: kp's `AppMasterSpec` sends `app.dossierId` and **not the dossier**,
+so `hotSpots`/`riskAreas` are seeded only if an (optional, forward-compatible)
+`appMaster.dossier` block travels — otherwise their absence becomes a setup note
+rather than a plausible substitute; and because the identity row carries the hire
+date, a re-hire on the same project adds its own core row beside the
+predecessor's instead of deduping into it. That is deliberate: two identity rows
+on one persona *is* a re-hire.
 
 **Partial success is reported, never rounded up.** Every step that fails
 becomes a note, not an abort: the persona and its build are already real. The
@@ -930,6 +946,7 @@ What is real today, and what is not:
 | `budgetUnmeasured` | **real** | `runs > 0 && cost_usd == 0.0` — the subscription-auth case. "It cost nothing" and "nobody was counting" are opposite findings that look identical in a number. |
 | `ledgerConsistent` | **real** | Cross-ledger check over the tenure window's dispatched sessions: every session the night-run ledger claims to have dispatched must have a `dev_tasks` row, written by a different function on the same path. `None` when nothing was dispatched — there is no honest verdict on an empty set. |
 | `autopilotMode` | **real** | The project's `autopilot_mode:<id>` row; `off` when there is none (the honest floor). |
+| `memory` | **real (M3b)** | `{core, active, working, archived}` — `memories::count_by_tier(persona)`, this holder's own memories per tier. Persona-scoped and deliberately **unwindowed**: memory is what the holder has accumulated over its whole tenure, which is the point (tenure made visible on kp's roster). Per tier rather than as a total because the tiers are not comparable — `core` is the always-included identity seeded at hire (exactly one row per hire, §11.2), `active` is the recall workhorse, `working` is raw capture, `archive` never reaches a prompt. `archived` on the wire, `archive` in the column. `None` when the persona holds **nothing** (seeding failed, or a hire predating M3a) and also on a query error: four zeros would read as a measurement of an agent that is accumulating. |
 
 Lifecycle gains `probation_review` with `{decision, note}`.
 

@@ -282,6 +282,26 @@ pub(crate) struct KpAppMasterRollup {
     pub ledger_consistent: Option<bool>,
     /// Real: the project's current autopilot mode. `suggest` during probation.
     pub autopilot_mode: &'static str,
+    /// M3b: how many memories this App master holds, per tier — `{core, active,
+    /// working, archived}`. Tenure made visible: kp's roster can show that a
+    /// holder six months in has accumulated something, which is the one thing a
+    /// count of proposals cannot say.
+    ///
+    /// Per tier rather than as a total because the tiers are not comparable:
+    /// `core` is the always-included identity (one row per hire, by contract),
+    /// `active` is the recall workhorse, `working` is raw capture, and
+    /// `archive` never reaches a prompt at all. A single number would hide the
+    /// only distinction that matters.
+    ///
+    /// Persona-scoped and deliberately **not** windowed to the reporting
+    /// period: memory is what this holder has accumulated over its whole
+    /// tenure, not what it accumulated this month.
+    ///
+    /// `None` when the persona holds **nothing** — a hire whose memory seeding
+    /// failed, or one made before M3a. Four zeros would read as a measurement
+    /// of an accumulating agent; the absence reads as what it is.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory: Option<crate::db::repos::core::memories::MemoryTierCounts>,
 }
 
 #[derive(Debug, Serialize)]
@@ -666,6 +686,10 @@ pub(crate) fn app_master_rollup(
 ) -> Option<KpAppMasterRollup> {
     let link = crate::db::models::parse_design_context(design_context).app_master?;
     let project_id = link.project_id;
+    // Persona-scoped, so it is readable even for a hire whose project binding
+    // failed — and unwindowed, deliberately: memory is what this holder has
+    // accumulated over its whole tenure, not what it accumulated this month.
+    let memory = memory_counts(pool, persona_id);
     if project_id.trim().is_empty() {
         // A hire whose project binding failed. It is still an App master, and
         // saying so with everything unmeasured is more useful than silence.
@@ -673,6 +697,7 @@ pub(crate) fn app_master_rollup(
             budget_settled_usd: Some(monthly_cost_usd),
             budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
             autopilot_mode: "off",
+            memory,
             ..Default::default()
         });
     }
@@ -756,7 +781,28 @@ pub(crate) fn app_master_rollup(
         budget_unmeasured: monthly_runs > 0 && monthly_cost_usd == 0.0,
         ledger_consistent: ledger_consistent(pool, &sessions),
         autopilot_mode,
+        memory,
     })
+}
+
+/// This holder's memory-tier counts, or `None` when it holds nothing.
+///
+/// A query failure is also `None` — the same reading as "nothing to report",
+/// and correctly so: both mean the rollup cannot say what this persona has
+/// accumulated, and sending four zeros for a DB error would be the one thing
+/// the whole payload is designed not to do.
+fn memory_counts(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Option<crate::db::repos::core::memories::MemoryTierCounts> {
+    match crate::db::repos::core::memories::count_by_tier(pool, persona_id) {
+        Ok(c) if c.is_empty() => None,
+        Ok(c) => Some(c),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "kp_reporter: memory tier counts unavailable");
+            None
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1052,6 +1098,13 @@ mod tests {
                 budget_unmeasured: false,
                 ledger_consistent: Some(true),
                 autopilot_mode: "suggest",
+                // M3b: accumulated experience, per tier.
+                memory: Some(crate::db::repos::core::memories::MemoryTierCounts {
+                    core: 1,
+                    active: 12,
+                    working: 3,
+                    archived: 4,
+                }),
             }),
         };
         assert_eq!(
@@ -1097,7 +1150,47 @@ mod tests {
                 "budgetUnmeasured": false,
                 "ledgerConsistent": true,
                 "autopilotMode": "suggest",
+                // M3b: a NESTED object (like `baselineGateHealth`, unlike every
+                // other v2 field), spelled `archived` on the wire where the
+                // column value is `archive`.
+                "memory": {"core": 1, "active": 12, "working": 3, "archived": 4},
             })
+        );
+    }
+
+    #[test]
+    fn a_persona_that_has_accumulated_nothing_omits_the_memory_block() {
+        // The same rule as every other reading here: absent means NOT MEASURED.
+        // Four zeros would read as "this holder has a memory and it is empty",
+        // which for a hire whose seeding failed is a claim, not a measurement.
+        let v = serde_json::to_value(KpAppMasterRollup {
+            proposals_opened: Some(3),
+            budget_settled_usd: Some(1.0),
+            autopilot_mode: "full",
+            memory: None,
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(
+            !v.as_object().unwrap().contains_key("memory"),
+            "memory must be omitted when there is nothing to count, got {v}"
+        );
+
+        // …and a holder with a single core row and nothing else reports that
+        // single row, zeros included: the query ran, and the empty tiers are
+        // real readings.
+        let seeded = serde_json::to_value(KpAppMasterRollup {
+            autopilot_mode: "full",
+            memory: Some(crate::db::repos::core::memories::MemoryTierCounts {
+                core: 1,
+                ..Default::default()
+            }),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            seeded.get("memory"),
+            Some(&serde_json::json!({"core": 1, "active": 0, "working": 0, "archived": 0}))
         );
     }
 
