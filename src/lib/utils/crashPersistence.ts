@@ -2,6 +2,7 @@ import { reportFrontendCrash } from "@/api/system/system";
 import { sanitizeErrorMessage } from "@/lib/utils/sanitizers/maskSensitive";
 import { createLogger } from "@/lib/log";
 import { silentCatch } from '@/lib/silentCatch';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 
 const logger = createLogger("crash-persistence");
@@ -64,8 +65,17 @@ export function readCrashLogs(): Array<{ timestamp: string; component: string; m
     }
     return trimmed as Array<{ timestamp: string; component: string; message: string; stack?: string }>;
   } catch {
-    // intentional: corrupted data -- wipe and return empty
-    localStorage.removeItem(CRASH_STORAGE_KEY);
+    // Corrupted data -- wipe and return empty. The wipe is itself wrapped:
+    // when `localStorage` is unavailable outright (storage blocked, private
+    // mode, a sandboxed webview) the getItem above throws AND so does this
+    // removeItem, so the recovery path re-threw out of a function whose entire
+    // contract is "returns a list, never throws" -- taking the crash-log panel
+    // down on exactly the machines whose crashes matter.
+    try {
+      localStorage.removeItem(CRASH_STORAGE_KEY);
+    } catch (err) {
+      silentCatch("lib/utils/crashPersistence:wipe")(err);
+    }
     return [];
   }
 }
@@ -91,9 +101,16 @@ export function persistCrash(
 
   // 1. localStorage (synchronous, best-effort)
   try {
-    const crashes: unknown[] = JSON.parse(
-      localStorage.getItem(CRASH_STORAGE_KEY) || "[]",
+    // A corrupted blob must not disable crash persistence FOREVER. The previous
+    // `JSON.parse(...)` threw straight into the outer catch, so this crash was
+    // dropped -- and because nothing rewrote the key, so was every crash after
+    // it, for the life of the install. Parsing defensively and discarding a
+    // non-array lets the very next write replace the bad value.
+    const stored = parseJsonOrDefault<unknown>(
+      localStorage.getItem(CRASH_STORAGE_KEY),
+      [],
     );
+    const crashes: unknown[] = Array.isArray(stored) ? stored : [];
     const entry: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       component: label,

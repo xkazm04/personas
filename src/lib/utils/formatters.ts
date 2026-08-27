@@ -33,15 +33,32 @@ export function normalizeTimestamp(dateStr: string): string {
     : dateStr;
 }
 
-export function formatTimestamp(timestamp: string | null, fallback = '-'): string {
+/**
+ * Absolute date+time for the ACTIVE UI language.
+ *
+ * Two defects this closes, both of which were visible only in the same file's
+ * own mirror image. (1) It called `toLocaleString()` with no locale, so dates
+ * followed the operating system while every number in this module follows the
+ * app language -- a `cs` user reading `1 234,50` next to `8/27/2026`. (2) It had
+ * no invalid-date guard, so a malformed timestamp rendered the literal string
+ * "Invalid Date" into the UI; `formatRelativeTime` two functions below has
+ * guarded exactly that since it was written, and returns the fallback instead.
+ */
+export function formatTimestamp(
+  timestamp: string | null | undefined,
+  fallback = '-',
+  opts?: { language?: string },
+): string {
   if (!timestamp) return fallback;
-  return new Date(normalizeTimestamp(timestamp)).toLocaleString();
+  const parsed = new Date(normalizeTimestamp(timestamp));
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleString(opts?.language ?? activeLanguage());
 }
 
 export function formatRelativeTime(
-  dateStr: string | null,
+  dateStr: string | null | undefined,
   fallback = '-',
-  opts?: { dateFallbackDays?: number },
+  opts?: { dateFallbackDays?: number; language?: string },
 ): string {
   if (!dateStr) return fallback;
   const then = new Date(normalizeTimestamp(dateStr)).getTime();
@@ -56,7 +73,9 @@ export function formatRelativeTime(
   if (diffHours < 24) return `${diffHours}h ago`;
   const diffDays = Math.floor(diffHours / 24);
   if (opts?.dateFallbackDays != null && diffDays >= opts.dateFallbackDays) {
-    return new Date(then).toLocaleDateString();
+    // Same reason as formatTimestamp: the date this falls back to must follow
+    // the app language, not the operating system's.
+    return new Date(then).toLocaleDateString(opts.language ?? activeLanguage());
   }
   return `${diffDays}d ago`;
 }
@@ -211,14 +230,32 @@ export interface CategoryColors extends BadgeColors {
   accent: string;
 }
 
-export const MEMORY_CATEGORY_COLORS: Record<string, CategoryColors> = {
+/**
+ * `satisfies Record<PersonaMemoryCategory, …>` is the totality gate: a category
+ * added to the domain type fails to compile here until it is given a colour,
+ * and a key outside the vocabulary is rejected as an excess property. The
+ * exported binding stays `Record<string, …>` because call sites index it with a
+ * raw stored category string.
+ *
+ * This matters more than a colour table usually would, because
+ * `ALL_MEMORY_CATEGORIES` below is the app's enumeration of memory categories
+ * and it is `Object.keys` of THIS object. Before the gate, the enumeration was
+ * derived from a colour map and then `as`-cast into the domain type, so a
+ * seventh category would have been silently absent from every filter and
+ * picker built on it — with the cast erasing the one signal that could have
+ * said so.
+ */
+const MEMORY_CATEGORY_COLORS_BY_CATEGORY = {
   fact: { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20', accent: 'border-l-blue-500' },
   preference: { label: 'Preference', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', accent: 'border-l-amber-500' },
   instruction: { label: 'Instruction', bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', accent: 'border-l-violet-500' },
   context: { label: 'Context', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', accent: 'border-l-emerald-500' },
   learned: { label: 'Learned', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', accent: 'border-l-cyan-500' },
   constraint: { label: 'Constraint', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', accent: 'border-l-red-500' },
-};
+} satisfies Record<PersonaMemoryCategory, CategoryColors>;
+
+export const MEMORY_CATEGORY_COLORS: Record<string, CategoryColors> =
+  MEMORY_CATEGORY_COLORS_BY_CATEGORY;
 
 export const TEAM_MEMORY_CATEGORY_COLORS: Record<string, CategoryColors> = {
   observation: { label: 'Observation', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', accent: 'border-l-cyan-500' },
@@ -231,7 +268,10 @@ export const DEFAULT_CATEGORY_COLORS: CategoryColors = {
   label: 'Unknown', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20', accent: 'border-l-gray-500',
 };
 
-export const ALL_MEMORY_CATEGORIES = Object.keys(MEMORY_CATEGORY_COLORS) as PersonaMemoryCategory[];
+/** Every memory category, derived from the gated map above — no cast required. */
+export const ALL_MEMORY_CATEGORIES = Object.keys(
+  MEMORY_CATEGORY_COLORS_BY_CATEGORY,
+) as PersonaMemoryCategory[];
 
 // Re-export event color tokens from the centralized design tokens file.
 // All new code should import directly from '@/lib/design/eventTokens'.

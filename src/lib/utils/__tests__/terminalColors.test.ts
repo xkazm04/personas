@@ -28,6 +28,20 @@ describe("classifyLine", () => {
     expect(classifyLine("Process exited with code 0")).toBe("meta");
   });
 
+  // Regression guard: `> Cancelled` used to be tested AFTER the generic `> `
+  // branch, so it was unreachable and a cancellation rendered as 'code'.
+  // Pins the fixed expression and forbids the old one.
+  it("classifies a cancellation as meta, not as code", () => {
+    expect(classifyLine("> Cancelled by user")).toBe("meta");
+    expect(classifyLine("> Cancelled")).toBe("meta");
+    expect(classifyLine("> Cancelled by user")).not.toBe("code");
+  });
+
+  it("still classifies other angle-bracket lines as code", () => {
+    expect(classifyLine("> const x = 1")).toBe("code");
+    expect(classifyLine("> Analyzing repository")).toBe("info");
+  });
+
   it("defaults to text for unrecognized lines", () => {
     expect(classifyLine("Hello, world!")).toBe("text");
     expect(classifyLine("")).toBe("text");
@@ -63,6 +77,25 @@ describe("parseSummaryLine", () => {
       status: "failed",
       duration_ms: null,
       cost_usd: null,
+    });
+  });
+});
+
+describe('parseSummaryLine shape guard', () => {
+  // Regression guard: the payload used to be cast straight to ExecutionSummary,
+  // so a parseable non-object arrived as a "summary" whose every field was
+  // undefined. Pins the fixed expression (null) and forbids the old (a value).
+  it('rejects a payload that parses but is not a summary object', () => {
+    expect(parseSummaryLine('[SUMMARY]"done"')).toBeNull();
+    expect(parseSummaryLine('[SUMMARY]null')).toBeNull();
+    expect(parseSummaryLine('[SUMMARY][]')).toBeNull();
+    expect(parseSummaryLine('[SUMMARY]42')).toBeNull();
+    expect(parseSummaryLine('[SUMMARY]{"duration_ms":10}')).toBeNull();
+  });
+
+  it('stays tolerant of a summary missing its optional numerics', () => {
+    expect(parseSummaryLine('[SUMMARY]{"status":"completed"}')).toEqual({
+      status: 'completed',
     });
   });
 });

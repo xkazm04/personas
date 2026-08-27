@@ -15,6 +15,19 @@ interface CacheEntry<T> {
 const _cache = new Map<string, CacheEntry<unknown>>();
 const _inflight = new Map<string, Promise<unknown>>();
 
+/**
+ * Identity of the request currently owning each key.
+ *
+ * A request must be able to ask "am I still the current one?" when it settles,
+ * because `invalidateSWRCache` can fire while it is in the air. Without that
+ * question the answer is always yes, and an invalidated key gets repopulated
+ * with pre-invalidation data by a request the caller already disowned. A fresh
+ * object per request is the cheapest identity there is; the entry is removed
+ * when the request settles or when it is disowned, so this map stays the same
+ * size as `_inflight`.
+ */
+const _requestToken = new Map<string, object>();
+
 /** Default TTL: 30 seconds */
 const DEFAULT_TTL_MS = 30_000;
 
@@ -73,18 +86,32 @@ export function createSWRFetcher<T>(
       return { data, fromCache: false };
     }
 
-    // Start fetch
+    // Start fetch. `token` identifies THIS request for the lifetime of the
+    // call, so both the cache write and the in-flight cleanup below can check
+    // that they are still the owner before touching shared state.
+    const token = {};
+    _requestToken.set(key, token);
+
     const promise = fn()
       .then((data) => {
-        // Refresh insertion order on write so recently-used keys stay ahead
-        // of the eviction cursor.
-        _cache.delete(key);
-        _cache.set(key, { data, fetchedAt: Date.now() });
-        evictOldestIfOverCap();
+        // A disowned request (invalidated, or superseded by a newer one) must
+        // not repopulate the cache it was invalidated out of.
+        if (_requestToken.get(key) === token) {
+          // Refresh insertion order on write so recently-used keys stay ahead
+          // of the eviction cursor.
+          _cache.delete(key);
+          _cache.set(key, { data, fetchedAt: Date.now() });
+          evictOldestIfOverCap();
+        }
         return data;
       })
       .finally(() => {
-        _inflight.delete(key);
+        // Guarded for the same reason: an unguarded delete here would evict a
+        // NEWER request that started after this one was disowned.
+        if (_requestToken.get(key) === token) {
+          _requestToken.delete(key);
+          _inflight.delete(key);
+        }
       });
 
     _inflight.set(key, promise);
@@ -101,13 +128,26 @@ export function createSWRFetcher<T>(
   };
 }
 
-/** Invalidate a specific cache key so the next fetch is forced. */
+/**
+ * Invalidate a specific cache key so the next fetch is forced.
+ *
+ * "Forced" has to survive a request that was already in the air. Dropping only
+ * the cache did not: the next call took the dedupe branch, awaited the
+ * pre-invalidation request, and that request then wrote its already-stale result
+ * straight back into the cache -- so the forced refetch served exactly the data
+ * the caller had just invalidated. Dropping the in-flight entry AND the request
+ * token disowns it on both counts: nobody waits on it, and it cannot repopulate
+ * the cache when it lands.
+ */
 export function invalidateSWRCache(key: string): void {
   _cache.delete(key);
+  _inflight.delete(key);
+  _requestToken.delete(key);
 }
 
 /** Clear all SWR cache entries. Useful for testing. */
 export function clearSWRCache(): void {
   _cache.clear();
   _inflight.clear();
+  _requestToken.clear();
 }
