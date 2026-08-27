@@ -149,6 +149,7 @@ pub fn log_wake(
 /// snake_case (no `rename_all`) — the Companion impact strip has read
 /// `row.cli_calls` since before this payload was typed.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CompanionWakeSurfaceStats {
     /// Wake-surface id (exec triage, message triage, channel reactions, ...).
@@ -168,6 +169,7 @@ pub struct CompanionWakeSurfaceStats {
 
 /// 24h rollup of autonomy wakes / signals / actions, grouped by surface.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CompanionWakeStats {
     /// The configured wake-window length, so the UI can render cadence next to

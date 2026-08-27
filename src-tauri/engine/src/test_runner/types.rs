@@ -51,6 +51,7 @@ pub fn parse_model_configs(
 /// `src/hooks/realtime/useRunEventListener.ts` does NOT recursively camelCase
 /// nested objects; this type is passed through.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct TestScenario {
     pub name: String,
@@ -64,6 +65,7 @@ pub struct TestScenario {
 
 /// A mock tool response within a scenario.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct MockToolResponse {
     pub tool_name: String,
@@ -77,6 +79,7 @@ pub struct MockToolResponse {
 /// `src/hooks/realtime/useRunEventListener.ts` flattens snake_case → camelCase
 /// for top-level fields but leaves `scores` and `scenarios` as-is.
 #[derive(Debug, Clone, Serialize, Deserialize, TS, Default)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct TestRunStatusEvent {
     pub run_id: String,
@@ -98,6 +101,7 @@ pub struct TestRunStatusEvent {
 
 /// Per-scenario scores; serialized snake_case directly into TestRunStatusEvent.scores.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct TestScores {
     pub tool_accuracy: Option<i32>,

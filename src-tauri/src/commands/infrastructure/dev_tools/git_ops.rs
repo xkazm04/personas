@@ -301,6 +301,7 @@ fn parse_test_counts(output: &str) -> (i32, i32, i32, i32) {
 /// snake_case (no `rename_all`) — the call site in `api/devTools` already
 /// declared this exact shape inline, down to `changed_files_count`.
 #[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct GitStatusSummary {
     pub project_id: String,

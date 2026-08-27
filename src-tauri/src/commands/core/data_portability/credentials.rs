@@ -35,6 +35,7 @@ pub struct CredentialExportEnvelope {
 }
 
 #[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CredentialImportResult {
     pub created: u32,
@@ -49,6 +50,7 @@ pub struct CredentialImportResult {
 }
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CredentialConflict {
     pub name: String,

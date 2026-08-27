@@ -66,10 +66,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/commands/communication/observability/prompt_lab.rs': [
     'PromptAbExecResult',
   ],
-  'src-tauri/src/commands/core/data_portability.rs': [
-    'CompetitiveImportPreview', 'CredentialConflict', 'CredentialImportResult', 'ExportStats',
-    'PortabilityImportResult',
-  ],
   // not touched this pass: file had uncommitted work in another session
   'src-tauri/src/commands/core/memories.rs': [
     'ApplyMemoryReviewProposalResult', 'MemoryReviewDetail',
@@ -283,9 +279,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/db/src/repos/execution/provider_audit.rs': [
     'ProviderUsageStats', 'ProviderUsageTimeseries',
   ],
-  'src-tauri/db/src/repos/resources/triggers.rs': [
-    'RenameEventTypeResult',
-  ],
   'src-tauri/engine/src/api_definition.rs': [
     'ApiEndpoint', 'ApiParameter', 'ApiRequestBody',
   ],
@@ -343,9 +336,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   'src-tauri/src/engine/share_link.rs': [
     'ResolvedShareLink', 'ShareLinkResult',
-  ],
-  'src-tauri/engine/src/test_runner.rs': [
-    'MockToolResponse', 'TestRunStatusEvent', 'TestScenario', 'TestScores',
   ],
   'src-tauri/src/engine/tool_runner.rs': [
     'ToolInvocationResult', 'ToolTestResult',

@@ -5,6 +5,7 @@
 use super::*;
 
 #[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CompetitiveImportPreview {
     pub source_platform: String,
