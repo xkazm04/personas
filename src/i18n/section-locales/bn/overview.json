@@ -1524,7 +1524,8 @@
     "report_empty": "(খালি বিষয়বস্তু)",
     "open_in_reports": "রিপোর্টে খুলুন",
     "report_summary_title": "রিপোর্ট",
-    "report_unavailable": "রিপোর্ট পাওয়া যাচ্ছে না"
+    "report_unavailable": "রিপোর্ট পাওয়া যাচ্ছে না",
+    "subtitle_composed_prefix": "রচিত"
   },
   "certification": {
     "title": "সার্টিফিকেশন কমান্ড সেন্টার",

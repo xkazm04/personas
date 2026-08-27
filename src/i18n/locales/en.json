@@ -7091,7 +7091,8 @@
       "report_summary_title": "Report",
       "report_unavailable": "Report unavailable",
       "report_empty": "(empty body)",
-      "open_in_reports": "Open in Reports"
+      "open_in_reports": "Open in Reports",
+      "subtitle_composed_prefix": "Composed"
     },
     "events": {
       "title": "Events",

@@ -201,6 +201,8 @@ export interface TourSubStepDef {
 }
 
 export interface TourStepDef {
+  /** Override DEFAULT_PANEL_WIDTH for this step (see onboarding/README.md). */
+  panelWidth?: number;
   id: TourStepId;
   title: string;
   description: string;

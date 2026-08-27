@@ -7772,7 +7772,8 @@
       "report_empty": "(खाली सामग्री)",
       "open_in_reports": "रिपोर्ट में खोलें",
       "report_summary_title": "रिपोर्ट",
-      "report_unavailable": "रिपोर्ट उपलब्ध नहीं है"
+      "report_unavailable": "रिपोर्ट उपलब्ध नहीं है",
+      "subtitle_composed_prefix": "रचित"
     },
     "certification": {
       "title": "प्रमाणन कमांड सेंटर",

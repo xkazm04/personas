@@ -292,7 +292,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
 
               {/* Racing progress visualization — shown for active competitions */}
               {!isFinished && (
-                <RacingProgress slots={detail.slots} />
+                <RacingProgress slots={detail.slots} competitionStartedAt={competition.created_at} />
               )}
 
               {detail.slots.length >= 2 && (

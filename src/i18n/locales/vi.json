@@ -7772,7 +7772,8 @@
       "report_empty": "(nội dung trống)",
       "open_in_reports": "Mở trong Báo cáo",
       "report_summary_title": "Báo cáo",
-      "report_unavailable": "Báo cáo không khả dụng"
+      "report_unavailable": "Báo cáo không khả dụng",
+      "subtitle_composed_prefix": "Đã soạn"
     },
     "certification": {
       "title": "Trung tâm điều hành chứng nhận",

@@ -1524,7 +1524,8 @@
     "report_empty": "（本文なし）",
     "open_in_reports": "レポートで開く",
     "report_summary_title": "レポート",
-    "report_unavailable": "レポートを利用できません"
+    "report_unavailable": "レポートを利用できません",
+    "subtitle_composed_prefix": "作成済み"
   },
   "certification": {
     "title": "認定コマンドセンター",
