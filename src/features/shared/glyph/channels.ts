@@ -3,25 +3,41 @@ import {
 } from 'lucide-react';
 import type { ParsedChannel } from './types';
 
-const CHANNEL_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  slack: Hash, teams: Hash, discord: Hash,
-  telegram: Send,
-  email: Mail, smtp: Mail, mail: Mail, gmail: Mail, outlook: Mail,
-  sms: Phone,
-  webhook: Webhook,
-  push: Bell, notification: Bell, notify: Bell,
-  desktop: Monitor,
+type ChannelIconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+
+interface ChannelStyle {
+  icon: ChannelIconComponent;
+  tint: string;
+}
+
+/** ONE map, not two.
+ *
+ *  The icon and the tint are two halves of a single presentation rule keyed by
+ *  the same channel vocabulary. Held as two parallel `Record<string, …>` maps
+ *  they were a silent-drift pair: adding a channel to one and forgetting the
+ *  other produced a tile with the right icon and the generic blue, or the
+ *  right colour and a generic bubble — a rendering nothing in the type system,
+ *  the linter or the tests could notice, because each map is individually
+ *  well-formed. Keyed together, a half-added channel does not compile. */
+const CHANNEL_STYLES: Record<string, ChannelStyle> = {
+  slack: { icon: Hash, tint: '#4a154b' },
+  teams: { icon: Hash, tint: '#5059C9' },
+  discord: { icon: Hash, tint: '#5865F2' },
+  telegram: { icon: Send, tint: '#229ED9' },
+  email: { icon: Mail, tint: '#60a5fa' },
+  smtp: { icon: Mail, tint: '#60a5fa' },
+  mail: { icon: Mail, tint: '#60a5fa' },
+  gmail: { icon: Mail, tint: '#ea4335' },
+  outlook: { icon: Mail, tint: '#0078d4' },
+  sms: { icon: Phone, tint: '#22c55e' },
+  webhook: { icon: Webhook, tint: '#64748b' },
+  push: { icon: Bell, tint: '#a78bfa' },
+  notification: { icon: Bell, tint: '#a78bfa' },
+  notify: { icon: Bell, tint: '#a78bfa' },
+  desktop: { icon: Monitor, tint: '#a78bfa' },
 };
 
-const CHANNEL_TINTS: Record<string, string> = {
-  slack: '#4a154b', teams: '#5059C9', discord: '#5865F2',
-  telegram: '#229ED9',
-  email: '#60a5fa', gmail: '#ea4335', outlook: '#0078d4', smtp: '#60a5fa', mail: '#60a5fa',
-  sms: '#22c55e',
-  webhook: '#64748b',
-  push: '#a78bfa', notification: '#a78bfa', notify: '#a78bfa',
-  desktop: '#a78bfa',
-};
+const FALLBACK_STYLE: ChannelStyle = { icon: MessageSquare, tint: '#60a5fa' };
 
 /** Turn a concatenated messageSummary (`"slack: team · email: daily"`) back
  *  into structured channel descriptors, one per `{type, description}` pair. */
@@ -33,10 +49,14 @@ export function parseChannels(summary: string | undefined): ParsedChannel[] {
   }).filter((ch) => ch.type.length > 0);
 }
 
-export function channelIcon(type: string) {
-  return CHANNEL_ICONS[type.toLowerCase()] ?? MessageSquare;
+function channelStyle(type: string): ChannelStyle {
+  return CHANNEL_STYLES[type.toLowerCase()] ?? FALLBACK_STYLE;
+}
+
+export function channelIcon(type: string): ChannelIconComponent {
+  return channelStyle(type).icon;
 }
 
 export function channelTint(type: string): string {
-  return CHANNEL_TINTS[type.toLowerCase()] ?? '#60a5fa';
+  return channelStyle(type).tint;
 }

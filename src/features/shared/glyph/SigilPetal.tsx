@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { GlyphDimension, GlyphPresence } from './types';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
+import { PETAL_INNER_RATIO, PETAL_OUTER_RATIO } from './helpers';
 
 interface SigilPetalProps {
   dim: GlyphDimension;
@@ -46,8 +47,10 @@ function SigilPetalImpl({
   const meta = DIM_META[dim];
   const angle = PETAL_ANGLES[dim];
   const center = size / 2;
-  const petalOuter = size * 0.44;
-  const petalInner = size * 0.14;
+  // Same ratios the parent built `petalPath` from — imported, never re-typed,
+  // so the gradient's userSpaceOnUse stops cannot drift off the silhouette.
+  const petalOuter = size * PETAL_OUTER_RATIO;
+  const petalInner = size * PETAL_INNER_RATIO;
   const petalGrad = `sigil-petal-${rowId}-${rowIndex}-${index}`;
 
   let body: React.ReactNode;

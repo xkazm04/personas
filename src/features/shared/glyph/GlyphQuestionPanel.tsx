@@ -5,6 +5,7 @@ import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { VaultConnectorPicker } from '@/features/vault/components/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
 import { CELL_KEY_TO_DIM } from './persona-sigil/cellDimMap';
+import { useGlyphDimText } from './persona-sigil';
 
 interface GlyphQuestionCardProps {
   question: BuildQuestion;
@@ -13,9 +14,17 @@ interface GlyphQuestionCardProps {
 
 function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
   const { t } = useTranslation();
+  const dimText = useGlyphDimText();
   const [freeText, setFreeText] = useState('');
   const dim = CELL_KEY_TO_DIM[question.cellKey];
   const color = dim ? DIM_META[dim].color : '#60a5fa';
+  // The heading names the dimension the answer refines. `cellKey` is the
+  // build engine's machine vocabulary ("human-review", "error-handling") —
+  // de-hyphenating it still puts an English identifier on screen in all 14
+  // locales. Every mapped key already has a localized dimension label; the
+  // de-hyphenated key survives only as the fallback for an unmapped key,
+  // which is a machine token either way.
+  const headingLabel = dim ? dimText.label[dim] : question.cellKey.replace(/-/g, ' ');
   const options = question.options ?? [];
   const connectorCategory = question.connectorCategory ?? null;
 
@@ -38,7 +47,7 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
           <HelpCircle className="w-3.5 h-3.5" style={{ color: '#fff' }} />
         </span>
         <span className="typo-label font-bold text-foreground">
-          {question.cellKey.replace(/-/g, ' ')}
+          {headingLabel}
         </span>
       </div>
       <p className="typo-body-lg text-foreground leading-snug">{question.question}</p>
@@ -77,6 +86,11 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') submit(freeText); }}
+              // A placeholder is not a label: it disappears on first keystroke
+              // and is only a last-resort accessible name. The sibling composer
+              // in DimensionPanel carries a real <label>; this one has no room
+              // for one, so the same localized string is bound explicitly.
+              aria-label={t.templates.chronology.answer_own_words_placeholder}
               placeholder={t.templates.chronology.answer_own_words_placeholder}
               className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border border-card-border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
               data-testid="glyph-freetext-input"

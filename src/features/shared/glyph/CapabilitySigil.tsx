@@ -235,18 +235,6 @@ export function EmptyCapabilitySigil({ size = 84, isHovered = false }: EmptyCapa
   const ringR = outerR + size * 0.04;
   const dotR = size * 0.045;
 
-  const innerHalfW = size * 0.022;
-  const midR = (innerR + outerR) / 2;
-  const midHalfW = size * 0.062;
-  const tipHalfW = size * 0.025;
-  const wedgePath = `
-    M 0 -${innerR}
-    C ${innerHalfW} -${innerR + size * 0.02}, ${midHalfW} -${midR + size * 0.02}, ${tipHalfW} -${outerR}
-    L -${tipHalfW} -${outerR}
-    C -${midHalfW} -${midR + size * 0.02}, -${innerHalfW} -${innerR + size * 0.02}, 0 -${innerR}
-    Z
-  `;
-
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={`block transition-colors ${isHovered ? 'text-primary' : 'text-foreground'}`}>
       <circle
@@ -258,19 +246,8 @@ export function EmptyCapabilitySigil({ size = 84, isHovered = false }: EmptyCapa
         strokeDasharray="3 4"
       />
       <circle cx={center} cy={center} r={innerR} fill="none" stroke="currentColor" strokeOpacity={0.06} strokeWidth={1} />
-      {GLYPH_DIMENSIONS.map((dim) => {
-        const angle = PETAL_ANGLES[dim];
-        const rad = ((angle - 90) * Math.PI) / 180;
-        const x = center + (innerR + (outerR - innerR) * 0.55) * Math.cos(rad);
-        const y = center + (innerR + (outerR - innerR) * 0.55) * Math.sin(rad);
-        return (
-          <g key={dim} transform={`translate(${center}, ${center}) rotate(${angle})`} opacity={0}>
-            <path d={wedgePath} fill="none" />
-            <g transform={`translate(${x - center}, ${y - center})`} />
-          </g>
-        );
-      })}
-      {/* Render dots regardless of style for consistency */}
+      {/* Empty slots always read as dots — the wedge silhouette belongs to a
+          populated sigil, so there is deliberately no wedge branch here. */}
       {GLYPH_DIMENSIONS.map((dim) => {
         const angle = PETAL_ANGLES[dim];
         const rad = ((angle - 90) * Math.PI) / 180;
