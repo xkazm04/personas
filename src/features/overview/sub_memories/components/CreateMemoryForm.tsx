@@ -13,7 +13,6 @@ import { debtText } from '@/i18n/DebtText';
 
 function InteractiveImportanceBar({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const maxScale = 5;
-  const barRef = useState<HTMLDivElement | null>(null);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -27,8 +26,11 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
 
   return (
     <div className="flex items-center gap-1.5" title={label}>
+      {/* The element carried `ref={(el) => barRef[1](el)}` over a `useState`
+          held as a ref. Nothing ever read `barRef[0]`, so the only effect was a
+          setState from the ref callback on mount and on unmount — two extra
+          renders per open for a value with no reader. */}
       <div
-        ref={(el) => { barRef[1](el); }}
         className="relative w-24 h-2 rounded-full bg-muted-foreground/15 cursor-pointer overflow-hidden"
         onClick={handleClick}
         role="slider"

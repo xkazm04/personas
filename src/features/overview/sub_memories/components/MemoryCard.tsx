@@ -169,7 +169,7 @@ export function MemoryRow({
   );
 
   return (
-    <div data-testid={`memory-row-${memory.id}`} style={{ borderLeftColor: importanceAccent }} className={`animate-fade-slide-in border-l-2 border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''} ${isArchived ? 'opacity-60' : ''}`}>
+    <div data-testid={`memory-row-${memory.id}`} style={{ borderLeftColor: importanceAccent }} className={`animate-fade-slide-in border-l-2 border-b border-primary/10 hover:bg-secondary/[0.06] transition-colors ${index % 2 === 0 ? 'bg-secondary/[0.03]' : ''} ${isArchived ? 'opacity-60' : ''}`}>
       {/* Desktop row — grid columns mirror the table header in MemoriesPage */}
       <div className="hidden md:grid items-center py-3 cursor-pointer" style={{ gridTemplateColumns: gridTemplate }} onClick={onSelect}>
         <div className="px-4 flex items-center gap-2 min-w-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>

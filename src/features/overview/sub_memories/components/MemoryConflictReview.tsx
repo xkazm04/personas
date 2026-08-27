@@ -4,6 +4,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { detectConflicts, type MemoryConflict, type ConflictResolution } from '../libs/memoryConflicts';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
@@ -106,14 +107,31 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         'success',
       );
       onConflictsResolved?.();
-    } catch {
+    } catch (err) {
+      // The toast alone told the user something failed and told US nothing: the
+      // error object was discarded, so a conflict resolution that always fails
+      // (a merge the backend rejects, a delete on a row someone else removed)
+      // produced no Sentry event and no console trace anywhere. Route it, then
+      // keep the toast — this is a user-facing failure AND a background one.
+      silentCatch('MemoryConflictReview:handleResolve')(err);
       useToastStore.getState().addToast('Failed to resolve conflict', 'error');
     } finally {
       setProcessing(null);
     }
   }, [deleteMemory, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved]);
 
-  if (conflicts.length === 0) return null;
+  // Rendering `null` here was invisible-by-design in the old banner position,
+  // but this component IS the Conflicts tab's entire body: a store with no
+  // detected conflicts painted a blank panel, which is indistinguishable from
+  // a tab that failed to load. Say the good news instead.
+  if (conflicts.length === 0) {
+    return (
+      <div className="mx-4 md:mx-6 text-center py-6 typo-body text-foreground">
+        <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
+        <DebtText k="auto_all_conflicts_resolved_b848395b" />
+      </div>
+    );
+  }
 
   const countByKind = {
     duplicate: unresolvedConflicts.filter((c) => c.kind === 'duplicate').length,

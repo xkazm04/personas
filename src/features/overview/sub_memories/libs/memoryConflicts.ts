@@ -118,6 +118,30 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
         ? 0
         : intersection / Math.min(fa.tokens.size, fb.tokens.size);
 
+      // CONTRADICTION IS CHECKED FIRST, AND THE ORDER IS THE WHOLE POINT.
+      //
+      // The duplicate branch used to run ahead of this one and `continue`, so a
+      // pair carrying an explicit negation could never be classified as a
+      // contradiction if it ALSO scored as similar — and every entry in
+      // NEGATION_PAIRS is a ONE-WORD swap (always/never, enable/disable,
+      // allow/deny, true/false). "Always deploy on friday" vs "Never deploy on
+      // friday" differ in a single token out of seven, which scores well above
+      // DUPLICATE_THRESHOLD, so the sharpest contradictions in the store were
+      // the ones guaranteed to be mislabelled. The consequence was not
+      // cosmetic: ConflictCard offers Merge for `duplicate` and for nothing
+      // else, and mergeMemories concatenates both bodies — so the UI's
+      // recommended action on two opposite instructions was to fuse them into
+      // one memory that says both, and inject that.
+      //
+      // A negation signal on a shared topic is therefore decisive: it is never
+      // redundancy, however similar the two texts read.
+      if (topic >= CONTRADICTION_TOPIC_THRESHOLD && hasContradictionSignal(contentA, contentB)) {
+        seen.add(pairKey);
+        conflicts.push({ id: pairKey, kind: 'contradiction', similarity: topic, memoryA: a, memoryB: b,
+          reason: `Potentially contradictory instructions on the same topic (${Math.round(topic * 100)}% topic overlap)` });
+        continue;
+      }
+
       // Only pay for the bigram Jaccard when even a perfect bigram match
       // could push the blended score over the duplicate threshold.
       if (wordSim * TEXT_SIM_WORD_WEIGHT + TEXT_SIM_BIGRAM_WEIGHT >= DUPLICATE_THRESHOLD) {
@@ -130,13 +154,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
             reason: crossPersona ? `Near-duplicate memories across different agents (${Math.round(sim * 100)}% similar)` : `Near-duplicate memories within the same agent (${Math.round(sim * 100)}% similar)` });
           continue;
         }
-      }
-
-      if (topic >= CONTRADICTION_TOPIC_THRESHOLD && hasContradictionSignal(contentA, contentB)) {
-        seen.add(pairKey);
-        conflicts.push({ id: pairKey, kind: 'contradiction', similarity: topic, memoryA: a, memoryB: b,
-          reason: `Potentially contradictory instructions on the same topic (${Math.round(topic * 100)}% topic overlap)` });
-        continue;
       }
 
       if (topic >= SUPERSEDED_TOPIC_THRESHOLD) {

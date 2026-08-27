@@ -95,11 +95,17 @@ export default function MemoriesPageGraph() {
     return new Set(filtered.filter((m) => m.persona_id === hovered.persona_id).map((m) => m.id));
   }, [hovered, filtered]);
 
+  // Every count here describes the CONSTELLATION ON SCREEN, which is what the
+  // strip sits above. `memoriesTotal` is the server-side count for the whole
+  // filtered set and memorySlice caps the fetch at 100 rows, so labelling it
+  // "Nodes" claimed a node for every memory in the database while the canvas
+  // drew at most a hundred — and fewer still under a category filter, which
+  // `filtered` applies and `memoriesTotal` cannot see.
   const stats = useMemo(() => {
-    const personasInGraph = new Set(memories.map((m) => m.persona_id)).size;
-    const categories = new Set(memories.map((m) => m.category)).size;
-    return { total: memoriesTotal, personas: personasInGraph, categories, avg: memoryStats?.avg_importance ?? 0 };
-  }, [memories, memoriesTotal, memoryStats]);
+    const personasInGraph = new Set(filtered.map((m) => m.persona_id)).size;
+    const categories = new Set(filtered.map((m) => m.category)).size;
+    return { nodes: filtered.length, personas: personasInGraph, categories, avg: memoryStats?.avg_importance ?? 0 };
+  }, [filtered, memoryStats]);
 
   const handleReview = useCallback(() => {
     void reviewMemories(undefined).catch(silentCatch('MemoriesPageGraph:reviewMemories'));
@@ -132,7 +138,7 @@ export default function MemoriesPageGraph() {
         {/* Top stats + filter row */}
         <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
           <div className="flex items-center gap-3 typo-body flex-wrap mr-auto">
-            <KpiMetric label="Nodes" value={stats.total} />
+            <KpiMetric label="Nodes" value={stats.nodes} />
             <KpiDivider />
             <KpiMetric label="Personas" value={stats.personas} tone="text-cyan-300" />
             <KpiDivider />
