@@ -37,8 +37,12 @@ export function MutationConfirmBanner({
         <div className="space-y-1 min-w-0">
           <p className="typo-body font-medium text-amber-300/90">{db.modifies_data}</p>
           <p className="typo-body text-foreground">{hint}</p>
-          <pre className="typo-code font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
-            {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
+          {/* The whole statement stays readable (scroll), never truncated: the
+              user is being asked to authorise exactly this text, and a cut at
+              200 characters hides the WHERE clause of a long DELETE — the one
+              part that decides how much it destroys. */}
+          <pre className="typo-code font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-auto max-h-20 border border-primary/5">
+            {pendingMutation}
           </pre>
         </div>
       </div>
