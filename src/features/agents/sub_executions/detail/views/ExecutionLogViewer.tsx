@@ -68,13 +68,18 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
     setLogError(null);
     try {
       const content = await getExecutionLog(executionId, personaId ?? '');
-      setLogContent(content ?? t.agents.executions.log_empty);
+      // Store the record, never a UI string: the empty-log NOTICE is rendered
+      // below from `logContent === ''`. Storing the translated placeholder here
+      // put it in state, so Copy handed the investigator "No log output" as if
+      // it were the log — and the copy-first path (which stores '') disagreed
+      // with this one about the same fact.
+      setLogContent(content ?? '');
     } catch (err) {
       setLogError(err instanceof Error ? err.message : t.agents.executions.failed_to_load_log);
     } finally {
       setLogLoading(false);
     }
-  }, [showLog, logContent, executionId, personaId, t.agents.executions.log_empty, t.agents.executions.failed_to_load_log]);
+  }, [showLog, logContent, executionId, personaId, t.agents.executions.failed_to_load_log]);
 
   return (
     <div>
@@ -91,6 +96,14 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
         </button>
         <CopyButton copied={copied} onCopy={handleCopyLog} tooltip={t.agents.executions.copy_log_tooltip} />
       </div>
+      {/* Outside the disclosure: a Copy that fails while the log is COLLAPSED
+          used to set this message into a branch that was not rendered, so the
+          action failed in silence. */}
+      {logError && (
+        <div className="mb-2 p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">
+          {logError}
+        </div>
+      )}
       {showLog && (
           <div>
             {logTruncated && (
@@ -105,12 +118,12 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
                 {t.agents.executions.loading_log}
               </div>
             )}
-            {logError && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">
-                {logError}
+            {logContent === '' && !logLoading && !logError && (
+              <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
+                {t.agents.executions.log_empty}
               </div>
             )}
-            {styledLines !== null && !logLoading && (
+            {styledLines !== null && logContent !== '' && !logLoading && (
               <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
                 {styledLines.map((entry, i) => (
                   <div key={i} className={entry.cls}>

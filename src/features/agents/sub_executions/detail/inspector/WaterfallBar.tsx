@@ -30,12 +30,24 @@ export function waterfallGeometry(
   return { leftPct, widthPct };
 }
 
+/**
+ * A span with neither an end nor a duration has not closed yet. It must not
+ * render as a finished bar: `waterfallGeometry` already stretches it to the end
+ * of the track, so without a distinct edge it is indistinguishable from a span
+ * that genuinely ran until the trace ended. Open bars therefore lose their
+ * right radius and gain a dashed trailing edge -- "still going", not "done".
+ */
+function isOpenSpan(span: UnifiedSpan): boolean {
+  return span.end_ms == null && span.duration_ms == null;
+}
+
 export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: number }) {
   if (!totalMs || totalMs === 0) return null;
 
   const { leftPct, widthPct } = waterfallGeometry(span.start_ms, span.duration_ms, totalMs);
 
   const config = getSpanTypeConfig(span.span_type);
+  const open = isOpenSpan(span);
 
   return (
     <div className="relative h-5 w-full">
@@ -43,7 +55,10 @@ export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: nu
       <div className="absolute inset-0 bg-primary/5 rounded" />
       {/* Bar */}
       <div
-        className={`absolute top-0.5 bottom-0.5 rounded ${span.error ? 'bg-red-500/40' : config.bg} transition-all`}
+        data-span-open={open ? 'true' : undefined}
+        className={`absolute top-0.5 bottom-0.5 ${
+          open ? 'rounded-l border-r-2 border-dashed border-primary/50' : 'rounded'
+        } ${span.error ? 'bg-red-500/40' : config.bg} transition-all`}
         style={{
           left: `${leftPct}%`,
           width: `${widthPct}%`,

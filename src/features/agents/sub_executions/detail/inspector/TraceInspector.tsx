@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
 import { AlertCircle, Activity, RefreshCw } from 'lucide-react';
@@ -29,6 +30,14 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     totalMs,
     childrenMap,
   } = useTraceData(execution.id, execution.persona_id);
+
+  // The one definition of "which spans failed" for this view: the summary tile
+  // counts exactly the spans listed below it. Folding the tile's number from a
+  // different span set is how the two disagreed.
+  const errorSpans = useMemo(
+    () => (unifiedTrace?.spans ?? []).filter((s) => s.error),
+    [unifiedTrace],
+  );
 
   if (error) {
     return (
@@ -67,7 +76,9 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   return (
     <div className="space-y-4">
-      {showSummary && trace && <TraceSummary trace={trace} model={execution.model_used} />}
+      {showSummary && trace && (
+        <TraceSummary trace={trace} model={execution.model_used} errorCount={errorSpans.length} />
+      )}
 
       {/* Time axis header */}
       <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
@@ -112,14 +123,13 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       </div>
 
       {/* Error details */}
-      {unifiedTrace?.spans.some(s => s.error) && (
+      {errorSpans.length > 0 && (
         <div className="space-y-2">
           <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" />
             {e.errors}
           </div>
-          {unifiedTrace.spans
-            .filter(s => s.error)
+          {errorSpans
             .map((span) => {
               const config = getSpanTypeConfig(span.span_type);
               return (
