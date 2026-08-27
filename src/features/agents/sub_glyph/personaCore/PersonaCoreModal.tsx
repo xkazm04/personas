@@ -8,7 +8,7 @@
  */
 import { Suspense } from "react";
 import { BaseModal } from "@/features/shared/components/modals";
-import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
+import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import Button from "@/features/shared/components/buttons/Button";
 import { RotateCcw } from "lucide-react";
 import type { PersonaCore } from "./types";
@@ -22,6 +22,34 @@ const PersonaCoreCodex = lazyRetry(() =>
   import("./PersonaCoreCodex").then((m) => ({ default: m.PersonaCoreCodex })),
 );
 
+/** The calm, geometry-matched placeholder for the codex body — used for BOTH
+ *  waits (the archetype fetch and the lazy chunk) so a cold open settles once
+ *  instead of stacking two differently-shaped skeletons. It ghosts the three
+ *  columns' silhouette, holds the body height so arrival replaces rather than
+ *  rearranges, and sits behind a 150ms CSS delay (fill-mode both) so a warm
+ *  open never flashes it. `feedback/LoadingSpinner` used to stand here and
+ *  renders `null`, i.e. the modal body was blank for the whole wait. */
+function CodexGhost() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex flex-col lg:flex-row gap-6 min-h-[24rem] animate-fade-in"
+      style={{ animationDelay: "150ms" }}
+    >
+      {[0, 1, 2].map((col) => (
+        <div key={col} className="flex-1 min-w-0 flex flex-col gap-3">
+          <span className="h-4 w-28 rounded-input bg-secondary/60" />
+          <div className="flex flex-col gap-1.5">
+            {[0, 1, 2, 3, 4].map((row) => (
+              <span key={row} className="h-8 w-full rounded-input bg-secondary/30" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="persona-core-modal" size="6xl" maxWidthClass="max-w-[86rem]">
@@ -32,11 +60,19 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
         </div>
 
         {core.loading ? (
-          <div className="py-16 flex justify-center"><LoadingSpinner label="Loading mentalities…" /></div>
+          <CodexGhost />
         ) : (
-          <Suspense fallback={<div className="py-16 flex justify-center"><LoadingSpinner label="Loading mentalities…" /></div>}>
-            <PersonaCoreCodex core={core} />
-          </Suspense>
+          // The codex is a lazy chunk, and lazyRetry's contract is that a
+          // permanent import failure is rethrown to the NEAREST ErrorBoundary.
+          // Without one here that failure escapes the modal and takes the whole
+          // compose surface down; with it, the failure occupies only the
+          // territory the codex would have and "Try again" closes back to the
+          // build surface the user came from.
+          <ErrorBoundary name="PersonaCore" onReset={onClose}>
+            <Suspense fallback={<CodexGhost />}>
+              <PersonaCoreCodex core={core} />
+            </Suspense>
+          </ErrorBoundary>
         )}
 
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-card-border/50">

@@ -8,10 +8,9 @@
 import { motion } from "framer-motion";
 import { Atom } from "lucide-react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
-import { coreIcon } from "./catalog";
+import { ACCENT, coreIcon } from "./catalog";
 import type { PersonaCore } from "./types";
 
-const ACCENT = "#60A5FA";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: () => void; locked?: boolean; index?: number }) {

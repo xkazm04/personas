@@ -17,10 +17,13 @@ export function AxisTraitGrid({ core }: { core: PersonaCore }) {
         const AxisIcon = axis.icon;
         return (
           <div key={axis.id} className="flex flex-col gap-1.5">
-            <span className="inline-flex items-center gap-1.5 typo-label" style={{ color: axis.color }}>
+            <span id={`core-axis-${axis.id}`} className="inline-flex items-center gap-1.5 typo-label" style={{ color: axis.color }}>
               <AxisIcon className="w-3.5 h-3.5" /> {axis.short}
             </span>
-            <div className="grid grid-cols-1 gap-1.5">
+            {/* The axis band is a visual grouping only; without the group role
+                the 20 trait toggles reach assistive tech as one flat list and
+                the axis name is never announced with them. */}
+            <div className="grid grid-cols-1 gap-1.5" role="group" aria-labelledby={`core-axis-${axis.id}`}>
               {byAxis(axis.id).map((t) => {
                 const on = sel.has(t.id);
                 const TIcon = t.icon;

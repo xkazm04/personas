@@ -37,6 +37,11 @@ export interface PersonaCoreState {
 export interface PersonaCore {
   loading: boolean;
   archetypes: Archetype[];
+  /** The archetype catalog fetch FAILED — distinct from "it returned nothing",
+   *  so the surface can state the failure instead of painting an empty column. */
+  loadFailed: boolean;
+  /** Re-run the archetype catalog fetch (the cure offered beside `loadFailed`). */
+  retryLoad: () => void;
   state: PersonaCoreState;
   configured: boolean;
   preset: Archetype | null;
