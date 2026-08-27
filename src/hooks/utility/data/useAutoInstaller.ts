@@ -35,6 +35,30 @@ function defaultState(): InstallState {
   return { phase: 'idle', progressPct: 0, outputLines: [], error: null, manualCommand: null };
 }
 
+const INSTALL_PHASES: readonly InstallPhase[] = [
+  'idle',
+  'downloading',
+  'installing',
+  'completed',
+  'failed',
+];
+
+/**
+ * The backend's status string is not this union: `emit_status` in
+ * `src-tauri/src/commands/infrastructure/setup.rs` also emits `"cancelled"`
+ * (3 sites, including the final status after a cancel lands mid-phase). The
+ * previous `status as InstallPhase` wrote that value straight into a field
+ * the type says cannot hold it — the UI only survived because
+ * `InstallButton` happens to fall through unknown phases to the idle button.
+ * Parse at the boundary instead: anything the union does not name resolves to
+ * `idle`, which is the state that already rendered, and the type stops lying.
+ */
+function toInstallPhase(status: string): InstallPhase {
+  return (INSTALL_PHASES as readonly string[]).includes(status)
+    ? (status as InstallPhase)
+    : 'idle';
+}
+
 export function useAutoInstaller() {
   const [nodeState, setNodeState] = useState<InstallState>(defaultState());
   const [claudeState, setClaudeState] = useState<InstallState>(defaultState());
@@ -69,7 +93,7 @@ export function useAutoInstaller() {
         const setter = t === 'node' ? setNodeState : setClaudeState;
         setter((prev) => ({
           ...prev,
-          phase: status as InstallPhase,
+          phase: toInstallPhase(status),
           progressPct: progress_pct ?? prev.progressPct,
           error: error ?? prev.error,
           manualCommand: manual_command ?? prev.manualCommand,
