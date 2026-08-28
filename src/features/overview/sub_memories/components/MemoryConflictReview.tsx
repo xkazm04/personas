@@ -17,10 +17,10 @@ interface MemoryConflictReviewProps {
 
 export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
   const {
-    memories, deleteMemory, mergeMemories: mergeMemoriesAction, fetchMemories,
+    memories, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
-    deleteMemory: s.deleteMemory,
+    setMemoryTier: s.setMemoryTier,
     mergeMemories: s.mergeMemories,
     fetchMemories: s.fetchMemories,
   })));
@@ -56,18 +56,33 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           // same protection archive_by_ids/delete_all enforce, which the raw
           // deleteMemory path lacks.
           const keep = resolution === 'keep_a' ? conflict.memoryA : conflict.memoryB;
-          const remove = resolution === 'keep_a' ? conflict.memoryB : conflict.memoryA;
-          if (keep.id === remove.id) {
-            throw new Error('conflict resolution would delete the kept memory');
+          const retire = resolution === 'keep_a' ? conflict.memoryB : conflict.memoryA;
+          if (keep.id === retire.id) {
+            throw new Error('conflict resolution would retire the kept memory');
           }
-          if (remove.tier === 'core') {
+          if (retire.tier === 'core') {
             useToastStore.getState().addToast(
-              'Cannot delete a core (pinned) memory — resolve this conflict manually',
+              'Cannot retire a core (pinned) memory — resolve this conflict manually',
               'error',
             );
             return;
           }
-          await deleteMemory(remove.id);
+          // RETIRE, DON'T DELETE. This was `deleteMemory(retire.id)` — an
+          // irreversible hard delete of a memory the user merely judged the
+          // weaker of two, on the output of a HEURISTIC detector (see
+          // memoryConflicts.ts; the thresholds it fires on are documented as
+          // "chosen empirically"). A wrong call was unrecoverable and left no
+          // trace that the losing claim had ever existed, so nobody could
+          // later ask why this memory won.
+          //
+          // `archive` is the schema's own non-destructive retire — documented
+          // on PersonaMemory.tier as "never injected, searchable only" — and
+          // it is exactly the door MemoryClaimsSection's `deprecate` already
+          // uses for the same judgement. The observable outcome here is
+          // unchanged: the list is fetched with the store's default `!archive`
+          // filter, so the retired memory leaves this surface and stops being
+          // injected, but it is still there to restore or audit.
+          await setMemoryTier(retire.id, 'archive');
           break;
         }
         case 'merge': {
@@ -118,7 +133,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
     } finally {
       setProcessing(null);
     }
-  }, [deleteMemory, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved]);
+  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved]);
 
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no
