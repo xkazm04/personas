@@ -317,3 +317,32 @@ describe('mergeTemplateOverlay — template-specific invariants', () => {
     expect(result.payload.service_flow).toEqual(['gmail', 'slack']);
   });
 });
+
+describe('mergeTemplateOverlay — prototype keys', () => {
+  // JSON.parse gives `__proto__` as an OWN enumerable property, so the merge
+  // saw it as an ordinary field and `result[k] = value` swapped the merged
+  // template's prototype — injecting fields that read back off the template
+  // while staying invisible to Object.keys, and long after the canonical file
+  // passed validation.
+  it('does not let an overlay replace the merged template prototype', () => {
+    const canonical = { id: 'tpl_1', name: 'Triage' };
+    const overlay = JSON.parse('{"__proto__":{"isPublished":false},"name":"Tri"}') as unknown;
+
+    const merged = mergeTemplateOverlay(canonical, overlay) as Record<string, unknown>;
+
+    expect(merged.name).toBe('Tri');
+    expect(merged.isPublished).toBeUndefined();
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+  });
+
+  it('ignores constructor and prototype keys too', () => {
+    const merged = mergeTemplateOverlay(
+      { id: 'tpl_1', name: 'Triage' },
+      { constructor: 'nope', prototype: 'nope', name: 'Tri' },
+    ) as Record<string, unknown>;
+
+    expect(merged.name).toBe('Tri');
+    expect(typeof merged.constructor).toBe('function');
+    expect(merged.prototype).toBeUndefined();
+  });
+});
