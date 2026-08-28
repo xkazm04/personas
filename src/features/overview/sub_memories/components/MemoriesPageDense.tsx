@@ -14,20 +14,24 @@ import { useAgentStore } from '@/stores/agentStore';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { deleteAllMemories } from '@/api/overview/memories';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
-import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
+import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
+import type { MemoryTierFilter } from '@/api/overview/memories';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -41,8 +45,10 @@ const COL_WIDTHS = {
   importance: 'w-28',
   tier: 'w-20',
   access: 'w-16',
-  lastSeen: 'w-20',
-  created: 'w-20',
+  // Widened from w-20 when the columns stopped hand-trimming " ago" off the
+  // rendered label (see DenseRow) — the untrimmed form needs the extra track.
+  lastSeen: 'w-24',
+  created: 'w-24',
 } as const;
 
 /** Rendered where a metric exists but this surface cannot measure it — never a
@@ -57,6 +63,9 @@ const TIER_TONE: Record<string, string> = {
 
 export default function MemoriesPageDense() {
   const { t, tx } = useTranslation();
+  /** Chrome shared with MemoriesPageGraph — bound once so the ~20 label
+   *  reads below stay readable. */
+  const mui = t.overview.memories_ui;
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const personas = useAgentStore((s) => s.personas);
   const {
@@ -81,6 +90,14 @@ export default function MemoriesPageDense() {
   const [sortField, setSortField] = useState<SortField>('created');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [categoryFilters, setCategoryFilters] = useState<Set<string>>(new Set());
+  // Persona and tier are SERVER-side filters — memorySlice.fetchMemories has
+  // always accepted both, and this page never passed either. Tier especially:
+  // the slice defaults to `!archive`, so with no tier control an archived
+  // memory could not be reached from this surface at all, and a user with
+  // twenty agents had no way to narrow to one. `null` tier means the slice's
+  // default active set.
+  const [personaFilter, setPersonaFilter] = useState<string | null>(null);
+  const [tierFilter, setTierFilter] = useState<MemoryTierFilter | null>(null);
   const [selected, setSelected] = useState<PersonaMemory | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState<'memories' | 'conflicts'>('memories');
@@ -108,13 +125,19 @@ export default function MemoriesPageDense() {
     const timer = setTimeout(() => {
       if (!latest.isCurrent(requestId)) return;
       setDebouncePending(false);
-      fetchMemories({ search: search || undefined, sort_column: 'created_at', sort_direction: 'desc' });
+      fetchMemories({
+        search: search || undefined,
+        persona_id: personaFilter ?? undefined,
+        tier: tierFilter ?? undefined,
+        sort_column: 'created_at',
+        sort_direction: 'desc',
+      });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search, latest]);
+  }, [fetchMemories, search, personaFilter, tierFilter, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
-  const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0;
+  const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0 || personaFilter !== null || tierFilter !== null;
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -216,8 +239,8 @@ export default function MemoriesPageDense() {
       <ContentHeader
         icon={<Brain className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Memories"
-        subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
+        title={t.overview.memories.title}
+        subtitle={tx(memoriesTotal === 1 ? mui.stored_subtitle_one : mui.stored_subtitle, { count: memoriesTotal })}
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -226,7 +249,7 @@ export default function MemoriesPageDense() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-primary/20' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
               <Brain className="w-4 h-4" />
-              <span className="typo-body font-medium">Memories</span>
+              <span className="typo-body font-medium">{mui.tab_memories}</span>
             </button>
             <button
               type="button"
@@ -234,26 +257,44 @@ export default function MemoriesPageDense() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
               <Shield className="w-4 h-4" />
-              <span className="typo-body font-medium">Conflicts</span>
+              <span className="typo-body font-medium">{mui.tab_conflicts}</span>
             </button>
             <div className="w-px h-6 bg-primary/10" />
-            <button type="button" onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
-              {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {memoryReviewRunning ? 'Reviewing...' : 'Review'}
-            </button>
+            {/* `Button loading` renders a REAL spinner and sets aria-busy.
+                What stood here rendered the null-returning feedback spinner in
+                place of the icon, so pressing Review deleted the icon and put
+                nothing where it had been (CLAUDE.md, the spinner boundary: a
+                spinner is REQUIRED on a control the user just pressed). The
+                flag is store-owned, so `loading={flag}` is the right shape
+                here rather than AsyncButton. */}
+            <Button
+              variant="accent"
+              accentColor="cyan"
+              size="sm"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              loading={memoryReviewRunning}
+              loadingLabel={mui.reviewing}
+              disabled={memoryReviewRunning || memoriesTotal === 0}
+              onClick={handleReview}
+            >
+              {mui.review}
+            </Button>
             <div className="relative" ref={reflectMenuRef}>
-              <button
-                type="button"
-                onClick={() => setReflectMenuOpen((v) => !v)}
+              <Button
+                variant="accent"
+                accentColor="amber"
+                size="sm"
+                icon={<Lightbulb className="w-3.5 h-3.5" />}
+                loading={memoryReviewRunning}
+                loadingLabel={t.overview.memories.reflecting}
                 disabled={memoryReviewRunning || reflectablePersonas.length === 0}
+                onClick={() => setReflectMenuOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={reflectMenuOpen}
                 title={t.overview.memories.reflect_hint}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-amber-500/15 text-amber-300 border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40"
               >
-                {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Lightbulb className="w-3.5 h-3.5" />}
-                {memoryReviewRunning ? t.overview.memories.reflecting : t.overview.memories.reflect}
-              </button>
+                {t.overview.memories.reflect}
+              </Button>
               {reflectMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-primary/20 bg-background shadow-elevation-3 p-1">
                   <p className="px-2 py-1.5 typo-caption text-foreground">{t.overview.memories.reflect_pick_persona}</p>
@@ -273,7 +314,7 @@ export default function MemoriesPageDense() {
             </div>
             <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-              Add
+              {t.common.add}
             </button>
             {memories.length > 0 && (
               <button type="button" onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
@@ -298,20 +339,22 @@ export default function MemoriesPageDense() {
         <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
           {stats && (
             <div className="flex items-center gap-3 typo-body flex-wrap">
-              <KpiMetric label="Total" value={stats.total} />
+              <KpiMetric label={mui.kpi_total} value={stats.total} />
               <KpiDivider />
-              <KpiMetric label="Avg Importance" value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
+              <KpiMetric label={mui.kpi_avg_importance} value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
               <KpiDivider />
-              {/* An "Archive" tile stood here and could only ever read 0: this
-                  list is fetched with the store's default `!archive` tier filter
-                  and carries no tier control, so an archived memory never enters
-                  `memories`. A tile that is structurally incapable of a non-zero
-                  value is not a measurement. */}
-              <KpiMetric label="Core" value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
+              {/* An "Archive" tile stood here and could only ever read 0: the
+                  list was fetched with the store's default `!archive` tier
+                  filter and the page carried no tier control, so an archived
+                  memory never entered `memories`. A tile that is structurally
+                  incapable of a non-zero value is not a measurement. The tier
+                  select below now reaches the archive; the tile stays gone
+                  because these counts are page-scoped, not store-scoped. */}
+              <KpiMetric label={tokenLabel(t, 'memory_tier', 'core')} value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
               <KpiDivider />
-              <KpiMetric label="Active" value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
+              <KpiMetric label={tokenLabel(t, 'memory_tier', 'active')} value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
               <KpiDivider />
-              <KpiMetric label="Total Access" value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-emerald-300" />
+              <KpiMetric label={mui.kpi_total_access} value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-emerald-300" />
             </div>
           )}
 
@@ -330,7 +373,28 @@ export default function MemoriesPageDense() {
 
         {/* Category pill bar — toggle filters */}
         <div className="flex items-center gap-1.5 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 flex-shrink-0">
-          <span className="typo-label text-foreground mr-1">Category</span>
+          <ThemedSelect
+            value={personaFilter ?? ''}
+            onChange={(e) => setPersonaFilter(e.target.value || null)}
+            wrapperClassName="min-w-[130px]"
+            aria-label={t.overview.memory_filter.all_agents}
+          >
+            <option value="">{t.overview.memory_filter.all_agents}</option>
+            {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </ThemedSelect>
+          <ThemedSelect
+            value={tierFilter ?? ''}
+            onChange={(e) => setTierFilter((e.target.value || null) as MemoryTierFilter | null)}
+            wrapperClassName="min-w-[120px]"
+            aria-label={t.overview.memory_filter.tier_all}
+          >
+            <option value="">{t.overview.memory_filter.tier_all}</option>
+            <option value="core">{t.overview.memory_filter.tier_core}</option>
+            <option value="active">{t.overview.memory_filter.tier_active}</option>
+            <option value="working">{t.overview.memory_filter.tier_working}</option>
+            <option value="archive">{t.overview.memory_filter.tier_archived}</option>
+          </ThemedSelect>
+          <span className="typo-label text-foreground mr-1">{mui.category_label}</span>
           {ALL_MEMORY_CATEGORIES.map((cat) => {
             const colors = MEMORY_CATEGORY_COLORS[cat]!;
             const active = categoryFilters.has(cat);
@@ -349,9 +413,13 @@ export default function MemoriesPageDense() {
               </button>
             );
           })}
-          {categoryFilters.size > 0 && (
-            <button type="button" onClick={() => setCategoryFilters(new Set())} className="typo-body text-foreground hover:text-foreground px-2 py-1">
-              Clear
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={() => { setCategoryFilters(new Set()); setPersonaFilter(null); setTierFilter(null); setSearch(''); }}
+              className="typo-body text-foreground hover:text-foreground px-2 py-1"
+            >
+              {t.common.clear}
             </button>
           )}
         </div>
@@ -362,14 +430,14 @@ export default function MemoriesPageDense() {
 
           {/* Column headers */}
           <div className="flex items-center border-b border-primary/10 bg-background/80 flex-shrink-0 relative z-10">
-            <div className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>TYPE</div>
-            <SortHeader field="title" label="Title" width={COL_WIDTHS.title} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="persona" label="Persona" width={COL_WIDTHS.persona} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="importance" label="Importance" width={COL_WIDTHS.importance} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="tier" label="Tier" width={COL_WIDTHS.tier} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="access_count" label="Hits" width={COL_WIDTHS.access} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
-            <SortHeader field="last_accessed" label="Last seen" width={COL_WIDTHS.lastSeen} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
-            <SortHeader field="created" label="Created" width={COL_WIDTHS.created} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+            <div className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>{mui.col_type}</div>
+            <SortHeader field="title" label={t.overview.memory_detail.title_label} width={COL_WIDTHS.title} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="persona" label={t.overview.reports.columns.persona} width={COL_WIDTHS.persona} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="importance" label={t.overview.memory_detail.importance_label} width={COL_WIDTHS.importance} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="tier" label={mui.col_tier} width={COL_WIDTHS.tier} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="access_count" label={mui.col_hits} width={COL_WIDTHS.access} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+            <SortHeader field="last_accessed" label={mui.col_last_seen} width={COL_WIDTHS.lastSeen} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+            <SortHeader field="created" label={t.common.created} width={COL_WIDTHS.created} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
           </div>
 
           {/* Body — three-state row region (docs/design/overview-loading.md):
@@ -397,7 +465,7 @@ export default function MemoriesPageDense() {
                     key={memory.id}
                     memory={memory}
                     index={i}
-                    personaName={personaMap.get(memory.persona_id)?.name ?? 'Unknown'}
+                    personaName={personaMap.get(memory.persona_id)?.name ?? mui.unknown_persona}
                     personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
                     isSelected={selected?.id === memory.id}
                     onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
@@ -413,7 +481,7 @@ export default function MemoriesPageDense() {
       {selected && (
         <MemoryDetailModal
           memory={selected}
-          personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
+          personaName={personaMap.get(selected.persona_id)?.name ?? mui.unknown_persona}
           personaColor={personaMap.get(selected.persona_id)?.color ?? '#6B7280'}
           onClose={() => setSelected(null)}
           onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
@@ -438,7 +506,7 @@ export default function MemoriesPageDense() {
               await deleteAllMemories();
               await fetchMemories();
             } catch (e) {
-              toastCatch('MemoriesPageDense:deleteAll', 'Failed to delete all memories')(e);
+              toastCatch('MemoriesPageDense:deleteAll', mui.delete_all_error)(e);
             } finally {
               setConfirmingDeleteAll(false);
             }
@@ -512,6 +580,7 @@ function DenseRow({
 }: {
   memory: PersonaMemory; index: number; personaName: string; personaColor: string; isSelected: boolean; onSelect: () => void;
 }) {
+  const { t } = useTranslation();
   const lastSeen = memory.last_accessed_at ?? memory.updated_at;
   const importancePct = (memory.importance / 5) * 100;
   const importanceHex = importanceColor(memory.importance);
@@ -548,18 +617,30 @@ function DenseRow({
         </div>
       </div>
       <div className={`${COL_WIDTHS.tier} px-2 py-2`}>
+        {/* `tier` is a language-agnostic machine token from the Rust side
+            ("core"/"active"/"working"/"archive"); rendering it raw showed
+            English in all 14 locales and gave a backend rename no compile-time
+            link to this cell. tokenLabel is the contract's resolver. */}
         <span className={`inline-flex items-center px-1.5 py-0.5 typo-caption font-medium rounded-input border ${tierClass}`}>
-          {memory.tier}
+          {tokenLabel(t, 'memory_tier', memory.tier)}
         </span>
       </div>
       <div className={`${COL_WIDTHS.access} px-2 py-2 text-right`}>
         <span className="typo-code font-mono tabular-nums text-emerald-300">{memory.access_count}</span>
       </div>
+      {/* A hand-rolled " ago" strip stood here to squeeze the label into a
+          w-20 track, and it trimmed inconsistently: "5m ago" became "5m" but
+          "just now" carries no such suffix and survived at full width, so the
+          column mixed trimmed and untrimmed forms. The shared
+          display/RelativeTime is the primitive for this (sibling code in
+          MemoryCard and MemoryClaimsSection already uses it); it also
+          live-updates on the shared ticker and puts the absolute timestamp in
+          a tooltip, neither of which the raw call did. */}
       <div className={`${COL_WIDTHS.lastSeen} px-2 py-2 text-right`}>
-        <span className="typo-code font-mono tabular-nums text-foreground">{formatRelativeTime(lastSeen).replace(/ ago$/, '')}</span>
+        <RelativeTime timestamp={lastSeen} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
       </div>
       <div className={`${COL_WIDTHS.created} px-2 py-2 text-right`}>
-        <span className="typo-code font-mono tabular-nums text-foreground">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
+        <RelativeTime timestamp={memory.created_at} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
       </div>
     </motion.button>
   );

@@ -84,7 +84,13 @@ interface MemoryFeatures {
 
 export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const conflicts: MemoryConflict[] = [];
-  const seen = new Set<string>();
+
+  // NOTE there is deliberately no `seen` de-dup set here. The pair loop below
+  // starts `j` at `i + 1`, so it visits every unordered pair exactly once and a
+  // de-dup guard could never fire. One stood here anyway (a Set, a `has`
+  // check, three `add` calls) and read as protection against a re-entry hazard
+  // the loop's own bounds already make impossible — which is worse than no
+  // comment, because it misstates the invariant to the next reader.
 
   // O(n) precompute — previously each memory's title+content was
   // re-tokenized and re-bigrammed for every pair (~3·(n-1) times per memory).
@@ -99,7 +105,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
       const a = memories[i]!; const b = memories[j]!;
       const fb = features[j]!;
       const pairKey = [a.id, b.id].sort().join(':');
-      if (seen.has(pairKey)) continue;
       const contentA = fa.content;
       const contentB = fb.content;
 
@@ -136,7 +141,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
       // A negation signal on a shared topic is therefore decisive: it is never
       // redundancy, however similar the two texts read.
       if (topic >= CONTRADICTION_TOPIC_THRESHOLD && hasContradictionSignal(contentA, contentB)) {
-        seen.add(pairKey);
         conflicts.push({ id: pairKey, kind: 'contradiction', similarity: topic, memoryA: a, memoryB: b,
           reason: `Potentially contradictory instructions on the same topic (${Math.round(topic * 100)}% topic overlap)` });
         continue;
@@ -148,7 +152,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
         const sim = wordSim * TEXT_SIM_WORD_WEIGHT
           + jaccard(fa.bigramSet, fb.bigramSet) * TEXT_SIM_BIGRAM_WEIGHT;
         if (sim >= DUPLICATE_THRESHOLD) {
-          seen.add(pairKey);
           const crossPersona = a.persona_id !== b.persona_id;
           conflicts.push({ id: pairKey, kind: 'duplicate', similarity: sim, memoryA: a, memoryB: b,
             reason: crossPersona ? `Near-duplicate memories across different agents (${Math.round(sim * 100)}% similar)` : `Near-duplicate memories within the same agent (${Math.round(sim * 100)}% similar)` });
@@ -161,7 +164,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
         if (timeDiff >= MIN_TIME_DIFF_MS) {
           const older = new Date(a.created_at) < new Date(b.created_at) ? a : b;
           const newer = older === a ? b : a;
-          seen.add(pairKey);
           conflicts.push({ id: pairKey, kind: 'superseded', similarity: topic, memoryA: newer, memoryB: older,
             reason: `Newer memory may supersede an older one on the same topic (${Math.round(topic * 100)}% overlap)` });
         }
@@ -172,4 +174,91 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const kindOrder: Record<ConflictKind, number> = { contradiction: 0, duplicate: 1, superseded: 2 };
   conflicts.sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || b.similarity - a.similarity);
   return conflicts;
+}
+
+// ---------------------------------------------------------------------------
+// Verdict telemetry
+// ---------------------------------------------------------------------------
+
+/**
+ * The label a resolved conflict is reported under.
+ *
+ * merge / keep_a / keep_b / dismiss are the ONLY ground truth that exists about
+ * whether this detector is any good, and none of it was recorded anywhere — a
+ * dismissal in particular is a labelled false positive handed to us for free,
+ * and it was discarded. So the three thresholds in `@/lib/memoryLimits`, whose
+ * own comments describe them as "chosen empirically", could never be re-tuned
+ * against evidence, and nobody could say whether this surface helps or annoys.
+ *
+ * The label pairs the conflict KIND with the score that produced it, because
+ * "dismissals cluster just above DUPLICATE_THRESHOLD" is the shape of the
+ * answer that would actually move a threshold. The score is bucketed to 0.05
+ * deliberately: a raw float would make every event a unique tag value and the
+ * aggregate uncountable.
+ *
+ * Carries no memory content, no ids and no persona — only the kind and a
+ * bucket, which is what makes it safe to send.
+ */
+export function conflictVerdictLabel(kind: ConflictKind, similarity: number): string {
+  const clamped = Math.min(1, Math.max(0, similarity));
+  const bucket = (Math.floor(clamped / 0.05) * 0.05).toFixed(2);
+  return `${kind}:${bucket}`;
+}
+
+// ---------------------------------------------------------------------------
+// Resolved-verdict recall
+// ---------------------------------------------------------------------------
+
+/**
+ * A user's verdict on a conflict pair has to outlive the component that took
+ * it. `MemoryConflictReview` held its resolved ids in component state, and the
+ * Conflicts tab unmounts the moment you switch back to Memories — so every
+ * pair the user had already judged reappeared on the next visit.
+ *
+ * That is worst exactly where it matters most. Detection is heuristic, so the
+ * pairs a user DISMISSES are its false positives: the surface was guaranteed to
+ * re-present its own worst output, and a user who cleared ten of them had to
+ * clear them again every time they came back.
+ *
+ * The store is module-scoped and session-scoped, deliberately. Persisting the
+ * ids to localStorage was tried and reverted: it bought recall across a restart
+ * at the cost of three separate golden-path violations (a raw web-storage
+ * access, a one-way module latch guarding the storage-failure report, and a
+ * durable read snapshotted into a component's `useState`), which is a bad trade
+ * for a surface a user visits a handful of times per session. Recall across the
+ * whole session is what the defect was about.
+ *
+ * Ids are pair keys (`sorted(idA):sorted(idB)`). The set is capped oldest-first
+ * because a key whose memories are long gone can never be matched again and
+ * must not grow without limit.
+ */
+
+/** Oldest-dropped cap on the verdict set. */
+export const MAX_RESOLVED_CONFLICTS = 200;
+
+const _resolvedConflicts = new Set<string>();
+
+/** The live verdict set. Read-only to callers — write through
+ *  {@link markConflictResolved} so the cap is always applied. */
+export function resolvedConflictIds(): ReadonlySet<string> {
+  return _resolvedConflicts;
+}
+
+/** Record a verdict, evicting the oldest ids once the cap is exceeded. */
+export function markConflictResolved(id: string): void {
+  _resolvedConflicts.add(id);
+  // Set iteration is insertion-ordered, so the head is the oldest.
+  let excess = _resolvedConflicts.size - MAX_RESOLVED_CONFLICTS;
+  if (excess <= 0) return;
+  for (const key of _resolvedConflicts) {
+    if (excess-- <= 0) break;
+    _resolvedConflicts.delete(key);
+  }
+}
+
+/** Test hatch — module state with no reset door is state a suite cannot
+ *  isolate, and every test after the first would inherit the last one's
+ *  verdicts. */
+export function __resetResolvedConflicts(): void {
+  _resolvedConflicts.clear();
 }

@@ -7263,7 +7263,23 @@
       "memory_b": "Memoria B",
       "merge": "Combinar",
       "keep": "Conservar",
-      "vs": "vs"
+      "vs": "vs",
+      "processing": "Aplicando la decisión…",
+      "merge_blocked_core": "No se puede fusionar un recuerdo esencial (fijado)",
+      "merge_blocked_cross_persona": "No se pueden fusionar recuerdos de agentes distintos",
+      "retire_blocked_core_toast": "No se puede archivar un recuerdo esencial (fijado): resuelve este conflicto a mano",
+      "merge_blocked_core_toast": "No se puede fusionar un recuerdo esencial (fijado): resuelve este conflicto a mano",
+      "merge_blocked_cross_persona_toast": "No se pueden fusionar recuerdos de agentes distintos: resuelve este conflicto a mano",
+      "dismissed_toast": "Conflicto descartado",
+      "resolved_toast": "Conflicto resuelto",
+      "resolve_failed_toast": "No se pudo resolver el conflicto",
+      "detected": "{count} conflictos detectados",
+      "detected_one": "{count} conflicto detectado",
+      "count_contradiction": "{count} contradicciones",
+      "count_contradiction_one": "{count} contradicción",
+      "count_duplicate": "{count} duplicados",
+      "count_duplicate_one": "{count} duplicado",
+      "count_superseded": "{count} sustituidos"
     },
     "observability_charts": {
       "cost_over_time": "Costo a lo largo del tiempo",
@@ -7534,7 +7550,11 @@
     },
     "review_results": {
       "title": "Revisión de memoria IA",
-      "review_failed": "Revisión fallida"
+      "review_failed": "Revisión fallida",
+      "reviewed_count": "Se revisaron {count} recuerdos",
+      "reviewed_count_one": "Se revisó {count} recuerdo",
+      "kept_count": "{count} conservados",
+      "pruned_count": "{count} descartados"
     },
     "anomaly_drilldown_extra": {
       "title": "Análisis Detallado de Anomalías",
@@ -8536,6 +8556,30 @@
         "decrypt": "Usar",
         "healthcheck": "Chequeo"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "{count} recuerdos guardados por los agentes",
+      "stored_subtitle_one": "{count} recuerdo guardado por los agentes",
+      "tab_memories": "Recuerdos",
+      "tab_conflicts": "Conflictos",
+      "review": "Revisar",
+      "reviewing": "Revisando…",
+      "kpi_total": "Totales",
+      "kpi_avg_importance": "Importancia media",
+      "kpi_total_access": "Usos totales",
+      "kpi_nodes": "Nodos",
+      "kpi_personas": "Agentes",
+      "kpi_clusters": "Grupos",
+      "category_label": "Categoría",
+      "col_type": "Tipo",
+      "col_tier": "Nivel",
+      "col_hits": "Usos",
+      "col_last_seen": "Visto por última vez",
+      "unknown_persona": "Desconocido",
+      "delete_all_error": "No se pudieron eliminar todos los recuerdos",
+      "legend_size": "Tamaño",
+      "legend_low": "Baja",
+      "legend_high": "Alta"
     }
   },
   "matrix_v3": {
@@ -12890,6 +12934,21 @@
     "kb_document": {
       "pending": "pendiente",
       "indexing": "indexando"
+    },
+    "memory_tier": {
+      "core": "Esencial",
+      "active": "Activa",
+      "working": "En curso",
+      "archive": "Archivada"
+    },
+    "memory_action": {
+      "kept": "Conservada",
+      "deleted": "Eliminada",
+      "error": "Error",
+      "proposed_delete": "Eliminación propuesta",
+      "proposed_update_importance": "Reevaluación propuesta",
+      "proposed_synthesize": "Fusión propuesta",
+      "proposed_archive": "Archivado propuesto"
     }
   },
   "project_overview": {

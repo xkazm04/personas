@@ -961,7 +961,23 @@
     "memory_b": "স্মৃতি B",
     "merge": "মার্জ করুন",
     "keep": "রাখুন",
-    "vs": "বনাম"
+    "vs": "বনাম",
+    "processing": "সিদ্ধান্ত প্রয়োগ করা হচ্ছে…",
+    "merge_blocked_core": "মূল (পিন করা) স্মৃতি একত্র করা যাবে না",
+    "merge_blocked_cross_persona": "ভিন্ন এজেন্টের স্মৃতি একত্র করা যাবে না",
+    "retire_blocked_core_toast": "মূল (পিন করা) স্মৃতি সংরক্ষণাগারে পাঠানো যাবে না — এই দ্বন্দ্ব নিজে মেটান",
+    "merge_blocked_core_toast": "মূল (পিন করা) স্মৃতি একত্র করা যাবে না — এই দ্বন্দ্ব নিজে মেটান",
+    "merge_blocked_cross_persona_toast": "ভিন্ন এজেন্টের স্মৃতি একত্র করা যাবে না — এই দ্বন্দ্ব নিজে মেটান",
+    "dismissed_toast": "দ্বন্দ্ব উপেক্ষা করা হয়েছে",
+    "resolved_toast": "দ্বন্দ্ব মিটেছে",
+    "resolve_failed_toast": "দ্বন্দ্ব মেটানো যায়নি",
+    "detected": "{count}টি দ্বন্দ্ব শনাক্ত হয়েছে",
+    "detected_one": "{count}টি দ্বন্দ্ব শনাক্ত হয়েছে",
+    "count_contradiction": "{count}টি বিরোধ",
+    "count_contradiction_one": "{count}টি বিরোধ",
+    "count_duplicate": "{count}টি নকল",
+    "count_duplicate_one": "{count}টি নকল",
+    "count_superseded": "{count}টি প্রতিস্থাপিত"
   },
   "observability_charts": {
     "cost_over_time": "সময়ের সাথে খরচ",
@@ -1232,7 +1248,11 @@
   },
   "review_results": {
     "title": "AI স্মৃতি পর্যালোচনা",
-    "review_failed": "পর্যালোচনা ব্যর্থ হয়েছে"
+    "review_failed": "পর্যালোচনা ব্যর্থ হয়েছে",
+    "reviewed_count": "{count}টি স্মৃতি পর্যালোচনা করা হয়েছে",
+    "reviewed_count_one": "{count}টি স্মৃতি পর্যালোচনা করা হয়েছে",
+    "kept_count": "{count}টি রাখা হয়েছে",
+    "pruned_count": "{count}টি ছাঁটাই করা হয়েছে"
   },
   "anomaly_drilldown_extra": {
     "title": "অ্যানোমালি ড্রিল-ডাউন",
@@ -2234,5 +2254,29 @@
       "decrypt": "ব্যবহার",
       "healthcheck": "পরীক্ষা"
     }
+  },
+  "memories_ui": {
+    "stored_subtitle": "এজেন্টদের সংরক্ষিত {count}টি স্মৃতি",
+    "stored_subtitle_one": "এজেন্টদের সংরক্ষিত {count}টি স্মৃতি",
+    "tab_memories": "স্মৃতি",
+    "tab_conflicts": "দ্বন্দ্ব",
+    "review": "পর্যালোচনা",
+    "reviewing": "পর্যালোচনা চলছে…",
+    "kpi_total": "মোট",
+    "kpi_avg_importance": "গড় গুরুত্ব",
+    "kpi_total_access": "মোট ব্যবহার",
+    "kpi_nodes": "নোড",
+    "kpi_personas": "এজেন্ট",
+    "kpi_clusters": "ক্লাস্টার",
+    "category_label": "বিভাগ",
+    "col_type": "ধরন",
+    "col_tier": "স্তর",
+    "col_hits": "ব্যবহার",
+    "col_last_seen": "শেষ দেখা",
+    "unknown_persona": "অজানা",
+    "delete_all_error": "সব স্মৃতি মুছে ফেলা যায়নি",
+    "legend_size": "আকার",
+    "legend_low": "কম",
+    "legend_high": "বেশি"
   }
 }

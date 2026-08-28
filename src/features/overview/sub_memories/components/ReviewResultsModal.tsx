@@ -2,6 +2,7 @@ import { Sparkles, X, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { MemoryReviewResult } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface ReviewResultsModalProps {
   reviewResult: MemoryReviewResult | null;
@@ -10,7 +11,8 @@ interface ReviewResultsModalProps {
 }
 
 export default function ReviewResultsModal({ reviewResult, reviewError, onClose }: ReviewResultsModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const rr = t.overview.review_results;
   if (!reviewResult && !reviewError) return null;
 
   return (
@@ -20,11 +22,11 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
           <div className="flex-1 min-w-0 pr-4">
             <h3 id="review-results-title" className="typo-heading text-foreground/90 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              {t.overview.review_results.title}
+              {rr.title}
             </h3>
             {reviewResult && (
               <p className="typo-body text-foreground mt-1">
-                Reviewed {reviewResult.reviewed} memories
+                {tx(reviewResult.reviewed === 1 ? rr.reviewed_count_one : rr.reviewed_count, { count: reviewResult.reviewed })}
               </p>
             )}
           </div>
@@ -39,7 +41,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
             <div className="flex items-start gap-3 p-4 rounded-modal bg-red-500/10 border border-red-500/20">
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="typo-heading text-red-300">{t.overview.review_results.review_failed}</p>
+                <p className="typo-heading text-red-300">{rr.review_failed}</p>
                 <p className="typo-body text-red-400/70 mt-1">{reviewError}</p>
               </div>
             </div>
@@ -48,11 +50,11 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="typo-heading text-emerald-300">{reviewResult.updated} kept</span>
+                  <span className="typo-heading text-emerald-300">{tx(rr.kept_count, { count: reviewResult.updated })}</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-red-500/10 border border-red-500/20">
                   <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                  <span className="typo-heading text-red-300">{reviewResult.deleted} pruned</span>
+                  <span className="typo-heading text-red-300">{tx(rr.pruned_count, { count: reviewResult.deleted })}</span>
                 </div>
               </div>
 
@@ -93,8 +95,12 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                             </p>
                           )}
                         </div>
+                        {/* `action` is a raw Rust token ("kept"/"deleted"/
+                            "error"/"proposed_*"). It rendered verbatim as the
+                            row's right-hand label in every locale; the token
+                            map is the sanctioned resolver. */}
                         <span className={`typo-heading flex-shrink-0 ${actionCls}`}>
-                          {d.action}
+                          {tokenLabel(t, 'memory_action', d.action)}
                         </span>
                       </div>
                     );

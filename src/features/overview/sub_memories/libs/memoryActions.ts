@@ -20,6 +20,45 @@ export interface MemoryAction {
 const STORAGE_KEY = 'dolla:memory-actions';
 
 /**
+ * Retention bound on the localStorage copy.
+ *
+ * Every persisted `MemoryAction` carries a 200-character excerpt of a memory's
+ * body (`rule`) plus the model's reasoning about it. That is the same class of
+ * text as the memory itself — which already lives in plaintext SQLite on this
+ * machine, so the excerpt is not a NEW exposure class and encrypting one mirror
+ * of it would be theatre. What it *was* is unbounded and permanent: nothing
+ * here ever dropped an entry, so a rule kept growing the blob and — the real
+ * defect — **an excerpt outlived the memory it was taken from**. Delete a
+ * memory, or Delete-all the store, and its body text stayed in localStorage
+ * forever with nothing left in the app that could show or clear it.
+ *
+ * So the copy is bounded in both directions: nothing older than
+ * `ACTION_TTL_MS`, and never more than `MAX_PERSISTED_ACTIONS` of them,
+ * newest first. Pruning runs on every read AND every write, so a session that
+ * only reads still shrinks a blob left over by an older build.
+ */
+export const ACTION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+export const MAX_PERSISTED_ACTIONS = 50;
+
+/**
+ * Drop expired entries and cap the rest, newest first. Exported for the unit
+ * test — a retention rule nothing exercises is a retention rule that silently
+ * stops running.
+ */
+export function pruneActions(actions: MemoryAction[], now: number = Date.now()): MemoryAction[] {
+  return actions
+    .filter((a) => {
+      const created = Date.parse(a.createdAt);
+      // An unparseable timestamp cannot be aged out, and keeping it forever is
+      // exactly the failure this bound exists to stop — treat it as expired.
+      if (Number.isNaN(created)) return false;
+      return now - created < ACTION_TTL_MS;
+    })
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    .slice(0, MAX_PERSISTED_ACTIONS);
+}
+
+/**
  * In-memory mirror of the last successful load. Acts as a session-scoped
  * backup so a mid-session corruption of `localStorage[STORAGE_KEY]` (truncation,
  * manual edit, quota eviction) doesn't discard the rules the user has already
@@ -46,8 +85,17 @@ export function loadActions(): MemoryAction[] {
       // later callers don't iterate on a non-iterable.
       throw new Error(`expected array, got ${typeof parsed}`);
     }
-    _sessionBackup = parsed as MemoryAction[];
-    return parsed as MemoryAction[];
+    // The parsed blob is whatever a previous build (or a hand edit) left in
+    // localStorage; `MemoryAction[]` is the shape this module writes and the
+    // only shape `pruneActions` reads (it touches `createdAt` alone, and
+    // tolerates a missing/unparseable one by expiring the entry).
+    const pruned = pruneActions(parsed as MemoryAction[]);
+    _sessionBackup = pruned;
+    // Write back only when pruning actually removed something, so a read never
+    // costs a serialize on the common path but a stale oversized blob left by
+    // an older build shrinks on the next load rather than surviving forever.
+    if (pruned.length !== parsed.length) saveActions(pruned);
+    return pruned;
   } catch (err) {
     // Hard data-loss path: report once per session and prefer the in-memory
     // backup over silently wiping the user's rules.
@@ -67,8 +115,9 @@ export function loadActions(): MemoryAction[] {
 }
 
 export function saveActions(actions: MemoryAction[]): void {
-  _sessionBackup = actions.slice();
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(actions)); }
+  const bounded = pruneActions(actions);
+  _sessionBackup = bounded;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(bounded)); }
   catch (err) {
     // Quota exceeded or storage disabled — not a data-loss bug (the in-memory
     // backup still holds the rules), but Sentry should see it.

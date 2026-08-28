@@ -7263,7 +7263,23 @@
       "memory_b": "Bộ nhớ B",
       "merge": "Gộp",
       "keep": "Giữ",
-      "vs": "vs"
+      "vs": "vs",
+      "processing": "Đang áp dụng quyết định…",
+      "merge_blocked_core": "Không thể hợp nhất ký ức cốt lõi (đã ghim)",
+      "merge_blocked_cross_persona": "Không thể hợp nhất ký ức của các tác tử khác nhau",
+      "retire_blocked_core_toast": "Không thể lưu trữ ký ức cốt lõi (đã ghim) — hãy tự xử lý xung đột này",
+      "merge_blocked_core_toast": "Không thể hợp nhất ký ức cốt lõi (đã ghim) — hãy tự xử lý xung đột này",
+      "merge_blocked_cross_persona_toast": "Không thể hợp nhất ký ức của các tác tử khác nhau — hãy tự xử lý xung đột này",
+      "dismissed_toast": "Đã bỏ qua xung đột",
+      "resolved_toast": "Đã xử lý xung đột",
+      "resolve_failed_toast": "Không xử lý được xung đột",
+      "detected": "Phát hiện {count} xung đột",
+      "detected_one": "Phát hiện {count} xung đột",
+      "count_contradiction": "{count} mâu thuẫn",
+      "count_contradiction_one": "{count} mâu thuẫn",
+      "count_duplicate": "{count} trùng lặp",
+      "count_duplicate_one": "{count} trùng lặp",
+      "count_superseded": "{count} bị thay thế"
     },
     "observability_charts": {
       "cost_over_time": "Chi phí theo thời gian",
@@ -7534,7 +7550,11 @@
     },
     "review_results": {
       "title": "Đánh giá bộ nhớ AI",
-      "review_failed": "Đánh giá thất bại"
+      "review_failed": "Đánh giá thất bại",
+      "reviewed_count": "Đã rà soát {count} ký ức",
+      "reviewed_count_one": "Đã rà soát {count} ký ức",
+      "kept_count": "Giữ lại {count}",
+      "pruned_count": "Loại bỏ {count}"
     },
     "anomaly_drilldown_extra": {
       "title": "Phân tích sâu bất thường",
@@ -8536,6 +8556,30 @@
         "decrypt": "Dùng",
         "healthcheck": "Kiểm tra"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "{count} ký ức do các tác tử lưu lại",
+      "stored_subtitle_one": "{count} ký ức do các tác tử lưu lại",
+      "tab_memories": "Ký ức",
+      "tab_conflicts": "Xung đột",
+      "review": "Rà soát",
+      "reviewing": "Đang rà soát…",
+      "kpi_total": "Tổng cộng",
+      "kpi_avg_importance": "Mức quan trọng trung bình",
+      "kpi_total_access": "Tổng lượt dùng",
+      "kpi_nodes": "Nút",
+      "kpi_personas": "Tác tử",
+      "kpi_clusters": "Cụm",
+      "category_label": "Phân loại",
+      "col_type": "Loại",
+      "col_tier": "Cấp",
+      "col_hits": "Lượt dùng",
+      "col_last_seen": "Lần cuối",
+      "unknown_persona": "Không rõ",
+      "delete_all_error": "Không xoá được toàn bộ ký ức",
+      "legend_size": "Kích thước",
+      "legend_low": "Thấp",
+      "legend_high": "Cao"
     }
   },
   "matrix_v3": {
@@ -12890,6 +12934,21 @@
     "kb_document": {
       "pending": "đang chờ",
       "indexing": "đang lập chỉ mục"
+    },
+    "memory_tier": {
+      "core": "Cốt lõi",
+      "active": "Đang hoạt động",
+      "working": "Đang xử lý",
+      "archive": "Đã lưu trữ"
+    },
+    "memory_action": {
+      "kept": "Đã giữ lại",
+      "deleted": "Đã xoá",
+      "error": "Lỗi",
+      "proposed_delete": "Đề xuất xoá",
+      "proposed_update_importance": "Đề xuất đánh giá lại",
+      "proposed_synthesize": "Đề xuất hợp nhất",
+      "proposed_archive": "Đề xuất lưu trữ"
     }
   },
   "project_overview": {

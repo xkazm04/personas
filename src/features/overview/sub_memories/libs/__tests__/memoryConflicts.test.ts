@@ -13,7 +13,7 @@
  * newer/older orientation of a `superseded` pair (ConflictCard's keep-A/keep-B
  * labels are read off it), the sort contract, and the fast-path invariant.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import {
@@ -22,7 +22,15 @@ import {
   TEXT_SIM_BIGRAM_WEIGHT,
   SUPERSEDED_MIN_TIME_DIFF_MS,
 } from '@/lib/memoryLimits';
-import { detectConflicts, textSimilarity } from '../memoryConflicts';
+import {
+  conflictVerdictLabel,
+  detectConflicts,
+  markConflictResolved,
+  resolvedConflictIds,
+  textSimilarity,
+  MAX_RESOLVED_CONFLICTS,
+  __resetResolvedConflicts,
+} from '../memoryConflicts';
 import { mergeMemories } from '../conflictHelpers';
 
 let seq = 0;
@@ -243,5 +251,66 @@ describe('mergeMemories', () => {
   it('carries neither side of a null tags column into the result', () => {
     const merged = mergeMemories(memory({ tags: null }), memory({ tags: ['keep'] }));
     expect(merged.tags).toEqual(['keep']);
+  });
+});
+
+/**
+ * Recall of the user's verdicts. Component state used to hold these, and the
+ * Conflicts tab unmounts on every switch back to Memories — so a dismissed
+ * pair (which, detection being heuristic, is by definition one of the
+ * detector's false positives) came back on the next visit.
+ */
+describe('resolved-conflict recall', () => {
+  beforeEach(() => {
+    __resetResolvedConflicts();
+  });
+
+  it('starts empty and remembers what was marked', () => {
+    expect(resolvedConflictIds().size).toBe(0);
+    markConflictResolved('a:b');
+    markConflictResolved('c:d');
+    expect([...resolvedConflictIds()].sort()).toEqual(['a:b', 'c:d']);
+  });
+
+  it('survives the component that recorded it', () => {
+    // The set lives in module scope precisely so a remount of the Conflicts
+    // tab reads back the same verdicts rather than a fresh empty Set.
+    markConflictResolved('pair');
+    const asSeenByARemount = new Set(resolvedConflictIds());
+    expect(asSeenByARemount.has('pair')).toBe(true);
+  });
+
+  it('is idempotent for a pair judged twice', () => {
+    markConflictResolved('same');
+    markConflictResolved('same');
+    expect(resolvedConflictIds().size).toBe(1);
+  });
+
+  it('caps the set, evicting the oldest verdicts', () => {
+    for (let i = 0; i < MAX_RESOLVED_CONFLICTS + 5; i++) markConflictResolved(`pair_${i}`);
+
+    const stored = resolvedConflictIds();
+    expect(stored.size).toBe(MAX_RESOLVED_CONFLICTS);
+    expect(stored.has(`pair_${MAX_RESOLVED_CONFLICTS + 4}`)).toBe(true);
+    expect(stored.has('pair_0')).toBe(false);
+  });
+});
+
+describe('conflictVerdictLabel', () => {
+  it('pairs the kind with a 0.05 score bucket', () => {
+    expect(conflictVerdictLabel('duplicate', 0.72)).toBe('duplicate:0.70');
+    expect(conflictVerdictLabel('contradiction', 0.851)).toBe('contradiction:0.85');
+    expect(conflictVerdictLabel('superseded', 0.5)).toBe('superseded:0.50');
+  });
+
+  it('emits at most 21 distinct buckets per kind, so the tag stays countable', () => {
+    const labels = new Set<string>();
+    for (let i = 0; i <= 1000; i++) labels.add(conflictVerdictLabel('duplicate', i / 1000));
+    expect(labels.size).toBeLessThanOrEqual(21);
+  });
+
+  it('clamps a score outside [0,1] rather than inventing a bucket', () => {
+    expect(conflictVerdictLabel('duplicate', 1.4)).toBe('duplicate:1.00');
+    expect(conflictVerdictLabel('duplicate', -0.2)).toBe('duplicate:0.00');
   });
 });

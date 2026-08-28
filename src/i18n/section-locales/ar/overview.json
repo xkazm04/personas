@@ -961,7 +961,23 @@
     "memory_b": "الذاكرة ب",
     "merge": "دمج",
     "keep": "إبقاء",
-    "vs": "مقابل"
+    "vs": "مقابل",
+    "processing": "جارٍ تنفيذ القرار…",
+    "merge_blocked_core": "لا يمكن دمج ذكرى أساسية مثبّتة",
+    "merge_blocked_cross_persona": "لا يمكن دمج ذكريات من وكلاء مختلفين",
+    "retire_blocked_core_toast": "لا يمكن أرشفة ذكرى أساسية مثبّتة — عالِج هذا التعارض يدويًا",
+    "merge_blocked_core_toast": "لا يمكن دمج ذكرى أساسية مثبّتة — عالِج هذا التعارض يدويًا",
+    "merge_blocked_cross_persona_toast": "لا يمكن دمج ذكريات من وكلاء مختلفين — عالِج هذا التعارض يدويًا",
+    "dismissed_toast": "تم تجاهل التعارض",
+    "resolved_toast": "تمت معالجة التعارض",
+    "resolve_failed_toast": "تعذّرت معالجة التعارض",
+    "detected": "تم رصد {count} تعارضات",
+    "detected_one": "تم رصد تعارض واحد ({count})",
+    "count_contradiction": "{count} تناقضات",
+    "count_contradiction_one": "{count} تناقض",
+    "count_duplicate": "{count} تكرارات",
+    "count_duplicate_one": "{count} تكرار",
+    "count_superseded": "{count} مُستبدَلة"
   },
   "observability_charts": {
     "cost_over_time": "التكلفة بمرور الوقت",
@@ -1232,7 +1248,11 @@
   },
   "review_results": {
     "title": "مراجعة الذاكرة بالذكاء الاصطناعي",
-    "review_failed": "فشلت المراجعة"
+    "review_failed": "فشلت المراجعة",
+    "reviewed_count": "تمت مراجعة {count} ذكريات",
+    "reviewed_count_one": "تمت مراجعة ذكرى واحدة ({count})",
+    "kept_count": "{count} محفوظة",
+    "pruned_count": "{count} مُزالة"
   },
   "anomaly_drilldown_extra": {
     "title": "التعمق في الشذوذ",
@@ -2234,5 +2254,29 @@
       "decrypt": "استخدام",
       "healthcheck": "فحص"
     }
+  },
+  "memories_ui": {
+    "stored_subtitle": "{count} ذكريات محفوظة بواسطة الوكلاء",
+    "stored_subtitle_one": "ذكرى واحدة ({count}) محفوظة بواسطة الوكلاء",
+    "tab_memories": "الذكريات",
+    "tab_conflicts": "التعارضات",
+    "review": "مراجعة",
+    "reviewing": "جارٍ المراجعة…",
+    "kpi_total": "الإجمالي",
+    "kpi_avg_importance": "متوسط الأهمية",
+    "kpi_total_access": "إجمالي الاستدعاءات",
+    "kpi_nodes": "العُقد",
+    "kpi_personas": "الوكلاء",
+    "kpi_clusters": "المجموعات",
+    "category_label": "الفئة",
+    "col_type": "النوع",
+    "col_tier": "المستوى",
+    "col_hits": "الاستدعاءات",
+    "col_last_seen": "آخر ظهور",
+    "unknown_persona": "غير معروف",
+    "delete_all_error": "تعذّر حذف جميع الذكريات",
+    "legend_size": "الحجم",
+    "legend_low": "منخفضة",
+    "legend_high": "مرتفعة"
   }
 }

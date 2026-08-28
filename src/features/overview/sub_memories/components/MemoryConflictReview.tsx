@@ -5,10 +5,19 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
-import { detectConflicts, type MemoryConflict, type ConflictResolution } from '../libs/memoryConflicts';
+import {
+  conflictVerdictLabel,
+  detectConflicts,
+  markConflictResolved,
+  resolvedConflictIds,
+  type MemoryConflict,
+  type ConflictResolution,
+} from '../libs/memoryConflicts';
+import { trackInteraction } from '@/lib/sentry';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
 import { DebtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface MemoryConflictReviewProps {
@@ -16,18 +25,29 @@ interface MemoryConflictReviewProps {
 }
 
 export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
+  const { t, tx } = useTranslation();
+  const mc = t.overview.memory_conflict;
   const {
-    memories, deleteMemory, mergeMemories: mergeMemoriesAction, fetchMemories,
+    memories, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
-    deleteMemory: s.deleteMemory,
+    setMemoryTier: s.setMemoryTier,
     mergeMemories: s.mergeMemories,
     fetchMemories: s.fetchMemories,
   })));
   const personas = useAgentStore((s) => s.personas);
 
   const [expanded, setExpanded] = useState(false);
-  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
+  // Seeded from the module-scoped verdict set, not `new Set()`. This component
+  // IS the Conflicts tab's body and unmounts on every switch back to Memories,
+  // so plain component state meant a user's decisions survived exactly until
+  // they looked at something else — and the pairs they had DISMISSED (the
+  // detector's own false positives) were the ones guaranteed to come back.
+  //
+  // The module set is the source of truth; this state holds a copy purely to
+  // trigger a re-render, and is replaced from the module set on every write, so
+  // the two cannot drift.
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => new Set(resolvedConflictIds()));
   const [activeConflictId, setActiveConflictId] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -56,18 +76,33 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           // same protection archive_by_ids/delete_all enforce, which the raw
           // deleteMemory path lacks.
           const keep = resolution === 'keep_a' ? conflict.memoryA : conflict.memoryB;
-          const remove = resolution === 'keep_a' ? conflict.memoryB : conflict.memoryA;
-          if (keep.id === remove.id) {
-            throw new Error('conflict resolution would delete the kept memory');
+          const retire = resolution === 'keep_a' ? conflict.memoryB : conflict.memoryA;
+          if (keep.id === retire.id) {
+            throw new Error('conflict resolution would retire the kept memory');
           }
-          if (remove.tier === 'core') {
+          if (retire.tier === 'core') {
             useToastStore.getState().addToast(
-              'Cannot delete a core (pinned) memory — resolve this conflict manually',
+              mc.retire_blocked_core_toast,
               'error',
             );
             return;
           }
-          await deleteMemory(remove.id);
+          // RETIRE, DON'T DELETE. This was `deleteMemory(retire.id)` — an
+          // irreversible hard delete of a memory the user merely judged the
+          // weaker of two, on the output of a HEURISTIC detector (see
+          // memoryConflicts.ts; the thresholds it fires on are documented as
+          // "chosen empirically"). A wrong call was unrecoverable and left no
+          // trace that the losing claim had ever existed, so nobody could
+          // later ask why this memory won.
+          //
+          // `archive` is the schema's own non-destructive retire — documented
+          // on PersonaMemory.tier as "never injected, searchable only" — and
+          // it is exactly the door MemoryClaimsSection's `deprecate` already
+          // uses for the same judgement. The observable outcome here is
+          // unchanged: the list is fetched with the store's default `!archive`
+          // filter, so the retired memory leaves this surface and stops being
+          // injected, but it is still there to restore or audit.
+          await setMemoryTier(retire.id, 'archive');
           break;
         }
         case 'merge': {
@@ -79,14 +114,14 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           // failure.
           if (conflict.memoryA.tier === 'core' || conflict.memoryB.tier === 'core') {
             useToastStore.getState().addToast(
-              'Cannot merge a core (pinned) memory — resolve this conflict manually',
+              mc.merge_blocked_core_toast,
               'error',
             );
             return;
           }
           if (conflict.memoryA.persona_id !== conflict.memoryB.persona_id) {
             useToastStore.getState().addToast(
-              'Cannot merge memories from different agents — resolve this conflict manually',
+              mc.merge_blocked_cross_persona_toast,
               'error',
             );
             return;
@@ -99,11 +134,28 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         case 'dismiss':
           break;
       }
-      setResolvedIds((prev) => new Set(prev).add(conflict.id));
+      // The user's verdict is the only ground truth about whether the detector
+      // is any good, and a DISMISS is a labelled false positive handed to us
+      // for free. Both were previously thrown away, which is why the thresholds
+      // in memoryLimits.ts ("chosen empirically") could never be re-tuned
+      // against evidence. Reported through the existing interaction door, and
+      // only once a verdict has actually been applied — the guard branches
+      // above return before this point because they applied nothing.
+      trackInteraction(
+        'memory_conflict_resolution',
+        resolution,
+        conflictVerdictLabel(conflict.kind, conflict.similarity),
+      );
+
+      // Written to the module set first, then mirrored into render state. Done
+      // outside the state updater on purpose: an updater must stay pure
+      // (StrictMode double-invokes it), and this write is not.
+      markConflictResolved(conflict.id);
+      setResolvedIds(new Set(resolvedConflictIds()));
       if (activeConflictId === conflict.id) setActiveConflictId(null);
       if (resolution !== 'dismiss') await fetchMemories();
       useToastStore.getState().addToast(
-        resolution === 'dismiss' ? 'Conflict dismissed' : 'Conflict resolved',
+        resolution === 'dismiss' ? mc.dismissed_toast : mc.resolved_toast,
         'success',
       );
       onConflictsResolved?.();
@@ -114,11 +166,11 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       // produced no Sentry event and no console trace anywhere. Route it, then
       // keep the toast — this is a user-facing failure AND a background one.
       silentCatch('MemoryConflictReview:handleResolve')(err);
-      useToastStore.getState().addToast('Failed to resolve conflict', 'error');
+      useToastStore.getState().addToast(mc.resolve_failed_toast, 'error');
     } finally {
       setProcessing(null);
     }
-  }, [deleteMemory, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved]);
+  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, mc]);
 
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no
@@ -150,22 +202,22 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       >
         <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
         <span className="typo-heading text-foreground/85 flex-1">
-          {unresolvedConflicts.length} conflict{unresolvedConflicts.length !== 1 ? 's' : ''} detected
+          {tx(unresolvedConflicts.length === 1 ? mc.detected_one : mc.detected, { count: unresolvedConflicts.length })}
         </span>
         <div className="flex items-center gap-1.5">
           {countByKind.contradiction > 0 && (
             <span className="px-1.5 py-0.5 typo-caption rounded-card bg-red-500/15 text-red-400 border border-red-500/20">
-              {countByKind.contradiction} contradiction{countByKind.contradiction !== 1 ? 's' : ''}
+              {tx(countByKind.contradiction === 1 ? mc.count_contradiction_one : mc.count_contradiction, { count: countByKind.contradiction })}
             </span>
           )}
           {countByKind.duplicate > 0 && (
             <span className="px-1.5 py-0.5 typo-caption rounded-card bg-amber-500/15 text-amber-400 border border-amber-500/20">
-              {countByKind.duplicate} duplicate{countByKind.duplicate !== 1 ? 's' : ''}
+              {tx(countByKind.duplicate === 1 ? mc.count_duplicate_one : mc.count_duplicate, { count: countByKind.duplicate })}
             </span>
           )}
           {countByKind.superseded > 0 && (
             <span className="px-1.5 py-0.5 typo-caption rounded-card bg-blue-500/15 text-blue-400 border border-blue-500/20">
-              {countByKind.superseded} superseded
+              {tx(mc.count_superseded, { count: countByKind.superseded })}
             </span>
           )}
         </div>

@@ -61,8 +61,10 @@ interface ConflictCardProps {
 
 export default function ConflictCard({ conflict, personaMap, isActive, isProcessing, onToggle, onResolve }: ConflictCardProps) {
   const { t } = useTranslation();
-  const nameA = personaMap.get(conflict.memoryA.persona_id) ?? 'Unknown';
-  const nameB = personaMap.get(conflict.memoryB.persona_id) ?? 'Unknown';
+  const mc = t.overview.memory_conflict;
+  const unknown = t.overview.memories_ui.unknown_persona;
+  const nameA = personaMap.get(conflict.memoryA.persona_id) ?? unknown;
+  const nameB = personaMap.get(conflict.memoryB.persona_id) ?? unknown;
 
   // A merge hard-deletes BOTH originals and the backend refuses it when a core
   // (user-pinned) memory or a cross-persona pair is involved. Disable the Merge
@@ -72,16 +74,16 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
   const mergeBlocksCrossPersona = conflict.memoryA.persona_id !== conflict.memoryB.persona_id;
   const mergeBlocked = mergeBlocksCore || mergeBlocksCrossPersona;
   const mergeBlockedReason = mergeBlocksCore
-    ? 'Cannot merge a core (pinned) memory'
-    : 'Cannot merge memories from different agents';
+    ? mc.merge_blocked_core
+    : mc.merge_blocked_cross_persona;
 
   return (
     <div className={`rounded-modal border transition-colors ${isActive ? 'border-primary/25 bg-secondary/30' : 'border-primary/10 bg-background/30'}`}>
-      <button type="button" onClick={onToggle} disabled={isProcessing} title={isProcessing ? 'Processing resolution...' : undefined} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:opacity-50">
+      <button type="button" onClick={onToggle} disabled={isProcessing} title={isProcessing ? mc.processing : undefined} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:opacity-50">
         {kindBadge(conflict.kind)}
         <span className="typo-body text-foreground flex-1 truncate">
           {stripHtml(conflict.memoryA.title)}
-          <span className="text-foreground mx-1.5">vs</span>
+          <span className="text-foreground mx-1.5">{mc.vs}</span>
           {stripHtml(conflict.memoryB.title)}
         </span>
         {similarityBadge(conflict.similarity)}
@@ -98,15 +100,15 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {conflict.kind === 'duplicate' && (
-                <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing || mergeBlocked} disabledReason={mergeBlocked ? mergeBlockedReason : 'Processing resolution...'} onClick={() => onResolve('merge')}>{t.overview.memory_conflict.merge}</Button>
+                <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing || mergeBlocked} disabledReason={mergeBlocked ? mergeBlockedReason : mc.processing} onClick={() => onResolve('merge')}>{t.overview.memory_conflict.merge}</Button>
               )}
-              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_a')}>
+              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('keep_a')}>
                 {t.overview.memory_review.keep_prefix}{stripHtml(conflict.memoryA.title).slice(0, 20)}...{t.overview.memory_review.keep_suffix}
               </Button>
-              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_b')}>
+              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('keep_b')}>
                 {t.overview.memory_review.keep_prefix}{stripHtml(conflict.memoryB.title).slice(0, 20)}...{t.overview.memory_review.keep_suffix}
               </Button>
-              <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('dismiss')}>{t.common.dismiss}</Button>
+              <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('dismiss')}>{t.common.dismiss}</Button>
             </div>
           </div>
         </div>
