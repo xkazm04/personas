@@ -611,6 +611,7 @@
     "chunks_label": "{count}টি চাংক",
     "kb_count_summary": "-- {docs}টি ডক, {chunks}টি চাঙ্ক",
     "default_patterns": "ডিফল্ট:",
+    "patterns_replace_defaults": "প্যাটার্ন যোগ করলে স্ক্যান শুধু সেটিতেই সীমিত হয় — উপরের ডিফল্টগুলি আর কাজ করে না।",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "দূরত্ব:",
     "chunk_label": "চাঙ্ক:",

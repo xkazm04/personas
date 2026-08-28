@@ -4633,6 +4633,7 @@
       "chunks_label": "{count} đoạn",
       "kb_count_summary": "-- {docs} tài liệu, {chunks} đoạn",
       "default_patterns": "Mặc định:",
+      "patterns_replace_defaults": "Thêm một mẫu sẽ giới hạn việc quét chỉ trong mẫu đó — các mẫu mặc định ở trên không còn áp dụng.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "khoảng cách:",
       "chunk_label": "đoạn:",

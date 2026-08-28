@@ -4633,6 +4633,7 @@
       "chunks_label": "{count}チャンク",
       "kb_count_summary": "-- {docs} 件のドキュメント、{chunks} 件のチャンク",
       "default_patterns": "デフォルト:",
+      "patterns_replace_defaults": "パターンを追加するとスキャン対象はそれだけに絞られ、上の既定パターンは適用されなくなります。",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "距離:",
       "chunk_label": "チャンク:",

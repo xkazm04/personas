@@ -611,6 +611,7 @@
     "chunks_label": "{count}개 청크",
     "kb_count_summary": "-- {docs}개 문서, {chunks}개 청크",
     "default_patterns": "기본값:",
+    "patterns_replace_defaults": "패턴을 추가하면 검사가 해당 패턴으로만 좁혀지며, 위의 기본값은 더 이상 적용되지 않습니다.",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "거리:",
     "chunk_label": "청크:",

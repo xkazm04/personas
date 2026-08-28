@@ -4633,6 +4633,7 @@
       "chunks_label": "{count} potongan",
       "kb_count_summary": "-- {docs} dokumen, {chunks} potongan",
       "default_patterns": "Pola default",
+      "patterns_replace_defaults": "Menambahkan pola membatasi pemindaian hanya pada pola itu — default di atas tidak lagi berlaku.",
       "add_pattern_placeholder": "Tambah pola…",
       "distance_label": "Jarak:",
       "chunk_label": "Potongan:",

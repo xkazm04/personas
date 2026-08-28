@@ -611,6 +611,7 @@
     "chunks_label": "{count} fragmentos",
     "kb_count_summary": "— {docs} docs, {chunks} fragmentos",
     "default_patterns": "Predeterminado:",
+    "patterns_replace_defaults": "Añadir un patrón limita el análisis solo a él: los predeterminados de arriba dejan de aplicarse.",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "distancia:",
     "chunk_label": "fragmento:",

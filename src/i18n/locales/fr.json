@@ -4633,6 +4633,7 @@
       "chunks_label": "{count} blocs",
       "kb_count_summary": "-- {docs} docs, {chunks} fragments",
       "default_patterns": "Par défaut :",
+      "patterns_replace_defaults": "Ajouter un motif limite l’analyse à celui-ci : les motifs par défaut ci-dessus ne s’appliquent plus.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "distance :",
       "chunk_label": "fragment :",

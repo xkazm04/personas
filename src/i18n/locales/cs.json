@@ -4633,6 +4633,7 @@
       "chunks_label": "{count} sekcí",
       "kb_count_summary": "-- {docs} dokumentů, {chunks} chunků",
       "default_patterns": "Výchozí:",
+      "patterns_replace_defaults": "Přidaný vzor omezí prohledávání jen na něj — výchozí vzory výše se už neuplatní.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "vzdálenost:",
       "chunk_label": "blok:",

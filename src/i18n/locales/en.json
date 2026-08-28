@@ -4939,6 +4939,7 @@
       "scanned_pages_tooltip": "These pages are images with no text layer, so their content is not searchable. Use an OCR-processed copy to include them.",
       "kb_count_summary": "-- {docs} docs, {chunks} chunks",
       "default_patterns": "Default:",
+      "patterns_replace_defaults": "Adding a pattern narrows the scan to it — the defaults above no longer apply.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "distance:",
       "chunk_label": "chunk:",

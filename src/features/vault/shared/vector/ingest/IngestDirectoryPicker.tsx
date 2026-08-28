@@ -9,7 +9,23 @@ interface IngestDirectoryPickerProps {
   onIngestStarted: (jobId: string) => void;
 }
 
-const DEFAULT_PATTERNS = ['*.txt', '*.md', '*.html', '*.csv', '*.json', '*.yaml', '*.rs', '*.py', '*.js', '*.ts'];
+/**
+ * Mirror of the fallback extension list `kb_ingest_directory` applies when
+ * `patterns` arrives empty (`src-tauri/src/commands/credentials/vector_kb.rs`).
+ * This list is display-only — the backend never receives it — so its one job is
+ * to be TRUE. It previously named 10 globs against the backend's 16, which is
+ * how a user could believe `.tsx`, `.yml`, `.toml` or `.log` were out of scope
+ * when they were being scanned all along.
+ *
+ * The backend branches on `patterns.is_empty()`: a non-empty list REPLACES this
+ * set rather than extending it. That is the contract `file_patterns_hint`
+ * describes ("empty = all supported"), and `patterns_replace_defaults` below
+ * states it outright the moment the user adds one.
+ */
+const DEFAULT_PATTERNS = [
+  '*.txt', '*.md', '*.html', '*.htm', '*.csv', '*.json', '*.yaml', '*.yml',
+  '*.toml', '*.log', '*.rs', '*.py', '*.js', '*.ts', '*.tsx', '*.jsx',
+];
 
 export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: IngestDirectoryPickerProps) {
   const { t } = useTranslation();
@@ -128,15 +144,20 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
               <span className="text-foreground font-normal ml-1">{sh.file_patterns_hint}</span>
             </label>
 
-            {/* Default patterns hint */}
-            {patterns.length === 0 && (
-              <p className="typo-caption text-foreground mb-2">
-                {sh.default_patterns} {DEFAULT_PATTERNS.slice(0, 6).join(', ')}...
-              </p>
-            )}
+            {/* Default patterns — shown even once the user has added their own,
+                because that is exactly when they need to see what they are
+                giving up. Hiding this list behind `patterns.length === 0` was
+                what made the override silent. */}
+            <p className="typo-caption text-foreground mb-2">
+              {sh.default_patterns} {DEFAULT_PATTERNS.slice(0, 6).join(', ')}...
+            </p>
 
             {/* Active patterns */}
             {patterns.length > 0 && (
+              <>
+              <p className="typo-caption text-amber-400/80 mb-2">
+                {sh.patterns_replace_defaults}
+              </p>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {patterns.map((p) => (
                   <span key={p} className="inline-flex items-center gap-1 typo-caption px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 border border-violet-500/15">
@@ -147,6 +168,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                   </span>
                 ))}
               </div>
+              </>
             )}
 
             {/* Add pattern */}

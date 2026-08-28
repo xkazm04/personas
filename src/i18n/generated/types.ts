@@ -4945,6 +4945,7 @@ export type Translations = {
       scanned_pages_tooltip: string;
       kb_count_summary: string;
       default_patterns: string;
+      patterns_replace_defaults: string;
       add_pattern_placeholder: string;
       distance_label: string;
       chunk_label: string;
