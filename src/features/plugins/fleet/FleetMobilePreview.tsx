@@ -3,8 +3,7 @@ import { Hourglass, Smartphone } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
-import type { FleetLabelKey } from './FleetStatusDots';
+import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
 import { useNowTick, formatAgo } from './relativeAgo';
 
 /**
@@ -13,16 +12,16 @@ import { useNowTick, formatAgo } from './relativeAgo';
  * the remote glance surface be designed and validated locally, long before
  * the paired mobile client exists. It is deliberately non-interactive: it
  * mirrors what a phone would show, not a second control surface.
+ *
+ * The per-state chips read `FLEET_STATE_META` — the ONE palette + order every
+ * fleet glance surface shares. This file used to keep a private six-entry copy
+ * of that list, and the copy had drifted: `finished` and `hibernated` were
+ * missing, so a fleet holding either counted them in the "N sessions" header
+ * and then rendered no chip for them. The header and the chips disagreed, and
+ * the two states it silently dropped are exactly the pair the rest of Fleet
+ * treats as terminal — the same drift that once let the broadcast composer
+ * target hibernated sessions.
  */
-
-const GLANCE_STATES: ReadonlyArray<{ id: FleetSessionState; dot: string; labelKey: FleetLabelKey }> = [
-  { id: 'awaiting_input', dot: 'bg-violet-400', labelKey: 'state_awaiting_input' },
-  { id: 'running', dot: 'bg-blue-400', labelKey: 'state_working' },
-  { id: 'spawning', dot: 'bg-cyan-400', labelKey: 'state_spawning' },
-  { id: 'idle', dot: 'bg-emerald-400', labelKey: 'state_idle' },
-  { id: 'stale', dot: 'bg-orange-400', labelKey: 'state_stale' },
-  { id: 'exited', dot: 'bg-zinc-500', labelKey: 'state_exited' },
-];
 
 export function FleetMobilePreview() {
   const { t, tx } = useTranslation();
@@ -30,17 +29,13 @@ export function FleetMobilePreview() {
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
 
   const { counts, total, waitingItems } = useMemo(() => {
-    const c: Record<FleetSessionState, number> = {
-      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0,
-    };
     const waiting: { name: string; lastActivityMs: number }[] = [];
     for (const s of sessions) {
-      c[s.state] += 1;
       if (s.state === 'awaiting_input') {
         waiting.push({ name: s.name ?? s.projectLabel, lastActivityMs: Number(s.lastActivityMs) });
       }
     }
-    return { counts: c, total: sessions.length, waitingItems: waiting };
+    return { counts: fleetStateCounts(sessions), total: sessions.length, waitingItems: waiting };
   }, [sessions]);
 
   const sessionCount =
@@ -82,7 +77,7 @@ export function FleetMobilePreview() {
             ) : (
               <>
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {GLANCE_STATES.filter((m) => counts[m.id] > 0).map((m) => (
+                  {FLEET_STATE_META.filter((m) => counts[m.id] > 0).map((m) => (
                     <span
                       key={m.id}
                       className="flex items-center gap-1.5 rounded-interactive border border-primary/10 bg-secondary/40 px-2 py-0.5 text-[13px] text-foreground"

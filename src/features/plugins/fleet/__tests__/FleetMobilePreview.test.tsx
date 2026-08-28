@@ -34,6 +34,18 @@ const SESSIONS: FleetSession[] = [
     name: null,
     lastActivityMs: Date.now(),
   } as unknown as FleetSession,
+  // `hibernated` is here on purpose: the preview used to keep a PRIVATE
+  // six-entry state list that omitted `hibernated` and `finished`, so this
+  // session was counted in the "N sessions" header and then rendered no chip.
+  // The header and the chips disagreed by exactly the sessions the operator is
+  // most likely to be confused by.
+  {
+    id: 's3',
+    state: 'hibernated',
+    projectLabel: 'repo-c',
+    name: 'parked',
+    lastActivityMs: Date.now() - 600_000,
+  } as unknown as FleetSession,
 ];
 
 vi.mock('@/stores/systemStore', () => ({
@@ -63,6 +75,18 @@ describe('FleetMobilePreview — live data is not hidden from assistive tech', (
 
   it('renders the session total on the screen', () => {
     render(<FleetMobilePreview />);
-    expect(screen.getByText(/2 sessions/i)).toBeTruthy();
+    expect(screen.getByText(/3 sessions/i)).toBeTruthy();
+  });
+
+  it('renders a chip for every state present, so the chips add up to the header', () => {
+    render(<FleetMobilePreview />);
+    // One chip per non-zero state — including `hibernated`, which the private
+    // list this component used to carry did not know about.
+    expect(screen.getByText('Hibernated')).toBeTruthy();
+    const chipCounts = screen
+      .getAllByText(/^\d+$/)
+      .map((el) => Number(el.textContent))
+      .reduce((a, b) => a + b, 0);
+    expect(chipCounts).toBe(3);
   });
 });
