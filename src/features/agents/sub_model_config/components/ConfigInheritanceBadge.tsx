@@ -1,4 +1,5 @@
 import { Globe, FolderOpen, User, Minus } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -45,15 +46,27 @@ export function ConfigInheritanceBadge({ source, isOverridden, workspaceName }: 
     : mc.tooltip_default;
 
   return (
-    <span
-      title={tooltip}
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${style.color} ${style.bg} transition-colors`}
-    >
-      <Icon className="w-2.5 h-2.5" />
-      {sourceLabels[source]}
-      {isOverridden && source === 'agent' && (
-        <span className="w-1 h-1 rounded-full bg-amber-400 flex-shrink-0" title={mc.tooltip_overriding} />
-      )}
-    </span>
+    // Where the value came from is explained ONLY here, so the explanation has
+    // to reach a keyboard user: `tabIndex` makes the badge a focus target and
+    // the shared Tooltip opens on focus as well as hover (a native `title`
+    // did neither, and was never announced).
+    <Tooltip content={tooltip}>
+      <span
+        tabIndex={0}
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${style.color} ${style.bg} transition-colors`}
+      >
+        <Icon className="w-2.5 h-2.5" />
+        {sourceLabels[source]}
+        {/* The dot is decoration — a second nested tip here would fight the
+            badge's own for the same pointer — so its meaning moves into the
+            badge's accessible name instead of a mouse-only `title`. */}
+        {isOverridden && source === 'agent' && (
+          <>
+            <span aria-hidden="true" className="w-1 h-1 rounded-full bg-amber-400 flex-shrink-0" />
+            <span className="sr-only">{mc.tooltip_overriding}</span>
+          </>
+        )}
+      </span>
+    </Tooltip>
   );
 }
