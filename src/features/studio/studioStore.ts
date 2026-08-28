@@ -66,6 +66,9 @@ export interface ProjectRuntime {
   gatePlan: boolean;
   /** C8 — enabled MCP connector ids for build turns. */
   mcp: string[];
+  /** Set when Stop came back "nothing was running" — see `stopTurn`. Rendered as
+   *  a one-line notice in the dock; cleared by the next turn. */
+  stopNoop: boolean;
 }
 
 // Exported for the test that pins the chain's stop condition. An autonomous run
@@ -130,6 +133,14 @@ export function splitReply(text: string): string[] {
 const pollTimers = new Map<string, number>();
 const autoTimers = new Map<string, number>();
 let streamUnlisten: (() => void) | null = null;
+
+// Per-project turn counter. `stopTurn` can now clear `busy` the moment the
+// backend says there was nothing to interrupt, which means a stale `runTurn`
+// may still be sitting on its 26-minute `webbuild_session_send` while the user
+// starts a NEW turn. Without this counter that stale turn's `finally` would
+// clear the new turn's `busy` flag and chain off its state. A turn only owns
+// the runtime while its sequence number is still the current one.
+const turnSeq = new Map<string, number>();
 
 // Stream deltas arrive many times per second during a build turn; committing a
 // store `set` per chunk re-renders every `stream` subscriber per chunk. Buffer
@@ -252,6 +263,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         decisionSelector: null,
         gatePlan: false,
         mcp: [],
+        stopNoop: false,
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -427,6 +439,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     const rt = get().runtimes[id];
     const text = raw.trim();
     if (!rt || rt.busy || !text) return;
+    const seq = (turnSeq.get(id) ?? 0) + 1;
+    turnSeq.set(id, seq);
     pendingStream.delete(id); // fresh turn — drop any unflushed tail
     patch(id, {
       busy: true,
@@ -436,6 +450,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       decisionArea: null,
       decisionSelector: null,
       stream: '',
+      stopNoop: false,
     });
     useCompanionStore.getState().pulseForwardAck();
     try {
@@ -483,23 +498,28 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       });
       toastCatch('build instruction')(e);
     } finally {
-      patch(id, { busy: false });
-      saveHistory(id);
-      // Chain the next autonomous turn.
-      const cur = get().runtimes[id];
-      if (cur?.autonomous) {
-        const done = cur.phases.length > 0 && cur.phases.every((p) => p.status === 'done');
-        if (done || cur.autoTurns >= AUTO_MAX_TURNS) {
-          get().stopAutonomous(id);
-        } else {
-          const timer = window.setTimeout(() => {
-            const r = get().runtimes[id];
-            if (r?.autonomous && !r.busy) {
-              patch(id, { autoTurns: r.autoTurns + 1 });
-              void runTurn(id, AUTO_INSTRUCTION);
-            }
-          }, 900);
-          autoTimers.set(id, timer);
+      // A Stop that found nothing to interrupt already released the dock and the
+      // user may have started a new turn since. This one is a ghost: it must not
+      // clear the live turn's `busy`, and it must not chain off its plan.
+      if (turnSeq.get(id) === seq) {
+        patch(id, { busy: false });
+        saveHistory(id);
+        // Chain the next autonomous turn.
+        const cur = get().runtimes[id];
+        if (cur?.autonomous) {
+          const done = cur.phases.length > 0 && cur.phases.every((p) => p.status === 'done');
+          if (done || cur.autoTurns >= AUTO_MAX_TURNS) {
+            get().stopAutonomous(id);
+          } else {
+            const timer = window.setTimeout(() => {
+              const r = get().runtimes[id];
+              if (r?.autonomous && !r.busy) {
+                patch(id, { autoTurns: r.autoTurns + 1 });
+                void runTurn(id, AUTO_INSTRUCTION);
+              }
+            }, 900);
+            autoTimers.set(id, timer);
+          }
         }
       }
     }
@@ -582,12 +602,21 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       stopLiveness(id);
       stopAuto(id);
       pendingStream.delete(id);
+      turnSeq.delete(id);
       // Closing a tab mid-build used to stop the dev server and leave the build
       // turn itself running: the CLI process kept editing the project with no
       // tab left to show it, and nothing would ever reap it (the turn's own
       // timeout is 25 minutes). Interrupt the session first, then the server.
       void webbuildSessionStop(id).catch(silentCatch('studioStore:closeTab:session'));
-      void webbuildDevStop(id).catch(silentCatch('studioStore:closeTab'));
+      // A REJECTED dev-server stop is not the same kind of failure as a failed
+      // interrupt, and it was getting the same silent treatment. The runtime and
+      // the tab are deleted unconditionally below, so a Bun process that refused
+      // to die keeps its port with nothing left in Studio pointing at it — and
+      // freeing that port is a manual act the user can only perform if they know
+      // it is needed. It is the one outcome here they have to be told about.
+      // The tab still closes either way: trapping the user behind a stop that
+      // cannot succeed would be the worse of the two failures.
+      void webbuildDevStop(id).catch(toastCatch('studioStore:closeTab'));
       set((s) => {
         const { [id]: _gone, ...rest } = s.runtimes;
         const order = s.tabOrder.filter((t) => t !== id);
@@ -660,7 +689,21 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       // `busy`; autonomous is already off so it won't chain another turn.
       stopAuto(id);
       patch(id, { autonomous: false, resumeAuto: false });
-      void webbuildSessionStop(id).catch(silentCatch('studioStore:stopTurn'));
+      void webbuildSessionStop(id)
+        .then((interrupted) => {
+          if (interrupted) return;
+          // FALSE is the one answer the user needs: the backend had no build
+          // turn registered for this project, so there was nothing to interrupt
+          // and nothing is going to resolve the pending `webbuild_session_send`
+          // early. Discarding it (the old `void … .catch()`) made a Stop that
+          // stopped nothing look identical to one that worked, and left the dock
+          // disabled until that send hit its 26-minute ceiling. Release it now
+          // and say so. The stale turn, if any, is fenced off by `turnSeq`.
+          if (!get().runtimes[id]?.busy) return;
+          turnSeq.set(id, (turnSeq.get(id) ?? 0) + 1);
+          patch(id, { busy: false, stopNoop: true });
+        })
+        .catch(silentCatch('studioStore:stopTurn'));
     },
   };
 });

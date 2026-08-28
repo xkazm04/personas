@@ -50,6 +50,7 @@ export default function StudioChatInput() {
         autonomous: r.autonomous,
         name: r.name,
         phases: r.phases,
+        stopNoop: r.stopNoop,
       };
     }),
   );
@@ -59,7 +60,7 @@ export default function StudioChatInput() {
   const stopTurn = useStudioStore((s) => s.stopTurn);
 
   if (!activeId || !rt) return null;
-  const { busy, question, autonomous, name, phases } = rt;
+  const { busy, question, autonomous, name, phases, stopNoop } = rt;
   const working = busy || autonomous;
   const { done, total } = phaseProgress(phases ?? []);
   const hasPlan = total > 0;
@@ -153,6 +154,19 @@ export default function StudioChatInput() {
 
           {/* Collapsed — the latest message bubble (+ earlier-message reveal) */}
           {!chatOpen && <StudioMessages />}
+
+          {/* Stop found nothing to interrupt. Saying so is the whole point: the
+              dock has just been released early, and without a line here that
+              reads as the build having finished. */}
+          {stopNoop && !working && (
+            <p
+              data-testid="studio-stop-noop"
+              role="status"
+              className="pointer-events-auto self-center rounded-full border border-border bg-background/80 px-3 py-1 typo-caption shadow-elevation-1"
+            >
+              {t.studio.stop_nothing_running}
+            </p>
+          )}
 
           {!working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
 

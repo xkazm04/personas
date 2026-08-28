@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const webbuildSessionSend = vi.fn();
 const webbuildListProjects = vi.fn();
+const webbuildSessionStop = vi.fn();
 
 vi.mock('@/api/webbuild', () => ({
   webbuildSessionSend: (...a: unknown[]) => webbuildSessionSend(...a),
@@ -18,7 +19,7 @@ vi.mock('@/api/webbuild', () => ({
   webbuildNextReady: vi.fn(async (ids: string[]) => ids),
   webbuildRegisterExisting: vi.fn(),
   webbuildScaffold: vi.fn(),
-  webbuildSessionStop: vi.fn(),
+  webbuildSessionStop: (...a: unknown[]) => webbuildSessionStop(...a),
 }));
 
 vi.mock('@/lib/silentCatch', () => ({
@@ -67,6 +68,7 @@ function seedRuntime(patch: Partial<ProjectRuntime> = {}) {
         decisionSelector: null,
         gatePlan: false,
         mcp: [],
+        stopNoop: false,
         ...patch,
       },
     },
@@ -199,6 +201,84 @@ describe('the autonomous chain stops', () => {
     expect(rt?.resumeAuto).toBe(false);
     // The cause stays in the conversation, not only in a toast that vanishes.
     expect(rt?.messages.at(-1)?.text).toContain('CLI timed out');
+  });
+});
+
+describe('Stop reads whether it actually stopped anything', () => {
+  // webbuild_session_stop returns whether a turn was really interrupted. That
+  // boolean used to be discarded, so a Stop that found nothing to stop looked
+  // exactly like one that worked — and `busy` then cleared only when the pending
+  // session_send hit its 26-minute ceiling, with the dock disabled the whole time.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    webbuildSessionSend.mockReset();
+    webbuildSessionSend.mockResolvedValue(reply());
+    webbuildSessionStop.mockReset();
+    webbuildSessionStop.mockResolvedValue(true);
+    useStudioHistory.setState({ byProject: {}, openTabIds: [], activeTabId: null });
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it('releases the dock at once when there was nothing to interrupt', async () => {
+    seedRuntime({ busy: true });
+    webbuildSessionStop.mockResolvedValue(false);
+
+    useStudioStore.getState().stopTurn(ID);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const rt = useStudioStore.getState().runtimes[ID];
+    expect(rt?.busy).toBe(false);
+    expect(rt?.stopNoop).toBe(true);
+  });
+
+  it('leaves the turn alone when the interrupt landed — the send resolves it', async () => {
+    seedRuntime({ busy: true });
+    webbuildSessionStop.mockResolvedValue(true);
+
+    useStudioStore.getState().stopTurn(ID);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const rt = useStudioStore.getState().runtimes[ID];
+    expect(rt?.busy).toBe(true);
+    expect(rt?.stopNoop).toBe(false);
+  });
+
+  it('fences off the abandoned turn so it cannot release the next one', async () => {
+    let resolveGhost!: (v: unknown) => void;
+    webbuildSessionSend.mockImplementationOnce(
+      () => new Promise((r) => { resolveGhost = r; }),
+    );
+    seedRuntime();
+
+    void useStudioStore.getState().sendTurn(ID, 'go');
+    expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(true);
+
+    webbuildSessionStop.mockResolvedValue(false);
+    useStudioStore.getState().stopTurn(ID);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(false);
+
+    // The user starts over. This turn is the live one.
+    let resolveLive!: (v: unknown) => void;
+    webbuildSessionSend.mockImplementationOnce(
+      () => new Promise((r) => { resolveLive = r; }),
+    );
+    void useStudioStore.getState().sendTurn(ID, 'again');
+    expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(true);
+    expect(useStudioStore.getState().runtimes[ID]?.stopNoop).toBe(false);
+
+    // The abandoned turn finally comes back. It must not touch the live one.
+    resolveGhost(reply());
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(true);
+
+    resolveLive(reply());
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(false);
   });
 });
 

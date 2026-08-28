@@ -21296,6 +21296,7 @@ export type Translations = {
     stop_athena: string;
     stop: string;
     stop_autonomous: string;
+    stop_nothing_running: string;
     build_autonomously: string;
     answer_athena: string;
     building_autonomously: string;
@@ -21320,6 +21321,7 @@ export type Translations = {
     project_name_placeholder: string;
     what_to_build: string;
     bun_missing: string;
+    bun_unknown: string;
     starter_portfolio: string;
     starter_landing: string;
     starter_dashboard: string;
