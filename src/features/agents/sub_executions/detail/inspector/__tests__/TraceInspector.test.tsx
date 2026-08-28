@@ -81,3 +81,49 @@ describe('TraceInspector live-buffer truncation signal', () => {
     expect(banner).toHaveTextContent('10,000');
   });
 });
+
+/**
+ * The Spans tile used to print `trace.spans.length` — the BACKEND-only set —
+ * while the Errors tile beside it and the waterfall directly beneath it both
+ * counted the UNIFIED set (backend spans plus the frontend pipeline stages
+ * merged in by `mergeBackendSpans`). The tile under-reported by exactly the
+ * pipeline stages, so Errors could exceed Spans on the same strip.
+ */
+describe('TraceInspector summary strip counts one population', () => {
+  beforeEach(() => mockedUseTraceData.mockReset());
+
+  it('counts the unified span set, not the backend-only set', () => {
+    const backendSpans = [erroredSpan(0), erroredSpan(1)];
+    const unifiedSpans = [erroredSpan(0), erroredSpan(1), erroredSpan(2), erroredSpan(3)];
+    mockedUseTraceData.mockReturnValue({
+      droppedSpanEvents: 0,
+      spanEventBufferCap: 10_000,
+      trace: {
+        trace_id: 't1',
+        execution_id: 'e1',
+        persona_id: 'p1',
+        chain_trace_id: null,
+        spans: backendSpans,
+        total_duration_ms: 100,
+        evicted_span_count: 0,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      traceIsSynthetic: false,
+      unifiedTrace: { executionId: 'e1', spans: unifiedSpans, startedAt: 0, completedAt: 100 },
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+      collapsedSpans: new Set<string>(),
+      toggleSpan: vi.fn(),
+      visibleNodes: [],
+      totalMs: 100,
+      childrenMap: new Map<string, boolean>(),
+    } as unknown as ReturnType<typeof useTraceData>);
+
+    render(<TraceInspector execution={{ id: 'e1', persona_id: 'p1' } as PersonaExecution} />);
+
+    // Errors already counted the unified set; Spans must agree with it.
+    expect(screen.getByTestId('trace-span-count')).toHaveTextContent('4');
+    expect(screen.getByTestId('trace-error-count')).toHaveTextContent('4');
+  });
+});

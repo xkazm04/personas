@@ -41,8 +41,39 @@ function convertBackendSpans(spans: TraceSpan[]): UnifiedSpan[] {
   }));
 }
 
+/**
+ * A trace object stood up locally when the backend has none to hand out.
+ *
+ * `traces::save` runs ONLY at the four finalize sites in
+ * `src-tauri/src/engine/runner/mod.rs`, so `get_execution_trace` returns null
+ * for every execution that is still running — the exact case the live view
+ * exists for. The `!t` branch used to leave `trace` null, and the span-event
+ * reducer's `if (!prev) return prev` guard then no-oped forever: the whole
+ * backend span stream went on the floor, uncounted by `droppedSpanEvents`,
+ * until the wholesale `execution-trace` event landed at finish.
+ *
+ * The shell carries only what is genuinely known — the ids the caller already
+ * supplied — and null/zero for every field that is a MEASUREMENT the backend
+ * has not made. `traceIsSynthetic` travels with it so a consumer can tell a
+ * shell from a persisted trace instead of guessing from empty fields.
+ */
+function synthesizeTraceShell(executionId: string, personaId: string, spans: TraceSpan[]): ExecutionTrace {
+  return {
+    trace_id: '',
+    execution_id: executionId,
+    persona_id: personaId,
+    chain_trace_id: null,
+    spans,
+    total_duration_ms: null,
+    evicted_span_count: 0,
+    created_at: '',
+  };
+}
+
 export function useTraceData(executionId: string, personaId: string) {
   const [trace, setTrace] = useState<ExecutionTrace | null>(null);
+  /** True while `trace` is the locally-built shell above, not a backend trace. */
+  const [traceIsSynthetic, setTraceIsSynthetic] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
@@ -81,6 +112,7 @@ export function useTraceData(executionId: string, personaId: string) {
     pendingSpanEventsRef.current = [];
     droppedSpanEventsRef.current = 0;
     setDroppedSpanEvents(0);
+    setTraceIsSynthetic(false);
 
     getExecutionTrace(executionId, personaId)
       .then((t) => {
@@ -94,9 +126,15 @@ export function useTraceData(executionId: string, personaId: string) {
         setDroppedSpanEvents(droppedSpanEventsRef.current);
 
         if (!t) {
-          // No trace persisted for this execution — there is no object to
-          // replay the buffered spans onto, so they go where they went before.
-          setTrace(null);
+          // Nothing is PERSISTED — which is not the same as nothing being
+          // known. Build the shell so the buffered spans (and every span event
+          // from here on) have a base to land on; see synthesizeTraceShell.
+          let shellSpans: TraceSpan[] = [];
+          for (const ev of buffered) {
+            shellSpans = applySpanEvent(shellSpans, ev.span, ev.event_type);
+          }
+          setTraceIsSynthetic(true);
+          setTrace(synthesizeTraceShell(executionId, personaId, shellSpans));
           setLoading(false);
           return;
         }
@@ -105,6 +143,7 @@ export function useTraceData(executionId: string, personaId: string) {
         for (const ev of buffered) {
           spans = applySpanEvent(spans, ev.span, ev.event_type);
         }
+        setTraceIsSynthetic(false);
         setTrace(spans === t.spans ? t : { ...t, spans });
         setLoading(false);
       })
@@ -126,6 +165,8 @@ export function useTraceData(executionId: string, personaId: string) {
   // Listen for live trace updates (complete trace emitted on finish)
   const handleTrace = useCallback((event: Event<ExecutionTrace>) => {
     if (event.payload.execution_id === executionId) {
+      // The persisted trace supersedes any shell built while the run was live.
+      setTraceIsSynthetic(false);
       setTrace(event.payload);
     }
   }, [executionId]);
@@ -251,6 +292,7 @@ export function useTraceData(executionId: string, personaId: string) {
 
   return {
     trace,
+    traceIsSynthetic,
     unifiedTrace,
     loading,
     error,

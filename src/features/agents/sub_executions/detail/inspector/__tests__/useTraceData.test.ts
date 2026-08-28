@@ -508,3 +508,93 @@ describe('computeVisibleNodes — 2,000+ span fixture', () => {
     expect(optimisedMs).toBeLessThan(legacyMs / 5);
   });
 });
+
+// ---------------------------------------------------------------------------
+// No persisted trace row — i.e. EVERY running execution
+// ---------------------------------------------------------------------------
+
+/**
+ * `traces::save` runs only at the four finalize sites in
+ * `src-tauri/src/engine/runner/mod.rs`, so `get_execution_trace` returns
+ * `null` for anything still running. The `!t` branch used to set `trace` to
+ * null and drop the buffer, after which the span reducer's `if (!prev) return
+ * prev` guard no-oped forever — the whole live backend span stream went on the
+ * floor, uncounted, until the wholesale `execution-trace` event at finish.
+ */
+describe('useTraceData — live spans when no trace row is persisted yet', () => {
+  it('replays the fetch-window buffer onto a synthesized shell', async () => {
+    const fetchDeferred = deferred<ExecutionTrace | null>();
+    getExecutionTraceMock.mockReturnValue(fetchDeferred.promise);
+
+    const { result } = await mountHook();
+    act(() => {
+      emitSpanEvent({ execution_id: EXEC_ID, span: span('a'), event_type: 'start' });
+      emitSpanEvent({ execution_id: EXEC_ID, span: span('b', { start_ms: 5 }), event_type: 'start' });
+    });
+
+    await act(async () => {
+      fetchDeferred.resolve(null);
+      await fetchDeferred.promise;
+    });
+
+    expect(result.current.trace).not.toBeNull();
+    expect(result.current.trace!.spans.map((s) => s.span_id)).toEqual(['a', 'b']);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('keeps applying span events that arrive after the null fetch settles', async () => {
+    getExecutionTraceMock.mockResolvedValue(null);
+
+    const { result } = await mountHook();
+    await act(async () => { await Promise.resolve(); });
+
+    act(() => {
+      emitSpanEvent({ execution_id: EXEC_ID, span: span('a'), event_type: 'start' });
+    });
+    act(() => {
+      emitSpanEvent({
+        execution_id: EXEC_ID,
+        span: span('a', { end_ms: 12, duration_ms: 12 }),
+        event_type: 'end',
+      });
+      emitSpanEvent({ execution_id: EXEC_ID, span: span('c', { start_ms: 3 }), event_type: 'start' });
+    });
+
+    expect(result.current.trace!.spans.map((s) => s.span_id)).toEqual(['a', 'c']);
+    expect(result.current.trace!.spans.find((s) => s.span_id === 'a')!.end_ms).toBe(12);
+    expect(result.current.visibleNodes.map((n) => n.span.span_id).sort()).toEqual(['a', 'c']);
+  });
+
+  it('claims no measurement the shell does not have, and says it is a shell', async () => {
+    getExecutionTraceMock.mockResolvedValue(null);
+
+    const { result } = await mountHook();
+    await act(async () => { await Promise.resolve(); });
+
+    expect(result.current.traceIsSynthetic).toBe(true);
+    expect(result.current.trace!.total_duration_ms).toBeNull();
+    expect(result.current.trace!.evicted_span_count).toBe(0);
+    expect(result.current.trace!.execution_id).toBe(EXEC_ID);
+  });
+
+  it('drops the shell flag once a real trace lands on the finish event', async () => {
+    getExecutionTraceMock.mockResolvedValue(null);
+
+    const { result } = await mountHook();
+    await act(async () => { await Promise.resolve(); });
+    expect(result.current.traceIsSynthetic).toBe(true);
+
+    act(() => {
+      for (const cb of handlers.get('execution-trace') ?? []) {
+        cb({
+          event: 'execution-trace',
+          id: 0,
+          payload: { ...trace([span('a')]), total_duration_ms: 99 },
+        } as unknown as Event<unknown>);
+      }
+    });
+
+    expect(result.current.traceIsSynthetic).toBe(false);
+    expect(result.current.trace!.total_duration_ms).toBe(99);
+  });
+});
