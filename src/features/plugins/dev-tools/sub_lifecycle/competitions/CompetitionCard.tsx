@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff, Trophy } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
@@ -17,15 +19,22 @@ import { PromptDiffModal, summarizePromptDiff } from './PromptDiffModal';
 import { parseGenesFromPrompt, type StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
-const STATUS_BADGES: Record<string, { color: string; label: string }> = {
-  running: { color: 'bg-blue-500/15 text-blue-400 border-blue-500/25', label: 'Running' },
-  awaiting_review: { color: 'bg-amber-500/15 text-amber-400 border-amber-500/25', label: 'Awaiting review' },
-  resolved: { color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25', label: 'Resolved' },
-  cancelled: { color: 'bg-red-500/15 text-red-400 border-red-500/25', label: 'Cancelled' },
+// Colour only. The LABEL is not this map's business: a backend status is a
+// language-agnostic machine token and must resolve through
+// `tokenLabel(t, 'competition', status)` (src/i18n/tokenMaps.ts), which also
+// DEV-warns on an unmapped token. This map used to carry English labels
+// beside the colours and fall back to rendering the raw token, so every
+// non-English user read "Awaiting review" — and the warning that exists for
+// exactly this miss could never fire, because nothing called the resolver.
+const STATUS_BADGE_COLORS: Record<string, string> = {
+  running: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+  awaiting_review: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
+  resolved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+  cancelled: 'bg-red-500/15 text-red-400 border-red-500/25',
 };
 
-function statusBadge(status: string) {
-  return STATUS_BADGES[status] ?? { color: 'bg-primary/10 text-foreground border-primary/15', label: status };
+function statusBadgeColor(status: string): string {
+  return STATUS_BADGE_COLORS[status] ?? 'bg-primary/10 text-foreground border-primary/15';
 }
 
 function BaselineHealth({ json }: { json: string }) {
@@ -108,14 +117,39 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     }
   }, [competition.id, detailGuard]);
 
-  // Load detail on expand, auto-poll every 8s while competition is running
+  // The AUTHORITATIVE status while a card is open. `competition.status` is the
+  // value from the LIST fetch, and that list only refreshes on a user action
+  // (Refresh, or a mutation calling `onRefresh`) — so it goes stale in both
+  // directions the moment a race changes state on its own:
+  //
+  //   * gating the poll on it kept `setInterval(loadDetail, 8000)` alive
+  //     FOREVER after the tasks finished — an IPC round-trip every 8s per
+  //     expanded card, for the life of the view, because the prop never
+  //     learned the race had ended;
+  //   * and a stale list in the other direction meant the poll never started
+  //     at all on a race that had since begun running.
+  //
+  // `detail.competition.status` is re-fetched every tick and was sitting right
+  // here unread. Before the first fetch lands it is null, and the prop is then
+  // the only thing we know — which is exactly what the old code used.
+  const liveStatus = detail?.competition.status ?? competition.status;
+
+  // Fetch once on expand (and whenever the card is pointed at a different
+  // competition).
   useEffect(() => {
     if (!expanded) return;
     loadDetail();
-    if (competition.status !== 'running') return;
+  }, [expanded, loadDetail]);
+
+  // Poll while the race is actually live. Kept as its OWN effect, keyed on a
+  // string rather than on `detail`: folding it back into the fetch effect
+  // above would re-run that effect on every poll response, and its `loadDetail()`
+  // call would then re-trigger itself in a loop.
+  useEffect(() => {
+    if (!expanded || liveStatus !== 'running') return;
     const interval = setInterval(loadDetail, 8000);
     return () => clearInterval(interval);
-  }, [expanded, competition.status, loadDetail]);
+  }, [expanded, liveStatus, loadDetail]);
 
   const handleOpenPickWinner = useCallback((taskId: string) => {
     setPendingWinnerTaskId(taskId);
@@ -160,6 +194,12 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
   }, [competition.id, pendingWinnerTaskId, winnerInsightText, addToast, onRefresh, dl]);
 
   const [optimisticCancelled, setOptimisticCancelled] = useState(false);
+  // Both footer actions are irreversible and both used to fire straight off a
+  // single click: Delete destroys the slots, prompts, diffs AND the winner
+  // insight (the only record of what a race taught you), and Cancel paints
+  // success optimistically before dispatching git-worktree removal. They now
+  // route through one confirm gate; nothing is dispatched until it is answered.
+  const [pendingDestructive, setPendingDestructive] = useState<'cancel' | 'delete' | null>(null);
 
   const handleCancel = useCallback(async () => {
     // Optimistic: update UI immediately, run cleanup in background
@@ -194,8 +234,12 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     }
   }, [competition.id, addToast, onRefresh, dl]);
 
-  const effectiveStatus = optimisticCancelled ? 'cancelled' : competition.status;
-  const badge = statusBadge(effectiveStatus);
+  // Same authority question for the badge and the footer actions: an open
+  // card that showed "Running" over a finished race was the visible half of
+  // the polling bug above.
+  const effectiveStatus = optimisticCancelled ? 'cancelled' : liveStatus;
+  const badgeColor = statusBadgeColor(effectiveStatus);
+  const badgeLabel = tokenLabel(t, 'competition', effectiveStatus);
   const isFinished = effectiveStatus === 'resolved' || effectiveStatus === 'cancelled';
 
   // Loading choreography (docs/design/overview-loading.md): slot rows ripple
@@ -227,8 +271,8 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
             {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {<AbsoluteTime timestamp={competition.created_at} />}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-0.5 typo-caption border shrink-0 ${badge.color}`}>
-          {badge.label}
+        <span className={`rounded-full px-2.5 py-0.5 typo-caption border shrink-0 ${badgeColor}`}>
+          {badgeLabel}
         </span>
       </button>
 
@@ -381,12 +425,12 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
                 </Button>
                 <div className="flex items-center gap-2">
                   {isFinished && (
-                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={handleDelete}>
+                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setPendingDestructive('delete')}>
                       {t.common.delete}
                     </Button>
                   )}
                   {!isFinished && (
-                    <Button variant="danger" size="sm" icon={<Ban className="w-3.5 h-3.5" />} onClick={handleCancel}>
+                    <Button variant="danger" size="sm" icon={<Ban className="w-3.5 h-3.5" />} onClick={() => setPendingDestructive('cancel')}>
                       {t.common.cancel}
                     </Button>
                   )}
@@ -395,6 +439,23 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
             </>
           )}
         </div>
+      )}
+
+      {pendingDestructive && (
+        <ConfirmDialog
+          danger
+          title={pendingDestructive === 'delete' ? dl.delete_confirm_title : dl.cancel_confirm_title}
+          body={pendingDestructive === 'delete' ? dl.delete_confirm_body : dl.cancel_confirm_body}
+          confirmLabel={pendingDestructive === 'delete' ? t.common.delete : dl.cancel_confirm_action}
+          cancelLabel={t.common.go_back}
+          onConfirm={async () => {
+            const action = pendingDestructive;
+            setPendingDestructive(null);
+            if (action === 'delete') await handleDelete();
+            else await handleCancel();
+          }}
+          onCancel={() => setPendingDestructive(null)}
+        />
       )}
     </div>
   );

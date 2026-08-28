@@ -12701,6 +12701,7 @@
       "analyzing": "विश्लेषण हो रहा है",
       "planning": "योजना बन रही है",
       "implementing": "कार्यान्वयन हो रहा है",
+      "committing": "कमिट हो रहा है",
       "validating": "सत्यापन हो रहा है",
       "complete": "पूर्ण"
     },
@@ -12849,6 +12850,12 @@
       "stuck_reclaimed": "वापस लेकर फिर से कतार में डाला गया",
       "stuck_retry_exhausted": "वापस लिया गया, पुनः प्रयास समाप्त",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "चल रहा है",
+      "awaiting_review": "समीक्षा की प्रतीक्षा",
+      "resolved": "हल",
+      "cancelled": "रद्द"
     }
   },
   "project_overview": {
@@ -16012,6 +16019,10 @@
       "dq_title": "अयोग्य",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "हल की गई प्रतियोगिताओं में aggregated। अधिक जीतता है।",
+      "leaderboard_low_sample": "बहुत कम रेस",
+      "leaderboard_low_sample_title": "केवल {n} निपटी हुई प्रतियोगिताएँ — इस दर को परिणाम मानने के लिए बहुत कम।",
+      "leaderboard_ci_title": "95% विश्वास अंतराल: {low}–{high}%",
+      "leaderboard_not_separated": "शीर्ष दो अपने विश्वास अंतरालों में ओवरलैप करते हैं — यह क्रम अभी परिणाम नहीं है।",
       "capture_winning_insight": "विजयी अंतर्दृष्टि capture करें",
       "capture_insight_desc": "इस दृष्टिकोण को जीत क्या दिलाई? यह नोट विजेता के साथ संग्रहीत है और भविष्य की प्रतियोगिताओं को seed करने के लिए उपयोग होता है।",
       "insight_placeholder": "वर्णन करें कि इस दृष्टिकोण को क्या सफल बनाया…",
@@ -16060,6 +16071,11 @@
       "background_cleanup_issue": "पृष्ठभूमि सफ़ाई समस्या: {error}",
       "competition_deleted": "प्रतियोगिता हटाई गई",
       "competition_delete_failed": "हटाने में विफल",
+      "cancel_confirm_title": "यह रेस रोकें?",
+      "cancel_confirm_body": "हर प्रतिस्पर्धी रोक दिया जाएगा और उसका git worktree हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
+      "cancel_confirm_action": "रेस रोकें",
+      "delete_confirm_title": "यह प्रतियोगिता हटाएँ?",
+      "delete_confirm_body": "स्लॉट, प्रॉम्प्ट, डिफ़ और विजेता अंतर्दृष्टि सब इसके साथ चले जाएँगे — वही अंतर्दृष्टि इस रेस से सीखी बात का इकलौता रिकॉर्ड है। इसे पूर्ववत नहीं किया जा सकता।",
       "readiness_ready": "चलाने के लिए तैयार। Dev Clone स्कैन करेगा, प्रस्तावित करेगा, और अनुमोदन पर निर्माण करेगा।",
       "readiness_partial": "आंशिक रूप से कॉन्फ़िगर किया गया। कमियाँ भरने के लिए ऑटो-सेटअप पर क्लिक करें।",
       "readiness_not_configured": "अभी तक कॉन्फ़िगर नहीं किया गया। Dev Clone अपनाएं और ऑटो-सेटअप चलाएं।",
@@ -16315,7 +16331,8 @@
       "triage_no_goals_title": "यहाँ अभी कोई लक्ष्य नहीं",
       "triage_resolving": "निपटाया जा रहा है…",
       "triage_strip_waiting": "शुरू होने की प्रतीक्षा",
-      "triage_title": "लक्ष्य"
+      "triage_title": "लक्ष्य",
+      "racing_waiting": "प्रतीक्षा में…"
     },
     "dev_projects": {
       "active_goals": "सक्रिय goals",

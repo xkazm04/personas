@@ -3106,6 +3106,10 @@
     "dq_title": "失格",
     "dq_label": "DQ x",
     "leaderboard_subtitle": "解決されたコンペティション全体で集計。高いほど勝ち。",
+    "leaderboard_low_sample": "レース数が少なすぎ",
+    "leaderboard_low_sample_title": "決着したコンペはわずか {n} 件 — この勝率を結果として読むには少なすぎます。",
+    "leaderboard_ci_title": "95% 信頼区間: {low}〜{high}%",
+    "leaderboard_not_separated": "上位2つは信頼区間が重なっています — この順位はまだ結論ではありません。",
     "capture_winning_insight": "勝利のインサイトを記録",
     "capture_insight_desc": "このアプローチを勝たせたのは何か？ このメモは勝者と共に保存され、今後のコンペティションのシードに使用されます。",
     "insight_placeholder": "このアプローチを成功させた要因を記述…",
@@ -3154,6 +3158,11 @@
     "background_cleanup_issue": "バックグラウンドのクリーンアップで問題が発生しました: {error}",
     "competition_deleted": "コンペを削除しました",
     "competition_delete_failed": "コンペの削除に失敗しました",
+    "cancel_confirm_title": "このレースを中止しますか?",
+    "cancel_confirm_body": "すべての競技者が停止され、その git worktree が削除されます。元に戻すことはできません。",
+    "cancel_confirm_action": "レースを中止",
+    "delete_confirm_title": "このコンペを削除しますか?",
+    "delete_confirm_body": "スロット、プロンプト、差分、そして勝者インサイトも一緒に消えます。そのインサイトは、このレースから学んだことの唯一の記録です。元に戻すことはできません。",
     "readiness_ready": "実行の準備ができました。承認されると、Dev Cloneがスキャン・提案・ビルドを行います。",
     "readiness_partial": "一部設定済みです。自動セットアップをクリックして残りを設定してください。",
     "readiness_not_configured": "まだ設定されていません。Dev Cloneを採用し、自動セットアップを実行してください。",
@@ -3409,7 +3418,8 @@
     "triage_no_goals_title": "ゴールはまだありません",
     "triage_resolving": "処理中…",
     "triage_strip_waiting": "開始待ち",
-    "triage_title": "ゴール"
+    "triage_title": "ゴール",
+    "racing_waiting": "待機中…"
   },
   "dev_projects": {
     "active_goals": "アクティブなゴール",

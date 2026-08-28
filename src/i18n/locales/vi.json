@@ -12701,6 +12701,7 @@
       "analyzing": "Đang phân tích",
       "planning": "Đang lập kế hoạch",
       "implementing": "Đang thực hiện",
+      "committing": "Đang commit",
       "validating": "Đang kiểm tra",
       "complete": "Hoàn tất"
     },
@@ -12849,6 +12850,12 @@
       "stuck_reclaimed": "Đã thu hồi và xếp lại hàng đợi",
       "stuck_retry_exhausted": "Đã thu hồi, hết lượt thử lại",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "Đang chạy",
+      "awaiting_review": "Chờ đánh giá",
+      "resolved": "Đã giải quyết",
+      "cancelled": "Đã hủy"
     }
   },
   "project_overview": {
@@ -16012,6 +16019,10 @@
       "dq_title": "Bị loại",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "Tổng hợp trên các cuộc thi đã giải quyết. Cao hơn thắng.",
+      "leaderboard_low_sample": "Quá ít cuộc đua",
+      "leaderboard_low_sample_title": "Chỉ có {n} cuộc thi đã phân định — quá ít để coi tỷ lệ này là một kết luận.",
+      "leaderboard_ci_title": "Khoảng tin cậy 95%: {low}–{high}%",
+      "leaderboard_not_separated": "Hai vị trí dẫn đầu chồng lấn trong khoảng tin cậy — thứ tự này chưa phải là kết luận.",
       "capture_winning_insight": "Ghi lại thông tin chi tiết chiến thắng",
       "capture_insight_desc": "Điều gì khiến cách tiếp cận này chiến thắng? Ghi chú này được lưu với người chiến thắng và được sử dụng để khởi tạo các cuộc thi trong tương lai.",
       "insight_placeholder": "Mô tả điều gì khiến cách tiếp cận này thành công…",
@@ -16060,6 +16071,11 @@
       "background_cleanup_issue": "Sự cố dọn dẹp nền: {error}",
       "competition_deleted": "Đã xóa cuộc thi",
       "competition_delete_failed": "Không thể xóa",
+      "cancel_confirm_title": "Dừng cuộc đua này?",
+      "cancel_confirm_body": "Mọi đối thủ sẽ bị dừng và git worktree của họ bị xóa. Không thể hoàn tác.",
+      "cancel_confirm_action": "Dừng cuộc đua",
+      "delete_confirm_title": "Xóa cuộc thi này?",
+      "delete_confirm_body": "Các suất thi, prompt, diff và bài học từ người thắng đều mất theo — bài học đó là ghi chép duy nhất về những gì cuộc đua này dạy bạn. Không thể hoàn tác.",
       "readiness_ready": "Sẵn sàng chạy. Dev Clone sẽ quét, đề xuất và xây dựng khi được phê duyệt.",
       "readiness_partial": "Đã cấu hình một phần. Nhấn Tự động thiết lập để lấp đầy các khoảng trống.",
       "readiness_not_configured": "Chưa được cấu hình. Hãy áp dụng Dev Clone và chạy Tự động thiết lập.",
@@ -16315,7 +16331,8 @@
       "triage_no_goals_title": "Chưa có mục tiêu nào ở đây",
       "triage_resolving": "Đang xử lý…",
       "triage_strip_waiting": "Chờ bắt đầu",
-      "triage_title": "Mục tiêu"
+      "triage_title": "Mục tiêu",
+      "racing_waiting": "Đang chờ…"
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",

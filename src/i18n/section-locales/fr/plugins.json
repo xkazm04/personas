@@ -3106,6 +3106,10 @@
     "dq_title": "Disqualifié",
     "dq_label": "DQ x",
     "leaderboard_subtitle": "Agrégé sur les compétitions résolues. Plus haut l’emporte.",
+    "leaderboard_low_sample": "Trop peu de courses",
+    "leaderboard_low_sample_title": "Seulement {n} compétitions tranchées — trop peu pour lire ce taux comme un résultat.",
+    "leaderboard_ci_title": "Intervalle de confiance à 95 % : {low}–{high} %",
+    "leaderboard_not_separated": "Les deux premiers se recouvrent dans leurs intervalles de confiance — cet ordre n'est pas encore un résultat.",
     "capture_winning_insight": "Capturer l’insight gagnant",
     "capture_insight_desc": "Qu’est-ce qui a fait gagner cette approche ? Cette note est stockée avec le gagnant et utilisée pour amorcer les futures compétitions.",
     "insight_placeholder": "Décrivez ce qui a fait réussir cette approche…",
@@ -3154,6 +3158,11 @@
     "background_cleanup_issue": "Problème de nettoyage en arrière-plan : {error}",
     "competition_deleted": "Compétition supprimée",
     "competition_delete_failed": "Échec de la suppression",
+    "cancel_confirm_title": "Arrêter cette course ?",
+    "cancel_confirm_body": "Chaque concurrent est arrêté et son worktree git supprimé. Cette action est irréversible.",
+    "cancel_confirm_action": "Arrêter la course",
+    "delete_confirm_title": "Supprimer cette compétition ?",
+    "delete_confirm_body": "Les emplacements, les prompts, les diffs et l'enseignement du gagnant partent avec — et cet enseignement est la seule trace de ce que cette course a révélé. Cette action est irréversible.",
     "readiness_ready": "Prêt à démarrer. Dev Clone analysera, proposera et construira une fois approuvé.",
     "readiness_partial": "Configuration partielle. Cliquez sur Config auto pour combler les lacunes.",
     "readiness_not_configured": "Pas encore configuré. Adoptez Dev Clone puis lancez Config auto.",
@@ -3409,7 +3418,8 @@
     "triage_no_goals_title": "Aucun objectif pour l’instant",
     "triage_resolving": "Traitement…",
     "triage_strip_waiting": "En attente de démarrage",
-    "triage_title": "Objectifs"
+    "triage_title": "Objectifs",
+    "racing_waiting": "En attente…"
   },
   "dev_projects": {
     "active_goals": "objectifs actifs",

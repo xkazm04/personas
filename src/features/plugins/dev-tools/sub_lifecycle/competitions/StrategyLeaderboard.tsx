@@ -1,13 +1,67 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getStrategyLeaderboard } from '@/api/devTools/devTools';
 import { createLatestWins } from '@/stores/util/latestWins';
 import type { DevStrategyStats } from '@/lib/bindings/DevStrategyStats';
 import { silentCatch } from '@/lib/silentCatch';
 
+// ---------------------------------------------------------------------------
+// Statistical honesty for the ranking.
+//
+// `get_strategy_leaderboard` orders `wins DESC, total DESC` and this panel
+// renders that order top-down with a win-rate percentage — i.e. it PRESENTS AN
+// ORDERING AS A CONCLUSION. A conclusion needs evidence, and a competition
+// project typically has one to three resolved races, so "80% win rate" is
+// routinely 4 wins out of 5, or 1 out of 1. Nothing below changes the ordering
+// (that is the backend's call); it attaches the uncertainty the order was
+// being read without.
+//
+// Wilson score interval rather than the normal approximation: the normal
+// interval degenerates at exactly the sample sizes this panel actually sees
+// (p̂ = 0 or 1 gives a zero-width interval, which would claim CERTAINTY from
+// one race — the opposite of the point).
+// ---------------------------------------------------------------------------
+
+/** Below this many resolved competitions a rate is a curiosity, not a measurement. */
+export const MIN_RANKABLE_SAMPLE = 5;
+
+const Z_95 = 1.959964;
+
+export interface WinRateInterval {
+  /** Lower bound of the 95% Wilson interval, 0..1. */
+  low: number;
+  /** Upper bound of the 95% Wilson interval, 0..1. */
+  high: number;
+}
+
+/** 95% Wilson score interval for `wins` successes out of `total` trials. */
+export function wilsonInterval(wins: number, total: number): WinRateInterval {
+  // No trials means no information — the honest interval is the whole range.
+  if (total <= 0) return { low: 0, high: 1 };
+  const p = Math.min(1, Math.max(0, wins / total));
+  const z2 = Z_95 * Z_95;
+  const denom = 1 + z2 / total;
+  const centre = (p + z2 / (2 * total)) / denom;
+  const margin = (Z_95 / denom) * Math.sqrt((p * (1 - p)) / total + z2 / (4 * total * total));
+  return { low: Math.max(0, centre - margin), high: Math.min(1, centre + margin) };
+}
+
+/**
+ * Is the leaderboard's headline claim — "#1 beats #2" — actually supported?
+ * True only when the leader's lower bound clears the runner-up's upper bound.
+ * A single row is trivially "separated": there is no comparison being made.
+ */
+export function isTopOrderingSeparated(stats: { wins: number; total: number }[]): boolean {
+  if (stats.length < 2) return true;
+  const first = wilsonInterval(stats[0]!.wins, stats[0]!.total);
+  const second = wilsonInterval(stats[1]!.wins, stats[1]!.total);
+  return first.low > second.high;
+}
+
 export function StrategyLeaderboard({ projectId }: { projectId: string }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [stats, setStats] = useState<DevStrategyStats[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +107,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
   if (stats.length === 0) return null;
 
   const maxWins = Math.max(1, ...stats.map((s) => s.wins));
+  const orderingSeparated = isTopOrderingSeparated(stats);
 
   return (
     <div className="rounded-card border border-primary/15 bg-card/40 p-4">
@@ -72,7 +127,10 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
         </button>
       </div>
       <div className="space-y-2">
-        {stats.map((s) => (
+        {stats.map((s) => {
+          const ci = wilsonInterval(s.wins, s.total);
+          const lowSample = s.total < MIN_RANKABLE_SAMPLE;
+          return (
           <div key={s.label} className="flex items-center gap-3">
             <span className="typo-card-label w-32 shrink-0 truncate">
               {s.label}
@@ -86,17 +144,42 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
             <span className="typo-caption text-foreground w-12 text-right shrink-0">
               {s.wins}/{s.total}
             </span>
-            <span className="typo-caption text-foreground w-12 text-right shrink-0">
-              {Math.round(s.win_rate * 100)}%
-            </span>
+            {/* The rate carries its own interval. A bare "80%" over five races
+                reads as a measurement; the tooltip is where the width of that
+                claim actually lives. Shared Tooltip, not `title=` — the native
+                attribute is hover-only, keyboard-unreachable and invisible on
+                touch (docs/concepts/golden-paths/tooltip.md). */}
+            <Tooltip
+              content={tx(t.plugins.dev_lifecycle.leaderboard_ci_title, {
+                low: Math.round(ci.low * 100),
+                high: Math.round(ci.high * 100),
+              })}
+            >
+              <span className={`typo-caption w-12 text-right shrink-0 tabular-nums ${lowSample ? 'text-foreground/60' : 'text-foreground'}`}>
+                {Math.round(s.win_rate * 100)}%
+              </span>
+            </Tooltip>
+            {lowSample && (
+              <Tooltip content={tx(t.plugins.dev_lifecycle.leaderboard_low_sample_title, { n: s.total })}>
+                <span className="typo-caption text-amber-400/80 shrink-0">
+                  {t.plugins.dev_lifecycle.leaderboard_low_sample}
+                </span>
+              </Tooltip>
+            )}
             {s.disqualified_count > 0 && (
               <span className="typo-caption text-amber-400 shrink-0" title={t.plugins.dev_lifecycle.dq_title}>
                 {t.plugins.dev_lifecycle.dq_label}{s.disqualified_count}
               </span>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
+      {!orderingSeparated && (
+        <p className="typo-caption text-amber-400/80 mt-3">
+          {t.plugins.dev_lifecycle.leaderboard_not_separated}
+        </p>
+      )}
       <p className="typo-caption text-foreground mt-3">
         {t.plugins.dev_lifecycle.leaderboard_subtitle}
       </p>

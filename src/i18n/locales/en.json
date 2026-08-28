@@ -13038,6 +13038,7 @@
       "analyzing": "Analyzing",
       "planning": "Planning",
       "implementing": "Implementing",
+      "committing": "Committing",
       "validating": "Validating",
       "complete": "Complete"
     },
@@ -13141,6 +13142,12 @@
       "dry_run": "Dry run (simulated)",
       "stuck_reclaimed": "Reclaimed and requeued",
       "stuck_retry_exhausted": "Reclaimed, retries exhausted"
+    },
+    "competition": {
+      "running": "Running",
+      "awaiting_review": "Awaiting review",
+      "resolved": "Resolved",
+      "cancelled": "Cancelled"
     }
   },
   "project_overview": {
@@ -16453,6 +16460,10 @@
       "dq_title": "Disqualified",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "Aggregated across resolved competitions. Higher wins.",
+      "leaderboard_low_sample": "Too few races",
+      "leaderboard_low_sample_title": "Only {n} resolved competitions — too few to read this rate as a result.",
+      "leaderboard_ci_title": "95% confidence interval: {low}–{high}%",
+      "leaderboard_not_separated": "The top two overlap within their confidence intervals — this order is not yet a result.",
       "capture_winning_insight": "Capture the winning insight",
       "capture_insight_desc": "What made this approach win? This note is stored with the winner and used to seed future competitions.",
       "insight_placeholder": "Describe what made this approach succeed…",
@@ -16558,6 +16569,11 @@
       "background_cleanup_issue": "Background cleanup issue: {error}",
       "competition_deleted": "Competition deleted",
       "competition_delete_failed": "Delete failed",
+      "cancel_confirm_title": "Stop this race?",
+      "cancel_confirm_body": "Every competitor is stopped and its git worktree is removed. This cannot be undone.",
+      "cancel_confirm_action": "Stop the race",
+      "delete_confirm_title": "Delete this competition?",
+      "delete_confirm_body": "The slots, prompts, diffs and the winning insight all go with it — that insight is the only record of what this race taught you. This cannot be undone.",
       "readiness_ready": "Ready to run. Dev Clone will scan, propose, and build on approval.",
       "readiness_partial": "Partially configured. Click Auto-Setup to fill the gaps.",
       "readiness_not_configured": "Not configured yet. Adopt Dev Clone and run Auto-Setup.",
@@ -16609,7 +16625,8 @@
       "triage_no_goals_title": "No goals here yet",
       "triage_no_goals_body": "Goals appear once a team or Athena writes them.",
       "triage_resolving": "Resolving…",
-      "triage_ago": "{time} ago"
+      "triage_ago": "{time} ago",
+      "racing_waiting": "Waiting…"
     },
     "dev_projects": {
       "bulk_selected_one": "project selected",

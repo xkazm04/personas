@@ -58,6 +58,7 @@
     "analyzing": "分析中",
     "planning": "规划中",
     "implementing": "实现中",
+    "committing": "提交中",
     "validating": "验证中",
     "complete": "已完成"
   },
@@ -206,5 +207,11 @@
     "stuck_reclaimed": "已回收并重新排队",
     "stuck_retry_exhausted": "已回收，重试次数用尽",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "competition": {
+    "running": "运行中",
+    "awaiting_review": "待审核",
+    "resolved": "已解决",
+    "cancelled": "已取消"
   }
 }

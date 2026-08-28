@@ -73,19 +73,35 @@ function geneDirective(key: keyof StrategyGenes, value: number): string {
 // ---------------------------------------------------------------------------
 
 export interface Milestone {
+  /**
+   * The wire id. This is a CONTRACT with the agent — `MILESTONE_INSTRUCTION`
+   * below tells the model to emit exactly these ids — so it is never renamed
+   * for display reasons.
+   */
   id: string;
-  label: string;
+  /**
+   * The `status_tokens.task_phase` token this milestone renders as. There is
+   * no English label on this record any more: the six labels used to live
+   * here as literal strings while `status_tokens.task_phase` already carried
+   * three of them under a second name, so the app held two copies of the same
+   * vocabulary and only one of them was translated. Resolve with
+   * `tokenLabel(t, 'task_phase', m.labelToken)` — see RacingProgress.
+   */
+  labelToken: string;
   progressPct: number;
   color: string;
 }
 
 export const MILESTONES: Milestone[] = [
-  { id: 'analyzing', label: 'Analyzing', progressPct: 10, color: 'blue' },
-  { id: 'planning', label: 'Planning', progressPct: 25, color: 'indigo' },
-  { id: 'implementing', label: 'Implementing', progressPct: 55, color: 'violet' },
-  { id: 'testing', label: 'Testing', progressPct: 80, color: 'amber' },
-  { id: 'committing', label: 'Committing', progressPct: 95, color: 'emerald' },
-  { id: 'done', label: 'Done', progressPct: 100, color: 'emerald' },
+  { id: 'analyzing', labelToken: 'analyzing', progressPct: 10, color: 'blue' },
+  { id: 'planning', labelToken: 'planning', progressPct: 25, color: 'indigo' },
+  { id: 'implementing', labelToken: 'implementing', progressPct: 55, color: 'violet' },
+  // The wire id is "testing"; the shared vocabulary calls this phase
+  // "validating". Mapping here keeps the agent contract and the user-facing
+  // word independent of each other.
+  { id: 'testing', labelToken: 'validating', progressPct: 80, color: 'amber' },
+  { id: 'committing', labelToken: 'committing', progressPct: 95, color: 'emerald' },
+  { id: 'done', labelToken: 'complete', progressPct: 100, color: 'emerald' },
 ];
 
 const MILESTONE_INSTRUCTION = `

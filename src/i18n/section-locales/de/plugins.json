@@ -3106,6 +3106,10 @@
     "dq_title": "Disqualifiziert",
     "dq_label": "DQ x",
     "leaderboard_subtitle": "Aggregiert über abgeschlossene Wettbewerbe. Höher gewinnt.",
+    "leaderboard_low_sample": "Zu wenige Rennen",
+    "leaderboard_low_sample_title": "Nur {n} entschiedene Wettbewerbe — zu wenige, um diese Quote als Ergebnis zu lesen.",
+    "leaderboard_ci_title": "95-%-Konfidenzintervall: {low}–{high} %",
+    "leaderboard_not_separated": "Die ersten beiden überlappen sich in ihren Konfidenzintervallen — diese Reihenfolge ist noch kein Ergebnis.",
     "capture_winning_insight": "Gewinn-Erkenntnis erfassen",
     "capture_insight_desc": "Was hat diesen Ansatz gewinnen lassen? Diese Notiz wird mit dem Gewinner gespeichert und dient als Grundlage für zukünftige Wettbewerbe.",
     "insight_placeholder": "Beschreiben Sie, was diesen Ansatz erfolgreich gemacht hat…",
@@ -3154,6 +3158,11 @@
     "background_cleanup_issue": "Problem bei der Hintergrundbereinigung: {error}",
     "competition_deleted": "Wettbewerb gelöscht",
     "competition_delete_failed": "Löschen fehlgeschlagen",
+    "cancel_confirm_title": "Dieses Rennen stoppen?",
+    "cancel_confirm_body": "Jeder Teilnehmer wird gestoppt und sein Git-Worktree entfernt. Das lässt sich nicht rückgängig machen.",
+    "cancel_confirm_action": "Rennen stoppen",
+    "delete_confirm_title": "Diesen Wettbewerb löschen?",
+    "delete_confirm_body": "Slots, Prompts, Diffs und die Gewinner-Erkenntnis verschwinden mit — und diese Erkenntnis ist die einzige Aufzeichnung dessen, was dieses Rennen gezeigt hat. Das lässt sich nicht rückgängig machen.",
     "readiness_ready": "Bereit zum Ausführen. Dev Clone scannt, schlägt vor und baut nach Genehmigung.",
     "readiness_partial": "Teilweise konfiguriert. Klicken Sie auf Auto-Einrichtung, um die Lücken zu schließen.",
     "readiness_not_configured": "Noch nicht konfiguriert. Übernehmen Sie Dev Clone und führen Sie die Auto-Einrichtung aus.",
@@ -3409,7 +3418,8 @@
     "triage_no_goals_title": "Noch keine Ziele",
     "triage_resolving": "Wird abgeschlossen…",
     "triage_strip_waiting": "Wartet auf Start",
-    "triage_title": "Ziele"
+    "triage_title": "Ziele",
+    "racing_waiting": "Wartet…"
   },
   "dev_projects": {
     "active_goals": "aktive Ziele",

@@ -12701,6 +12701,7 @@
       "analyzing": "Analýza",
       "planning": "Plánování",
       "implementing": "Implementace",
+      "committing": "Commitování",
       "validating": "Ověřování",
       "complete": "Dokončeno"
     },
@@ -12849,6 +12850,12 @@
       "stuck_reclaimed": "Znovu převzato a zařazeno",
       "stuck_retry_exhausted": "Znovu převzato, pokusy vyčerpány",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "Běží",
+      "awaiting_review": "Čeká na kontrolu",
+      "resolved": "Vyřešeno",
+      "cancelled": "Zrušeno"
     }
   },
   "project_overview": {
@@ -16012,6 +16019,10 @@
       "dq_title": "Diskvalifikováno",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "Agregováno napříč vyřešenými soutěžemi. Vyšší vyhrává.",
+      "leaderboard_low_sample": "Málo závodů",
+      "leaderboard_low_sample_title": "Pouze {n} rozhodnutých soutěží — příliš málo na to, aby se tento poměr četl jako výsledek.",
+      "leaderboard_ci_title": "95% interval spolehlivosti: {low}–{high} %",
+      "leaderboard_not_separated": "První dva se překrývají v intervalech spolehlivosti — toto pořadí zatím není výsledek.",
       "capture_winning_insight": "Zachyť vítězný insight",
       "capture_insight_desc": "Co způsobilo, že tento přístup vyhrál? Tato poznámka je uložena s vítězem a použita pro zasetí budoucích soutěží.",
       "insight_placeholder": "Popiš, co způsobilo úspěch tohoto přístupu…",
@@ -16060,6 +16071,11 @@
       "background_cleanup_issue": "Problém při úklidu na pozadí: {error}",
       "competition_deleted": "Soutěž odstraněna",
       "competition_delete_failed": "Odstranění selhalo",
+      "cancel_confirm_title": "Zastavit tento závod?",
+      "cancel_confirm_body": "Každý soutěžící bude zastaven a jeho git worktree odstraněn. Tuto akci nelze vzít zpět.",
+      "cancel_confirm_action": "Zastavit závod",
+      "delete_confirm_title": "Smazat tuto soutěž?",
+      "delete_confirm_body": "Zmizí s ní sloty, prompty, diffy i vítězný poznatek — a ten poznatek je jediným záznamem toho, co vás tento závod naučil. Nelze vzít zpět.",
       "readiness_ready": "Připraveno ke spuštění. Dev Clone provede sken, navrhne úkoly a po schválení je sestaví.",
       "readiness_partial": "Částečně nakonfigurováno. Kliknutím na Automatické nastavení doplníte chybějící kroky.",
       "readiness_not_configured": "Zatím není nakonfigurováno. Adoptujte Dev Clone a spusťte Automatické nastavení.",
@@ -16315,7 +16331,8 @@
       "triage_no_goals_title": "Zatím žádné cíle",
       "triage_resolving": "Vyřizuje se…",
       "triage_strip_waiting": "Čeká na zahájení",
-      "triage_title": "Cíle"
+      "triage_title": "Cíle",
+      "racing_waiting": "Čeká se…"
     },
     "dev_projects": {
       "active_goals": "aktivních cílů",

@@ -55,13 +55,27 @@ describe('computeSlotQualityScore', () => {
     expect(s.total).toBe(0);
   });
 
-  it('scores an unfinished task on completion credit alone', () => {
-    for (const status of ['queued', 'running', 'pending']) {
-      const s = computeSlotQualityScore({ status }, slot())!;
-      expect(s.build).toBe(0);
-      expect(s.completion).toBe(5);
-      expect(s.total).toBe(5);
-    }
+  // REPLACES 'scores an unfinished task on completion credit alone', which
+  // pinned the defect: an unfinished slot scored 5, landed under the 70
+  // threshold, and rendered a RED "Q 5" pill indistinguishable from a
+  // competitor that finished and failed every gate — so during a live race
+  // every slot that had not finished yet wore a catastrophic badge. Every gate
+  // in the rubric is post-hoc, so there is nothing to score before the slot
+  // settles; the row renders the pill only when a score exists.
+  it.each(['queued', 'running', 'pending', 'in_progress', 'blocked'])(
+    'declines to score a %s task rather than giving it a failing grade',
+    (status) => {
+      expect(computeSlotQualityScore({ status }, slot())).toBeNull();
+      expect(computeSlotQualityScore({ status }, slot({ diff_stats_json: stats(3, 90, 20) }))).toBeNull();
+    },
+  );
+
+  it('still scores a cancelled task, which is a settled outcome', () => {
+    const s = computeSlotQualityScore({ status: 'cancelled' }, slot())!;
+    expect(s).not.toBeNull();
+    expect(s.build).toBe(0);
+    expect(s.completion).toBe(5);
+    expect(s.total).toBe(5);
   });
 
   it('halves the tests gate for a single-file diff and drops it with no diff at all', () => {

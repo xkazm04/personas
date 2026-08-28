@@ -58,6 +58,7 @@
     "analyzing": "विश्लेषण हो रहा है",
     "planning": "योजना बन रही है",
     "implementing": "कार्यान्वयन हो रहा है",
+    "committing": "कमिट हो रहा है",
     "validating": "सत्यापन हो रहा है",
     "complete": "पूर्ण"
   },
@@ -206,5 +207,11 @@
     "stuck_reclaimed": "वापस लेकर फिर से कतार में डाला गया",
     "stuck_retry_exhausted": "वापस लिया गया, पुनः प्रयास समाप्त",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "competition": {
+    "running": "चल रहा है",
+    "awaiting_review": "समीक्षा की प्रतीक्षा",
+    "resolved": "हल",
+    "cancelled": "रद्द"
   }
 }

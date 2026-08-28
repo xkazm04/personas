@@ -3106,6 +3106,10 @@
     "dq_title": "已取消资格",
     "dq_label": "DQ x",
     "leaderboard_subtitle": "跨已解决竞赛的汇总。越高越好。",
+    "leaderboard_low_sample": "对局过少",
+    "leaderboard_low_sample_title": "仅有 {n} 场已决出胜负的比赛，样本太少，这个胜率还不能当作结论。",
+    "leaderboard_ci_title": "95% 置信区间：{low}–{high}%",
+    "leaderboard_not_separated": "前两名的置信区间相互重叠，这个排序还不能当作结论。",
     "capture_winning_insight": "捕获获胜洞察",
     "capture_insight_desc": "是什么让这种方法获胜？此笔记将与获胜者一同存储，用于为未来竞赛播种。",
     "insight_placeholder": "描述是什么让这种方法成功…",
@@ -3154,6 +3158,11 @@
     "background_cleanup_issue": "后台清理问题：{error}",
     "competition_deleted": "竞赛已删除",
     "competition_delete_failed": "删除失败",
+    "cancel_confirm_title": "要中止这场比赛吗？",
+    "cancel_confirm_body": "所有参赛者都会被停止，其 git worktree 也会被删除。此操作无法撤销。",
+    "cancel_confirm_action": "中止比赛",
+    "delete_confirm_title": "要删除这场比赛吗？",
+    "delete_confirm_body": "参赛位、提示词、差异以及获胜心得都会一并消失，而那条心得是这场比赛留下的唯一记录。此操作无法撤销。",
     "readiness_ready": "已就绪，可以运行。开发克隆将扫描、提出建议，并在获批准后构建。",
     "readiness_partial": "部分已配置。点击「自动设置」以补全缺口。",
     "readiness_not_configured": "尚未配置。请先采用开发克隆，然后运行「自动设置」。",
@@ -3409,7 +3418,8 @@
     "triage_no_goals_title": "这里还没有目标",
     "triage_resolving": "处理中…",
     "triage_strip_waiting": "等待开始",
-    "triage_title": "目标"
+    "triage_title": "目标",
+    "racing_waiting": "等待中…"
   },
   "dev_projects": {
     "active_goals": "活跃目标",

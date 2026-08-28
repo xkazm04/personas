@@ -12701,6 +12701,7 @@
       "analyzing": "বিশ্লেষণ হচ্ছে",
       "planning": "পরিকল্পনা করা হচ্ছে",
       "implementing": "বাস্তবায়ন হচ্ছে",
+      "committing": "কমিট হচ্ছে",
       "validating": "যাচাই হচ্ছে",
       "complete": "সম্পন্ন"
     },
@@ -12849,6 +12850,12 @@
       "stuck_reclaimed": "পুনরুদ্ধার করে আবার সারিতে রাখা হয়েছে",
       "stuck_retry_exhausted": "পুনরুদ্ধার করা হয়েছে, পুনঃচেষ্টা শেষ",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "চলছে",
+      "awaiting_review": "পর্যালোচনার অপেক্ষায়",
+      "resolved": "সমাধান হয়েছে",
+      "cancelled": "বাতিল"
     }
   },
   "project_overview": {
@@ -16012,6 +16019,10 @@
       "dq_title": "অযোগ্য",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "সমাধানিত প্রতিযোগিতা জুড়ে সমষ্টিগত। উচ্চতর জয়ী।",
+      "leaderboard_low_sample": "খুব কম রেস",
+      "leaderboard_low_sample_title": "মাত্র {n}টি নিষ্পত্তি হওয়া প্রতিযোগিতা — এই হারকে ফলাফল হিসেবে ধরার পক্ষে খুব কম।",
+      "leaderboard_ci_title": "৯৫% আস্থার ব্যবধান: {low}–{high}%",
+      "leaderboard_not_separated": "শীর্ষ দুটি তাদের আস্থার ব্যবধানে ওভারল্যাপ করছে — এই ক্রম এখনও কোনো ফলাফল নয়।",
       "capture_winning_insight": "বিজয়ী অন্তর্দৃষ্টি ধরুন",
       "capture_insight_desc": "কী এই পদ্ধতিকে বিজয়ী করেছে? এই নোট বিজয়ীর সাথে সংরক্ষিত এবং ভবিষ্যতের প্রতিযোগিতা সিড করতে ব্যবহৃত হয়।",
       "insight_placeholder": "এই পদ্ধতিটি কীভাবে সফল হয়েছে বর্ণনা করুন…",
@@ -16060,6 +16071,11 @@
       "background_cleanup_issue": "ব্যাকগ্রাউন্ড পরিষ্কার সমস্যা: {error}",
       "competition_deleted": "প্রতিযোগিতা মুছে ফেলা হয়েছে",
       "competition_delete_failed": "মুছতে ব্যর্থ হয়েছে",
+      "cancel_confirm_title": "এই রেসটি থামাবেন?",
+      "cancel_confirm_body": "প্রতিটি প্রতিযোগী থামানো হবে এবং তার git worktree মুছে ফেলা হবে। এটি ফেরানো যাবে না।",
+      "cancel_confirm_action": "রেস থামান",
+      "delete_confirm_title": "এই প্রতিযোগিতাটি মুছবেন?",
+      "delete_confirm_body": "স্লট, প্রম্পট, ডিফ এবং বিজয়ী অন্তর্দৃষ্টি সবই এর সঙ্গে মুছে যাবে — সেই অন্তর্দৃষ্টিই এই রেস থেকে আপনার শেখার একমাত্র নথি। এটি ফেরানো যাবে না।",
       "readiness_ready": "চালানোর জন্য প্রস্তুত। অনুমোদনের পর Dev Clone স্ক্যান করবে, প্রস্তাব দেবে এবং তৈরি করবে।",
       "readiness_partial": "আংশিকভাবে কনফিগার করা হয়েছে। ফাঁক পূরণ করতে অটো-সেটআপে ক্লিক করুন।",
       "readiness_not_configured": "এখনও কনফিগার করা হয়নি। Dev Clone গ্রহণ করুন এবং অটো-সেটআপ চালান।",
@@ -16315,7 +16331,8 @@
       "triage_no_goals_title": "এখানে এখনও কোনো লক্ষ্য নেই",
       "triage_resolving": "নিষ্পত্তি হচ্ছে…",
       "triage_strip_waiting": "শুরুর অপেক্ষায়",
-      "triage_title": "লক্ষ্য"
+      "triage_title": "লক্ষ্য",
+      "racing_waiting": "অপেক্ষা করছে…"
     },
     "dev_projects": {
       "active_goals": "সক্রিয় লক্ষ্য",

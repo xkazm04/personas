@@ -12701,6 +12701,7 @@
       "analyzing": "Menganalisis",
       "planning": "Merencanakan",
       "implementing": "Menerapkan",
+      "committing": "Melakukan commit",
       "validating": "Memvalidasi",
       "complete": "Selesai"
     },
@@ -12849,6 +12850,12 @@
       "stuck_reclaimed": "Diambil kembali dan diantrekan ulang",
       "stuck_retry_exhausted": "Diambil kembali, percobaan ulang habis",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "Berjalan",
+      "awaiting_review": "Menunggu tinjauan",
+      "resolved": "Terselesaikan",
+      "cancelled": "Dibatalkan"
     }
   },
   "project_overview": {
@@ -16012,6 +16019,10 @@
       "dq_title": "Didiskualifikasi",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "Diagregasi lintas kompetisi yang telah diselesaikan. Lebih tinggi menang.",
+      "leaderboard_low_sample": "Terlalu sedikit balapan",
+      "leaderboard_low_sample_title": "Hanya {n} kompetisi yang sudah diputuskan — terlalu sedikit untuk membaca rasio ini sebagai hasil.",
+      "leaderboard_ci_title": "Interval kepercayaan 95%: {low}–{high}%",
+      "leaderboard_not_separated": "Dua teratas saling tumpang tindih dalam interval kepercayaannya — urutan ini belum bisa disebut hasil.",
       "capture_winning_insight": "Catat wawasan pemenang",
       "capture_insight_desc": "Apa yang membuat pendekatan ini menang? Catatan ini disimpan bersama pemenang dan digunakan untuk menginisiasi kompetisi di masa depan.",
       "insight_placeholder": "Jelaskan apa yang membuat pendekatan ini berhasil…",
@@ -16060,6 +16071,11 @@
       "background_cleanup_issue": "Masalah pembersihan latar belakang: {error}",
       "competition_deleted": "Kompetisi dihapus",
       "competition_delete_failed": "Gagal menghapus",
+      "cancel_confirm_title": "Hentikan balapan ini?",
+      "cancel_confirm_body": "Setiap peserta dihentikan dan git worktree-nya dihapus. Tindakan ini tidak dapat dibatalkan.",
+      "cancel_confirm_action": "Hentikan balapan",
+      "delete_confirm_title": "Hapus kompetisi ini?",
+      "delete_confirm_body": "Slot, prompt, diff, dan wawasan pemenang ikut terhapus — wawasan itu satu-satunya catatan tentang apa yang diajarkan balapan ini. Tindakan ini tidak dapat dibatalkan.",
       "readiness_ready": "Siap dijalankan. Dev Clone akan memindai, mengusulkan, dan membangun setelah disetujui.",
       "readiness_partial": "Konfigurasi belum lengkap. Klik Penyiapan Otomatis untuk melengkapi kekurangannya.",
       "readiness_not_configured": "Belum dikonfigurasi. Adopsi Dev Clone dan jalankan Penyiapan Otomatis.",
@@ -16315,7 +16331,8 @@
       "triage_no_goals_title": "Belum ada sasaran di sini",
       "triage_resolving": "Menyelesaikan…",
       "triage_strip_waiting": "Menunggu dimulai",
-      "triage_title": "Sasaran"
+      "triage_title": "Sasaran",
+      "racing_waiting": "Menunggu…"
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",

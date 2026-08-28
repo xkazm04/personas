@@ -12701,6 +12701,7 @@
       "analyzing": "분석 중",
       "planning": "계획 중",
       "implementing": "구현 중",
+      "committing": "커밋 중",
       "validating": "검증 중",
       "complete": "완료"
     },
@@ -12849,6 +12850,12 @@
       "stuck_reclaimed": "회수하여 다시 대기열에 넣음",
       "stuck_retry_exhausted": "회수했으나 재시도 횟수 소진",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "실행 중",
+      "awaiting_review": "검토 대기 중",
+      "resolved": "해결됨",
+      "cancelled": "취소됨"
     }
   },
   "project_overview": {
@@ -16012,6 +16019,10 @@
       "dq_title": "실격됨",
       "dq_label": "DQ x",
       "leaderboard_subtitle": "해결된 경쟁을 전반적으로 집계. 높을수록 승리.",
+      "leaderboard_low_sample": "레이스 수 부족",
+      "leaderboard_low_sample_title": "판정이 끝난 경쟁이 {n}건뿐입니다 — 이 승률을 결과로 보기에는 표본이 부족합니다.",
+      "leaderboard_ci_title": "95% 신뢰구간: {low}~{high}%",
+      "leaderboard_not_separated": "상위 두 항목의 신뢰구간이 겹칩니다 — 이 순서는 아직 결론이 아닙니다.",
       "capture_winning_insight": "승리 인사이트 캡처",
       "capture_insight_desc": "이 접근 방식이 승리한 이유는 무엇입니까? 이 노트는 승자와 함께 저장되어 향후 경쟁을 시드하는 데 사용됩니다.",
       "insight_placeholder": "이 접근 방식이 성공한 이유를 설명하세요…",
@@ -16060,6 +16071,11 @@
       "background_cleanup_issue": "백그라운드 정리 문제: {error}",
       "competition_deleted": "경쟁 삭제됨",
       "competition_delete_failed": "삭제 실패",
+      "cancel_confirm_title": "이 레이스를 중단할까요?",
+      "cancel_confirm_body": "모든 경쟁자가 중단되고 각자의 git worktree가 삭제됩니다. 되돌릴 수 없습니다.",
+      "cancel_confirm_action": "레이스 중단",
+      "delete_confirm_title": "이 경쟁을 삭제할까요?",
+      "delete_confirm_body": "슬롯, 프롬프트, 디프, 그리고 우승 인사이트가 함께 사라집니다 — 그 인사이트는 이 레이스에서 배운 것의 유일한 기록입니다. 되돌릴 수 없습니다.",
       "readiness_ready": "실행 준비 완료. Dev Clone이 스캔하고 제안한 후 승인되면 빌드합니다.",
       "readiness_partial": "일부만 설정되었습니다. 자동 설정을 클릭해 남은 부분을 채우세요.",
       "readiness_not_configured": "아직 설정되지 않았습니다. Dev Clone을 채택하고 자동 설정을 실행하세요.",
@@ -16315,7 +16331,8 @@
       "triage_no_goals_title": "아직 목표가 없습니다",
       "triage_resolving": "처리 중…",
       "triage_strip_waiting": "시작 대기",
-      "triage_title": "목표"
+      "triage_title": "목표",
+      "racing_waiting": "대기 중…"
     },
     "dev_projects": {
       "active_goals": "활성 목표",

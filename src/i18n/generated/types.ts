@@ -13044,6 +13044,7 @@ export type Translations = {
       analyzing: string;
       planning: string;
       implementing: string;
+      committing: string;
       validating: string;
       complete: string;
     };
@@ -13147,6 +13148,12 @@ export type Translations = {
       dry_run: string;
       stuck_reclaimed: string;
       stuck_retry_exhausted: string;
+    };
+    competition: {
+      running: string;
+      awaiting_review: string;
+      resolved: string;
+      cancelled: string;
     };
   };
   project_overview: {
@@ -16459,6 +16466,10 @@ export type Translations = {
       dq_title: string;
       dq_label: string;
       leaderboard_subtitle: string;
+      leaderboard_low_sample: string;
+      leaderboard_low_sample_title: string;
+      leaderboard_ci_title: string;
+      leaderboard_not_separated: string;
       capture_winning_insight: string;
       capture_insight_desc: string;
       insight_placeholder: string;
@@ -16564,6 +16575,11 @@ export type Translations = {
       background_cleanup_issue: string;
       competition_deleted: string;
       competition_delete_failed: string;
+      cancel_confirm_title: string;
+      cancel_confirm_body: string;
+      cancel_confirm_action: string;
+      delete_confirm_title: string;
+      delete_confirm_body: string;
       readiness_ready: string;
       readiness_partial: string;
       readiness_not_configured: string;
@@ -16616,6 +16632,7 @@ export type Translations = {
       triage_no_goals_body: string;
       triage_resolving: string;
       triage_ago: string;
+      racing_waiting: string;
     };
     dev_projects: {
       bulk_selected_one: string;

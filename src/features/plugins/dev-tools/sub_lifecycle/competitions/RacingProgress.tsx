@@ -1,4 +1,7 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import type { Translations } from '@/i18n/en';
 import { MILESTONES, type Milestone } from './strategyPresets';
 import type { DevCompetitionSlot } from '@/lib/bindings/DevCompetitionSlot';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -39,17 +42,21 @@ const MILESTONE_TEXT: Record<string, string> = {
  * We check the task's last_event or progress_pct to derive the milestone.
  * Since we can't read raw output here, we use progress_pct as a proxy.
  */
-function deriveProgress(task: DevTask | null): { milestone: Milestone; detail: string } {
-  if (!task) return { milestone: MILESTONES[0]!, detail: 'Waiting...' };
+function deriveProgress(task: DevTask | null, t: Translations): { milestone: Milestone; detail: string } {
+  // Every caption below was a raw English literal. Three of the four had an
+  // exact equivalent in `status_tokens.execution` already, so they resolve
+  // through the shared vocabulary rather than adding a fourth copy of
+  // "Completed"/"Queued"/"Failed" to this file.
+  if (!task) return { milestone: MILESTONES[0]!, detail: t.plugins.dev_lifecycle.racing_waiting };
 
   if (task.status === 'completed') {
-    return { milestone: MILESTONES[MILESTONES.length - 1]!, detail: 'Finished' };
+    return { milestone: MILESTONES[MILESTONES.length - 1]!, detail: tokenLabel(t, 'execution', 'completed') };
   }
   if (task.status === 'failed') {
-    return { milestone: MILESTONES[0]!, detail: task.error ?? 'Failed' };
+    return { milestone: MILESTONES[0]!, detail: task.error ?? tokenLabel(t, 'execution', 'failed') };
   }
   if (task.status === 'queued') {
-    return { milestone: MILESTONES[0]!, detail: 'In queue' };
+    return { milestone: MILESTONES[0]!, detail: tokenLabel(t, 'execution', 'queued') };
   }
 
   // Use progress_pct from task to find the closest milestone
@@ -58,7 +65,7 @@ function deriveProgress(task: DevTask | null): { milestone: Milestone; detail: s
   for (const m of MILESTONES) {
     if (pct >= m.progressPct) current = m;
   }
-  return { milestone: current, detail: current.label };
+  return { milestone: current, detail: tokenLabel(t, 'task_phase', current.labelToken) };
 }
 
 interface RacingProgressProps {
@@ -66,9 +73,10 @@ interface RacingProgressProps {
 }
 
 export function RacingProgress({ slots }: RacingProgressProps) {
+  const { t } = useTranslation();
   const progresses: SlotProgress[] = useMemo(() =>
     slots.map(({ slot, task }) => {
-      const { milestone, detail } = deriveProgress(task);
+      const { milestone, detail } = deriveProgress(task, t);
       return {
         slot, task,
         currentMilestone: milestone,
@@ -78,7 +86,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
           : milestone.progressPct,
       };
     }),
-  [slots]);
+  [slots, t]);
 
   return (
     <div className="space-y-2">
@@ -88,7 +96,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
           <span key={m.id} className="flex items-center gap-1 shrink-0">
             {i > 0 && <span className="text-foreground">→</span>}
             <span className={`w-1.5 h-1.5 rounded-full ${MILESTONE_DOT[m.color] ?? 'bg-blue-400'}`} />
-            {m.label}
+            {tokenLabel(t, 'task_phase', m.labelToken)}
           </span>
         ))}
       </div>
@@ -139,7 +147,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
             </div>
             <div className="flex items-center gap-3 typo-caption">
               <span className={`${MILESTONE_TEXT[currentMilestone.color] ?? MILESTONE_TEXT.blue} shrink-0`}>
-                {currentMilestone.label}
+                {tokenLabel(t, 'task_phase', currentMilestone.labelToken)}
               </span>
               <span className="text-foreground truncate flex-1">{detail}</span>
               {isRunning && task?.started_at && (
