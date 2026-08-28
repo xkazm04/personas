@@ -39,22 +39,62 @@ export function summarizeAnswer(
 // Option normalization
 // ---------------------------------------------------------------------------
 
+/**
+ * Coerce an authored option value to the answer string the payload mapping
+ * consumes, or `null` when it cannot be one.
+ *
+ * Only scalars survive. A nested object or array has no string form a user
+ * could have meant — `String({})` is `"[object Object]"`, which used to
+ * render as a selectable card and then get stored verbatim as the answer.
+ * `null`/`undefined`/empty are equally unusable: they produce a blank,
+ * indistinguishable card.
+ */
+function coerceOptionValue(value: unknown): string | null {
+  if (typeof value === 'string') return value.trim() || null;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : null;
+  if (typeof value === 'boolean') return String(value);
+  return null;
+}
+
 /** Templates author both shapes — plain strings OR `{value, label, description}`
  *  objects. Flatten both to a single `QuestionnaireNormalizedOption` so downstream widgets
- *  never need to guess. */
+ *  never need to guess.
+ *
+ *  Templates come from generators as well as by hand, and this is the single
+ *  normalisation door both adoption surfaces pass through, so a malformed
+ *  option is DROPPED here rather than rendered. Shipping it forward would put
+ *  an unpickable card in front of the user and corrupt the stored answer. */
 export function normalizeOptions(raw: unknown[] | undefined): QuestionnaireNormalizedOption[] {
   if (!raw || raw.length === 0) return [];
-  return raw.map((o) => {
+  const dropped: unknown[] = [];
+  const out = raw.flatMap<QuestionnaireNormalizedOption>((o) => {
     if (o && typeof o === 'object') {
       const obj = o as { value?: unknown; label?: unknown; description?: unknown };
-      const value = typeof obj.value === 'string' ? obj.value : String(obj.value ?? '');
-      const label = typeof obj.label === 'string' ? obj.label : value;
+      const value = coerceOptionValue(obj.value);
+      if (value === null) {
+        dropped.push(o);
+        return [];
+      }
+      const label = typeof obj.label === 'string' && obj.label.trim() ? obj.label : value;
       const sublabel = typeof obj.description === 'string' ? obj.description : null;
-      return { value, label, sublabel };
+      return [{ value, label, sublabel }];
     }
-    const s = String(o);
-    return { value: s, label: s, sublabel: null };
+    const s = coerceOptionValue(o);
+    if (s === null) {
+      dropped.push(o);
+      return [];
+    }
+    return [{ value: s, label: s, sublabel: null }];
   });
+  if (dropped.length > 0) {
+    // Surfacing beats swallowing: a template that authors an unusable option
+    // is an authoring defect, and the questionnaire is the only place it shows.
+    console.warn(
+      `[adoption] normalizeOptions dropped ${dropped.length} option(s) with no usable scalar value`,
+      dropped,
+    );
+  }
+  return out;
 }
 
 /** Options resolver for the numeric-keyboard handler + QuestionnaireStackedOptions.
