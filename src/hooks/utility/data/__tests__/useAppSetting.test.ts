@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+
+const { logError } = vi.hoisted(() => ({ logError: vi.fn() }));
+vi.mock("@/lib/log", () => ({
+  createLogger: () => ({ error: logError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
+}));
+
 // Test needs per-call argument inspection and a deferred resolution, which the
 // tauriMock helpers do not expose. Same escape hatch as
 // `src/api/__tests__/settings.test.ts`.
@@ -20,6 +26,26 @@ function bulkCalls() {
 describe("useAppSetting", () => {
   beforeEach(() => {
     resetInvokeMocks();
+    logError.mockReset();
+  });
+
+  it("never logs a failed save's raw error message (it can carry the secret)", async () => {
+    const secret = "sk-live-SUPERSECRET";
+    mockedInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_app_settings_bulk") return { ollama_api_key: null };
+      throw new Error(`rejected value ${secret}`);
+    });
+
+    const { result } = renderHook(() => useAppSetting("ollama_api_key"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    act(() => { result.current.setValue(secret); });
+    await act(async () => { await result.current.save(); });
+
+    expect(logError).toHaveBeenCalledTimes(1);
+    const [, meta] = logError.mock.calls[0] as [string, Record<string, unknown>];
+    expect(meta).toEqual({ key: "ollama_api_key", code: "Error" });
+    expect(JSON.stringify(logError.mock.calls)).not.toContain(secret);
   });
 
   it("loads the stored value for its key", async () => {
