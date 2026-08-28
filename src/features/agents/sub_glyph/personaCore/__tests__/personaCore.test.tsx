@@ -506,6 +506,31 @@ describe("PersonaCoreCodex column order", () => {
     expect(mentality).toBeLessThan(character);
     expect(character).toBeLessThan(configuration);
   });
+
+  it("gives each column its own scroll once they sit side by side", () => {
+    // All three used to share one max-h-[64vh] scroller, so browsing the nine
+    // mentality cards pushed the trait grid off-screen. min-h-0 is part of the
+    // contract: without it a flex child will not shrink, so it never overflows
+    // and the overflow-y-auto is decoration.
+    const core = {
+      state: { traits: [] as string[], disposition: 0.4, conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
+      archetypes: [], loadFailed: false, discardedTraits: null,
+      toggleTrait: () => {}, setDisposition: () => {}, setConflict: () => {},
+      setModel: () => {}, setEffort: () => {}, applyPreset: () => {},
+      retryLoad: () => {}, restoreTraits: () => {},
+    } as unknown as Parameters<typeof PersonaCoreCodex>[0]["core"];
+
+    const { container } = render(<PersonaCoreCodex core={core} />);
+    const outer = container.firstElementChild as HTMLElement;
+    expect(outer.className).toContain("lg:overflow-hidden");
+
+    const columns = [...outer.children] as HTMLElement[];
+    expect(columns.length).toBe(3);
+    for (const col of columns) {
+      expect(col.className).toContain("lg:overflow-y-auto");
+      expect(col.className).toContain("min-h-0");
+    }
+  });
 });
 
 // --------------------------------------------------------------------------

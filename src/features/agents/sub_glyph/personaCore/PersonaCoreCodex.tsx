@@ -18,21 +18,27 @@ import type { PersonaCore } from "./types";
 export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
   const { t, tx } = useTranslation();
   const { state } = core;
+  // One scroller below lg, where the columns stack and scrolling them together
+  // is the only sensible thing. Side by side, each column owns its own scroll:
+  // browsing nine mentality cards used to push the trait grid off-screen
+  // because all three shared a single 64vh scroller. `min-h-0` on each column
+  // is load-bearing -- a flex child defaults to min-height:auto and would
+  // refuse to shrink, so it would never overflow and never scroll.
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-h-[64vh] overflow-y-auto scrollbar-thin pr-1">
+    <div className="flex flex-col lg:flex-row gap-6 max-h-[64vh] overflow-y-auto lg:overflow-hidden scrollbar-thin pr-1">
       {/* Mentality FIRST — a card seeds disposition, conflict style and five
           dominant traits in one click (applyPreset). It used to sit third, so
           the reading order taught the modal backwards: a first-timer worked
           through 20 trait toggles and three tile groups by hand and only then
           met the shortcut that would have done it. Expanded to an equal column
           for the rich persona cards. */}
-      <div className="flex-1 min-w-0 flex flex-col gap-3">
+      <div className="flex-1 min-w-0 flex flex-col gap-3 min-h-0 lg:overflow-y-auto scrollbar-thin lg:pr-2">
         <SectionHeader>{t.agents.core_col_mentality}</SectionHeader>
         <SnapshotColumn core={core} />
       </div>
 
       {/* Character — ordered icon grid (single column) */}
-      <div className="flex-1 min-w-0 flex flex-col gap-3 lg:pl-6 lg:border-l border-card-border/50">
+      <div className="flex-1 min-w-0 flex flex-col gap-3 lg:pl-6 lg:border-l border-card-border/50 min-h-0 lg:overflow-y-auto scrollbar-thin lg:pr-2">
         <div className="flex items-baseline justify-between">
           <SectionHeader>{t.agents.core_col_character}</SectionHeader>
           <span className="flex items-center gap-2">
@@ -64,7 +70,7 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
       </div>
 
       {/* Configuration — icon tiles + meter */}
-      <div className="flex-1 min-w-0 flex flex-col gap-4 lg:pl-6 lg:border-l border-card-border/50">
+      <div className="flex-1 min-w-0 flex flex-col gap-4 lg:pl-6 lg:border-l border-card-border/50 min-h-0 lg:overflow-y-auto scrollbar-thin lg:pr-2">
         <SectionHeader>{t.agents.core_col_configuration}</SectionHeader>
         <div className="rounded-card border border-card-border bg-secondary/20 p-3">
           <PolaritySlider
