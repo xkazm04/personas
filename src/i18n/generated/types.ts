@@ -16442,6 +16442,10 @@ export type Translations = {
       dq_title: string;
       dq_label: string;
       leaderboard_subtitle: string;
+      leaderboard_low_sample: string;
+      leaderboard_low_sample_title: string;
+      leaderboard_ci_title: string;
+      leaderboard_not_separated: string;
       capture_winning_insight: string;
       capture_insight_desc: string;
       insight_placeholder: string;
