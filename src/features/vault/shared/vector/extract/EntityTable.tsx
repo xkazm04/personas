@@ -2,9 +2,7 @@ import { ScanLine } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KbEntity } from '@/api/vault/database/vectorKb';
-
-/** Passages below this confidence were read off mostly-image pages. */
-const PARTIAL_CONFIDENCE = 0.99;
+import { isPartialExtraction } from '../partialConfidence';
 
 /**
  * The model may return a nested object or an array for an attribute. `String(v)`
@@ -48,7 +46,7 @@ export function EntityTable({ entities }: { entities: KbEntity[] }) {
       </thead>
       <tbody>
         {entities.map((e) => {
-          const partial = e.extractionConfidence < PARTIAL_CONFIDENCE;
+          const partial = isPartialExtraction(e.extractionConfidence);
           const attrs = e.attributes && typeof e.attributes === 'object' ? e.attributes : {};
           return (
             <tr key={e.id} className="typo-body text-foreground border-b border-border/15 align-top">
