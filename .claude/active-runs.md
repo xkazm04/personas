@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-08-28 19:58]**
+- **Paths:** `src/**` · `.claude/skills/scan-sweep/**`
+- **Status:** started
+
 - **[2026-08-28 15:30]**
 - **Paths:** `src/**` · `src-tauri/src/engine/dispatch.rs`
 - **Status:** started
@@ -489,6 +493,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### net-delta-triage — net-delta auto-accept rule in scan-sweep; triage remaining backlog
 
 ### backlog-exec-240 — execute 149 auto-approved wave findings via subagents; backlog 91 for triage
 
