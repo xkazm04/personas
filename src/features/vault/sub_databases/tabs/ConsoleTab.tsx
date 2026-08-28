@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Play, Shield, ShieldOff } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SqlEditor } from '../SqlEditor';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
@@ -64,15 +64,22 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
         />
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          {/* Busy state belongs to the control the user pressed: Button renders a
+              REAL spinner and sets aria-busy. feedback/LoadingSpinner renders null,
+              so the old ternary deleted the Play icon and put nothing in its place. */}
+          <Button
+            variant="accent"
+            accentColor="emerald"
+            size="md"
             onClick={handleExecute}
-            disabled={executing || !query.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={!query.trim()}
+            loading={executing}
+            loadingLabel={db.running}
+            icon={<Play className="w-3.5 h-3.5" />}
+            className="rounded-modal typo-body"
           >
-            {executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-            {executing ? db.running : db.run_query}
-          </button>
+            {db.run_query}
+          </Button>
           <span className="typo-body text-foreground">{db.ctrl_enter}</span>
           <div className="ml-auto flex items-center gap-2">
             <button

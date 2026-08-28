@@ -1,5 +1,5 @@
 import { Play, Wand2, Save, Check, Shield, ShieldOff, X } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
 
@@ -45,21 +45,21 @@ export function QueryToolbar({
       </span>
       <ConnectorCapabilityNote serviceType={serviceType} />
 
-      <button
-        type="button"
+      {/* Busy state belongs to the control the user pressed: Button renders a REAL
+          spinner and sets aria-busy. feedback/LoadingSpinner renders null, so the
+          old ternary deleted the Save icon and left the button blank mid-save. */}
+      <Button
+        variant={saveState === 'saved' ? 'accent' : 'ghost'}
+        accentColor={saveState === 'saved' ? 'emerald' : undefined}
+        size="sm"
         onClick={onSave}
-        disabled={saveState === 'saving'}
-        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all duration-300 ${
-          saveState === 'saved'
-            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25 shadow-elevation-1 shadow-emerald-500/10'
-            : saveState === 'saving'
-              ? 'text-foreground border-transparent'
-              : 'text-foreground hover:text-foreground/70 hover:bg-secondary/40 border-transparent hover:border-primary/10'
-        }`}
+        loading={saveState === 'saving'}
+        loadingLabel={db.saving}
+        icon={saveState === 'saved' ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+        className="rounded-modal typo-body duration-300"
       >
-        {saveState === 'saved' ? <Check className="w-3 h-3" /> : saveState === 'saving' ? <LoadingSpinner size="xs" /> : <Save className="w-3 h-3" />}
-        {saveState === 'saved' ? db.saved : saveState === 'saving' ? db.saving : db.save}
-      </button>
+        {saveState === 'saved' ? db.saved : db.save}
+      </Button>
 
       {executing ? (
         <button
@@ -82,15 +82,21 @@ export function QueryToolbar({
         </button>
       )}
 
-      <button
-        type="button"
+      {/* Same reason as Save above: the AI-run icon used to vanish for the whole
+          debug round-trip, which is the longest wait in this toolbar. */}
+      <Button
+        variant="accent"
+        accentColor="violet"
+        size="sm"
         onClick={onAiRun}
-        disabled={isAiRunning || !editorValue.trim()}
-        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-elevation-1 shadow-violet-500/5"
+        disabled={!editorValue.trim()}
+        loading={isAiRunning}
+        loadingLabel={db.debugging}
+        icon={<Wand2 className="w-3 h-3" />}
+        className="rounded-modal typo-body px-3.5 py-1.5 shadow-elevation-1 shadow-violet-500/5"
       >
-        {isAiRunning ? <LoadingSpinner size="xs" /> : <Wand2 className="w-3 h-3" />}
-        {isAiRunning ? db.debugging : db.ai_run}
-      </button>
+        {db.ai_run}
+      </Button>
 
       <button
         type="button"
