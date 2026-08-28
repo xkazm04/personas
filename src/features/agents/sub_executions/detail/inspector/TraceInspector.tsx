@@ -52,6 +52,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   const e = t.agents.executions;
   const {
     trace,
+    traceIsSynthetic,
     unifiedTrace,
     loading,
     error,
@@ -126,8 +127,11 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   // TraceSummary requires a full ExecutionTrace shape (input_tokens / evicted_span_count).
   // When only the live pipelineTrace is available (no backend trace yet), skip the
-  // summary panel rather than fabricating fields.
-  const showSummary = trace !== null;
+  // summary panel rather than fabricating fields — and the same rule covers the
+  // SHELL `useTraceData` synthesizes for a still-running execution: it exists so
+  // live spans have somewhere to land, and it has measured nothing, so it must
+  // not paint a duration/cost/token strip.
+  const showSummary = trace !== null && !traceIsSynthetic;
 
   return (
     <div className="space-y-4">
