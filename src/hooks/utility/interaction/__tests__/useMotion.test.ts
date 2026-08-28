@@ -1,6 +1,52 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import type { Variants } from 'framer-motion';
-import { toReducedVariants } from '../useMotion';
+import { toReducedVariants, useReducedMotion } from '../useMotion';
+
+describe('useReducedMotion', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-motion');
+  });
+
+  it('is false when neither signal asks for reduced motion', () => {
+    const { result } = renderHook(() => useReducedMotion());
+    expect(result.current).toBe(false);
+  });
+
+  it("honours the app's own Reduce Motion setting, not just the OS media query", () => {
+    // `<html data-motion="reduce">` is what themeStore projects for the
+    // Appearance toggle. globals.css honoured it; this hook did not, so every
+    // framer-motion entrance, stagger and spring gated on it kept animating at
+    // full speed for a user who had explicitly turned motion off in the app.
+    document.documentElement.setAttribute('data-motion', 'reduce');
+    const { result } = renderHook(() => useReducedMotion());
+    expect(result.current).toBe(true);
+  });
+
+  it('reacts when the setting is toggled while mounted', async () => {
+    const { result } = renderHook(() => useReducedMotion());
+    expect(result.current).toBe(false);
+
+    await act(async () => {
+      document.documentElement.setAttribute('data-motion', 'reduce');
+      // MutationObserver callbacks are delivered as a microtask.
+      await Promise.resolve();
+    });
+    expect(result.current).toBe(true);
+
+    await act(async () => {
+      document.documentElement.removeAttribute('data-motion');
+      await Promise.resolve();
+    });
+    expect(result.current).toBe(false);
+  });
+
+  it('ignores any other value of the attribute', () => {
+    document.documentElement.setAttribute('data-motion', 'full');
+    const { result } = renderHook(() => useReducedMotion());
+    expect(result.current).toBe(false);
+  });
+});
 
 describe('toReducedVariants', () => {
   it('strips translate/scale/rotate movement but keeps opacity', () => {

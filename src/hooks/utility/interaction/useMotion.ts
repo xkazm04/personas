@@ -5,14 +5,53 @@ const MQ = typeof window !== 'undefined' && typeof window.matchMedia === 'functi
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
   : null;
 
-function subscribe(cb: () => void) {
-  MQ?.addEventListener('change', cb);
-  return () => MQ?.removeEventListener('change', cb);
+/**
+ * The app's SECOND reduced-motion signal, and the one this hook used to miss.
+ *
+ * There are two: the OS media query above, and the in-app Appearance toggle,
+ * which `themeStore` projects onto the document as `<html data-motion="reduce">`.
+ * `globals.css` honours both — but CSS can only reach CSS. Every framer-motion
+ * entrance, stagger and spring gated on this hook kept running at full speed
+ * for a user who had turned Reduce Motion on in the app's own settings, so the
+ * setting silently covered the CSS half of the app's animation and not the
+ * JavaScript half.
+ */
+const MOTION_ATTR = 'data-motion';
+
+function appReduceMotion(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    document.documentElement.getAttribute(MOTION_ATTR) === 'reduce'
+  );
 }
 
-function getSnapshot() { return MQ?.matches ?? false; }
+function subscribe(cb: () => void) {
+  MQ?.addEventListener('change', cb);
 
-/** Drop-in replacement for framer-motion's `useReducedMotion`. */
+  // Attribute-filtered and scoped to the one element that carries it, so this
+  // observes exactly the toggle and nothing else in the tree.
+  let observer: MutationObserver | null = null;
+  if (typeof document !== 'undefined' && typeof MutationObserver === 'function') {
+    observer = new MutationObserver(cb);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: [MOTION_ATTR],
+    });
+  }
+
+  return () => {
+    MQ?.removeEventListener('change', cb);
+    observer?.disconnect();
+  };
+}
+
+function getSnapshot() { return appReduceMotion() || (MQ?.matches ?? false); }
+
+/**
+ * Drop-in replacement for framer-motion's `useReducedMotion`, reading BOTH of
+ * the app's reduced-motion signals: the OS media query and the in-app
+ * Appearance toggle (`<html data-motion="reduce">`). Either one is enough.
+ */
 export function useReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
@@ -47,9 +86,10 @@ const REDUCED_MOTION: MotionConfig = {
 };
 
 /**
- * Returns motion configuration that respects the user's `prefers-reduced-motion`
- * OS preference. Use the returned values in Framer Motion `transition` props
- * or to conditionally skip animation logic.
+ * Returns motion configuration that respects the user's reduced-motion
+ * preference from either source — the `prefers-reduced-motion` OS setting or
+ * the app's own Appearance toggle. Use the returned values in Framer Motion
+ * `transition` props or to conditionally skip animation logic.
  *
  * For most components, wrapping the app in `<MotionConfig reducedMotion="user">`
  * is sufficient. Use this hook when you need programmatic control (e.g.
