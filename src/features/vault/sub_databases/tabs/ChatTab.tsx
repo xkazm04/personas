@@ -6,9 +6,11 @@ import type { ConversationTurn, NlQuerySnapshot } from '@/api/vault/database/nlQ
 import { ChatMessages, type ChatMessage } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { MutationConfirmBanner } from './MutationConfirmBanner';
+import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
 import { extractErrorMessage } from '../safeModeUtils';
 import { silentCatch } from '@/lib/silentCatch';
+import { trackInteraction } from '@/lib/sentry';
 import { getNlDatabaseDialect } from '../introspectionQueries';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -16,6 +18,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 // stuck snapshot), stop polling after this long instead of locking the chat
 // input forever.
 const NL_QUERY_POLL_TIMEOUT_MS = 60_000;
+
+/**
+ * Telemetry category for the NL-query lane. This is the most expensive surface
+ * in the database console — one model call per question — and was the least
+ * observable: generation, failure, the 60s timeout, and whether the generated
+ * statement was ever actually RUN all resolved into local component state and
+ * nothing else, so "does the AI lane produce SQL people run?" had no answer.
+ *
+ * Labels are fixed enumerations only. No question text, no generated SQL, no
+ * connector identity ever leaves the app through here.
+ */
+const NL_TELEMETRY = 'db_nl_query';
 
 
 interface ChatTabProps {
@@ -105,6 +119,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
           setActiveQueryId(null);
           setGenerating(false);
           cancelNlQuery(queryId).catch(silentCatch('ChatTab:cancelNlQueryTimeout'));
+          trackInteraction(NL_TELEMETRY, 'generation_timeout');
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsg.id
@@ -117,6 +132,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         try {
           const snapshot: NlQuerySnapshot = await getNlQuerySnapshot(queryId);
           if (snapshot.status === 'completed') {
+            trackInteraction(NL_TELEMETRY, 'generated', snapshot.generated_sql ? 'with_sql' : 'no_sql');
             clearInterval(pollRef.current);
             pollRef.current = undefined;
             setActiveQueryId(null);
@@ -129,6 +145,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
               ),
             );
           } else if (snapshot.status === 'failed') {
+            trackInteraction(NL_TELEMETRY, 'generation_failed');
             clearInterval(pollRef.current);
             pollRef.current = undefined;
             setActiveQueryId(null);
@@ -144,6 +161,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         } catch (err) { silentCatch("features/vault/sub_databases/tabs/ChatTab:catch1")(err); }
       }, 800);
     } catch (err) {
+      trackInteraction(NL_TELEMETRY, 'generation_failed', 'start');
       setGenerating(false);
       setActiveQueryId(null);
       setMessages((prev) =>
@@ -158,6 +176,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
 
   const handleCancel = useCallback(() => {
     if (activeQueryId) {
+      trackInteraction(NL_TELEMETRY, 'generation_cancelled');
       cancelNlQuery(activeQueryId).catch(silentCatch('ChatTab:cancelNlQuery'));
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
       setActiveQueryId(null);
@@ -175,11 +194,17 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     const msgId = runTargetMsgIdRef.current;
     if (!msgId) return;
     setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, status: 'executing' as const } : m)));
+    // The single question this lane's ROI turns on: was the generated statement
+    // actually run, and did it work? `mutation` vs `read` is the only detail
+    // carried — never the statement itself.
+    const kind = allowMutation ? 'mutation' : 'read';
     try {
       const result = await executeDbQuery(credentialId, sql, undefined, allowMutation);
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result, error: undefined, status: 'done' as const } : m)));
+      trackInteraction(NL_TELEMETRY, 'executed', kind);
     } catch (err) {
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result: undefined, error: extractErrorMessage(err), status: 'done' as const } : m)));
+      trackInteraction(NL_TELEMETRY, 'execute_failed', kind);
     }
   }, [credentialId, executeDbQuery]);
 
@@ -214,10 +239,31 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     [handleSubmit],
   );
 
-  const suggestions = getSuggestions(language);
+  const suggestions = language === 'redis'
+    ? [t.vault.databases.suggestion_redis_keys, t.vault.databases.suggestion_redis_recent]
+    : [
+        t.vault.databases.suggestion_sql_tables,
+        t.vault.databases.suggestion_sql_recent,
+        t.vault.databases.suggestion_sql_nulls,
+        t.vault.databases.suggestion_sql_duplicates,
+      ];
 
   return (
     <div className="flex flex-col h-full min-h-[500px]">
+      {/* The same capability chrome the saved-query toolbar carries
+          (QueryToolbar.tsx:46). The chat lane offers a Run button on every
+          connector — including key-value and introspection-only ones that
+          cannot execute the statement the model just wrote — and had nothing
+          at all that said so. */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/8 bg-secondary/5 shrink-0">
+        {/* No font-* utility here: typography.css is unlayered, so a weight
+            utility beside a typo-* token is silently discarded (the toolbar's
+            copy of this chip still carries the dead font-medium). */}
+        <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8">
+          {language}
+        </span>
+        <ConnectorCapabilityNote serviceType={serviceType} />
+      </div>
       <ChatMessages
         messages={messages}
         scrollRef={scrollRef}
@@ -253,8 +299,3 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   );
 }
 
-function getSuggestions(lang: string): string[] {
-  return lang === 'redis'
-    ? ['Show all keys matching "user:*"', 'Get the 10 most recent entries']
-    : ['Show me all tables and their row counts', 'Find the 10 most recent records', 'List columns with null values', 'Show duplicate entries'];
-}

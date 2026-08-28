@@ -33,7 +33,12 @@ function stripSqlLiterals(s: string): string {
     .replace(/"(?:""|[^"])*"/g, '');
 }
 
-/** Returns `true` if the query looks like it mutates data. */
+/**
+ * Returns `true` if the query looks like it mutates data.
+ *
+ * Biased toward `true`: an unrecognised or unparseable statement is treated as a
+ * mutation so the confirm banner is offered, rather than silently executed.
+ */
 export function isMutationQuery(queryText: string): boolean {
   let s = queryText.trim();
 
@@ -52,8 +57,16 @@ export function isMutationQuery(queryText: string): boolean {
     }
   }
 
+  // Fail CLOSED on anything this classifier cannot parse. Convex is a
+  // first-class language in these editors and a Convex statement is a JSON body
+  // (`{"path": "messages:remove", "args": {...}}`), so it has no leading
+  // keyword at all. Returning false here classified every Convex call — remove
+  // and destroy included — as a read: no confirm banner, dispatched with
+  // allowMutation:false. Every other unknown shape in this pipeline already
+  // fails closed; this was the one hole. The backend guard still has the final
+  // say, so the cost of a false positive is one extra confirmation.
   const match = s.match(/^([A-Za-z]+)/);
-  if (!match?.[1]) return false;
+  if (!match?.[1]) return true;
   const leading = match[1].toUpperCase();
   if (!READ_ONLY_KEYWORDS.has(leading)) return true;
 

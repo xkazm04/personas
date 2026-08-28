@@ -74,7 +74,7 @@ export function ColumnList({
                 {!isApi && (
                   <td className="px-3 py-1.5 text-center">
                     {col.is_nullable === 'YES' ? (
-                      <span className="text-foreground">yes</span>
+                      <span className="text-foreground">{db.column_nullable_yes}</span>
                     ) : (
                       <span className="text-amber-400/70 font-medium">{db.not_null}</span>
                     )}
