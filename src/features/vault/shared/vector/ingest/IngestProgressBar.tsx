@@ -11,17 +11,37 @@ interface IngestProgressBarProps {
   onComplete: () => void;
 }
 
+/**
+ * Payload of `kb:ingest_error`. NOT a `KbIngestProgress` — the four emit sites
+ * in `src-tauri/src/commands/credentials/vector_kb.rs` (the ingest and reindex
+ * error branches and both panic guards) construct a bare
+ * `json!({ "jobId": …, "error": … })`, so there is no binding to import and this
+ * shape is the invariant those four sites hold.
+ */
+interface KbIngestErrorEvent {
+  jobId: string;
+  error: string;
+}
+
 export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const [progress, setProgress] = useState<KbIngestProgress | null>(null);
   const [done, setDone] = useState(false);
+  // Set only by `kb:ingest_error`. Until this bar subscribed to that channel, a
+  // job that died at the TOP level — `update_kb_counters` failing before the
+  // terminal emit, a reindex failing on `embed_batch`, or the task panicking —
+  // reported on a channel with no listener anywhere in the app. `onComplete`
+  // never fired, so the bar sat on "Preparing ingestion…" forever and the
+  // document list was never refreshed. Closing the modal was the only escape.
+  const [failure, setFailure] = useState<string | null>(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
   useEffect(() => {
     let unlisten1: (() => void) | undefined;
     let unlisten2: (() => void) | undefined;
+    let unlisten3: (() => void) | undefined;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const setup = async () => {
@@ -35,8 +55,23 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
         if (event.payload.jobId === jobId) {
           setProgress(event.payload);
           setDone(true);
-          // Delay onComplete slightly so the user sees the final state
-          timeoutId = setTimeout(() => onCompleteRef.current(), 1500);
+          // A FAILURE also arrives on the complete channel — `ingest_files`
+          // reports "all N documents failed" and the partial "N of M failed"
+          // there. Auto-dismissing those unmounted the bar 1.5s later, and the
+          // bar was the only place that message existed: a red flash, then an
+          // empty list and no explanation. Success still auto-dismisses;
+          // a failure now waits to be read and dismissed.
+          const failed = event.payload.status === 'error' || !!event.payload.error;
+          if (!failed) {
+            timeoutId = setTimeout(() => onCompleteRef.current(), 1500);
+          }
+        }
+      });
+
+      unlisten3 = await listen<KbIngestErrorEvent>(EventName.KB_INGEST_ERROR, (event) => {
+        if (event.payload.jobId === jobId) {
+          setFailure(event.payload.error || '');
+          setDone(true);
         }
       });
     };
@@ -45,6 +80,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
     return () => {
       unlisten1?.();
       unlisten2?.();
+      unlisten3?.();
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [jobId]);
@@ -53,7 +89,9 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
     ? Math.round((progress.documentsDone / progress.documentsTotal) * 100)
     : 0;
 
-  const hasError = !!progress && (progress.status === 'error' || !!progress.error);
+  const hasError =
+    failure !== null || (!!progress && (progress.status === 'error' || !!progress.error));
+  const errorText = failure || progress?.error || null;
 
   return (
     <div className="space-y-2">
@@ -71,10 +109,10 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
           aria-live="polite"
           className={`flex-1 truncate ${hasError ? 'text-red-400' : 'text-foreground'}`}
         >
-          {!progress
+          {hasError
+            ? (errorText || sh.ingestion_failed)
+            : !progress
             ? sh.preparing_ingestion
-            : hasError
-            ? (progress.error || sh.ingestion_failed)
             : done
             ? tx(sh.ingestion_done, { chunks: progress.chunksCreated, docs: progress.documentsDone })
             : progress.currentFile
@@ -82,10 +120,21 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
             : sh.processing}
         </span>
 
-        {progress && (
+        {progress && !hasError && (
           <span className="typo-caption text-foreground shrink-0">
             {tx(sh.file_progress, { done: progress.documentsDone, total: progress.documentsTotal })}
           </span>
+        )}
+
+        {/* The bar no longer clears itself on failure, so it needs a way out. */}
+        {hasError && (
+          <button
+            type="button"
+            onClick={() => onCompleteRef.current()}
+            className="typo-caption shrink-0 px-2 py-0.5 rounded-card border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            {t.common.dismiss}
+          </button>
         )}
       </div>
 
