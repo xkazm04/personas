@@ -7275,6 +7275,8 @@
       "resolve_failed_toast": "Impossible de régler le conflit",
       "detected": "{count} conflits détectés",
       "detected_one": "{count} conflit détecté",
+      "scanned_scope": "parmi les {count} mémorisations les plus récentes",
+      "none_in_scanned": "Aucun conflit parmi les {count} mémorisations les plus récentes",
       "count_contradiction": "{count} contradictions",
       "count_contradiction_one": "{count} contradiction",
       "count_duplicate": "{count} doublons",

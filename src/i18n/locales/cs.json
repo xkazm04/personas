@@ -7275,6 +7275,8 @@
       "resolve_failed_toast": "Konflikt se nepodařilo vyřešit",
       "detected": "Nalezeno {count} konfliktů",
       "detected_one": "Nalezen {count} konflikt",
+      "scanned_scope": "v {count} nejnovějších vzpomínkách",
+      "none_in_scanned": "V {count} nejnovějších vzpomínkách nejsou žádné konflikty",
       "count_contradiction": "{count} rozporů",
       "count_contradiction_one": "{count} rozpor",
       "count_duplicate": "{count} duplicit",

@@ -973,6 +973,8 @@
     "resolve_failed_toast": "Konflikt konnte nicht geklärt werden",
     "detected": "{count} Konflikte erkannt",
     "detected_one": "{count} Konflikt erkannt",
+    "scanned_scope": "in den {count} neuesten Erinnerungen",
+    "none_in_scanned": "Keine Konflikte in den {count} neuesten Erinnerungen",
     "count_contradiction": "{count} Widersprüche",
     "count_contradiction_one": "{count} Widerspruch",
     "count_duplicate": "{count} Duplikate",

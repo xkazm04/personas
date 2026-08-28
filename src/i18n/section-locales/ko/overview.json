@@ -973,6 +973,8 @@
     "resolve_failed_toast": "충돌을 처리하지 못했습니다",
     "detected": "충돌 {count}건 발견",
     "detected_one": "충돌 {count}건 발견",
+    "scanned_scope": "최근 메모리 {count}건 중",
+    "none_in_scanned": "최근 메모리 {count}건에는 충돌이 없습니다",
     "count_contradiction": "모순 {count}건",
     "count_contradiction_one": "모순 {count}건",
     "count_duplicate": "중복 {count}건",

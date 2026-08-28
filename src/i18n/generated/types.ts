@@ -7745,6 +7745,8 @@ export type Translations = {
       resolve_failed_toast: string;
       detected: string;
       detected_one: string;
+      scanned_scope: string;
+      none_in_scanned: string;
       count_contradiction: string;
       count_contradiction_one: string;
       count_duplicate: string;

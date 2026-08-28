@@ -7275,6 +7275,8 @@
       "resolve_failed_toast": "تعذّرت معالجة التعارض",
       "detected": "تم رصد {count} تعارضات",
       "detected_one": "تم رصد تعارض واحد ({count})",
+      "scanned_scope": "ضمن أحدث {count} ذكرى",
+      "none_in_scanned": "لا توجد تعارضات ضمن أحدث {count} ذكرى",
       "count_contradiction": "{count} تناقضات",
       "count_contradiction_one": "{count} تناقض",
       "count_duplicate": "{count} تكرارات",

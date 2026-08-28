@@ -7739,6 +7739,8 @@
       "resolve_failed_toast": "Failed to resolve conflict",
       "detected": "{count} conflicts detected",
       "detected_one": "{count} conflict detected",
+      "scanned_scope": "in the {count} most recent memories",
+      "none_in_scanned": "No conflicts in the {count} most recent memories",
       "count_contradiction": "{count} contradictions",
       "count_contradiction_one": "{count} contradiction",
       "count_duplicate": "{count} duplicates",

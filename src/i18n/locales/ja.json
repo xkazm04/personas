@@ -7275,6 +7275,8 @@
       "resolve_failed_toast": "矛盾を解消できませんでした",
       "detected": "{count} 件の矛盾を検出",
       "detected_one": "{count} 件の矛盾を検出",
+      "scanned_scope": "最新 {count} 件のメモリ内",
+      "none_in_scanned": "最新 {count} 件のメモリに矛盾はありません",
       "count_contradiction": "{count} 件の相反",
       "count_contradiction_one": "{count} 件の相反",
       "count_duplicate": "{count} 件の重複",

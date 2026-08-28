@@ -973,6 +973,8 @@
     "resolve_failed_toast": "टकराव सुलझाया नहीं जा सका",
     "detected": "{count} टकराव मिले",
     "detected_one": "{count} टकराव मिला",
+    "scanned_scope": "हाल की {count} स्मृतियों में",
+    "none_in_scanned": "हाल की {count} स्मृतियों में कोई टकराव नहीं",
     "count_contradiction": "{count} विरोधाभास",
     "count_contradiction_one": "{count} विरोधाभास",
     "count_duplicate": "{count} प्रतिलिपियाँ",

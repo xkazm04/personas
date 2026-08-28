@@ -7275,6 +7275,8 @@
       "resolve_failed_toast": "Gagal menyelesaikan konflik",
       "detected": "{count} konflik terdeteksi",
       "detected_one": "{count} konflik terdeteksi",
+      "scanned_scope": "dalam {count} memori terbaru",
+      "none_in_scanned": "Tidak ada konflik dalam {count} memori terbaru",
       "count_contradiction": "{count} pertentangan",
       "count_contradiction_one": "{count} pertentangan",
       "count_duplicate": "{count} duplikat",
