@@ -509,6 +509,65 @@ describe("PersonaCoreCodex column order", () => {
 });
 
 // --------------------------------------------------------------------------
+// Two a11y contracts: mutually-exclusive choices vs a genuine toggle.
+// --------------------------------------------------------------------------
+import { ConflictTiles, EffortMeter, ModelTiles } from "../ConfigTiles";
+
+describe("config tile semantics", () => {
+  const makeCore = (over: Record<string, unknown> = {}) => ({
+    state: { model: "sonnet", effort: "medium", conflictStyle: null, traits: [] as string[] },
+    setModel: vi.fn(), setEffort: vi.fn(), setConflict: vi.fn(),
+    ...over,
+  } as unknown as Parameters<typeof ModelTiles>[0]["core"]);
+
+  it("announces model as one choice with a current value, not three toggles", () => {
+    // aria-pressed told a screen reader these were independent toggles.
+    const { container } = render(<ModelTiles core={makeCore()} />);
+    expect(container.querySelectorAll('[role="radiogroup"]').length).toBe(1);
+    const radios = container.querySelectorAll('[role="radio"]');
+    expect(radios.length).toBe(MODEL_TIERS.length);
+    expect(container.querySelectorAll("[aria-pressed]").length).toBe(0);
+
+    const checked = [...radios].filter((r) => r.getAttribute("aria-checked") === "true");
+    expect(checked.length).toBe(1);
+  });
+
+  it("keeps exactly one model tile in the tab order", () => {
+    const { container } = render(<ModelTiles core={makeCore()} />);
+    const stops = [...container.querySelectorAll('[role="radio"]')]
+      .filter((r) => r.getAttribute("tabindex") === "0");
+    expect(stops.length).toBe(1);
+  });
+
+  it("moves the model selection with the arrow keys", () => {
+    const setModel = vi.fn();
+    const { container } = render(<ModelTiles core={makeCore({ setModel })} />);
+    const radios = [...container.querySelectorAll('[role="radio"]')];
+    const current = radios.find((r) => r.getAttribute("aria-checked") === "true")!;
+
+    fireEvent.keyDown(current, { key: "ArrowRight" });
+    expect(setModel).toHaveBeenCalledTimes(1);
+    const next = MODEL_TIERS[MODEL_TIERS.findIndex((m) => m.id === "sonnet") + 1]!.id;
+    expect(setModel).toHaveBeenCalledWith(next);
+  });
+
+  it("announces effort the same way", () => {
+    const { container } = render(<EffortMeter core={makeCore()} />);
+    expect(container.querySelectorAll('[role="radiogroup"]').length).toBe(1);
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(EFFORT_TIERS.length);
+    expect(container.querySelectorAll("[aria-pressed]").length).toBe(0);
+  });
+
+  it("leaves conflict style as a toggle, because it genuinely is one", () => {
+    // Clicking the active style CLEARS it (setConflict's same-id handler),
+    // which is toggle behaviour and would be a lie under radio semantics.
+    const { container } = render(<ConflictTiles core={makeCore()} />);
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(0);
+    expect(container.querySelectorAll("[aria-pressed]").length).toBe(CONFLICT_STYLES.length);
+  });
+});
+
+// --------------------------------------------------------------------------
 // What the surface reports about itself.
 // --------------------------------------------------------------------------
 import { personaCoreSelectionLabel } from "../usePersonaCore";
