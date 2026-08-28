@@ -12674,6 +12674,11 @@
       "cancelled": "キャンセル済み",
       "error": "エラー"
     },
+    "simple": {
+      "good": "良好",
+      "warning": "要注意",
+      "problem": "異常"
+    },
     "event": {
       "pending": "保留中",
       "processing": "処理中",

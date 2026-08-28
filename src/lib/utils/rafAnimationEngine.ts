@@ -33,7 +33,8 @@ const MASS = 1;
 const REST_THRESHOLD = 0.01; // value + velocity both below this → settled
 
 /**
- * Whether the user asked for reduced motion, read live at each target change.
+ * Whether the user asked for reduced motion, read live — at each target change
+ * AND once per frame of the running loop.
  *
  * The preference is honored HERE rather than in each caller: this engine is the
  * single place every scripted spring in the app runs, so a component that
@@ -42,10 +43,18 @@ const REST_THRESHOLD = 0.01; // value + velocity both below this → settled
  * that choice themselves — what this guard removes is the travel, which is the
  * part the preference is about.
  *
- * Deliberately not cached: the preference can change mid-session, and the query
- * is only evaluated when a target actually moves. Guarded for environments
- * without `matchMedia` (jsdom without the shim, SSR), where it reads as "no
- * preference expressed" and full motion is correct.
+ * It used to be sampled at target-set time ONLY, which is the one moment a
+ * user who is bothered by the motion has not yet reacted to it: enabling the
+ * preference mid-flight left the current travel running to completion, and an
+ * entry whose target never moved again never re-read it at all. The loop is the
+ * only place that observes every animating entry on every frame, so that is
+ * where the question belongs.
+ *
+ * Deliberately not cached: the preference can change mid-session, and one
+ * `matchMedia` read per frame (not per entry, and only while something is
+ * actually animating) is far cheaper than the physics it gates. Guarded for
+ * environments without `matchMedia` (jsdom without the shim, SSR), where it
+ * reads as "no preference expressed" and full motion is correct.
  */
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -69,6 +78,26 @@ function tick(now: number) {
   // Cap dt to avoid huge jumps after tab-switch
   const dt = Math.min((now - lastTime) / 1000, 0.064);
   lastTime = now;
+
+  // One decider, read once per frame, before any physics runs. A user who turns
+  // reduced motion on mid-flight gets the resolved end state on the very next
+  // frame rather than having to watch the current travel finish.
+  if (prefersReducedMotion()) {
+    for (const [key, entry] of entries) {
+      if (entry.current === entry.target && entry.velocity === 0) continue;
+      entry.current = entry.target;
+      entry.velocity = 0;
+      try {
+        entry.write(entry.target);
+      } catch (err) {
+        entries.delete(key);
+        silentCatch('lib/utils/rafAnimationEngine:write')(err);
+      }
+    }
+    rafId = null;
+    lastTime = null;
+    return;
+  }
 
   let anyActive = false;
 

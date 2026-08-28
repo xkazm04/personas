@@ -25,12 +25,25 @@ export function classifyLine(line: string): TerminalLineStyle {
   return 'text';
 }
 
+/**
+ * Line style → Tailwind classes for the plain-text renderer.
+ *
+ * Every style carries real classes. `summary` used to map to `''`, which was a
+ * silent "handled elsewhere" — and it is only *sometimes* handled elsewhere:
+ * `TerminalBody` draws a structured card from `parseSummaryLine` only when its
+ * `showSummaryLines` prop is set AND the payload parses. Every other case (the
+ * prop off, a malformed payload, any other consumer) fell through to this map
+ * and rendered a `[SUMMARY]{…}` line with no styling at all, while the
+ * classifier reported it as its own category. Run metadata that is emphatic but
+ * not colour-coded — a summary reports success and failure alike — is the right
+ * fallback.
+ */
 export const TERMINAL_STYLE_MAP: Record<TerminalLineStyle, string> = {
   meta: 'text-foreground italic',
   tool: 'text-cyan-400/70',
   error: 'text-red-400/80 font-medium',
   status: 'text-emerald-400/70 font-semibold',
-  summary: '',
+  summary: 'text-foreground font-semibold',
   text: 'text-foreground',
   code: 'text-violet-300/80 font-mono',
   info: 'text-blue-400/70 font-medium',

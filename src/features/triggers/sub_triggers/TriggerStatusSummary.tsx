@@ -1,6 +1,7 @@
 import type { PersonaTrigger } from '@/lib/types/types';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getTriggerCategoryMeta, getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TriggerStatusSummaryProps {
   trigger: PersonaTrigger;
@@ -8,6 +9,7 @@ interface TriggerStatusSummaryProps {
 
 /** Shared type icon + config badge summary for collapsed trigger rows and list overview. */
 export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
+  const { t } = useTranslation();
   const meta = TRIGGER_TYPE_META[trigger.trigger_type] || DEFAULT_TRIGGER_META;
   const Icon = meta.Icon;
   const colorClass = meta.color;
@@ -49,7 +51,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
         </span>
       )}
       <span className={`typo-body font-medium ${colorClass}`}>
-        {getTriggerTypeLabel(trigger.trigger_type)}
+        {getTriggerTypeLabel(trigger.trigger_type, t)}
       </span>
       {parts.length > 0 && (
         <span className="typo-body text-foreground truncate">

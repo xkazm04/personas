@@ -39,16 +39,49 @@ export function safeJsonParse<T = unknown>(
   }
 }
 
-/** Check whether a raw JSON string parses into a non-empty array or object. */
+function isNonEmptyPlainObject(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.keys(value as Record<string, unknown>).length > 0
+  );
+}
+
+/**
+ * Check whether a raw JSON string parses into a non-empty array or object.
+ *
+ * A parse failure is `false` for BOTH shapes. The catch used to read
+ * `type === 'object' ? !!raw : false`, so the same malformed string answered
+ * "yes, that's object content" and "no, that's not array content" — the `type`
+ * parameter selecting whether to trust the input rather than which shape to look
+ * for. That was one caller's requirement ("a non-empty raw blob still renders")
+ * papered into the shared predicate, where every other caller inherited it as a
+ * masked parse failure. The requirement now has its own name:
+ * {@link hasRenderableJsonBlob}.
+ */
 export function hasNonEmptyJson(raw: string | null | undefined, type: 'array' | 'object'): boolean {
   if (!raw) return false;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (type === 'array') {
-      return Array.isArray(parsed) && parsed.length > 0;
-    }
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed as Record<string, unknown>).length > 0;
-  } catch { // intentional: non-critical -- JSON parse fallback
-    return type === 'object' ? !!raw : false;
-  }
+  const [parsed, err] = safeJsonParse(raw);
+  if (err) return false;
+  return type === 'array'
+    ? Array.isArray(parsed) && parsed.length > 0
+    : isNonEmptyPlainObject(parsed);
+}
+
+/**
+ * Whether a stored blob has anything worth rendering — a non-empty JSON object,
+ * OR text that does not parse at all and is therefore shown verbatim.
+ *
+ * This is the honest name for what `hasNonEmptyJson(raw, 'object')` used to do
+ * in its catch branch. Execution `input_data` / `output_data` come from four
+ * different CLI providers and are not guaranteed to be JSON; hiding a panel
+ * because a blob failed to parse would hide content the viewer can read fine.
+ * Use this only where unparseable text is genuinely displayed.
+ */
+export function hasRenderableJsonBlob(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  const [parsed, err] = safeJsonParse(raw);
+  if (err) return true; // unparseable but non-empty — rendered as raw text
+  return isNonEmptyPlainObject(parsed);
 }

@@ -12674,6 +12674,11 @@
       "cancelled": "Abgebrochen",
       "error": "Fehler"
     },
+    "simple": {
+      "good": "In Ordnung",
+      "warning": "Achtung",
+      "problem": "Störung"
+    },
     "event": {
       "pending": "Ausstehend",
       "processing": "Verarbeitung",

@@ -12674,6 +12674,11 @@
       "cancelled": "ملغى",
       "error": "خطأ"
     },
+    "simple": {
+      "good": "جيد",
+      "warning": "انتباه",
+      "problem": "خلل"
+    },
     "event": {
       "pending": "معلّق",
       "processing": "جارٍ المعالجة",

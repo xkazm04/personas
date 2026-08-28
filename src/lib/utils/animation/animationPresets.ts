@@ -51,11 +51,28 @@ export const MOTION_PRESETS = {
   },
 } as const;
 
+/**
+ * Framer twins of `CSS_DURATION_CLASS`, rung for rung.
+ *
+ * `EASE` used to be `{ type: 'spring', stiffness: 300, damping: 25 }` while
+ * `CSS_DURATION_CLASS.EASE` was a 400ms tween — **one word for two different
+ * gestures**. A component animating one property in Framer and another in CSS
+ * reached for "EASE" both times and got two unrelated motion characters, and a
+ * spring cannot be audited against a millisecond cap at all, because it has no
+ * duration. The three names now mean the same thing on both sides; the spring
+ * lives under its own name, where nothing mistakes it for a rung of the ladder.
+ */
 export const MOTION_TIMING = {
   SNAP: MOTION_PRESETS.snappy.framer,
   FLOW: MOTION_PRESETS.smooth.framer,
-  EASE: { type: 'spring' as const, stiffness: 300, damping: 25 },
+  EASE: MOTION_PRESETS.gentle.framer,
 };
+
+/**
+ * Physics-driven alternative to the timed ladder — deliberately NOT a member of
+ * `MOTION_TIMING`, because it has no duration and so belongs to no rung.
+ */
+export const MOTION_SPRING = { type: 'spring' as const, stiffness: 300, damping: 25 };
 
 /** Stagger container -- wrap the list/grid parent with this variant. */
 export const staggerContainer: Variants = {
@@ -84,7 +101,13 @@ export const staggerItem: Variants = {
 
 // ---------------------------------------------------------------------------
 // Dashboard stagger variants
-// 50ms stagger, 300ms ease-out entrance, translate-y-2 (8px) slide-up
+// 50ms stagger, `smooth` (250ms) ease-out entrance, translate-y-2 (8px) slide-up
+//
+// The entrance used to inline `duration: 0.3`, which is not on the repo's
+// ladder (150 / 250 / 400ms) — a fourth duration invented at the call site,
+// and the literal preset-vocabulary violation these presets exist to prevent.
+// Both transitions now read from MOTION_PRESETS, so the ladder is the only
+// place a dashboard duration can change.
 // ---------------------------------------------------------------------------
 
 /** Dashboard stagger container -- 50ms delay between children. */
@@ -95,18 +118,18 @@ export const dashboardContainer: Variants = {
   },
 };
 
-/** Dashboard stagger item -- fade+slide entrance (300ms ease-out). */
+/** Dashboard stagger item -- fade+slide entrance on the `smooth` rung. */
 export const dashboardItem: Variants = {
   hidden: { opacity: 0, y: 8 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: 'easeOut' },
+    transition: MOTION_PRESETS.smooth.framer,
   },
   exit: {
     opacity: 0,
     y: -6,
-    transition: { duration: 0.15, ease: 'easeOut' },
+    transition: MOTION_PRESETS.snappy.framer,
   },
 };
 

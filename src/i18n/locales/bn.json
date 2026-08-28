@@ -12674,6 +12674,11 @@
       "cancelled": "বাতিল",
       "error": "ত্রুটি"
     },
+    "simple": {
+      "good": "ভালো",
+      "warning": "মনোযোগ দিন",
+      "problem": "সমস্যা"
+    },
     "event": {
       "pending": "মুলতুবি",
       "processing": "প্রক্রিয়াধীন",

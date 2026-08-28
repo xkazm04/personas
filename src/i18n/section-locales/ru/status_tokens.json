@@ -7,6 +7,11 @@
     "cancelled": "Отменено",
     "error": "Ошибка"
   },
+  "simple": {
+    "good": "Норма",
+    "warning": "Внимание",
+    "problem": "Сбой"
+  },
   "event": {
     "pending": "Ожидание",
     "processing": "Обработка",

@@ -59,19 +59,32 @@ export const DAY_NAME_TO_NUM: Readonly<Record<string, number>> = {
  *   - "0"–"6" for a specific day
  *   - null if no match
  *
- * Names are matched longest-first so "tuesday" wins over "tue" when both
- * appear at the same position.
+ * The FIRST day mentioned wins; a tie at one position goes to the longer name,
+ * so "tuesday" beats "tue" where both could match the same text.
+ *
+ * The previous implementation sorted the names longest-first and returned the
+ * first that matched *anywhere*, which is not what its own doc claimed and has
+ * no position logic in it at all. On "run Tuesday, skip Wednesday" it returned
+ * Wednesday, purely because "wednesday" is the longer word — the stated intent
+ * (disambiguate a prefix from its full name at one site) had generalised into
+ * "the longest day name mentioned anywhere wins".
  */
 export function findDayOfWeekInText(input: string): string | null {
   const lower = input.toLowerCase();
   if (/\bweekday/.test(lower)) return '1-5';
   if (/\bweekend/.test(lower)) return '0,6';
 
-  const namesByLength = Object.keys(DAY_NAME_TO_NUM).sort((a, b) => b.length - a.length);
-  for (const name of namesByLength) {
-    if (new RegExp(`\\b${name}s?\\b`).test(lower)) {
-      return String(DAY_NAME_TO_NUM[name]);
+  let best: { index: number; length: number; num: number } | null = null;
+  for (const [name, num] of Object.entries(DAY_NAME_TO_NUM)) {
+    const match = new RegExp(`\\b${name}s?\\b`).exec(lower);
+    if (!match) continue;
+    if (
+      !best ||
+      match.index < best.index ||
+      (match.index === best.index && name.length > best.length)
+    ) {
+      best = { index: match.index, length: name.length, num };
     }
   }
-  return null;
+  return best ? String(best.num) : null;
 }

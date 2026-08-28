@@ -80,6 +80,32 @@ describe('createSWRFetcher', () => {
     expect(readBack).toEqual({ data: 'fresh', fromCache: true });
   });
 
+  // Regression guard for the FIFO-documented-as-LRU defect. The fresh-hit path
+  // used to return before touching the map, so only a WRITE refreshed a key's
+  // position: a key read on every render but never restale kept its original
+  // insertion slot and was evicted first, which is the exact opposite of what
+  // the `MAX_CACHE_ENTRIES` doc promised.
+  it('a fresh cache hit refreshes the key against the eviction cursor', async () => {
+    const MAX = 500;
+    const read = async (k: string) =>
+      createSWRFetcher(k, async () => `v-${k}`, 60_000)();
+
+    // Fill the cache to the cap. `hot` is the very first key inserted, so under
+    // insertion-order-only eviction it is the first one dropped.
+    await read('hot');
+    for (let i = 0; i < MAX - 1; i += 1) await read(`filler-${i}`);
+
+    // Touch `hot` — a fresh hit, no fetch. This must move it to the back.
+    expect(await read('hot')).toEqual({ data: 'v-hot', fromCache: true });
+
+    // One more distinct key pushes the cache over the cap and evicts one entry.
+    await read('overflow');
+
+    // `hot` survived (it was re-set on the hit); the oldest untouched filler did not.
+    expect(await read('hot')).toEqual({ data: 'v-hot', fromCache: true });
+    expect(await read('filler-0')).toEqual({ data: 'v-filler-0', fromCache: false });
+  });
+
   it('a disowned request does not evict a newer request from the in-flight map', async () => {
     const first = deferred<string>();
     const second = deferred<string>();

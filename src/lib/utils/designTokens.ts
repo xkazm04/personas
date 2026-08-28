@@ -229,8 +229,16 @@ export const STATE_INACTIVE_BORDER = BORDER_SUBTLE;
 
 export type SimpleStatus = 'good' | 'warning' | 'problem';
 
+/**
+ * Appearance vocabulary for one simple-mode status level.
+ *
+ * Carries no `label`. It used to, with the literal English 'Good' / 'Attention' /
+ * 'Problem' baked in — display copy inside a design-token module, and the one
+ * surface aimed at the least technical users was the one surface that could not
+ * be translated. The copy now lives where every other machine token's copy does,
+ * `status_tokens.simple`, read through `tokenLabel(t, 'simple', level)`.
+ */
 export interface SimpleStatusToken {
-  label: string;
   color: string;
   bg: string;
   dot: string;
@@ -239,9 +247,9 @@ export interface SimpleStatusToken {
 export const SIMPLE_MODE = {
   /** Reduced three-level status palette for simple mode -- derived from STATUS_PALETTE */
   STATUS: {
-    good:    { label: 'Good',      color: STATUS_PALETTE.success.text, bg: STATUS_PALETTE.success.bg, dot: STATUS_PALETTE.success.icon },
-    warning: { label: 'Attention', color: STATUS_PALETTE.warning.text, bg: STATUS_PALETTE.warning.bg, dot: STATUS_PALETTE.warning.icon },
-    problem: { label: 'Problem',   color: STATUS_PALETTE.error.text,   bg: STATUS_PALETTE.error.bg,   dot: STATUS_PALETTE.error.icon },
+    good:    { color: STATUS_PALETTE.success.text, bg: STATUS_PALETTE.success.bg, dot: STATUS_PALETTE.success.icon },
+    warning: { color: STATUS_PALETTE.warning.text, bg: STATUS_PALETTE.warning.bg, dot: STATUS_PALETTE.warning.icon },
+    problem: { color: STATUS_PALETTE.error.text,   bg: STATUS_PALETTE.error.bg,   dot: STATUS_PALETTE.error.icon },
   } satisfies Record<SimpleStatus, SimpleStatusToken>,
   /** Card style for simple mode -- larger, rounder, more breathing room */
   CARD: `rounded-xl border ${BORDER_DEFAULT} bg-background/60 p-5 shadow-elevation-1`,

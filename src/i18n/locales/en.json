@@ -13011,6 +13011,11 @@
       "cancelled": "Cancelled",
       "error": "Error"
     },
+    "simple": {
+      "good": "Good",
+      "warning": "Attention",
+      "problem": "Problem"
+    },
     "event": {
       "pending": "Pending",
       "processing": "Processing",
