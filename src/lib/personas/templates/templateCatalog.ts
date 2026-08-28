@@ -124,9 +124,25 @@ export interface CatalogLoadResult {
 
 let _cached: VerifiedEntry[] | null = null;
 let _cachedSkipped: CatalogSkippedEntry[] = [];
-let _loading: Promise<VerifiedEntry[]> | null = null;
+let _loading: Promise<CatalogLoad> | null = null;
 
-async function loadAndVerify(): Promise<VerifiedEntry[]> {
+/**
+ * Bumped by every `invalidateTemplateCatalog()`. A load captures the generation
+ * before it awaits and publishes its result only if the generation is unchanged
+ * when it resolves — the same technique `executionSink` uses to make a stale
+ * copy inert. Without it, a load already in flight when Retry (or the dev HMR
+ * hook) invalidated would resolve afterwards and write its PRE-invalidation
+ * result straight back into `_cached`, so the invalidation had no effect and
+ * Retry served the very data it was pressed to discard.
+ */
+let _generation = 0;
+
+interface CatalogLoad {
+  verified: VerifiedEntry[];
+  skipped: CatalogSkippedEntry[];
+}
+
+async function loadAndVerify(): Promise<CatalogLoad> {
   const canonicalEntries = Object.entries(moduleLoaders).filter(
     ([modulePath]) => !isOverlayFilename(filenameFromPath(modulePath)),
   );
@@ -205,9 +221,12 @@ async function loadAndVerify(): Promise<VerifiedEntry[]> {
 
   // Register all catalog templates as verified built-ins
   registerBuiltinTemplates(verified.map((v) => v.template.id));
-  _cachedSkipped = skipped;
 
-  return verified;
+  // `skipped` rides back with `verified` rather than being written straight to
+  // `_cachedSkipped` here: a load that resolves AFTER an invalidation must not
+  // leave its own view of the world behind. The single generation-guarded
+  // assignment in `loadVerified` decides whether either half is published.
+  return { verified, skipped };
 }
 
 /**
@@ -220,12 +239,12 @@ async function loadAndVerify(): Promise<VerifiedEntry[]> {
  * happens to call `invalidateTemplateCatalog()` first. Successful loads still
  * memoize exactly as before.
  */
-async function loadAndVerifyResettable(): Promise<VerifiedEntry[]> {
+async function loadAndVerifyResettable(): Promise<CatalogLoad> {
   let settled = false;
   try {
-    const verified = await loadAndVerify();
+    const loaded = await loadAndVerify();
     settled = true;
-    return verified;
+    return loaded;
   } finally {
     if (!settled) _loading = null;
   }
@@ -236,10 +255,28 @@ async function loadAndVerifyResettable(): Promise<VerifiedEntry[]> {
  * All consumers should use this instead of the sync TEMPLATE_CATALOG export.
  */
 export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
-  if (_cached) return _cached.map((v) => v.template);
+  return (await loadVerified()).map((v) => v.template);
+}
+
+/**
+ * The load path every public reader goes through. Returns the verified entries
+ * directly so a caller never has to reach back into `_cached` — which may
+ * legitimately be `null` on return now that a stale resolve declines to
+ * populate it.
+ */
+async function loadVerified(): Promise<VerifiedEntry[]> {
+  if (_cached) return _cached;
   if (!_loading) _loading = loadAndVerifyResettable();
-  _cached = await _loading;
-  return _cached.map((v) => v.template);
+  // Read both BEFORE the await: `_loading` can be nulled and `_generation`
+  // bumped while we are suspended here.
+  const generation = _generation;
+  const inFlight = _loading;
+  const loaded = await inFlight;
+  if (generation === _generation) {
+    _cached = loaded.verified;
+    _cachedSkipped = loaded.skipped;
+  }
+  return loaded.verified;
 }
 
 /**
@@ -273,7 +310,9 @@ export async function getTemplateCatalogStatus(): Promise<CatalogLoadResult> {
  * invalidation for the lifetime of the session.
  */
 export function invalidateTemplateCatalog(): void {
+  _generation += 1;
   _cached = null;
+  _cachedSkipped = [];
   _loading = null;
   _localizedCache.clear();
   invalidateOverlayCache();
@@ -359,8 +398,7 @@ export async function getLocalizedTemplateCatalogStatus(
  */
 export async function verifyTemplatesWithBackend(): Promise<BatchIntegrityResult | null> {
   try {
-    await getTemplateCatalog();
-    const verified = _cached!;
+    const verified = await loadVerified();
 
     const entries = verified.map((v) => ({
       path: v.relPath,
