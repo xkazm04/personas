@@ -17775,6 +17775,7 @@
     "title_placeholder": "제목…",
     "content_placeholder": "내용…",
     "importance_label": "Imp:",
+    "category_label": "카테고리",
     "save_memory": "메모리 저장",
     "search_memories": "메모리 검색…",
     "clear_run_filter": "실행 필터 지우기",

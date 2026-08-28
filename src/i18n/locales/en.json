@@ -18343,6 +18343,7 @@
     "title_placeholder": "Title...",
     "content_placeholder": "Content...",
     "importance_label": "Imp:",
+    "category_label": "Category",
     "save_memory": "Save Memory",
     "search_memories": "Search memories...",
     "clear_run_filter": "Clear run filter",

@@ -17775,6 +17775,7 @@
     "title_placeholder": "タイトル…",
     "content_placeholder": "コンテンツ…",
     "importance_label": "重要度:",
+    "category_label": "カテゴリ",
     "save_memory": "メモリを保存",
     "search_memories": "メモリを検索…",
     "clear_run_filter": "実行フィルターをクリア",
