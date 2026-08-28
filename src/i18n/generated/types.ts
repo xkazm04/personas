@@ -1043,6 +1043,7 @@ export type Translations = {
       composed_tours: string;
       composed_badge: string;
       composed_stale: string;
+      composed_failed: string;
       composed_empty: string;
     };
     setup_stepper: {

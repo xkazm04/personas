@@ -1003,6 +1003,7 @@
       "composed_tours": "Compuestas por Athena",
       "composed_badge": "Compuesto por Athena",
       "composed_stale": "Puede estar desactualizado — la aplicación ha cambiado desde que se compuso",
+      "composed_failed": "No se pudieron cargar los recorridos que Athena compuso para usted.",
       "composed_empty": "Cuando le pide a Athena que le muestre cómo funciona algo, los recorridos que compone aparecen aquí."
     },
     "setup_stepper": {

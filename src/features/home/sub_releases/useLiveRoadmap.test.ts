@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 
-import type { LiveRoadmapResult } from '@/api/liveRoadmap';
+import type { LiveRoadmapFailureKind, LiveRoadmapOutcome, LiveRoadmapResult } from '@/api/liveRoadmap';
 
-const fetchLiveRoadmap = vi.fn<(opts?: { force?: boolean }) => Promise<LiveRoadmapResult | null>>();
+const fetchLiveRoadmap = vi.fn<(opts?: { force?: boolean }) => Promise<LiveRoadmapOutcome>>();
 
 vi.mock('@/api/liveRoadmap', () => ({
   fetchLiveRoadmap: (opts?: { force?: boolean }) => fetchLiveRoadmap(opts),
@@ -19,11 +19,26 @@ vi.mock('@/stores/systemStore', () => ({
 
 import { useLiveRoadmap } from './useLiveRoadmap';
 
-function result(source: LiveRoadmapResult['source'], fetchedAt = '2026-08-27T10:00:00Z'): LiveRoadmapResult {
+function result(source: LiveRoadmapResult['source'], fetchedAt = '2026-08-27T10:00:00Z'): LiveRoadmapOutcome {
   return {
-    roadmap: { schemaVersion: 1, release: { version: 'roadmap', status: 'roadmap', items: [] }, i18n: {} },
-    fetchedAt,
-    source,
+    ok: true,
+    result: {
+      roadmap: { schemaVersion: 1, release: { version: 'roadmap', status: 'roadmap', items: [] }, i18n: {} },
+      fetchedAt,
+      source,
+    },
+  };
+}
+
+/**
+ * A failed fetch. The kind is now carried across the boundary instead of being
+ * collapsed into `null`; the hook's posture is deliberately identical for every
+ * kind, which is what the `schema` cases below pin.
+ */
+function failure(kind: LiveRoadmapFailureKind = 'offline'): LiveRoadmapOutcome {
+  return {
+    ok: false,
+    failure: { kind, structural: kind === 'schema', message: `${kind} failure` },
   };
 }
 
@@ -40,7 +55,7 @@ describe('useLiveRoadmap', () => {
   });
 
   it('falls to unavailable when the very first fetch fails', async () => {
-    fetchLiveRoadmap.mockResolvedValue(null);
+    fetchLiveRoadmap.mockResolvedValue(failure());
     const { result: hook } = renderHook(() => useLiveRoadmap());
     await waitFor(() => expect(hook.current.status).toBe('unavailable'));
     expect(hook.current.roadmap).toBeNull();
@@ -54,7 +69,7 @@ describe('useLiveRoadmap', () => {
     const { result: hook } = renderHook(() => useLiveRoadmap());
     await waitFor(() => expect(hook.current.status).toBe('fresh'));
 
-    fetchLiveRoadmap.mockResolvedValueOnce(null);
+    fetchLiveRoadmap.mockResolvedValueOnce(failure());
     await act(async () => {
       await hook.current.refresh();
     });
@@ -66,7 +81,7 @@ describe('useLiveRoadmap', () => {
   });
 
   it('keeps unavailable as unavailable when a refresh also fails', async () => {
-    fetchLiveRoadmap.mockResolvedValue(null);
+    fetchLiveRoadmap.mockResolvedValue(failure());
     const { result: hook } = renderHook(() => useLiveRoadmap());
     await waitFor(() => expect(hook.current.status).toBe('unavailable'));
 
@@ -81,7 +96,7 @@ describe('useLiveRoadmap', () => {
     const { result: hook } = renderHook(() => useLiveRoadmap());
     await waitFor(() => expect(hook.current.status).toBe('fresh'));
 
-    fetchLiveRoadmap.mockResolvedValueOnce(null);
+    fetchLiveRoadmap.mockResolvedValueOnce(failure());
     await act(async () => { await hook.current.refresh(); });
     expect(hook.current.status).toBe('stale');
 
@@ -89,5 +104,20 @@ describe('useLiveRoadmap', () => {
     await act(async () => { await hook.current.refresh(); });
     expect(hook.current.status).toBe('fresh');
     expect(hook.current.fetchedAt).toBe('2026-08-27T11:00:00Z');
+  });
+
+  it('treats a structural failure the same as a transient one on screen', async () => {
+    // Schema drift is permanent and silent, and the reader has nothing useful
+    // to do about it — so the pill stays honest ('stale') rather than growing a
+    // second failure vocabulary. What changes is that the cause survives the
+    // boundary at all; the API layer reports the structural ones to Sentry.
+    fetchLiveRoadmap.mockResolvedValueOnce(result('network'));
+    const { result: hook } = renderHook(() => useLiveRoadmap());
+    await waitFor(() => expect(hook.current.status).toBe('fresh'));
+
+    fetchLiveRoadmap.mockResolvedValueOnce(failure('schema'));
+    await act(async () => { await hook.current.refresh(); });
+    expect(hook.current.status).toBe('stale');
+    expect(hook.current.fetchedAt).toBe('2026-08-27T10:00:00Z');
   });
 });

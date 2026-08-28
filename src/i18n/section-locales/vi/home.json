@@ -60,6 +60,7 @@
     "composed_tours": "Do Athena soạn",
     "composed_badge": "Athena soạn",
     "composed_stale": "Có thể đã lỗi thời — ứng dụng đã thay đổi kể từ khi soạn",
+    "composed_failed": "Không thể tải các hướng dẫn Athena đã soạn cho bạn.",
     "composed_empty": "Khi bạn nhờ Athena hướng dẫn cách một tính năng hoạt động, các hướng dẫn cô ấy soạn sẽ hiển thị ở đây."
   },
   "setup_stepper": {

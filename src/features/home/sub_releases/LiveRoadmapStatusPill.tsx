@@ -82,7 +82,7 @@ export function LiveRoadmapStatusPill({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-primary/8 bg-primary/[0.03] px-3 py-1.5">
+    <div className="flex items-center gap-2 rounded-full border border-primary/8 bg-primary/[0.03] px-3 py-1">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       <span className="font-mono text-xs text-foreground">{label}</span>
       {onRefresh && status !== 'unavailable' && (
@@ -91,7 +91,12 @@ export function LiveRoadmapStatusPill({
           onClick={onRefresh}
           disabled={refreshing}
           aria-busy={refreshing}
-          className="ml-1 flex items-center gap-1 rounded-full border border-primary/8 bg-primary/[0.04] px-2 py-0.5 typo-caption text-foreground transition-colors hover:border-primary/16 hover:bg-primary/[0.07] disabled:opacity-50"
+          // 24x24 is the floor, not a preference: this is the only control on
+          // the surface and WCAG 2.2 SC 2.5.8 sets the minimum pointer target
+          // at 24x24 CSS px. `px-2 py-0.5` around a 12px icon measured ~26x16,
+          // failing it on the short axis and making the one affordance the
+          // live-roadmap design rests on the hardest thing here to hit.
+          className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-primary/8 bg-primary/[0.04] text-foreground transition-colors hover:border-primary/16 hover:bg-primary/[0.07] disabled:opacity-50"
           aria-label={refreshLabel}
           title={refreshLabel}
         >

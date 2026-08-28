@@ -18,6 +18,35 @@ describe('flashSpotlight', () => {
     await expect(flashSpotlight('')).resolves.toBeUndefined();
     warnSpy.mockRestore();
   });
+
+  it('stops polling for an anchor a newer call has superseded', async () => {
+    // The generation token made a superseded call inert at its RESUME points,
+    // but the 80ms poll itself was never cancelled: an abandoned call kept
+    // querying the document for the rest of its 4s deadline (~50 wasted
+    // queries) and then filed an `anchor-never-mounted` degradation for an
+    // anchor nobody was waiting for.
+    vi.useFakeTimers();
+    document.body.innerHTML = '';
+    try {
+      const first = flashSpotlight('anchor-alpha');
+      await vi.advanceTimersByTimeAsync(200); // a few ticks of the first poll
+      const second = flashSpotlight('anchor-beta'); // supersedes the first
+
+      const spy = vi.spyOn(document, 'querySelector');
+      await vi.advanceTimersByTimeAsync(1000);
+      const alphaQueries = spy.mock.calls.filter((c) => String(c[0]).includes('anchor-alpha'));
+      expect(alphaQueries).toHaveLength(0);
+
+      // The live call keeps polling — the guard cancels the abandoned loop only.
+      expect(spy.mock.calls.filter((c) => String(c[0]).includes('anchor-beta')).length).toBeGreaterThan(0);
+
+      spy.mockRestore();
+      await vi.advanceTimersByTimeAsync(4000);
+      await Promise.all([first, second]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('flashSpotlight under reduced motion', () => {

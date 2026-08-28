@@ -55,9 +55,9 @@ export function useLiveRoadmap(): UseLiveRoadmap {
 
   const run = useCallback(async (force: boolean) => {
     if (force) setRefreshing(true);
-    const result = await fetchLiveRoadmap({ force });
+    const outcome = await fetchLiveRoadmap({ force });
     if (!mounted.current) return;
-    if (!result) {
+    if (!outcome.ok) {
       // A failed fetch is not a no-op for the freshness pill. With content
       // already on screen the previous status ('fresh' / 'cached') would keep
       // claiming a healthy live channel: a manual refresh spins, settles, and
@@ -67,13 +67,20 @@ export function useLiveRoadmap(): UseLiveRoadmap {
       // because the network attempt failed"), and the pill already renders it
       // as a red dot with the offline-snapshot label. 'unavailable' (bundled
       // fallback, nothing to be stale about) stays as it is.
+      //
+      // `outcome.failure` says WHY. The pill's posture is deliberately the same
+      // for every kind — from the reader's side a stale roadmap is a stale
+      // roadmap — but a STRUCTURAL failure (schema drift: permanent, silent,
+      // and identical on screen to a train tunnel) is reported to Sentry at the
+      // API boundary that holds the evidence, so it is no longer invisible to
+      // monitoring just because the UI has nothing different to say about it.
       setStatus((prev) =>
         prev === 'loading' ? 'unavailable' : prev === 'unavailable' ? prev : 'stale',
       );
     } else {
-      setRoadmap(result.roadmap);
-      setFetchedAt(result.fetchedAt);
-      setStatus(statusFromSource(result.source));
+      setRoadmap(outcome.result.roadmap);
+      setFetchedAt(outcome.result.fetchedAt);
+      setStatus(statusFromSource(outcome.result.source));
     }
     if (force) setRefreshing(false);
   }, []);

@@ -1003,6 +1003,7 @@
       "composed_tours": "由 Athena 编排",
       "composed_badge": "Athena 编排",
       "composed_stale": "可能已过时 — 应用在编排后已发生变化",
+      "composed_failed": "无法加载 Athena 为您编排的操作指引。",
       "composed_empty": "当您请 Athena 演示某项功能时，她编排的操作指引会显示在这里。"
     },
     "setup_stepper": {
