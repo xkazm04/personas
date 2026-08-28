@@ -9,34 +9,19 @@
  *   - `triggers/sub_triggers/nlTriggerParser.ts` (regex day-name matcher)
  *
  * Centralising stops the three from drifting on Monday=1 vs. Sunday=0
- * conventions, and gives a single place to add Locale-aware names if
- * the i18n migration later reaches scheduling labels.
+ * conventions.
+ *
+ * **Everything here is machine vocabulary, not display text.** A `DAYS` array
+ * of English day names for "week-grid UIs" used to sit alongside it, carrying
+ * `short: 'Mon'` / `label: 'Monday'` in a 14-locale app. It was removed rather
+ * than translated: measured across the whole tree it had exactly zero
+ * consumers, so it was never a live i18n gap -- it was a loaded gun for
+ * whoever rendered it next, and it also pinned this file's doc comment to a
+ * promise ("a single place to add locale-aware names") that i18n never took up
+ * because the app resolves labels through the catalog, not through a lib
+ * constant. A week grid needs `t`; build its labels from the catalog and keep
+ * the cron digit as the key.
  */
-
-export interface DayInfo {
-  /** Cron DOW digit as string ("0"-"6"). Sunday is "0". */
-  readonly key: string;
-  /** Three-letter English abbreviation ("Mon", "Tue", …). */
-  readonly short: string;
-  /** Full English name ("Monday", "Tuesday", …). */
-  readonly label: string;
-}
-
-/**
- * Days ordered Monday-first for week-grid UIs. Sunday comes last because
- * most users in the supported locales read calendars Mon→Sun. The `key`
- * field is still the POSIX cron digit, so Sunday's key is "0" even though
- * it appears at the end of this array.
- */
-export const DAYS: readonly DayInfo[] = [
-  { key: '1', short: 'Mon', label: 'Monday' },
-  { key: '2', short: 'Tue', label: 'Tuesday' },
-  { key: '3', short: 'Wed', label: 'Wednesday' },
-  { key: '4', short: 'Thu', label: 'Thursday' },
-  { key: '5', short: 'Fri', label: 'Friday' },
-  { key: '6', short: 'Sat', label: 'Saturday' },
-  { key: '0', short: 'Sun', label: 'Sunday' },
-] as const;
 
 /**
  * Lowercase short and long day names → cron DOW digit. Combined so both

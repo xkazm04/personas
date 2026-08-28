@@ -26,6 +26,25 @@ describe('classifyError', () => {
     expect(classifyError(new Error('something odd'), 'fb').severity).toBe('unknown');
   });
 
+  // Regression guard. TRANSIENT_PATTERNS used to be tested before
+  // PERMANENT_PATTERNS, so every message in the intersection of the two
+  // vocabularies was auto-retried even though no retry could succeed.
+  it('lets permanent win an overlap with a transient keyword', () => {
+    expect(classifyError(new Error('Invalid network configuration'), 'fb').severity).toBe('permanent');
+    expect(classifyError(new Error('400 Bad Request - please try again'), 'fb').severity).toBe('permanent');
+    expect(classifyError(new Error('Validation failed, please try again'), 'fb').severity).toBe('permanent');
+  });
+
+  // Regression guard. The lists held bare `/503/`, `/429/`, `/400/`, so any
+  // three-digit run anywhere in the message classified the error.
+  it('reads a status code only where the message declares one', () => {
+    expect(classifyError(new Error('queued 502 of 900 rows'), 'fb').severity).toBe('unknown');
+    expect(classifyError(new Error('listening on port 4041'), 'fb').severity).toBe('unknown');
+    expect(classifyError(new Error('HTTP 503 upstream refused'), 'fb').severity).toBe('transient');
+    expect(classifyError(new Error('status code: 429'), 'fb').retryAfterMs).toBe(5000);
+    expect(classifyError(new Error('error 403 from the connector'), 'fb').severity).toBe('permanent');
+  });
+
   it('uses the fallback message when the error carries none', () => {
     expect(classifyError({}, 'fallback text').message).toBe('fallback text');
   });

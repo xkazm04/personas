@@ -5,7 +5,9 @@
     "completed": "সম্পন্ন",
     "failed": "ব্যর্থ",
     "cancelled": "বাতিল",
-    "error": "ত্রুটি"
+    "incomplete": "অসম্পূর্ণ",
+    "error": "ত্রুটি",
+    "unknown": "অজানা"
   },
   "simple": {
     "good": "ভালো",

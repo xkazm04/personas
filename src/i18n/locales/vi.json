@@ -12223,6 +12223,24 @@
     "resume_schedule": "Tiếp tục lịch",
     "change_frequency_title": "Đổi tần suất",
     "current_prefix": "Hiện tại: ",
+    "cron_presets": {
+      "every_minute": "Mỗi phút",
+      "every_5_min": "Mỗi 5 phút",
+      "every_15_min": "Mỗi 15 phút",
+      "every_30_min": "Mỗi 30 phút",
+      "hourly": "Mỗi giờ",
+      "every_6_hours": "Mỗi 6 giờ",
+      "daily_midnight": "Hằng ngày lúc nửa đêm",
+      "daily_9am": "Hằng ngày lúc 9:00",
+      "daily_6pm": "Hằng ngày lúc 18:00",
+      "twice_daily": "Hai lần mỗi ngày (9:00 và 17:00)",
+      "weekdays_8am": "Ngày trong tuần lúc 8:00",
+      "weekdays_9am": "Ngày trong tuần lúc 9:00",
+      "monday_9am": "Mỗi thứ Hai lúc 9:00",
+      "friday_5pm": "Mỗi thứ Sáu lúc 17:00",
+      "sunday": "Mỗi Chủ nhật",
+      "monthly_1st": "Hằng tháng vào ngày 1"
+    },
     "quick_presets": "Cài đặt nhanh",
     "cron_expression": "Biểu thức cron",
     "interval_seconds": "Khoảng thời gian (giây)",
@@ -12740,7 +12758,9 @@
       "completed": "Hoàn thành",
       "failed": "Thất bại",
       "cancelled": "Đã hủy",
-      "error": "Lỗi"
+      "incomplete": "Chưa hoàn tất",
+      "error": "Lỗi",
+      "unknown": "Không rõ"
     },
     "simple": {
       "good": "Tốt",

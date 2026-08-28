@@ -288,7 +288,7 @@
       },
       "baseline": {
         "files": 35,
-        "matches": 229
+        "matches": 222
       },
       "floor": 4000
     },
@@ -718,8 +718,8 @@
         }
       ],
       "baseline": {
-        "files": 61,
-        "matches": 812
+        "files": 60,
+        "matches": 800
       },
       "floor": 1500
     },
@@ -1344,8 +1344,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 14,
-        "matches": 43
+        "files": 13,
+        "matches": 38
       },
       "floor": 4000
     },
@@ -3493,7 +3493,7 @@
       ],
       "baseline": {
         "files": 52,
-        "matches": 76
+        "matches": 77
       },
       "floor": 3000
     },

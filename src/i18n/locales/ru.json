@@ -12223,6 +12223,24 @@
     "resume_schedule": "Возобновить расписание",
     "change_frequency_title": "Изменить частоту",
     "current_prefix": "Текущее: ",
+    "cron_presets": {
+      "every_minute": "Каждую минуту",
+      "every_5_min": "Каждые 5 мин",
+      "every_15_min": "Каждые 15 мин",
+      "every_30_min": "Каждые 30 мин",
+      "hourly": "Каждый час",
+      "every_6_hours": "Каждые 6 часов",
+      "daily_midnight": "Ежедневно в полночь",
+      "daily_9am": "Ежедневно в 9:00",
+      "daily_6pm": "Ежедневно в 18:00",
+      "twice_daily": "Дважды в день (9:00 и 17:00)",
+      "weekdays_8am": "По будням в 8:00",
+      "weekdays_9am": "По будням в 9:00",
+      "monday_9am": "Каждый понедельник в 9:00",
+      "friday_5pm": "Каждую пятницу в 17:00",
+      "sunday": "Каждое воскресенье",
+      "monthly_1st": "Ежемесячно 1-го числа"
+    },
     "quick_presets": "Быстрые пресеты",
     "cron_expression": "Cron-выражение",
     "interval_seconds": "Интервал (секунды)",
@@ -12740,7 +12758,9 @@
       "completed": "Завершено",
       "failed": "Сбой",
       "cancelled": "Отменено",
-      "error": "Ошибка"
+      "incomplete": "Не завершено",
+      "error": "Ошибка",
+      "unknown": "Неизвестно"
     },
     "simple": {
       "good": "Норма",

@@ -3,6 +3,7 @@ import { X, Clock, Check, AlertTriangle } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
+import { cronPresetLabel } from '@/lib/utils/cronPresets';
 import { useConflictPreview } from '../libs/useCronPreview';
 import { TimezoneSelect, getDetectedTimezone } from '@/features/triggers/sub_triggers/TimezoneSelect';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
@@ -141,7 +142,7 @@ export default function FrequencyEditor({
                       : 'bg-secondary/40 border-primary/10 text-foreground hover:bg-secondary/60 hover:text-foreground/80 hover:border-primary/20'
                   }`}
                 >
-                  {preset.label}
+                  {cronPresetLabel(t, preset)}
                 </button>
               ))}
             </div>

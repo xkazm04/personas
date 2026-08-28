@@ -12223,6 +12223,24 @@
     "resume_schedule": "Obnovit plán",
     "change_frequency_title": "Změnit frekvenci",
     "current_prefix": "Aktuální: ",
+    "cron_presets": {
+      "every_minute": "Každou minutu",
+      "every_5_min": "Každých 5 min",
+      "every_15_min": "Každých 15 min",
+      "every_30_min": "Každých 30 min",
+      "hourly": "Každou hodinu",
+      "every_6_hours": "Každých 6 hodin",
+      "daily_midnight": "Denně o půlnoci",
+      "daily_9am": "Denně v 9:00",
+      "daily_6pm": "Denně v 18:00",
+      "twice_daily": "Dvakrát denně (9:00 a 17:00)",
+      "weekdays_8am": "Ve všední dny v 8:00",
+      "weekdays_9am": "Ve všední dny v 9:00",
+      "monday_9am": "Každé pondělí v 9:00",
+      "friday_5pm": "Každý pátek v 17:00",
+      "sunday": "Každou neděli",
+      "monthly_1st": "Měsíčně 1. dne"
+    },
     "quick_presets": "Rychlé předvolby",
     "cron_expression": "Cron výraz",
     "interval_seconds": "Interval (sekundy)",
@@ -12740,7 +12758,9 @@
       "completed": "Dokončeno",
       "failed": "Selhalo",
       "cancelled": "Zrušeno",
-      "error": "Chyba"
+      "incomplete": "Nedokončeno",
+      "error": "Chyba",
+      "unknown": "Neznámé"
     },
     "simple": {
       "good": "V pořádku",

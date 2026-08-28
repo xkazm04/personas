@@ -4,7 +4,7 @@ import { type CronPreview } from '@/api/pipeline/triggers';
 import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
 import { TimezoneSelect } from './TimezoneSelect';
 import { useTranslation } from '@/i18n/useTranslation';
-import { CRON_PRESETS } from '@/lib/utils/cronPresets';
+import { CRON_PRESETS, cronPresetLabel } from '@/lib/utils/cronPresets';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -167,7 +167,7 @@ export function CronConfig({
                   : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
-              {p.label}
+              {cronPresetLabel(t, p)}
             </button>
           ))}
         </div>

@@ -12223,6 +12223,24 @@
     "resume_schedule": "Lanjutkan jadwal",
     "change_frequency_title": "Ubah frekuensi",
     "current_prefix": "Saat ini: ",
+    "cron_presets": {
+      "every_minute": "Setiap menit",
+      "every_5_min": "Setiap 5 menit",
+      "every_15_min": "Setiap 15 menit",
+      "every_30_min": "Setiap 30 menit",
+      "hourly": "Setiap jam",
+      "every_6_hours": "Setiap 6 jam",
+      "daily_midnight": "Harian tengah malam",
+      "daily_9am": "Harian pukul 09.00",
+      "daily_6pm": "Harian pukul 18.00",
+      "twice_daily": "Dua kali sehari (09.00 & 17.00)",
+      "weekdays_8am": "Hari kerja pukul 08.00",
+      "weekdays_9am": "Hari kerja pukul 09.00",
+      "monday_9am": "Setiap Senin pukul 09.00",
+      "friday_5pm": "Setiap Jumat pukul 17.00",
+      "sunday": "Setiap Minggu",
+      "monthly_1st": "Bulanan tanggal 1"
+    },
     "quick_presets": "Preset cepat",
     "cron_expression": "Ekspresi cron",
     "interval_seconds": "Interval (detik)",
@@ -12740,7 +12758,9 @@
       "completed": "Selesai",
       "failed": "Gagal",
       "cancelled": "Dibatalkan",
-      "error": "Kesalahan"
+      "incomplete": "Tidak lengkap",
+      "error": "Kesalahan",
+      "unknown": "Tidak diketahui"
     },
     "simple": {
       "good": "Baik",

@@ -4768,9 +4768,14 @@ html[data-document-visible='false'] *::after {
     radial-gradient(22% 70% at 100% 50%,
       color-mix(in srgb, var(--color-primary) 30%, transparent) 0%,
       transparent 72%);
+  /* The fallbacks must equal --duration-normal, not approximate it: a var()
+     fallback is what renders wherever the custom property is out of scope, so
+     a different number there is a second, silent declaration of the ladder.
+     These read 200ms against a 250ms token until 2026-08-28; the parity test
+     at src/lib/utils/__tests__/motionTokens.parity.test.ts now compares them. */
   animation:
-    kbd-nav-glow-in var(--duration-normal, 200ms) ease-out,
-    kbd-nav-glow-breathe 3.2s ease-in-out var(--duration-normal, 200ms) infinite;
+    kbd-nav-glow-in var(--duration-normal, 250ms) ease-out,
+    kbd-nav-glow-breathe 3.2s ease-in-out var(--duration-normal, 250ms) infinite;
 }
 
 @keyframes kbd-nav-glow-in {

@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
  */
 const activeLanguage = (): string => useI18nStore.getState().language;
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 
 /**
  * SQLite `datetime('now')` returns "YYYY-MM-DD HH:MM:SS" — UTC, but with NO
@@ -55,6 +56,43 @@ export function formatTimestamp(
   return parsed.toLocaleString(opts?.language ?? activeLanguage());
 }
 
+const relativeTimeFormatCache = new Map<string, Intl.RelativeTimeFormat>();
+
+function getRelativeTimeFormat(locale: string): Intl.RelativeTimeFormat {
+  let fmt = relativeTimeFormatCache.get(locale);
+  if (!fmt) {
+    // `short`, not `narrow`, and that was measured rather than assumed:
+    // driven over all 14 shipped locales, CLDR's narrow forms for `fr` and
+    // `ru` are SIGNED rather than phrased -- "-3 j", "-3 дн." -- which reads
+    // as a negative quantity, not as elapsed time. `short` is idiomatic in
+    // all 14 at the cost of a slightly wider English rung ("3 days ago"
+    // where this ladder used to write "3d ago"). `auto` lets a locale use
+    // its own idiom where it has one ("now", "yesterday").
+    fmt = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' });
+    relativeTimeFormatCache.set(locale, fmt);
+  }
+  return fmt;
+}
+
+/**
+ * Elapsed-since-a-moment label for the ACTIVE UI language.
+ *
+ * This ladder used to return the literal strings 'just now', `${n}s ago`,
+ * `${n}m ago`, `${n}h ago`, `${n}d ago`. It is the shared one -- behind ~100
+ * `<RelativeTime>` tags and 69 direct callers -- so those five English strings
+ * were the elapsed vocabulary of the whole app in all 14 locales, and
+ * `display/RelativeTime`, the i18n-aware component, rendered them unchanged.
+ *
+ * The fix is `Intl.RelativeTimeFormat`, not five more catalog keys. The
+ * vocabulary of elapsed time is closed and universal: every locale already has
+ * a canonical form for it, including plural categories and word order that a
+ * `{n}m ago` template cannot express and that nobody here could author for 13
+ * languages anyway. Adding keys would have made this the fifteenth
+ * independently-translated elapsed ladder in the repo; this makes it the
+ * first that needs no keys at all. Precedent: `LiveRoadmapStatusPill.tsx:38`.
+ *
+ * The signature is unchanged, so no call site moves.
+ */
 export function formatRelativeTime(
   dateStr: string | null | undefined,
   fallback = '-',
@@ -63,21 +101,28 @@ export function formatRelativeTime(
   if (!dateStr) return fallback;
   const then = new Date(normalizeTimestamp(dateStr)).getTime();
   if (isNaN(then)) return fallback;
+  const language = opts?.language ?? activeLanguage();
+  const rtf = getRelativeTimeFormat(language);
   const now = Date.now();
-  const diffSeconds = Math.floor((now - then) / 1000);
-  if (diffSeconds < 5) return 'just now';
-  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  // Clamp the future to zero. Clock skew, an NTP correction, a DST jump or a
+  // laptop waking from sleep all produce a `then` ahead of `now`, and the old
+  // ladder rendered that as `-45s ago` -- a negative count welded to a past
+  // tense. `Intl` would render it as "in 45 seconds", which is a different
+  // lie on a row that has already finished running.
+  const diffSeconds = Math.max(0, Math.floor((now - then) / 1000));
+  if (diffSeconds < 5) return rtf.format(0, 'second');
+  if (diffSeconds < 60) return rtf.format(-diffSeconds, 'second');
   const diffMinutes = Math.floor(diffSeconds / 60);
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffMinutes < 60) return rtf.format(-diffMinutes, 'minute');
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return rtf.format(-diffHours, 'hour');
   const diffDays = Math.floor(diffHours / 24);
   if (opts?.dateFallbackDays != null && diffDays >= opts.dateFallbackDays) {
     // Same reason as formatTimestamp: the date this falls back to must follow
     // the app language, not the operating system's.
-    return new Date(then).toLocaleDateString(opts.language ?? activeLanguage());
+    return new Date(then).toLocaleDateString(language);
   }
-  return `${diffDays}d ago`;
+  return rtf.format(-diffDays, 'day');
 }
 
 /**
@@ -184,28 +229,61 @@ export function badgeClass(colors: BadgeColors): string {
 }
 
 // -- Unified execution status map ----------------------------------------
-export interface ExecutionStatusEntry extends BadgeColors {
-  label: string;
+
+/** How a status badge LOOKS. Says nothing about what it reads. */
+export interface ExecutionStatusPresentation extends BadgeColors {
   icon: LucideIcon;
   pulse?: boolean;
 }
 
-export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusEntry> = {
-  queued:     { label: 'Queued',     icon: Clock,         text: 'text-status-neutral',      bg: 'bg-status-neutral/10',    border: 'border-status-neutral/20' },
-  running:    { label: 'Running',    icon: Loader2,       text: 'text-status-processing',   bg: 'bg-status-processing/10', border: 'border-status-processing/30', pulse: true },
-  completed:  { label: 'Completed',  icon: CheckCircle2,  text: 'text-status-success',      bg: 'bg-status-success/10',    border: 'border-status-success/20' },
-  failed:     { label: 'Failed',     icon: XCircle,       text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
-  cancelled:  { label: 'Cancelled',  icon: Pause,         text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
-  incomplete: { label: 'Incomplete', icon: AlertTriangle,  text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
-  unknown:    { label: 'Unknown',    icon: HelpCircle,      text: 'text-neutral-400',         bg: 'bg-neutral-500/10',       border: 'border-neutral-500/20' },
+export interface ExecutionStatusEntry extends ExecutionStatusPresentation {
+  /** Translated for the active UI language -- never a raw machine token. */
+  label: string;
+}
+
+/**
+ * Badge presentation per execution status.
+ *
+ * **No labels here.** This map used to carry seven hardcoded English strings
+ * ('Queued', 'Running', ...) which eleven call sites rendered raw, in a
+ * 14-locale app -- while `status_tokens.execution` in the i18n catalog held the
+ * same enumeration for the components that resolved through `tokenLabel`. One
+ * concept written down twice drifts, and these two already had: the catalog
+ * knew `error` and this map did not, this map knew `incomplete`/`unknown` and
+ * the catalog did not. So `incomplete` and `unknown` rendered English in every
+ * locale and `error` fell through to the gray Unknown badge. The catalog is now
+ * the only place a label is written; this map only decides how the badge looks,
+ * and `error` has an entry.
+ */
+export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusPresentation> = {
+  queued:     { icon: Clock,          text: 'text-status-neutral',      bg: 'bg-status-neutral/10',    border: 'border-status-neutral/20' },
+  running:    { icon: Loader2,        text: 'text-status-processing',   bg: 'bg-status-processing/10', border: 'border-status-processing/30', pulse: true },
+  completed:  { icon: CheckCircle2,   text: 'text-status-success',      bg: 'bg-status-success/10',    border: 'border-status-success/20' },
+  failed:     { icon: XCircle,        text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
+  error:      { icon: XCircle,        text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
+  cancelled:  { icon: Pause,          text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
+  incomplete: { icon: AlertTriangle,  text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
+  unknown:    { icon: HelpCircle,     text: 'text-neutral-400',         bg: 'bg-neutral-500/10',       border: 'border-neutral-500/20' },
 };
 
-/** Fallback entry for unknown/corrupted statuses (gray badge, not red). */
-export const DEFAULT_STATUS_ENTRY: ExecutionStatusEntry = EXECUTION_STATUS_MAP.unknown!;
+/** Fallback presentation for unknown/corrupted statuses (gray badge, not red). */
+export const DEFAULT_STATUS_PRESENTATION: ExecutionStatusPresentation = EXECUTION_STATUS_MAP.unknown!;
 
-/** Look up a status entry with fallback. */
+/**
+ * Look up a status badge, with its label resolved for the ACTIVE UI language.
+ *
+ * The bundle is read at call time rather than passed in, for the same reason
+ * `activeLanguage()` above is: every one of the eleven call sites is a render
+ * body that already had the status token and no `t`, and the instruction to
+ * thread one through is exactly the instruction that ran at ~96%
+ * non-compliance for `language`. `status_tokens` is a BASE section
+ * (`i18n/routeSections.ts`), so it is loaded on every route and the lookup
+ * cannot land on a not-yet-fetched chunk. An unmapped token still resolves
+ * through `tokenLabel`, which warns in DEV and falls back to the raw token.
+ */
 export function getStatusEntry(status: string): ExecutionStatusEntry {
-  return EXECUTION_STATUS_MAP[status] ?? DEFAULT_STATUS_ENTRY;
+  const presentation = EXECUTION_STATUS_MAP[status] ?? DEFAULT_STATUS_PRESENTATION;
+  return { ...presentation, label: tokenLabel(getActiveTranslations(), 'execution', status) };
 }
 
 
