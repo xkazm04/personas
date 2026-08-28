@@ -99,7 +99,14 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                   type="button"
                   key={i}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${i < dots ? 'bg-amber-400' : 'bg-primary/10'} hover:bg-amber-300`}
-                  onClick={() => onImportanceChange(memory.id, dotsToImportance(i))}
+                  // Re-clicking the rung a memory already sits on writes nothing:
+                  // the dot row is coarser than the 1-10 field behind it, so an
+                  // unguarded click could round-trip the value into a different
+                  // number with no visible change to the dots.
+                  onClick={() => {
+                    const next = dotsToImportance(i);
+                    if (next !== memory.importance) onImportanceChange(memory.id, next);
+                  }}
                   aria-label={`${pt.importance_label} ${dotsToImportance(i)}`}
                 />
               ))}
