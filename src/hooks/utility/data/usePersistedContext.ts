@@ -14,7 +14,10 @@ export interface UsePersistedContextOptions<T> {
   validate: (parsed: T) => string | null;
   /**
    * Extract the `savedAt` timestamp from the parsed context.
-   * Return `undefined` if the context has no timestamp (will be treated as fresh).
+   * Return `undefined` if the context has no timestamp — the entry is then
+   * treated as STALE and discarded. A context whose age cannot be proven is
+   * never restored (fail closed); every writer in this repo persists
+   * `savedAt: Date.now()`, so only malformed/legacy entries hit this path.
    */
   getSavedAt: (parsed: T) => number | undefined;
   /** Called when a valid, non-stale context is found. */
@@ -53,16 +56,28 @@ export function usePersistedContext<T>({
     if (!raw) return;
 
     try {
-      const parsed = JSON.parse(raw) as T;
+      const decoded: unknown = JSON.parse(raw);
+      // Invariant: this entry is written only by this app's own persist step,
+      // which always stores a plain object. `validate` is contracted to look
+      // for a required id field, which no non-object JSON value can carry, so
+      // anything that is not an object is discarded BEFORE the cast rather
+      // than asserted past it.
+      if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
+        window.localStorage.removeItem(key);
+        return;
+      }
+      const parsed = decoded as T;
       const id = validate(parsed);
       if (!id) {
         window.localStorage.removeItem(key);
         return;
       }
 
-      // Discard stale contexts
+      // Discard stale contexts. A missing or non-finite timestamp fails
+      // CLOSED: an entry whose age cannot be established is not restorable,
+      // where it used to be restored forever.
       const savedAt = getSavedAt(parsed);
-      if (savedAt !== undefined && Date.now() - savedAt > maxAge) {
+      if (savedAt === undefined || !Number.isFinite(savedAt) || Date.now() - savedAt > maxAge) {
         window.localStorage.removeItem(key);
         return;
       }

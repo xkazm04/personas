@@ -58,10 +58,27 @@ describe("usePersistedContext", () => {
     expect(window.localStorage.getItem(KEY)).toBeNull();
   });
 
-  it("treats a context with no savedAt as fresh", () => {
+  it("discards a context with no savedAt (fail closed — age unprovable)", () => {
     window.localStorage.setItem(KEY, JSON.stringify({ jobId: "j-1" }));
     const { onRestore } = setup();
-    expect(onRestore).toHaveBeenCalledTimes(1);
+    expect(onRestore).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem(KEY)).toBeNull();
+  });
+
+  it("discards a context whose savedAt is not a finite number", () => {
+    // `Infinity` round-trips through JSON as `null`; a string timestamp is the
+    // other shape a legacy/hand-edited entry can carry.
+    window.localStorage.setItem(KEY, JSON.stringify({ jobId: "j-1", savedAt: "yesterday" }));
+    const { onRestore } = setup();
+    expect(onRestore).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem(KEY)).toBeNull();
+  });
+
+  it("discards a non-object entry instead of asserting it to T", () => {
+    window.localStorage.setItem(KEY, JSON.stringify("just-a-string"));
+    const { onRestore } = setup();
+    expect(onRestore).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem(KEY)).toBeNull();
   });
 
   it("removes a corrupt entry instead of throwing", () => {
