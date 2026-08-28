@@ -68,7 +68,10 @@ export interface ProjectRuntime {
   mcp: string[];
 }
 
-const AUTO_MAX_TURNS = 12;
+// Exported for the test that pins the chain's stop condition. An autonomous run
+// that miscounts here burns real CLI turns against a real project, which is the
+// one failure in this file whose cost is not paid in pixels.
+export const AUTO_MAX_TURNS = 12;
 
 // Boot poll bounds. A poll whose ONLY exit is success is not a poll, it is a
 // hang: a dev server that never binds — a port already in use, Turbopack dying
@@ -95,7 +98,12 @@ const AUTO_INSTRUCTION =
 // giant bubble. Split it into paragraph-level "beats" so the log becomes a
 // history of shorter messages (a real conversation), while keeping fenced code
 // blocks intact so we never split mid-snippet. One-paragraph replies stay one.
-function splitReply(text: string): string[] {
+//
+// Exported so it can be tested directly: it is pure, it is the only thing
+// standing between a streamed reply and the chat log's shape, and its
+// interesting case (a fence the model never closed) cannot be reached from the
+// store's public surface without mocking a whole turn.
+export function splitReply(text: string): string[] {
   const t = text.trim();
   if (!t) return [];
   const parts: string[] = [];
