@@ -51,6 +51,12 @@ describe('splitBodySections', () => {
     expect(sections[0]!.canonical).toBe('impact');
   });
 
+  it('slots a Net delta section between Expected impact and Description', () => {
+    const sections = splitBodySections('## Description\nd\n\n## Net delta\nBefore: a\nAfter: b\n\n## Expected impact\ni');
+    expect(sections.map((s) => s.heading)).toEqual(['Expected impact', 'Net delta', 'Description']);
+    expect(sections[1]!.canonical).toBe('delta');
+  });
+
   it('returns one un-headed section for free prose, and reports it as unsectioned', () => {
     expect(splitBodySections('just prose')).toEqual([
       { heading: null, content: 'just prose', canonical: null },
