@@ -4,7 +4,7 @@
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
-import { ZAPIER_DEFINITION, resolveServiceByInclusion, classifyNodeRole } from '../platformDefinitions';
+import { ZAPIER_DEFINITION, resolveService, classifyNodeRole } from '../platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface ZapierStep {
@@ -25,9 +25,7 @@ interface ZapierExport {
 }
 
 function extractServiceName(app: string | undefined): string {
-  if (!app) return 'unknown';
-  const lower = app.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  return resolveServiceByInclusion(ZAPIER_DEFINITION, lower) ?? lower;
+  return resolveService(ZAPIER_DEFINITION, app);
 }
 
 function isTriggerStep(step: ZapierStep): boolean {

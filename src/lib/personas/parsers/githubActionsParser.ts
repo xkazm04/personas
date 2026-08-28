@@ -5,6 +5,7 @@
 
 import type { AgentIR } from '@/lib/types/designTypes';
 import { sanitizeTextField, sanitizeParamValue } from '@/lib/utils/sanitizers/workflowSanitizer';
+import { GITHUB_ACTIONS_DEFINITION, resolveService } from '../platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface GHAStep {
@@ -32,36 +33,19 @@ interface GHAWorkflow {
   env?: Record<string, unknown>;
 }
 
-const GHA_SERVICE_MAP: Record<string, string> = {
-  'actions/checkout': 'git',
-  'actions/setup-node': 'nodejs',
-  'actions/setup-python': 'python',
-  'actions/setup-java': 'java',
-  'actions/setup-go': 'golang',
-  'actions/upload-artifact': 'artifacts',
-  'actions/download-artifact': 'artifacts',
-  'actions/cache': 'cache',
-  'docker/build-push-action': 'docker',
-  'docker/login-action': 'docker',
-  'aws-actions': 'aws',
-  'azure/': 'azure',
-  'google-github-actions': 'gcp',
-  'slackapi/slack-github-action': 'slack',
-  'peter-evans/create-pull-request': 'github',
-};
-
+/**
+ * A step's service name.
+ *
+ * The action -> service table used to live here as a private `GHA_SERVICE_MAP`
+ * walked with `includes()`. It is now `GITHUB_ACTIONS_DEFINITION.nodeTypeMap`,
+ * resolved through the same {@link resolveService} entry point the other three
+ * adapters use — so the identity string the whole IR is keyed on has one
+ * derivation instead of four, and an org pattern can no longer match the middle
+ * of an unrelated repository name.
+ */
 function extractServiceFromUses(uses: string | undefined): string {
   if (!uses) return 'shell';
-  const lower = uses.toLowerCase();
-  for (const [pattern, service] of Object.entries(GHA_SERVICE_MAP)) {
-    if (lower.includes(pattern.toLowerCase())) return service;
-  }
-  const match = uses.match(/^([^@/]+\/[^@/]+)/);
-  if (match) {
-    const repo = match[1]?.split('/')[1];
-    return repo ? repo.toLowerCase().replace(/[^a-z0-9-]/g, '') : 'action';
-  }
-  return 'action';
+  return resolveService(GITHUB_ACTIONS_DEFINITION, uses);
 }
 
 function parseTriggers(onConfig: unknown): Array<{

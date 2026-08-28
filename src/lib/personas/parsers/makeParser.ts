@@ -4,7 +4,7 @@
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
-import { MAKE_DEFINITION, resolveServiceByInclusion, classifyNodeRole } from '../platformDefinitions';
+import { MAKE_DEFINITION, resolveService, classifyNodeRole } from '../platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface MakeModule {
@@ -30,12 +30,7 @@ interface MakeExport {
 }
 
 function extractServiceName(moduleId: string | undefined): string {
-  if (!moduleId) return 'unknown';
-  const lower = moduleId.toLowerCase();
-  const colonPart = lower.split(':')[0] || lower;
-  const cleaned = colonPart.replace(/[^a-z0-9-]/g, '');
-
-  return resolveServiceByInclusion(MAKE_DEFINITION, cleaned) ?? (cleaned || 'unknown');
+  return resolveService(MAKE_DEFINITION, moduleId);
 }
 
 export function parseMakeWorkflow(json: unknown): AgentIR {

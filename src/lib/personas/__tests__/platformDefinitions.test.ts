@@ -3,39 +3,60 @@ import {
   MAKE_DEFINITION,
   N8N_DEFINITION,
   ZAPIER_DEFINITION,
-  resolveNodeType,
-  resolveServiceByInclusion,
+  GITHUB_ACTIONS_DEFINITION,
+  resolveService,
   classifyNodeRole,
   extractProtocolsFromNodes,
 } from '../platformDefinitions';
 
-describe('resolveServiceByInclusion — specificity over declaration order', () => {
+describe('resolveService — specificity over declaration order', () => {
   it('prefers google-sheets over the generic google mapping declared before it', () => {
     // MAKE_DEFINITION declares `google` first; without specificity ordering
     // every google-sheets / google-drive module collapsed onto `google`.
-    expect(resolveServiceByInclusion(MAKE_DEFINITION, 'google-sheets')).toBe('google-sheets');
-    expect(resolveServiceByInclusion(MAKE_DEFINITION, 'google-drive')).toBe('google-drive');
-    expect(resolveServiceByInclusion(MAKE_DEFINITION, 'google-contacts')).toBe('google');
+    expect(resolveService(MAKE_DEFINITION, 'google-sheets:addRow')).toBe('google-sheets');
+    expect(resolveService(MAKE_DEFINITION, 'google-drive:watchFiles')).toBe('google-drive');
+    expect(resolveService(MAKE_DEFINITION, 'google-contacts:list')).toBe('google');
   });
 
-  it('returns undefined when no mapping applies', () => {
-    expect(resolveServiceByInclusion(MAKE_DEFINITION, 'acme-widgets')).toBeUndefined();
+  it('falls back to the normalized identifier when no mapping applies', () => {
+    expect(resolveService(MAKE_DEFINITION, 'acme-widgets:doThing')).toBe('acme-widgets');
+    expect(resolveService(MAKE_DEFINITION, undefined)).toBe('unknown');
   });
 
   it('resolves Zapier app slugs to their canonical service', () => {
-    expect(resolveServiceByInclusion(ZAPIER_DEFINITION, 'google-sheets')).toBe('google-sheets');
-    expect(resolveServiceByInclusion(ZAPIER_DEFINITION, 'google-mail')).toBe('gmail');
+    expect(resolveService(ZAPIER_DEFINITION, 'google-sheets')).toBe('google-sheets');
+    expect(resolveService(ZAPIER_DEFINITION, 'google-mail')).toBe('gmail');
+    expect(resolveService(ZAPIER_DEFINITION, undefined)).toBe('unknown');
+  });
+
+  it('strips the n8n namespace and the Trigger suffix', () => {
+    expect(resolveService(N8N_DEFINITION, 'n8n-nodes-base.gmailTrigger')).toBe('gmail');
+    expect(resolveService(N8N_DEFINITION, 'n8n-nodes-base.googleSheets')).toBe('google-sheets');
+    expect(resolveService(N8N_DEFINITION, 'n8n-nodes-base.acmeWidget')).toBe('acmewidget');
   });
 });
 
-describe('resolveNodeType', () => {
-  it('strips the n8n namespace and the Trigger suffix', () => {
-    expect(resolveNodeType(N8N_DEFINITION, 'n8n-nodes-base.gmailTrigger')).toBe('gmail');
-    expect(resolveNodeType(N8N_DEFINITION, 'n8n-nodes-base.googleSheets')).toBe('google-sheets');
+// The GitHub Actions adapter kept a private action -> service map walked with
+// `includes()`, so an org-level pattern could match the MIDDLE of an unrelated
+// repository name and hand the whole IR the wrong identity string. Routed
+// through the one entry point, its patterns are anchored to the start of
+// `owner/repo` instead.
+describe('resolveService — GitHub Actions', () => {
+  it('maps the well-known actions to their service', () => {
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'actions/checkout@v4')).toBe('git');
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'aws-actions/configure-aws-credentials@v4')).toBe('aws');
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'azure/login@v2')).toBe('azure');
   });
 
-  it('falls back to the cleaned node name for unmapped types', () => {
-    expect(resolveNodeType(N8N_DEFINITION, 'n8n-nodes-base.acmeWidget')).toBe('acmewidget');
+  it('does not claim a third-party repo that merely contains an org pattern', () => {
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'someorg/my-aws-actions-helper@v1'))
+      .toBe('my-aws-actions-helper');
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'someorg/azure-tools@v1')).toBe('azure-tools');
+  });
+
+  it('falls back to the repository name, then to a generic action', () => {
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'acme/deploy-tool@v3')).toBe('deploy-tool');
+    expect(resolveService(GITHUB_ACTIONS_DEFINITION, 'docker://alpine')).toBe('action');
   });
 });
 
