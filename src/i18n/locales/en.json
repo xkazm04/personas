@@ -1256,6 +1256,7 @@
     "core_col_mentality": "Mentality",
     "core_traits_one": "1 trait",
     "core_traits_other": "{count} traits",
+    "core_traits_restore": "Restore my traits",
     "core_disposition": "Disposition",
     "core_disposition_low": "Cautious",
     "core_disposition_high": "Bold",

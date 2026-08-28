@@ -1262,6 +1262,7 @@ export type Translations = {
     core_col_mentality: string;
     core_traits_one: string;
     core_traits_other: string;
+    core_traits_restore: string;
     core_disposition: string;
     core_disposition_low: string;
     core_disposition_high: string;

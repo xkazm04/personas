@@ -4,6 +4,7 @@
  *  lands where it expects and you scan rather than read.
  *  Character (icon grid) · Configuration (icon tiles + effort meter) · Mentality.
  */
+import { Undo2 } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { SectionHeader, FieldLabel } from "./SectionLabels";
 import { SnapshotColumn } from "./SnapshotColumn";
@@ -22,13 +23,30 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
       <div className="flex-1 min-w-0 flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
           <SectionHeader>{t.agents.core_col_character}</SectionHeader>
-          {state.traits.length > 0 && (
-            <span className="typo-caption" style={{ color: ACCENT }}>
-              {state.traits.length === 1
-                ? t.agents.core_traits_one
-                : tx(t.agents.core_traits_other, { count: state.traits.length })}
-            </span>
-          )}
+          <span className="flex items-center gap-2">
+            {/* Picking a mentality REPLACES the whole trait set. The cards are
+                one click away in the same modal, so a curious click used to
+                cost a minute of deliberate work with no way back. The offer
+                appears only when something was actually discarded, and
+                withdraws itself the moment the user edits the new set. */}
+            {core.discardedTraits && (
+              <button
+                type="button"
+                onClick={core.restoreTraits}
+                data-testid="core-restore-traits"
+                className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/80 cursor-pointer"
+              >
+                <Undo2 className="w-3 h-3" /> {t.agents.core_traits_restore}
+              </button>
+            )}
+            {state.traits.length > 0 && (
+              <span className="typo-caption" style={{ color: ACCENT }}>
+                {state.traits.length === 1
+                  ? t.agents.core_traits_one
+                  : tx(t.agents.core_traits_other, { count: state.traits.length })}
+              </span>
+            )}
+          </span>
         </div>
         <AxisTraitGrid core={core} />
       </div>

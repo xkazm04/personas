@@ -55,6 +55,7 @@
   "core_col_mentality": "Мышление",
   "core_traits_one": "1 черта",
   "core_traits_other": "Черт: {count}",
+  "core_traits_restore": "Вернуть мои черты",
   "core_disposition": "Нрав",
   "core_disposition_low": "Осторожный",
   "core_disposition_high": "Смелый",

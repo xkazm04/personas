@@ -55,6 +55,7 @@
   "core_col_mentality": "メンタリティ",
   "core_traits_one": "特性 1 件",
   "core_traits_other": "特性 {count} 件",
+  "core_traits_restore": "元の特性に戻す",
   "core_disposition": "気質",
   "core_disposition_low": "慎重",
   "core_disposition_high": "大胆",

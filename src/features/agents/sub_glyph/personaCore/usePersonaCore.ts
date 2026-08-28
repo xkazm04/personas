@@ -70,6 +70,11 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
   const [loadFailed, setLoadFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<PersonaCoreState>(DEFAULT_CORE);
+  // The hand-picked trait set the last applyPreset threw away, held so the user
+  // can get it back. Not part of PersonaCoreState: it is transient repair
+  // material, never part of what the core IS, and must not make `configured`
+  // true on its own.
+  const [discardedTraits, setDiscardedTraits] = useState<string[] | null>(null);
   const configured = useMemo(() => !isDefaultCore(state), [state]);
 
   useEffect(() => {
@@ -97,29 +102,49 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
   useEffect(() => {
     if (resetKey !== null) return;
     setState(DEFAULT_CORE);
+    setDiscardedTraits(null);
   }, [resetKey]);
 
   const applyPreset = useCallback((a: Archetype) => {
+    // Preload the archetype's dominant traits so a snapshot lands as a complete
+    // character. A snapshot is a fresh starting point, so this REPLACES the
+    // current trait set (falls back to keeping it only for an unmapped
+    // archetype) — but replacing is not the same as destroying. Remember what
+    // was thrown away so `restoreTraits` can hand it back: the mentality cards
+    // sit one click from the trait grid in the same modal, carry no warning,
+    // and a curious click used to silently cost a minute of deliberate work.
+    const preloaded = ARCHETYPE_TRAITS[a.id];
+    setDiscardedTraits(preloaded && state.traits.length > 0 ? state.traits : null);
     setState((prev) => ({
       ...prev,
       archetypeId: a.id,
       disposition: coreNumber(a, "riskTolerance", prev.disposition),
       conflictStyle: coreString(a, "conflictStyle") ?? prev.conflictStyle,
-      // Preload the archetype's dominant traits so a snapshot lands as a complete
-      // character. A snapshot is a fresh starting point, so this replaces the
-      // current trait set (falls back to keeping it only for an unmapped archetype).
-      traits: ARCHETYPE_TRAITS[a.id] ?? prev.traits,
+      traits: preloaded ?? prev.traits,
     }));
-  }, []);
+  }, [state.traits]);
+
+  // Keeps the archetype the user just picked — they clicked the card on
+  // purpose; it is only the traits they did not mean to lose.
+  const restoreTraits = useCallback(() => {
+    if (!discardedTraits) return;
+    setState((p) => ({ ...p, traits: discardedTraits }));
+    setDiscardedTraits(null);
+  }, [discardedTraits]);
 
   const setDisposition = useCallback((v: number) => setState((p) => ({ ...p, disposition: v })), []);
   const setConflict = useCallback((id: string | null) => setState((p) => ({ ...p, conflictStyle: p.conflictStyle === id ? null : id })), []);
-  const toggleTrait = useCallback((id: string) => setState((p) => ({
-    ...p, traits: p.traits.includes(id) ? p.traits.filter((t) => t !== id) : [...p.traits, id],
-  })), []);
+  const toggleTrait = useCallback((id: string) => {
+    // Editing the trait set is the user accepting it: the offer to put the old
+    // one back would now silently undo THIS edit too, so it is withdrawn.
+    setDiscardedTraits(null);
+    setState((p) => ({
+      ...p, traits: p.traits.includes(id) ? p.traits.filter((t) => t !== id) : [...p.traits, id],
+    }));
+  }, []);
   const setModel = useCallback((m: ModelTier) => setState((p) => ({ ...p, model: m })), []);
   const setEffort = useCallback((e: EffortLevel) => setState((p) => ({ ...p, effort: e })), []);
-  const reset = useCallback(() => setState(DEFAULT_CORE), []);
+  const reset = useCallback(() => { setState(DEFAULT_CORE); setDiscardedTraits(null); }, []);
 
   const preset = useMemo(() => archetypes.find((a) => a.id === state.archetypeId) ?? null, [archetypes, state.archetypeId]);
 
@@ -144,6 +169,7 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
 
   return {
     loading, archetypes, loadFailed, retryLoad, state, configured, preset,
-    applyPreset, setDisposition, setConflict, toggleTrait, setModel, setEffort, reset, launchAugmentation,
+    applyPreset, discardedTraits, restoreTraits,
+    setDisposition, setConflict, toggleTrait, setModel, setEffort, reset, launchAugmentation,
   };
 }

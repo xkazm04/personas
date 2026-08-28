@@ -239,6 +239,70 @@ describe("usePersonaCore", () => {
     expect(result.current.state.archetypeId).toBe("guardian");
   });
 
+  it("hands back the hand-picked traits a mentality replaced", async () => {
+    // The mentality cards sit one click from the trait grid in the same modal,
+    // carry no warning, and replace the WHOLE trait set. A user who spent a
+    // minute assembling traits and then clicked a card out of curiosity lost
+    // all of it with no way back.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.toggleTrait("terse"));
+    act(() => result.current.toggleTrait("actionable"));
+    expect(result.current.discardedTraits).toBeNull();
+
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    expect(result.current.state.traits).toEqual(ARCHETYPE_TRAITS.guardian);
+    expect(result.current.discardedTraits).toEqual(["terse", "actionable"]);
+
+    act(() => result.current.restoreTraits());
+    expect(result.current.state.traits).toEqual(["terse", "actionable"]);
+    // The archetype was clicked on purpose — only the traits come back.
+    expect(result.current.state.archetypeId).toBe("guardian");
+    expect(result.current.discardedTraits).toBeNull();
+  });
+
+  it("offers nothing to restore when the preset replaced an empty set", async () => {
+    // The affordance is driven by this value, so a non-null here would put a
+    // permanent dead "restore" control in the column.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    expect(result.current.discardedTraits).toBeNull();
+  });
+
+  it("withdraws the restore offer once the user edits the new trait set", async () => {
+    // Restoring after an edit would silently undo THAT edit too.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.toggleTrait("terse"));
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    expect(result.current.discardedTraits).toEqual(["terse"]);
+
+    act(() => result.current.toggleTrait("ships-fast"));
+    expect(result.current.discardedTraits).toBeNull();
+    act(() => result.current.restoreTraits());
+    expect(result.current.state.traits).toContain("ships-fast");
+  });
+
+  it("drops the restore offer when the core is reset", async () => {
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.toggleTrait("terse"));
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    act(() => result.current.reset());
+
+    expect(result.current.discardedTraits).toBeNull();
+    expect(result.current.configured).toBe(false);
+  });
+
   it("keeps the configured core when a build session STARTS", async () => {
     // resetKey is the build-session id: null while composing, an id once the
     // build launches. The launched intent carries the core's directives, so the

@@ -1208,6 +1208,7 @@
     "core_col_mentality": "사고방식",
     "core_traits_one": "특성 1개",
     "core_traits_other": "특성 {count}개",
+    "core_traits_restore": "내 특성 되돌리기",
     "core_disposition": "성향",
     "core_disposition_low": "신중",
     "core_disposition_high": "과감",
