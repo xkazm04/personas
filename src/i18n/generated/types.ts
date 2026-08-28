@@ -13825,6 +13825,9 @@ export type Translations = {
       pair_generating: string;
       pair_scan_hint: string;
       pair_token_once: string;
+      pair_regenerate_confirm_title: string;
+      pair_regenerate_confirm_body: string;
+      pair_regenerate_confirm_action: string;
       pair_url_label: string;
       pair_qr_alt: string;
       pair_devices_title: string;

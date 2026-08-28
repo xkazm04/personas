@@ -87,6 +87,71 @@ describe('FleetPairDevice — pairing failure is announced', () => {
   });
 });
 
+/**
+ * Generate was guarded only by `busy`, so pressing it again while a live token
+ * was on screen minted another one — no confirmation, no cap, no notice that
+ * the previous token stays valid until revoked. Two live device-scoped
+ * credentials for a LAN-exposed surface, and nothing on either row saying which
+ * one the phone holds.
+ */
+describe('FleetPairDevice — a second token is not minted silently', () => {
+  const PAIR = { url: 'http://192.168.1.5:8765/#tok', qrSvg: '<svg/>' } as never;
+
+  it('mints on the first press with no confirmation to get in the way', async () => {
+    vi.mocked(fleetApi.pairDevice).mockResolvedValue(PAIR);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+
+    await screen.findByTestId('fleet-pair-qr');
+    expect(fleetApi.pairDevice).toHaveBeenCalledTimes(1);
+  });
+
+  it('confirms before a SECOND mint, and names what happens to the first token', async () => {
+    vi.mocked(fleetApi.pairDevice).mockResolvedValue(PAIR);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    await screen.findByTestId('fleet-pair-qr');
+
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+
+    // Still ONE token minted — the press opened a dialog, it did not mint.
+    expect(fleetApi.pairDevice).toHaveBeenCalledTimes(1);
+    // The stake is spelled out, not left to the operator to infer.
+    expect(screen.getByText(/stays valid until you revoke it/i)).toBeInTheDocument();
+  });
+
+  it('mints nothing when the confirmation is cancelled', async () => {
+    vi.mocked(fleetApi.pairDevice).mockResolvedValue(PAIR);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    await screen.findByTestId('fleet-pair-qr');
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(fleetApi.pairDevice).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/stays valid until you revoke it/i)).toBeNull();
+  });
+
+  it('still mints when the operator confirms', async () => {
+    vi.mocked(fleetApi.pairDevice).mockResolvedValue(PAIR);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    await screen.findByTestId('fleet-pair-qr');
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    await user.click(screen.getByRole('button', { name: /generate anyway/i }));
+
+    await waitFor(() => expect(fleetApi.pairDevice).toHaveBeenCalledTimes(2));
+  });
+});
+
 describe('FleetPairDevice — copy confirmation timer', () => {
   afterEach(() => {
     vi.restoreAllMocks();
