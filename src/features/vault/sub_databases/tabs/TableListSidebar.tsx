@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { Table2, Pin, Key, ChevronRight, Database } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TableSearch, SidebarTestConnection } from './TableSearch';
 import type { IntrospectedTable, RedisKeyInfo } from '@/hooks/database/useTableIntrospection';
@@ -37,6 +38,47 @@ function activateOnKey(e: React.KeyboardEvent, activate: () => void) {
   }
 }
 
+/** Deterministic ghost-bar width variety so ghosts read as rows, not a barcode. */
+const GHOST_BAR_WIDTHS = ['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'];
+
+/**
+ * Cold load for the table list — a calm ghost matched to the real row geometry
+ * (`px-2.5 py-2 rounded-modal`, icon slot + label), UNDER the permanent search
+ * chrome, per docs/design/overview-loading.md.
+ *
+ * What this replaced was `<LoadingSpinner/>` beside a centred "Loading…". That
+ * component renders `null`, so the sidebar painted one bare sentence floating in
+ * an otherwise empty 288px column and then relaid out entirely when rows arrived.
+ *
+ * `animate-fade-in` carries fill-mode `both`, so the staggered ≥120ms delay keeps
+ * these invisible until then and a fast introspection never paints a ghost at all.
+ * No `animate-pulse`.
+ *
+ * Deliberately silent to assistive tech: the loading state is announced through
+ * the app-wide `AriaLiveProvider` by the caller. A local `role="status"` here
+ * would be mounted in the same commit as its own text and therefore never
+ * announced (docs/concepts/golden-paths/screen-reader-announcements.md). The
+ * census rule for that condition cannot reach this site — it keys on a live
+ * region lexically adjacent to a conditional, and this one is a component
+ * boundary away — which is a limit of the proxy, not an exemption on the merits.
+ */
+function TableListGhost() {
+  return (
+    <div aria-hidden="true" className="space-y-0.5">
+      {Array.from({ length: 7 }).map((_, r) => (
+        <div
+          key={r}
+          className="flex items-center gap-1.5 px-2.5 py-2 rounded-modal border border-transparent animate-fade-in"
+          style={{ animationDelay: `${120 + r * 35}ms` }}
+        >
+          <span className="w-4 h-4 rounded bg-primary/[0.06] shrink-0" />
+          <span className={`h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[r % GHOST_BAR_WIDTHS.length]}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function TableListSidebar({
   tables,
   redisKeys,
@@ -57,6 +99,14 @@ export function TableListSidebar({
 }: TableListSidebarProps) {
   const { t, tx } = useTranslation();
   const dbt = t.vault.databases;
+
+  // Announce the cold load through the app-wide, always-mounted live region —
+  // see the note on TableListGhost for why a local one cannot work here.
+  const isColdLoad = loading && tables.length === 0 && redisKeys.length === 0;
+  useEffect(() => {
+    if (isColdLoad) announceImperative(dbt.loading);
+  }, [isColdLoad, dbt.loading]);
+
   const q = filter.trim().toLowerCase();
   const filteredTables = q
     ? tables.filter((t) => {
@@ -81,12 +131,7 @@ export function TableListSidebar({
 
       {/* List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {loading && tables.length === 0 && redisKeys.length === 0 && (
-          <div className="flex items-center justify-center py-12 gap-2">
-            <LoadingSpinner className="text-foreground" />
-            <span className="typo-body text-foreground">{dbt.loading}</span>
-          </div>
-        )}
+        {isColdLoad && <TableListGhost />}
 
         {error && (
           <div className="space-y-2">
