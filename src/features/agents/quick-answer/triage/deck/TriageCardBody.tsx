@@ -31,6 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { TriageItem } from '../triageTypes';
 import { TriageCardHeader } from './TriageCardHeader';
+import { splitBodySections } from './triageBodySections';
 
 function Block({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -76,7 +77,34 @@ const CardProse = memo(function CardProse({ item }: { item: TriageItem }) {
  *  is replaced by `answerSlot` and must not be built at all. */
 const CardBody = memo(function CardBody({ item }: { item: TriageItem }) {
   if (!item.body) return null;
-  return <MarkdownRenderer content={item.body} className="typo-body text-foreground" />;
+  const sections = splitBodySections(item.body);
+  // Free prose (no `## ` sections) renders exactly as before.
+  if (sections.every((s) => s.heading === null)) {
+    return <MarkdownRenderer content={item.body} className="typo-body text-foreground" />;
+  }
+  // The structured form — see `triageBodySections.ts`. The Summary is the
+  // lead: it reads as the card's own prose, set apart from the rest by a rule.
+  // Every other section is a labelled block, so the reviewer's eye lands on
+  // the same slots (Description / Flow / Expected impact) on every card and a
+  // missing slot is visible as an absence rather than as shorter prose.
+  return (
+    <>
+      {sections.map((section, i) => {
+        if (section.heading === null || section.canonical === 'summary') {
+          return (
+            <div key={`lead-${i}`} className="border-b border-primary/10 pb-4">
+              <MarkdownRenderer content={section.content} className="typo-body text-foreground" />
+            </div>
+          );
+        }
+        return (
+          <Block key={`${section.heading}-${i}`} label={section.heading}>
+            <MarkdownRenderer content={section.content} className="typo-body text-foreground" />
+          </Block>
+        );
+      })}
+    </>
+  );
 });
 
 export function TriageCardBody({

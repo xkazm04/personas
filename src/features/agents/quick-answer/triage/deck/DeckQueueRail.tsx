@@ -174,16 +174,18 @@ const QueueRow = memo(function QueueRow({
           : 'border-transparent hover:border-primary/30 hover:bg-secondary/40'
       }`}
     >
-      {/* Position + kind, pinned to the row's top-left corner and stepped down a
-          size. They used to sit IN the text flow, which cost the title ~70px of
-          a 240px rail on every row and truncated most topics mid-word. Out of
-          flow they cost the FIRST LINE only — the spacer below — and nothing at
-          all from the second. */}
-      <span className="pointer-events-none absolute left-3 top-2.5 flex items-center gap-1">
-        <span className="typo-label w-6 text-right tabular-nums text-muted-foreground">
+      {/* Position + kind, pinned to the row's top-left corner and stepped down
+          TWO sizes (caption number, 12px glyph). They used to sit IN the text
+          flow, which cost the title ~70px of a 240px rail on every row and
+          truncated most topics mid-word. Out of flow they cost the FIRST LINE
+          only — the 32px spacer below, down from 48 — and nothing at all from
+          the second. Zero is not on offer: a badge that costs no title width
+          is a badge painted over the title's first word. */}
+      <span className="pointer-events-none absolute left-2 top-2 flex items-center gap-0.5">
+        <span className="typo-caption w-4 text-right tabular-nums leading-none text-muted-foreground">
           {position}
         </span>
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
+        <Icon className={`h-3 w-3 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
       </span>
       {/* The icon is `aria-hidden`, so this is the ONLY thing standing between
           the row and a queue whose item types are invisible to a screen reader. */}
@@ -204,7 +206,7 @@ const QueueRow = memo(function QueueRow({
             spacer at the head of the flow is the one way to indent its first
             line that does not depend on how Blink treats indentation inside
             one. It is what keeps the title clear of the corner badge. */}
-        <span aria-hidden className="inline-block w-12" />
+        <span aria-hidden className="inline-block w-8" />
         {item.title}
       </span>
       {/* A skipped card sorts to the BACK of the queue rather than leaving it,
