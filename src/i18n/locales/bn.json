@@ -4454,7 +4454,9 @@
       "capability_key_value_hint": "এটি একটি কী-ভ্যালু স্টোর। SCAN, GET এবং TYPE-এর মতো কী কমান্ড ব্যবহার করুন — SQL নয়।",
       "capability_select_subset": "শুধু SELECT",
       "capability_select_subset_hint": "এখানে শুধু একক-টেবিলের সরল SELECT কোয়েরি চলে — WHERE দিয়ে ফিল্টার, ORDER BY দিয়ে সাজানো, LIMIT দিয়ে সীমা নির্ধারণ। JOIN, অ্যাগ্রিগেট, CTE এবং রাইট সমর্থিত নয়।",
-      "query_timeout": "প্রতিক্রিয়ার জন্য অপেক্ষার সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।"
+      "query_timeout": "প্রতিক্রিয়ার জন্য অপেক্ষার সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
+      "add_favorite": "প্রিয়তে যোগ করুন",
+      "remove_favorite": "প্রিয় থেকে সরান"
     },
     "dependencies": {
       "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",

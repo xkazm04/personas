@@ -6,6 +6,47 @@ import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 import type { ConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 
+/**
+ * Cold-load ghost for the Redis key-detail pane.
+ *
+ * `feedback/LoadingSpinner` renders `null`, so selecting a key used to paint a
+ * bare "Loading key info..." label with an empty gap beside it and then jump to
+ * a two-row layout. The permanent chrome — the "Type" label — stays put and the
+ * ghost only stands in for the value badge and the hint line, so the settled
+ * state lands in exactly the same place. Geometry is matched to that settled
+ * block: a `px-2 py-0.5` pill and the hint paragraph beneath it.
+ *
+ * `animate-fade-in` carries fill-mode `both`, so the staggered >=120ms delay
+ * keeps these invisible until then and a fast TYPE lookup never paints a ghost
+ * at all. No `animate-pulse`, ever.
+ *
+ * Deliberately silent to assistive tech: the caller announces this load through
+ * the app-wide `AriaLiveProvider`. A local `role="status"` here would enter the
+ * accessibility tree in the same commit as its own text, leaving no change for a
+ * screen reader to observe, so the announcement would never fire at all
+ * (census `live-region-born-with-its-message`,
+ * docs/concepts/golden-paths/screen-reader-announcements.md).
+ */
+function KeyInfoGhost({ typeLabel }: { typeLabel: string }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="typo-body text-foreground">{typeLabel}</span>
+        <span
+          aria-hidden="true"
+          className="inline-block h-5 w-20 rounded bg-primary/[0.06] animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+        />
+      </div>
+      <span
+        aria-hidden="true"
+        className="block h-3.5 w-3/5 rounded bg-primary/[0.06] animate-fade-in"
+        style={{ animationDelay: '155ms' }}
+      />
+    </div>
+  );
+}
+
 interface TableDetailPanelProps {
   isRedis: boolean;
   /** Notion/Airtable API-based connector. */
@@ -109,22 +150,7 @@ export function TableDetailPanel({
           </div>
           <div className="p-4">
             {keyTypeResult === null ? (
-              /* Cold load for the key detail — a ghost matched to the settled block
-                 below it (label + type pill on one row, hint line under), not the
-                 old `<LoadingSpinner/>` beside "Loading key info…", which rendered
-                 `null` and left a bare sentence where a shape belonged.
-                 `animate-fade-in` is fill-mode `both`, so the ≥120ms stagger means a
-                 fast TYPE lookup never paints a ghost. No `animate-pulse`.
-                 Silent to assistive tech on purpose — the announcement goes through
-                 the app-wide AriaLiveProvider above, because a local `role="status"`
-                 mounted together with its own text is never announced at all. */
-              <div aria-hidden="true" className="space-y-3">
-                <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '120ms' }}>
-                  <span className="h-3.5 w-16 rounded bg-primary/[0.06]" />
-                  <span className="h-5 w-20 rounded bg-primary/[0.06]" />
-                </div>
-                <span className="block h-3.5 w-3/5 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '155ms' }} />
-              </div>
+              <KeyInfoGhost typeLabel={dbt.type_label} />
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">

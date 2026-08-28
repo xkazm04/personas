@@ -4454,7 +4454,9 @@
       "capability_key_value_hint": "这是一个键值存储。请使用 SCAN、GET 和 TYPE 等键命令，而非 SQL。",
       "capability_select_subset": "仅 SELECT",
       "capability_select_subset_hint": "这里仅运行针对单个表的简单 SELECT 查询——用 WHERE 过滤、ORDER BY 排序、LIMIT 限制。不支持 JOIN、聚合、CTE 和写入。",
-      "query_timeout": "等待响应超时，请重试。"
+      "query_timeout": "等待响应超时，请重试。",
+      "add_favorite": "添加到收藏夹",
+      "remove_favorite": "从收藏夹中移除"
     },
     "dependencies": {
       "simulate_revocation": "模拟撤销",

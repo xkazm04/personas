@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Play, Shield, ShieldOff } from 'lucide-react';
+import { Play, Shield, ShieldOff, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SqlEditor } from '../SqlEditor';
@@ -85,7 +85,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
     setHistory(next);
   }, [credentialId]);
 
-  const { executing, result, error, runQuery } = useDbQueryRunner(credentialId, undefined, recordHistory);
+  const { executing, result, error, runQuery, cancelQuery } = useDbQueryRunner(credentialId, undefined, recordHistory);
 
   const { safeMode, setSafeMode, pendingMutation, guardedExecute, confirmMutation: handleConfirmMutation, cancelMutation: handleCancelMutation } = useQuerySafeMode(runQuery);
 
@@ -133,6 +133,21 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           >
             {db.run_query}
           </Button>
+          {/* The saved-query editor has offered this since useDbQueryRunner grew
+              a cancellation handle (QueryToolbar.tsx); the console destructured
+              everything from the same hook EXCEPT cancelQuery, so an identical
+              query run one tab over was uncancellable and the user's only exit
+              was to sit out the backend's QUERY_TIMEOUT. */}
+          {executing && (
+            <button
+              type="button"
+              onClick={cancelQuery}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 transition-all"
+            >
+              <X className="w-3 h-3" />
+              {t.common.cancel}
+            </button>
+          )}
           <span className="typo-body text-foreground">{db.ctrl_enter}</span>
           <div className="ml-auto flex items-center gap-2">
             <button

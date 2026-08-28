@@ -4454,7 +4454,9 @@
       "capability_key_value_hint": "Es un almacén de clave-valor. Usa comandos de clave como SCAN, GET y TYPE, no SQL.",
       "capability_select_subset": "Solo SELECT",
       "capability_select_subset_hint": "Aquí solo se ejecutan consultas SELECT simples de una sola tabla: filtra con WHERE, ordena con ORDER BY y limita con LIMIT. No se admiten JOIN, agregaciones, CTE ni escrituras.",
-      "query_timeout": "Se agotó el tiempo de espera de la respuesta. Vuelve a intentarlo."
+      "query_timeout": "Se agotó el tiempo de espera de la respuesta. Vuelve a intentarlo.",
+      "add_favorite": "Añadir a favoritos",
+      "remove_favorite": "Quitar de favoritos"
     },
     "dependencies": {
       "simulate_revocation": "Simular revocación",

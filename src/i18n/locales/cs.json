@@ -4454,7 +4454,9 @@
       "capability_key_value_hint": "Toto je úložiště typu klíč-hodnota. Používejte klíčové příkazy jako SCAN, GET a TYPE — ne SQL.",
       "capability_select_subset": "Jen SELECT",
       "capability_select_subset_hint": "Zde běží pouze jednoduché dotazy SELECT nad jednou tabulkou — filtrování pomocí WHERE, řazení pomocí ORDER BY, omezení pomocí LIMIT. JOINy, agregace, CTE a zápisy nejsou podporovány.",
-      "query_timeout": "Vypršel časový limit čekání na odpověď. Zkuste to prosím znovu."
+      "query_timeout": "Vypršel časový limit čekání na odpověď. Zkuste to prosím znovu.",
+      "add_favorite": "Přidat do oblíbených",
+      "remove_favorite": "Odebrat z oblíbených"
     },
     "dependencies": {
       "simulate_revocation": "Simulovat zneplatnění",

@@ -21,7 +21,15 @@ const READ_ONLY_KEYWORDS = new Set([
 // look read-only by leading keyword but actually mutate data. After stripping
 // string/identifier literals to avoid matching inside text values, scan the body
 // for mutation verbs.
-const MUTATION_VERBS_RE = /\b(DELETE|UPDATE|INSERT|MERGE|REPLACE|TRUNCATE|UPSERT)\b/i;
+//
+// This list is the mirror of the backend's CTE_MUTATION_VERBS
+// (src-tauri/src/engine/db_query.rs). DROP and ALTER were missing from this
+// copy, so a `WITH`-led statement carrying either was classified a read here,
+// raised no confirm banner, and was dispatched with allowMutation:false — where
+// the backend, whose list DOES carry them, rejected it as a mutation. The user
+// got a raw validation error instead of the authorisation prompt this guard
+// exists to offer. Keep the two lists in step.
+const MUTATION_VERBS_RE = /\b(DELETE|UPDATE|INSERT|MERGE|REPLACE|TRUNCATE|UPSERT|DROP|ALTER)\b/i;
 
 function stripSqlLiterals(s: string): string {
   // Strip single-quoted literals (with '' escapes), double-quoted identifiers,
@@ -70,9 +78,24 @@ export function isMutationQuery(queryText: string): boolean {
   const leading = match[1].toUpperCase();
   if (!READ_ONLY_KEYWORDS.has(leading)) return true;
 
-  // CTE escape hatch: a `WITH` query can wrap a mutation. Scan the body
-  // (with literals stripped) for mutation verbs as whole words.
-  if (leading === 'WITH') {
+  // Two read-looking leading keywords can still carry a mutation in the body,
+  // so the leading keyword alone is not enough to grant read-only status:
+  //
+  //   WITH    — `WITH x AS (DELETE FROM t RETURNING *) SELECT * FROM x`.
+  //             Postgres, SQLite, Neon and PlanetScale all execute the CTE.
+  //
+  //   EXPLAIN — `EXPLAIN ANALYZE DELETE FROM users` REALLY DELETES. ANALYZE is
+  //             not a dry run: Postgres executes the statement and reports the
+  //             measured plan. Classifying on the leading keyword let this
+  //             through safe mode with no confirm banner at all, and the
+  //             backend's is_mutation() keys on the same keyword, so nothing
+  //             downstream stopped it either. A bare `EXPLAIN DELETE ...` does
+  //             not execute, but it is warned about too — one redundant
+  //             confirmation is the documented price of this guard's
+  //             fail-closed posture.
+  //
+  // Scan the body (with literals stripped) for mutation verbs as whole words.
+  if (leading === 'WITH' || leading === 'EXPLAIN') {
     const body = stripSqlLiterals(s);
     if (MUTATION_VERBS_RE.test(body)) return true;
   }
