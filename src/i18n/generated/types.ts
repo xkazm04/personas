@@ -16551,6 +16551,11 @@ export type Translations = {
       background_cleanup_issue: string;
       competition_deleted: string;
       competition_delete_failed: string;
+      cancel_confirm_title: string;
+      cancel_confirm_body: string;
+      cancel_confirm_action: string;
+      delete_confirm_title: string;
+      delete_confirm_body: string;
       readiness_ready: string;
       readiness_partial: string;
       readiness_not_configured: string;

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff, Trophy } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -168,6 +169,12 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
   }, [competition.id, pendingWinnerTaskId, winnerInsightText, addToast, onRefresh, dl]);
 
   const [optimisticCancelled, setOptimisticCancelled] = useState(false);
+  // Both footer actions are irreversible and both used to fire straight off a
+  // single click: Delete destroys the slots, prompts, diffs AND the winner
+  // insight (the only record of what a race taught you), and Cancel paints
+  // success optimistically before dispatching git-worktree removal. They now
+  // route through one confirm gate; nothing is dispatched until it is answered.
+  const [pendingDestructive, setPendingDestructive] = useState<'cancel' | 'delete' | null>(null);
 
   const handleCancel = useCallback(async () => {
     // Optimistic: update UI immediately, run cleanup in background
@@ -390,12 +397,12 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
                 </Button>
                 <div className="flex items-center gap-2">
                   {isFinished && (
-                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={handleDelete}>
+                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setPendingDestructive('delete')}>
                       {t.common.delete}
                     </Button>
                   )}
                   {!isFinished && (
-                    <Button variant="danger" size="sm" icon={<Ban className="w-3.5 h-3.5" />} onClick={handleCancel}>
+                    <Button variant="danger" size="sm" icon={<Ban className="w-3.5 h-3.5" />} onClick={() => setPendingDestructive('cancel')}>
                       {t.common.cancel}
                     </Button>
                   )}
@@ -404,6 +411,23 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
             </>
           )}
         </div>
+      )}
+
+      {pendingDestructive && (
+        <ConfirmDialog
+          danger
+          title={pendingDestructive === 'delete' ? dl.delete_confirm_title : dl.cancel_confirm_title}
+          body={pendingDestructive === 'delete' ? dl.delete_confirm_body : dl.cancel_confirm_body}
+          confirmLabel={pendingDestructive === 'delete' ? t.common.delete : dl.cancel_confirm_action}
+          cancelLabel={t.common.go_back}
+          onConfirm={async () => {
+            const action = pendingDestructive;
+            setPendingDestructive(null);
+            if (action === 'delete') await handleDelete();
+            else await handleCancel();
+          }}
+          onCancel={() => setPendingDestructive(null)}
+        />
       )}
     </div>
   );
