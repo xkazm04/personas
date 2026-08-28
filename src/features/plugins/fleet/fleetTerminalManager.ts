@@ -23,7 +23,9 @@
  *     not running ones.
  *   - Many panes can attach different sessions at once → grid view (P2).
  *   - Renderer (WebGL) is attach-scoped so N background terminals don't hold
- *     N live GL contexts; unicode11 / web-links load once.
+ *     N live GL contexts, AND bounded by its own LRU (see MAX_WEBGL) so N
+ *     simultaneously *attached* panes can't either; unicode11 / web-links
+ *     load once.
  *   - A shared `config` (font size, copy-on-select, theme) is applied to
  *     every live terminal and to all future ones (P4).
  *
@@ -227,6 +229,53 @@ const parked: string[] =
 const MAX_PARKED = 6;
 
 /**
+ * Max terminals holding a live accelerated (WebGL) renderer AT THE SAME TIME.
+ *
+ * MAX_PARKED bounds only the parked side of the ladder; attached terminals were
+ * unbounded, and every attach calls `loadWebgl()`. The grid overlay mounts a
+ * live pane for the focused tile AND for every `awaiting_input` session, so a
+ * fleet where eight sessions want the operator at once held eight GL contexts
+ * plus whatever the rest of the app wants. GPU contexts are COUNTED, not
+ * metered: crossing the platform cap makes the browser revoke the OLDEST
+ * context — which may belong to the terminal the operator is reading.
+ *
+ * So the budget is enforced here instead, on the one door through which
+ * renderers are created. Past the cap the oldest accelerated terminal drops its
+ * addon and xterm falls back to the DOM renderer automatically — slower to
+ * paint, identical output, and no revocation from under a live pane.
+ *
+ * 6 leaves headroom beneath the ~16-context floor browsers implement, for the
+ * charts and canvases the rest of the app may hold at the same time.
+ */
+const MAX_WEBGL = 6;
+
+// Sessions holding a live WebGL addon, least-recently-loaded first.
+const WEBGL_LRU_KEY = '__fleetTerminalWebglLru__';
+const webglLru: string[] =
+  ((globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] as string[] | undefined) ?? [];
+(globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] = webglLru;
+
+/** Renderers dropped BECAUSE of MAX_WEBGL — the same instrument logic as
+ *  `bumpEvictions()` below: a cap set too low and a renderer bug both read as
+ *  "the terminal got slow", and only this counter separates them. */
+const WEBGL_EVICTIONS_KEY = '__fleetTerminalWebglEvictions__';
+function bumpWebglEvictions(): void {
+  const g = globalThis as Record<string, unknown>;
+  g[WEBGL_EVICTIONS_KEY] = ((g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
+}
+
+function unGl(sessionId: string): void {
+  const i = webglLru.indexOf(sessionId);
+  if (i !== -1) webglLru.splice(i, 1);
+}
+
+/** Move a session to the most-recent end of the accelerated-renderer LRU. */
+function touchGl(sessionId: string): void {
+  unGl(sessionId);
+  webglLru.push(sessionId);
+}
+
+/**
  * Budget evictions are counted, because a budget set too low and a bug in the
  * replay handshake produce the SAME user report — "my terminals keep going
  * blank and replaying" — and nothing else in the app can tell them apart.
@@ -253,6 +302,12 @@ export interface FleetTerminalStats {
   maxParked: number;
   /** Terminals disposed BECAUSE of that budget, since app start. */
   evictions: number;
+  /** Terminals holding a live accelerated (WebGL) renderer right now. */
+  webgl: number;
+  /** The budget those GL contexts are bounded by. */
+  maxWebgl: number;
+  /** Renderers dropped to the DOM fallback BECAUSE of that budget. */
+  webglEvictions: number;
 }
 
 /**
@@ -265,6 +320,10 @@ export function getFleetTerminalStats(): FleetTerminalStats {
     parked: parked.length,
     maxParked: MAX_PARKED,
     evictions: ((globalThis as Record<string, unknown>)[EVICTIONS_KEY] as number | undefined) ?? 0,
+    webgl: webglLru.length,
+    maxWebgl: MAX_WEBGL,
+    webglEvictions:
+      ((globalThis as Record<string, unknown>)[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0,
   };
 }
 
@@ -349,8 +408,32 @@ function scheduleFit(m: ManagedTerminal): void {
   });
 }
 
+/**
+ * Drop the least-recently-loaded accelerated renderers until at most MAX_WEBGL
+ * remain. `keepId` is the terminal that just asked for one and is never its own
+ * victim. A dropped terminal keeps rendering through xterm's DOM fallback.
+ */
+function enforceWebglBudget(keepId: string): void {
+  while (webglLru.length > MAX_WEBGL) {
+    const oldest = webglLru[0]!;
+    // Bookkeeping repairs, not budget evictions: an id whose terminal is gone
+    // or already un-accelerated must be shifted by hand, because disposeWebgl
+    // early-returns without unGl-ing it and the head would never move.
+    const victim = registry.get(oldest);
+    if (!victim || !victim.webgl || oldest === keepId) {
+      webglLru.shift();
+      continue;
+    }
+    bumpWebglEvictions();
+    disposeWebgl(victim);
+  }
+}
+
 function loadWebgl(m: ManagedTerminal): void {
-  if (m.webgl) return;
+  if (m.webgl) {
+    touchGl(m.sessionId);
+    return;
+  }
   try {
     const addon = new WebglAddon();
     // On GL context loss, drop the addon — xterm falls back to the DOM
@@ -361,19 +444,26 @@ function loadWebgl(m: ManagedTerminal): void {
       } catch (err) {
         silentCatch('fleetTerminal:webglContextLoss')(err);
       }
-      if (m.webgl === addon) m.webgl = null;
+      if (m.webgl === addon) {
+        m.webgl = null;
+        unGl(m.sessionId);
+      }
     });
     m.term.loadAddon(addon);
     m.webgl = addon;
+    touchGl(m.sessionId);
+    enforceWebglBudget(m.sessionId);
   } catch (e) {
     // WebGL unavailable (software WebView, blocked context) — DOM renderer is
     // the built-in fallback, so this is non-fatal.
     m.webgl = null;
+    unGl(m.sessionId);
     silentCatch('fleetTerminal:webgl')(e);
   }
 }
 
 function disposeWebgl(m: ManagedTerminal): void {
+  unGl(m.sessionId);
   if (!m.webgl) return;
   try {
     m.webgl.dispose();

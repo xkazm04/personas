@@ -99,14 +99,16 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
+  (g.__fleetTerminalWebglLru__ as string[] | undefined)?.splice(0);
   g.__fleetTerminalEvictions__ = 0;
+  g.__fleetTerminalWebglEvictions__ = 0;
 }
 
 const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminalParked__ as string[];
 const registryMap = () =>
   (globalThis as Record<string, unknown>).__fleetTerminalRegistry__ as Map<
     string,
-    { attached: boolean; deadNoticeShown: boolean; term: FakeTerminal }
+    { attached: boolean; deadNoticeShown: boolean; term: FakeTerminal; webgl: { dispose: () => void } | null }
   >;
 
 function attach(id: string): HTMLDivElement {
@@ -451,5 +453,65 @@ describe('disposeTerminal', () => {
 
     expect(vi.mocked(fleetApi.unsubscribeTerminal)).not.toHaveBeenCalled();
     host.remove();
+  });
+});
+
+describe('accelerated-renderer budget', () => {
+  const glLru = () => (globalThis as Record<string, unknown>).__fleetTerminalWebglLru__ as string[];
+
+  it('bounds how many ATTACHED terminals hold a GL context at once', () => {
+    // Eight panes live at once — the grid overlay does exactly this when many
+    // sessions go `awaiting_input` together. Before the budget every one of
+    // them loaded a renderer and the PLATFORM decided which context to revoke.
+    const hosts = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8'].map((id) => attach(id));
+
+    const stats = getFleetTerminalStats();
+    expect(stats.maxWebgl).toBe(6);
+    expect(stats.webgl).toBe(6);
+    expect(glLru()).toEqual(['g3', 'g4', 'g5', 'g6', 'g7', 'g8']);
+    // The two oldest were dropped to the DOM fallback, deliberately, and counted.
+    expect(registryMap().get('g1')?.webgl).toBeNull();
+    expect(registryMap().get('g2')?.webgl).toBeNull();
+    expect(stats.webglEvictions).toBe(2);
+    // The terminal that just asked is never its own victim.
+    expect(registryMap().get('g8')?.webgl).not.toBeNull();
+
+    hosts.forEach((h) => h.remove());
+  });
+
+  it('disposes the evicted addon rather than orphaning the context', () => {
+    const hosts = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'].map((id) => attach(id));
+    const victim = registryMap().get('d1')?.webgl;
+    expect(victim).toBeTruthy();
+    const disposeSpy = vi.spyOn(victim!, 'dispose');
+
+    hosts.push(attach('d7'));
+
+    expect(disposeSpy).toHaveBeenCalled();
+    expect(registryMap().get('d1')?.webgl).toBeNull();
+    hosts.forEach((h) => h.remove());
+  });
+
+  it('re-attaching an accelerated session refreshes its place in the LRU', () => {
+    const hosts = ['t1', 't2', 't3', 't4', 't5', 't6'].map((id) => attach(id));
+    // t1 is the oldest — touch it, and t2 becomes the next victim instead.
+    hosts.push(attach('t1'));
+    hosts.push(attach('t7'));
+
+    expect(registryMap().get('t1')?.webgl).not.toBeNull();
+    expect(registryMap().get('t2')?.webgl).toBeNull();
+    expect(glLru()).toEqual(['t3', 't4', 't5', 't6', 't1', 't7']);
+    hosts.forEach((h) => h.remove());
+  });
+
+  it('returns the budget when a pane detaches, so parked terminals cost no context', () => {
+    const hosts = ['p1', 'p2'].map((id) => attach(id));
+    expect(getFleetTerminalStats().webgl).toBe(2);
+
+    detachTerminal('p1');
+
+    expect(getFleetTerminalStats().webgl).toBe(1);
+    expect(glLru()).toEqual(['p2']);
+    hosts.forEach((h) => h.remove());
   });
 });
