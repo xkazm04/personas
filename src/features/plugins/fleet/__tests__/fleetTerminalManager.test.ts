@@ -76,6 +76,7 @@ import {
   detachTerminal,
   disposeTerminal,
   gcTerminals,
+  getFleetTerminalStats,
 } from '../fleetTerminalManager';
 
 /** Let the manager's rAF-scheduled fit (and the resize push behind it) run. */
@@ -88,6 +89,7 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
+  g.__fleetTerminalEvictions__ = 0;
 }
 
 const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminalParked__ as string[];
@@ -147,6 +149,43 @@ describe('parked LRU eviction', () => {
 
     expect(parkedList()).not.toContain('watched');
     expect(registryMap().get('watched')?.attached).toBe(true);
+    detachTerminal('watched');
+    host.remove();
+    other.remove();
+  });
+});
+
+describe('eviction accounting', () => {
+  it('counts a real budget eviction so a too-low MAX_PARKED is distinguishable from a replay bug', () => {
+    expect(getFleetTerminalStats().evictions).toBe(0);
+
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    for (const id of ids) {
+      const host = attach(id);
+      detachTerminal(id);
+      host.remove();
+    }
+
+    // 8 parked against a budget of 6 → exactly two terminals cost us their
+    // scrollback. Without this number, the operator's "it went blank and
+    // replayed" is indistinguishable from a bug in hydrate().
+    const stats = getFleetTerminalStats();
+    expect(stats.evictions).toBe(2);
+    expect(stats.parked).toBe(stats.maxParked);
+    expect(stats.live).toBe(stats.maxParked);
+  });
+
+  it('does not count the bookkeeping shifts as evictions', () => {
+    // A ghost id (no registry entry) and a leaked attached id are both shifted
+    // out of the LRU by hand. Neither cost a terminal, so neither may inflate
+    // the instrument — a counter that fires on repairs would send an operator
+    // hunting a budget that was never hit.
+    const host = attach('watched');
+    parkedList().push('ghost-1', 'watched', 'p1', 'p2', 'p3', 'p4', 'p5');
+    const other = attach('other');
+    detachTerminal('other');
+
+    expect(getFleetTerminalStats().evictions).toBe(0);
     detachTerminal('watched');
     host.remove();
     other.remove();

@@ -202,6 +202,48 @@ const parked: string[] =
 /** Max detached xterm instances kept alive for instant re-attach. */
 const MAX_PARKED = 6;
 
+/**
+ * Budget evictions are counted, because a budget set too low and a bug in the
+ * replay handshake produce the SAME user report — "my terminals keep going
+ * blank and replaying" — and nothing else in the app can tell them apart.
+ * MAX_PARKED is an unvalidated constant; this counter is the instrument that
+ * says whether it is being hit at all. HMR-safe like the registry beside it, so
+ * a hot reload mid-session doesn't zero the evidence.
+ *
+ * Read it with `getFleetTerminalStats()` (or `__fleetTerminalEvictions__` from
+ * a devtools console). A rising count while the operator reports blank
+ * terminals means the budget; a flat count means look at `hydrate()`.
+ */
+const EVICTIONS_KEY = '__fleetTerminalEvictions__';
+function bumpEvictions(): void {
+  const g = globalThis as Record<string, unknown>;
+  g[EVICTIONS_KEY] = ((g[EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
+}
+
+export interface FleetTerminalStats {
+  /** Terminals alive right now (attached + parked). */
+  live: number;
+  /** Detached terminals held for instant re-attach. */
+  parked: number;
+  /** The LRU budget those parked terminals are bounded by. */
+  maxParked: number;
+  /** Terminals disposed BECAUSE of that budget, since app start. */
+  evictions: number;
+}
+
+/**
+ * Snapshot of the manager's budget bookkeeping — the early-warning instrument
+ * for a MAX_PARKED set too low.
+ */
+export function getFleetTerminalStats(): FleetTerminalStats {
+  return {
+    live: registry.size,
+    parked: parked.length,
+    maxParked: MAX_PARKED,
+    evictions: ((globalThis as Record<string, unknown>)[EVICTIONS_KEY] as number | undefined) ?? 0,
+  };
+}
+
 function unpark(sessionId: string): void {
   const i = parked.indexOf(sessionId);
   if (i !== -1) parked.splice(i, 1);
@@ -523,6 +565,10 @@ export function detachTerminal(sessionId: string): void {
       parked.shift();
       continue;
     }
+    // Count ONLY a real budget eviction — the two shifts above are bookkeeping
+    // repairs (a ghost id, a leaked attached id), not a terminal the budget
+    // cost us, and counting them would make the instrument lie.
+    bumpEvictions();
     disposeTerminal(oldest);
   }
 }
