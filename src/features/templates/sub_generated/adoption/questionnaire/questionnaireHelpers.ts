@@ -157,6 +157,14 @@ export function isStackable(q: TransformQuestionResponse, optCount: number): boo
  *
  * Returns `null` when neither field is present — the caller should render the
  * normal input surface rather than a remedy it cannot target.
+ *
+ * NOTE THE TWO VOCABULARIES. A `vault_category` (`messaging`, `email`,
+ * `image_generation`) and a `dynamic_source.service_type` (`gmail`, `notion`, …)
+ * are different namespaces, and this function legitimately returns either. The
+ * `onAddCredential` handler owes the resolution, in one place:
+ * `ChronologyAdoptionView.handleAddCredentialForCategory` maps a service_type to
+ * its category tag before the picker filters the catalog — without that step
+ * `connectorsInCategory()` returns nothing and the modal looks broken.
  */
 export function resolveBlockedCredentialCategory(
   q: TransformQuestionResponse,
