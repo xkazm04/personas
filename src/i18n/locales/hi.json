@@ -2386,6 +2386,7 @@
       "model_b": "मॉडल B",
       "add_prompt_first": "तुलना चलाने के लिए पहले एक प्रॉम्प्ट जोड़ें।",
       "select_different_models": "तुलना करने के लिए दो अलग-अलग मॉडल चुनें।",
+      "no_results_produced": "मॉडल {models} ने कोई परिणाम नहीं दिया — हो सकता है कि रन विफल हो गया हो।",
       "run_comparison": "तुलना चलाएं",
       "generating_scenarios": "परिदृश्य जनरेट हो रहे हैं…",
       "testing_model": "{modelId} का परीक्षण",

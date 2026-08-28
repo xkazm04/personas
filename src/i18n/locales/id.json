@@ -2386,6 +2386,7 @@
       "model_b": "Model B",
       "add_prompt_first": "Tambahkan prompt terlebih dahulu untuk menjalankan perbandingan.",
       "select_different_models": "Pilih dua model berbeda untuk dibandingkan.",
+      "no_results_produced": "Model {models} tidak menghasilkan hasil apa pun — proses mungkin gagal.",
       "run_comparison": "Jalankan perbandingan",
       "generating_scenarios": "Menghasilkan skenario…",
       "testing_model": "Menguji {modelId}",

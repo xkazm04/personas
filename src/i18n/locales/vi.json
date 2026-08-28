@@ -2386,6 +2386,7 @@
       "model_b": "Mô hình B",
       "add_prompt_first": "Thêm lời nhắc trước khi chạy so sánh.",
       "select_different_models": "Chọn hai mô hình khác nhau để so sánh.",
+      "no_results_produced": "Mô hình {models} không tạo ra kết quả nào — lần chạy có thể đã thất bại.",
       "run_comparison": "Chạy so sánh",
       "generating_scenarios": "Đang tạo tình huống…",
       "testing_model": "Đang kiểm tra {modelId}",

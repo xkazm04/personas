@@ -2386,6 +2386,7 @@
       "model_b": "モデルB",
       "add_prompt_first": "比較を実行するにはプロンプトを先に追加してください。",
       "select_different_models": "比較するには2つの異なるモデルを選択してください。",
+      "no_results_produced": "モデル {models} は結果を返しませんでした。実行に失敗した可能性があります。",
       "run_comparison": "比較を実行",
       "generating_scenarios": "シナリオを生成中…",
       "testing_model": "{modelId} をテスト中",

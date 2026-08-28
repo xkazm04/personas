@@ -2386,6 +2386,7 @@
       "model_b": "Model B",
       "add_prompt_first": "Nejdříve přidejte prompt, abyste mohli porovnávat.",
       "select_different_models": "Vyberte dva různé modely pro porovnání.",
+      "no_results_produced": "Model {models} nevrátil žádné výsledky — běh pravděpodobně selhal.",
       "run_comparison": "Spustit porovnání",
       "generating_scenarios": "Generování scénářů…",
       "testing_model": "Testování {modelId}",

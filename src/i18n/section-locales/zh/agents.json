@@ -1233,6 +1233,7 @@
     "model_b": "模型 B",
     "add_prompt_first": "请先添加提示词以运行比较。",
     "select_different_models": "请选择两个不同的模型进行比较。",
+    "no_results_produced": "模型 {models} 未产生任何结果 — 运行可能已失败。",
     "run_comparison": "运行比较",
     "generating_scenarios": "正在生成场景…",
     "testing_model": "正在测试 {modelId}",

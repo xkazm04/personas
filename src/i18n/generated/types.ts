@@ -2473,6 +2473,7 @@ export type Translations = {
       model_b: string;
       add_prompt_first: string;
       select_different_models: string;
+      no_results_produced: string;
       run_comparison: string;
       generating_scenarios: string;
       testing_model: string;

@@ -167,7 +167,7 @@ export function ModelABCompare() {
                 <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
                   <span className="typo-body text-red-300/90">
-                    {`Model ${missingModels.join(', ')} produced no results — run may have failed.`}
+                    {mc.no_results_produced.replace('{models}', missingModels.join(', '))}
                   </span>
                 </div>
               )}

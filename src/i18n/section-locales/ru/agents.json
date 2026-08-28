@@ -1233,6 +1233,7 @@
     "model_b": "Модель B",
     "add_prompt_first": "Сначала добавьте промпт для сравнения.",
     "select_different_models": "Выберите две разные модели для сравнения.",
+    "no_results_produced": "Модель {models} не выдала результатов — возможно, запуск завершился ошибкой.",
     "run_comparison": "Запустить сравнение",
     "generating_scenarios": "Генерация сценариев…",
     "testing_model": "Тестирование {modelId}",

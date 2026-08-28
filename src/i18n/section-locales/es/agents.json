@@ -1233,6 +1233,7 @@
     "model_b": "Modelo B",
     "add_prompt_first": "Agrega un prompt primero para ejecutar comparaciones.",
     "select_different_models": "Selecciona dos modelos diferentes para comparar.",
+    "no_results_produced": "El modelo {models} no produjo resultados: es posible que la ejecución haya fallado.",
     "run_comparison": "Ejecutar comparación",
     "generating_scenarios": "Generando escenarios…",
     "testing_model": "Probando {modelId}",

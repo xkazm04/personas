@@ -2386,6 +2386,7 @@
       "model_b": "النموذج B",
       "add_prompt_first": "أضف تعليمات أولاً لتشغيل المقارنات.",
       "select_different_models": "اختر نموذجين مختلفين للمقارنة.",
+      "no_results_produced": "لم ينتج النموذج {models} أي نتائج — قد يكون التشغيل قد فشل.",
       "run_comparison": "تشغيل المقارنة",
       "generating_scenarios": "جارٍ توليد السيناريوهات…",
       "testing_model": "اختبار {modelId}",

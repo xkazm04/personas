@@ -2386,6 +2386,7 @@
       "model_b": "মডেল B",
       "add_prompt_first": "তুলনা চালাতে প্রথমে একটি প্রম্পট যোগ করুন।",
       "select_different_models": "তুলনা করতে দুটি আলাদা মডেল নির্বাচন করুন।",
+      "no_results_produced": "মডেল {models} কোনো ফলাফল দেয়নি — রানটি সম্ভবত ব্যর্থ হয়েছে।",
       "run_comparison": "তুলনা চালান",
       "generating_scenarios": "দৃশ্যকল্প তৈরি হচ্ছে…",
       "testing_model": "{modelId} পরীক্ষা করা হচ্ছে",
