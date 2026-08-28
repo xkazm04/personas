@@ -5,7 +5,7 @@
 // (archive the memory — the sanctioned retire), or dismiss. `helpful` filing
 // is deliberately absent from this surface: injections already carry the
 // access signal, and a thumbs-up button would just farm noise.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Flag, ShieldQuestion } from 'lucide-react';
 
 import {
@@ -17,6 +17,7 @@ import {
   type MemoryClaim,
 } from '@/api/overview/memories';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -40,10 +41,27 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Latest-wins guard for the claims fetch — the shared primitive, not a
+  // hand-rolled counter. `reload()` fires on every `memoryId` change and after
+  // every file/resolve, so two responses are routinely in flight at once: open
+  // memory A, switch quickly to B, and if A's response lands second it wrote
+  // A's claims into B's panel. That is not cosmetic here — the panel's
+  // `deprecate` button archives the memory the panel is CURRENTLY bound to, so
+  // a mismatched claim list invites a destructive action on the wrong evidence.
+  // The same token also makes a post-unmount write inert.
+  const latest = useRef(createLatestWins()).current;
   const reload = useCallback(() => {
-    listMemoryClaims(memoryId).then(setClaims).catch(toastCatch('MemoryClaimsSection:list'));
-  }, [memoryId]);
-  useEffect(() => { reload(); }, [reload]);
+    const token = latest.next();
+    listMemoryClaims(memoryId)
+      .then((rows) => { if (latest.isCurrent(token)) setClaims(rows); })
+      .catch(toastCatch('MemoryClaimsSection:list'));
+  }, [memoryId, latest]);
+  useEffect(() => {
+    reload();
+    // Retire the in-flight token on unmount / memoryId change so a response
+    // that lands afterwards can never call setClaims on a dead component.
+    return () => { latest.next(); };
+  }, [reload, latest]);
 
   const open = claims.filter((c) => c.resolution === null && c.verdict !== 'helpful');
 
