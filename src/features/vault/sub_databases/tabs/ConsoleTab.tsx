@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Play, Shield, ShieldOff, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SqlEditor } from '../SqlEditor';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
@@ -150,19 +151,20 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           )}
           <span className="typo-body text-foreground">{db.ctrl_enter}</span>
           <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSafeMode((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
-                safeMode
-                  ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
-                  : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
-              }`}
-              title={safeMode ? db.safe_mode_on : db.safe_mode_off}
-            >
-              {safeMode ? <Shield className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
-              {safeMode ? db.safe_mode : db.write_mode}
-            </button>
+            <Tooltip content={safeMode ? db.safe_mode_on : db.safe_mode_off}>
+              <button
+                type="button"
+                onClick={() => setSafeMode((v) => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
+                  safeMode
+                    ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
+                    : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
+                }`}
+              >
+                {safeMode ? <Shield className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
+                {safeMode ? db.safe_mode : db.write_mode}
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -170,15 +172,15 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="typo-body text-foreground">{db.recent}</span>
             {history.map((h, i) => (
-              <button
-                type="button"
-                key={i}
-                onClick={() => handleHistoryClick(h.query)}
-                className="px-2 py-0.5 rounded typo-code font-mono text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
-                title={h.query}
-              >
-                {h.query.length > 40 ? h.query.slice(0, 40) + '...' : h.query}
-              </button>
+              <Tooltip key={i} content={h.query}>
+                <button
+                  type="button"
+                  onClick={() => handleHistoryClick(h.query)}
+                  className="px-2 py-0.5 rounded typo-code font-mono text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
+                >
+                  {h.query.length > 40 ? h.query.slice(0, 40) + '...' : h.query}
+                </button>
+              </Tooltip>
             ))}
           </div>
         )}

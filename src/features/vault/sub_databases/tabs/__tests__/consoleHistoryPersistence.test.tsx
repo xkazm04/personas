@@ -41,13 +41,13 @@ describe("ConsoleTab — query history survives the surface", () => {
   it("still offers the last query after the tab is unmounted and reopened", async () => {
     const first = render(<ConsoleTab credentialId="cred-1" language="sql" />);
     await runQuery("SELECT 1");
-    expect(screen.getByTitle("SELECT 1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "SELECT 1" })).toBeInTheDocument();
 
     // What a switch to Tables and back actually does.
     first.unmount();
     render(<ConsoleTab credentialId="cred-1" language="sql" />);
 
-    expect(screen.getByTitle("SELECT 1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "SELECT 1" })).toBeInTheDocument();
   });
 
   it("keeps each database's history to itself", async () => {
@@ -57,6 +57,6 @@ describe("ConsoleTab — query history survives the surface", () => {
 
     render(<ConsoleTab credentialId="cred-2" language="sql" />);
 
-    expect(screen.queryByTitle("SELECT 1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "SELECT 1" })).not.toBeInTheDocument();
   });
 });

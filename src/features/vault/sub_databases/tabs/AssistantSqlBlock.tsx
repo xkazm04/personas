@@ -1,6 +1,7 @@
 import { Loader2, Play, Copy, Check } from 'lucide-react';
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ChatMessage } from './ChatMessages';
 
@@ -36,18 +37,20 @@ export function AssistantSqlBlock({
             {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
           </span>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onCopySql(msg.sql!, msg.id)}
-              className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70 transition-colors"
-              title={db.copy_sql}
-            >
-              {copiedSql === msg.id ? (
-                <Check className="w-3 h-3 text-emerald-400" />
-              ) : (
-                <Copy className="w-3 h-3" />
-              )}
-            </button>
+            <Tooltip content={db.copy_sql}>
+              <button
+                type="button"
+                onClick={() => onCopySql(msg.sql!, msg.id)}
+                className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70 transition-colors"
+                aria-label={db.copy_sql}
+              >
+                {copiedSql === msg.id ? (
+                  <Check className="w-3 h-3 text-emerald-400" />
+                ) : (
+                  <Copy className="w-3 h-3" />
+                )}
+              </button>
+            </Tooltip>
           </div>
         </div>
         <div className="max-h-[200px] overflow-auto">

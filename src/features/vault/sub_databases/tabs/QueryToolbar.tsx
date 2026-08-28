@@ -1,5 +1,6 @@
 import { Play, Wand2, Save, Check, Shield, ShieldOff, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
 
@@ -98,19 +99,20 @@ export function QueryToolbar({
         {db.ai_run}
       </Button>
 
-      <button
-        type="button"
-        onClick={onToggleSafeMode}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all ${
-          safeMode
-            ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
-            : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
-        }`}
-        title={safeMode ? db.safe_mode_on : db.safe_mode_off}
-      >
-        {safeMode ? <Shield className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
-        {safeMode ? db.safe : db.write}
-      </button>
+      <Tooltip content={safeMode ? db.safe_mode_on : db.safe_mode_off}>
+        <button
+          type="button"
+          onClick={onToggleSafeMode}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all ${
+            safeMode
+              ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
+              : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
+          }`}
+        >
+          {safeMode ? <Shield className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
+          {safeMode ? db.safe : db.write}
+        </button>
+      </Tooltip>
     </div>
   );
 }

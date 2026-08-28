@@ -1,4 +1,5 @@
 import { Send, X, CornerDownLeft } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ChatInputProps {
@@ -53,20 +54,21 @@ export function ChatInput({
             <CornerDownLeft className="w-3 h-3" />
           </div>
         </div>
-        <button
-          type="button"
-          onClick={generating ? onCancel : onSubmit}
-          disabled={!generating && !input.trim()}
-          className={`shrink-0 p-2.5 rounded-modal border transition-colors ${
-            generating
-              ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
-              : 'bg-violet-500/10 border-violet-500/20 text-violet-400 hover:bg-violet-500/20 disabled:opacity-30 disabled:cursor-not-allowed'
-          }`}
-          title={generating ? t.common.cancel : t.common.send}
-          aria-label={generating ? t.common.cancel : t.common.send}
-        >
-          {generating ? <X className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-        </button>
+        <Tooltip content={generating ? t.common.cancel : t.common.send}>
+          <button
+            type="button"
+            onClick={generating ? onCancel : onSubmit}
+            disabled={!generating && !input.trim()}
+            className={`shrink-0 p-2.5 rounded-modal border transition-colors ${
+              generating
+                ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
+                : 'bg-violet-500/10 border-violet-500/20 text-violet-400 hover:bg-violet-500/20 disabled:opacity-30 disabled:cursor-not-allowed'
+            }`}
+            aria-label={generating ? t.common.cancel : t.common.send}
+          >
+            {generating ? <X className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

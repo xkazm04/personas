@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
@@ -110,15 +111,16 @@ export function TableDetailPanel({
               <span className="px-1.5 py-0.5 rounded typo-body font-medium bg-violet-500/10 text-violet-400/70">VIEW</span>
             )}
             {!isPinned && (
-              <button
-                type="button"
-                onClick={() => onPinTable(selectedTable)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
-                title={dbt.pin_table}
-              >
-                <Pin className="w-3 h-3" />
-                {dbt.pin}
-              </button>
+              <Tooltip content={dbt.pin_table}>
+                <button
+                  type="button"
+                  onClick={() => onPinTable(selectedTable)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
+                >
+                  <Pin className="w-3 h-3" />
+                  {dbt.pin}
+                </button>
+              </Tooltip>
             )}
             {isPinned && (
               <span className="flex items-center gap-1 px-2.5 py-1 typo-body text-blue-400/50">
