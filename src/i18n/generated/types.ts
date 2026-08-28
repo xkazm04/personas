@@ -13124,6 +13124,10 @@ export type Translations = {
       stuck_reclaimed: string;
       stuck_retry_exhausted: string;
     };
+    kb_document: {
+      pending: string;
+      indexing: string;
+    };
   };
   project_overview: {
     today_activity_heading: string;

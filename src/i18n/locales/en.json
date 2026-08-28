@@ -13117,6 +13117,10 @@
       "dry_run": "Dry run (simulated)",
       "stuck_reclaimed": "Reclaimed and requeued",
       "stuck_retry_exhausted": "Reclaimed, retries exhausted"
+    },
+    "kb_document": {
+      "pending": "pending",
+      "indexing": "indexing"
     }
   },
   "project_overview": {

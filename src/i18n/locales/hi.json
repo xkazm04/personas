@@ -12825,6 +12825,10 @@
       "stuck_reclaimed": "वापस लेकर फिर से कतार में डाला गया",
       "stuck_retry_exhausted": "वापस लिया गया, पुनः प्रयास समाप्त",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "kb_document": {
+      "pending": "लंबित",
+      "indexing": "इंडेक्स हो रहा है"
     }
   },
   "project_overview": {
