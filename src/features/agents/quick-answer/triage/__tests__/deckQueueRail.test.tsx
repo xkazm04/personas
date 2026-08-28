@@ -79,6 +79,10 @@ describe('DeckQueueRail rows', () => {
 
     const name = listOf(container).querySelector('[data-rail-name]');
     expect(name?.textContent).toBe('Cache the roster');
+    // The project rides beside the title as its own chip — never folded into
+    // the title text, which is what a screen reader and this assertion read.
+    const project = listOf(container).querySelector('[data-rail-project]');
+    expect(project?.textContent).toBe('somewhere');
 
     // The kind must survive the deleted line — but only for assistive tech.
     const kind = listOf(container).querySelector('.sr-only');

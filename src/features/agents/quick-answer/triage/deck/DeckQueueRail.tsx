@@ -64,11 +64,12 @@ const VIRTUALIZE_ABOVE = 40;
  * is that a row whose title genuinely needs a third line clips instead of
  * growing, which `line-clamp-2` was already deciding anyway.
  *
- * 60 = `py-1.5` (6 + 6) plus two `typo-body` lines (14px × 1.65 × 2 ≈ 46.2).
- * Two, because the title now wraps rather than truncating at the first ellipsis
- * — see the row below.
+ * 55 = `py-1` (4 + 4) plus two `typo-body` lines (14px × 1.65 × 2 ≈ 46.2) plus
+ * the 1px hairline divider under every row. Two lines, because the title wraps
+ * rather than truncating at the first ellipsis — see the row below. (Was 60
+ * with `py-1.5`; slimmed 2026-08-28 for a denser queue.)
  */
-export const ROW_HEIGHT = 60;
+export const ROW_HEIGHT = 55;
 
 /**
  * The rail's width: EVERYTHING THE CARD DOES NOT NEED, floored at 18rem and
@@ -168,7 +169,9 @@ const QueueRow = memo(function QueueRow({
       // counter and the icon for the row's width — it owns the whole row and
       // wraps under them. See the marker span below.
       style={{ height: ROW_HEIGHT }}
-      className={`focus-ring relative block w-full overflow-hidden border-l-2 px-3 py-1.5 text-left transition-colors ${
+      // `border-b` is the hairline that keeps rows from floating in the rail;
+      // it is part of ROW_HEIGHT above.
+      className={`focus-ring relative block w-full overflow-hidden border-l-2 border-b border-b-primary/8 px-3 py-1 text-left transition-colors ${
         current
           ? 'border-primary bg-primary/10'
           : 'border-transparent hover:border-primary/30 hover:bg-secondary/40'
@@ -181,7 +184,7 @@ const QueueRow = memo(function QueueRow({
           only — the 32px spacer below, down from 48 — and nothing at all from
           the second. Zero is not on offer: a badge that costs no title width
           is a badge painted over the title's first word. */}
-      <span className="pointer-events-none absolute left-2 top-2 flex items-center gap-0.5">
+      <span className="pointer-events-none absolute left-2 top-1.5 flex items-center gap-0.5">
         <span className="typo-caption w-4 text-right tabular-nums leading-none text-muted-foreground">
           {position}
         </span>
@@ -197,17 +200,22 @@ const QueueRow = memo(function QueueRow({
           `line-clamp-2` rather than `truncate`: the corner badge buys the title
           the full rail width, and the second line is what turns "readable at a
           glance" into "actually the whole topic" for the long ones. */}
-      <span
-        data-rail-name
-        className={`typo-body line-clamp-2 text-foreground ${deferred ? 'pr-5' : ''}`}
-      >
+      <span className={`typo-body line-clamp-2 text-foreground ${deferred ? 'pr-5' : ''}`}>
         {/* An empty inline-block, NOT `text-indent` / `float`: this box is a
             `-webkit-box` (that is what `line-clamp` is), and a zero-width
             spacer at the head of the flow is the one way to indent its first
             line that does not depend on how Blink treats indentation inside
             one. It is what keeps the title clear of the corner badge. */}
         <span aria-hidden className="inline-block w-8" />
-        {item.title}
+        <span data-rail-name className="typo-body">{item.title}</span>
+        {/* The project, inline right after the title so the relation reads on
+            the same glance — this rail mixes every project's backlog. Inline
+            (not a flex sibling) so it wraps WITH the title inside the clamp. */}
+        {item.source.label ? (
+          <span data-rail-project className="ml-1.5 inline-block max-w-[10rem] truncate align-baseline rounded-interactive border border-primary/15 bg-secondary/40 px-1 typo-caption leading-4 text-foreground">
+            {item.source.label}
+          </span>
+        ) : null}
       </span>
       {/* A skipped card sorts to the BACK of the queue rather than leaving it,
           so without this the rail's tail reads as "not looked at yet" when it is
