@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Settings2 } from 'lucide-react';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import StudioDesignKnobs from './StudioDesignKnobs';
@@ -46,8 +47,16 @@ export default function StudioBuildSettings({ id }: { id: string }) {
   const mcp = useStudioStore((s) => s.runtimes[id]?.mcp ?? []);
   const setBuildSettings = useStudioStore((s) => s.setBuildSettings);
 
+  // Escape closes it, like every other dismissible surface in the app. The
+  // click-away layer below stays: a cross-origin iframe swallows its own clicks,
+  // so a mousedown on the live preview never reaches this document and the
+  // hook's outside-click half cannot see it.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(wrapRef, open, close);
+
   return (
-    <div className="relative shrink-0">
+    <div ref={wrapRef} className="relative shrink-0">
       <button
         type="button"
         data-testid="studio-settings"

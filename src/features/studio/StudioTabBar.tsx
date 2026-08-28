@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -6,6 +6,7 @@ import { FolderGit2, FolderInput, ListChecks, Plus, X } from 'lucide-react';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { webbuildNextReady } from '@/api/webbuild';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
 import { phaseProgress, tabDotClass } from './studioBuildModel';
@@ -117,6 +118,13 @@ export default function StudioTabBar({
     setPickerOpen((o) => !o);
   };
 
+  // Escape closes the picker, matching the other two Studio popovers. The
+  // ref goes on the portalled menu itself; a mousedown on the click-away layer
+  // is "outside" it, which is exactly the dismissal that layer already gives.
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closePicker = useCallback(() => setPickerOpen(false), []);
+  useClickOutside(menuRef, pickerOpen, closePicker);
+
   return (
     <header className="relative flex w-full min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border px-3 py-1.5">
       {tabOrder.map((id) => {
@@ -177,6 +185,7 @@ export default function StudioTabBar({
           <>
             <div className="fixed inset-0 z-[120]" onClick={() => setPickerOpen(false)} />
             <div
+              ref={menuRef}
               className="fixed z-[121] w-64 overflow-hidden rounded-card border border-border bg-background/95 py-1 shadow-elevation-4 backdrop-blur"
               style={{ top: menuPos.top, left: menuPos.left }}
             >

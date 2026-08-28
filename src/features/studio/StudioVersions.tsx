@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { History, RotateCcw } from 'lucide-react';
 import { webbuildListVersions, webbuildRestoreVersion } from '@/api/webbuild';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { BuildVersion } from '@/lib/bindings/BuildVersion';
@@ -22,6 +23,14 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
   const [versions, setVersions] = useState<BuildVersion[]>([]);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<BuildVersion | null>(null);
+
+  // Escape closes the menu — but never while the restore confirmation is up,
+  // where Escape belongs to the dialog. The click-away layer below stays: a
+  // cross-origin iframe swallows its own clicks, so a mousedown on the live
+  // preview never reaches this document.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(wrapRef, open && pending === null, close);
 
   const toggle = async () => {
     const next = !open;
@@ -52,7 +61,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
   };
 
   return (
-    <div className="relative">
+    <div ref={wrapRef} className="relative">
       <button
         type="button"
         data-testid="studio-versions"
