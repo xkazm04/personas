@@ -108,7 +108,11 @@ export function GlyphCard({
           {/* Header */}
           <div className="relative z-10 flex items-center gap-3 px-5 py-4 bg-gradient-to-b from-card-bg/95 via-card-bg/70 to-transparent backdrop-blur-sm">
             <span className="typo-data text-foreground tabular-nums">{String(index + 1).padStart(2, '0')}</span>
-            <span className={`typo-heading font-bold uppercase tracking-[0.12em] truncate flex-1 ${row.enabled ? 'text-foreground' : 'text-foreground'}`}>
+            {/* Disabled rows are marked by the `off_badge` chip and the sigil's
+                own 50% opacity — the title itself stays at full contrast. The
+                branch that used to dim it here collapsed to two identical
+                classes during the contrast migration and said nothing. */}
+            <span className="typo-heading font-bold uppercase tracking-[0.12em] truncate flex-1 text-foreground">
               {row.title}
             </span>
 

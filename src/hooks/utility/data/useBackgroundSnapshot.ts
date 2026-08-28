@@ -48,6 +48,20 @@ export interface UseBackgroundSnapshotOptions {
  * Polls a background job snapshot endpoint at regular intervals with
  * adaptive backoff, handling terminal states, awaiting-answers pauses,
  * and session loss via a callback-based API.
+ *
+ * The callbacks and `getSnapshot` are *configuration*, not data deps. Callers
+ * build them with `useCallback` over their own props, so any consumer that is
+ * itself rendered with an inline closure (e.g.
+ * `useBackgroundRebuild(() => gallery.refresh())` in `GeneratedReviewsTab`)
+ * hands this hook a fresh identity on every render. Depending on them
+ * restarted the polling effect on every render: it cleared the timer, reset
+ * the backoff and the consecutive-failure counter, re-armed `onQuestions`
+ * delivery, and immediately re-polled — and because `onLines` sets state with
+ * a fresh array on every poll, that loop sustained itself at IPC speed
+ * instead of at `interval`, and `maxFailures` could never be reached. They
+ * are latched in refs, and the effect keys only on the values that really
+ * identify a polling session: `snapshotId`, `interval`, `maxFailures`,
+ * `epoch`. Same pattern as `useAppSetting` and `useLayeredList` next door.
  */
 export function useBackgroundSnapshot({
   snapshotId,
@@ -69,6 +83,26 @@ export function useBackgroundSnapshot({
   const consecutiveRunningRef = useRef(0);
   const notFoundCountRef = useRef(0);
   const questionsDeliveredRef = useRef(false);
+
+  // Latest-callback refs — see the hook doc above.
+  const getSnapshotRef = useRef(getSnapshot);
+  getSnapshotRef.current = getSnapshot;
+  const onLinesRef = useRef(onLines);
+  onLinesRef.current = onLines;
+  const onPhaseRef = useRef(onPhase);
+  onPhaseRef.current = onPhase;
+  const onDraftRef = useRef(onDraft);
+  onDraftRef.current = onDraft;
+  const onCompletedNoDraftRef = useRef(onCompletedNoDraft);
+  onCompletedNoDraftRef.current = onCompletedNoDraft;
+  const onFailedRef = useRef(onFailed);
+  onFailedRef.current = onFailed;
+  const onSessionLostRef = useRef(onSessionLost);
+  onSessionLostRef.current = onSessionLost;
+  const onQuestionsRef = useRef(onQuestions);
+  onQuestionsRef.current = onQuestions;
+  const onSectionsRef = useRef(onSections);
+  onSectionsRef.current = onSections;
 
   useEffect(() => {
     if (!snapshotId) return;
@@ -94,27 +128,29 @@ export function useBackgroundSnapshot({
 
     const syncSnapshot = async () => {
       try {
-        const snapshot = await getSnapshot(snapshotId);
+        const snapshot = await getSnapshotRef.current(snapshotId);
         notFoundCountRef.current = 0;
 
         const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
-        onLines(lines);
+        onLinesRef.current(lines);
 
         // Forward streaming sections if present
-        if (onSections && Array.isArray(snapshot.sections) && snapshot.sections.length > 0) {
-          onSections(snapshot.sections);
+        const onSectionsFn = onSectionsRef.current;
+        if (onSectionsFn && Array.isArray(snapshot.sections) && snapshot.sections.length > 0) {
+          onSectionsFn(snapshot.sections);
         }
 
         if (snapshot.status === 'running' || snapshot.status === 'completed' || snapshot.status === 'failed') {
-          onPhase(snapshot.status);
+          onPhaseRef.current(snapshot.status);
         }
 
         // Handle awaiting_answers: forward questions and pause polling
-        if (snapshot.status === 'awaiting_answers' && onQuestions && !questionsDeliveredRef.current) {
+        const onQuestionsFn = onQuestionsRef.current;
+        if (snapshot.status === 'awaiting_answers' && onQuestionsFn && !questionsDeliveredRef.current) {
           const questions = Array.isArray(snapshot.questions) ? snapshot.questions : [];
           if (questions.length > 0) {
             questionsDeliveredRef.current = true;
-            onQuestions(questions);
+            onQuestionsFn(questions);
             // Stop polling -- user needs to answer before we continue
             clearPollTimer();
             return;
@@ -122,13 +158,13 @@ export function useBackgroundSnapshot({
         }
 
         if (snapshot.draft) {
-          onDraft(snapshot.draft);
+          onDraftRef.current(snapshot.draft);
         } else if (snapshot.status === 'completed') {
-          onCompletedNoDraft();
+          onCompletedNoDraftRef.current();
         }
 
         if (snapshot.status === 'failed') {
-          onFailed(snapshot.error || 'Background job failed.');
+          onFailedRef.current(snapshot.error || 'Background job failed.');
         }
 
         // Stop polling once we reach a terminal state
@@ -155,7 +191,7 @@ export function useBackgroundSnapshot({
         // intentional: non-critical -- polling retries with backoff until maxFailures
         notFoundCountRef.current += 1;
         if (notFoundCountRef.current >= maxFailures) {
-          onSessionLost();
+          onSessionLostRef.current();
           clearPollTimer();
           return;
         }
@@ -168,7 +204,10 @@ export function useBackgroundSnapshot({
     return () => {
       clearPollTimer();
     };
-  }, [snapshotId, getSnapshot, onLines, onPhase, onDraft, onCompletedNoDraft, onFailed, onSessionLost, onQuestions, onSections, interval, maxFailures, epoch]);
+    // Callbacks are latched in refs above; only these values identify a
+    // polling session. Re-running on a callback identity is the render-thrash
+    // loop documented in the hook doc.
+  }, [snapshotId, interval, maxFailures, epoch]);
 
   // Cleanup poll timer on unmount
   useEffect(() => {

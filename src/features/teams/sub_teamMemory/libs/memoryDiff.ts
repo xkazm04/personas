@@ -70,9 +70,16 @@ export function computeMemoryDiff(memoriesA: TeamMemory[], memoriesB: TeamMemory
       countB: bList.length,
       delta: bList.length - aList.length,
     });
-    const avgA = avgImportance(aList);
-    const avgB = avgImportance(bList);
-    if (aList.length > 0 || bList.length > 0) {
+    // An importance SHIFT only exists where both sides have something to
+    // average. The previous `||` emitted a shift for a category present on one
+    // side only, with `avgImportance([]) === 0` standing in for the missing
+    // side — so a category that first appeared in run B rendered as
+    // "0.0 -> 6.2, rising", a fabricated claim about a comparison that was
+    // never made. Appearance and disappearance are already reported, honestly
+    // and with counts, by `categoryDiffs`.
+    if (aList.length > 0 && bList.length > 0) {
+      const avgA = avgImportance(aList);
+      const avgB = avgImportance(bList);
       importanceShifts.push({ category, avgA, avgB, delta: avgB - avgA });
     }
   }

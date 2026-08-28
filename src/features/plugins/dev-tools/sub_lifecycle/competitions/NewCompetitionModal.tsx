@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Swords, CheckCircle2, RefreshCw, Dna } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -34,15 +34,24 @@ export function NewCompetitionModal({
     setStrategies(generateStrategies(slotCount, previousWinnerGenes));
   }, [slotCount, previousWinnerGenes]);
 
-  // Reset form fields and strategies when modal opens
-  useEffect(() => { if (open) { setTitle(''); setDescription(''); setStrategies(generateStrategies(slotCount, previousWinnerGenes)); } },
-    [open, previousWinnerGenes, slotCount], // only on open transition
-  );
+  // Clear the typed fields ONLY on the closed→open transition. This used to
+  // list `slotCount` and `previousWinnerGenes` in its deps while the comment
+  // claimed "only on open transition", so picking a different competitor count
+  // (2/3/4) mid-compose re-ran the body and silently wiped the title and
+  // description the user had already typed. The ref pins the effect to the
+  // real transition instead of to every dep change while open.
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    if (open && !wasOpenRef.current) { setTitle(''); setDescription(''); }
+    wasOpenRef.current = open;
+  }, [open]);
 
-  // Regenerate strategies when slot count changes while modal is open
-  useEffect(() => { if (open) { regenerate(); } },
-    [open, regenerate, slotCount], // slotCount drives regenerate identity
-  );
+  // Strategies are (re)generated whenever the modal is open and the inputs
+  // that shape them change — `regenerate`'s identity already tracks both
+  // slotCount and previousWinnerGenes, so this is the single generation site.
+  // (The reset effect above used to generate a set too, and this one then
+  // immediately overwrote it with a *different* random draw on every open.)
+  useEffect(() => { if (open) { regenerate(); } }, [open, regenerate]);
 
   const handleCreate = useCallback(async () => {
     if (!title.trim()) { addToast(dl.task_title_required, 'error'); return; }
@@ -107,6 +116,7 @@ export function NewCompetitionModal({
             <div className="flex items-center gap-2">
               {[2, 3, 4].map((n) => (
                 <button type="button" key={n} onClick={() => setSlotCount(n)}
+                  aria-pressed={slotCount === n}
                   className={`w-8 h-8 rounded-interactive typo-heading transition-colors ${
                     slotCount === n ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
                     : 'text-foreground hover:bg-secondary/40 border border-transparent'
@@ -125,11 +135,13 @@ export function NewCompetitionModal({
             </label>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => setBaseRef('head')}
+                aria-pressed={baseRef === 'head'}
                 className={`px-3 h-8 rounded-interactive typo-caption transition-colors border ${
                   baseRef === 'head' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                   : 'text-foreground hover:bg-secondary/40 border-transparent'
                 }`}>{dl.worktree_base_ref_head}</button>
               <button type="button" onClick={() => setBaseRef('fresh')}
+                aria-pressed={baseRef === 'fresh'}
                 className={`px-3 h-8 rounded-interactive typo-caption transition-colors border ${
                   baseRef === 'fresh' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                   : 'text-foreground hover:bg-secondary/40 border-transparent'

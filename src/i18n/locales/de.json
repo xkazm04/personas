@@ -7772,7 +7772,8 @@
       "report_empty": "(leerer Inhalt)",
       "open_in_reports": "In Berichten öffnen",
       "report_summary_title": "Bericht",
-      "report_unavailable": "Bericht nicht verfügbar"
+      "report_unavailable": "Bericht nicht verfügbar",
+      "subtitle_composed_prefix": "Erstellt"
     },
     "certification": {
       "title": "Zertifizierungs-Kommandozentrale",

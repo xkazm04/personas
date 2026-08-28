@@ -30,6 +30,23 @@ const DEFAULT_CORE: PersonaCoreState = {
   effort: DEFAULT_EFFORT,
 };
 
+/** Is this state still the untouched default? `configured` is DERIVED from
+ *  this rather than latched by a "the user clicked something" flag: the flag
+ *  never went back down, so undoing every choice (toggling the last trait off,
+ *  deselecting a conflict style) left the badge reading "Custom core" and the
+ *  launch augmentation still injecting a default disposition + model line the
+ *  user had explicitly cleared. */
+function isDefaultCore(s: PersonaCoreState): boolean {
+  return (
+    s.archetypeId === DEFAULT_CORE.archetypeId &&
+    s.disposition === DEFAULT_CORE.disposition &&
+    s.conflictStyle === DEFAULT_CORE.conflictStyle &&
+    s.model === DEFAULT_CORE.model &&
+    s.effort === DEFAULT_CORE.effort &&
+    s.traits.length === 0
+  );
+}
+
 function coreNumber(a: Archetype, key: string, fallback: number): number {
   const core = (a.persona as { core?: Record<string, unknown> } | undefined)?.core;
   const v = core?.[key];
@@ -47,25 +64,43 @@ function archetypeStance(a: Archetype): string | null {
 export function usePersonaCore(resetKey: string | null): PersonaCore {
   const [loading, setLoading] = useState(true);
   const [archetypes, setArchetypes] = useState<Archetype[]>([]);
+  // A failed catalog fetch must NOT be spelled the same way as an empty
+  // catalog: both used to leave `archetypes: []` behind, and the Mentality
+  // column rendered a silent blank with no explanation and no way back.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<PersonaCoreState>(DEFAULT_CORE);
-  const [configured, setConfigured] = useState(false);
+  const configured = useMemo(() => !isDefaultCore(state), [state]);
 
   useEffect(() => {
     let live = true;
+    setLoading(true);
+    setLoadFailed(false);
     listArchetypes()
       .then((c) => { if (!live) return; setArchetypes(c.archetypes); setLoading(false); })
-      .catch((e) => { silentCatch("personaCore:list_archetypes")(e); if (live) setLoading(false); });
+      .catch((e) => {
+        silentCatch("personaCore:list_archetypes")(e);
+        if (!live) return;
+        setLoadFailed(true);
+        setLoading(false);
+      });
     return () => { live = false; };
-  }, []);
+  }, [attempt]);
 
-  useEffect(() => { setState(DEFAULT_CORE); setConfigured(false); }, [resetKey]);
+  const retryLoad = useCallback(() => setAttempt((n) => n + 1), []);
 
-  const touch = useCallback((fn: (prev: PersonaCoreState) => PersonaCoreState) => {
-    setState(fn); setConfigured(true);
-  }, []);
+  // Reset only when the surface returns to COMPOSE (`resetKey` null). The key
+  // is the build-session id, which goes null -> <id> at LAUNCH: resetting there
+  // wiped the core the build had just been launched with, so the (locked,
+  // view-only) badge read "Persona core / unconfigured" for the whole build
+  // while the intent it shipped carried the core's directives.
+  useEffect(() => {
+    if (resetKey !== null) return;
+    setState(DEFAULT_CORE);
+  }, [resetKey]);
 
   const applyPreset = useCallback((a: Archetype) => {
-    touch((prev) => ({
+    setState((prev) => ({
       ...prev,
       archetypeId: a.id,
       disposition: coreNumber(a, "riskTolerance", prev.disposition),
@@ -75,16 +110,16 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
       // current trait set (falls back to keeping it only for an unmapped archetype).
       traits: ARCHETYPE_TRAITS[a.id] ?? prev.traits,
     }));
-  }, [touch]);
+  }, []);
 
-  const setDisposition = useCallback((v: number) => touch((p) => ({ ...p, disposition: v })), [touch]);
-  const setConflict = useCallback((id: string | null) => touch((p) => ({ ...p, conflictStyle: p.conflictStyle === id ? null : id })), [touch]);
-  const toggleTrait = useCallback((id: string) => touch((p) => ({
+  const setDisposition = useCallback((v: number) => setState((p) => ({ ...p, disposition: v })), []);
+  const setConflict = useCallback((id: string | null) => setState((p) => ({ ...p, conflictStyle: p.conflictStyle === id ? null : id })), []);
+  const toggleTrait = useCallback((id: string) => setState((p) => ({
     ...p, traits: p.traits.includes(id) ? p.traits.filter((t) => t !== id) : [...p.traits, id],
-  })), [touch]);
-  const setModel = useCallback((m: ModelTier) => touch((p) => ({ ...p, model: m })), [touch]);
-  const setEffort = useCallback((e: EffortLevel) => touch((p) => ({ ...p, effort: e })), [touch]);
-  const reset = useCallback(() => { setState(DEFAULT_CORE); setConfigured(false); }, []);
+  })), []);
+  const setModel = useCallback((m: ModelTier) => setState((p) => ({ ...p, model: m })), []);
+  const setEffort = useCallback((e: EffortLevel) => setState((p) => ({ ...p, effort: e })), []);
+  const reset = useCallback(() => setState(DEFAULT_CORE), []);
 
   const preset = useMemo(() => archetypes.find((a) => a.id === state.archetypeId) ?? null, [archetypes, state.archetypeId]);
 
@@ -105,7 +140,7 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
   }, [configured, state, preset]);
 
   return {
-    loading, archetypes, state, configured, preset,
+    loading, archetypes, loadFailed, retryLoad, state, configured, preset,
     applyPreset, setDisposition, setConflict, toggleTrait, setModel, setEffort, reset, launchAugmentation,
   };
 }

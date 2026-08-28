@@ -1,6 +1,6 @@
 import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphDimension } from './types';
-import { DIM_META } from './dimMeta';
+import { DIM_META, PETAL_ANGLES } from './dimMeta';
 
 const patternId = (dim: GlyphDimension, uid: string) => `sigil-pat-${dim}-${uid}`;
 
@@ -43,6 +43,18 @@ function texture(i: number, color: string) {
  * many sigils on a page, callers pass a per-instance `uid`) and referenced
  * via {@link petalPatternFill} when CVD-safe mode is on. Lets the eight
  * petals read by texture, not hue alone — WCAG 1.4.1 (use of colour).
+ *
+ * `patternTransform` is load-bearing, not decoration. Each pattern is
+ * referenced from a petal `<path>` that sits inside a
+ * `rotate(PETAL_ANGLES[dim])` group, and `patternUnits="userSpaceOnUse"`
+ * resolves the tile in the *referencing element's* user space — so an
+ * unrotated tile turns with its petal. The eight textures are only eight
+ * distinct shapes at their designed orientation: turned by their own petal
+ * angle, `task` (vertical, +45°) and `connector` (forward diagonal, +90°)
+ * both land at 135°, and `review` (grid, +180°) and `memory` (cross-hatch,
+ * +225°) both collapse onto the same orthogonal grid. Counter-rotating by
+ * the petal's own angle keeps every texture at the orientation it was drawn
+ * for. Pinned by `__tests__/dimPatterns.test.tsx`.
  */
 export function SigilPatternDefs({ uid }: { uid: string }) {
   return (
@@ -56,6 +68,7 @@ export function SigilPatternDefs({ uid }: { uid: string }) {
             width="5"
             height="5"
             patternUnits="userSpaceOnUse"
+            patternTransform={`rotate(${-PETAL_ANGLES[dim]})`}
           >
             <rect width="5" height="5" fill={color} fillOpacity={0.22} />
             {texture(i, color)}

@@ -1,21 +1,7 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { summarizeSourceDefinition } from '@/features/templates/components/SourceDefinitionInput';
-import type { useTranslation } from '@/i18n/useTranslation';
+import { getActiveTranslations, type useTranslation } from '@/i18n/useTranslation';
 import type { QuestionnaireNormalizedOption } from './types';
-
-// ---------------------------------------------------------------------------
-// Geometry
-// ---------------------------------------------------------------------------
-
-export function polar(angleRad: number, r: number) {
-  return { x: Math.cos(angleRad) * r, y: Math.sin(angleRad) * r };
-}
-
-export function angleForIndex(i: number, total: number): number {
-  if (total === 0) return 0;
-  // Start at top (-π/2) and move clockwise
-  return (i / total) * Math.PI * 2 - Math.PI / 2;
-}
 
 // ---------------------------------------------------------------------------
 // Answer summary — used by the thread rail
@@ -64,9 +50,15 @@ export function resolveStackableOptions(
   filteredOptions?: string[],
 ): QuestionnaireNormalizedOption[] {
   if (question.type === 'boolean') {
+    // Non-React helper: `getActiveTranslations()` is the sanctioned door for
+    // localized strings outside a component (CLAUDE.md § i18n). Both live
+    // call sites (AdoptionAnswerCard, QuestionnaireForm) invoke this during
+    // render of a `useTranslation()` subscriber, so a language switch
+    // re-derives these labels.
+    const t = getActiveTranslations();
     return [
-      { value: 'yes', label: 'Yes', sublabel: null },
-      { value: 'no', label: 'No', sublabel: null },
+      { value: 'yes', label: t.recipes.yes, sublabel: null },
+      { value: 'no', label: t.recipes.no, sublabel: null },
     ];
   }
   if (question.type === 'select') {

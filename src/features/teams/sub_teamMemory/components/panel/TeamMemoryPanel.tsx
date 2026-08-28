@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
@@ -16,6 +17,35 @@ const STORAGE_KEY = 'team-memory-panel-width';
 const MIN_WIDTH = 272;
 const MAX_WIDTH = 480;
 const DEFAULT_WIDTH = 288; // matches original w-72
+
+/**
+ * Panel width is a per-viewer convenience, so every access is guarded: reading
+ * or writing localStorage THROWS (not returns null) under a blocked-site-data
+ * policy or a sandboxed context, and an unguarded read here happened inside a
+ * useState initializer -- i.e. it would have taken the whole panel down.
+ */
+function readStoredWidth(): number {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const n = Number(stored);
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
+    }
+  } catch (err) {
+    // Storage unavailable -- the default width is a complete answer.
+    silentCatch('teamMemory/TeamMemoryPanel:readStoredWidth')(err);
+  }
+  return DEFAULT_WIDTH;
+}
+
+function writeStoredWidth(width: number) {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(width));
+  } catch (err) {
+    // Non-persisted width is a degraded convenience, never a user-facing error.
+    silentCatch('teamMemory/TeamMemoryPanel:writeStoredWidth')(err);
+  }
+}
 
 interface TeamMemoryPanelProps {
   teamId: string;
@@ -38,7 +68,7 @@ export default function TeamMemoryPanel({
   teamId, memories, total, stats, layout = 'floating', onClose, onDelete, onImportanceChange,
   onCreate, onFilter, onLoadMore, onFilterByRun, onEdit,
 }: TeamMemoryPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const pt = t.pipeline;
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,14 +77,8 @@ export default function TeamMemoryPanel({
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [activeRunFilter, setActiveRunFilter] = useState<string | null>(null);
 
-  const [panelWidth, setPanelWidth] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
-    }
-    return DEFAULT_WIDTH;
-  });
+  const [panelWidth, setPanelWidth] = useState(readStoredWidth);
+  const [dragging, setDragging] = useState(false);
   const draggingRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const widthRef = useRef(panelWidth);
@@ -70,24 +94,34 @@ export default function TeamMemoryPanel({
     setPanelWidth(newWidth);
   });
 
+  // Window-level mousemove is the most expensive listener the app can hold, and
+  // this one used to be registered for the panel's whole lifetime -- including
+  // the `pane` layout, which renders no resize handle and can therefore never
+  // drag. It now exists only for the duration of an actual drag.
   useEffect(() => {
+    if (!dragging) return;
     const onMouseMove = (e: MouseEvent) => {
       resizePanelFrame(e.clientX);
     };
     const onMouseUp = () => {
       if (!draggingRef.current) return;
       draggingRef.current = false;
+      setDragging(false);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      localStorage.setItem(STORAGE_KEY, String(widthRef.current));
+      writeStoredWidth(widthRef.current);
     };
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      // The drag can be torn down by unmount mid-gesture; the body styles the
+      // gesture set are this effect's to reap either way.
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
-  }, [resizePanelFrame]);
+  }, [dragging, resizePanelFrame]);
 
   const handleLoadMore = useCallback(async () => {
     setLoadingMore(true);
@@ -149,6 +183,7 @@ export default function TeamMemoryPanel({
           onMouseDown={(e) => {
             e.preventDefault();
             draggingRef.current = true;
+            setDragging(true);
             document.body.style.cursor = 'col-resize';
             document.body.style.userSelect = 'none';
           }}
@@ -203,7 +238,7 @@ export default function TeamMemoryPanel({
             className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >
-            <span>{pt.avg_importance.replace('{value}', stats.avg_importance.toFixed(1)).replace('{count}', String(stats.category_counts.length))}</span>
+            <span>{tx(pt.avg_importance, { value: stats.avg_importance.toFixed(1), count: stats.category_counts.length })}</span>
             {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
           {statsExpanded && (

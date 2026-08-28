@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Swords, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCompetitions } from '@/api/devTools/devTools';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { CompetitionCard } from './CompetitionCard';
 import { StrategyLeaderboard } from './StrategyLeaderboard';
 import { WinningGeneProfile } from './WinningGeneProfile';
 import { NewCompetitionModal } from './NewCompetitionModal';
 import type { StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Module-scoped cache of the last-fetched competitions, keyed by project.
 // The list lived only in component state, so every remount (a tab away-and-back
@@ -48,20 +50,37 @@ export function CompetitionList() {
     setShowNewModal(true);
   }, []);
 
+  // Latest-wins guard. Switching projects (or clicking Refresh twice) leaves
+  // two flights open, and without a token the SLOWER one wins by landing
+  // last — project A's cards paint while project B is selected in the header,
+  // and B's own cards disappear. A monotonic counter minted synchronously
+  // before the request leaves; a stale completion is inert, not an error.
+  const requestGuard = useRef(createLatestWins()).current;
+
   const refresh = useCallback(async () => {
     if (!activeProjectId) return;
+    const token = requestGuard.next();
     setLoading(true);
     try {
       const list = await listCompetitions(activeProjectId);
-      setCompetitions(list);
+      // The module cache is keyed by project, so it is safe to write from a
+      // superseded flight; the SCREEN is not, so it is guarded.
       cachedProjectId = activeProjectId;
       cachedCompetitions = list;
-    } catch {
-      setCompetitions([]);
+      if (!requestGuard.isCurrent(token)) return;
+      setCompetitions(list);
+    } catch (err) {
+      // Do NOT blank the list. `setCompetitions([])` here turned one transient
+      // IPC failure into the settled "No competitions yet" empty state — the
+      // user was told their competitions do not exist because a fetch failed,
+      // while the module cache still held them (docs/design/overview-loading.md
+      // law 1: data on screen is sacred). Cards stay; the error gets a
+      // breadcrumb instead of being swallowed.
+      silentCatch('CompetitionList:refresh')(err);
     } finally {
-      setLoading(false);
+      if (requestGuard.isCurrent(token)) setLoading(false);
     }
-  }, [activeProjectId]);
+  }, [activeProjectId, requestGuard]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -86,7 +105,7 @@ export function CompetitionList() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="typo-caption text-primary uppercase tracking-wider">
-          Competitions {competitions.length > 0 && <span>({competitions.length})</span>}
+          {t.plugins.dev_tools.competitions} {competitions.length > 0 && <span>({competitions.length})</span>}
         </h3>
         <div className="flex items-center gap-2">
           <Button
@@ -95,7 +114,7 @@ export function CompetitionList() {
             icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
             onClick={refresh}
           >
-            Refresh
+            {t.common.refresh}
           </Button>
           <Button
             variant="accent"
@@ -132,7 +151,7 @@ export function CompetitionList() {
 
       {activeCompetitions.length > 0 && (
         <div className="space-y-2">
-          <p className="typo-caption text-foreground">Active</p>
+          <p className="typo-caption text-foreground">{t.plugins.dev_tools.active}</p>
           {activeCompetitions.map((c) => (
             <CompetitionCard key={c.id} competition={c} onRefresh={refresh} />
           ))}
@@ -141,7 +160,7 @@ export function CompetitionList() {
 
       {pastCompetitions.length > 0 && (
         <div className="space-y-2">
-          <p className="typo-caption text-foreground">Past</p>
+          <p className="typo-caption text-foreground">{t.plugins.dev_tools.past}</p>
           {pastCompetitions.map((c) => (
             <CompetitionCard key={c.id} competition={c} onRefresh={refresh} onRematch={handleRematch} />
           ))}

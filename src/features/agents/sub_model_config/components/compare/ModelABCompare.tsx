@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ArrowLeftRight, Play, Square, ChevronDown, AlertCircle,
 } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { capturePersonaToken } from '@/lib/personas/personaToken';
 import type { ModelTestConfig } from '@/api/agents/tests';
@@ -202,7 +201,6 @@ export function ModelABCompare() {
               {progress && (
                 <div className="px-3 py-2.5 rounded-modal bg-secondary/40 border border-primary/20 space-y-1.5">
                   <div className="flex items-center gap-2 typo-body text-foreground">
-                    <LoadingSpinner size="sm" className="text-indigo-400" />
                     <span>
                       {progress.phase === 'generating' ? mc.generating_scenarios :
                        progress.modelId ? mc.testing_model.replace('{modelId}', progress.modelId) :
@@ -210,12 +208,20 @@ export function ModelABCompare() {
                       {progress.scenarioName ? ` -- ${progress.scenarioName}` : ''}
                     </span>
                   </div>
-                  {progress.total != null && progress.current != null && (
+                  {/* Determinate only when the run reports a usable total: a
+                      total of 0 divided to Infinity and painted a full-width bar,
+                      and the indeterminate arm replaces a LoadingSpinner that
+                      renders null, i.e. an unbounded phase showed no motion. */}
+                  {progress.total != null && progress.current != null && progress.total > 0 ? (
                     <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
-                        style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, Math.round((progress.current / progress.total) * 100)))}%` }}
                       />
+                    </div>
+                  ) : (
+                    <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+                      <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 animate-pulse" />
                     </div>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import { Brain, Search, GitCommitVertical, X, FilterX } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -80,14 +80,17 @@ export default function MemoryPanelList({
         {activeRunFilter && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-violet-500/10 border border-violet-500/20">
             <GitCommitVertical className="w-3 h-3 text-violet-400 flex-shrink-0" />
+            {/* The run id carries its own meaning next to the commit glyph; the
+                bare English word "Run" that sat here rendered untranslated in
+                all 14 locales. */}
             <span className="typo-code text-violet-400 font-mono truncate flex-1">
-              Run {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
+              {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
             </span>
             <button
               type="button"
               onClick={onClearRunFilter}
-              className="p-0.5 rounded text-violet-400/60 hover:text-violet-400 transition-colors flex-shrink-0"
-              title={t.pipeline.clear_run_filter}
+              className="p-0.5 rounded-interactive text-violet-400/60 hover:text-violet-400 transition-colors flex-shrink-0"
+              aria-label={t.pipeline.clear_run_filter}
             >
               <X className="w-3 h-3" />
             </button>
@@ -127,17 +130,25 @@ export default function MemoryPanelList({
                 onEdit={onEdit}
               />
             ))}
-            {hasMore && !activeRunFilter && (
-              <button
-                type="button"
+            {/* `total` and the hook's paged fetch are both run-aware, so paging
+                works under a run filter exactly as it does without one. Gating
+                these two on `!activeRunFilter` silently truncated any run with
+                more than one page of memories: no "load more", no count, and
+                the remainder read as "this run has 30 memories". */}
+            {hasMore && (
+              <Button
+                block
+                variant="ghost"
+                size="xs"
+                loading={loadingMore}
+                loadingLabel={t.common.loading}
                 onClick={onLoadMore}
-                disabled={loadingMore}
-                className="w-full py-1.5 typo-body text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-card transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="py-1.5 gap-1.5 typo-body text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-card"
               >
-                {loadingMore ? (<><LoadingSpinner size="xs" />{t.common.loading}</>) : <>{t.pipeline.load_more}</>}
-              </button>
+                {t.pipeline.load_more}
+              </Button>
             )}
-            {!activeRunFilter && total > memories.length && (
+            {total > memories.length && (
               <div className="text-center typo-body text-foreground py-1">
                 {tx(t.pipeline.showing_count, { shown: memories.length, total })}
               </div>

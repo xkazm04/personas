@@ -152,6 +152,12 @@ practice-harvest/
 
 # /consult skill log (counts reach the ai-registry signals lane; the log itself stays local)
 .ai/consults.jsonl
+# .ai/ generated artifacts: the registry-map is a 460 KB join rewritten by
+# /conform and churns every run; the scripts, manifest and memory lane stay
+# tracked because lefthook pre-push and .github/workflows/ai-conformance.yml
+# run node .ai/doctor.mjs from a clean clone.
+.ai/registry-map.json
+.ai/context-index.json
 
 # BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-skills.mjs)
 # The links are machine state; the declaration lives in .ai/manifest.yaml `skills:`.

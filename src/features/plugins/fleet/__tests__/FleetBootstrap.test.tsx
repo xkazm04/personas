@@ -81,7 +81,9 @@ describe('FleetBootstrap — the mount in App.tsx is not DEV-gated', () => {
     // A prod build replaces `import.meta.env.DEV` with `false` and Rollup drops
     // the whole branch — including the effect. Nothing else on this line either.
     expect(line).not.toContain('import.meta.env.DEV');
-    expect(line.trim()).toBe('<FleetBootstrap />');
+    // Since the per-overlay error boundaries (OverlayIsland) the mount is
+    // wrapped, but the wrapper is the ONLY thing on the line — no gate.
+    expect(line.trim()).toBe('<OverlayIsland name="fleet-bootstrap"><FleetBootstrap /></OverlayIsland>');
   });
 
   it('keeps the FleetGridLayer overlay DEV-gated', () => {

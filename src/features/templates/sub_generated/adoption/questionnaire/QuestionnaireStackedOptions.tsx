@@ -27,8 +27,12 @@ export function QuestionnaireStackedOptions({
 }) {
   const selectedValue = value || null;
   const { shouldAnimate } = useMotion();
+  // Hover and focus are tracked SEPARATELY. Sharing one flag meant a mouse
+  // leaving the picker cleared the badges while the keyboard focus that
+  // actually needs the 1-9 hint was still inside it.
+  const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const showBadges = focused;
+  const showBadges = hovered || focused;
   const fadeTransition = shouldAnimate ? MOTION_PRESETS.snappy.framer : { duration: 0 };
 
   return (
@@ -40,20 +44,24 @@ export function QuestionnaireStackedOptions({
           setFocused(false);
         }
       }}
-      onMouseEnter={() => setFocused(true)}
-      onMouseLeave={() => setFocused(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {options.map((opt, i) => {
         const isSelected = selectedValue === opt.value;
         const num = i < 9 ? i + 1 : null;
         return (
           <motion.button
-            key={opt.value}
+            // Option values come from template payloads and are not guaranteed
+            // unique; index-suffixing keeps React keys stable-per-slot instead
+            // of silently collapsing duplicate options into one row.
+            key={`${opt.value}-${i}`}
             type="button"
             onClick={() => onChange(opt.value)}
-            initial={{ opacity: 0, y: 4 }}
+            aria-pressed={isSelected}
+            initial={shouldAnimate ? { opacity: 0, y: 4 } : false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: i * 0.03 }}
+            transition={shouldAnimate ? { duration: 0.2, delay: i * 0.03 } : { duration: 0 }}
             className={`relative w-full text-left rounded-card px-4 py-3 border flex items-center gap-3 transition-all ${
               isSelected
                 ? 'bg-primary/10 border-primary/40 shadow-elevation-1'

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Timer, DollarSign, Wrench, FileText, ChevronDown, ChevronRight, Coins } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { getStatusEntry } from '@/lib/utils/formatters';
 import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED } from '@/lib/design/statusTokens';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -111,8 +112,12 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <StatusIcon status={summary.status} className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
-          <span className={`${compact ? 'typo-body font-medium' : 'typo-heading'} capitalize ${presentation.text}`}>
-            {summary.status}
+          {/* `summary.status` is a machine token off the stream, not UI copy --
+              printing it raw left the run's headline word untranslated in all
+              13 non-English locales (and CSS `capitalize` is not a substitute
+              for a label). */}
+          <span className={`${compact ? 'typo-body font-medium' : 'typo-heading'} ${presentation.text}`}>
+            {tokenLabel(t, 'execution', summary.status)}
           </span>
         </div>
 

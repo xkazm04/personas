@@ -70,7 +70,15 @@ export function CompetitionSlotRow({
       await stopSlotServer(slot.id);
       setServer(null);
       addToast(dt.slot_dev_server_stopped, 'success');
-    } catch { setServer(null); }
+    } catch (err) {
+      // The row still drops its handle — a stop that failed leaves nothing this
+      // component can do about the child process — but the failure must reach an
+      // error door. The bare `catch { setServer(null) }` here routed a real
+      // backend error (port still held, PID gone, IPC down) to nothing at all,
+      // so a dev server that refused to die looked exactly like one that did.
+      silentCatch('CompetitionSlotRow:handleStopServer')(err);
+      setServer(null);
+    }
   }, [slot.id, addToast, dt]);
 
   const taskStatus = task?.status ?? 'unknown';

@@ -46,12 +46,10 @@ const STARTERS: { label: string; emoji: string; name: string; vision: string }[]
 export default function StudioVisionStart({
   onSubmit,
   busy,
-  statusLabel,
   error,
 }: {
   onSubmit: (name: string, vision: string) => void;
   busy: boolean;
-  statusLabel?: string;
   /** Last scaffold/create failure (H9) — shown so a failed start isn't silent. */
   error?: string | null;
 }) {
@@ -78,9 +76,7 @@ export default function StudioVisionStart({
       <div className="flex h-full items-center justify-center px-6">
         <div className="flex items-center gap-3 rounded-card border border-border bg-background/80 px-5 py-4 shadow-elevation-2">
           <Bot className="h-5 w-5 text-primary" />
-          <span className="text-md text-foreground/80">
-            {statusLabel ?? 'Setting up your project…'}
-          </span>
+          <span className="text-md text-foreground/80">Setting up your project…</span>
           <span className="flex gap-0.5">
             <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
             <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />

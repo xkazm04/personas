@@ -35,6 +35,7 @@ export function PromptCacheControls({ value, onChange }: PromptCacheControlsProp
             <button
               key={p.value}
               type="button"
+              aria-pressed={selected}
               onClick={() => onChange(p.value)}
               className={`flex-1 py-1.5 px-2 rounded-card border typo-body font-medium transition-all ${
                 selected

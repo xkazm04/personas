@@ -46,6 +46,10 @@ export function ProviderCredentialField({
   };
 
   const hasValue = f1.value.trim() || (field2 ? f2.value.trim() : '');
+  // A failed save must be visible: useAppSetting swallows the rejection into
+  // `error`, so a field that never renders it leaves the user believing an
+  // unsaved credential was stored (failure is never an empty success).
+  const saveError = f1.error ?? (field2 ? f2.error : null);
   const isSaved = f1.saved && (!field2 || f2.saved);
 
   return (
@@ -111,6 +115,10 @@ export function ProviderCredentialField({
           )}
           <SaveConfigButton onClick={handleSave} disabled={!f1.value.trim()} saved={isSaved} label={saveLabel} />
         </div>
+      )}
+
+      {saveError && (
+        <p role="alert" className="typo-body text-status-error">{saveError}</p>
       )}
 
       {description && (

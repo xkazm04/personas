@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
+import { PETAL_INNER_RATIO, PETAL_OUTER_RATIO } from './helpers';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
 import { SigilPetal } from './SigilPetal';
 import { useGlyphDimText } from './persona-sigil';
@@ -16,8 +17,6 @@ interface InteractiveSigilProps {
   size: number;
 }
 
-const PETAL_OUTER_RATIO = 0.44;
-const PETAL_INNER_RATIO = 0.14;
 const CORE_RATIO = 0.12;
 const ICON_R_LINKED_RATIO = 0.28;
 const ICON_R_SHARED_RATIO = 0.24;

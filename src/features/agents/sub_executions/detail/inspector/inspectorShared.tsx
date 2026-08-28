@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import { ArrowDownToLine, ArrowUpFromLine, DollarSign, Database, Clock, type LucideIcon } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { formatDuration } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HighlightedJsonBlock } from './HighlightedJsonBlock';
@@ -36,9 +38,13 @@ export function InspectorStatStrip({ execution }: { execution: PersonaExecution 
   const cacheHitPct =
     totalInputWithCache > 0 ? Math.round((cacheRead / totalInputWithCache) * 100) : 0;
 
-  const stats: Array<{ icon: LucideIcon; label: string; value: string }> = [
-    { icon: ArrowDownToLine, label: e.input_tokens, value: execution.input_tokens.toLocaleString() },
-    { icon: ArrowUpFromLine, label: e.output_tokens, value: execution.output_tokens.toLocaleString() },
+  // Token counts go through `Numeric` like every other figure in this strip.
+  // Bare `Number.prototype.toLocaleString()` groups by the HOST locale, so a
+  // user running the app in `cs` on an en-US machine got "1,024" beside a
+  // "1 024" rendered two tiles along.
+  const stats: Array<{ icon: LucideIcon; label: string; value: ReactNode }> = [
+    { icon: ArrowDownToLine, label: e.input_tokens, value: <Numeric value={execution.input_tokens} /> },
+    { icon: ArrowUpFromLine, label: e.output_tokens, value: <Numeric value={execution.output_tokens} /> },
     { icon: DollarSign, label: e.cost, value: formatCost(execution.cost_usd) },
     { icon: Database, label: e.cache_hit, value: hasCacheData ? `${cacheHitPct}%` : '–' },
     { icon: Clock, label: e.duration, value: formatDuration(execution.duration_ms) },

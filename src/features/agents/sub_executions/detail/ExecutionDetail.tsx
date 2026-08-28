@@ -6,7 +6,7 @@ import { TraceInspector } from '@/features/agents/sub_executions/detail/inspecto
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
 import { hasNonEmptyJson } from '@/lib/utils/parseJson';
-import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
+import { ExecutionDetailTabs, tabButtonId, tabPanelId, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { ChainTraceView } from './chain/ChainTraceView';
 import { useChainTrace } from '../libs/useChainTrace';
@@ -81,6 +81,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
           hasPipeline={hasPipeline}
           hasChain={chain.hasChain}
           executionStatus={execution.status}
+          idScope={execution.id}
         />
         <div className="flex items-center gap-2">
           <button
@@ -99,7 +100,13 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
       <DryRunModal open={dryRun.open} loading={dryRun.loading} report={dryRun.report} errorMessage={dryRun.errorMessage} onClose={dryRun.close} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
-        <div className="min-w-0 space-y-4">
+        <div
+          className="min-w-0 space-y-4"
+          role="tabpanel"
+          id={tabPanelId(execution.id)}
+          aria-labelledby={tabButtonId(execution.id, activeTab)}
+          tabIndex={0}
+        >
           {/* Tab Content */}
           {activeTab === 'director' && directorReviewMd ? (
             <div className="rounded-modal border border-violet-500/20 bg-violet-500/[0.03] p-5">

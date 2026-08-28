@@ -27,6 +27,11 @@ export function useRunDiffSummaries(runIdsChronological: string[]): Map<string, 
     }
     let cancelled = false;
     const recent = runIdsChronological.slice(-MAX_RUNS);
+    // Whether the window's oldest run is genuinely the first run in history.
+    // When it is not, its predecessor was never fetched, so it has no baseline
+    // to be compared against — and "everything counted as added" would be a
+    // fabricated claim on the one marker where the reader cannot check.
+    const windowIsWholeHistory = recent.length === runIdsChronological.length;
     Promise.all(recent.map((id) => listTeamMemoriesByRun(id)))
       .then((sets) => {
         if (cancelled) return;
@@ -34,7 +39,9 @@ export function useRunDiffSummaries(runIdsChronological: string[]): Map<string, 
         for (let i = 0; i < recent.length; i++) {
           const current = sets[i]!;
           if (i === 0) {
-            next.set(recent[i]!, { added: current.length, removed: 0 });
+            // No summary at all when the baseline is off the edge of the
+            // window: the marker then shows no delta rather than a wrong one.
+            if (windowIsWholeHistory) next.set(recent[i]!, { added: current.length, removed: 0 });
             continue;
           }
           const prev = sets[i - 1]!;

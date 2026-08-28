@@ -7772,7 +7772,8 @@
       "report_empty": "(cuerpo vacío)",
       "open_in_reports": "Abrir en Informes",
       "report_summary_title": "Informe",
-      "report_unavailable": "Informe no disponible"
+      "report_unavailable": "Informe no disponible",
+      "subtitle_composed_prefix": "Compuesto"
     },
     "certification": {
       "title": "Centro de mando de certificación",

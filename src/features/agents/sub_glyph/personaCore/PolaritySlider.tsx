@@ -38,6 +38,9 @@ export function PolaritySlider({
           onBlur={() => setDragging(false)}
           className="absolute inset-0 w-full opacity-0 cursor-pointer"
           aria-label={label}
+          // Without this a screen reader announces a bare "62" — the poles are
+          // painted below the track and exist nowhere in the accessible name.
+          aria-valuetext={`${pct}% ${highLabel}`}
         />
       </div>
       <div className="flex items-center justify-between typo-caption">

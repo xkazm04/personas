@@ -7772,7 +7772,8 @@
       "report_empty": "(prázdný obsah)",
       "open_in_reports": "Otevřít v Reportech",
       "report_summary_title": "Hlášení",
-      "report_unavailable": "Report není k dispozici"
+      "report_unavailable": "Report není k dispozici",
+      "subtitle_composed_prefix": "Sestaveno"
     },
     "certification": {
       "title": "Centrum certifikací",

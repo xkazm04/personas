@@ -7772,7 +7772,8 @@
       "report_empty": "(نص فارغ)",
       "open_in_reports": "فتح في التقارير",
       "report_summary_title": "تقرير",
-      "report_unavailable": "التقرير غير متاح"
+      "report_unavailable": "التقرير غير متاح",
+      "subtitle_composed_prefix": "تم التكوين"
     },
     "certification": {
       "title": "مركز قيادة الشهادات",

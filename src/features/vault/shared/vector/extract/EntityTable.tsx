@@ -7,6 +7,23 @@ import type { KbEntity } from '@/api/vault/database/vectorKb';
 const PARTIAL_CONFIDENCE = 0.99;
 
 /**
+ * The model may return a nested object or an array for an attribute. `String(v)`
+ * renders those as "[object Object]" / a comma soup, which reads as a bug in the
+ * extraction rather than as the value it is.
+ */
+function formatAttrValue(v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'object') {
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return String(v);
+    }
+  }
+  return String(v);
+}
+
+/**
  * Extracted entities as a flat table, grouped by type. Attributes are shown as
  * compact key:value pairs; the source column carries the document + page so a
  * row stays traceable to where it came from.
@@ -52,7 +69,7 @@ export function EntityTable({ entities }: { entities: KbEntity[] }) {
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {Object.entries(attrs as Record<string, unknown>).map(([k, v]) => (
                     <span key={k} className="typo-caption text-foreground">
-                      <span className="text-primary/70">{k}:</span> {String(v)}
+                      <span className="text-primary/70">{k}:</span> {formatAttrValue(v)}
                     </span>
                   ))}
                 </div>

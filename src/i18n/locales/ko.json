@@ -7772,7 +7772,8 @@
       "report_empty": "(본문 없음)",
       "open_in_reports": "보고서에서 열기",
       "report_summary_title": "보고서",
-      "report_unavailable": "보고서를 사용할 수 없습니다"
+      "report_unavailable": "보고서를 사용할 수 없습니다",
+      "subtitle_composed_prefix": "작성됨"
     },
     "certification": {
       "title": "인증 관리 센터",

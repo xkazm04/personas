@@ -31,7 +31,11 @@ export function PowerMoveRow({ move }: { move: PowerMove }) {
           {ht.used_badge}
         </StatusBadge>
       )}
-      <span className="inline-flex items-center gap-0.5 typo-caption text-primary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+      {/* The launch affordance reveals on hover AND on keyboard focus. Without
+          the focus-visible half a keyboard user tabbing the quest board sees
+          rows with no visible call to action at all — the same pattern the
+          Welcome grid's arrow already pairs (NavigationGrid.tsx:79). */}
+      <span className="inline-flex items-center gap-0.5 typo-caption text-primary opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity flex-shrink-0">
         {ht.try_it}
         <ChevronRight className="w-3.5 h-3.5" />
       </span>

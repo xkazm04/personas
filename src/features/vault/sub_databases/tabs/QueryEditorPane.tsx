@@ -1,5 +1,5 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
@@ -37,6 +37,11 @@ export function QueryEditorPane({
 
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  // The 'saved' badge reverts on a timer; the handle is kept so unmounting the
+  // pane (switching saved query, leaving the tab) cannot fire setState on a
+  // dead component.
+  const savedResetRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(savedResetRef.current), []);
   const queryDebug = useQueryDebug();
 
   const { executing, result, error, setResult, setError, runQuery, cancelQuery } = useDbQueryRunner(
@@ -58,7 +63,8 @@ export function QueryEditorPane({
     try {
       await updateQuery(selectedId, { queryText: editorValue });
       setSaveState('saved');
-      setTimeout(() => setSaveState('idle'), 1500);
+      clearTimeout(savedResetRef.current);
+      savedResetRef.current = setTimeout(() => setSaveState('idle'), 1500);
     } catch (err) {
       // Surface the failure — previously this silently reset the button to
       // idle, which reads identically to a successful save and led users to
@@ -135,7 +141,13 @@ export function QueryEditorPane({
           value={editorValue}
           onChange={onEditorChange}
           language={language}
-          placeholder={language === 'redis' ? 'GET mykey' : language === 'convex' ? '{"path": "func:name", "args": {}}' : 'SELECT * FROM ...'}
+          placeholder={
+            language === 'redis'
+              ? db.redis_placeholder
+              : language === 'convex'
+                ? db.convex_placeholder
+                : db.sql_placeholder
+          }
           onExecute={handleExecute}
           minHeight="160px"
         />

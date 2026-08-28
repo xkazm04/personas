@@ -5,6 +5,10 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import type { KnowledgeBase, KbExtractionSchema, KbEntity } from '@/api/vault/database/vectorKb';
+// The payload of `kb-extraction-progress` is a generated contract; this file
+// used to re-declare it by hand, so a Rust-side field change would have drifted
+// silently instead of failing the type-check.
+import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
 import {
   kbInferSchema,
   kbRunExtraction,
@@ -14,17 +18,6 @@ import { SchemaEditor } from '../extract/SchemaEditor';
 import { EntityTable } from '../extract/EntityTable';
 
 const logger = createLogger('vector-kb-extract');
-
-interface ExtractProgress {
-  runId: string;
-  kbId: string;
-  status: string;
-  documentsTotal: number;
-  documentsDone: number;
-  entitiesFound: number;
-  currentDocument: string | null;
-  error: string | null;
-}
 
 /**
  * Structured-extraction tab: the two-pass flow (infer schema -> review/edit ->
@@ -38,10 +31,17 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
   const [schema, setSchema] = useState<KbExtractionSchema | null>(null);
   const [entities, setEntities] = useState<KbEntity[]>([]);
   const [inferring, setInferring] = useState(false);
-  const [progress, setProgress] = useState<ExtractProgress | null>(null);
+  const [progress, setProgress] = useState<KbExtractionProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // `kb_run_extraction` returns as soon as the job is spawned, so `running`
+  // (derived from the first progress event) is still false for the round trip
+  // after the click. Without this latch a second click spawns a second run over
+  // the same corpus, doubling the model spend and the rows written.
+  const [starting, setStarting] = useState(false);
 
   const running = progress != null && progress.status === 'running';
+  const busy = running || starting;
+  const startingRef = useRef(false);
 
   const loadEntities = useCallback(async () => {
     try {
@@ -58,10 +58,16 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
   loadEntitiesRef.current = loadEntities;
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    void listen<ExtractProgress>('kb-extraction-progress', (event) => {
+    void listen<KbExtractionProgress>('kb-extraction-progress', (event) => {
       if (event.payload.kbId !== kb.id) return;
       setProgress(event.payload);
-      if (event.payload.status !== 'running') void loadEntitiesRef.current();
+      if (event.payload.status !== 'running') {
+        // A run that ends in failure carries its reason here and nowhere else:
+        // the progress line below is gated on `running`, so without this the
+        // run simply stops and the user is told nothing.
+        if (event.payload.error) setError(event.payload.error);
+        void loadEntitiesRef.current();
+      }
     }).then((fn) => { unlisten = fn; });
     return () => unlisten?.();
   }, [kb.id]);
@@ -79,12 +85,17 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
   }, [kb.id]);
 
   const handleRun = useCallback(async () => {
-    if (!schema) return;
+    if (!schema || startingRef.current) return;
+    startingRef.current = true;
+    setStarting(true);
     setError(null);
     try {
       await kbRunExtraction(kb.id, schema);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
     }
   }, [kb.id, schema]);
 
@@ -100,7 +111,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
         <button
           type="button"
           onClick={() => void handleInfer()}
-          disabled={inferring || running}
+          disabled={inferring || busy}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50 typo-body"
         >
           {inferring ? <LoadingSpinner className="text-violet-400" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -111,11 +122,11 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
           <button
             type="button"
             onClick={() => void handleRun()}
-            disabled={running || schema.entities.length === 0}
+            disabled={busy || schema.entities.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-50 typo-body"
           >
-            {running ? <LoadingSpinner className="text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
-            {running ? sh.extract_running : sh.extract_run_btn}
+            {busy ? <LoadingSpinner className="text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
+            {busy ? sh.extract_running : sh.extract_run_btn}
           </button>
         )}
       </div>

@@ -14,6 +14,10 @@ export function useEffectiveConfig(personaId: string | null | undefined, refresh
   useEffect(() => {
     if (!personaId) {
       setConfig(null);
+      // Also clear the in-flight flag: the previous run's cleanup has already
+      // set cancelled, so its .finally() will not run and the panel would keep
+      // rendering its loading ghost forever after the persona is deselected.
+      setLoading(false);
       return;
     }
 

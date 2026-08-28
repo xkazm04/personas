@@ -40,7 +40,7 @@
 //! lock + a preemption path, deliberately out of scope for this foundational
 //! commit (which changes no existing behavior).
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use crate::daemon::lock::{default_data_dir, DaemonLock, LockError, TriggerKind};
@@ -213,6 +213,24 @@ pub fn is_engine_leader(app: &tauri::AppHandle) -> bool {
     app.try_state::<std::sync::Arc<crate::AppState>>()
         .map(|s| s.leadership.is_leader())
         .unwrap_or(true)
+}
+
+/// Whether a *different*, live instance currently holds engine leadership.
+///
+/// Read-only: peeks the lease file without acquiring it, so a caller that
+/// runs before this instance has acquired (the boot recovery phase) can tell
+/// "another instance is driving this DB right now" from "nobody is". A stale
+/// lease reads as nobody, exactly as it does for [`EngineLeadership::try_acquire`] —
+/// heartbeat freshness is this protocol's liveness signal and `pid` is
+/// deliberately not consulted (see [`crate::daemon::lock`]).
+///
+/// Only meaningful BEFORE this process acquires; afterwards the lease it sees
+/// may be its own.
+pub fn another_instance_leads(app_data_dir: &Path) -> bool {
+    matches!(
+        DaemonLock::check_active_named(app_data_dir, LEADER_LOCK_FILENAME),
+        Ok(Some(_))
+    )
 }
 
 #[cfg(test)]

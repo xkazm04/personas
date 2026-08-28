@@ -4,6 +4,7 @@
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
+import { sanitizeTextField } from '@/lib/utils/sanitizers/workflowSanitizer';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface GHAStep {
@@ -189,12 +190,20 @@ export function parseGithubActionsWorkflow(json: unknown): AgentIR {
     }
   }
 
+  // This adapter REPLACES the pipeline's prompt fields below, which means the
+  // sanitization the pipeline applies at the waist is bypassed for everything it
+  // rewrites. Sanitize the workflow name and every job name here so the override
+  // path carries the same guarantee as the path it overrides — a `name:` in a
+  // downloaded workflow YAML is untrusted text heading for a model prompt.
+  const safeWorkflowName =
+    sanitizeTextField(workflow.name, 200) || 'Imported GitHub Actions Workflow';
+
   // GHA has custom identity/instructions, so we override the pipeline output
   const result = runExtractionPipeline({
     platformLabel: 'GitHub Actions',
     platformNoun: 'workflow',
     elementNoun: 'steps',
-    workflowName: workflow.name || 'Imported GitHub Actions Workflow',
+    workflowName: safeWorkflowName,
     nodes,
     excludedServices: ['shell', 'action', 'cache', 'artifacts'],
     // Pass pre-computed triggers instead of fallback (GHA handles its own trigger parsing)
@@ -212,18 +221,21 @@ export function parseGithubActionsWorkflow(json: unknown): AgentIR {
 
   // Override identity and instructions with GHA-specific versions
   const jobEntries = Object.entries(jobsObj);
-  result.structured_prompt.identity = `You are an AI agent that orchestrates the "${workflow.name || 'Imported GitHub Actions Workflow'}" CI/CD pipeline, originally defined as a GitHub Actions workflow.`;
+  const safeJobName = (job: GHAJob, id: string): string =>
+    sanitizeTextField(job.name, 150) || sanitizeTextField(id, 150) || 'job';
+  result.structured_prompt.identity = `You are an AI agent that orchestrates the "${safeWorkflowName}" CI/CD pipeline, originally defined as a GitHub Actions workflow.`;
   result.structured_prompt.instructions = `Execute the following jobs in order:\n${jobEntries.map(([id, j], i) => {
     const job = j as GHAJob;
     const stepCount = job.steps?.length ?? 0;
-    return `${i + 1}. ${job.name || id} (${stepCount} steps, runs on ${job['runs-on'] || 'unknown'})`;
+    const runsOn = sanitizeTextField(job['runs-on'], 150) || 'unknown';
+    return `${i + 1}. ${safeJobName(job, id)} (${stepCount} steps, runs on ${runsOn})`;
   }).join('\n')}\n\nRespect job dependencies and pass artifacts between jobs as needed.`;
   result.structured_prompt.errorHandling = 'If any step fails, check the job\'s continue-on-error setting. By default, stop the job on failure and report the error. For independent jobs, continue execution.';
 
   // Override summary/markdown with job-level detail
-  const jobNames = jobEntries.map(([id, j]) => (j as GHAJob).name || id);
-  result.full_prompt_markdown = `# ${workflow.name || 'Imported GitHub Actions Workflow'}\n\nJobs: ${jobNames.join(' \u2192 ')}\n\nThis persona was imported from a GitHub Actions workflow with ${jobEntries.length} jobs and ${nodes.length} total steps.`;
-  result.summary = `Imported from GitHub Actions workflow "${workflow.name || 'Imported GitHub Actions Workflow'}" with ${jobEntries.length} jobs and ${nodes.length} steps.`;
+  const jobNames = jobEntries.map(([id, j]) => safeJobName(j as GHAJob, id));
+  result.full_prompt_markdown = `# ${safeWorkflowName}\n\nJobs: ${jobNames.join(' \u2192 ')}\n\nThis persona was imported from a GitHub Actions workflow with ${jobEntries.length} jobs and ${nodes.length} total steps.`;
+  result.summary = `Imported from GitHub Actions workflow "${safeWorkflowName}" with ${jobEntries.length} jobs and ${nodes.length} steps.`;
 
   return result;
 }

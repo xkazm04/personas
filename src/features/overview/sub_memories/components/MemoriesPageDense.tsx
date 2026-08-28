@@ -6,10 +6,12 @@
 // padding, mono-font numerics, persistent column sort affordance.
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -42,6 +44,10 @@ const COL_WIDTHS = {
   lastSeen: 'w-20',
   created: 'w-20',
 } as const;
+
+/** Rendered where a metric exists but this surface cannot measure it — never a
+ *  0, which is indistinguishable from a measured zero. */
+const UNMEASURED = '—';
 
 const TIER_TONE: Record<string, string> = {
   core: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
@@ -78,7 +84,9 @@ export default function MemoriesPageDense() {
   const [selected, setSelected] = useState<PersonaMemory | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState<'memories' | 'conflicts'>('memories');
-  const latestRef = useRef(0);
+  // Latest-wins guard for the debounced search fetch — the shared primitive,
+  // not a hand-rolled counter (census: hand-rolled-stale-token).
+  const latest = useRef(createLatestWins()).current;
   // Covers the 300ms debounce window itself, which `memoriesLoading` (only
   // flipped by the store once the fetch actually starts) doesn't see — without
   // this, the pre-debounce window renders with stale/empty `memories` and
@@ -95,17 +103,18 @@ export default function MemoriesPageDense() {
   const [debouncePending, setDebouncePending] = useState(true);
 
   useEffect(() => {
-    const requestId = ++latestRef.current;
+    const requestId = latest.next();
     setDebouncePending(true);
     const timer = setTimeout(() => {
-      if (requestId !== latestRef.current) return;
+      if (!latest.isCurrent(requestId)) return;
       setDebouncePending(false);
       fetchMemories({ search: search || undefined, sort_column: 'created_at', sort_direction: 'desc' });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search]);
+  }, [fetchMemories, search, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
+  const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0;
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -150,6 +159,14 @@ export default function MemoriesPageDense() {
 
   const stats = useMemo(() => {
     if (!memoryStats) return null;
+    // `total` and `avgImportance` are computed SERVER-SIDE over the whole
+    // filtered set; the tier counts and the access sum below can only be
+    // computed over `memories`, which memorySlice caps at 100 rows (500 when
+    // searching). Mixing the two produced a strip whose parts did not sum to
+    // its own Total and that got quietly wronger the more memories a user had.
+    // So they are derived only when the page IS the whole set, and reported as
+    // unmeasured otherwise — never as a plausible-looking small number.
+    const complete = memories.length >= memoryStats.total;
     const tierCounts = memories.reduce<Record<string, number>>((acc, m) => {
       acc[m.tier] = (acc[m.tier] ?? 0) + 1; return acc;
     }, {});
@@ -157,9 +174,9 @@ export default function MemoriesPageDense() {
     return {
       total: memoryStats.total,
       avgImportance: memoryStats.avg_importance,
+      complete,
       core: tierCounts.core ?? 0,
       active: tierCounts.active ?? 0,
-      archive: tierCounts.archive ?? 0,
       totalAccess,
     };
   }, [memoryStats, memories]);
@@ -172,6 +189,15 @@ export default function MemoriesPageDense() {
   // the Reflect button opens a picker over personas that actually hold
   // memories, ranked by how much there is to consolidate.
   const [reflectMenuOpen, setReflectMenuOpen] = useState(false);
+  const reflectMenuRef = useRef<HTMLDivElement>(null);
+
+  // The persona picker was a popover with no way out but choosing a persona:
+  // no Escape, no outside-click, and no aria-expanded, so a screen reader was
+  // never told a menu had opened. `useClickOutside` is the repo's dismissal
+  // contract for an anchored transient surface and pairs outside-press with
+  // Escape, so this popover now closes the same way every other one does.
+  const closeReflectMenu = useCallback(() => setReflectMenuOpen(false), []);
+  useClickOutside(reflectMenuRef, reflectMenuOpen, closeReflectMenu);
   const reflectablePersonas = useMemo(() => {
     if (!memoryStats) return [] as Array<{ id: string; name: string; count: number }>;
     return memoryStats.agent_counts
@@ -215,11 +241,13 @@ export default function MemoriesPageDense() {
               {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {memoryReviewRunning ? 'Reviewing...' : 'Review'}
             </button>
-            <div className="relative">
+            <div className="relative" ref={reflectMenuRef}>
               <button
                 type="button"
                 onClick={() => setReflectMenuOpen((v) => !v)}
                 disabled={memoryReviewRunning || reflectablePersonas.length === 0}
+                aria-haspopup="menu"
+                aria-expanded={reflectMenuOpen}
                 title={t.overview.memories.reflect_hint}
                 className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-amber-500/15 text-amber-300 border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40"
               >
@@ -228,7 +256,7 @@ export default function MemoriesPageDense() {
               </button>
               {reflectMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-primary/20 bg-background shadow-elevation-3 p-1">
-                  <p className="px-2 py-1.5 typo-caption text-muted-foreground">{t.overview.memories.reflect_pick_persona}</p>
+                  <p className="px-2 py-1.5 typo-caption text-foreground">{t.overview.memories.reflect_pick_persona}</p>
                   {reflectablePersonas.map((p) => (
                     <button
                       type="button"
@@ -237,7 +265,7 @@ export default function MemoriesPageDense() {
                       className="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded-card typo-body text-foreground/90 hover:bg-secondary/50 transition-colors"
                     >
                       <span className="truncate">{p.name}</span>
-                      <span className="typo-caption text-muted-foreground flex-shrink-0">{p.count}</span>
+                      <span className="typo-caption text-foreground flex-shrink-0">{p.count}</span>
                     </button>
                   ))}
                 </div>
@@ -274,13 +302,16 @@ export default function MemoriesPageDense() {
               <KpiDivider />
               <KpiMetric label="Avg Importance" value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
               <KpiDivider />
-              <KpiMetric label="Core" value={stats.core} tone="text-amber-300" />
+              {/* An "Archive" tile stood here and could only ever read 0: this
+                  list is fetched with the store's default `!archive` tier filter
+                  and carries no tier control, so an archived memory never enters
+                  `memories`. A tile that is structurally incapable of a non-zero
+                  value is not a measurement. */}
+              <KpiMetric label="Core" value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
               <KpiDivider />
-              <KpiMetric label="Active" value={stats.active} tone="text-cyan-300" />
+              <KpiMetric label="Active" value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
               <KpiDivider />
-              <KpiMetric label="Archive" value={stats.archive} tone="text-foreground" />
-              <KpiDivider />
-              <KpiMetric label="Total Access" value={stats.totalAccess.toLocaleString()} tone="text-emerald-300" />
+              <KpiMetric label="Total Access" value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-emerald-300" />
             </div>
           )}
 
@@ -350,7 +381,15 @@ export default function MemoriesPageDense() {
             {isFetching && sortedMemories.length === 0 ? (
               <DenseGhostRows />
             ) : sortedMemories.length === 0 ? (
-              <div className="flex items-center justify-center py-12 typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></div>
+              // Both zero-row conditions used to read "No memories match current
+              // filters", so a first-run user with an empty store and no filter
+              // set was told their filters were too narrow. Filtered-to-zero and
+              // nothing-here-yet are different states and get different copy.
+              <div className="flex items-center justify-center py-12 typo-body text-foreground">
+                {hasActiveFilters
+                  ? <DebtText k="auto_no_memories_match_current_filters_06cb075f" />
+                  : <DebtText k="auto_no_memories_yet_775ad944" />}
+              </div>
             ) : (
               <AnimatePresence mode="popLayout">
                 {sortedMemories.map((memory, i) => (
@@ -382,10 +421,17 @@ export default function MemoriesPageDense() {
       )}
 
       {confirmingDeleteAll && (
+        // `memories` is ONE PAGE (memorySlice caps the fetch at 100 rows, 500
+        // when searching) while `delete_all_memories` deletes every non-core
+        // memory in the database. Counting the page understated the blast radius
+        // by the whole pagination factor — "This permanently deletes all 100
+        // memories" in front of a 3,000-row store. `memoriesTotal` is the
+        // server-side count for the current filter, so it is the largest honest
+        // number this surface holds.
         <ConfirmDialog
           danger
           title={t.overview.memories.delete_all_confirm_title}
-          body={tx(t.overview.memories.delete_all_confirm_body, { count: memories.length })}
+          body={tx(t.overview.memories.delete_all_confirm_body, { count: memoriesTotal })}
           confirmLabel={t.overview.memories.delete_all_confirm_cta}
           onConfirm={async () => {
             try {

@@ -69,7 +69,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     let log_dir = app_data_dir.join("logs");
 
-    recovery::recover_interrupted_work(&pool, &user_db_pool, &mut st);
+    recovery::recover_interrupted_work(&app_data_dir, &pool, &user_db_pool, &mut st);
 
     let scheduler = Arc::new(engine::background::SchedulerState::new());
     let engine = Arc::new(engine::ExecutionEngine::new(

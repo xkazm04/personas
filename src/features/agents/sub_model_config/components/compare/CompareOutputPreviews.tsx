@@ -24,8 +24,10 @@ export function OutputPreviews({
 
   if (scenarios.length === 0) return null;
 
-  // If only one scenario, show it directly
-  const firstScenario = scenarios.length === 1 ? scenarios[0]! : expandedScenario;
+  // Show the first scenario by default. Selecting one is a refinement, not a
+  // precondition: a multi-scenario run used to render the chip row above an
+  // empty gap until the user happened to click a chip.
+  const activeScenario = expandedScenario ?? scenarios[0]!;
 
   return (
     <div className="space-y-2">
@@ -36,9 +38,10 @@ export function OutputPreviews({
             <button
               type="button"
               key={s}
-              onClick={() => setExpandedScenario(expandedScenario === s ? null : s)}
+              onClick={() => setExpandedScenario(s)}
+              aria-pressed={activeScenario === s}
               className={`px-2 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${
-                expandedScenario === s
+                activeScenario === s
                   ? 'bg-primary/15 border-primary/30 text-primary'
                   : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
               }`}
@@ -48,16 +51,16 @@ export function OutputPreviews({
           ))}
         </div>
       )}
-      {firstScenario && (
+      {activeScenario && (
         <div className="grid grid-cols-2 gap-2">
           <OutputBox
             label={modelA.label}
-            text={results.find((r) => r.modelId === modelA.id && r.scenarioName === firstScenario)?.outputPreview ?? ''}
+            text={results.find((r) => r.modelId === modelA.id && r.scenarioName === activeScenario)?.outputPreview ?? ''}
             accent="blue"
           />
           <OutputBox
             label={modelB.label}
-            text={results.find((r) => r.modelId === modelB.id && r.scenarioName === firstScenario)?.outputPreview ?? ''}
+            text={results.find((r) => r.modelId === modelB.id && r.scenarioName === activeScenario)?.outputPreview ?? ''}
             accent="amber"
           />
         </div>

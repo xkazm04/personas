@@ -72,7 +72,8 @@ export function ChatMessages({
                   type="button"
                   onClick={onCancel}
                   className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
-                  title="Cancel"
+                  title={t.common.cancel}
+                  aria-label={t.common.cancel}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -81,6 +82,14 @@ export function ChatMessages({
 
             {msg.role === 'assistant' && msg.status === 'failed' && (
               <p className="typo-body text-red-400">{msg.content}</p>
+            )}
+
+            {/* An answer that carries no SQL (a clarifying question, a refusal,
+                an explanation-only reply) still has to be readable — without
+                this branch the bubble renders completely empty. */}
+            {msg.role === 'assistant' && !msg.sql && msg.content
+              && msg.status !== 'generating' && msg.status !== 'failed' && (
+              <p className="typo-body whitespace-pre-wrap">{msg.content}</p>
             )}
 
             {msg.role === 'assistant' && msg.sql && msg.status !== 'generating' && msg.status !== 'failed' && (

@@ -10,6 +10,7 @@
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { PlatformDefinition, ProtocolMapRule } from '../platformDefinitions';
 import { extractProtocolsFromNodes } from '../platformDefinitions';
+import { sanitizeTextField } from '@/lib/utils/sanitizers/workflowSanitizer';
 
 // -- Adapter interface -------------------------------------------
 
@@ -62,14 +63,43 @@ export interface AdapterResult {
 // -- Pipeline ----------------------------------------------------
 
 /**
+ * Length caps for untrusted text lowered into the IR. Sized to match
+ * `workflowSanitizer`'s own `MAX_LENGTHS.workflowName` / `.nodeName`, so a
+ * "description" cannot smuggle a ten-thousand-token payload into a prompt.
+ */
+const MAX_NAME_LEN = 200;
+const MAX_LABEL_LEN = 150;
+
+/**
  * Run the shared extraction pipeline on an adapter result.
  *
  * This is the single algorithm that all parsers share. Each parser
  * calls its adapter to produce an `AdapterResult`, then passes it here.
  */
 export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
-  const { platformLabel, platformNoun, elementNoun, workflowName, nodes } = adapter;
+  const { platformLabel, platformNoun, elementNoun } = adapter;
   const excludedServices = new Set(adapter.excludedServices ?? []);
+
+  // Every string below originates in a file the user downloaded from a foreign
+  // product — attacker-grade input wearing a colleague's name — and every one of
+  // them is interpolated into `structured_prompt` / `full_prompt_markdown`, i.e.
+  // straight into a model prompt. Sanitizing HERE, at the waist all four
+  // adapters lower through, is the single door: previously only the n8n adapter
+  // sanitized (workflowSanitizer.ts still documents itself as being about "n8n
+  // workflows"), so a Zapier / Make / GitHub Actions export carrying
+  // `## SYSTEM ... ignore all previous instructions` reached the prompt intact.
+  // `sanitizeTextField` (not `sanitizeName`) is deliberate: it neutralizes
+  // prompt STRUCTURE — headings, fences, role lines, zero-width characters —
+  // while leaving ordinary text in any script alone, so a Japanese or Russian
+  // workflow name survives rather than being emptied by an ASCII allowlist.
+  const workflowName = sanitizeTextField(adapter.workflowName, MAX_NAME_LEN);
+  const nodes: NormalizedNode[] = adapter.nodes.map((node) => ({
+    ...node,
+    label: sanitizeTextField(node.label, MAX_LABEL_LEN) || node.service || 'step',
+    sourceDescription: node.sourceDescription
+      ? sanitizeTextField(node.sourceDescription, MAX_LABEL_LEN)
+      : node.sourceDescription,
+  }));
 
   const triggerNodes = nodes.filter((n) => n.isTrigger);
   const actionNodes = nodes.filter((n) => !n.isTrigger && !n.isExcluded);

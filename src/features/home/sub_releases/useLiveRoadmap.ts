@@ -58,7 +58,18 @@ export function useLiveRoadmap(): UseLiveRoadmap {
     const result = await fetchLiveRoadmap({ force });
     if (!mounted.current) return;
     if (!result) {
-      setStatus((prev) => (prev === 'loading' ? 'unavailable' : prev));
+      // A failed fetch is not a no-op for the freshness pill. With content
+      // already on screen the previous status ('fresh' / 'cached') would keep
+      // claiming a healthy live channel: a manual refresh spins, settles, and
+      // leaves the same green dot and the same timestamp -- indistinguishable
+      // from a refresh that succeeded and found nothing new. 'stale' is
+      // precisely this state ("what you are reading came from the cache
+      // because the network attempt failed"), and the pill already renders it
+      // as a red dot with the offline-snapshot label. 'unavailable' (bundled
+      // fallback, nothing to be stale about) stays as it is.
+      setStatus((prev) =>
+        prev === 'loading' ? 'unavailable' : prev === 'unavailable' ? prev : 'stale',
+      );
     } else {
       setRoadmap(result.roadmap);
       setFetchedAt(result.fetchedAt);

@@ -60,8 +60,16 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     if (open) void fleetRefresh();
   }, [open, fleetRefresh]);
 
+  // A broadcast target must have a PTY writer to receive the text. `exited` is
+  // the obvious one; `hibernated` is the trap — the row is still listed and
+  // still looks alive, but hibernate FREES the process ("Hibernated — process
+  // freed; resume with claude --resume"), so every write to it returns
+  // "session writer dropped" and lands in the failure count. The rest of Fleet
+  // already pairs the two states as terminal (the grid tile calls both
+  // tombstones with "no PTY to attach"); this list was the one place that
+  // filtered on `exited` alone.
   const targetable = useMemo(
-    () => sessions.filter((s) => s.state !== 'exited'),
+    () => sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated'),
     [sessions],
   );
 
@@ -128,6 +136,13 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       addToast(`Broadcast failed — 0 of ${total} delivered`, 'error');
     }
     setSending(false);
+    // A broadcast that reached NOBODY must not destroy what the operator
+    // typed. Clearing + closing on a total failure discards a message they
+    // may have spent minutes composing and leaves them with a red toast and
+    // an empty composer — the one case where retrying is exactly what they
+    // want. Partial success still closes: those sessions did receive it, and
+    // re-sending the same text would double-submit to them.
+    if (sent === 0 && total > 0) return;
     setText('');
     onClose();
   }, [text, selected, sending, pressEnter, onClose]);

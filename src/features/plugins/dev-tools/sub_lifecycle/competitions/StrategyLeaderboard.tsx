@@ -1,25 +1,45 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getStrategyLeaderboard } from '@/api/devTools/devTools';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { DevStrategyStats } from '@/lib/bindings/DevStrategyStats';
+import { silentCatch } from '@/lib/silentCatch';
 
 export function StrategyLeaderboard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const [stats, setStats] = useState<DevStrategyStats[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Latest-wins guard. This panel refetches on every project switch and on
+  // every Refresh click, so two flights can be open at once; without a token
+  // the SLOWER one wins simply by landing last, and project A's leaderboard
+  // paints under project B's header. A monotonic counter (never a timestamp —
+  // it collides under rapid dispatch, exactly when the guard matters) is
+  // minted synchronously BEFORE the request leaves, and both the success and
+  // the failure path check it. A stale completion is inert, not an error.
+  const requestGuard = useRef(createLatestWins()).current;
+
   const load = useCallback(async () => {
+    const token = requestGuard.next();
     setLoading(true);
     try {
       const data = await getStrategyLeaderboard(projectId);
+      if (!requestGuard.isCurrent(token)) return;
       setStats(data);
-    } catch {
-      setStats([]);
+    } catch (err) {
+      // Leave `stats` exactly as it is. A failed refresh must not erase a
+      // leaderboard already on screen (docs/design/overview-loading.md law 1):
+      // the old `setStats([])` collapsed the whole panel to `null` on one
+      // transient IPC error, with no way back but another manual refresh. A
+      // COLD failure needs no clear — `stats` is still the initial [].
+      // The old form was a bare `catch { setStats([]) }`, so this failure
+      // reached no error door at all; route it to a breadcrumb now.
+      silentCatch('StrategyLeaderboard:load')(err);
     } finally {
-      setLoading(false);
+      if (requestGuard.isCurrent(token)) setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, requestGuard]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -45,7 +65,8 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
           type="button"
           onClick={load}
           className="ml-auto text-foreground hover:text-primary transition-colors"
-          title="Refresh"
+          title={t.common.refresh}
+          aria-label={t.common.refresh}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>

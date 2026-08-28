@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
 import { useTableIntrospection, getCachedColumns } from '@/hooks/database/useTableIntrospection';
@@ -15,6 +16,7 @@ interface TablesTabProps {
 }
 
 export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
+  const { t } = useTranslation();
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
   const pinnedTables = useVaultStore((s) => s.dbSchemaTables).filter((t) => t.credential_id === credentialId);
   const createTable = useVaultStore((s) => s.createDbSchemaTable);
@@ -40,8 +42,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
       const result = await executeDbQuery(credentialId, `TYPE "${escapedKey}"`);
       const val = result.rows[0]?.[0];
       setKeyTypeResult(val != null ? String(val) : 'unknown');
-    } catch { setKeyTypeResult('error'); }
-  }, [credentialId, executeDbQuery]);
+    } catch (err) {
+      // The badge used to read a bare untranslated 'error' and the cause went
+      // nowhere — the catch body is non-empty, so no-silent-catch never saw it.
+      silentCatch('features/vault/sub_databases/tabs/TablesTab:fetchKeyType')(err);
+      setKeyTypeResult(t.common.error);
+    }
+  }, [credentialId, executeDbQuery, t]);
 
   const handleSelectTable = useCallback((tableName: string) => {
     setSelectedTable(tableName);
@@ -83,8 +90,6 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   const handleCopyName = useCallback((tableName: string) => {
     copyText(tableName);
   }, []);
-
-  const { t } = useTranslation();
 
   if (family === 'unsupported') {
     return (

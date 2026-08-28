@@ -51,9 +51,18 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  // Mirror of activeQueryId for the unmount cleanup, which must not re-run
+  // (and therefore cannot close over the state value).
+  const activeQueryIdRef = useRef<string | null>(null);
+  useEffect(() => { activeQueryIdRef.current = activeQueryId; }, [activeQueryId]);
+
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      // Leaving the tab stops the poll; without this the backend generation job
+      // keeps running (and keeps spending model budget) with nobody reading it.
+      const pending = activeQueryIdRef.current;
+      if (pending) cancelNlQuery(pending).catch(silentCatch('ChatTab:cancelNlQueryUnmount'));
     };
   }, []);
 
@@ -115,7 +124,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMsg.id
-                  ? { ...m, sql: snapshot.generated_sql || undefined, explanation: snapshot.explanation || undefined, content: snapshot.explanation || 'Query generated.', status: 'ready' as const }
+                  ? { ...m, sql: snapshot.generated_sql || undefined, explanation: snapshot.explanation || undefined, content: snapshot.explanation || t.vault.databases.query_generated, status: 'ready' as const }
                   : m,
               ),
             );
@@ -127,7 +136,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMsg.id
-                  ? { ...m, content: snapshot.error || 'Query generation failed.', error: snapshot.error || 'Query generation failed.', status: 'failed' as const }
+                  ? { ...m, content: snapshot.error || t.vault.databases.query_failed, error: snapshot.error || t.vault.databases.query_failed, status: 'failed' as const }
                   : m,
               ),
             );
@@ -154,10 +163,10 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       setActiveQueryId(null);
       setGenerating(false);
       setMessages((prev) =>
-        prev.map((m) => m.status === 'generating' ? { ...m, content: 'Cancelled.', status: 'failed' as const } : m),
+        prev.map((m) => m.status === 'generating' ? { ...m, content: t.vault.databases.cancelled, status: 'failed' as const } : m),
       );
     }
-  }, [activeQueryId]);
+  }, [activeQueryId, t]);
 
   // Runs the SQL for whichever message is the current run target. Bound to
   // credentialId only, so the shared safe-mode drift guard clears any pending
@@ -170,7 +179,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       const result = await executeDbQuery(credentialId, sql, undefined, allowMutation);
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result, error: undefined, status: 'done' as const } : m)));
     } catch (err) {
-      setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, error: extractErrorMessage(err), status: 'done' as const } : m)));
+      setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result: undefined, error: extractErrorMessage(err), status: 'done' as const } : m)));
     }
   }, [credentialId, executeDbQuery]);
 
@@ -179,9 +188,16 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const handleExecuteSql = useCallback(async (msgId: string, sql: string) => {
     // AI-suggested mutations get the same confirm dialog as the SQL editor,
     // driven by the shared useQuerySafeMode hook (safe mode on by default).
+    //
+    // Only one message may own the confirm banner at a time. A pending mutation
+    // is executed against whatever runTargetMsgIdRef points at when the user
+    // confirms, so running a second message while a banner is open would report
+    // the FIRST message's rows under the second message. Dropping the stale
+    // banner keeps the pending statement and its target in step.
+    if (runTargetMsgIdRef.current && runTargetMsgIdRef.current !== msgId) cancelMutation();
     runTargetMsgIdRef.current = msgId;
     await guardedExecute(sql);
-  }, [guardedExecute]);
+  }, [guardedExecute, cancelMutation]);
 
   const handleCopySql = useCallback((sql: string, msgId: string) => {
     copySqlText(msgId, sql);

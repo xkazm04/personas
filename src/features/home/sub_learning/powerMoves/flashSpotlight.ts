@@ -1,3 +1,6 @@
+import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
+
 const POLL_MS = 80;
 const WAIT_MS = 4000;
 const SCROLL_SETTLE_MS = 350;
@@ -14,7 +17,8 @@ let activeFlash: HTMLDivElement | null = null;
  * the user has already navigated away from. Each call captures its number and
  * abandons at every resume point if a newer one has started.
  */
-let generation = 0;
+const flashes = createLatestWins();
+const log = createLogger('powerMoves/flashSpotlight');
 
 function removeActiveFlash() {
   activeFlash?.remove();
@@ -33,6 +37,37 @@ function isSafeTestId(id: string): boolean {
   return TESTID_PATTERN.test(id);
 }
 
+/**
+ * One breadcrumb per way this spotlight can decline to paint. The guided-tour
+ * degradation policy is "skip, never strand" — which this already did — plus
+ * "instrument every skip", which it did not.
+ */
+function noteDegradation(reason: string, testId: string): void {
+  // Scoped logger, not a raw Sentry breadcrumb: telemetry egress is consent-
+  // gated at the boot door and a side-field on a breadcrumb bypasses the
+  // record scrubber (census: consent-bypassing-telemetry-import,
+  // unscrubbed-telemetry-side-field).
+  log.warn(`flashSpotlight skipped: ${reason}`, { testId });
+}
+
+/**
+ * Reduced motion, from BOTH of the app's signals. There are two: the OS media
+ * query, and the in-app Appearance toggle that `themeStore` projects as
+ * `<html data-motion="reduce">` (globals.css honours both). Neither reaches
+ * this module for free -- the CSS override cannot touch a Web Animations API
+ * animation, and `scroll-behavior: auto !important` cannot override an
+ * explicit `behavior: 'smooth'` argument. So the two motions this file owns --
+ * a smooth scroll and a six-keyframe pulse -- are the two the app's global
+ * reduce-motion handling misses, and the check has to be made here.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion') === 'reduce') {
+    return true;
+  }
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 /** Poll for `[data-testid="${testId}"]` until present or timed out. */
 function waitForTestId(testId: string): Promise<Element | null> {
   if (!isSafeTestId(testId)) {
@@ -42,6 +77,7 @@ function waitForTestId(testId: string): Promise<Element | null> {
         { received: testId },
       );
     }
+    noteDegradation('unsafe-testid', testId);
     return Promise.resolve(null);
   }
   return new Promise((resolve) => {
@@ -49,7 +85,15 @@ function waitForTestId(testId: string): Promise<Element | null> {
     const tick = () => {
       const el = document.querySelector(`[data-testid="${testId}"]`);
       if (el) return resolve(el);
-      if (Date.now() > deadline) return resolve(null);
+      if (Date.now() > deadline) {
+        // A missing anchor is an expected condition, but a SILENT one is how a
+        // dead deep link survives: the ring never paints, nothing is logged,
+        // and the move is still marked "tried". Record the degradation so a
+        // spotlight that stopped resolving is visible rather than merely
+        // invisible.
+        noteDegradation('anchor-never-mounted', testId);
+        return resolve(null);
+      }
       setTimeout(tick, POLL_MS);
     };
     tick();
@@ -66,21 +110,30 @@ function waitForTestId(testId: string): Promise<Element | null> {
  * not track scroll/resize during the pulse — the target was just centered, and
  * the ring is pointer-events-none, so a stale rect costs nothing. Tours keep
  * the dimming `TourSpotlight`; this is the lightweight non-dimming cousin.
+ *
+ * Under reduced motion the scroll is instant and the ring is steady — the
+ * affordance still marks the anchor, it just stops moving.
  */
 export async function flashSpotlight(testId: string): Promise<void> {
-  const mine = ++generation;
+  const mine = flashes.next();
   removeActiveFlash();
   const el = await waitForTestId(testId);
-  if (!el || mine !== generation) return;
+  if (!el || !flashes.isCurrent(mine)) return;
 
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  await new Promise((r) => setTimeout(r, SCROLL_SETTLE_MS));
-  if (mine !== generation) return;
+  const reduceMotion = prefersReducedMotion();
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+  // An instant scroll still needs one macrotask for layout to settle before the
+  // rect is read; it does not need the smooth-scroll settle window.
+  await new Promise((r) => setTimeout(r, reduceMotion ? 0 : SCROLL_SETTLE_MS));
+  if (!flashes.isCurrent(mine)) return;
 
   // Re-query post-scroll: the node may have re-rendered into a new element.
   const live = document.querySelector(`[data-testid="${testId}"]`) ?? el;
   const rect = live.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) return;
+  if (rect.width === 0 && rect.height === 0) {
+    noteDegradation('anchor-has-no-box', testId);
+    return;
+  }
 
   const ring = document.createElement('div');
   ring.setAttribute('data-testid', 'power-move-flash');
@@ -99,6 +152,18 @@ export async function flashSpotlight(testId: string): Promise<void> {
   } satisfies Partial<CSSStyleDeclaration>);
   document.body.appendChild(ring);
   activeFlash = ring;
+
+  if (reduceMotion) {
+    // The steady-ring fallback globals.css already uses for its own spotlights
+    // ("prefers-reduced-motion: a steady ring + steady corners, no animation").
+    // The affordance still lands -- the anchor is still marked -- without the
+    // scale-and-fade pulse.
+    window.setTimeout(() => {
+      if (activeFlash === ring) removeActiveFlash();
+      else ring.remove();
+    }, FLASH_MS);
+    return;
+  }
 
   const anim = ring.animate(
     [

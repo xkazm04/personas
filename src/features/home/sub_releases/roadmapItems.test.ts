@@ -111,6 +111,30 @@ describe('buildDisplayItems', () => {
     expect(buildDisplayItems(BUNDLED, live, 'ja', BUNDLED_I18N).map((i) => i.title)).toEqual(['Live item']);
   });
 
+  it('drops a single live item the locale bundle has no content for', () => {
+    // The whole-payload fallback does not fire here — one item HAS content — so
+    // before this the other item rendered as the literal `[roadmap.b]`.
+    const live = liveWith(
+      [
+        { id: 'a', status: 'planned', priority: 'now', sortOrder: 1 },
+        { id: 'b', status: 'planned', priority: 'now', sortOrder: 2 },
+      ],
+      { a: { title: 'A', description: '' } },
+    );
+    expect(buildDisplayItems(BUNDLED, live, 'en', BUNDLED_I18N).map((i) => i.title)).toEqual(['A']);
+  });
+
+  it('drops bundled items whose i18n entry is missing', () => {
+    const items = buildDisplayItems(BUNDLED, null, 'en', { '1': { title: 'Bundled one', description: 'b1' } });
+    expect(items.map((i) => i.title)).toEqual(['Bundled one']);
+  });
+
+  it('returns nothing rather than placeholder cards when no content resolves at all', () => {
+    // An honest empty roadmap; the view renders its empty state instead of a
+    // wall of `[roadmap.1]` / `[roadmap.2]`.
+    expect(buildDisplayItems(BUNDLED, null, 'en', undefined)).toEqual([]);
+  });
+
   it('falls back to bundled ordering when the live override is undefined', () => {
     const items = buildDisplayItems(BUNDLED, undefined, 'en', BUNDLED_I18N);
     expect(items.map((i) => i.sort_order)).toEqual([1, 2]);

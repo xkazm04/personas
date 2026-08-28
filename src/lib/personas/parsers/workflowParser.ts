@@ -9,6 +9,7 @@
 import yaml from 'js-yaml';
 import type { LoadOptions } from 'js-yaml';
 import type { AgentIR } from '@/lib/types/designTypes';
+import { sanitizeTextField } from '@/lib/utils/sanitizers/workflowSanitizer';
 import {
   detectWorkflowPlatform,
   PLATFORM_LABELS,
@@ -48,7 +49,12 @@ export interface WorkflowParseResult {
   workflowName: string;
   /** Serialized JSON representation of the parsed content */
   rawJson: string;
-  /** True when the platform was guessed via fallback parsing and confidence is low */
+  /**
+   * True when the detected platform is anything less than a high-confidence
+   * structural match, so the UI must have the user confirm the FORMAT (not just
+   * the entities) before proceeding. Covers both the speculative fallback and a
+   * medium-confidence fingerprint (an envelope shape with no signature marker).
+   */
   needsConfirmation: boolean;
 }
 
@@ -101,7 +107,6 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
 
   // Route to platform-specific parser
   let result: AgentIR;
-  let needsConfirmation = false;
   let finalDetection = detection;
 
   switch (detection.platform) {
@@ -127,11 +132,16 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
         label: PLATFORM_LABELS[fallback.platform],
         format: detection.format,
       };
-      // Flag for user confirmation when confidence is not high
-      needsConfirmation = true;
       break;
     }
   }
+
+  // Confidence is not decoration: it is the bit that decides whether the review
+  // gate must confirm the FORMAT as well as the entities. A medium-confidence
+  // hit (matched on envelope shape only, no signature marker — e.g. `nodes` +
+  // `connections` with no `n8n-nodes-base.*` type anywhere) used to proceed as
+  // silently as a signature match, so the user was never told what was assumed.
+  const needsConfirmation = finalDetection.confidence !== 'high';
 
   // Extract workflow name from the parsed result summary
   const workflowName = extractWorkflowName(parsed, finalDetection.platform);
@@ -161,6 +171,12 @@ function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
     { platform: 'n8n', parse: parseN8nWorkflow },
     { platform: 'zapier', parse: parseZapierWorkflow },
     { platform: 'make', parse: parseMakeWorkflow },
+    // Last on purpose: the three above are the JSON-family adapters and win the
+    // stable-sort tie-break. GHA was omitted entirely, so a YAML file whose
+    // fingerprint missed (jobs nested unexpectedly, `on:` absent) fell through
+    // to a refusal that LISTED GitHub Actions as supported without ever having
+    // run its adapter, and reported no error for it.
+    { platform: 'github-actions', parse: parseGithubActionsWorkflow },
   ];
 
   for (const { platform, parse } of parsers) {
@@ -193,8 +209,18 @@ function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
 
 /**
  * Extract a human-readable workflow name from parsed content.
+ *
+ * This is a SECOND derivation of the name — each adapter derives its own for the
+ * prompt — and this is the copy the import wizard displays and persists as the
+ * persona's name. It was the only one that stayed raw, so sanitizing inside the
+ * adapters left this door open: the name reaches the persona record, and a
+ * persona's name is interpolated into its assembled prompt downstream.
  */
 function extractWorkflowName(parsed: Record<string, unknown>, platform: WorkflowPlatform): string {
+  return sanitizeTextField(rawWorkflowName(parsed, platform), 200) || 'Imported Workflow';
+}
+
+function rawWorkflowName(parsed: Record<string, unknown>, platform: WorkflowPlatform): string {
   switch (platform) {
     case 'n8n':
       return typeof parsed.name === 'string' && parsed.name ? parsed.name : 'Imported n8n Workflow';

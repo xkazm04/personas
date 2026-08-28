@@ -7098,6 +7098,7 @@ export type Translations = {
       report_unavailable: string;
       report_empty: string;
       open_in_reports: string;
+      subtitle_composed_prefix: string;
     };
     events: {
       title: string;

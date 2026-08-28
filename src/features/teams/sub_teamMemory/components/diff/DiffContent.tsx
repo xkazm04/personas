@@ -35,7 +35,10 @@ interface DiffContentProps {
 }
 
 export default function DiffContent({ diff }: DiffContentProps) {
-  const { t } = useTranslation();
+  // `tx` is the repo's interpolation helper; hand-rolled `.replace('{count}', …)`
+  // silently renders the raw placeholder in any locale whose translator moved
+  // or dropped it, and hardcoded '1' for the singular branch.
+  const { t, tx } = useTranslation();
   const pt = t.pipeline;
   const [expandedSection, setExpandedSection] = useState<'added' | 'removed' | null>('added');
 
@@ -102,7 +105,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {diff.added.length > 0 && (
         <div className="px-1">
           <button type="button" onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
-            <Plus className="w-3 h-3" />{diff.added.length === 1 ? pt.new_memories_one.replace('{count}', '1') : pt.new_memories_other.replace('{count}', String(diff.added.length))}
+            <Plus className="w-3 h-3" />{tx(diff.added.length === 1 ? pt.new_memories_one : pt.new_memories_other, { count: diff.added.length })}
           </button>
           {expandedSection === 'added' && (
             <div className="space-y-1 max-h-36 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10">
@@ -116,7 +119,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {diff.removed.length > 0 && (
         <div className="px-1">
           <button type="button" onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
-            <Minus className="w-3 h-3" />{diff.removed.length === 1 ? pt.removed_memories_one.replace('{count}', '1') : pt.removed_memories_other.replace('{count}', String(diff.removed.length))}
+            <Minus className="w-3 h-3" />{tx(diff.removed.length === 1 ? pt.removed_memories_one : pt.removed_memories_other, { count: diff.removed.length })}
           </button>
           {expandedSection === 'removed' && (
             <div className="space-y-1 max-h-36 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10">

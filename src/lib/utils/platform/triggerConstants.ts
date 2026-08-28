@@ -89,6 +89,36 @@ export interface TriggerCategoryMeta {
   types: TriggerKind[];
 }
 
+/**
+ * Category membership — the ONE declaration of which kind belongs where.
+ *
+ * `as const` so the union of members is computable at the type level, and
+ * `satisfies Record<TriggerCategory, readonly TriggerKind[]>` so a category
+ * cannot advertise a kind the store will reject. `TRIGGER_CATEGORIES` derives
+ * its `types` from here, so the card list and the lookup map cannot drift.
+ */
+const CATEGORY_MEMBERS = {
+  pull: ['schedule', 'polling', 'file_watcher', 'clipboard', 'app_focus'],
+  push: ['webhook', 'event_listener'],
+  compose: ['chain', 'composite'],
+  /** Degenerate category — `manual` is shown separately and has no card. */
+  manual: ['manual'],
+} as const satisfies Record<TriggerCategory, readonly TriggerKind[]>;
+
+/**
+ * Totality gate for the taxonomy.
+ *
+ * The three `satisfies Record<TriggerKind, …>` maps above (icons, copy, i18n
+ * keys) already fail to compile when Rust adds a kind. The taxonomy did NOT:
+ * `TRIGGER_CATEGORIES` was a plain array, so an uncategorised kind fell through
+ * `getTriggerCategory`'s `?? 'manual'` and a new push-style trigger would have
+ * rendered under "Manual" with no error anywhere. This makes that a compile
+ * failure naming the missing kind.
+ */
+type CategorisedKind = (typeof CATEGORY_MEMBERS)[TriggerCategory][number];
+const _assertEveryTriggerKindIsCategorised: (kind: TriggerKind) => CategorisedKind = (kind) => kind;
+void _assertEveryTriggerKindIsCategorised;
+
 export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
   {
     id: 'pull',
@@ -97,7 +127,7 @@ export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/20',
-    types: ['schedule', 'polling', 'file_watcher', 'clipboard', 'app_focus'],
+    types: [...CATEGORY_MEMBERS.pull],
   },
   {
     id: 'push',
@@ -106,7 +136,7 @@ export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/20',
-    types: ['webhook', 'event_listener'],
+    types: [...CATEGORY_MEMBERS.push],
   },
   {
     id: 'compose',
@@ -115,15 +145,17 @@ export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/20',
-    types: ['chain', 'composite'],
+    types: [...CATEGORY_MEMBERS.compose],
   },
 ];
 
+// Built from CATEGORY_MEMBERS rather than from TRIGGER_CATEGORIES so `manual`
+// -- which deliberately has no card -- is covered by the same declaration the
+// totality gate checks, instead of by a hand-written extra `set` call.
 const _categoryByType = new Map<string, TriggerCategory>();
-for (const cat of TRIGGER_CATEGORIES) {
-  for (const t of cat.types) _categoryByType.set(t, cat.id);
+for (const [id, kinds] of Object.entries(CATEGORY_MEMBERS)) {
+  for (const kind of kinds) _categoryByType.set(kind, id as TriggerCategory);
 }
-_categoryByType.set('manual', 'manual');
 
 /** Get the category for a trigger type. */
 export function getTriggerCategory(triggerType: string): TriggerCategory {
@@ -188,12 +220,37 @@ const TRIGGER_TYPE_I18N_BY_KIND = {
 export const TRIGGER_TYPE_I18N: Record<string, { label: string; desc: string }> =
   TRIGGER_TYPE_I18N_BY_KIND;
 
-/** Map trigger category ID to i18n key for label/description. */
-export const TRIGGER_CATEGORY_I18N: Record<string, { label: string; desc: string }> = {
-  pull:    { label: 'triggers.category_pull',    desc: 'triggers.category_pull_desc' },
-  push:    { label: 'triggers.category_push',    desc: 'triggers.category_push_desc' },
-  compose: { label: 'triggers.category_compose', desc: 'triggers.category_compose_desc' },
-};
+/**
+ * Category id -> the keys inside the `triggers` section carrying its copy.
+ *
+ * `satisfies Record<Exclude<TriggerCategory, 'manual'>, ...>` makes it total
+ * over the categories that actually render a card, so a fourth category cannot
+ * be added without its copy. `manual` is excluded deliberately: it has no card.
+ */
+const CATEGORY_I18N_KEYS = {
+  pull:    { label: 'category_pull',    desc: 'category_pull_desc' },
+  push:    { label: 'category_push',    desc: 'category_push_desc' },
+  compose: { label: 'category_compose', desc: 'category_compose_desc' },
+} as const satisfies Record<
+  Exclude<TriggerCategory, 'manual'>,
+  { label: keyof Translations['triggers']; desc: keyof Translations['triggers'] }
+>;
+
+/**
+ * Map trigger category ID to the fully-qualified i18n key for label/description.
+ *
+ * DERIVED from `CATEGORY_I18N_KEYS` rather than written out again. It used to be
+ * a second hand-maintained copy of the same mapping, and `getTriggerCategories`
+ * below kept a THIRD one locally -- so the exported table could drift from the
+ * keys the UI actually reads with nothing to notice.
+ */
+export const TRIGGER_CATEGORY_I18N: Record<string, { label: string; desc: string }> =
+  Object.fromEntries(
+    Object.entries(CATEGORY_I18N_KEYS).map(([id, keys]) => [
+      id,
+      { label: `triggers.${keys.label}`, desc: `triggers.${keys.desc}` },
+    ]),
+  );
 
 /** Resolve trigger type options with translated labels. Defaults to English. */
 export function getTriggerTypeOptions(t: Translations = en): TriggerTypeOption[] {
@@ -212,13 +269,11 @@ export function getTriggerTypeOptions(t: Translations = en): TriggerTypeOption[]
 
 /** Resolve trigger category metadata with translated labels. Defaults to English. */
 export function getTriggerCategories(t: Translations = en): TriggerCategoryMeta[] {
-  const catKeyMap: Record<string, { label: keyof Translations['triggers']; desc: keyof Translations['triggers'] }> = {
-    pull:    { label: 'category_pull',    desc: 'category_pull_desc' },
-    push:    { label: 'category_push',    desc: 'category_push_desc' },
-    compose: { label: 'category_compose', desc: 'category_compose_desc' },
-  };
   return TRIGGER_CATEGORIES.map((cat) => {
-    const keys = catKeyMap[cat.id];
+    const keys = (CATEGORY_I18N_KEYS as Record<
+      string,
+      { label: keyof Translations['triggers']; desc: keyof Translations['triggers'] } | undefined
+    >)[cat.id];
     if (!keys) return cat;
     return {
       ...cat,
@@ -621,12 +676,26 @@ export function parseTriggerConfig(
   }
 }
 
-/** Internal: parse raw JSON/object/string into a plain object. */
+/**
+ * Internal: parse raw JSON/object/string into a plain object.
+ *
+ * Anything that is not a plain object collapses to `{}`. That guard is
+ * load-bearing rather than defensive: `JSON.parse('null')` returns `null`, and
+ * a `trigger_config` column holding the four characters `null` (which is what
+ * `JSON.stringify(null)` writes) used to be handed back as-is, so the very next
+ * statement in `parseTriggerConfig` — `typeof raw.type` — threw
+ * "Cannot read properties of null" and took the whole trigger list down.
+ * Arrays and scalars (`'5'`, `'"x"'`, `'[]'`) are equally not configs.
+ */
 function parseRawConfig(config: string | object | null | undefined): Record<string, unknown> {
   if (!config) return {};
-  if (typeof config === 'object') return config as Record<string, unknown>;
+  if (typeof config === 'object') {
+    return Array.isArray(config) ? {} : (config as Record<string, unknown>);
+  }
   try {
-    return JSON.parse(config);
+    const parsed: unknown = JSON.parse(config);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return parsed as Record<string, unknown>;
   } catch {
     // intentional: non-critical -- JSON parse fallback
     return {};

@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  formatPercent,
-  formatCount,
-  formatNumeric,
-  formatCompactNumber,
-  compactWithTitle,
-} from '../formatters';
+import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatTimestamp, formatRelativeTime } from '../formatters';
 
 describe('formatPercent', () => {
   it('treats the input as a percentage magnitude by default', () => {
@@ -113,5 +107,43 @@ describe('formatNumeric', () => {
   it('renders an em dash for null / NaN regardless of unit', () => {
     expect(formatNumeric(null, 'usd')).toBe('—');
     expect(formatNumeric(NaN, 'percent')).toBe('—');
+  });
+});
+
+describe('formatTimestamp', () => {
+  // Regression guards. `formatTimestamp` used to call `toLocaleString()` with
+  // no locale (so dates followed the OS while numbers in the same file followed
+  // the app language) and had no invalid-date guard (so "Invalid Date" reached
+  // the UI). Pins the fixed expressions and forbids the old ones.
+  it('formats in the requested locale, not the operating system default', () => {
+    const iso = '2026-03-04 05:06:07';
+    const de = formatTimestamp(iso, '-', { language: 'de' });
+    const en = formatTimestamp(iso, '-', { language: 'en-US' });
+    expect(de).toBe(new Date('2026-03-04T05:06:07Z').toLocaleString('de'));
+    expect(en).toBe(new Date('2026-03-04T05:06:07Z').toLocaleString('en-US'));
+    expect(de).not.toBe(en);
+  });
+
+  it('returns the fallback for an unparseable timestamp instead of "Invalid Date"', () => {
+    expect(formatTimestamp('not-a-date')).toBe('-');
+    expect(formatTimestamp('not-a-date', 'Never')).toBe('Never');
+    expect(formatTimestamp('not-a-date')).not.toContain('Invalid');
+  });
+
+  it('returns the fallback for null/undefined', () => {
+    expect(formatTimestamp(null)).toBe('-');
+    expect(formatTimestamp(undefined, 'Never')).toBe('Never');
+  });
+});
+
+describe('formatRelativeTime date fallback', () => {
+  it('renders the date fallback in the requested locale', () => {
+    const then = new Date(Date.now() - 10 * 24 * 3600 * 1000);
+    const iso = then.toISOString();
+    const de = formatRelativeTime(iso, '-', { dateFallbackDays: 7, language: 'de' });
+    const en = formatRelativeTime(iso, '-', { dateFallbackDays: 7, language: 'en-US' });
+    expect(de).toBe(then.toLocaleDateString('de'));
+    expect(en).toBe(then.toLocaleDateString('en-US'));
+    expect(de).not.toBe(en);
   });
 });
