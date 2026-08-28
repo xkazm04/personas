@@ -102,11 +102,27 @@ export function resolveNodeType(def: PlatformDefinition, nodeType: string): stri
   return cleaned;
 }
 
-/** Classify a node's role using platform-specific patterns. */
+/**
+ * Classify a node's role using platform-specific patterns.
+ *
+ * Patterns are substring tests by default. A trailing `$` anchors the pattern
+ * to the END of the node type — the table authors three of them (`if$`, `set$`,
+ * `code$`) precisely because the unanchored forms are too greedy to be safe
+ * (`if` alone matches `notification`, `set` matches `dataset`). Those anchors
+ * were previously fed to `includes()`, which searches for a LITERAL `$`; no node
+ * type contains one, so all three rows were dead and their `decision` / `utility`
+ * classifications could never be produced. Only the `=== 'trigger'` branch is
+ * read today, which is why nothing failed — but the table advertised a
+ * classification it could not perform.
+ */
 export function classifyNodeRole(def: PlatformDefinition, nodeType: string): string {
   const lower = nodeType.toLowerCase();
   for (const nrp of def.nodeRoleClassification) {
-    if (lower.includes(nrp.pattern.toLowerCase())) {
+    const pattern = nrp.pattern.toLowerCase();
+    const anchored = pattern.endsWith('$');
+    const needle = anchored ? pattern.slice(0, -1) : pattern;
+    if (!needle) continue;
+    if (anchored ? lower.endsWith(needle) : lower.includes(needle)) {
       return nrp.role;
     }
   }

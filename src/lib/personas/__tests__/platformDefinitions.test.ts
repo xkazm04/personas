@@ -45,6 +45,26 @@ describe('classifyNodeRole', () => {
     expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.openAi')).toBe('llm');
     expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.slack')).toBe('tool');
   });
+
+  // The three `$`-anchored rows were dead for as long as they existed: they were
+  // fed to a substring matcher that looked for a literal `$`.
+  it('honours the trailing-$ anchor so the decision/utility rows can fire', () => {
+    expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.if')).toBe('decision');
+    expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.set')).toBe('utility');
+    expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.code')).toBe('utility');
+  });
+
+  // ...and the anchor is what keeps them from being greedy. An unanchored `if`
+  // would swallow every node whose name merely contains those two letters.
+  it('does not let an anchored pattern match mid-string', () => {
+    expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.ifElseBranchHelper')).toBe('tool');
+    expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.codeSandboxDeploy')).toBe('tool');
+  });
+
+  // The anchor must not defeat the earlier trigger rows, which are unanchored.
+  it('still prefers the earlier trigger classification', () => {
+    expect(classifyNodeRole(N8N_DEFINITION, 'n8n-nodes-base.ifTrigger')).toBe('trigger');
+  });
 });
 
 describe('extractProtocolsFromNodes', () => {
