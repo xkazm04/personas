@@ -13212,6 +13212,7 @@
       "pair_credentials_note": "Your credentials never leave this desktop.",
       "pair_preview_note": "Preview only — the secure handshake, live QR, and mobile client ship in a later update.",
       "pair_lan_badge": "LAN only",
+      "terminal_session_gone": "This session is no longer available - it may have exited or been removed. Close and reopen this pane to try again.",
       "pair_generate": "Pair this phone",
       "pair_generating": "Minting device token…",
       "pair_scan_hint": "Scan with your phone's camera on the same Wi-Fi, then add the page to your home screen.",

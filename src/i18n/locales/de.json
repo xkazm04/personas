@@ -12920,6 +12920,7 @@
       "pair_credentials_note": "Ihre Anmeldedaten verlassen diesen Desktop niemals.",
       "pair_preview_note": "Nur Vorschau — sicherer Handshake, Live-QR und mobiler Client folgen in einem späteren Update.",
       "pair_lan_badge": "Nur LAN",
+      "terminal_session_gone": "Diese Sitzung ist nicht mehr verfügbar – sie wurde möglicherweise beendet oder entfernt. Schließen und öffnen Sie diesen Bereich erneut, um es noch einmal zu versuchen.",
       "pair_generate": "Dieses Telefon koppeln",
       "pair_generating": "Geräte-Token wird erstellt…",
       "pair_scan_hint": "Mit der Handykamera im selben WLAN scannen und die Seite dann zum Startbildschirm hinzufügen.",

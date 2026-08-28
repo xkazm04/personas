@@ -12920,6 +12920,7 @@
       "pair_credentials_note": "Vaše přihlašovací údaje nikdy neopustí tento počítač.",
       "pair_preview_note": "Pouze náhled — zabezpečený handshake, živý QR a mobilní klient přijdou v pozdější aktualizaci.",
       "pair_lan_badge": "Pouze LAN",
+      "terminal_session_gone": "Tato relace již není dostupná – mohla skončit nebo být odebrána. Zavřete a znovu otevřete tento panel a zkuste to znovu.",
       "pair_generate": "Spárovat tento telefon",
       "pair_generating": "Vytvářím token zařízení…",
       "pair_scan_hint": "Naskenujte fotoaparátem telefonu na stejné Wi-Fi a poté si stránku přidejte na plochu telefonu.",

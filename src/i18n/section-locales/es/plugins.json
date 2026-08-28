@@ -38,6 +38,7 @@
     "pair_credentials_note": "Sus credenciales nunca salen de este escritorio.",
     "pair_preview_note": "Solo vista previa — el handshake seguro, el QR en vivo y el cliente móvil llegan en una actualización posterior.",
     "pair_lan_badge": "Solo LAN",
+    "terminal_session_gone": "Esta sesión ya no está disponible: puede haber terminado o haber sido eliminada. Cierra y vuelve a abrir este panel para reintentarlo.",
     "pair_generate": "Vincular este teléfono",
     "pair_generating": "Generando token del dispositivo…",
     "pair_scan_hint": "Escanee con la cámara de su teléfono en la misma Wi-Fi y luego añada la página a su pantalla de inicio.",

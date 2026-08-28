@@ -12920,6 +12920,7 @@
       "pair_credentials_note": "您的凭据绝不会离开此桌面设备。",
       "pair_preview_note": "仅为预览 — 安全握手、实时二维码和移动客户端将在后续更新中推出。",
       "pair_lan_badge": "仅限局域网",
+      "terminal_session_gone": "此会话已不可用 — 它可能已退出或被移除。关闭并重新打开此面板以重试。",
       "pair_generate": "配对此手机",
       "pair_generating": "正在生成设备令牌…",
       "pair_scan_hint": "在同一 Wi-Fi 下用手机相机扫描，然后将页面添加到主屏幕。",

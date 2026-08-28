@@ -12920,6 +12920,7 @@
       "pair_credentials_note": "Kredensial Anda tidak pernah meninggalkan desktop ini.",
       "pair_preview_note": "Hanya pratinjau — handshake aman, QR langsung, dan klien seluler hadir di pembaruan berikutnya.",
       "pair_lan_badge": "Hanya LAN",
+      "terminal_session_gone": "Sesi ini tidak lagi tersedia — mungkin sudah berhenti atau dihapus. Tutup lalu buka kembali panel ini untuk mencoba lagi.",
       "pair_generate": "Tautkan ponsel ini",
       "pair_generating": "Membuat token perangkat…",
       "pair_scan_hint": "Pindai dengan kamera ponsel di Wi-Fi yang sama, lalu tambahkan halaman ke layar utama.",

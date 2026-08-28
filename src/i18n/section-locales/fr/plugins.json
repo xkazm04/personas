@@ -38,6 +38,7 @@
     "pair_credentials_note": "Vos identifiants ne quittent jamais ce poste.",
     "pair_preview_note": "Aperçu uniquement — la poignée de main sécurisée, le QR en direct et le client mobile arrivent dans une prochaine mise à jour.",
     "pair_lan_badge": "LAN uniquement",
+    "terminal_session_gone": "Cette session n'est plus disponible : elle a peut-être été fermée ou supprimée. Fermez puis rouvrez ce volet pour réessayer.",
     "pair_generate": "Associer ce téléphone",
     "pair_generating": "Création du jeton d’appareil…",
     "pair_scan_hint": "Scannez avec l’appareil photo de votre téléphone sur le même Wi-Fi, puis ajoutez la page à votre écran d’accueil.",

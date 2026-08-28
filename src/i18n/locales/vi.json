@@ -12920,6 +12920,7 @@
       "pair_credentials_note": "Thông tin đăng nhập của bạn không bao giờ rời khỏi máy tính này.",
       "pair_preview_note": "Chỉ xem trước — bắt tay an toàn, QR trực tiếp và ứng dụng di động sẽ có trong bản cập nhật sau.",
       "pair_lan_badge": "Chỉ mạng LAN",
+      "terminal_session_gone": "Phiên này không còn khả dụng — có thể nó đã thoát hoặc bị xóa. Đóng rồi mở lại khung này để thử lại.",
       "pair_generate": "Ghép nối điện thoại này",
       "pair_generating": "Đang tạo mã thông báo thiết bị…",
       "pair_scan_hint": "Quét bằng camera điện thoại trên cùng mạng Wi-Fi, sau đó thêm trang vào màn hình chính.",

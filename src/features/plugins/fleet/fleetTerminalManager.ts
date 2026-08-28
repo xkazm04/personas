@@ -178,6 +178,30 @@ interface ManagedTerminal {
    */
   lastCols: number;
   lastRows: number;
+  /** True once the dead-session notice has been painted for the current
+   *  hydration failure; cleared by the next successful hydrate so a session
+   *  that comes back does not keep a stale tombstone, and a repeated failure
+   *  does not stack the same line over and over. */
+  deadNoticeShown: boolean;
+}
+
+/**
+ * Localized one-line notice painted into the terminal when subscribing fails.
+ *
+ * `fleet_subscribe_terminal` returns Err("session not found: …") when the
+ * registry has lost the session. Dropping that on the floor left the operator
+ * with a black rectangle that is INDISTINGUISHABLE from a session that simply
+ * has not printed anything yet — the one state they cannot act on, because they
+ * cannot tell whether to wait or to give up. This module is not a React
+ * component and has no `t`, so the pane pushes the translated string in before
+ * it attaches. Empty until then, and an empty notice paints nothing rather than
+ * falling back to hardcoded English.
+ */
+let deadNotice = '';
+
+/** Set the translated dead-session notice (called from FleetTerminalPane). */
+export function setFleetTerminalDeadNotice(text: string): void {
+  deadNotice = text;
 }
 
 // HMR-safe registry. Reusing the existing map across hot reloads keeps live
@@ -413,6 +437,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     hydrationGen: 0,
     lastCols: 0,
     lastRows: 0,
+    deadNoticeShown: false,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -506,6 +531,9 @@ function hydrate(m: ManagedTerminal): void {
       if (gen !== m.hydrationGen || !m.attached) return;
       // Clear any stale buffer so a re-focus doesn't duplicate the ring tail.
       m.term.reset();
+      // The session answered, so any tombstone from an earlier failure is gone
+      // with the reset — allow a future failure to paint a fresh one.
+      m.deadNoticeShown = false;
       if (snapshot) m.term.write(snapshot);
       const queued = m.pendingLive;
       m.pendingLive = [];
@@ -518,6 +546,13 @@ function hydrate(m: ManagedTerminal): void {
       if (gen === m.hydrationGen) {
         m.hydrating = false;
         m.pendingLive = [];
+        // Say so IN the terminal. This is the difference between "still
+        // starting up" and "this session is gone", and the operator had no way
+        // to tell them apart: both painted an empty black box.
+        if (m.attached && deadNotice && !m.deadNoticeShown) {
+          m.deadNoticeShown = true;
+          m.term.write(`\r\n\x1b[31m${deadNotice}\x1b[0m\r\n`);
+        }
       }
       silentCatch('fleetTerminal:subscribe')(e);
     });

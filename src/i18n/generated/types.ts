@@ -13218,6 +13218,7 @@ export type Translations = {
       pair_credentials_note: string;
       pair_preview_note: string;
       pair_lan_badge: string;
+      terminal_session_gone: string;
       pair_generate: string;
       pair_generating: string;
       pair_scan_hint: string;

@@ -86,6 +86,7 @@ import {
   disposeTerminal,
   gcTerminals,
   getFleetTerminalStats,
+  setFleetTerminalDeadNotice,
 } from '../fleetTerminalManager';
 
 /** Let the manager's rAF-scheduled fit (and the resize push behind it) run. */
@@ -105,7 +106,7 @@ const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminal
 const registryMap = () =>
   (globalThis as Record<string, unknown>).__fleetTerminalRegistry__ as Map<
     string,
-    { attached: boolean; term: FakeTerminal }
+    { attached: boolean; deadNoticeShown: boolean; term: FakeTerminal }
   >;
 
 function attach(id: string): HTMLDivElement {
@@ -277,6 +278,67 @@ describe('hydration handshake', () => {
     expect(m.term.written).toEqual(['AFTER-FAILURE']);
 
     detachTerminal('h-rej');
+    host.remove();
+  });
+
+  it('paints a dead-session notice into the terminal when subscribe rejects', async () => {
+    setFleetTerminalDeadNotice('Session is gone.');
+    vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(new Error('session not found'));
+
+    const host = attach('h-dead');
+    const m = registryMap().get('h-dead')!;
+    await settle();
+
+    // The whole defect: this used to be an empty black box, indistinguishable
+    // from a session that had simply printed nothing yet.
+    expect(m.term.written.join('')).toContain('Session is gone.');
+
+    detachTerminal('h-dead');
+    host.remove();
+    setFleetTerminalDeadNotice('');
+  });
+
+  it('does not stack the notice on a repeated failure, and clears it once the session answers', async () => {
+    setFleetTerminalDeadNotice('Session is gone.');
+    vi.mocked(fleetApi.subscribeTerminal)
+      .mockRejectedValueOnce(new Error('gone'))
+      .mockRejectedValueOnce(new Error('gone again'))
+      .mockResolvedValueOnce('BACK');
+
+    const host = attach('h-dead2');
+    const m = registryMap().get('h-dead2')!;
+    await settle();
+    // Re-attach into the same container without detaching: a second failure
+    // must not append a second tombstone under the first.
+    attachTerminal('h-dead2', host);
+    await settle();
+
+    const notices = m.term.written.filter((w) => w.includes('Session is gone.'));
+    expect(notices).toHaveLength(1);
+
+    // Third attach succeeds — reset() wipes the tombstone, and the flag must
+    // reopen so a LATER death is reported again.
+    attachTerminal('h-dead2', host);
+    await settle();
+    expect(m.deadNoticeShown).toBe(false);
+
+    detachTerminal('h-dead2');
+    host.remove();
+    setFleetTerminalDeadNotice('');
+  });
+
+  it('paints nothing when no translated notice has been pushed in', async () => {
+    // The manager has no `t`. Rather than fall back to hardcoded English it
+    // stays silent until the pane hands it a translated string.
+    setFleetTerminalDeadNotice('');
+    vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(new Error('nope'));
+
+    const host = attach('h-quiet');
+    const m = registryMap().get('h-quiet')!;
+    await settle();
+
+    expect(m.term.written).toEqual([]);
+    detachTerminal('h-quiet');
     host.remove();
   });
 
