@@ -200,6 +200,39 @@ interface ManagedTerminal {
    *  that comes back does not keep a stale tombstone, and a repeated failure
    *  does not stack the same line over and over. */
   deadNoticeShown: boolean;
+  /**
+   * True once a write into this session's emulator has thrown.
+   *
+   * A throw is reported ONCE per session rather than per chunk: a terminal in a
+   * bad state (disposed emulator, an addon that lost its buffer) fails on every
+   * chunk the backend sends, and a fleet under load sends thousands. Reporting
+   * each one turns a single fault into a telemetry flood that buries its own
+   * first occurrence — the one event that says when it started. Cleared by the
+   * next successful hydrate, so a session that recovers can report again.
+   */
+  writeFailed: boolean;
+  /** True once the listener-failure notice has been painted into this terminal;
+   *  cleared by the next successful hydrate so a pane that recovers does not
+   *  keep a stale warning, and a repeated failure does not stack the same line. */
+  listenerNoticeShown: boolean;
+  /**
+   * True while this terminal holds a snapshot from a subscribe that SUCCEEDED
+   * into the container it is still mounted in — i.e. re-hydrating would buy
+   * nothing and cost the local scrollback.
+   *
+   * `hydrate` always calls `m.term.reset()` before writing the backend ring
+   * tail, and `scrollback: 5000` is deliberately LARGER than that ring, so the
+   * reset is lossy by design: whatever the operator had scrolled back to and the
+   * ring no longer holds is gone, plus a visible flash. That is the right trade
+   * for a real attach and pure loss for a re-invocation of an effect that is
+   * supposed to be idempotent.
+   *
+   * Cleared on detach (which unsubscribed, so the next attach genuinely must
+   * re-subscribe) and on a hydration FAILURE — a dead session must stay
+   * retryable by re-attaching, which is exactly what a blanket
+   * already-attached guard would have taken away.
+   */
+  hydratedOk: boolean;
 }
 
 /**
@@ -219,6 +252,26 @@ let deadNotice = '';
 /** Set the translated dead-session notice (called from FleetTerminalPane). */
 export function setFleetTerminalDeadNotice(text: string): void {
   deadNotice = text;
+}
+
+/**
+ * Localized notice for the OTHER failure door — the shared output listener.
+ *
+ * There are two independent ways a pane can end up showing a snapshot that
+ * never updates, and only one of them used to say so. `subscribeTerminal` is a
+ * per-session IPC command; `listen('fleet-session-output')` is a separate,
+ * app-wide registration. A pane whose subscribe SUCCEEDS and whose listener
+ * registration FAILED paints its ring snapshot perfectly and then freezes —
+ * keystrokes still reach the PTY, the child still answers, and nothing renders.
+ * That is indistinguishable from a hung agent, which is the wrong thing for the
+ * operator to conclude. Pushed in from `FleetTerminalPane` for the same reason
+ * as `deadNotice`: this module has no `t`.
+ */
+let listenerNotice = '';
+
+/** Set the translated listener-failure notice (called from FleetTerminalPane). */
+export function setFleetTerminalListenerNotice(text: string): void {
+  listenerNotice = text;
 }
 
 // HMR-safe registry. Reusing the existing map across hot reloads keeps live
@@ -365,6 +418,39 @@ export function getFleetTerminalStats(): FleetTerminalStats {
   };
 }
 
+/**
+ * Panes that want to be TOLD when the holder is taken out from under them.
+ *
+ * There is one holder `<div>` per session, so two mount points can never both
+ * display it — that much is inherent. What was not inherent is that the loser
+ * found out by rendering an empty black box: `attachTerminal` re-parented the
+ * holder unconditionally, with the mutual exclusion between surfaces asserted
+ * only in a prose comment. Five independent call sites mount a pane for a
+ * session id THEY choose (the grid, an overlay tile, the monitor's fullscreen
+ * pane, the mastermind preview, the passport modal), and the last two live
+ * outside the fleet overlay entirely, so nothing structural keeps them apart.
+ *
+ * A refcount is the wrong instrument here — the resource is a DOM node, and
+ * counting holders would not let two of them paint. Naming the current owner
+ * and notifying the displaced one is the reachable half: the pane can say where
+ * its terminal went, and offer to take it back.
+ *
+ * Keyed by container element and WEAK, so an unmounted pane's entry disappears
+ * with it and a forgotten deregistration cannot leak.
+ */
+const holderLostListeners = new WeakMap<HTMLElement, () => void>();
+
+/**
+ * Register `cb` to fire when another container takes this session's holder away
+ * from `container`. Returns the deregistration.
+ */
+export function onTerminalHolderLost(container: HTMLElement, cb: () => void): () => void {
+  holderLostListeners.set(container, cb);
+  return () => {
+    if (holderLostListeners.get(container) === cb) holderLostListeners.delete(container);
+  };
+}
+
 function unpark(sessionId: string): void {
   const i = parked.indexOf(sessionId);
   if (i !== -1) parked.splice(i, 1);
@@ -380,26 +466,103 @@ function unpark(sessionId: string): void {
  * a second listener.
  */
 const OUTPUT_LISTENER_KEY = '__fleetTerminalOutputListener__';
-function ensureSharedOutputListener(): void {
+
+/**
+ * Deliver one chunk into one session's emulator, CONTAINED.
+ *
+ * The dispatch below runs inside the ONE shared `fleet-session-output` callback,
+ * which is the whole fleet's only door to live PTY output. An exception thrown
+ * out of it — a disposed emulator, an addon in a bad state, anything `write`
+ * can raise for exactly one session — escapes into the Tauri event callback and
+ * every terminal in the app stops receiving output at once, with no error and
+ * nothing to restart it. One session's fault must not be able to blackout the
+ * fleet, so the throw stops here.
+ */
+function writeChunk(m: ManagedTerminal, chunk: string): void {
+  try {
+    m.term.write(chunk);
+  } catch (e) {
+    // Once per session — see `writeFailed`.
+    if (!m.writeFailed) {
+      m.writeFailed = true;
+      silentCatch('fleetTerminal:write')(e);
+    }
+  }
+}
+
+/**
+ * Register the listener, reporting the outcome to the CALLER.
+ *
+ * It used to return `void` and swallow its own rejection, which is why the
+ * blackout was silent: `attachTerminal` called it and then called `hydrate`
+ * regardless, `hydrate` succeeded (a different IPC command), the snapshot
+ * painted, and the pane looked healthy forever. Handing the promise back is what
+ * lets the attach path tell the operator, and what lets the retry below know it
+ * has something to retry.
+ */
+function ensureSharedOutputListener(): Promise<void> {
   const g = globalThis as Record<string, unknown>;
-  if (g[OUTPUT_LISTENER_KEY]) return;
+  if (g[OUTPUT_LISTENER_KEY]) return Promise.resolve();
   g[OUTPUT_LISTENER_KEY] = true; // set eagerly so a re-entrant call can't double-listen
-  listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
+  return listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
     const m = registry.get(event.payload.session_id);
     if (!m) return;
     if (m.hydrating) {
       m.pendingLive.push(event.payload.chunk);
       return;
     }
-    m.term.write(event.payload.chunk);
+    writeChunk(m, event.payload.chunk);
   })
     .then((fn) => {
       g[OUTPUT_LISTENER_KEY] = fn;
+      listenerBackoffMs = LISTENER_RETRY_MIN_MS;
     })
     .catch((e) => {
       g[OUTPUT_LISTENER_KEY] = undefined; // allow a retry on the next attach
       silentCatch('fleetTerminal:listen')(e);
+      // Re-thrown, not swallowed: the caller decides what the operator is told.
+      throw e;
     });
+}
+
+/**
+ * Retry the registration on a bounded exponential backoff.
+ *
+ * Retry used to be deferred to the next `attachTerminal` — a call the operator
+ * has no reason to make, because the pane in front of them looks fine. So the
+ * one event that could recover the fleet was gated on the one thing a
+ * successfully-lying UI guarantees will not happen.
+ */
+const LISTENER_RETRY_MIN_MS = 1_000;
+const LISTENER_RETRY_MAX_MS = 30_000;
+let listenerBackoffMs = LISTENER_RETRY_MIN_MS;
+let listenerRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleListenerRetry(): void {
+  if (listenerRetryTimer !== null) return; // one retry in flight is enough
+  const delay = listenerBackoffMs;
+  listenerBackoffMs = Math.min(listenerBackoffMs * 2, LISTENER_RETRY_MAX_MS);
+  listenerRetryTimer = setTimeout(() => {
+    listenerRetryTimer = null;
+    // eslint-disable-next-line custom/async-catch-requires-helper -- ensureSharedOutputListener already ran silentCatch('fleetTerminal:listen') on this exact error before re-throwing it; a second report per retry would turn one outage into a Sentry flood measured in attempts.
+    ensureSharedOutputListener().catch(() => scheduleListenerRetry());
+  }, delay);
+}
+
+/**
+ * Paint the listener-failure notice into one attached terminal, once.
+ *
+ * Queued behind an in-flight hydration rather than written straight away: the
+ * snapshot resolution calls `term.reset()`, so a notice written first would be
+ * erased by the very handshake that makes the pane look healthy. `pendingLive`
+ * is exactly the queue that already exists for "must land after the snapshot".
+ */
+function paintListenerNotice(m: ManagedTerminal): void {
+  if (!m.attached || !listenerNotice || m.listenerNoticeShown) return;
+  m.listenerNoticeShown = true;
+  const line = `\r\n\x1b[33m${listenerNotice}\x1b[0m\r\n`;
+  if (m.hydrating) m.pendingLive.push(line);
+  else writeChunk(m, line);
 }
 
 /** Open a web link from terminal output via the OS browser (sanitized). */
@@ -602,6 +765,9 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     lastCols: 0,
     lastRows: 0,
     deadNoticeShown: false,
+    writeFailed: false,
+    listenerNoticeShown: false,
+    hydratedOk: false,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -663,9 +829,33 @@ function getOrCreate(sessionId: string): ManagedTerminal {
  * make `container` the owner — the only pane whose detach may tear it down.
  */
 export function attachTerminal(sessionId: string, container: HTMLElement): void {
-  ensureSharedOutputListener();
   unpark(sessionId);
   const m = getOrCreate(sessionId);
+  // The listener is the OTHER door to live output, and its failure used to be
+  // invisible because `hydrate` below succeeds independently of it. Chain the
+  // outcome instead of dropping it: say so in the terminal, and keep retrying.
+  // eslint-disable-next-line custom/async-catch-requires-helper -- ensureSharedOutputListener already ran silentCatch('fleetTerminal:listen') on this error before re-throwing; this handler exists to TELL THE OPERATOR and re-arm, not to report a second time.
+  ensureSharedOutputListener().catch(() => {
+    paintListenerNotice(m);
+    scheduleListenerRetry();
+  });
+  // Read BEFORE the DOM move below, which would make every attach look mounted.
+  const alreadyMounted =
+    m.attached && m.holder.parentElement === container && (m.hydratedOk || m.hydrating);
+  // Tell the pane we are taking the holder FROM, while it can still react. Only
+  // a container still in the document can be displaced — one already unmounted
+  // has nothing to repaint, and notifying it would be a callback into a dead
+  // component.
+  const previousOwner = m.owner;
+  if (previousOwner && previousOwner !== container && previousOwner.isConnected) {
+    try {
+      holderLostListeners.get(previousOwner)?.();
+    } catch (e) {
+      // A displaced pane's own render must never be able to abort the attach the
+      // operator is waiting on.
+      silentCatch('fleetTerminal:holderLost')(e);
+    }
+  }
   m.owner = container;
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);
@@ -677,7 +867,13 @@ export function attachTerminal(sessionId: string, container: HTMLElement): void 
   m.attached = true;
   loadWebgl(m);
   scheduleFit(m);
-  hydrate(m);
+  // Hydration is the lossy step (see `hydratedOk`), so it runs only when this
+  // attach is a REAL one. A re-invocation for a session already mounted in this
+  // same container — with a snapshot that landed, or one still in flight — used
+  // to reset the emulator and replace 5000 lines of local scrollback with the
+  // much shorter backend ring tail. Idempotence of attach was accidental; it is
+  // now the contract.
+  if (!alreadyMounted) hydrate(m);
 }
 
 /**
@@ -702,11 +898,19 @@ function hydrate(m: ManagedTerminal): void {
       // The session answered, so any tombstone from an earlier failure is gone
       // with the reset — allow a future failure to paint a fresh one.
       m.deadNoticeShown = false;
-      if (snapshot) m.term.write(snapshot);
+      // A terminal that survived a reset is a terminal that may write again, so
+      // the once-per-session write report re-arms with it.
+      m.writeFailed = false;
+      // The reset also wiped any listener warning, so allow a fresh one.
+      m.listenerNoticeShown = false;
+      // This terminal now holds a landed snapshot — a re-attach into the same
+      // container has nothing to gain and the scrollback to lose.
+      m.hydratedOk = true;
+      if (snapshot) writeChunk(m, snapshot);
       const queued = m.pendingLive;
       m.pendingLive = [];
       m.hydrating = false;
-      for (const chunk of queued) m.term.write(chunk);
+      for (const chunk of queued) writeChunk(m, chunk);
     })
     .catch((e) => {
       // Subscribe failed (session gone, etc.) — stop hydrating so any future
@@ -714,6 +918,9 @@ function hydrate(m: ManagedTerminal): void {
       if (gen === m.hydrationGen) {
         m.hydrating = false;
         m.pendingLive = [];
+        // A failed subscribe must stay RETRYABLE by re-attaching — that is the
+        // only recovery a dead-then-resurrected session has.
+        m.hydratedOk = false;
         // Say so IN the terminal. This is the difference between "still
         // starting up" and "this session is gone", and the operator had no way
         // to tell them apart: both painted an empty black box.
@@ -751,6 +958,9 @@ export function detachTerminal(sessionId: string, owner?: HTMLElement): void {
   m.hydrationGen++;
   m.hydrating = false;
   m.pendingLive = [];
+  // This detach UNSUBSCRIBES, so the snapshot the terminal holds stops tracking
+  // the session — the next attach must genuinely re-subscribe and replay.
+  m.hydratedOk = false;
   unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
   disposeWebgl(m);
   m.attached = false;

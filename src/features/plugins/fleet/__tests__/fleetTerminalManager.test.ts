@@ -8,7 +8,7 @@
  * `parked`, `attached`, the cols/rows the child was last told about), which is
  * where every defect this file pins actually lived.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 class FakeTerminal {
   cols = 80;
@@ -94,6 +94,7 @@ vi.mock('@/api/fleet/fleet', () => ({
 vi.mock('@/api/system/system', () => ({ openExternalUrl: vi.fn().mockResolvedValue(null) }));
 
 import * as fleetApi from '@/api/fleet/fleet';
+import { listen } from '@tauri-apps/api/event';
 import {
   attachTerminal,
   configureFleetTerminals,
@@ -101,7 +102,9 @@ import {
   disposeTerminal,
   gcTerminals,
   getFleetTerminalStats,
+  onTerminalHolderLost,
   setFleetTerminalDeadNotice,
+  setFleetTerminalListenerNotice,
   setTerminalLiveness,
 } from '../fleetTerminalManager';
 
@@ -652,6 +655,64 @@ describe('attach ownership', () => {
     expect(registryMap().get('unowned')?.attached).toBe(false);
     host.remove();
   });
+
+  // The holder is one DOM node, so the steal itself is inherent. Doing it
+  // SILENTLY was not: the displaced pane rendered an empty black box that never
+  // updated, which reads exactly like a session that has printed nothing.
+  it('tells the pane it is taking the holder from', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    const lost = vi.fn();
+    const off = onTerminalHolderLost(paneA, lost);
+
+    attachTerminal('stolen', paneA);
+    expect(lost).not.toHaveBeenCalled();
+
+    attachTerminal('stolen', paneB);
+
+    expect(lost).toHaveBeenCalledTimes(1);
+    expect(registryMap().get('stolen')?.holder.parentElement).toBe(paneB);
+
+    off();
+    detachTerminal('stolen');
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('never notifies a container that has already left the document', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    const lost = vi.fn();
+    const off = onTerminalHolderLost(paneA, lost);
+
+    attachTerminal('unmounted-owner', paneA);
+    paneA.remove(); // its React tree is gone; there is nothing left to repaint
+    attachTerminal('unmounted-owner', paneB);
+
+    expect(lost).not.toHaveBeenCalled();
+
+    off();
+    detachTerminal('unmounted-owner');
+    paneB.remove();
+  });
+
+  it('does not notify on a re-attach into the same container', () => {
+    const pane = document.createElement('div');
+    document.body.append(pane);
+    const lost = vi.fn();
+    const off = onTerminalHolderLost(pane, lost);
+
+    attachTerminal('same-pane', pane);
+    attachTerminal('same-pane', pane);
+
+    expect(lost).not.toHaveBeenCalled();
+
+    off();
+    detachTerminal('same-pane');
+    pane.remove();
+  });
 });
 
 describe('clipboard paste framing', () => {
@@ -750,5 +811,237 @@ describe('liveness', () => {
 
   it('no-ops for a session that has no terminal', () => {
     expect(() => setTerminalLiveness('never-attached', false)).not.toThrow();
+  });
+});
+
+/**
+ * The shared output listener is the whole fleet's ONE door to live PTY output.
+ * Its handler body ran unguarded, so a `term.write` that threw for a single
+ * session escaped into the Tauri event callback — and every terminal in the app
+ * stopped receiving output at once, with no error and nothing to restart it.
+ * A whole-feature outage from a single-session fault.
+ */
+describe('shared output listener containment', () => {
+  const emit = (sessionId: string, chunk: string) =>
+    listenBox.handler?.({ payload: { session_id: sessionId, chunk } });
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('keeps delivering to the rest of the fleet when one terminal throws on write', async () => {
+    const hostBad = attach('sick');
+    const hostOk = attach('healthy');
+    await settle(); // both past hydration, so chunks render directly
+
+    registryMap().get('sick')!.term.write = () => {
+      throw new Error('emulator disposed');
+    };
+
+    // The throw must stop inside the dispatch. Unguarded, this line itself threw.
+    expect(() => emit('sick', 'BOOM')).not.toThrow();
+
+    // ...and the fault must not have cost the fleet its output door.
+    emit('healthy', 'STILL-HERE');
+    expect(registryMap().get('healthy')!.term.written).toContain('STILL-HERE');
+
+    detachTerminal('sick');
+    detachTerminal('healthy');
+    hostBad.remove();
+    hostOk.remove();
+  });
+
+  it('survives a session that throws on every chunk', async () => {
+    const host = attach('always-sick');
+    await settle();
+    registryMap().get('always-sick')!.term.write = () => {
+      throw new Error('emulator disposed');
+    };
+
+    for (let i = 0; i < 50; i += 1) {
+      expect(() => emit('always-sick', `chunk-${i}`)).not.toThrow();
+    }
+
+    detachTerminal('always-sick');
+    host.remove();
+  });
+});
+
+/**
+ * The OTHER failure door. `subscribeTerminal` and `listen()` are independent
+ * IPC surfaces, and only the first was instrumented: a `listen()` rejection
+ * reset a globalThis key and silentCatch'd, while `attachTerminal` called
+ * `hydrate` regardless. Hydration then SUCCEEDED, painted the ring snapshot,
+ * and the pane froze forever — keystrokes reaching the PTY, the child
+ * answering, nothing rendering. Indistinguishable from a hung agent, and the
+ * only retry was a future attach the operator has no reason to perform.
+ */
+describe('shared output listener failure is visible and retried', () => {
+  const settle = () => vi.advanceTimersByTimeAsync(1);
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // The listener latch is HMR-safe (survives on globalThis), so it must be
+    // cleared here or the manager considers itself already registered.
+    delete (globalThis as Record<string, unknown>).__fleetTerminalOutputListener__;
+    vi.mocked(listen).mockClear();
+    setFleetTerminalListenerNotice('OUTPUT-STALLED');
+  });
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
+  it('paints an in-terminal notice when the listener never registers', async () => {
+    vi.mocked(listen).mockRejectedValueOnce(new Error('ipc unavailable'));
+
+    const host = attach('blind');
+    await settle();
+
+    const written = registryMap().get('blind')!.term.written.join('');
+    // The pane used to look perfect: snapshot painted, no error, no output ever.
+    expect(written).toContain('OUTPUT-STALLED');
+
+    detachTerminal('blind');
+    host.remove();
+  });
+
+  it('re-registers on a backoff instead of waiting for an attach that never comes', async () => {
+    vi.mocked(listen).mockRejectedValueOnce(new Error('ipc unavailable'));
+
+    const host = attach('retry-me');
+    await settle();
+    const afterFirst = vi.mocked(listen).mock.calls.length;
+    expect(afterFirst).toBe(1);
+
+    // Nobody touches the app. The retry has to come from the manager.
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    expect(vi.mocked(listen).mock.calls.length).toBeGreaterThan(afterFirst);
+
+    detachTerminal('retry-me');
+    host.remove();
+  });
+
+  it('does not stack the same notice on a second attach of the same session', async () => {
+    vi.mocked(listen).mockRejectedValueOnce(new Error('ipc unavailable'));
+
+    const host = attach('once-only');
+    await settle();
+    attachTerminal('once-only', host);
+    await settle();
+
+    const hits = registryMap()
+      .get('once-only')!
+      .term.written.filter((c) => c.includes('OUTPUT-STALLED')).length;
+    expect(hits).toBe(1);
+
+    detachTerminal('once-only');
+    host.remove();
+  });
+});
+
+/**
+ * `hydrate` always calls `term.reset()` before writing the backend ring tail,
+ * and `scrollback: 5000` is deliberately larger than that ring — so a reset is
+ * LOSSY by design. `attachTerminal` called it unconditionally, which made the
+ * idempotence of attach accidental: any re-invocation for a session already
+ * mounted in the same container silently destroyed the operator's scrolled-back
+ * history and flashed the screen, on a path that looks like a no-op.
+ *
+ * The guard must NOT extend to a session whose subscribe failed: re-attaching is
+ * the only recovery a dead-then-resurrected session has.
+ */
+describe('attach idempotence', () => {
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('does not reset the emulator when the same container re-attaches a hydrated session', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('SNAP');
+    const host = attach('idem');
+    await settle();
+    const m = registryMap().get('idem')!;
+    expect(m.term.reset).toHaveBeenCalledTimes(1);
+
+    // The effect re-runs. Before the guard this was a full reset + re-subscribe.
+    attachTerminal('idem', host);
+    await settle();
+    attachTerminal('idem', host);
+    await settle();
+
+    expect(m.term.reset).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(1);
+
+    detachTerminal('idem');
+    host.remove();
+  });
+
+  it('keeps the scrollback the ring no longer holds', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('TAIL-ONLY');
+    const host = attach('scrollback');
+    await settle();
+    const m = registryMap().get('scrollback')!;
+    // Everything the session printed since — longer than any backend ring.
+    m.term.written.push('OLD-HISTORY');
+
+    attachTerminal('scrollback', host);
+    await settle();
+
+    // A reset would have thrown OLD-HISTORY away and re-rendered TAIL-ONLY.
+    expect(m.term.written).toContain('OLD-HISTORY');
+    expect(m.term.written.filter((w) => w === 'TAIL-ONLY')).toHaveLength(1);
+
+    detachTerminal('scrollback');
+    host.remove();
+  });
+
+  it('still hydrates a genuine re-attach after a detach', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('SNAP');
+    const host = attach('real-reattach');
+    await settle();
+    const m = registryMap().get('real-reattach')!;
+    detachTerminal('real-reattach');
+
+    attachTerminal('real-reattach', host);
+    await settle();
+
+    // The detach unsubscribed — this attach MUST re-subscribe and replay.
+    expect(m.term.reset).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(2);
+
+    detachTerminal('real-reattach');
+    host.remove();
+  });
+
+  it('still hydrates a session moved into a different container', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('SNAP');
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    attachTerminal('moved', paneA);
+    await settle();
+    const m = registryMap().get('moved')!;
+
+    attachTerminal('moved', paneB);
+    await settle();
+
+    expect(m.term.reset).toHaveBeenCalledTimes(2);
+    detachTerminal('moved');
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('still retries a session whose subscribe failed', async () => {
+    vi.mocked(fleetApi.subscribeTerminal)
+      .mockRejectedValueOnce(new Error('session not found'))
+      .mockResolvedValueOnce('BACK');
+    const host = attach('resurrect');
+    await settle();
+    const m = registryMap().get('resurrect')!;
+    expect(m.term.reset).not.toHaveBeenCalled();
+
+    // Re-attaching is the operator's only recovery path for a dead session.
+    attachTerminal('resurrect', host);
+    await settle();
+
+    expect(m.term.written).toContain('BACK');
+    detachTerminal('resurrect');
+    host.remove();
   });
 });

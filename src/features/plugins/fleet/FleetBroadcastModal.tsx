@@ -182,6 +182,18 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       addToast(tx(t.plugins.fleet.broadcast_sent_partial, { sent, total, failed }), 'warning');
     } else {
       addToast(tx(t.plugins.fleet.broadcast_failed_all, { total }), 'error');
+      // NOBODY heard it. Per-session isolation (every target is attempted
+      // regardless of earlier failures) is deliberate and stays — but a batch
+      // where every write failed is not N independent faults, it is one
+      // systemic one: a backend whose session registry went stale after a
+      // restart fails every write for the same reason. The only response used
+      // to be an error toast and a re-armed Send on the identical roster, which
+      // invites the operator to throw the whole fleet at a backend already
+      // known to be in a bad state. Re-reading the roster is what makes the
+      // retry different from the attempt that just failed: the prune effect
+      // drops targets that no longer exist, so what Send is armed on visibly
+      // changes rather than silently repeating.
+      void fleetRefresh();
     }
     setSending(false);
     setProgress(null);
@@ -201,7 +213,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     setFailedIds([]);
     setText('');
     onClose();
-  }, [text, selected, sending, pressEnter, onClose, t, tx]);
+  }, [text, selected, sending, pressEnter, onClose, fleetRefresh, t, tx]);
 
   // Label the failures for display. A session that vanished from the roster
   // between the send and the render falls back to its id — an opaque id the

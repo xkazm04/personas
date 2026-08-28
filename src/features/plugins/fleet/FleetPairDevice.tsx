@@ -10,6 +10,7 @@ import {
   type FleetPairResult,
   type FleetCompanionStatus,
 } from '@/api/fleet/fleet';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useNowTick, formatAgo } from './relativeAgo';
 
 /**
@@ -44,7 +45,7 @@ export function FleetPairDevice() {
     refreshDevices();
   }, [refreshDevices]);
 
-  const generate = useCallback(() => {
+  const mint = useCallback(() => {
     setBusy(true);
     setError(false);
     setCopied(false);
@@ -59,6 +60,30 @@ export function FleetPairDevice() {
       })
       .finally(() => setBusy(false));
   }, [refreshDevices]);
+
+  /**
+   * Confirmation gate in front of a SECOND mint.
+   *
+   * Generate was guarded only by `busy`, so a press while a live token was
+   * already on screen minted another one — no confirmation, no cap, and no
+   * notice that the previous token stays valid until it is revoked. The failure
+   * is quiet and cumulative: an operator who presses it again after not
+   * finishing a scan now owns two live device-scoped credentials for a
+   * LAN-exposed surface, with nothing on either row saying which one the phone
+   * holds. `revoke` beside it already goes through `toastCatch` for the same
+   * class of reason; this brings the minting door to the same bar.
+   *
+   * The first mint stays one press — there is nothing to warn about yet.
+   */
+  const [confirmRemint, setConfirmRemint] = useState(false);
+
+  const generate = useCallback(() => {
+    if (pair) {
+      setConfirmRemint(true);
+      return;
+    }
+    mint();
+  }, [pair, mint]);
 
   // The 1.5s copy confirmation outlives the component if the operator navigates
   // away right after copying. Holding the handle in a ref lets the unmount
@@ -246,6 +271,20 @@ export function FleetPairDevice() {
           </ul>
         )}
       </div>
+
+      {confirmRemint ? (
+        <ConfirmDialog
+          title={t.plugins.fleet.pair_regenerate_confirm_title}
+          body={t.plugins.fleet.pair_regenerate_confirm_body}
+          confirmLabel={t.plugins.fleet.pair_regenerate_confirm_action}
+          danger
+          onConfirm={() => {
+            setConfirmRemint(false);
+            mint();
+          }}
+          onCancel={() => setConfirmRemint(false)}
+        />
+      ) : null}
     </div>
   );
 }
