@@ -504,10 +504,58 @@ Proposed additions come back in `ShipMilestoneIngestSummary` and are rendered as
 proposals in the Planner. Nothing adds them; widening the cut stays an operator
 decision made in the composer.
 
+### The management API's Ship routes (2026-08-28)
+
+Two documented paths assumed the loopback management API on `127.0.0.1:9420`
+could read and write the Ship layer, and neither could ever have worked: the
+skill's Phase 1 above ("Management HTTP API, if it answers. Read the milestone,
+its items, and the project") and goal assist's closing line (§8: "use it to
+persist the goal updates"). Until 2026-08-28 the router carried no `dev_*`
+route at all, so a session that followed either instruction fell through to
+the `brief.json` fallback or wrote `SHIP_GOAL_REPORT.md` for nobody to ingest.
+The routes now exist (`src-tauri/src/engine/management_api/ship.rs`):
+
+| Route | Does | Scope |
+| --- | --- | --- |
+| `GET /api/dev/projects` | project ids, names, roots | any valid key |
+| `GET /api/dev/projects/{id}/ship` | the project, every milestone with its members (names resolved), the use-case and goal registries | any valid key |
+| `GET /api/dev/milestones/{id}` | one milestone + project + members — the Phase 1 shape | any valid key |
+| `POST /api/dev/projects/{id}/milestones` | create a milestone: `name`, `goal` (title, ≤72), `description` (the brief, ≤1200), optional `rows` (existing use cases / goals, by id or name) and optional `goals` (new goals, idempotent by title), optional `targetDate` | `personas:build` |
+| `POST /api/dev/projects/{id}/use-cases` | register a use case (`name`, `kind`, `contextHints`, `primaryContextHint`, `rationale`) so a cut can bind a core path the scan never proposed | `personas:build` |
+| `POST /api/dev/milestones/{id}/goals` | decompose more of the brief: `goals: [{ title, description?, context_hint? }]`, ≤8 per call | `personas:build` |
+| `POST /api/dev/milestones/{id}/scope` | place / move / remove members: `items: [{ item_kind, item_id, bucket: core\|later\|never\|remove, description? }]` | `personas:build` |
+| `POST /api/dev/milestones/{id}` | patch the brief: `name`, `goal`, `description`, `targetDate` — **never `status`** | `personas:build` |
+| `POST /api/dev/goals/{id}` | what a goal-assist run learned: `title`, `description`, `status`, `progress` | `personas:build` |
+
+**It is not a second implementation of Ship's rules.** Every write goes through
+the validators Athena's cards use (`validate_ship_milestone`,
+`validate_ship_goals`, `validate_ship_scope` in `approval_exec_ship.rs`) and
+then the ordinary repo functions, so a milestone created from a terminal is
+bounded, resolved against the real registry, refused on a KPI member and
+idempotent on goal titles exactly as one created from a card. What the door
+adds over the cards is only what a card cannot express: a milestone born with
+**no members** (a brief first, the cut later) and brief-plus-goals in one round
+trip. A refused goal row deletes the milestone it was meant for, so the caller
+sees one 400 and no half-applied cut — the same rule the ingest door states.
+
+**What it deliberately does not do:** no lifecycle (`status` is not in the
+patch body — cutting stamps the creep baseline and shipping certifies against
+criteria this process cannot see, §5), no deletion, no KPI members, no rating
+writes (the operator's second opinion is never rewritten from a terminal).
+
+**Getting a key from a terminal.** The pairing ceremony
+(`docs/architecture/cloud-integration-bridge.md` §4) works for a CLI too:
+`POST /pair/request` with an `Origin` header and a ≥16-char nonce, approve in
+the app (the modal's Approve button carries `data-testid="pair-approve"`, so
+a test-automation build can approve it from the bridge), then
+`GET /pair/claim?nonce=…` with the same `Origin` — once. The token is
+origin-bound and expiring; keep it out of the transcript.
+
 ### Where this code lives
 
 | File | Responsibility |
 | --- | --- |
+| `src-tauri/src/engine/management_api/ship.rs` | The `/api/dev/*` Ship routes: snapshots, create / decompose / scope / patch through the card validators |
 | `.claude/skills/ship-milestone/skill.md` | The skill: phases, gap rule, interview shape, result contract |
 | `.../ship/ShipMilestoneRun.tsx` | Run + Ingest controls and the inline result panel |
 | `src/api/devTools/milestones.ts` → `shipMilestoneIngest` | IPC wrapper |

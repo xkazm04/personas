@@ -47,7 +47,7 @@ export function buildGoalAssistPrompt(
     '3. UPDATE GOAL METADATA — refine the goal\'s description with what you learned (touched areas, approach, remaining steps) and an honest progress estimate.',
     '4. FLAG FOR REVIEW — finish with a "MANUAL REVIEW" summary block: what changed, what was assigned where, and what the operator should verify before accepting the milestone item.',
     '',
-    'If the Personas management API is reachable (http://127.0.0.1:9420), use it to persist the goal updates; otherwise write SHIP_GOAL_REPORT.md at the repo root with the same content — the operator ingests it manually.',
+    'If the Personas management API is reachable (http://127.0.0.1:9420) and you hold a key with the personas:build scope, persist the goal updates with POST /api/dev/goals/<goalId> ({ description, status, progress }); otherwise write SHIP_GOAL_REPORT.md at the repo root with the same content — the operator ingests it manually.',
   ].filter((l): l is string => l !== null).join('\n');
 }
 

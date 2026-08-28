@@ -49,6 +49,9 @@ use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
+/// `/api/dev/*` — the Ship layer (milestones, goals, scope). See `ship.rs`.
+mod ship;
+
 // =============================================================================
 // Shared state for the management API
 // =============================================================================
@@ -139,7 +142,37 @@ pub fn management_router(state: ManagementState) -> Router {
         // any-valid-key read rule.
         .route("/api/kp/persona-requests", post(kp_create_persona_request))
         .route("/api/kp/persona-requests/{id}", get(kp_get_persona_request))
-        .route("/api/kp/connector-catalog", get(kp_connector_catalog));
+        .route("/api/kp/connector-catalog", get(kp_connector_catalog))
+        // -- Ship layer (management_api/ship.rs). Reads for any valid key;
+        // writes demand `personas:build` (see `authorize`). No lifecycle and
+        // no deletion routes by design — cutting and shipping are the
+        // operator's, in the Ship tab or through Athena's approval-gated op.
+        .route("/api/dev/projects", get(ship::list_projects))
+        .route(
+            "/api/dev/projects/{project_id}/ship",
+            get(ship::get_project_ship),
+        )
+        .route(
+            "/api/dev/projects/{project_id}/milestones",
+            post(ship::post_milestone),
+        )
+        .route(
+            "/api/dev/projects/{project_id}/use-cases",
+            post(ship::post_use_case),
+        )
+        .route(
+            "/api/dev/milestones/{milestone_id}",
+            get(ship::get_milestone).post(ship::post_milestone_patch),
+        )
+        .route(
+            "/api/dev/milestones/{milestone_id}/goals",
+            post(ship::post_milestone_goals),
+        )
+        .route(
+            "/api/dev/milestones/{milestone_id}/scope",
+            post(ship::post_milestone_scope),
+        )
+        .route("/api/dev/goals/{goal_id}", post(ship::post_goal_patch));
 
     // Headless bridge test mode (§13). The route is ADDED, not merely refused,
     // so with the mode off it 404s: "there is nothing there" and "you may not
@@ -429,6 +462,16 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
             Ok(())
         } else {
             Err("api key lacks execute scope for this persona")
+        };
+    }
+    if path.starts_with("/api/dev/") {
+        // Ship layer: a milestone or goal written here is work the app will
+        // dispatch agents at, so writes sit at the `/api/build` trust tier.
+        // Reads follow the generic any-valid-key GET rule.
+        return match *method {
+            Method::GET | Method::HEAD | Method::OPTIONS => Ok(()),
+            _ if has(SCOPE_BUILD) => Ok(()),
+            _ => Err("api key lacks the personas:build scope"),
         };
     }
     if path.starts_with("/api/") {
@@ -3691,6 +3734,25 @@ mod tests {
 
     fn scopes(list: &[&str]) -> Vec<String> {
         list.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn authorize_ship_routes_read_with_any_key_and_write_with_build() {
+        assert!(authorize(&Method::GET, "/api/dev/projects", &[]).is_ok());
+        assert!(authorize(&Method::GET, "/api/dev/milestones/m1", &[]).is_ok());
+        assert!(authorize(&Method::POST, "/api/dev/projects/p1/milestones", &[]).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/dev/projects/p1/milestones",
+            &scopes(&["personas:execute"])
+        )
+        .is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/dev/milestones/m1/goals",
+            &scopes(&["personas:build"])
+        )
+        .is_ok());
     }
 
     #[test]

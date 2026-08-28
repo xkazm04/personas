@@ -42,9 +42,16 @@ atomically per gap. Never `git stash`; never `git add -A`.
 `$ARGUMENTS` carries the milestone id. Resolve it in this order — the same
 fallback `buildGoalAssistPrompt` already uses on the app side:
 
-1. **Management HTTP API**, if `http://127.0.0.1:9420` answers. Read the
-   milestone, its items (`item_kind`, `item_id`, `bucket`, `description`,
-   `rating`, `added_after_cut`), and the project. This is the live truth.
+1. **Management HTTP API**, if `http://127.0.0.1:9420` answers:
+   `GET /api/dev/milestones/<id>` with `Authorization: Bearer <key>` returns
+   the project, the milestone and its items (`itemKind`, `itemId`, `name`,
+   `bucket`, `description`, `rating`, `addedAfterCut`);
+   `GET /api/dev/projects/<projectId>/ship` returns the whole roadmap plus the
+   use-case and goal registries. This is the live truth. A key comes from the
+   pairing ceremony (`POST /pair/request` → approve in the app →
+   `GET /pair/claim`) or from `PERSONAS_API_KEY` when the dispatcher set it;
+   reads need any valid key. (These routes exist since 2026-08-28 — before
+   that this step could only ever fall through to the brief.)
 2. **A brief file**, when the API is unreachable: the dispatcher writes
    `.personas/ship-milestone/runs/<run-id>/brief.json` with the same content.
    Read that.

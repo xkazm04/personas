@@ -176,7 +176,7 @@ export default function PairApprovalModal() {
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-1">
-          <Button variant="ghost" onClick={dequeue} disabled={busy}>
+          <Button variant="ghost" onClick={dequeue} disabled={busy} data-testid="pair-dismiss">
             {s.pair_later}
           </Button>
           <Button
@@ -187,7 +187,13 @@ export default function PairApprovalModal() {
           >
             {s.pair_reject}
           </Button>
-          <Button variant="primary" onClick={() => void onApprove()} loading={busy} disabled={!armed}>
+          <Button
+            variant="primary"
+            onClick={() => void onApprove()}
+            loading={busy}
+            disabled={!armed}
+            data-testid="pair-approve"
+          >
             {s.pair_approve}
           </Button>
         </div>
