@@ -35,6 +35,29 @@ export function phaseProgress(phases: BuildPhase[]): {
   };
 }
 
+/**
+ * The `targetOrigin` for a message posted INTO a project's preview frame —
+ * derived from the dev server's own URL, never `'*'`.
+ *
+ * `postMessage(payload, '*')` delivers to whatever origin the frame happens to
+ * hold at that moment, and the preview is a user-authored dev site that can
+ * navigate itself anywhere. Naming the origin is what makes that not matter:
+ * the browser drops the message rather than handing our payload to whatever
+ * loaded itself into the frame.
+ *
+ * Returns null when there is no URL yet or it will not parse — and the caller
+ * must then send nothing at all, because falling back to `'*'` would restore
+ * exactly the behaviour this exists to remove.
+ */
+export function previewTargetOrigin(url: string | undefined | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** The minimum a tab's status dot needs to know — kept structural so the mapping
  *  is testable without constructing a whole `ProjectRuntime`. */
 export interface TabDotState {

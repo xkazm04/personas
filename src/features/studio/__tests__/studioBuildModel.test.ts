@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { MOCK_PHASES, phaseProgress, tabDotClass } from '../studioBuildModel';
+import {
+  MOCK_PHASES,
+  phaseProgress,
+  previewTargetOrigin,
+  tabDotClass,
+} from '../studioBuildModel';
 import type { TabDotState } from '../studioBuildModel';
 
 // The Studio context shipped with zero tests. These pin the two properties the
@@ -48,6 +53,29 @@ describe('phaseProgress', () => {
     ]);
     expect(all.done).toBe(all.total);
     expect(all.active).toBeUndefined();
+  });
+});
+
+describe('previewTargetOrigin (never post into the preview with "*")', () => {
+  it('reduces the dev server URL to its origin', () => {
+    expect(previewTargetOrigin('http://localhost:3000/dashboard?x=1#y')).toBe(
+      'http://localhost:3000',
+    );
+    expect(previewTargetOrigin('http://127.0.0.1:4310')).toBe('http://127.0.0.1:4310');
+  });
+
+  it('returns null rather than a wildcard when there is nothing to address', () => {
+    // The caller must send NOTHING on null. A '*' fallback here would restore
+    // exactly the broadcast this helper exists to remove — the preview is a
+    // user-authored dev site that can navigate itself to another origin.
+    for (const bad of [undefined, null, '', 'not a url', '/relative/path']) {
+      expect(previewTargetOrigin(bad)).toBeNull();
+    }
+  });
+
+  it('never returns "*" for any input', () => {
+    const inputs = ['http://localhost:3000', '*', 'null', 'about:blank', ''];
+    expect(inputs.map(previewTargetOrigin)).not.toContain('*');
   });
 });
 

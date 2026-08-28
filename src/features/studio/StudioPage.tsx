@@ -9,6 +9,7 @@ import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
+import { previewTargetOrigin } from './studioBuildModel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
@@ -160,6 +161,13 @@ export default function StudioPage() {
   useEffect(() => {
     setPointerRect(null);
     if (!active?.question || !active?.decisionSelector) return;
+    // The dev server's own origin, so the ping is addressed rather than
+    // broadcast. No origin (no URL yet, or it won't parse) means we send
+    // NOTHING — falling back to '*' would restore the very behaviour the named
+    // origin exists to remove, and the preview is a user-authored dev site that
+    // can navigate itself somewhere else at any moment.
+    const targetOrigin = previewTargetOrigin(activeId ? previewUrls[activeId] : null);
+    if (!targetOrigin) return;
     const selector = active.decisionSelector;
     let tries = 0;
     const interval = window.setInterval(() => {
@@ -171,12 +179,12 @@ export default function StudioPage() {
       );
       iframe?.contentWindow?.postMessage(
         { source: 'athena', type: 'locate', selector, reqId: `${activeId}` },
-        '*',
+        targetOrigin,
       );
       if (++tries >= 8) window.clearInterval(interval);
     }, 700);
     return () => window.clearInterval(interval);
-  }, [activeId, active?.question, active?.decisionSelector]);
+  }, [activeId, active?.question, active?.decisionSelector, previewUrls]);
 
   // Fly Athena's global orb to the element a precise decision is about — reusing
   // the companion walkthrough's orb-target glide. The element's rect is in the
