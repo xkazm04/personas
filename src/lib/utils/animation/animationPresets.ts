@@ -51,11 +51,28 @@ export const MOTION_PRESETS = {
   },
 } as const;
 
+/**
+ * Framer twins of `CSS_DURATION_CLASS`, rung for rung.
+ *
+ * `EASE` used to be `{ type: 'spring', stiffness: 300, damping: 25 }` while
+ * `CSS_DURATION_CLASS.EASE` was a 400ms tween — **one word for two different
+ * gestures**. A component animating one property in Framer and another in CSS
+ * reached for "EASE" both times and got two unrelated motion characters, and a
+ * spring cannot be audited against a millisecond cap at all, because it has no
+ * duration. The three names now mean the same thing on both sides; the spring
+ * lives under its own name, where nothing mistakes it for a rung of the ladder.
+ */
 export const MOTION_TIMING = {
   SNAP: MOTION_PRESETS.snappy.framer,
   FLOW: MOTION_PRESETS.smooth.framer,
-  EASE: { type: 'spring' as const, stiffness: 300, damping: 25 },
+  EASE: MOTION_PRESETS.gentle.framer,
 };
+
+/**
+ * Physics-driven alternative to the timed ladder — deliberately NOT a member of
+ * `MOTION_TIMING`, because it has no duration and so belongs to no rung.
+ */
+export const MOTION_SPRING = { type: 'spring' as const, stiffness: 300, damping: 25 };
 
 /** Stagger container -- wrap the list/grid parent with this variant. */
 export const staggerContainer: Variants = {
