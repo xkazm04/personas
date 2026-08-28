@@ -20,6 +20,11 @@ import { parseN8nWorkflow } from './n8nParser';
 import { parseZapierWorkflow } from './zapierParser';
 import { parseMakeWorkflow } from './makeParser';
 import { parseGithubActionsWorkflow } from './githubActionsParser';
+import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
+import { createLogger } from '@/lib/log';
+import { trackInteraction } from '@/lib/sentry';
+
+const logger = createLogger('workflow-import');
 
 /**
  * js-yaml 4.2 added `maxDepth` (default 100) and `maxMergeSeqLength` (default 20)
@@ -35,10 +40,114 @@ type BoundedLoadOptions = LoadOptions & {
   maxMergeSeqLength?: number;
 };
 
+const WORKFLOW_MAX_DEPTH = 50;
+
 const WORKFLOW_YAML_LOAD_LIMITS: BoundedLoadOptions = {
-  maxDepth: 50,
+  maxDepth: WORKFLOW_MAX_DEPTH,
   maxMergeSeqLength: 20,
 };
+
+/**
+ * Ceiling on the number of values (objects, arrays, scalars) a workflow may
+ * contain. Well above any real export — the largest template in this repo is
+ * three orders of magnitude below it — and low enough that a hostile file
+ * cannot make the downstream adapters and the prompt assembler walk forever.
+ */
+const WORKFLOW_MAX_VALUES = 250_000;
+
+/**
+ * The bounds `JSON.parse` never had.
+ *
+ * The YAML branch has been bounded since the loader options above were added,
+ * with a comment naming the DoS class it closes. The JSON branch — which is the
+ * COMMON one, three of the four adapters being JSON — then called bare
+ * `JSON.parse(content)` with no byte, depth or entity cap, and no caller
+ * imposed one either: the upload, paste and URL hooks all read the whole
+ * content before handing it over. The size cap runs BEFORE the parse, because
+ * after it the work is already done.
+ */
+function assertBoundedSize(content: string): void {
+  // `length` is UTF-16 code units, which is <= the byte count for any input, so
+  // this never rejects a file the byte-based cap would accept.
+  if (content.length > MAX_WORKFLOW_JSON_BYTES) {
+    throw new Error(
+      `Workflow file is too large (limit ${Math.floor(MAX_WORKFLOW_JSON_BYTES / (1024 * 1024))} MB).`,
+    );
+  }
+}
+
+/**
+ * Walk the parsed structure iteratively — never recursively, which would trade
+ * one denial of service for another — and refuse anything nested deeper or
+ * wider than the bounds above. Applied to the YAML result too: the loader
+ * bounds depth but not total size.
+ */
+function assertBoundedStructure(root: unknown): void {
+  const stack: Array<{ value: unknown; depth: number }> = [{ value: root, depth: 0 }];
+  let seen = 0;
+
+  while (stack.length > 0) {
+    const { value, depth } = stack.pop()!;
+    seen += 1;
+    if (seen > WORKFLOW_MAX_VALUES) {
+      throw new Error('Workflow file has too many entries to import.');
+    }
+    if (depth > WORKFLOW_MAX_DEPTH) {
+      throw new Error(`Workflow file is nested too deeply (limit ${WORKFLOW_MAX_DEPTH}).`);
+    }
+    if (!value || typeof value !== 'object') continue;
+
+    if (Array.isArray(value)) {
+      for (const item of value) stack.push({ value: item, depth: depth + 1 });
+    } else {
+      for (const item of Object.values(value as Record<string, unknown>)) {
+        stack.push({ value: item, depth: depth + 1 });
+      }
+    }
+  }
+}
+
+type KnownPlatform = Exclude<WorkflowPlatform, 'unknown'>;
+
+interface PlatformAdapter {
+  parse: (data: Record<string, unknown>) => AgentIR;
+  /** The file extensions this platform exports as, as shown to the user. */
+  extensions: string;
+}
+
+/**
+ * The single enumeration of routable platforms.
+ *
+ * Declared as a TOTAL `Record<KnownPlatform, ...>` on purpose: adding a member
+ * to `WorkflowPlatform` now fails `tsc` here until it is routed. There used to
+ * be three hand-written enumerations of the same set — the detector's labels,
+ * the router's `switch`, and the speculative-parse array — and nothing compared
+ * them, so `github-actions` went missing from the third while the refusal
+ * message printed by that very function went on listing GitHub Actions as
+ * supported: a list disagreeing with its own advertisement, under a green test
+ * suite. The switch and the array are both derived from this table now, and so
+ * is the advertisement.
+ *
+ * Declaration order IS the speculative-parse order and is load-bearing: the
+ * three JSON-family adapters are tried before GitHub Actions so they win the
+ * stable-sort tie-break on equal output.
+ */
+const PLATFORM_ADAPTERS: Record<KnownPlatform, PlatformAdapter> = {
+  'n8n': { parse: parseN8nWorkflow, extensions: '.json' },
+  'zapier': { parse: parseZapierWorkflow, extensions: '.json' },
+  'make': { parse: parseMakeWorkflow, extensions: '.json' },
+  'github-actions': { parse: parseGithubActionsWorkflow, extensions: '.yml/.yaml' },
+};
+
+/** Every platform the parser can route to, in speculative-parse order. */
+export const ROUTABLE_PLATFORMS = Object.keys(PLATFORM_ADAPTERS) as readonly KnownPlatform[];
+
+/** The refusal message's supported-format list, derived from the routing table. */
+export function supportedFormatsSentence(): string {
+  return ROUTABLE_PLATFORMS.map(
+    (platform) => `${PLATFORM_LABELS[platform]} (${PLATFORM_ADAPTERS[platform].extensions})`,
+  ).join(', ');
+}
 
 export interface WorkflowParseResult {
   /** The detected platform */
@@ -69,6 +178,8 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   if (!content || content.trim().length === 0) {
     throw new Error('File is empty.');
   }
+
+  assertBoundedSize(content);
 
   const ext = getExtension(fileName);
   let parsed: Record<string, unknown>;
@@ -102,6 +213,8 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
     }
   }
 
+  assertBoundedStructure(parsed);
+
   // Detect the platform
   const detection = detectWorkflowPlatform(parsed, ext);
 
@@ -109,31 +222,18 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   let result: AgentIR;
   let finalDetection = detection;
 
-  switch (detection.platform) {
-    case 'n8n':
-      result = parseN8nWorkflow(parsed);
-      break;
-    case 'zapier':
-      result = parseZapierWorkflow(parsed);
-      break;
-    case 'make':
-      result = parseMakeWorkflow(parsed);
-      break;
-    case 'github-actions':
-      result = parseGithubActionsWorkflow(parsed);
-      break;
-    case 'unknown': {
-      // Attempt all parsers and pick the best candidate
-      const fallback = tryParsers(parsed);
-      result = fallback.result;
-      finalDetection = {
-        platform: fallback.platform,
-        confidence: fallback.confidence,
-        label: PLATFORM_LABELS[fallback.platform],
-        format: detection.format,
-      };
-      break;
-    }
+  if (detection.platform === 'unknown') {
+    // Attempt every routable parser and pick the best candidate
+    const fallback = tryParsers(parsed, detection.format);
+    result = fallback.result;
+    finalDetection = {
+      platform: fallback.platform,
+      confidence: fallback.confidence,
+      label: PLATFORM_LABELS[fallback.platform],
+      format: detection.format,
+    };
+  } else {
+    result = PLATFORM_ADAPTERS[detection.platform].parse(parsed);
   }
 
   // Confidence is not decoration: it is the bit that decides whether the review
@@ -146,15 +246,48 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   // Extract workflow name from the parsed result summary
   const workflowName = extractWorkflowName(parsed, finalDetection.platform);
 
+  reportDetection(finalDetection, detection.platform === 'unknown');
+
   // Serialize to JSON for storage (normalize YAML to JSON)
   const rawJson = JSON.stringify(parsed);
 
   return { detection: finalDetection, result, workflowName, rawJson, needsConfirmation };
 }
 
+/**
+ * The one counter that tells an operator a vendor changed its export format.
+ *
+ * Nothing under `parsers/` emitted anything at all, so the only way to learn
+ * that n8n had shipped a new shape was a support ticket saying "import failed".
+ * A rising `speculative` / `low`-confidence rate on one platform is that signal
+ * arriving days earlier. `trackInteraction` is the primitive the rest of the
+ * app already uses for this; nothing here carries workflow CONTENT, only the
+ * shape verdict.
+ */
+function reportDetection(detected: DetectionResult, speculative: boolean): void {
+  const outcome = `${detected.platform}:${detected.confidence}${speculative ? ':speculative' : ''}`;
+  logger.info('workflow detected', {
+    platform: detected.platform,
+    confidence: detected.confidence,
+    format: detected.format,
+    speculative,
+  });
+  trackInteraction('workflow_import', 'detected', outcome);
+}
+
+/**
+ * The refusal counter's other half: a file nothing could parse. A rise here
+ * with no matching product change is the same vendor-drift signal seen from
+ * the failure side.
+ */
+function reportDetectionFailure(format: DetectionResult['format'], errors: string[]): void {
+  logger.warn('workflow detection failed', { format, adapterErrors: errors.length });
+  trackInteraction('workflow_import', 'unrecognized', format);
+}
+
 interface TryParsersResult {
   result: AgentIR;
-  platform: Exclude<WorkflowPlatform, 'unknown'>;
+  platform: KnownPlatform;
   confidence: DetectionResult['confidence'];
 }
 
@@ -163,25 +296,16 @@ interface TryParsersResult {
  * Runs all parsers, collects successes, and picks the best candidate.
  * Confidence is 'medium' when exactly one parser succeeds, 'low' when multiple do.
  */
-function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
-  const candidates: Array<{ platform: Exclude<WorkflowPlatform, 'unknown'>; result: AgentIR; nodeCount: number }> = [];
+function tryParsers(
+  parsed: Record<string, unknown>,
+  format: DetectionResult['format'],
+): TryParsersResult {
+  const candidates: Array<{ platform: KnownPlatform; result: AgentIR; nodeCount: number }> = [];
   const errors: string[] = [];
 
-  const parsers: Array<{ platform: Exclude<WorkflowPlatform, 'unknown'>; parse: (d: Record<string, unknown>) => AgentIR }> = [
-    { platform: 'n8n', parse: parseN8nWorkflow },
-    { platform: 'zapier', parse: parseZapierWorkflow },
-    { platform: 'make', parse: parseMakeWorkflow },
-    // Last on purpose: the three above are the JSON-family adapters and win the
-    // stable-sort tie-break. GHA was omitted entirely, so a YAML file whose
-    // fingerprint missed (jobs nested unexpectedly, `on:` absent) fell through
-    // to a refusal that LISTED GitHub Actions as supported without ever having
-    // run its adapter, and reported no error for it.
-    { platform: 'github-actions', parse: parseGithubActionsWorkflow },
-  ];
-
-  for (const { platform, parse } of parsers) {
+  for (const platform of ROUTABLE_PLATFORMS) {
     try {
-      const result = parse(parsed);
+      const result = PLATFORM_ADAPTERS[platform].parse(parsed);
       // Count meaningful output as a quality signal
       const nodeCount = (result.suggested_tools?.length ?? 0) + (result.suggested_triggers?.length ?? 0) + (result.suggested_connectors?.length ?? 0);
       candidates.push({ platform, result, nodeCount });
@@ -191,8 +315,9 @@ function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
   }
 
   if (candidates.length === 0) {
+    reportDetectionFailure(format, errors);
     throw new Error(
-      `Could not identify the workflow platform. Supported formats: n8n (.json), Zapier (.json), Make (.json), GitHub Actions (.yml/.yaml).\n\nParser errors:\n${errors.join('\n')}`,
+      `Could not identify the workflow platform. Supported formats: ${supportedFormatsSentence()}.\n\nParser errors:\n${errors.join('\n')}`,
     );
   }
 
