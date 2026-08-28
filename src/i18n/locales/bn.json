@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "বার্তা",
       "broadcast_append": "যোগ করুন",
       "broadcast_sending": "পাঠানো হচ্ছে…",
+      "broadcast_sending_progress": "পাঠানো হচ্ছে… {total}-এর {done}টি",
       "broadcast_send_to": "{count} টিতে পাঠান",
       "broadcast_sent_one": "{count} টি সেশনে পাঠানো হয়েছে",
       "broadcast_sent_other": "{count} টি সেশনে পাঠানো হয়েছে",

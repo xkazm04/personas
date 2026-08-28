@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { writeInput } from '@/api/fleet/fleet';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { FleetStatusDots } from './FleetStatusDots';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -19,6 +20,16 @@ import { DebtText, debtText } from '@/i18n/DebtText';
  * selected session's PTY stdin via fleet_write_input. Tracks partial
  * failures and toasts a summary; per-session errors do not abort the batch.
  */
+/**
+ * How many PTY writes are in flight at once during a broadcast.
+ *
+ * Chosen, not inherited from the selection size: a broadcast is one small
+ * stdin write per session, so a handful of lanes already collapses the batch
+ * to a few round trips, while a wedged PTY can only stall its own lane instead
+ * of the whole fleet behind it.
+ */
+const BROADCAST_CONCURRENCY = 8;
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -43,6 +54,10 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pressEnter, setPressEnter] = useState(true);
   const [sending, setSending] = useState(false);
+  // How far the current batch has got. "Sending…" alone told the operator that
+  // something was happening and nothing about how much of the fleet had heard
+  // it yet.
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   // Ids of the sessions the LAST send could not reach. "Sent to 3 of 7 — 4
   // failed" told the operator that something went wrong and nothing about
   // where; with a fleet of interactive agents that is the difference between a
@@ -120,15 +135,36 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     if (!text.trim() || selected.size === 0 || sending) return;
     setSending(true);
     const payload = pressEnter ? `${text}\r` : text;
-    // Keep the id, not just a tally — the catch already has it in hand.
-    const failedSids: string[] = [];
-    for (const sid of selected) {
+    const targets = [...selected];
+    setProgress({ done: 0, total: targets.length });
+    // Sent CONCURRENTLY, not one after another. Serially, a 20-session
+    // broadcast was 20 round trips end to end and — worse — a single wedged PTY
+    // held every session behind it, so the operator's fleet-wide instruction
+    // reached the fleet in the order of its slowest member. These writes are to
+    // independent PTYs; nothing about them is ordered.
+    //
+    // Concurrency is also what answers "no way to cancel": the batch finishes
+    // in a few round trips instead of running long enough to need stopping.
+    //
+    // Through the shared pool, NOT `Promise.all(targets.map(…))` — a fleet-
+    // scaled fan-out whose width is however many sessions the operator happened
+    // to tick is a width nobody chose. Each task swallows its own failure, so
+    // the pool's fail-fast propagation never fires and every target is
+    // attempted.
+    let done = 0;
+    const outcomes = await mapWithConcurrency(targets, BROADCAST_CONCURRENCY, async (sid) => {
       try {
         await writeInput(sid, payload);
+        // Keep the id, not just a tally — the caller needs to retarget.
+        return null;
       } catch {
-        failedSids.push(sid);
+        return sid;
+      } finally {
+        done += 1;
+        setProgress({ done, total: targets.length });
       }
-    }
+    });
+    const failedSids = outcomes.filter((sid): sid is string => sid !== null);
     const failed = failedSids.length;
     // Always surface the real outcome — the single most important feedback in
     // the feature is "did my fleet-wide command land?". Previously a full
@@ -148,6 +184,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       addToast(tx(t.plugins.fleet.broadcast_failed_all, { total }), 'error');
     }
     setSending(false);
+    setProgress(null);
     // ANY failure keeps the composer open and retargets the selection to
     // exactly the sessions that missed it. A broadcast that reached nobody must
     // not destroy a message the operator may have spent minutes composing; and
@@ -305,7 +342,12 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             onClick={handleSend}
           >
             {sending
-              ? t.plugins.fleet.broadcast_sending
+              ? progress
+                ? tx(t.plugins.fleet.broadcast_sending_progress, {
+                    done: progress.done,
+                    total: progress.total,
+                  })
+                : t.plugins.fleet.broadcast_sending
               : tx(t.plugins.fleet.broadcast_send_to, { count: selected.size })}
           </Button>
         </div>

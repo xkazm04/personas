@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "Pesan",
       "broadcast_append": "Tambahkan",
       "broadcast_sending": "Mengirim…",
+      "broadcast_sending_progress": "Mengirim… {done} dari {total}",
       "broadcast_send_to": "Kirim ke {count}",
       "broadcast_sent_one": "Terkirim ke {count} sesi",
       "broadcast_sent_other": "Terkirim ke {count} sesi",

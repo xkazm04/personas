@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "संदेश",
       "broadcast_append": "जोड़ें",
       "broadcast_sending": "भेजा जा रहा है…",
+      "broadcast_sending_progress": "भेजा जा रहा है… {total} में से {done}",
       "broadcast_send_to": "{count} को भेजें",
       "broadcast_sent_one": "{count} सत्र को भेजा गया",
       "broadcast_sent_other": "{count} सत्रों को भेजा गया",

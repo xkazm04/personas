@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "Votre message",
       "broadcast_append": "Ajouter",
       "broadcast_sending": "Envoi…",
+      "broadcast_sending_progress": "Envoi… {done} sur {total}",
       "broadcast_send_to": "Envoyer à {count}",
       "broadcast_sent_one": "Envoyé à {count} session",
       "broadcast_sent_other": "Envoyé à {count} sessions",

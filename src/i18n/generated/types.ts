@@ -13360,6 +13360,7 @@ export type Translations = {
       broadcast_message_label: string;
       broadcast_append: string;
       broadcast_sending: string;
+      broadcast_sending_progress: string;
       broadcast_send_to: string;
       broadcast_sent_one: string;
       broadcast_sent_other: string;

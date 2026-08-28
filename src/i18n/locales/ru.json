@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "Сообщение",
       "broadcast_append": "Добавить",
       "broadcast_sending": "Отправка…",
+      "broadcast_sending_progress": "Отправка… {done} из {total}",
       "broadcast_send_to": "Отправить в {count}",
       "broadcast_sent_one": "Отправлено в {count} сеанс",
       "broadcast_sent_other": "Отправлено в {count} сеансов",

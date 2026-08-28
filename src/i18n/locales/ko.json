@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "메시지",
       "broadcast_append": "끝에 추가",
       "broadcast_sending": "보내는 중…",
+      "broadcast_sending_progress": "보내는 중… {total}개 중 {done}개",
       "broadcast_send_to": "{count}개에 보내기",
       "broadcast_sent_one": "세션 {count}개에 보냈습니다",
       "broadcast_sent_other": "세션 {count}개에 보냈습니다",

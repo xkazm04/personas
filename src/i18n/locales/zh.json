@@ -13062,6 +13062,7 @@
       "broadcast_message_label": "消息",
       "broadcast_append": "追加",
       "broadcast_sending": "发送中…",
+      "broadcast_sending_progress": "发送中… 第 {done} 个，共 {total} 个",
       "broadcast_send_to": "发送给 {count} 个",
       "broadcast_sent_one": "已发送给 {count} 个会话",
       "broadcast_sent_other": "已发送给 {count} 个会话",

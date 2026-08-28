@@ -13354,6 +13354,7 @@
       "broadcast_message_label": "Message",
       "broadcast_append": "Append",
       "broadcast_sending": "Sending…",
+      "broadcast_sending_progress": "Sending… {done} of {total}",
       "broadcast_send_to": "Send to {count}",
       "broadcast_sent_one": "Sent to {count} session",
       "broadcast_sent_other": "Sent to {count} sessions",

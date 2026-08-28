@@ -41,6 +41,7 @@
     "broadcast_message_label": "الرسالة",
     "broadcast_append": "إلحاق",
     "broadcast_sending": "جارٍ الإرسال…",
+    "broadcast_sending_progress": "جارٍ الإرسال… {done} من {total}",
     "broadcast_send_to": "إرسال إلى {count}",
     "broadcast_sent_one": "تم الإرسال إلى {count} جلسة",
     "broadcast_sent_other": "تم الإرسال إلى {count} جلسات",
