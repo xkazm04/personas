@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
-import { buildParentMap, isAncestorCollapsed, mergeSpanEvent } from '../traceVisibility';
+import type { SpanNode } from '../traceInspectorTypes';
+import { applySpanEvent, buildParentIndex, computeVisibleNodes } from '../traceInspectorTypes';
 import { waterfallGeometry } from '../WaterfallBar';
 import { durationColor } from '../inspectorTypes';
 
@@ -37,64 +38,74 @@ function backendSpan(id: string, over: Partial<TraceSpan> = {}): TraceSpan {
   } as TraceSpan;
 }
 
-describe('buildParentMap', () => {
+/** Flat node list in the shape `computeVisibleNodes` consumes. */
+function nodes(spans: UnifiedSpan[]): SpanNode[] {
+  return spans.map((s) => ({ span: s, children: [], depth: 0 }));
+}
+
+function visibleIds(spans: UnifiedSpan[], collapsed: string[]): string[] {
+  return computeVisibleNodes(nodes(spans), new Set(collapsed), buildParentIndex(spans))
+    .map((n) => n.span.span_id);
+}
+
+describe('buildParentIndex', () => {
   it('maps every span to its parent, with null for roots', () => {
-    const map = buildParentMap([span('root', null), span('a', 'root'), span('b', 'a')]);
-    expect(map.get('root')).toBeNull();
-    expect(map.get('a')).toBe('root');
-    expect(map.get('b')).toBe('a');
-    expect(map.size).toBe(3);
+    const index = buildParentIndex([span('root', null), span('a', 'root'), span('b', 'a')]);
+    expect(index.get('root')).toBeNull();
+    expect(index.get('a')).toBe('root');
+    expect(index.get('b')).toBe('a');
+    expect(index.size).toBe(3);
   });
 
   it('normalises an undefined parent to null', () => {
-    const map = buildParentMap([span('root', undefined as unknown as null)]);
-    expect(map.get('root')).toBeNull();
+    const index = buildParentIndex([span('root', undefined as unknown as null)]);
+    expect(index.get('root')).toBeNull();
   });
 });
 
-describe('isAncestorCollapsed', () => {
+describe('computeVisibleNodes', () => {
   //  root > a > b > c
   const spans = [span('root', null), span('a', 'root'), span('b', 'a'), span('c', 'b')];
-  const map = buildParentMap(spans);
 
-  it('is false when nothing is collapsed', () => {
-    expect(isAncestorCollapsed('b', map, new Set())).toBe(false);
+  it('returns the input list by reference when nothing is collapsed', () => {
+    const all = nodes(spans);
+    expect(computeVisibleNodes(all, new Set(), buildParentIndex(spans))).toBe(all);
   });
 
-  it('is false for a root span (no parent to walk)', () => {
-    expect(isAncestorCollapsed(null, map, new Set(['root']))).toBe(false);
+  it('keeps a collapsed span itself visible — only its descendants hide', () => {
+    expect(visibleIds(spans, ['root'])).toEqual(['root']);
   });
 
-  it('hides a child of a directly collapsed parent', () => {
-    expect(isAncestorCollapsed('b', map, new Set(['b']))).toBe(true);
+  it('hides the child of a directly collapsed parent', () => {
+    expect(visibleIds(spans, ['b'])).toEqual(['root', 'a', 'b']);
   });
 
-  it('hides a deep descendant of a collapsed grandparent', () => {
-    // c's parent chain is b -> a -> root; collapsing `a` must hide `c`.
-    expect(isAncestorCollapsed('b', map, new Set(['a']))).toBe(true);
-    expect(isAncestorCollapsed('b', map, new Set(['root']))).toBe(true);
+  it('hides deep descendants of a collapsed grandparent', () => {
+    expect(visibleIds(spans, ['a'])).toEqual(['root', 'a']);
   });
 
   it('does not hide a sibling branch', () => {
-    const siblings = buildParentMap([span('root', null), span('a', 'root'), span('x', 'root')]);
-    expect(isAncestorCollapsed('x', siblings, new Set(['a']))).toBe(false);
+    const siblings = [span('root', null), span('a', 'root'), span('x', 'root')];
+    expect(visibleIds(siblings, ['a'])).toEqual(['root', 'a', 'x']);
   });
 
   it('terminates on a malformed parent cycle', () => {
-    const cyclic = buildParentMap([span('p', 'q'), span('q', 'p')]);
-    expect(isAncestorCollapsed('p', cyclic, new Set())).toBe(false);
+    // A non-empty collapsed set is what forces the walk to actually run —
+    // an empty one short-circuits before the cycle guard is ever reached.
+    const cyclic = [span('p', 'q'), span('q', 'p')];
+    expect(visibleIds(cyclic, ['unrelated'])).toEqual(['p', 'q']);
   });
 });
 
-describe('mergeSpanEvent', () => {
+describe('applySpanEvent', () => {
   it('appends a span on its start event', () => {
-    const next = mergeSpanEvent([], backendSpan('s1'), 'start');
+    const next = applySpanEvent([], backendSpan('s1'), 'start');
     expect(next.map((s) => s.span_id)).toEqual(['s1']);
   });
 
   it('replaces the existing row on end', () => {
     const prev = [backendSpan('s1')];
-    const next = mergeSpanEvent(prev, backendSpan('s1', { duration_ms: 42 }), 'end');
+    const next = applySpanEvent(prev, backendSpan('s1', { duration_ms: 42 }), 'end');
     expect(next).toHaveLength(1);
     expect(next[0]!.duration_ms).toBe(42);
   });
@@ -102,24 +113,24 @@ describe('mergeSpanEvent', () => {
   it('keeps an end event whose start was never seen', () => {
     // The regression this guards: an `end` with no existing row used to be
     // dropped, so the span vanished from the live trace entirely.
-    const next = mergeSpanEvent([backendSpan('other')], backendSpan('s1', { duration_ms: 7 }), 'end');
+    const next = applySpanEvent([backendSpan('other')], backendSpan('s1', { duration_ms: 7 }), 'end');
     expect(next.map((s) => s.span_id)).toEqual(['other', 's1']);
     expect(next[1]!.duration_ms).toBe(7);
   });
 
   it('ignores a duplicate start and returns the same array', () => {
     const prev = [backendSpan('s1')];
-    expect(mergeSpanEvent(prev, backendSpan('s1'), 'start')).toBe(prev);
+    expect(applySpanEvent(prev, backendSpan('s1'), 'start')).toBe(prev);
   });
 
   it('ignores unknown event types and returns the same array', () => {
     const prev = [backendSpan('s1')];
-    expect(mergeSpanEvent(prev, backendSpan('s2'), 'progress')).toBe(prev);
+    expect(applySpanEvent(prev, backendSpan('s2'), 'progress')).toBe(prev);
   });
 
   it('does not mutate the previous array', () => {
     const prev = [backendSpan('s1')];
-    mergeSpanEvent(prev, backendSpan('s2'), 'start');
+    applySpanEvent(prev, backendSpan('s2'), 'start');
     expect(prev).toHaveLength(1);
   });
 });

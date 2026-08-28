@@ -1531,6 +1531,10 @@ export type Translations = {
       pending: string;
       loading_trace: string;
       failed_to_load_trace: string;
+      payload_not_parseable: string;
+      error_cards_capped: string;
+      live_events_dropped: string;
+      live_events_dropped_other: string;
       no_trace_data: string;
       trace_spans_appear: string;
       span: string;
