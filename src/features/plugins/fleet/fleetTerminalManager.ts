@@ -23,7 +23,8 @@
  *     not running ones.
  *   - Many panes can attach different sessions at once → grid view (P2).
  *   - Renderer (WebGL) is attach-scoped so N background terminals don't hold
- *     N live GL contexts; unicode11 / web-links load once.
+ *     N live GL contexts, AND bounded by a fleet-wide budget (MAX_WEBGL) so N
+ *     *attached* ones can't either; unicode11 / web-links load once.
  *   - A shared `config` (font size, copy-on-select, theme) is applied to
  *     every live terminal and to all future ones (P4).
  *
@@ -244,6 +245,42 @@ function bumpEvictions(): void {
   g[EVICTIONS_KEY] = ((g[EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
 }
 
+/**
+ * Fleet-wide budget on LIVE WebGL renderer contexts.
+ *
+ * MAX_PARKED bounds *detached* terminals; nothing bounded attached ones, and
+ * WebGL is per-ATTACH. The grid mounts a live terminal for the focused tile
+ * plus every session that needs the operator (`needsLiveAttention`), and
+ * `gridDim` tiles up to 4x4 — so a 16-session fleet sitting on `awaiting_input`
+ * asks for 16 GL contexts at once, before counting the panes that live outside
+ * the overlay (the mastermind preview, the passport modal, the monitor's
+ * fullscreen pane). Fleet is this app's ONLY WebGL consumer — the charts are
+ * SVG — so that number IS the app's context count.
+ *
+ * Past the WebView's own cap the browser silently kills the OLDEST context and
+ * the terminal that loses it is not the one that caused the overrun. Choosing
+ * the victim here instead makes the demotion deterministic and recent-first:
+ * beyond the budget the least-recently-attached terminal drops to the DOM
+ * renderer — the same fallback `onContextLoss` already exercises, and the same
+ * one a machine with no WebGL at all runs on permanently.
+ */
+const MAX_WEBGL = 8;
+
+/** Attach-ordered ids of the terminals currently holding a GL context. */
+const WEBGL_ORDER_KEY = '__fleetTerminalWebglOrder__';
+const webglOrder: string[] =
+  ((globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] as string[] | undefined) ?? [];
+(globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] = webglOrder;
+
+/** Renderers demoted to DOM by the budget — the same instrument argument as
+ *  `bumpEvictions`: a budget set too low and a broken renderer produce the same
+ *  user report ("the grid went sluggish"), and only a counter separates them. */
+const WEBGL_EVICTIONS_KEY = '__fleetTerminalWebglEvictions__';
+function bumpWebglEvictions(): void {
+  const g = globalThis as Record<string, unknown>;
+  g[WEBGL_EVICTIONS_KEY] = ((g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
+}
+
 export interface FleetTerminalStats {
   /** Terminals alive right now (attached + parked). */
   live: number;
@@ -253,18 +290,28 @@ export interface FleetTerminalStats {
   maxParked: number;
   /** Terminals disposed BECAUSE of that budget, since app start. */
   evictions: number;
+  /** Live WebGL renderer contexts held right now, fleet-wide. */
+  webglContexts: number;
+  /** The budget those contexts are bounded by. */
+  maxWebgl: number;
+  /** Renderers demoted to the DOM fallback BECAUSE of that budget. */
+  webglEvictions: number;
 }
 
 /**
  * Snapshot of the manager's budget bookkeeping — the early-warning instrument
- * for a MAX_PARKED set too low.
+ * for a MAX_PARKED or MAX_WEBGL set too low.
  */
 export function getFleetTerminalStats(): FleetTerminalStats {
+  const g = globalThis as Record<string, unknown>;
   return {
     live: registry.size,
     parked: parked.length,
     maxParked: MAX_PARKED,
-    evictions: ((globalThis as Record<string, unknown>)[EVICTIONS_KEY] as number | undefined) ?? 0,
+    evictions: (g[EVICTIONS_KEY] as number | undefined) ?? 0,
+    webglContexts: webglOrder.length,
+    maxWebgl: MAX_WEBGL,
+    webglEvictions: (g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0,
   };
 }
 
@@ -349,8 +396,39 @@ function scheduleFit(m: ManagedTerminal): void {
   });
 }
 
+/** Drop `sessionId` out of the GL holder order (no-op if it holds none). */
+function releaseWebglSlot(sessionId: string): void {
+  const i = webglOrder.indexOf(sessionId);
+  if (i !== -1) webglOrder.splice(i, 1);
+}
+
+/**
+ * Free GL slots until one is available, demoting least-recently-attached first.
+ *
+ * Termination is by construction, not by luck: `disposeWebgl` ALWAYS releases
+ * the slot, and the two inconsistent entries (a ghost id whose terminal was
+ * disposed elsewhere, an id whose context was already lost) are shifted by
+ * hand. The parked LRU below spun forever on exactly that hole.
+ */
+function enforceWebglBudget(): void {
+  while (webglOrder.length >= MAX_WEBGL) {
+    const oldest = webglOrder[0]!;
+    const victim = registry.get(oldest);
+    if (!victim || !victim.webgl) {
+      // Bookkeeping repair, not a budget demotion — counting it would make the
+      // instrument lie, the same argument `bumpEvictions` documents.
+      webglOrder.shift();
+      continue;
+    }
+    bumpWebglEvictions();
+    disposeWebgl(victim);
+  }
+}
+
 function loadWebgl(m: ManagedTerminal): void {
   if (m.webgl) return;
+  // Make room BEFORE minting, so a fresh attach can never evict itself.
+  enforceWebglBudget();
   try {
     const addon = new WebglAddon();
     // On GL context loss, drop the addon — xterm falls back to the DOM
@@ -361,10 +439,14 @@ function loadWebgl(m: ManagedTerminal): void {
       } catch (err) {
         silentCatch('fleetTerminal:webglContextLoss')(err);
       }
-      if (m.webgl === addon) m.webgl = null;
+      if (m.webgl === addon) {
+        m.webgl = null;
+        releaseWebglSlot(m.sessionId);
+      }
     });
     m.term.loadAddon(addon);
     m.webgl = addon;
+    webglOrder.push(m.sessionId);
   } catch (e) {
     // WebGL unavailable (software WebView, blocked context) — DOM renderer is
     // the built-in fallback, so this is non-fatal.
@@ -374,6 +456,9 @@ function loadWebgl(m: ManagedTerminal): void {
 }
 
 function disposeWebgl(m: ManagedTerminal): void {
+  // Release unconditionally — the slot must go even if the addon is already
+  // gone, or `enforceWebglBudget` would have a head it can never move past.
+  releaseWebglSlot(m.sessionId);
   if (!m.webgl) return;
   try {
     m.webgl.dispose();
