@@ -416,7 +416,7 @@ fn dispatch_chat_note(ctx: &mut DispatchContext<'_>, content: &str) {
 /// skip their round instead of stacking ideas faster than the triage +
 /// promotion loop can drain them. Sized ~2× the strategist triage trigger
 /// (≥ 6 pending) so triage always fires well before producers go quiet.
-pub const IDEA_BACKLOG_CAP: i64 = 15;
+pub const IDEA_BACKLOG_CAP: i64 = 300;
 
 /// Backlog aging window: a `pending` idea untouched for this many days that
 /// never became work (no linked task) is archived by `archive_stale_ideas` —
