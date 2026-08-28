@@ -65,8 +65,8 @@ export function deduplicateFetch<T>(
  * sibling `staleWhileRevalidate` grew exactly this door; the two implement the
  * same coalescing concept and had drifted to different lifecycle rules.
  *
- * The key is used verbatim, so a `deduplicateKeyedFetch` entry is addressed by
- * the composed key the wrapper derives, not by its prefix alone.
+ * The key is used verbatim — for `deduplicateKeyedFetch`, build it with
+ * {@link deduplicatedFetchKey}.
  */
 export function invalidateDeduplicatedFetch(key: string): void {
   _inflight.delete(key);
@@ -80,16 +80,65 @@ export function clearDeduplicatedFetches(): void {
 }
 
 /**
+ * Derive the in-flight key for one argument list.
+ *
+ * This was `JSON.stringify(args)`, which is wrong for a cache key in three
+ * separate ways, each of which collapses or breaks calls the wrapper exists to
+ * keep apart:
+ *
+ *  - `undefined` and `null` both serialize to `null`, so `f(undefined)` and
+ *    `f(null)` shared one promise. They are encoded distinctly here.
+ *  - a function or symbol argument serializes to `null`, so two unrelated calls
+ *    collapsed onto one key. They now throw a named error instead of silently
+ *    sharing a result — the identity simply cannot be expressed in a key.
+ *  - a circular argument made `JSON.stringify` THROW, so a deduplication helper
+ *    prevented the very fetch it exists to share. Cycles are marked instead.
+ *
+ * Object keys are sorted so `{a,b}` and `{b,a}` describe the same request.
+ */
+export function deduplicatedFetchKey(prefix: string, args: readonly unknown[]): string {
+  const path = new WeakSet<object>();
+
+  const encode = (value: unknown): string => {
+    if (value === undefined) return 'u';
+    if (value === null) return 'z';
+    const type = typeof value;
+    if (type === 'function' || type === 'symbol') {
+      throw new TypeError(
+        `deduplicateKeyedFetch("${prefix}"): a ${type} argument has no stable cache key. ` +
+          'Pass primitives or plain serializable objects.',
+      );
+    }
+    if (type === 'bigint') return `g${String(value)}`;
+    if (type !== 'object') return JSON.stringify(value) ?? 'u';
+
+    const obj = value as object;
+    if (path.has(obj)) return '~cycle';
+    path.add(obj);
+    const body = Array.isArray(obj)
+      ? `[${obj.map(encode).join(',')}]`
+      : `{${Object.keys(obj as Record<string, unknown>)
+          .sort()
+          .map((k) => `${JSON.stringify(k)}:${encode((obj as Record<string, unknown>)[k])}`)
+          .join(',')}}`;
+    path.delete(obj);
+    return body;
+  };
+
+  return `${prefix}:[${args.map(encode).join(',')}]`;
+}
+
+/**
  * Same as `deduplicateFetch` but derives the cache key from the arguments,
  * so e.g. `fetchRecentEvents(50)` and `fetchRecentEvents(100)` are tracked
- * independently.
+ * independently. See {@link deduplicatedFetchKey} for the key rules.
  */
 export function deduplicateKeyedFetch<Args extends unknown[], T>(
   prefix: string,
   fn: (...args: Args) => Promise<T>,
 ): (...args: Args) => Promise<T> {
   return (...args: Args) => {
-    const key = `${prefix}:${JSON.stringify(args)}`;
+    const key = deduplicatedFetchKey(prefix, args);
     const existing = _inflight.get(key);
     if (existing) return existing as Promise<T>;
     return track(key, () => fn(...args));
