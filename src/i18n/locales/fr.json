@@ -13558,6 +13558,8 @@
       "broadcast_retry_hint": "Ces sessions ne l'ont pas reçu. La sélection ne vise plus qu'elles — appuyez sur Envoyer pour réessayer.",
       "terminal_session_gone": "Cette session n'est plus disponible : elle a peut-être été fermée ou supprimée. Fermez puis rouvrez ce volet pour réessayer.",
       "terminal_output_stalled": "La sortie en direct n'arrive plus pour aucune session — reconnexion en cours. Ce que vous tapez atteint toujours ce terminal.",
+      "terminal_displaced": "Cette session est maintenant ouverte dans un autre volet — une seule vue peut afficher un terminal à la fois.",
+      "terminal_displaced_reclaim": "Afficher ici",
       "pair_generate": "Associer ce téléphone",
       "pair_generating": "Création du jeton d’appareil…",
       "pair_scan_hint": "Scannez avec l’appareil photo de votre téléphone sur le même Wi-Fi, puis ajoutez la page à votre écran d’accueil.",

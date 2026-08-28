@@ -50,6 +50,8 @@
     "broadcast_retry_hint": "Tyto relace zprávu neobdržly. Výběr nyní zahrnuje pouze je – opakujte stiskem tlačítka Odeslat.",
     "terminal_session_gone": "Tato relace již není dostupná – mohla skončit nebo být odebrána. Zavřete a znovu otevřete tento panel a zkuste to znovu.",
     "terminal_output_stalled": "Živý výstup přestal přicházet u všech relací – probíhá opětovné připojení. Váš vstup se do tohoto terminálu stále dostává.",
+    "terminal_displaced": "Tato relace je nyní otevřená v jiném panelu – terminál může zobrazovat jen jedno zobrazení naráz.",
+    "terminal_displaced_reclaim": "Zobrazit zde",
     "pair_generate": "Spárovat tento telefon",
     "pair_generating": "Vytvářím token zařízení…",
     "pair_scan_hint": "Naskenujte fotoaparátem telefonu na stejné Wi-Fi a poté si stránku přidejte na plochu telefonu.",

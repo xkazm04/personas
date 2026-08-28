@@ -13819,6 +13819,8 @@ export type Translations = {
       broadcast_retry_hint: string;
       terminal_session_gone: string;
       terminal_output_stalled: string;
+      terminal_displaced: string;
+      terminal_displaced_reclaim: string;
       pair_generate: string;
       pair_generating: string;
       pair_scan_hint: string;

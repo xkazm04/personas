@@ -102,6 +102,7 @@ import {
   disposeTerminal,
   gcTerminals,
   getFleetTerminalStats,
+  onTerminalHolderLost,
   setFleetTerminalDeadNotice,
   setFleetTerminalListenerNotice,
   setTerminalLiveness,
@@ -653,6 +654,64 @@ describe('attach ownership', () => {
     expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('unowned');
     expect(registryMap().get('unowned')?.attached).toBe(false);
     host.remove();
+  });
+
+  // The holder is one DOM node, so the steal itself is inherent. Doing it
+  // SILENTLY was not: the displaced pane rendered an empty black box that never
+  // updated, which reads exactly like a session that has printed nothing.
+  it('tells the pane it is taking the holder from', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    const lost = vi.fn();
+    const off = onTerminalHolderLost(paneA, lost);
+
+    attachTerminal('stolen', paneA);
+    expect(lost).not.toHaveBeenCalled();
+
+    attachTerminal('stolen', paneB);
+
+    expect(lost).toHaveBeenCalledTimes(1);
+    expect(registryMap().get('stolen')?.holder.parentElement).toBe(paneB);
+
+    off();
+    detachTerminal('stolen');
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('never notifies a container that has already left the document', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    const lost = vi.fn();
+    const off = onTerminalHolderLost(paneA, lost);
+
+    attachTerminal('unmounted-owner', paneA);
+    paneA.remove(); // its React tree is gone; there is nothing left to repaint
+    attachTerminal('unmounted-owner', paneB);
+
+    expect(lost).not.toHaveBeenCalled();
+
+    off();
+    detachTerminal('unmounted-owner');
+    paneB.remove();
+  });
+
+  it('does not notify on a re-attach into the same container', () => {
+    const pane = document.createElement('div');
+    document.body.append(pane);
+    const lost = vi.fn();
+    const off = onTerminalHolderLost(pane, lost);
+
+    attachTerminal('same-pane', pane);
+    attachTerminal('same-pane', pane);
+
+    expect(lost).not.toHaveBeenCalled();
+
+    off();
+    detachTerminal('same-pane');
+    pane.remove();
   });
 });
 

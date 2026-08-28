@@ -50,6 +50,8 @@
     "broadcast_retry_hint": "这些会话未收到。当前选择已缩小为仅包含它们 — 点击发送重试。",
     "terminal_session_gone": "此会话已不可用 — 它可能已退出或被移除。关闭并重新打开此面板以重试。",
     "terminal_output_stalled": "所有会话的实时输出已中断，正在重新连接。你的输入仍会送达此终端。",
+    "terminal_displaced": "此会话现已在另一个面板中打开 — 同一时间只有一个视图能显示终端。",
+    "terminal_displaced_reclaim": "在此显示",
     "pair_generate": "配对此手机",
     "pair_generating": "正在生成设备令牌…",
     "pair_scan_hint": "在同一 Wi-Fi 下用手机相机扫描，然后将页面添加到主屏幕。",

@@ -418,6 +418,39 @@ export function getFleetTerminalStats(): FleetTerminalStats {
   };
 }
 
+/**
+ * Panes that want to be TOLD when the holder is taken out from under them.
+ *
+ * There is one holder `<div>` per session, so two mount points can never both
+ * display it — that much is inherent. What was not inherent is that the loser
+ * found out by rendering an empty black box: `attachTerminal` re-parented the
+ * holder unconditionally, with the mutual exclusion between surfaces asserted
+ * only in a prose comment. Five independent call sites mount a pane for a
+ * session id THEY choose (the grid, an overlay tile, the monitor's fullscreen
+ * pane, the mastermind preview, the passport modal), and the last two live
+ * outside the fleet overlay entirely, so nothing structural keeps them apart.
+ *
+ * A refcount is the wrong instrument here — the resource is a DOM node, and
+ * counting holders would not let two of them paint. Naming the current owner
+ * and notifying the displaced one is the reachable half: the pane can say where
+ * its terminal went, and offer to take it back.
+ *
+ * Keyed by container element and WEAK, so an unmounted pane's entry disappears
+ * with it and a forgotten deregistration cannot leak.
+ */
+const holderLostListeners = new WeakMap<HTMLElement, () => void>();
+
+/**
+ * Register `cb` to fire when another container takes this session's holder away
+ * from `container`. Returns the deregistration.
+ */
+export function onTerminalHolderLost(container: HTMLElement, cb: () => void): () => void {
+  holderLostListeners.set(container, cb);
+  return () => {
+    if (holderLostListeners.get(container) === cb) holderLostListeners.delete(container);
+  };
+}
+
 function unpark(sessionId: string): void {
   const i = parked.indexOf(sessionId);
   if (i !== -1) parked.splice(i, 1);
@@ -809,6 +842,20 @@ export function attachTerminal(sessionId: string, container: HTMLElement): void 
   // Read BEFORE the DOM move below, which would make every attach look mounted.
   const alreadyMounted =
     m.attached && m.holder.parentElement === container && (m.hydratedOk || m.hydrating);
+  // Tell the pane we are taking the holder FROM, while it can still react. Only
+  // a container still in the document can be displaced — one already unmounted
+  // has nothing to repaint, and notifying it would be a callback into a dead
+  // component.
+  const previousOwner = m.owner;
+  if (previousOwner && previousOwner !== container && previousOwner.isConnected) {
+    try {
+      holderLostListeners.get(previousOwner)?.();
+    } catch (e) {
+      // A displaced pane's own render must never be able to abort the attach the
+      // operator is waiting on.
+      silentCatch('fleetTerminal:holderLost')(e);
+    }
+  }
   m.owner = container;
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);

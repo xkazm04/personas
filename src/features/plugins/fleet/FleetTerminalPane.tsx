@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { MonitorUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   attachTerminal,
   detachTerminal,
   focusTerminal,
+  onTerminalHolderLost,
   setFleetTerminalDeadNotice,
   setFleetTerminalListenerNotice,
   setTerminalLiveness,
@@ -61,18 +63,46 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
     setFleetTerminalListenerNotice(t.plugins.fleet.terminal_output_stalled);
   }, [t]);
 
+  /**
+   * True once another mount point has taken this session's terminal away.
+   *
+   * There is ONE holder element per session, so two panes cannot both display
+   * it — and five independent call sites mount a pane for a session id they
+   * choose, two of them (the mastermind preview, the passport modal) outside
+   * the fleet overlay entirely. The loser used to find out by rendering an
+   * empty black box that never updated again, indistinguishable from a session
+   * that has printed nothing. Saying so, and offering the terminal back, is the
+   * difference between a dead pane and a moved one.
+   */
+  const [displaced, setDisplaced] = useState(false);
+
   // Attach the managed terminal on mount / session change; detach (NOT
   // dispose) on unmount so the buffer and PTY subscription persist.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    setDisplaced(false);
+    const offHolderLost = onTerminalHolderLost(container, () => setDisplaced(true));
     attachTerminal(sessionId, container);
     if (autoFocus && live) focusTerminal(sessionId);
     // Detach with our own container as the owner token: if another pane has
     // since attached the same session, the holder is THEIRS and our unmount
     // must not unsubscribe, drop the renderer and unparent what they display.
-    return () => detachTerminal(sessionId, container);
+    return () => {
+      offHolderLost();
+      detachTerminal(sessionId, container);
+    };
   }, [sessionId, autoFocus, live]);
+
+  // Take the terminal back. Symmetric by construction: whoever asks last owns
+  // the holder, and the pane that loses it is told in exactly the same way.
+  const reclaim = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    setDisplaced(false);
+    attachTerminal(sessionId, container);
+    if (live) focusTerminal(sessionId);
+  }, [sessionId, live]);
 
   // Liveness is pushed AFTER the attach effect so it lands on a terminal that
   // exists; the manager no-ops for an unknown id.
@@ -81,11 +111,33 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
   }, [sessionId, live]);
 
   return (
-    <div
-      ref={containerRef}
-      className={`h-full w-full bg-[#0a0a0c] ${live ? '' : 'opacity-70'} ${className ?? ''}`}
-      data-testid={`fleet-terminal-${sessionId}`}
-      data-live={live ? 'true' : 'false'}
-    />
+    <div className={`relative h-full w-full ${className ?? ''}`}>
+      <div
+        ref={containerRef}
+        className={`h-full w-full bg-[#0a0a0c] ${live ? '' : 'opacity-70'}`}
+        data-testid={`fleet-terminal-${sessionId}`}
+        data-live={live ? 'true' : 'false'}
+        data-displaced={displaced ? 'true' : 'false'}
+      />
+      {displaced ? (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0a0a0c]/95 px-4 text-center"
+          data-testid={`fleet-terminal-displaced-${sessionId}`}
+        >
+          <p role="status" className="text-[13px] text-foreground">
+            {t.plugins.fleet.terminal_displaced}
+          </p>
+          <button
+            type="button"
+            onClick={reclaim}
+            data-testid={`fleet-terminal-reclaim-${sessionId}`}
+            className="flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-2.5 py-1 text-[13px] font-medium text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+          >
+            <MonitorUp className="w-3.5 h-3.5" aria-hidden="true" />
+            {t.plugins.fleet.terminal_displaced_reclaim}
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }

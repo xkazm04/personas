@@ -50,6 +50,8 @@
     "broadcast_retry_hint": "Diese Sitzungen haben es nicht erhalten. Die Auswahl umfasst jetzt nur noch sie – zum Wiederholen auf Senden klicken.",
     "terminal_session_gone": "Diese Sitzung ist nicht mehr verfügbar – sie wurde möglicherweise beendet oder entfernt. Schließen und öffnen Sie diesen Bereich erneut, um es noch einmal zu versuchen.",
     "terminal_output_stalled": "Die Live-Ausgabe kommt für keine Sitzung mehr an – es wird neu verbunden. Ihre Eingaben erreichen dieses Terminal weiterhin.",
+    "terminal_displaced": "Diese Sitzung ist jetzt in einem anderen Bereich geöffnet – nur eine Ansicht kann ein Terminal gleichzeitig zeigen.",
+    "terminal_displaced_reclaim": "Hier anzeigen",
     "pair_generate": "Dieses Telefon koppeln",
     "pair_generating": "Geräte-Token wird erstellt…",
     "pair_scan_hint": "Mit der Handykamera im selben WLAN scannen und die Seite dann zum Startbildschirm hinzufügen.",
