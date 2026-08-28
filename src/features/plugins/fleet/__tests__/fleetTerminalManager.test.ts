@@ -752,3 +752,53 @@ describe('liveness', () => {
     expect(() => setTerminalLiveness('never-attached', false)).not.toThrow();
   });
 });
+
+/**
+ * The shared output listener is the whole fleet's ONE door to live PTY output.
+ * Its handler body ran unguarded, so a `term.write` that threw for a single
+ * session escaped into the Tauri event callback — and every terminal in the app
+ * stopped receiving output at once, with no error and nothing to restart it.
+ * A whole-feature outage from a single-session fault.
+ */
+describe('shared output listener containment', () => {
+  const emit = (sessionId: string, chunk: string) =>
+    listenBox.handler?.({ payload: { session_id: sessionId, chunk } });
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('keeps delivering to the rest of the fleet when one terminal throws on write', async () => {
+    const hostBad = attach('sick');
+    const hostOk = attach('healthy');
+    await settle(); // both past hydration, so chunks render directly
+
+    registryMap().get('sick')!.term.write = () => {
+      throw new Error('emulator disposed');
+    };
+
+    // The throw must stop inside the dispatch. Unguarded, this line itself threw.
+    expect(() => emit('sick', 'BOOM')).not.toThrow();
+
+    // ...and the fault must not have cost the fleet its output door.
+    emit('healthy', 'STILL-HERE');
+    expect(registryMap().get('healthy')!.term.written).toContain('STILL-HERE');
+
+    detachTerminal('sick');
+    detachTerminal('healthy');
+    hostBad.remove();
+    hostOk.remove();
+  });
+
+  it('survives a session that throws on every chunk', async () => {
+    const host = attach('always-sick');
+    await settle();
+    registryMap().get('always-sick')!.term.write = () => {
+      throw new Error('emulator disposed');
+    };
+
+    for (let i = 0; i < 50; i += 1) {
+      expect(() => emit('always-sick', `chunk-${i}`)).not.toThrow();
+    }
+
+    detachTerminal('always-sick');
+    host.remove();
+  });
+});

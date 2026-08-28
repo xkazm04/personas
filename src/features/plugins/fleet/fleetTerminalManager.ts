@@ -200,6 +200,17 @@ interface ManagedTerminal {
    *  that comes back does not keep a stale tombstone, and a repeated failure
    *  does not stack the same line over and over. */
   deadNoticeShown: boolean;
+  /**
+   * True once a write into this session's emulator has thrown.
+   *
+   * A throw is reported ONCE per session rather than per chunk: a terminal in a
+   * bad state (disposed emulator, an addon that lost its buffer) fails on every
+   * chunk the backend sends, and a fleet under load sends thousands. Reporting
+   * each one turns a single fault into a telemetry flood that buries its own
+   * first occurrence — the one event that says when it started. Cleared by the
+   * next successful hydrate, so a session that recovers can report again.
+   */
+  writeFailed: boolean;
 }
 
 /**
@@ -380,6 +391,30 @@ function unpark(sessionId: string): void {
  * a second listener.
  */
 const OUTPUT_LISTENER_KEY = '__fleetTerminalOutputListener__';
+
+/**
+ * Deliver one chunk into one session's emulator, CONTAINED.
+ *
+ * The dispatch below runs inside the ONE shared `fleet-session-output` callback,
+ * which is the whole fleet's only door to live PTY output. An exception thrown
+ * out of it — a disposed emulator, an addon in a bad state, anything `write`
+ * can raise for exactly one session — escapes into the Tauri event callback and
+ * every terminal in the app stops receiving output at once, with no error and
+ * nothing to restart it. One session's fault must not be able to blackout the
+ * fleet, so the throw stops here.
+ */
+function writeChunk(m: ManagedTerminal, chunk: string): void {
+  try {
+    m.term.write(chunk);
+  } catch (e) {
+    // Once per session — see `writeFailed`.
+    if (!m.writeFailed) {
+      m.writeFailed = true;
+      silentCatch('fleetTerminal:write')(e);
+    }
+  }
+}
+
 function ensureSharedOutputListener(): void {
   const g = globalThis as Record<string, unknown>;
   if (g[OUTPUT_LISTENER_KEY]) return;
@@ -391,7 +426,7 @@ function ensureSharedOutputListener(): void {
       m.pendingLive.push(event.payload.chunk);
       return;
     }
-    m.term.write(event.payload.chunk);
+    writeChunk(m, event.payload.chunk);
   })
     .then((fn) => {
       g[OUTPUT_LISTENER_KEY] = fn;
@@ -602,6 +637,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     lastCols: 0,
     lastRows: 0,
     deadNoticeShown: false,
+    writeFailed: false,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -702,11 +738,14 @@ function hydrate(m: ManagedTerminal): void {
       // The session answered, so any tombstone from an earlier failure is gone
       // with the reset — allow a future failure to paint a fresh one.
       m.deadNoticeShown = false;
-      if (snapshot) m.term.write(snapshot);
+      // A terminal that survived a reset is a terminal that may write again, so
+      // the once-per-session write report re-arms with it.
+      m.writeFailed = false;
+      if (snapshot) writeChunk(m, snapshot);
       const queued = m.pendingLive;
       m.pendingLive = [];
       m.hydrating = false;
-      for (const chunk of queued) m.term.write(chunk);
+      for (const chunk of queued) writeChunk(m, chunk);
     })
     .catch((e) => {
       // Subscribe failed (session gone, etc.) — stop hydrating so any future
