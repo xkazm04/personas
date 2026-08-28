@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { SigilPetal } from '../SigilPetal';
 
 /**
@@ -10,7 +10,10 @@ import { SigilPetal } from '../SigilPetal';
  * the element hover actually lands on. Pinned here because the defect was
  * invisible: the markup looked correct and rendered nothing.
  */
-function renderPetal(ariaLabel = 'Trigger: linked') {
+function renderPetal(
+  ariaLabel = 'Trigger: linked',
+  extra: { disabled?: boolean; onClick?: () => void; onKeyDown?: () => void } = {},
+) {
   return render(
     <svg>
       <SigilPetal
@@ -27,13 +30,14 @@ function renderPetal(ariaLabel = 'Trigger: linked') {
         isActive={false}
         dimOther={false}
         onHover={vi.fn()}
-        onClick={vi.fn()}
+        onClick={extra.onClick ?? vi.fn()}
         tabIndex={0}
         ariaLabel={ariaLabel}
         isFocused={false}
-        onKeyDown={vi.fn()}
+        onKeyDown={extra.onKeyDown ?? vi.fn()}
         onFocusDim={vi.fn()}
         registerRef={vi.fn()}
+        disabled={extra.disabled}
       />
     </svg>,
   );
@@ -61,5 +65,41 @@ describe('SigilPetal hover tip', () => {
     const { container } = renderPetal('Memory: not set');
     const group = container.querySelector('g[role="button"]') as SVGGElement;
     expect(group.getAttribute('aria-label')).toBe('Memory: not set');
+  });
+});
+
+/**
+ * While a build runs the card passes `disabled` — the petal used to keep its
+ * tab stop, pointer cursor and click handler and simply do nothing, so both
+ * mouse and keyboard users got no signal the control was inert.
+ */
+describe('SigilPetal disabled state', () => {
+  it('drops the tab stop and marks itself aria-disabled', () => {
+    const { container } = renderPetal('Trigger: linked', { disabled: true });
+    const group = container.querySelector('g[role="button"]') as SVGGElement;
+    expect(group.getAttribute('aria-disabled')).toBe('true');
+    expect(group.hasAttribute('tabindex')).toBe(false);
+    expect(group.style.cursor).toBe('default');
+  });
+
+  it('does not invite or accept a click', () => {
+    const onClick = vi.fn();
+    const onKeyDown = vi.fn();
+    const { container } = renderPetal('Trigger: linked', { disabled: true, onClick, onKeyDown });
+    const group = container.querySelector('g[role="button"]') as SVGGElement;
+    fireEvent.click(group);
+    fireEvent.keyDown(group, { key: 'Enter' });
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onKeyDown).not.toHaveBeenCalled();
+  });
+
+  it('stays fully operable when not disabled', () => {
+    const onClick = vi.fn();
+    const { container } = renderPetal('Trigger: linked', { onClick });
+    const group = container.querySelector('g[role="button"]') as SVGGElement;
+    expect(group.getAttribute('tabindex')).toBe('0');
+    expect(group.style.cursor).toBe('pointer');
+    fireEvent.click(group);
+    expect(onClick).toHaveBeenCalledWith('trigger');
   });
 });

@@ -15,6 +15,10 @@ interface InteractiveSigilProps {
   onHover: (dim: GlyphDimension | null) => void;
   onClick: (dim: GlyphDimension) => void;
   size: number;
+  /** Petals are inert (a build is running). Threaded down so the affordances
+   *  (tab stop, pointer cursor, keyboard activation) go with the behaviour
+   *  instead of inviting clicks that silently no-op. */
+  disabled?: boolean;
 }
 
 const CORE_RATIO = 0.12;
@@ -102,7 +106,7 @@ function getGeometry(size: number): SigilGeometry {
  *  cached at module scope, so hover-driven re-renders don't rebuild path
  *  strings or recompute petal trig — see idea-5d95dae2 for the perf rationale. */
 export function InteractiveSigil({
-  row, rowIndex, hoveredDim, activeDim, onHover, onClick, size,
+  row, rowIndex, hoveredDim, activeDim, onHover, onClick, size, disabled = false,
 }: InteractiveSigilProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
@@ -153,11 +157,11 @@ export function InteractiveSigil({
         case 'Enter':
         case ' ':
           e.preventDefault();
-          onClick(dim);
+          if (!disabled) onClick(dim);
           break;
       }
     },
-    [moveFocus, onClick],
+    [moveFocus, onClick, disabled],
   );
 
   const handlePetalFocus = useCallback(
@@ -275,6 +279,7 @@ export function InteractiveSigil({
               onKeyDown={handlePetalKeyDown}
               onFocusDim={handlePetalFocus}
               registerRef={registerPetalRef}
+              disabled={disabled}
             />
           );
         })}

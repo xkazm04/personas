@@ -94,7 +94,8 @@ export function GlyphCard({
               row={row} rowIndex={index} size={440}
               hoveredDim={hoveredDim} activeDim={activeDim}
               onHover={setHoveredDim}
-              onClick={isBuilding ? () => undefined : setActiveDim}
+              onClick={setActiveDim}
+              disabled={!!isBuilding}
             />
           </motion.div>
 
