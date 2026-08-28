@@ -10,7 +10,7 @@
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { PlatformDefinition, ProtocolMapRule } from '../platformDefinitions';
 import { extractProtocolsFromNodes } from '../platformDefinitions';
-import { sanitizeTextField, sanitizeParamValue } from '@/lib/utils/sanitizers/workflowSanitizer';
+import { sanitizeTextField, sanitizeParamValue, MAX_LENGTHS } from '@/lib/utils/sanitizers/workflowSanitizer';
 import { createLogger } from '@/lib/log';
 import { trackInteraction } from '@/lib/sentry';
 
@@ -90,12 +90,16 @@ export interface AdapterResult {
 // -- Pipeline ----------------------------------------------------
 
 /**
- * Length caps for untrusted text lowered into the IR. Sized to match
- * `workflowSanitizer`'s own `MAX_LENGTHS.workflowName` / `.nodeName`, so a
- * "description" cannot smuggle a ten-thousand-token payload into a prompt.
+ * Length caps for untrusted text lowered into the IR, so a "description" cannot
+ * smuggle a ten-thousand-token payload into a prompt.
+ *
+ * These were `200` and `150` written out here, under a comment saying they were
+ * sized to match the sanitizer's own caps — a hand copy of a constant, which
+ * agrees until the day the original moves. Read them from the sanitizer, which
+ * is the module that owns the rule.
  */
-const MAX_NAME_LEN = 200;
-const MAX_LABEL_LEN = 150;
+const MAX_NAME_LEN = MAX_LENGTHS.workflowName;
+const MAX_LABEL_LEN = MAX_LENGTHS.nodeName;
 
 /**
  * Run the shared extraction pipeline on an adapter result.
