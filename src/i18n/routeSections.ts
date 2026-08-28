@@ -60,9 +60,10 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `ship` — the Factory L2 Ship tab (milestone convergence layer).
   // `mastermind` — the teams/sub_mastermind canvas.
   teams: ['plugins', 'pipeline', 'kpis', 'ship', 'mastermind'],
-  // foundry + recipes_catalog: the Foundry create surface (archetype palette
-  // + capability rack) lives on the personas route and reuses the recipe
-  // catalog's category labels.
+  // foundry: the Compose (Foundry) wizard was retired 2026-07-07; the section
+  // is down to the composition x-ray badge on adopted templates, which renders
+  // on this route. recipes_catalog: the recipe catalog's category labels,
+  // reused by the persona surfaces.
   // deployment / deploy_errors — agents/sub_deployment (incl. the cloud panels
   //   and the deployTarget slice its health monitor reads).
   // agent_lab / eval_strategies — agents/sub_lab + sub_model_config compare.

@@ -61,7 +61,9 @@
     "composed_badge": "Athena soạn",
     "composed_stale": "Có thể đã lỗi thời — ứng dụng đã thay đổi kể từ khi soạn",
     "composed_failed": "Không thể tải các hướng dẫn Athena đã soạn cho bạn.",
-    "composed_empty": "Khi bạn nhờ Athena hướng dẫn cách một tính năng hoạt động, các hướng dẫn cô ấy soạn sẽ hiển thị ở đây."
+    "composed_empty": "Khi bạn nhờ Athena hướng dẫn cách một tính năng hoạt động, các hướng dẫn cô ấy soạn sẽ hiển thị ở đây.",
+    "composed_dismiss": "Bỏ hướng dẫn đã lỗi thời này",
+    "composed_all_dismissed": "Bạn đã dọn hết các hướng dẫn lỗi thời. Hướng dẫn mới sẽ xuất hiện ở đây khi Athena soạn xong."
   },
   "setup_stepper": {
     "your_profile": "Hồ sơ của bạn",

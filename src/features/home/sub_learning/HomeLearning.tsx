@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { GraduationCap, Compass, Check, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
+import { GraduationCap, Compass, Check, ChevronRight, Sparkles, RefreshCw, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { getLocalizedTourRegistry, type TourDef } from '@/stores/slices/system/tourSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TOUR_ICONS, getColors } from './data';
@@ -75,10 +76,13 @@ function ComposedTourCard({
   entry,
   isCompleted,
   onClick,
+  onDismiss,
 }: {
   entry: ComposedTourEntry;
   isCompleted: boolean;
   onClick: () => void;
+  /** Clears an unplayable tour from the list. Only offered on that branch. */
+  onDismiss: () => void;
 }) {
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
@@ -112,12 +116,25 @@ function ComposedTourCard({
   if (!playable) {
     // Stale (anchor manifest drifted and re-validation failed): visible but
     // not startable — playing it would spotlight elements that no longer exist.
+    // Dismissable, because "correct but permanent" is how the list grew into a
+    // pile of dimmed cards nobody could clear.
     return (
       <div
         data-testid={`learning-composed-tour-${entry.record.id}`}
         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-modal border ${colors.border} ${colors.bg} opacity-60`}
       >
         {body}
+        <Tooltip content={ht.composed_dismiss}>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={ht.composed_dismiss}
+            data-testid={`learning-composed-dismiss-${entry.record.id}`}
+            className="flex-shrink-0"
+            icon={<X className="w-3.5 h-3.5" />}
+            onClick={onDismiss}
+          />
+        </Tooltip>
       </div>
     );
   }
@@ -141,9 +158,11 @@ export default function HomeLearning() {
   const [activeTour, setActiveTour] = useState<TourDef | null>(null);
   const {
     entries: composedTours,
+    total: composedTotal,
     loading: composedLoading,
     status: composedStatus,
     reload: reloadComposed,
+    dismiss: dismissComposed,
   } = useComposedTours();
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
@@ -232,7 +251,12 @@ export default function HomeLearning() {
                 </Button>
               </div>
             ) : composedTours.length === 0 ? (
-              <p className="typo-caption text-foreground">{ht.composed_empty}</p>
+              /* An emptied list is not an unused feature: if every record the
+                 fetch returned was outdated and the user cleared it, saying
+                 "she hasn't composed anything yet" would be a lie. */
+              <p className="typo-caption text-foreground">
+                {composedTotal > 0 ? ht.composed_all_dismissed : ht.composed_empty}
+              </p>
             ) : (
               <div className="flex flex-col gap-1.5" data-testid="learning-composed-tours">
                 {composedTours.map((entry) => (
@@ -248,6 +272,7 @@ export default function HomeLearning() {
                     // any other record id simply misses and falls through to `false`.
                     isCompleted={tourCompletionMap[entry.record.id as TourDef['id']] ?? false}
                     onClick={() => entry.def && setActiveTour(entry.def)}
+                    onDismiss={() => dismissComposed(entry.record.id)}
                   />
                 ))}
               </div>

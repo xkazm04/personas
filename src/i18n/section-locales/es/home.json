@@ -61,7 +61,9 @@
     "composed_badge": "Compuesto por Athena",
     "composed_stale": "Puede estar desactualizado — la aplicación ha cambiado desde que se compuso",
     "composed_failed": "No se pudieron cargar los recorridos que Athena compuso para usted.",
-    "composed_empty": "Cuando le pide a Athena que le muestre cómo funciona algo, los recorridos que compone aparecen aquí."
+    "composed_empty": "Cuando le pide a Athena que le muestre cómo funciona algo, los recorridos que compone aparecen aquí.",
+    "composed_dismiss": "Descartar este recorrido desactualizado",
+    "composed_all_dismissed": "Has descartado todos los recorridos desactualizados. Los nuevos aparecerán aquí a medida que Athena los componga."
   },
   "setup_stepper": {
     "your_profile": "Su perfil",
