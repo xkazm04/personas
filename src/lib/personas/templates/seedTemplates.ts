@@ -4,8 +4,10 @@
  *
  * Source of truth: templateCatalog.ts (single template catalog).
  */
-import { getTemplateCatalog } from './templateCatalog';
+import { getLocalizedTemplateCatalog } from './templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
+import type { LocaleCode } from '@/i18n/locales.manifest';
+import { useI18nStore } from '@/stores/i18nStore';
 import { batchImportDesignReviews, deleteStaleSeedTemplates } from '@/api/overview/reviews';
 
 const SEED_RUN_ID = 'seed-category-v1';
@@ -91,15 +93,28 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
   };
 }
 
+/**
+ * The language the seed rows should be written in.
+ *
+ * The gallery reads the catalog through `useLocalizedTemplateCatalog`, so
+ * seeding from the canonical English catalog produced a split-language UI:
+ * translated cards in the gallery and English `test_case_name` / `instruction`
+ * in the Generated tab, from the same templates. Both sides now resolve the
+ * same overlay for the same language.
+ */
+function activeSeedLanguage(): LocaleCode {
+  return useI18nStore.getState().language;
+}
+
 /** All seed templates that should be present in the Generated tab. */
-export async function getSeedReviews(): Promise<SeedReviewInput[]> {
-  const catalog = await getTemplateCatalog();
+export async function getSeedReviews(lang?: LocaleCode): Promise<SeedReviewInput[]> {
+  const catalog = await getLocalizedTemplateCatalog(lang ?? activeSeedLanguage());
   return catalog.map((t) => templateToReviewInput(t, SEED_RUN_ID));
 }
 
 /** IDs of all templates currently in the catalog (used to prune stale seeds). */
-export async function getActiveSeedIds(): Promise<string[]> {
-  const catalog = await getTemplateCatalog();
+export async function getActiveSeedIds(lang?: LocaleCode): Promise<string[]> {
+  const catalog = await getLocalizedTemplateCatalog(lang ?? activeSeedLanguage());
   return catalog.map((t) => t.id);
 }
 
@@ -108,10 +123,11 @@ export async function getActiveSeedIds(): Promise<string[]> {
 // ---------------------------------------------------------------------------
 
 let _seedOncePromise: Promise<void> | null = null;
-let _seedOnceDone = false;
+/** Language the completed seed run wrote, or `null` when no run has completed. */
+let _seededLang: LocaleCode | null = null;
 
-async function runSeed(): Promise<void> {
-  const seeds = await getSeedReviews();
+async function runSeed(lang: LocaleCode): Promise<void> {
+  const seeds = await getSeedReviews(lang);
   // Upsert ALL seeds (not just missing) to backfill new fields like category.
   // The backend uses ON CONFLICT DO UPDATE so this is idempotent — it preserves
   // adoption_count and last_adopted_at while updating changed fields.
@@ -119,7 +135,7 @@ async function runSeed(): Promise<void> {
   await batchImportDesignReviews(seeds);
   // Prune stale seed rows whose IDs are no longer in the catalog (renamed or
   // deleted template files). Only affects seed rows.
-  const activeIds = await getActiveSeedIds();
+  const activeIds = await getActiveSeedIds(lang);
   if (activeIds.length > 0) {
     await deleteStaleSeedTemplates(SEED_RUN_ID, activeIds);
   }
@@ -139,20 +155,26 @@ async function runSeed(): Promise<void> {
  * app-init bootstrap calls it behind requestIdleCallback so it never gates
  * first paint.
  *
+ * The guard is keyed on the UI language rather than a bare boolean, so the
+ * first call after a language switch re-seeds the (upserted) rows in the new
+ * language instead of leaving the Generated tab in whatever language the app
+ * happened to boot in.
+ *
  * `force` (dev only) bypasses the session guard so edited template JSON
  * re-seeds after a hot reload.
  */
 export async function seedCatalogTemplatesOnce(opts?: { force?: boolean }): Promise<void> {
+  const lang = activeSeedLanguage();
   if (opts?.force) {
-    _seedOnceDone = false;
+    _seededLang = null;
     _seedOncePromise = null;
   }
-  if (_seedOnceDone) return;
+  if (_seededLang === lang) return;
   if (_seedOncePromise) return _seedOncePromise;
-  _seedOncePromise = runSeed();
+  _seedOncePromise = runSeed(lang);
   try {
     await _seedOncePromise;
-    _seedOnceDone = true;
+    _seededLang = lang;
   } finally {
     _seedOncePromise = null;
   }

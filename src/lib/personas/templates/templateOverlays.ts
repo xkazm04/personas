@@ -97,6 +97,21 @@ function isPlainObject(v: unknown): v is Record<string, Json> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
+/**
+ * Keys an overlay may never carry into a merged template.
+ *
+ * `JSON.parse('{"__proto__":{…}}')` produces an OWN enumerable `__proto__`
+ * property, so `Object.entries` hands it to the merge like any other field —
+ * and `result[k] = value` then runs the `__proto__` setter and swaps the
+ * merged template's prototype. The injected fields read back off the template
+ * (`template.anything`) while staying invisible to `Object.keys`, so they are
+ * past `validateTemplateCatalogEntry`, which ran on the canonical file before
+ * the overlay was ever applied. Overlays are the one input here that is NOT
+ * checksummed (this module's own header says so), which is exactly why they
+ * are the input that needs the guard.
+ */
+const FORBIDDEN_MERGE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function findMatchKey(obj: Record<string, Json>): string | undefined {
   for (const k of MATCH_KEYS) {
     if (typeof obj[k] === 'string') return k;
@@ -195,6 +210,7 @@ function mergeObject(
 ): Record<string, Json> {
   const result: Record<string, Json> = { ...canonical };
   for (const [k, overlayValue] of Object.entries(overlay)) {
+    if (FORBIDDEN_MERGE_KEYS.has(k)) continue;
     if (overlayValue === null || overlayValue === undefined) continue;
     const canonValue = canonical[k];
     const childCtx: MergeCtx = { ...ctx, path: ctx.path ? `${ctx.path}.${k}` : k };

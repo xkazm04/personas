@@ -18,8 +18,15 @@ import { stripInjectionPatterns, escapeForPrompt } from './promptInjection';
 /** Safe characters for workflow and node names */
 const SAFE_NAME_RE = /[^a-zA-Z0-9\s\-_.()/&+:,#@!]/g;
 
-/** Maximum field lengths to prevent oversized injection payloads */
-const MAX_LENGTHS = {
+/**
+ * Maximum field lengths to prevent oversized injection payloads.
+ *
+ * Exported because `workflowPipeline` hand-copied `workflowName` and `nodeName`
+ * into its own `MAX_NAME_LEN` / `MAX_LABEL_LEN`, with a comment saying they were
+ * "sized to match" these — a mirror that nothing compared. Same rule, one
+ * definition.
+ */
+export const MAX_LENGTHS = {
   workflowName: 200,
   nodeName: 150,
   nodeType: 200,

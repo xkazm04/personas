@@ -20,10 +20,20 @@ export const COMPLETENESS_AMBER_MIN = 40;
 /** Below AMBER → grey ring.  Persona needs significant setup work. */
 // (implicit: any value < COMPLETENESS_AMBER_MIN)
 
+/**
+ * Ring colours as semantic tokens, not literals.
+ *
+ * These were the raw hex values `#34d399` / `#fbbf24` / `#94a3b8` — which are
+ * exactly `--status-success-raw` / `--status-warning-raw` / `--status-neutral-raw`
+ * in `globals.css`, so the ring was a hand-copied third instance of a colour the
+ * theme layer already owns. As literals they could not respond to
+ * `[data-theme^="light"]` or to the brightness compensation, both of which
+ * redefine the `--status-*` tokens; as `var()` references they do.
+ */
 export const COMPLETENESS_COLORS = {
-  green: '#34d399',
-  amber: '#fbbf24',
-  grey: '#94a3b8',
+  green: 'var(--status-success)',
+  amber: 'var(--status-warning)',
+  grey: 'var(--status-neutral)',
 } as const;
 
 /** Return the ring colour for a completeness percentage. */
@@ -89,13 +99,18 @@ export interface TrustTier {
  * - L2 (50–74): solid track record emerging
  * - L3 (75–89): reliable with healthy cost posture
  * - L4 (90–100): battle-tested, high confidence
+ *
+ * Colours are the theme's own hue tokens (`--status-neutral`, `--brand-*`)
+ * rather than raw Tailwind palette classes, so a light theme and the
+ * brightness compensation reach them. The tier scale is a ramp, not a status,
+ * which is why the brand hues carry it and only L0 borrows a status token.
  */
 export const TRUST_TIERS: readonly TrustTier[] = [
-  { min: 0,  label: 'L0', color: 'text-zinc-400',    bar: 'bg-zinc-500',    bg: 'bg-zinc-500/15' },
-  { min: 25, label: 'L1', color: 'text-sky-400',     bar: 'bg-sky-500',     bg: 'bg-sky-500/15' },
-  { min: 50, label: 'L2', color: 'text-violet-400',  bar: 'bg-violet-500',  bg: 'bg-violet-500/15' },
-  { min: 75, label: 'L3', color: 'text-amber-400',   bar: 'bg-amber-500',   bg: 'bg-amber-500/15' },
-  { min: 90, label: 'L4', color: 'text-emerald-400', bar: 'bg-emerald-500', bg: 'bg-emerald-500/15' },
+  { min: 0,  label: 'L0', color: 'text-status-neutral', bar: 'bg-status-neutral', bg: 'bg-status-neutral/15' },
+  { min: 25, label: 'L1', color: 'text-brand-cyan',     bar: 'bg-brand-cyan',     bg: 'bg-brand-cyan/15' },
+  { min: 50, label: 'L2', color: 'text-brand-purple',   bar: 'bg-brand-purple',   bg: 'bg-brand-purple/15' },
+  { min: 75, label: 'L3', color: 'text-brand-amber',    bar: 'bg-brand-amber',    bg: 'bg-brand-amber/15' },
+  { min: 90, label: 'L4', color: 'text-brand-emerald',  bar: 'bg-brand-emerald',  bg: 'bg-brand-emerald/15' },
 ] as const;
 
 /** Look up the trust tier for a given score (0–100). */

@@ -43,7 +43,9 @@ describe('workflow import telemetry', () => {
     parseWorkflowFile(
       JSON.stringify({
         name: 'CI',
-        jobs: { build: { 'runs-on': 'ubuntu-latest', steps: [{ uses: 'actions/checkout@v4' }] } },
+        // No `on:` and no `runs-on:` — the structural signature is absent, so
+        // detection returns `unknown` and only the speculative pass recovers it.
+        jobs: { build: { steps: [{ uses: 'actions/checkout@v4' }] } },
       }),
       'ci.json',
     );

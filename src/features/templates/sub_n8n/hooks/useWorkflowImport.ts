@@ -1,5 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { parseWorkflowFile } from '@/lib/personas/parsers/workflowParser';
 import { isSupportedFile } from '@/lib/personas/parsers/workflowDetector';
 import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
@@ -24,11 +26,29 @@ export function useWorkflowImport({
   setIsRestoring,
   createSession,
 }: UseWorkflowImportOptions) {
+  const { t } = useTranslation();
+
+  /**
+   * Every refusal this wizard shows comes from a `.ts` module that throws an
+   * English sentence — the parser's ("File is empty.", "Invalid YAML: …",
+   * "Could not identify the workflow platform…") and this hook's own guards.
+   * They were rendered verbatim, so in a 14-language app the error path was
+   * the one surface that never spoke the user's language. The parsers keep
+   * their stable strings; the error registry turns them into product copy.
+   */
+  const fail = useCallback(
+    (raw: string) => {
+      const { message, suggestion } = resolveErrorTranslated(t, raw);
+      dispatch({ type: 'SET_ERROR', error: suggestion ? `${message} ${suggestion}` : message });
+    },
+    [dispatch, t],
+  );
+
   const processContent = useCallback(
     (content: string, sourceName: string) => {
       try {
         if (!content || content.trim().length === 0) {
-          dispatch({ type: 'SET_ERROR', error: 'Content is empty.' });
+          fail('Content is empty.');
           return;
         }
 
@@ -36,10 +56,7 @@ export function useWorkflowImport({
         try {
           parseResult = parseWorkflowFile(content, sourceName);
         } catch (parseErr) {
-          dispatch({
-            type: 'SET_ERROR',
-            error: `Failed to analyze workflow: ${parseErr instanceof Error ? parseErr.message : 'unknown error'}`,
-          });
+          fail(parseErr instanceof Error ? parseErr.message : '');
           return;
         }
 
@@ -62,26 +79,22 @@ export function useWorkflowImport({
 
         void Promise.resolve(createSession(wfName, rawJson)).catch(silentCatch("useWorkflowImport:createSession"));
       } catch (err) {
-        dispatch({
-          type: 'SET_ERROR',
-          error: err instanceof Error ? err.message : 'Failed to parse workflow content.',
-        });
+        fail(err instanceof Error ? err.message : '');
       }
     },
-    [dispatch, removeSession, clearPersistedContext, resetTransformStream, setIsRestoring, createSession],
+    [fail, removeSession, clearPersistedContext, resetTransformStream, setIsRestoring, createSession, dispatch],
   );
 
   const processFile = useCallback(
     (file: File) => {
       try {
         if (!isSupportedFile(file.name)) {
-          dispatch({ type: 'SET_ERROR', error: 'Unsupported file type. Accepts .json (n8n, Zapier, Make) or .yml/.yaml (GitHub Actions).' });
+          fail('Unsupported file type.');
           return;
         }
 
         if (file.size > MAX_FILE_SIZE_BYTES) {
-          const limitMb = MAX_FILE_SIZE_BYTES / (1024 * 1024);
-          dispatch({ type: 'SET_ERROR', error: `File is too large (max ${limitMb}MB). Please use a smaller workflow export.` });
+          fail('File is too large.');
           return;
         }
 
@@ -90,16 +103,13 @@ export function useWorkflowImport({
           const content = e.target?.result as string;
           processContent(content, file.name);
         };
-        reader.onerror = () => dispatch({ type: 'SET_ERROR', error: 'Failed to read the file.' });
+        reader.onerror = () => fail('Failed to read the file.');
         reader.readAsText(file);
       } catch (err) {
-        dispatch({
-          type: 'SET_ERROR',
-          error: `Unexpected error: ${err instanceof Error ? err.message : 'unknown error'}`,
-        });
+        fail(err instanceof Error ? err.message : '');
       }
     },
-    [dispatch, processContent],
+    [fail, processContent],
   );
 
   return { processContent, processFile };

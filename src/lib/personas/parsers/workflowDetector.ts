@@ -88,25 +88,47 @@ function detectFromJson(json: Record<string, unknown>): DetectionResult {
     }
   }
 
+  // GitHub Actions arriving down the JSON path. The GHA signature lived only
+  // in the YAML branch, so a jobs-shaped document reaching detection with a
+  // non-YAML extension — which is every preview-card call, and any workflow
+  // saved as .json — was reported as `unknown`, even though `countElements`
+  // right below already counts its jobs. Same rule, one implementation.
+  // Confidence is `medium`, not `high`: the structure matches but the file
+  // did not arrive in the format GitHub exports, so the wizard still asks the
+  // user to confirm the format.
+  if (isGithubActionsShape(json)) {
+    return {
+      platform: 'github-actions',
+      confidence: 'medium',
+      label: PLATFORM_LABELS['github-actions'],
+      format: 'json',
+    };
+  }
+
   return { platform: 'unknown', confidence: 'low', label: PLATFORM_LABELS['unknown'], format: 'json' };
+}
+
+/**
+ * The GitHub Actions structural signature: a `jobs` map, plus either an `on`
+ * trigger (which YAML may have parsed into the boolean key `true`) or a job
+ * carrying `runs-on`.
+ *
+ * Extracted so the JSON and YAML branches share ONE definition of the rule.
+ */
+function isGithubActionsShape(parsed: Record<string, unknown>): boolean {
+  if (!parsed.jobs || typeof parsed.jobs !== 'object') return false;
+  // YAML `on:` can parse as a `true:` key.
+  if ('on' in parsed || parsed.true !== undefined) return true;
+  const jobs = parsed.jobs as Record<string, Record<string, unknown>>;
+  return Object.values(jobs).some((j) => j && typeof j === 'object' && 'runs-on' in j);
 }
 
 /**
  * Detect if YAML content represents a GitHub Actions workflow.
  */
 function detectFromYaml(parsed: Record<string, unknown>): DetectionResult {
-  // GitHub Actions: has `on` (trigger) and `jobs` keys
-  if (parsed.jobs && typeof parsed.jobs === 'object') {
-    const hasOn = 'on' in parsed || parsed.true !== undefined; // YAML `on:` can parse as `true:` key
-    if (hasOn || parsed.on) {
-      return { platform: 'github-actions', confidence: 'high', label: PLATFORM_LABELS['github-actions'], format: 'yaml' };
-    }
-    // Even without `on`, having `jobs` with `runs-on` is strongly indicative
-    const jobs = parsed.jobs as Record<string, Record<string, unknown>>;
-    const hasRunsOn = Object.values(jobs).some((j) => j && typeof j === 'object' && 'runs-on' in j);
-    if (hasRunsOn) {
-      return { platform: 'github-actions', confidence: 'high', label: PLATFORM_LABELS['github-actions'], format: 'yaml' };
-    }
+  if (isGithubActionsShape(parsed)) {
+    return { platform: 'github-actions', confidence: 'high', label: PLATFORM_LABELS['github-actions'], format: 'yaml' };
   }
 
   return { platform: 'unknown', confidence: 'low', label: PLATFORM_LABELS['unknown'], format: 'yaml' };
@@ -160,9 +182,18 @@ export function countElements(json: Record<string, unknown>): { count: number; l
   return { count: 0, label: 'element' };
 }
 
-/** Render-friendly platform label for preview summaries. */
-export function detectPlatformLabel(json: Record<string, unknown>): string {
-  const result = detectWorkflowPlatform(json, '.json');
+/**
+ * Render-friendly platform label for preview summaries.
+ *
+ * `fileExtension` defaults to `.json` because every current caller has already
+ * JSON-parsed its content; pass the real extension when the document came from
+ * a YAML file so the preview card and the parser cannot disagree about it.
+ */
+export function detectPlatformLabel(
+  json: Record<string, unknown>,
+  fileExtension = '.json',
+): string {
+  const result = detectWorkflowPlatform(json, fileExtension);
   return result.platform === 'unknown' ? 'Workflow' : result.label;
 }
 
