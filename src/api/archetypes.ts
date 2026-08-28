@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { ArchetypeCatalog } from '@/lib/bindings/ArchetypeCatalog';
+import { createTtlValueCache } from '@/lib/async/createTtlValueCache';
 
 export type { ArchetypeCatalog };
 export type { Archetype } from '@/lib/bindings/Archetype';
@@ -22,7 +23,12 @@ export type { MemoryStrategy } from '@/lib/bindings/MemoryStrategy';
  * while the app is still starting; memoising the failed promise would freeze a
  * transient error for the life of the process and make that button inert.
  */
-let cached: Promise<ArchetypeCatalog> | null = null;
+// The shared TTL value cache is the repo's one door for a module-scoped memo
+// (hand-rolled-module-cache). A session-long TTL: the payload is embedded in
+// the binary and cannot change while the app runs.
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const catalogCache = createTtlValueCache<Promise<ArchetypeCatalog>>(SESSION_TTL_MS);
+const CATALOG_KEY = 'catalog';
 
 /**
  * Persona Foundry foundation palette — mentality archetypes + memory
@@ -31,7 +37,11 @@ let cached: Promise<ArchetypeCatalog> | null = null;
  * the first call in a session is the only one that reaches the backend.
  */
 export async function listArchetypes(): Promise<ArchetypeCatalog> {
-  if (!cached) cached = fetchCatalog();
+  let cached = catalogCache.get(CATALOG_KEY);
+  if (!cached) {
+    cached = fetchCatalog();
+    catalogCache.set(CATALOG_KEY, cached);
+  }
   return cached;
 }
 
@@ -43,7 +53,7 @@ async function fetchCatalog(): Promise<ArchetypeCatalog> {
     // (`usePersonaCore` routes this to `silentCatch` and paints a retry
     // affordance). Swallowing it here would make the retry look like a
     // success and leave the palette permanently blank.
-    cached = null;
+    catalogCache.delete(CATALOG_KEY);
     throw err;
   }
 }
@@ -53,5 +63,5 @@ async function fetchCatalog(): Promise<ArchetypeCatalog> {
  * leaks one test's catalog (or its absence) into the next.
  */
 export function __resetArchetypeCacheForTests(): void {
-  cached = null;
+  catalogCache.delete(CATALOG_KEY);
 }

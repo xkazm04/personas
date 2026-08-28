@@ -61,7 +61,7 @@ function renderPanel() {
 /** Drive the panel to "filtered to one run" the way a user does. */
 async function filterToFirstRun() {
   await act(async () => {
-    fireEvent.click(screen.getByTitle(/timeline/i));
+    fireEvent.click(screen.getByRole('button', { name: /timeline/i }));
   });
   // Run markers start collapsed; the filter affordance lives inside one.
   await act(async () => {

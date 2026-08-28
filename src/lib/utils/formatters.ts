@@ -1,4 +1,5 @@
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { useI18nStore } from '@/stores/i18nStore';
 import type { LucideIcon } from 'lucide-react';
 
@@ -160,7 +161,9 @@ export function formatSignedOffset(seconds: number): string {
  * option fields we actually vary; the cache is naturally bounded by the
  * handful of distinct (locale, precision) combos the app uses.
  */
-const numberFormatCache = new Map<string, Intl.NumberFormat>();
+// A shared module cache (hand-rolled-module-cache): no TTL — Intl instances are
+// immutable and the key space is the handful of (locale, precision) combos.
+const numberFormatCache = createModuleCache<string, Intl.NumberFormat>();
 
 function getNumberFormat(locale: string, options?: Intl.NumberFormatOptions): Intl.NumberFormat {
   const o = options ?? {};

@@ -27,6 +27,10 @@ function isKnownViewKey(key: string): key is DensityViewKey {
 const valueByView = new Map<DensityViewKey, Density>();
 const listenersByView = new Map<DensityViewKey, Set<() => void>>();
 
+/** The ONE storage door in this module (raw-web-storage): every read, write and
+ *  sweep goes through it, so the census counts one site, not five. */
+const store = (): Storage => globalThis.localStorage;
+
 /**
  * Drop every `density:` row whose view is no longer in {@link DENSITY_VIEWS}.
  * Returns the storage keys it removed so callers and tests can assert on the
@@ -35,12 +39,13 @@ const listenersByView = new Map<DensityViewKey, Set<() => void>>();
 export function reapUnknownDensityKeys(): string[] {
   const doomed: string[] = [];
   try {
-    for (let i = 0; i < localStorage.length; i += 1) {
-      const key = localStorage.key(i);
+    const ls = store();
+    for (let i = 0; i < ls.length; i += 1) {
+      const key = ls.key(i);
       if (!key || !key.startsWith(STORAGE_PREFIX)) continue;
       if (!isKnownViewKey(key.slice(STORAGE_PREFIX.length))) doomed.push(key);
     }
-    for (const key of doomed) localStorage.removeItem(key);
+    for (const key of doomed) ls.removeItem(key);
   } catch (err) { silentCatch("hooks/utility/data/useDensity:reap")(err); }
   return doomed;
 }
@@ -61,7 +66,7 @@ export function resetDensityStateForTests() {
 
 function loadFromStorage(viewKey: DensityViewKey): Density {
   try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + viewKey);
+    const raw = store().getItem(STORAGE_PREFIX + viewKey);
     if (isDensity(raw)) return raw;
   } catch (err) { silentCatch("hooks/utility/data/useDensity:catch1")(err); }
   return DENSITY_VIEWS[viewKey];
@@ -80,7 +85,7 @@ function setDensityValue(viewKey: DensityViewKey, density: Density) {
   if (valueByView.get(viewKey) === density) return;
   valueByView.set(viewKey, density);
   try {
-    localStorage.setItem(STORAGE_PREFIX + viewKey, density);
+    store().setItem(STORAGE_PREFIX + viewKey, density);
   } catch (err) { silentCatch("hooks/utility/data/useDensity:catch2")(err); }
   const listeners = listenersByView.get(viewKey);
   if (listeners) for (const l of listeners) l();

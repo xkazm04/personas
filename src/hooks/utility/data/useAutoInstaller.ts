@@ -3,6 +3,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { cancelSetupInstall, startSetupInstall } from "@/api/system/system";
 import { silentCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "@/stores/util/latestWins";
 
 
 export type InstallTarget = 'node' | 'claude_cli';
@@ -85,7 +86,7 @@ export function useAutoInstaller() {
   // that window ran cleanup() against the (still empty) shared array, then had
   // its own listeners overwritten by the first run's late assignment, leaking
   // them until unmount and double-appending every output line.
-  const runIdRef = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
 
   const cleanup = useCallback(() => {
     for (const unlisten of unlistenersRef.current) {
@@ -95,7 +96,7 @@ export function useAutoInstaller() {
   }, []);
 
   const install = useCallback(async (target: 'node' | 'claude_cli' | 'all') => {
-    const runId = ++runIdRef.current;
+    const runId = latestWins.next();
     cleanup();
 
     if (target === 'node' || target === 'all') {
@@ -109,7 +110,7 @@ export function useAutoInstaller() {
     // current one; only then are they published to the shared ref.
     const registered: UnlistenFn[] = [];
     const superseded = () => {
-      if (runIdRef.current === runId) return false;
+      if (latestWins.isCurrent(runId)) return false;
       for (const unlisten of registered) unlisten();
       registered.length = 0;
       return true;
@@ -117,7 +118,7 @@ export function useAutoInstaller() {
 
     try {
       const unlistenOutput = await listen<SetupOutputPayload>(EventName.SETUP_OUTPUT, (event) => {
-        if (runIdRef.current !== runId) return;
+        if (!latestWins.isCurrent(runId)) return;
         const { target: t, line } = event.payload;
         const setter = t === 'node' ? setNodeState : setClaudeState;
         setter((prev) => ({ ...prev, outputLines: appendLine(prev.outputLines, line) }));
@@ -126,7 +127,7 @@ export function useAutoInstaller() {
       if (superseded()) return;
 
       const unlistenStatus = await listen<SetupStatusPayload>(EventName.SETUP_STATUS, (event) => {
-        if (runIdRef.current !== runId) return;
+        if (!latestWins.isCurrent(runId)) return;
         const { target: t, status, progress_pct, error, manual_command } = event.payload;
         const setter = t === 'node' ? setNodeState : setClaudeState;
         setter((prev) => ({
@@ -164,7 +165,7 @@ export function useAutoInstaller() {
     return () => {
       // Supersede any install still awaiting its listen() calls, so it
       // abandons them instead of subscribing after the hook is gone.
-      runIdRef.current += 1;
+      latestWins.next();
       cleanup();
     };
   }, [cleanup]);
@@ -173,7 +174,7 @@ export function useAutoInstaller() {
     cancelSetupInstall().catch(silentCatch("autoInstaller:cancelInstall"));
     // Same reason as unmount: an install still mid-registration must not
     // publish its listeners after the user cancelled.
-    runIdRef.current += 1;
+    latestWins.next();
     cleanup();
     setNodeState(defaultState());
     setClaudeState(defaultState());
