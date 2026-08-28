@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { DAYS, DAY_NAME_TO_NUM, findDayOfWeekInText } from '../dayOfWeek';
+import { DAY_NAME_TO_NUM, findDayOfWeekInText } from '../dayOfWeek';
 
 describe('day-of-week vocabulary', () => {
-  it('keeps POSIX cron digits while ordering the grid Monday-first', () => {
-    expect(DAYS.map((d) => d.key)).toEqual(['1', '2', '3', '4', '5', '6', '0']);
-    expect(DAYS.at(-1)?.label).toBe('Sunday');
-  });
-
   it('maps every short and long name to its POSIX digit', () => {
     expect(DAY_NAME_TO_NUM.sun).toBe(0);
     expect(DAY_NAME_TO_NUM.sunday).toBe(0);

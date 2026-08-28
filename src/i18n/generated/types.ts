@@ -12436,6 +12436,24 @@ export type Translations = {
     resume_schedule: string;
     change_frequency_title: string;
     current_prefix: string;
+    cron_presets: {
+      every_minute: string;
+      every_5_min: string;
+      every_15_min: string;
+      every_30_min: string;
+      hourly: string;
+      every_6_hours: string;
+      daily_midnight: string;
+      daily_9am: string;
+      daily_6pm: string;
+      twice_daily: string;
+      weekdays_8am: string;
+      weekdays_9am: string;
+      monday_9am: string;
+      friday_5pm: string;
+      sunday: string;
+      monthly_1st: string;
+    };
     quick_presets: string;
     cron_expression: string;
     interval_seconds: string;
