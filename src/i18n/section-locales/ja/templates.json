@@ -726,6 +726,7 @@
     "hide_explanation": "説明を非表示",
     "show_explanation": "説明を表示",
     "all_option": "すべて",
+    "thread_current": "現在",
     "add_custom": "追加",
     "custom_prefix": "+ カスタム…",
     "custom_plain": "カスタム…",

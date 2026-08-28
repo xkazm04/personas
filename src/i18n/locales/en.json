@@ -9684,6 +9684,7 @@
       "hide_explanation": "Hide explanation",
       "show_explanation": "Show explanation",
       "all_option": "All",
+      "thread_current": "current",
       "add_custom": "Add",
       "custom_prefix": "+ Other…",
       "custom_plain": "Other…",

@@ -9690,6 +9690,7 @@ export type Translations = {
       hide_explanation: string;
       show_explanation: string;
       all_option: string;
+      thread_current: string;
       add_custom: string;
       custom_prefix: string;
       custom_plain: string;
