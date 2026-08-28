@@ -5,6 +5,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { FolderGit2, FolderInput, ListChecks, Plus, X } from 'lucide-react';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { webbuildNextReady } from '@/api/webbuild';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
 import { phaseProgress, tabDotClass } from './studioBuildModel';
@@ -21,6 +22,7 @@ export default function StudioTabBar({
   projects: DevProject[];
   onNew: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const tabOrder = useStudioStore((s) => s.tabOrder);
   // Perf: the strip only needs each tab's name + status-dot class. Selecting the
@@ -92,7 +94,7 @@ export default function StudioTabBar({
     const path = await open({
       directory: true,
       multiple: false,
-      title: 'Add an existing Next.js project',
+      title: t.studio.add_existing_dialog_title,
     });
     if (typeof path === 'string') void importExisting(path);
   };
@@ -146,7 +148,7 @@ export default function StudioTabBar({
             <button
               type="button"
               onClick={() => closeTab(id)}
-              aria-label={`Close ${name}`}
+              aria-label={tx(t.studio.close_tab, { name })}
               // `opacity-0` + `group-hover:opacity-100` alone makes this a
               // control you can Tab to but cannot see — the focus ring lands on
               // a fully transparent button. Reveal it on focus too.
@@ -162,7 +164,7 @@ export default function StudioTabBar({
         ref={plusRef}
         type="button"
         onClick={togglePicker}
-        aria-label="Open or create a project"
+        aria-label={t.studio.open_or_create}
         aria-haspopup="menu"
         aria-expanded={pickerOpen}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-foreground/60 hover:bg-secondary/40 hover:text-foreground"
@@ -186,21 +188,23 @@ export default function StudioTabBar({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
               >
-                <Plus className="h-3.5 w-3.5 text-primary" /> New project
+                <Plus className="h-3.5 w-3.5 text-primary" /> {t.studio.new_project}
               </button>
               <button
                 type="button"
                 onClick={() => void addExisting()}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
               >
-                <FolderInput className="h-3.5 w-3.5 text-primary" /> Add existing project…
+                <FolderInput className="h-3.5 w-3.5 text-primary" /> {t.studio.add_existing_project}
               </button>
               {(recent.length > 0 || importable.length > 0) && (
                 <div className="max-h-72 overflow-y-auto">
                   {recent.length > 0 && (
                     <>
                       <div className="my-1 h-px bg-border" />
-                      <div className="px-3 py-1 typo-caption text-foreground/45">Resume</div>
+                      <div className="px-3 py-1 typo-caption text-foreground/45">
+                        {t.studio.resume}
+                      </div>
                       {recent.map((p) => {
                         const prog = phaseProgress(history[p.id]?.phases ?? []);
                         return (
@@ -216,7 +220,7 @@ export default function StudioTabBar({
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
                             <span
                               className="flex shrink-0 items-center gap-1 typo-caption text-foreground/45"
-                              title="Saved checklist progress — re-opens with its history"
+                              title={t.studio.saved_progress_hint}
                             >
                               <ListChecks className="h-3 w-3" />
                               {prog.done}/{prog.total}
@@ -230,7 +234,7 @@ export default function StudioTabBar({
                     <>
                       <div className="my-1 h-px bg-border" />
                       <div className="px-3 py-1 typo-caption text-foreground/45">
-                        Dev Tools projects
+                        {t.studio.dev_tools_projects}
                       </div>
                       {importable.map((p) => {
                         const blocked = nextReady[p.id] === false;
@@ -250,9 +254,7 @@ export default function StudioTabBar({
                               void openImportable(p.id, p.name);
                             }}
                             title={
-                              blocked
-                                ? 'Not a Next.js app — Studio builds Next.js + Tailwind projects'
-                                : p.root_path
+                              blocked ? t.studio.not_next_js_hint : p.root_path
                             }
                             className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
                               blocked
@@ -264,7 +266,7 @@ export default function StudioTabBar({
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
                             {blocked && (
                               <span className="shrink-0 typo-caption text-status-warning/80">
-                                Not Next.js
+                                {t.studio.not_next_js}
                               </span>
                             )}
                           </button>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ListChecks, X } from 'lucide-react';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PlanGlyph } from './PlanGlyph';
 import StudioChecklistStepper from './StudioChecklistStepper';
 import type { BuildPhase } from './studioBuildModel';
@@ -24,6 +25,7 @@ export default function StudioPlanDrawer({
   total: number;
   busy: boolean;
 }) {
+  const { t } = useTranslation();
   const { shouldAnimate } = useMotion();
   const hasPlan = total > 0;
   const pct = hasPlan ? Math.round((done / total) * 100) : 0;
@@ -34,7 +36,7 @@ export default function StudioPlanDrawer({
         <motion.aside
           key="studio-plan-drawer"
           data-testid="studio-plan-drawer"
-          aria-label="Build plan"
+          aria-label={t.studio.build_plan}
           initial={shouldAnimate ? { x: '100%', opacity: 0 } : { opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={shouldAnimate ? { x: '100%', opacity: 0 } : { opacity: 0 }}
@@ -52,7 +54,7 @@ export default function StudioPlanDrawer({
                 <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-primary/25" />
               )}
             </span>
-            <span className="text-md font-medium text-foreground">Build plan</span>
+            <span className="text-md font-medium text-foreground">{t.studio.build_plan}</span>
             {hasPlan && (
               <span className="font-mono text-[11px] text-foreground/50">
                 {done}/{total}
@@ -62,7 +64,7 @@ export default function StudioPlanDrawer({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close plan"
+              aria-label={t.studio.close_plan}
               className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
             >
               <X className="h-4 w-4" />
@@ -86,9 +88,7 @@ export default function StudioPlanDrawer({
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
                 <PlanGlyph size={88} />
-                <p className="typo-caption text-foreground/50">
-                  No plan yet — Athena will lay one out as you build.
-                </p>
+                <p className="typo-caption text-foreground/50">{t.studio.no_plan_yet}</p>
               </div>
             )}
           </div>

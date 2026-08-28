@@ -57,7 +57,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
         type="button"
         data-testid="studio-versions"
         onClick={() => void toggle()}
-        aria-label="Version history"
+        aria-label={t.studio.version_history}
         aria-haspopup="menu"
         aria-expanded={open}
         className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
@@ -82,9 +82,9 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
           className="absolute right-0 top-9 z-30 max-h-72 w-64 overflow-y-auto rounded-modal border border-border bg-background/95 p-1.5 shadow-elevation-4 backdrop-blur"
         >
           {loading ? (
-            <p className="px-2 py-1.5 typo-caption">Loading…</p>
+            <p className="px-2 py-1.5 typo-caption">{t.common.loading}</p>
           ) : versions.length === 0 ? (
-            <p className="px-2 py-1.5 typo-caption">No versions yet.</p>
+            <p className="px-2 py-1.5 typo-caption">{t.studio.no_versions_yet}</p>
           ) : (
             versions.map((v, i) => (
               <button
@@ -97,7 +97,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
                 <RotateCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/40 group-hover:text-primary" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs text-foreground">
-                    {v.message.replace(/^athena:\s*/, '') || (i === 0 ? 'Latest' : v.sha)}
+                    {v.message.replace(/^athena:\s*/, '') || (i === 0 ? t.studio.latest : v.sha)}
                   </span>
                   <span className="block text-[10px] text-foreground/40">{v.when}</span>
                 </span>

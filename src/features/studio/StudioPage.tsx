@@ -19,13 +19,6 @@ import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 // building while you're on another tab or another app module. Previews are kept
 // "warm" (every live tab mounted, only the active visible) so switching tabs is
 // instant + lossless instead of reloading the dev server each time (B1).
-const COPY = {
-  scaffolding: 'Scaffolding with Bun — this can take a minute…',
-  starting: 'Starting the dev server…',
-  error: 'Something went wrong starting this project.',
-  empty: 'No project open — use + to open an existing project or start a new one.',
-};
-
 export default function StudioPage() {
   const { t } = useTranslation();
   const [projects, setProjects] = useState<DevProject[]>([]);
@@ -282,7 +275,7 @@ export default function StudioPage() {
                   <button
                     type="button"
                     onClick={reloadActive}
-                    aria-label="Reload preview"
+                    aria-label={t.studio.reload_preview}
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
                   >
                     <RotateCcw className="h-4 w-4" />
@@ -312,7 +305,7 @@ export default function StudioPage() {
                         }
                       }}
                       spellCheck={false}
-                      aria-label="Preview path"
+                      aria-label={t.studio.preview_path}
                       placeholder="/"
                       className="min-w-0 flex-1 bg-transparent px-2 font-mono text-xs text-foreground/85 outline-none placeholder:text-foreground/40"
                     />
@@ -373,11 +366,11 @@ export default function StudioPage() {
                   <Bot className="h-5 w-5 text-primary" />
                   <span className="text-md text-foreground/80">
                     {active.phase === 'scaffolding'
-                      ? COPY.scaffolding
+                      ? t.studio.scaffolding
                       : active.phase === 'starting'
-                        ? COPY.starting
+                        ? t.studio.starting
                         : active.phase === 'error'
-                          ? COPY.error
+                          ? t.studio.start_error
                           : active.name}
                   </span>
                   {/* A boot that gave up now says so, and a dead end needs a way
@@ -398,7 +391,7 @@ export default function StudioPage() {
               </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                <p className="typo-caption max-w-sm">{COPY.empty}</p>
+                <p className="typo-caption max-w-sm">{t.studio.no_project_open}</p>
               </div>
             )}
           </>

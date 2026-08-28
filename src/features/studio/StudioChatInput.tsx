@@ -30,7 +30,7 @@ import { phaseProgress } from './studioBuildModel';
 // dock re-centres itself into the space the drawer leaves.
 
 export default function StudioChatInput() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
@@ -131,12 +131,14 @@ export default function StudioChatInput() {
               >
                 <header className="flex shrink-0 items-center gap-1.5 border-b border-border px-3 py-1.5">
                   <MessageSquare className="h-3.5 w-3.5 text-primary/70" />
-                  <span className="text-xs font-medium text-foreground/80">Conversation</span>
+                  <span className="text-xs font-medium text-foreground/80">
+                    {t.studio.conversation}
+                  </span>
                   <div className="flex-1" />
                   <button
                     type="button"
                     onClick={() => setChatOpen(false)}
-                    aria-label="Collapse"
+                    aria-label={t.studio.collapse}
                     className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
                   >
                     <ChevronDown className="h-4 w-4" />
@@ -161,10 +163,10 @@ export default function StudioChatInput() {
             onSubmit={send}
             placeholder={
               question
-                ? `Answer Athena · ${name}`
+                ? tx(t.studio.answer_athena, { name })
                 : autonomous
-                  ? `Athena is building ${name} autonomously…`
-                  : `Tell Athena what to build in ${name}…`
+                  ? tx(t.studio.building_autonomously, { name })
+                  : tx(t.studio.tell_athena, { name })
             }
             disabled={working}
             busy={busy && !autonomous}
@@ -175,7 +177,9 @@ export default function StudioChatInput() {
               <button
                 type="button"
                 onClick={() => setChatOpen((v) => !v)}
-                aria-label={chatOpen ? 'Collapse conversation' : 'Expand conversation'}
+                aria-label={
+                  chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
+                }
                 aria-expanded={chatOpen}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
               >
@@ -188,7 +192,7 @@ export default function StudioChatInput() {
                   type="button"
                   onClick={() => void pickReference()}
                   disabled={working}
-                  aria-label="Add a design reference image"
+                  aria-label={t.studio.add_reference_image}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
                 >
                   <ImageIcon className="h-4 w-4" />
@@ -199,7 +203,9 @@ export default function StudioChatInput() {
                   type="button"
                   onClick={() => setPlanOpen((v) => !v)}
                   data-testid="studio-plan-button"
-                  aria-label={hasPlan ? `Build plan · ${done} of ${total} done` : 'Build plan'}
+                  aria-label={
+                    hasPlan ? tx(t.studio.plan_progress, { done, total }) : t.studio.build_plan
+                  }
                   aria-expanded={planOpen}
                   className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
                     planOpen
@@ -226,17 +232,19 @@ export default function StudioChatInput() {
                     type="button"
                     onClick={() => stopTurn(activeId)}
                     data-testid="studio-stop"
-                    aria-label="Stop Athena"
+                    aria-label={t.studio.stop_athena}
                     className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
                   >
                     <CircleStop className="h-4 w-4" />
-                    Stop
+                    {t.studio.stop}
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
-                    aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
+                    aria-label={
+                      autonomous ? t.studio.stop_autonomous : t.studio.build_autonomously
+                    }
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
                       autonomous
                         ? 'bg-primary/20 text-primary'
