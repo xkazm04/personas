@@ -3,6 +3,7 @@ import { X, FolderOpen, Plus, Minus } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { kbIngestDirectory, kbPickDirectory } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 interface IngestDirectoryPickerProps {
   kbId: string;
@@ -188,11 +189,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             </div>
           </div>
 
-          {error && (
-            <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400">
-              {error}
-            </div>
-          )}
+          {error && <KbErrorNotice raw={error} />}
         </div>
 
         {/* Footer */}

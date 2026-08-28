@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Sparkles, Play, AlertCircle } from 'lucide-react';
+import { Sparkles, Play } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,6 +10,7 @@ import type { KnowledgeBase, KbExtractionSchema, KbEntity } from '@/api/vault/da
 // used to re-declare it by hand, so a Rust-side field change would have drifted
 // silently instead of failing the type-check.
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
+import { KbErrorNotice } from '../KbErrorNotice';
 import {
   kbInferSchema,
   kbRunExtraction,
@@ -147,12 +148,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
         )}
       </div>
 
-      {error && (
-        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          {error}
-        </div>
-      )}
+      {error && <KbErrorNotice raw={error} />}
 
       {running && progress && (
         <p className="typo-caption text-foreground">

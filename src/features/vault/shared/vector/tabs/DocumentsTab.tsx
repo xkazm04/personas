@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Trash2, Upload, AlertCircle, ScanLine } from 'lucide-react';
+import { FileText, Trash2, Upload, ScanLine } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -17,6 +17,7 @@ import { StatusBadge } from './StatusBadge';
 import { truncatePath, formatBytes } from './documentTabHelpers';
 import { DocToolbar } from './DocUploadArea';
 import { DocGhostRows } from './DocGhostRows';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 interface DocumentsTabProps {
   kb: KnowledgeBase;
@@ -103,12 +104,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
             rows already on screen paints nothing — law 1. */}
         {loading && documents.length === 0 && <DocGhostRows />}
 
-        {error && (
-          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {error}
-          </div>
-        )}
+        {error && <KbErrorNotice raw={error} className="mx-6 mt-4" />}
 
         {!loading && documents.length === 0 && !error && (
           <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted} disabled={activeJobId !== null}>

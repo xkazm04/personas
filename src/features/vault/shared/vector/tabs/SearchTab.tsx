@@ -9,6 +9,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { trackInteraction } from '@/lib/analytics';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 /** A compact dropdown over the shared `Listbox` (a raw native select element is a census
  *  violation: raw-select). Trigger shows the current label; options are
@@ -234,11 +235,7 @@ export function SearchTab({ kb }: SearchTabProps) {
 
       {/* Results */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {error && (
-          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400">
-            {error}
-          </div>
-        )}
+        {error && <KbErrorNotice raw={error} className="mx-6 mt-4" />}
 
         {results === null && !error && (
           <EmptyIllustration

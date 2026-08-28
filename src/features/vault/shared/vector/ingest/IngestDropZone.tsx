@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react';
 import { kbIngestFiles } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 interface IngestDropZoneProps {
   kbId: string;
@@ -21,7 +22,9 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
   const sh = t.vault.shared;
   const [isDragOver, setIsDragOver] = useState(false);
   const [ingesting, setIngesting] = useState(false);
-  const [dropError, setDropError] = useState<string | null>(null);
+  // `localized` distinguishes a message this component wrote (already in the
+  // user's language) from a raw backend string the error registry must resolve.
+  const [dropError, setDropError] = useState<{ text: string; localized: boolean } | null>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -42,7 +45,7 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
 
     // Say why nothing happened rather than swallowing the drop.
     if (disabled) {
-      setDropError(sh.ingest_in_progress);
+      setDropError({ text: sh.ingest_in_progress, localized: true });
       return;
     }
 
@@ -60,7 +63,7 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
     }
 
     if (paths.length === 0) {
-      setDropError(sh.drop_no_paths);
+      setDropError({ text: sh.drop_no_paths, localized: true });
       return;
     }
 
@@ -70,7 +73,7 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
       const jobId = await kbIngestFiles(kbId, paths);
       onIngestStarted(jobId);
     } catch (err) {
-      setDropError(err instanceof Error ? err.message : String(err));
+      setDropError({ text: err instanceof Error ? err.message : String(err), localized: false });
     } finally {
       setIngesting(false);
     }
@@ -87,10 +90,13 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
 
       {/* Drop error banner */}
       {dropError && (
-        <div className="absolute top-2 left-2 right-2 z-10 p-2 rounded-card bg-red-500/10 border border-red-500/20 typo-caption text-red-400 flex items-center gap-2">
-          <span className="flex-1">{dropError}</span>
-          <button type="button" onClick={() => setDropError(null)} className="text-red-400/60 hover:text-red-400 shrink-0">&times;</button>
-        </div>
+        <KbErrorNotice
+          raw={dropError.text}
+          localized={dropError.localized}
+          compact
+          onDismiss={() => setDropError(null)}
+          className="absolute top-2 left-2 right-2 z-10"
+        />
       )}
 
       {/* Drop overlay */}

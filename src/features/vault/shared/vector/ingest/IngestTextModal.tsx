@@ -4,6 +4,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { kbIngestText } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatCount } from '@/lib/utils/formatters';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 interface IngestTextModalProps {
   kbId: string;
@@ -93,11 +94,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
           />
         </div>
 
-        {error && (
-          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400">
-            {error}
-          </div>
-        )}
+        {error && <KbErrorNotice raw={error} />}
       </div>
 
       {/* Footer */}

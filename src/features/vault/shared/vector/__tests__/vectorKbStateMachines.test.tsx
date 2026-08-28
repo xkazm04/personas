@@ -292,6 +292,24 @@ describe('DocumentsTab — load failure is not "no documents"', () => {
     expect(screen.queryByText('No documents yet')).toBeNull();
   });
 
+  /**
+   * The headline the user reads is the localized registry copy, in every one of
+   * the 14 locales. The English Rust diagnostic stays reachable — one
+   * disclosure away — because the generic fallback alone says less than the
+   * string it replaced.
+   */
+  it('a backend error is resolved through the registry, raw text behind a disclosure', async () => {
+    mockListDocuments.mockRejectedValue(new Error('kb_list_documents timed out after 30s'));
+
+    const { container } = render(<DocumentsTab kb={KB} onRefresh={() => {}} />);
+
+    expect(await screen.findByText('The request took too long to complete.')).toBeTruthy();
+    const details = container.querySelector('details');
+    expect(details).toBeTruthy();
+    expect(details?.textContent).toContain('kb_list_documents timed out after 30s');
+    expect(screen.queryByText('No documents yet')).toBeNull();
+  });
+
   it('an empty corpus shows the empty state, never an error', async () => {
     mockListDocuments.mockResolvedValue([]);
 
