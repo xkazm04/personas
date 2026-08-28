@@ -30,8 +30,11 @@ export function MetricCard({
         {isWinner && <Trophy className="w-3 h-3 text-primary" />}
       </div>
 
+      {/* An em dash, not a 0: a model whose rows were never graded has no
+          composite to state, and painting one as zero is the fold this panel
+          used to make. */}
       <div className={`typo-data-lg font-bold tabular-nums ${scoreColor(metrics.composite)}`}>
-        {metrics.composite}
+        {metrics.composite ?? '—'}
       </div>
 
       <MetricRows metrics={metrics} />
@@ -80,10 +83,12 @@ export function CompareBar({
 }: {
   label: string;
   labelIcon: typeof Target;
-  valueA: number;
-  valueB: number;
+  /** `null` = the dimension was never scored for this model. Renders an em
+   *  dash and an empty bar — a zero-length bar would read as a measured 0. */
+  valueA: number | null;
+  valueB: number | null;
 }) {
-  const max = Math.max(valueA, valueB, 1);
+  const max = Math.max(valueA ?? 0, valueB ?? 0, 1);
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1.5 typo-caption text-foreground">
@@ -93,18 +98,18 @@ export function CompareBar({
       <div className="flex items-center gap-1.5">
         {/* A bar (right-aligned, blue) */}
         <div className="flex-1 flex justify-end">
-          <div className="h-2.5 rounded-full bg-blue-500/30 overflow-hidden" style={{ width: `${(valueA / max) * 100}%` }}>
+          <div className="h-2.5 rounded-full bg-blue-500/30 overflow-hidden" style={{ width: `${((valueA ?? 0) / max) * 100}%` }}>
             <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
           </div>
         </div>
         <div className="w-16 text-center typo-code font-mono tabular-nums">
-          <span className={scoreColor(valueA)}>{valueA}</span>
+          <span className={scoreColor(valueA)}>{valueA ?? '—'}</span>
           <span className="text-foreground mx-0.5">:</span>
-          <span className={scoreColor(valueB)}>{valueB}</span>
+          <span className={scoreColor(valueB)}>{valueB ?? '—'}</span>
         </div>
         {/* B bar (left-aligned, amber) */}
         <div className="flex-1">
-          <div className="h-2.5 rounded-full bg-amber-500/30 overflow-hidden" style={{ width: `${(valueB / max) * 100}%` }}>
+          <div className="h-2.5 rounded-full bg-amber-500/30 overflow-hidden" style={{ width: `${((valueB ?? 0) / max) * 100}%` }}>
             <div className="h-full bg-amber-500 rounded-full" style={{ width: '100%' }} />
           </div>
         </div>

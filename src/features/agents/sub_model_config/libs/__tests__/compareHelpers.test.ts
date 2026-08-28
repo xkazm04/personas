@@ -67,13 +67,14 @@ describe('model-config telemetry events', () => {
   });
 
   it('carries the outcome the panel used to discard — winner and a spend band, never a raw figure', () => {
-    const metrics = (modelId: string, composite: number, totalCost: number) => ({
+    const metrics = (modelId: string, composite: number | null, totalCost: number) => ({
       modelId,
       provider: 'anthropic',
       avgToolAccuracy: 0,
       avgOutputQuality: 0,
       avgProtocolCompliance: 0,
       composite,
+      scored: { toolAccuracy: 1, outputQuality: 1, protocolCompliance: 1 },
       totalCost,
       avgDuration: 0,
       totalInputTokens: 0,
@@ -89,6 +90,56 @@ describe('model-config telemetry events', () => {
 
     const tied = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', 70, 0));
     expect(tied.label).toBe('haiku_vs_opus|winner=tie|cost=zero');
+
+    // An unscored model must never be reported as the loser — that is a
+    // verdict on evidence that does not exist.
+    const unscored = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', null, 0));
+    expect(unscored.label).toBe('haiku_vs_opus|winner=unscored|cost=zero');
+  });
+});
+
+describe('computeMetrics null-awareness', () => {
+  it('averages only the rows that carried a score, and counts the admissions', () => {
+    const metrics = aggregateResults(
+      [
+        row({ toolAccuracyScore: 90 }),
+        row({ id: 'r2', toolAccuracyScore: null }),
+        row({ id: 'r3', toolAccuracyScore: null }),
+      ],
+      'haiku',
+    )!;
+    // 90 over the ONE row that was graded — not 30 (90/3), which is what
+    // `?? 0` produced until 2026-08-28.
+    expect(metrics.avgToolAccuracy).toBe(90);
+    expect(metrics.scored.toolAccuracy).toBe(1);
+    expect(metrics.count).toBe(3);
+  });
+
+  it('reports an entirely ungraded dimension as null, never as zero', () => {
+    const metrics = aggregateResults(
+      [row({ toolAccuracyScore: null }), row({ id: 'r2', toolAccuracyScore: null })],
+      'haiku',
+    )!;
+    expect(metrics.avgToolAccuracy).toBeNull();
+    expect(metrics.scored.toolAccuracy).toBe(0);
+    // The remaining dimensions still carry the composite.
+    expect(metrics.composite).not.toBeNull();
+  });
+
+  it('has no composite at all when not one dimension was graded', () => {
+    const metrics = aggregateResults(
+      [row({ toolAccuracyScore: null, outputQualityScore: null, protocolCompliance: null })],
+      'haiku',
+    )!;
+    expect(metrics.composite).toBeNull();
+  });
+
+  it('does not let an ungraded dimension drag a model below a fully graded rival', () => {
+    // Both models score 80 on everything they were graded on; B simply was not
+    // graded on tool accuracy. B must not lose for it.
+    const a = aggregateResults([row({ modelId: 'a', toolAccuracyScore: 80, outputQualityScore: 80, protocolCompliance: 80 })], 'a')!;
+    const b = aggregateResults([row({ modelId: 'b', toolAccuracyScore: null, outputQualityScore: 80, protocolCompliance: 80 })], 'b')!;
+    expect(b.composite).toBe(a.composite);
   });
 });
 
