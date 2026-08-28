@@ -38,6 +38,16 @@ function renderRow(spans: TraceSpan[]) {
   return screen.getByTestId('chain-span-cost').textContent;
 }
 
+describe('ChainSpanRow narrow-viewport layout', () => {
+  it('wraps rather than clipping its six fixed-width slots', () => {
+    render(<ChainSpanRow trace={trace([span()])} index={0} isCurrent={false} onOpen={vi.fn()} />);
+    const row = screen.getByTestId('chain-span-row');
+    // The parent hides its overflow, so a non-wrapping row is a row that
+    // silently loses its metrics below ~420px.
+    expect(row.className).toContain('flex-wrap');
+  });
+});
+
 describe('ChainSpanRow cost fold', () => {
   it('reports the unknown marker when no span in the step carried a price', () => {
     // The regression this pins: `sum + (s.cost_usd ?? 0)` printed a confident

@@ -33,26 +33,32 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
   const StatusIcon = hasError ? XCircle : CheckCircle2;
   const statusClass = hasError ? 'text-status-error' : 'text-status-success';
 
+  // Six fixed-width slots on one non-wrapping line clipped this row below
+  // ~420px, against a parent that hides its overflow. The rest of the detail
+  // view degrades deliberately for a narrow window (the aside is `lg:`-gated,
+  // the waterfall pans inside its own scroller); this row wraps instead — the
+  // metrics group drops to a second line rather than off the edge.
   return (
     <button
       type="button"
       onClick={onOpen}
       disabled={isCurrent}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+      className={`w-full flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 text-left transition-colors ${
         isCurrent ? 'bg-primary/10 cursor-default' : 'hover:bg-secondary/40'
       }`}
+      data-testid="chain-span-row"
     >
-      <span className="typo-code text-foreground tabular-nums w-5 text-right">{index + 1}</span>
+      <span className="typo-code text-foreground tabular-nums w-5 text-right flex-shrink-0">{index + 1}</span>
       <StatusIcon className={`w-4 h-4 flex-shrink-0 ${statusClass}`} />
-      <span className="typo-code text-foreground">#{trace.execution_id.slice(0, 8)}</span>
+      <span className="typo-code text-foreground flex-shrink-0">#{trace.execution_id.slice(0, 8)}</span>
       {isCurrent && (
-        <span className="typo-code px-1.5 py-0.5 rounded-card bg-primary/15 text-primary/80 border border-primary/20">
+        <span className="typo-code px-1.5 py-0.5 rounded-card bg-primary/15 text-primary/80 border border-primary/20 flex-shrink-0">
           {e.chain_current}
         </span>
       )}
-      <span className="typo-code text-foreground ml-auto whitespace-nowrap">{tx(e.chain_spans_count, { count: trace.spans.length })}</span>
-      <span className="typo-code text-foreground w-16 text-right">{formatDuration(trace.total_duration_ms)}</span>
-      <span className="typo-code text-foreground w-20 text-right" data-testid="chain-span-cost">
+      <span className="typo-code text-foreground ml-auto whitespace-nowrap flex-shrink-0">{tx(e.chain_spans_count, { count: trace.spans.length })}</span>
+      <span className="typo-code text-foreground w-16 text-right flex-shrink-0">{formatDuration(trace.total_duration_ms)}</span>
+      <span className="typo-code text-foreground w-20 text-right flex-shrink-0" data-testid="chain-span-cost">
         {pricedSpans > 0 ? formatCost(cost, { precision: 4, language }) : '-'}
       </span>
       {isCurrent
