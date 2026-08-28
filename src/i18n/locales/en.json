@@ -1263,6 +1263,7 @@
     "core_disposition_high": "Bold",
     "core_conflict_label": "In disagreement",
     "core_model_label": "Model",
+    "core_model_cost": "Relative cost: {multiple}× the cheapest model tier",
     "core_effort_label": "Reasoning effort",
     "glyph_intent_placeholder": "e.g. Summarize my unread emails each morning",
     "glyph_dim_label": {

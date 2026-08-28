@@ -1215,6 +1215,7 @@
     "core_disposition_high": "大胆",
     "core_conflict_label": "意見が割れたとき",
     "core_model_label": "モデル",
+    "core_model_cost": "相対コスト：最も安価なモデル階層の{multiple}倍",
     "core_effort_label": "推論の深さ",
     "glyph_intent_placeholder": "例：毎朝、未読メールを要約する",
     "glyph_dim_label": {

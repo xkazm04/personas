@@ -19,6 +19,10 @@ interface InteractiveSigilProps {
   onHover: (dim: GlyphDimension | null) => void;
   onClick: (dim: GlyphDimension) => void;
   size: number;
+  /** Petals are inert (a build is running). Threaded down so the affordances
+   *  (tab stop, pointer cursor, keyboard activation) go with the behaviour
+   *  instead of inviting clicks that silently no-op. */
+  disabled?: boolean;
 }
 
 const CORE_RATIO = 0.12;
@@ -48,6 +52,26 @@ interface SigilGeometry {
 }
 
 const geometryCache = new Map<number, SigilGeometry>();
+
+/** The card sizes the sigil from its own width, which varies continuously as
+ *  the window resizes. Geometry is cached by size at module scope, so an
+ *  unquantized width would mint a fresh entry (eight petal trig solutions plus
+ *  two path strings) on every resize frame and never evict. Snapping to 20px
+ *  steps bounds the cache to a handful of entries and is far below the
+ *  threshold at which a size difference is visible. */
+export const SIGIL_SIZE_STEP = 20;
+export const SIGIL_MIN_SIZE = 240;
+export const SIGIL_MAX_SIZE = 440;
+
+/** Largest step-quantized sigil that fits `available` px, clamped to the range
+ *  the artwork was drawn for. Returns SIGIL_MAX_SIZE when the width is not yet
+ *  known (first paint, or no ResizeObserver), which is the pre-responsive
+ *  behaviour rather than a jarring small-then-big pop. */
+export function fitSigilSize(available: number | null): number {
+  if (available === null || !Number.isFinite(available) || available <= 0) return SIGIL_MAX_SIZE;
+  const stepped = Math.floor(available / SIGIL_SIZE_STEP) * SIGIL_SIZE_STEP;
+  return Math.min(SIGIL_MAX_SIZE, Math.max(SIGIL_MIN_SIZE, stepped));
+}
 
 function getGeometry(size: number): SigilGeometry {
   const cached = geometryCache.get(size);
@@ -106,7 +130,7 @@ function getGeometry(size: number): SigilGeometry {
  *  cached at module scope, so hover-driven re-renders don't rebuild path
  *  strings or recompute petal trig — see idea-5d95dae2 for the perf rationale. */
 export function InteractiveSigil({
-  row, rowIndex, hoveredDim, activeDim, onHover, onClick, size,
+  row, rowIndex, hoveredDim, activeDim, onHover, onClick, size, disabled = false,
 }: InteractiveSigilProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
@@ -157,11 +181,11 @@ export function InteractiveSigil({
         case 'Enter':
         case ' ':
           e.preventDefault();
-          onClick(dim);
+          if (!disabled) onClick(dim);
           break;
       }
     },
-    [moveFocus, onClick],
+    [moveFocus, onClick, disabled],
   );
 
   const handlePetalFocus = useCallback(
@@ -284,6 +308,7 @@ export function InteractiveSigil({
               registerRef={registerPetalRef}
               cvdSafe={cvdSafe}
               patternUid={patternUid}
+              disabled={disabled}
             />
           );
         })}

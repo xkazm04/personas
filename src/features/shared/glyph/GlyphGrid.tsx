@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ListChecks } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -59,10 +61,13 @@ export function GlyphGrid({
         <GlyphQuestionPanel questions={questions} onAnswer={onAnswerBuildQuestion!} />
       )}
       {rows.length === 0 ? (
-        <div className="rounded-modal bg-card-bg border border-card-border p-8 text-center shadow-elevation-2">
-          <span className="typo-body text-foreground italic">
-            {emptyLabel ?? c.empty_seeding}
-          </span>
+        /* The shared primitive, not a bespoke card with an italic span: all four
+           consuming surfaces (adoption, edit, view, template preview) render
+           this, so a one-off here was an empty state that looked like nothing
+           else in the app. ListChecks matches the 'use-cases-empty' scenario --
+           a Glyph row IS a use case -- while the label stays caller-supplied. */
+        <div className="py-12">
+          <EmptyState icon={ListChecks} title={emptyLabel ?? c.empty_seeding} />
         </div>
       ) : (
         <div className={gridCls}>

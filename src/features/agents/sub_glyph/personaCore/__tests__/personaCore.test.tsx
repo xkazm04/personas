@@ -28,6 +28,7 @@ import {
   traitById,
 } from "../catalog";
 import { ARCHETYPE_GLYPHS } from "../archetypeGlyphData";
+import { MentalityCard } from "../MentalityCard";
 import { EFFORT_LEVELS, EFFORT_OPTIONS } from "@/lib/models/modelCatalog";
 
 // --------------------------------------------------------------------------
@@ -133,9 +134,86 @@ describe("persona-core catalog integrity", () => {
     expect(incomplete).toEqual([]);
   });
 
+  it("carries a relative-cost signal on every model tier, ascending with capability", () => {
+    // Picking a model is the biggest spend lever on this screen, and the tiles
+    // used to describe capability only ("Deepest reasoning...") with no number
+    // to trade it against. A tier added without a multiple would ship a blank
+    // chip; one added out of order would tell the user the wrong thing.
+    const costs = MODEL_TIERS.map((m) => m.relativeCost);
+    expect(costs.every((c) => Number.isFinite(c) && c >= 1)).toBe(true);
+    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+    expect(costs[0]).toBe(1);
+  });
+
   it("resolves an unknown model tier to a real tier rather than undefined", () => {
     expect(modelTier("sonnet").id).toBe("sonnet");
     expect(modelTier("nope" as never).promptWord).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// Off-screen avatars: the Mentality column lists nine archetypes in a 64vh
+// scroller and only ~3 are visible, so mounting every glyph eagerly paints
+// hundreds of animated paths (and a light-theme CSS rule per colour each) for
+// content nobody can see.
+// --------------------------------------------------------------------------
+describe("MentalityCard avatar deferral", () => {
+  const archetype = {
+    id: "analyst", name: "Analyst", tagline: "Argues from evidence",
+    icon: "LineChart", color: "#60a5fa", recipeAffinity: [], persona: {},
+  };
+
+  let trigger: ((entries: { isIntersecting: boolean }[]) => void) | null = null;
+
+  beforeEach(() => {
+    trigger = null;
+    vi.stubGlobal("IntersectionObserver", class {
+      constructor(cb: (entries: { isIntersecting: boolean }[]) => void) { trigger = cb; }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+      takeRecords() { return []; }
+    });
+  });
+
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  // MotionizedGlyph is the only thing on this card that emits an inline <style>
+  // (its keyframes + per-colour light-theme overrides). Counting <path> alone
+  // would not discriminate — the lucide fallback and the trait strip draw paths
+  // of their own, which is exactly how this assertion first passed for the
+  // wrong reason.
+  const glyphMounted = (c: HTMLElement) => c.querySelectorAll("svg style").length;
+
+  it("mounts no glyph until the card nears the viewport, then mounts it", () => {
+    // The fixture must actually HAVE a glyph, or "nothing mounted" would be
+    // true no matter what the component did.
+    const paths = ARCHETYPE_GLYPHS[archetype.id]?.data.length ?? 0;
+    expect(paths).toBeGreaterThan(0);
+
+    const { container } = render(
+      <MentalityCard archetype={archetype} active={false} onSelect={() => {}} />,
+    );
+    expect(glyphMounted(container)).toBe(0);
+
+    act(() => { trigger?.([{ isIntersecting: true }]); });
+    expect(glyphMounted(container)).toBe(1);
+    const glyphSvg = container.querySelector("style")!.closest("svg")!;
+    expect(glyphSvg.querySelectorAll("path").length).toBe(paths);
+  });
+
+  it("keeps the glyph mounted after the card scrolls away", () => {
+    // Unmounting on scroll-away would re-pay the mount cost and re-fire the
+    // reveal on every pass through the list.
+    const { container } = render(
+      <MentalityCard archetype={archetype} active={false} onSelect={() => {}} />,
+    );
+    act(() => { trigger?.([{ isIntersecting: true }]); });
+    const mounted = container.querySelectorAll("path").length;
+    expect(glyphMounted(container)).toBe(1);
+    act(() => { trigger?.([{ isIntersecting: false }]); });
+    expect(glyphMounted(container)).toBe(1);
+    expect(container.querySelectorAll("path").length).toBe(mounted);
   });
 });
 
@@ -150,6 +228,24 @@ describe("persona-core theming", () => {
     // A file walk that visits nothing passes every assertion below by default,
     // which is the exact way this kind of gate rots into decoration.
     expect(sources.length).toBeGreaterThan(5);
+  });
+
+  it("keeps every colour literal in catalog.ts", () => {
+    // catalog.ts owns ACCENT, the five axis colours and the three control
+    // accents. Four call sites used to write raw hex instead, three of them
+    // re-using an axis colour for an unrelated concept and one spelling
+    // ACCENT a third way, so changing a colour meant grepping call sites and
+    // guessing which uses of a hex meant the same thing.
+    const offenders = sources.flatMap((f) => {
+      if (f === "catalog.ts" || f === "archetypeGlyphData.ts") return [];
+      const src = readFileSync(path.join(dir, f), "utf8");
+      return src.split("\n").flatMap((line, i) => {
+        const code = line.trimStart();
+        if (code.startsWith("*") || code.startsWith("//")) return [];
+        return /#[0-9a-fA-F]{3,8}\b/.test(line) ? [`${f}:${i + 1}`] : [];
+      });
+    });
+    expect(offenders).toEqual([]);
   });
 
   it("paints no literal white through an inline style", () => {
@@ -374,6 +470,125 @@ describe("AxisTraitGrid accessibility", () => {
   it("exposes every trait as a pressable toggle", () => {
     render(<AxisTraitGrid core={core} />);
     expect(screen.getAllByRole("button").length).toBe(TRAIT_CATALOG.length);
+  });
+});
+
+// --------------------------------------------------------------------------
+// Reading order: the preset column leads.
+// --------------------------------------------------------------------------
+import { PersonaCoreCodex } from "../PersonaCoreCodex";
+
+describe("PersonaCoreCodex column order", () => {
+  it("puts Mentality (the one-click preset) ahead of hand assembly", () => {
+    // A mentality card seeds disposition, conflict style and five dominant
+    // traits at once. With it third, a first-timer read the modal backwards —
+    // 20 trait toggles and three tile groups by hand, then the shortcut.
+    const core = {
+      state: { traits: [] as string[], disposition: 0.4, conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
+      archetypes: [], loadFailed: false, discardedTraits: null,
+      toggleTrait: () => {}, setDisposition: () => {}, setConflict: () => {},
+      setModel: () => {}, setEffort: () => {}, applyPreset: () => {},
+      retryLoad: () => {}, restoreTraits: () => {},
+    } as unknown as Parameters<typeof PersonaCoreCodex>[0]["core"];
+
+    const { container } = render(<PersonaCoreCodex core={core} />);
+    // SectionHeader renders an <h3> per column — the same structure a screen
+    // reader walks, so DOM order here IS reading order.
+    const order = [...container.querySelectorAll("h3")].map((el) => el.textContent?.trim() ?? "");
+
+    const mentality = order.findIndex((h) => /mentality/i.test(h));
+    const character = order.findIndex((h) => /character/i.test(h));
+    const configuration = order.findIndex((h) => /configuration/i.test(h));
+
+    // Instrument check — all three must be found, or the ordering assertions
+    // below compare -1 against -1 and pass while measuring nothing.
+    expect([mentality, character, configuration].every((i) => i >= 0)).toBe(true);
+    expect(mentality).toBeLessThan(character);
+    expect(character).toBeLessThan(configuration);
+  });
+
+  it("gives each column its own scroll once they sit side by side", () => {
+    // All three used to share one max-h-[64vh] scroller, so browsing the nine
+    // mentality cards pushed the trait grid off-screen. min-h-0 is part of the
+    // contract: without it a flex child will not shrink, so it never overflows
+    // and the overflow-y-auto is decoration.
+    const core = {
+      state: { traits: [] as string[], disposition: 0.4, conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
+      archetypes: [], loadFailed: false, discardedTraits: null,
+      toggleTrait: () => {}, setDisposition: () => {}, setConflict: () => {},
+      setModel: () => {}, setEffort: () => {}, applyPreset: () => {},
+      retryLoad: () => {}, restoreTraits: () => {},
+    } as unknown as Parameters<typeof PersonaCoreCodex>[0]["core"];
+
+    const { container } = render(<PersonaCoreCodex core={core} />);
+    const outer = container.firstElementChild as HTMLElement;
+    expect(outer.className).toContain("lg:overflow-hidden");
+
+    const columns = [...outer.children] as HTMLElement[];
+    expect(columns.length).toBe(3);
+    for (const col of columns) {
+      expect(col.className).toContain("lg:overflow-y-auto");
+      expect(col.className).toContain("min-h-0");
+    }
+  });
+});
+
+// --------------------------------------------------------------------------
+// Two a11y contracts: mutually-exclusive choices vs a genuine toggle.
+// --------------------------------------------------------------------------
+import { ConflictTiles, EffortMeter, ModelTiles } from "../ConfigTiles";
+
+describe("config tile semantics", () => {
+  const makeCore = (over: Record<string, unknown> = {}) => ({
+    state: { model: "sonnet", effort: "medium", conflictStyle: null, traits: [] as string[] },
+    setModel: vi.fn(), setEffort: vi.fn(), setConflict: vi.fn(),
+    ...over,
+  } as unknown as Parameters<typeof ModelTiles>[0]["core"]);
+
+  it("announces model as one choice with a current value, not three toggles", () => {
+    // aria-pressed told a screen reader these were independent toggles.
+    const { container } = render(<ModelTiles core={makeCore()} />);
+    expect(container.querySelectorAll('[role="radiogroup"]').length).toBe(1);
+    const radios = container.querySelectorAll('[role="radio"]');
+    expect(radios.length).toBe(MODEL_TIERS.length);
+    expect(container.querySelectorAll("[aria-pressed]").length).toBe(0);
+
+    const checked = [...radios].filter((r) => r.getAttribute("aria-checked") === "true");
+    expect(checked.length).toBe(1);
+  });
+
+  it("keeps exactly one model tile in the tab order", () => {
+    const { container } = render(<ModelTiles core={makeCore()} />);
+    const stops = [...container.querySelectorAll('[role="radio"]')]
+      .filter((r) => r.getAttribute("tabindex") === "0");
+    expect(stops.length).toBe(1);
+  });
+
+  it("moves the model selection with the arrow keys", () => {
+    const setModel = vi.fn();
+    const { container } = render(<ModelTiles core={makeCore({ setModel })} />);
+    const radios = [...container.querySelectorAll('[role="radio"]')];
+    const current = radios.find((r) => r.getAttribute("aria-checked") === "true")!;
+
+    fireEvent.keyDown(current, { key: "ArrowRight" });
+    expect(setModel).toHaveBeenCalledTimes(1);
+    const next = MODEL_TIERS[MODEL_TIERS.findIndex((m) => m.id === "sonnet") + 1]!.id;
+    expect(setModel).toHaveBeenCalledWith(next);
+  });
+
+  it("announces effort the same way", () => {
+    const { container } = render(<EffortMeter core={makeCore()} />);
+    expect(container.querySelectorAll('[role="radiogroup"]').length).toBe(1);
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(EFFORT_TIERS.length);
+    expect(container.querySelectorAll("[aria-pressed]").length).toBe(0);
+  });
+
+  it("leaves conflict style as a toggle, because it genuinely is one", () => {
+    // Clicking the active style CLEARS it (setConflict's same-id handler),
+    // which is toggle behaviour and would be a lie under radio semantics.
+    const { container } = render(<ConflictTiles core={makeCore()} />);
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(0);
+    expect(container.querySelectorAll("[aria-pressed]").length).toBe(CONFLICT_STYLES.length);
   });
 });
 

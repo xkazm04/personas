@@ -1215,6 +1215,7 @@
     "core_disposition_high": "সাহসী",
     "core_conflict_label": "মতবিরোধে",
     "core_model_label": "মডেল",
+    "core_model_cost": "আপেক্ষিক খরচ: সবচেয়ে সস্তা মডেল স্তরের {multiple} গুণ",
     "core_effort_label": "যুক্তির গভীরতা",
     "glyph_intent_placeholder": "যেমন প্রতিদিন সকালে আমার অপঠিত ইমেল সারসংক্ষেপ করো",
     "glyph_dim_label": {

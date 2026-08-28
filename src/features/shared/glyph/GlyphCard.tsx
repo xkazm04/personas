@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Workflow } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,7 +10,7 @@ import { DIM_META } from './dimMeta';
 import { useGlyphDimText } from './persona-sigil';
 import { parseChannels } from './channels';
 import { triggerIcon, prettyTriggerType, triggerDetail } from './triggers';
-import { InteractiveSigil } from './InteractiveSigil';
+import { InteractiveSigil, fitSigilSize } from './InteractiveSigil';
 import { SigilLegend } from './SigilLegend';
 import { ChannelTotem } from './ChannelTotem';
 import { ConnectorTotem } from './ConnectorTotem';
@@ -53,8 +53,30 @@ export function GlyphCard({
   const dimText = useGlyphDimText();
   const motion_ = useMotion();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
+  // The sigil used to be a literal 440px inside a card that drops to a single
+  // column below xl: too small for a wide column, and clipped on both flanks
+  // by the card's own overflow-hidden once the column narrowed past ~470px.
+  // It now takes the largest quantized size its column can hold. `null` means
+  // "not measured yet" and renders at full size, so nothing pops on first paint.
+  const sigilBoxRef = useRef<HTMLDivElement>(null);
+  const [sigilBoxWidth, setSigilBoxWidth] = useState<number | null>(null);
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
   const [flowOpen, setFlowOpen] = useState(false);
+
+  useEffect(() => {
+    const el = sigilBoxRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (typeof w === 'number') setSigilBoxWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // The card's horizontal padding on each flank — the sigil must clear it or
+  // overflow-hidden crops the outer petals.
+  const sigilSize = fitSigilSize(sigilBoxWidth === null ? null : sigilBoxWidth - 40);
 
   const TrigIcon = row.triggers[0] ? triggerIcon(row.triggers[0].trigger_type) : null;
   const trigText = row.triggers[0]
@@ -84,17 +106,20 @@ export function GlyphCard({
         <div className="absolute top-0 left-0 w-full h-1/3 pointer-events-none"
           style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)' }} />
 
-        <div className="relative min-h-[540px] flex flex-col">
+        {/* Height tracks the sigil so a shrunk hero doesn't sit in a well of
+            empty space; at the full 440 this is the original 540px. */}
+        <div ref={sigilBoxRef} className="relative flex flex-col" style={{ minHeight: sigilSize + 100 }}>
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
             animate={{ opacity: activeDim ? 0.18 : 1, scale: activeDim ? 0.94 : 1 }}
             transition={motion_.shouldAnimate ? { duration: 0.3, ease: 'easeOut' } : { duration: 0 }}
           >
             <InteractiveSigil
-              row={row} rowIndex={index} size={440}
+              row={row} rowIndex={index} size={sigilSize}
               hoveredDim={hoveredDim} activeDim={activeDim}
               onHover={setHoveredDim}
-              onClick={isBuilding ? () => undefined : setActiveDim}
+              onClick={setActiveDim}
+              disabled={!!isBuilding}
             />
           </motion.div>
 

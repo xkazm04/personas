@@ -47,6 +47,11 @@ interface SigilPetalProps {
    *  whenever `cvdSafe` is set — pattern ids must not collide across the many
    *  sigils that can share one page. */
   patternUid?: string;
+  /** The petal is inert (a build is running). The affordances have to go with
+   *  the behaviour: `aria-disabled`, no tab stop, no click, no pointer cursor.
+   *  Leaving them on made every petal invite a click that silently did
+   *  nothing — the honest treatment SigilLegend already gets. */
+  disabled?: boolean;
 }
 
 /** Renders a single petal group — body varies by presence state.
@@ -60,7 +65,7 @@ function SigilPetalImpl({
   dim, presence, index, size, rowId, rowIndex, glowId,
   petalPath, petalPathDashed, isHovered, isActive, dimOther,
   onHover, onClick, tabIndex, ariaLabel, isFocused,
-  onKeyDown, onFocusDim, registerRef, cvdSafe = false, patternUid,
+  onKeyDown, onFocusDim, registerRef, cvdSafe = false, patternUid, disabled = false,
 }: SigilPetalProps) {
   const meta = DIM_META[dim];
   const angle = PETAL_ANGLES[dim];
@@ -132,21 +137,27 @@ function SigilPetalImpl({
       ref={(el) => registerRef(dim, el)}
       transform={`translate(${center} ${center}) rotate(${angle})`}
       role="button"
-      tabIndex={tabIndex}
+      tabIndex={disabled ? undefined : tabIndex}
       aria-label={ariaLabel}
       aria-pressed={isActive}
+      aria-disabled={disabled || undefined}
       style={{
         opacity: dimOther && !isActive ? 0.25 : 1,
         transition: 'opacity 0.25s ease',
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
         pointerEvents: 'auto',
         outline: 'none',
       }}
-      onMouseEnter={() => onHover(dim)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onFocusDim(dim)}
-      onKeyDown={(e) => onKeyDown(e, dim)}
-      onClick={(e) => {
+      // Pointer events, not mouse events: the label preview was mouse-only, so
+      // on a touch screen a tap went straight to the panel and the dimension
+      // was never named. `pointerenter`/`pointerleave` fire identically for a
+      // mouse and additionally bracket a touch, which shows the label for the
+      // duration of the press. Pen input gets it for free.
+      onPointerEnter={() => onHover(dim)}
+      onPointerLeave={() => onHover(null)}
+      onFocus={disabled ? undefined : () => onFocusDim(dim)}
+      onKeyDown={disabled ? undefined : (e) => onKeyDown(e, dim)}
+      onClick={disabled ? undefined : (e) => {
         e.stopPropagation();
         onClick(dim);
       }}

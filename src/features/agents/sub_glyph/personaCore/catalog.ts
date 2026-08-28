@@ -21,6 +21,22 @@ import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types"
 /** The persona-core accent (also the model-tier accent). */
 export const ACCENT = "#60A5FA";
 
+/** The three control accents that are NOT axis colours.
+ *
+ *  They were raw hex literals at their call sites, and three of the four
+ *  re-used an axis colour for an unrelated concept: the disposition slider
+ *  wrote TRAIT_AXES.autonomy's `#fb7185`, the conflict tiles wrote
+ *  TRAIT_AXES.temperament's `#fbbf24`, and the effort meter declared a local
+ *  `purple` that appeared nowhere else. A colour edit therefore meant grepping
+ *  call sites and guessing which uses of a hex meant the same thing.
+ *
+ *  They are separate constants rather than aliases of the axis colours ON
+ *  PURPOSE: sharing a value is not sharing a meaning, and re-pointing the
+ *  autonomy axis must not silently repaint the disposition slider. */
+export const DISPOSITION_ACCENT = "#fb7185";
+export const CONFLICT_ACCENT = "#fbbf24";
+export const EFFORT_ACCENT = "#a78bfa";
+
 // -- Archetype icon resolver -------------------------------------------------
 /** The `icon` names the shipped archetype catalog actually uses
  *  (`scripts/templates/_archetypes.json`), and nothing else. Five further
@@ -107,14 +123,25 @@ export const ARCHETYPE_TRAITS: Record<string, string[]> = {
 };
 
 // -- Engine tiers ------------------------------------------------------------
-/** A model tier, enumerated ONCE. The icon used to live in ConfigTiles' own
+/** `relativeCost` is the tier's Anthropic list price per million tokens expressed
+ *  as a multiple of the cheapest tier, so the screen where a user picks a model
+ *  carries a spend signal instead of capability prose alone. Sourced from the
+ *  published API price list (Haiku $1 / Sonnet $3 / Opus $5 per M input tokens,
+ *  read 2026-08-28); the ratio holds for output tokens too ($5 / $15 / $25).
+ *  It is a RATIO, deliberately — an absolute figure would go stale silently
+ *  and this surface has no per-run token estimate to multiply it by. Effort
+ *  tiers carry no such number: raising effort raises token spend, but Anthropic
+ *  publishes no multiplier for it, and inventing one would be worse than the
+ *  ascending meter already communicating relative depth.
+ *
+ *  A model tier, enumerated ONCE. The icon used to live in ConfigTiles' own
  *  `MODEL_ICON` map and the prompt word in a ternary inside usePersonaCore, so
  *  the same three tiers were written out in three files and a fourth tier would
  *  have had to be added to all three (with only this one failing a test). */
-export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string; icon: LucideIcon; promptWord: string }[] = [
-  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
-  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", blurb: "The everyday default — strong reasoning at moderate cost" },
-  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", blurb: "Deepest reasoning for hard, high-stakes work" },
+export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string; icon: LucideIcon; promptWord: string; relativeCost: number }[] = [
+  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", relativeCost: 1, blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
+  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", relativeCost: 3, blurb: "The everyday default — strong reasoning at moderate cost" },
+  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", relativeCost: 5, blurb: "Deepest reasoning for hard, high-stakes work" },
 ];
 
 export function modelTier(id: ModelTier) {
