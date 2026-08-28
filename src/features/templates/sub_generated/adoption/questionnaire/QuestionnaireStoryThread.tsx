@@ -78,13 +78,13 @@ function ThreadItem({
               )}
               {isAnsweredCurrent && (
                 <span className="ml-1.5 text-[10px] uppercase tracking-[0.18em] text-primary/80 font-semibold not-italic">
-                  current
+                  {t.templates.adopt_modal.thread_current}
                 </span>
               )}
             </div>
           ) : state === 'current' ? (
             <div className="typo-label text-primary/80 font-semibold mt-1">
-              current
+              {t.templates.adopt_modal.thread_current}
             </div>
           ) : state === 'blocked' ? (
             <div className="typo-caption text-status-error/80 leading-tight mt-1">

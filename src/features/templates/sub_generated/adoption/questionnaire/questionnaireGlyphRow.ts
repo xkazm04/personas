@@ -25,18 +25,38 @@
 import type { GlyphRow, GlyphDimension, GlyphPresence } from '@/features/shared/glyph';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { QuestionnaireCategory } from '../questionnaireCategoryOrder';
 
-/** Adoption-question category → glyph dimension. Categories not in this
- *  map don't move the sigil (the question is generic config). */
-export const QUESTION_CATEGORY_TO_DIM: Record<string, GlyphDimension> = {
+/**
+ * Adoption-question category → glyph dimension. THE authority for this
+ * mapping — `persona-layout/questionDimMap.ts` routes through it rather than
+ * keeping a second copy.
+ *
+ * `satisfies Record<QuestionnaireCategory, …>` is load-bearing: it makes a
+ * category added to `QUESTIONNAIRE_CATEGORY_ORDER` but forgotten here a
+ * COMPILE ERROR. Without it the map was an open `Record<string, …>`, an
+ * omission was unrepresentable as an error, and `boundaries` sat missing —
+ * a boundaries question moved no petal and nothing said so.
+ *
+ * `boundaries` maps to `review`: a boundary is an approval/escalation limit on
+ * what the persona may do unattended, which is the Review petal's subject. It
+ * is the one judgement call in this table — change it here, once, if wrong.
+ */
+const CATEGORY_TO_DIM = {
   credentials: 'connector',
   configuration: 'task',
+  domain: 'task',
   human_in_the_loop: 'review',
+  quality: 'error',
   memory: 'memory',
   notifications: 'message',
-  domain: 'task',
-  quality: 'error',
-};
+  boundaries: 'review',
+} as const satisfies Record<QuestionnaireCategory, GlyphDimension>;
+
+/** Lookup view of {@link CATEGORY_TO_DIM}. Widened to `string` keys because
+ *  callers index it with `q.category`, a free-form value off the template
+ *  payload; an untagged or unknown category simply moves nothing. */
+export const QUESTION_CATEGORY_TO_DIM: Record<string, GlyphDimension> = CATEGORY_TO_DIM;
 
 const ALL_DIMS: GlyphDimension[] = [
   'trigger', 'task', 'connector', 'message',

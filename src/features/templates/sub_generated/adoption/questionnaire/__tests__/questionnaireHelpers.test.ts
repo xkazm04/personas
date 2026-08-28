@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import {
   isStackable,
@@ -33,6 +33,32 @@ describe('normalizeOptions', () => {
   it('returns an empty list for absent or empty option arrays', () => {
     expect(normalizeOptions(undefined)).toEqual([]);
     expect(normalizeOptions([])).toEqual([]);
+  });
+
+  it('drops an option whose value has no usable scalar form', () => {
+    // `String({foo:1})` is "[object Object]". Rendered, it is a selectable
+    // card the user can pick, and the literal string is then stored as the
+    // answer the payload mapping consumes. Dropping it keeps the rest of the
+    // list usable instead of offering a card that cannot mean anything.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(
+        normalizeOptions([{ value: { foo: 1 } }, { value: 'slack' }, { value: ['a'] }]),
+      ).toEqual([{ value: 'slack', label: 'slack', sublabel: null }]);
+      expect(normalizeOptions([{ label: 'No value' }, null, undefined, ''])).toEqual([]);
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('keeps scalar values templates legitimately author', () => {
+    // Numbers and booleans round-trip to an answer string a user could have
+    // meant, so they are normalised rather than dropped.
+    expect(normalizeOptions([3, true])).toEqual([
+      { value: '3', label: '3', sublabel: null },
+      { value: 'true', label: 'true', sublabel: null },
+    ]);
   });
 });
 
@@ -100,5 +126,25 @@ describe('summarizeAnswer', () => {
 
   it('drops blank segments rather than rendering a dangling separator', () => {
     expect(summarizeAnswer('a, , b')).toBe('a and b');
+  });
+
+  it('builds the list through the catalog when translations are threaded', () => {
+    // The conjunction and the "+N more" suffix are grammar. If they were
+    // assembled in code, a non-English rail would read English punctuation
+    // on an otherwise translated surface; these assertions fail the moment
+    // the sentence shape moves back out of the catalog.
+    const t = {
+      templates: {
+        adopt_modal: {
+          answer_list_pair: '{first} y {second}',
+          answer_list_overflow: '{first}, {second} y {count} más',
+        },
+      },
+      // Invariant: `summarizeAnswer` reads exactly these two leaves off the
+      // catalog, so a two-leaf stub is a complete stand-in for the full tree.
+      // Narrowing is safe because the cast is confined to this test.
+    } as unknown as Parameters<typeof summarizeAnswer>[2];
+    expect(summarizeAnswer('a, b', 'select', t)).toBe('a y b');
+    expect(summarizeAnswer('a, b, c, d', 'select', t)).toBe('a, b y 2 más');
   });
 });

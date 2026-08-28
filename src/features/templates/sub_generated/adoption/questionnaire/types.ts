@@ -19,8 +19,23 @@ export interface QuestionnaireFormProps {
    */
   dynamicOptions?: Record<string, DynamicOptionState>;
   onRetryDynamic?: (questionId: string) => void;
-  /** Passes the vault category the user needs to connect a credential for. */
-  onAddCredential?: (vaultCategory: string) => void;
+  /**
+   * Opens the quick-add credential flow for the thing the user needs to connect.
+   *
+   * The argument is EITHER vocabulary — a real vault category (`messaging`,
+   * `email`, `image_generation`) when `question.vault_category` is set, or a
+   * `dynamic_source.service_type` (`gmail`, `notion`, …) when it is not. Those
+   * are separate vocabularies and the renderers legitimately pass both
+   * (`QuestionnaireFormGridParts.tsx:129-130,:174`).
+   *
+   * Resolving them is the HANDLER's job, in one place:
+   * `ChronologyAdoptionView.handleAddCredentialForCategory` (`:1282-1291`) maps
+   * a service_type to its category tag before the picker filters the catalog —
+   * without that step `connectorsInCategory()` returns nothing and the modal
+   * looks broken. Any new handler bound to this prop owes the same resolution;
+   * the parameter is not a promise that only categories arrive.
+   */
+  onAddCredential?: (vaultCategoryOrServiceType: string) => void;
   onAnswerUpdated: (questionId: string, answer: string) => void;
   onSubmit: () => void;
   onClose: () => void;

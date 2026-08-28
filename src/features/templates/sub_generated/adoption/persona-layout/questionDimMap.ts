@@ -1,5 +1,6 @@
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import { QUESTION_CATEGORY_TO_DIM } from '../questionnaire/questionnaireGlyphRow';
 
 /**
  * Map an adoption question to the persona dimension whose petal should
@@ -11,25 +12,15 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
  *   1. `vault_category` set → connector dim (this is always a vault pick)
  *   2. category string match → matching dim
  *   3. fallback → `task` (catch-all; surfaces on the What petal)
+ *
+ * The category table itself is NOT restated here. It used to be a hand-kept
+ * `switch` that duplicated `QUESTION_CATEGORY_TO_DIM` and had drifted from it
+ * (`boundaries` reached neither), so this routes through that one authority —
+ * which is completeness-checked against `QUESTIONNAIRE_CATEGORY_ORDER`.
  */
 export function questionToDimension(q: TransformQuestionResponse): GlyphDimension {
   if (q.vault_category) return 'connector';
-  switch (q.category) {
-    case 'credentials':
-      return 'connector';
-    case 'human_in_the_loop':
-      return 'review';
-    case 'memory':
-      return 'memory';
-    case 'notifications':
-      return 'message';
-    case 'quality':
-      return 'error';
-    case 'configuration':
-    case 'domain':
-    default:
-      return 'task';
-  }
+  return (q.category ? QUESTION_CATEGORY_TO_DIM[q.category] : undefined) ?? 'task';
 }
 
 /**
