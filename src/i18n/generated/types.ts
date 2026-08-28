@@ -13060,7 +13060,9 @@ export type Translations = {
       completed: string;
       failed: string;
       cancelled: string;
+      incomplete: string;
       error: string;
+      unknown: string;
     };
     simple: {
       good: string;

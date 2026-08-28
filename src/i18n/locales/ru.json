@@ -12717,7 +12717,9 @@
       "completed": "Завершено",
       "failed": "Сбой",
       "cancelled": "Отменено",
-      "error": "Ошибка"
+      "incomplete": "Не завершено",
+      "error": "Ошибка",
+      "unknown": "Неизвестно"
     },
     "simple": {
       "good": "Норма",

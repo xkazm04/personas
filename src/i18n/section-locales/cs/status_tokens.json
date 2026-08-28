@@ -5,7 +5,9 @@
     "completed": "Dokončeno",
     "failed": "Selhalo",
     "cancelled": "Zrušeno",
-    "error": "Chyba"
+    "incomplete": "Nedokončeno",
+    "error": "Chyba",
+    "unknown": "Neznámé"
   },
   "simple": {
     "good": "V pořádku",

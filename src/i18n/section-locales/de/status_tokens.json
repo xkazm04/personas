@@ -5,7 +5,9 @@
     "completed": "Abgeschlossen",
     "failed": "Fehlgeschlagen",
     "cancelled": "Abgebrochen",
-    "error": "Fehler"
+    "incomplete": "Unvollständig",
+    "error": "Fehler",
+    "unknown": "Unbekannt"
   },
   "simple": {
     "good": "In Ordnung",

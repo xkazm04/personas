@@ -12717,7 +12717,9 @@
       "completed": "Hoàn thành",
       "failed": "Thất bại",
       "cancelled": "Đã hủy",
-      "error": "Lỗi"
+      "incomplete": "Chưa hoàn tất",
+      "error": "Lỗi",
+      "unknown": "Không rõ"
     },
     "simple": {
       "good": "Tốt",

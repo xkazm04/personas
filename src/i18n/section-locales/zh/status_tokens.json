@@ -5,7 +5,9 @@
     "completed": "已完成",
     "failed": "失败",
     "cancelled": "已取消",
-    "error": "错误"
+    "incomplete": "未完成",
+    "error": "错误",
+    "unknown": "未知"
   },
   "simple": {
     "good": "良好",

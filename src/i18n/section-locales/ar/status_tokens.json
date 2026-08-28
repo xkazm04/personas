@@ -5,7 +5,9 @@
     "completed": "مكتمل",
     "failed": "فاشل",
     "cancelled": "ملغى",
-    "error": "خطأ"
+    "incomplete": "غير مكتمل",
+    "error": "خطأ",
+    "unknown": "غير معروف"
   },
   "simple": {
     "good": "جيد",

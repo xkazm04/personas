@@ -12717,7 +12717,9 @@
       "completed": "पूर्ण",
       "failed": "विफल",
       "cancelled": "रद्द",
-      "error": "त्रुटि"
+      "incomplete": "अपूर्ण",
+      "error": "त्रुटि",
+      "unknown": "अज्ञात"
     },
     "simple": {
       "good": "ठीक है",

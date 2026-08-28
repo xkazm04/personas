@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
  */
 const activeLanguage = (): string => useI18nStore.getState().language;
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 
 /**
  * SQLite `datetime('now')` returns "YYYY-MM-DD HH:MM:SS" — UTC, but with NO
@@ -184,28 +185,61 @@ export function badgeClass(colors: BadgeColors): string {
 }
 
 // -- Unified execution status map ----------------------------------------
-export interface ExecutionStatusEntry extends BadgeColors {
-  label: string;
+
+/** How a status badge LOOKS. Says nothing about what it reads. */
+export interface ExecutionStatusPresentation extends BadgeColors {
   icon: LucideIcon;
   pulse?: boolean;
 }
 
-export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusEntry> = {
-  queued:     { label: 'Queued',     icon: Clock,         text: 'text-status-neutral',      bg: 'bg-status-neutral/10',    border: 'border-status-neutral/20' },
-  running:    { label: 'Running',    icon: Loader2,       text: 'text-status-processing',   bg: 'bg-status-processing/10', border: 'border-status-processing/30', pulse: true },
-  completed:  { label: 'Completed',  icon: CheckCircle2,  text: 'text-status-success',      bg: 'bg-status-success/10',    border: 'border-status-success/20' },
-  failed:     { label: 'Failed',     icon: XCircle,       text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
-  cancelled:  { label: 'Cancelled',  icon: Pause,         text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
-  incomplete: { label: 'Incomplete', icon: AlertTriangle,  text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
-  unknown:    { label: 'Unknown',    icon: HelpCircle,      text: 'text-neutral-400',         bg: 'bg-neutral-500/10',       border: 'border-neutral-500/20' },
+export interface ExecutionStatusEntry extends ExecutionStatusPresentation {
+  /** Translated for the active UI language -- never a raw machine token. */
+  label: string;
+}
+
+/**
+ * Badge presentation per execution status.
+ *
+ * **No labels here.** This map used to carry seven hardcoded English strings
+ * ('Queued', 'Running', ...) which eleven call sites rendered raw, in a
+ * 14-locale app -- while `status_tokens.execution` in the i18n catalog held the
+ * same enumeration for the components that resolved through `tokenLabel`. One
+ * concept written down twice drifts, and these two already had: the catalog
+ * knew `error` and this map did not, this map knew `incomplete`/`unknown` and
+ * the catalog did not. So `incomplete` and `unknown` rendered English in every
+ * locale and `error` fell through to the gray Unknown badge. The catalog is now
+ * the only place a label is written; this map only decides how the badge looks,
+ * and `error` has an entry.
+ */
+export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusPresentation> = {
+  queued:     { icon: Clock,          text: 'text-status-neutral',      bg: 'bg-status-neutral/10',    border: 'border-status-neutral/20' },
+  running:    { icon: Loader2,        text: 'text-status-processing',   bg: 'bg-status-processing/10', border: 'border-status-processing/30', pulse: true },
+  completed:  { icon: CheckCircle2,   text: 'text-status-success',      bg: 'bg-status-success/10',    border: 'border-status-success/20' },
+  failed:     { icon: XCircle,        text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
+  error:      { icon: XCircle,        text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
+  cancelled:  { icon: Pause,          text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
+  incomplete: { icon: AlertTriangle,  text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
+  unknown:    { icon: HelpCircle,     text: 'text-neutral-400',         bg: 'bg-neutral-500/10',       border: 'border-neutral-500/20' },
 };
 
-/** Fallback entry for unknown/corrupted statuses (gray badge, not red). */
-export const DEFAULT_STATUS_ENTRY: ExecutionStatusEntry = EXECUTION_STATUS_MAP.unknown!;
+/** Fallback presentation for unknown/corrupted statuses (gray badge, not red). */
+export const DEFAULT_STATUS_PRESENTATION: ExecutionStatusPresentation = EXECUTION_STATUS_MAP.unknown!;
 
-/** Look up a status entry with fallback. */
+/**
+ * Look up a status badge, with its label resolved for the ACTIVE UI language.
+ *
+ * The bundle is read at call time rather than passed in, for the same reason
+ * `activeLanguage()` above is: every one of the eleven call sites is a render
+ * body that already had the status token and no `t`, and the instruction to
+ * thread one through is exactly the instruction that ran at ~96%
+ * non-compliance for `language`. `status_tokens` is a BASE section
+ * (`i18n/routeSections.ts`), so it is loaded on every route and the lookup
+ * cannot land on a not-yet-fetched chunk. An unmapped token still resolves
+ * through `tokenLabel`, which warns in DEV and falls back to the raw token.
+ */
 export function getStatusEntry(status: string): ExecutionStatusEntry {
-  return EXECUTION_STATUS_MAP[status] ?? DEFAULT_STATUS_ENTRY;
+  const presentation = EXECUTION_STATUS_MAP[status] ?? DEFAULT_STATUS_PRESENTATION;
+  return { ...presentation, label: tokenLabel(getActiveTranslations(), 'execution', status) };
 }
 
 

@@ -13054,7 +13054,9 @@
       "completed": "Completed",
       "failed": "Failed",
       "cancelled": "Cancelled",
-      "error": "Error"
+      "incomplete": "Incomplete",
+      "error": "Error",
+      "unknown": "Unknown"
     },
     "simple": {
       "good": "Good",

@@ -12717,7 +12717,9 @@
       "completed": "完了",
       "failed": "失敗",
       "cancelled": "キャンセル済み",
-      "error": "エラー"
+      "incomplete": "未完了",
+      "error": "エラー",
+      "unknown": "不明"
     },
     "simple": {
       "good": "良好",

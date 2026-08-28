@@ -12717,7 +12717,9 @@
       "completed": "Completado",
       "failed": "Fallido",
       "cancelled": "Cancelado",
-      "error": "Error"
+      "incomplete": "Incompleto",
+      "error": "Error",
+      "unknown": "Desconocido"
     },
     "simple": {
       "good": "Correcto",

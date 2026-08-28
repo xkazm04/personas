@@ -5,7 +5,9 @@
     "completed": "Selesai",
     "failed": "Gagal",
     "cancelled": "Dibatalkan",
-    "error": "Kesalahan"
+    "incomplete": "Tidak lengkap",
+    "error": "Kesalahan",
+    "unknown": "Tidak diketahui"
   },
   "simple": {
     "good": "Baik",

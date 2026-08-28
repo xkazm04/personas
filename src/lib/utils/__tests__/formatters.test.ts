@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatTimestamp, formatRelativeTime } from '../formatters';
+import { describe, it, expect, afterEach } from 'vitest';
+import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatTimestamp, formatRelativeTime, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+import { useI18nStore } from '@/stores/i18nStore';
 
 describe('formatPercent', () => {
   it('treats the input as a percentage magnitude by default', () => {
@@ -145,5 +147,49 @@ describe('formatRelativeTime date fallback', () => {
     expect(de).toBe(then.toLocaleDateString('de'));
     expect(en).toBe(then.toLocaleDateString('en-US'));
     expect(de).not.toBe(en);
+  });
+});
+
+/**
+ * `EXECUTION_STATUS_MAP` used to carry seven hardcoded English labels which
+ * eleven call sites rendered raw, in a 14-locale app, while the i18n catalog
+ * held the same enumeration for the components that went through `tokenLabel`.
+ * The two lists had already drifted apart in both directions.
+ */
+describe('getStatusEntry', () => {
+  const original = useI18nStore.getState().language;
+  afterEach(() => {
+    useI18nStore.setState({ language: original });
+  });
+
+  it('keeps no label in the presentation map', () => {
+    for (const entry of Object.values(EXECUTION_STATUS_MAP)) {
+      expect(entry).not.toHaveProperty('label');
+    }
+  });
+
+  it('resolves the label for the active language', async () => {
+    useI18nStore.setState({ language: 'en' });
+    await preloadSectionsAsync('en', ['status_tokens']);
+    expect(getStatusEntry('running').label).toBe('Running');
+    expect(getStatusEntry('incomplete').label).toBe('Incomplete');
+    expect(getStatusEntry('unknown').label).toBe('Unknown');
+
+    useI18nStore.setState({ language: 'de' });
+    await preloadSectionsAsync('de', ['status_tokens']);
+    expect(getStatusEntry('running').label).toBe('Läuft');
+    expect(getStatusEntry('incomplete').label).toBe('Unvollständig');
+    expect(getStatusEntry('unknown').label).toBe('Unbekannt');
+  });
+
+  it('gives `error` its own failure badge instead of the gray Unknown one', () => {
+    expect(getStatusEntry('error').icon).toBe(getStatusEntry('failed').icon);
+    expect(getStatusEntry('error').text).toBe('text-status-error');
+  });
+
+  it('falls back to the gray presentation for an unmapped status', () => {
+    const entry = getStatusEntry('teleported');
+    expect(entry.icon).toBe(EXECUTION_STATUS_MAP.unknown!.icon);
+    expect(entry.label).toBe('teleported');
   });
 });

@@ -12717,7 +12717,9 @@
       "completed": "완료",
       "failed": "실패",
       "cancelled": "취소됨",
-      "error": "오류"
+      "incomplete": "미완료",
+      "error": "오류",
+      "unknown": "알 수 없음"
     },
     "simple": {
       "good": "양호",
