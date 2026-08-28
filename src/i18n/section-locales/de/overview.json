@@ -961,7 +961,23 @@
     "memory_b": "Erinnerung B",
     "merge": "Zusammenführen",
     "keep": "Behalten",
-    "vs": "vs"
+    "vs": "vs",
+    "processing": "Entscheidung wird ausgeführt…",
+    "merge_blocked_core": "Eine Kern-Erinnerung (angeheftet) lässt sich nicht zusammenführen",
+    "merge_blocked_cross_persona": "Erinnerungen verschiedener Agenten lassen sich nicht zusammenführen",
+    "retire_blocked_core_toast": "Eine Kern-Erinnerung (angeheftet) lässt sich nicht archivieren — bitte manuell klären",
+    "merge_blocked_core_toast": "Eine Kern-Erinnerung (angeheftet) lässt sich nicht zusammenführen — bitte manuell klären",
+    "merge_blocked_cross_persona_toast": "Erinnerungen verschiedener Agenten lassen sich nicht zusammenführen — bitte manuell klären",
+    "dismissed_toast": "Konflikt verworfen",
+    "resolved_toast": "Konflikt geklärt",
+    "resolve_failed_toast": "Konflikt konnte nicht geklärt werden",
+    "detected": "{count} Konflikte erkannt",
+    "detected_one": "{count} Konflikt erkannt",
+    "count_contradiction": "{count} Widersprüche",
+    "count_contradiction_one": "{count} Widerspruch",
+    "count_duplicate": "{count} Duplikate",
+    "count_duplicate_one": "{count} Duplikat",
+    "count_superseded": "{count} überholt"
   },
   "observability_charts": {
     "cost_over_time": "Kosten im Zeitverlauf",
@@ -1232,7 +1248,11 @@
   },
   "review_results": {
     "title": "KI-Erinnerungsüberprüfung",
-    "review_failed": "Überprüfung fehlgeschlagen"
+    "review_failed": "Überprüfung fehlgeschlagen",
+    "reviewed_count": "{count} Erinnerungen geprüft",
+    "reviewed_count_one": "{count} Erinnerung geprüft",
+    "kept_count": "{count} behalten",
+    "pruned_count": "{count} entfernt"
   },
   "anomaly_drilldown_extra": {
     "title": "Anomalie-Drilldown",
@@ -2234,5 +2254,29 @@
       "decrypt": "Genutzt",
       "healthcheck": "Prüfung"
     }
+  },
+  "memories_ui": {
+    "stored_subtitle": "{count} von Agenten gespeicherte Erinnerungen",
+    "stored_subtitle_one": "{count} von Agenten gespeicherte Erinnerung",
+    "tab_memories": "Erinnerungen",
+    "tab_conflicts": "Konflikte",
+    "review": "Prüfen",
+    "reviewing": "Wird geprüft…",
+    "kpi_total": "Gesamt",
+    "kpi_avg_importance": "Ø Wichtigkeit",
+    "kpi_total_access": "Zugriffe gesamt",
+    "kpi_nodes": "Knoten",
+    "kpi_personas": "Agenten",
+    "kpi_clusters": "Cluster",
+    "category_label": "Kategorie",
+    "col_type": "Typ",
+    "col_tier": "Stufe",
+    "col_hits": "Zugriffe",
+    "col_last_seen": "Zuletzt gesehen",
+    "unknown_persona": "Unbekannt",
+    "delete_all_error": "Alle Erinnerungen konnten nicht gelöscht werden",
+    "legend_size": "Größe",
+    "legend_low": "Niedrig",
+    "legend_high": "Hoch"
   }
 }

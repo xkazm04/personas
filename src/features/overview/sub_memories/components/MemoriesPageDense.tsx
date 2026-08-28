@@ -63,6 +63,9 @@ const TIER_TONE: Record<string, string> = {
 
 export default function MemoriesPageDense() {
   const { t, tx } = useTranslation();
+  /** Chrome shared with MemoriesPageGraph — bound once so the ~20 label
+   *  reads below stay readable. */
+  const mui = t.overview.memories_ui;
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const personas = useAgentStore((s) => s.personas);
   const {
@@ -236,8 +239,8 @@ export default function MemoriesPageDense() {
       <ContentHeader
         icon={<Brain className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Memories"
-        subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
+        title={t.overview.memories.title}
+        subtitle={tx(memoriesTotal === 1 ? mui.stored_subtitle_one : mui.stored_subtitle, { count: memoriesTotal })}
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -246,7 +249,7 @@ export default function MemoriesPageDense() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-primary/20' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
               <Brain className="w-4 h-4" />
-              <span className="typo-body font-medium">Memories</span>
+              <span className="typo-body font-medium">{mui.tab_memories}</span>
             </button>
             <button
               type="button"
@@ -254,7 +257,7 @@ export default function MemoriesPageDense() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
               <Shield className="w-4 h-4" />
-              <span className="typo-body font-medium">Conflicts</span>
+              <span className="typo-body font-medium">{mui.tab_conflicts}</span>
             </button>
             <div className="w-px h-6 bg-primary/10" />
             {/* `Button loading` renders a REAL spinner and sets aria-busy.
@@ -270,11 +273,11 @@ export default function MemoriesPageDense() {
               size="sm"
               icon={<Sparkles className="w-3.5 h-3.5" />}
               loading={memoryReviewRunning}
-              loadingLabel="Reviewing..."
+              loadingLabel={mui.reviewing}
               disabled={memoryReviewRunning || memoriesTotal === 0}
               onClick={handleReview}
             >
-              Review
+              {mui.review}
             </Button>
             <div className="relative" ref={reflectMenuRef}>
               <Button
@@ -311,7 +314,7 @@ export default function MemoriesPageDense() {
             </div>
             <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-              Add
+              {t.common.add}
             </button>
             {memories.length > 0 && (
               <button type="button" onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
@@ -336,9 +339,9 @@ export default function MemoriesPageDense() {
         <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
           {stats && (
             <div className="flex items-center gap-3 typo-body flex-wrap">
-              <KpiMetric label="Total" value={stats.total} />
+              <KpiMetric label={mui.kpi_total} value={stats.total} />
               <KpiDivider />
-              <KpiMetric label="Avg Importance" value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
+              <KpiMetric label={mui.kpi_avg_importance} value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
               <KpiDivider />
               {/* An "Archive" tile stood here and could only ever read 0: the
                   list was fetched with the store's default `!archive` tier
@@ -347,11 +350,11 @@ export default function MemoriesPageDense() {
                   incapable of a non-zero value is not a measurement. The tier
                   select below now reaches the archive; the tile stays gone
                   because these counts are page-scoped, not store-scoped. */}
-              <KpiMetric label="Core" value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
+              <KpiMetric label={tokenLabel(t, 'memory_tier', 'core')} value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
               <KpiDivider />
-              <KpiMetric label="Active" value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
+              <KpiMetric label={tokenLabel(t, 'memory_tier', 'active')} value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
               <KpiDivider />
-              <KpiMetric label="Total Access" value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-emerald-300" />
+              <KpiMetric label={mui.kpi_total_access} value={stats.complete ? stats.totalAccess.toLocaleString() : UNMEASURED} tone="text-emerald-300" />
             </div>
           )}
 
@@ -391,7 +394,7 @@ export default function MemoriesPageDense() {
             <option value="working">{t.overview.memory_filter.tier_working}</option>
             <option value="archive">{t.overview.memory_filter.tier_archived}</option>
           </ThemedSelect>
-          <span className="typo-label text-foreground mr-1">Category</span>
+          <span className="typo-label text-foreground mr-1">{mui.category_label}</span>
           {ALL_MEMORY_CATEGORIES.map((cat) => {
             const colors = MEMORY_CATEGORY_COLORS[cat]!;
             const active = categoryFilters.has(cat);
@@ -416,7 +419,7 @@ export default function MemoriesPageDense() {
               onClick={() => { setCategoryFilters(new Set()); setPersonaFilter(null); setTierFilter(null); setSearch(''); }}
               className="typo-body text-foreground hover:text-foreground px-2 py-1"
             >
-              Clear
+              {t.common.clear}
             </button>
           )}
         </div>
@@ -427,14 +430,14 @@ export default function MemoriesPageDense() {
 
           {/* Column headers */}
           <div className="flex items-center border-b border-primary/10 bg-background/80 flex-shrink-0 relative z-10">
-            <div className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>TYPE</div>
-            <SortHeader field="title" label="Title" width={COL_WIDTHS.title} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="persona" label="Persona" width={COL_WIDTHS.persona} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="importance" label="Importance" width={COL_WIDTHS.importance} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="tier" label="Tier" width={COL_WIDTHS.tier} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="access_count" label="Hits" width={COL_WIDTHS.access} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
-            <SortHeader field="last_accessed" label="Last seen" width={COL_WIDTHS.lastSeen} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
-            <SortHeader field="created" label="Created" width={COL_WIDTHS.created} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+            <div className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>{mui.col_type}</div>
+            <SortHeader field="title" label={t.overview.memory_detail.title_label} width={COL_WIDTHS.title} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="persona" label={t.overview.reports.columns.persona} width={COL_WIDTHS.persona} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="importance" label={t.overview.memory_detail.importance_label} width={COL_WIDTHS.importance} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="tier" label={mui.col_tier} width={COL_WIDTHS.tier} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
+            <SortHeader field="access_count" label={mui.col_hits} width={COL_WIDTHS.access} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+            <SortHeader field="last_accessed" label={mui.col_last_seen} width={COL_WIDTHS.lastSeen} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+            <SortHeader field="created" label={t.common.created} width={COL_WIDTHS.created} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
           </div>
 
           {/* Body — three-state row region (docs/design/overview-loading.md):
@@ -462,7 +465,7 @@ export default function MemoriesPageDense() {
                     key={memory.id}
                     memory={memory}
                     index={i}
-                    personaName={personaMap.get(memory.persona_id)?.name ?? 'Unknown'}
+                    personaName={personaMap.get(memory.persona_id)?.name ?? mui.unknown_persona}
                     personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
                     isSelected={selected?.id === memory.id}
                     onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
@@ -478,7 +481,7 @@ export default function MemoriesPageDense() {
       {selected && (
         <MemoryDetailModal
           memory={selected}
-          personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
+          personaName={personaMap.get(selected.persona_id)?.name ?? mui.unknown_persona}
           personaColor={personaMap.get(selected.persona_id)?.color ?? '#6B7280'}
           onClose={() => setSelected(null)}
           onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
@@ -503,7 +506,7 @@ export default function MemoriesPageDense() {
               await deleteAllMemories();
               await fetchMemories();
             } catch (e) {
-              toastCatch('MemoriesPageDense:deleteAll', 'Failed to delete all memories')(e);
+              toastCatch('MemoriesPageDense:deleteAll', mui.delete_all_error)(e);
             } finally {
               setConfirmingDeleteAll(false);
             }

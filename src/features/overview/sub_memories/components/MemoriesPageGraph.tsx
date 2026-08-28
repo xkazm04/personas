@@ -27,6 +27,9 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 interface NodePosition { x: number; y: number; }
 
 export default function MemoriesPageGraph() {
+  const { t, tx } = useTranslation();
+  /** Chrome shared with MemoriesPageDense. */
+  const mui = t.overview.memories_ui;
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, reviewMemories,
@@ -118,8 +121,8 @@ export default function MemoriesPageGraph() {
       <ContentHeader
         icon={<Brain className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Memories"
-        subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
+        title={t.overview.memories.title}
+        subtitle={tx(memoriesTotal === 1 ? mui.stored_subtitle_one : mui.stored_subtitle, { count: memoriesTotal })}
         actions={
           <div className="flex items-center gap-2">
             {/* Real spinner + aria-busy on the pressed control. The previous
@@ -131,15 +134,15 @@ export default function MemoriesPageGraph() {
               size="sm"
               icon={<Sparkles className="w-3.5 h-3.5" />}
               loading={memoryReviewRunning}
-              loadingLabel="Reviewing..."
+              loadingLabel={mui.reviewing}
               disabled={memoryReviewRunning || memoriesTotal === 0}
               onClick={handleReview}
             >
-              Review
+              {mui.review}
             </Button>
             <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-              Add
+              {t.common.add}
             </button>
           </div>
         }
@@ -151,17 +154,17 @@ export default function MemoriesPageGraph() {
         {/* Top stats + filter row */}
         <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
           <div className="flex items-center gap-3 typo-body flex-wrap mr-auto">
-            <KpiMetric label="Nodes" value={stats.nodes} />
+            <KpiMetric label={mui.kpi_nodes} value={stats.nodes} />
             <KpiDivider />
-            <KpiMetric label="Personas" value={stats.personas} tone="text-cyan-300" />
+            <KpiMetric label={mui.kpi_personas} value={stats.personas} tone="text-cyan-300" />
             <KpiDivider />
-            <KpiMetric label="Clusters" value={stats.categories} tone="text-violet-300" />
+            <KpiMetric label={mui.kpi_clusters} value={stats.categories} tone="text-violet-300" />
             <KpiDivider />
-            <KpiMetric label="Avg Importance" value={stats.avg.toFixed(1)} tone="text-amber-300" />
+            <KpiMetric label={mui.kpi_avg_importance} value={stats.avg.toFixed(1)} tone="text-amber-300" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <FilterPill active={activeCategory === 'all'} onClick={() => { setActiveCategory('all'); setSelected(null); }}>All</FilterPill>
+            <FilterPill active={activeCategory === 'all'} onClick={() => { setActiveCategory('all'); setSelected(null); }}>{t.common.all}</FilterPill>
             {ALL_MEMORY_CATEGORIES.map((cat) => {
               const colors = MEMORY_CATEGORY_COLORS[cat]!;
               const active = activeCategory === cat;
@@ -252,8 +255,8 @@ export default function MemoriesPageGraph() {
               </svg>
 
               {/* Legends */}
-              <PersonaLegend personas={personas} memories={memories} />
-              <SizeLegend />
+              <PersonaLegend personas={personas} memories={memories} label={mui.kpi_personas} />
+              <SizeLegend labels={{ size: mui.legend_size, importance: t.overview.memory_detail.importance_label, low: mui.legend_low, high: mui.legend_high }} />
 
               {/* Detail panel (in-page, not modal) */}
               <AnimatePresence>
@@ -261,7 +264,7 @@ export default function MemoriesPageGraph() {
                   <DetailPanel
                     key={selected.id}
                     memory={selected}
-                    personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
+                    personaName={personaMap.get(selected.persona_id)?.name ?? mui.unknown_persona}
                     onClose={() => setSelected(null)}
                     onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
                   />
@@ -465,7 +468,7 @@ function ClusterLabels({ width, height }: { width: number; height: number }) {
   );
 }
 
-function PersonaLegend({ personas, memories }: { personas: { id: string; name: string; color: string | null }[]; memories: PersonaMemory[] }) {
+function PersonaLegend({ personas, memories, label }: { personas: { id: string; name: string; color: string | null }[]; memories: PersonaMemory[]; label: string }) {
   const personasInGraph = useMemo(() => {
     const ids = new Set(memories.map((m) => m.persona_id));
     return personas.filter((p) => ids.has(p.id)).slice(0, 6);
@@ -475,7 +478,7 @@ function PersonaLegend({ personas, memories }: { personas: { id: string; name: s
 
   return (
     <div className="absolute left-3 bottom-3 flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
-      <span className="typo-label text-foreground">Personas</span>
+      <span className="typo-label text-foreground">{label}</span>
       {personasInGraph.map((p) => (
         <div key={p.id} className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color ?? '#6B7280' }} />
@@ -486,15 +489,15 @@ function PersonaLegend({ personas, memories }: { personas: { id: string; name: s
   );
 }
 
-function SizeLegend() {
+function SizeLegend({ labels }: { labels: { size: string; importance: string; low: string; high: string } }) {
   return (
     <div className="absolute left-3 top-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
-      <span className="typo-label text-foreground">Size</span>
-      <span className="typo-caption text-foreground">Importance</span>
+      <span className="typo-label text-foreground">{labels.size}</span>
+      <span className="typo-caption text-foreground">{labels.importance}</span>
       <svg width={10} height={10}><circle cx={5} cy={5} r={3} fill="currentColor" className="text-foreground" /></svg>
-      <span className="typo-caption text-foreground">low</span>
+      <span className="typo-caption text-foreground">{labels.low}</span>
       <svg width={16} height={16}><circle cx={8} cy={8} r={6} fill="currentColor" className="text-foreground" /></svg>
-      <span className="typo-caption text-foreground">high</span>
+      <span className="typo-caption text-foreground">{labels.high}</span>
     </div>
   );
 }
@@ -533,11 +536,11 @@ function DetailPanel({
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <DetailStat label="Importance" value={`${memory.importance}/5`} tone="text-amber-300" />
+        <DetailStat label={t.overview.memory_detail.importance_label} value={`${memory.importance}/5`} tone="text-amber-300" />
         {/* Machine token from the backend — resolved through the token map, not
             printed raw (see the same fix on the dense table's Tier column). */}
-        <DetailStat label="Tier" value={tokenLabel(t, 'memory_tier', memory.tier)} tone="text-foreground" />
-        <DetailStat label="Hits" value={memory.access_count} tone="text-emerald-300" />
+        <DetailStat label={t.overview.memories_ui.col_tier} value={tokenLabel(t, 'memory_tier', memory.tier)} tone="text-foreground" />
+        <DetailStat label={t.overview.memories_ui.col_hits} value={memory.access_count} tone="text-emerald-300" />
       </div>
 
       <div className="h-1.5 w-full rounded-full bg-foreground/10 overflow-hidden mb-3">
@@ -548,7 +551,7 @@ function DetailPanel({
 
       <div className="flex items-center justify-between typo-caption text-foreground pt-2 border-t border-primary/10">
         <span><DebtText k="auto_last_seen_56462f81" /> {formatRelativeTime(lastSeen)}</span>
-        <button type="button" onClick={onDelete} className="text-red-400/80 hover:text-red-400">Delete</button>
+        <button type="button" onClick={onDelete} className="text-red-400/80 hover:text-red-400">{t.common.delete}</button>
       </div>
     </motion.div>
   );

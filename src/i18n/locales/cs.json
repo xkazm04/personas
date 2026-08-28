@@ -7225,7 +7225,23 @@
       "memory_b": "Vzpomínka B",
       "merge": "Sloučit",
       "keep": "Zachovat",
-      "vs": "vs."
+      "vs": "vs.",
+      "processing": "Zpracovávám rozhodnutí…",
+      "merge_blocked_core": "Základní (připnutou) vzpomínku nelze sloučit",
+      "merge_blocked_cross_persona": "Vzpomínky různých agentů nelze sloučit",
+      "retire_blocked_core_toast": "Základní (připnutou) vzpomínku nelze archivovat — vyřešte konflikt ručně",
+      "merge_blocked_core_toast": "Základní (připnutou) vzpomínku nelze sloučit — vyřešte konflikt ručně",
+      "merge_blocked_cross_persona_toast": "Vzpomínky různých agentů nelze sloučit — vyřešte konflikt ručně",
+      "dismissed_toast": "Konflikt zamítnut",
+      "resolved_toast": "Konflikt vyřešen",
+      "resolve_failed_toast": "Konflikt se nepodařilo vyřešit",
+      "detected": "Nalezeno {count} konfliktů",
+      "detected_one": "Nalezen {count} konflikt",
+      "count_contradiction": "{count} rozporů",
+      "count_contradiction_one": "{count} rozpor",
+      "count_duplicate": "{count} duplicit",
+      "count_duplicate_one": "{count} duplicita",
+      "count_superseded": "{count} nahrazeno"
     },
     "observability_charts": {
       "cost_over_time": "Náklady v čase",
@@ -7496,7 +7512,11 @@
     },
     "review_results": {
       "title": "Kontrola paměti AI",
-      "review_failed": "Kontrola selhala"
+      "review_failed": "Kontrola selhala",
+      "reviewed_count": "Prověřeno {count} vzpomínek",
+      "reviewed_count_one": "Prověřena {count} vzpomínka",
+      "kept_count": "{count} ponecháno",
+      "pruned_count": "{count} vyřazeno"
     },
     "anomaly_drilldown_extra": {
       "title": "Analýza anomálie",
@@ -8498,6 +8518,30 @@
         "decrypt": "Použít",
         "healthcheck": "Kontrola"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "{count} vzpomínek uložených agenty",
+      "stored_subtitle_one": "{count} vzpomínka uložená agenty",
+      "tab_memories": "Vzpomínky",
+      "tab_conflicts": "Konflikty",
+      "review": "Prověřit",
+      "reviewing": "Prověřuji…",
+      "kpi_total": "Celkem",
+      "kpi_avg_importance": "Průměrná důležitost",
+      "kpi_total_access": "Celkem použití",
+      "kpi_nodes": "Uzly",
+      "kpi_personas": "Agenti",
+      "kpi_clusters": "Shluky",
+      "category_label": "Kategorie",
+      "col_type": "Typ",
+      "col_tier": "Úroveň",
+      "col_hits": "Použití",
+      "col_last_seen": "Naposledy",
+      "unknown_persona": "Neznámý",
+      "delete_all_error": "Nepodařilo se smazat všechny vzpomínky",
+      "legend_size": "Velikost",
+      "legend_low": "Nízká",
+      "legend_high": "Vysoká"
     }
   },
   "matrix_v3": {

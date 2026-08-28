@@ -17,6 +17,7 @@ import { trackInteraction } from '@/lib/sentry';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
 import { DebtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface MemoryConflictReviewProps {
@@ -24,6 +25,8 @@ interface MemoryConflictReviewProps {
 }
 
 export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
+  const { t, tx } = useTranslation();
+  const mc = t.overview.memory_conflict;
   const {
     memories, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
@@ -76,7 +79,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           }
           if (retire.tier === 'core') {
             useToastStore.getState().addToast(
-              'Cannot retire a core (pinned) memory — resolve this conflict manually',
+              mc.retire_blocked_core_toast,
               'error',
             );
             return;
@@ -108,14 +111,14 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           // failure.
           if (conflict.memoryA.tier === 'core' || conflict.memoryB.tier === 'core') {
             useToastStore.getState().addToast(
-              'Cannot merge a core (pinned) memory — resolve this conflict manually',
+              mc.merge_blocked_core_toast,
               'error',
             );
             return;
           }
           if (conflict.memoryA.persona_id !== conflict.memoryB.persona_id) {
             useToastStore.getState().addToast(
-              'Cannot merge memories from different agents — resolve this conflict manually',
+              mc.merge_blocked_cross_persona_toast,
               'error',
             );
             return;
@@ -150,7 +153,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       if (activeConflictId === conflict.id) setActiveConflictId(null);
       if (resolution !== 'dismiss') await fetchMemories();
       useToastStore.getState().addToast(
-        resolution === 'dismiss' ? 'Conflict dismissed' : 'Conflict resolved',
+        resolution === 'dismiss' ? mc.dismissed_toast : mc.resolved_toast,
         'success',
       );
       onConflictsResolved?.();
@@ -161,11 +164,11 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       // produced no Sentry event and no console trace anywhere. Route it, then
       // keep the toast — this is a user-facing failure AND a background one.
       silentCatch('MemoryConflictReview:handleResolve')(err);
-      useToastStore.getState().addToast('Failed to resolve conflict', 'error');
+      useToastStore.getState().addToast(mc.resolve_failed_toast, 'error');
     } finally {
       setProcessing(null);
     }
-  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, resolvedIds]);
+  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, resolvedIds, mc]);
 
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no
@@ -197,22 +200,22 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       >
         <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
         <span className="typo-heading text-foreground/85 flex-1">
-          {unresolvedConflicts.length} conflict{unresolvedConflicts.length !== 1 ? 's' : ''} detected
+          {tx(unresolvedConflicts.length === 1 ? mc.detected_one : mc.detected, { count: unresolvedConflicts.length })}
         </span>
         <div className="flex items-center gap-1.5">
           {countByKind.contradiction > 0 && (
             <span className="px-1.5 py-0.5 typo-caption rounded-card bg-red-500/15 text-red-400 border border-red-500/20">
-              {countByKind.contradiction} contradiction{countByKind.contradiction !== 1 ? 's' : ''}
+              {tx(countByKind.contradiction === 1 ? mc.count_contradiction_one : mc.count_contradiction, { count: countByKind.contradiction })}
             </span>
           )}
           {countByKind.duplicate > 0 && (
             <span className="px-1.5 py-0.5 typo-caption rounded-card bg-amber-500/15 text-amber-400 border border-amber-500/20">
-              {countByKind.duplicate} duplicate{countByKind.duplicate !== 1 ? 's' : ''}
+              {tx(countByKind.duplicate === 1 ? mc.count_duplicate_one : mc.count_duplicate, { count: countByKind.duplicate })}
             </span>
           )}
           {countByKind.superseded > 0 && (
             <span className="px-1.5 py-0.5 typo-caption rounded-card bg-blue-500/15 text-blue-400 border border-blue-500/20">
-              {countByKind.superseded} superseded
+              {tx(mc.count_superseded, { count: countByKind.superseded })}
             </span>
           )}
         </div>

@@ -7689,7 +7689,23 @@
       "memory_b": "Memory B",
       "merge": "Merge",
       "keep": "Keep",
-      "vs": "vs"
+      "vs": "vs",
+      "processing": "Processing resolution…",
+      "merge_blocked_core": "Cannot merge a core (pinned) memory",
+      "merge_blocked_cross_persona": "Cannot merge memories from different agents",
+      "retire_blocked_core_toast": "Cannot retire a core (pinned) memory — resolve this conflict manually",
+      "merge_blocked_core_toast": "Cannot merge a core (pinned) memory — resolve this conflict manually",
+      "merge_blocked_cross_persona_toast": "Cannot merge memories from different agents — resolve this conflict manually",
+      "dismissed_toast": "Conflict dismissed",
+      "resolved_toast": "Conflict resolved",
+      "resolve_failed_toast": "Failed to resolve conflict",
+      "detected": "{count} conflicts detected",
+      "detected_one": "{count} conflict detected",
+      "count_contradiction": "{count} contradictions",
+      "count_contradiction_one": "{count} contradiction",
+      "count_duplicate": "{count} duplicates",
+      "count_duplicate_one": "{count} duplicate",
+      "count_superseded": "{count} superseded"
     },
     "observability_charts": {
       "cost_over_time": "Cost Over Time",
@@ -7999,7 +8015,11 @@
     },
     "review_results": {
       "title": "AI Memory Review",
-      "review_failed": "Review failed"
+      "review_failed": "Review failed",
+      "reviewed_count": "Reviewed {count} memories",
+      "reviewed_count_one": "Reviewed {count} memory",
+      "kept_count": "{count} kept",
+      "pruned_count": "{count} pruned"
     },
     "anomaly_drilldown_extra": {
       "title": "Anomaly Drill-Down",
@@ -8715,6 +8735,30 @@
         "decrypt": "Use",
         "healthcheck": "Check"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "{count} memories stored by agents",
+      "stored_subtitle_one": "{count} memory stored by agents",
+      "tab_memories": "Memories",
+      "tab_conflicts": "Conflicts",
+      "review": "Review",
+      "reviewing": "Reviewing…",
+      "kpi_total": "Total",
+      "kpi_avg_importance": "Avg importance",
+      "kpi_total_access": "Total access",
+      "kpi_nodes": "Nodes",
+      "kpi_personas": "Personas",
+      "kpi_clusters": "Clusters",
+      "category_label": "Category",
+      "col_type": "Type",
+      "col_tier": "Tier",
+      "col_hits": "Hits",
+      "col_last_seen": "Last seen",
+      "unknown_persona": "Unknown",
+      "delete_all_error": "Failed to delete all memories",
+      "legend_size": "Size",
+      "legend_low": "Low",
+      "legend_high": "High"
     }
   },
   "matrix_v3": {

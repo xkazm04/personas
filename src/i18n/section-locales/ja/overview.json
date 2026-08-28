@@ -961,7 +961,23 @@
     "memory_b": "メモリB",
     "merge": "マージ",
     "keep": "保持",
-    "vs": "対"
+    "vs": "対",
+    "processing": "処理を適用中…",
+    "merge_blocked_core": "コア（固定）の記憶は統合できません",
+    "merge_blocked_cross_persona": "別々のエージェントの記憶は統合できません",
+    "retire_blocked_core_toast": "コア（固定）の記憶はアーカイブできません — この矛盾は手動で解消してください",
+    "merge_blocked_core_toast": "コア（固定）の記憶は統合できません — この矛盾は手動で解消してください",
+    "merge_blocked_cross_persona_toast": "別々のエージェントの記憶は統合できません — この矛盾は手動で解消してください",
+    "dismissed_toast": "矛盾を却下しました",
+    "resolved_toast": "矛盾を解消しました",
+    "resolve_failed_toast": "矛盾を解消できませんでした",
+    "detected": "{count} 件の矛盾を検出",
+    "detected_one": "{count} 件の矛盾を検出",
+    "count_contradiction": "{count} 件の相反",
+    "count_contradiction_one": "{count} 件の相反",
+    "count_duplicate": "{count} 件の重複",
+    "count_duplicate_one": "{count} 件の重複",
+    "count_superseded": "{count} 件が置き換え"
   },
   "observability_charts": {
     "cost_over_time": "時系列コスト",
@@ -1232,7 +1248,11 @@
   },
   "review_results": {
     "title": "AIメモリレビュー",
-    "review_failed": "レビューに失敗しました"
+    "review_failed": "レビューに失敗しました",
+    "reviewed_count": "{count} 件の記憶を見直しました",
+    "reviewed_count_one": "{count} 件の記憶を見直しました",
+    "kept_count": "{count} 件保持",
+    "pruned_count": "{count} 件整理"
   },
   "anomaly_drilldown_extra": {
     "title": "異常ドリルダウン",
@@ -2234,5 +2254,29 @@
       "decrypt": "使用",
       "healthcheck": "確認"
     }
+  },
+  "memories_ui": {
+    "stored_subtitle": "エージェントが保存した記憶 {count} 件",
+    "stored_subtitle_one": "エージェントが保存した記憶 {count} 件",
+    "tab_memories": "記憶",
+    "tab_conflicts": "矛盾",
+    "review": "見直す",
+    "reviewing": "見直し中…",
+    "kpi_total": "合計",
+    "kpi_avg_importance": "平均重要度",
+    "kpi_total_access": "参照回数の合計",
+    "kpi_nodes": "ノード",
+    "kpi_personas": "エージェント",
+    "kpi_clusters": "クラスター",
+    "category_label": "カテゴリ",
+    "col_type": "種類",
+    "col_tier": "階層",
+    "col_hits": "参照回数",
+    "col_last_seen": "最終参照",
+    "unknown_persona": "不明",
+    "delete_all_error": "すべての記憶を削除できませんでした",
+    "legend_size": "サイズ",
+    "legend_low": "低",
+    "legend_high": "高"
   }
 }

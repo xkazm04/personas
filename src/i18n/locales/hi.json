@@ -7225,7 +7225,23 @@
       "memory_b": "मेमोरी B",
       "merge": "मर्ज करें",
       "keep": "रखें",
-      "vs": "बनाम"
+      "vs": "बनाम",
+      "processing": "निर्णय लागू किया जा रहा है…",
+      "merge_blocked_core": "मुख्य (पिन की गई) स्मृति को विलय नहीं किया जा सकता",
+      "merge_blocked_cross_persona": "अलग-अलग एजेंटों की स्मृतियाँ विलय नहीं की जा सकतीं",
+      "retire_blocked_core_toast": "मुख्य (पिन की गई) स्मृति संग्रहीत नहीं की जा सकती — यह टकराव स्वयं सुलझाएँ",
+      "merge_blocked_core_toast": "मुख्य (पिन की गई) स्मृति विलय नहीं की जा सकती — यह टकराव स्वयं सुलझाएँ",
+      "merge_blocked_cross_persona_toast": "अलग-अलग एजेंटों की स्मृतियाँ विलय नहीं की जा सकतीं — यह टकराव स्वयं सुलझाएँ",
+      "dismissed_toast": "टकराव खारिज किया गया",
+      "resolved_toast": "टकराव सुलझा",
+      "resolve_failed_toast": "टकराव सुलझाया नहीं जा सका",
+      "detected": "{count} टकराव मिले",
+      "detected_one": "{count} टकराव मिला",
+      "count_contradiction": "{count} विरोधाभास",
+      "count_contradiction_one": "{count} विरोधाभास",
+      "count_duplicate": "{count} प्रतिलिपियाँ",
+      "count_duplicate_one": "{count} प्रतिलिपि",
+      "count_superseded": "{count} अधिक्रमित"
     },
     "observability_charts": {
       "cost_over_time": "समय के साथ लागत",
@@ -7496,7 +7512,11 @@
     },
     "review_results": {
       "title": "AI मेमोरी समीक्षा",
-      "review_failed": "समीक्षा विफल"
+      "review_failed": "समीक्षा विफल",
+      "reviewed_count": "{count} स्मृतियों की समीक्षा हुई",
+      "reviewed_count_one": "{count} स्मृति की समीक्षा हुई",
+      "kept_count": "{count} रखी गईं",
+      "pruned_count": "{count} हटाई गईं"
     },
     "anomaly_drilldown_extra": {
       "title": "विसंगति ड्रिल-डाउन",
@@ -8498,6 +8518,30 @@
         "decrypt": "उपयोग",
         "healthcheck": "जाँच"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "एजेंटों द्वारा सहेजी गई {count} स्मृतियाँ",
+      "stored_subtitle_one": "एजेंटों द्वारा सहेजी गई {count} स्मृति",
+      "tab_memories": "स्मृतियाँ",
+      "tab_conflicts": "टकराव",
+      "review": "समीक्षा",
+      "reviewing": "समीक्षा जारी…",
+      "kpi_total": "कुल",
+      "kpi_avg_importance": "औसत महत्व",
+      "kpi_total_access": "कुल उपयोग",
+      "kpi_nodes": "नोड",
+      "kpi_personas": "एजेंट",
+      "kpi_clusters": "समूह",
+      "category_label": "श्रेणी",
+      "col_type": "प्रकार",
+      "col_tier": "स्तर",
+      "col_hits": "उपयोग",
+      "col_last_seen": "अंतिम बार देखा",
+      "unknown_persona": "अज्ञात",
+      "delete_all_error": "सभी स्मृतियाँ हटाई नहीं जा सकीं",
+      "legend_size": "आकार",
+      "legend_low": "कम",
+      "legend_high": "अधिक"
     }
   },
   "matrix_v3": {

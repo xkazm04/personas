@@ -7225,7 +7225,23 @@
       "memory_b": "Память B",
       "merge": "Объединить",
       "keep": "Сохранить",
-      "vs": "против"
+      "vs": "против",
+      "processing": "Применяем решение…",
+      "merge_blocked_core": "Основное (закреплённое) воспоминание нельзя объединить",
+      "merge_blocked_cross_persona": "Воспоминания разных агентов нельзя объединить",
+      "retire_blocked_core_toast": "Основное (закреплённое) воспоминание нельзя архивировать — разберите это противоречие вручную",
+      "merge_blocked_core_toast": "Основное (закреплённое) воспоминание нельзя объединить — разберите это противоречие вручную",
+      "merge_blocked_cross_persona_toast": "Воспоминания разных агентов нельзя объединить — разберите это противоречие вручную",
+      "dismissed_toast": "Противоречие отклонено",
+      "resolved_toast": "Противоречие снято",
+      "resolve_failed_toast": "Не удалось снять противоречие",
+      "detected": "Найдено противоречий: {count}",
+      "detected_one": "Найдено противоречий: {count}",
+      "count_contradiction": "взаимоисключений: {count}",
+      "count_contradiction_one": "взаимоисключение: {count}",
+      "count_duplicate": "дубликатов: {count}",
+      "count_duplicate_one": "дубликат: {count}",
+      "count_superseded": "устарело: {count}"
     },
     "observability_charts": {
       "cost_over_time": "Затраты за период",
@@ -7496,7 +7512,11 @@
     },
     "review_results": {
       "title": "Обзор памяти ИИ",
-      "review_failed": "Проверка не удалась"
+      "review_failed": "Проверка не удалась",
+      "reviewed_count": "Проверено воспоминаний: {count}",
+      "reviewed_count_one": "Проверено воспоминаний: {count}",
+      "kept_count": "{count} сохранено",
+      "pruned_count": "{count} удалено"
     },
     "anomaly_drilldown_extra": {
       "title": "Детальный анализ аномалии",
@@ -8498,6 +8518,30 @@
         "decrypt": "Использован",
         "healthcheck": "Проверка"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "Агенты сохранили воспоминаний: {count}",
+      "stored_subtitle_one": "Агенты сохранили воспоминаний: {count}",
+      "tab_memories": "Воспоминания",
+      "tab_conflicts": "Противоречия",
+      "review": "Проверить",
+      "reviewing": "Идёт проверка…",
+      "kpi_total": "Всего",
+      "kpi_avg_importance": "Средняя важность",
+      "kpi_total_access": "Всего обращений",
+      "kpi_nodes": "Узлы",
+      "kpi_personas": "Агенты",
+      "kpi_clusters": "Кластеры",
+      "category_label": "Категория",
+      "col_type": "Тип",
+      "col_tier": "Уровень",
+      "col_hits": "Обращения",
+      "col_last_seen": "Последний раз",
+      "unknown_persona": "Неизвестно",
+      "delete_all_error": "Не удалось удалить все воспоминания",
+      "legend_size": "Размер",
+      "legend_low": "Низкая",
+      "legend_high": "Высокая"
     }
   },
   "matrix_v3": {

@@ -7225,7 +7225,23 @@
       "memory_b": "Memori B",
       "merge": "Gabung",
       "keep": "Pertahankan",
-      "vs": "vs"
+      "vs": "vs",
+      "processing": "Menerapkan keputusan…",
+      "merge_blocked_core": "Memori inti (disematkan) tidak bisa digabung",
+      "merge_blocked_cross_persona": "Memori dari agen berbeda tidak bisa digabung",
+      "retire_blocked_core_toast": "Memori inti (disematkan) tidak bisa diarsipkan — selesaikan konflik ini secara manual",
+      "merge_blocked_core_toast": "Memori inti (disematkan) tidak bisa digabung — selesaikan konflik ini secara manual",
+      "merge_blocked_cross_persona_toast": "Memori dari agen berbeda tidak bisa digabung — selesaikan konflik ini secara manual",
+      "dismissed_toast": "Konflik diabaikan",
+      "resolved_toast": "Konflik diselesaikan",
+      "resolve_failed_toast": "Gagal menyelesaikan konflik",
+      "detected": "{count} konflik terdeteksi",
+      "detected_one": "{count} konflik terdeteksi",
+      "count_contradiction": "{count} pertentangan",
+      "count_contradiction_one": "{count} pertentangan",
+      "count_duplicate": "{count} duplikat",
+      "count_duplicate_one": "{count} duplikat",
+      "count_superseded": "{count} tergantikan"
     },
     "observability_charts": {
       "cost_over_time": "Biaya seiring waktu",
@@ -7496,7 +7512,11 @@
     },
     "review_results": {
       "title": "Ulasan Memori AI",
-      "review_failed": "Ulasan gagal"
+      "review_failed": "Ulasan gagal",
+      "reviewed_count": "{count} memori ditinjau",
+      "reviewed_count_one": "{count} memori ditinjau",
+      "kept_count": "{count} dipertahankan",
+      "pruned_count": "{count} dipangkas"
     },
     "anomaly_drilldown_extra": {
       "title": "Drill-Down Anomali",
@@ -8498,6 +8518,30 @@
         "decrypt": "Pakai",
         "healthcheck": "Periksa"
       }
+    },
+    "memories_ui": {
+      "stored_subtitle": "{count} memori yang disimpan agen",
+      "stored_subtitle_one": "{count} memori yang disimpan agen",
+      "tab_memories": "Memori",
+      "tab_conflicts": "Konflik",
+      "review": "Tinjau",
+      "reviewing": "Meninjau…",
+      "kpi_total": "Jumlah",
+      "kpi_avg_importance": "Rata-rata kepentingan",
+      "kpi_total_access": "Total penggunaan",
+      "kpi_nodes": "Simpul",
+      "kpi_personas": "Agen",
+      "kpi_clusters": "Klaster",
+      "category_label": "Kategori",
+      "col_type": "Jenis",
+      "col_tier": "Tingkat",
+      "col_hits": "Penggunaan",
+      "col_last_seen": "Terakhir dilihat",
+      "unknown_persona": "Tidak diketahui",
+      "delete_all_error": "Gagal menghapus semua memori",
+      "legend_size": "Ukuran",
+      "legend_low": "Rendah",
+      "legend_high": "Tinggi"
     }
   },
   "matrix_v3": {
