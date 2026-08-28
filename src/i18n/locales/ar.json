@@ -4698,7 +4698,14 @@
       "corpus_overview_hide": "إخفاء نظرة عامة على المجموعة",
       "corpus_overview_show": "إظهار نظرة عامة على المجموعة",
       "corpus_overview_subtitle": "ما تحتويه قاعدة المعرفة هذه، والأجزاء غير القابلة للقراءة.",
-      "corpus_overview_title": "نظرة عامة على المجموعة"
+      "corpus_overview_title": "نظرة عامة على المجموعة",
+      "documents_count_one": "{count} مستند",
+      "documents_count_other": "{count} مستندات",
+      "drop_no_paths": "لم يتم العثور على مسارات ملفات صالحة. جرّب إسقاط الملفات بشكل فردي.",
+      "chars_unit": "{count} حرف",
+      "search_source_label": "المصدر",
+      "search_source_all": "كل المستندات",
+      "search_results_capped": "أفضل {count} نتيجة لـ \"{query}\""
     },
     "manager": {
       "title": "بيانات الاعتماد",
@@ -12873,6 +12880,10 @@
       "awaiting_review": "بانتظار المراجعة",
       "resolved": "محلول",
       "cancelled": "ملغى"
+    },
+    "kb_document": {
+      "pending": "في الانتظار",
+      "indexing": "جارٍ الفهرسة"
     }
   },
   "project_overview": {

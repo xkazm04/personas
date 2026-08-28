@@ -670,7 +670,14 @@
     "corpus_overview_hide": "Skrýt přehled korpusu",
     "corpus_overview_show": "Zobrazit přehled korpusu",
     "corpus_overview_subtitle": "Co tato znalostní báze obsahuje a které části jsou nečitelné.",
-    "corpus_overview_title": "Přehled korpusu"
+    "corpus_overview_title": "Přehled korpusu",
+    "documents_count_one": "{count} dokument",
+    "documents_count_other": "{count} dokumentů",
+    "drop_no_paths": "Nebyly nalezeny žádné platné cesty k souborům. Zkuste přetáhnout jednotlivé soubory.",
+    "chars_unit": "{count} znaků",
+    "search_source_label": "Zdroj",
+    "search_source_all": "Všechny dokumenty",
+    "search_results_capped": "Nejlepších {count} pro „{query}“"
   },
   "manager": {
     "title": "Přihlašovací údaje",

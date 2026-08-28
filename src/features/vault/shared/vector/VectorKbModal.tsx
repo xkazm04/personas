@@ -13,6 +13,7 @@ import { DocumentsTab } from './tabs/DocumentsTab';
 import { SearchTab } from './tabs/SearchTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { ExtractTab } from './tabs/ExtractTab';
+import { DocGhostRows } from './tabs/DocGhostRows';
 import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
 
 
@@ -209,9 +210,12 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
 
       {/* Content */}
       <div className="flex-1 min-h-0 relative">
+        {/* The header and tab bar above are permanent chrome and stay put; the
+            content region gets a calm ghost of the Documents list it is about
+            to become. A spinner is banned for a surface loading its data. */}
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 overflow-hidden">
+            <DocGhostRows header rows={5} />
           </div>
         )}
 

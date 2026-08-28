@@ -3,7 +3,7 @@ import { X, Type } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { kbIngestText } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Numeric } from '@/features/shared/components/display/Numeric';
+import { formatCount } from '@/lib/utils/formatters';
 
 interface IngestTextModalProps {
   kbId: string;
@@ -12,7 +12,7 @@ interface IngestTextModalProps {
 }
 
 export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
@@ -78,8 +78,10 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         <div>
           <label className="typo-caption font-medium text-foreground mb-1.5 block">
             {sh.content_label}
+            {/* The unit belongs to the translated string — a bare ' chars'
+                suffix rendered English in all 14 locales. */}
             {text.length > 0 && (
-              <span className="ml-2 text-foreground"><Numeric value={text.length} /> chars</span>
+              <span className="ml-2 text-foreground font-data">{tx(sh.chars_unit, { count: formatCount(text.length, { precision: 0 }) })}</span>
             )}
           </label>
           <textarea

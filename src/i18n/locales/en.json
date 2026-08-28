@@ -4967,7 +4967,14 @@
       "search_results_one": "{count} result for \"{query}\"",
       "search_results_other": "{count} results for \"{query}\"",
       "search_floor_filtered": "{count} low-relevance passage(s) hidden",
-      "no_results_floor_hint": "{count} passage(s) were found but none were relevant enough to show. Try different wording, or check the Documents tab to see what this knowledge base actually contains."
+      "no_results_floor_hint": "{count} passage(s) were found but none were relevant enough to show. Try different wording, or check the Documents tab to see what this knowledge base actually contains.",
+      "documents_count_one": "{count} document",
+      "documents_count_other": "{count} documents",
+      "drop_no_paths": "No valid file paths found. Try dropping individual files.",
+      "chars_unit": "{count} chars",
+      "search_source_label": "Source",
+      "search_source_all": "All documents",
+      "search_results_capped": "Top {count} for \"{query}\""
     },
     "manager": {
       "title": "Credentials",
@@ -13165,6 +13172,10 @@
       "awaiting_review": "Awaiting review",
       "resolved": "Resolved",
       "cancelled": "Cancelled"
+    },
+    "kb_document": {
+      "pending": "pending",
+      "indexing": "indexing"
     }
   },
   "project_overview": {

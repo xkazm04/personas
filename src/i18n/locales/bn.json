@@ -4698,7 +4698,14 @@
       "corpus_overview_hide": "কর্পাস ওভারভিউ লুকান",
       "corpus_overview_show": "কর্পাস ওভারভিউ দেখান",
       "corpus_overview_subtitle": "এই নলেজ বেসে কী আছে এবং কোন অংশগুলো পাঠযোগ্য নয়।",
-      "corpus_overview_title": "কর্পাস ওভারভিউ"
+      "corpus_overview_title": "কর্পাস ওভারভিউ",
+      "documents_count_one": "{count}টি নথি",
+      "documents_count_other": "{count}টি নথি",
+      "drop_no_paths": "কোনও বৈধ ফাইল পাথ পাওয়া যায়নি। আলাদাভাবে ফাইল ছেড়ে দেখুন।",
+      "chars_unit": "{count} অক্ষর",
+      "search_source_label": "উৎস",
+      "search_source_all": "সব নথি",
+      "search_results_capped": "\"{query}\"-এর জন্য সেরা {count}টি"
     },
     "manager": {
       "title": "ক্রেডেনশিয়াল",
@@ -12873,6 +12880,10 @@
       "awaiting_review": "পর্যালোচনার অপেক্ষায়",
       "resolved": "সমাধান হয়েছে",
       "cancelled": "বাতিল"
+    },
+    "kb_document": {
+      "pending": "অপেক্ষমাণ",
+      "indexing": "ইনডেক্স হচ্ছে"
     }
   },
   "project_overview": {

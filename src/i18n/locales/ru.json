@@ -4698,7 +4698,14 @@
       "corpus_overview_hide": "Скрыть обзор корпуса",
       "corpus_overview_show": "Показать обзор корпуса",
       "corpus_overview_subtitle": "Что содержит эта база знаний и какие части нечитаемы.",
-      "corpus_overview_title": "Обзор корпуса"
+      "corpus_overview_title": "Обзор корпуса",
+      "documents_count_one": "{count} документ",
+      "documents_count_other": "{count} документов",
+      "drop_no_paths": "Не найдено ни одного корректного пути к файлу. Попробуйте перетащить файлы по одному.",
+      "chars_unit": "{count} симв.",
+      "search_source_label": "Источник",
+      "search_source_all": "Все документы",
+      "search_results_capped": "Топ-{count} по запросу «{query}»"
     },
     "manager": {
       "title": "Учётные данные",
@@ -12873,6 +12880,10 @@
       "awaiting_review": "Ожидает проверки",
       "resolved": "Решено",
       "cancelled": "Отменено"
+    },
+    "kb_document": {
+      "pending": "в очереди",
+      "indexing": "индексация"
     }
   },
   "project_overview": {

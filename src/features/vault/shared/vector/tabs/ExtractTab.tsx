@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, Play, AlertCircle } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { trackInteraction } from '@/lib/analytics';
 import type { KnowledgeBase, KbExtractionSchema, KbEntity } from '@/api/vault/database/vectorKb';
 // The payload of `kb-extraction-progress` is a generated contract; this file
 // used to re-declare it by hand, so a Rust-side field change would have drifted
@@ -91,6 +92,9 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
     setError(null);
     try {
       await kbRunExtraction(kb.id, schema);
+      // Extraction is the most expensive operation in this feature and nothing
+      // recorded that it ever ran. Shape counts only, no corpus content.
+      trackInteraction('vector_kb', 'extraction_run', `entityTypes=${schema.entities.length}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -107,27 +111,39 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
     <div className="p-6 space-y-4">
       <p className="typo-body text-foreground max-w-2xl">{sh.extract_intro}</p>
 
+      {/*
+        Both controls are ACTION buttons, so the busy state has to be a real
+        spinner on the control itself. They used to render `LoadingSpinner`,
+        which returns null — the icon vanished and nothing took its place.
+        `Button loading` owns the spinner, the dim, `disabled` and `aria-busy`.
+      */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          accentColor="violet"
+          size="sm"
+          icon={<Sparkles className="w-3.5 h-3.5" />}
+          loading={inferring}
+          loadingLabel={sh.extract_inferring}
+          disabled={busy}
           onClick={() => void handleInfer()}
-          disabled={inferring || busy}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50 typo-body"
         >
-          {inferring ? <LoadingSpinner className="text-violet-400" /> : <Sparkles className="w-3.5 h-3.5" />}
-          {inferring ? sh.extract_inferring : sh.extract_infer_btn}
-        </button>
+          {sh.extract_infer_btn}
+        </Button>
 
         {schema && (
-          <button
-            type="button"
+          <Button
+            variant="accent"
+            accentColor="emerald"
+            size="sm"
+            icon={<Play className="w-3.5 h-3.5" />}
+            loading={busy}
+            loadingLabel={sh.extract_running}
+            disabled={schema.entities.length === 0}
             onClick={() => void handleRun()}
-            disabled={busy || schema.entities.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-50 typo-body"
           >
-            {busy ? <LoadingSpinner className="text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
-            {busy ? sh.extract_running : sh.extract_run_btn}
-          </button>
+            {sh.extract_run_btn}
+          </Button>
         )}
       </div>
 

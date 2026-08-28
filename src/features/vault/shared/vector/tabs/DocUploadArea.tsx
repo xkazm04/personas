@@ -16,13 +16,18 @@ export function DocToolbar({
   onBrowseFiles,
   onShowDirPicker,
 }: DocToolbarProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
 
   return (
     <div className="flex items-center gap-2 px-6 py-3 border-b border-primary/10 shrink-0">
       <h3 className="typo-body font-medium text-foreground flex-1">
-        {documentCount} document{documentCount !== 1 ? 's' : ''}
+        {/*
+          English pluralization used to be baked into the JSX here, which no
+          catalog could reach — and which is wrong anyway for the Slavic and
+          Arabic locales. The two-form choice lives in the catalog now.
+        */}
+        {tx(documentCount === 1 ? sh.documents_count_one : sh.documents_count_other, { count: documentCount })}
       </h3>
       <button
         type="button"

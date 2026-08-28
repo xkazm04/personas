@@ -4698,7 +4698,14 @@
       "corpus_overview_hide": "コーパスの概要を非表示",
       "corpus_overview_show": "コーパスの概要を表示",
       "corpus_overview_subtitle": "このナレッジベースに含まれる内容と、読み取れない部分。",
-      "corpus_overview_title": "コーパスの概要"
+      "corpus_overview_title": "コーパスの概要",
+      "documents_count_one": "{count} 件のドキュメント",
+      "documents_count_other": "{count} 件のドキュメント",
+      "drop_no_paths": "有効なファイルパスが見つかりませんでした。ファイルを個別にドロップしてみてください。",
+      "chars_unit": "{count} 文字",
+      "search_source_label": "対象ファイル",
+      "search_source_all": "すべてのドキュメント",
+      "search_results_capped": "「{query}」の上位 {count} 件"
     },
     "manager": {
       "title": "認証情報",
@@ -12873,6 +12880,10 @@
       "awaiting_review": "レビュー待ち",
       "resolved": "解決済み",
       "cancelled": "キャンセル済み"
+    },
+    "kb_document": {
+      "pending": "保留中",
+      "indexing": "インデックス作成中"
     }
   },
   "project_overview": {

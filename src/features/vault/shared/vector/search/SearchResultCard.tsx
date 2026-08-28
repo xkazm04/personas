@@ -5,20 +5,18 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { VectorSearchResult } from '@/api/vault/database/vectorKb';
+import { isPartialExtraction } from '../partialConfidence';
 
 interface SearchResultCardProps {
   result: VectorSearchResult;
   rank: number;
 }
 
-/** Below this the passage came from a mostly-image page; flag it as partial. */
-const PARTIAL_CONFIDENCE = 0.99;
-
 export function SearchResultCard({ result, rank }: SearchResultCardProps) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const [expanded, setExpanded] = useState(false);
-  const isPartial = result.extractionConfidence < PARTIAL_CONFIDENCE;
+  const isPartial = isPartialExtraction(result.extractionConfidence);
 
   const preview = result.content.length > 300 && !expanded
     ? result.content.slice(0, 300) + '...'

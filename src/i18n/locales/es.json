@@ -4698,7 +4698,14 @@
       "corpus_overview_hide": "Ocultar resumen del corpus",
       "corpus_overview_show": "Mostrar resumen del corpus",
       "corpus_overview_subtitle": "Qué contiene esta base de conocimiento y qué partes son ilegibles.",
-      "corpus_overview_title": "Resumen del corpus"
+      "corpus_overview_title": "Resumen del corpus",
+      "documents_count_one": "{count} documento",
+      "documents_count_other": "{count} documentos",
+      "drop_no_paths": "No se encontraron rutas de archivo válidas. Prueba a soltar los archivos de uno en uno.",
+      "chars_unit": "{count} caracteres",
+      "search_source_label": "Fuente",
+      "search_source_all": "Todos los documentos",
+      "search_results_capped": "Los {count} mejores para \"{query}\""
     },
     "manager": {
       "title": "Credenciales",
@@ -12873,6 +12880,10 @@
       "awaiting_review": "Pendiente de revisión",
       "resolved": "Resuelto",
       "cancelled": "Cancelado"
+    },
+    "kb_document": {
+      "pending": "pendiente",
+      "indexing": "indexando"
     }
   },
   "project_overview": {

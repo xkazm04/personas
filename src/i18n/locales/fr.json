@@ -4698,7 +4698,14 @@
       "corpus_overview_hide": "Masquer l’aperçu du corpus",
       "corpus_overview_show": "Afficher l’aperçu du corpus",
       "corpus_overview_subtitle": "Ce que contient cette base de connaissances et quelles parties sont illisibles.",
-      "corpus_overview_title": "Aperçu du corpus"
+      "corpus_overview_title": "Aperçu du corpus",
+      "documents_count_one": "{count} document",
+      "documents_count_other": "{count} documents",
+      "drop_no_paths": "Aucun chemin de fichier valide trouvé. Essayez de déposer les fichiers un par un.",
+      "chars_unit": "{count} caractères",
+      "search_source_label": "Source document",
+      "search_source_all": "Tous les documents",
+      "search_results_capped": "Les {count} meilleurs résultats pour « {query} »"
     },
     "manager": {
       "title": "Coffre-fort",
@@ -12873,6 +12880,10 @@
       "awaiting_review": "En attente de revue",
       "resolved": "Résolu",
       "cancelled": "Annulé"
+    },
+    "kb_document": {
+      "pending": "en attente",
+      "indexing": "indexation"
     }
   },
   "project_overview": {
