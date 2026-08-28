@@ -60,6 +60,7 @@
     "composed_tours": "Athena-র তৈরি ট্যুর",
     "composed_badge": "Athena-র তৈরি",
     "composed_stale": "পুরোনো হয়ে থাকতে পারে — এটি তৈরির পর অ্যাপ বদলে গেছে",
+    "composed_failed": "Athena আপনার জন্য তৈরি করা ওয়াকথ্রুগুলো লোড করা যায়নি।",
     "composed_empty": "আপনি যখন Athena-কে কিছু কীভাবে কাজ করে দেখাতে বলেন, তার তৈরি ওয়াকথ্রুগুলো এখানে জমা হয়।"
   },
   "setup_stepper": {

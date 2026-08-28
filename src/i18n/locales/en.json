@@ -1037,6 +1037,7 @@
       "composed_tours": "Composed by Athena",
       "composed_badge": "Athena composed",
       "composed_stale": "May be outdated — the app has changed since this was composed",
+      "composed_failed": "Couldn't load the walkthroughs Athena composed for you.",
       "composed_empty": "When you ask Athena to show you how something works, the walkthroughs she composes land here."
     },
     "setup_stepper": {

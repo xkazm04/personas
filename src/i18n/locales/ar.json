@@ -1003,6 +1003,7 @@
       "composed_tours": "من إعداد Athena",
       "composed_badge": "أعدّتها Athena",
       "composed_stale": "قد يكون قديمًا — تغيّر التطبيق منذ إعداده",
+      "composed_failed": "تعذّر تحميل الجولات التي أعدّتها Athena لك.",
       "composed_empty": "عندما تطلب من Athena أن تريك كيفية عمل شيء ما، تظهر الجولات التي تُعدّها هنا."
     },
     "setup_stepper": {

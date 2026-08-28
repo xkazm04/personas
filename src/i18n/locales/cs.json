@@ -1003,6 +1003,7 @@
       "composed_tours": "Sestavila Athena",
       "composed_badge": "Od Atheny",
       "composed_stale": "Může být zastaralé — aplikace se od sestavení změnila",
+      "composed_failed": "Průvodce, které pro vás Athena sestavila, se nepodařilo načíst.",
       "composed_empty": "Když požádáte Athenu, aby vám ukázala, jak něco funguje, průvodci, které sestaví, se objeví zde."
     },
     "setup_stepper": {

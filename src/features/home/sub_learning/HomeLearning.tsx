@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { GraduationCap, Compass, Check, ChevronRight, Sparkles } from 'lucide-react';
+import { GraduationCap, Compass, Check, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { TOUR_REGISTRY, type TourDef } from '@/stores/slices/system/tourSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TOUR_ICONS, getColors } from './data';
 import { TourDetailModal } from './TourDetailModal';
@@ -138,7 +139,12 @@ export default function HomeLearning() {
   const tourCompletionMap = useSystemStore((s) => s.tourCompletionMap);
   const startTour = useSystemStore((s) => s.startTour);
   const [activeTour, setActiveTour] = useState<TourDef | null>(null);
-  const { entries: composedTours, loading: composedLoading } = useComposedTours();
+  const {
+    entries: composedTours,
+    loading: composedLoading,
+    status: composedStatus,
+    reload: reloadComposed,
+  } = useComposedTours();
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
 
@@ -201,6 +207,24 @@ export default function HomeLearning() {
               <div className="flex flex-col gap-1.5" aria-hidden="true">
                 <div className="h-[46px] rounded-modal bg-primary/[0.05]" />
                 <div className="h-[46px] rounded-modal bg-primary/[0.05]" />
+              </div>
+            ) : composedStatus === 'failed' ? (
+              /* An IPC/network failure is NOT an empty list. Showing the
+                 "none composed yet" hint here told the user Athena had
+                 composed nothing, and told the developer nothing at all. */
+              <div
+                className="flex flex-col items-start gap-2"
+                data-testid="learning-composed-failed"
+              >
+                <p className="typo-caption text-foreground">{ht.composed_failed}</p>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon={<RefreshCw className="w-3.5 h-3.5" />}
+                  onClick={reloadComposed}
+                >
+                  {t.common.retry}
+                </Button>
               </div>
             ) : composedTours.length === 0 ? (
               <p className="typo-caption text-foreground">{ht.composed_empty}</p>
