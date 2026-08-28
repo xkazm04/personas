@@ -215,6 +215,24 @@ interface ManagedTerminal {
    *  cleared by the next successful hydrate so a pane that recovers does not
    *  keep a stale warning, and a repeated failure does not stack the same line. */
   listenerNoticeShown: boolean;
+  /**
+   * True while this terminal holds a snapshot from a subscribe that SUCCEEDED
+   * into the container it is still mounted in — i.e. re-hydrating would buy
+   * nothing and cost the local scrollback.
+   *
+   * `hydrate` always calls `m.term.reset()` before writing the backend ring
+   * tail, and `scrollback: 5000` is deliberately LARGER than that ring, so the
+   * reset is lossy by design: whatever the operator had scrolled back to and the
+   * ring no longer holds is gone, plus a visible flash. That is the right trade
+   * for a real attach and pure loss for a re-invocation of an effect that is
+   * supposed to be idempotent.
+   *
+   * Cleared on detach (which unsubscribed, so the next attach genuinely must
+   * re-subscribe) and on a hydration FAILURE — a dead session must stay
+   * retryable by re-attaching, which is exactly what a blanket
+   * already-attached guard would have taken away.
+   */
+  hydratedOk: boolean;
 }
 
 /**
@@ -716,6 +734,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     deadNoticeShown: false,
     writeFailed: false,
     listenerNoticeShown: false,
+    hydratedOk: false,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -787,6 +806,9 @@ export function attachTerminal(sessionId: string, container: HTMLElement): void 
     paintListenerNotice(m);
     scheduleListenerRetry();
   });
+  // Read BEFORE the DOM move below, which would make every attach look mounted.
+  const alreadyMounted =
+    m.attached && m.holder.parentElement === container && (m.hydratedOk || m.hydrating);
   m.owner = container;
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);
@@ -798,7 +820,13 @@ export function attachTerminal(sessionId: string, container: HTMLElement): void 
   m.attached = true;
   loadWebgl(m);
   scheduleFit(m);
-  hydrate(m);
+  // Hydration is the lossy step (see `hydratedOk`), so it runs only when this
+  // attach is a REAL one. A re-invocation for a session already mounted in this
+  // same container — with a snapshot that landed, or one still in flight — used
+  // to reset the emulator and replace 5000 lines of local scrollback with the
+  // much shorter backend ring tail. Idempotence of attach was accidental; it is
+  // now the contract.
+  if (!alreadyMounted) hydrate(m);
 }
 
 /**
@@ -828,6 +856,9 @@ function hydrate(m: ManagedTerminal): void {
       m.writeFailed = false;
       // The reset also wiped any listener warning, so allow a fresh one.
       m.listenerNoticeShown = false;
+      // This terminal now holds a landed snapshot — a re-attach into the same
+      // container has nothing to gain and the scrollback to lose.
+      m.hydratedOk = true;
       if (snapshot) writeChunk(m, snapshot);
       const queued = m.pendingLive;
       m.pendingLive = [];
@@ -840,6 +871,9 @@ function hydrate(m: ManagedTerminal): void {
       if (gen === m.hydrationGen) {
         m.hydrating = false;
         m.pendingLive = [];
+        // A failed subscribe must stay RETRYABLE by re-attaching — that is the
+        // only recovery a dead-then-resurrected session has.
+        m.hydratedOk = false;
         // Say so IN the terminal. This is the difference between "still
         // starting up" and "this session is gone", and the operator had no way
         // to tell them apart: both painted an empty black box.
@@ -877,6 +911,9 @@ export function detachTerminal(sessionId: string, owner?: HTMLElement): void {
   m.hydrationGen++;
   m.hydrating = false;
   m.pendingLive = [];
+  // This detach UNSUBSCRIBES, so the snapshot the terminal holds stops tracking
+  // the session — the next attach must genuinely re-subscribe and replay.
+  m.hydratedOk = false;
   unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
   disposeWebgl(m);
   m.attached = false;

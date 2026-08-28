@@ -878,3 +878,111 @@ describe('shared output listener failure is visible and retried', () => {
     host.remove();
   });
 });
+
+/**
+ * `hydrate` always calls `term.reset()` before writing the backend ring tail,
+ * and `scrollback: 5000` is deliberately larger than that ring — so a reset is
+ * LOSSY by design. `attachTerminal` called it unconditionally, which made the
+ * idempotence of attach accidental: any re-invocation for a session already
+ * mounted in the same container silently destroyed the operator's scrolled-back
+ * history and flashed the screen, on a path that looks like a no-op.
+ *
+ * The guard must NOT extend to a session whose subscribe failed: re-attaching is
+ * the only recovery a dead-then-resurrected session has.
+ */
+describe('attach idempotence', () => {
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('does not reset the emulator when the same container re-attaches a hydrated session', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('SNAP');
+    const host = attach('idem');
+    await settle();
+    const m = registryMap().get('idem')!;
+    expect(m.term.reset).toHaveBeenCalledTimes(1);
+
+    // The effect re-runs. Before the guard this was a full reset + re-subscribe.
+    attachTerminal('idem', host);
+    await settle();
+    attachTerminal('idem', host);
+    await settle();
+
+    expect(m.term.reset).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(1);
+
+    detachTerminal('idem');
+    host.remove();
+  });
+
+  it('keeps the scrollback the ring no longer holds', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('TAIL-ONLY');
+    const host = attach('scrollback');
+    await settle();
+    const m = registryMap().get('scrollback')!;
+    // Everything the session printed since — longer than any backend ring.
+    m.term.written.push('OLD-HISTORY');
+
+    attachTerminal('scrollback', host);
+    await settle();
+
+    // A reset would have thrown OLD-HISTORY away and re-rendered TAIL-ONLY.
+    expect(m.term.written).toContain('OLD-HISTORY');
+    expect(m.term.written.filter((w) => w === 'TAIL-ONLY')).toHaveLength(1);
+
+    detachTerminal('scrollback');
+    host.remove();
+  });
+
+  it('still hydrates a genuine re-attach after a detach', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('SNAP');
+    const host = attach('real-reattach');
+    await settle();
+    const m = registryMap().get('real-reattach')!;
+    detachTerminal('real-reattach');
+
+    attachTerminal('real-reattach', host);
+    await settle();
+
+    // The detach unsubscribed — this attach MUST re-subscribe and replay.
+    expect(m.term.reset).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(2);
+
+    detachTerminal('real-reattach');
+    host.remove();
+  });
+
+  it('still hydrates a session moved into a different container', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValue('SNAP');
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    attachTerminal('moved', paneA);
+    await settle();
+    const m = registryMap().get('moved')!;
+
+    attachTerminal('moved', paneB);
+    await settle();
+
+    expect(m.term.reset).toHaveBeenCalledTimes(2);
+    detachTerminal('moved');
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('still retries a session whose subscribe failed', async () => {
+    vi.mocked(fleetApi.subscribeTerminal)
+      .mockRejectedValueOnce(new Error('session not found'))
+      .mockResolvedValueOnce('BACK');
+    const host = attach('resurrect');
+    await settle();
+    const m = registryMap().get('resurrect')!;
+    expect(m.term.reset).not.toHaveBeenCalled();
+
+    // Re-attaching is the operator's only recovery path for a dead session.
+    attachTerminal('resurrect', host);
+    await settle();
+
+    expect(m.term.written).toContain('BACK');
+    detachTerminal('resurrect');
+    host.remove();
+  });
+});
