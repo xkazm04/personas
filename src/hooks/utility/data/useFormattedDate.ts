@@ -1,7 +1,15 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface UseFormattedDateOptions {
-  /** Locale override. Defaults to the runtime's resolved locale. */
+  /**
+   * BCP-47 locale override. **Defaults to the active UI language**, not the
+   * runtime/OS locale — the app ships 14 languages and an explicit active
+   * language, so a user running it in Japanese on an en-US machine used to
+   * get English dates next to Japanese chrome. Pass this only as a genuine
+   * override (e.g. a fixed-locale export preview). Mirrors the binding
+   * `display/Numeric` already does for number separators.
+   */
   locale?: string;
   dateStyle?: 'full' | 'long' | 'medium' | 'short';
   timeStyle?: 'full' | 'long' | 'medium' | 'short';
@@ -26,7 +34,8 @@ export function useFormattedDate(
   ts: string | number | Date | null | undefined,
   options?: UseFormattedDateOptions,
 ): string {
-  const locale = options?.locale;
+  const { language: activeLanguage } = useTranslation();
+  const locale = options?.locale ?? activeLanguage;
   const dateStyle = options?.dateStyle;
   const timeStyle = options?.timeStyle;
   return useMemo(() => {

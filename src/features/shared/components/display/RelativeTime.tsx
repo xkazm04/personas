@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from './Tooltip';
 
 interface RelativeTimeProps {
@@ -24,6 +25,12 @@ export const RelativeTime = memo(function RelativeTime({
   className,
   showTooltip = true,
 }: RelativeTimeProps) {
+  // Bind the tooltip's absolute date to the ACTIVE UI language, not the OS
+  // locale: `toLocaleString()` with no argument formatted in en-US for a user
+  // running the app in Japanese. `useFormattedDate` and `display/Numeric` bind
+  // the same way, so the whole surface stays in one language.
+  const { language } = useTranslation();
+
   const isoStr = typeof timestamp === 'number'
     ? new Date(timestamp).toISOString()
     : timestamp
@@ -35,7 +42,7 @@ export const RelativeTime = memo(function RelativeTime({
 
   const relative = formatRelativeTime(isoStr, fallback);
 
-  const fullDate = isoStr ? new Date(isoStr).toLocaleString() : fallback;
+  const fullDate = isoStr ? new Date(isoStr).toLocaleString(language) : fallback;
 
   const span = (
     <span className={className}>
