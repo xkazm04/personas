@@ -268,6 +268,17 @@ export default function StudioPage() {
                   src={`${previewUrls[id]}${route === '/' ? '' : route}`}
                   title={isActive ? 'preview' : `preview-${id}`}
                   aria-hidden={!isActive}
+                  // `opacity-0` + `pointer-events-none` hides a warm preview
+                  // from the mouse and from sight, and from neither the Tab key
+                  // nor the accessibility tree's focus order: an iframe stays
+                  // focusable, and so does every control inside its document.
+                  // Tabbing out of the dock therefore walked into an invisible
+                  // copy of another project's site — and `aria-hidden` over
+                  // focusable content is itself the ARIA violation. `inert`
+                  // (Chromium 102+, so every WebView2 this ships on) is the one
+                  // attribute that removes a subtree from focus AND from the
+                  // a11y tree; `tabIndex={-1}` alone would not reach inside.
+                  {...(isActive ? {} : { inert: true, tabIndex: -1 })}
                   className={`absolute inset-0 h-full w-full border-0 bg-white transition-opacity duration-200 ${
                     isActive ? 'opacity-100' : 'pointer-events-none opacity-0'
                   }`}
