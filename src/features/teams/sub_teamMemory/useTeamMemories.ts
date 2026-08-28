@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
+import { trackInteraction } from '@/lib/analytics';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   listTeamMemories,
@@ -17,6 +18,21 @@ import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 
 const PAGE_SIZE = 30;
+
+/**
+ * Analytics category for every mutation this hook owns.
+ *
+ * The five handlers below used to complete with a success toast and nothing
+ * else, so nothing anywhere could tell "teams do not curate memories" apart
+ * from "teams curate memories and we never measured it" — which is exactly the
+ * evidence any later consolidation/decay work would have to be prioritised on.
+ *
+ * Only identifier strings cross this seam: the operation and its outcome. No
+ * memory id, title, content or team id — see `lib/analytics/sink.ts`.
+ */
+const IX_CATEGORY = 'team_memory';
+const IX_OK = 'ok';
+const IX_FAILED = 'failed';
 
 /**
  * Data layer for `TeamMemoryPanel` — list + count + stats with category /
@@ -67,6 +83,7 @@ export function useTeamMemories(teamId: string) {
 
   const onFilterByRun = useCallback((runId: string | null) => {
     filtersRef.current = { ...filtersRef.current, runId: runId ?? undefined };
+    trackInteraction(IX_CATEGORY, 'filter_run', runId ? 'set' : 'cleared');
     refresh().catch(toastCatch('teamMemory/useTeamMemories:runFilter'));
   }, [refresh]);
 
@@ -87,25 +104,36 @@ export function useTeamMemories(teamId: string) {
   const onCreate = useCallback((input: CreateTeamMemoryInput) => {
     createTeamMemory(input)
       .then(() => {
+        trackInteraction(IX_CATEGORY, 'create', IX_OK);
         addToast(t.pipeline.memory_created, 'success');
         return refresh();
       })
-      .catch(toastCatch('teamMemory/useTeamMemories:create'));
+      .catch((err) => {
+        trackInteraction(IX_CATEGORY, 'create', IX_FAILED);
+        toastCatch('teamMemory/useTeamMemories:create')(err);
+      });
   }, [addToast, refresh, t]);
 
   const onDelete = useCallback((id: string) => {
     deleteTeamMemory(id)
       .then(() => {
+        trackInteraction(IX_CATEGORY, 'delete', IX_OK);
         addToast(t.pipeline.memory_deleted, 'success');
         return refresh();
       })
-      .catch(toastCatch('teamMemory/useTeamMemories:delete'));
+      .catch((err) => {
+        trackInteraction(IX_CATEGORY, 'delete', IX_FAILED);
+        toastCatch('teamMemory/useTeamMemories:delete')(err);
+      });
   }, [addToast, refresh, t]);
 
   const onImportanceChange = useCallback((id: string, importance: number) => {
     // Optimistic — the dots respond instantly; a failed write rolls back via refresh.
     setMemories((prev) => prev.map((m) => (m.id === id ? { ...m, importance } : m)));
-    updateTeamMemoryImportance(id, importance).catch((err) => {
+    updateTeamMemoryImportance(id, importance).then(() => {
+      trackInteraction(IX_CATEGORY, 'importance', IX_OK);
+    }).catch((err) => {
+      trackInteraction(IX_CATEGORY, 'importance', IX_FAILED);
       toastCatch('teamMemory/useTeamMemories:importance')(err);
       refresh().catch(toastCatch('teamMemory/useTeamMemories:importanceRollback'));
     });
@@ -114,10 +142,14 @@ export function useTeamMemories(teamId: string) {
   const onEdit = useCallback((id: string, title: string, content: string, category: string, importance: number) => {
     updateTeamMemory(id, title, content, category, importance)
       .then(() => {
+        trackInteraction(IX_CATEGORY, 'edit', IX_OK);
         addToast(t.pipeline.memory_updated, 'success');
         return refresh();
       })
-      .catch(toastCatch('teamMemory/useTeamMemories:edit'));
+      .catch((err) => {
+        trackInteraction(IX_CATEGORY, 'edit', IX_FAILED);
+        toastCatch('teamMemory/useTeamMemories:edit')(err);
+      });
   }, [addToast, refresh, t]);
 
   return { memories, total, stats, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
