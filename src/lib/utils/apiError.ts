@@ -97,6 +97,22 @@ const PERMANENT_KINDS: ReadonlySet<TauriErrorKind> = new Set([
 ]);
 
 /**
+ * Retry delay attached to an `unknown`-severity error: **zero, because nothing
+ * retries it.**
+ *
+ * This was `3000`, and `withRetry` gates on `isTransient`, which is false for
+ * `unknown` — so the number was never read. That is the dangerous way for a
+ * field to be wrong: it reads as a *missing* retry, and the obvious "fix" is to
+ * widen the gate — which would start retrying every uncovered kind, including
+ * `execution` (re-running a persona) and `io`, where a second attempt is not
+ * safe to assume idempotent. The invariant is now explicit and testable:
+ * **`retryAfterMs > 0` if and only if the error is transient.** Widening retry
+ * to a specific kind means moving that kind into `TRANSIENT_KINDS`, deliberately
+ * and one at a time — not flipping a gate for the whole residue.
+ */
+const UNKNOWN_RETRY_AFTER_MS = 0;
+
+/**
  * Classify an unknown error into a typed ApiError with retry guidance.
  * When the error is a structured Tauri response with a `kind` field,
  * classification uses the kind directly — no regex needed.
@@ -115,8 +131,9 @@ export function classifyError(err: unknown, fallbackMessage: string): ApiError {
     if (PERMANENT_KINDS.has(kind)) {
       return new ApiError(msg, 'permanent', 0, err, kind);
     }
-    // Known kind but neither transient nor permanent (database, io, execution, etc.)
-    return new ApiError(msg, 'unknown', 3000, err, kind);
+    // Known kind but neither transient nor permanent (database, io, execution,
+    // process_spawn, gitlab, internal, external, …). See UNKNOWN_RETRY_AFTER_MS.
+    return new ApiError(msg, 'unknown', UNKNOWN_RETRY_AFTER_MS, err, kind);
   }
 
   // Fallback: regex-based classification for non-Tauri errors
@@ -133,7 +150,7 @@ export function classifyError(err: unknown, fallbackMessage: string): ApiError {
     }
   }
 
-  return new ApiError(msg, 'unknown', 3000, err);
+  return new ApiError(msg, 'unknown', UNKNOWN_RETRY_AFTER_MS, err);
 }
 
 /** Extract a human-readable message from any error shape */
@@ -148,8 +165,10 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 /**
- * Wrap a promise with automatic retry for transient errors.
+ * Wrap a promise with automatic retry for **transient** errors only.
  * Only retries once to avoid cascading failures.
+ *
+ * `unknown` severity is deliberately not retried — see `UNKNOWN_RETRY_AFTER_MS`.
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
