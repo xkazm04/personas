@@ -1688,6 +1688,7 @@
       "trace_empty_hint": "Подробные трассировки собираются для запусков с инструментами и более новых. Для этого запуска их нет.",
       "verdict_field": "Вердикт",
       "chain_ended_because": "Почему цепочка завершилась",
+      "span_orphaned": "Родительский спан отсутствует в этой трассировке",
       "chain_total_cost": "Стоимость цепочки",
       "chain_cost_partial": "Оценено {priced} из {total} запусков",
       "active_chains_agents_one": "{count} агент",

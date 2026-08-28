@@ -532,6 +532,7 @@
     "trace_empty_hint": "বিস্তারিত trace শুধু টুল-ব্যবহারকারী ও নতুন রানের জন্য সংগ্রহ করা হয়। এই রানে দেখানোর মতো কিছু নেই।",
     "verdict_field": "রায়",
     "chain_ended_because": "চেইন কেন শেষ হয়েছে",
+    "span_orphaned": "প্যারেন্ট স্প্যান এই ট্রেসে নেই",
     "chain_total_cost": "চেইন খরচ",
     "chain_cost_partial": "{total}টির মধ্যে {priced}টি রানের খরচ জানা",
     "active_chains_agents_one": "{count}টি এজেন্ট",

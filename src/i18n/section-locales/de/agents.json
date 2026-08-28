@@ -532,6 +532,7 @@
     "trace_empty_hint": "Detaillierte Traces werden für werkzeugnutzende und neuere Läufe erfasst. Für diesen Lauf sind keine vorhanden.",
     "verdict_field": "Urteil",
     "chain_ended_because": "Grund für Kettenende",
+    "span_orphaned": "Der übergeordnete Span fehlt in dieser Ablaufverfolgung",
     "chain_total_cost": "Kettenkosten",
     "chain_cost_partial": "{priced} von {total} Läufen mit bekannten Kosten",
     "active_chains_agents_one": "{count} Agent",

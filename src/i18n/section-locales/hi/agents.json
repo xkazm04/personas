@@ -532,6 +532,7 @@
     "trace_empty_hint": "विस्तृत ट्रेस टूल-उपयोग करने वाले और नए रन के लिए कैप्चर किए जाते हैं। इस रन के लिए दिखाने को कुछ नहीं है।",
     "verdict_field": "निर्णय",
     "chain_ended_because": "श्रृंखला क्यों समाप्त हुई",
+    "span_orphaned": "मूल स्पैन इस ट्रेस में नहीं है",
     "chain_total_cost": "श्रृंखला लागत",
     "chain_cost_partial": "{total} में से {priced} रन की लागत ज्ञात",
     "active_chains_agents_one": "{count} एजेंट",

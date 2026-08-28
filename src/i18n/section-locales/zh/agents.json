@@ -532,6 +532,7 @@
     "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
     "verdict_field": "判定结果",
     "chain_ended_because": "链结束原因",
+    "span_orphaned": "父跨度不在此追踪中",
     "chain_total_cost": "链成本",
     "chain_cost_partial": "{total} 次运行中已计价 {priced} 次",
     "active_chains_agents_one": "{count} 个智能体",

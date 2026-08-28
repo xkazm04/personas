@@ -1688,6 +1688,7 @@
       "trace_empty_hint": "Trace terperinci direkam untuk proses yang menggunakan tool dan proses yang lebih baru. Proses ini tidak memiliki trace untuk ditampilkan.",
       "verdict_field": "Putusan",
       "chain_ended_because": "Alasan rantai berhenti",
+      "span_orphaned": "Span induk tidak ada dalam jejak ini",
       "chain_total_cost": "Biaya rantai",
       "chain_cost_partial": "{priced} dari {total} proses diketahui biayanya",
       "active_chains_agents_one": "{count} agen",
