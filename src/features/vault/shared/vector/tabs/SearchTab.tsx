@@ -32,8 +32,8 @@ export function SearchTab({ kb }: SearchTabProps) {
     return () => { mountedRef.current = false; };
   }, []);
 
-  const handleSearch = useCallback(async () => {
-    const trimmed = query.trim();
+  const runSearch = useCallback(async (term: string) => {
+    const trimmed = term.trim();
     if (!trimmed) return;
 
     const seq = latestWins.next();
@@ -59,7 +59,26 @@ export function SearchTab({ kb }: SearchTabProps) {
     } finally {
       if (mountedRef.current && latestWins.isCurrent(seq)) setSearching(false);
     }
-  }, [query, kb.id, topK, latestWins]);
+  }, [kb.id, topK, latestWins]);
+
+  const handleSearch = useCallback(() => runSearch(query), [runSearch, query]);
+
+  // A filter control has to see the whole set on change. Changing "Results: 10"
+  // to 50 next to a rendered list used to do nothing at all — no refetch, and no
+  // hint that the control was armed for some later search. It re-runs the LAST
+  // executed query (not whatever is currently typed in the box, which the user
+  // has not asked for yet). Refs keep `lastQuery` out of the dep array: it
+  // changes on every search, and depending on it would make this loop.
+  const runSearchRef = useRef(runSearch);
+  runSearchRef.current = runSearch;
+  const lastQueryRef = useRef<string | null>(null);
+  lastQueryRef.current = lastQuery;
+  const topKSettledRef = useRef(false);
+  useEffect(() => {
+    if (!topKSettledRef.current) { topKSettledRef.current = true; return; }
+    const previous = lastQueryRef.current;
+    if (previous) void runSearchRef.current(previous);
+  }, [topK]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
