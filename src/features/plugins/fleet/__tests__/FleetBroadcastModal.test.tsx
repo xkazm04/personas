@@ -44,10 +44,14 @@ const SESSIONS: FleetSession[] = [
 
 // Selector-form store mock — the modal reads `s.fleetSessions` plus the
 // `s.fleetRefresh` action it fires on open to sync the live session list.
+// `fleetRefresh` is a STABLE hoisted spy, not a fresh closure per selector
+// call: the total-failure path fires it, and a new identity on every render
+// would make it uncountable (and re-fire the open effect every render).
+const fleetRefresh = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (
     selector: (s: { fleetSessions: FleetSession[]; fleetRefresh: () => Promise<void> }) => unknown,
-  ) => selector({ fleetSessions: SESSIONS, fleetRefresh: async () => {} }),
+  ) => selector({ fleetSessions: SESSIONS, fleetRefresh }),
 }));
 
 vi.mock('@/api/fleet/fleet', () => ({
@@ -209,6 +213,7 @@ describe('FleetBroadcastModal — localized chrome and result toasts', () => {
 describe('FleetBroadcastModal — which sessions missed it', () => {
   beforeEach(() => {
     addToast.mockClear();
+    fleetRefresh.mockClear();
     vi.mocked(fleetApi.writeInput).mockClear();
   });
 
@@ -252,6 +257,48 @@ describe('FleetBroadcastModal — which sessions missed it', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     // Two attempts total, both to the one session that needed it.
     expect(vi.mocked(fleetApi.writeInput).mock.calls.map((c) => c[0])).toEqual(['s1', 's1']);
+  });
+
+  /**
+   * A batch where EVERY write failed is not N independent faults — it is one
+   * systemic fault (a backend whose session registry went stale after a
+   * restart fails every write for the same reason). The composer's only
+   * response was an error toast and a re-armed Send on the identical roster,
+   * which invites the operator to throw the whole fleet at a backend already
+   * known to be in a bad state.
+   */
+  it('re-reads the roster after a broadcast that reached nobody', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fleetApi.writeInput).mockRejectedValue(new Error('session writer dropped'));
+
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    // The open effect already refreshes once — count from there.
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalled());
+    const onOpen = fleetRefresh.mock.calls.length;
+
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'ship it');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(fleetRefresh.mock.calls.length).toBeGreaterThan(onOpen));
+  });
+
+  it('does NOT re-read the roster on a partial failure — those are per-session faults', async () => {
+    const user = userEvent.setup();
+    // s1 succeeds, so this is not the systemic case; per-session isolation and
+    // retry-narrowing already cover it, and a refresh here would be noise.
+    vi.mocked(fleetApi.writeInput).mockResolvedValue(undefined as never);
+
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalled());
+    const onOpen = fleetRefresh.mock.calls.length;
+
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'ship it');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    expect(fleetRefresh.mock.calls.length).toBe(onOpen);
   });
 
   it('shows no failure panel when everything landed', async () => {
