@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { classifyLine, parseSummaryLine } from "../terminalColors";
+import {
+  classifyLine,
+  parseSummaryLine,
+  TERMINAL_STYLE_MAP,
+  type TerminalLineStyle,
+} from "../terminalColors";
 
 describe("classifyLine", () => {
   it("classifies error lines", () => {
@@ -97,5 +102,31 @@ describe('parseSummaryLine shape guard', () => {
     expect(parseSummaryLine('[SUMMARY]{"status":"completed"}')).toEqual({
       status: 'completed',
     });
+  });
+});
+
+describe("TERMINAL_STYLE_MAP", () => {
+  // Regression guard. `summary` mapped to '' — a silent "handled elsewhere"
+  // that only holds when TerminalBody's `showSummaryLines` prop is set AND the
+  // payload parses. Every other path rendered an unstyled `[SUMMARY]{…}` line
+  // while the classifier reported it as its own category.
+  it("gives every classified style real classes", () => {
+    const styles: TerminalLineStyle[] = [
+      'meta', 'tool', 'error', 'status', 'summary', 'text', 'code', 'info',
+    ];
+    for (const style of styles) {
+      expect(TERMINAL_STYLE_MAP[style].trim(), style).not.toBe('');
+    }
+  });
+
+  it("covers every style classifyLine can return", () => {
+    const samples = [
+      '[ERROR] broke', '[SUMMARY]{"status":"completed"}', '[System] hello',
+      '> Using tool: Read', '  subagent said', '> Analyzing', '> Cancelled',
+      '> ls -la', 'Session started', 'Process exited', 'plain output',
+    ];
+    for (const line of samples) {
+      expect(TERMINAL_STYLE_MAP[classifyLine(line)], line).toBeTruthy();
+    }
   });
 });
