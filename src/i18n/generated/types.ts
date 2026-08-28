@@ -13955,6 +13955,12 @@ export type Translations = {
       settings_font_size: string;
       settings_copy_on_select: string;
       settings_copy_on_select_desc: string;
+      settings_budgets_title: string;
+      settings_budgets_desc: string;
+      settings_budgets_terminals: string;
+      settings_budgets_terminals_value: string;
+      settings_budgets_renderers: string;
+      settings_budgets_renderers_value: string;
       settings_theme: string;
       settings_theme_auto: string;
       settings_theme_dark: string;
