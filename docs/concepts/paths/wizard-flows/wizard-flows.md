@@ -12,7 +12,7 @@ techniques:
 evidence:
   - src/features/templates/sub_n8n/reducers/navigationReducer.ts          # precondition inside the transition (GO_TO_STEP returns unchanged slice on failure) + one shared clamp for restore and fallback
   - src/features/templates/sub_n8n/hooks/useN8nSession.ts                 # durable pointer: debounced sync of step+payload to the session row, unmount flush
-  - src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx  # derived commit gate + category rail + blocked-step-names-credential + guarded keyboard advancement
+  - src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts  # guarded keyboard advancement (QuestionnaireForm.tsx, the unmounted composition, was deleted in e1eeeffa7)
   - src-tauri/core/src/models/build_session.rs                            # server-side resumable FSM: AwaitingInput phase, validate_transition, durable pending_question, hydration payload
   - src/features/plugins/twin/sub_training/useTrainingSession.ts          # generated interview: rubric coverage scoring, one-bounded follow-ups, per-answer promotion to durable memories, static fallback on generator failure
   - src/hooks/utility/data/usePersistedContext.ts                         # re-attach to an in-flight background job by id, max-age expiry of stale contexts

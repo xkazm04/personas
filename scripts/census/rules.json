@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 71,
-        "matches": 71
+        "files": 70,
+        "matches": 70
       },
       "floor": 4000
     },
@@ -441,8 +441,8 @@
         }
       ],
       "baseline": {
-        "files": 46,
-        "matches": 70
+        "files": 45,
+        "matches": 68
       },
       "floor": 4000
     },
@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 795,
-        "matches": 1929
+        "files": 792,
+        "matches": 1923
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 346,
-        "matches": 787
+        "files": 345,
+        "matches": 783
       },
       "floor": 4000
     },
@@ -956,8 +956,8 @@
         }
       ],
       "baseline": {
-        "files": 25,
-        "matches": 28
+        "files": 24,
+        "matches": 27
       },
       "floor": 4000
     },
@@ -1194,8 +1194,8 @@
         }
       ],
       "baseline": {
-        "files": 51,
-        "matches": 72
+        "files": 50,
+        "matches": 71
       },
       "floor": 4000
     },
@@ -1321,8 +1321,8 @@
         "description": "RECALL FIX 2026-08-14: the original pattern required toLocale(Date|Time)String, so a bare `new Date(x).toLocaleString()` was invisible — including RelativeTime.tsx:38, which renders the tooltip behind ~100 <RelativeTime> tags and is the most-rendered date in the app. Found by the tooltip composer critiquing a rule another path had already shipped. The fix is a date-specific alternative, NOT a relaxed (?:Date|Time)? — measured: 26 bare .toLocaleString() sites, only 12 are dates; the rest are token counts and KPI numbers owned by the numeric rules, and relaxing would have imported 14 false positives into a date rule. STILL INVISIBLE, stated rather than hidden: a Date held in a variable (`date.toLocaleString()`) cannot be distinguished from a number by any regex — that residue needs type information. a date/time formatting call whose locale argument is absent, `undefined`, or `[]` — three spellings of \"use whatever locale the operating system is set to\". PROXY FOR the stack-free condition: a moment is projected into a calendar and a clock using the locale of the machine the code runs on rather than the language the user chose in the application, so a user who set this app to Japanese on an en-US laptop reads `5/24/26` and a user who set it to English on a German laptop reads `24.05.26`. Verified against the app's own machinery: useTranslation() (src/i18n/useTranslation.ts:325) returns `{ t, tx, language }` over 14 shipped locales and i18nStore.ts:94 even mirrors the chosen language into the Rust backend — so the correct value is available at every one of these call sites and reaches exactly ONE of them (LiveRoadmapStatusPill.tsx:38). Measured population: a balanced-paren census of every toLocale*String / Intl.DateTimeFormat / Intl.RelativeTimeFormat first argument in all 4,829 src .ts+.tsx found 84 date-locale decisions — 76 host-OS, 6 hardcoded 'en-US', 1 parameterised-but-never-passed, 1 correct. This pattern covers 55 of the 76: `.toLocaleString(` is deliberately EXCLUDED because it is ambiguous between a Date and a number and would collide with number-and-cost-formatting.md's territory, which costs ~20 date sites of recall and buys 100% precision. Precision 55/55 on a full read of every match: every one is a date or time formatted for a locale the app did not choose. Two matches are non-product destinations (LabVersionsTable.tsx:298,312 stamp an exported comparison report; run-harness.ts:56 prints a harness console line) and are carried in the baseline rather than excluded, because a directory-level exemption for two lines adds a stale-exclude failure mode worth more than it saves. PRECONDITION (measured, must be re-derived per repo): this repo owns an app-level language, exposes it through one hook, and spells a date render as a toLocale*String method or an Intl constructor. A repo with no i18n system has the condition and no fix — brainiac/console has 3 such calls, zero locale channel, and nothing to wire; a repo that pins a literal locale instead scores zero here while being equally locale-blind — personas-web spells 4 of its 12 date-locale calls as 'en-US' and this pattern declines all four. LEGAL FIX: <RelativeTime timestamp={x}/> for elapsed, <AbsoluteTime timestamp={x} variant=\"datetime|date|time|compact\"/> for a fixed moment, or — for a raw Intl call that must stay raw — the `language` from useTranslation(), as LiveRoadmapStatusPill.tsx:38 does. NOTE THE DESTINATION IS NOT YET CORRECT BY DEFAULT: both primitives resolve their own locale from the host OS today (AbsoluteTime.tsx:51, RelativeTime.tsx:38), so routing a call site there buys correctness of instant, cadence and style and defers the language until §8 Gap 1 lands. Sequence Gap 1 before burning this baseline."
       },
       "baseline": {
-        "files": 51,
-        "matches": 64
+        "files": 50,
+        "matches": 63
       },
       "floor": 4000
     },
@@ -1344,8 +1344,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 13,
-        "matches": 38
+        "files": 12,
+        "matches": 34
       },
       "floor": 4000
     },
@@ -3756,8 +3756,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 2,
-        "matches": 2
+        "files": 1,
+        "matches": 1
       },
       "floor": 3000
     },
@@ -5139,6 +5139,10 @@
         {
           "path": "src/hooks/useTauriEvent.ts",
           "reason": "the primitive itself — its two definitions are the anchor, not call sites"
+        },
+        {
+          "path": "src/features/vault/shared/vector/ingest/IngestProgressBar.tsx",
+          "reason": "documented tension with unmanaged-tauri-subscription: the bar's three hand-rolled listen() calls leaked on the listen-vs-unmount race and were routed through useTypedTauriEvent (e9505acbd/42beb2f0e), which is the one sanctioned hook and is unbuffered. The bar mounts in the same tick the job is spawned, no kb job-progress snapshot command exists to replay from, and the gap window is the job's own startup. Remove this exclude when a buffered event hook or a progress snapshot getter lands"
         }
       ],
       "baseline": {

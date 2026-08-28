@@ -2,6 +2,11 @@
 
 ## Active
 
+### accepted-exec-115 — execute 115 accepted ideas via Opus executors in worktrees
+- **[2026-08-28 20:13]**
+- **Paths:** `src/**` · `src-tauri/**`
+- **Status:** started
+
 - **[2026-08-28 19:58]**
 - **Paths:** `src/**` · `.claude/skills/scan-sweep/**`
 - **Status:** started
