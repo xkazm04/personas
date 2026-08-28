@@ -84,7 +84,13 @@ interface MemoryFeatures {
 
 export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const conflicts: MemoryConflict[] = [];
-  const seen = new Set<string>();
+
+  // NOTE there is deliberately no `seen` de-dup set here. The pair loop below
+  // starts `j` at `i + 1`, so it visits every unordered pair exactly once and a
+  // de-dup guard could never fire. One stood here anyway (a Set, a `has`
+  // check, three `add` calls) and read as protection against a re-entry hazard
+  // the loop's own bounds already make impossible — which is worse than no
+  // comment, because it misstates the invariant to the next reader.
 
   // O(n) precompute — previously each memory's title+content was
   // re-tokenized and re-bigrammed for every pair (~3·(n-1) times per memory).
@@ -99,7 +105,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
       const a = memories[i]!; const b = memories[j]!;
       const fb = features[j]!;
       const pairKey = [a.id, b.id].sort().join(':');
-      if (seen.has(pairKey)) continue;
       const contentA = fa.content;
       const contentB = fb.content;
 
@@ -136,7 +141,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
       // A negation signal on a shared topic is therefore decisive: it is never
       // redundancy, however similar the two texts read.
       if (topic >= CONTRADICTION_TOPIC_THRESHOLD && hasContradictionSignal(contentA, contentB)) {
-        seen.add(pairKey);
         conflicts.push({ id: pairKey, kind: 'contradiction', similarity: topic, memoryA: a, memoryB: b,
           reason: `Potentially contradictory instructions on the same topic (${Math.round(topic * 100)}% topic overlap)` });
         continue;
@@ -148,7 +152,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
         const sim = wordSim * TEXT_SIM_WORD_WEIGHT
           + jaccard(fa.bigramSet, fb.bigramSet) * TEXT_SIM_BIGRAM_WEIGHT;
         if (sim >= DUPLICATE_THRESHOLD) {
-          seen.add(pairKey);
           const crossPersona = a.persona_id !== b.persona_id;
           conflicts.push({ id: pairKey, kind: 'duplicate', similarity: sim, memoryA: a, memoryB: b,
             reason: crossPersona ? `Near-duplicate memories across different agents (${Math.round(sim * 100)}% similar)` : `Near-duplicate memories within the same agent (${Math.round(sim * 100)}% similar)` });
@@ -161,7 +164,6 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
         if (timeDiff >= MIN_TIME_DIFF_MS) {
           const older = new Date(a.created_at) < new Date(b.created_at) ? a : b;
           const newer = older === a ? b : a;
-          seen.add(pairKey);
           conflicts.push({ id: pairKey, kind: 'superseded', similarity: topic, memoryA: newer, memoryB: older,
             reason: `Newer memory may supersede an older one on the same topic (${Math.round(topic * 100)}% overlap)` });
         }
