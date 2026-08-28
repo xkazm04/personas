@@ -67,8 +67,23 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
 
   if (!config) return null;
 
-  // Count how many fields are inherited (not agent-level and not default)
-  const fields = [config.model, config.provider, config.baseUrl, config.maxBudgetUsd, config.maxTurns, config.promptCachePolicy];
+  // Count how many fields are inherited (not agent-level and not default).
+  // EVERY row this panel renders is counted, `authToken` included. It was the
+  // one row rendered below and left out of this array until 2026-08-29, so a
+  // persona authenticating with a workspace-level token read "2 inherited"
+  // when three things were — an undercount on the single field where
+  // "where did this come from" has a security answer. The counter states how
+  // many values arrived from elsewhere; it never states any of them, and the
+  // token's own value stays masked in `FieldRow` regardless.
+  const fields = [
+    config.model,
+    config.provider,
+    config.baseUrl,
+    config.authToken,
+    config.maxBudgetUsd,
+    config.maxTurns,
+    config.promptCachePolicy,
+  ];
   const inheritedCount = fields.filter(f => f.source === 'workspace' || f.source === 'global').length;
   const overriddenCount = fields.filter(f => f.isOverridden).length;
 
