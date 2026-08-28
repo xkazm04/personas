@@ -4458,7 +4458,9 @@
       "capability_select_subset_hint": "Seules des requêtes SELECT simples sur une seule table s’exécutent ici : filtrez avec WHERE, triez avec ORDER BY, limitez avec LIMIT. Les JOIN, agrégations, CTE et écritures ne sont pas pris en charge.",
       "query_timeout": "Délai d’attente dépassé pour la réponse. Veuillez réessayer.",
       "add_favorite": "Ajouter aux favoris",
-      "remove_favorite": "Retirer des favoris"
+      "remove_favorite": "Retirer des favoris",
+      "delete_query_title": "Supprimer la requête enregistrée ?",
+      "delete_query_body": "« {title} » et son texte de requête seront supprimés. Cette action est irréversible."
     },
     "dependencies": {
       "simulate_revocation": "Simuler la révocation",

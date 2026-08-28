@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Star, Check, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -12,7 +13,7 @@ interface QuerySidebarProps {
 }
 
 export function QuerySidebar({ credentialId, language, selectedId, onSelect }: QuerySidebarProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const db = t.vault.databases;
   const queries = useVaultStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
   const createQuery = useVaultStore((s) => s.createDbSavedQuery);
@@ -21,6 +22,18 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
 
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  // The trash icon is hover-revealed and sits a few pixels from the favourite
+  // star, so a mis-aimed click used to destroy the query text irrecoverably.
+  // Hold the target here and let ConfirmDialog own the actual delete.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setPendingDelete(null);
+    await deleteQuery(id);
+    if (selectedId === id) onSelect('');
+  }, [pendingDelete, deleteQuery, selectedId, onSelect]);
 
   const handleCreate = useCallback(async () => {
     const title = newTitle.trim();
@@ -122,7 +135,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <button
               type="button"
               aria-label={t.common.delete}
-              onClick={(e) => { e.stopPropagation(); deleteQuery(q.id); if (selectedId === q.id) onSelect(''); }}
+              onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: q.id, title: q.title }); }}
               className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
             >
               <Trash2 className="w-3 h-3" />
@@ -139,6 +152,17 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
           </div>
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          danger
+          title={db.delete_query_title}
+          body={tx(db.delete_query_body, { title: pendingDelete.title })}
+          confirmLabel={t.common.delete}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

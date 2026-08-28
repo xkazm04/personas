@@ -4458,7 +4458,9 @@
       "capability_select_subset_hint": "تُشغَّل هنا فقط استعلامات SELECT البسيطة على جدول واحد — التصفية باستخدام WHERE، والترتيب باستخدام ORDER BY، والتحديد باستخدام LIMIT. أما JOIN والتجميعات وCTE وعمليات الكتابة فغير مدعومة.",
       "query_timeout": "انتهت مهلة انتظار الاستجابة. يرجى المحاولة مرة أخرى.",
       "add_favorite": "إضافة إلى المفضلة",
-      "remove_favorite": "إزالة من المفضلة"
+      "remove_favorite": "إزالة من المفضلة",
+      "delete_query_title": "هل تريد حذف الاستعلام المحفوظ؟",
+      "delete_query_body": "سيتم حذف «{title}» ونص الاستعلام الخاص به. لا يمكن التراجع عن هذا الإجراء."
     },
     "dependencies": {
       "simulate_revocation": "محاكاة الإبطال",

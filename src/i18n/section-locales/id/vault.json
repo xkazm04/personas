@@ -433,7 +433,9 @@
     "capability_select_subset_hint": "Di sini hanya kueri SELECT sederhana pada satu tabel yang berjalan — saring dengan WHERE, urutkan dengan ORDER BY, batasi dengan LIMIT. JOIN, agregasi, CTE, dan penulisan tidak didukung.",
     "query_timeout": "Waktu tunggu respons habis. Silakan coba lagi.",
     "add_favorite": "Tambahkan ke favorit",
-    "remove_favorite": "Hapus dari favorit"
+    "remove_favorite": "Hapus dari favorit",
+    "delete_query_title": "Hapus kueri tersimpan?",
+    "delete_query_body": "\"{title}\" beserta teks kuerinya akan dihapus. Tindakan ini tidak dapat dibatalkan."
   },
   "dependencies": {
     "simulate_revocation": "Simulasi pencabutan",

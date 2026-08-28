@@ -4727,7 +4727,9 @@
       "capability_introspection_only": "Browse only",
       "capability_introspection_only_hint": "This connector has no ad-hoc query lane here — browse tables and columns; run queries in the provider's own console.",
       "add_favorite": "Add to favorites",
-      "remove_favorite": "Remove from favorites"
+      "remove_favorite": "Remove from favorites",
+      "delete_query_title": "Delete saved query?",
+      "delete_query_body": "\"{title}\" and its query text will be removed. This action cannot be undone."
     },
     "dependencies": {
       "simulate_revocation": "Simulate Revocation",

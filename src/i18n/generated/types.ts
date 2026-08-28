@@ -4734,6 +4734,8 @@ export type Translations = {
       capability_introspection_only_hint: string;
       add_favorite: string;
       remove_favorite: string;
+      delete_query_title: string;
+      delete_query_body: string;
     };
     dependencies: {
       simulate_revocation: string;
