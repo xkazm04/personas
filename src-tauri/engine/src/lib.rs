@@ -52,12 +52,15 @@ pub mod api_definition;
 pub mod app_focus;
 pub mod app_master;
 pub mod app_master_gates;
+pub mod app_master_hire_memory;
+pub mod app_master_memory;
 pub mod archetype_catalog;
 pub mod auto_triage;
 pub mod autonomy;
 pub mod autopilot;
 #[cfg(feature = "desktop")]
 pub mod bridge_manifest;
+pub mod build_stall;
 pub mod bus;
 pub mod capability_contract;
 #[cfg(feature = "desktop")]
@@ -161,6 +164,7 @@ pub mod tool_outcome;
 pub mod topology_heuristic;
 pub mod topology_types;
 pub mod unattended;
+pub mod unattended_worktree;
 pub mod verification_command;
 pub mod workflow_compiler;
 pub mod workspace_projection;

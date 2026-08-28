@@ -7788,7 +7788,8 @@
       "report_empty": "(corps vide)",
       "open_in_reports": "Ouvrir dans Rapports",
       "report_summary_title": "Rapport",
-      "report_unavailable": "Rapport indisponible"
+      "report_unavailable": "Rapport indisponible",
+      "subtitle_composed_prefix": "Composé"
     },
     "certification": {
       "title": "Centre de commande de certification",
@@ -15180,6 +15181,13 @@
       "recall_group_goals": "Objectifs",
       "recall_group_backlog": "Backlog",
       "recall_open_in_brain": "Ouvrir dans la visionneuse du cerveau : {title}",
+      "recall_lane_vector": "correspondance sémantique",
+      "recall_lane_keyword": "correspondance par mot-clé",
+      "recall_lane_always": "toujours inclus",
+      "recall_lane_recency": "tour récent",
+      "recall_chip_lane_aria": "{title} ({lane})",
+      "recall_chip_relevance_aria": "{title} ({lane}, pertinence {percent} %)",
+      "recall_dropped_far": "{count} autres ont été trouvés puis écartés, leur score étant inférieur au seuil de pertinence {floor}.",
       "turn_summary_label": "Ce qu’Athena a fait ce tour",
       "turn_summary_nav": "Navigation",
       "turn_summary_approval": "Approbation",

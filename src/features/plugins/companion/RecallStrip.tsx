@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Brain, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { BrainKind, CompanionRecallPreview } from '@/api/companion';
+import type {
+  BrainKind,
+  CompanionRecallPreview,
+  CompanionRecallPreviewEntry,
+} from '@/api/companion';
+import { RecallChip } from './RecallChip';
 
 /**
  * Per-turn rollup of what Athena's brain pulled into the system prompt.
@@ -122,6 +127,7 @@ export function RecallStrip({
             kind="backlog"
             onOpen={onOpenInBrain}
           />
+          <FloorNote preview={preview} />
         </div>
       )}
     </div>
@@ -135,46 +141,51 @@ function ChipGroup({
   onOpen,
 }: {
   label: string;
-  entries: { id: string; title: string }[];
+  entries: CompanionRecallPreviewEntry[];
   kind: BrainKind;
   onOpen?: (kind: BrainKind, id: string) => void;
 }) {
-  const { t } = useTranslation();
   if (entries.length === 0) return null;
-  const baseClass =
-    'rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 text-foreground';
   return (
     <div className="flex flex-wrap items-baseline gap-1.5">
       <span className="text-foreground shrink-0">{label}</span>
-      {entries.map((e) => {
-        const clickable = !!onOpen && !!e.id;
-        if (!clickable) {
-          return (
-            <span key={e.id || e.title} className={baseClass}>
-              {e.title}
-            </span>
-          );
-        }
-        const ariaLabel = t.plugins.companion.recall_open_in_brain.replace(
-          '{title}',
-          e.title,
-        );
-        return (
-          <button
-            key={e.id || e.title}
-            type="button"
-            onClick={() => onOpen!(kind, e.id)}
-            className={`${baseClass} text-left hover:bg-foreground/[0.10] hover:border-primary/30 transition-colors focus-ring cursor-pointer`}
-            title={ariaLabel}
-            aria-label={ariaLabel}
-            data-testid="companion-recall-chip"
-            data-kind={kind}
-            data-id={e.id}
-          >
-            {e.title}
-          </button>
-        );
-      })}
+      {entries.map((e) => (
+        <RecallChip
+          key={e.id || e.title}
+          entry={e}
+          kind={kind}
+          onOpen={onOpen}
+        />
+      ))}
     </div>
+  );
+}
+
+/**
+ * What retrieval measured and then rejected.
+ *
+ * Only rendered when a floor was actually applied — a build with no vector
+ * lane has no threshold, and printing one would describe a mechanism that did
+ * not run. Without this line an unexpectedly thin recall is indistinguishable
+ * from a brain that had nothing to say, which is the state that made
+ * `MAX_VECTOR_DISTANCE` a number nobody could tune.
+ */
+function FloorNote({ preview }: { preview: CompanionRecallPreview }) {
+  const { t } = useTranslation();
+  // `== null` catches undefined as well as null on purpose. The strip renders
+  // whatever the backend event carried, and a payload built before these
+  // fields existed must degrade to "no note" rather than take the chat
+  // surface down over a diagnostic footer.
+  const floor = preview.relevanceFloor;
+  if (floor == null || !preview.droppedFar) return null;
+  return (
+    <p
+      className="border-t border-foreground/10 pt-1.5 text-foreground"
+      data-testid="companion-recall-floor-note"
+    >
+      {t.plugins.companion.recall_dropped_far
+        .replace('{count}', String(preview.droppedFar))
+        .replace('{floor}', floor.toFixed(2))}
+    </p>
   );
 }

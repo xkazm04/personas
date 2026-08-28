@@ -1524,7 +1524,8 @@
     "report_empty": "(пустое содержимое)",
     "open_in_reports": "Открыть в Отчётах",
     "report_summary_title": "Отчёт",
-    "report_unavailable": "Отчёт недоступен"
+    "report_unavailable": "Отчёт недоступен",
+    "subtitle_composed_prefix": "Составлено"
   },
   "certification": {
     "title": "Центр управления сертификацией",

@@ -31,34 +31,14 @@ use crate::companion::brain::keyword;
 /// this module against each other — and, crucially, against the single
 /// in-process `CYCLE_RUNNING` flag, which two concurrent cycle tests would
 /// otherwise make each other skip.
-struct BrainHome {
-    _dir: std::path::PathBuf,
-    _guard: std::sync::MutexGuard<'static, ()>,
-}
-
-static HOME_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-impl BrainHome {
-    fn new(tag: &str) -> Self {
-        let guard = HOME_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let dir = std::env::temp_dir().join(format!(
-            "personas_sleep_test_{tag}_{}",
-            uuid::Uuid::new_v4()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        std::env::set_var("PERSONAS_HOME", &dir);
-        Self {
-            _dir: dir,
-            _guard: guard,
-        }
-    }
-}
-
-impl Drop for BrainHome {
-    fn drop(&mut self) {
-        std::env::remove_var("PERSONAS_HOME");
-    }
-}
+/// Was a private mutex here. `PERSONAS_HOME` is ONE process-global, so a lock
+/// private to this file serialised these tests against each other and against
+/// nothing else — `cycle_report`'s disk tests redirect the same variable and
+/// never took it. [`TestHome`] is that lock, shared across the brain module,
+/// and it keeps this file's second reason for holding it: one global lock also
+/// serialises the in-process `CYCLE_RUNNING` flag, which two concurrent cycle
+/// tests would otherwise make each other skip.
+use crate::companion::brain::test_home::TestHome as BrainHome;
 
 /// Canned replies per leg. The whole point of the seam: every decision the
 /// cycle makes about a reply is exercised without spawning a process.
@@ -1355,4 +1335,103 @@ fn a_reply_that_is_not_a_json_object_is_refused() {
     assert!(parse_object("```json\n{\"facts\":[]}\n```", "t").is_ok());
     assert!(parse_object("[1,2,3]", "t").is_err());
     assert!(parse_object("nothing here", "t").is_err());
+}
+
+/// The forget contract, end to end against the real schema and the real cycle.
+///
+/// This is the failure the tombstone exists for, and it is worth spelling out
+/// because nothing about it looks like a bug from inside the cycle: deleting a
+/// fact removes the fact, not the episodes it was derived from, and the cycle
+/// reads those same episodes on its next run. So "forget that" used to hold
+/// exactly until the next cycle, which then re-derived it from the identical
+/// evidence and wrote it back. The user's correction was reversed silently,
+/// and from their side Athena had simply ignored them.
+///
+/// Asserted three ways, because a refusal nobody can see is indistinguishable
+/// from a cycle that happened to learn nothing: the fact stays gone, the stats
+/// carry a dedicated counter, and the report says so in words.
+#[tokio::test]
+async fn a_cycle_refuses_to_relearn_a_fact_the_user_forgot() {
+    let _home = BrainHome::new("forget");
+    let pool = crate::db::init_test_user_db().unwrap();
+    let eps = seed_episodes(&pool);
+
+    // The user's own words, still on the record after the delete — this is the
+    // evidence the second cycle re-derives from.
+    let id = semantic::write_fact(
+        &pool,
+        &semantic::FactInput {
+            scope: semantic::FactScope::User,
+            key: "uses_worktrees",
+            value: "The operator isolates multi-file work in a git worktree.",
+            sources: &eps[..1],
+            importance: 3,
+            confidence: 0.9,
+            supersedes_id: None,
+            contradicts_id: None,
+        },
+    )
+    .unwrap();
+
+    // "Forget that."
+    semantic::delete_fact(&pool, &id).unwrap();
+    assert!(semantic::is_forgotten(
+        &pool,
+        semantic::FactScope::User,
+        "uses_worktrees"
+    ));
+
+    // Tonight's cycle reaches the same conclusion from the same episodes.
+    let compress = format!(
+        r#"{{"facts":[{{"scope":"user","key":"uses_worktrees",
+             "value":"The operator isolates multi-file work in a git worktree.",
+             "tags":[],"confidence":0.9,"provenance":["{}"]}}],
+            "procedurals":[],"staged":[],"prune_candidates":[]}}"#,
+        eps[0]
+    );
+    let CycleOutcome::Ran { cycle_id, .. } = run_forced(
+        &pool,
+        &Canned::new(&compress, r#"{"supersede":[],"contradictions":[]}"#),
+        true,
+    )
+    .await
+    else {
+        panic!("the forced cycle must run");
+    };
+
+    // 1. It stayed gone.
+    let live = semantic::list_facts(&pool, None, false, 50).unwrap();
+    assert!(
+        !live.iter().any(|f| f.key == "uses_worktrees"),
+        "a forgotten fact must not come back on its own: {:?}",
+        live.iter().map(|f| &f.key).collect::<Vec<_>>()
+    );
+
+    // 2. The refusal is counted, and counted separately from a cap drop —
+    //    this is the system obeying, not the system hitting a limit.
+    let stats = cycle_stats(&pool, &cycle_id);
+    assert_eq!(stats["facts_dropped_forgotten"], 1);
+    assert_eq!(stats["facts_applied"], 0);
+    assert_eq!(
+        stats["facts_dropped_over_cap"], 0,
+        "a forgotten refusal is not a cap drop"
+    );
+
+    // 3. The user can read why, in the report.
+    let body = report_body(&pool, &cycle_id);
+    assert!(
+        body.contains("asked me to forget"),
+        "the report must own the refusal: {body}"
+    );
+    assert!(
+        body.contains("uses_worktrees"),
+        "and name the key it refused: {body}"
+    );
+
+    // And the tombstone is still standing, so the NEXT cycle refuses too.
+    assert!(semantic::is_forgotten(
+        &pool,
+        semantic::FactScope::User,
+        "uses_worktrees"
+    ));
 }

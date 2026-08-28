@@ -2220,11 +2220,26 @@ export interface CompanionStreamEvent {
  */
 export const COMPANION_RECALL_PREVIEW_EVENT = 'companion://recall-preview';
 
+/** Which retrieval lane produced an entry. Stable wire values. */
+export type CompanionRecallLane = 'vector' | 'keyword' | 'always' | 'recency';
+
 export interface CompanionRecallPreviewEntry {
   /** Stable id of the underlying memory row (or doctrine file_path). */
   id: string;
   /** Short, glanceable label (≤60 chars, truncated server-side). */
   title: string;
+  /**
+   * How this entry got here. `always` and `recency` entries would have been
+   * in the prompt whatever was asked, so they are not evidence that retrieval
+   * matched anything.
+   */
+  lane: CompanionRecallLane;
+  /**
+   * Relevance in 0..1, nearest-first, for `vector` entries only. `null` for
+   * every other lane — those have no distance, and drawing a bar for them
+   * would invent a number.
+   */
+  relevance: number | null;
 }
 
 export interface CompanionRecallPreview {
@@ -2236,6 +2251,13 @@ export interface CompanionRecallPreview {
   backlog: CompanionRecallPreviewEntry[];
   /** True when a synthesis briefing replaced raw chunks this turn. */
   synthesized: boolean;
+  /** Hits retrieved and then rejected for falling outside the relevance floor. */
+  droppedFar: number;
+  /**
+   * The floor those hits were measured against, or `null` on a build with no
+   * vector lane — where there is no threshold to show.
+   */
+  relevanceFloor: number | null;
 }
 
 export interface CompanionRecallPreviewEvent {

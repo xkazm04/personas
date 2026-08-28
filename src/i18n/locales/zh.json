@@ -7788,7 +7788,8 @@
       "report_empty": "（内容为空）",
       "open_in_reports": "在报告中打开",
       "report_summary_title": "报告",
-      "report_unavailable": "报告不可用"
+      "report_unavailable": "报告不可用",
+      "subtitle_composed_prefix": "已生成"
     },
     "certification": {
       "title": "认证指挥中心",
@@ -15180,6 +15181,13 @@
       "recall_group_goals": "目标",
       "recall_group_backlog": "待办",
       "recall_open_in_brain": "在大脑浏览器中打开：{title}",
+      "recall_lane_vector": "语义匹配",
+      "recall_lane_keyword": "关键词匹配",
+      "recall_lane_always": "始终包含",
+      "recall_lane_recency": "近期对话",
+      "recall_chip_lane_aria": "{title}（{lane}）",
+      "recall_chip_relevance_aria": "{title}（{lane}，相关度 {percent}%）",
+      "recall_dropped_far": "另有 {count} 条被检索到，但因低于相关度阈值 {floor} 而未采用。",
       "turn_summary_label": "Athena 本轮的操作摘要",
       "turn_summary_nav": "跳转",
       "turn_summary_approval": "批准",

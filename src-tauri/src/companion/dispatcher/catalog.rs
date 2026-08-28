@@ -255,6 +255,13 @@ pub(super) const READ_OPS: &[&str] = &[
     // runtime signals the DB cannot see, and a second derivation here would
     // drift from the one on his screen. See `companion::ship_ops`.
     "describe_ship_milestone",
+    // Her own memory pipeline (2026-08-26). When recall comes back empty she
+    // had no way to tell a cold brain from a dark embedder from a build with
+    // no vector lane, so the honest answer ("I don't know why I don't
+    // remember") was unavailable and she guessed instead. Reads counters and
+    // returns the single first blocking cause with its fix. Takes no query —
+    // there is only one brain. See `companion::brain::health`.
+    "describe_brain_health",
 ];
 
 /// Read ops whose `query` param is optional (they answer for everything when
@@ -266,6 +273,7 @@ pub(super) const READ_OPS_QUERY_OPTIONAL: &[&str] = &[
     "list_runner_tasks",
     "describe_skill_fleet",
     "describe_knowledge",
+    "describe_brain_health",
 ];
 
 /// Longest accepted lookup string. A name or a UUID; anything longer is a

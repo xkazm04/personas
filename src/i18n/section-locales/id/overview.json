@@ -1524,7 +1524,8 @@
     "report_empty": "(isi kosong)",
     "open_in_reports": "Buka di Laporan",
     "report_summary_title": "Laporan",
-    "report_unavailable": "Laporan tidak tersedia"
+    "report_unavailable": "Laporan tidak tersedia",
+    "subtitle_composed_prefix": "Disusun"
   },
   "certification": {
     "title": "Pusat komando sertifikasi",

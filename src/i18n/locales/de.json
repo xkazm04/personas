@@ -7788,7 +7788,8 @@
       "report_empty": "(leerer Inhalt)",
       "open_in_reports": "In Berichten öffnen",
       "report_summary_title": "Bericht",
-      "report_unavailable": "Bericht nicht verfügbar"
+      "report_unavailable": "Bericht nicht verfügbar",
+      "subtitle_composed_prefix": "Erstellt"
     },
     "certification": {
       "title": "Zertifizierungs-Kommandozentrale",
@@ -15180,6 +15181,13 @@
       "recall_group_goals": "Ziele",
       "recall_group_backlog": "Backlog",
       "recall_open_in_brain": "Im Brain Viewer öffnen: {title}",
+      "recall_lane_vector": "semantischer Treffer",
+      "recall_lane_keyword": "Stichworttreffer",
+      "recall_lane_always": "immer enthalten",
+      "recall_lane_recency": "letzter Zug",
+      "recall_chip_lane_aria": "{title} ({lane})",
+      "recall_chip_relevance_aria": "{title} ({lane}, {percent} % Relevanz)",
+      "recall_dropped_far": "{count} weitere wurden gefunden und aussortiert, weil ihr Wert unter der Relevanzschwelle {floor} lag.",
       "turn_summary_label": "Was Athena in dieser Runde getan hat",
       "turn_summary_nav": "navigiert",
       "turn_summary_approval": "Genehmigung",

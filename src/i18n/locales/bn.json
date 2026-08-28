@@ -7788,7 +7788,8 @@
       "report_empty": "(খালি বিষয়বস্তু)",
       "open_in_reports": "রিপোর্টে খুলুন",
       "report_summary_title": "রিপোর্ট",
-      "report_unavailable": "রিপোর্ট পাওয়া যাচ্ছে না"
+      "report_unavailable": "রিপোর্ট পাওয়া যাচ্ছে না",
+      "subtitle_composed_prefix": "রচিত"
     },
     "certification": {
       "title": "সার্টিফিকেশন কমান্ড সেন্টার",
@@ -15180,6 +15181,13 @@
       "recall_group_goals": "লক্ষ্য",
       "recall_group_backlog": "ব্যাকলগ",
       "recall_open_in_brain": "ব্রেইন ভিউয়ারে খুলুন: {title}",
+      "recall_lane_vector": "অর্থগত মিল",
+      "recall_lane_keyword": "কীওয়ার্ড মিল",
+      "recall_lane_always": "সবসময় অন্তর্ভুক্ত",
+      "recall_lane_recency": "সাম্প্রতিক আলাপ",
+      "recall_chip_lane_aria": "{title} ({lane})",
+      "recall_chip_relevance_aria": "{title} ({lane}, {percent}% প্রাসঙ্গিকতা)",
+      "recall_dropped_far": "আরও {count}টি পাওয়া গেছে, তবে {floor} প্রাসঙ্গিকতার সীমার নিচে স্কোর করায় বাদ দেওয়া হয়েছে।",
       "turn_summary_label": "Athena এই টার্নে যা করেছে",
       "turn_summary_nav": "নেভিগেট করেছে",
       "turn_summary_approval": "অনুমোদন",

@@ -1524,7 +1524,8 @@
     "report_empty": "(corps vide)",
     "open_in_reports": "Ouvrir dans Rapports",
     "report_summary_title": "Rapport",
-    "report_unavailable": "Rapport indisponible"
+    "report_unavailable": "Rapport indisponible",
+    "subtitle_composed_prefix": "Composé"
   },
   "certification": {
     "title": "Centre de commande de certification",

@@ -7114,6 +7114,7 @@ export type Translations = {
       report_unavailable: string;
       report_empty: string;
       open_in_reports: string;
+      subtitle_composed_prefix: string;
     };
     events: {
       title: string;
@@ -15374,6 +15375,13 @@ export type Translations = {
       recall_group_goals: string;
       recall_group_backlog: string;
       recall_open_in_brain: string;
+      recall_lane_vector: string;
+      recall_lane_keyword: string;
+      recall_lane_always: string;
+      recall_lane_recency: string;
+      recall_chip_lane_aria: string;
+      recall_chip_relevance_aria: string;
+      recall_dropped_far: string;
       turn_summary_label: string;
       turn_summary_nav: string;
       turn_summary_approval: string;

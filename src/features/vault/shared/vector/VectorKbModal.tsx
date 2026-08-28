@@ -276,7 +276,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               <button
                 type="button"
                 onClick={() => void refreshKb()}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors focus-ring"
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors focus-ring"
               >
                 <RefreshCw className="w-3 h-3" aria-hidden />
                 {t.common.retry}
