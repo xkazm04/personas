@@ -1409,6 +1409,7 @@
       "pending": "pendiente",
       "loading_trace": "Cargando traza",
       "failed_to_load_trace": "Error al cargar la traza: {error}",
+      "payload_not_parseable": "No se puede analizar como datos estructurados: {reason}",
       "no_trace_data": "No se registraron datos de traza",
       "trace_spans_appear": "Los tramos de traza aparecen durante la ejecución",
       "span": "Tramo",

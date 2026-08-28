@@ -1409,6 +1409,7 @@
       "pending": "معلّق",
       "loading_trace": "جارٍ تحميل التتبع",
       "failed_to_load_trace": "فشل تحميل التتبع: {error}",
+      "payload_not_parseable": "تعذر تحليله كبيانات منظمة: {reason}",
       "no_trace_data": "لا بيانات تتبع مسجلة",
       "trace_spans_appear": "فترات التتبع تظهر أثناء التنفيذ",
       "span": "فترة",

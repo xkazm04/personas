@@ -256,6 +256,7 @@
     "pending": "保留中",
     "loading_trace": "トレースを読み込み中",
     "failed_to_load_trace": "トレースの読み込みに失敗: {error}",
+    "payload_not_parseable": "構造化データとして解析できません: {reason}",
     "no_trace_data": "トレースデータなし",
     "trace_spans_appear": "実行中にトレーススパンが表示されます",
     "span": "スパン",

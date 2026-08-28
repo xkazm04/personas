@@ -256,6 +256,7 @@
     "pending": "en attente",
     "loading_trace": "Chargement de la trace",
     "failed_to_load_trace": "Échec du chargement de la trace : {error}",
+    "payload_not_parseable": "Illisible en tant que données structurées : {reason}",
     "no_trace_data": "Aucune donnée de trace enregistrée",
     "trace_spans_appear": "Les plages de trace apparaissent pendant l’exécution",
     "span": "Plage",

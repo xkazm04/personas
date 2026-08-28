@@ -1409,6 +1409,7 @@
       "pending": "মুলতুবি",
       "loading_trace": "ট্রেস লোড হচ্ছে",
       "failed_to_load_trace": "ট্রেস লোড ব্যর্থ: {error}",
+      "payload_not_parseable": "কাঠামোবদ্ধ ডেটা হিসেবে পার্স করা যায়নি: {reason}",
       "no_trace_data": "কোনো ট্রেস ডেটা রেকর্ড নেই",
       "trace_spans_appear": "এক্সিকিউশনের সময় ট্রেস স্প্যান দেখা যায়",
       "span": "স্প্যান",

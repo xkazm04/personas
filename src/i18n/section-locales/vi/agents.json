@@ -256,6 +256,7 @@
     "pending": "đang chờ",
     "loading_trace": "Đang tải theo dõi",
     "failed_to_load_trace": "Không thể tải theo dõi: {error}",
+    "payload_not_parseable": "Không phân tích được dưới dạng dữ liệu có cấu trúc: {reason}",
     "no_trace_data": "Không có dữ liệu theo dõi",
     "trace_spans_appear": "Các span theo dõi xuất hiện trong quá trình thực thi",
     "span": "Span",
