@@ -10711,6 +10711,7 @@
       "updates_up_to_date": "Bạn đang dùng bản mới nhất",
       "updates_available_toast": "Đã có bản cập nhật mới — xem thanh thông báo ở đầu trang để cài đặt",
       "updates_check_failed": "Không thể kiểm tra bản cập nhật. Vui lòng thử lại sau.",
+      "updates_already_checking": "Đang có một lượt kiểm tra chạy rồi — vui lòng đợi một lát.",
       "updates_current_version": "Bạn đang dùng v{version}",
       "updates_last_checked": "Kiểm tra lần cuối {time}",
       "updates_history_title": "Cập nhật gần đây",

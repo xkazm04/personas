@@ -10711,6 +10711,7 @@
       "updates_up_to_date": "Vous êtes à jour",
       "updates_available_toast": "Mise à jour disponible — consultez la bannière en haut pour l’installer",
       "updates_check_failed": "Impossible de vérifier les mises à jour. Réessayez dans un instant.",
+      "updates_already_checking": "Une vérification est déjà en cours — patientez un instant.",
       "updates_current_version": "Vous êtes en v{version}",
       "updates_last_checked": "Dernière vérification {time}",
       "updates_history_title": "Mises à jour récentes",

@@ -10970,6 +10970,7 @@ export type Translations = {
       updates_up_to_date: string;
       updates_available_toast: string;
       updates_check_failed: string;
+      updates_already_checking: string;
       updates_current_version: string;
       updates_last_checked: string;
       updates_history_title: string;

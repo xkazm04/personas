@@ -24,6 +24,7 @@
     "updates_up_to_date": "최신 버전입니다",
     "updates_available_toast": "업데이트를 사용할 수 있습니다 — 설치하려면 상단 배너를 확인하세요",
     "updates_check_failed": "업데이트를 확인할 수 없습니다. 잠시 후 다시 시도하세요.",
+    "updates_already_checking": "이미 확인 중입니다. 잠시만 기다려 주세요.",
     "updates_current_version": "현재 버전 v{version}",
     "updates_last_checked": "마지막 확인 {time}",
     "updates_history_title": "최근 업데이트",

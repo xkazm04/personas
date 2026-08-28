@@ -10,8 +10,19 @@ export interface UpdateInfo {
   body: string | null;
 }
 
-/** Outcome of a manual check — used by Settings UI for toast feedback. */
-export type CheckOutcome = "update-available" | "up-to-date" | "failed";
+/**
+ * Outcome of a manual check — used by Settings UI for toast feedback.
+ *
+ * `already-checking` is deliberately distinct from `up-to-date`: a press that
+ * collides with the in-flight background poll ran NO check, and reporting
+ * non-execution as a green "you're up to date" is the same empty-success the
+ * `failed` branch exists to avoid.
+ */
+export type CheckOutcome =
+  | "update-available"
+  | "up-to-date"
+  | "already-checking"
+  | "failed";
 
 export function useAutoUpdater() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -34,7 +45,9 @@ export function useAutoUpdater() {
   const checkingRef = useRef(false);
 
   const checkForUpdate = useCallback(async (): Promise<CheckOutcome> => {
-    if (checkingRef.current) return "up-to-date";
+    // A check is already in flight (usually the 6h background poll). Report
+    // that honestly rather than claiming a fresh check found nothing.
+    if (checkingRef.current) return "already-checking";
     checkingRef.current = true;
     setIsChecking(true);
     setError(null);

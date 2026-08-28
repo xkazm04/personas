@@ -10711,6 +10711,7 @@
       "updates_up_to_date": "已是最新版本",
       "updates_available_toast": "有可用更新——请查看顶部横幅完成安装",
       "updates_check_failed": "无法检查更新，请稍后重试。",
+      "updates_already_checking": "已经在检查了，请稍候。",
       "updates_current_version": "当前版本 v{version}",
       "updates_last_checked": "上次检查 {time}",
       "updates_history_title": "近期更新",

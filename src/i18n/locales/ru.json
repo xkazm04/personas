@@ -10711,6 +10711,7 @@
       "updates_up_to_date": "У вас последняя версия",
       "updates_available_toast": "Доступно обновление — чтобы установить, откройте баннер вверху экрана",
       "updates_check_failed": "Не удалось проверить наличие обновлений. Повторите попытку через некоторое время.",
+      "updates_already_checking": "Проверка уже выполняется — подождите немного.",
       "updates_current_version": "У вас версия v{version}",
       "updates_last_checked": "Последняя проверка {time}",
       "updates_history_title": "Недавние обновления",

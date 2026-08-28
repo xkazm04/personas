@@ -61,6 +61,10 @@ export default function AccountSettings() {
       addToast(s.updates_available_toast, 'success');
     } else if (outcome === "up-to-date") {
       addToast(s.updates_up_to_date, 'success');
+    } else if (outcome === "already-checking") {
+      // No check ran — a background poll owns the in-flight one. Never a
+      // green success: that would confirm a result the app does not have.
+      addToast(s.updates_already_checking, 'warning');
     } else {
       addToast(s.updates_check_failed, 'error');
     }
@@ -127,6 +131,12 @@ export default function AccountSettings() {
               <span className="inline-flex items-center gap-1.5 typo-caption text-emerald-400 animate-fade-slide-in">
                 <CheckCircle2 className="w-4 h-4" />
                 {s.updates_up_to_date}
+              </span>
+            )}
+            {!isChecking && lastOutcome === 'already-checking' && (
+              <span className="inline-flex items-center gap-1.5 typo-caption text-amber-400 animate-fade-slide-in">
+                <AlertCircle className="w-4 h-4" />
+                {s.updates_already_checking}
               </span>
             )}
             {!isChecking && lastOutcome === 'failed' && (

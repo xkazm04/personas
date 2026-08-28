@@ -10964,6 +10964,7 @@
       "updates_up_to_date": "You're up to date",
       "updates_available_toast": "Update available — see the banner at the top to install",
       "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+      "updates_already_checking": "A check is already running — hang tight.",
       "updates_current_version": "You're on v{version}",
       "updates_last_checked": "Last checked {time}",
       "updates_history_title": "Recent updates",

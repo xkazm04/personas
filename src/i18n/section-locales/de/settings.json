@@ -24,6 +24,7 @@
     "updates_up_to_date": "Sie sind auf dem neuesten Stand",
     "updates_available_toast": "Update verfügbar — installieren Sie es über das Banner oben",
     "updates_check_failed": "Suche nach Updates nicht möglich. Versuchen Sie es gleich noch einmal.",
+    "updates_already_checking": "Eine Prüfung läuft bereits – einen Moment bitte.",
     "updates_current_version": "Sie nutzen v{version}",
     "updates_last_checked": "Zuletzt geprüft {time}",
     "updates_history_title": "Letzte Aktualisierungen",
