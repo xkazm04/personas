@@ -81,3 +81,22 @@ describe('TraceSummary error tile', () => {
     expect(screen.getByTestId('trace-error-count').textContent).toBe('0');
   });
 });
+
+describe('TraceSummary cost tile', () => {
+  it('shows the unknown marker when the run was never priced', () => {
+    render(<TraceSummary trace={trace({ spans: [span({ cost_usd: null })] })} errorCount={0} />);
+    expect(screen.getByTestId('trace-cost').textContent).toBe('-');
+  });
+
+  it('shows a measured zero as zero, not as unpriced', () => {
+    // `null` is "we could not price this run"; `0` is "this run was free".
+    // The old `totalCost > 0` test printed the same dash for both.
+    render(<TraceSummary trace={trace({ spans: [span({ cost_usd: 0 })] })} errorCount={0} />);
+    expect(screen.getByTestId('trace-cost').textContent).toBe('$0.0000');
+  });
+
+  it('shows a measured price', () => {
+    render(<TraceSummary trace={trace({ spans: [span({ cost_usd: 0.1234 })] })} errorCount={0} />);
+    expect(screen.getByTestId('trace-cost').textContent).toBe('$0.1234');
+  });
+});

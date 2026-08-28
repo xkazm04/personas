@@ -19,7 +19,17 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const hasError = trace.spans.some((s) => s.error);
-  const cost = trace.spans.reduce((sum, s) => sum + (s.cost_usd ?? 0), 0);
+  // `null` is "we could not price this span"; `0` is "this span was free".
+  // Folding with `?? 0` printed a confident $0.0000 for a chain step where
+  // NOTHING was priced — indistinguishable from a genuinely free run, and
+  // today the tracer prices the root span alone, so that was the common case.
+  // The count of spans the fold could not measure travels with the sum.
+  const { cost, pricedSpans } = trace.spans.reduce(
+    (acc, s) => (s.cost_usd == null
+      ? acc
+      : { cost: acc.cost + s.cost_usd, pricedSpans: acc.pricedSpans + 1 }),
+    { cost: 0, pricedSpans: 0 },
+  );
   const StatusIcon = hasError ? XCircle : CheckCircle2;
   const statusClass = hasError ? 'text-status-error' : 'text-status-success';
 
@@ -42,7 +52,9 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
       )}
       <span className="typo-code text-foreground ml-auto whitespace-nowrap">{tx(e.chain_spans_count, { count: trace.spans.length })}</span>
       <span className="typo-code text-foreground w-16 text-right">{formatDuration(trace.total_duration_ms)}</span>
-      <span className="typo-code text-foreground w-20 text-right">{formatCost(cost, { precision: 4, language })}</span>
+      <span className="typo-code text-foreground w-20 text-right" data-testid="chain-span-cost">
+        {pricedSpans > 0 ? formatCost(cost, { precision: 4, language }) : '-'}
+      </span>
       {isCurrent
         ? <span className="w-3.5 h-3.5 flex-shrink-0" />
         : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}

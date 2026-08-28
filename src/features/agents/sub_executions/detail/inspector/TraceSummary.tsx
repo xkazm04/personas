@@ -31,7 +31,11 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
   const stats = useMemo(() => {
     const rootSpan = trace.spans.find(s => s.span_type === 'execution');
     const toolCalls = trace.spans.filter(s => s.span_type === 'tool_call');
-    const totalCost = rootSpan?.cost_usd ?? 0;
+    // `null` is "we could not price this run"; `0` is "this run was free" --
+    // the same rule SpanRow states per row. Coercing null to 0 and then
+    // testing `> 0` collapsed both into one dash, so a genuinely free run was
+    // reported as unpriced. The nullable measure stays nullable to the tile.
+    const totalCost = rootSpan?.cost_usd ?? null;
     const totalInput = rootSpan?.input_tokens ?? 0;
     const totalOutput = rootSpan?.output_tokens ?? 0;
 
@@ -57,8 +61,8 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
           <DollarSign className="w-2.5 h-2.5" />
           {e.cost}
         </div>
-        <div className="typo-code text-foreground/90">
-          {stats.totalCost > 0 ? <>$<Numeric value={stats.totalCost} precision={4} /></> : '-'}
+        <div className="typo-code text-foreground/90" data-testid="trace-cost">
+          {stats.totalCost != null ? <>$<Numeric value={stats.totalCost} precision={4} /></> : '-'}
         </div>
       </div>
 
@@ -96,14 +100,19 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
           root span (see the per-span note in SpanRow), so the finest
           decomposition this trace can honestly support is input vs output —
           apportioned from the SAME total shown in the Cost tile above, never
-          recomputed. */}
+          recomputed.
+
+          `actualCostUsd` anchors the bar on a MEASURED price and estimates
+          when there isn't one. A measured $0 is not an anchor it can scale,
+          so it still falls through to the estimate — behaviour unchanged by
+          the null/zero split above. */}
       {model && stats.totalInput + stats.totalOutput > 0 && (
         <div className="col-span-2 md:col-span-5 rounded-card border border-primary/20 bg-secondary/40 p-3">
           <CostBreakdownBar
             model={model}
             inputTokens={stats.totalInput}
             outputTokens={stats.totalOutput}
-            actualCostUsd={stats.totalCost > 0 ? stats.totalCost : null}
+            actualCostUsd={stats.totalCost ? stats.totalCost : null}
           />
         </div>
       )}
