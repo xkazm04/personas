@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Unified top band: template identity on the left, live counters on the
@@ -102,22 +103,29 @@ export function QuestionnaireHeaderBand({
           const isAnswered = !!userAnswers[q.id];
           const isBlocked = blockedQuestionIds?.has(q.id);
           return (
-            <button
-              key={q.id}
-              type="button"
-              onClick={() => onJumpTo(i)}
-              title={q.question}
-              className={`flex-shrink-0 h-1.5 rounded-full transition-all ${
-                isActive
-                  ? 'w-10 bg-primary'
-                  : isBlocked
-                    ? 'w-3 bg-status-error/60'
-                    : isAnswered
-                      ? 'w-5 bg-status-success/60 hover:bg-status-success'
-                      : 'w-3 bg-foreground/[0.12] hover:bg-foreground/[0.2]'
-              }`}
-              aria-label={tx(t.templates.adopt_modal.question_number_aria, { number: i + 1 })}
-            />
+            // The pill's aria-label carries only the position ("Question 3"),
+            // so the question TEXT exists nowhere else on this control. A
+            // native `title` delivered it on mouse hover alone — never on
+            // keyboard focus, never on touch, and outside the app's own
+            // rendering. The shared Tooltip shows on focus as well as hover,
+            // and its default trigger wrapper is `display: contents`, so the
+            // stepper's flex layout is unchanged.
+            <Tooltip key={q.id} content={q.question} placement="top">
+              <button
+                type="button"
+                onClick={() => onJumpTo(i)}
+                className={`flex-shrink-0 h-1.5 rounded-full transition-all ${
+                  isActive
+                    ? 'w-10 bg-primary'
+                    : isBlocked
+                      ? 'w-3 bg-status-error/60'
+                      : isAnswered
+                        ? 'w-5 bg-status-success/60 hover:bg-status-success'
+                        : 'w-3 bg-foreground/[0.12] hover:bg-foreground/[0.2]'
+                }`}
+                aria-label={tx(t.templates.adopt_modal.question_number_aria, { number: i + 1 })}
+              />
+            </Tooltip>
           );
         })}
       </div>
