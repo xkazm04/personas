@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircle2, AlertCircle, Loader } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { listen } from '@tauri-apps/api/event';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
-import type { KbIngestProgress } from '@/api/vault/database/vectorKb';
+import type { KbIngestProgressPayload } from '@/lib/eventRegistry';
 
 interface IngestProgressBarProps {
   kbId: string;
@@ -11,22 +11,11 @@ interface IngestProgressBarProps {
   onComplete: () => void;
 }
 
-/**
- * Payload of `kb:ingest_error`. NOT a `KbIngestProgress` — the four emit sites
- * in `src-tauri/src/commands/credentials/vector_kb.rs` (the ingest and reindex
- * error branches and both panic guards) construct a bare
- * `json!({ "jobId": …, "error": … })`, so there is no binding to import and this
- * shape is the invariant those four sites hold.
- */
-interface KbIngestErrorEvent {
-  jobId: string;
-  error: string;
-}
 
 export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
-  const [progress, setProgress] = useState<KbIngestProgress | null>(null);
+  const [progress, setProgress] = useState<KbIngestProgressPayload | null>(null);
   const [done, setDone] = useState(false);
   // Set only by `kb:ingest_error`. Until this bar subscribed to that channel, a
   // job that died at the TOP level — `update_kb_counters` failing before the
@@ -38,52 +27,56 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  useEffect(() => {
-    let unlisten1: (() => void) | undefined;
-    let unlisten2: (() => void) | undefined;
-    let unlisten3: (() => void) | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  // Through `useTypedTauriEvent`, not a bare `listen()` in an effect. The hand-
+  // rolled form assigned its unlisten fn INSIDE an async callback, so a cleanup
+  // that ran before `listen()` resolved — closing the modal right after starting
+  // a job, or StrictMode's double-invoke — no-op'd, and the subscription then
+  // registered and lived for the rest of the process, one leak per open/close.
+  // The hook owns that race, the teardown and the payload typing.
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
 
-    const setup = async () => {
-      unlisten1 = await listen<KbIngestProgress>(EventName.KB_INGEST_PROGRESS, (event) => {
-        if (event.payload.jobId === jobId) {
-          setProgress(event.payload);
-        }
-      });
+  useTypedTauriEvent(
+    EventName.KB_INGEST_PROGRESS,
+    useCallback(
+      (payload: KbIngestProgressPayload) => {
+        if (payload.jobId === jobId) setProgress(payload);
+      },
+      [jobId],
+    ),
+  );
 
-      unlisten2 = await listen<KbIngestProgress>(EventName.KB_INGEST_COMPLETE, (event) => {
-        if (event.payload.jobId === jobId) {
-          setProgress(event.payload);
-          setDone(true);
-          // A FAILURE also arrives on the complete channel — `ingest_files`
-          // reports "all N documents failed" and the partial "N of M failed"
-          // there. Auto-dismissing those unmounted the bar 1.5s later, and the
-          // bar was the only place that message existed: a red flash, then an
-          // empty list and no explanation. Success still auto-dismisses;
-          // a failure now waits to be read and dismissed.
-          const failed = event.payload.status === 'error' || !!event.payload.error;
-          if (!failed) {
-            timeoutId = setTimeout(() => onCompleteRef.current(), 1500);
-          }
-        }
-      });
+  useTypedTauriEvent(
+    EventName.KB_INGEST_COMPLETE,
+    useCallback(
+      (payload: KbIngestProgressPayload) => {
+        if (payload.jobId !== jobId) return;
+        setProgress(payload);
+        setDone(true);
+        // A FAILURE also arrives on the complete channel — `ingest_files`
+        // reports "all N documents failed" and the partial "N of M failed"
+        // there. Auto-dismissing those unmounted the bar 1.5s later, and the
+        // bar was the only place that message existed: a red flash, then an
+        // empty list and no explanation. Success still auto-dismisses;
+        // a failure now waits to be read and dismissed.
+        if (payload.status === 'error' || payload.error) return;
+        timeoutRef.current = setTimeout(() => onCompleteRef.current(), 1500);
+      },
+      [jobId],
+    ),
+  );
 
-      unlisten3 = await listen<KbIngestErrorEvent>(EventName.KB_INGEST_ERROR, (event) => {
-        if (event.payload.jobId === jobId) {
-          setFailure(event.payload.error || '');
-          setDone(true);
-        }
-      });
-    };
-
-    void setup();
-    return () => {
-      unlisten1?.();
-      unlisten2?.();
-      unlisten3?.();
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [jobId]);
+  useTypedTauriEvent(
+    EventName.KB_INGEST_ERROR,
+    useCallback(
+      (payload: { jobId: string; error: string }) => {
+        if (payload.jobId !== jobId) return;
+        setFailure(payload.error || '');
+        setDone(true);
+      },
+      [jobId],
+    ),
+  );
 
   const pct = progress && progress.documentsTotal > 0
     ? Math.round((progress.documentsDone / progress.documentsTotal) * 100)
