@@ -10715,6 +10715,7 @@
       "updates_up_to_date": "Máte nejnovější verzi",
       "updates_available_toast": "K dispozici je aktualizace — nainstalujte ji pomocí banneru nahoře",
       "updates_check_failed": "Aktualizace se nepodařilo zkontrolovat. Zkuste to znovu za chvíli.",
+      "updates_already_checking": "Kontrola už probíhá — vydržte chvilku.",
       "updates_current_version": "Máte verzi v{version}",
       "updates_last_checked": "Naposledy zkontrolováno {time}",
       "updates_history_title": "Nedávné aktualizace",

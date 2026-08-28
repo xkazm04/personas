@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useSyncExternalStore } from 'react';
 
 // -- ModuleCache: module-level shared cache with pub/sub ---------------
 
@@ -54,13 +54,14 @@ export function createModuleCache<K, V>(options?: ModuleCacheOptions): ModuleCac
   }
 
   return {
+    // `get` and `has` are READ-ONLY on purpose. They used to evict the expired
+    // entry, which made them mutating -- and `useModuleSubscription` calls
+    // `get` during render, so an expiry turned a render into a side effect.
+    // An expired entry is now reported as absent and left in place; it is
+    // overwritten by the next `set` and dropped by invalidate/clear.
     get: (key) => {
       if (!data.has(key)) return undefined;
-      if (isExpired(key)) {
-        data.delete(key);
-        timestamps.delete(key);
-        return undefined;
-      }
+      if (isExpired(key)) return undefined;
       return data.get(key);
     },
     set: (key, value) => {
@@ -73,12 +74,7 @@ export function createModuleCache<K, V>(options?: ModuleCacheOptions): ModuleCac
     },
     has: (key) => {
       if (!data.has(key)) return false;
-      if (isExpired(key)) {
-        data.delete(key);
-        timestamps.delete(key);
-        return false;
-      }
-      return true;
+      return !isExpired(key);
     },
     clear: () => {
       data.clear();
@@ -108,16 +104,27 @@ export function createModuleCache<K, V>(options?: ModuleCacheOptions): ModuleCac
 /**
  * Subscribe to a `ModuleCache` and return the value for `key`.
  * The component re-renders whenever `cache.notify()` is called.
+ *
+ * Uses `useSyncExternalStore` rather than a re-render kick + a bare
+ * `cache.get()` in the render body: the old shape returned a value read
+ * straight out of a mutable module Map, so the value rendered was not
+ * necessarily the value that triggered the render (a tear), and concurrent
+ * rendering had no way to detect the store changing mid-render.
+ * `useDensity` in this same directory already used this pattern.
  */
 export function useModuleSubscription<K, V>(
   cache: ModuleCache<K, V>,
   key: K,
 ): V | undefined {
-  const [, rerender] = useReducer((c: number) => c + 1, 0);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => cache.subscribe(onStoreChange),
+    [cache],
+  );
+  // Reads are pure (see `get` above), so the same function serves as the
+  // server snapshot -- there is no client-only state to guard against.
+  const getSnapshot = useCallback(() => cache.get(key), [cache, key]);
 
-  useEffect(() => cache.subscribe(rerender), [cache, rerender]);
-
-  return cache.get(key);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 /**

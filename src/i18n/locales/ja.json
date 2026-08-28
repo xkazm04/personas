@@ -10715,6 +10715,7 @@
       "updates_up_to_date": "最新の状態です",
       "updates_available_toast": "アップデートが利用可能です — インストールするには上部のバナーをご確認ください",
       "updates_check_failed": "アップデートを確認できませんでした。しばらくしてからもう一度お試しください。",
+      "updates_already_checking": "すでに確認中です。少しお待ちください。",
       "updates_current_version": "現在のバージョン v{version}",
       "updates_last_checked": "最終確認 {time}",
       "updates_history_title": "最近の更新",

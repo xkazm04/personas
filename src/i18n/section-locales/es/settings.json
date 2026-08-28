@@ -24,6 +24,7 @@
     "updates_up_to_date": "Ya está actualizado",
     "updates_available_toast": "Actualización disponible — consulte el aviso en la parte superior para instalarla",
     "updates_check_failed": "No se pudo comprobar si hay actualizaciones. Inténtelo de nuevo en unos instantes.",
+    "updates_already_checking": "Ya hay una comprobación en curso; espera un momento.",
     "updates_current_version": "Tienes la v{version}",
     "updates_last_checked": "Última comprobación {time}",
     "updates_history_title": "Actualizaciones recientes",

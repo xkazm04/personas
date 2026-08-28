@@ -10715,6 +10715,7 @@
       "updates_up_to_date": "أنت محدَّث بالكامل",
       "updates_available_toast": "يتوفر تحديث — راجع الشريط في الأعلى لتثبيته",
       "updates_check_failed": "تعذّر التحقق من التحديثات. أعد المحاولة بعد قليل.",
+      "updates_already_checking": "هناك عملية تحقق جارية بالفعل — انتظر لحظة.",
       "updates_current_version": "أنت تستخدم الإصدار v{version}",
       "updates_last_checked": "آخر فحص {time}",
       "updates_history_title": "التحديثات الأخيرة",

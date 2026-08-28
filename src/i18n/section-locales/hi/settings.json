@@ -24,6 +24,7 @@
     "updates_up_to_date": "आप नवीनतम संस्करण पर हैं",
     "updates_available_toast": "अपडेट उपलब्ध — इंस्टॉल करने के लिए ऊपर दिए गए बैनर को देखें",
     "updates_check_failed": "अपडेट की जाँच नहीं हो सकी। कुछ देर में पुनः प्रयास करें।",
+    "updates_already_checking": "जाँच पहले से चल रही है — थोड़ा इंतज़ार करें।",
     "updates_current_version": "आप v{version} पर हैं",
     "updates_last_checked": "अंतिम जाँच {time}",
     "updates_history_title": "हाल के अपडेट",

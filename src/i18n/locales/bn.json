@@ -10715,6 +10715,7 @@
       "updates_up_to_date": "আপনি সর্বশেষ সংস্করণে আছেন",
       "updates_available_toast": "আপডেট উপলব্ধ — ইনস্টল করতে উপরের ব্যানার দেখুন",
       "updates_check_failed": "আপডেট পরীক্ষা করা যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।",
+      "updates_already_checking": "একটি পরীক্ষা ইতিমধ্যেই চলছে — একটু অপেক্ষা করুন।",
       "updates_current_version": "আপনি v{version} ব্যবহার করছেন",
       "updates_last_checked": "সর্বশেষ পরীক্ষা {time}",
       "updates_history_title": "সাম্প্রতিক আপডেট",

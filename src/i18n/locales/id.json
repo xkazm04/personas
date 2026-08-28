@@ -10715,6 +10715,7 @@
       "updates_up_to_date": "Anda sudah menggunakan versi terbaru",
       "updates_available_toast": "Pembaruan tersedia — lihat banner di bagian atas untuk memasangnya",
       "updates_check_failed": "Tidak dapat memeriksa pembaruan. Coba lagi sebentar lagi.",
+      "updates_already_checking": "Pemeriksaan sedang berjalan — tunggu sebentar.",
       "updates_current_version": "Anda menggunakan v{version}",
       "updates_last_checked": "Terakhir diperiksa {time}",
       "updates_history_title": "Pembaruan terbaru",
