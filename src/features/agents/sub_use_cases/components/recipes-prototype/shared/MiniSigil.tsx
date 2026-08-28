@@ -6,9 +6,9 @@
  * `@/features/shared/glyph`) directly using the new names.
  *
  *   MiniSigil       → CapabilitySigil
- *   EmptyMiniSigil  → EmptyCapabilitySigil
+ *
+ * The `EmptyMiniSigil` → `EmptyCapabilitySigil` alias is gone with the
+ * component: the ghost empty-slot sigil had zero render sites app-wide, so
+ * it was deleted along with its barrel export and this alias.
  */
-export {
-  CapabilitySigil as MiniSigil,
-  EmptyCapabilitySigil as EmptyMiniSigil,
-} from '@/features/shared/glyph/CapabilitySigil';
+export { CapabilitySigil as MiniSigil } from '@/features/shared/glyph/CapabilitySigil';
