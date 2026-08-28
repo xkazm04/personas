@@ -1,12 +1,12 @@
-import gettingStarted from './assets/getting-started.png';
-import gettingStartedSimple from './assets/getting-started-simple.png';
-import executionObservability from './assets/execution-observability.png';
-import orchestrationEvents from './assets/orchestration-events.png';
-import pluginsExplorer from './assets/plugins-explorer.png';
-import schedulesMastery from './assets/schedules-mastery.png';
-import templatesRecipes from './assets/templates-recipes.png';
-import teamsOrchestration from './assets/teams-orchestration.png';
-import obsidianBrain from './assets/obsidian-brain.png';
+import gettingStarted from './assets/getting-started.webp';
+import gettingStartedSimple from './assets/getting-started-simple.webp';
+import executionObservability from './assets/execution-observability.webp';
+import orchestrationEvents from './assets/orchestration-events.webp';
+import pluginsExplorer from './assets/plugins-explorer.webp';
+import schedulesMastery from './assets/schedules-mastery.webp';
+import templatesRecipes from './assets/templates-recipes.webp';
+import teamsOrchestration from './assets/teams-orchestration.webp';
+import obsidianBrain from './assets/obsidian-brain.webp';
 
 /**
  * Per-tour decorative background illustrations (Leonardo, Lucid Origin model,
@@ -22,6 +22,15 @@ import obsidianBrain from './assets/obsidian-brain.png';
  * Brand direction (leonardo skill): neon, futuristic, glowing, geometric,
  * clean. The `prompt` strings are the exact briefs used, kept for
  * regeneration. Keyed by `TourDef.id` (TOUR_REGISTRY in tourSlice).
+ *
+ * **Format: WebP q92, converted from the original PNGs 2026-08-28**
+ * (1,149,351 → 488,334 bytes, −57.5%). These carry an enormous quality budget
+ * for a wash rendered at `opacity-[0.32]`, and the conversion was measured
+ * rather than assumed: per-pixel mean delta < 1/255 and max delta 17–28/255 on
+ * isolated pixels, which at 0.32 opacity composites to ≤ ~9/255 worst case.
+ * LOSSLESS WebP was measured first and rejected — it came out 2.7x LARGER than
+ * these already-tight PNGs. If you regenerate from a prompt, re-encode at q92
+ * (`sharp(png).webp({ quality: 92, effort: 6 })`) rather than committing a PNG.
  */
 export interface TourIllustration {
   /** Imported asset URL (resolved by Vite). */
