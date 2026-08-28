@@ -76,6 +76,45 @@ export function toTestConfig(opt: ModelOption): ModelTestConfig {
   return { id: opt.id, provider: opt.provider, model: opt.model, base_url: opt.base_url };
 }
 
+// -- Row outcome --
+
+/**
+ * Row statuses meaning the cell never produced an answer to compare.
+ *
+ * `LabArenaResult.status` is written per CELL by the lab runner
+ * (`src-tauri/engine/src/test_runner/lab.rs:403-412` and `verdict_status` in
+ * `scoring.rs:64-80`) and is one of `passed` | `failed` | `inconclusive` |
+ * `error` | `cancelled`. Two consequences worth stating, because both are easy
+ * to get backwards:
+ *
+ *  - there is no `completed` at the row level, so `status !== 'completed'` is
+ *    not the failure test — it matches every row;
+ *  - `failed` means the scenario scored BELOW the pass threshold. That is a
+ *    measurement, and the panel already renders it as one. It is not a failure
+ *    to run.
+ *
+ * Only `error` and `cancelled` rows carry an `errorMessage`, and on `error` the
+ * runner also copies the error string into `output_preview` (`lab.rs:409`) — so
+ * without this discrimination the compare panel renders the error text inside
+ * the model's output box, styled exactly like something the model said.
+ */
+const FAILED_ROW_STATUSES: ReadonlySet<string> = new Set(['error', 'cancelled']);
+
+export interface RowFailure {
+  /** The raw backend token — resolve for display with `tokenLabel(t, 'execution', …)`. */
+  status: string;
+  /** `null` when the runner recorded no reason; render a translated fallback. */
+  message: string | null;
+}
+
+/** The row's failure, or `null` when it ran (whatever it then scored). */
+export function rowFailure(
+  row: Pick<LabArenaResult, 'status' | 'errorMessage'> | null | undefined,
+): RowFailure | null {
+  if (!row || !FAILED_ROW_STATUSES.has(row.status)) return null;
+  return { status: row.status, message: row.errorMessage };
+}
+
 // -- Metric helpers --
 
 /**

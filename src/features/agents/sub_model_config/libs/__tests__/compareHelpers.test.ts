@@ -11,6 +11,7 @@ import {
   toTestConfig,
   aggregateResults,
   aggregateResultsDetailed,
+  rowFailure,
 } from '../compareHelpers';
 import {
   OLLAMA_CLOUD_BASE_URL,
@@ -273,5 +274,53 @@ describe('OllamaCloudPresets', () => {
     expect(profileToDropdownValue({ provider: 'anthropic', model: 'opus' })).not.toBe(
       UNSET_MODEL_VALUE,
     );
+  });
+});
+
+// Until 2026-08-29 nothing in the compare lane read `status` or `errorMessage`
+// at the row level: an errored cell rendered a score dash, a 0.0s duration and
+// — because the runner copies the error string into `output_preview` — the
+// error text inside the model's output box, styled as something the model said.
+describe('rowFailure — a cell that never ran vs one that ran badly', () => {
+  it('reports error and cancelled rows as failures, carrying the reason', () => {
+    expect(rowFailure(row({ status: 'error', errorMessage: 'timeout after 120s' }))).toEqual({
+      status: 'error',
+      message: 'timeout after 120s',
+    });
+    expect(rowFailure(row({ status: 'cancelled', errorMessage: 'Cancelled' }))).toEqual({
+      status: 'cancelled',
+      message: 'Cancelled',
+    });
+  });
+
+  it('reports a null message rather than inventing one, so the caller can translate a fallback', () => {
+    expect(rowFailure(row({ status: 'error', errorMessage: null }))).toEqual({
+      status: 'error',
+      message: null,
+    });
+  });
+
+  // `failed` is the runner's word for "scored below the pass threshold"
+  // (verdict_status, scoring.rs) — a measurement the panel already renders.
+  // Treating it as a run failure would hide every low score behind an error
+  // badge, which is the opposite regression.
+  it('does NOT treat a low-scoring or inconclusive row as a failure to run', () => {
+    expect(rowFailure(row({ status: 'failed' }))).toBeNull();
+    expect(rowFailure(row({ status: 'passed' }))).toBeNull();
+    expect(rowFailure(row({ status: 'inconclusive' }))).toBeNull();
+  });
+
+  it('is null for an absent row, so a missing cell stays a missing cell', () => {
+    expect(rowFailure(undefined)).toBeNull();
+    expect(rowFailure(null)).toBeNull();
+  });
+
+  // The discriminator this panel's evaluation reached for first. No row the
+  // runner writes ever has status 'completed', so `status !== 'completed'`
+  // would flag every row — including the successes — as a failure.
+  it('is not satisfied by the status !== completed test', () => {
+    const passed = row({ status: 'passed' });
+    expect(passed.status).not.toBe('completed');
+    expect(rowFailure(passed)).toBeNull();
   });
 });

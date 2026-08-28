@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
+import { AlertCircle } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
-import type { ModelOption } from '../../libs/compareHelpers';
+import { rowFailure, type ModelOption } from '../../libs/compareHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 export function OutputPreviews({
   modelA,
@@ -55,12 +57,12 @@ export function OutputPreviews({
         <div className="grid grid-cols-2 gap-2">
           <OutputBox
             label={modelA.label}
-            text={results.find((r) => r.modelId === modelA.id && r.scenarioName === activeScenario)?.outputPreview ?? ''}
+            row={results.find((r) => r.modelId === modelA.id && r.scenarioName === activeScenario)}
             accent="blue"
           />
           <OutputBox
             label={modelB.label}
-            text={results.find((r) => r.modelId === modelB.id && r.scenarioName === activeScenario)?.outputPreview ?? ''}
+            row={results.find((r) => r.modelId === modelB.id && r.scenarioName === activeScenario)}
             accent="amber"
           />
         </div>
@@ -74,16 +76,50 @@ function NoOutputLabel() {
   return <span className="text-foreground italic">{t.agents.model_config.no_output}</span>;
 }
 
-function OutputBox({ label, text, accent }: { label: string; text: string; accent: 'blue' | 'amber' }) {
+/**
+ * One model's answer for the active scenario — or, when the cell never ran, the
+ * reason. On an `error` row the runner copies the error string into
+ * `output_preview` (`test_runner/lab.rs:409`), so reading `outputPreview` alone
+ * printed the failure as if the model had said it; a `cancelled` row has no
+ * preview at all and was indistinguishable from a model that answered nothing.
+ */
+function OutputBox({
+  label,
+  row,
+  accent,
+}: {
+  label: string;
+  row: LabArenaResult | undefined;
+  accent: 'blue' | 'amber';
+}) {
+  const { t } = useTranslation();
   const borderCls = accent === 'blue' ? 'border-blue-500/20' : 'border-amber-500/20';
   const headerCls = accent === 'blue' ? 'text-blue-400/80' : 'text-amber-400/80';
+  const failure = rowFailure(row);
+  const text = row?.outputPreview ?? '';
   return (
-    <div className={`rounded-modal border ${borderCls} overflow-hidden`}>
-      <div className={`px-2.5 py-1.5 typo-caption font-medium ${headerCls} bg-secondary/30 border-b ${borderCls}`}>
+    <div className={`rounded-modal border ${failure ? 'border-red-500/20' : borderCls} overflow-hidden`}>
+      <div
+        className={`px-2.5 py-1.5 typo-caption font-medium bg-secondary/30 border-b ${
+          failure ? 'text-red-300/90 border-red-500/20' : `${headerCls} ${borderCls}`
+        }`}
+      >
         {label}
       </div>
       <div className="px-2.5 py-2 typo-code text-foreground max-h-32 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
-        {text || <NoOutputLabel />}
+        {failure ? (
+          <>
+            {/* `typo-label` carries the weight; adding a `font-*` utility next to
+                a typo-* token is silently discarded by the cascade. */}
+            <div className="flex items-center gap-1.5 typo-label font-sans text-red-300/90 mb-1">
+              <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+              {tokenLabel(t, 'execution', failure.status)}
+            </div>
+            {failure.message ?? t.common.unknown_error}
+          </>
+        ) : (
+          text || <NoOutputLabel />
+        )}
       </div>
     </div>
   );
