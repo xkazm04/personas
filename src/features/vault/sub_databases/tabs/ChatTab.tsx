@@ -6,6 +6,7 @@ import type { ConversationTurn, NlQuerySnapshot } from '@/api/vault/database/nlQ
 import { ChatMessages, type ChatMessage } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { MutationConfirmBanner } from './MutationConfirmBanner';
+import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
 import { extractErrorMessage } from '../safeModeUtils';
 import { silentCatch } from '@/lib/silentCatch';
@@ -225,6 +226,17 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
 
   return (
     <div className="flex flex-col h-full min-h-[500px]">
+      {/* The same capability chrome the saved-query toolbar carries
+          (QueryToolbar.tsx:46). The chat lane offers a Run button on every
+          connector — including key-value and introspection-only ones that
+          cannot execute the statement the model just wrote — and had nothing
+          at all that said so. */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/8 bg-secondary/5 shrink-0">
+        <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 font-medium">
+          {language}
+        </span>
+        <ConnectorCapabilityNote serviceType={serviceType} />
+      </div>
       <ChatMessages
         messages={messages}
         scrollRef={scrollRef}

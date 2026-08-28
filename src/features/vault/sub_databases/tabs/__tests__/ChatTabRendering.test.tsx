@@ -101,4 +101,20 @@ describe("ChatTab — assistant message rendering", () => {
     expect(screen.getByText(/does not exist/)).toBeInTheDocument();
     expect(screen.queryByText("ada@example.com")).not.toBeInTheDocument();
   });
+
+  it("advertises the connector's capability class, like the saved-query toolbar does", async () => {
+    // The chat lane offers Run on every connector. On a key-value or
+    // introspection-only one the generated statement cannot execute at all, and
+    // this lane used to carry no capability chrome whatsoever.
+    mockedInvoke.mockImplementation(async (cmd: string) =>
+      cmd === "db_connector_capability" ? "key-value" : undefined,
+    );
+    render(<ChatTab credentialId="cred-1" language="redis" serviceType="upstash" />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(screen.getByTestId("db-capability-note")).toHaveAttribute("data-capability", "key-value");
+  });
 });
