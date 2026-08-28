@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, FileText, Clock, ArrowRight, ChevronDown } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import Button from '@/features/shared/components/buttons/Button';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
@@ -191,19 +192,20 @@ export function SearchTab({ kb }: SearchTabProps) {
               autoFocus
             />
           </div>
-          <button
-            type="button"
+          {/*
+            ACTION control. The hand-rolled ring it replaced also painted
+            `border-white/*`, which the design system bans outright.
+          */}
+          <Button
+            variant="accent"
+            accentColor="violet"
+            icon={<ArrowRight className="w-3.5 h-3.5" />}
+            loading={searching}
+            disabled={!query.trim()}
             onClick={() => void handleSearch()}
-            disabled={!query.trim() || searching}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium rounded-modal bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {searching ? (
-              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <ArrowRight className="w-3.5 h-3.5" />
-            )}
             {sh.search}
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3 typo-caption text-foreground">

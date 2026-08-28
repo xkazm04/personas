@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, FolderOpen, Plus, Minus } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
 import { kbIngestDirectory, kbPickDirectory } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { KbErrorNotice } from '../KbErrorNotice';
@@ -194,28 +195,25 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 typo-body rounded-card hover:bg-secondary/50 text-foreground transition-colors"
-          >
+          <Button variant="ghost" onClick={onClose}>
             {t.common.cancel}
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleSubmit()}
+          </Button>
+          {/*
+            An ACTION control: the busy state is a real spinner on the button
+            itself. This used to hand-paint a `border-white/*` ring — a banned
+            color, and a fourth copy of a primitive `Button` already owns along
+            with `disabled` and `aria-busy`.
+          */}
+          <Button
+            variant="accent"
+            accentColor="violet"
+            loading={ingesting}
+            loadingLabel={sh.scanning}
             disabled={!canSubmit}
-            className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => void handleSubmit()}
           >
-            {ingesting ? (
-              <span className="flex items-center gap-2">
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {sh.scanning}
-              </span>
-            ) : (
-              sh.scan_ingest
-            )}
-          </button>
+            {sh.scan_ingest}
+          </Button>
         </div>
     </BaseModal>
   );

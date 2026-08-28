@@ -113,7 +113,12 @@ export function IngestDropZone({ kbId, onIngestStarted, disabled = false, childr
         </div>
       )}
 
-      {/* Ingesting overlay */}
+      {/*
+        Ingesting overlay. This one KEEPS its ring: a drop is an ACTION, and
+        the golden path requires a real spinner for an action in flight — but
+        the "control" here is the whole zone, so there is no Button to hang it
+        on. It paints violet-500, not the banned border-white/*.
+      */}
       {ingesting && (
         <div className="absolute inset-0 z-10 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
           <div className="flex items-center gap-2">

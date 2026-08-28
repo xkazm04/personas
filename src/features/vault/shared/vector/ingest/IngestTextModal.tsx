@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Type } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
 import { kbIngestText } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatCount } from '@/lib/utils/formatters';
@@ -99,28 +100,20 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
 
       {/* Footer */}
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-4 py-2 typo-body rounded-card hover:bg-secondary/50 text-foreground transition-colors"
-        >
+        <Button variant="ghost" onClick={onClose}>
           {t.common.cancel}
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
+        </Button>
+        {/* ACTION control — Button owns the spinner, the dim, disabled and aria-busy. */}
+        <Button
+          variant="accent"
+          accentColor="violet"
+          loading={ingesting}
+          loadingLabel={sh.ingesting}
           disabled={!canSubmit}
-          className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={() => void handleSubmit()}
         >
-          {ingesting ? (
-            <span className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {sh.ingesting}
-            </span>
-          ) : (
-            sh.ingest
-          )}
-        </button>
+          {sh.ingest}
+        </Button>
       </div>
     </BaseModal>
   );
