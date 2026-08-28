@@ -192,8 +192,8 @@
         }
       ],
       "baseline": {
-        "files": 34,
-        "matches": 36
+        "files": 33,
+        "matches": 35
       },
       "floor": 2500
     },
@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 32,
-        "matches": 38
+        "files": 31,
+        "matches": 36
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 352,
-        "matches": 799
+        "files": 349,
+        "matches": 795
       },
       "floor": 4000
     },
@@ -680,8 +680,8 @@
         }
       ],
       "baseline": {
-        "files": 48,
-        "matches": 93
+        "files": 46,
+        "matches": 88
       },
       "floor": 4000
     },
@@ -1412,7 +1412,7 @@
       },
       "baseline": {
         "files": 553,
-        "matches": 1066
+        "matches": 1062
       },
       "floor": 2000
     },
@@ -5031,8 +5031,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 50,
-        "matches": 68
+        "files": 47,
+        "matches": 64
       },
       "floor": 4000
     },
@@ -5086,6 +5086,10 @@
         {
           "path": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts",
           "reason": "vitest fixture; the bundle test mints a synthetic row to assert slice wiring, not ordering"
+        },
+        {
+          "path": "src/features/overview/sub_memories/libs/__tests__/memoryActions.test.ts",
+          "reason": "vitest fixture minting synthetic memory-action rows to assert the retention bound; a fixture clock is the point of the test"
         }
       ],
       "baseline": {
