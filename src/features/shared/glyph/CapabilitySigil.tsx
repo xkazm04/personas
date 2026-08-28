@@ -19,36 +19,39 @@ interface CapabilitySigilProps {
   isHovered?: boolean;
   /** Selected state — adds active ring + bright core. */
   isActive?: boolean;
-  /** Render petals as filled wedges instead of dots. Used by SigilGrid variant
-   *  for a more organic, sigil-like read. CapabilityCard uses dots (compact). */
-  petalStyle?: 'wedge' | 'dot';
 }
 
 /**
- * Shared mini-sigil rendering used by both grid variants.
+ * Capability Sigil — the small glyph representing a single use case /
+ * capability. One per row in a Persona Layout's grid, one per tab in the
+ * capability tab bar, one in the fleet monitor's capability list, and one
+ * blown up in the expanded detail view. Same 8-petal geometry as the Persona
+ * Sigil; petals lit dimly to show which of the persona's dimensions this
+ * capability touches.
  *
  * Visual contract:
- *   - 8 micro-petals at the canonical PETAL_ANGLES (0/45/.../315°)
+ *   - 8 micro-petals as filled wedges at the canonical PETAL_ANGLES
+ *     (0/45/.../315°)
  *   - Petals present in `uc.dimensions` glow in their dim colour; absent
- *     petals are reduced to a thin ghost outline at 18% opacity
- *   - Centre core is tinted by health: success-green (active), amber + faint
- *     pulse (needs-attention), muted slate (disabled)
+ *     petals are reduced to a thin ghost outline
+ *   - Centre core is tinted by health: success-green (active), warning-amber
+ *     (needs-attention), muted slate (disabled) — all static, no pulse
  *   - Outer health ring encodes state at a glance even before the eye reads
  *     individual petals
  *
- * Designed to be readable at 60-100px (grid tile) and 240-320px (level-2
- * detail). Pure visual — no interaction; the parent owns click handlers.
- */
-/**
- * Capability Sigil — the small glyph representing a single use case /
- * capability. One per row in a Persona Layout's grid. Same 8-petal
- * geometry as the Persona Sigil; petals lit dimly to show which of the
- * persona's dimensions this capability touches.
+ * Readable at 60-100px (grid tile) and 240-320px (level-2 detail). Pure
+ * visual — no interaction beyond per-petal hover naming; the parent owns
+ * click handlers.
  *
- * Pure visual — no interaction. Parent owns click handlers.
+ * There used to be a `petalStyle?: 'wedge' | 'dot'` prop with a ~20-line dot
+ * branch. All four call sites passed `"wedge"` explicitly, so the branch had
+ * never rendered, and the JSDoc justifying it named two components
+ * (`SigilGrid`, `CapabilityCard`) that do not exist. Both are gone; a
+ * compact variant, if one is ever wanted, should come back with a live call
+ * site attached.
  */
 export function CapabilitySigil({
-  uc, size = 84, isHovered = false, isActive = false, petalStyle = 'wedge',
+  uc, size = 84, isHovered = false, isActive = false,
 }: CapabilitySigilProps) {
   const { t } = useTranslation();
   const dimText = useGlyphDimText();
@@ -71,12 +74,10 @@ export function CapabilitySigil({
   const corePct = 0.20;
   const innerPct = 0.30;
   const outerPct = 0.46;
-  const petalDotPct = 0.045;
 
   const coreR = size * corePct;
   const innerR = size * innerPct;
   const outerR = size * outerPct;
-  const petalDotR = size * petalDotPct;
 
   const ringR = outerR + size * 0.04;
 
@@ -171,45 +172,24 @@ export function CapabilitySigil({
         // instant feedback before the OS tooltip appears.
         const isPetalHover = hoveredDim === dim;
 
-        if (petalStyle === 'wedge') {
-          return (
-            <g
-              key={dim}
-              transform={`translate(${center}, ${center}) rotate(${angle})`}
-              style={{ pointerEvents: 'all', cursor: 'default' }}
-              onMouseEnter={() => setHoveredDim(dim)}
-              onMouseLeave={() => setHoveredDim(null)}
-            >
-              <title>{dimText.label[dim]}</title>
-              <path
-                d={wedgePath}
-                fill={isPresent ? (cvdSafe ? petalPatternFill(dim, uid) : meta.color) : 'transparent'}
-                fillOpacity={isPresent ? (cvdSafe ? 1 : isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
-                stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
-                strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
-                strokeWidth={isPresent ? 0.8 : 0.6}
-              />
-            </g>
-          );
-        }
-        // Dot style — render petals as small circles at the canonical position
-        const rad = ((angle - 90) * Math.PI) / 180;
-        const x = center + (innerR + (outerR - innerR) * 0.55) * Math.cos(rad);
-        const y = center + (innerR + (outerR - innerR) * 0.55) * Math.sin(rad);
         return (
-          <circle
+          <g
             key={dim}
-            cx={x}
-            cy={y}
-            r={isPetalHover ? petalDotR * 1.35 : petalDotR}
-            fill={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
-            fillOpacity={isPresent ? (isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : isPetalHover ? 0.5 : ghostOpacity}
+            transform={`translate(${center}, ${center}) rotate(${angle})`}
             style={{ pointerEvents: 'all', cursor: 'default' }}
             onMouseEnter={() => setHoveredDim(dim)}
             onMouseLeave={() => setHoveredDim(null)}
           >
             <title>{dimText.label[dim]}</title>
-          </circle>
+            <path
+              d={wedgePath}
+              fill={isPresent ? (cvdSafe ? petalPatternFill(dim, uid) : meta.color) : 'transparent'}
+              fillOpacity={isPresent ? (cvdSafe ? 1 : isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
+              stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
+              strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
+              strokeWidth={isPresent ? 0.8 : 0.6}
+            />
+          </g>
         );
       })}
 

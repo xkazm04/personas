@@ -111,7 +111,7 @@ export function UseCaseRow({
     >
       <div className="flex items-center gap-4 px-4 py-3">
         <div className="relative shrink-0">
-          <CapabilitySigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} petalStyle="wedge" />
+          <CapabilitySigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} />
           <AnimatePresence>
             {isRunning && (
               prefersReducedMotion ? (
