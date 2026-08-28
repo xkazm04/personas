@@ -4670,7 +4670,8 @@
       "corpus_overview_subtitle": "Ce que contient cette base de connaissances et quelles parties sont illisibles.",
       "corpus_overview_title": "Aperçu du corpus",
       "documents_count_one": "{count} document",
-      "documents_count_other": "{count} documents"
+      "documents_count_other": "{count} documents",
+      "drop_no_paths": "Aucun chemin de fichier valide trouvé. Essayez de déposer les fichiers un par un."
     },
     "manager": {
       "title": "Coffre-fort",

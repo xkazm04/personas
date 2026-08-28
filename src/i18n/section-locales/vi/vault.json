@@ -672,7 +672,8 @@
     "corpus_overview_subtitle": "Cơ sở kiến thức này chứa những gì và phần nào không đọc được.",
     "corpus_overview_title": "Tổng quan kho tài liệu",
     "documents_count_one": "{count} tài liệu",
-    "documents_count_other": "{count} tài liệu"
+    "documents_count_other": "{count} tài liệu",
+    "drop_no_paths": "Không tìm thấy đường dẫn tệp hợp lệ. Hãy thử thả từng tệp một."
   },
   "manager": {
     "title": "Thông tin xác thực",

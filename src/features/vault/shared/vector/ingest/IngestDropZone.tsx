@@ -48,7 +48,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
     }
 
     if (paths.length === 0) {
-      setDropError('No valid file paths found. Try dropping individual files.');
+      setDropError(sh.drop_no_paths);
       return;
     }
 
@@ -62,7 +62,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
     } finally {
       setIngesting(false);
     }
-  }, [kbId, onIngestStarted]);
+  }, [kbId, onIngestStarted, sh]);
 
   return (
     <div

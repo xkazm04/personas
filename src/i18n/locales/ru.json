@@ -4670,7 +4670,8 @@
       "corpus_overview_subtitle": "Что содержит эта база знаний и какие части нечитаемы.",
       "corpus_overview_title": "Обзор корпуса",
       "documents_count_one": "{count} документ",
-      "documents_count_other": "{count} документов"
+      "documents_count_other": "{count} документов",
+      "drop_no_paths": "Не найдено ни одного корректного пути к файлу. Попробуйте перетащить файлы по одному."
     },
     "manager": {
       "title": "Учётные данные",

@@ -4670,7 +4670,8 @@
       "corpus_overview_subtitle": "このナレッジベースに含まれる内容と、読み取れない部分。",
       "corpus_overview_title": "コーパスの概要",
       "documents_count_one": "{count} 件のドキュメント",
-      "documents_count_other": "{count} 件のドキュメント"
+      "documents_count_other": "{count} 件のドキュメント",
+      "drop_no_paths": "有効なファイルパスが見つかりませんでした。ファイルを個別にドロップしてみてください。"
     },
     "manager": {
       "title": "認証情報",

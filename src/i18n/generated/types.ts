@@ -4946,6 +4946,7 @@ export type Translations = {
       no_results_floor_hint: string;
       documents_count_one: string;
       documents_count_other: string;
+      drop_no_paths: string;
     };
     manager: {
       title: string;

@@ -672,7 +672,8 @@
     "corpus_overview_subtitle": "Co tato znalostní báze obsahuje a které části jsou nečitelné.",
     "corpus_overview_title": "Přehled korpusu",
     "documents_count_one": "{count} dokument",
-    "documents_count_other": "{count} dokumentů"
+    "documents_count_other": "{count} dokumentů",
+    "drop_no_paths": "Nebyly nalezeny žádné platné cesty k souborům. Zkuste přetáhnout jednotlivé soubory."
   },
   "manager": {
     "title": "Přihlašovací údaje",
