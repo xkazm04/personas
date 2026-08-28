@@ -17,11 +17,28 @@ export interface QualityScore {
   completion: number;
 }
 
+/**
+ * The states in which a slot has an outcome to score. Every gate in the rubric
+ * above is POST-HOC — "task completed → build passed implicitly", "diff touches
+ * 2+ files → tests likely present" — so a slot that is still queued or running
+ * has nothing any of them can read.
+ *
+ * Scoring one anyway is what this guard exists to stop: a queued competitor
+ * scored 0+0+0+0+5 = 5, landed under the 70 threshold, and was painted with a
+ * RED "Q 5" pill indistinguishable from a finished competitor that failed
+ * every gate. During a live race that meant every unfinished slot wore a
+ * catastrophic badge for something it had not yet had the chance to do.
+ */
+const SCORABLE_STATUSES: ReadonlySet<string> = new Set(['completed', 'failed', 'cancelled']);
+
 export function computeSlotQualityScore(
   task: { status: string; progress_pct?: number } | null,
   slot: { disqualified: boolean; diff_stats_json: string | null },
 ): QualityScore | null {
   if (!task) return null;
+  // Null, not zero: the caller renders the pill only when a score exists, so
+  // "not yet judged" reads as absence rather than as a failing grade.
+  if (!SCORABLE_STATUSES.has(task.status)) return null;
   const stats = slot.diff_stats_json ? (() => {
     try { return JSON.parse(slot.diff_stats_json) as { files_changed: number; lines_added: number; lines_removed: number }; }
     catch { return null; }
