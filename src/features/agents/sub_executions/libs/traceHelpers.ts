@@ -65,14 +65,37 @@ export interface SpanNode {
   span: UnifiedSpan;
   children: SpanNode[];
   depth: number;
+  /** The span named a `parent_span_id` that is not in this trace, so it is
+   *  rendered at the top level despite not being a root. The backend evicts
+   *  the oldest completed non-root span once a trace passes its 10,000-span
+   *  ceiling (`src-tauri/core/src/trace.rs`), and that is routinely a parent —
+   *  so in exactly the large traces where structure matters, children get
+   *  promoted. Surfaced so the waterfall can say so rather than lying. */
+  orphaned: boolean;
 }
 
+/**
+ * Link spans into a forest, then resolve depth.
+ *
+ * Depth used to be assigned in the same pass as the linking
+ * (`node.depth = parent.depth + 1`), which reads the parent's depth AT THAT
+ * MOMENT. Nothing guarantees a parent is processed before its child: for the
+ * a→b→c chain supplied child-first as `[c, b, a]`, `c` is linked while `b.depth`
+ * is still its initialised 0, so `c` lands at depth 1 instead of 2 and the
+ * waterfall indents it as its own parent's sibling. Resolving depth in a second
+ * pass — after every node is linked — makes the result independent of array
+ * order.
+ *
+ * The second pass walks down from the roots, so a parent cycle (neither node
+ * reachable from a root) is skipped exactly as it already was: such nodes never
+ * entered `roots` and so were never in the output to begin with.
+ */
 export function buildSpanTree(spans: UnifiedSpan[]): SpanNode[] {
   const byId = new Map<string, SpanNode>();
   const roots: SpanNode[] = [];
 
   for (const span of spans) {
-    byId.set(span.span_id, { span, children: [], depth: 0 });
+    byId.set(span.span_id, { span, children: [], depth: 0, orphaned: false });
   }
 
   for (const span of spans) {
@@ -80,10 +103,11 @@ export function buildSpanTree(spans: UnifiedSpan[]): SpanNode[] {
     if (span.parent_span_id) {
       const parent = byId.get(span.parent_span_id);
       if (parent) {
-        node.depth = parent.depth + 1;
         parent.children.push(node);
         continue;
       }
+      // Named a parent that isn't here — an evicted or filtered-out span.
+      node.orphaned = true;
     }
     roots.push(node);
   }
@@ -93,6 +117,16 @@ export function buildSpanTree(spans: UnifiedSpan[]): SpanNode[] {
     node.children.forEach(sortChildren);
   };
   roots.forEach(sortChildren);
+
+  // Second pass: depth, now that every parent link exists.
+  const stack: SpanNode[] = [...roots];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    for (const child of node.children) {
+      child.depth = node.depth + 1;
+      stack.push(child);
+    }
+  }
 
   return roots;
 }

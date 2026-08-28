@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Power, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useThemeStore } from '@/stores/themeStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { CONNECTOR_META, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
@@ -62,6 +63,8 @@ export function UseCaseRow({
   }, [runStartedAt]);
 
   const health = getHealthMeta(t)[uc.health];
+  // The sigil is a pure primitive — this connected row owns the store read.
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const isDisabled = uc.health === 'disabled';
   const isAttention = uc.health === 'needs-attention';
   const stateHex = STATE_HEX[uc.health];
@@ -111,7 +114,13 @@ export function UseCaseRow({
     >
       <div className="flex items-center gap-4 px-4 py-3">
         <div className="relative shrink-0">
-          <CapabilitySigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} />
+          <CapabilitySigil
+            uc={uc}
+            healthLabel={health.label}
+            cvdSafe={cvdSafe}
+            size={SIGIL_SIZE}
+            isHovered={hovered}
+          />
           <AnimatePresence>
             {isRunning && (
               prefersReducedMotion ? (

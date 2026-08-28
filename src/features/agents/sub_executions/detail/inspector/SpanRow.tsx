@@ -1,9 +1,10 @@
 import { memo, useCallback } from 'react';
-import { ChevronDown, ChevronRight, AlertCircle, CircleDashed } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, CircleDashed, Unlink } from 'lucide-react';
 import { getSpanTypeConfig, isSpanFailure, isSpanUnclosed, spanTypeLabel } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
 import { WaterfallBar } from './WaterfallBar';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface SpanRowProps {
@@ -16,7 +17,7 @@ interface SpanRowProps {
 }
 
 function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRowProps) {
-  const { span, depth } = node;
+  const { span, depth, orphaned } = node;
   // Subscribed here rather than threaded from the parent so the memoized row
   // re-renders on a language switch — `propsEqual` below ignores anything that
   // is not span data, so a prop would never have reached it.
@@ -73,6 +74,16 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
         {unclosed && (
           <CircleDashed className="w-3 h-3 text-foreground/85 flex-shrink-0" />
         )}
+        {/* This span named a parent the trace does not contain, so it sits at
+            the top level without being a root — the backend evicts the oldest
+            completed non-root span past the 10,000 ceiling, and that is
+            routinely somebody's parent. Say so rather than rendering it as a
+            peer of its own parent's siblings. */}
+        {orphaned && (
+          <Tooltip content={t.agents.executions.span_orphaned}>
+            <Unlink aria-label={t.agents.executions.span_orphaned} className="w-3 h-3 text-status-warning flex-shrink-0" />
+          </Tooltip>
+        )}
 
         {/* A missing cost and a free step are different facts. `cost_usd > 0`
             hid both, so a genuinely $0.0000 step looked identical to one the
@@ -106,7 +117,8 @@ function propsEqual(a: SpanRowProps, b: SpanRowProps): boolean {
     a.expanded !== b.expanded ||
     a.hasChildren !== b.hasChildren ||
     a.onToggle !== b.onToggle ||
-    a.node.depth !== b.node.depth
+    a.node.depth !== b.node.depth ||
+    a.node.orphaned !== b.node.orphaned
   ) {
     return false;
   }

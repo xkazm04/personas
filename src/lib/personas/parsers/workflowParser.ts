@@ -48,6 +48,28 @@ const WORKFLOW_YAML_LOAD_LIMITS: BoundedLoadOptions = {
 };
 
 /**
+ * The one bounded YAML load in the app.
+ *
+ * Exported because the upload preview needs to look inside a `.yml` drop
+ * BEFORE `parseWorkflowFile` runs — it used to substring-scan the raw text for
+ * `jobs:` and report `nodeCount: 0`, which both mis-detected (the literal text
+ * `jobs:` inside a comment passes) and promised a workflow with no steps. It
+ * must not reach for a bare `yaml.load`: the loader bounds above are the DoS
+ * guard for semi-trusted external exports, and a second parse site configured
+ * differently is exactly how that guard goes missing.
+ *
+ * Throws `yaml.YAMLException` on malformed input and a plain `Error` when the
+ * document is not an object; callers decide how to present that.
+ */
+export function loadWorkflowYaml(content: string): Record<string, unknown> {
+  const loaded = yaml.load(content, WORKFLOW_YAML_LOAD_LIMITS);
+  if (!loaded || typeof loaded !== 'object') {
+    throw new Error('YAML file does not contain a valid object.');
+  }
+  return loaded as Record<string, unknown>;
+}
+
+/**
  * Ceiling on the number of values (objects, arrays, scalars) a workflow may
  * contain. Well above any real export — the largest template in this repo is
  * three orders of magnitude below it — and low enough that a hostile file
@@ -187,11 +209,7 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   // Parse the content based on file extension
   if (ext === '.yml' || ext === '.yaml') {
     try {
-      const loaded = yaml.load(content, WORKFLOW_YAML_LOAD_LIMITS);
-      if (!loaded || typeof loaded !== 'object') {
-        throw new Error('YAML file does not contain a valid object.');
-      }
-      parsed = loaded as Record<string, unknown>;
+      parsed = loadWorkflowYaml(content);
     } catch (err) {
       if (err instanceof yaml.YAMLException) {
         throw Object.assign(new Error(`Invalid YAML: ${err.message}`), { cause: err });

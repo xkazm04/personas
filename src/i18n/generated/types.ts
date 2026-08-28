@@ -1784,7 +1784,9 @@ export type Translations = {
       chain_loading: string;
       chain_badge_tooltip: string;
       chain_total_cost: string;
+      chain_cost_partial: string;
       chain_ended_because: string;
+      span_orphaned: string;
       lines_counter: string;
       timeline_scrubber_label: string;
       timeline_scrubber_value: string;

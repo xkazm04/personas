@@ -6,11 +6,18 @@ import {
   isSupportedFile,
   countElements,
   detectPlatformLabel,
+  detectWorkflowPlatform,
 } from '@/lib/personas/parsers/workflowDetector';
+import { loadWorkflowYaml } from '@/lib/personas/parsers/workflowParser';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { FilePreview } from './n8nUploadTypes';
 import { MAX_FILE_SIZE, formatFileSize, extractYamlName } from './n8nUploadTypes';
 
 export function useFileUpload(onContentPaste?: (content: string, sourceName: string) => void) {
+  const { t } = useTranslation();
+  // The one message this hook gained; the registry already carries it in all
+  // 14 locales, so the YAML branch is not a new hardcoded English string.
+  const invalidYamlMessage = t.error_registry.workflow_invalid_yaml_message;
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<FilePreview | null>(null);
   const mountedRef = useRef(true);
@@ -103,16 +110,37 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
         logger.debug('File read OK', { bytes: content.length });
 
         if (ext === '.yml' || ext === '.yaml') {
-          if (!content.includes('jobs:') && !content.includes('jobs :')) {
+          // Parse ONCE, then route through the same detection + count pair the
+          // JSON branch below uses. This used to be a substring scan for
+          // `jobs:` with a hardcoded `nodeCount: 0`, so the card promised a
+          // workflow with no steps (and the literal text `jobs:` inside a
+          // comment was enough to pass it).
+          let yamlDoc: Record<string, unknown>;
+          try {
+            yamlDoc = loadWorkflowYaml(content);
+          } catch (err) {
+            logger.warn('YAML preview parse failed', { fileName: file.name, error: String(err) });
+            setPreview({ kind: 'error', fileName: file.name, message: invalidYamlMessage });
+            return;
+          }
+
+          const detection = detectWorkflowPlatform(yamlDoc, ext);
+          if (detection.platform === 'unknown') {
             setPreview({ kind: 'error', fileName: file.name, message: 'No "jobs" key found. This does not appear to be a GitHub Actions workflow.' });
             return;
           }
-          const workflowName = extractYamlName(content);
+
+          const { count } = countElements(yamlDoc);
+          const parsedName = typeof yamlDoc.name === 'string' ? yamlDoc.name.trim() : '';
+          const workflowName = parsedName || extractYamlName(content) || 'GitHub Actions Workflow';
           validatedFileRef.current = file;
           validatedContentRef.current = content;
+
+          logger.debug('Validation OK', { platform: detection.label, workflowName, elementCount: count });
+
           setPreview({
             kind: 'valid', fileName: file.name, fileSize: formatFileSize(file.size),
-            workflowName: workflowName || 'GitHub Actions Workflow', nodeCount: 0, platform: 'GitHub Actions',
+            workflowName, nodeCount: count, platform: detection.label,
           });
           return;
         }
@@ -144,7 +172,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
       };
       reader.readAsText(file);
     },
-    [],
+    [invalidYamlMessage],
   );
 
   const handleDrop = useCallback((e: React.DragEvent) => {

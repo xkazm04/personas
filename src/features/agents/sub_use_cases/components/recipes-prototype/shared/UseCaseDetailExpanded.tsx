@@ -18,6 +18,7 @@ import { EventRenameModal } from '../../core/EventRenameModal';
 import { UseCaseDetailPanel } from '../../detail/UseCaseDetailPanel';
 import { getHealthMeta, getModeMeta, getDimLabels, type DisplayUseCase } from './displayUseCase';
 import { MiniSigil } from './MiniSigil';
+import { useThemeStore } from '@/stores/themeStore';
 import { usePolicyControls, type ReviewMode } from './usePolicyControls';
 import { ConnectorDimCard } from './ConnectorDimCard';
 import { NotificationsDimCard } from './NotificationsDimCard';
@@ -88,6 +89,8 @@ export function UseCaseDetailExpanded({
   const policy = usePolicyControls({ personaId, uc, memoriesDefault, reviewsDefault });
 
   const healthMeta = getHealthMeta(t);
+  // The sigil is a pure primitive — this connected view owns the store read.
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const modeMeta = getModeMeta(t);
   const dimLabels = getDimLabels(t);
 
@@ -227,7 +230,7 @@ export function UseCaseDetailExpanded({
           {/* Sigil column */}
           <div className="rounded-card border border-card-border bg-secondary/30 p-4 flex flex-col items-center justify-center">
             <motion.div className="relative" layoutId={`sigil-${uc.id}`} transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}>
-              <MiniSigil uc={uc} size={228} isActive />
+              <MiniSigil uc={uc} healthLabel={healthMeta[uc.health].label} cvdSafe={cvdSafe} size={228} isActive />
             </motion.div>
             <div className="typo-label text-foreground mt-3">
               {tx(t.agents.use_cases.dimensions_of_eight, { count: uc.dimensions.length })}

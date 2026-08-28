@@ -10,7 +10,11 @@ import { motion } from 'framer-motion';
 import { Play, Loader2 } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
-import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import {
+  getHealthMeta,
+  type DisplayUseCase,
+} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import { useThemeStore } from '@/stores/themeStore';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
@@ -28,6 +32,10 @@ interface MonitorCapabilitiesProps {
 export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilitiesProps) {
   const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
+  // The sigil is a pure primitive — this connected grid owns the store read
+  // and the health-label lookup.
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
+  const healthMeta = getHealthMeta(t);
   const [executing, setExecuting] = useState<Set<string>>(new Set());
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -90,7 +98,12 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
           >
             <div className="relative w-[68px] h-[68px] flex items-center justify-center">
               <div className={isExecuting ? 'opacity-40 transition-opacity' : 'transition-opacity'}>
-                <CapabilitySigil uc={uc} size={68} />
+                <CapabilitySigil
+                  uc={uc}
+                  healthLabel={healthMeta[uc.health].label}
+                  cvdSafe={cvdSafe}
+                  size={68}
+                />
               </div>
               {isExecuting ? (
                 <>

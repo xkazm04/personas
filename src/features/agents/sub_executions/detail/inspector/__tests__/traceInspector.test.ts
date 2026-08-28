@@ -40,7 +40,7 @@ function backendSpan(id: string, over: Partial<TraceSpan> = {}): TraceSpan {
 
 /** Flat node list in the shape `computeVisibleNodes` consumes. */
 function nodes(spans: UnifiedSpan[]): SpanNode[] {
-  return spans.map((s) => ({ span: s, children: [], depth: 0 }));
+  return spans.map((s) => ({ span: s, children: [], depth: 0, orphaned: false }));
 }
 
 function visibleIds(spans: UnifiedSpan[], collapsed: string[]): string[] {
