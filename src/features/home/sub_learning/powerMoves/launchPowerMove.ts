@@ -9,11 +9,31 @@ import type { PowerMove } from './registry';
 const SUB_TAB_DELAY_MS = 120;
 
 /**
- * The "Try it" action: marks the move tried, then deep-links to its surface
- * and flashes the one-shot spotlight on the landing anchor.
+ * Credit the move only once its deep link has actually landed.
+ *
+ * `markTried` used to run on the first line of `launchPowerMove`, before any
+ * navigation and long before the spotlight resolved — so a move whose anchor
+ * never mounted still incremented the quest board's progress count, and the app
+ * could report `anchor-never-mounted` and "you have used this feature" about
+ * the same click. A move with no spotlight anchor has nothing to verify: the
+ * navigation IS the action, so it is credited immediately.
+ */
+function creditOnLanding(move: PowerMove): void {
+  const anchor = move.spotlightTestId;
+  if (!anchor) {
+    usePowerMovesStore.getState().markTried(move.id);
+    return;
+  }
+  void flashSpotlight(anchor).then((landed) => {
+    if (landed) usePowerMovesStore.getState().markTried(move.id);
+  });
+}
+
+/**
+ * The "Try it" action: deep-links to the move's surface, flashes the one-shot
+ * spotlight on the landing anchor, and marks the move tried once it lands.
  */
 export function launchPowerMove(move: PowerMove): void {
-  usePowerMovesStore.getState().markTried(move.id);
   const sys = useSystemStore.getState();
 
   if ('overlay' in move.nav) {
@@ -21,7 +41,7 @@ export function launchPowerMove(move: PowerMove): void {
     // Overlay moves get the landing spotlight too — the overlay mounts its own
     // anchor, and skipping the flash here is why an overlay move felt like a
     // dead click compared with a section move.
-    if (move.spotlightTestId) void flashSpotlight(move.spotlightTestId);
+    creditOnLanding(move);
     return;
   }
 
@@ -40,5 +60,5 @@ export function launchPowerMove(move: PowerMove): void {
       if (nav.pluginTab) s.setPluginTab(nav.pluginTab);
     }, SUB_TAB_DELAY_MS);
   }
-  if (move.spotlightTestId) void flashSpotlight(move.spotlightTestId);
+  creditOnLanding(move);
 }

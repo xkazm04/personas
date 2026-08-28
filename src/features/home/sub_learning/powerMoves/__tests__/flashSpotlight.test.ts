@@ -9,13 +9,13 @@ describe('flashSpotlight', () => {
     // rejection nobody awaits or catches. The charset guard must reject it
     // gracefully instead.
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await expect(flashSpotlight('bad"id]')).resolves.toBeUndefined();
+    await expect(flashSpotlight('bad"id]')).resolves.toBe(false);
     warnSpy.mockRestore();
   });
 
   it('resolves without throwing for an empty testid', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await expect(flashSpotlight('')).resolves.toBeUndefined();
+    await expect(flashSpotlight('')).resolves.toBe(false);
     warnSpy.mockRestore();
   });
 

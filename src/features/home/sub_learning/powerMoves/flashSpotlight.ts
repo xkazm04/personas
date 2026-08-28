@@ -125,26 +125,35 @@ function waitForTestId(testId: string, generation: number): Promise<Element | nu
  *
  * Under reduced motion the scroll is instant and the ring is steady — the
  * affordance still marks the anchor, it just stops moving.
+ *
+ * Resolves to whether the deep link actually LANDED — i.e. whether the anchor
+ * ever mounted. Callers use this to avoid crediting a dead deep link: the app
+ * used to be able to report `anchor-never-mounted` and "you have used this
+ * feature" about the same click.
  */
-export async function flashSpotlight(testId: string): Promise<void> {
+export async function flashSpotlight(testId: string): Promise<boolean> {
   const mine = flashes.next();
   removeActiveFlash();
   const el = await waitForTestId(testId, mine);
-  if (!el || !flashes.isCurrent(mine)) return;
+  // A superseded call abandoned before finding its anchor cannot vouch for the
+  // landing; the newer call speaks for the navigation the user actually made.
+  if (!el) return false;
+  if (!flashes.isCurrent(mine)) return true;
 
   const reduceMotion = prefersReducedMotion();
   el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   // An instant scroll still needs one macrotask for layout to settle before the
   // rect is read; it does not need the smooth-scroll settle window.
   await new Promise((r) => setTimeout(r, reduceMotion ? 0 : SCROLL_SETTLE_MS));
-  if (!flashes.isCurrent(mine)) return;
+  // The anchor mounted, so the link landed — only the ring is abandoned here.
+  if (!flashes.isCurrent(mine)) return true;
 
   // Re-query post-scroll: the node may have re-rendered into a new element.
   const live = document.querySelector(`[data-testid="${testId}"]`) ?? el;
   const rect = live.getBoundingClientRect();
   if (rect.width === 0 && rect.height === 0) {
     noteDegradation('anchor-has-no-box', testId);
-    return;
+    return false;
   }
 
   const ring = document.createElement('div');
@@ -174,7 +183,7 @@ export async function flashSpotlight(testId: string): Promise<void> {
       if (activeFlash === ring) removeActiveFlash();
       else ring.remove();
     }, FLASH_MS);
-    return;
+    return true;
   }
 
   const anim = ring.animate(
@@ -192,4 +201,5 @@ export async function flashSpotlight(testId: string): Promise<void> {
     if (activeFlash === ring) removeActiveFlash();
     else ring.remove();
   };
+  return true;
 }
