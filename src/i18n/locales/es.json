@@ -12949,6 +12949,12 @@
       "proposed_update_importance": "Reevaluación propuesta",
       "proposed_synthesize": "Fusión propuesta",
       "proposed_archive": "Archivado propuesto"
+    },
+    "memory_category": {
+      "observation": "Observación",
+      "decision": "Decisión",
+      "context": "Contexto",
+      "learning": "Aprendizaje"
     }
   },
   "project_overview": {

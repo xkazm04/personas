@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { useState } from 'react';
 import { Plus, Minus, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -23,7 +24,7 @@ function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'add
       <p className="typo-caption font-medium text-foreground truncate">{memory.title}</p>
       <p className="typo-caption text-foreground line-clamp-1 mt-0.5">{memory.content}</p>
       <div className="flex items-center gap-2 mt-1">
-        <span className={`typo-caption capitalize ${catColor}`}>{memory.category}</span>
+        <span className={`typo-caption ${catColor}`}>{tokenLabel(t, 'memory_category', memory.category)}</span>
         <span className="typo-caption text-foreground">{t.pipeline.importance_label} {memory.importance}</span>
       </div>
     </div>
@@ -72,7 +73,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
           <div className="space-y-0.5">
             {diff.categoryDiffs.map((cd) => (
               <div key={cd.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
-                <span className={`capitalize ${CATEGORY_COLORS[cd.category] ?? 'text-foreground'}`}>{cd.category}</span>
+                <span className={CATEGORY_COLORS[cd.category] ?? 'text-foreground'}>{tokenLabel(t, 'memory_category', cd.category)}</span>
                 <span className="flex items-center gap-2">
                   <span className="text-foreground">{cd.countA} {'→'} {cd.countB}</span>
                   {cd.delta !== 0 && <span className={cd.delta > 0 ? 'text-emerald-400' : 'text-red-400'}>{cd.delta > 0 ? '+' : ''}{cd.delta}</span>}
@@ -90,7 +91,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
           <div className="space-y-0.5">
             {diff.importanceShifts.filter((s) => Math.abs(s.delta) >= 0.1).map((s) => (
               <div key={s.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
-                <span className={`capitalize ${CATEGORY_COLORS[s.category] ?? 'text-foreground'}`}>{s.category}</span>
+                <span className={CATEGORY_COLORS[s.category] ?? 'text-foreground'}>{tokenLabel(t, 'memory_category', s.category)}</span>
                 <span className="flex items-center gap-1.5">
                   <span className="text-foreground"><Numeric value={s.avgA} precision={1} /> {'→'} <Numeric value={s.avgB} precision={1} /></span>
                   {s.delta > 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-amber-400" />}

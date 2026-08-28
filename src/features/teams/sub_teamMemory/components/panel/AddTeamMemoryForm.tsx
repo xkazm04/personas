@@ -4,6 +4,7 @@ import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../../libs/memoryConstants';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
@@ -89,7 +90,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
           onChange={(e) => setCategory(e.target.value)}
         >
           {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>{tokenLabel(t, 'memory_category', c)}</option>
           ))}
         </select>
 

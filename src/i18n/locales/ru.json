@@ -12949,6 +12949,12 @@
       "proposed_update_importance": "Предложено переоценить",
       "proposed_synthesize": "Предложено объединить",
       "proposed_archive": "Предложено архивировать"
+    },
+    "memory_category": {
+      "observation": "Наблюдение",
+      "decision": "Решение",
+      "context": "Контекст",
+      "learning": "Вывод"
     }
   },
   "project_overview": {

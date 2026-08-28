@@ -13248,6 +13248,12 @@ export type Translations = {
       proposed_synthesize: string;
       proposed_archive: string;
     };
+    memory_category: {
+      observation: string;
+      decision: string;
+      context: string;
+      learning: string;
+    };
   };
   project_overview: {
     today_activity_heading: string;

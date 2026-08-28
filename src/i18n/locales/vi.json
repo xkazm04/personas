@@ -12949,6 +12949,12 @@
       "proposed_update_importance": "Đề xuất đánh giá lại",
       "proposed_synthesize": "Đề xuất hợp nhất",
       "proposed_archive": "Đề xuất lưu trữ"
+    },
+    "memory_category": {
+      "observation": "Quan sát",
+      "decision": "Quyết định",
+      "context": "Bối cảnh",
+      "learning": "Bài học"
     }
   },
   "project_overview": {

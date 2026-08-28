@@ -12949,6 +12949,12 @@
       "proposed_update_importance": "Usulan penilaian ulang",
       "proposed_synthesize": "Usulan penggabungan",
       "proposed_archive": "Usulan pengarsipan"
+    },
+    "memory_category": {
+      "observation": "Observasi",
+      "decision": "Keputusan",
+      "context": "Konteks",
+      "learning": "Pembelajaran"
     }
   },
   "project_overview": {

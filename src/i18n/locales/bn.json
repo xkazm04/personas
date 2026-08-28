@@ -12949,6 +12949,12 @@
       "proposed_update_importance": "গুরুত্ব পুনর্নির্ধারণের প্রস্তাব",
       "proposed_synthesize": "একত্র করার প্রস্তাব",
       "proposed_archive": "সংরক্ষণের প্রস্তাব"
+    },
+    "memory_category": {
+      "observation": "পর্যবেক্ষণ",
+      "decision": "সিদ্ধান্ত",
+      "context": "প্রসঙ্গ",
+      "learning": "শিক্ষা"
     }
   },
   "project_overview": {

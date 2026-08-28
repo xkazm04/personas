@@ -13241,6 +13241,12 @@
       "proposed_update_importance": "Re-score proposed",
       "proposed_synthesize": "Merge proposed",
       "proposed_archive": "Archive proposed"
+    },
+    "memory_category": {
+      "observation": "Observation",
+      "decision": "Decision",
+      "context": "Context",
+      "learning": "Learning"
     }
   },
   "project_overview": {

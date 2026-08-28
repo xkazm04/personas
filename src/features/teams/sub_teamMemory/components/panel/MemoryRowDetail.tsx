@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX } from '../../libs/memoryConstants';
@@ -87,7 +88,7 @@ export default function MemoryRowDetail({
           onChange={(e) => setEditCategory(e.target.value)}
         >
           {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>{tokenLabel(t, 'memory_category', c)}</option>
           ))}
         </select>
 

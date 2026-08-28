@@ -12949,6 +12949,12 @@
       "proposed_update_importance": "建议重新评分",
       "proposed_synthesize": "建议合并",
       "proposed_archive": "建议归档"
+    },
+    "memory_category": {
+      "observation": "观察",
+      "decision": "决策",
+      "context": "上下文",
+      "learning": "经验"
     }
   },
   "project_overview": {
