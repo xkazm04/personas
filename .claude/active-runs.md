@@ -52,6 +52,8 @@
 
 - **[2026-08-26 16:21]**
 - **Paths:** `src/features/overview/sub_events/**` · `src/features/overview/sub_missionControl/**` · `src/features/overview/sub_director/**` · `src/features/overview/sub_incidents/**`
+- **[2026-08-28 16:16]**
+- **Paths:** `src-tauri/src/engine/management_api.rs` · `src-tauri/src/engine/management_api/**` · `.claude/skills/ship-milestone/**` · `docs/features/plugins/dev tools/ship.md` · `scripts/ship/**`
 - **Status:** started
 
 - **[2026-08-26 10:14]**
@@ -527,6 +529,7 @@
 ### overview-ui-pass-2 — Events headers, Director empty card, Incidents 3-way prototype, Extracted removal, Patterns Codex + Coverage prototype
 
 ### overview-ui-pass — Events typography, Vault pane header, Director layout, Incidents prototype
+### ship-goals-orchestration — Ship goals orchestration: management-API ship routes + 3-app milestone cuts (ascent/kp/systedo-case)
 
 ### exec-text-column-fix — Fix rusqlite Invalid column type Text at index 15 (persona_executions.cache_read_tokens)
 
