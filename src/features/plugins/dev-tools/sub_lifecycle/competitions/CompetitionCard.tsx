@@ -117,14 +117,39 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     }
   }, [competition.id, detailGuard]);
 
-  // Load detail on expand, auto-poll every 8s while competition is running
+  // The AUTHORITATIVE status while a card is open. `competition.status` is the
+  // value from the LIST fetch, and that list only refreshes on a user action
+  // (Refresh, or a mutation calling `onRefresh`) — so it goes stale in both
+  // directions the moment a race changes state on its own:
+  //
+  //   * gating the poll on it kept `setInterval(loadDetail, 8000)` alive
+  //     FOREVER after the tasks finished — an IPC round-trip every 8s per
+  //     expanded card, for the life of the view, because the prop never
+  //     learned the race had ended;
+  //   * and a stale list in the other direction meant the poll never started
+  //     at all on a race that had since begun running.
+  //
+  // `detail.competition.status` is re-fetched every tick and was sitting right
+  // here unread. Before the first fetch lands it is null, and the prop is then
+  // the only thing we know — which is exactly what the old code used.
+  const liveStatus = detail?.competition.status ?? competition.status;
+
+  // Fetch once on expand (and whenever the card is pointed at a different
+  // competition).
   useEffect(() => {
     if (!expanded) return;
     loadDetail();
-    if (competition.status !== 'running') return;
+  }, [expanded, loadDetail]);
+
+  // Poll while the race is actually live. Kept as its OWN effect, keyed on a
+  // string rather than on `detail`: folding it back into the fetch effect
+  // above would re-run that effect on every poll response, and its `loadDetail()`
+  // call would then re-trigger itself in a loop.
+  useEffect(() => {
+    if (!expanded || liveStatus !== 'running') return;
     const interval = setInterval(loadDetail, 8000);
     return () => clearInterval(interval);
-  }, [expanded, competition.status, loadDetail]);
+  }, [expanded, liveStatus, loadDetail]);
 
   const handleOpenPickWinner = useCallback((taskId: string) => {
     setPendingWinnerTaskId(taskId);
@@ -209,7 +234,10 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
     }
   }, [competition.id, addToast, onRefresh, dl]);
 
-  const effectiveStatus = optimisticCancelled ? 'cancelled' : competition.status;
+  // Same authority question for the badge and the footer actions: an open
+  // card that showed "Running" over a finished race was the visible half of
+  // the polling bug above.
+  const effectiveStatus = optimisticCancelled ? 'cancelled' : liveStatus;
   const badgeColor = statusBadgeColor(effectiveStatus);
   const badgeLabel = tokenLabel(t, 'competition', effectiveStatus);
   const isFinished = effectiveStatus === 'resolved' || effectiveStatus === 'cancelled';
