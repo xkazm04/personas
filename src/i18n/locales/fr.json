@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "Réévaluation proposée",
       "proposed_synthesize": "Fusion proposée",
       "proposed_archive": "Archivage proposé"
+    },
+    "memory_category": {
+      "observation": "Constat",
+      "decision": "Décision",
+      "context": "Contexte",
+      "learning": "Apprentissage"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "Titre…",
     "content_placeholder": "Contenu…",
     "importance_label": "Imp. :",
+    "category_label": "Catégorie",
     "save_memory": "Enregistrer la mémoire",
     "search_memories": "Rechercher des mémoires…",
     "clear_run_filter": "Effacer le filtre d’exécution",

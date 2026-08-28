@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "اقتراح بإعادة التقييم",
       "proposed_synthesize": "اقتراح بالدمج",
       "proposed_archive": "اقتراح بالأرشفة"
+    },
+    "memory_category": {
+      "observation": "ملاحظة",
+      "decision": "قرار",
+      "context": "سياق",
+      "learning": "درس مستفاد"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "العنوان…",
     "content_placeholder": "المحتوى…",
     "importance_label": "الأهمية:",
+    "category_label": "الفئة",
     "save_memory": "حفظ الذاكرة",
     "search_memories": "البحث في الذاكرة…",
     "clear_run_filter": "مسح تصفية التشغيل",

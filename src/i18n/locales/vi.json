@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "Đề xuất đánh giá lại",
       "proposed_synthesize": "Đề xuất hợp nhất",
       "proposed_archive": "Đề xuất lưu trữ"
+    },
+    "memory_category": {
+      "observation": "Quan sát",
+      "decision": "Quyết định",
+      "context": "Bối cảnh",
+      "learning": "Bài học"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "Tiêu đề…",
     "content_placeholder": "Nội dung…",
     "importance_label": "QT:",
+    "category_label": "Danh mục",
     "save_memory": "Lưu ký ức",
     "search_memories": "Tìm kiếm ký ức…",
     "clear_run_filter": "Xóa bộ lọc lần chạy",

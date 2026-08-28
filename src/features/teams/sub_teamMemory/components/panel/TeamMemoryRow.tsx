@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { useState, useCallback, useMemo } from 'react';
 import { History, ChevronUp } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
@@ -91,7 +92,11 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
           <p className="typo-body font-medium text-foreground/90 truncate">{memory.title}</p>
           <p className="typo-body text-foreground line-clamp-2 mt-0.5">{memory.content}</p>
           <div className="flex items-center gap-2 mt-1.5">
-            <CategoryChip category={memory.category} source="team" />
+            <CategoryChip
+              category={memory.category}
+              source="team"
+              label={tokenLabel(t, 'memory_category', memory.category)}
+            />
             <span className="typo-body px-1.5 py-0.5 rounded-full bg-primary/5 text-foreground">
               {isAuto ? pt.auto_label : pt.manual_label}
             </span>
@@ -143,7 +148,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                 <div key={i} className="pl-2 border-l-2 border-primary/10 space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="typo-body font-medium text-foreground truncate">{rev.title}</span>
-                    <span className="typo-body text-foreground capitalize">{rev.category}</span>
+                    <span className="typo-body text-foreground">{tokenLabel(t, 'memory_category', rev.category)}</span>
                   </div>
                   <p className="typo-body text-foreground line-clamp-1">{rev.content}</p>
                   {/* Was a raw `new Date(...).toLocaleDateString(undefined, …)`:

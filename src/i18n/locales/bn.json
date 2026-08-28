@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "গুরুত্ব পুনর্নির্ধারণের প্রস্তাব",
       "proposed_synthesize": "একত্র করার প্রস্তাব",
       "proposed_archive": "সংরক্ষণের প্রস্তাব"
+    },
+    "memory_category": {
+      "observation": "পর্যবেক্ষণ",
+      "decision": "সিদ্ধান্ত",
+      "context": "প্রসঙ্গ",
+      "learning": "শিক্ষা"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "শিরোনাম…",
     "content_placeholder": "বিষয়বস্তু…",
     "importance_label": "Imp:",
+    "category_label": "বিভাগ",
     "save_memory": "মেমোরি সংরক্ষণ করুন",
     "search_memories": "মেমোরি খুঁজুন…",
     "clear_run_filter": "রান ফিল্টার সাফ করুন",

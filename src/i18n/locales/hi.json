@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "पुनर्मूल्यांकन का प्रस्ताव",
       "proposed_synthesize": "विलय का प्रस्ताव",
       "proposed_archive": "संग्रह का प्रस्ताव"
+    },
+    "memory_category": {
+      "observation": "अवलोकन",
+      "decision": "निर्णय",
+      "context": "संदर्भ",
+      "learning": "सीख"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "शीर्षक…",
     "content_placeholder": "सामग्री…",
     "importance_label": "महत्व:",
+    "category_label": "श्रेणी",
     "save_memory": "याद सहेजें",
     "search_memories": "यादें खोजें…",
     "clear_run_filter": "रन फ़िल्टर साफ़ करें",

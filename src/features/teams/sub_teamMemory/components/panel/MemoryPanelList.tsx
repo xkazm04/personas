@@ -3,6 +3,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 const CATEGORY_FILTERS = ['all', 'observation', 'decision', 'context', 'learning'] as const;
 
@@ -54,14 +55,14 @@ export default function MemoryPanelList({
           <button
             type="button"
             key={cat}
-            className={`typo-body px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
+            className={`typo-body px-2 py-0.5 rounded-full whitespace-nowrap transition-colors ${
               activeCategory === cat
                 ? 'bg-violet-500/20 text-violet-400 font-medium'
                 : 'bg-primary/5 text-foreground hover:bg-primary/10'
             }`}
             onClick={() => onCategoryChange(cat)}
           >
-            {cat}
+            {cat === 'all' ? t.common.all : tokenLabel(t, 'memory_category', cat)}
           </button>
         ))}
       </div>

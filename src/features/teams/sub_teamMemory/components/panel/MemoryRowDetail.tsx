@@ -1,8 +1,11 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, ChevronDown } from 'lucide-react';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX } from '../../libs/memoryConstants';
 import { Slider } from '@/features/shared/components/forms/Slider';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
@@ -49,12 +52,16 @@ export default function MemoryRowDetail({
       <div className="flex items-center justify-between">
         <span className="typo-body font-medium text-violet-400">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" title={t.common.save}>
-            <Check className="w-3 h-3" />
-          </button>
-          <button type="button" onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" title={t.common.cancel}>
-            <X className="w-3 h-3" />
-          </button>
+          <Tooltip content={t.common.save}>
+            <button type="button" onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" aria-label={t.common.save}>
+              <Check className="w-3 h-3" />
+            </button>
+          </Tooltip>
+          <Tooltip content={t.common.cancel}>
+            <button type="button" onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" aria-label={t.common.cancel}>
+              <X className="w-3 h-3" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -76,15 +83,47 @@ export default function MemoryRowDetail({
       />
 
       <div className="flex items-center gap-2">
-        <select
-          className="typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-0.5 text-foreground focus-visible:outline-none"
-          value={editCategory}
-          onChange={(e) => setEditCategory(e.target.value)}
+        <Listbox
+          ariaLabel={pt.category_label}
+          className="flex-shrink-0"
+          itemCount={CATEGORIES.length}
+          onSelectFocused={(idx) => {
+            const picked = CATEGORIES[idx];
+            if (picked) setEditCategory(picked);
+          }}
+          renderTrigger={({ isOpen, toggle }) => (
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={pt.category_label}
+              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-0.5 text-foreground hover:border-primary/20 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+            >
+              {tokenLabel(t, 'memory_category', editCategory)}
+              <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+          )}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          {({ close, focusIndex }) => (
+            <div className="py-1 bg-secondary/95">
+              {CATEGORIES.map((c, idx) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="option"
+                  aria-selected={editCategory === c}
+                  onClick={() => { setEditCategory(c); close(); }}
+                  className={`w-full text-left px-2 py-1 typo-body transition-colors ${
+                    idx === focusIndex || editCategory === c
+                      ? 'bg-primary/10 text-foreground'
+                      : 'text-foreground/80 hover:bg-primary/5'
+                  }`}
+                >
+                  {tokenLabel(t, 'memory_category', c)}
+                </button>
+              ))}
+            </div>
+          )}
+        </Listbox>
 
         <div className="flex items-center gap-1">
           <span className="typo-body text-foreground">{pt.importance_label}</span>

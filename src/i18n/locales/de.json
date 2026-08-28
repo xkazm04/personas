@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "Neubewertung vorgeschlagen",
       "proposed_synthesize": "Zusammenführen vorgeschlagen",
       "proposed_archive": "Archivieren vorgeschlagen"
+    },
+    "memory_category": {
+      "observation": "Beobachtung",
+      "decision": "Entscheidung",
+      "context": "Kontext",
+      "learning": "Erkenntnis"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "Titel…",
     "content_placeholder": "Inhalt…",
     "importance_label": "Wichtigkeit:",
+    "category_label": "Kategorie",
     "save_memory": "Erinnerung speichern",
     "search_memories": "Erinnerungen suchen…",
     "clear_run_filter": "Ausführungsfilter löschen",

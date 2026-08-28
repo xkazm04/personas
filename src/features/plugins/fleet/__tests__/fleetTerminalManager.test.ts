@@ -102,6 +102,7 @@ import {
   gcTerminals,
   getFleetTerminalStats,
   setFleetTerminalDeadNotice,
+  setTerminalLiveness,
 } from '../fleetTerminalManager';
 
 /** Let the manager's rAF-scheduled fit (and the resize push behind it) run. */
@@ -726,5 +727,28 @@ describe('clipboard paste framing', () => {
 
     expect(vi.mocked(fleetApi.writeInput)).not.toHaveBeenCalled();
     host.remove();
+  });
+});
+
+describe('liveness', () => {
+  it('stops the cursor blinking and refuses stdin once the process is gone', () => {
+    attach('dead-1');
+    const term = registryMap().get('dead-1')!.term;
+    // The fake terminal does not mirror constructor options, so liveness is
+    // asserted by the flip the manager performs, not by the initial value.
+    expect(term.options.disableStdin).toBeFalsy();
+
+    setTerminalLiveness('dead-1', false);
+    expect(term.options.cursorBlink).toBe(false);
+    expect(term.options.disableStdin).toBe(true);
+
+    // Resuming a hibernated session must hand the terminal back.
+    setTerminalLiveness('dead-1', true);
+    expect(term.options.cursorBlink).toBe(true);
+    expect(term.options.disableStdin).toBe(false);
+  });
+
+  it('no-ops for a session that has no terminal', () => {
+    expect(() => setTerminalLiveness('never-attached', false)).not.toThrow();
   });
 });

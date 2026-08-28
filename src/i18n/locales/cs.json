@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "Návrh na přehodnocení",
       "proposed_synthesize": "Návrh na sloučení",
       "proposed_archive": "Návrh na archivaci"
+    },
+    "memory_category": {
+      "observation": "Pozorování",
+      "decision": "Rozhodnutí",
+      "context": "Kontext",
+      "learning": "Poučení"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "Název…",
     "content_placeholder": "Obsah…",
     "importance_label": "Důl:",
+    "category_label": "Kategorie",
     "save_memory": "Uložit vzpomínku",
     "search_memories": "Hledat vzpomínky…",
     "clear_run_filter": "Vymazat filtr běhu",

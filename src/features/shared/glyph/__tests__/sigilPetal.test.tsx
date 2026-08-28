@@ -10,12 +10,16 @@ import { SigilPetal } from '../SigilPetal';
  * the element hover actually lands on. Pinned here because the defect was
  * invisible: the markup looked correct and rendered nothing.
  */
-function renderPetal(ariaLabel = 'Trigger: linked') {
+function renderPetal(
+  ariaLabel = 'Trigger: linked',
+  extra: { presence?: 'none' | 'shared' | 'linked'; cvdSafe?: boolean; patternUid?: string } = {},
+) {
+  const { presence = 'linked', cvdSafe, patternUid } = extra;
   return render(
     <svg>
       <SigilPetal
         dim="trigger"
-        presence="linked"
+        presence={presence}
         index={0}
         size={200}
         rowId="row-1"
@@ -34,6 +38,8 @@ function renderPetal(ariaLabel = 'Trigger: linked') {
         onKeyDown={vi.fn()}
         onFocusDim={vi.fn()}
         registerRef={vi.fn()}
+        cvdSafe={cvdSafe}
+        patternUid={patternUid}
       />
     </svg>,
   );
@@ -61,5 +67,46 @@ describe('SigilPetal hover tip', () => {
     const { container } = renderPetal('Memory: not set');
     const group = container.querySelector('g[role="button"]') as SVGGElement;
     expect(group.getAttribute('aria-label')).toBe('Memory: not set');
+  });
+});
+
+/**
+ * CVD-safe appearance reached the 68-84px `CapabilitySigil` and stopped there:
+ * the 440px `InteractiveSigil` — the card's primary navigation — kept painting
+ * petals in `DIM_META[dim].color` with no texture branch at all, so a user who
+ * enabled the setting got two different answers from the same eight-colour
+ * vocabulary on the same screen.
+ */
+describe('SigilPetal CVD-safe textures', () => {
+  const fillOf = (container: HTMLElement, selector: string) =>
+    container.querySelector(selector)?.getAttribute('fill');
+
+  it('fills a linked petal with its dimension texture instead of the hue gradient', () => {
+    const { container } = renderPetal('Trigger: linked', { cvdSafe: true, patternUid: 'row-1-0' });
+    expect(fillOf(container, 'path[filter]')).toBe('url(#sigil-pat-trigger-row-1-0)');
+    // The gradient is the hue treatment — under texture it is not even emitted.
+    expect(container.querySelector('linearGradient')).toBeNull();
+  });
+
+  it('textures a shared petal too, keeping the dashed silhouette that says "shared"', () => {
+    const { container } = renderPetal('Trigger: shared', {
+      presence: 'shared',
+      cvdSafe: true,
+      patternUid: 'row-1-0',
+    });
+    const path = container.querySelector('path[stroke-dasharray]')!;
+    expect(path.getAttribute('fill')).toBe('url(#sigil-pat-trigger-row-1-0)');
+    expect(path.getAttribute('stroke-dasharray')).toBe('4,4');
+  });
+
+  it('keeps the hue gradient when CVD-safe is off', () => {
+    const { container } = renderPetal();
+    expect(container.querySelector('linearGradient')).not.toBeNull();
+    expect(fillOf(container, 'path[filter]')).toBe('url(#sigil-petal-row-1-0-0)');
+  });
+
+  it('ignores cvdSafe without a patternUid — a fill pointing at a missing id paints nothing', () => {
+    const { container } = renderPetal('Trigger: linked', { cvdSafe: true });
+    expect(fillOf(container, 'path[filter]')).toBe('url(#sigil-petal-row-1-0-0)');
   });
 });

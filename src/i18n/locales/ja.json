@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "重要度見直しの提案",
       "proposed_synthesize": "統合の提案",
       "proposed_archive": "アーカイブの提案"
+    },
+    "memory_category": {
+      "observation": "観察",
+      "decision": "決定",
+      "context": "文脈",
+      "learning": "学び"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "タイトル…",
     "content_placeholder": "コンテンツ…",
     "importance_label": "重要度:",
+    "category_label": "カテゴリ",
     "save_memory": "メモリを保存",
     "search_memories": "メモリを検索…",
     "clear_run_filter": "実行フィルターをクリア",

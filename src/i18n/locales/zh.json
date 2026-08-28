@@ -12971,6 +12971,12 @@
       "proposed_update_importance": "建议重新评分",
       "proposed_synthesize": "建议合并",
       "proposed_archive": "建议归档"
+    },
+    "memory_category": {
+      "observation": "观察",
+      "decision": "决策",
+      "context": "上下文",
+      "learning": "经验"
     }
   },
   "project_overview": {
@@ -17795,6 +17801,7 @@
     "title_placeholder": "标题…",
     "content_placeholder": "内容…",
     "importance_label": "重要性：",
+    "category_label": "类别",
     "save_memory": "保存记忆",
     "search_memories": "搜索记忆…",
     "clear_run_filter": "清除运行筛选",

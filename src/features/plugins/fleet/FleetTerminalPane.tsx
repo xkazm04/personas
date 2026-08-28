@@ -5,6 +5,7 @@ import {
   detachTerminal,
   focusTerminal,
   setFleetTerminalDeadNotice,
+  setTerminalLiveness,
 } from './fleetTerminalManager';
 
 interface FleetTerminalPaneProps {
@@ -14,6 +15,13 @@ interface FleetTerminalPaneProps {
   className?: string;
   /** Grid tiles disable auto-focus so tabbing between many panes is sane. */
   autoFocus?: boolean;
+  /**
+   * False once the session's process is gone (exited / hibernated — the same
+   * tombstone predicate `FleetOverlayTile` computes). The pane then stops the
+   * cursor blinking and refuses stdin instead of pretending a dead rung of the
+   * ladder is still typeable. Defaults to true.
+   */
+  live?: boolean;
 }
 
 /**
@@ -30,7 +38,7 @@ interface FleetTerminalPaneProps {
  * The pane is deliberately chrome-free — font size, copy-on-select and theme
  * live in Fleet Settings, applied live across all terminals via the manager.
  */
-export function FleetTerminalPane({ sessionId, className, autoFocus = true }: FleetTerminalPaneProps) {
+export function FleetTerminalPane({ sessionId, className, autoFocus = true, live = true }: FleetTerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { t } = useTranslation();
 
@@ -51,18 +59,25 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true }: Fl
     const container = containerRef.current;
     if (!container) return;
     attachTerminal(sessionId, container);
-    if (autoFocus) focusTerminal(sessionId);
+    if (autoFocus && live) focusTerminal(sessionId);
     // Detach with our own container as the owner token: if another pane has
     // since attached the same session, the holder is THEIRS and our unmount
     // must not unsubscribe, drop the renderer and unparent what they display.
     return () => detachTerminal(sessionId, container);
-  }, [sessionId, autoFocus]);
+  }, [sessionId, autoFocus, live]);
+
+  // Liveness is pushed AFTER the attach effect so it lands on a terminal that
+  // exists; the manager no-ops for an unknown id.
+  useEffect(() => {
+    setTerminalLiveness(sessionId, live);
+  }, [sessionId, live]);
 
   return (
     <div
       ref={containerRef}
-      className={`h-full w-full bg-[#0a0a0c] ${className ?? ''}`}
+      className={`h-full w-full bg-[#0a0a0c] ${live ? '' : 'opacity-70'} ${className ?? ''}`}
       data-testid={`fleet-terminal-${sessionId}`}
+      data-live={live ? 'true' : 'false'}
     />
   );
 }

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ChevronDown } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../../libs/memoryConstants';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
@@ -83,15 +85,47 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       />
 
       <div className="flex items-center gap-2">
-        <select
-          className="typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-1 text-foreground focus-visible:outline-none"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+        <Listbox
+          ariaLabel={t.pipeline.category_label}
+          className="flex-shrink-0"
+          itemCount={CATEGORIES.length}
+          onSelectFocused={(idx) => {
+            const picked = CATEGORIES[idx];
+            if (picked) setCategory(picked);
+          }}
+          renderTrigger={({ isOpen, toggle }) => (
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={t.pipeline.category_label}
+              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-1 text-foreground hover:border-primary/20 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+            >
+              {tokenLabel(t, 'memory_category', category)}
+              <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+          )}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          {({ close, focusIndex }) => (
+            <div className="py-1 bg-secondary/95">
+              {CATEGORIES.map((c, idx) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="option"
+                  aria-selected={category === c}
+                  onClick={() => { setCategory(c); close(); }}
+                  className={`w-full text-left px-2 py-1 typo-body transition-colors ${
+                    idx === focusIndex || category === c
+                      ? 'bg-primary/10 text-foreground'
+                      : 'text-foreground/80 hover:bg-primary/5'
+                  }`}
+                >
+                  {tokenLabel(t, 'memory_category', c)}
+                </button>
+              ))}
+            </div>
+          )}
+        </Listbox>
 
         <div className="flex items-center gap-1">
           <span className="typo-body text-foreground">{t.pipeline.importance_label}</span>

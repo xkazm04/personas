@@ -47,7 +47,7 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
 
       <div className="h-[280px] bg-background/80">
         {live ? (
-          <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus={false} />
+          <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus={false} live={session?.state !== 'hibernated'} />
         ) : (
           <p className="typo-caption text-foreground/50 px-3 py-4">
             {session ? (session.mode === 'headless' ? t.mastermind.fleet_headless : t.mastermind.fleet_gone) : t.mastermind.fleet_demo}
