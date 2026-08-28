@@ -57,7 +57,12 @@ pub async fn ingest_files(
 
     for (i, file_path) in file_paths.iter().enumerate() {
         if cancel.is_cancelled() {
+            // Cancellation is terminal, so it emits the terminal event — the
+            // same one `reindex_kb` emits on the identical check below. Without
+            // it the frontend's `onComplete` never fires and the progress bar
+            // for a KB deleted mid-ingest hangs forever.
             progress.status = "cancelled".into();
+            let _ = app.emit(event_name::KB_INGEST_COMPLETE, &progress);
             return Ok(progress);
         }
 
