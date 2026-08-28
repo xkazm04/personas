@@ -76,6 +76,17 @@ export interface UseLayeredListResult<Row, Counts> {
   reload: () => void;
 }
 
+/**
+ * A page that claims `hasMore` but hands back no cursor is exhausted as far as
+ * this hook is concerned. Trusting the flag alone left `cursorRef` at null, so
+ * the next `loadMore` re-fetched the FIRST page and appended it again — and the
+ * IntersectionObserver kept re-arming, duplicating rows without bound.
+ * Believing the cursor (the thing that can actually advance) fails closed.
+ */
+function canContinue<Row>(page: LayeredPage<Row>): boolean {
+  return page.hasMore && page.nextCursor !== null;
+}
+
 export function useLayeredList<Row, Counts = unknown>(
   opts: UseLayeredListOptions<Row, Counts>,
 ): UseLayeredListResult<Row, Counts> {
@@ -107,6 +118,11 @@ export function useLayeredList<Row, Counts = unknown>(
     hasMoreRef.current = false;
     inFlightRef.current = true;
     setLoading(true);
+    // A loadMore in flight is superseded by this epoch bump, and its
+    // resolution returns early WITHOUT clearing loadingMore — so the "loading
+    // more" row stayed on screen forever after a filter change or a reload
+    // that landed mid-append. This load now owns the list's loading state.
+    setLoadingMore(false);
     setError(null);
 
     // L0 — counts. Fire-and-forget; a failure must not block the rows.
@@ -128,8 +144,8 @@ export function useLayeredList<Row, Counts = unknown>(
         if (epoch !== epochRef.current) return;
         setRows(page.rows);
         cursorRef.current = page.nextCursor;
-        hasMoreRef.current = page.hasMore;
-        setHasMore(page.hasMore);
+        hasMoreRef.current = canContinue(page);
+        setHasMore(hasMoreRef.current);
         setLoading(false);
         inFlightRef.current = false;
       },
@@ -154,8 +170,8 @@ export function useLayeredList<Row, Counts = unknown>(
         if (epoch !== epochRef.current) return;
         setRows((prev) => [...prev, ...page.rows]);
         cursorRef.current = page.nextCursor;
-        hasMoreRef.current = page.hasMore;
-        setHasMore(page.hasMore);
+        hasMoreRef.current = canContinue(page);
+        setHasMore(hasMoreRef.current);
         setLoadingMore(false);
         inFlightRef.current = false;
       },

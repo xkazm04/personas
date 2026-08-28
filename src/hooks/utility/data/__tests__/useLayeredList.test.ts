@@ -96,6 +96,49 @@ describe('useLayeredList', () => {
     expect(result.current.rows).toEqual([42]);
   });
 
+  it('clears loadingMore when a filter change supersedes an in-flight loadMore', async () => {
+    let resolveAppend: (p: LayeredPage<number>) => void = () => {};
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(page([1, 2], true))
+      .mockImplementationOnce(() => new Promise<LayeredPage<number>>((r) => { resolveAppend = r; }))
+      .mockResolvedValue(page([9], false));
+
+    const { result, rerender } = renderHook(
+      ({ k }) => useLayeredList<number>({ filterKey: k, fetchPage }),
+      { initialProps: { k: 'a' } },
+    );
+    await waitFor(() => expect(result.current.rows).toEqual([1, 2]));
+
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.loadingMore).toBe(true));
+
+    // The filter changes while the append is still out. Its late response is
+    // dropped — so the reset has to clear loadingMore, or the "loading more"
+    // row stays on screen for the rest of the session.
+    rerender({ k: 'b' });
+    await waitFor(() => expect(result.current.rows).toEqual([9]));
+    act(() => resolveAppend(page([3, 4], true)));
+    await waitFor(() => expect(result.current.loadingMore).toBe(false));
+    expect(result.current.rows).toEqual([9]);
+  });
+
+  it('treats hasMore with a null cursor as exhausted rather than refetching page 1 forever', async () => {
+    // A backend that reports "more available" but hands back no cursor used to
+    // leave cursorRef at null, so every loadMore re-fetched the FIRST page and
+    // appended it again — unbounded duplicate rows.
+    const fetchPage = vi.fn().mockResolvedValue({ rows: [1, 2], nextCursor: null, hasMore: true });
+
+    const { result } = renderHook(() => useLayeredList<number>({ filterKey: 'all', fetchPage }));
+    await waitFor(() => expect(result.current.rows).toEqual([1, 2]));
+
+    expect(result.current.hasMore).toBe(false);
+    act(() => result.current.loadMore());
+    await Promise.resolve();
+    expect(fetchPage).toHaveBeenCalledTimes(1);
+    expect(result.current.rows).toEqual([1, 2]);
+  });
+
   it('defers fetching while disabled, then fetches once enabled', async () => {
     const fetchPage = vi.fn().mockResolvedValue(page([7], false));
 
