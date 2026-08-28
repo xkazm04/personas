@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} قسم",
       "kb_count_summary": "-- {docs} مستنداً، {chunks} مقطعاً",
       "default_patterns": "الافتراضي:",
+      "patterns_replace_defaults": "إضافة نمط تقصر الفحص عليه، ولم تعد الأنماط الافتراضية أعلاه سارية.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "المسافة:",
       "chunk_label": "المقطع:",
@@ -13422,6 +13423,20 @@
       "working": "قيد العمل",
       "archive": "مؤرشفة"
     },
+    "span_type": {
+      "execution": "تنفيذ",
+      "prompt_assembly": "المُوجّه",
+      "credential_resolution": "بيانات الاعتماد",
+      "cli_spawn": "تشغيل CLI",
+      "tool_call": "استدعاء أداة",
+      "protocol_dispatch": "البروتوكول",
+      "chain_evaluation": "تقييم السلسلة",
+      "stream_processing": "البث",
+      "outcome_assessment": "النتيجة",
+      "healing_analysis": "المعالجة",
+      "pipeline_stage": "مرحلة المسار",
+      "unknown": "غير معروف"
+    },
     "memory_action": {
       "kept": "محفوظة",
       "deleted": "محذوفة",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "الرسالة",
       "broadcast_append": "إلحاق",
       "broadcast_sending": "جارٍ الإرسال…",
+      "broadcast_sending_progress": "جارٍ الإرسال… {done} من {total}",
       "broadcast_send_to": "إرسال إلى {count}",
       "broadcast_sent_one": "تم الإرسال إلى {count} جلسة",
       "broadcast_sent_other": "تم الإرسال إلى {count} جلسات",

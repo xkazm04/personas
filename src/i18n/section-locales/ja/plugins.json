@@ -41,6 +41,7 @@
     "broadcast_message_label": "メッセージ",
     "broadcast_append": "末尾に追加",
     "broadcast_sending": "送信中…",
+    "broadcast_sending_progress": "送信中… {total} 件中 {done} 件",
     "broadcast_send_to": "{count} 件に送信",
     "broadcast_sent_one": "{count} 件のセッションに送信しました",
     "broadcast_sent_other": "{count} 件のセッションに送信しました",

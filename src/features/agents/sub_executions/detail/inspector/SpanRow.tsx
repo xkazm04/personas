@@ -1,9 +1,10 @@
 import { memo, useCallback } from 'react';
 import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
-import { getSpanTypeConfig } from './traceInspectorTypes';
+import { getSpanTypeConfig, spanTypeLabel } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
 import { WaterfallBar } from './WaterfallBar';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SpanRowProps {
   node: SpanNode;
@@ -16,6 +17,10 @@ interface SpanRowProps {
 
 function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRowProps) {
   const { span, depth } = node;
+  // Subscribed here rather than threaded from the parent so the memoized row
+  // re-renders on a language switch — `propsEqual` below ignores anything that
+  // is not span data, so a prop would never have reached it.
+  const { t } = useTranslation();
   const config = getSpanTypeConfig(span.span_type);
   const handleToggle = useCallback(() => onToggle(span.span_id), [onToggle, span.span_id]);
 
@@ -49,7 +54,7 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
         )}
 
         <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
-          {config.label}
+          {spanTypeLabel(t, span.span_type)}
         </span>
 
         <span className="typo-code text-foreground/85 truncate" title={span.name}>

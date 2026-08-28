@@ -138,3 +138,37 @@ export function isStackable(q: TransformQuestionResponse, optCount: number): boo
   }
   return false;
 }
+
+// ---------------------------------------------------------------------------
+// Blocked-question remedy category
+// ---------------------------------------------------------------------------
+
+/**
+ * Which vault category the "Add credential" remedy should target for a question
+ * the vault matcher flagged as blocked.
+ *
+ * `matchVaultToQuestions` blocks two different shapes and only one of them
+ * carries `vault_category`: the static-options branch sets it, while the
+ * `dynamic_source` branch blocks purely on `dynamic_source.service_type` and
+ * `continue`s before the `vault_category` check ever runs
+ * (`vaultAdoptionMatcher.ts`). Gating the remedy on `vault_category` alone
+ * therefore left every blocked dynamic-source question with no way out: it fell
+ * through to the ordinary picker, which then failed to load.
+ *
+ * Returns `null` when neither field is present — the caller should render the
+ * normal input surface rather than a remedy it cannot target.
+ *
+ * NOTE THE TWO VOCABULARIES. A `vault_category` (`messaging`, `email`,
+ * `image_generation`) and a `dynamic_source.service_type` (`gmail`, `notion`, …)
+ * are different namespaces, and this function legitimately returns either. The
+ * `onAddCredential` handler owes the resolution, in one place:
+ * `ChronologyAdoptionView.handleAddCredentialForCategory` maps a service_type to
+ * its category tag before the picker filters the catalog — without that step
+ * `connectorsInCategory()` returns nothing and the modal looks broken.
+ */
+export function resolveBlockedCredentialCategory(
+  q: TransformQuestionResponse,
+): string | null {
+  if (q.vault_category) return q.vault_category;
+  return q.dynamic_source?.service_type ?? null;
+}

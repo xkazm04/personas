@@ -4950,6 +4950,7 @@ export type Translations = {
       scanned_pages_tooltip: string;
       kb_count_summary: string;
       default_patterns: string;
+      patterns_replace_defaults: string;
       add_pattern_placeholder: string;
       distance_label: string;
       chunk_label: string;
@@ -13683,6 +13684,20 @@ export type Translations = {
       working: string;
       archive: string;
     };
+    span_type: {
+      execution: string;
+      prompt_assembly: string;
+      credential_resolution: string;
+      cli_spawn: string;
+      tool_call: string;
+      protocol_dispatch: string;
+      chain_evaluation: string;
+      stream_processing: string;
+      outcome_assessment: string;
+      healing_analysis: string;
+      pipeline_stage: string;
+      unknown: string;
+    };
     memory_action: {
       kept: string;
       deleted: string;
@@ -13795,6 +13810,7 @@ export type Translations = {
       broadcast_message_label: string;
       broadcast_append: string;
       broadcast_sending: string;
+      broadcast_sending_progress: string;
       broadcast_send_to: string;
       broadcast_sent_one: string;
       broadcast_sent_other: string;

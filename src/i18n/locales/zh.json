@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} 个片段",
       "kb_count_summary": "-- {docs} 个文档，{chunks} 个片段",
       "default_patterns": "默认：",
+      "patterns_replace_defaults": "添加模式后，扫描将仅限于该模式，上方的默认模式不再生效。",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "距离：",
       "chunk_label": "片段：",
@@ -13422,6 +13423,20 @@
       "working": "工作中",
       "archive": "已归档"
     },
+    "span_type": {
+      "execution": "执行",
+      "prompt_assembly": "提示词",
+      "credential_resolution": "凭据",
+      "cli_spawn": "启动 CLI",
+      "tool_call": "工具调用",
+      "protocol_dispatch": "协议",
+      "chain_evaluation": "链路评估",
+      "stream_processing": "流式处理",
+      "outcome_assessment": "结果",
+      "healing_analysis": "自愈",
+      "pipeline_stage": "流水线阶段",
+      "unknown": "未知"
+    },
     "memory_action": {
       "kept": "保留",
       "deleted": "已删除",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "消息",
       "broadcast_append": "追加",
       "broadcast_sending": "发送中…",
+      "broadcast_sending_progress": "发送中… 第 {done} 个，共 {total} 个",
       "broadcast_send_to": "发送给 {count} 个",
       "broadcast_sent_one": "已发送给 {count} 个会话",
       "broadcast_sent_other": "已发送给 {count} 个会话",

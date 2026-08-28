@@ -3,6 +3,7 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import {
   isStackable,
   normalizeOptions,
+  resolveBlockedCredentialCategory,
   resolveStackableOptions,
   summarizeAnswer,
 } from '../questionnaireHelpers';
@@ -146,5 +147,29 @@ describe('summarizeAnswer', () => {
     } as unknown as Parameters<typeof summarizeAnswer>[2];
     expect(summarizeAnswer('a, b', 'select', t)).toBe('a y b');
     expect(summarizeAnswer('a, b, c, d', 'select', t)).toBe('a, b y 2 más');
+  });
+});
+
+describe('resolveBlockedCredentialCategory', () => {
+  it('prefers the explicit vault_category when the matcher set one', () => {
+    expect(resolveBlockedCredentialCategory(q({ vault_category: 'messaging' }))).toBe(
+      'messaging',
+    );
+  });
+
+  it('falls back to the dynamic source service_type', () => {
+    // The regression this guards: matchVaultToQuestions blocks a
+    // dynamic_source question purely on service_type and never attaches a
+    // vault_category, so a vault_category-only gate rendered the blocked
+    // question as an ordinary picker with no remedy at all.
+    expect(
+      resolveBlockedCredentialCategory(
+        q({ dynamic_source: { service_type: 'sentry', operation: 'list_projects' } }),
+      ),
+    ).toBe('sentry');
+  });
+
+  it('returns null when neither field is present', () => {
+    expect(resolveBlockedCredentialCategory(q())).toBeNull();
   });
 });

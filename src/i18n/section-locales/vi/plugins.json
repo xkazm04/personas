@@ -41,6 +41,7 @@
     "broadcast_message_label": "Tin nhắn",
     "broadcast_append": "Thêm",
     "broadcast_sending": "Đang gửi…",
+    "broadcast_sending_progress": "Đang gửi… {done}/{total}",
     "broadcast_send_to": "Gửi đến {count}",
     "broadcast_sent_one": "Đã gửi đến {count} phiên",
     "broadcast_sent_other": "Đã gửi đến {count} phiên",

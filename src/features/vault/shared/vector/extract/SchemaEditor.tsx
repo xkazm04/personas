@@ -49,6 +49,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
               onClick={() => setEntities(schema.entities.filter((_, i) => i !== ei))}
               className="p-1.5 rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
               title={sh.extract_remove}
+                  aria-label={sh.extract_remove}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -90,6 +91,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                   }}
                   className="p-1 rounded-card text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   title={sh.extract_remove}
+                  aria-label={sh.extract_remove}
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>

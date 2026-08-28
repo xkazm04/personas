@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} blocs",
       "kb_count_summary": "-- {docs} docs, {chunks} fragments",
       "default_patterns": "Par défaut :",
+      "patterns_replace_defaults": "Ajouter un motif limite l’analyse à celui-ci : les motifs par défaut ci-dessus ne s’appliquent plus.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "distance :",
       "chunk_label": "fragment :",
@@ -13422,6 +13423,20 @@
       "working": "En cours",
       "archive": "Archivée"
     },
+    "span_type": {
+      "execution": "Exécution",
+      "prompt_assembly": "Préparer prompt",
+      "credential_resolution": "Identifiants",
+      "cli_spawn": "Lancement CLI",
+      "tool_call": "Appel d’outil",
+      "protocol_dispatch": "Protocole",
+      "chain_evaluation": "Évaluation de chaîne",
+      "stream_processing": "Flux",
+      "outcome_assessment": "Résultat",
+      "healing_analysis": "Réparation",
+      "pipeline_stage": "Étape du pipeline",
+      "unknown": "Inconnu"
+    },
     "memory_action": {
       "kept": "Conservée",
       "deleted": "Supprimée",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Votre message",
       "broadcast_append": "Ajouter",
       "broadcast_sending": "Envoi…",
+      "broadcast_sending_progress": "Envoi… {done} sur {total}",
       "broadcast_send_to": "Envoyer à {count}",
       "broadcast_sent_one": "Envoyé à {count} session",
       "broadcast_sent_other": "Envoyé à {count} sessions",

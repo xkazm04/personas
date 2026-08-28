@@ -4638,6 +4638,7 @@
       "chunks_label": "{count}টি চাংক",
       "kb_count_summary": "-- {docs}টি ডক, {chunks}টি চাঙ্ক",
       "default_patterns": "ডিফল্ট:",
+      "patterns_replace_defaults": "প্যাটার্ন যোগ করলে স্ক্যান শুধু সেটিতেই সীমিত হয় — উপরের ডিফল্টগুলি আর কাজ করে না।",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "দূরত্ব:",
       "chunk_label": "চাঙ্ক:",
@@ -13422,6 +13423,20 @@
       "working": "কার্যকরী",
       "archive": "সংরক্ষিত"
     },
+    "span_type": {
+      "execution": "এক্সিকিউশন",
+      "prompt_assembly": "প্রম্পট",
+      "credential_resolution": "ক্রেডেনশিয়াল",
+      "cli_spawn": "CLI চালু",
+      "tool_call": "টুল কল",
+      "protocol_dispatch": "প্রোটোকল",
+      "chain_evaluation": "চেইন মূল্যায়ন",
+      "stream_processing": "স্ট্রিম",
+      "outcome_assessment": "ফলাফল",
+      "healing_analysis": "নিরাময়",
+      "pipeline_stage": "পাইপলাইন ধাপ",
+      "unknown": "অজানা"
+    },
     "memory_action": {
       "kept": "রাখা হয়েছে",
       "deleted": "মুছে ফেলা হয়েছে",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "বার্তা",
       "broadcast_append": "যোগ করুন",
       "broadcast_sending": "পাঠানো হচ্ছে…",
+      "broadcast_sending_progress": "পাঠানো হচ্ছে… {total}-এর {done}টি",
       "broadcast_send_to": "{count} টিতে পাঠান",
       "broadcast_sent_one": "{count} টি সেশনে পাঠানো হয়েছে",
       "broadcast_sent_other": "{count} টি সেশনে পাঠানো হয়েছে",

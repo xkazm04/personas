@@ -41,6 +41,7 @@
     "broadcast_message_label": "Nachricht",
     "broadcast_append": "Anhängen",
     "broadcast_sending": "Wird gesendet…",
+    "broadcast_sending_progress": "Wird gesendet… {done} von {total}",
     "broadcast_send_to": "An {count} senden",
     "broadcast_sent_one": "An {count} Sitzung gesendet",
     "broadcast_sent_other": "An {count} Sitzungen gesendet",

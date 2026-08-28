@@ -231,6 +231,20 @@
     "working": "Sementara",
     "archive": "Diarsipkan"
   },
+  "span_type": {
+    "execution": "Eksekusi",
+    "prompt_assembly": "Siapkan prompt",
+    "credential_resolution": "Kredensial",
+    "cli_spawn": "Jalankan CLI",
+    "tool_call": "Panggilan alat",
+    "protocol_dispatch": "Protokol",
+    "chain_evaluation": "Evaluasi rantai",
+    "stream_processing": "Aliran",
+    "outcome_assessment": "Hasil",
+    "healing_analysis": "Pemulihan",
+    "pipeline_stage": "Tahap pipeline",
+    "unknown": "Tidak diketahui"
+  },
   "memory_action": {
     "kept": "Dipertahankan",
     "deleted": "Dihapus",

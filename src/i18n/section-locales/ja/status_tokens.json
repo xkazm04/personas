@@ -231,6 +231,20 @@
     "working": "作業中",
     "archive": "アーカイブ済み"
   },
+  "span_type": {
+    "execution": "実行",
+    "prompt_assembly": "プロンプト",
+    "credential_resolution": "認証情報",
+    "cli_spawn": "CLI 起動",
+    "tool_call": "ツール呼び出し",
+    "protocol_dispatch": "プロトコル",
+    "chain_evaluation": "チェーン評価",
+    "stream_processing": "ストリーム",
+    "outcome_assessment": "結果",
+    "healing_analysis": "自己修復",
+    "pipeline_stage": "パイプライン段階",
+    "unknown": "不明"
+  },
   "memory_action": {
     "kept": "保持",
     "deleted": "削除済み",

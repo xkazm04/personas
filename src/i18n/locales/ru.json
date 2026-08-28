@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} фрагментов",
       "kb_count_summary": "-- {docs} документов, {chunks} фрагментов",
       "default_patterns": "По умолчанию:",
+      "patterns_replace_defaults": "Добавленный шаблон ограничивает сканирование только им — стандартные шаблоны выше больше не действуют.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "расстояние:",
       "chunk_label": "фрагмент:",
@@ -13422,6 +13423,20 @@
       "working": "Рабочая",
       "archive": "В архиве"
     },
+    "span_type": {
+      "execution": "Выполнение",
+      "prompt_assembly": "Промпт",
+      "credential_resolution": "Учётные данные",
+      "cli_spawn": "Запуск CLI",
+      "tool_call": "Вызов инструмента",
+      "protocol_dispatch": "Протокол",
+      "chain_evaluation": "Оценка цепочки",
+      "stream_processing": "Поток",
+      "outcome_assessment": "Итог",
+      "healing_analysis": "Восстановление",
+      "pipeline_stage": "Этап конвейера",
+      "unknown": "Неизвестно"
+    },
     "memory_action": {
       "kept": "Сохранена",
       "deleted": "Удалена",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Сообщение",
       "broadcast_append": "Добавить",
       "broadcast_sending": "Отправка…",
+      "broadcast_sending_progress": "Отправка… {done} из {total}",
       "broadcast_send_to": "Отправить в {count}",
       "broadcast_sent_one": "Отправлено в {count} сеанс",
       "broadcast_sent_other": "Отправлено в {count} сеансов",

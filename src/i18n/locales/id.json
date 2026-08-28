@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} potongan",
       "kb_count_summary": "-- {docs} dokumen, {chunks} potongan",
       "default_patterns": "Pola default",
+      "patterns_replace_defaults": "Menambahkan pola membatasi pemindaian hanya pada pola itu — default di atas tidak lagi berlaku.",
       "add_pattern_placeholder": "Tambah pola…",
       "distance_label": "Jarak:",
       "chunk_label": "Potongan:",
@@ -13422,6 +13423,20 @@
       "working": "Sementara",
       "archive": "Diarsipkan"
     },
+    "span_type": {
+      "execution": "Eksekusi",
+      "prompt_assembly": "Siapkan prompt",
+      "credential_resolution": "Kredensial",
+      "cli_spawn": "Jalankan CLI",
+      "tool_call": "Panggilan alat",
+      "protocol_dispatch": "Protokol",
+      "chain_evaluation": "Evaluasi rantai",
+      "stream_processing": "Aliran",
+      "outcome_assessment": "Hasil",
+      "healing_analysis": "Pemulihan",
+      "pipeline_stage": "Tahap pipeline",
+      "unknown": "Tidak diketahui"
+    },
     "memory_action": {
       "kept": "Dipertahankan",
       "deleted": "Dihapus",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Pesan",
       "broadcast_append": "Tambahkan",
       "broadcast_sending": "Mengirim…",
+      "broadcast_sending_progress": "Mengirim… {done} dari {total}",
       "broadcast_send_to": "Kirim ke {count}",
       "broadcast_sent_one": "Terkirim ke {count} sesi",
       "broadcast_sent_other": "Terkirim ke {count} sesi",

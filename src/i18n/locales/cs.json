@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} sekcí",
       "kb_count_summary": "-- {docs} dokumentů, {chunks} chunků",
       "default_patterns": "Výchozí:",
+      "patterns_replace_defaults": "Přidaný vzor omezí prohledávání jen na něj — výchozí vzory výše se už neuplatní.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "vzdálenost:",
       "chunk_label": "blok:",
@@ -13422,6 +13423,20 @@
       "working": "Pracovní",
       "archive": "Archivovaná"
     },
+    "span_type": {
+      "execution": "Spuštění",
+      "prompt_assembly": "Příprava promptu",
+      "credential_resolution": "Přihlašovací údaje",
+      "cli_spawn": "Spuštění CLI",
+      "tool_call": "Volání nástroje",
+      "protocol_dispatch": "Protokol",
+      "chain_evaluation": "Vyhodnocení řetězce",
+      "stream_processing": "Streamování",
+      "outcome_assessment": "Výsledek",
+      "healing_analysis": "Náprava",
+      "pipeline_stage": "Fáze pipeline",
+      "unknown": "Neznámé"
+    },
     "memory_action": {
       "kept": "Ponecháno",
       "deleted": "Smazáno",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Zpráva",
       "broadcast_append": "Přidat",
       "broadcast_sending": "Odesílání…",
+      "broadcast_sending_progress": "Odesílání… {done} z {total}",
       "broadcast_send_to": "Odeslat do {count}",
       "broadcast_sent_one": "Odesláno do {count} relace",
       "broadcast_sent_other": "Odesláno do {count} relací",

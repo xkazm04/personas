@@ -1,21 +1,6 @@
 import { Brain, Zap } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-export { formatTime };
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 const CATEGORY_DOT: Record<string, string> = {
   observation: 'bg-cyan-500',
@@ -36,7 +21,7 @@ export function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual
           ) : (
             <Zap className="w-2.5 h-2.5 text-amber-400/50" />
           )}
-          <span className="typo-body text-foreground">{formatTime(memory.created_at)}</span>
+          <RelativeTime timestamp={memory.created_at} className="typo-body text-foreground" />
         </div>
       </div>
     </div>

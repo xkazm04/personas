@@ -613,6 +613,7 @@
     "chunks_label": "{count} Abschnitte",
     "kb_count_summary": "-- {docs} Dokumente, {chunks} Chunks",
     "default_patterns": "Standard:",
+    "patterns_replace_defaults": "Ein hinzugefügtes Muster schränkt die Suche darauf ein — die Standardmuster oben gelten dann nicht mehr.",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "Distanz:",
     "chunk_label": "Chunk:",

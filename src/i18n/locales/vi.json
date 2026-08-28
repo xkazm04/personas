@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} đoạn",
       "kb_count_summary": "-- {docs} tài liệu, {chunks} đoạn",
       "default_patterns": "Mặc định:",
+      "patterns_replace_defaults": "Thêm một mẫu sẽ giới hạn việc quét chỉ trong mẫu đó — các mẫu mặc định ở trên không còn áp dụng.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "khoảng cách:",
       "chunk_label": "đoạn:",
@@ -13422,6 +13423,20 @@
       "working": "Đang xử lý",
       "archive": "Đã lưu trữ"
     },
+    "span_type": {
+      "execution": "Thực thi",
+      "prompt_assembly": "Soạn prompt",
+      "credential_resolution": "Thông tin đăng nhập",
+      "cli_spawn": "Khởi chạy CLI",
+      "tool_call": "Gọi công cụ",
+      "protocol_dispatch": "Giao thức",
+      "chain_evaluation": "Đánh giá chuỗi",
+      "stream_processing": "Luồng",
+      "outcome_assessment": "Kết quả",
+      "healing_analysis": "Khắc phục",
+      "pipeline_stage": "Giai đoạn pipeline",
+      "unknown": "Không xác định"
+    },
     "memory_action": {
       "kept": "Đã giữ lại",
       "deleted": "Đã xoá",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Tin nhắn",
       "broadcast_append": "Thêm",
       "broadcast_sending": "Đang gửi…",
+      "broadcast_sending_progress": "Đang gửi… {done}/{total}",
       "broadcast_send_to": "Gửi đến {count}",
       "broadcast_sent_one": "Đã gửi đến {count} phiên",
       "broadcast_sent_other": "Đã gửi đến {count} phiên",

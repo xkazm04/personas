@@ -231,6 +231,20 @@
     "working": "কার্যকরী",
     "archive": "সংরক্ষিত"
   },
+  "span_type": {
+    "execution": "এক্সিকিউশন",
+    "prompt_assembly": "প্রম্পট",
+    "credential_resolution": "ক্রেডেনশিয়াল",
+    "cli_spawn": "CLI চালু",
+    "tool_call": "টুল কল",
+    "protocol_dispatch": "প্রোটোকল",
+    "chain_evaluation": "চেইন মূল্যায়ন",
+    "stream_processing": "স্ট্রিম",
+    "outcome_assessment": "ফলাফল",
+    "healing_analysis": "নিরাময়",
+    "pipeline_stage": "পাইপলাইন ধাপ",
+    "unknown": "অজানা"
+  },
   "memory_action": {
     "kept": "রাখা হয়েছে",
     "deleted": "মুছে ফেলা হয়েছে",

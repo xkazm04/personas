@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} चंक",
       "kb_count_summary": "-- {docs} दस्तावेज़, {chunks} खंड",
       "default_patterns": "डिफ़ॉल्ट:",
+      "patterns_replace_defaults": "पैटर्न जोड़ने पर स्कैन उसी तक सीमित हो जाता है — ऊपर दिए डिफ़ॉल्ट अब लागू नहीं होते।",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "दूरी:",
       "chunk_label": "खंड:",
@@ -13422,6 +13423,20 @@
       "working": "कार्यशील",
       "archive": "संग्रहीत"
     },
+    "span_type": {
+      "execution": "निष्पादन",
+      "prompt_assembly": "प्रॉम्प्ट",
+      "credential_resolution": "क्रेडेंशियल",
+      "cli_spawn": "CLI आरंभ",
+      "tool_call": "टूल कॉल",
+      "protocol_dispatch": "प्रोटोकॉल",
+      "chain_evaluation": "चेन मूल्यांकन",
+      "stream_processing": "स्ट्रीम",
+      "outcome_assessment": "परिणाम",
+      "healing_analysis": "सुधार",
+      "pipeline_stage": "पाइपलाइन चरण",
+      "unknown": "अज्ञात"
+    },
     "memory_action": {
       "kept": "रखा गया",
       "deleted": "हटाया गया",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "संदेश",
       "broadcast_append": "जोड़ें",
       "broadcast_sending": "भेजा जा रहा है…",
+      "broadcast_sending_progress": "भेजा जा रहा है… {total} में से {done}",
       "broadcast_send_to": "{count} को भेजें",
       "broadcast_sent_one": "{count} सत्र को भेजा गया",
       "broadcast_sent_other": "{count} सत्रों को भेजा गया",

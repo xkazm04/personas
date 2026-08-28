@@ -100,3 +100,39 @@ describe('TraceSummary cost tile', () => {
     expect(screen.getByTestId('trace-cost').textContent).toBe('$0.1234');
   });
 });
+
+describe('TraceSummary tokens tile', () => {
+  it('shows the unknown marker when the run was never measured', () => {
+    // The regression this pins: tokens folded with `?? 0` while the cost on the
+    // SAME object stayed nullable, so an aborted run — every abort path calls
+    // finalize(None, None, None, err) — read "Cost -" beside "Tokens 0". One
+    // honest dash and one fabricated measurement for the same missing number.
+    render(
+      <TraceSummary
+        trace={trace({ spans: [span({ input_tokens: null, output_tokens: null })] })}
+        errorCount={0}
+      />,
+    );
+    expect(screen.getByTestId('trace-tokens').textContent).toBe('-');
+  });
+
+  it('shows a measured zero as zero, not as unmeasured', () => {
+    render(
+      <TraceSummary
+        trace={trace({ spans: [span({ input_tokens: 0, output_tokens: 0 })] })}
+        errorCount={0}
+      />,
+    );
+    expect(screen.getByTestId('trace-tokens').textContent).toBe('0');
+  });
+
+  it('sums input and output when both were measured', () => {
+    render(
+      <TraceSummary
+        trace={trace({ spans: [span({ input_tokens: 120, output_tokens: 80 })] })}
+        errorCount={0}
+      />,
+    );
+    expect(screen.getByTestId('trace-tokens').textContent).toContain('200');
+  });
+});

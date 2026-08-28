@@ -613,6 +613,7 @@
     "chunks_label": "{count} фрагментов",
     "kb_count_summary": "-- {docs} документов, {chunks} фрагментов",
     "default_patterns": "По умолчанию:",
+    "patterns_replace_defaults": "Добавленный шаблон ограничивает сканирование только им — стандартные шаблоны выше больше не действуют.",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "расстояние:",
     "chunk_label": "фрагмент:",

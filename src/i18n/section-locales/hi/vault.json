@@ -613,6 +613,7 @@
     "chunks_label": "{count} चंक",
     "kb_count_summary": "-- {docs} दस्तावेज़, {chunks} खंड",
     "default_patterns": "डिफ़ॉल्ट:",
+    "patterns_replace_defaults": "पैटर्न जोड़ने पर स्कैन उसी तक सीमित हो जाता है — ऊपर दिए डिफ़ॉल्ट अब लागू नहीं होते।",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "दूरी:",
     "chunk_label": "खंड:",

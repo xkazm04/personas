@@ -4638,6 +4638,7 @@
       "chunks_label": "{count}チャンク",
       "kb_count_summary": "-- {docs} 件のドキュメント、{chunks} 件のチャンク",
       "default_patterns": "デフォルト:",
+      "patterns_replace_defaults": "パターンを追加するとスキャン対象はそれだけに絞られ、上の既定パターンは適用されなくなります。",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "距離:",
       "chunk_label": "チャンク:",
@@ -13422,6 +13423,20 @@
       "working": "作業中",
       "archive": "アーカイブ済み"
     },
+    "span_type": {
+      "execution": "実行",
+      "prompt_assembly": "プロンプト",
+      "credential_resolution": "認証情報",
+      "cli_spawn": "CLI 起動",
+      "tool_call": "ツール呼び出し",
+      "protocol_dispatch": "プロトコル",
+      "chain_evaluation": "チェーン評価",
+      "stream_processing": "ストリーム",
+      "outcome_assessment": "結果",
+      "healing_analysis": "自己修復",
+      "pipeline_stage": "パイプライン段階",
+      "unknown": "不明"
+    },
     "memory_action": {
       "kept": "保持",
       "deleted": "削除済み",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "メッセージ",
       "broadcast_append": "末尾に追加",
       "broadcast_sending": "送信中…",
+      "broadcast_sending_progress": "送信中… {total} 件中 {done} 件",
       "broadcast_send_to": "{count} 件に送信",
       "broadcast_sent_one": "{count} 件のセッションに送信しました",
       "broadcast_sent_other": "{count} 件のセッションに送信しました",

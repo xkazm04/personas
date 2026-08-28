@@ -4,7 +4,7 @@ import { formatDuration, formatCount } from '@/lib/utils/formatters';
 import { AlertCircle, Activity, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
-import { getSpanTypeConfig } from './traceInspectorTypes';
+import { getSpanTypeConfig, spanTypeLabel } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
@@ -172,7 +172,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                 <div key={span.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-card">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border}`}>
-                      {config.label}
+                      {spanTypeLabel(t, span.span_type)}
                     </span>
                     <span className="typo-code text-foreground">{span.name}</span>
                   </div>

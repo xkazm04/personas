@@ -613,6 +613,7 @@
     "chunks_label": "{count} قسم",
     "kb_count_summary": "-- {docs} مستنداً، {chunks} مقطعاً",
     "default_patterns": "الافتراضي:",
+    "patterns_replace_defaults": "إضافة نمط تقصر الفحص عليه، ولم تعد الأنماط الافتراضية أعلاه سارية.",
     "add_pattern_placeholder": "*.pdf",
     "distance_label": "المسافة:",
     "chunk_label": "المقطع:",

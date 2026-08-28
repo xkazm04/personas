@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} Abschnitte",
       "kb_count_summary": "-- {docs} Dokumente, {chunks} Chunks",
       "default_patterns": "Standard:",
+      "patterns_replace_defaults": "Ein hinzugefügtes Muster schränkt die Suche darauf ein — die Standardmuster oben gelten dann nicht mehr.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "Distanz:",
       "chunk_label": "Chunk:",
@@ -13422,6 +13423,20 @@
       "working": "In Arbeit",
       "archive": "Archiviert"
     },
+    "span_type": {
+      "execution": "Ausführung",
+      "prompt_assembly": "Prompt-Aufbau",
+      "credential_resolution": "Zugangsdaten",
+      "cli_spawn": "CLI-Start",
+      "tool_call": "Werkzeugaufruf",
+      "protocol_dispatch": "Protokoll",
+      "chain_evaluation": "Kettenauswertung",
+      "stream_processing": "Streaming",
+      "outcome_assessment": "Ergebnis",
+      "healing_analysis": "Selbstheilung",
+      "pipeline_stage": "Pipeline-Phase",
+      "unknown": "Unbekannt"
+    },
     "memory_action": {
       "kept": "Behalten",
       "deleted": "Gelöscht",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Nachricht",
       "broadcast_append": "Anhängen",
       "broadcast_sending": "Wird gesendet…",
+      "broadcast_sending_progress": "Wird gesendet… {done} von {total}",
       "broadcast_send_to": "An {count} senden",
       "broadcast_sent_one": "An {count} Sitzung gesendet",
       "broadcast_sent_other": "An {count} Sitzungen gesendet",

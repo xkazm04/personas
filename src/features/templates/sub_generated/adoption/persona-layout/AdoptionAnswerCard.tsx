@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Check, Power } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
@@ -12,6 +12,7 @@ import {
   isStackable,
   resolveStackableOptions,
 } from '../questionnaire/questionnaireHelpers';
+import { useQuestionnaireKeyboardNav } from '../questionnaire/useQuestionnaireKeyboardNav';
 
 interface AdoptionAnswerCardProps {
   /** The dimension whose questions this card is presenting. */
@@ -124,19 +125,60 @@ export function AdoptionAnswerCard({
     if (idx >= 0) setActiveIdx(idx);
   }, [pinnedQuestionId, orderedQuestions]);
 
-  if (orderedQuestions.length === 0) {
+  // Derived BEFORE the empty-questions bail so the keyboard hook below sits
+  // above every early return — hooks cannot be called conditionally. Each
+  // derivation therefore tolerates an undefined active question.
+  const activeQuestion = orderedQuestions[activeIdx] ?? orderedQuestions[0];
+  const isBlocked = !!activeQuestion && blockedQuestionIds.has(activeQuestion.id);
+  const isAutoDetected = !!activeQuestion && autoDetectedIds.has(activeQuestion.id);
+  const answer = activeQuestion ? (userAnswers[activeQuestion.id] ?? '') : '';
+  const options = useMemo(
+    () =>
+      activeQuestion
+        ? resolveStackableOptions(activeQuestion, filteredOptions?.[activeQuestion.id])
+        : [],
+    [activeQuestion, filteredOptions],
+  );
+  const stackable = !!activeQuestion && isStackable(activeQuestion, options.length);
+
+  const goTo = useCallback(
+    (idx: number) => {
+      const clamped = Math.max(0, Math.min(orderedQuestions.length - 1, idx));
+      const target = orderedQuestions[clamped];
+      if (!target) return;
+      setActiveIdx(clamped);
+      onQuestionChange?.(target.id);
+    },
+    [orderedQuestions, onQuestionChange],
+  );
+  const goNext = useCallback(() => goTo(activeIdx + 1), [goTo, activeIdx]);
+  const goPrev = useCallback(() => goTo(activeIdx - 1), [goTo, activeIdx]);
+  // Enter only ever advances here: the card has no submit affordance of its
+  // own (the adoption wizard owns that), so `canSubmit` stays false and
+  // `onSubmit` is never reached.
+  const noSubmit = useCallback(() => {}, []);
+
+  // Digits 1-9 pick a stacked option, Enter advances, arrows step between the
+  // dim's questions — the same shortcuts the questionnaire has always
+  // implemented but which nothing mounted once this card became the live
+  // answering surface.
+  useQuestionnaireKeyboardNav({
+    currentQuestion: activeQuestion,
+    currentOptions: options,
+    currentIsStackable: stackable,
+    isCurrentBlocked: isBlocked,
+    currentAnswered: !!answer,
+    isAtEnd: activeIdx >= orderedQuestions.length - 1,
+    canSubmit: false,
+    next: goNext,
+    prev: goPrev,
+    onSubmit: noSubmit,
+    onAnswerUpdated,
+  });
+
+  if (!activeQuestion) {
     return null;
   }
-
-  const activeQuestion = orderedQuestions[activeIdx] ?? orderedQuestions[0]!;
-  const isBlocked = blockedQuestionIds.has(activeQuestion.id);
-  const isAutoDetected = autoDetectedIds.has(activeQuestion.id);
-  const answer = userAnswers[activeQuestion.id] ?? '';
-  const options = resolveStackableOptions(
-    activeQuestion,
-    filteredOptions?.[activeQuestion.id],
-  );
-  const stackable = isStackable(activeQuestion, options.length);
 
   const unansweredCount = orderedQuestions.filter((q) => !userAnswers[q.id]).length;
   const allAnswered = unansweredCount === 0;
@@ -180,11 +222,7 @@ export function AdoptionAnswerCard({
       )}
       <button
         type="button"
-        onClick={() => {
-          const next = Math.max(0, activeIdx - 1);
-          setActiveIdx(next);
-          onQuestionChange?.(orderedQuestions[next]!.id);
-        }}
+        onClick={goPrev}
         disabled={activeIdx === 0}
         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
       >
@@ -208,11 +246,7 @@ export function AdoptionAnswerCard({
       {activeIdx < orderedQuestions.length - 1 ? (
         <button
           type="button"
-          onClick={() => {
-            const next = Math.min(orderedQuestions.length - 1, activeIdx + 1);
-            setActiveIdx(next);
-            onQuestionChange?.(orderedQuestions[next]!.id);
-          }}
+          onClick={goNext}
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
         >
           {t.templates.adopt_modal.next}

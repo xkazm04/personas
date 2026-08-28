@@ -4638,6 +4638,7 @@
       "chunks_label": "{count} fragmentos",
       "kb_count_summary": "— {docs} docs, {chunks} fragmentos",
       "default_patterns": "Predeterminado:",
+      "patterns_replace_defaults": "Añadir un patrón limita el análisis solo a él: los predeterminados de arriba dejan de aplicarse.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "distancia:",
       "chunk_label": "fragmento:",
@@ -13422,6 +13423,20 @@
       "working": "En curso",
       "archive": "Archivada"
     },
+    "span_type": {
+      "execution": "Ejecución",
+      "prompt_assembly": "Preparar prompt",
+      "credential_resolution": "Credenciales",
+      "cli_spawn": "Inicio de CLI",
+      "tool_call": "Llamada a herramienta",
+      "protocol_dispatch": "Protocolo",
+      "chain_evaluation": "Evaluación de cadena",
+      "stream_processing": "Flujo",
+      "outcome_assessment": "Resultado",
+      "healing_analysis": "Reparación",
+      "pipeline_stage": "Etapa del proceso",
+      "unknown": "Desconocido"
+    },
     "memory_action": {
       "kept": "Conservada",
       "deleted": "Eliminada",
@@ -13534,6 +13549,7 @@
       "broadcast_message_label": "Mensaje",
       "broadcast_append": "Añadir",
       "broadcast_sending": "Enviando…",
+      "broadcast_sending_progress": "Enviando… {done} de {total}",
       "broadcast_send_to": "Enviar a {count}",
       "broadcast_sent_one": "Enviado a {count} sesión",
       "broadcast_sent_other": "Enviado a {count} sesiones",

@@ -4944,6 +4944,7 @@
       "scanned_pages_tooltip": "These pages are images with no text layer, so their content is not searchable. Use an OCR-processed copy to include them.",
       "kb_count_summary": "-- {docs} docs, {chunks} chunks",
       "default_patterns": "Default:",
+      "patterns_replace_defaults": "Adding a pattern narrows the scan to it — the defaults above no longer apply.",
       "add_pattern_placeholder": "*.pdf",
       "distance_label": "distance:",
       "chunk_label": "chunk:",
@@ -13677,6 +13678,20 @@
       "working": "Working",
       "archive": "Archived"
     },
+    "span_type": {
+      "execution": "Execution",
+      "prompt_assembly": "Prompt",
+      "credential_resolution": "Credentials",
+      "cli_spawn": "CLI Spawn",
+      "tool_call": "Tool Call",
+      "protocol_dispatch": "Protocol",
+      "chain_evaluation": "Chain Eval",
+      "stream_processing": "Stream",
+      "outcome_assessment": "Outcome",
+      "healing_analysis": "Healing",
+      "pipeline_stage": "Pipeline Stage",
+      "unknown": "Unknown"
+    },
     "memory_action": {
       "kept": "Kept",
       "deleted": "Deleted",
@@ -13789,6 +13804,7 @@
       "broadcast_message_label": "Message",
       "broadcast_append": "Append",
       "broadcast_sending": "Sending…",
+      "broadcast_sending_progress": "Sending… {done} of {total}",
       "broadcast_send_to": "Send to {count}",
       "broadcast_sent_one": "Sent to {count} session",
       "broadcast_sent_other": "Sent to {count} sessions",
