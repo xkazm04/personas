@@ -865,11 +865,12 @@ pub fn resolve_effective_config(
         .home_team_id
         .as_deref()
         .and_then(|tid| team_repo::get_by_id(&state.db, tid).ok());
-    Ok(config_merge::resolve_effective_config(
-        &state.db,
-        &persona,
-        workspace.as_ref(),
-    ))
+    // `.redacted()` — the resolved auth token is a live credential (Ollama API
+    // key, LiteLLM master key, custom bearer). Everything returned here is
+    // serialized into the webview, so it must not carry one; the panel's `mask`
+    // prop only bullets it at paint time. The runner keeps calling the
+    // un-redacted resolver.
+    Ok(config_merge::resolve_effective_config(&state.db, &persona, workspace.as_ref()).redacted())
 }
 
 /// Resolve effective model config for many personas in a single IPC call.
@@ -910,9 +911,12 @@ pub fn resolve_effective_config_bulk(
             .home_team_id
             .as_deref()
             .and_then(|tid| team_by_id.get(tid).copied());
-        out.push(config_merge::resolve_effective_config_with_globals(
-            persona, workspace, &ctx,
-        ));
+        // Redacted for the same reason as the single-persona command above:
+        // this vector crosses the IPC boundary into the webview.
+        out.push(
+            config_merge::resolve_effective_config_with_globals(persona, workspace, &ctx)
+                .redacted(),
+        );
     }
     Ok(out)
 }

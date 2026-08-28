@@ -55,6 +55,39 @@ pub struct EffectiveModelConfig {
     pub prompt_cache_policy: ConfigField<String>,
 }
 
+/// What `EffectiveModelConfig::redacted` substitutes for a resolved auth token.
+///
+/// A fixed, non-empty marker: the panel needs to know a token WAS resolved (and
+/// from which tier) to render the row honestly, and `None` would spell that the
+/// same way as "no credential configured anywhere".
+pub const REDACTED_AUTH_TOKEN: &str = "[redacted]";
+
+impl EffectiveModelConfig {
+    /// Drop the cleartext auth token, keeping only whether one resolved and
+    /// which tier supplied it.
+    ///
+    /// The cascade itself must keep resolving the real secret — the runner
+    /// rebuilds the persona's model profile out of this struct
+    /// (`src/engine/runner/mod.rs`) and would otherwise send `[redacted]` as a
+    /// bearer token. What must never leave the process is the VALUE: this
+    /// struct is serialized to the webview by the `resolve_effective_config` /
+    /// `resolve_effective_config_bulk` commands, where the Ollama API key /
+    /// LiteLLM master key / custom bearer lands in the IPC payload, in the
+    /// React props tree (readable in DevTools), and in anything that
+    /// serializes a component tree. The `mask` prop on `EffectiveConfigPanel`'s
+    /// auth-token row only bullets it at PAINT time, which is cosmetic.
+    ///
+    /// So: every path that hands this config to the frontend calls this; no
+    /// path that feeds the runner does.
+    #[must_use]
+    pub fn redacted(mut self) -> Self {
+        if self.auth_token.value.is_some() {
+            self.auth_token.value = Some(REDACTED_AUTH_TOKEN.to_string());
+        }
+        self
+    }
+}
+
 /// Global-tier config inputs, fetched once from `app_settings` and reused
 /// across many persona resolutions.
 ///
@@ -409,5 +442,48 @@ mod tests {
         assert!(result.value.is_none());
         assert_eq!(result.source, ConfigSource::Default);
         assert!(!result.is_overridden);
+    }
+
+    fn config_with_auth(auth: ConfigField<String>) -> EffectiveModelConfig {
+        EffectiveModelConfig {
+            persona_id: "p1".into(),
+            persona_name: "P".into(),
+            workspace_name: None,
+            model: resolve_string_field(Some("m".into()), None, None),
+            provider: resolve_string_field(Some("ollama".into()), None, None),
+            base_url: resolve_string_field(None, None, None),
+            auth_token: auth,
+            max_budget_usd: resolve_f64_field(None, None, None),
+            max_turns: resolve_i32_field(None, None, None),
+            prompt_cache_policy: resolve_string_field(None, None, None),
+        }
+    }
+
+    #[test]
+    fn test_redacted_replaces_cleartext_but_keeps_provenance() {
+        let config = config_with_auth(resolve_string_field(
+            None,
+            None,
+            Some("sk-live-super-secret".into()),
+        ));
+        let redacted = config.redacted();
+        assert_eq!(
+            redacted.auth_token.value.as_deref(),
+            Some(REDACTED_AUTH_TOKEN)
+        );
+        // Provenance must survive — the panel renders which tier supplied it.
+        assert_eq!(redacted.auth_token.source, ConfigSource::Global);
+        assert!(!redacted.auth_token.is_overridden);
+        // Non-secret fields are untouched.
+        assert_eq!(redacted.provider.value.as_deref(), Some("ollama"));
+    }
+
+    #[test]
+    fn test_redacted_keeps_absent_token_absent() {
+        // "no credential anywhere" must not be spelled as "a token exists".
+        let config = config_with_auth(resolve_string_field(None, None, None));
+        let redacted = config.redacted();
+        assert!(redacted.auth_token.value.is_none());
+        assert_eq!(redacted.auth_token.source, ConfigSource::Default);
     }
 }
