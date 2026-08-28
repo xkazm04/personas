@@ -13,18 +13,25 @@ import {
   VolumeX, ListTree, Zap, Repeat, Flag, Database, BellOff, GraduationCap,
   ShieldCheck, Swords, Rocket, Flame, Scale, Wrench, Handshake, ScanSearch,
   ShieldHalf, MessagesSquare, Sparkles, LineChart, Radar, Workflow, Activity,
-  LibraryBig, Palette, ConciergeBell, Target, Brain, Users, BookOpenCheck,
-  NotebookPen, type LucideIcon,
+  LibraryBig, Palette, ConciergeBell, Feather, Brain, type LucideIcon,
 } from "lucide-react";
+import { EFFORT_OPTIONS, type EffortOption } from "@/lib/models/modelCatalog";
 import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types";
 
 /** The persona-core accent (also the model-tier accent). */
 export const ACCENT = "#60A5FA";
 
-// -- Archetype icon resolver (carried over from the retired Foundry) ---------
-const CORE_ICONS: Record<string, LucideIcon> = {
+// -- Archetype icon resolver -------------------------------------------------
+/** The `icon` names the shipped archetype catalog actually uses
+ *  (`scripts/templates/_archetypes.json`), and nothing else. Five further
+ *  entries (Target, Brain, Users, BookOpenCheck, NotebookPen) were residue of
+ *  the retired Foundry: no archetype referenced them, so they only pulled dead
+ *  lucide imports into the chunk. `personaCore.test.tsx` pins the map to the
+ *  shipped catalog in BOTH directions, so a new archetype icon fails loudly
+ *  here instead of silently falling back to Sparkles. */
+export const CORE_ICONS: Record<string, LucideIcon> = {
   ShieldCheck, LineChart, Radar, Workflow, Activity, LibraryBig, Palette,
-  Rocket, ConciergeBell, Target, Brain, Users, BookOpenCheck, NotebookPen,
+  Rocket, ConciergeBell,
 };
 export function coreIcon(name: string): LucideIcon {
   return CORE_ICONS[name] ?? Sparkles;
@@ -100,15 +107,34 @@ export const ARCHETYPE_TRAITS: Record<string, string[]> = {
 };
 
 // -- Engine tiers ------------------------------------------------------------
-export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string }[] = [
-  { id: "haiku", label: "Haiku", blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
-  { id: "sonnet", label: "Sonnet", blurb: "The everyday default — strong reasoning at moderate cost" },
-  { id: "opus", label: "Opus", blurb: "Deepest reasoning for hard, high-stakes work" },
+/** A model tier, enumerated ONCE. The icon used to live in ConfigTiles' own
+ *  `MODEL_ICON` map and the prompt word in a ternary inside usePersonaCore, so
+ *  the same three tiers were written out in three files and a fourth tier would
+ *  have had to be added to all three (with only this one failing a test). */
+export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string; icon: LucideIcon; promptWord: string }[] = [
+  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
+  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", blurb: "The everyday default — strong reasoning at moderate cost" },
+  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", blurb: "Deepest reasoning for hard, high-stakes work" },
 ];
 
-export const EFFORT_TIERS: { id: EffortLevel; label: string; blurb: string }[] = [
-  { id: "low", label: "Low", blurb: "Minimal deliberation — quickest, cheapest responses" },
-  { id: "medium", label: "Medium", blurb: "Balanced reasoning — the default" },
-  { id: "high", label: "High", blurb: "Extended reasoning for tricky problems" },
-  { id: "xhigh", label: "Max", blurb: "Maximum reasoning depth — slowest, most thorough" },
-];
+export function modelTier(id: ModelTier) {
+  return MODEL_TIERS.find((m) => m.id === id) ?? MODEL_TIERS[1]!;
+}
+
+/** Blurbs are this surface's own copy; the ID LIST AND THE LABEL are not.
+ *  `modelCatalog` owns the effort vocabulary the backend is wired to, so the
+ *  tiers are DERIVED from `EFFORT_OPTIONS` rather than re-typed here — labels
+ *  included, via each option's `labelKey`. The re-typed copy had drifted
+ *  (`xhigh` was labelled "Max" here, and hardcoded English besides), and a
+ *  fifth level added to modelCatalog would simply never have appeared in this
+ *  modal. The app-wide English label for `xhigh` is now "Max" — this is that
+ *  key's first real call site, and it had been left holding the raw id. */
+const EFFORT_BLURBS: Record<EffortLevel, string> = {
+  low: "Minimal deliberation — quickest, cheapest responses",
+  medium: "Balanced reasoning — the default",
+  high: "Extended reasoning for tricky problems",
+  xhigh: "Maximum reasoning depth — slowest, most thorough",
+};
+
+export const EFFORT_TIERS: { id: EffortLevel; labelKey: EffortOption["labelKey"]; blurb: string }[] =
+  EFFORT_OPTIONS.map((o) => ({ id: o.id, labelKey: o.labelKey, blurb: EFFORT_BLURBS[o.id] }));

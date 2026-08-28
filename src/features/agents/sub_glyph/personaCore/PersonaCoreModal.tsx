@@ -6,11 +6,14 @@
  *  is the "Codex" design (won the /prototype round): an ordered, icon-forward
  *  3-column grid — Character · Configuration · Mentality.
  */
-import { Suspense } from "react";
+import { Suspense, useCallback } from "react";
 import { BaseModal } from "@/features/shared/components/modals";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import Button from "@/features/shared/components/buttons/Button";
+import { useTranslation } from "@/i18n/useTranslation";
+import { getAnalyticsSink } from "@/lib/analytics/sink";
 import { RotateCcw } from "lucide-react";
+import { personaCoreSelectionLabel } from "./usePersonaCore";
 import type { PersonaCore } from "./types";
 import { lazyRetry } from "@/lib/lazyRetry";
 
@@ -51,12 +54,30 @@ function CodexGhost() {
 }
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+
+  // Close is the one moment the whole selection is settled and still in hand —
+  // after this the core leaves the component tree only as prose folded into the
+  // build intent, which is why nothing downstream could ever answer "which
+  // archetypes and traits do people actually pick?". Fires on every exit route
+  // (Done, Esc, backdrop) so an ABANDONED open is recorded too, and routes
+  // through getAnalyticsSink() rather than Sentry directly so the user's
+  // telemetry switch governs it like every other usage event.
+  const handleClose = useCallback(() => {
+    getAnalyticsSink().interaction({
+      category: "persona_core",
+      action: core.configured ? "configured" : "dismissed",
+      label: personaCoreSelectionLabel(core.state),
+    });
+    onClose();
+  }, [core.configured, core.state, onClose]);
+
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} titleId="persona-core-modal" size="6xl" maxWidthClass="max-w-[86rem]">
+    <BaseModal isOpen={isOpen} onClose={handleClose} titleId="persona-core-modal" size="6xl" maxWidthClass="max-w-[86rem]">
       <div className="flex flex-col gap-4 p-5" data-testid="persona-core-modal">
         <div className="flex flex-col gap-0.5">
-          <h2 id="persona-core-modal" className="typo-heading-lg text-foreground">Persona core</h2>
-          <span className="typo-caption">Who this agent is under the task — its disposition, character, and the model that runs it.</span>
+          <h2 id="persona-core-modal" className="typo-heading-lg text-foreground">{t.agents.core_title}</h2>
+          <span className="typo-caption">{t.agents.core_subtitle}</span>
         </div>
 
         {core.loading ? (
@@ -67,7 +88,9 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
           // Without one here that failure escapes the modal and takes the whole
           // compose surface down; with it, the failure occupies only the
           // territory the codex would have and "Try again" closes back to the
-          // build surface the user came from.
+          // build surface the user came from. Deliberately the RAW onClose: a
+          // boundary reset is crash recovery, not a user closing the modal, and
+          // recording a selection the user never saw would be noise.
           <ErrorBoundary name="PersonaCore" onReset={onClose}>
             <Suspense fallback={<CodexGhost />}>
               <PersonaCoreCodex core={core} />
@@ -82,9 +105,9 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
             disabled={!core.configured}
             className="inline-flex items-center gap-1.5 typo-caption text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:text-foreground/80"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Reset to defaults
+            <RotateCcw className="w-3.5 h-3.5" /> {t.agents.core_reset}
           </button>
-          <Button variant="primary" size="sm" onClick={onClose} data-testid="persona-core-done">Done</Button>
+          <Button variant="primary" size="sm" onClick={handleClose} data-testid="persona-core-done">{t.common.done}</Button>
         </div>
       </div>
     </BaseModal>

@@ -1247,6 +1247,22 @@
     "glyph_cap_trigger_manual": "Manual",
     "glyph_cap_trigger_polling": "Polling every {seconds}s",
     "glyph_launch": "Launch",
+    "core_title": "Persona core",
+    "core_subtitle": "Who this agent is under the task — its disposition, character, and the model that runs it.",
+    "core_custom": "Custom core",
+    "core_reset": "Reset to defaults",
+    "core_col_character": "Character",
+    "core_col_configuration": "Configuration",
+    "core_col_mentality": "Mentality",
+    "core_traits_one": "1 trait",
+    "core_traits_other": "{count} traits",
+    "core_traits_restore": "Restore my traits",
+    "core_disposition": "Disposition",
+    "core_disposition_low": "Cautious",
+    "core_disposition_high": "Bold",
+    "core_conflict_label": "In disagreement",
+    "core_model_label": "Model",
+    "core_effort_label": "Reasoning effort",
     "glyph_intent_placeholder": "e.g. Summarize my unread emails each morning",
     "glyph_dim_label": {
       "trigger": "When",
@@ -17574,7 +17590,7 @@
     "effort_low": "Low",
     "effort_medium": "Medium",
     "effort_high": "High",
-    "effort_xhigh": "xhigh"
+    "effort_xhigh": "Max"
   },
   "process_labels": {
     "n8n_transform": "n8n Transform",

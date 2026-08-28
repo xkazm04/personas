@@ -1199,6 +1199,22 @@
     "glyph_cap_trigger_manual": "Manual",
     "glyph_cap_trigger_polling": "Polling tiap {seconds} dtk",
     "glyph_launch": "Luncurkan",
+    "core_title": "Inti persona",
+    "core_subtitle": "Siapa agen ini di balik tugasnya — watak, karakter, dan model yang menjalankannya.",
+    "core_custom": "Inti khusus",
+    "core_reset": "Kembalikan ke bawaan",
+    "core_col_character": "Karakter",
+    "core_col_configuration": "Konfigurasi",
+    "core_col_mentality": "Mentalitas",
+    "core_traits_one": "1 sifat",
+    "core_traits_other": "{count} sifat",
+    "core_traits_restore": "Kembalikan sifat saya",
+    "core_disposition": "Watak",
+    "core_disposition_low": "Hati-hati",
+    "core_disposition_high": "Berani",
+    "core_conflict_label": "Saat berbeda pendapat",
+    "core_model_label": "Model bahasa",
+    "core_effort_label": "Kedalaman penalaran",
     "glyph_intent_placeholder": "mis. Rangkum email saya yang belum dibaca tiap pagi",
     "glyph_dim_label": {
       "trigger": "Kapan",
@@ -17282,7 +17298,7 @@
     "effort_low": "Low",
     "effort_medium": "Medium",
     "effort_high": "High",
-    "effort_xhigh": "Xhigh"
+    "effort_xhigh": "Maksimal"
   },
   "process_labels": {
     "n8n_transform": "Transformasi n8n",

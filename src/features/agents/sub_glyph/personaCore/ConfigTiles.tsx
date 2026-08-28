@@ -1,14 +1,13 @@
 /** ConfigTiles — icon-forward, low-text configuration controls. Conflict / model
  *  are icon TILES, effort is an ascending stepped METER — symbols and alignment
  *  instead of segmented rows of words. (Disposition uses PolaritySlider.) */
-import { Feather, Sparkles, Brain, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
+import { useTranslation } from "@/i18n/useTranslation";
 import { ACCENT, CONFLICT_STYLES, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
-import type { EffortLevel, ModelTier, PersonaCore } from "./types";
-
-const MODEL_ICON: Record<ModelTier, LucideIcon> = { haiku: Feather, sonnet: Sparkles, opus: Brain };
+import type { PersonaCore } from "./types";
 
 /** A single icon tile — the shared atom for the tile groups. */
 function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb }: {
@@ -42,7 +41,7 @@ export function ModelTiles({ core }: { core: PersonaCore }) {
   return (
     <div className="flex gap-1.5">
       {MODEL_TIERS.map((m) => (
-        <IconTile key={m.id} icon={MODEL_ICON[m.id]} label={m.label} blurb={m.blurb} color={ACCENT}
+        <IconTile key={m.id} icon={m.icon} label={m.label} blurb={m.blurb} color={ACCENT}
           active={core.state.model === m.id} onClick={() => core.setModel(m.id)} testid={`core-model-${m.id}`} />
       ))}
     </div>
@@ -51,6 +50,7 @@ export function ModelTiles({ core }: { core: PersonaCore }) {
 
 /** Effort as an ascending 4-step meter — the bars grow with reasoning depth. */
 export function EffortMeter({ core }: { core: PersonaCore }) {
+  const { t } = useTranslation();
   const idx = EFFORT_TIERS.findIndex((e) => e.id === core.state.effort);
   const purple = "#a78bfa";
   return (
@@ -60,10 +60,18 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
         const h = 12 + i * 6; // ascending
         return (
           <Tooltip key={e.id} content={e.blurb}>
-            <button type="button" onClick={() => core.setEffort(e.id as EffortLevel)} data-testid={`core-effort-${e.id}`} aria-pressed={core.state.effort === e.id}
+            <button type="button" onClick={() => core.setEffort(e.id)} data-testid={`core-effort-${e.id}`} aria-pressed={core.state.effort === e.id}
               className="flex-1 flex flex-col items-center gap-1 cursor-pointer group">
-              <span className="w-full rounded-sm transition-colors" style={{ height: h, background: on ? colorWithAlpha(purple, core.state.effort === e.id ? 0.9 : 0.5) : "rgba(255,255,255,0.08)" }} />
-              <span className={`typo-body leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{e.label}</span>
+              {/* The OFF bar is a semantic class, not an inline literal-white
+                  fill: an inline style outranks the app's [data-theme^="light"]
+                  overrides, so the unlit steps painted white-on-white in light
+                  themes. The lit bars stay inline — they are tinted from the
+                  meter's own accent, which no class can express. */}
+              <span
+                className={`w-full rounded-sm transition-colors ${on ? "" : "bg-secondary/60"}`}
+                style={{ height: h, background: on ? colorWithAlpha(purple, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
+              />
+              <span className={`typo-body leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{t.models[`effort_${e.id}`]}</span>
             </button>
           </Tooltip>
         );

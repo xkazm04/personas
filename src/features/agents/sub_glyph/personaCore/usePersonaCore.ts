@@ -18,7 +18,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { listArchetypes } from "@/api/archetypes";
 import { DEFAULT_EFFORT } from "@/lib/models/modelCatalog";
 import { silentCatch } from "@/lib/silentCatch";
-import { CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, traitById } from "./catalog";
+import { CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, modelTier, traitById } from "./catalog";
 import type { Archetype, EffortLevel, ModelTier, PersonaCore, PersonaCoreState } from "./types";
 
 const DEFAULT_CORE: PersonaCoreState = {
@@ -61,6 +61,34 @@ function archetypeStance(a: Archetype): string | null {
   return coreString(a, "stance");
 }
 
+/** The persona core, flattened into one analytics label.
+ *
+ *  This surface is where a user states who their agent IS, and until now every
+ *  choice was thrown away at launch after being folded into a prompt string —
+ *  nothing recorded which archetype was picked, which traits were toggled,
+ *  whether the preset was accepted or edited, or whether the modal was opened
+ *  and abandoned. The trait grid meanwhile orders itself by a hand-derived
+ *  corpus frequency that real selection data could corroborate or replace.
+ *
+ *  Everything here is a CATALOG IDENTIFIER or a count — archetype ids, trait
+ *  ids, a conflict-style id, a model tier, an effort level. No persona name, no
+ *  intent text, no user-authored content, matching the privacy contract the
+ *  analytics module states for itself. Trait ids are sorted so the same
+ *  selection produces the same label regardless of click order.
+ *
+ *  Exported as a pure function so the contract is testable without a DOM.
+ */
+export function personaCoreSelectionLabel(s: PersonaCoreState): string {
+  return [
+    `archetype=${s.archetypeId ?? "none"}`,
+    `traits=${s.traits.length}`,
+    `trait_ids=${[...s.traits].sort().join("|") || "none"}`,
+    `conflict=${s.conflictStyle ?? "none"}`,
+    `model=${s.model}`,
+    `effort=${s.effort}`,
+  ].join(";");
+}
+
 export function usePersonaCore(resetKey: string | null): PersonaCore {
   const [loading, setLoading] = useState(true);
   const [archetypes, setArchetypes] = useState<Archetype[]>([]);
@@ -70,6 +98,11 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
   const [loadFailed, setLoadFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<PersonaCoreState>(DEFAULT_CORE);
+  // The hand-picked trait set the last applyPreset threw away, held so the user
+  // can get it back. Not part of PersonaCoreState: it is transient repair
+  // material, never part of what the core IS, and must not make `configured`
+  // true on its own.
+  const [discardedTraits, setDiscardedTraits] = useState<string[] | null>(null);
   const configured = useMemo(() => !isDefaultCore(state), [state]);
 
   useEffect(() => {
@@ -97,29 +130,49 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
   useEffect(() => {
     if (resetKey !== null) return;
     setState(DEFAULT_CORE);
+    setDiscardedTraits(null);
   }, [resetKey]);
 
   const applyPreset = useCallback((a: Archetype) => {
+    // Preload the archetype's dominant traits so a snapshot lands as a complete
+    // character. A snapshot is a fresh starting point, so this REPLACES the
+    // current trait set (falls back to keeping it only for an unmapped
+    // archetype) — but replacing is not the same as destroying. Remember what
+    // was thrown away so `restoreTraits` can hand it back: the mentality cards
+    // sit one click from the trait grid in the same modal, carry no warning,
+    // and a curious click used to silently cost a minute of deliberate work.
+    const preloaded = ARCHETYPE_TRAITS[a.id];
+    setDiscardedTraits(preloaded && state.traits.length > 0 ? state.traits : null);
     setState((prev) => ({
       ...prev,
       archetypeId: a.id,
       disposition: coreNumber(a, "riskTolerance", prev.disposition),
       conflictStyle: coreString(a, "conflictStyle") ?? prev.conflictStyle,
-      // Preload the archetype's dominant traits so a snapshot lands as a complete
-      // character. A snapshot is a fresh starting point, so this replaces the
-      // current trait set (falls back to keeping it only for an unmapped archetype).
-      traits: ARCHETYPE_TRAITS[a.id] ?? prev.traits,
+      traits: preloaded ?? prev.traits,
     }));
-  }, []);
+  }, [state.traits]);
+
+  // Keeps the archetype the user just picked — they clicked the card on
+  // purpose; it is only the traits they did not mean to lose.
+  const restoreTraits = useCallback(() => {
+    if (!discardedTraits) return;
+    setState((p) => ({ ...p, traits: discardedTraits }));
+    setDiscardedTraits(null);
+  }, [discardedTraits]);
 
   const setDisposition = useCallback((v: number) => setState((p) => ({ ...p, disposition: v })), []);
   const setConflict = useCallback((id: string | null) => setState((p) => ({ ...p, conflictStyle: p.conflictStyle === id ? null : id })), []);
-  const toggleTrait = useCallback((id: string) => setState((p) => ({
-    ...p, traits: p.traits.includes(id) ? p.traits.filter((t) => t !== id) : [...p.traits, id],
-  })), []);
+  const toggleTrait = useCallback((id: string) => {
+    // Editing the trait set is the user accepting it: the offer to put the old
+    // one back would now silently undo THIS edit too, so it is withdrawn.
+    setDiscardedTraits(null);
+    setState((p) => ({
+      ...p, traits: p.traits.includes(id) ? p.traits.filter((t) => t !== id) : [...p.traits, id],
+    }));
+  }, []);
   const setModel = useCallback((m: ModelTier) => setState((p) => ({ ...p, model: m })), []);
   const setEffort = useCallback((e: EffortLevel) => setState((p) => ({ ...p, effort: e })), []);
-  const reset = useCallback(() => setState(DEFAULT_CORE), []);
+  const reset = useCallback(() => { setState(DEFAULT_CORE); setDiscardedTraits(null); }, []);
 
   const preset = useMemo(() => archetypes.find((a) => a.id === state.archetypeId) ?? null, [archetypes, state.archetypeId]);
 
@@ -134,13 +187,17 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
     );
     if (state.conflictStyle && CONFLICT_DIRECTIVE[state.conflictStyle]) lines.push(CONFLICT_DIRECTIVE[state.conflictStyle]!);
     for (const id of state.traits) { const t = traitById(id); if (t) lines.push(t.directive); }
-    const modelWord = state.model === "haiku" ? "Haiku (fast)" : state.model === "opus" ? "Opus (max reasoning)" : "Sonnet (balanced)";
-    lines.push(`Model tier: ${modelWord}; reasoning effort: ${state.effort}`);
+    // The prompt word comes off MODEL_TIERS, not a ternary: the same three
+    // tiers used to be spelled out here, in ConfigTiles' icon map and in the
+    // catalog, so a fourth tier had to be added in three places and only one
+    // of them was under test.
+    lines.push(`Model tier: ${modelTier(state.model).promptWord}; reasoning effort: ${state.effort}`);
     return `\n---\nPersona core:\n${lines.map((l) => `- ${l}`).join("\n")}`;
   }, [configured, state, preset]);
 
   return {
     loading, archetypes, loadFailed, retryLoad, state, configured, preset,
-    applyPreset, setDisposition, setConflict, toggleTrait, setModel, setEffort, reset, launchAugmentation,
+    applyPreset, discardedTraits, restoreTraits,
+    setDisposition, setConflict, toggleTrait, setModel, setEffort, reset, launchAugmentation,
   };
 }

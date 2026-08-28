@@ -10,23 +10,25 @@
  *  and its avatar (MentalityCard falls back to a lucide glyph), with no error
  *  anywhere.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, renderHook, act, waitFor, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, renderHook, act, waitFor, screen, fireEvent } from "@testing-library/react";
 
 import {
   ARCHETYPE_TRAITS,
+  CORE_ICONS,
   CONFLICT_STYLES,
   CONFLICT_DIRECTIVE,
   EFFORT_TIERS,
   MODEL_TIERS,
+  modelTier,
   TRAIT_AXES,
   TRAIT_CATALOG,
   traitById,
 } from "../catalog";
 import { ARCHETYPE_GLYPHS } from "../archetypeGlyphData";
-import { EFFORT_LEVELS } from "@/lib/models/modelCatalog";
+import { EFFORT_LEVELS, EFFORT_OPTIONS } from "@/lib/models/modelCatalog";
 
 // --------------------------------------------------------------------------
 // Ground truth: the catalog the backend actually serves.
@@ -88,15 +90,82 @@ describe("persona-core catalog integrity", () => {
   });
 
   it("keeps its effort tiers in step with the app-wide effort vocabulary", () => {
-    // catalog.ts re-enumerates effort levels with its own labels; modelCatalog
-    // owns the vocabulary the backend is wired to. Drift here means the modal
-    // offers a level the engine cannot receive (or hides one it can).
+    // modelCatalog owns the vocabulary the backend is wired to; EFFORT_TIERS is
+    // now DERIVED from it, so this pins the derivation rather than a hand-typed
+    // copy. Drift here would mean the modal offers a level the engine cannot
+    // receive (or hides one it can).
     expect(EFFORT_TIERS.map((e) => e.id)).toEqual([...EFFORT_LEVELS]);
+  });
+
+  it("labels every effort tier through the app-wide i18n key, not its own copy", () => {
+    // The hand-typed copy had drifted: it called `xhigh` "Max" in this modal
+    // while the shared vocabulary's label key held the raw id, so the same
+    // level read two different ways inside one app.
+    expect(EFFORT_TIERS.map((e) => e.labelKey)).toEqual(EFFORT_OPTIONS.map((o) => o.labelKey));
+  });
+
+  it("carries a blurb for every effort tier the vocabulary defines", () => {
+    // Blurbs are this surface's own copy, keyed by id in a separate map — a
+    // level added upstream must not arrive with an empty tooltip.
+    expect(EFFORT_TIERS.filter((e) => !e.blurb).map((e) => e.id)).toEqual([]);
+  });
+
+  it("maps exactly the archetype icons the shipped catalog uses", () => {
+    // Two-sided on purpose. A missing entry is invisible at runtime (coreIcon
+    // falls back to Sparkles, so a new archetype silently wears the wrong
+    // glyph); a surplus entry is dead weight that drags an unused lucide icon
+    // into the chunk — which is how five Foundry-era entries survived here.
+    const used = [...new Set(shipped.map((a) => a.icon))].sort();
+    expect(Object.keys(CORE_ICONS).sort()).toEqual(used);
   });
 
   it("offers each model tier exactly once", () => {
     const ids = MODEL_TIERS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("gives every model tier the icon and prompt word it used to duplicate", () => {
+    // The three tiers were enumerated three times — catalog labels, ConfigTiles'
+    // MODEL_ICON map, and a ternary inside usePersonaCore's augmentation — and
+    // only the catalog was under test, so a fourth tier would have shipped
+    // iconless and with the wrong prompt word.
+    const incomplete = MODEL_TIERS.filter((m) => !m.icon || !m.promptWord).map((m) => m.id);
+    expect(incomplete).toEqual([]);
+  });
+
+  it("resolves an unknown model tier to a real tier rather than undefined", () => {
+    expect(modelTier("sonnet").id).toBe("sonnet");
+    expect(modelTier("nope" as never).promptWord).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// Theming: an inline fill is unreachable by the light-theme overrides.
+// --------------------------------------------------------------------------
+describe("persona-core theming", () => {
+  const dir = path.resolve(process.cwd(), "src/features/agents/sub_glyph/personaCore");
+  const sources = readdirSync(dir).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"));
+
+  it("reads the persona-core sources (instrument check)", () => {
+    // A file walk that visits nothing passes every assertion below by default,
+    // which is the exact way this kind of gate rots into decoration.
+    expect(sources.length).toBeGreaterThan(5);
+  });
+
+  it("paints no literal white through an inline style", () => {
+    // `style={{ background: "rgba(255,255,255,…)" }}` wins the cascade outright,
+    // so `[data-theme^="light"]` can never override it and the surface goes
+    // white-on-white in light themes. ESLint's colour rules only read Tailwind
+    // class names, so nothing else in the toolchain sees this.
+    const offenders = sources.flatMap((f) => {
+      const src = readFileSync(path.join(dir, f), "utf8");
+      return src.split("\n").flatMap((line, i) =>
+        /rgba?\(\s*255\s*,\s*255\s*,\s*255/.test(line) && !line.trimStart().startsWith("*")
+          ? [`${f}:${i + 1}`]
+          : [],
+      );
+    });
+    expect(offenders).toEqual([]);
   });
 });
 
@@ -170,6 +239,70 @@ describe("usePersonaCore", () => {
     expect(result.current.state.archetypeId).toBe("guardian");
   });
 
+  it("hands back the hand-picked traits a mentality replaced", async () => {
+    // The mentality cards sit one click from the trait grid in the same modal,
+    // carry no warning, and replace the WHOLE trait set. A user who spent a
+    // minute assembling traits and then clicked a card out of curiosity lost
+    // all of it with no way back.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.toggleTrait("terse"));
+    act(() => result.current.toggleTrait("actionable"));
+    expect(result.current.discardedTraits).toBeNull();
+
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    expect(result.current.state.traits).toEqual(ARCHETYPE_TRAITS.guardian);
+    expect(result.current.discardedTraits).toEqual(["terse", "actionable"]);
+
+    act(() => result.current.restoreTraits());
+    expect(result.current.state.traits).toEqual(["terse", "actionable"]);
+    // The archetype was clicked on purpose — only the traits come back.
+    expect(result.current.state.archetypeId).toBe("guardian");
+    expect(result.current.discardedTraits).toBeNull();
+  });
+
+  it("offers nothing to restore when the preset replaced an empty set", async () => {
+    // The affordance is driven by this value, so a non-null here would put a
+    // permanent dead "restore" control in the column.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    expect(result.current.discardedTraits).toBeNull();
+  });
+
+  it("withdraws the restore offer once the user edits the new trait set", async () => {
+    // Restoring after an edit would silently undo THAT edit too.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.toggleTrait("terse"));
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    expect(result.current.discardedTraits).toEqual(["terse"]);
+
+    act(() => result.current.toggleTrait("ships-fast"));
+    expect(result.current.discardedTraits).toBeNull();
+    act(() => result.current.restoreTraits());
+    expect(result.current.state.traits).toContain("ships-fast");
+  });
+
+  it("drops the restore offer when the core is reset", async () => {
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.toggleTrait("terse"));
+    const guardian = shipped.find((a) => a.id === "guardian")!;
+    act(() => result.current.applyPreset(guardian as never));
+    act(() => result.current.reset());
+
+    expect(result.current.discardedTraits).toBeNull();
+    expect(result.current.configured).toBe(false);
+  });
+
   it("keeps the configured core when a build session STARTS", async () => {
     // resetKey is the build-session id: null while composing, an id once the
     // build launches. The launched intent carries the core's directives, so the
@@ -241,5 +374,94 @@ describe("AxisTraitGrid accessibility", () => {
   it("exposes every trait as a pressable toggle", () => {
     render(<AxisTraitGrid core={core} />);
     expect(screen.getAllByRole("button").length).toBe(TRAIT_CATALOG.length);
+  });
+});
+
+// --------------------------------------------------------------------------
+// What the surface reports about itself.
+// --------------------------------------------------------------------------
+import { personaCoreSelectionLabel } from "../usePersonaCore";
+import { PersonaCoreModal } from "../PersonaCoreModal";
+import { setAnalyticsSink, noopSink, type InteractionEvent } from "@/lib/analytics/sink";
+
+describe("persona-core selection label", () => {
+  const base = {
+    archetypeId: null, disposition: 0.4, conflictStyle: null,
+    traits: [] as string[], model: "sonnet", effort: "medium",
+  } as Parameters<typeof personaCoreSelectionLabel>[0];
+
+  it("reports an untouched core without inventing a selection", () => {
+    expect(personaCoreSelectionLabel(base)).toBe(
+      "archetype=none;traits=0;trait_ids=none;conflict=none;model=sonnet;effort=medium",
+    );
+  });
+
+  it("is stable under click order, so the same choice is one bucket", () => {
+    const a = personaCoreSelectionLabel({ ...base, traits: ["terse", "actionable"] });
+    const b = personaCoreSelectionLabel({ ...base, traits: ["actionable", "terse"] });
+    expect(a).toBe(b);
+  });
+
+  it("carries only catalog identifiers — no user-authored content", () => {
+    // The privacy contract the analytics module states for itself. Every token
+    // in the label must be an id this repo ships, a count, or "none".
+    const label = personaCoreSelectionLabel({
+      ...base, archetypeId: "guardian", conflictStyle: "analyst",
+      traits: ["terse", "quality-gate"], model: "opus", effort: "high",
+    });
+    const values = label.split(";").map((p) => p.split("=")[1]!);
+    const known = new Set<string>([
+      ...Object.keys(ARCHETYPE_TRAITS), ...TRAIT_CATALOG.map((t) => t.id),
+      ...CONFLICT_STYLES.map((c) => c.id), ...MODEL_TIERS.map((m) => m.id),
+      ...EFFORT_TIERS.map((e) => String(e.id)), "none",
+    ]);
+    const unknown = values.flatMap((v) =>
+      v.split("|").filter((tok) => !known.has(tok) && !/^\d+$/.test(tok)),
+    );
+    expect(unknown).toEqual([]);
+  });
+});
+
+describe("PersonaCoreModal analytics", () => {
+  const events: InteractionEvent[] = [];
+
+  beforeEach(() => {
+    events.length = 0;
+    listArchetypes.mockReset();
+    listArchetypes.mockResolvedValue(CATALOG);
+    setAnalyticsSink({ ...noopSink, interaction: (e) => { events.push(e); } });
+  });
+  afterEach(() => setAnalyticsSink(noopSink));
+
+  it("records the settled selection when the user closes the modal", async () => {
+    // Before this, every choice left the component tree only as prose folded
+    // into the build intent, so nothing downstream could answer which
+    // archetypes or traits people actually pick.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.toggleTrait("terse"));
+
+    const onClose = vi.fn();
+    render(<PersonaCoreModal core={result.current} isOpen onClose={onClose} />);
+    fireEvent.click(screen.getByTestId("persona-core-done"));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.category).toBe("persona_core");
+    expect(events[0]!.action).toBe("configured");
+    expect(events[0]!.label).toContain("trait_ids=terse");
+  });
+
+  it("distinguishes an ABANDONED open from a configured one", async () => {
+    // An open the user backed out of is the signal that says the surface is
+    // confusing; collapsing it into "configured" would hide exactly that.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    render(<PersonaCoreModal core={result.current} isOpen onClose={() => {}} />);
+    fireEvent.click(screen.getByTestId("persona-core-done"));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]!.action).toBe("dismissed");
   });
 });

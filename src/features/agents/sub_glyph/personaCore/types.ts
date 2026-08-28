@@ -46,6 +46,15 @@ export interface PersonaCore {
   configured: boolean;
   preset: Archetype | null;
   applyPreset: (a: Archetype) => void;
+  /** The hand-picked trait set the last `applyPreset` REPLACED, or null when
+   *  there is nothing to give back. A mentality card is one click away from the
+   *  trait grid in the same modal and replaces the whole set with no warning,
+   *  so the work a user spent a minute on can vanish to an idle click. This is
+   *  the way back — see `restoreTraits`. */
+  discardedTraits: string[] | null;
+  /** Put the discarded trait set back, keeping the archetype the user just
+   *  picked. Null-safe: a no-op when nothing was discarded. */
+  restoreTraits: () => void;
   setDisposition: (v: number) => void;
   setConflict: (id: string | null) => void;
   toggleTrait: (id: string) => void;
