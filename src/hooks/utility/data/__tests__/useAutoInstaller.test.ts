@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // `invoke`; `listen` is mocked globally in `src/test/setup.ts`.
 import { listen } from "@tauri-apps/api/event";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useAutoInstaller } from "../useAutoInstaller";
+import { useAutoInstaller, MAX_INSTALL_OUTPUT_LINES } from "../useAutoInstaller";
 import { EventName } from "@/lib/eventRegistry";
 import { resetInvokeMocks } from "@/test/tauriMock";
 
@@ -144,6 +144,67 @@ describe("useAutoInstaller", () => {
 
     for (const u of firstRun) expect(u).toHaveBeenCalled();
     expect(bus.unlistens).toHaveLength(4);
+  });
+
+  it("caps the retained transcript at MAX_INSTALL_OUTPUT_LINES, keeping the tail", async () => {
+    const bus = captureListeners();
+    const { result } = renderHook(() => useAutoInstaller());
+    await act(async () => { await result.current.install("node"); });
+
+    const total = MAX_INSTALL_OUTPUT_LINES + 25;
+    for (let i = 0; i < total; i++) {
+      bus.emit(EventName.SETUP_OUTPUT, { install_id: "i", target: "node", line: `line ${i}` });
+    }
+
+    const lines = result.current.nodeState.outputLines;
+    expect(lines).toHaveLength(MAX_INSTALL_OUTPUT_LINES);
+    // The newest line survives; the oldest 25 are dropped.
+    expect(lines[lines.length - 1]).toBe(`line ${total - 1}`);
+    expect(lines[0]).toBe(`line ${total - MAX_INSTALL_OUTPUT_LINES}`);
+  });
+
+  it("a second install started mid-registration does not leak or double-append", async () => {
+    const handlers = new Map<string, Handler[]>();
+    const unlistens: ReturnType<typeof vi.fn>[] = [];
+    // Hold the FIRST listen() open so the second install() starts inside the
+    // first's registration window — the exact race the runId token closes.
+    let releaseFirst: () => void = () => {};
+    let listenCalls = 0;
+    mockedListen.mockImplementation(async (event: string, handler: Handler) => {
+      listenCalls += 1;
+      if (listenCalls === 1) {
+        await new Promise<void>((resolve) => { releaseFirst = resolve; });
+      }
+      const list = handlers.get(event) ?? [];
+      list.push(handler);
+      handlers.set(event, list);
+      const unlisten = vi.fn();
+      unlistens.push(unlisten);
+      return unlisten;
+    });
+
+    const { result } = renderHook(() => useAutoInstaller());
+
+    let firstInstall: Promise<void> | undefined;
+    await act(async () => {
+      firstInstall = result.current.install("node");
+      await result.current.install("node");   // second run wins
+      releaseFirst();
+      await firstInstall;
+    });
+
+    // The winning run registered first (the loser's listen was held open), so
+    // the LAST unlisten belongs to the superseded run — and it was released.
+    expect(unlistens).toHaveLength(3);
+    expect(unlistens[2]).toHaveBeenCalled();
+    expect(unlistens[0]).not.toHaveBeenCalled();
+    expect(unlistens[1]).not.toHaveBeenCalled();
+    const outputHandlers = handlers.get(EventName.SETUP_OUTPUT) ?? [];
+    act(() => {
+      for (const h of outputHandlers) h({ payload: { install_id: "i", target: "node", line: "solo" } });
+    });
+    // One line, not one per surviving handler.
+    expect(result.current.nodeState.outputLines).toEqual(["solo"]);
   });
 
   it("unsubscribes on unmount", async () => {

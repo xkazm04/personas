@@ -6,6 +6,20 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('app-setting');
 
+/**
+ * This hook is the read/write door for settings that hold SECRETS —
+ * `ollama_api_key` and `litellm_master_key` reach it through
+ * `ProviderCredentialField`. A backend IPC error can carry the rejected payload
+ * in its message, and `logger` output reaches the console and Sentry, so the
+ * raw message must never be logged from here. Log the key plus the error's
+ * class, which is what `ByomApiKeyManager.logSecretSafeError` already does for
+ * the very same keys — the discipline existed in one module and not in the hook
+ * underneath it.
+ */
+function errorClass(err: unknown): string {
+  return err instanceof Error ? err.name : typeof err;
+}
+
 interface UseAppSettingResult {
   value: string;
   setValue: (v: string) => void;
@@ -119,7 +133,10 @@ export function useAppSetting(
       }, 2000);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to save app setting', { key, err: message });
+      // Key + error class only — see errorClass() above. The message still
+      // reaches `error` state, where it is rendered back to the operator who
+      // typed the value; it must not reach the log sinks.
+      logger.error('Failed to save app setting', { key, code: errorClass(err) });
       setError(message);
     }
   }, [key]);
