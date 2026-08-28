@@ -4689,6 +4689,13 @@ export type Translations = {
       refresh: string;
       introspection_unavailable: string;
       not_null: string;
+      column_nullable_yes: string;
+      suggestion_sql_tables: string;
+      suggestion_sql_recent: string;
+      suggestion_sql_nulls: string;
+      suggestion_sql_duplicates: string;
+      suggestion_redis_keys: string;
+      suggestion_redis_recent: string;
       ctrl_enter: string;
       capability_full_sql: string;
       capability_full_sql_hint: string;

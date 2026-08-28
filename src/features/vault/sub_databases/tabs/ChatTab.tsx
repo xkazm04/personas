@@ -214,7 +214,14 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     [handleSubmit],
   );
 
-  const suggestions = getSuggestions(language);
+  const suggestions = language === 'redis'
+    ? [t.vault.databases.suggestion_redis_keys, t.vault.databases.suggestion_redis_recent]
+    : [
+        t.vault.databases.suggestion_sql_tables,
+        t.vault.databases.suggestion_sql_recent,
+        t.vault.databases.suggestion_sql_nulls,
+        t.vault.databases.suggestion_sql_duplicates,
+      ];
 
   return (
     <div className="flex flex-col h-full min-h-[500px]">
@@ -253,8 +260,3 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   );
 }
 
-function getSuggestions(lang: string): string[] {
-  return lang === 'redis'
-    ? ['Show all keys matching "user:*"', 'Get the 10 most recent entries']
-    : ['Show me all tables and their row counts', 'Find the 10 most recent records', 'List columns with null values', 'Show duplicate entries'];
-}
