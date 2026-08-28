@@ -101,13 +101,22 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
     }, 500);
   }, []);
 
+  // Mirror of `capabilities` readable from event handlers. A setState updater
+  // must be PURE -- React may invoke it twice (always does under StrictMode),
+  // so `persist()` cannot live inside one. Reading the previous map from this
+  // ref instead lets `toggle` compute `next` up front, hand setState a plain
+  // value, and persist exactly once. The ref is written eagerly in `toggle`
+  // (not only by the effect) so several toggles in one tick still compose.
+  const capabilitiesRef = useRef(capabilities);
+  useEffect(() => { capabilitiesRef.current = capabilities; }, [capabilities]);
+
   const toggle = useCallback((operation: CliOperation, provider: CliEngine) => {
-    setCapabilities((prev) => {
-      const next = { ...prev };
-      next[operation] = { ...next[operation], [provider]: !next[operation][provider] };
-      persist(next);
-      return next;
-    });
+    const prev = capabilitiesRef.current;
+    const next = { ...prev };
+    next[operation] = { ...next[operation], [provider]: !next[operation][provider] };
+    capabilitiesRef.current = next;
+    setCapabilities(next);
+    persist(next);
   }, [persist]);
 
   const resetToDefaults = useCallback(() => {
@@ -115,6 +124,7 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
     // is stored -- safe to clear the corrupt-load guard so this write (unlike
     // a plain toggle) is allowed through.
     loadCorruptedRef.current = false;
+    capabilitiesRef.current = DEFAULT_CAPABILITIES;
     setCapabilities(DEFAULT_CAPABILITIES);
     persist(DEFAULT_CAPABILITIES);
   }, [persist]);
