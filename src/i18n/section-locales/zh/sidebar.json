@@ -96,5 +96,6 @@
   "devices": "设备",
   "messages": "报告",
   "unread_reports_sr": "{count} 份未读报告",
-  "unread_reports_sr_other": "{count} 份未读报告"
+  "unread_reports_sr_other": "{count} 份未读报告",
+  "experimental": "实验性功能"
 }

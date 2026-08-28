@@ -476,7 +476,6 @@
     "stream_kind_slack": "Slack",
     "triage_queue_jump": "Siguiente: {title}",
     "triage_queue_rail_aria": "Cola de triaje",
-    "triage_queue_rail_title": "A continuación",
     "quick_error_body": "La cola de revisiones no respondió, así que esto no es el panorama completo.",
     "quick_error_title": "No se pudo leer lo pendiente",
     "quick_loading": "Leyendo lo que le espera…",
@@ -511,7 +510,23 @@
     "conv_persona_review_rejected": "Rechazado",
     "conv_persona_review_resolved": "Resuelto",
     "conv_persona_sending": "Enviando…",
-    "conv_persona_working": "{name} está trabajando…"
+    "conv_persona_working": "{name} está trabajando…",
+    "triage_rail_tab_decide": "Por decidir",
+    "triage_rail_tab_accepted": "Aceptadas",
+    "triage_rail_tabs_aria": "Vista de la cola",
+    "triage_accepted_empty": "No hay nada esperando a construirse",
+    "triage_accepted_empty_sub": "Los elementos aceptados esperan aquí hasta que los envías a un ejecutor.",
+    "triage_accepted_select_all": "Seleccionar todo",
+    "triage_accepted_selected": "{count} seleccionados",
+    "triage_accepted_dispatch": "Enviar",
+    "triage_accepted_mode_aria": "Modo de envío",
+    "triage_accepted_mode_single": "Uno a uno",
+    "triage_accepted_mode_batch": "Por lotes",
+    "triage_accepted_mode_parallel": "En paralelo",
+    "triage_accepted_concurrency_hint": "Cuántos se ejecutan a la vez",
+    "triage_accepted_result": "{count} enviados al ejecutor",
+    "triage_accepted_result_skipped": "{count} omitidos",
+    "triage_accepted_row_aria": "Seleccionar {title}"
   },
   "common": {
     "loading": "Cargando…",
@@ -923,7 +938,8 @@
     "devices": "Dispositivos",
     "messages": "Informes",
     "unread_reports_sr": "{count} informe sin leer",
-    "unread_reports_sr_other": "{count} informes sin leer"
+    "unread_reports_sr_other": "{count} informes sin leer",
+    "experimental": "Función experimental"
   },
   "home": {
     "setup": {
@@ -12265,6 +12281,11 @@
     "col_connectors": "Conectores",
     "_comment_col_version": "Table column header for version",
     "col_version": "Versión",
+    "col_icon": "Conector",
+    "col_actions": "Acciones",
+    "sort_by": "Ordenar por {label}",
+    "showing_count": "Mostrando {shown} de {total}",
+    "load_more_status": "Desplázate para ver más",
     "_comment_col_eligibility": "Table column header for eligibility status",
     "col_eligibility": "Elegibilidad",
     "_comment_adopt_button": "Button label to adopt a recipe from the table row",

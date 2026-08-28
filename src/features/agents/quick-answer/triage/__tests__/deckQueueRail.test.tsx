@@ -16,11 +16,25 @@
  *      virtualization engages above 40 rows, so a constant left at the old
  *      two-line height misplaces every row past the 40th.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
 import { DeckQueueRail, RAIL_WIDTH, ROW_HEIGHT } from '../deck/DeckQueueRail';
 import { makeItem } from './triageFixtures';
+
+// The rail grew a second tab (Accepted) whose body reads
+// `dev_tools_undispatched_ideas`. These tests are about the DECIDE list, so the
+// IPC layer is stubbed to an empty list — an unstubbed `invoke` in jsdom
+// rejects, and a rail that took the deck down with it is exactly what the
+// error path is guarded against elsewhere.
+vi.mock('@/api/devTools/devTools', () => ({
+  undispatchedIdeas: () => Promise.resolve([]),
+  dispatchIdeas: () => Promise.resolve({ target: 'runner', dispatched: [], skipped: [], started: true }),
+}));
+
+/** The decide list's own scroller — every row query below is scoped to it, so
+ *  the tab switcher's buttons above cannot be mistaken for a queue row. */
+const listOf = (c: HTMLElement) => c.querySelector('[data-decide-list]') as HTMLElement;
 
 // This repo's test setup does not auto-cleanup.
 afterEach(cleanup);
@@ -42,19 +56,19 @@ describe('DeckQueueRail cursor', () => {
 
   it('marks the row AT the cursor as current, not row 1', () => {
     const { container } = renderRail(three(), new Map(), 1);
-    const current = container.querySelectorAll('[aria-current="true"]');
+    const current = listOf(container).querySelectorAll('[aria-current="true"]');
     expect(current).toHaveLength(1);
     expect(current[0]!.querySelector('[data-rail-name]')?.textContent).toBe('Second');
   });
 
   it('leaves every row its own position — a jump must not renumber the queue', () => {
     const { container } = renderRail(three(), new Map(), 2);
-    const positions = [...container.querySelectorAll('button')].map(
+    const positions = [...listOf(container).querySelectorAll('button')].map(
       (b) => b.firstElementChild?.textContent,
     );
     expect(positions).toEqual(['1', '2', '3']);
     expect(
-      container.querySelector('[aria-current="true"] [data-rail-name]')?.textContent,
+      listOf(container).querySelector('[aria-current="true"] [data-rail-name]')?.textContent,
     ).toBe('Third');
   });
 });
@@ -63,11 +77,11 @@ describe('DeckQueueRail rows', () => {
   it('shows the title and keeps the kind reachable without printing it', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Cache the roster' })]);
 
-    const name = container.querySelector('[data-rail-name]');
+    const name = listOf(container).querySelector('[data-rail-name]');
     expect(name?.textContent).toBe('Cache the roster');
 
     // The kind must survive the deleted line — but only for assistive tech.
-    const kind = container.querySelector('.sr-only');
+    const kind = listOf(container).querySelector('.sr-only');
     expect(kind?.textContent).toBe('Idea');
   });
 
@@ -75,7 +89,7 @@ describe('DeckQueueRail rows', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Only line' })]);
     // The old row nested a second <span> carrying the kind text beside the
     // title. Exactly one visible text node per row is the shape now.
-    const visibleSpans = container.querySelectorAll('button > span:not(.sr-only)');
+    const visibleSpans = listOf(container).querySelectorAll('button > span:not(.sr-only)');
     // position + icon-sibling text only: the counter and the name.
     expect(visibleSpans.length).toBe(2);
   });
@@ -83,7 +97,7 @@ describe('DeckQueueRail rows', () => {
   it('keeps the deferred marker on a skipped row', () => {
     const item = makeItem('idea', { title: 'Passed on once' });
     const { container } = renderRail([item], new Map([[item.id, 1]]));
-    expect(container.querySelector('.lucide-rotate-ccw')).toBeTruthy();
+    expect(listOf(container).querySelector('.lucide-rotate-ccw')).toBeTruthy();
   });
 
   it('gives the deferred state an sr-only companion, like the kind above it', () => {
@@ -93,20 +107,20 @@ describe('DeckQueueRail rows', () => {
     const item = makeItem('idea', { title: 'Passed on once' });
     const { container } = renderRail([item], new Map([[item.id, 1]]));
 
-    const spoken = Array.from(container.querySelectorAll('.sr-only')).map((el) => el.textContent);
+    const spoken = Array.from(listOf(container).querySelectorAll('.sr-only')).map((el) => el.textContent);
     expect(spoken).toContain('Idea');
     expect(spoken).toContain('Passed over earlier');
   });
 
   it('does not claim an unskipped row was passed over', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Fresh' })]);
-    const spoken = Array.from(container.querySelectorAll('.sr-only')).map((el) => el.textContent);
+    const spoken = Array.from(listOf(container).querySelectorAll('.sr-only')).map((el) => el.textContent);
     expect(spoken).not.toContain('Passed over earlier');
   });
 
   it('does not mark an unskipped row as deferred', () => {
     const { container } = renderRail([makeItem('idea', { title: 'Fresh' })]);
-    expect(container.querySelector('.lucide-rotate-ccw')).toBeNull();
+    expect(listOf(container).querySelector('.lucide-rotate-ccw')).toBeNull();
   });
 
   it('renders every name at normal weight', () => {
@@ -114,7 +128,7 @@ describe('DeckQueueRail rows', () => {
       makeItem('idea', { title: 'First' }),
       makeItem('review', { title: 'Second' }),
     ]);
-    const names = container.querySelectorAll('[data-rail-name]');
+    const names = listOf(container).querySelectorAll('[data-rail-name]');
     expect(names.length).toBe(2);
     for (const n of names) {
       // typo-body is weight 400. typo-caption (500) and typo-title (600) are
@@ -133,11 +147,30 @@ describe('DeckQueueRail layout', () => {
       makeItem('idea', { title: `Row ${i}` }),
     );
     const { container } = renderRail(items);
-    const list = container.querySelector('ul[style]') as HTMLElement | null;
+    const list = listOf(container).querySelector('ul[style]') as HTMLElement | null;
     expect(list).toBeTruthy();
     // The constant and the virtualizer's total size are two independent
     // numbers; drift between them is silent.
     expect(list!.style.height).toBe(`${60 * ROW_HEIGHT}px`);
+  });
+
+  it('gives the row the SAME height it hands the virtualizer', () => {
+    // The two used to be independent numbers — `estimateSize` here, padding +
+    // line-height in the class list — and drift between them misplaces every
+    // row past the 40th, silently. The row now reads the constant, so this is
+    // a guard on that coupling surviving the next redesign.
+    const { container } = renderRail();
+    const row = listOf(container).querySelector('button') as HTMLElement;
+    expect(row.style.height).toBe(`${ROW_HEIGHT}px`);
+  });
+
+  it('keeps the counter out of the title so the title owns the row width', () => {
+    // The counter and kind icon are pinned to the corner, not laid out beside
+    // the title — which is the whole reason the title stopped truncating. If
+    // they ever slide back into the flow, the title's own text picks them up.
+    const { container } = renderRail([makeItem('idea', { title: 'Cache the roster' })]);
+    expect(listOf(container).querySelector('[data-rail-name]')?.textContent).toBe('Cache the roster');
+    expect(listOf(container).querySelector('button')?.firstElementChild?.textContent).toBe('1');
   });
 
   it('applies the shared width constant to the rail', () => {

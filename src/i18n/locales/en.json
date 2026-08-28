@@ -466,7 +466,6 @@
     "triage_progress_aria": "Session progress",
     "triage_queue_jump": "Deal this next: {title}",
     "triage_queue_rail_aria": "Triage queue",
-    "triage_queue_rail_title": "Up next",
     "triage_questions_pending": "{count} questions before this build can continue",
     "triage_reason_already_done": "Already done",
     "triage_reason_already_handled": "Already handled",
@@ -511,7 +510,23 @@
     "quick_error_title": "Could not read what is waiting",
     "quick_error_body": "The review queue did not answer, so this is not the whole picture.",
     "reviews_loading": "Reading pending reviews…",
-    "reviews_error": "The review queue did not answer. A step may still be held."
+    "reviews_error": "The review queue did not answer. A step may still be held.",
+    "triage_rail_tab_decide": "To decide",
+    "triage_rail_tab_accepted": "Accepted",
+    "triage_rail_tabs_aria": "Queue view",
+    "triage_accepted_empty": "Nothing waiting to be built",
+    "triage_accepted_empty_sub": "Accepted items land here until you send them to a runner.",
+    "triage_accepted_select_all": "Select all",
+    "triage_accepted_selected": "{count} selected",
+    "triage_accepted_dispatch": "Dispatch",
+    "triage_accepted_mode_aria": "Dispatch mode",
+    "triage_accepted_mode_single": "Single",
+    "triage_accepted_mode_batch": "Batch",
+    "triage_accepted_mode_parallel": "Parallel",
+    "triage_accepted_concurrency_hint": "How many run at once",
+    "triage_accepted_result": "Sent {count} to the runner",
+    "triage_accepted_result_skipped": "{count} skipped",
+    "triage_accepted_row_aria": "Select {title}"
   },
   "common": {
     "unknown_error": "Unknown error",
@@ -923,7 +938,8 @@
     "patterns": "Patterns",
     "devices": "Devices",
     "unread_reports_sr": "{count} unread report",
-    "unread_reports_sr_other": "{count} unread reports"
+    "unread_reports_sr_other": "{count} unread reports",
+    "experimental": "Experimental"
   },
   "home": {
     "get_started": {
@@ -12503,6 +12519,11 @@
     "col_connectors": "Connectors",
     "_comment_col_version": "Table column header for version",
     "col_version": "Version",
+    "col_icon": "Connector",
+    "col_actions": "Actions",
+    "sort_by": "Sort by {label}",
+    "showing_count": "Showing {shown} of {total}",
+    "load_more_status": "Scroll for more",
     "_comment_col_eligibility": "Table column header for eligibility status",
     "col_eligibility": "Eligibility",
     "_comment_adopt_button": "Button label to adopt a recipe from the table row",

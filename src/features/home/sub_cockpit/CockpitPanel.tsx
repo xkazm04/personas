@@ -21,7 +21,6 @@ import {
   ContentBox,
   ContentHeader,
 } from '@/features/shared/components/layout/ContentLayout';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { silentCatch } from '@/lib/silentCatch';
@@ -209,12 +208,10 @@ export default function CockpitPanel() {
           })
         : cockpit.subtitle_contextual
     : spec && !specParseFailed
-      ? (
-          <>
-            {cockpit.subtitle_composed_prefix}{' '}
-            <RelativeTime timestamp={spec.updatedAt} />
-          </>
-        )
+      // Authorship only — no "updated <n> minutes ago". The freshness stamp read
+      // as a staleness warning on a surface Athena recomposes on her own cadence,
+      // so the subtitle now says who composed it and nothing else.
+      ? cockpit.subtitle_composed
       : defaultBody
         ? cockpit.default_subtitle
         : cockpit.subtitle_default;

@@ -1,0 +1,113 @@
+import { useState } from 'react';
+import { MessageSquare } from 'lucide-react';
+import { upsertKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
+import { BaseModal } from '@/lib/ui/BaseModal';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { SCOPE_TYPES } from '../libs/knowledgeHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
+
+interface AnnotateModalProps {
+  personas: Array<{ id: string; name: string }>;
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalProps) {
+  const { t } = useTranslation();
+  const [personaId, setPersonaId] = useState(personas[0]?.id ?? '');
+  const [scopeType, setScopeType] = useState('global');
+  const [scopeId, setScopeId] = useState('');
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!text.trim() || !personaId) return;
+    setSaving(true);
+    try {
+      await upsertKnowledgeAnnotation(
+        personaId,
+        scopeType,
+        scopeType !== 'persona' && scopeType !== 'global' ? (scopeId || null) : null,
+        text.trim(),
+        'user',
+      );
+      onCreated();
+    } catch {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="md" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-elevation-4 overflow-hidden p-6 space-y-4">
+      <h3 id="annotate-modal-title" className="typo-body-lg font-semibold text-foreground/90 flex items-center gap-2">
+        <MessageSquare className="w-4 h-4 text-cyan-400" /> {t.overview.annotate_modal.title}
+      </h3>
+
+      <div className="space-y-3">
+        <div>
+          <label className="typo-caption text-foreground mb-1 block">{t.overview.annotate_modal.persona_label}</label>
+          <ThemedSelect
+            filterable
+            value={personaId}
+            onValueChange={setPersonaId}
+            placeholder={t.common.select_persona}
+            className="py-1.5"
+            options={personas.map((p) => ({ value: p.id, label: p.name }))}
+          />
+        </div>
+
+        <div>
+          <label className="typo-caption text-foreground mb-1 block">{t.overview.annotate_modal.scope_label}</label>
+          <ThemedSelect
+            filterable
+            value={scopeType}
+            onValueChange={setScopeType}
+            placeholder={t.common.select}
+            className="py-1.5"
+            options={Object.entries(SCOPE_TYPES).map(([key, val]) => ({ value: key, label: val.label }))}
+          />
+        </div>
+
+        {(scopeType === 'tool' || scopeType === 'connector') && (
+          <div>
+            <label className="typo-caption text-foreground mb-1 block">
+              {scopeType === 'tool' ? t.overview.annotate_modal.tool_name : t.overview.annotate_modal.connector_type}
+            </label>
+            <input
+              type="text"
+              value={scopeId}
+              onChange={(e) => setScopeId(e.target.value)}
+              placeholder={scopeType === 'tool' ? 'e.g. http_request' : 'e.g. google_workspace'}
+              className="w-full px-3 py-1.5 rounded-modal bg-secondary/40 border border-primary/10 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="typo-caption text-foreground mb-1 block">{t.overview.annotate_modal.annotation_label}</label>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={t.overview.annotate_modal.annotation_placeholder}
+            rows={3}
+            className="w-full px-3 py-2 rounded-modal bg-secondary/40 border border-primary/10 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 resize-none"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onClose} className="px-4 py-1.5 rounded-modal typo-body text-foreground hover:text-foreground/90 transition-colors">
+          {t.overview.annotate_modal.cancel}
+        </button>
+        <button
+          type="button"
+          onClick={() => { void handleSave(); }}
+          disabled={saving || !text.trim()}
+          className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 typo-body font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+        >
+          {saving ? t.overview.annotate_modal.saving : t.overview.annotate_modal.save_annotation}
+        </button>
+      </div>
+    </BaseModal>
+  );
+}

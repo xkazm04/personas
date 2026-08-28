@@ -96,5 +96,6 @@
   "devices": "기기",
   "messages": "보고서",
   "unread_reports_sr": "읽지 않은 보고서 {count}개",
-  "unread_reports_sr_other": "읽지 않은 보고서 {count}개"
+  "unread_reports_sr_other": "읽지 않은 보고서 {count}개",
+  "experimental": "실험적 기능"
 }

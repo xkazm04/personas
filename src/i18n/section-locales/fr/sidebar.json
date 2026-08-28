@@ -96,5 +96,6 @@
   "devices": "Appareils",
   "messages": "Rapports",
   "unread_reports_sr": "{count} rapport non lu",
-  "unread_reports_sr_other": "{count} rapports non lus"
+  "unread_reports_sr_other": "{count} rapports non lus",
+  "experimental": "Expérimental"
 }

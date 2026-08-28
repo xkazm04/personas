@@ -96,5 +96,6 @@
   "devices": "Устройства",
   "messages": "Отчёты",
   "unread_reports_sr": "{count} непрочитанный отчёт",
-  "unread_reports_sr_other": "{count} непрочитанных отчётов"
+  "unread_reports_sr_other": "{count} непрочитанных отчётов",
+  "experimental": "Экспериментально"
 }

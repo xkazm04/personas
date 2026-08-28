@@ -1,23 +1,24 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { ChevronRight, X, MapPin, Sparkles, Volume2, Check } from 'lucide-react';
+import { ChevronRight, X, MapPin, Sparkles, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getActiveTourSteps, getTourById, type TourId } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
-import { getStepColors, getNextTourId, getTourSequence } from './tourConstants';
+import { getStepColors, getNextTourId, getTourSequence, TOUR_RAIL_WIDTH } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
+import { TourNarrativeDeck } from './TourNarrativeDeck';
+import { focusTourHighlight } from './tourHighlight';
 import { StepProgress } from './StepProgress';
 import { TourProgressArc } from './TourProgressArc';
 import { useTourNarration } from './useTourNarration';
 import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-
-const DEFAULT_PANEL_WIDTH = 440;
 
 export default function GuidedTour() {
   // Precedence contract — see `src/features/onboarding/README.md`
@@ -88,7 +89,7 @@ export default function GuidedTour() {
   const isStepCompleted = currentStep ? (completedSteps[currentStep.id] ?? false) : false;
   const allCompleted = visibleSteps.every((s) => completedSteps[s.id] ?? false);
   const completedCount = visibleSteps.filter((s) => completedSteps[s.id]).length;
-  const panelWidth = currentStep?.panelWidth ?? DEFAULT_PANEL_WIDTH;
+  const hasProgress = Object.values(completedSteps).some(Boolean);
 
   // Athena-narrated tour (prototype): speak each step via live TTS when the
   // companion's voice is configured. Silent + inert otherwise. Called
@@ -272,7 +273,7 @@ export default function GuidedTour() {
       <div
         data-testid="tour-completion"
         className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
-        style={{ width: panelWidth }}
+        style={{ width: TOUR_RAIL_WIDTH }}
       >
         <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
@@ -351,7 +352,7 @@ export default function GuidedTour() {
       <div
         data-testid="tour-resume-interstitial"
         className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
-        style={{ width: panelWidth }}
+        style={{ width: TOUR_RAIL_WIDTH }}
       >
         <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
@@ -437,66 +438,76 @@ export default function GuidedTour() {
     );
   }
 
+  // Caption for the deck: only while audio is actually playing/loading, and only
+  // when the step has narration copy to show.
+  const narrationCaption =
+    narration.available
+    && (narration.status === 'speaking' || narration.status === 'loading')
+      ? currentStep.narration ?? null
+      : null;
+
+  // Two surfaces, one tour (see `TourNarrativeDeck`): a fixed-width rail over
+  // the app's own sidebars carrying steps + checklist + navigation, and a
+  // centred deck carrying every paragraph.
   return (
-    <div
-      key="tour-panel"
-      data-testid="tour-panel"
-      onKeyDown={handlePanelKeyDown}
-      role="region"
-      aria-label={`${t.onboarding.tour_a11y_region}: ${tourDef.title}`}
-      className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
-      style={{ width: panelWidth }}
-    >
-      <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
-              <Sparkles className={`w-4 h-4 ${colors.text}`} />
+    <>
+      <div
+        key="tour-panel"
+        data-testid="tour-panel"
+        onKeyDown={handlePanelKeyDown}
+        role="region"
+        aria-label={`${t.onboarding.tour_a11y_region}: ${tourDef.title}`}
+        className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
+        style={{ width: TOUR_RAIL_WIDTH }}
+      >
+        <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
+          <div className="flex items-center justify-between gap-1 px-3 py-2.5 border-b border-primary/8">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className={`w-7 h-7 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center flex-shrink-0`}>
+                <Sparkles className={`w-3.5 h-3.5 ${colors.text}`} />
+              </div>
+              <div className="min-w-0">
+                <Tooltip content={tourDef.title} placement="right">
+                  <h3 className="typo-heading text-foreground/90 leading-tight truncate">{tourDef.title}</h3>
+                </Tooltip>
+                <p className="typo-caption text-foreground truncate">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
-              <p className="typo-caption text-foreground">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <TourNarrationButton control={narration} accentTextClass={colors.text} />
+              <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title={t.onboarding.minimize} aria-label={t.onboarding.minimize} data-testid="tour-panel-minimize">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} aria-label={t.onboarding.end_tour} data-testid="tour-panel-dismiss">
+                <X className="w-3.5 h-3.5" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <TourNarrationButton control={narration} accentTextClass={colors.text} />
-            <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title={t.onboarding.minimize} aria-label={t.onboarding.minimize} data-testid="tour-panel-minimize">
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} aria-label={t.onboarding.end_tour} data-testid="tour-panel-dismiss">
-              <X className="w-3.5 h-3.5" />
-            </Button>
-          </div>
+          <TourPanelBody
+            currentIndex={currentIndex}
+            completedSteps={completedSteps}
+            isStepCompleted={isStepCompleted}
+            allCompleted={allCompleted}
+            subStepIndex={subStepIndex}
+            tourId={tourId}
+            tourColor={tourDef.color}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            onJump={handleJump}
+            onComplete={() => setShowCompletion(true)}
+          />
         </div>
-        {/* Live narration caption — surfaces what Athena is speaking (distinct
-            from the on-screen description) while the audio plays, so narrated
-            tours are usable muted / accessible. No-op when voice isn't set up. */}
-        {narration.available
-          && (narration.status === 'speaking' || narration.status === 'loading')
-          && currentStep.narration && (
-          <div
-            data-testid="tour-narration-caption"
-            aria-live="polite"
-            className="flex items-start gap-2 px-4 py-2 border-b border-primary/8 bg-secondary/10"
-          >
-            <Volume2 className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${colors.text} animate-pulse`} />
-            <p className="typo-caption text-foreground leading-relaxed italic">{currentStep.narration}</p>
-          </div>
-        )}
-        <TourPanelBody
-          currentIndex={currentIndex}
-          completedSteps={completedSteps}
-          isStepCompleted={isStepCompleted}
-          allCompleted={allCompleted}
-          subStepIndex={subStepIndex}
-          tourId={tourId}
-          tourColor={tourDef.color}
-          onNext={handleNext}
-          onPrev={handlePrev}
-          onJump={handleJump}
-          onComplete={() => setShowCompletion(true)}
-        />
       </div>
-    </div>
+      <TourNarrativeDeck
+        tourId={tourId}
+        currentIndex={currentIndex}
+        subStepIndex={subStepIndex}
+        totalSteps={visibleSteps.length}
+        isStepCompleted={isStepCompleted}
+        hasProgress={hasProgress}
+        narrationCaption={narrationCaption}
+        onShowMe={focusTourHighlight}
+      />
+    </>
   );
 }

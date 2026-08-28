@@ -7,13 +7,17 @@ export function humanizeCron(cron: string): string {
   if (parts.length !== 5) return cron;
   const [min, hour, dom, mon, dow] = parts as [string, string, string, string, string];
 
-  // Multi-value hour fields (comma lists, ranges) can't collapse to a single
-  // "HH:MM" without losing runs — leave timeStr unset so callers fall through
-  // to the raw cron instead of misrepresenting the schedule.
-  const hourMultiValued = /[,-]/.test(hour);
+  // Multi-value minute OR hour fields (comma lists, ranges, steps) can't
+  // collapse to a single "HH:MM" without losing runs — leave timeStr unset so
+  // callers fall through to the raw cron instead of misrepresenting the
+  // schedule. The guard has to cover BOTH fields: `parseInt("0,30")` is 0, so
+  // guarding only the hour rendered `0,30 9 * * *` as "Daily · 09:00" and
+  // silently dropped the 09:30 run.
+  const multiValued = (f: string) => /[,/-]/.test(f);
+  const timeMultiValued = multiValued(min) || multiValued(hour);
 
   const timeStr = (() => {
-    if (hourMultiValued) return null;
+    if (timeMultiValued) return null;
     const h = parseInt(hour, 10);
     const m = parseInt(min, 10);
     if (Number.isNaN(h) || Number.isNaN(m)) return null;

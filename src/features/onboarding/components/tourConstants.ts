@@ -14,6 +14,25 @@ import {
 } from '@/lib/design/tourSurfaces';
 import type { TourId } from '@/stores/slices/system/tourSlice';
 
+// -- Panel geometry -------------------------------------------------------
+
+/**
+ * Width of the tour rail, in px. Deliberately equal to the app's own two
+ * sidebar levels (L1 icon rail 52px + L2 sub-nav 240px, see `Sidebar.tsx`) so
+ * the tour never covers more chrome than the navigation it is talking about.
+ *
+ * The rail is therefore a NARROW surface: steps, checklist items and the
+ * Back/Next controls only. Every paragraph — step description, hints, the
+ * concept intro, the interactive step content — lives in `TourNarrativeDeck`,
+ * centred over the content area. Before that split the panel was 320–480px
+ * wide *and per-step variable*, so it both jumped width between steps and still
+ * overflowed with text.
+ */
+export const TOUR_RAIL_WIDTH = 292;
+
+/** Max width of the centred narrative deck, in px. */
+export const TOUR_DECK_MAX_WIDTH = 680;
+
 // -- Per-step icon map (all tours) ---------------------------------------
 
 const ICON_MAP: Record<string, typeof Key> = {

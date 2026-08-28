@@ -472,7 +472,6 @@ export type Translations = {
     triage_progress_aria: string;
     triage_queue_jump: string;
     triage_queue_rail_aria: string;
-    triage_queue_rail_title: string;
     triage_questions_pending: string;
     triage_reason_already_done: string;
     triage_reason_already_handled: string;
@@ -518,6 +517,22 @@ export type Translations = {
     quick_error_body: string;
     reviews_loading: string;
     reviews_error: string;
+    triage_rail_tab_decide: string;
+    triage_rail_tab_accepted: string;
+    triage_rail_tabs_aria: string;
+    triage_accepted_empty: string;
+    triage_accepted_empty_sub: string;
+    triage_accepted_select_all: string;
+    triage_accepted_selected: string;
+    triage_accepted_dispatch: string;
+    triage_accepted_mode_aria: string;
+    triage_accepted_mode_single: string;
+    triage_accepted_mode_batch: string;
+    triage_accepted_mode_parallel: string;
+    triage_accepted_concurrency_hint: string;
+    triage_accepted_result: string;
+    triage_accepted_result_skipped: string;
+    triage_accepted_row_aria: string;
   };
   common: {
     unknown_error: string;
@@ -930,6 +945,7 @@ export type Translations = {
     devices: string;
     unread_reports_sr: string;
     unread_reports_sr_other: string;
+    experimental: string;
   };
   home: {
     get_started: {
@@ -12509,6 +12525,11 @@ export type Translations = {
     col_connectors: string;
     _comment_col_version: string;
     col_version: string;
+    col_icon: string;
+    col_actions: string;
+    sort_by: string;
+    showing_count: string;
+    load_more_status: string;
     _comment_col_eligibility: string;
     col_eligibility: string;
     _comment_adopt_button: string;

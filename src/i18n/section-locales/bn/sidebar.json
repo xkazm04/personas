@@ -96,5 +96,6 @@
   "devices": "ডিভাইসসমূহ",
   "messages": "রিপোর্ট",
   "unread_reports_sr": "{count}টি অপঠিত রিপোর্ট",
-  "unread_reports_sr_other": "{count}টি অপঠিত রিপোর্ট"
+  "unread_reports_sr_other": "{count}টি অপঠিত রিপোর্ট",
+  "experimental": "পরীক্ষামূলক"
 }

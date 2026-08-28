@@ -57,9 +57,15 @@ describe('HomePage tab routing', () => {
     expect(await screen.findByTestId('stub-learning')).toBeInTheDocument();
   });
 
-  it('falls back to Welcome for an unknown tab', async () => {
+  // Welcome / What's New / System Check are dev-only rows in the Home L2 nav
+  // (`homeItems[].devOnly`). Anything the current build doesn't show — an
+  // unknown value from stale persisted state, or a dev-only tab in a production
+  // build — resolves to DEFAULT_HOME_TAB so the surface always has a matching
+  // sidebar row. Under Vitest `import.meta.env.DEV` is true, so the dev-only
+  // tabs themselves still route (covered above).
+  it('falls back to the default tab for an unknown tab', async () => {
     currentHomeTab = 'something-else';
     render(<HomePage />);
-    expect(await screen.findByTestId('stub-welcome')).toBeInTheDocument();
+    expect(await screen.findByTestId('stub-cockpit')).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
-// Shared vocabulary of the Passport Wall's split modules (host + overview grid
-// + compare table + cell renderers): the row-behaviour sets, display copy, the
-// sort/view tab specs, and the cover's shared layout-morph motion props.
+// Shared vocabulary of the Passport Wall's split modules (host + compare table
+// + cell renderers): the row-behaviour sets, display copy, the sort tab spec,
+// and the cover's shared layout motion props.
 import type { MotionProps } from 'framer-motion';
 
 // Improvable cells. Tier-0 standards-config rows (CI / Self-verify) + every
@@ -29,9 +29,6 @@ export const COPY = {
   automation: 'Automation',
   production: 'Production',
   sort: 'Sort',
-  view: 'View',
-  viewOverview: 'Overview',
-  viewCompare: 'Compare',
   setUp: 'set up →',
   add: 'add →',
 };
@@ -46,14 +43,9 @@ export const SORT_TABS: Array<{ id: WallSort; label: string }> = [
   { id: 'gap', label: 'Readiness gap' },
 ];
 
-export type WallView = 'overview' | 'compare';
-export const VIEW_TABS: Array<{ id: WallView; label: string }> = [
-  { id: 'overview', label: COPY.viewOverview },
-  { id: 'compare', label: COPY.viewCompare },
-];
-
-/** Covers carry framer-motion layoutIds so switching views RECOMPOSES the
- *  wall — each cover morphs between its grid tile and its table column. */
+/** Covers carry framer-motion layoutIds. They used to morph between the
+ *  retired Overview grid's tile and this table's column; with one view left
+ *  they animate the column REORDER when the sort changes. */
 export function coverMotion(slug: string, reduce: boolean | null): MotionProps {
   return reduce
     ? {}

@@ -1,0 +1,140 @@
+/**
+ * DeckDispatchBar — the Run Desk's action row, at rail width.
+ *
+ * Migrated from `plugins/dev-tools/sub_runner/RunDeskControls.tsx`, which is a
+ * horizontal `ActionRow` of six buttons across a full-width page. This rail is
+ * `clamp(18rem, …, 36rem)` — at its floor that row would wrap into six lines of
+ * one button each. So the SHAPE is different and the ACTIONS are the same three
+ * the Run Desk had for a selection: one at a time, the runner's default, or a
+ * width you name. See {@link useAcceptedDispatch} for what each maps to.
+ *
+ * Three deliberate omissions, none of them oversights:
+ *  • "New task" — this bar acts on a selection of ideas the reviewer just
+ *    accepted; authoring a task from nothing is not a triage act.
+ *  • "Batch from accepted" — that button IS this whole surface, minus the
+ *    ability to choose. Select-all + Dispatch is the same thing with a look at
+ *    what you are sending.
+ *  • "Cancel all" / "Retry failed" — those operate on tasks that already exist,
+ *    which is the Run Desk's own subject, not the deck's.
+ */
+import { Rocket } from 'lucide-react';
+
+import { AsyncButton } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import { PillGroup, type PillOption } from '@/features/shared/components/forms/PillGroup';
+import { useTranslation } from '@/i18n/useTranslation';
+
+import {
+  MAX_PARALLEL,
+  MIN_PARALLEL,
+  type AcceptedDispatch,
+  type DispatchMode,
+} from './useAcceptedDispatch';
+
+export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
+  const { t, tx } = useTranslation();
+  const m = t.monitor;
+
+  const total = ctl.rows.length;
+  const chosen = ctl.selected.size;
+  const allSelected = total > 0 && chosen === total;
+
+  // A RADIO GROUP, not a tab strip. The three modes select a parameter, not a
+  // region — nothing on this bar is a `tabpanel`, and `SegmentedTabs` would
+  // have this row telling assistive tech it controls three panels that do not
+  // exist (census: `tabstrip-with-no-declared-panel`). `PillGroup` declares
+  // `role="radiogroup"` / `role="radio"`, which is what this actually is.
+  const modes: PillOption<DispatchMode>[] = [
+    { value: 'single', label: m.triage_accepted_mode_single },
+    { value: 'batch', label: m.triage_accepted_mode_batch },
+    { value: 'parallel', label: m.triage_accepted_mode_parallel },
+  ];
+
+  return (
+    <div className="shrink-0 space-y-2 border-b border-primary/10 px-3 py-2">
+      <div className="flex items-center gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-2 typo-body text-foreground">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            disabled={total === 0}
+            // `indeterminate` is a PROPERTY, not an attribute — React will not
+            // set it from JSX, so a partial selection reads as "none selected"
+            // without this ref.
+            ref={(el) => { if (el) el.indeterminate = chosen > 0 && !allSelected; }}
+            onChange={ctl.toggleAll}
+            className="h-3.5 w-3.5 cursor-pointer rounded border-primary/30 bg-secondary/30 accent-primary"
+          />
+          {m.triage_accepted_select_all}
+        </label>
+        <span className="ml-auto typo-label tabular-nums text-foreground">
+          {tx(m.triage_accepted_selected, { count: chosen })}
+        </span>
+      </div>
+
+      <Tooltip content={m.triage_accepted_concurrency_hint}>
+        <div aria-label={m.triage_accepted_mode_aria}>
+          <PillGroup options={modes} value={ctl.mode} onChange={ctl.setMode} />
+        </div>
+      </Tooltip>
+
+      <div className="flex items-center gap-2">
+        {/* Only in `parallel`: in the other two modes the width is not the
+            reviewer's to set (1, and the runner's own default), and a stepper
+            that does nothing is worse than no stepper. */}
+        {ctl.mode === 'parallel' && (
+          <NumberStepper
+            value={ctl.maxParallel}
+            onChange={(n) => ctl.setMaxParallel(n ?? MIN_PARALLEL)}
+            min={MIN_PARALLEL}
+            max={MAX_PARALLEL}
+            ariaLabel={m.triage_accepted_concurrency_hint}
+            className="shrink-0"
+          />
+        )}
+        {/* An ACTION, so a real spinner on the control the reviewer pressed —
+            `AsyncButton` with a promise-returning onClick, never a `useState`
+            busy flag (docs/concepts/golden-paths/inline-busy-state.md). */}
+        <AsyncButton
+          variant="accent"
+          accentColor="amber"
+          size="sm"
+          className="flex-1"
+          icon={<Rocket className="h-3.5 w-3.5" />}
+          disabled={chosen === 0}
+          onClick={() => ctl.dispatch()}
+        >
+          {m.triage_accepted_dispatch}
+        </AsyncButton>
+      </div>
+
+      {/* The outcome, until the next dispatch clears it. `skipped` is printed
+          BESIDE `dispatched` and never folded into it — a dispatch that half
+          worked must not read as one that worked. */}
+      {ctl.report && (
+        <button
+          type="button"
+          onClick={ctl.dismissReport}
+          className={`focus-ring block w-full rounded-interactive px-2 py-1 text-left typo-label ${
+            ctl.report.error
+              ? 'bg-status-error/10 text-status-error'
+              : 'bg-status-success/10 text-status-success'
+          }`}
+        >
+          {ctl.report.error ?? (
+            <>
+              {tx(m.triage_accepted_result, { count: ctl.report.dispatched })}
+              {ctl.report.skipped > 0 && (
+                <span className="text-status-warning">
+                  {' · '}
+                  {tx(m.triage_accepted_result_skipped, { count: ctl.report.skipped })}
+                </span>
+              )}
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}

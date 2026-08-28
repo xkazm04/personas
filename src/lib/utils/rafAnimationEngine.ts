@@ -9,6 +9,8 @@
  * (matches the previous framer-motion config).
  */
 
+import { silentCatch } from '@/lib/silentCatch';
+
 interface AnimationEntry {
   /** Current interpolated value */
   current: number;
@@ -30,6 +32,33 @@ const DAMPING = 15;
 const MASS = 1;
 const REST_THRESHOLD = 0.01; // value + velocity both below this → settled
 
+/**
+ * Whether the user asked for reduced motion, read live at each target change.
+ *
+ * The preference is honored HERE rather than in each caller: this engine is the
+ * single place every scripted spring in the app runs, so a component that
+ * forgets to check cannot produce travelling motion. Callers that only want a
+ * *presentational* downgrade (a digit roll becoming a cross-fade) still make
+ * that choice themselves — what this guard removes is the travel, which is the
+ * part the preference is about.
+ *
+ * Deliberately not cached: the preference can change mid-session, and the query
+ * is only evaluated when a target actually moves. Guarded for environments
+ * without `matchMedia` (jsdom without the shim, SSR), where it reads as "no
+ * preference expressed" and full motion is correct.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    // intentional: a malformed/unsupported media query must not stop animation
+    return false;
+  }
+}
+
 function tick(now: number) {
   if (lastTime === null) {
     lastTime = now;
@@ -43,7 +72,7 @@ function tick(now: number) {
 
   let anyActive = false;
 
-  for (const entry of entries.values()) {
+  for (const [key, entry] of entries) {
     const displacement = entry.current - entry.target;
     const springForce = -STIFFNESS * displacement;
     const dampingForce = -DAMPING * entry.velocity;
@@ -61,7 +90,18 @@ function tick(now: number) {
       entry.velocity = 0;
     }
 
-    entry.write(entry.current);
+    // A throwing `write` used to escape `tick` before it could re-arm the
+    // frame. `rafId` still held the handle of the frame that had just fired, so
+    // `ensureRunning` saw a live loop, scheduled nothing, and EVERY animation in
+    // the app stayed frozen for the rest of the session. Evict the offending
+    // entry instead and keep the shared loop alive for its neighbours.
+    try {
+      entry.write(entry.current);
+    } catch (err) {
+      entries.delete(key);
+      silentCatch('lib/utils/rafAnimationEngine:write')(err);
+      continue;
+    }
 
     // Still animating?
     if (entry.current !== entry.target || entry.velocity !== 0) {
@@ -104,11 +144,20 @@ export function registerAnimation(
 
 /**
  * Update the target value for a registered animation. Starts the rAF loop if idle.
+ *
+ * Under `prefers-reduced-motion: reduce` the value is snapped instead: these
+ * animations carry content (a counter's figure is the number the reader came
+ * for), so the reduced form is the resolved end state delivered immediately —
+ * never nothing, and never a slower version of the same travel.
  */
 export function setAnimationTarget(key: symbol, target: number) {
   const entry = entries.get(key);
   if (!entry) return;
   if (entry.target === target) return;
+  if (prefersReducedMotion()) {
+    snapAnimation(key, target);
+    return;
+  }
   entry.target = target;
   ensureRunning();
 }

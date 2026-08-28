@@ -96,5 +96,6 @@
   "devices": "Dispositivos",
   "messages": "Informes",
   "unread_reports_sr": "{count} informe sin leer",
-  "unread_reports_sr_other": "{count} informes sin leer"
+  "unread_reports_sr_other": "{count} informes sin leer",
+  "experimental": "Función experimental"
 }

@@ -142,7 +142,12 @@ export default function HomeLearning() {
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
 
-  const completedCount = Object.values(tourCompletionMap).filter(Boolean).length;
+  // Count only the built-in registry, because that is what the denominator
+  // is. `tourCompletionMap` also carries Athena-composed (`athena-*`) tour
+  // ids — hydrated at tourSlice.ts:1322 and written by `finishTour` for any
+  // active tour — so counting every truthy value rendered "12 of 9" once a
+  // user finished a composed tour.
+  const completedCount = TOUR_REGISTRY.filter((tour) => tourCompletionMap[tour.id]).length;
   const lastIdx = TOUR_REGISTRY.length - 1;
 
   return (

@@ -96,5 +96,6 @@
   "devices": "डिवाइस",
   "messages": "रिपोर्टें",
   "unread_reports_sr": "{count} अपठित रिपोर्ट",
-  "unread_reports_sr_other": "{count} अपठित रिपोर्टें"
+  "unread_reports_sr_other": "{count} अपठित रिपोर्टें",
+  "experimental": "प्रयोगात्मक"
 }

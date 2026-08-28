@@ -17,11 +17,35 @@
 //    row out and unshift it to position 1, which renumbered the very list the
 //    reviewer was reading, around their own click. See `triageQueue#cursorId`.
 //  • It hides below `lg`. On a narrow window the card is the whole point.
-import { memo, useEffect, useRef } from 'react';
+//
+// SECOND TAB (2026-08-27, migrated from the Run Desk). The rail now carries two
+// halves of one job: `To decide`, the ledger described above, and `Accepted`,
+// the work the reviewer has said yes to that nobody has sent to a runner yet.
+// The deck used to end at the verdict — an accepted idea became a `dev_ideas`
+// row and sat there until somebody opened a different section and pressed
+// "Batch from accepted". The `Accepted` tab is that button's whole surface,
+// with the ability to see and choose what you are sending. See
+// `useAcceptedDispatch` for the three dispatch techniques and
+// `DeckDispatchBar` / `DeckAcceptedList` for the two pieces it renders.
+//
+// The tab is rail-local state on purpose: nothing outside needs to know which
+// half is showing, and lifting it would put a re-render of the whole deck
+// behind a switch that repaints one column.
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 
+import {
+  SegmentedTabs,
+  segmentedTabPanelProps,
+  type SegmentedTab,
+} from '@/features/shared/components/layout/SegmentedTabs';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+
+import { DeckAcceptedList } from './DeckAcceptedList';
+import { DeckDispatchBar } from './DeckDispatchBar';
+import { useAcceptedDispatch } from './useAcceptedDispatch';
 
 import type { SkipLedger } from '../triageQueue';
 import type { TriageItem } from '../triageTypes';
@@ -31,32 +55,60 @@ import { KIND_META, kindCopy, TONE_TEXT } from './DeckChips';
  *  (a virtualizer with a handful of rows costs a measure pass and buys nothing). */
 const VIRTUALIZE_ABOVE = 40;
 /**
- * Row height fed to the virtualizer. Matches the padding + line-height below:
- * `py-2` (8 + 8) plus one `typo-body` line.
+ * Row height, fed to the virtualizer AND applied to the row itself.
  *
- * Exported so a test can assert the constant and the rendered row agree. They
- * are two independent numbers handed to `estimateSize`, virtualization engages
- * above `VIRTUALIZE_ABOVE` rows, and drift between them misplaces every row past
- * that point — silently.
+ * It used to be a lone `estimateSize` argument that a reader had to keep in
+ * their head against `py-2 + one typo-body line` — two independent numbers,
+ * and drift between them misplaces every row past the 40th, silently. The row
+ * now takes its height FROM this constant, so they cannot drift: the only cost
+ * is that a row whose title genuinely needs a third line clips instead of
+ * growing, which `line-clamp-2` was already deciding anyway.
+ *
+ * 60 = `py-1.5` (6 + 6) plus two `typo-body` lines (14px × 1.65 × 2 ≈ 46.2).
+ * Two, because the title now wraps rather than truncating at the first ellipsis
+ * — see the row below.
  */
-export const ROW_HEIGHT = 40;
+export const ROW_HEIGHT = 60;
 
 /**
- * The rail's width, and the width its mirror must match.
+ * The rail's width: EVERYTHING THE CARD DOES NOT NEED, floored at 18rem and
+ * capped at 36rem. Roughly 240px → 519px on a 1359px window, and it keeps
+ * moving with the window instead of waiting for the next breakpoint.
  *
- * Doubles (240 → 480) only where the screen can pay for it. The card is
- * `max-w-[46rem]` (736px) and its flanks + gaps + padding cost 224px, so the
- * centre column needs 960px to hold the card at full width. `TriageDeckVariant`
- * mirrors this rail with an empty column only at breakpoints where
- * `viewport − 2 × rail` still clears 960 — which is why the ladder pauses at
- * `w-72` through `2xl` instead of growing on every step. The result: the card's
- * width is unchanged at every breakpoint, and from `2xl` up its centre stops
- * moving when the rail resizes.
+ * Two things used to stand between this rail and the screen, and both are gone:
  *
- * Exported because the mirror MUST read this same string. Two hand-copied class
- * lists that drift is precisely how the card slides off-centre again.
+ *  • The MIRROR. An empty column, exactly one rail wide, at `2xl` and up, so
+ *    the card centred on the WINDOW rather than on the space the rail left
+ *    over. It worked — and it charged every pixel the rail wanted TWICE, which
+ *    is the whole reason the rail could never grow past `w-72`. The card is now
+ *    centred in the column beside the rail.
+ *  • The FLANKS' layout width. Two 4rem buttons with a `gap-6 xl:gap-12` on
+ *    either side cost the card column 14rem of flow. Pinned to that column's
+ *    borders they cost 10rem of padding (`lg:px-20`), and padding is not width
+ *    the card competes for.
+ *
+ * THE INVARIANT: the card's width never regresses. It wants `46rem` plus the
+ * flanks' `10rem` of padding = **56rem**, which is the subtrahend below — so
+ * for every window ≥ 74rem the card is at full measure and the rail takes 100%
+ * of the surplus. Below that the floor holds at 18rem and the card gives way
+ * exactly as it always did (at `lg` it now gets 36rem, where the old geometry
+ * left it 35rem).
+ *
+ * A CLAMP AND NOT A BREAKPOINT LADDER, for a measured reason. Tailwind's named
+ * breakpoints are rem-based and this app's root font-size is user-configurable
+ * (15px on the machine this was measured on, so `xl` fires at 1200px, not
+ * 1280). Arbitrary `min-[…px]:` variants sort BEFORE the named ones in the
+ * generated sheet, so a mixed ladder silently loses: a probe carrying
+ * `min-[1344px]:w-[28rem] xl:w-96` at a 1359px viewport resolves to `w-96`,
+ * with `xl` winning despite matching a narrower query. The rung this file
+ * shipped before — `min-[1728px]:w-96` after `2xl:w-72` — was dead for the
+ * same reason. `clamp()` has no variants to order and no breakpoint to
+ * mis-align, and it is expressed in the same rem the card and padding are.
+ *
+ * Still exported, and the test still asserts the `<aside>` carries it: this is
+ * load-bearing arithmetic, not decoration.
  */
-export const RAIL_WIDTH = 'w-60 xl:w-72 2xl:w-72 min-[1728px]:w-96 min-[1920px]:w-[30rem]';
+export const RAIL_WIDTH = 'w-[clamp(18rem,calc(100vw_-_56rem),36rem)]';
 
 /**
  * Memoised, one level below the rail's own memo — because the two protect
@@ -108,23 +160,51 @@ const QueueRow = memo(function QueueRow({
       aria-current={current ? 'true' : undefined}
       // The kind rides in the tooltip too: with the second line gone, the icon
       // is the only thing carrying it on screen, and an icon is not a label.
+      // The FULL title rides here as well — two clamped lines is a lot of room,
+      // but it is still a bound, and the tooltip is where the rest lives.
       title={`${kindLabel} — ${tx(t.monitor.triage_queue_jump, { title: item.title })}`}
-      className={`focus-ring flex w-full items-center gap-2.5 border-l-2 px-3 py-2 text-left transition-colors ${
+      // Block, not flex, and a height taken from ROW_HEIGHT rather than implied
+      // by the padding: the title is no longer a flex sibling competing with the
+      // counter and the icon for the row's width — it owns the whole row and
+      // wraps under them. See the marker span below.
+      style={{ height: ROW_HEIGHT }}
+      className={`focus-ring relative block w-full overflow-hidden border-l-2 px-3 py-1.5 text-left transition-colors ${
         current
           ? 'border-primary bg-primary/10'
           : 'border-transparent hover:border-primary/30 hover:bg-secondary/40'
       }`}
     >
-      <span className="typo-data w-5 shrink-0 tabular-nums text-muted-foreground">{position}</span>
-      <Icon className={`h-4 w-4 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
+      {/* Position + kind, pinned to the row's top-left corner and stepped down a
+          size. They used to sit IN the text flow, which cost the title ~70px of
+          a 240px rail on every row and truncated most topics mid-word. Out of
+          flow they cost the FIRST LINE only — the spacer below — and nothing at
+          all from the second. */}
+      <span className="pointer-events-none absolute left-3 top-2.5 flex items-center gap-1">
+        <span className="typo-label w-6 text-right tabular-nums text-muted-foreground">
+          {position}
+        </span>
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${TONE_TEXT[meta.tone]}`} aria-hidden />
+      </span>
       {/* The icon is `aria-hidden`, so this is the ONLY thing standing between
-          the single-line row and a queue whose item types are invisible to a
-          screen reader. */}
+          the row and a queue whose item types are invisible to a screen reader. */}
       <span className="sr-only">{kindLabel}</span>
       {/* Normal weight, every row. The card being decided is marked by the left
           border and the background tint it already has — carrying that in the
-          font weight as well made the rail read as a list of headlines. */}
-      <span data-rail-name className="typo-body min-w-0 flex-1 truncate text-foreground">
+          font weight as well made the rail read as a list of headlines.
+
+          `line-clamp-2` rather than `truncate`: the corner badge buys the title
+          the full rail width, and the second line is what turns "readable at a
+          glance" into "actually the whole topic" for the long ones. */}
+      <span
+        data-rail-name
+        className={`typo-body line-clamp-2 text-foreground ${deferred ? 'pr-5' : ''}`}
+      >
+        {/* An empty inline-block, NOT `text-indent` / `float`: this box is a
+            `-webkit-box` (that is what `line-clamp` is), and a zero-width
+            spacer at the head of the flow is the one way to indent its first
+            line that does not depend on how Blink treats indentation inside
+            one. It is what keeps the title clear of the corner badge. */}
+        <span aria-hidden className="inline-block w-12" />
         {item.title}
       </span>
       {/* A skipped card sorts to the BACK of the queue rather than leaving it,
@@ -137,13 +217,113 @@ const QueueRow = memo(function QueueRow({
           The kind got one when the second line was deleted; this did not. */}
       {deferred ? (
         <>
-          <RotateCcw className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+          <RotateCcw
+            className="absolute right-2 top-2.5 h-3 w-3 text-muted-foreground"
+            aria-hidden
+          />
           <span className="sr-only">{t.monitor.triage_queue_deferred}</span>
         </>
       ) : null}
     </button>
   );
 });
+
+/**
+ * The `To decide` body — the ledger, unchanged. Split out of the rail when the
+ * second tab arrived, so the two bodies are siblings rather than one component
+ * with a mode flag threaded through its virtualizer.
+ */
+const DecideList = memo(function DecideList({
+  items,
+  cursor,
+  skips,
+  onJump,
+}: {
+  items: TriageItem[];
+  cursor: number;
+  skips: SkipLedger;
+  onJump: (id: string) => void;
+}) {
+  const virtualize = items.length > VIRTUALIZE_ABOVE;
+  const { parentRef, virtualizer } = useVirtualList(items, ROW_HEIGHT);
+
+  // A virtualized rail only mounts the rows near the viewport, so `QueueRow`'s
+  // own `scrollIntoView` cannot reach a current row that is not rendered — and
+  // the cursor is exactly the thing that now jumps (to the row clicked, and to
+  // the front again when it wraps off the end). Drive the scroller by INDEX
+  // instead; the row-level effect still handles the short, non-virtual list.
+  useEffect(() => {
+    if (!virtualize) return;
+    virtualizer.scrollToIndex(cursor, { align: 'auto' });
+    // `virtualizer` re-identifies on every measure pass; scrolling on that would
+    // fight the reviewer's own scrolling. The cursor moving is the only reason
+    // to move the viewport.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cursor, virtualize]);
+
+  return (
+    // The scroll element is handed to the virtualizer ONLY when the list is
+    // long enough to virtualize. A virtualizer that owns a scroller it isn't
+    // driving still measures and scrolls it.
+    <div
+      data-decide-list
+      ref={virtualize ? parentRef : undefined}
+      className="min-h-0 flex-1 overflow-y-auto"
+    >
+      {virtualize ? (
+        <ul className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+          {virtualizer.getVirtualItems().map((row) => {
+            const item = items[row.index]!;
+            return (
+              <li
+                key={item.id}
+                className="absolute inset-x-0 top-0"
+                style={{ height: row.size, transform: `translateY(${row.start}px)` }}
+              >
+                <QueueRow
+                  item={item}
+                  position={row.index + 1}
+                  current={row.index === cursor}
+                  deferred={(skips.get(item.id) ?? 0) > 0}
+                  onJump={onJump}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <ul>
+          {items.map((item, i) => (
+            <li key={item.id}>
+              <QueueRow
+                item={item}
+                position={i + 1}
+                current={i === cursor}
+                deferred={(skips.get(item.id) ?? 0) > 0}
+                onJump={onJump}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+});
+
+/** Which half of the rail is showing. See the file header. */
+type RailTab = 'decide' | 'accepted';
+
+/**
+ * Ties each tab to the region it selects.
+ *
+ * `SegmentedTabs` emits `aria-controls` UNCONDITIONALLY, off a prefix that
+ * defaults to `useId()` — so without passing one explicitly, the id it points
+ * at is not merely unwritten, it is unobtainable, and the strip advertises a
+ * relationship that exists only in the visual layout. Passing a fixed prefix
+ * and spreading `segmentedTabPanelProps` onto the body is what makes the
+ * promise true (census: `tabstrip-with-no-declared-panel`).
+ */
+const RAIL_TAB_PREFIX = 'triage-rail';
 
 /**
  * Memoised, and the row list is why.
@@ -169,76 +349,94 @@ export const DeckQueueRail = memo(function DeckQueueRail({
   onJump: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const virtualize = items.length > VIRTUALIZE_ABOVE;
-  const { parentRef, virtualizer } = useVirtualList(items, ROW_HEIGHT);
+  const [tab, setTab] = useState<RailTab>('decide');
 
-  // A virtualized rail only mounts the rows near the viewport, so `QueueRow`'s
-  // own `scrollIntoView` cannot reach a current row that is not rendered — and
-  // the cursor is exactly the thing that now jumps (to the row clicked, and to
-  // the front again when it wraps off the end). Drive the scroller by INDEX
-  // instead; the row-level effect still handles the short, non-virtual list.
-  useEffect(() => {
-    if (!virtualize) return;
-    virtualizer.scrollToIndex(cursor, { align: 'auto' });
-    // `virtualizer` re-identifies on every measure pass; scrolling on that would
-    // fight the reviewer's own scrolling. The cursor moving is the only reason
-    // to move the viewport.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cursor, virtualize]);
+  // Unconditional, as hooks must be — including on the frames where this rail
+  // renders nothing. That costs one `dev_tools_undispatched_ideas` read on a
+  // cold deal, which is a POST-PAINT effect and so lands after the first commit
+  // the rail is deliberately held out of. What it buys is that the tab's count
+  // is truthful the moment the rail appears, rather than after the reviewer has
+  // clicked a tab labelled zero to find out it is not.
+  const accepted = useAcceptedDispatch({
+    resolveErrorMessage: (err) =>
+      resolveErrorTranslated(t, err instanceof Error ? err.message : String(err)).message,
+  });
 
-  if (items.length === 0) return null;
+  const tabs: SegmentedTab<RailTab>[] = useMemo(
+    () => [
+      {
+        id: 'decide',
+        label: (
+          <span className="inline-flex items-center gap-1.5">
+            {t.monitor.triage_rail_tab_decide}
+            <span className="tabular-nums opacity-60">{items.length}</span>
+          </span>
+        ),
+        ariaLabel: t.monitor.triage_rail_tab_decide,
+      },
+      {
+        id: 'accepted',
+        label: (
+          <span className="inline-flex items-center gap-1.5">
+            {t.monitor.triage_rail_tab_accepted}
+            <span className="tabular-nums opacity-60">{accepted.rows.length}</span>
+          </span>
+        ),
+        ariaLabel: t.monitor.triage_rail_tab_accepted,
+      },
+    ],
+    [t, items.length, accepted.rows.length],
+  );
+
+  // Nothing to decide AND nothing accepted waiting = no rail. The gate used to
+  // be `items.length === 0` alone; keeping it that way would hide the Accepted
+  // tab at exactly the moment it is most useful — a reviewer who has just
+  // cleared the deck is the one person with a pile of accepted work and no
+  // queue left to read.
+  if (items.length === 0 && accepted.rows.length === 0) return null;
 
   return (
     <aside
       aria-label={t.monitor.triage_queue_rail_aria}
       className={`hidden h-full ${RAIL_WIDTH} shrink-0 flex-col border-r border-primary/10 bg-secondary/15 lg:flex`}
     >
-      <div className="flex shrink-0 items-baseline justify-between border-b border-primary/10 px-3 py-3">
-        <h2 className="typo-label text-muted-foreground">
-          {t.monitor.triage_queue_rail_title}
-        </h2>
-        <span className="typo-data tabular-nums text-foreground">{items.length}</span>
+      <div className="shrink-0 border-b border-primary/10 px-3 py-2">
+        <SegmentedTabs
+          tabs={tabs}
+          activeTab={tab}
+          onTabChange={setTab}
+          variant="segment"
+          size="sm"
+          idPrefix={RAIL_TAB_PREFIX}
+          ariaLabel={t.monitor.triage_rail_tabs_aria}
+        />
       </div>
 
-      {/* The scroll element is handed to the virtualizer ONLY when the list is
-          long enough to virtualize. A virtualizer that owns a scroller it isn't
-          driving still measures and scrolls it. */}
-      <div ref={virtualize ? parentRef : undefined} className="min-h-0 flex-1 overflow-y-auto">
-        {virtualize ? (
-          <ul className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
-            {virtualizer.getVirtualItems().map((row) => {
-              const item = items[row.index]!;
-              return (
-                <li
-                  key={item.id}
-                  className="absolute inset-x-0 top-0"
-                  style={{ height: row.size, transform: `translateY(${row.start}px)` }}
-                >
-                  <QueueRow
-                    item={item}
-                    position={row.index + 1}
-                    current={row.index === cursor}
-                    deferred={(skips.get(item.id) ?? 0) > 0}
-                    onJump={onJump}
-                  />
-                </li>
-              );
-            })}
-          </ul>
+      {/* One panel element per tab, keyed by the tab so the two bodies never
+          share a DOM node (and never share a scroll position).
+
+          `segmentedTabPanelProps` supplies the id and `aria-labelledby` off the
+          primitive's OWN arithmetic, so the two halves of `aria-controls`
+          cannot drift. `role` is then written out literally as well — the same
+          value the helper sets, and redundant at runtime. It is here because
+          the census rule that gates this condition greps for the string
+          `role="tabpanel"` in the file, and a role that only exists inside a
+          spread is invisible to it: the file would go on reading as a strip
+          with no panel. Stating it is cheaper than a rule that cannot see its
+          own prescribed fix. */}
+      <div
+        key={tab}
+        {...segmentedTabPanelProps(RAIL_TAB_PREFIX, tab)}
+        role="tabpanel"
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        {tab === 'decide' ? (
+          <DecideList items={items} cursor={cursor} skips={skips} onJump={onJump} />
         ) : (
-          <ul>
-            {items.map((item, i) => (
-              <li key={item.id}>
-                <QueueRow
-                  item={item}
-                  position={i + 1}
-                  current={i === cursor}
-                  deferred={(skips.get(item.id) ?? 0) > 0}
-                  onJump={onJump}
-                />
-              </li>
-            ))}
-          </ul>
+          <>
+            <DeckDispatchBar ctl={accepted} />
+            <DeckAcceptedList ctl={accepted} />
+          </>
         )}
       </div>
     </aside>

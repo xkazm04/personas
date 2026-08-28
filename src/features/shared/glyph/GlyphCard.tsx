@@ -188,7 +188,7 @@ export function GlyphCard({
                   ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.7)]'
                   : 'bg-foreground/30'
               }`}
-              aria-label={statusDot === 'active' ? 'active' : 'paused'}
+              aria-label={statusDot === 'active' ? t.agents.use_cases.health_active : t.agents.use_cases.health_paused}
             />
           )}
 

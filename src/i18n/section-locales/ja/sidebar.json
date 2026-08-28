@@ -96,5 +96,6 @@
   "devices": "デバイス",
   "messages": "レポート",
   "unread_reports_sr": "未読レポート {count} 件",
-  "unread_reports_sr_other": "未読レポート {count} 件"
+  "unread_reports_sr_other": "未読レポート {count} 件",
+  "experimental": "実験的機能"
 }

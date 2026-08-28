@@ -37,8 +37,18 @@ export function RecipesPage() {
   // Refresh on mount. The boot-time recipe seed (Phase 2.4) populates the
   // DB before the frontend renders, so this is usually a one-shot fetch
   // that lands the rows into the store.
+  //
+  // `isLoading` exists only so the browse list can hold its empty state back
+  // until this settles (the store carries no per-slice loading flag). It
+  // starts true and is cleared in a `finally`, so a rejected fetch releases
+  // the empty state rather than pinning the surface blank forever.
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    fetchRecipes().catch(silentCatch('RecipesPage.fetchRecipes'));
+    let cancelled = false;
+    fetchRecipes()
+      .catch(silentCatch('RecipesPage.fetchRecipes'))
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
   }, [fetchRecipes]);
 
   // Memoise the adapter pass — the catalog has ~291 entries, and the
@@ -84,6 +94,7 @@ export function RecipesPage() {
           >
             <RecipesBrowseList
               recipes={recipes}
+              isLoading={isLoading}
               search={search}
               onSearchChange={setSearch}
               onOpenDetail={(id) => setSelectedRecipeId(id)}

@@ -96,5 +96,6 @@
   "devices": "Zařízení",
   "messages": "Reporty",
   "unread_reports_sr": "{count} nepřečtený report",
-  "unread_reports_sr_other": "{count} nepřečtených reportů"
+  "unread_reports_sr_other": "{count} nepřečtených reportů",
+  "experimental": "Experimentální"
 }

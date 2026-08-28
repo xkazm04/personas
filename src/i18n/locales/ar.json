@@ -476,7 +476,6 @@
     "stream_kind_slack": "Slack",
     "triage_queue_jump": "التالي: {title}",
     "triage_queue_rail_aria": "قائمة الفرز",
-    "triage_queue_rail_title": "التالي",
     "quick_error_body": "لم تستجب قائمة المراجعات، لذا فهذه ليست الصورة الكاملة.",
     "quick_error_title": "تعذّرت قراءة ما ينتظرك",
     "quick_loading": "جارٍ قراءة ما ينتظرك…",
@@ -511,7 +510,23 @@
     "conv_persona_review_rejected": "مرفوض",
     "conv_persona_review_resolved": "تم الحل",
     "conv_persona_sending": "جارٍ الإرسال…",
-    "conv_persona_working": "{name} يعمل…"
+    "conv_persona_working": "{name} يعمل…",
+    "triage_rail_tab_decide": "بانتظار القرار",
+    "triage_rail_tab_accepted": "مقبولة",
+    "triage_rail_tabs_aria": "عرض قائمة الانتظار",
+    "triage_accepted_empty": "لا شيء بانتظار التنفيذ",
+    "triage_accepted_empty_sub": "تبقى العناصر المقبولة هنا حتى ترسلها إلى مُنفِّذ.",
+    "triage_accepted_select_all": "تحديد الكل",
+    "triage_accepted_selected": "المحدد: {count}",
+    "triage_accepted_dispatch": "إرسال",
+    "triage_accepted_mode_aria": "وضع الإرسال",
+    "triage_accepted_mode_single": "واحد تلو الآخر",
+    "triage_accepted_mode_batch": "دفعة",
+    "triage_accepted_mode_parallel": "بالتوازي",
+    "triage_accepted_concurrency_hint": "كم عنصرًا يعمل في وقت واحد",
+    "triage_accepted_result": "تم إرسال {count} إلى المُنفِّذ",
+    "triage_accepted_result_skipped": "تم تخطي {count}",
+    "triage_accepted_row_aria": "تحديد {title}"
   },
   "common": {
     "loading": "جارٍ التحميل…",
@@ -923,7 +938,8 @@
     "devices": "الأجهزة",
     "messages": "التقارير",
     "unread_reports_sr": "{count} تقرير غير مقروء",
-    "unread_reports_sr_other": "{count} تقارير غير مقروءة"
+    "unread_reports_sr_other": "{count} تقارير غير مقروءة",
+    "experimental": "تجريبي"
   },
   "home": {
     "setup": {
@@ -12265,6 +12281,11 @@
     "col_connectors": "الموصلات",
     "_comment_col_version": "Table column header for version",
     "col_version": "الإصدار",
+    "col_icon": "الموصل",
+    "col_actions": "الإجراءات",
+    "sort_by": "الفرز حسب {label}",
+    "showing_count": "عرض {shown} من {total}",
+    "load_more_status": "مرّر لعرض المزيد",
     "_comment_col_eligibility": "Table column header for eligibility status",
     "col_eligibility": "الأهلية",
     "_comment_adopt_button": "Button label to adopt a recipe from the table row",

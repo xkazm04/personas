@@ -476,7 +476,6 @@
     "stream_kind_slack": "Slack",
     "triage_queue_jump": "পরবর্তীতে দেখান: {title}",
     "triage_queue_rail_aria": "ট্রায়াজ সারি",
-    "triage_queue_rail_title": "পরবর্তী",
     "quick_error_body": "রিভিউ সারি সাড়া দেয়নি, তাই এটি পুরো চিত্র নয়।",
     "quick_error_title": "যা অপেক্ষা করছে তা পড়া যায়নি",
     "quick_loading": "আপনার জন্য যা অপেক্ষা করছে তা পড়া হচ্ছে…",
@@ -511,7 +510,23 @@
     "conv_persona_review_rejected": "প্রত্যাখ্যাত",
     "conv_persona_review_resolved": "সমাধান হয়েছে",
     "conv_persona_sending": "পাঠানো হচ্ছে…",
-    "conv_persona_working": "{name} কাজ করছে…"
+    "conv_persona_working": "{name} কাজ করছে…",
+    "triage_rail_tab_decide": "সিদ্ধান্ত বাকি",
+    "triage_rail_tab_accepted": "গৃহীত",
+    "triage_rail_tabs_aria": "সারির ভিউ",
+    "triage_accepted_empty": "তৈরির জন্য কিছু অপেক্ষা করছে না",
+    "triage_accepted_empty_sub": "গৃহীত আইটেমগুলি এখানে থাকে যতক্ষণ না আপনি সেগুলি রানারে পাঠান।",
+    "triage_accepted_select_all": "সব নির্বাচন করুন",
+    "triage_accepted_selected": "{count}টি নির্বাচিত",
+    "triage_accepted_dispatch": "পাঠান",
+    "triage_accepted_mode_aria": "পাঠানোর ধরন",
+    "triage_accepted_mode_single": "একটি করে",
+    "triage_accepted_mode_batch": "ব্যাচ",
+    "triage_accepted_mode_parallel": "সমান্তরাল",
+    "triage_accepted_concurrency_hint": "একসাথে কতগুলি চলবে",
+    "triage_accepted_result": "{count}টি রানারে পাঠানো হয়েছে",
+    "triage_accepted_result_skipped": "{count}টি বাদ পড়েছে",
+    "triage_accepted_row_aria": "{title} নির্বাচন করুন"
   },
   "common": {
     "loading": "লোড হচ্ছে…",
@@ -923,7 +938,8 @@
     "devices": "ডিভাইসসমূহ",
     "messages": "রিপোর্ট",
     "unread_reports_sr": "{count}টি অপঠিত রিপোর্ট",
-    "unread_reports_sr_other": "{count}টি অপঠিত রিপোর্ট"
+    "unread_reports_sr_other": "{count}টি অপঠিত রিপোর্ট",
+    "experimental": "পরীক্ষামূলক"
   },
   "home": {
     "setup": {
@@ -12265,6 +12281,11 @@
     "col_connectors": "কানেক্টর",
     "_comment_col_version": "Table column header for version",
     "col_version": "সংস্করণ",
+    "col_icon": "কানেক্টর",
+    "col_actions": "অ্যাকশন",
+    "sort_by": "{label} অনুসারে সাজান",
+    "showing_count": "{total}-এর মধ্যে {shown}টি দেখানো হচ্ছে",
+    "load_more_status": "আরও দেখতে স্ক্রল করুন",
     "_comment_col_eligibility": "Table column header for eligibility status",
     "col_eligibility": "যোগ্যতা",
     "_comment_adopt_button": "Button label to adopt a recipe from the table row",

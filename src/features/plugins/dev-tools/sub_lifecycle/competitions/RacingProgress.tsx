@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { MILESTONES, type Milestone } from './strategyPresets';
 import type { DevCompetitionSlot } from '@/lib/bindings/DevCompetitionSlot';
 import type { DevTask } from '@/lib/bindings/DevTask';
-import { elapsedStr } from './timeUtils';
+import { elapsedStr, durationStr } from './timeUtils';
 
 interface SlotProgress {
   slot: DevCompetitionSlot;
@@ -63,7 +63,6 @@ function deriveProgress(task: DevTask | null): { milestone: Milestone; detail: s
 
 interface RacingProgressProps {
   slots: { slot: DevCompetitionSlot; task: DevTask | null }[];
-  competitionStartedAt: string;
 }
 
 export function RacingProgress({ slots }: RacingProgressProps) {
@@ -148,9 +147,15 @@ export function RacingProgress({ slots }: RacingProgressProps) {
                   {elapsedStr(new Date(task.started_at).getTime())}
                 </span>
               )}
+              {/* A FINISHED slot's time is the run's duration, not the time
+                  since it started. This branch called `elapsedStr(started_at)`
+                  — the same helper the running branch above uses — so a
+                  completed racer's badge kept climbing on every 8s poll and
+                  disagreed with CompetitionSlotRow, which prints
+                  `durationStr(started_at, completed_at)` for the same slot. */}
               {isDone && task?.started_at && task?.completed_at && (
                 <span className="text-emerald-400 shrink-0">
-                  {elapsedStr(new Date(task.started_at).getTime())}
+                  {durationStr(task.started_at, task.completed_at)}
                 </span>
               )}
             </div>

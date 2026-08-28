@@ -476,7 +476,6 @@
     "stream_kind_slack": "Slack",
     "triage_queue_jump": "Další na řadě: {title}",
     "triage_queue_rail_aria": "Fronta k třídění",
-    "triage_queue_rail_title": "Další na řadě",
     "quick_error_body": "Fronta kontrol neodpověděla, takže tohle není celý obraz.",
     "quick_error_title": "Nepodařilo se načíst, co čeká",
     "quick_loading": "Načítám, co na vás čeká…",
@@ -511,7 +510,23 @@
     "conv_persona_review_rejected": "Zamítnuto",
     "conv_persona_review_resolved": "Vyřešeno",
     "conv_persona_sending": "Odesílání…",
-    "conv_persona_working": "{name} pracuje…"
+    "conv_persona_working": "{name} pracuje…",
+    "triage_rail_tab_decide": "K rozhodnutí",
+    "triage_rail_tab_accepted": "Přijaté",
+    "triage_rail_tabs_aria": "Zobrazení fronty",
+    "triage_accepted_empty": "Nic nečeká na realizaci",
+    "triage_accepted_empty_sub": "Přijaté položky tu čekají, dokud je nepošlete běhovému procesu.",
+    "triage_accepted_select_all": "Vybrat vše",
+    "triage_accepted_selected": "Vybráno: {count}",
+    "triage_accepted_dispatch": "Odeslat",
+    "triage_accepted_mode_aria": "Režim odeslání",
+    "triage_accepted_mode_single": "Po jedné",
+    "triage_accepted_mode_batch": "Dávka",
+    "triage_accepted_mode_parallel": "Paralelně",
+    "triage_accepted_concurrency_hint": "Kolik jich běží najednou",
+    "triage_accepted_result": "Odesláno běhovému procesu: {count}",
+    "triage_accepted_result_skipped": "Přeskočeno: {count}",
+    "triage_accepted_row_aria": "Vybrat {title}"
   },
   "common": {
     "loading": "Načítání…",
@@ -923,7 +938,8 @@
     "devices": "Zařízení",
     "messages": "Reporty",
     "unread_reports_sr": "{count} nepřečtený report",
-    "unread_reports_sr_other": "{count} nepřečtených reportů"
+    "unread_reports_sr_other": "{count} nepřečtených reportů",
+    "experimental": "Experimentální"
   },
   "home": {
     "setup": {
@@ -12265,6 +12281,11 @@
     "col_connectors": "Konektory",
     "_comment_col_version": "Table column header for version",
     "col_version": "Verze",
+    "col_icon": "Konektor",
+    "col_actions": "Akce",
+    "sort_by": "Seřadit podle: {label}",
+    "showing_count": "Zobrazeno {shown} z {total}",
+    "load_more_status": "Posunutím zobrazíte další",
     "_comment_col_eligibility": "Table column header for eligibility status",
     "col_eligibility": "Způsobilost",
     "_comment_adopt_button": "Button label to adopt a recipe from the table row",

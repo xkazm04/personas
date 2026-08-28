@@ -1,20 +1,20 @@
-// The project-readiness wall — TWO VIEWS of the same passports (design adopted
-// from the Dev Tools cockpit prototype R7–R9, docs/plans/dev-tools-cx-redesign.md):
+// The project-readiness wall — the row-aligned dimension matrix (design adopted
+// from the Dev Tools cockpit prototype R7–R9, docs/plans/dev-tools-cx-redesign.md).
 //
-//   • Overview (DEFAULT) — passport covers as a grid with a blockers digest
-//     (WallOverviewGrid).
-//   • Compare — the row-aligned dimension matrix with the improve machinery
-//     (WallCompareTable).
+// It used to be TWO views of the same passports behind a switcher: an Overview
+// grid of covers, and this Compare matrix. The grid was removed (2026-08-27)
+// and Compare is the baseline — the grid showed nothing the matrix's own cover
+// header does not, and a switcher between "the covers" and "the covers plus
+// every dimension under them" is a toggle whose off position is a strict subset
+// of its on position.
 //
-// This host owns the view/sort state, the toolbar, the column ordering, and
-// the R19 unified-row modals (setup + fleet terminal); the views, the cover,
-// and the cell renderer live in their own modules (wallConfig / CoverBody /
-// InkWallCell / WallOverviewGrid / WallCompareTable). Covers carry
-// framer-motion layoutIds, so switching views RECOMPOSES the wall: each cover
-// morphs between its grid tile and its table column.
+// This host owns the sort state, the toolbar, the column ordering, and the R19
+// unified-row modals (setup + fleet terminal); the table, the cover, and the
+// cell renderer live in their own modules (wallConfig / CoverBody /
+// InkWallCell / WallCompareTable).
 import { useMemo, useRef, useState } from 'react';
 import { LayoutGroup, useReducedMotion } from 'framer-motion';
-import { ArrowUpDown, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { sortByNameAsc, type AppPassport } from './passportModel';
 import { InkTabs } from './passportInk';
@@ -26,9 +26,8 @@ import { ImprovePlanPanel } from './improve/ImprovePlanPanel';
 import { PassportActionsCell } from './PassportActionsRow';
 import { PassportTerminalModal, usePassportFleetSessions } from './passportFleet';
 import { RowSetupModal } from './RowSetupModal';
-import { WallOverviewGrid } from './WallOverviewGrid';
 import { WallCompareTable, type WallSetupTarget } from './WallCompareTable';
-import { COPY, SORT_TABS, VIEW_TABS, type WallSort, type WallView } from './wallConfig';
+import { COPY, SORT_TABS, type WallSort } from './wallConfig';
 
 // Back-compat surface: these were authored in this file before the split and
 // are imported from here by the Mastermind project sidebar.
@@ -71,7 +70,6 @@ export function ProjectsPassportWall({
   onRescanProject?: (slug: string) => void;
 }) {
   const reduce = useReducedMotion();
-  const [view, setView] = useState<WallView>('overview');
   const [sort, setSort] = useState<WallSort>('name');
   // R19 — unified-row machinery: live fleet sessions per dispatch key + modals.
   const fleetSessions = usePassportFleetSessions();
@@ -136,40 +134,36 @@ export function ProjectsPassportWall({
 
   return (
     <div>
-      {/* toolbar — view toggle + (compare-only) scroll arrows + column sort */}
+      {/* toolbar — column scroll + column sort. The view toggle is gone: the
+          matrix is the only view now. */}
       <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-        <div className="inline-flex items-center gap-4">
-          <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label={COPY.view} icon={LayoutGrid} />
-          {view === 'compare' && (
-            <div className="inline-flex items-center gap-1.5">
-              <button type="button" onClick={() => nudge(-1)} aria-label="Scroll columns left" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button type="button" onClick={() => nudge(1)} aria-label="Scroll columns right" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <span className="typo-body-lg text-foreground/45 ml-1">{COPY.scrollHint}</span>
-            </div>
-          )}
+        <div className="inline-flex items-center gap-1.5">
+          <button type="button" onClick={() => nudge(-1)} aria-label="Scroll columns left" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button type="button" onClick={() => nudge(1)} aria-label="Scroll columns right" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <span className="typo-body-lg text-foreground/45 ml-1">{COPY.scrollHint}</span>
         </div>
         <InkTabs tabs={SORT_TABS} active={sort} onChange={setSort} label={COPY.sort} icon={ArrowUpDown} />
       </div>
 
+      {/* Still a LayoutGroup, and the covers still carry layoutIds — they used
+          to morph between the grid tile and the table column, and they now
+          animate the REORDER when the sort changes, which is the same
+          machinery pointed at the one view that is left. */}
       <LayoutGroup>
-        {view === 'overview' ? (
-          <WallOverviewGrid columns={columns} reduce={reduce} coverProps={coverProps} />
-        ) : (
-          <WallCompareTable
-            columns={columns}
-            reduce={reduce}
-            coverProps={coverProps}
-            scrollRef={scrollRef}
-            fleetSessions={fleetSessions}
-            onOpenSetup={setSetupModal}
-            onOpenTerminal={setTerminalKey}
-            renderActions={renderActions}
-          />
-        )}
+        <WallCompareTable
+          columns={columns}
+          reduce={reduce}
+          coverProps={coverProps}
+          scrollRef={scrollRef}
+          fleetSessions={fleetSessions}
+          onOpenSetup={setSetupModal}
+          onOpenTerminal={setTerminalKey}
+          renderActions={renderActions}
+        />
       </LayoutGroup>
 
       {planSlug && (

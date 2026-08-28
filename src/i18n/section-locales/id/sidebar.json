@@ -96,5 +96,6 @@
   "devices": "Perangkat",
   "messages": "Laporan",
   "unread_reports_sr": "{count} laporan belum dibaca",
-  "unread_reports_sr_other": "{count} laporan belum dibaca"
+  "unread_reports_sr_other": "{count} laporan belum dibaca",
+  "experimental": "Eksperimental"
 }

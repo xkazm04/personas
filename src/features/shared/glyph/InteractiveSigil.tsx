@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
-import { PETAL_INNER_RATIO, PETAL_OUTER_RATIO } from './helpers';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
 import { SigilPetal } from './SigilPetal';
 import { useGlyphDimText } from './persona-sigil';
+import { PETAL_INNER_RATIO, PETAL_OUTER_RATIO } from './helpers';
 
 interface InteractiveSigilProps {
   row: GlyphRow;
@@ -305,6 +305,16 @@ export function InteractiveSigil({
         const x = presence === 'linked' ? xLinked : presence === 'shared' ? xShared : xEmpty;
         const y = presence === 'linked' ? yLinked : presence === 'shared' ? yShared : yEmpty;
         const label = dimText.label[dim];
+        // Localized state, never the raw `presence` token: 'linked' /
+        // 'shared' / 'none' are machine identifiers, and the petal's own
+        // aria-label and the legend already resolve them through
+        // `presence_*`. This overlay was the one surface still printing them.
+        const stateLabel =
+          presence === 'linked'
+            ? c.presence_linked
+            : presence === 'shared'
+              ? c.presence_shared
+              : c.presence_none;
 
         return (
           <div
@@ -315,7 +325,7 @@ export function InteractiveSigil({
               width: iconBox, height: iconBox,
               opacity: dimOther ? 0.2 : 1,
             }}
-            title={c.presence_tooltip.replace('{label}', label).replace('{state}', presence)}
+            title={c.presence_tooltip.replace('{label}', label).replace('{state}', stateLabel)}
           >
             {presence === 'linked' ? (
               <>

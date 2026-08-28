@@ -2,18 +2,28 @@ import {
   Activity, CalendarClock, Crown, FlaskConical, History, Inbox, Link, RotateCcw,
   Shield, Sparkles, Star, Zap,
 } from 'lucide-react';
-import type { SidebarSection, OverviewTab, PluginTab, EventBusTab } from '@/lib/types/types';
+import type { OverviewTab, PluginTab, EventBusTab } from '@/lib/types/types';
+import type { RoutableSection } from '@/features/personas/sectionRouter';
 import type { Translations } from '@/i18n/useTranslation';
 import { listAllTriggers } from '@/api/pipeline/triggers';
 
 type LearningStrings = Translations['home']['learning'];
 type LearningKey = keyof LearningStrings;
 
-/** Where a power move's "Try it" lands the user. */
+/**
+ * Where a power move's "Try it" lands the user.
+ *
+ * `section` is deliberately `RoutableSection`, NOT `SidebarSection`: the wider
+ * type admits `'schedules'`, which is overlay-only and has no entry in
+ * `SECTION_ROUTES`. Routing there set the sidebar to a section the content
+ * router cannot render, so the user landed on the All Agents fallback while the
+ * spotlight polled 4s for an anchor that never mounted. Overlay-summoned
+ * surfaces belong in the `overlay` arm.
+ */
 export type PowerMoveNav =
-  | { overlay: 'monitor' }
+  | { overlay: 'monitor' | 'schedules' }
   | {
-      section: SidebarSection;
+      section: RoutableSection;
       overviewTab?: OverviewTab;
       eventBusTab?: EventBusTab;
       pluginTab?: PluginTab;
@@ -55,7 +65,8 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-amber-400',
     group: 'save_time',
     titleKey: 'pm_schedule_delay_title',
-    nav: { section: 'schedules' },
+    // Schedules is a title-bar overlay, not a rail section — see PowerMoveNav.
+    nav: { overlay: 'schedules' },
     spotlightTestId: 'schedules-page',
   },
   {

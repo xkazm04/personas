@@ -2,6 +2,38 @@
 
 ## Active
 
+- **[2026-08-27 23:52]**
+- **Paths:** `src/**`
+- **Status:** started
+
+- **[2026-08-27 19:48]**
+- **Paths:** `src/**`
+- **Status:** started
+
+- **[2026-08-27 17:17]**
+- **Paths:** `src/features/teams/sub_factory/passport/**` · `src/features/shared/chrome/sidebar/sections/TeamsSidebarNav.tsx` · `src/features/agents/quick-answer/triage/**` · `src/features/plugins/dev-tools/sub_runner/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-08-26 20:49]**
+- **Paths:** `src-tauri/src/commands/infrastructure/dev_tools.rs` · `src-tauri/db/src/migrations/incremental/**` · `src-tauri/src/commands/design/team_presets.rs` · `src-tauri/engine/src/team_preset_loader.rs` · `src/features/templates/sub_presets/**` · `src/api/templates/teamPresets.ts`
+- **Status:** started
+
+- **[2026-08-26 20:47]**
+- **Paths:** `src/features/teams/**` · `src/features/plugins/dev-tools/sub_projects/**` · `src/features/templates/sub_presets/**` · `src/features/shared/chrome/sidebar/**` · `src-tauri/src/commands/infrastructure/dev_tools.rs` · `src-tauri/db/src/**` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-08-26 18:43]**
+- **Paths:** `src/features/overview/sub_incidents/**` · `src/features/overview/sub_patterns/coverage/**`
+- **Status:** started
+
+- **[2026-08-26 18:13]**
+- **Paths:** `src/features/overview/sub_events/**` · `src/features/overview/sub_director/**` · `src/features/overview/sub_incidents/**` · `src/features/overview/sub_knowledge/**` · `src/features/overview/sub_patterns/**`
+- **Status:** started
+
+- **[2026-08-26 16:21]**
+- **Paths:** `src/features/overview/sub_events/**` · `src/features/overview/sub_missionControl/**` · `src/features/overview/sub_director/**` · `src/features/overview/sub_incidents/**`
+- **Status:** started
+
 - **[2026-08-26 10:14]**
 - **Paths:** `src-tauri/db/src/migrations/incremental/**` · `src-tauri/db/src/repos/execution/executions.rs` · `CHANGELOG.md`
 - **Status:** started
@@ -449,6 +481,22 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### scan-sweep-wave2 — scan-sweep Wave 2: lib-personas, vault-shared-vector, hooks-utility-data, execution-detail-inspector, model-config, studio, fleet-terminal-manager, vault-databases-tabs
+
+### scan-sweep-wave1 — scan-sweep Wave 1: 8 parallel --one rounds (shared-glyph, overview-memories, template-adoption-questionnaire, plugins-dev-tools-lifecycle, persona-core-codex, team-memory, home-learning, lib-utils)
+
+### projects-devtools-consolidation — Consolidate Projects/Dev-tools content pages: drop Factory Overview view, dev-gate Competition, migrate Run Desk dispatch into the triage deck rail
+
+### projects-consolidation — Projects module: Manage-first consolidation, one team per project, Missions deletion
+
+### project-team-invariant — Backend: project auto-owns one team (ensure-team + migration backfill) + additive preset adoption into existing team
+
+### overview-proto-consolidate — Consolidate Dossier / Register / Coverage Ledger winners
+
+### overview-ui-pass-2 — Events headers, Director empty card, Incidents 3-way prototype, Extracted removal, Patterns Codex + Coverage prototype
+
+### overview-ui-pass — Events typography, Vault pane header, Director layout, Incidents prototype
 
 ### exec-text-column-fix — Fix rusqlite Invalid column type Text at index 15 (persona_executions.cache_read_tokens)
 

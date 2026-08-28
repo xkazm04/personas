@@ -31,7 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { kindCopy } from './deck/DeckChips';
-import { DeckQueueRail, RAIL_WIDTH } from './deck/DeckQueueRail';
+import { DeckQueueRail } from './deck/DeckQueueRail';
 import { DeckCleared, DeckFailed, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
@@ -246,7 +246,15 @@ export function TriageDeckVariant({
           onJump={queue.focusItem}
         />
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
+        {/* The card column. Its horizontal padding is the ONLY thing the two
+            flanks cost it now — they are pinned to its borders below rather
+            than sitting in the flow with a `gap-6 xl:gap-12` on either side,
+            which is what used to charge the card 224px of dead width to place
+            two 64px buttons. 160px now (80px per side: an 8px inset, the 64px
+            button, a 8px breath), and none of it is layout the card competes
+            with. That, plus the deleted mirror column, is what paid for the
+            rail. */}
+        <div className="relative flex min-h-0 flex-1 items-center justify-center px-6 py-8 lg:px-20">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/5 to-transparent"
           aria-hidden
@@ -280,14 +288,23 @@ export function TriageDeckVariant({
         ) : (
           <>
             {/* Both flanks go inert while a reason is being asked for: the
-                verdict is already committed and a second one has nowhere to go. */}
-            <DeckFlank
-              tone="danger"
-              icon={ThumbsDown}
-              label={top.verdictLabels.reject}
-              disabled={!!capture}
-              onClick={rejectTop}
-            />
+                verdict is already committed and a second one has nowhere to go.
+
+                Pinned to the column's border, out of the flex flow. The wrapper
+                carries the centring transform rather than the button, because
+                the button is a `motion.button` with a `whileHover` scale —
+                framer writes the whole `transform`, so a Tailwind
+                `-translate-y-1/2` on it would be dropped the moment the pointer
+                arrived and the button would jump. */}
+            <div className="absolute left-1.5 top-1/2 z-10 -translate-y-1/2">
+              <DeckFlank
+                tone="danger"
+                icon={ThumbsDown}
+                label={top.verdictLabels.reject}
+                disabled={!!capture}
+                onClick={rejectTop}
+              />
+            </div>
 
             {/* Widened from 42rem: the card carries markdown prose, and the
                 extra measure is what the docked ledger's single row bought
@@ -324,28 +341,27 @@ export function TriageDeckVariant({
               ))}
             </div>
 
-            <DeckFlank
-              tone="success"
-              icon={ThumbsUp}
-              label={top.verdictLabels.accept}
-              disabled={!canAccept || !!capture}
-              onClick={acceptTop}
-            />
+            <div className="absolute right-1.5 top-1/2 z-10 -translate-y-1/2">
+              <DeckFlank
+                tone="success"
+                icon={ThumbsUp}
+                label={top.verdictLabels.accept}
+                disabled={!canAccept || !!capture}
+                onClick={acceptTop}
+              />
+            </div>
           </>
         )}
         </div>
 
-        {/* Mirrors the rail so the card centres on the WINDOW rather than on
-            whatever space the rail happens to leave. Without it the card is a
-            flex sibling of the rail and slides right by half the rail's width,
-            which is why the rail could never be widened.
-
-            Only from `2xl` up, and that is the whole trade: the card wants 960px
-            (736 + flanks + gaps + padding), so mirroring a 288px rail at 1280px
-            would cost the card 256px to correct a 144px offset — a worse deal
-            than the offset. Above `2xl` the arithmetic affords it and the card
-            keeps its full width. See RAIL_WIDTH. */}
-        <div aria-hidden className={`hidden shrink-0 2xl:block ${RAIL_WIDTH}`} />
+        {/* No mirror column here any more.
+            It used to sit at `2xl` and up, empty, exactly as wide as the rail,
+            so the card centred on the WINDOW rather than on the space the rail
+            left over. It worked — and it cost one rail-width of dead column to
+            do it, which meant every pixel the rail wanted was charged twice and
+            the rail could never grow. The rail is the thing being read; the
+            card is now centred in the column beside it, at unchanged width.
+            See `RAIL_WIDTH` for the arithmetic that keeps that true. */}
       </div>
 
       {/* The reason strip TAKES OVER the action bar rather than layering over

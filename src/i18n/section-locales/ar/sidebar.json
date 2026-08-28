@@ -96,5 +96,6 @@
   "devices": "الأجهزة",
   "messages": "التقارير",
   "unread_reports_sr": "{count} تقرير غير مقروء",
-  "unread_reports_sr_other": "{count} تقارير غير مقروءة"
+  "unread_reports_sr_other": "{count} تقارير غير مقروءة",
+  "experimental": "تجريبي"
 }

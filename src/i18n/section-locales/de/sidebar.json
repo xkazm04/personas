@@ -96,5 +96,6 @@
   "devices": "Geräte",
   "messages": "Berichte",
   "unread_reports_sr": "{count} ungelesener Bericht",
-  "unread_reports_sr_other": "{count} ungelesene Berichte"
+  "unread_reports_sr_other": "{count} ungelesene Berichte",
+  "experimental": "Experimentell"
 }

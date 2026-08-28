@@ -18,6 +18,10 @@ export function launchPowerMove(move: PowerMove): void {
 
   if ('overlay' in move.nav) {
     sys.setHeaderOverlay(move.nav.overlay);
+    // Overlay moves get the landing spotlight too — the overlay mounts its own
+    // anchor, and skipping the flash here is why an overlay move felt like a
+    // dead click compared with a section move.
+    if (move.spotlightTestId) void flashSpotlight(move.spotlightTestId);
     return;
   }
 

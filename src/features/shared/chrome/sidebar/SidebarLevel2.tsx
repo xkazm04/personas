@@ -174,11 +174,18 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
       const homeIndicators: Record<string, SubNavIndicator> = whatsNewUpdate
         ? { roadmap: { color: 'bg-cyan-400 border border-cyan-500/50', label: t.shared.sidebar_extra.whats_new_update, pulse: true } }
         : {};
+      // Dev-only tabs (Welcome / What's New / System Check) are hidden from
+      // production builds and carry the golden dev ring in DEV — same treatment
+      // as the overview case below.
+      const visibleHomeItems = isDev ? homeItems : homeItems.filter((i) => !i.devOnly);
+      const homeDevSet = isDev
+        ? new Set(homeItems.filter((i) => i.devOnly).map((i) => i.id))
+        : undefined;
       return (
         <div className="flex flex-col h-full">
           <SidebarGroupNav
             ariaLabel={t.sidebar.home}
-            groups={buildGroups(homeGroups, homeItems, { indicators: homeIndicators })}
+            groups={buildGroups(homeGroups, visibleHomeItems, { indicators: homeIndicators, devIds: homeDevSet })}
             activeId={homeTab}
             onSelect={(id) => setHomeTab(id as HomeTab)}
             onHoverItem={(id) => {

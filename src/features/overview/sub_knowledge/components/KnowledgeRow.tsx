@@ -1,0 +1,312 @@
+import { useState } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import { ChevronDown, ChevronRight, CheckCircle, X, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
+import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
+import { KNOWLEDGE_TYPES, SCOPE_TYPES, formatDuration, formatCost } from '../libs/knowledgeHelpers';
+import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
+import { ConfidenceArc } from '@/features/shared/components/display/ConfidenceArc';
+import { StatusBadge, type BadgeAccent } from '@/features/shared/components/display/StatusBadge';
+import { Collapse } from '@/features/shared/components/display/Collapse';
+import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
+
+const cardVariants = { hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } };
+const cardTransition = { type: 'spring' as const, stiffness: 400, damping: 30, mass: 0.8 };
+
+function formatLabel(key: string): string {
+  return key
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function formatPrimitiveValue(value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') return value.toLocaleString();
+  return String(value);
+}
+
+function isPrimitive(value: unknown): boolean {
+  return value === null || value === undefined || typeof value !== 'object';
+}
+
+function NestedObjectCard({ label, data }: { label: string; data: Record<string, unknown> }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 w-full text-left"
+        title={open ? t.overview.knowledge_row.collapse_details : t.overview.knowledge_row.expand_details}
+        aria-expanded={open}
+      >
+        <motion.div
+          animate={{ rotate: open ? 90 : 0 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+        >
+          <ChevronRight className="w-3 h-3 text-foreground" />
+        </motion.div>
+        <span className="typo-label text-foreground">{label}</span>
+        <span className="typo-caption text-foreground ml-auto">{Object.keys(data).length} fields</span>
+      </button>
+      <Collapse open={open} unmountWhenClosed>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 pl-4">
+          {Object.entries(data).map(([k, v]) =>
+            isPrimitive(v) ? (
+              <div key={k} className="bg-secondary/10 rounded-card p-2">
+                <div className="typo-label text-foreground mb-0.5">{formatLabel(k)}</div>
+                <div className="typo-body font-medium text-foreground break-words">{formatPrimitiveValue(v)}</div>
+              </div>
+            ) : (
+              <div key={k} className="col-span-full">
+                <NestedObjectCard label={formatLabel(k)} data={v as Record<string, unknown>} />
+              </div>
+            )
+          )}
+        </div>
+      </Collapse>
+    </motion.div>
+  );
+}
+
+function PatternValueCard({ label, value }: { label: string; value: unknown }) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null;
+    const allPrimitive = value.every(isPrimitive);
+    if (allPrimitive) {
+      return (
+        <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
+          <div className="typo-label text-foreground mb-0.5">{label}</div>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {value.map((item, i) => (
+              <span key={i} className="typo-caption font-medium text-foreground bg-secondary/20 rounded px-1.5 py-0.5">
+                {formatPrimitiveValue(item)}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      );
+    }
+    return (
+      <div className="col-span-full">
+        <NestedObjectCard label={`${label} (${value.length})`} data={Object.fromEntries(value.map((v, i) => [String(i), v]))} />
+      </div>
+    );
+  }
+  if (typeof value === 'object' && value !== null) {
+    return (
+      <div className="col-span-full">
+        <NestedObjectCard label={label} data={value as Record<string, unknown>} />
+      </div>
+    );
+  }
+  return (
+    <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
+      <div className="typo-label text-foreground mb-0.5">{label}</div>
+      <div className="typo-body font-medium text-foreground break-words">{formatPrimitiveValue(value)}</div>
+    </motion.div>
+  );
+}
+
+/** 48×16 inline SVG sparkline showing last N execution outcomes (green=success, red=failure). */
+function ExecutionSparkline({ results }: { results: boolean[] }) {
+  const { t } = useTranslation();
+  const W = 48;
+  const H = 16;
+  const pad = 3;
+  const n = results.length;
+  if (n === 0) return null;
+
+  const gap = n === 1 ? 0 : (W - pad * 2) / (n - 1);
+  const yOk = pad + 1;
+  const yFail = H - pad - 1;
+  const points = results.map((ok, i) => ({
+    x: pad + i * gap,
+    y: ok ? yOk : yFail,
+    ok,
+  }));
+  const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
+
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="inline-block align-middle flex-shrink-0" aria-label={t.overview.knowledge_row.execution_trend_label}>
+      <polyline points={polyline} fill="none" stroke="currentColor" strokeWidth={1} className="text-foreground" />
+      {points.map((p, i) => (
+        <circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={1.5}
+          fill={p.ok ? '#34d399' : '#f87171'}
+          opacity={i === n - 1 ? 0.9 : 0.6}
+        />
+      ))}
+    </svg>
+  );
+}
+
+interface KnowledgeRowProps {
+  entry: ExecutionKnowledge;
+  personaName?: string;
+  onMutated?: () => void;
+}
+
+export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProps) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const config = KNOWLEDGE_TYPES[entry.knowledge_type];
+  const total = entry.success_count + entry.failure_count;
+  const confidencePct = Math.round(entry.confidence * 100);
+  const typeAccent = (config?.color ?? 'blue') as BadgeAccent;
+  const isAnnotation = entry.knowledge_type === 'agent_annotation' || entry.knowledge_type === 'user_annotation';
+  const scopeConfig = SCOPE_TYPES[entry.scope_type] ?? SCOPE_TYPES.persona!;
+  const ScopeIcon = scopeConfig.icon;
+  const scopeAccent = scopeConfig.color as BadgeAccent;
+
+  const patternData = parseJsonOrDefault<Record<string, unknown>>(entry.pattern_data, {});
+  const recentResults = Array.isArray(patternData.recentResults)
+    ? (patternData.recentResults as unknown[]).filter((v): v is boolean => typeof v === 'boolean').slice(-10)
+    : [];
+
+  const toggleExpanded = () => setExpanded(prev => !prev);
+
+  const handleRowKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleExpanded();
+    }
+  };
+
+  const handleVerify = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await verifyKnowledgeAnnotation(entry.id);
+      onMutated?.();
+    } catch (err) { silentCatch("features/overview/sub_knowledge/components/KnowledgeRow:catch1")(err); }
+  };
+
+  const handleDismiss = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await dismissKnowledgeAnnotation(entry.id);
+      onMutated?.();
+    } catch (err) { silentCatch("features/overview/sub_knowledge/components/KnowledgeRow:catch2")(err); }
+  };
+
+  return (
+    <div className="border border-primary/8 rounded-modal bg-background/40 hover:bg-background/60 transition-colors">
+      <div role="button" tabIndex={0} onClick={toggleExpanded} onKeyDown={handleRowKeyDown} className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="typo-body font-medium text-foreground/90 truncate">
+              {isAnnotation && entry.annotation_text ? entry.annotation_text : entry.pattern_key}
+            </span>
+            <StatusBadge accent={typeAccent} size="sm" pill>
+              {config?.label ?? entry.knowledge_type}
+            </StatusBadge>
+            {entry.scope_type !== 'persona' && (
+              <StatusBadge accent={scopeAccent} size="sm" pill icon={<ScopeIcon className="w-2.5 h-2.5" />}>
+                {entry.scope_id ?? entry.scope_type}
+              </StatusBadge>
+            )}
+            {entry.is_verified && (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 typo-caption text-foreground">
+            {personaName && <span>{personaName}</span>}
+            {!isAnnotation && <span>{total} run{total !== 1 ? 's' : ''}</span>}
+            {!isAnnotation && recentResults.length > 1 && <ExecutionSparkline results={recentResults} />}
+            {!isAnnotation && <span>avg {formatCost(entry.avg_cost_usd)}</span>}
+            {!isAnnotation && <span>{formatDuration(entry.avg_duration_ms)}</span>}
+            {isAnnotation && entry.annotation_source && <span>by {entry.annotation_source}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isAnnotation && !entry.is_verified && (
+            <>
+              <button
+                type="button"
+                onClick={handleVerify}
+                aria-label={t.overview.knowledge_row.verify_annotation}
+                className="p-1 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                title={t.overview.knowledge_row.verify_annotation}
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleDismiss}
+                aria-label={t.overview.knowledge_row.dismiss_annotation}
+                className="p-1 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
+                title={t.overview.knowledge_row.dismiss_annotation}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+          <ConfidenceArc value={confidencePct} />
+          <span className="typo-code font-mono text-foreground w-8 text-right">{confidencePct}%</span>
+          <motion.div
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+          >
+            <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+          </motion.div>
+        </div>
+      </div>
+
+      <Collapse open={expanded} unmountWhenClosed>
+        <div className="px-4 pb-3 pt-0 space-y-3">
+              {isAnnotation && entry.annotation_text && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+                >
+                  <div className="typo-label text-foreground mb-1">{t.overview.knowledge_row.annotation}</div>
+                  <p className="typo-body text-foreground bg-secondary/20 rounded-card p-2">{entry.annotation_text}</p>
+                </motion.div>
+              )}
+              <motion.div
+                className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+                initial="hidden"
+                animate="visible"
+                variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
+              >
+                <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
+                  <div className="typo-label text-foreground mb-0.5">{t.overview.knowledge_row.successes}</div>
+                  <div className="typo-heading font-semibold text-emerald-400">{entry.success_count}</div>
+                </motion.div>
+                <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
+                  <div className="typo-label text-foreground mb-0.5">{t.overview.knowledge_row.failures}</div>
+                  <div className="typo-heading font-semibold text-red-400">{entry.failure_count}</div>
+                </motion.div>
+                <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
+                  <div className="typo-label text-foreground mb-0.5">{t.overview.knowledge_row.avg_cost}</div>
+                  <div className="typo-heading font-semibold text-foreground">{formatCost(entry.avg_cost_usd)}</div>
+                </motion.div>
+                <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
+                  <div className="typo-label text-foreground mb-0.5">{t.overview.knowledge_row.avg_duration}</div>
+                  <div className="typo-heading font-semibold text-foreground">{formatDuration(entry.avg_duration_ms)}</div>
+                </motion.div>
+                {Object.keys(patternData).length > 0 && (
+                  <motion.div className="col-span-full" variants={cardVariants} transition={cardTransition}>
+                    <div className="typo-label text-foreground mb-2">{t.overview.knowledge_row.pattern_data}</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {Object.entries(patternData).map(([key, value]) => (
+                        <PatternValueCard key={key} label={formatLabel(key)} value={value} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+        </div>
+      </Collapse>
+    </div>
+  );
+}

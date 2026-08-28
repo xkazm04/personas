@@ -96,5 +96,6 @@
   "devices": "Thiết bị",
   "messages": "Báo cáo",
   "unread_reports_sr": "{count} báo cáo chưa đọc",
-  "unread_reports_sr_other": "{count} báo cáo chưa đọc"
+  "unread_reports_sr_other": "{count} báo cáo chưa đọc",
+  "experimental": "Thử nghiệm"
 }

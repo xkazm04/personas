@@ -4,6 +4,7 @@ import type { HomeTab } from '@/lib/types/types';
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/sub_welcome/HomeWelcome';
 import { useMorningBriefing } from '@/features/home/sub_cockpit/briefing/useMorningBriefing';
+import { DEFAULT_HOME_TAB, isHomeTabAvailable } from '@/features/shared/chrome/sidebar/sidebarData';
 
 const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/sub_learning/HomeLearning'));
@@ -25,21 +26,20 @@ function KeepAlivePane({ active, children }: { active: boolean; children: ReactN
 
 export default function HomePage() {
   const homeTab = useSystemStore((s) => s.homeTab);
-  const devSystemCheck = import.meta.env.DEV;
+  const isDev = import.meta.env.DEV;
 
   // Morning Director: once per app session, compose the session-open
   // briefing from the since-left delta (delta-gated — no LLM call when
   // nothing happened) and surface it as a Cockpit overlay.
   useMorningBriefing();
 
-  // The effective active tab. `system-check` is DEV-only; outside DEV — and for
-  // any unknown value from stale persisted state — it falls back to the Welcome
-  // surface (matching the old ladder's final-else behavior).
-  const KNOWN_TABS: readonly HomeTab[] = ['welcome', 'cockpit', 'roadmap', 'learning', 'system-check'];
-  const activeTab: HomeTab =
-    !KNOWN_TABS.includes(homeTab) || (homeTab === 'system-check' && !devSystemCheck)
-      ? 'welcome'
-      : homeTab;
+  // The effective active tab. Welcome / What's New / System Check are DEV-only
+  // (`homeItems[].devOnly` — the same flag that hides them from the L2 sidebar);
+  // outside DEV — and for any unknown value from stale persisted state — the tab
+  // falls back to `DEFAULT_HOME_TAB`, which is the first row a production build
+  // actually shows. Without this a persisted `homeTab: 'welcome'` would paint a
+  // surface with no sidebar row to match it.
+  const activeTab: HomeTab = isHomeTabAvailable(homeTab) ? homeTab : DEFAULT_HOME_TAB;
 
   // Track which tabs have EVER been active. Only visited tabs are mounted, so
   // the first paint mounts Welcome alone (the default) — cockpit/roadmap/learning
@@ -66,7 +66,7 @@ export default function HomePage() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      {visited.has('welcome') && (
+      {isDev && visited.has('welcome') && (
         <KeepAlivePane active={activeTab === 'welcome'}>
           <HomeWelcome />
         </KeepAlivePane>
@@ -76,7 +76,7 @@ export default function HomePage() {
           <Suspense fallback={fallback}><Cockpit /></Suspense>
         </KeepAlivePane>
       )}
-      {visited.has('roadmap') && (
+      {isDev && visited.has('roadmap') && (
         <KeepAlivePane active={activeTab === 'roadmap'}>
           <Suspense fallback={fallback}><HomeReleases /></Suspense>
         </KeepAlivePane>
@@ -86,7 +86,7 @@ export default function HomePage() {
           <Suspense fallback={fallback}><HomeLearning /></Suspense>
         </KeepAlivePane>
       )}
-      {devSystemCheck && visited.has('system-check') && (
+      {isDev && visited.has('system-check') && (
         <KeepAlivePane active={activeTab === 'system-check'}>
           <SystemHealthPanel />
         </KeepAlivePane>

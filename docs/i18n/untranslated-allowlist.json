@@ -2073,6 +2073,7 @@
   "fr:recipes.tags",
   "fr:recipes.tags_label",
   "fr:recipes_catalog.category_communication",
+  "fr:recipes_catalog.col_actions",
   "fr:recipes_catalog.col_version",
   "fr:recipes_catalog.placeholder_email_multi",
   "fr:recipes_catalog.placeholder_email_single",

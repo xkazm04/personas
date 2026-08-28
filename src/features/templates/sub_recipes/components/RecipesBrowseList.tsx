@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Search, Sparkles, AlertTriangle, Lock, Check, ChevronDown,
 } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,6 +22,9 @@ interface RecipesBrowseListProps {
   search: string;
   onSearchChange: (value: string) => void;
   onOpenDetail: (recipeId: string) => void;
+  /** True while the first `list_recipes` is in flight. Only used to hold the
+   *  empty state back — see the results block. */
+  isLoading?: boolean;
 }
 
 interface CategoryOption {
@@ -40,8 +46,15 @@ type EligibilityFilter = 'all' | 'eligible' | 'adoptable-with-setup' | 'incompat
  *     Otherwise eligibility is a moot dimension and we drop the row
  *     entirely (no banner — recipe.detail surfaces "select a persona"
  *     guidance contextually if a user tries to adopt).
+ *
+ * Scale note: the catalog is fetched whole into `pipelineStore` and is
+ * expected to pass 1000 entries. Two things keep filtering off the typing
+ * path at that size — a prebuilt lowercase haystack per recipe (built once
+ * per catalog change, not once per keystroke) and a debounce between the
+ * input and the filter pass. Row rendering is bounded separately, by the
+ * paging inside `RecipesTableResults`.
  */
-export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail }: RecipesBrowseListProps) {
+export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail, isLoading }: RecipesBrowseListProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibilityMap = useRecipeEligibilityMap(recipes);
@@ -57,6 +70,23 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
 
   const [category, setCategory] = useState<RecipeCategory | 'all'>('all');
   const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all');
+
+  // The input stays instant (it renders `search`); only the filter pass waits.
+  // Without this every keystroke re-scans the whole catalog and re-renders the
+  // table — at 1000 recipes that is what turns typing into a slideshow.
+  const debouncedSearch = useDebounce(search, 150);
+
+  // Prebuilt lowercase haystack per recipe. The previous inline
+  // `[name, summary, description, ...tags].join(' ').toLowerCase()` allocated
+  // two strings per recipe *per keystroke*; this allocates them once per
+  // catalog change and the keystroke path becomes a map lookup + `includes`.
+  const searchIndex = useMemo(() => {
+    const index = new Map<string, string>();
+    for (const r of recipes) {
+      index.set(r.id, `${r.name} ${r.summary} ${r.description} ${r.tags.join(' ')}`.toLowerCase());
+    }
+    return index;
+  }, [recipes]);
 
   const categoryOptions = useMemo<CategoryOption[]>(() => {
     const labels = getCategoryLabels(t);
@@ -75,20 +105,27 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
   }, [t, recipes]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
+    // Nothing narrows the list — hand back the same array reference so the
+    // table's "the list changed, reset paging" effect doesn't fire on every
+    // unrelated parent render.
+    if (!q && category === 'all' && (!selectedPersona || eligibilityFilter === 'all')) return recipes;
     return recipes.filter((r) => {
       if (category !== 'all' && r.category !== category) return false;
       if (selectedPersona && eligibilityFilter !== 'all') {
         const e = eligibilityMap.get(r.id);
         if (!e || e.state !== eligibilityFilter) return false;
       }
-      if (q) {
-        const hay = [r.name, r.summary, r.description, ...r.tags].join(' ').toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
+      if (q && !(searchIndex.get(r.id) ?? '').includes(q)) return false;
       return true;
     });
-  }, [recipes, search, category, eligibilityFilter, eligibilityMap, selectedPersona]);
+  }, [recipes, debouncedSearch, searchIndex, category, eligibilityFilter, eligibilityMap, selectedPersona]);
+
+  const resetFilters = useCallback(() => {
+    onSearchChange('');
+    setCategory('all');
+    setEligibilityFilter('all');
+  }, [onSearchChange]);
 
   const counts = useMemo(() => {
     let eligible = 0, setup = 0, locked = 0;
@@ -182,27 +219,34 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
         )}
       </div>
 
-      {/* Results */}
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-        <div className="p-4">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-16 typo-caption text-foreground">
-              <Search className="w-8 h-8 mb-2 text-foreground" />
-              <div className="typo-body font-medium text-foreground/85 mb-1">{t.recipes_catalog.no_results_heading}</div>
-              <div>{t.recipes_catalog.no_results_body}</div>
-            </div>
-          ) : (
-            <RecipesTableResults
-              recipes={filtered}
-              eligibilityMap={eligibilityMap}
-              highlight={search}
-              personaSelected={!!selectedPersona}
-              adoptedRecipeIds={adoptedRecipeIds}
-              staleRecipeIds={staleRecipeIds}
-              onOpenDetail={onOpenDetail}
+      {/* Results. The table owns its own scroller (that is what makes its
+          sticky header and infinite scroll work), so this wrapper only gives
+          it a bounded height — it must NOT scroll itself. */}
+      <div className="flex-1 min-h-0 p-4">
+        {filtered.length === 0 ? (
+          // Empty-flash-safe (docs/design/overview-loading.md, law 2): "no
+          // recipes match" is a claim about a catalog that has arrived. Until
+          // the first fetch settles the surface stays quiet rather than
+          // asserting emptiness and then contradicting itself — a bigger
+          // catalog just makes that window longer and the flash more visible.
+          isLoading && recipes.length === 0 ? null : (
+            <NoResults
+              onReset={resetFilters}
+              title={t.recipes_catalog.no_results_heading}
+              subtitle={t.recipes_catalog.no_results_body}
             />
-          )}
-        </div>
+          )
+        ) : (
+          <RecipesTableResults
+            recipes={filtered}
+            eligibilityMap={eligibilityMap}
+            highlight={debouncedSearch}
+            personaSelected={!!selectedPersona}
+            adoptedRecipeIds={adoptedRecipeIds}
+            staleRecipeIds={staleRecipeIds}
+            onOpenDetail={onOpenDetail}
+          />
+        )}
       </div>
     </div>
   );
@@ -232,25 +276,27 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
       }}
       // Filter row sits over the table — opaque dropdown so options don't
       // bleed into table rows visible behind.
-      menuClassName="animate-fade-slide-in absolute top-full mt-1 left-0 min-w-[200px] bg-card-bg border border-card-border rounded-xl shadow-elevation-4 z-[100] overflow-hidden"
+      menuClassName="animate-fade-slide-in absolute top-full mt-1 left-0 min-w-[200px] bg-card-bg border border-card-border rounded-modal shadow-elevation-4 z-[100] overflow-hidden"
       renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={isOpen}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-input border typo-caption transition-colors cursor-pointer ${
-            isAll
-              ? 'border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/30'
-              : 'border-primary/35 bg-primary/12 text-primary hover:bg-primary/22'
-          }`}
-          title={t.recipes_catalog.category_filter_aria}
-        >
-          <span className="typo-label opacity-70">
-            {t.recipes_catalog.category_filter_prefix}
-          </span>
-          <span className="font-medium">{current.label}</span>
-          <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        <Tooltip content={t.recipes_catalog.category_filter_aria}>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={isOpen}
+            aria-label={t.recipes_catalog.category_filter_aria}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-input border typo-caption transition-colors cursor-pointer ${
+              isAll
+                ? 'border-card-border bg-secondary/40 text-foreground/85 hover:border-foreground/30'
+                : 'border-primary/35 bg-primary/12 text-primary hover:bg-primary/22'
+            }`}
+          >
+            <span className="typo-label opacity-70">
+              {t.recipes_catalog.category_filter_prefix}
+            </span>
+            <span>{current.label}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </Tooltip>
       )}
     >
       {({ close, focusIndex }) => (

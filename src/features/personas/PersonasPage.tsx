@@ -198,7 +198,11 @@ export default function PersonasPage() {
       () => import('@/features/teams/sub_kpis/KPIsPage'),
       () => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'),
       () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'),
-      () => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'),
+      // Competition is dev-only now — prefetching a chunk no production user
+      // can reach is bandwidth spent on nothing.
+      ...(import.meta.env.DEV
+        ? [() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage')]
+        : []),
       () => import('@/features/teams/sub_factory/FactoryPage'),
     ], { initialDelayMs: 1500 });
     // Warm the projects list once, off the startup critical path. Every
@@ -307,7 +311,13 @@ export default function PersonasPage() {
       if (teamsTab === 'lifecycle') {
         return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={<RouteChunkSkeleton />}><LifecyclePage /></Suspense></ErrorBoundary>;
       }
-      if (teamsTab === 'competition') {
+      // Competition is EXPERIMENTAL and dev-gated (golden rail in
+      // `TeamsSidebarNav`). The nav entry is gone in a production build, but
+      // `teamsTab` is persisted — a store written in a dev build would
+      // otherwise land a prod user on a route with no way back to it in the
+      // menu. Falling through to the section's landing route is the honest
+      // reading of "this surface does not exist here".
+      if (teamsTab === 'competition' && import.meta.env.DEV) {
         return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={<RouteChunkSkeleton />}><CompetitionPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'mastermind') {

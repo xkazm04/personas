@@ -7,9 +7,33 @@ This doc explains how to author and extend in-app guided tours. Tour logic lives
 | File | Role |
 |---|---|
 | `src/stores/slices/system/tourSlice.ts` | `TOUR_REGISTRY` (step definitions), state machine, persistence, event dispatch |
-| `src/features/onboarding/components/tourConstants.ts` | Per-step icon map, per-tour / per-step color scheme |
-| `src/features/onboarding/components/GuidedTour.tsx` | Panel UI, navigation driver, step-specific side effects (e.g. baseline capture, modal opening), timed auto-advance |
+| `src/features/onboarding/components/tourConstants.ts` | Per-step icon map, per-tour / per-step color scheme, panel geometry (`TOUR_RAIL_WIDTH`, `TOUR_DECK_MAX_WIDTH`) |
+| `src/features/onboarding/components/GuidedTour.tsx` | Renders both surfaces, navigation driver, step-specific side effects (e.g. baseline capture, modal opening), timed auto-advance |
+| `src/features/onboarding/components/TourPanelBody.tsx` | **Rail** body — step list, checklist, Back/Skip/Continue |
+| `src/features/onboarding/components/TourNarrativeDeck.tsx` | **Deck** — every paragraph and the interactive step content |
 | `src/lib/storeBusWiring.ts` | Bridges app events (appearance change, execution complete, persona phase) → `emitTourEvent(...)` |
+
+## Two surfaces: the rail and the deck
+
+A running tour paints **two** fixed elements, and which one your copy lands in is
+decided by what kind of copy it is:
+
+| | **Rail** (`GuidedTour` panel + `TourPanelBody`) | **Deck** (`TourNarrativeDeck`) |
+|---|---|---|
+| Where | pinned left, under the titlebar, full height | centred over the content area, top-aligned |
+| Width | fixed `TOUR_RAIL_WIDTH` (292px) | up to `TOUR_DECK_MAX_WIDTH` (680px) |
+| Holds | tour title, step counter, step list, the current step's **checklist labels**, narration/minimize/dismiss, Back · Skip/Continue/Finish | step title, `description`, the active `hint`, `TourIntroCard`, the live narration caption, the specialized step components, the "I've explored this" button |
+| Never holds | a paragraph | navigation between steps |
+
+`TOUR_RAIL_WIDTH` is 292px because that is exactly the app's own sidebar L1
+(52px) + L2 (240px): the tour covers the navigation it is describing and nothing
+more. **The rail is not resizable and steps cannot override its width.** The
+former `panelWidth?: number` field on `TourStepDef` is gone — it varied 320–480px
+per step, which made the panel visibly jump width on every Next while still
+overflowing with text. If a step needs more room, that room is the deck's.
+
+The deck is collapsible (`tour-deck-toggle`) down to its title row, so a user can
+uncover whatever it happens to sit over without leaving the tour.
 
 ## Step schema (TourStepDef)
 
@@ -19,8 +43,8 @@ Each step is a row in one of the `*_STEPS` arrays in `tourSlice.ts`:
 {
   id: 'appearance-setup',              // unique across all tours; used by icon/color maps and navigateToStep
   title: 'Make It Yours',
-  description: '...',                  // shown in the tour panel body
-  hint: 'Change at least one setting below to continue.',
+  description: '...',                  // prose - renders in the DECK, not the rail
+  hint: 'Change at least one setting below to continue.',  // prose — renders in the DECK
   nav: {
     sidebarSection: 'settings',        // cast to SidebarSection
     subTab: 'appearance',              // optional; sub-tab value
@@ -29,9 +53,10 @@ Each step is a row in one of the `*_STEPS` arrays in `tourSlice.ts`:
   },
   completeOn: 'tour:appearance-changed',  // event key (see below). The step is marked complete when emitTourEvent() is called with this key while the step is active.
   subSteps: [
+    // `label` is the RAIL checklist row (keep it short — it truncates at ~230px);
+    // `hint` is the DECK's active-hint callout for whichever sub-step is current.
     { id, label, hint, highlightTestId? } // optional inline guidance; advanceSubStep() walks these
   ],
-  panelWidth?: 320,                     // override DEFAULT_PANEL_WIDTH (440)
   highlightTestId?: 'settings-appearance-panel',  // drives TourSpotlight overlay
 }
 ```
@@ -61,7 +86,7 @@ A step completes when `emitTourEvent(completeOn)` is called while that step is t
 | **storeBus wiring** (recommended for real app events) | `src/lib/storeBusWiring.ts` | `tour:appearance-changed`, `tour:execution-complete`, `tour:persona-draft-ready`, `tour:persona-promoted` |
 | **Tour slice itself** (interaction counters) | `tourSlice.ts` `recordCredentialInteraction` | `tour:credentials-explored` |
 | **Component-level** (inline triggers) | e.g. `PersonaCreationCoach.tsx` | `tour:persona-promoted` |
-| **Explicit user acknowledgment** | `TourPanelBody.tsx` "I've explored this" button | any event listed in `EXPLORATION_TOUR_EVENTS` (`tourSlice.ts`) — used for observability/events stops where there's no meaningful user action to detect |
+| **Explicit user acknowledgment** | `TourNarrativeDeck.tsx` "I've explored this" button | any event listed in `EXPLORATION_TOUR_EVENTS` (`tourSlice.ts`) — used for observability/events stops where there's no meaningful user action to detect |
 
 **Adding a new completion event:**
 1. Pick an event key — convention `tour:<feature>-<verb>`.
@@ -69,7 +94,7 @@ A step completes when `emitTourEvent(completeOn)` is called while that step is t
 3. Wire an emitter:
    - If a storeBus event already fires at the right moment → add a listener in `storeBusWiring.ts`.
    - If it's a counter-style interaction → extend `recordCredentialInteraction` or mirror that pattern.
-   - If the step is purely informational (look at the dashboard, watch a stream) → add the key to `EXPLORATION_TOUR_EVENTS` in `tourSlice.ts`. The panel will render an "I've explored this" button so the user advances when they're ready (no hidden timer).
+   - If the step is purely informational (look at the dashboard, watch a stream) → add the key to `EXPLORATION_TOUR_EVENTS` in `tourSlice.ts`. The deck will render an "I've explored this" button so the user advances when they're ready (no hidden timer).
 
 ## Icons & colors
 

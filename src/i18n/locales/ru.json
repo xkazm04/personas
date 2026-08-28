@@ -476,7 +476,6 @@
     "stream_kind_slack": "Slack",
     "triage_queue_jump": "Следующая: {title}",
     "triage_queue_rail_aria": "Очередь разбора",
-    "triage_queue_rail_title": "Далее",
     "quick_error_body": "Очередь проверок не ответила, поэтому картина неполная.",
     "quick_error_title": "Не удалось прочитать, что вас ждёт",
     "quick_loading": "Читаем, что вас ждёт…",
@@ -511,7 +510,23 @@
     "conv_persona_review_rejected": "Отклонено",
     "conv_persona_review_resolved": "Решено",
     "conv_persona_sending": "Отправка…",
-    "conv_persona_working": "{name} работает…"
+    "conv_persona_working": "{name} работает…",
+    "triage_rail_tab_decide": "На решение",
+    "triage_rail_tab_accepted": "Принятые",
+    "triage_rail_tabs_aria": "Вид очереди",
+    "triage_accepted_empty": "Нет задач, ожидающих разработки",
+    "triage_accepted_empty_sub": "Принятые элементы остаются здесь, пока вы не отправите их исполнителю.",
+    "triage_accepted_select_all": "Выбрать все",
+    "triage_accepted_selected": "Выбрано: {count}",
+    "triage_accepted_dispatch": "Отправить",
+    "triage_accepted_mode_aria": "Режим отправки",
+    "triage_accepted_mode_single": "По одному",
+    "triage_accepted_mode_batch": "Пакетом",
+    "triage_accepted_mode_parallel": "Параллельно",
+    "triage_accepted_concurrency_hint": "Сколько выполняется одновременно",
+    "triage_accepted_result": "Отправлено исполнителю: {count}",
+    "triage_accepted_result_skipped": "Пропущено: {count}",
+    "triage_accepted_row_aria": "Выбрать «{title}»"
   },
   "common": {
     "loading": "Загрузка…",
@@ -923,7 +938,8 @@
     "devices": "Устройства",
     "messages": "Отчёты",
     "unread_reports_sr": "{count} непрочитанный отчёт",
-    "unread_reports_sr_other": "{count} непрочитанных отчётов"
+    "unread_reports_sr_other": "{count} непрочитанных отчётов",
+    "experimental": "Экспериментально"
   },
   "home": {
     "setup": {
@@ -12265,6 +12281,11 @@
     "col_connectors": "Коннекторы",
     "_comment_col_version": "Table column header for version",
     "col_version": "Версия",
+    "col_icon": "Коннектор",
+    "col_actions": "Действия",
+    "sort_by": "Сортировать по «{label}»",
+    "showing_count": "Показано {shown} из {total}",
+    "load_more_status": "Прокрутите, чтобы увидеть ещё",
     "_comment_col_eligibility": "Table column header for eligibility status",
     "col_eligibility": "Готовность",
     "_comment_adopt_button": "Button label to adopt a recipe from the table row",

@@ -45,10 +45,21 @@ const DEV_ITEMS: Array<{
   icon: typeof LayoutDashboard;
   labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind';
   testId: string;
+  /**
+   * Experimental: rendered only in a development build, and marked with a
+   * GOLDEN left rail so it never reads as a shipped surface while it is
+   * standing next to three that are.
+   *
+   * The gate is `import.meta.env.DEV`, which Vite REPLACES with the literal
+   * `false` in a production bundle — so the entry is dead-code-eliminated
+   * rather than merely hidden, and the same is true of the lazy route behind
+   * it once nothing reaches it. Same mechanism as `EditorTabBar`'s `devOnly`.
+   */
+  devOnly?: true;
 }> = [
   { id: 'lifecycle', icon: GitBranch, labelKey: 'lifecycle', testId: 'teams-lifecycle-nav' },
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
-  { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav' },
+  { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav', devOnly: true },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
 ];
 
@@ -226,7 +237,7 @@ export function TeamsSidebarNav() {
           {t.sidebar.development}
         </div>
         <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
-          {DEV_ITEMS.map((item) => {
+          {DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => {
             const Icon = item.icon;
             const active = teamsTab === item.id;
             return (
@@ -234,16 +245,30 @@ export function TeamsSidebarNav() {
                 type="button"
                 key={item.id}
                 data-testid={item.testId}
+                data-experimental={item.devOnly ? 'true' : undefined}
                 onClick={() => go(item.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
+                // The golden rail is `border-l-2` ON THE ROW, drawn just inside
+                // the group's own grey rail, plus a squared left corner so the
+                // two read as one edge rather than a stray tick. `rounded-r-md`
+                // keeps the right side as it was.
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body transition-colors ${
+                  item.devOnly
+                    ? 'border-l-2 border-amber-400/70 rounded-r-md'
+                    : 'rounded-md'
+                } ${
                   active
                     ? 'bg-primary/10 text-foreground/90 font-medium'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${item.devOnly ? 'text-amber-400/80' : ''}`} />
                 <span className="truncate">{t.sidebar[item.labelKey]}</span>
+                {/* The rail carries the meaning on screen and is `border`, so it
+                    reaches no screen reader at all — this is the only thing
+                    standing between the row and an experimental surface that
+                    announces itself as a shipped one. */}
+                {item.devOnly && <span className="sr-only">{t.sidebar.experimental}</span>}
                 {item.id === 'factory' && factoryRunning && (
                   // Decorative pulse — the running state is announced by the
                   // 1st-level badge tooltip, so aria-hidden avoids double-reading.
