@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, type ReactNode } from 'react
 import { Send, X, Hourglass, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { writeInput } from '@/api/fleet/fleet';
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function FleetBroadcastModal({ open, onClose, initialText, title }: Props) {
+  const { t, tx } = useTranslation();
   const sessions = useSystemStore((s) => s.fleetSessions);
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
 
@@ -129,11 +131,13 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     const sent = total - failed;
     const addToast = useToastStore.getState().addToast;
     if (sent === total) {
-      addToast(sent === 1 ? 'Sent to 1 session' : `Sent to ${sent} sessions`, 'success');
+      const key =
+        sent === 1 ? t.plugins.fleet.broadcast_sent_one : t.plugins.fleet.broadcast_sent_other;
+      addToast(tx(key, { count: sent }), 'success');
     } else if (sent > 0) {
-      addToast(`Sent to ${sent} of ${total} sessions — ${failed} failed`, 'warning');
+      addToast(tx(t.plugins.fleet.broadcast_sent_partial, { sent, total, failed }), 'warning');
     } else {
-      addToast(`Broadcast failed — 0 of ${total} delivered`, 'error');
+      addToast(tx(t.plugins.fleet.broadcast_failed_all, { total }), 'error');
     }
     setSending(false);
     // A broadcast that reached NOBODY must not destroy what the operator
@@ -145,7 +149,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     if (sent === 0 && total > 0) return;
     setText('');
     onClose();
-  }, [text, selected, sending, pressEnter, onClose]);
+  }, [text, selected, sending, pressEnter, onClose, t, tx]);
 
   return (
     <BaseModal
@@ -160,13 +164,15 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
           <h2 id="fleet-broadcast-title" className="typo-section-title">
             {title ?? <DebtText k="auto_broadcast_prompt_26edef52" />}
           </h2>
-          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         <label className="block mb-3">
-          <span className="typo-caption font-medium text-foreground mb-1.5 block">Message</span>
+          <span className="typo-caption font-medium text-foreground mb-1.5 block">
+            {t.plugins.fleet.broadcast_message_label}
+          </span>
           <textarea
             data-testid="fleet-broadcast-text"
             value={text}
@@ -185,7 +191,9 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             onChange={(e) => setPressEnter(e.target.checked)}
             className="rounded"
           />
-          Append <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code> <DebtText k="auto_so_claude_submits_immediately_14f3a1f0" />
+          {t.plugins.fleet.broadcast_append}{' '}
+          <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code>{' '}
+          <DebtText k="auto_so_claude_submits_immediately_14f3a1f0" />
         </label>
 
         <div className="mb-3">
@@ -204,10 +212,10 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
                 <DebtText k="auto_waiting_449531f9" />{waiting.length})
               </Button>
               <Button variant="ghost" size="sm" icon={<CheckSquare className="w-3 h-3" />} onClick={selectAll}>
-                All
+                {t.common.all}
               </Button>
               <Button variant="ghost" size="sm" icon={<Square className="w-3 h-3" />} onClick={clearSel}>
-                Clear
+                {t.common.clear}
               </Button>
             </div>
           </div>
@@ -236,7 +244,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button
             data-testid="fleet-broadcast-send"
@@ -246,7 +254,9 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             disabled={!text.trim() || selected.size === 0 || sending}
             onClick={handleSend}
           >
-            {sending ? 'Sending…' : `Send to ${selected.size}`}
+            {sending
+              ? t.plugins.fleet.broadcast_sending
+              : tx(t.plugins.fleet.broadcast_send_to, { count: selected.size })}
           </Button>
         </div>
       </div>

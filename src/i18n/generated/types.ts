@@ -13218,6 +13218,14 @@ export type Translations = {
       pair_credentials_note: string;
       pair_preview_note: string;
       pair_lan_badge: string;
+      broadcast_message_label: string;
+      broadcast_append: string;
+      broadcast_sending: string;
+      broadcast_send_to: string;
+      broadcast_sent_one: string;
+      broadcast_sent_other: string;
+      broadcast_sent_partial: string;
+      broadcast_failed_all: string;
       terminal_session_gone: string;
       pair_generate: string;
       pair_generating: string;

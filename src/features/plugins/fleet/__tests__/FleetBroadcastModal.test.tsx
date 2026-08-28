@@ -54,6 +54,11 @@ vi.mock('@/api/fleet/fleet', () => ({
   writeInput: vi.fn().mockResolvedValue(null),
 }));
 
+const addToast = vi.fn();
+vi.mock('@/stores/toastStore', () => ({
+  useToastStore: { getState: () => ({ addToast }) },
+}));
+
 import * as fleetApi from '@/api/fleet/fleet';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 
@@ -143,5 +148,54 @@ describe('FleetBroadcastModal — target list and failure handling', () => {
     await user.click(screen.getByTestId('fleet-broadcast-send'));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+});
+
+/**
+ * The composer is the one Fleet surface that commands the whole fleet at once,
+ * and it shipped eight hardcoded English strings in a 14-language app. These
+ * assertions read the rendered control names, so a regression to a raw literal
+ * shows up as a changed string rather than as silence.
+ */
+describe('FleetBroadcastModal — localized chrome and result toasts', () => {
+  beforeEach(() => {
+    addToast.mockClear();
+    vi.mocked(fleetApi.writeInput).mockClear().mockResolvedValue(undefined as never);
+  });
+
+  it('names its controls from the catalog, including the close button a screen reader reads', () => {
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    // aria-label="Close" was hardcoded, so a non-English screen-reader user got
+    // an English control name on the fleet's most powerful surface.
+    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    expect(screen.getByText(/^Message$/)).toBeInTheDocument();
+  });
+
+  it('interpolates the singular send result rather than concatenating a count', async () => {
+    const user = userEvent.setup();
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'hello');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    // One target → the _one variant. A single template with a bare count would
+    // read "Sent to 1 sessions" in English and be ungrammatical in most locales.
+    expect(addToast.mock.calls[0]![0]).toBe('Sent to 1 session');
+    expect(addToast.mock.calls[0]![1]).toBe('success');
+  });
+
+  it('interpolates the total-failure result with the real target count', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fleetApi.writeInput).mockRejectedValue(new Error('session writer dropped'));
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'hello');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    expect(addToast.mock.calls[0]![0]).toContain('0 of 1');
+    expect(addToast.mock.calls[0]![1]).toBe('error');
   });
 });
