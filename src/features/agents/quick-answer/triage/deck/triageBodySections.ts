@@ -40,7 +40,7 @@ function canonicalOf(heading: string): CanonicalSection | null {
   if (/^description\b/.test(h)) return 'description';
   if (/^(flow|steps|bullet)/.test(h)) return 'flow';
   if (/impact\b/.test(h) || /^expected\b/.test(h)) return 'impact';
-  if (/^net delta\b/.test(h) || /^delta\b/.test(h)) return 'delta';
+  if (/^net delta\b/.test(h) || /^delta\b/.test(h) || /^evaluation\b/.test(h)) return 'delta';
   return null;
 }
 
