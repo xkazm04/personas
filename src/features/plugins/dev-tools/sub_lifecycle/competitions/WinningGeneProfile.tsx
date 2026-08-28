@@ -8,6 +8,35 @@ import { silentCatch } from '@/lib/silentCatch';
 import { parseGenesFromPrompt, type StrategyGenes } from './strategyPresets';
 
 /**
+ * How many competition details are fetched at once. The analysis is still an
+ * N+1 by shape — one detail fetch per resolved competition — but it used to run
+ * them STRICTLY IN SERIES in a `for…of` with an `await` in the body, so a
+ * project with 40 resolved races meant 40 sequential IPC round trips behind one
+ * spinner with no cancel. Bounding the fan-out keeps the wall clock proportional
+ * to `ceil(n / DETAIL_CONCURRENCY)` without replacing one problem (a long serial
+ * chain) with another (an unbounded burst at the backend).
+ */
+const DETAIL_CONCURRENCY = 6;
+
+/** Run `fn` over `items` with at most `limit` in flight, preserving order. */
+export async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor++;
+      out[index] = await fn(items[index]!);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+/**
  * On-demand "what wins here" analysis: across the project's resolved
  * competitions, recover each winner's genes (parsed from its stored strategy
  * prompt) and average them, so the user sees the emphasis profile that tends
@@ -24,9 +53,9 @@ export function WinningGeneProfile({ projectId }: { projectId: string }) {
     setLoading(true);
     try {
       const comps = await listCompetitions(projectId, 'resolved');
+      const details = await mapWithConcurrency(comps, DETAIL_CONCURRENCY, (c) => getCompetition(c.id));
       const genesList: StrategyGenes[] = [];
-      for (const c of comps) {
-        const detail = await getCompetition(c.id);
+      for (const detail of details) {
         const winner = detail.slots.find((s) => s.slot.task_id === detail.competition.winner_task_id)?.slot;
         const g = winner?.strategy_prompt ? parseGenesFromPrompt(winner.strategy_prompt) : null;
         if (g) genesList.push(g);
