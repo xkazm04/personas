@@ -12929,6 +12929,7 @@
       "pair_devices_title": "Gekoppelte Geräte",
       "pair_no_devices": "Noch keine Geräte gekoppelt.",
       "pair_revoke": "Widerrufen",
+      "pair_revoke_error": "Das Gerät konnte nicht widerrufen werden. Möglicherweise hat es weiterhin Zugriff – bitte erneut versuchen.",
       "pair_revoked_badge": "Widerrufen",
       "pair_never_connected": "Nie verbunden",
       "pair_error_generic": "Kopplung fehlgeschlagen. Prüfen Sie die App-Protokolle und versuchen Sie es erneut.",

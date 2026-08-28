@@ -47,6 +47,7 @@
     "pair_devices_title": "Appareils associés",
     "pair_no_devices": "Aucun appareil associé pour l’instant.",
     "pair_revoke": "Révoquer",
+    "pair_revoke_error": "Impossible de révoquer cet appareil. Il a peut-être encore accès — réessayez.",
     "pair_revoked_badge": "Révoqué",
     "pair_never_connected": "Jamais connecté",
     "pair_error_generic": "Échec de l’association. Consultez les journaux de l’application et réessayez.",

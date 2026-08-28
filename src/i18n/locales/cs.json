@@ -12929,6 +12929,7 @@
       "pair_devices_title": "Spárovaná zařízení",
       "pair_no_devices": "Zatím žádná spárovaná zařízení.",
       "pair_revoke": "Odvolat",
+      "pair_revoke_error": "Zařízení se nepodařilo odvolat. Možná má stále přístup – zkuste to znovu.",
       "pair_revoked_badge": "Odvoláno",
       "pair_never_connected": "Nikdy nepřipojeno",
       "pair_error_generic": "Párování se nezdařilo. Zkontrolujte protokoly aplikace a zkuste to znovu.",

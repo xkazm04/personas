@@ -47,6 +47,7 @@
     "pair_devices_title": "ペアリング済みデバイス",
     "pair_no_devices": "ペアリング済みのデバイスはまだありません。",
     "pair_revoke": "無効化",
+    "pair_revoke_error": "そのデバイスの解除に失敗しました。まだアクセスできる可能性があります。もう一度お試しください。",
     "pair_revoked_badge": "無効化済み",
     "pair_never_connected": "未接続",
     "pair_error_generic": "ペアリングに失敗しました。アプリのログを確認して、もう一度お試しください。",

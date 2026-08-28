@@ -47,6 +47,7 @@
     "pair_devices_title": "연결된 기기",
     "pair_no_devices": "아직 연결된 기기가 없습니다.",
     "pair_revoke": "해지",
+    "pair_revoke_error": "해당 기기의 접근 권한을 해제하지 못했습니다. 아직 접근할 수 있으니 다시 시도하세요.",
     "pair_revoked_badge": "해지됨",
     "pair_never_connected": "연결된 적 없음",
     "pair_error_generic": "페어링에 실패했습니다. 앱 로그를 확인한 뒤 다시 시도하세요.",

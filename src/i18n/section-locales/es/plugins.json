@@ -47,6 +47,7 @@
     "pair_devices_title": "Dispositivos vinculados",
     "pair_no_devices": "Aún no hay dispositivos vinculados.",
     "pair_revoke": "Revocar",
+    "pair_revoke_error": "No se pudo revocar ese dispositivo. Puede que siga teniendo acceso; inténtalo de nuevo.",
     "pair_revoked_badge": "Revocado",
     "pair_never_connected": "Nunca conectado",
     "pair_error_generic": "La vinculación falló. Revisa los registros de la aplicación e inténtalo de nuevo.",

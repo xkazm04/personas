@@ -13221,6 +13221,7 @@
       "pair_devices_title": "Paired devices",
       "pair_no_devices": "No devices paired yet.",
       "pair_revoke": "Revoke",
+      "pair_revoke_error": "Could not revoke that device. It may still have access - try again.",
       "pair_revoked_badge": "Revoked",
       "pair_never_connected": "Never connected",
       "pair_error_generic": "Pairing failed. Check the app logs and try again.",

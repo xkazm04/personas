@@ -12929,6 +12929,7 @@
       "pair_devices_title": "الأجهزة المقترنة",
       "pair_no_devices": "لا توجد أجهزة مقترنة بعد.",
       "pair_revoke": "إبطال",
+      "pair_revoke_error": "تعذّر إلغاء وصول هذا الجهاز. قد يظل متصلاً — حاول مرة أخرى.",
       "pair_revoked_badge": "مُبطَل",
       "pair_never_connected": "لم يتصل مطلقًا",
       "pair_error_generic": "فشل الاقتران. تحقق من سجلات التطبيق وحاول مجددًا.",

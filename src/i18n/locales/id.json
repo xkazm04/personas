@@ -12929,6 +12929,7 @@
       "pair_devices_title": "Perangkat tertaut",
       "pair_no_devices": "Belum ada perangkat yang tertaut.",
       "pair_revoke": "Cabut",
+      "pair_revoke_error": "Perangkat itu gagal dicabut aksesnya. Mungkin masih dapat mengakses — coba lagi.",
       "pair_revoked_badge": "Dicabut",
       "pair_never_connected": "Belum pernah terhubung",
       "pair_error_generic": "Penautan gagal. Periksa log aplikasi dan coba lagi.",

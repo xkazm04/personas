@@ -13227,6 +13227,7 @@ export type Translations = {
       pair_devices_title: string;
       pair_no_devices: string;
       pair_revoke: string;
+      pair_revoke_error: string;
       pair_revoked_badge: string;
       pair_never_connected: string;
       pair_error_generic: string;

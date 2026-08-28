@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Smartphone, QrCode, Copy, Check, Lock, ShieldOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   pairDevice,
@@ -70,13 +70,19 @@ export function FleetPairDevice() {
       .catch(silentCatch('FleetPairDevice:copy'));
   }, [pair]);
 
+  // Revocation is a SECURITY action: the operator clicks Revoke to cut a
+  // phone's access and then walks away. Swallowing the failure silently is the
+  // one outcome we cannot afford — the row keeps rendering its Revoke button
+  // unchanged, refreshDevices never runs, and the operator believes a device is
+  // disconnected while it is still paired. toastCatch is the door the repo
+  // reserves for exactly this: a failure the user must be told about.
   const revoke = useCallback(
     (deviceId: string) => {
       revokeCompanionDevice(deviceId)
         .then(() => refreshDevices())
-        .catch(silentCatch('FleetPairDevice:revoke'));
+        .catch(toastCatch('FleetPairDevice:revoke', t.plugins.fleet.pair_revoke_error));
     },
-    [refreshDevices],
+    [refreshDevices, t],
   );
 
   const qrDataUri = useMemo(
@@ -131,8 +137,12 @@ export function FleetPairDevice() {
           >
             {busy ? t.plugins.fleet.pair_generating : t.plugins.fleet.pair_generate}
           </button>
+          {/* role="alert" so a screen-reader user is TOLD the pairing failed.
+              Without it the only signal is a colour change they cannot see. */}
           {error ? (
-            <p className="text-[13px] text-red-300">{t.plugins.fleet.pair_error_generic}</p>
+            <p role="alert" className="text-[13px] text-red-300">
+              {t.plugins.fleet.pair_error_generic}
+            </p>
           ) : null}
 
           {pair ? (

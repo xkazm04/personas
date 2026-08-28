@@ -47,6 +47,7 @@
     "pair_devices_title": "已配对设备",
     "pair_no_devices": "尚未配对任何设备。",
     "pair_revoke": "撤销",
+    "pair_revoke_error": "无法吊销该设备。它可能仍有访问权限，请重试。",
     "pair_revoked_badge": "已撤销",
     "pair_never_connected": "从未连接",
     "pair_error_generic": "配对失败。请检查应用日志后重试。",

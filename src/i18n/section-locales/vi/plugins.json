@@ -47,6 +47,7 @@
     "pair_devices_title": "Thiết bị đã ghép nối",
     "pair_no_devices": "Chưa có thiết bị nào được ghép nối.",
     "pair_revoke": "Thu hồi",
+    "pair_revoke_error": "Không thể thu hồi thiết bị đó. Thiết bị có thể vẫn còn quyền truy cập — hãy thử lại.",
     "pair_revoked_badge": "Đã thu hồi",
     "pair_never_connected": "Chưa từng kết nối",
     "pair_error_generic": "Ghép nối thất bại. Kiểm tra nhật ký ứng dụng rồi thử lại.",
