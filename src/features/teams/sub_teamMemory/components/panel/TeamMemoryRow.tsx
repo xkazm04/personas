@@ -6,6 +6,7 @@ import { IMPORTANCE_DOTS, importanceToDots, dotsToImportance } from '../../libs/
 import MemoryRowDetail from './MemoryRowDetail';
 import MemoryRowActions from './MemoryRowActions';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -139,9 +140,15 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                     <span className="typo-body text-foreground capitalize">{rev.category}</span>
                   </div>
                   <p className="typo-body text-foreground line-clamp-1">{rev.content}</p>
-                  <span className="typo-body text-foreground">
-                    {new Date(rev.edited_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  {/* Was a raw `new Date(...).toLocaleDateString(undefined, …)`:
+                      it formatted against whatever locale the host OS happens
+                      to be in, and it parsed `edited_at` without
+                      `normalizeTimestamp`, so a SQLite-authored
+                      "YYYY-MM-DD HH:MM:SS" (UTC, no designator) read as local
+                      time and every revision displayed offset by the viewer's
+                      UTC offset. AbsoluteTime is the repo's one door for a
+                      fixed timestamp and handles both. */}
+                  <AbsoluteTime timestamp={rev.edited_at} variant="compact" className="typo-body text-foreground" />
                 </div>
               ))}
             </div>
