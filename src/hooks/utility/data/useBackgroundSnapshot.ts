@@ -4,6 +4,7 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 const MIN_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 10000;
 const BACKOFF_FACTOR = 1.5;
+const DEFAULT_MAX_FAILURES = 3;
 
 /** Shape of a background job snapshot as consumed by `useBackgroundSnapshot`. */
 export interface SnapshotLike {
@@ -38,7 +39,12 @@ export interface UseBackgroundSnapshotOptions {
   onSections?: (sections: unknown[]) => void;
   /** Polling interval in ms. Defaults to 1000. */
   interval?: number;
-  /** Number of consecutive fetch failures before treating session as lost. Defaults to 3. */
+  /**
+   * Number of consecutive fetch failures before treating session as lost.
+   * Defaults to 3. Clamped to a finite integer >= 1: 0 would end the session
+   * on the first blip, and NaN/Infinity would make the limit unreachable so
+   * `onSessionLost` could never fire.
+   */
   maxFailures?: number;
   /** Increment to force polling restart (e.g. after user answers questions and Turn 2 begins). */
   epoch?: number;
@@ -75,7 +81,7 @@ export function useBackgroundSnapshot({
   onQuestions,
   onSections,
   interval = 1000,
-  maxFailures = 3,
+  maxFailures = DEFAULT_MAX_FAILURES,
   epoch = 0,
 }: UseBackgroundSnapshotOptions) {
   const pollTimerRef = useRef<number | null>(null);
@@ -103,6 +109,14 @@ export function useBackgroundSnapshot({
   onQuestionsRef.current = onQuestions;
   const onSectionsRef = useRef(onSections);
   onSectionsRef.current = onSections;
+
+  // A caller may derive this from config or props. Used raw, 0 makes the first
+  // transient error terminal and a non-finite value makes the `>=` below never
+  // true, so the poller could never report session loss. Clamping here (rather
+  // than inside the effect) also keeps the dep stable across equivalent values.
+  const failureLimit = Number.isFinite(maxFailures)
+    ? Math.max(1, Math.trunc(maxFailures))
+    : DEFAULT_MAX_FAILURES;
 
   useEffect(() => {
     if (!snapshotId) return;
@@ -190,7 +204,7 @@ export function useBackgroundSnapshot({
       } catch {
         // intentional: non-critical -- polling retries with backoff until maxFailures
         notFoundCountRef.current += 1;
-        if (notFoundCountRef.current >= maxFailures) {
+        if (notFoundCountRef.current >= failureLimit) {
           onSessionLostRef.current();
           clearPollTimer();
           return;
@@ -207,7 +221,7 @@ export function useBackgroundSnapshot({
     // Callbacks are latched in refs above; only these values identify a
     // polling session. Re-running on a callback identity is the render-thrash
     // loop documented in the hook doc.
-  }, [snapshotId, interval, maxFailures, epoch]);
+  }, [snapshotId, interval, failureLimit, epoch]);
 
   // Cleanup poll timer on unmount
   useEffect(() => {
