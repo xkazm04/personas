@@ -11,6 +11,33 @@ import type { AgentIR } from '@/lib/types/designTypes';
 import type { PlatformDefinition, ProtocolMapRule } from '../platformDefinitions';
 import { extractProtocolsFromNodes } from '../platformDefinitions';
 import { sanitizeTextField } from '@/lib/utils/sanitizers/workflowSanitizer';
+import { createLogger } from '@/lib/log';
+import { trackInteraction } from '@/lib/sentry';
+
+const logger = createLogger('workflow-import');
+
+/**
+ * Report node types this platform's table has no mapping for.
+ *
+ * This is the ranked backlog for new `nodeTypeMap` rows, and the pipeline is
+ * the only place that knows it — at the exact moment it happens. It was
+ * recorded nowhere, so the table grew from whatever anyone happened to notice.
+ * Only the raw TYPE strings travel (`n8n-nodes-base.acmeWidget`), never a node
+ * label, a parameter or anything the user wrote.
+ */
+function reportUnmappedTypes(def: PlatformDefinition | undefined, nodes: NormalizedNode[]): void {
+  if (!def) return;
+  const known = new Set(def.nodeTypeMap.map((m) => m.targetService));
+  const unmapped = [...new Set(
+    nodes.filter((n) => !known.has(n.service)).map((n) => n.rawType),
+  )];
+  if (unmapped.length === 0) return;
+
+  logger.info('unmapped node types', { platform: def.id, count: unmapped.length, types: unmapped });
+  for (const type of unmapped) {
+    trackInteraction('workflow_import', 'unmapped_type', `${def.id}:${type}`);
+  }
+}
 
 // -- Adapter interface -------------------------------------------
 
@@ -100,6 +127,8 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
       ? sanitizeTextField(node.sourceDescription, MAX_LABEL_LEN)
       : node.sourceDescription,
   }));
+
+  reportUnmappedTypes(adapter.platformDef, nodes);
 
   const triggerNodes = nodes.filter((n) => n.isTrigger);
   const actionNodes = nodes.filter((n) => !n.isTrigger && !n.isExcluded);

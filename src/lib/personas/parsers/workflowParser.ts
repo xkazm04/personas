@@ -21,6 +21,10 @@ import { parseZapierWorkflow } from './zapierParser';
 import { parseMakeWorkflow } from './makeParser';
 import { parseGithubActionsWorkflow } from './githubActionsParser';
 import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
+import { createLogger } from '@/lib/log';
+import { trackInteraction } from '@/lib/sentry';
+
+const logger = createLogger('workflow-import');
 
 /**
  * js-yaml 4.2 added `maxDepth` (default 100) and `maxMergeSeqLength` (default 20)
@@ -220,7 +224,7 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
 
   if (detection.platform === 'unknown') {
     // Attempt every routable parser and pick the best candidate
-    const fallback = tryParsers(parsed);
+    const fallback = tryParsers(parsed, detection.format);
     result = fallback.result;
     finalDetection = {
       platform: fallback.platform,
@@ -242,10 +246,43 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   // Extract workflow name from the parsed result summary
   const workflowName = extractWorkflowName(parsed, finalDetection.platform);
 
+  reportDetection(finalDetection, detection.platform === 'unknown');
+
   // Serialize to JSON for storage (normalize YAML to JSON)
   const rawJson = JSON.stringify(parsed);
 
   return { detection: finalDetection, result, workflowName, rawJson, needsConfirmation };
+}
+
+/**
+ * The one counter that tells an operator a vendor changed its export format.
+ *
+ * Nothing under `parsers/` emitted anything at all, so the only way to learn
+ * that n8n had shipped a new shape was a support ticket saying "import failed".
+ * A rising `speculative` / `low`-confidence rate on one platform is that signal
+ * arriving days earlier. `trackInteraction` is the primitive the rest of the
+ * app already uses for this; nothing here carries workflow CONTENT, only the
+ * shape verdict.
+ */
+function reportDetection(detected: DetectionResult, speculative: boolean): void {
+  const outcome = `${detected.platform}:${detected.confidence}${speculative ? ':speculative' : ''}`;
+  logger.info('workflow detected', {
+    platform: detected.platform,
+    confidence: detected.confidence,
+    format: detected.format,
+    speculative,
+  });
+  trackInteraction('workflow_import', 'detected', outcome);
+}
+
+/**
+ * The refusal counter's other half: a file nothing could parse. A rise here
+ * with no matching product change is the same vendor-drift signal seen from
+ * the failure side.
+ */
+function reportDetectionFailure(format: DetectionResult['format'], errors: string[]): void {
+  logger.warn('workflow detection failed', { format, adapterErrors: errors.length });
+  trackInteraction('workflow_import', 'unrecognized', format);
 }
 
 interface TryParsersResult {
@@ -259,7 +296,10 @@ interface TryParsersResult {
  * Runs all parsers, collects successes, and picks the best candidate.
  * Confidence is 'medium' when exactly one parser succeeds, 'low' when multiple do.
  */
-function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
+function tryParsers(
+  parsed: Record<string, unknown>,
+  format: DetectionResult['format'],
+): TryParsersResult {
   const candidates: Array<{ platform: KnownPlatform; result: AgentIR; nodeCount: number }> = [];
   const errors: string[] = [];
 
@@ -275,6 +315,7 @@ function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
   }
 
   if (candidates.length === 0) {
+    reportDetectionFailure(format, errors);
     throw new Error(
       `Could not identify the workflow platform. Supported formats: ${supportedFormatsSentence()}.\n\nParser errors:\n${errors.join('\n')}`,
     );
