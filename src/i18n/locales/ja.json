@@ -1004,7 +1004,9 @@
       "composed_badge": "Athena 作成",
       "composed_stale": "古い可能性があります — 作成後にアプリが変更されています",
       "composed_failed": "Athena が作成したウォークスルーを読み込めませんでした。",
-      "composed_empty": "Athena に使い方を見せてもらうと、作成されたウォークスルーがここに表示されます。"
+      "composed_empty": "Athena に使い方を見せてもらうと、作成されたウォークスルーがここに表示されます。",
+      "composed_dismiss": "この古いガイドを閉じる",
+      "composed_all_dismissed": "古いガイドはすべて片付きました。Athena が新しく作成すると、ここに表示されます。"
     },
     "setup_stepper": {
       "your_profile": "プロフィール",

@@ -61,7 +61,9 @@
     "composed_badge": "Von Athena erstellt",
     "composed_stale": "Möglicherweise veraltet — die App hat sich seit der Erstellung geändert",
     "composed_failed": "Die von Athena für Sie zusammengestellten Rundgänge konnten nicht geladen werden.",
-    "composed_empty": "Wenn Sie Athena bitten, Ihnen etwas zu zeigen, landen die von ihr zusammengestellten Rundgänge hier."
+    "composed_empty": "Wenn Sie Athena bitten, Ihnen etwas zu zeigen, landen die von ihr zusammengestellten Rundgänge hier.",
+    "composed_dismiss": "Diese veraltete Tour ausblenden",
+    "composed_all_dismissed": "Du hast alle veralteten Touren ausgeblendet. Neue erscheinen hier, sobald Athena sie zusammenstellt."
   },
   "setup_stepper": {
     "your_profile": "Ihr Profil",

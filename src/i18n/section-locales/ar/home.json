@@ -61,7 +61,9 @@
     "composed_badge": "أعدّتها Athena",
     "composed_stale": "قد يكون قديمًا — تغيّر التطبيق منذ إعداده",
     "composed_failed": "تعذّر تحميل الجولات التي أعدّتها Athena لك.",
-    "composed_empty": "عندما تطلب من Athena أن تريك كيفية عمل شيء ما، تظهر الجولات التي تُعدّها هنا."
+    "composed_empty": "عندما تطلب من Athena أن تريك كيفية عمل شيء ما، تظهر الجولات التي تُعدّها هنا.",
+    "composed_dismiss": "تجاهل هذه الجولة القديمة",
+    "composed_all_dismissed": "لقد أزلت كل الجولات القديمة. ستظهر هنا الجولات الجديدة التي تُعدّها Athena."
   },
   "setup_stepper": {
     "your_profile": "ملفك الشخصي",

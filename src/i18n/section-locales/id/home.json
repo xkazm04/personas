@@ -61,7 +61,9 @@
     "composed_badge": "Disusun Athena",
     "composed_stale": "Mungkin sudah usang — aplikasi telah berubah sejak panduan ini disusun",
     "composed_failed": "Panduan yang disusun Athena untuk Anda tidak dapat dimuat.",
-    "composed_empty": "Saat Anda meminta Athena menunjukkan cara kerja sesuatu, panduan yang disusunnya muncul di sini."
+    "composed_empty": "Saat Anda meminta Athena menunjukkan cara kerja sesuatu, panduan yang disusunnya muncul di sini.",
+    "composed_dismiss": "Singkirkan panduan usang ini",
+    "composed_all_dismissed": "Semua panduan usang sudah Anda singkirkan. Yang baru akan muncul di sini saat Athena menyusunnya."
   },
   "setup_stepper": {
     "your_profile": "Profil Anda",

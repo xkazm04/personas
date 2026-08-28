@@ -1038,7 +1038,9 @@
       "composed_badge": "Athena composed",
       "composed_stale": "May be outdated — the app has changed since this was composed",
       "composed_failed": "Couldn't load the walkthroughs Athena composed for you.",
-      "composed_empty": "When you ask Athena to show you how something works, the walkthroughs she composes land here."
+      "composed_empty": "When you ask Athena to show you how something works, the walkthroughs she composes land here.",
+      "composed_dismiss": "Dismiss this outdated walkthrough",
+      "composed_all_dismissed": "You've cleared every outdated walkthrough. New ones appear here as Athena composes them."
     },
     "setup_stepper": {
       "your_profile": "Your profile",

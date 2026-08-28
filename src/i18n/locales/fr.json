@@ -1004,7 +1004,9 @@
       "composed_badge": "Composé par Athena",
       "composed_stale": "Peut-être obsolète — l’application a changé depuis sa composition",
       "composed_failed": "Impossible de charger les visites guidées composées par Athena.",
-      "composed_empty": "Quand vous demandez à Athena de vous montrer comment quelque chose fonctionne, les visites guidées qu’elle compose arrivent ici."
+      "composed_empty": "Quand vous demandez à Athena de vous montrer comment quelque chose fonctionne, les visites guidées qu’elle compose arrivent ici.",
+      "composed_dismiss": "Masquer cette visite obsolète",
+      "composed_all_dismissed": "Vous avez masqué toutes les visites obsolètes. Les nouvelles apparaîtront ici au fur et à mesure qu’Athena les compose."
     },
     "setup_stepper": {
       "your_profile": "Votre profil",

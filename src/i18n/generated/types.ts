@@ -1045,6 +1045,8 @@ export type Translations = {
       composed_stale: string;
       composed_failed: string;
       composed_empty: string;
+      composed_dismiss: string;
+      composed_all_dismissed: string;
     };
     setup_stepper: {
       your_profile: string;
