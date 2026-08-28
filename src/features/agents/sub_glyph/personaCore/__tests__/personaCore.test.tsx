@@ -22,12 +22,13 @@ import {
   CONFLICT_DIRECTIVE,
   EFFORT_TIERS,
   MODEL_TIERS,
+  modelTier,
   TRAIT_AXES,
   TRAIT_CATALOG,
   traitById,
 } from "../catalog";
 import { ARCHETYPE_GLYPHS } from "../archetypeGlyphData";
-import { EFFORT_LEVELS } from "@/lib/models/modelCatalog";
+import { EFFORT_LEVELS, EFFORT_OPTIONS } from "@/lib/models/modelCatalog";
 
 // --------------------------------------------------------------------------
 // Ground truth: the catalog the backend actually serves.
@@ -89,10 +90,24 @@ describe("persona-core catalog integrity", () => {
   });
 
   it("keeps its effort tiers in step with the app-wide effort vocabulary", () => {
-    // catalog.ts re-enumerates effort levels with its own labels; modelCatalog
-    // owns the vocabulary the backend is wired to. Drift here means the modal
-    // offers a level the engine cannot receive (or hides one it can).
+    // modelCatalog owns the vocabulary the backend is wired to; EFFORT_TIERS is
+    // now DERIVED from it, so this pins the derivation rather than a hand-typed
+    // copy. Drift here would mean the modal offers a level the engine cannot
+    // receive (or hides one it can).
     expect(EFFORT_TIERS.map((e) => e.id)).toEqual([...EFFORT_LEVELS]);
+  });
+
+  it("labels every effort tier through the app-wide i18n key, not its own copy", () => {
+    // The hand-typed copy had drifted: it called `xhigh` "Max" in this modal
+    // while the shared vocabulary's label key held the raw id, so the same
+    // level read two different ways inside one app.
+    expect(EFFORT_TIERS.map((e) => e.labelKey)).toEqual(EFFORT_OPTIONS.map((o) => o.labelKey));
+  });
+
+  it("carries a blurb for every effort tier the vocabulary defines", () => {
+    // Blurbs are this surface's own copy, keyed by id in a separate map — a
+    // level added upstream must not arrive with an empty tooltip.
+    expect(EFFORT_TIERS.filter((e) => !e.blurb).map((e) => e.id)).toEqual([]);
   });
 
   it("maps exactly the archetype icons the shipped catalog uses", () => {
@@ -107,6 +122,20 @@ describe("persona-core catalog integrity", () => {
   it("offers each model tier exactly once", () => {
     const ids = MODEL_TIERS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("gives every model tier the icon and prompt word it used to duplicate", () => {
+    // The three tiers were enumerated three times — catalog labels, ConfigTiles'
+    // MODEL_ICON map, and a ternary inside usePersonaCore's augmentation — and
+    // only the catalog was under test, so a fourth tier would have shipped
+    // iconless and with the wrong prompt word.
+    const incomplete = MODEL_TIERS.filter((m) => !m.icon || !m.promptWord).map((m) => m.id);
+    expect(incomplete).toEqual([]);
+  });
+
+  it("resolves an unknown model tier to a real tier rather than undefined", () => {
+    expect(modelTier("sonnet").id).toBe("sonnet");
+    expect(modelTier("nope" as never).promptWord).toBeTruthy();
   });
 });
 

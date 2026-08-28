@@ -17274,7 +17274,7 @@
     "effort_low": "Low",
     "effort_medium": "보통",
     "effort_high": "높음",
-    "effort_xhigh": "xhigh"
+    "effort_xhigh": "최대"
   },
   "process_labels": {
     "n8n_transform": "n8n 변환",

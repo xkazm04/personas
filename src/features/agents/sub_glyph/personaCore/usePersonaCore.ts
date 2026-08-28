@@ -18,7 +18,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { listArchetypes } from "@/api/archetypes";
 import { DEFAULT_EFFORT } from "@/lib/models/modelCatalog";
 import { silentCatch } from "@/lib/silentCatch";
-import { CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, traitById } from "./catalog";
+import { CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, modelTier, traitById } from "./catalog";
 import type { Archetype, EffortLevel, ModelTier, PersonaCore, PersonaCoreState } from "./types";
 
 const DEFAULT_CORE: PersonaCoreState = {
@@ -134,8 +134,11 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
     );
     if (state.conflictStyle && CONFLICT_DIRECTIVE[state.conflictStyle]) lines.push(CONFLICT_DIRECTIVE[state.conflictStyle]!);
     for (const id of state.traits) { const t = traitById(id); if (t) lines.push(t.directive); }
-    const modelWord = state.model === "haiku" ? "Haiku (fast)" : state.model === "opus" ? "Opus (max reasoning)" : "Sonnet (balanced)";
-    lines.push(`Model tier: ${modelWord}; reasoning effort: ${state.effort}`);
+    // The prompt word comes off MODEL_TIERS, not a ternary: the same three
+    // tiers used to be spelled out here, in ConfigTiles' icon map and in the
+    // catalog, so a fourth tier had to be added in three places and only one
+    // of them was under test.
+    lines.push(`Model tier: ${modelTier(state.model).promptWord}; reasoning effort: ${state.effort}`);
     return `\n---\nPersona core:\n${lines.map((l) => `- ${l}`).join("\n")}`;
   }, [configured, state, preset]);
 

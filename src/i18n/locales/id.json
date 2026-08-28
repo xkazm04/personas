@@ -17274,7 +17274,7 @@
     "effort_low": "Low",
     "effort_medium": "Medium",
     "effort_high": "High",
-    "effort_xhigh": "Xhigh"
+    "effort_xhigh": "Maksimal"
   },
   "process_labels": {
     "n8n_transform": "Transformasi n8n",

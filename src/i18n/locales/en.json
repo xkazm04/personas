@@ -17566,7 +17566,7 @@
     "effort_low": "Low",
     "effort_medium": "Medium",
     "effort_high": "High",
-    "effort_xhigh": "xhigh"
+    "effort_xhigh": "Max"
   },
   "process_labels": {
     "n8n_transform": "n8n Transform",
