@@ -178,6 +178,30 @@ interface ManagedTerminal {
    */
   lastCols: number;
   lastRows: number;
+  /** True once the dead-session notice has been painted for the current
+   *  hydration failure; cleared by the next successful hydrate so a session
+   *  that comes back does not keep a stale tombstone, and a repeated failure
+   *  does not stack the same line over and over. */
+  deadNoticeShown: boolean;
+}
+
+/**
+ * Localized one-line notice painted into the terminal when subscribing fails.
+ *
+ * `fleet_subscribe_terminal` returns Err("session not found: …") when the
+ * registry has lost the session. Dropping that on the floor left the operator
+ * with a black rectangle that is INDISTINGUISHABLE from a session that simply
+ * has not printed anything yet — the one state they cannot act on, because they
+ * cannot tell whether to wait or to give up. This module is not a React
+ * component and has no `t`, so the pane pushes the translated string in before
+ * it attaches. Empty until then, and an empty notice paints nothing rather than
+ * falling back to hardcoded English.
+ */
+let deadNotice = '';
+
+/** Set the translated dead-session notice (called from FleetTerminalPane). */
+export function setFleetTerminalDeadNotice(text: string): void {
+  deadNotice = text;
 }
 
 // HMR-safe registry. Reusing the existing map across hot reloads keeps live
@@ -201,6 +225,48 @@ const parked: string[] =
 
 /** Max detached xterm instances kept alive for instant re-attach. */
 const MAX_PARKED = 6;
+
+/**
+ * Budget evictions are counted, because a budget set too low and a bug in the
+ * replay handshake produce the SAME user report — "my terminals keep going
+ * blank and replaying" — and nothing else in the app can tell them apart.
+ * MAX_PARKED is an unvalidated constant; this counter is the instrument that
+ * says whether it is being hit at all. HMR-safe like the registry beside it, so
+ * a hot reload mid-session doesn't zero the evidence.
+ *
+ * Read it with `getFleetTerminalStats()` (or `__fleetTerminalEvictions__` from
+ * a devtools console). A rising count while the operator reports blank
+ * terminals means the budget; a flat count means look at `hydrate()`.
+ */
+const EVICTIONS_KEY = '__fleetTerminalEvictions__';
+function bumpEvictions(): void {
+  const g = globalThis as Record<string, unknown>;
+  g[EVICTIONS_KEY] = ((g[EVICTIONS_KEY] as number | undefined) ?? 0) + 1;
+}
+
+export interface FleetTerminalStats {
+  /** Terminals alive right now (attached + parked). */
+  live: number;
+  /** Detached terminals held for instant re-attach. */
+  parked: number;
+  /** The LRU budget those parked terminals are bounded by. */
+  maxParked: number;
+  /** Terminals disposed BECAUSE of that budget, since app start. */
+  evictions: number;
+}
+
+/**
+ * Snapshot of the manager's budget bookkeeping — the early-warning instrument
+ * for a MAX_PARKED set too low.
+ */
+export function getFleetTerminalStats(): FleetTerminalStats {
+  return {
+    live: registry.size,
+    parked: parked.length,
+    maxParked: MAX_PARKED,
+    evictions: ((globalThis as Record<string, unknown>)[EVICTIONS_KEY] as number | undefined) ?? 0,
+  };
+}
 
 function unpark(sessionId: string): void {
   const i = parked.indexOf(sessionId);
@@ -371,6 +437,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     hydrationGen: 0,
     lastCols: 0,
     lastRows: 0,
+    deadNoticeShown: false,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -464,6 +531,9 @@ function hydrate(m: ManagedTerminal): void {
       if (gen !== m.hydrationGen || !m.attached) return;
       // Clear any stale buffer so a re-focus doesn't duplicate the ring tail.
       m.term.reset();
+      // The session answered, so any tombstone from an earlier failure is gone
+      // with the reset — allow a future failure to paint a fresh one.
+      m.deadNoticeShown = false;
       if (snapshot) m.term.write(snapshot);
       const queued = m.pendingLive;
       m.pendingLive = [];
@@ -476,6 +546,13 @@ function hydrate(m: ManagedTerminal): void {
       if (gen === m.hydrationGen) {
         m.hydrating = false;
         m.pendingLive = [];
+        // Say so IN the terminal. This is the difference between "still
+        // starting up" and "this session is gone", and the operator had no way
+        // to tell them apart: both painted an empty black box.
+        if (m.attached && deadNotice && !m.deadNoticeShown) {
+          m.deadNoticeShown = true;
+          m.term.write(`\r\n\x1b[31m${deadNotice}\x1b[0m\r\n`);
+        }
       }
       silentCatch('fleetTerminal:subscribe')(e);
     });
@@ -523,6 +600,10 @@ export function detachTerminal(sessionId: string): void {
       parked.shift();
       continue;
     }
+    // Count ONLY a real budget eviction — the two shifts above are bookkeeping
+    // repairs (a ghost id, a leaked attached id), not a terminal the budget
+    // cost us, and counting them would make the instrument lie.
+    bumpEvictions();
     disposeTerminal(oldest);
   }
 }

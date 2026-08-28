@@ -13266,6 +13266,16 @@ export type Translations = {
       pair_credentials_note: string;
       pair_preview_note: string;
       pair_lan_badge: string;
+      broadcast_message_label: string;
+      broadcast_append: string;
+      broadcast_sending: string;
+      broadcast_send_to: string;
+      broadcast_sent_one: string;
+      broadcast_sent_other: string;
+      broadcast_sent_partial: string;
+      broadcast_failed_all: string;
+      broadcast_retry_hint: string;
+      terminal_session_gone: string;
       pair_generate: string;
       pair_generating: string;
       pair_scan_hint: string;
@@ -13275,6 +13285,7 @@ export type Translations = {
       pair_devices_title: string;
       pair_no_devices: string;
       pair_revoke: string;
+      pair_revoke_error: string;
       pair_revoked_badge: string;
       pair_never_connected: string;
       pair_error_generic: string;

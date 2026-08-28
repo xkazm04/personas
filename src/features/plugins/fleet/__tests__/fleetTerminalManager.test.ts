@@ -58,8 +58,17 @@ vi.mock('@xterm/addon-webgl', () => ({
     dispose = vi.fn();
   },
 }));
+/** Capture the ONE shared `fleet-session-output` handler so a test can deliver
+ *  live PTY chunks into the manager exactly as the backend would. Held in a
+ *  vi.hoisted box because a vi.mock factory runs before module-level lets. */
+const listenBox = vi.hoisted(() => ({
+  handler: null as ((e: { payload: { session_id: string; chunk: string } }) => void) | null,
+}));
 vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn().mockResolvedValue(() => {}),
+  listen: vi.fn((_name: string, handler: (e: { payload: { session_id: string; chunk: string } }) => void) => {
+    listenBox.handler = handler;
+    return Promise.resolve(() => {});
+  }),
 }));
 vi.mock('@/api/fleet/fleet', () => ({
   writeInput: vi.fn().mockResolvedValue(null),
@@ -76,6 +85,8 @@ import {
   detachTerminal,
   disposeTerminal,
   gcTerminals,
+  getFleetTerminalStats,
+  setFleetTerminalDeadNotice,
 } from '../fleetTerminalManager';
 
 /** Let the manager's rAF-scheduled fit (and the resize push behind it) run. */
@@ -88,13 +99,14 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
+  g.__fleetTerminalEvictions__ = 0;
 }
 
 const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminalParked__ as string[];
 const registryMap = () =>
   (globalThis as Record<string, unknown>).__fleetTerminalRegistry__ as Map<
     string,
-    { attached: boolean; term: FakeTerminal }
+    { attached: boolean; deadNoticeShown: boolean; term: FakeTerminal }
   >;
 
 function attach(id: string): HTMLDivElement {
@@ -147,6 +159,228 @@ describe('parked LRU eviction', () => {
 
     expect(parkedList()).not.toContain('watched');
     expect(registryMap().get('watched')?.attached).toBe(true);
+    detachTerminal('watched');
+    host.remove();
+    other.remove();
+  });
+});
+
+/**
+ * The replay-then-splice handshake — the manager's subtlest logic, and the only
+ * part of it whose failure mode is invisible: every one of these interleavings
+ * loses or duplicates scrollback in a way that looks like a rendering glitch.
+ *
+ * The contract hydrate() implements: while a subscribe is in flight, live
+ * chunks are HELD (never interleaved with the snapshot); the snapshot is
+ * written after a reset; the held chunks are flushed after it, in order; and a
+ * newer attach/detach voids an older snapshot resolution outright.
+ */
+describe('hydration handshake', () => {
+  /** Deliver a live PTY chunk through the ONE shared output listener. */
+  const emit = (sessionId: string, chunk: string) =>
+    listenBox.handler?.({ payload: { session_id: sessionId, chunk } });
+
+  /** Let the promise chains inside hydrate() settle. */
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('writes the snapshot first, then the chunks that arrived while it was in flight', async () => {
+    let resolveSnapshot!: (s: string) => void;
+    vi.mocked(fleetApi.subscribeTerminal).mockImplementationOnce(
+      () => new Promise<string>((r) => (resolveSnapshot = r)),
+    );
+
+    const host = attach('h-order');
+    const m = registryMap().get('h-order')!;
+
+    // Held, not written — interleaving these with the snapshot is what
+    // produces duplicated or out-of-order scrollback.
+    emit('h-order', 'LIVE-A');
+    emit('h-order', 'LIVE-B');
+    expect(m.term.written).toEqual([]);
+
+    resolveSnapshot('SNAP');
+    await settle();
+
+    expect(m.term.reset).toHaveBeenCalledTimes(1);
+    expect(m.term.written).toEqual(['SNAP', 'LIVE-A', 'LIVE-B']);
+
+    detachTerminal('h-order');
+    host.remove();
+  });
+
+  it('voids a snapshot that resolves after the pane has detached', async () => {
+    let resolveSnapshot!: (s: string) => void;
+    vi.mocked(fleetApi.subscribeTerminal).mockImplementationOnce(
+      () => new Promise<string>((r) => (resolveSnapshot = r)),
+    );
+
+    const host = attach('h-void');
+    const m = registryMap().get('h-void')!;
+    emit('h-void', 'LIVE-A');
+
+    // The operator switched away mid-fetch. Painting the snapshot now would
+    // write the ring tail into a terminal nobody is watching, and the NEXT
+    // attach would replay it again on top.
+    detachTerminal('h-void');
+    resolveSnapshot('SNAP');
+    await settle();
+
+    expect(m.term.written).toEqual([]);
+    expect(m.term.reset).not.toHaveBeenCalled();
+    host.remove();
+  });
+
+  it('drops a superseded snapshot when a second attach starts before the first resolves', async () => {
+    let resolveFirst!: (s: string) => void;
+    let resolveSecond!: (s: string) => void;
+    vi.mocked(fleetApi.subscribeTerminal)
+      .mockImplementationOnce(() => new Promise<string>((r) => (resolveFirst = r)))
+      .mockImplementationOnce(() => new Promise<string>((r) => (resolveSecond = r)));
+
+    const host1 = attach('h-gen');
+    detachTerminal('h-gen');
+    const host2 = attach('h-gen');
+    const m = registryMap().get('h-gen')!;
+
+    // Rapid switching: the FIRST subscribe lands late. hydrationGen has moved
+    // on twice, so its snapshot is stale by definition and must be discarded —
+    // writing it would show the older ring tail under the newer one.
+    resolveFirst('STALE-SNAP');
+    await settle();
+    expect(m.term.written).toEqual([]);
+
+    resolveSecond('FRESH-SNAP');
+    await settle();
+    expect(m.term.written).toEqual(['FRESH-SNAP']);
+
+    detachTerminal('h-gen');
+    host1.remove();
+    host2.remove();
+  });
+
+  it('stops hydrating when subscribe rejects, so later chunks render instead of piling up', async () => {
+    vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(
+      new Error('session not found: h-rej'),
+    );
+
+    const host = attach('h-rej');
+    const m = registryMap().get('h-rej')!;
+    emit('h-rej', 'QUEUED-BEFORE-FAILURE');
+    await settle();
+
+    // The queue is dropped with the failed hydration (there is no snapshot to
+    // splice it onto). What must NOT happen is `hydrating` staying true — that
+    // would make every subsequent chunk accumulate in pendingLive forever,
+    // leaving a permanently blank terminal fed by a growing array.
+    expect(m.term.written).toEqual([]);
+
+    emit('h-rej', 'AFTER-FAILURE');
+    expect(m.term.written).toEqual(['AFTER-FAILURE']);
+
+    detachTerminal('h-rej');
+    host.remove();
+  });
+
+  it('paints a dead-session notice into the terminal when subscribe rejects', async () => {
+    setFleetTerminalDeadNotice('Session is gone.');
+    vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(new Error('session not found'));
+
+    const host = attach('h-dead');
+    const m = registryMap().get('h-dead')!;
+    await settle();
+
+    // The whole defect: this used to be an empty black box, indistinguishable
+    // from a session that had simply printed nothing yet.
+    expect(m.term.written.join('')).toContain('Session is gone.');
+
+    detachTerminal('h-dead');
+    host.remove();
+    setFleetTerminalDeadNotice('');
+  });
+
+  it('does not stack the notice on a repeated failure, and clears it once the session answers', async () => {
+    setFleetTerminalDeadNotice('Session is gone.');
+    vi.mocked(fleetApi.subscribeTerminal)
+      .mockRejectedValueOnce(new Error('gone'))
+      .mockRejectedValueOnce(new Error('gone again'))
+      .mockResolvedValueOnce('BACK');
+
+    const host = attach('h-dead2');
+    const m = registryMap().get('h-dead2')!;
+    await settle();
+    // Re-attach into the same container without detaching: a second failure
+    // must not append a second tombstone under the first.
+    attachTerminal('h-dead2', host);
+    await settle();
+
+    const notices = m.term.written.filter((w) => w.includes('Session is gone.'));
+    expect(notices).toHaveLength(1);
+
+    // Third attach succeeds — reset() wipes the tombstone, and the flag must
+    // reopen so a LATER death is reported again.
+    attachTerminal('h-dead2', host);
+    await settle();
+    expect(m.deadNoticeShown).toBe(false);
+
+    detachTerminal('h-dead2');
+    host.remove();
+    setFleetTerminalDeadNotice('');
+  });
+
+  it('paints nothing when no translated notice has been pushed in', async () => {
+    // The manager has no `t`. Rather than fall back to hardcoded English it
+    // stays silent until the pane hands it a translated string.
+    setFleetTerminalDeadNotice('');
+    vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(new Error('nope'));
+
+    const host = attach('h-quiet');
+    const m = registryMap().get('h-quiet')!;
+    await settle();
+
+    expect(m.term.written).toEqual([]);
+    detachTerminal('h-quiet');
+    host.remove();
+  });
+
+  it('ignores chunks for a session with no terminal in the registry', () => {
+    // The backend only emits for subscribed sessions, but a dispose racing an
+    // in-flight chunk must be a no-op rather than a throw inside the ONE shared
+    // listener — a throw there would take down delivery for every session.
+    expect(() => emit('nobody-home', 'x')).not.toThrow();
+  });
+});
+
+describe('eviction accounting', () => {
+  it('counts a real budget eviction so a too-low MAX_PARKED is distinguishable from a replay bug', () => {
+    expect(getFleetTerminalStats().evictions).toBe(0);
+
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    for (const id of ids) {
+      const host = attach(id);
+      detachTerminal(id);
+      host.remove();
+    }
+
+    // 8 parked against a budget of 6 → exactly two terminals cost us their
+    // scrollback. Without this number, the operator's "it went blank and
+    // replayed" is indistinguishable from a bug in hydrate().
+    const stats = getFleetTerminalStats();
+    expect(stats.evictions).toBe(2);
+    expect(stats.parked).toBe(stats.maxParked);
+    expect(stats.live).toBe(stats.maxParked);
+  });
+
+  it('does not count the bookkeeping shifts as evictions', () => {
+    // A ghost id (no registry entry) and a leaked attached id are both shifted
+    // out of the LRU by hand. Neither cost a terminal, so neither may inflate
+    // the instrument — a counter that fires on repairs would send an operator
+    // hunting a budget that was never hit.
+    const host = attach('watched');
+    parkedList().push('ghost-1', 'watched', 'p1', 'p2', 'p3', 'p4', 'p5');
+    const other = attach('other');
+    detachTerminal('other');
+
+    expect(getFleetTerminalStats().evictions).toBe(0);
     detachTerminal('watched');
     host.remove();
     other.remove();

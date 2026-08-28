@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { attachTerminal, detachTerminal, focusTerminal } from './fleetTerminalManager';
+import { useTranslation } from '@/i18n/useTranslation';
+import {
+  attachTerminal,
+  detachTerminal,
+  focusTerminal,
+  setFleetTerminalDeadNotice,
+} from './fleetTerminalManager';
 
 interface FleetTerminalPaneProps {
   /** Internal Fleet session id (UUID v4 minted by fleet_spawn_session). */
@@ -26,6 +32,18 @@ interface FleetTerminalPaneProps {
  */
 export function FleetTerminalPane({ sessionId, className, autoFocus = true }: FleetTerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useTranslation();
+
+  // Hand the manager the translated dead-session notice BEFORE attaching. The
+  // manager is a plain module with no `t`, and a failed subscribe there used to
+  // paint nothing at all — leaving a black box the operator could not tell from
+  // a session that had simply not printed yet. This effect is declared first so
+  // it runs before the attach effect below on the same mount. Every terminal in
+  // the app goes through this pane, which is why the string is pushed from here
+  // rather than from the grid-only settings hook.
+  useEffect(() => {
+    setFleetTerminalDeadNotice(t.plugins.fleet.terminal_session_gone);
+  }, [t]);
 
   // Attach the managed terminal on mount / session change; detach (NOT
   // dispose) on unmount so the buffer and PTY subscription persist.
