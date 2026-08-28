@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import {
   ALL_COMPARE_MODELS,
+  ANTHROPIC_TIERS,
   FREE_COST,
   costBucket,
   buildModelSelectEvent,
@@ -206,6 +207,19 @@ describe('ALL_COMPARE_MODELS', () => {
         /^\$\d+(\.\d+)?\/\$\d+(\.\d+)?$/,
       );
     }
+  });
+
+  // ModelSelector kept its own hand-typed copy of the three tiers and their
+  // prices until 2026-08-28, so a price correction could land in the chooser
+  // and leave the A/B dropdown quoting the old figure. Both lists now derive
+  // from ANTHROPIC_TIERS; this asserts the derivation stays exact.
+  it('derives every Anthropic option from the single tier list', () => {
+    const anthropic = ALL_COMPARE_MODELS.filter((m) => m.provider === 'anthropic');
+    expect(anthropic.map((m) => ({ value: m.id, label: m.label, cost: m.cost }))).toEqual(
+      ANTHROPIC_TIERS.map((tier) => ({ value: tier.value, label: tier.label, cost: tier.cost })),
+    );
+    // The dropdown value IS the model id sent to the API.
+    for (const m of anthropic) expect(m.model).toBe(m.id);
   });
 
   it('maps an option onto a test config without inventing fields', () => {

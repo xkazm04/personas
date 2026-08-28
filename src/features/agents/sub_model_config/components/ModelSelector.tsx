@@ -1,7 +1,7 @@
 import { Cpu, Check, Settings2 } from 'lucide-react';
 import { getAnalyticsSink } from '@/lib/analytics/sink';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import { buildModelSelectEvent } from '../libs/compareHelpers';
+import { ANTHROPIC_TIERS, FREE_COST, buildModelSelectEvent } from '../libs/compareHelpers';
 import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '../libs/OllamaCloudPresets';
@@ -65,22 +65,25 @@ interface ModelDef {
   cost: string;
 }
 
-// Input/output USD per MILLION tokens — the denominator Anthropic actually
-// publishes. These read `~$0.25/1K`, `~$3/1K`, `~$15/1K` until 2026-08-28: a
-// `/1K` denominator overstates by 1000x read literally, and read charitably as
-// `/1M` it still showed only the input half while hiding the 5x output rate.
-// The unit is spelled out once under the grid (`price_unit_note`) rather than
-// repeated in every cell.
-const ANTHROPIC_MODELS: ModelDef[] = [
-  { value: 'haiku', name: 'Haiku', cost: '$1/$5' },
-  { value: 'sonnet', name: 'Sonnet', cost: '$3/$15' },
-  { value: 'opus', name: 'Opus', cost: '$5/$25' },
-];
+// Both lists are DERIVED, never re-typed. The tiers and their prices live in
+// `ANTHROPIC_TIERS`; the Ollama rows in `OLLAMA_CLOUD_PRESETS`. This file kept
+// its own copy of the three Anthropic tiers until 2026-08-28, which meant a
+// price correction could land in the chooser and leave the A/B dropdown
+// quoting the old figure.
+//
+// Prices are input/output USD per MILLION tokens — the denominator Anthropic
+// actually publishes. The unit is spelled out once under the grid
+// (`price_unit_note`) rather than repeated in every cell.
+const ANTHROPIC_MODELS: ModelDef[] = ANTHROPIC_TIERS.map((tier) => ({
+  value: tier.value,
+  name: tier.label,
+  cost: tier.cost,
+}));
 
 const OLLAMA_MODELS: ModelDef[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
   value: p.value,
   name: p.label.split(' (')[0] ?? p.label,
-  cost: 'Free',
+  cost: FREE_COST,
 }));
 
 const CUSTOM_MODELS: ModelDef[] = [
@@ -218,7 +221,7 @@ export function ModelSelector({
                       {model.name}
                     </span>
                     {/* Cost */}
-                    <span className={`typo-code font-mono flex-shrink-0 ${model.cost === 'Free' ? 'text-emerald-400/80' : 'text-foreground'}`}>
+                    <span className={`typo-code font-mono flex-shrink-0 ${model.cost === FREE_COST ? 'text-emerald-400/80' : 'text-foreground'}`}>
                       {model.cost}
                     </span>
                   </button>

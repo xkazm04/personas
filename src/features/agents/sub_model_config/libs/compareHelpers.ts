@@ -29,10 +29,38 @@ export interface ModelOption {
  */
 export const FREE_COST = 'Free';
 
+/**
+ * The Anthropic tiers and their prices, defined ONCE.
+ *
+ * The Ollama half of this context always derived both its selector rows and
+ * its compare options from `OLLAMA_CLOUD_PRESETS`; the Anthropic half was
+ * typed out a second time in `ModelSelector.tsx` until 2026-08-28, so a price
+ * correction landed in one list and left the other stale — two call sites on
+ * the same screen disagreeing about what a model costs. Add a tier here and
+ * both the chooser and the A/B dropdown pick it up.
+ */
+export interface AnthropicTier {
+  /** Dropdown value AND the model id sent to the API — they are the same. */
+  value: string;
+  label: string;
+  cost: string;
+}
+
+export const ANTHROPIC_TIERS: readonly AnthropicTier[] = [
+  { value: 'haiku', label: 'Haiku', cost: '$1/$5' },
+  { value: 'sonnet', label: 'Sonnet', cost: '$3/$15' },
+  { value: 'opus', label: 'Opus', cost: '$5/$25' },
+];
+
 export const ALL_COMPARE_MODELS: ModelOption[] = [
-  { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku', group: 'Anthropic', cost: '$1/$5' },
-  { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet', group: 'Anthropic', cost: '$3/$15' },
-  { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus', group: 'Anthropic', cost: '$5/$25' },
+  ...ANTHROPIC_TIERS.map((tier) => ({
+    id: tier.value,
+    label: tier.label,
+    provider: 'anthropic',
+    model: tier.value,
+    group: 'Anthropic',
+    cost: tier.cost,
+  })),
   ...OLLAMA_CLOUD_PRESETS.map((p) => ({
     id: p.value,
     label: p.label.split(' (')[0] ?? p.label,
