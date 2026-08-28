@@ -136,7 +136,12 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   return (
     <div className="space-y-4">
       {showSummary && trace && (
-        <TraceSummary trace={trace} model={execution.model_used} errorCount={errorSpans.length} />
+        <TraceSummary
+          trace={trace}
+          model={execution.model_used}
+          errorCount={errorSpans.length}
+          spanCount={unifiedTrace?.spans.length ?? 0}
+        />
       )}
 
       {/* The frontend half of the truncation pair. TraceSummary warns on the

@@ -15,17 +15,24 @@ import { CostBreakdownBar } from './CostBreakdownBar';
 const MAX_TRACE_SPANS = 10_000;
 
 /**
- * `errorCount` is supplied by the caller and never recomputed here.
+ * `errorCount` AND `spanCount` are supplied by the caller and never recomputed
+ * here.
  *
- * The tile used to fold `trace.spans` itself while `TraceInspector` listed its
- * error cards from the UNIFIED trace (pipeline spans merged in). Those are
- * different span sets, so a run that failed in a frontend pipeline stage --
- * `traceStage(trace, 'validate', undefined, String(err))` in
+ * The tiles used to fold `trace.spans` themselves while `TraceInspector` listed
+ * its error cards and drew its waterfall from the UNIFIED trace (pipeline spans
+ * merged in). Those are different span sets, so a run that failed in a frontend
+ * pipeline stage -- `traceStage(trace, 'validate', undefined, String(err))` in
  * `stores/slices/agents/executionSlice.ts:488` -- printed "0" in the Errors
- * tile with the error card rendered directly beneath it. One number, one place
- * that states the rule.
+ * tile with the error card rendered directly beneath it.
+ *
+ * `errorCount` was lifted out for that reason and `spanCount` was left behind,
+ * which only moved the disagreement one tile over: Spans counted the backend
+ * set while Errors counted the unified set, so the strip could read
+ * "Spans 12 / Errors 19" with 19 rows in the waterfall below it. Both numbers
+ * now come from the caller's one set. Nothing on this strip counts its own
+ * population.
  */
-export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTrace; model?: string | null; errorCount: number }) {
+export function TraceSummary({ trace, model, errorCount, spanCount }: { trace: ExecutionTrace; model?: string | null; errorCount: number; spanCount: number }) {
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const stats = useMemo(() => {
@@ -89,8 +96,8 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
           <Activity className="w-2.5 h-2.5" />
           {e.spans}
         </div>
-        <div className="typo-code text-foreground/90">
-          {trace.spans.length}
+        <div className="typo-code text-foreground/90" data-testid="trace-span-count">
+          {spanCount}
         </div>
       </div>
 
