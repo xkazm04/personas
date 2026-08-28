@@ -12825,6 +12825,12 @@
       "stuck_reclaimed": "Diambil kembali dan diantrekan ulang",
       "stuck_retry_exhausted": "Diambil kembali, percobaan ulang habis",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "competition": {
+      "running": "Berjalan",
+      "awaiting_review": "Menunggu tinjauan",
+      "resolved": "Terselesaikan",
+      "cancelled": "Dibatalkan"
     }
   },
   "project_overview": {

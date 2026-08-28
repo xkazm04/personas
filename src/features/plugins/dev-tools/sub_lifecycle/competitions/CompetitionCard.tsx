@@ -8,6 +8,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
@@ -17,15 +18,22 @@ import { PromptDiffModal, summarizePromptDiff } from './PromptDiffModal';
 import { parseGenesFromPrompt, type StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
-const STATUS_BADGES: Record<string, { color: string; label: string }> = {
-  running: { color: 'bg-blue-500/15 text-blue-400 border-blue-500/25', label: 'Running' },
-  awaiting_review: { color: 'bg-amber-500/15 text-amber-400 border-amber-500/25', label: 'Awaiting review' },
-  resolved: { color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25', label: 'Resolved' },
-  cancelled: { color: 'bg-red-500/15 text-red-400 border-red-500/25', label: 'Cancelled' },
+// Colour only. The LABEL is not this map's business: a backend status is a
+// language-agnostic machine token and must resolve through
+// `tokenLabel(t, 'competition', status)` (src/i18n/tokenMaps.ts), which also
+// DEV-warns on an unmapped token. This map used to carry English labels
+// beside the colours and fall back to rendering the raw token, so every
+// non-English user read "Awaiting review" — and the warning that exists for
+// exactly this miss could never fire, because nothing called the resolver.
+const STATUS_BADGE_COLORS: Record<string, string> = {
+  running: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+  awaiting_review: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
+  resolved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+  cancelled: 'bg-red-500/15 text-red-400 border-red-500/25',
 };
 
-function statusBadge(status: string) {
-  return STATUS_BADGES[status] ?? { color: 'bg-primary/10 text-foreground border-primary/15', label: status };
+function statusBadgeColor(status: string): string {
+  return STATUS_BADGE_COLORS[status] ?? 'bg-primary/10 text-foreground border-primary/15';
 }
 
 function BaselineHealth({ json }: { json: string }) {
@@ -195,7 +203,8 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
   }, [competition.id, addToast, onRefresh, dl]);
 
   const effectiveStatus = optimisticCancelled ? 'cancelled' : competition.status;
-  const badge = statusBadge(effectiveStatus);
+  const badgeColor = statusBadgeColor(effectiveStatus);
+  const badgeLabel = tokenLabel(t, 'competition', effectiveStatus);
   const isFinished = effectiveStatus === 'resolved' || effectiveStatus === 'cancelled';
 
   // Loading choreography (docs/design/overview-loading.md): slot rows ripple
@@ -227,8 +236,8 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
             {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {<AbsoluteTime timestamp={competition.created_at} />}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-0.5 typo-caption border shrink-0 ${badge.color}`}>
-          {badge.label}
+        <span className={`rounded-full px-2.5 py-0.5 typo-caption border shrink-0 ${badgeColor}`}>
+          {badgeLabel}
         </span>
       </button>
 

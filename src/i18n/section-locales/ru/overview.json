@@ -1158,7 +1158,14 @@
     "no_patterns_match": "Нет паттернов, подходящих под текущие фильтры",
     "recent_learnings": "Недавние выводы",
     "curating_manually": "Курируете документы вручную?",
-    "obsidian_tip": "Для менее чем ~1000 заметок коннектор Obsidian может синхронизировать ваше хранилище напрямую."
+    "obsidian_tip": "Для менее чем ~1000 заметок коннектор Obsidian может синхронизировать ваше хранилище напрямую.",
+    "type_tool_sequence": "Последовательности инструментов",
+    "type_failure_pattern": "Паттерны сбоев",
+    "type_cost_quality": "Стоимость / качество",
+    "type_model_performance": "Производительность модели",
+    "type_data_flow": "Потоки данных",
+    "type_agent_annotation": "Аннотация агента",
+    "type_user_annotation": "Аннотация пользователя"
   },
   "focused_decision": {
     "accept": "Принять",

@@ -13124,6 +13124,12 @@ export type Translations = {
       stuck_reclaimed: string;
       stuck_retry_exhausted: string;
     };
+    competition: {
+      running: string;
+      awaiting_review: string;
+      resolved: string;
+      cancelled: string;
+    };
   };
   project_overview: {
     today_activity_heading: string;

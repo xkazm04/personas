@@ -206,5 +206,11 @@
     "stuck_reclaimed": "Recuperado y vuelto a encolar",
     "stuck_retry_exhausted": "Recuperado, reintentos agotados",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "competition": {
+    "running": "En ejecución",
+    "awaiting_review": "Pendiente de revisión",
+    "resolved": "Resuelto",
+    "cancelled": "Cancelado"
   }
 }

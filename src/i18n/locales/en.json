@@ -13117,6 +13117,12 @@
       "dry_run": "Dry run (simulated)",
       "stuck_reclaimed": "Reclaimed and requeued",
       "stuck_retry_exhausted": "Reclaimed, retries exhausted"
+    },
+    "competition": {
+      "running": "Running",
+      "awaiting_review": "Awaiting review",
+      "resolved": "Resolved",
+      "cancelled": "Cancelled"
     }
   },
   "project_overview": {
