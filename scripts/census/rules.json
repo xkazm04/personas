@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 32,
-        "matches": 38
+        "files": 30,
+        "matches": 35
       },
       "floor": 2000
     },
@@ -560,7 +560,7 @@
       },
       "baseline": {
         "files": 797,
-        "matches": 1934
+        "matches": 1931
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 352,
-        "matches": 799
+        "files": 351,
+        "matches": 795
       },
       "floor": 4000
     },
@@ -5031,8 +5031,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 50,
-        "matches": 68
+        "files": 48,
+        "matches": 65
       },
       "floor": 4000
     },

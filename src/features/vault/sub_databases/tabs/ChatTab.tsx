@@ -256,7 +256,10 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
           cannot execute the statement the model just wrote — and had nothing
           at all that said so. */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/8 bg-secondary/5 shrink-0">
-        <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 font-medium">
+        {/* No font-* utility here: typography.css is unlayered, so a weight
+            utility beside a typo-* token is silently discarded (the toolbar's
+            copy of this chip still carries the dead font-medium). */}
+        <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8">
           {language}
         </span>
         <ConnectorCapabilityNote serviceType={serviceType} />
