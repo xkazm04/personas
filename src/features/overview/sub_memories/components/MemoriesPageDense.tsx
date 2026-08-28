@@ -7,7 +7,6 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Brain, Sparkles, Plus, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
@@ -30,6 +29,8 @@ import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { MemoryTierFilter } from '@/api/overview/memories';
@@ -198,6 +199,13 @@ export default function MemoriesPageDense() {
     });
     return copy;
   }, [memories, sortField, sortDir, categoryFilters, personaMap]);
+
+  // Row-entrance cascade (docs/design/overview-loading.md, row level). A new
+  // query context — sort, search or any filter — replays the stagger for the
+  // rows it produces; a poll or refetch redelivering the same ids does not,
+  // because the tracker is keyed by memory id.
+  const revealResetKey = `${sortField}|${sortDir}|${search}|${personaFilter ?? 'all'}|${tierFilter ?? 'default'}|${[...categoryFilters].sort().join(',')}`;
+  const enter = useRevealTracker(revealResetKey);
 
   const stats = useMemo(() => {
     if (!memoryStats) return null;
@@ -487,19 +495,19 @@ export default function MemoriesPageDense() {
                   : <DebtText k="auto_no_memories_yet_775ad944" />}
               </div>
             ) : (
-              <AnimatePresence mode="popLayout">
-                {sortedMemories.map((memory, i) => (
-                  <DenseRow
-                    key={memory.id}
-                    memory={memory}
-                    index={i}
-                    personaName={personaMap.get(memory.persona_id)?.name ?? mui.unknown_persona}
-                    personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
-                    isSelected={selected?.id === memory.id}
-                    onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
-                  />
-                ))}
-              </AnimatePresence>
+              sortedMemories.map((memory, i) => (
+                <DenseRow
+                  key={memory.id}
+                  memory={memory}
+                  index={i}
+                  personaName={personaMap.get(memory.persona_id)?.name ?? mui.unknown_persona}
+                  personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
+                  isSelected={selected?.id === memory.id}
+                  onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
+                  hasEntered={enter.hasEntered}
+                  markEntered={enter.markEntered}
+                />
+              ))
             )}
           </div>
         </div>
@@ -604,9 +612,10 @@ function DenseGhostRows() {
 }
 
 function DenseRow({
-  memory, index, personaName, personaColor, isSelected, onSelect,
+  memory, index, personaName, personaColor, isSelected, onSelect, hasEntered, markEntered,
 }: {
   memory: PersonaMemory; index: number; personaName: string; personaColor: string; isSelected: boolean; onSelect: () => void;
+  hasEntered: (id: string) => boolean; markEntered: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const lastSeen = memory.last_accessed_at ?? memory.updated_at;
@@ -614,15 +623,31 @@ function DenseRow({
   const importanceHex = importanceColor(memory.importance);
   const tierClass = TIER_TONE[memory.tier] ?? TIER_TONE.archive!;
 
+  // Was a `<motion.button layout>` inside `<AnimatePresence mode="popLayout">`.
+  // `layout` makes framer-motion measure every row's box before AND after every
+  // commit, and popLayout adds exit bookkeeping on top — an O(page size) measure
+  // pass on each sort toggle, filter change and keystroke-driven refetch, over a
+  // page the store caps at 100 rows (500 while searching). The documented
+  // replacement is the shared RevealItem + useRevealTracker cascade
+  // (docs/design/overview-loading.md): a one-shot CSS fade per row, guarded by
+  // id so a refetch delivering the same rows doesn't replay it, and no layout
+  // measurement at all.
+  //
+  // RevealItem renders div/tr/li, not a button, so the row carries the same
+  // role="row" + tabIndex + explicit Enter/Space handler the sibling faux tables
+  // use (GlobalExecutionList, ReportList) — the keyboard path the `<button>`
+  // gave for free is kept, not dropped.
   return (
-    <motion.button
-      layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
+    <RevealItem
+      revealId={memory.id}
+      order={index}
+      hasEntered={hasEntered}
+      markEntered={markEntered}
+      role="row"
+      tabIndex={0}
       onClick={onSelect}
-      className={`group flex items-center w-full text-left transition-all duration-150 border-b border-primary/5 ${
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+      className={`group flex items-center w-full text-left cursor-pointer transition-colors duration-150 border-b border-primary/5 ${
         index % 2 === 0 ? 'bg-transparent' : 'bg-secondary/[0.03]'
       } ${isSelected ? 'bg-primary/[0.08] ring-1 ring-primary/25 ring-inset' : 'hover:bg-secondary/[0.06]'}`}
     >
@@ -670,7 +695,7 @@ function DenseRow({
       <div className={`${COL_WIDTHS.created} px-2 py-2 text-right`}>
         <RelativeTime timestamp={memory.created_at} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
       </div>
-    </motion.button>
+    </RevealItem>
   );
 }
 
