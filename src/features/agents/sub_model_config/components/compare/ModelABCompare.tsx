@@ -35,6 +35,11 @@ export function ModelABCompare() {
   const [modelB, setModelB] = useState('sonnet');
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [lastResults, setLastResults] = useState<import('@/lib/bindings/LabArenaResult').LabArenaResult[] | null>(null);
+  // The run whose results fetch has come back — whether or not it produced
+  // rows. This, not the presence of metrics, is what "the run is over" means:
+  // a run where a model never reported is settled AND empty, and the outcome
+  // telemetry below has to be able to say so.
+  const [settledRunId, setSettledRunId] = useState<string | null>(null);
 
   // Fetch results when run completes. Trigger deliberately does NOT depend on
   // arenaResultsMap: fetchArenaResults writes a fresh map reference on every
@@ -42,9 +47,13 @@ export function ModelABCompare() {
   // IPC/render loop for as long as the panel stayed open after a completed run.
   // The effect below is the sole store→local sync.
   useEffect(() => {
-    if (activeRunId && !isLabRunning && labProgress === null) {
-      fetchArenaResults(activeRunId).catch(silentCatch("ModelABCompare:fetchArenaResults"));
-    }
+    if (!activeRunId || isLabRunning || labProgress !== null) return;
+    const runId = activeRunId;
+    let cancelled = false;
+    fetchArenaResults(runId)
+      .catch(silentCatch("ModelABCompare:fetchArenaResults"))
+      .then(() => { if (!cancelled) setSettledRunId(runId); });
+    return () => { cancelled = true; };
   }, [activeRunId, isLabRunning, labProgress, fetchArenaResults]);
 
   // Also sync from store when results arrive
@@ -60,6 +69,7 @@ export function ModelABCompare() {
   const handleStart = useCallback(async () => {
     if (!selectedPersona || !optA || !optB || modelA === modelB) return;
     setLastResults(null);
+    setSettledRunId(null);
     const models: ModelTestConfig[] = [toTestConfig(optA), toTestConfig(optB)];
     const token = capturePersonaToken(selectedPersona.id);
     const runId = await startArena(token.personaId!, models);
@@ -83,6 +93,7 @@ export function ModelABCompare() {
       // Also clear any lingering progress/results so the UI doesn't stall
       // on a stale progress bar after cancel.
       setLastResults(null);
+      setSettledRunId(null);
     }
   }, [activeRunId, cancelArena]);
 
@@ -100,6 +111,7 @@ export function ModelABCompare() {
       return null;
     });
     setLastResults(null);
+    setSettledRunId(null);
     setExpanded(false);
   }, [personaId, cancelArena]);
 
@@ -119,16 +131,30 @@ export function ModelABCompare() {
     return out;
   }, [lastResults, modelA, modelB]);
 
-  // Report the outcome ONCE per run. The metrics are recomputed on every
-  // render of a settled run, so an unguarded emit here would bill the sink for
-  // a re-render — the run id, not the metrics, is the identity of the event.
+  // Report the outcome ONCE per run, for EVERY run that reported a start.
+  // `compare_start` is unconditional, so the old `if (!metricsA || !metricsB)
+  // return` made a failed dispatch indistinguishable from abandonment — the
+  // panel's own failure rate was the one thing its telemetry could not see.
+  //
+  // Aggregates are recomputed from the store entry rather than read off
+  // `metricsA`/`metricsB`: those derive from `lastResults`, which the sync
+  // effect above only writes when rows exist, so they are permanently null in
+  // exactly the case this event now has to report. The run id, not the
+  // metrics, is the identity of the event.
   const reportedRunId = useRef<string | null>(null);
   useEffect(() => {
-    if (!activeRunId || activeRunId === reportedRunId.current) return;
-    if (!metricsA || !metricsB) return;
-    reportedRunId.current = activeRunId;
-    getAnalyticsSink().interaction(buildCompareOutcomeEvent(metricsA, metricsB));
-  }, [activeRunId, metricsA, metricsB]);
+    if (!settledRunId || settledRunId === reportedRunId.current) return;
+    reportedRunId.current = settledRunId;
+    const rows = arenaResultsMap[settledRunId] ?? [];
+    getAnalyticsSink().interaction(
+      buildCompareOutcomeEvent(
+        aggregateResults(rows, modelA),
+        aggregateResults(rows, modelB),
+        modelA,
+        modelB,
+      ),
+    );
+  }, [settledRunId, arenaResultsMap, modelA, modelB]);
 
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
   const canRun = hasPrompt && modelA !== modelB && !isLabRunning;
