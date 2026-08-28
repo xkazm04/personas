@@ -7,6 +7,11 @@
     "cancelled": "Annulé",
     "error": "Erreur"
   },
+  "simple": {
+    "good": "Bon",
+    "warning": "À surveiller",
+    "problem": "Problème"
+  },
   "event": {
     "pending": "En attente",
     "processing": "En traitement",

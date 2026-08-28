@@ -1,5 +1,7 @@
 import { CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 import { SIMPLE_MODE } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import type { StatusKey } from '@/lib/design/statusTokens';
 import type { HealthCheckItem } from "@/api/system/system";
@@ -27,6 +29,7 @@ export function SectionStatusDot({ items }: { items: HealthCheckItem[] }) {
 
 /** Simple mode: displays a labeled dot badge instead of detailed status icons. */
 export function SimpleStatusBadge({ items }: { items: HealthCheckItem[] }) {
+  const { t } = useTranslation();
   const hasError = items.some((i) => i.status === 'error');
   const hasWarn = items.some((i) => i.status === 'warn');
 
@@ -36,7 +39,7 @@ export function SimpleStatusBadge({ items }: { items: HealthCheckItem[] }) {
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full typo-caption ${token.bg} ${token.color}`}>
       <StatusShape status={hasError ? 'error' : hasWarn ? 'warning' : 'success'} size="xs" colorClass="" />
-      {token.label}
+      {tokenLabel(t, 'simple', level)}
     </span>
   );
 }

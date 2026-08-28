@@ -12626,6 +12626,11 @@
       "cancelled": "Dibatalkan",
       "error": "Kesalahan"
     },
+    "simple": {
+      "good": "Baik",
+      "warning": "Perhatian",
+      "problem": "Masalah"
+    },
     "event": {
       "pending": "Tertunda",
       "processing": "Memproses",

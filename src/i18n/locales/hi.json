@@ -12626,6 +12626,11 @@
       "cancelled": "रद्द",
       "error": "त्रुटि"
     },
+    "simple": {
+      "good": "ठीक है",
+      "warning": "ध्यान दें",
+      "problem": "समस्या"
+    },
     "event": {
       "pending": "लंबित",
       "processing": "प्रक्रियाधीन",

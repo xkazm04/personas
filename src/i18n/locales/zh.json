@@ -12626,6 +12626,11 @@
       "cancelled": "已取消",
       "error": "错误"
     },
+    "simple": {
+      "good": "良好",
+      "warning": "注意",
+      "problem": "异常"
+    },
     "event": {
       "pending": "待处理",
       "processing": "处理中",

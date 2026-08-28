@@ -12626,6 +12626,11 @@
       "cancelled": "Zrušeno",
       "error": "Chyba"
     },
+    "simple": {
+      "good": "V pořádku",
+      "warning": "Pozor",
+      "problem": "Závada"
+    },
     "event": {
       "pending": "Čeká",
       "processing": "Zpracování",

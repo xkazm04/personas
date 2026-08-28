@@ -12626,6 +12626,11 @@
       "cancelled": "취소됨",
       "error": "오류"
     },
+    "simple": {
+      "good": "양호",
+      "warning": "주의",
+      "problem": "문제"
+    },
     "event": {
       "pending": "대기 중",
       "processing": "처리 중",

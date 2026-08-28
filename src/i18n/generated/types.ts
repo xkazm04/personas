@@ -12969,6 +12969,11 @@ export type Translations = {
       cancelled: string;
       error: string;
     };
+    simple: {
+      good: string;
+      warning: string;
+      problem: string;
+    };
     event: {
       pending: string;
       processing: string;

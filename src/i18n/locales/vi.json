@@ -12626,6 +12626,11 @@
       "cancelled": "Đã hủy",
       "error": "Lỗi"
     },
+    "simple": {
+      "good": "Tốt",
+      "warning": "Chú ý",
+      "problem": "Sự cố"
+    },
     "event": {
       "pending": "Đang chờ",
       "processing": "Đang xử lý",

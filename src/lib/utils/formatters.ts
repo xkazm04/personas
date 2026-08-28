@@ -475,23 +475,35 @@ export function formatNumeric(
 // -- Simple mode helpers ------------------------------------------------
 
 import type { SimpleStatus } from './designTokens';
-import { SIMPLE_MODE } from './designTokens';
+import type { Translations } from '@/i18n/en';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 
 
-/**
- * Map a granular status string to one of three simple levels.
- * Used in simple mode to reduce cognitive load.
- */
-export function formatSimpleStatus(status: string): { level: SimpleStatus; label: string } {
+/** Map a granular status string to one of three simple levels. */
+export function toSimpleStatusLevel(status: string): SimpleStatus {
   const s = status.toLowerCase();
   if (['completed', 'success', 'healthy', 'ready', 'approved', 'active', 'running', 'processed'].includes(s)) {
-    return { level: 'good', label: SIMPLE_MODE.STATUS.good.label };
+    return 'good';
   }
   if (['failed', 'error', 'critical', 'rejected', 'blocked', 'unhealthy'].includes(s)) {
-    return { level: 'problem', label: SIMPLE_MODE.STATUS.problem.label };
+    return 'problem';
   }
-  return { level: 'warning', label: SIMPLE_MODE.STATUS.warning.label };
+  return 'warning';
+}
+
+/**
+ * Map a granular status string to one of three simple levels, with its label.
+ * Used in simple mode to reduce cognitive load.
+ *
+ * The label used to come from `SIMPLE_MODE.STATUS[level].label` — literal English
+ * in a design-token module, so the mode built for the least technical users was
+ * the one that could not be translated. It now resolves through the same
+ * `status_tokens` path every other machine token uses.
+ */
+export function formatSimpleStatus(t: Translations, status: string): { level: SimpleStatus; label: string } {
+  const level = toSimpleStatusLevel(status);
+  return { level, label: tokenLabel(t, 'simple', level) };
 }
 
 /**

@@ -12626,6 +12626,11 @@
       "cancelled": "Cancelado",
       "error": "Error"
     },
+    "simple": {
+      "good": "Correcto",
+      "warning": "Atención",
+      "problem": "Problema"
+    },
     "event": {
       "pending": "Pendiente",
       "processing": "Procesando",
