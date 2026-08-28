@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
+import { Brain, Sparkles, Plus, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { createLatestWins } from '@/stores/util/latestWins';
@@ -21,6 +21,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
@@ -38,18 +39,36 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 type SortField = 'title' | 'persona' | 'category' | 'importance' | 'access_count' | 'last_accessed' | 'created' | 'tier';
 type SortDir = 'asc' | 'desc';
 
+// Every consumer of a column — the header cell, the ghost cell and the real
+// row cell — reads the same string here, so the responsive collapse below is
+// declared once and the three stay in lockstep by construction.
+//
+// The fixed tracks sum to 616px before the title's 180px minimum, so a viewport
+// under ~800px used to force horizontal overflow with no way to scroll to it:
+// the retired MemoryTableHeader carried `hidden md:flex` and that intent was
+// dropped when this dense matrix replaced it. Columns now shed in reverse
+// order of value (created → last-seen/hits → tier) as the viewport narrows.
+//
+// `max-*:hidden` rather than `hidden lg:flex`: it is a media query, so it wins
+// over each site's own base `flex`/`block` instead of colliding with it — one
+// appended class works at all three call sites without restructuring any of
+// them.
 const COL_WIDTHS = {
   type: 'w-10',
   title: 'flex-1 min-w-[180px]',
   persona: 'w-32',
   importance: 'w-28',
-  tier: 'w-20',
-  access: 'w-16',
+  tier: 'w-20 max-sm:hidden',
+  access: 'w-16 max-md:hidden',
   // Widened from w-20 when the columns stopped hand-trimming " ago" off the
   // rendered label (see DenseRow) — the untrimmed form needs the extra track.
-  lastSeen: 'w-24',
-  created: 'w-24',
+  lastSeen: 'w-24 max-md:hidden',
+  created: 'w-24 max-lg:hidden',
 } as const;
+
+/** Dense padding for the shared SortableHeader — its default `px-4 py-2.5` is
+ *  the comfortable-table figure and would break this surface's row rhythm. */
+const SORT_HEADER_PADDING = 'px-2 py-2';
 
 /** Rendered where a metric exists but this surface cannot measure it — never a
  *  0, which is indistinguishable from a measured zero. */
@@ -428,16 +447,25 @@ export default function MemoriesPageDense() {
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
           <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--primary) 4%, transparent), transparent 70%)' }} />
 
-          {/* Column headers */}
-          <div className="flex items-center border-b border-primary/10 bg-background/80 flex-shrink-0 relative z-10">
-            <div className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>{mui.col_type}</div>
-            <SortHeader field="title" label={t.overview.memory_detail.title_label} width={COL_WIDTHS.title} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="persona" label={t.overview.reports.columns.persona} width={COL_WIDTHS.persona} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="importance" label={t.overview.memory_detail.importance_label} width={COL_WIDTHS.importance} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="tier" label={mui.col_tier} width={COL_WIDTHS.tier} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="left" />
-            <SortHeader field="access_count" label={mui.col_hits} width={COL_WIDTHS.access} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
-            <SortHeader field="last_accessed" label={mui.col_last_seen} width={COL_WIDTHS.lastSeen} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
-            <SortHeader field="created" label={t.common.created} width={COL_WIDTHS.created} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
+          {/* Column headers.
+              The local SortHeader that stood here painted the sort state as a
+              chevron pair and nothing else: a screen-reader user heard the
+              column name and had no way to learn which column was sorted or in
+              which direction. The shared display/SortableHeader is the repo's
+              primitive for exactly this — it puts `aria-sort` on an explicit
+              role="columnheader" (the `as="div"` arm, for faux-table grids like
+              this one) and gives the button a "Sorted by X, ascending. Activate
+              to sort descending." label. role="row" on the container mirrors the
+              sibling faux tables (GlobalExecutionList, ReportList). */}
+          <div role="row" className="flex items-center border-b border-primary/10 bg-background/80 flex-shrink-0 relative z-10">
+            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-label text-foreground`}>{mui.col_type}</div>
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.title} label={t.overview.memory_detail.title_label} active={sortField === 'title'} dir={sortDir} onSort={() => handleSort('title')} align="left" />
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.persona} label={t.overview.reports.columns.persona} active={sortField === 'persona'} dir={sortDir} onSort={() => handleSort('persona')} align="left" />
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.importance} label={t.overview.memory_detail.importance_label} active={sortField === 'importance'} dir={sortDir} onSort={() => handleSort('importance')} align="left" />
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.tier} label={mui.col_tier} active={sortField === 'tier'} dir={sortDir} onSort={() => handleSort('tier')} align="left" />
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.access} label={mui.col_hits} active={sortField === 'access_count'} dir={sortDir} onSort={() => handleSort('access_count')} align="right" />
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.lastSeen} label={mui.col_last_seen} active={sortField === 'last_accessed'} dir={sortDir} onSort={() => handleSort('last_accessed')} align="right" />
+            <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.created} label={t.common.created} active={sortField === 'created'} dir={sortDir} onSort={() => handleSort('created')} align="right" />
           </div>
 
           {/* Body — three-state row region (docs/design/overview-loading.md):
@@ -643,27 +671,6 @@ function DenseRow({
         <RelativeTime timestamp={memory.created_at} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
       </div>
     </motion.button>
-  );
-}
-
-function SortHeader({
-  field, label, width, sortField, sortDir, onSort, align,
-}: {
-  field: SortField; label: string; width: string; sortField: SortField; sortDir: SortDir; onSort: (f: SortField) => void; align: 'left' | 'right';
-}) {
-  const active = sortField === field;
-  return (
-    <button
-      type="button"
-      onClick={() => onSort(field)}
-      className={`${width} flex items-center gap-1 px-2 py-2 typo-label transition-colors ${align === 'right' ? 'justify-end' : 'justify-start'} ${active ? 'text-foreground' : 'text-foreground hover:text-foreground/80'}`}
-    >
-      {label}
-      <span className="flex flex-col -space-y-0.5">
-        <ChevronUp className={`h-2.5 w-2.5 ${active && sortDir === 'asc' ? 'text-primary' : 'text-foreground'}`} />
-        <ChevronDown className={`h-2.5 w-2.5 ${active && sortDir === 'desc' ? 'text-primary' : 'text-foreground'}`} />
-      </span>
-    </button>
   );
 }
 
