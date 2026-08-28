@@ -17501,6 +17501,7 @@
     "edit_memory_title": "메모리 항목 수정",
     "auto_label": "자동",
     "manual_label": "수동",
+    "memory_member_label": "멤버",
     "version_history": "버전 기록",
     "no_agents_in_team": "이 팀에 에이전트가 없습니다",
     "drag_agents_hint": "사이드바에서 캔버스로 에이전트를 드래그하세요",

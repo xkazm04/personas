@@ -18066,6 +18066,7 @@ export type Translations = {
     memory_deleted: string;
     auto_label: string;
     manual_label: string;
+    memory_member_label: string;
     version_history: string;
     no_agents_in_team: string;
     drag_agents_hint: string;

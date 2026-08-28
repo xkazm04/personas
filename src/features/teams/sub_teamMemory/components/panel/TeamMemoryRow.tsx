@@ -5,6 +5,7 @@ import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { IMPORTANCE_DOTS, importanceToDots, dotsToImportance } from '../../libs/memoryConstants';
 import MemoryRowDetail from './MemoryRowDetail';
 import MemoryRowActions from './MemoryRowActions';
+import MemoryProvenance from './MemoryProvenance';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -124,6 +125,11 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
               </button>
             )}
           </div>
+
+          {/* The row carried member_id / persona_id / run_id all along and
+              showed none of them, so a belief a team acts on arrived with no
+              author. */}
+          <MemoryProvenance memberId={memory.member_id} personaId={memory.persona_id} runId={memory.run_id} />
 
           {showHistory && revisions.length > 0 && (
             <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">

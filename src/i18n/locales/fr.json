@@ -17501,6 +17501,7 @@
     "edit_memory_title": "Modifier l’entrée de mémoire",
     "auto_label": "auto",
     "manual_label": "manuel",
+    "memory_member_label": "Membre",
     "version_history": "Historique des versions",
     "no_agents_in_team": "Aucun agent dans cette équipe",
     "drag_agents_hint": "Faites glisser des agents depuis la barre latérale vers le canevas",
