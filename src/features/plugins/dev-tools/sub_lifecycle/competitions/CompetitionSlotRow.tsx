@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Loader2, CheckCircle2, XCircle, Clock, Ban,
   Trophy, FileDiff, Eye, EyeOff, Star, FolderOpen,
@@ -80,6 +80,27 @@ export function CompetitionSlotRow({
       setServer(null);
     }
   }, [slot.id, addToast, dt]);
+
+  // `startSlotServer` spawns a REAL OS process holding a REAL port, and the
+  // only control that can stop it is the Stop button rendered from `server`
+  // below — i.e. from this component's own state. Collapsing the card,
+  // navigating away, or a poll that re-keys the list unmounts the row and
+  // destroys that control while the process keeps running: nothing else in the
+  // app knows the port is held, and the next Preview click spawns a SECOND
+  // server. The creator names the reaper — mirror the handle into a ref and
+  // stop the process when the row goes away (or is repointed at another slot).
+  const serverRef = useRef<{ port: number; pid: number; url: string } | null>(null);
+  useEffect(() => { serverRef.current = server; }, [server]);
+  useEffect(() => {
+    const slotId = slot.id;
+    return () => {
+      if (!serverRef.current) return;
+      serverRef.current = null;
+      // Unmount cleanup cannot await, and there is no UI left to toast into —
+      // but a stop that fails still has to reach an error door.
+      stopSlotServer(slotId).catch(silentCatch('CompetitionSlotRow:unmountReaper'));
+    };
+  }, [slot.id]);
 
   const taskStatus = task?.status ?? 'unknown';
   const isDq = slot.disqualified;
