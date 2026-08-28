@@ -208,11 +208,6 @@ impl ConnectionManager {
             .map(|c| c.info.display_name.clone())
     }
 
-    /// Check if the connection capacity has been reached.
-    async fn is_at_capacity(&self) -> bool {
-        self.connections.read().await.len() >= self.max_peers
-    }
-
     /// Connect to a peer by peer_id (looks up address from discovered_peers).
     ///
     /// After the QUIC handshake completes, spawns an inbound dispatch loop so
@@ -236,16 +231,14 @@ impl ConnectionManager {
             return Ok(());
         }
 
-        // Enforce max_peers limit
-        if self.is_at_capacity().await {
-            self.metrics
-                .connections_rejected_capacity
-                .fetch_add(1, Ordering::Relaxed);
-            return Err(AppError::Validation(format!(
-                "Connection limit reached ({} peers). Disconnect a peer first.",
-                self.max_peers
-            )));
-        }
+        // NOTE: max_peers is NOT checked here. The only capacity check lives in
+        // `try_insert_connection`, under the same write lock as the insert — a
+        // read-then-write split is a TOCTOU race that lets concurrent connects
+        // each see "below capacity" and overshoot the limit. An advisory check
+        // here is racy, adds a second increment site for
+        // `connections_rejected_capacity`, and is exactly the kind of duplicate
+        // that drifts from the authoritative one — it already had: this path
+        // and the incoming path carried two different rejection messages.
 
         // Serialize concurrent connect attempts for the same peer_id, and arrange
         // for the entry to be removed even if the future below is cancelled
@@ -284,9 +277,13 @@ impl ConnectionManager {
     /// Returns `Ok(true)` if the new connection was inserted (caller should spawn
     /// the inbound dispatch loop), `Ok(false)` if the new connection lost the
     /// tie-break and was closed, or `Err(_)` if capacity is full at insert time.
-    /// The capacity check lives here (instead of in is_at_capacity()) because the
-    /// read-then-write split is a TOCTOU race — multiple concurrent connects could
-    /// each see "below capacity" and overshoot max_peers.
+    /// This is the ONLY capacity check, deliberately. `connect_to_peer` and
+    /// `handle_incoming` each used to run an advisory `is_at_capacity()` read
+    /// first; that read-then-write split is a TOCTOU race (multiple concurrent
+    /// connects could each see "below capacity" and overshoot max_peers), it
+    /// gave `connections_rejected_capacity` a second increment site, and the
+    /// two copies had already drifted to different rejection messages. They
+    /// were removed — do not reintroduce one.
     async fn try_insert_connection(
         &self,
         peer_id: &str,
@@ -561,17 +558,14 @@ impl ConnectionManager {
         pairing: Arc<DevicePairing>,
         remote_jobs: Arc<RemoteJobs>,
     ) -> Result<(), AppError> {
-        // Enforce max_peers limit for incoming connections
-        if self.is_at_capacity().await {
-            self.metrics
-                .connections_rejected_capacity
-                .fetch_add(1, Ordering::Relaxed);
-            quinn_conn.close(quinn::VarInt::from_u32(1), b"capacity exceeded");
-            return Err(AppError::Validation(format!(
-                "Rejecting incoming connection: at capacity ({} peers)",
-                self.max_peers
-            )));
-        }
+        // NOTE: max_peers is NOT checked here — see `try_insert_connection`,
+        // which enforces it atomically with the insert at the end of this
+        // handshake and closes the connection with the same
+        // `capacity exceeded` QUIC code. The advisory pre-check that used to
+        // sit here was racy, was a second increment site for the rejection
+        // metric, and had drifted to a different error message than the
+        // authoritative one. The cost of removing it is one extra handshake
+        // per over-capacity peer, bounded by the timeouts below.
 
         let (send, recv) = quinn_conn
             .accept_bi()

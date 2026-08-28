@@ -80,4 +80,34 @@ describe('extractProtocolsFromNodes', () => {
   it('returns nothing when no node matches', () => {
     expect(extractProtocolsFromNodes(N8N_DEFINITION, ['n8n-nodes-base.acmeWidget'])).toEqual([]);
   });
+
+  // The Rust ProtocolMapRule (src-tauri/core/src/models/platform_definition.rs,
+  // built by pm() in src-tauri/engine/src/platform_rules.rs) has no
+  // `node_patterns` field, so a definition arriving over IPC carries rules
+  // without `nodePatterns`. Reading it directly threw
+  // `TypeError: rule.nodePatterns.some is not a function`; it must degrade to
+  // "no structural match" and leave the keyword fallback to do its work.
+  it('does not throw on a backend-shaped rule that has no nodePatterns', () => {
+    const backendShaped = {
+      ...N8N_DEFINITION,
+      protocolMapRules: [
+        {
+          platformPattern: 'Slack/Telegram/Email nodes',
+          targetProtocol: 'user_message',
+          condition: 'notification node present',
+        },
+      ],
+    } as unknown as typeof N8N_DEFINITION;
+
+    expect(() => extractProtocolsFromNodes(backendShaped, ['n8n-nodes-base.slack'])).not.toThrow();
+    expect(extractProtocolsFromNodes(backendShaped, ['n8n-nodes-base.slack'])).toEqual([]);
+  });
+
+  it('does not throw when protocolMapRules itself is absent', () => {
+    const noRules = {
+      ...N8N_DEFINITION,
+      protocolMapRules: undefined,
+    } as unknown as typeof N8N_DEFINITION;
+    expect(extractProtocolsFromNodes(noRules, ['n8n-nodes-base.slack'])).toEqual([]);
+  });
 });

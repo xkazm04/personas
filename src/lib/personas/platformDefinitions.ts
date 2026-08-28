@@ -1,9 +1,32 @@
 /**
  * Config-driven platform definitions for workflow import.
  *
- * Mirrors the Rust PlatformDefinition struct. Each platform's node-type
- * mappings, credential consolidation rules, and role classifications are
- * defined here as data rather than scattered across individual parsers.
+ * Each platform's node-type mappings, credential consolidation rules, and role
+ * classifications are defined here as data rather than scattered across
+ * individual parsers.
+ *
+ * ## This is a CACHED COPY of the Rust table, not a mirror of it
+ *
+ * This header used to read "Mirrors the Rust PlatformDefinition struct". It
+ * does not, and saying so hid two real divergences (measured 2026-08-28):
+ *
+ * 1. **Shape.** `ProtocolMapRule` below requires `nodePatterns: string[]`.
+ *    The Rust `ProtocolMapRule` (`src-tauri/core/src/models/platform_definition.rs`,
+ *    built by `pm()` in `src-tauri/engine/src/platform_rules.rs`) has only
+ *    `platform_pattern` / `target_protocol` / `condition` — there is no
+ *    `node_patterns` field and nothing generates one. A rule that came from the
+ *    backend therefore has `nodePatterns === undefined`.
+ * 2. **Contents.** The two tables have drifted independently — each side
+ *    carries platform entries and patterns the other lacks.
+ *
+ * Nothing in the app currently feeds a backend-sourced definition into these
+ * functions (`get_platform_definition` has no call sites), so this is latent,
+ * not live. It is guarded rather than assumed: `extractProtocolsFromNodes`
+ * tolerates a missing `nodePatterns`, and `@/api/platforms/platformDefinitions`
+ * validates the IPC payload at the boundary instead of asserting it.
+ *
+ * When you change either table, change the other in the same PR — nothing
+ * compares them.
  */
 
 // -- Types ------------------------------------------------------
@@ -29,8 +52,31 @@ export interface ProtocolMapRule {
   platformPattern: string;
   targetProtocol: 'user_message' | 'agent_memory' | 'manual_review' | 'emit_event';
   condition: string;
-  /** Concrete node-type substrings to match (same matching as nodeRoleClassification) */
+  /**
+   * Concrete node-type substrings to match (same matching as
+   * nodeRoleClassification).
+   *
+   * **TS-only — the Rust `ProtocolMapRule` has no counterpart field.** Required
+   * here because every locally-authored definition supplies it; a definition
+   * that arrived over IPC will not, which is why every reader must go through
+   * {@link protocolNodePatterns}.
+   */
   nodePatterns: string[];
+}
+
+/**
+ * The node-type substrings a protocol rule matches on, or `[]` when the rule
+ * came from a source that does not carry them (see the note on
+ * {@link ProtocolMapRule.nodePatterns}).
+ *
+ * An empty list means "this rule never matches structurally" — the keyword
+ * prompt-scan fallback still applies — which is the right degradation. Reading
+ * `rule.nodePatterns` directly would throw `TypeError: ... .some is not a
+ * function` deep inside the import pipeline instead.
+ */
+function protocolNodePatterns(rule: ProtocolMapRule): string[] {
+  const patterns: unknown = rule.nodePatterns;
+  return Array.isArray(patterns) ? patterns.filter((p): p is string => typeof p === 'string') : [];
 }
 
 export interface PlatformDefinition {
@@ -152,9 +198,9 @@ export function extractProtocolsFromNodes(
 
   for (const nodeType of nodeTypes) {
     const lower = nodeType.toLowerCase();
-    for (const rule of def.protocolMapRules) {
+    for (const rule of def.protocolMapRules ?? []) {
       if (seen.has(rule.targetProtocol)) continue;
-      if (rule.nodePatterns.some((p) => lower.includes(p.toLowerCase()))) {
+      if (protocolNodePatterns(rule).some((p) => lower.includes(p.toLowerCase()))) {
         seen.add(rule.targetProtocol);
         result.push({
           type: rule.targetProtocol,
