@@ -66,6 +66,25 @@ export function diffLines(a: string, b: string): DiffLine[] {
 }
 
 /**
+ * The three sentences this summary is made of, supplied by the caller.
+ *
+ * They are NOT UI-only text: the summary pre-fills the WinnerInsightDialog
+ * textarea, the user edits it, and `pickCompetitionWinner` then PERSISTS the
+ * result as `winner_insight` — which is rendered back later and leaves in a
+ * data export. Composed as literals here they baked English permanently into
+ * every locale's database, next to the user's own words in their own language.
+ * The caller passes translated copy; this stays a pure, testable function.
+ */
+export interface PromptDiffSummaryCopy {
+  /** e.g. "Terse won. Notable prompt deltas vs other variants:" */
+  headline: (winnerLabel: string) => string;
+  /** e.g. "vs Verbose (+3 / -1):" */
+  variant: (label: string, added: number, removed: number) => string;
+  /** The trailing prompt inviting the human's own take. */
+  takeaway: string;
+}
+
+/**
  * Build a short plain-text summary of how `winner` differs from `others`.
  * Designed to pre-fill the WinnerInsightDialog textarea so the human's
  * insight comment starts from the actual prompt delta rather than a blank
@@ -76,11 +95,12 @@ export function summarizePromptDiff(
   winnerLabel: string,
   winnerPrompt: string,
   others: { label: string; prompt: string }[],
+  copy: PromptDiffSummaryCopy,
 ): string {
   const TRIM = 80;
   const MAX_BULLETS = 4;
   const trim = (s: string) => (s.length > TRIM ? s.slice(0, TRIM - 1) + '…' : s);
-  const parts: string[] = [`${winnerLabel} won. Notable prompt deltas vs other variants:`, ''];
+  const parts: string[] = [copy.headline(winnerLabel), ''];
   for (const other of others) {
     const lines = diffLines(other.prompt, winnerPrompt);
     let adds = 0, removes = 0;
@@ -95,11 +115,11 @@ export function summarizePromptDiff(
       }
     }
     if (adds === 0 && removes === 0) continue;
-    parts.push(`vs ${other.label} (+${adds} / -${removes}):`);
+    parts.push(copy.variant(other.label, adds, removes));
     parts.push(...samples);
     parts.push('');
   }
-  parts.push('— My take on why this won:');
+  parts.push(copy.takeaway);
   return parts.join('\n');
 }
 

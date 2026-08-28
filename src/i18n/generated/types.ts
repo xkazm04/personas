@@ -16621,6 +16621,9 @@ export type Translations = {
       prompt_diff_title: string;
       prompt_diff_stats: string;
       prompt_diff_empty: string;
+      prompt_diff_summary_headline: string;
+      prompt_diff_summary_variant: string;
+      prompt_diff_summary_takeaway: string;
       kanban_nudge_decrease: string;
       kanban_nudge_increase: string;
       kanban_drop_here: string;

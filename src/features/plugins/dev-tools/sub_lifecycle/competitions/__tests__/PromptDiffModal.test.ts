@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { diffLines, summarizePromptDiff } from '../PromptDiffModal';
+import { diffLines, summarizePromptDiff, type PromptDiffSummaryCopy } from '../PromptDiffModal';
+import { getEnglishTranslations } from '@/i18n/englishSections';
+
+/**
+ * The prose used to be composed as English literals INSIDE summarizePromptDiff,
+ * and it is persisted as `winner_insight` — so every locale's database got the
+ * English scaffold. The copy is now the caller's, and these fixtures mirror
+ * exactly what CompetitionCard passes.
+ */
+const COPY: PromptDiffSummaryCopy = {
+  headline: (label) => `${label} won. Notable prompt deltas vs other variants:`,
+  variant: (label, added, removed) => `vs ${label} (+${added} / -${removed}):`,
+  takeaway: '— My take on why this won:',
+};
 
 describe('diffLines', () => {
   it('marks identical strings as fully matched', () => {
@@ -49,6 +62,7 @@ describe('summarizePromptDiff', () => {
       'Winner',
       'shared line',
       [{ label: 'Loser', prompt: 'shared line' }],
+      COPY,
     );
     // No vs-Loser block because there are zero adds/removes.
     expect(out).not.toContain('vs Loser');
@@ -61,6 +75,7 @@ describe('summarizePromptDiff', () => {
       'Winner',
       'role: senior\nstyle: terse',
       [{ label: 'Loser', prompt: 'role: junior\nstyle: terse' }],
+      COPY,
     );
     expect(out).toContain('vs Loser');
     expect(out).toMatch(/\+1 \/ -1/);
@@ -74,6 +89,7 @@ describe('summarizePromptDiff', () => {
       'Winner',
       winnerLines,
       [{ label: 'Loser', prompt: '' }],
+      COPY,
     );
     // Each "+ added N" should appear at most 4 times (MAX_BULLETS = 4)
     const addBullets = out.split('\n').filter((line) => line.trim().startsWith('+ '));
@@ -88,6 +104,7 @@ describe('summarizePromptDiff', () => {
       'Winner',
       longLine,
       [{ label: 'Loser', prompt: '' }],
+      COPY,
     );
     const bullet = out.split('\n').find((l) => l.trim().startsWith('+ '));
     expect(bullet).toBeDefined();
@@ -103,8 +120,35 @@ describe('summarizePromptDiff', () => {
         { label: 'Loser1', prompt: 'A' },
         { label: 'Loser2', prompt: 'X' },
       ],
+      COPY,
     );
     expect(out).toContain('vs Loser1');
     expect(out).toContain('vs Loser2');
+  });
+
+  it('emits no English scaffold when the caller supplies localized copy', () => {
+    const es: PromptDiffSummaryCopy = {
+      headline: (label) => `Ganó ${label}. Diferencias destacadas del prompt frente a las demás variantes:`,
+      variant: (label, added, removed) => `frente a ${label} (+${added} / -${removed}):`,
+      takeaway: '— Mi opinión sobre por qué ganó:',
+    };
+    const out = summarizePromptDiff('Conciso', 'rol: senior\nestilo', [{ label: 'Extenso', prompt: 'rol: junior\nestilo' }], es);
+    expect(out).toContain('Ganó Conciso');
+    expect(out).toContain('frente a Extenso');
+    expect(out).toContain('Mi opinión');
+    // The three sentences this function used to compose itself. Any of them
+    // reappearing means English is being written into a non-English user's
+    // persisted `winner_insight` again.
+    expect(out).not.toMatch(/ won\./);
+    expect(out).not.toContain('My take on why this won');
+    expect(out).not.toMatch(/^vs /m);
+  });
+
+  it('has the catalog keys CompetitionCard feeds it', () => {
+    const dl = getEnglishTranslations().plugins.dev_lifecycle;
+    expect(dl.prompt_diff_summary_headline).toContain('{label}');
+    expect(dl.prompt_diff_summary_variant).toContain('{added}');
+    expect(dl.prompt_diff_summary_variant).toContain('{removed}');
+    expect(dl.prompt_diff_summary_takeaway.length).toBeGreaterThan(0);
   });
 });
