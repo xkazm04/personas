@@ -72,6 +72,7 @@
   "stop": "Стоп",
   "stop_athena": "Остановить Athena",
   "stop_autonomous": "Остановить автономную сборку",
+  "stop_nothing_running": "Останавливать было нечего — поле ввода снова доступно.",
   "tell_athena": "Скажите Athena, что создать в {name}…",
   "type_answer_below": "Введите ответ в чате ниже.",
   "version_history": "История версий",

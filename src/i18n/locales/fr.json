@@ -21307,6 +21307,7 @@
     "stop": "Arrêter",
     "stop_athena": "Arrêter Athena",
     "stop_autonomous": "Arrêter la construction autonome",
+    "stop_nothing_running": "Rien ne tournait, il n’y avait rien à arrêter — la saisie est de nouveau libre.",
     "tell_athena": "Indiquez à Athena quoi construire dans {name}…",
     "type_answer_below": "Saisissez votre réponse dans le chat ci-dessous.",
     "version_history": "Historique des versions",

@@ -72,6 +72,7 @@
   "stop": "Stopp",
   "stop_athena": "Athena stoppen",
   "stop_autonomous": "Autonomen Build stoppen",
+  "stop_nothing_running": "Es lief nichts, was sich hätte stoppen lassen – die Eingabe ist wieder frei.",
   "tell_athena": "Sag Athena, was in {name} gebaut werden soll…",
   "type_answer_below": "Gib deine Antwort unten im Chat ein.",
   "version_history": "Versionsverlauf",

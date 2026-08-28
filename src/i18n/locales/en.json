@@ -21290,6 +21290,7 @@
     "stop_athena": "Stop Athena",
     "stop": "Stop",
     "stop_autonomous": "Stop autonomous build",
+    "stop_nothing_running": "Nothing was running to stop — the input is free again.",
     "build_autonomously": "Build autonomously",
     "answer_athena": "Answer Athena · {name}",
     "building_autonomously": "Athena is building {name} autonomously…",

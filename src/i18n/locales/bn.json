@@ -21307,6 +21307,7 @@
     "stop": "থামান",
     "stop_athena": "Athena থামান",
     "stop_autonomous": "স্বয়ংক্রিয় বিল্ড থামান",
+    "stop_nothing_running": "থামানোর মতো কিছু চলছিল না — ইনপুট আবার খোলা।",
     "tell_athena": "{name}-এ কী তৈরি করতে হবে তা Athena-কে বলুন…",
     "type_answer_below": "নিচের চ্যাটে আপনার উত্তর টাইপ করুন।",
     "version_history": "ভার্সন ইতিহাস",

@@ -72,6 +72,7 @@
   "stop": "रोकें",
   "stop_athena": "Athena को रोकें",
   "stop_autonomous": "स्वायत्त बिल्ड रोकें",
+  "stop_nothing_running": "रोकने के लिए कुछ चल ही नहीं रहा था — इनपुट फिर से खुला है।",
   "tell_athena": "Athena को बताएं कि {name} में क्या बनाना है…",
   "type_answer_below": "नीचे चैट में अपना जवाब टाइप करें।",
   "version_history": "वर्शन इतिहास",

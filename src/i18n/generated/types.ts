@@ -21296,6 +21296,7 @@ export type Translations = {
     stop_athena: string;
     stop: string;
     stop_autonomous: string;
+    stop_nothing_running: string;
     build_autonomously: string;
     answer_athena: string;
     building_autonomously: string;

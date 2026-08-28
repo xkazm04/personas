@@ -21307,6 +21307,7 @@
     "stop": "Dừng",
     "stop_athena": "Dừng Athena",
     "stop_autonomous": "Dừng xây dựng tự động",
+    "stop_nothing_running": "Không có tiến trình nào đang chạy để dừng — ô nhập đã mở lại.",
     "tell_athena": "Cho Athena biết bạn muốn xây dựng gì trong {name}…",
     "type_answer_below": "Nhập câu trả lời của bạn vào khung trò chuyện bên dưới.",
     "version_history": "Lịch sử phiên bản",

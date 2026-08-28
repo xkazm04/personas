@@ -72,6 +72,7 @@
   "stop": "Zastavit",
   "stop_athena": "Zastavit Athenu",
   "stop_autonomous": "Zastavit autonomní sestavení",
+  "stop_nothing_running": "Nic neběželo, takže nebylo co zastavit — pole je zase volné.",
   "tell_athena": "Řekněte Atheně, co má v {name} sestavit…",
   "type_answer_below": "Napište svou odpověď do chatu níže.",
   "version_history": "Historie verzí",

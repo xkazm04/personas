@@ -72,6 +72,7 @@
   "stop": "Detener",
   "stop_athena": "Detener a Athena",
   "stop_autonomous": "Detener construcción autónoma",
+  "stop_nothing_running": "No había nada en marcha que detener: la entrada vuelve a estar libre.",
   "tell_athena": "Dile a Athena qué construir en {name}…",
   "type_answer_below": "Escribe tu respuesta en el chat de abajo.",
   "version_history": "Historial de versiones",

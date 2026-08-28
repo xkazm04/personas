@@ -21307,6 +21307,7 @@
     "stop": "停止",
     "stop_athena": "Athenaを停止",
     "stop_autonomous": "自律ビルドを停止",
+    "stop_nothing_running": "停止する処理は実行されていませんでした。入力欄はまた使えます。",
     "tell_athena": "{name}で作りたいものをAthenaに伝える…",
     "type_answer_below": "下のチャットに回答を入力してください。",
     "version_history": "バージョン履歴",

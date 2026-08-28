@@ -72,6 +72,7 @@
   "stop": "Hentikan",
   "stop_athena": "Hentikan Athena",
   "stop_autonomous": "Hentikan pembangunan otonom",
+  "stop_nothing_running": "Tidak ada yang sedang berjalan untuk dihentikan — kolom masukan terbuka lagi.",
   "tell_athena": "Beri tahu Athena apa yang harus dibangun di {name}…",
   "type_answer_below": "Ketik jawabanmu di kolom obrolan di bawah.",
   "version_history": "Riwayat versi",

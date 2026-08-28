@@ -72,6 +72,7 @@
   "stop": "중지",
   "stop_athena": "Athena 중지",
   "stop_autonomous": "자율 빌드 중지",
+  "stop_nothing_running": "중지할 작업이 실행되고 있지 않았습니다. 입력창을 다시 사용할 수 있습니다.",
   "tell_athena": "{name}에서 만들 것을 Athena에게 알려주세요…",
   "type_answer_below": "아래 채팅창에 답변을 입력하세요.",
   "version_history": "버전 기록",

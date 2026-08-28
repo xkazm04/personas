@@ -72,6 +72,7 @@
   "stop": "إيقاف",
   "stop_athena": "إيقاف Athena",
   "stop_autonomous": "إيقاف البناء المستقل",
+  "stop_nothing_running": "لم يكن هناك شيء قيد التشغيل لإيقافه — يمكنك الكتابة من جديد.",
   "tell_athena": "أخبر Athena بما تريد بناءه في {name}…",
   "type_answer_below": "اكتب إجابتك في المحادثة أدناه.",
   "version_history": "سجل الإصدارات",
