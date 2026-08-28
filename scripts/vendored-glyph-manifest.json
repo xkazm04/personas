@@ -1,0 +1,19 @@
+{
+  "$comment": "Content hashes of the vendored machine-traced glyph artifacts. Regenerate with `npm run check:glyphs -- --update` ONLY after a real re-trace through the ai-registry motionize skill — a hash that moves for any other reason is the hand edit this file exists to catch.",
+  "algorithm": "sha256 over LF-normalised UTF-8",
+  "artifacts": {
+    "src/features/agents/sub_glyph/personaCore/archetypeGlyphData.ts": "674b003197629bed961dc48b68df68b70ab5a020fc3266b8da9d733b09ac1e1c",
+    "src/features/plugins/dev-tools/sub_overview/pulseGlyphData.ts": "d5cef281d9562a80633f86b6fbd188a2799186d8fcafd2b1cde71edfe3397cc6",
+    "src/features/shared/glyph/glyphs/coachingGlyph.ts": "ddc1ca5e29d27ff006c441534b7cdace348ba41f1a6c7f947ad6834a5fecbf99",
+    "src/features/shared/glyph/glyphs/feedsGlyph.ts": "c524bde87581293455cf774610a1abb5970b5001f4894a9ecb62ec2e3a3ac957",
+    "src/features/shared/glyph/glyphs/goalsGlyph.ts": "e8f7457544ed348a899f080ba48092858e1388645c5f7c3f8f02ed326a573e9d",
+    "src/features/shared/glyph/glyphs/kpisGlyph.ts": "c0079a40d50dad72cbe4f0bdbd382f00b0a69b6f8abe0a0a570a98fb15e2b57a",
+    "src/features/shared/glyph/glyphs/ratelimitGlyph.ts": "dfa424737ff5baaf8b4c695e095637ef0b853cfde28e72a79d11c4f529acabce",
+    "src/features/shared/glyph/glyphs/relayGlyph.ts": "94c0bb05ceb81857e032c55fb41422bd942a4717f044b903bc60d06023e49066",
+    "src/features/shared/glyph/glyphs/roadmapRouteGlyph.ts": "7708463bd8e8f5a186917a733bf95c171eda74111d11ffa50932f431f031fa1a",
+    "src/features/shared/glyph/glyphs/roadmapWaypointGlyph.ts": "c8200edabed5863bb27d2e1899fdd3c19f5ff97e4b8e85b1f57e26e158d6758d",
+    "src/features/shared/glyph/glyphs/scopeMapGlyph.ts": "da635a2474c27f2b259e5fd074b3f2a327ab98b5d34564ad2c5851a354797ad2",
+    "src/features/studio/planGlyphData.ts": "bc91ad8ad06d046cd20628476acce405eb18bb29fe46b01e063deb27558a75c9",
+    "src/features/teams/sub_teamWorkspace/networkGlyphData.ts": "3905b7530f55dcae00828ee40e2e1aff4229e89479be4f0201b326d0d66b5565"
+  }
+}
