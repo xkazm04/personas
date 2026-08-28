@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getAppSettingsBulk } from '@/api/system/settings';
 import { createLogger } from '@/lib/log';
@@ -143,10 +143,21 @@ export function useSettings(keys: readonly string[]): UseSettingsResult {
   // Stabilise the dep on key contents. Sorting + joining keeps the dep stable
   // across renders that pass equivalent-but-distinct array references.
   const stableSignature = useMemo(() => [...keys].sort().join('\x1f'), [keys]);
-  const stableKeys = useMemo(
-    () => stableSignature.split('\x1f').filter(Boolean),
-    [stableSignature],
-  );
+
+  // The signature is a CACHE KEY and nothing else. `stableKeys` used to be
+  // `stableSignature.split('\x1f')` -- the array actually sent to the backend
+  // was a round-trip through the delimiter, so any key containing it was
+  // silently split into two keys that do not exist, and the miss came back as
+  // `null` rather than as an error. Callers already assemble dynamic keys
+  // (`execution_retention_months:${personaId}`). The array is now the sorted
+  // original, held in a ref so its identity stays stable while the signature
+  // does -- `keys` is usually an inline literal with a fresh identity every
+  // render, and the effect below keys on this array.
+  const keyCacheRef = useRef<{ signature: string; keys: string[] } | null>(null);
+  if (keyCacheRef.current?.signature !== stableSignature) {
+    keyCacheRef.current = { signature: stableSignature, keys: [...keys].sort().filter(Boolean) };
+  }
+  const stableKeys = keyCacheRef.current.keys;
 
   const [values, setValues] = useState<Record<string, string | null>>({});
   const [loaded, setLoaded] = useState(false);
