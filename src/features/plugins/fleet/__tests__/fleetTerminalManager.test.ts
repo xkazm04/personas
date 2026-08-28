@@ -99,7 +99,9 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
+  (g.__fleetTerminalWebglOrder__ as string[] | undefined)?.splice(0);
   g.__fleetTerminalEvictions__ = 0;
+  g.__fleetTerminalWebglEvictions__ = 0;
 }
 
 const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminalParked__ as string[];
@@ -384,6 +386,66 @@ describe('eviction accounting', () => {
     detachTerminal('watched');
     host.remove();
     other.remove();
+  });
+});
+
+describe('WebGL renderer budget', () => {
+  /** Registry view that exposes the attach-scoped renderer handle. */
+  const glOf = (id: string) =>
+    (registryMap() as unknown as Map<string, { webgl: unknown }>).get(id)!.webgl;
+
+  it('bounds live GL contexts fleet-wide and demotes the oldest attach to the DOM renderer', () => {
+    const budget = getFleetTerminalStats().maxWebgl;
+    expect(getFleetTerminalStats().webglContexts).toBe(0);
+
+    // A 16-session fleet all sitting on awaiting_input mounts a live terminal
+    // per tile. Before the budget every one of those minted a GL context and
+    // the WebView silently killed whichever it liked once its own cap was hit.
+    const ids = Array.from({ length: budget + 2 }, (_, i) => `gl-${i}`);
+    const hosts = ids.map((id) => attach(id));
+
+    const stats = getFleetTerminalStats();
+    expect(stats.webglContexts).toBe(budget);
+    expect(stats.webglEvictions).toBe(2);
+    // Least-recently-attached lost theirs; the newest (the focused tile) kept it.
+    expect(glOf(ids[0]!)).toBeNull();
+    expect(glOf(ids[1]!)).toBeNull();
+    expect(glOf(ids[ids.length - 1]!)).not.toBeNull();
+
+    for (const id of ids) detachTerminal(id);
+    for (const h of hosts) h.remove();
+  });
+
+  it('frees the slot on detach, so cycling panes never demotes anyone', () => {
+    const budget = getFleetTerminalStats().maxWebgl;
+    // Attach and detach one at a time, many more times than the budget: each
+    // detach hands its context back, so nothing is ever evicted.
+    for (let i = 0; i < budget * 3; i += 1) {
+      const host = attach(`cycle-${i}`);
+      expect(getFleetTerminalStats().webglContexts).toBe(1);
+      detachTerminal(`cycle-${i}`);
+      host.remove();
+    }
+    const stats = getFleetTerminalStats();
+    expect(stats.webglContexts).toBe(0);
+    expect(stats.webglEvictions).toBe(0);
+  });
+
+  it('shifts a ghost holder by hand rather than spinning on it', () => {
+    // A disposed terminal whose id is still in the order is a bookkeeping
+    // repair, not a demotion — and the head MUST move, or the budget loop
+    // freezes the UI thread exactly the way the parked LRU once did.
+    const g = globalThis as Record<string, unknown>;
+    const order = g.__fleetTerminalWebglOrder__ as string[];
+    const budget = getFleetTerminalStats().maxWebgl;
+    for (let i = 0; i < budget; i += 1) order.push(`ghost-${i}`);
+
+    const host = attach('real');
+
+    expect(getFleetTerminalStats().webglEvictions).toBe(0);
+    expect(glOf('real')).not.toBeNull();
+    detachTerminal('real');
+    host.remove();
   });
 });
 
