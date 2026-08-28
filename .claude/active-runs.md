@@ -2,6 +2,11 @@
 
 ## Active
 
+### backlog-exec-240 — execute 149 auto-approved wave findings via subagents; backlog 91 for triage
+- **[2026-08-28 15:30]**
+- **Paths:** `src/**` · `src-tauri/src/engine/dispatch.rs`
+- **Status:** started
+
 - **[2026-08-28 14:04]**
 - **Paths:** `src/features/agents/quick-answer/triage/**` · `.claude/skills/scan-sweep/**`
 - **Status:** started
