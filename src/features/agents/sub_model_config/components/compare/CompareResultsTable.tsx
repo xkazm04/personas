@@ -23,7 +23,17 @@ export function ComparisonResults({
 }) {
   const { t } = useTranslation();
   const mc = t.agents.model_config;
-  const winner = metricsA.composite > metricsB.composite ? 'A' : metricsA.composite < metricsB.composite ? 'B' : null;
+  // No winner unless BOTH models have a composite. A model whose rows were
+  // never graded has `null` here, and crowning the other one would announce a
+  // verdict on evidence that does not exist.
+  const winner =
+    metricsA.composite == null || metricsB.composite == null
+      ? null
+      : metricsA.composite > metricsB.composite
+        ? 'A'
+        : metricsA.composite < metricsB.composite
+          ? 'B'
+          : null;
 
   // Per-scenario side by side
   const scenarios = useMemo(() => {
@@ -51,7 +61,7 @@ export function ComparisonResults({
             {winner === 'A' ? modelA.label : modelB.label} {mc.wins}
           </span>
           <span className="typo-body text-foreground">
-            ({(winner === 'A' ? metricsA : metricsB).composite} vs {(winner === 'A' ? metricsB : metricsA).composite} {mc.composite})
+            ({(winner === 'A' ? metricsA : metricsB).composite ?? '—'} vs {(winner === 'A' ? metricsB : metricsA).composite ?? '—'} {mc.composite})
           </span>
         </div>
       )}

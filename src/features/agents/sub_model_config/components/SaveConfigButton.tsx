@@ -1,29 +1,45 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 
 interface SaveConfigButtonProps {
-  onClick: () => void;
+  /**
+   * Returning the promise is load-bearing: `AsyncButton` uses it to hold a
+   * synchronous in-flight guard and paint a real spinner. A `() => void`
+   * handler that swallows its own promise silently disarms both.
+   */
+  onClick: () => void | Promise<void>;
   disabled: boolean;
   saved: boolean;
   label?: string;
 }
 
+/**
+ * Save control for a provider credential.
+ *
+ * This was a hand-rolled `<button>` with `disabled` and a `saved` flag and
+ * nothing else until 2026-08-28: during the await of `setAppSetting` — an IPC
+ * round-trip that may touch the OS keyring — it looked completely idle, so a
+ * second click re-entered the handler and issued a second write. `AsyncButton`
+ * supplies the three things the spinner boundary requires of a control the
+ * user just pressed: a visible spinner, `disabled`, and `aria-busy`, plus a
+ * synchronous guard that rejects the second click before React can re-render.
+ */
 export function SaveConfigButton({ onClick, disabled, saved, label }: SaveConfigButtonProps) {
   const { t } = useTranslation();
   const displayLabel = label ?? t.common.save;
   return (
-    <button
+    <AsyncButton
       type="button"
-      onClick={onClick}
+      size="sm"
+      variant={saved ? 'accent' : 'secondary'}
+      accentColor={saved ? 'emerald' : undefined}
+      // The resting tint is the primary token, which has no `accent` entry.
+      className={saved ? '' : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'}
       disabled={disabled || saved}
-      className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${
-        saved
-          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-          : !disabled
-            ? 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'
-            : 'bg-secondary/40 text-foreground border border-primary/10 cursor-not-allowed'
-      }`}
+      loadingText={t.common.saving}
+      onClick={() => onClick()}
     >
       {saved ? t.agents.model_config.saved : displayLabel}
-    </button>
+    </AsyncButton>
   );
 }

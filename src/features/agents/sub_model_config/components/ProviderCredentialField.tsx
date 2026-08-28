@@ -65,6 +65,13 @@ export function ProviderCredentialField({
         <div className="space-y-2">
           {field1.type === 'password' ? (
             <PasswordToggleField
+              // A provider API key is not the user's login. Without this,
+              // PasswordToggleField defaults to autoComplete="current-password"
+              // (PasswordToggleField.tsx:106) and the WebView's password
+              // manager offers to save and refill an sk-... proxy key as if it
+              // were a site credential. CustomModelConfigForm's auth-token
+              // field already opts out; these two did not until 2026-08-28.
+              autoComplete="off"
               value={f1.value}
               onChange={(e) => f1.setValue(e.target.value)}
               placeholder={field1.placeholder}
@@ -80,6 +87,7 @@ export function ProviderCredentialField({
           )}
           {field2.type === 'password' ? (
             <PasswordToggleField
+              autoComplete="off"
               value={f2.value}
               onChange={(e) => f2.setValue(e.target.value)}
               placeholder={field2.placeholder}
@@ -99,6 +107,7 @@ export function ProviderCredentialField({
         <div className="flex gap-2">
           {field1.type === 'password' ? (
             <PasswordToggleField
+              autoComplete="off"
               className="flex-1"
               value={f1.value}
               onChange={(e) => f1.setValue(e.target.value)}

@@ -63,7 +63,11 @@ function buildModelOp(d: PersonaDraft): PersonaOperation {
     } satisfies ModelProfile);
   } else {
     profile = JSON.stringify({
-      model: d.selectedModel,
+      // A persona whose model was never chosen has an empty `selectedModel`
+      // (see `profileToDropdownValue`). Writing that through as `model: ""`
+      // would invent a choice the user never made the first time any OTHER
+      // model field — budget, turns, cache policy — is edited. Stay absent.
+      model: d.selectedModel || undefined,
       provider: 'anthropic',
       prompt_cache_policy: cachePolicy,
     } satisfies ModelProfile);

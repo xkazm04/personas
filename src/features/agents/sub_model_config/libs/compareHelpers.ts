@@ -1,7 +1,7 @@
 import type { ModelTestConfig } from '@/api/agents/tests';
 import type { InteractionEvent } from '@/lib/analytics/sink';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
-import { compositeScore } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow } from '@/lib/eval/evalFramework';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
@@ -29,10 +29,38 @@ export interface ModelOption {
  */
 export const FREE_COST = 'Free';
 
+/**
+ * The Anthropic tiers and their prices, defined ONCE.
+ *
+ * The Ollama half of this context always derived both its selector rows and
+ * its compare options from `OLLAMA_CLOUD_PRESETS`; the Anthropic half was
+ * typed out a second time in `ModelSelector.tsx` until 2026-08-28, so a price
+ * correction landed in one list and left the other stale — two call sites on
+ * the same screen disagreeing about what a model costs. Add a tier here and
+ * both the chooser and the A/B dropdown pick it up.
+ */
+export interface AnthropicTier {
+  /** Dropdown value AND the model id sent to the API — they are the same. */
+  value: string;
+  label: string;
+  cost: string;
+}
+
+export const ANTHROPIC_TIERS: readonly AnthropicTier[] = [
+  { value: 'haiku', label: 'Haiku', cost: '$1/$5' },
+  { value: 'sonnet', label: 'Sonnet', cost: '$3/$15' },
+  { value: 'opus', label: 'Opus', cost: '$5/$25' },
+];
+
 export const ALL_COMPARE_MODELS: ModelOption[] = [
-  { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku', group: 'Anthropic', cost: '$1/$5' },
-  { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet', group: 'Anthropic', cost: '$3/$15' },
-  { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus', group: 'Anthropic', cost: '$5/$25' },
+  ...ANTHROPIC_TIERS.map((tier) => ({
+    id: tier.value,
+    label: tier.label,
+    provider: 'anthropic',
+    model: tier.value,
+    group: 'Anthropic',
+    cost: tier.cost,
+  })),
   ...OLLAMA_CLOUD_PRESETS.map((p) => ({
     id: p.value,
     label: p.label.split(' (')[0] ?? p.label,
@@ -50,13 +78,35 @@ export function toTestConfig(opt: ModelOption): ModelTestConfig {
 
 // -- Metric helpers --
 
+/**
+ * How many of a model's rows actually carried each score. A dimension with a
+ * `scored` of 0 was never measured — its average is `null`, not `0`.
+ */
+export interface ScoredCounts {
+  toolAccuracy: number;
+  outputQuality: number;
+  protocolCompliance: number;
+}
+
 export interface ModelMetrics {
   modelId: string;
   provider: string;
-  avgToolAccuracy: number;
-  avgOutputQuality: number;
-  avgProtocolCompliance: number;
-  composite: number;
+  /**
+   * Averages over the rows that CARRIED the score, or `null` when no row did.
+   * These read `rows.reduce((s, r) => s + (r.x ?? 0), 0) / n` until 2026-08-28,
+   * which folded "never graded" into the same figure as "graded zero": a model
+   * whose rows were not graded on a dimension posted a real 0 on it, dragging
+   * its composite down and handing the wins banner to the other model on
+   * evidence that does not exist. A zero is a measurement; a null is an
+   * admission, and `scored` carries the count of admissions alongside it.
+   */
+  avgToolAccuracy: number | null;
+  avgOutputQuality: number | null;
+  avgProtocolCompliance: number | null;
+  /** Null when NOT ONE dimension was scored — there is no composite to state. */
+  composite: number | null;
+  /** Rows carrying each score, out of `count`. */
+  scored: ScoredCounts;
   totalCost: number;
   avgDuration: number;
   totalInputTokens: number;
@@ -98,18 +148,45 @@ export function aggregateResultsDetailed(
   return { status: 'ok', metrics: computeMetrics(rows, modelId) };
 }
 
+/**
+ * Mean over the rows that carried the score, plus the count of those rows.
+ * Rows with a `null` score are EXCLUDED from both numerator and denominator —
+ * an ungraded row must not vote for zero.
+ */
+function avgScored(
+  rows: LabArenaResult[],
+  pick: (r: LabArenaResult) => number | null,
+): { avg: number | null; scored: number } {
+  let sum = 0;
+  let scored = 0;
+  for (const r of rows) {
+    const v = pick(r);
+    if (v == null) continue;
+    sum += v;
+    scored += 1;
+  }
+  return scored === 0 ? { avg: null, scored: 0 } : { avg: sum / scored, scored };
+}
+
 function computeMetrics(rows: LabArenaResult[], modelId: string): ModelMetrics {
   const n = rows.length;
-  const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n;
-  const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n;
-  const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / n;
+  const ta = avgScored(rows, (r) => r.toolAccuracyScore);
+  const oq = avgScored(rows, (r) => r.outputQualityScore);
+  const pc = avgScored(rows, (r) => r.protocolCompliance);
   return {
     modelId,
     provider: rows[0]?.provider ?? 'unknown',
-    avgToolAccuracy: Math.round(avgTA),
-    avgOutputQuality: Math.round(avgOQ),
-    avgProtocolCompliance: Math.round(avgPC),
-    composite: compositeScore(avgTA, avgOQ, avgPC),
+    avgToolAccuracy: ta.avg == null ? null : Math.round(ta.avg),
+    avgOutputQuality: oq.avg == null ? null : Math.round(oq.avg),
+    avgProtocolCompliance: pc.avg == null ? null : Math.round(pc.avg),
+    // Re-weights the dimensions that were actually measured instead of
+    // biasing the composite toward zero; null only when none were.
+    composite: compositeScoreFromRow(ta.avg, oq.avg, pc.avg),
+    scored: {
+      toolAccuracy: ta.scored,
+      outputQuality: oq.scored,
+      protocolCompliance: pc.scored,
+    },
     totalCost: rows.reduce((s, r) => s + r.costUsd, 0),
     avgDuration: Math.round(rows.reduce((s, r) => s + r.durationMs, 0) / n),
     totalInputTokens: rows.reduce((s, r) => s + r.inputTokens, 0),
@@ -162,9 +239,20 @@ export function buildCompareStartEvent(modelA: string, modelB: string): Interact
  * An A/B comparison produced results for both models — the event carrying the
  * outcome the panel used to throw away. `winner` is decided on composite
  * score, the same number the results table ranks on.
+ *
+ * A model with no scored dimension has a `null` composite: it is reported as
+ * `unscored`, never as a loss. Declaring a winner over an absent score is the
+ * exact fold this event is meant to observe, not commit.
  */
 export function buildCompareOutcomeEvent(a: ModelMetrics, b: ModelMetrics): InteractionEvent {
-  const winner = a.composite === b.composite ? 'tie' : a.composite > b.composite ? a.modelId : b.modelId;
+  const winner =
+    a.composite == null || b.composite == null
+      ? 'unscored'
+      : a.composite === b.composite
+        ? 'tie'
+        : a.composite > b.composite
+          ? a.modelId
+          : b.modelId;
   return {
     category: MODEL_CONFIG_TELEMETRY_CATEGORY,
     action: 'compare_complete',
