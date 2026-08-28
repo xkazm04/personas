@@ -11,6 +11,7 @@ import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
+import { useStudioHistory } from './studioHistory';
 import { previewTargetOrigin } from './studioBuildModel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
@@ -90,7 +91,14 @@ export default function StudioPage() {
 
   const refreshProjects = useCallback(async () => {
     try {
-      setProjects(await webbuildListProjects());
+      const list = await webbuildListProjects();
+      setProjects(list);
+      // The one place in Studio holding the authoritative project list, so the
+      // one place that can reap persisted history for projects that are gone.
+      // Without it `byProject` and `openTabIds` only ever grew: a deleted
+      // project kept its saved log forever, and its stale tab id was re-walked
+      // by `rehydrate` on every launch. A prune with nothing stale is a no-op.
+      useStudioHistory.getState().prune(list.map((p) => p.id));
     } catch (e) {
       toastCatch('load projects')(e);
     }
