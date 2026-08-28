@@ -28,6 +28,7 @@ import {
   traitById,
 } from "../catalog";
 import { ARCHETYPE_GLYPHS } from "../archetypeGlyphData";
+import { MentalityCard } from "../MentalityCard";
 import { EFFORT_LEVELS, EFFORT_OPTIONS } from "@/lib/models/modelCatalog";
 
 // --------------------------------------------------------------------------
@@ -147,6 +148,72 @@ describe("persona-core catalog integrity", () => {
   it("resolves an unknown model tier to a real tier rather than undefined", () => {
     expect(modelTier("sonnet").id).toBe("sonnet");
     expect(modelTier("nope" as never).promptWord).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// Off-screen avatars: the Mentality column lists nine archetypes in a 64vh
+// scroller and only ~3 are visible, so mounting every glyph eagerly paints
+// hundreds of animated paths (and a light-theme CSS rule per colour each) for
+// content nobody can see.
+// --------------------------------------------------------------------------
+describe("MentalityCard avatar deferral", () => {
+  const archetype = {
+    id: "analyst", name: "Analyst", tagline: "Argues from evidence",
+    icon: "LineChart", color: "#60a5fa", recipeAffinity: [], persona: {},
+  };
+
+  let trigger: ((entries: { isIntersecting: boolean }[]) => void) | null = null;
+
+  beforeEach(() => {
+    trigger = null;
+    vi.stubGlobal("IntersectionObserver", class {
+      constructor(cb: (entries: { isIntersecting: boolean }[]) => void) { trigger = cb; }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+      takeRecords() { return []; }
+    });
+  });
+
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  // MotionizedGlyph is the only thing on this card that emits an inline <style>
+  // (its keyframes + per-colour light-theme overrides). Counting <path> alone
+  // would not discriminate — the lucide fallback and the trait strip draw paths
+  // of their own, which is exactly how this assertion first passed for the
+  // wrong reason.
+  const glyphMounted = (c: HTMLElement) => c.querySelectorAll("svg style").length;
+
+  it("mounts no glyph until the card nears the viewport, then mounts it", () => {
+    // The fixture must actually HAVE a glyph, or "nothing mounted" would be
+    // true no matter what the component did.
+    const paths = ARCHETYPE_GLYPHS[archetype.id]?.data.length ?? 0;
+    expect(paths).toBeGreaterThan(0);
+
+    const { container } = render(
+      <MentalityCard archetype={archetype} active={false} onSelect={() => {}} />,
+    );
+    expect(glyphMounted(container)).toBe(0);
+
+    act(() => { trigger?.([{ isIntersecting: true }]); });
+    expect(glyphMounted(container)).toBe(1);
+    const glyphSvg = container.querySelector("style")!.closest("svg")!;
+    expect(glyphSvg.querySelectorAll("path").length).toBe(paths);
+  });
+
+  it("keeps the glyph mounted after the card scrolls away", () => {
+    // Unmounting on scroll-away would re-pay the mount cost and re-fire the
+    // reveal on every pass through the list.
+    const { container } = render(
+      <MentalityCard archetype={archetype} active={false} onSelect={() => {}} />,
+    );
+    act(() => { trigger?.([{ isIntersecting: true }]); });
+    const mounted = container.querySelectorAll("path").length;
+    expect(glyphMounted(container)).toBe(1);
+    act(() => { trigger?.([{ isIntersecting: false }]); });
+    expect(glyphMounted(container)).toBe(1);
+    expect(container.querySelectorAll("path").length).toBe(mounted);
   });
 });
 

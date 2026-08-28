@@ -5,6 +5,7 @@
  *  distinct persona at a glance. Picking one seeds disposition + conflict + those
  *  dominant traits (applyPreset).
  */
+import { useEffect, useRef, useState } from "react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { MotionizedGlyph } from "@/features/shared/components/display/MotionizedGlyph";
 import { coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
@@ -13,12 +14,48 @@ import type { Archetype } from "./types";
 
 const axisColorOf = (axisId: string) => TRAIT_AXES.find((a) => a.id === axisId)?.color ?? "#60A5FA";
 
+/** The Mentality column lists all nine archetypes inside a 64vh scroller, but
+ *  only ~3 cards are on screen. Mounting every avatar eagerly paints ~330
+ *  animated <path> elements and injects a light-theme CSS override per colour
+ *  for each of them, all for content nobody can see yet.
+ *
+ *  So the avatar waits until its card is near the viewport, then stays mounted
+ *  — unmounting on scroll-away would re-pay the mount cost and re-fire the
+ *  reveal on every pass. `rootMargin` warms the next card before it arrives so
+ *  the glyph is never seen popping in. Without IntersectionObserver (jsdom,
+ *  very old engines) everything mounts immediately, which is the old behaviour. */
+function useNearViewportOnce<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [near, setNear] = useState(() => typeof IntersectionObserver === "undefined");
+
+  useEffect(() => {
+    if (near) return;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setNear(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "240px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+
+  return { ref, near };
+}
+
 export function MentalityCard({ archetype: a, active, onSelect }: { archetype: Archetype; active: boolean; onSelect: () => void }) {
+  const { ref: cardRef, near } = useNearViewportOnce<HTMLButtonElement>();
   const glyph = ARCHETYPE_GLYPHS[a.id];
   const Icon = coreIcon(a.icon);
   const traits = (ARCHETYPE_TRAITS[a.id] ?? []).flatMap((id) => { const t = traitById(id); return t ? [t] : []; });
   return (
     <button
+      ref={cardRef}
       type="button"
       onClick={onSelect}
       data-testid={`core-snapshot-${a.id}`}
@@ -33,7 +70,7 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
         className="relative shrink-0 w-28 h-28 rounded-card flex items-center justify-center overflow-hidden"
         style={{ background: colorWithAlpha(a.color, active ? 0.16 : 0.06), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(a.color, active ? 0.4 : 0.2)}` }}
       >
-        {glyph ? (
+        {glyph && near ? (
           <MotionizedGlyph data={glyph.data} viewBox={glyph.viewBox} spread={0.9} className="w-[108px] h-[108px]" />
         ) : (
           <Icon className="w-9 h-9" style={{ color: a.color }} />
