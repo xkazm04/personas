@@ -119,6 +119,16 @@ type CategorisedKind = (typeof CATEGORY_MEMBERS)[TriggerCategory][number];
 const _assertEveryTriggerKindIsCategorised: (kind: TriggerKind) => CategorisedKind = (kind) => kind;
 void _assertEveryTriggerKindIsCategorised;
 
+/**
+ * ENGLISH FALLBACK COPY - do not render this directly.
+ *
+ * Render `getTriggerCategories(t)` instead. This half is the source that accessor reads
+ * its non-copy fields from (ids, icons, colours, types, template configs) and
+ * the default when no catalogue entry exists. Every trigger picker used to
+ * import it, so 31 translated `triggers.*` keys rendered nowhere in 13
+ * locales. `__tests__/triggerConstants.test.ts` now fails if a render site
+ * imports it again.
+ */
 export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
   {
     id: 'pull',
@@ -195,6 +205,16 @@ const TRIGGER_TYPE_COPY = {
 } satisfies Record<TriggerKind, { label: string; description: string }>;
 
 /** The Add-trigger menu — **derived from the vocabulary**, in menu order. */
+/**
+ * ENGLISH FALLBACK COPY - do not render this directly.
+ *
+ * Render `getTriggerTypeOptions(t)` instead. This half is the source that accessor reads
+ * its non-copy fields from (ids, icons, colours, types, template configs) and
+ * the default when no catalogue entry exists. Every trigger picker used to
+ * import it, so 31 translated `triggers.*` keys rendered nowhere in 13
+ * locales. `__tests__/triggerConstants.test.ts` now fails if a render site
+ * imports it again.
+ */
 export const TRIGGER_TYPE_OPTIONS: TriggerTypeOption[] = TRIGGER_KINDS.map((type) => ({
   type,
   label: TRIGGER_TYPE_COPY[type].label,
@@ -475,6 +495,16 @@ export const DEFAULT_RATE_LIMIT: TriggerRateLimitConfig = {
   max_concurrent: 0,
 };
 
+/**
+ * ENGLISH FALLBACK COPY - do not render this directly.
+ *
+ * Render `getRateLimitWindowOptions(t)` instead. This half is the source that accessor reads
+ * its non-copy fields from (ids, icons, colours, types, template configs) and
+ * the default when no catalogue entry exists. Every trigger picker used to
+ * import it, so 31 translated `triggers.*` keys rendered nowhere in 13
+ * locales. `__tests__/triggerConstants.test.ts` now fails if a render site
+ * imports it again.
+ */
 export const RATE_LIMIT_WINDOW_OPTIONS = [
   { label: 'Per minute', value: 60 },       // i18n: triggers.rate_per_minute
   { label: 'Per 5 minutes', value: 300 },   // i18n: triggers.rate_per_5_minutes
@@ -534,6 +564,16 @@ export interface TriggerTemplate {
   config: Record<string, unknown>;
 }
 
+/**
+ * ENGLISH FALLBACK COPY - do not render this directly.
+ *
+ * Render `getTriggerTemplates(t)` instead. This half is the source that accessor reads
+ * its non-copy fields from (ids, icons, colours, types, template configs) and
+ * the default when no catalogue entry exists. Every trigger picker used to
+ * import it, so 31 translated `triggers.*` keys rendered nowhere in 13
+ * locales. `__tests__/triggerConstants.test.ts` now fails if a render site
+ * imports it again.
+ */
 export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   // File watcher templates
   {

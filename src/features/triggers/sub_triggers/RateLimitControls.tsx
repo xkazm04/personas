@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Shield, ChevronDown, ChevronRight, Gauge, Clock, Layers } from 'lucide-react';
 import {
   type TriggerRateLimitConfig,
   DEFAULT_RATE_LIMIT,
-  RATE_LIMIT_WINDOW_OPTIONS,
+  getRateLimitWindowOptions,
   hasActiveRateLimit,
 } from '@/lib/utils/platform/triggerConstants';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
@@ -20,6 +20,9 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const active = hasActiveRateLimit(rateLimit);
+  // The translated accessor, not the frozen `RATE_LIMIT_WINDOW_OPTIONS`: the
+  // `triggers.rate_per_*` keys exist in all 14 locales and were never read.
+  const windowOptions = useMemo(() => getRateLimitWindowOptions(t), [t]);
 
   const update = (patch: Partial<TriggerRateLimitConfig>) => {
     onChange({ ...rateLimit, ...patch });
@@ -77,7 +80,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                     onChange={(e) => update({ window_seconds: parseInt(e.target.value) })}
                     className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
                   >
-                    {RATE_LIMIT_WINDOW_OPTIONS.map((opt) => (
+                    {windowOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
