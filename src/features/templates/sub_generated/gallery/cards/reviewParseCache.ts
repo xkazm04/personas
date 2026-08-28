@@ -1,4 +1,4 @@
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
@@ -22,8 +22,8 @@ export function getCachedLightFields(review: PersonaDesignReview): CachedReviewF
   let cached = reviewParseCache.get(review);
   if (!cached) {
     cached = {
-      connectors: parseJsonSafe(review.connectors_used, []),
-      flowCount: parseJsonSafe<unknown[]>(review.use_case_flows, []).length,
+      connectors: parseJsonOrDefault(review.connectors_used, []),
+      flowCount: parseJsonOrDefault<unknown[]>(review.use_case_flows, []).length,
     };
     reviewParseCache.set(review, cached);
   }
@@ -34,7 +34,7 @@ export function getCachedLightFields(review: PersonaDesignReview): CachedReviewF
 export function getCachedDesignResult(review: PersonaDesignReview): AgentIR | null {
   const cached = getCachedLightFields(review);
   if (cached.designResult === undefined) {
-    cached.designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+    cached.designResult = parseJsonOrDefault<AgentIR | null>(review.design_result, null);
   }
   return cached.designResult;
 }

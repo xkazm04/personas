@@ -1,7 +1,7 @@
 import { Sparkles, Download } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -30,7 +30,7 @@ export function RecommendedCarousel({
       </div>
       <div className="flex gap-2.5 overflow-x-auto pb-1">
         {recommendedTemplates.map((tmpl) => {
-          const connectors: string[] = parseJsonSafe(tmpl.connectors_used, []);
+          const connectors: string[] = parseJsonOrDefault(tmpl.connectors_used, []);
           return (
             <button
               type="button"

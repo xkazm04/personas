@@ -1,5 +1,5 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { ARCH_CATEGORIES, computeCategoryReadiness, userHasCategoryCredential } from './architecturalCategories';
 
 interface SuggestedConnectorShape {
@@ -62,7 +62,7 @@ export function computeAdoptionReadiness(
   }
 
   // Fallback path: parse connectors_used (service_flow strings)
-  const connectors: string[] = parseJsonSafe(review.connectors_used, []);
+  const connectors: string[] = parseJsonOrDefault(review.connectors_used, []);
   if (connectors.length === 0) return 100;
 
   const { total, ready } = computeCategoryReadiness(connectors, credentialServiceTypes);

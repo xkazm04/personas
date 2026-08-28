@@ -2,7 +2,7 @@ import { X, Sparkles, Download } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { BaseModal } from '../../shared/BaseModal';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 
 interface RecommendedModalProps {
@@ -54,7 +54,7 @@ export function RecommendedModal({
         ) : (
           <div className="divide-y divide-primary/5">
             {recommendedTemplates.map((t) => {
-              const connectors: string[] = parseJsonSafe(t.connectors_used, []);
+              const connectors: string[] = parseJsonOrDefault(t.connectors_used, []);
               return (
                 <button
                   type="button"

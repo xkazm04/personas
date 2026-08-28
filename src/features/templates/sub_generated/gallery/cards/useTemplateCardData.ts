@@ -8,7 +8,7 @@ import { getCachedDesignResult, getCachedLightFields, getCachedVerification, get
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 /**
  * Cheap verification that skips the content-hash computation.
@@ -35,15 +35,15 @@ export function useTemplateCardData(
 ) {
   const parsedData = useMemo(() => {
     const { connectors } = getCachedLightFields(review);
-    const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
+    const triggerTypes = parseJsonOrDefault<string[]>(review.trigger_types, []);
     const designResult = getCachedDesignResult(review);
-    const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
+    const flows = parseJsonOrDefault<UseCaseFlow[]>(review.use_case_flows, []);
     const displayFlows = flows.length > 0
       ? flows
       : (() => {
           const raw = designResult as unknown as Record<string, unknown> | null;
           return raw?.use_case_flows
-            ? parseJsonSafe<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
+            ? parseJsonOrDefault<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
             : [];
         })();
 

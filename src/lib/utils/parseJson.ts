@@ -1,3 +1,22 @@
+/**
+ * Parsing a stored JSON blob. Which of these to reach for:
+ *
+ *  - the caller can ACT on a parse failure (report it, surface it, branch on
+ *    it) -> `safeJsonParse`, which hands back the error.
+ *  - the caller cannot -> `parseJsonOrDefault`, which substitutes a fallback.
+ *    A parse failure is then indistinguishable from an empty value, which is
+ *    the point and also the cost.
+ *
+ * `hasNonEmptyJson` / `hasRenderableJsonBlob` answer "is there anything here?"
+ * without handing the value back; they differ on what unparseable text means
+ * and each says so.
+ *
+ * There used to be a fifth entry point, `parseJsonSafe`, which was
+ * `export const parseJsonSafe = parseJsonOrDefault` -- one function under two
+ * names, no rule for choosing, and by the end 8 of its 13 consumers were
+ * importing the real name and aliasing it back locally.
+ */
+
 /** Parse a JSON string, returning `fallback` if the input is nullish or malformed. */
 export function parseJsonOrDefault<T>(json: string | null | undefined, fallback: T): T {
   if (!json) return fallback;
@@ -8,9 +27,6 @@ export function parseJsonOrDefault<T>(json: string | null | undefined, fallback:
     return fallback;
   }
 }
-
-/** Alias for parseJsonOrDefault -- matches the name used across template components. */
-export const parseJsonSafe = parseJsonOrDefault;
 
 /** Result tuple returned by {@link safeJsonParse}. */
 export type JsonParseResult<T> =

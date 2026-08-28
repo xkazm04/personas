@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Download, Workflow, Server, Zap, UserCheck, Bell } from 'lucide-react';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { deriveArchCategories } from '../../shared/architecturalCategories';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -40,16 +40,16 @@ export function ExpandedRowContent({
 }: ExpandedRowContentProps) {
   const { t } = useTranslation();
   const flows = useMemo(() => {
-    const fromReview = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
+    const fromReview = parseJsonOrDefault<UseCaseFlow[]>(review.use_case_flows, []);
     if (fromReview.length > 0) return fromReview;
     const raw = designResult as unknown as Record<string, unknown> | null;
     return raw?.use_case_flows
-      ? parseJsonSafe<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
+      ? parseJsonOrDefault<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
       : [];
   }, [review.use_case_flows, designResult]);
 
   const connectors: string[] = useMemo(
-    () => parseJsonSafe(review.connectors_used, []),
+    () => parseJsonOrDefault(review.connectors_used, []),
     [review.connectors_used],
   );
 

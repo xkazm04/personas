@@ -1,5 +1,5 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 export interface TemplateMatch {
   review: PersonaDesignReview;
@@ -31,10 +31,10 @@ function normalizedAppKeyword(connectorName: string): string {
 function collectTemplateConnectorTokens(review: PersonaDesignReview): string[] {
   const tokens: string[] = [];
 
-  const used: string[] = parseJsonSafe(review.connectors_used, []);
+  const used: string[] = parseJsonOrDefault(review.connectors_used, []);
   for (const u of used) if (typeof u === 'string') tokens.push(u);
 
-  const dr: DesignResultShape = parseJsonSafe(review.design_result, {} as DesignResultShape);
+  const dr: DesignResultShape = parseJsonOrDefault(review.design_result, {} as DesignResultShape);
   if (Array.isArray(dr.service_flow)) {
     for (const s of dr.service_flow) if (typeof s === 'string') tokens.push(s);
   }

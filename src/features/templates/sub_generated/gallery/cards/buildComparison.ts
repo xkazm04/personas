@@ -3,7 +3,7 @@ import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
 import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
 import { computeDifficulty, estimateSetupMinutes } from '../../shared/templateComplexity';
 import type { DifficultyLevel } from '../../shared/templateComplexity';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 
@@ -54,7 +54,7 @@ export function buildComparison(
     );
 
     const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
-    const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
+    const triggerTypes = parseJsonOrDefault<string[]>(review.trigger_types, []);
     const triggerCount = suggestedTriggers.length > 0 ? suggestedTriggers.length : triggerTypes.length;
 
     const raw = designResult as unknown as Record<string, unknown> | null;
