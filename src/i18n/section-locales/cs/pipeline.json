@@ -136,6 +136,7 @@
   "timeline_view": "Časová osa",
   "compare_runs": "Porovnat běhy",
   "avg_importance": "Průměrná důležitost: {value} | {count} kategorií",
+  "stats_team_wide": "za celý tým",
   "add_memory": "Přidat vzpomínku",
   "new_memory": "Nová vzpomínka",
   "title_placeholder": "Název…",

@@ -17766,6 +17766,7 @@
     "timeline_view": "タイムラインビュー",
     "compare_runs": "実行を比較",
     "avg_importance": "平均重要度: {value} | {count}カテゴリ",
+    "stats_team_wide": "チーム全体",
     "add_memory": "メモリを追加",
     "new_memory": "新規メモリ",
     "title_placeholder": "タイトル…",

@@ -18334,6 +18334,7 @@
     "timeline_view": "Timeline view",
     "compare_runs": "Compare runs",
     "avg_importance": "Avg importance: {value} | {count} categories",
+    "stats_team_wide": "team-wide",
     "add_memory": "Add Memory",
     "new_memory": "New Memory",
     "title_placeholder": "Title...",

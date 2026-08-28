@@ -17766,6 +17766,7 @@
     "timeline_view": "Хронология",
     "compare_runs": "Сравнить запуски",
     "avg_importance": "Средняя важность: {value} | {count} категорий",
+    "stats_team_wide": "по всей команде",
     "add_memory": "Добавить память",
     "new_memory": "Новая запись",
     "title_placeholder": "Заголовок…",

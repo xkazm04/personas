@@ -17766,6 +17766,7 @@
     "timeline_view": "타임라인 보기",
     "compare_runs": "실행 비교",
     "avg_importance": "평균 중요도: {value} · 카테고리 {count}개",
+    "stats_team_wide": "팀 전체",
     "add_memory": "메모리 추가",
     "new_memory": "새 메모리",
     "title_placeholder": "제목…",

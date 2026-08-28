@@ -136,6 +136,7 @@
   "timeline_view": "عرض الجدول الزمني",
   "compare_runs": "مقارنة التشغيلات",
   "avg_importance": "متوسط الأهمية: {value} | {count} فئات",
+  "stats_team_wide": "على مستوى الفريق",
   "add_memory": "إضافة ذاكرة",
   "new_memory": "ذاكرة جديدة",
   "title_placeholder": "العنوان…",

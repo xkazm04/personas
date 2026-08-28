@@ -18340,6 +18340,7 @@ export type Translations = {
     timeline_view: string;
     compare_runs: string;
     avg_importance: string;
+    stats_team_wide: string;
     add_memory: string;
     new_memory: string;
     title_placeholder: string;
