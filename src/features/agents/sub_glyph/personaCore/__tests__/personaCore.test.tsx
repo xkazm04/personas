@@ -456,6 +456,41 @@ describe("AxisTraitGrid accessibility", () => {
 });
 
 // --------------------------------------------------------------------------
+// Reading order: the preset column leads.
+// --------------------------------------------------------------------------
+import { PersonaCoreCodex } from "../PersonaCoreCodex";
+
+describe("PersonaCoreCodex column order", () => {
+  it("puts Mentality (the one-click preset) ahead of hand assembly", () => {
+    // A mentality card seeds disposition, conflict style and five dominant
+    // traits at once. With it third, a first-timer read the modal backwards —
+    // 20 trait toggles and three tile groups by hand, then the shortcut.
+    const core = {
+      state: { traits: [] as string[], disposition: 0.4, conflictStyle: null, model: "sonnet", effort: "medium", archetypeId: null },
+      archetypes: [], loadFailed: false, discardedTraits: null,
+      toggleTrait: () => {}, setDisposition: () => {}, setConflict: () => {},
+      setModel: () => {}, setEffort: () => {}, applyPreset: () => {},
+      retryLoad: () => {}, restoreTraits: () => {},
+    } as unknown as Parameters<typeof PersonaCoreCodex>[0]["core"];
+
+    const { container } = render(<PersonaCoreCodex core={core} />);
+    // SectionHeader renders an <h3> per column — the same structure a screen
+    // reader walks, so DOM order here IS reading order.
+    const order = [...container.querySelectorAll("h3")].map((el) => el.textContent?.trim() ?? "");
+
+    const mentality = order.findIndex((h) => /mentality/i.test(h));
+    const character = order.findIndex((h) => /character/i.test(h));
+    const configuration = order.findIndex((h) => /configuration/i.test(h));
+
+    // Instrument check — all three must be found, or the ordering assertions
+    // below compare -1 against -1 and pass while measuring nothing.
+    expect([mentality, character, configuration].every((i) => i >= 0)).toBe(true);
+    expect(mentality).toBeLessThan(character);
+    expect(character).toBeLessThan(configuration);
+  });
+});
+
+// --------------------------------------------------------------------------
 // What the surface reports about itself.
 // --------------------------------------------------------------------------
 import { personaCoreSelectionLabel } from "../usePersonaCore";
