@@ -17,6 +17,8 @@ const STORAGE_KEY = 'team-memory-panel-width';
 const MIN_WIDTH = 272;
 const MAX_WIDTH = 480;
 const DEFAULT_WIDTH = 288; // matches original w-72
+/** `left-3` (12px) plus the same breathing room on the right edge. */
+const FLOATING_GUTTER_PX = 24;
 
 /**
  * Panel width is a per-viewer convenience, so every access is guarded: reading
@@ -166,10 +168,19 @@ export default function TeamMemoryPanel({
   const hasRunData = stats?.run_counts && stats.run_counts.length > 0;
   const isPane = layout === 'pane';
 
+  // The stored width knows nothing about the viewport it is restored into. The
+  // floating layout sits at `left-3` and can carry a width of up to MAX_WIDTH,
+  // so on a narrow window the panel ran past the right edge and took the resize
+  // handle (`right-0` of the panel) off screen with it -- leaving the user no
+  // affordance to shrink it back. The cap is expressed in CSS rather than JS so
+  // it re-applies on every window resize without a listener, and the drag maths
+  // keeps working because it measures the panel's real (clamped) rect.
+  const floatingStyle = { width: panelWidth, maxWidth: `calc(100vw - ${FLOATING_GUTTER_PX}px)` };
+
   return (
     <div
       ref={panelRef}
-      style={isPane ? undefined : { width: panelWidth }}
+      style={isPane ? undefined : floatingStyle}
       className={
         isPane
           ? 'h-full w-full max-w-xl flex flex-col rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden'
