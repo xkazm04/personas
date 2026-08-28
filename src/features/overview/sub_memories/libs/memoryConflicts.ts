@@ -1,4 +1,5 @@
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
+import { silentCatch } from '@/lib/silentCatch';
 import {
   TEXT_SIM_WORD_WEIGHT,
   TEXT_SIM_BIGRAM_WEIGHT,
@@ -174,4 +175,70 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const kindOrder: Record<ConflictKind, number> = { contradiction: 0, duplicate: 1, superseded: 2 };
   conflicts.sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || b.similarity - a.similarity);
   return conflicts;
+}
+
+// ---------------------------------------------------------------------------
+// Resolved-verdict recall
+// ---------------------------------------------------------------------------
+
+/**
+ * A user's verdict on a conflict pair has to outlive the component that took
+ * it. `MemoryConflictReview` held its resolved ids in component state, and the
+ * Conflicts tab unmounts the moment you switch back to Memories — so every
+ * pair the user had already judged reappeared on the next visit.
+ *
+ * That is worst exactly where it matters most. Detection is heuristic, so the
+ * pairs a user DISMISSES are its false positives: the surface was guaranteed to
+ * re-present its own worst output, forever, and a user who cleared ten of them
+ * had to clear them again every time they came back.
+ *
+ * The ids are pair keys (`sorted(idA):sorted(idB)`), so they are stable across
+ * sessions and cheap to store. They are capped for the same reason the
+ * memory-action store now is: a key whose memories are long gone can never be
+ * matched again and must not accumulate without limit.
+ */
+const RESOLVED_KEY = 'dolla:memory-conflicts-resolved';
+
+/** Newest-kept cap on the persisted verdict set. */
+export const MAX_RESOLVED_CONFLICTS = 200;
+
+/** Reported once per session — this runs on every mount of the Conflicts tab,
+ *  and a private-mode / storage-disabled profile would otherwise emit the same
+ *  event on every visit for a condition whose only impact is re-showing pairs. */
+let _resolvedStorageReported = false;
+
+function reportStorageFailure(where: string, err: unknown): void {
+  if (_resolvedStorageReported) return;
+  _resolvedStorageReported = true;
+  silentCatch(`memoryConflicts:${where}`)(err);
+}
+
+/** Read the persisted verdicts. Never throws: an unreadable store degrades to
+ *  "the user is shown these conflicts again", which is wrong but not harmful. */
+export function loadResolvedConflicts(): Set<string> {
+  try {
+    const raw = localStorage.getItem(RESOLVED_KEY);
+    if (!raw) return new Set();
+    const parsed: unknown = JSON.parse(raw);
+    // The blob is whatever a previous build or a hand edit left behind, so the
+    // shape is checked rather than asserted — a non-array, or a non-string
+    // entry inside one, is dropped instead of poisoning the id set.
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+  } catch (err) {
+    reportStorageFailure('loadResolvedConflicts', err);
+    return new Set();
+  }
+}
+
+/** Persist the verdict set, keeping the most recently added ids. */
+export function saveResolvedConflicts(ids: Iterable<string>): void {
+  try {
+    // Set iteration is insertion-ordered, so the tail is the newest.
+    localStorage.setItem(RESOLVED_KEY, JSON.stringify([...ids].slice(-MAX_RESOLVED_CONFLICTS)));
+  } catch (err) {
+    // The in-session Set still holds the verdicts, so the only loss is recall
+    // after a restart.
+    reportStorageFailure('saveResolvedConflicts', err);
+  }
 }

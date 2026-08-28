@@ -13,7 +13,7 @@
  * newer/older orientation of a `superseded` pair (ConflictCard's keep-A/keep-B
  * labels are read off it), the sort contract, and the fast-path invariant.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import {
@@ -22,7 +22,13 @@ import {
   TEXT_SIM_BIGRAM_WEIGHT,
   SUPERSEDED_MIN_TIME_DIFF_MS,
 } from '@/lib/memoryLimits';
-import { detectConflicts, textSimilarity } from '../memoryConflicts';
+import {
+  detectConflicts,
+  loadResolvedConflicts,
+  saveResolvedConflicts,
+  textSimilarity,
+  MAX_RESOLVED_CONFLICTS,
+} from '../memoryConflicts';
 import { mergeMemories } from '../conflictHelpers';
 
 let seq = 0;
@@ -243,5 +249,52 @@ describe('mergeMemories', () => {
   it('carries neither side of a null tags column into the result', () => {
     const merged = mergeMemories(memory({ tags: null }), memory({ tags: ['keep'] }));
     expect(merged.tags).toEqual(['keep']);
+  });
+});
+
+/**
+ * Recall of the user's verdicts. Component state used to hold these, and the
+ * Conflicts tab unmounts on every switch back to Memories — so a dismissed
+ * pair (which, detection being heuristic, is by definition one of the
+ * detector's false positives) came back on the next visit, forever.
+ */
+describe('resolved-conflict recall', () => {
+  const KEY = 'dolla:memory-conflicts-resolved';
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('reads back the verdicts a previous mount wrote', () => {
+    saveResolvedConflicts(new Set(['a:b', 'c:d']));
+    expect([...loadResolvedConflicts()].sort()).toEqual(['a:b', 'c:d']);
+  });
+
+  it('returns an empty set when nothing has been stored', () => {
+    expect(loadResolvedConflicts().size).toBe(0);
+  });
+
+  it('survives a blob that is not an array of strings', () => {
+    // Whatever a previous build or a hand edit left behind must degrade to
+    // "show the conflicts again", never to a poisoned id set.
+    localStorage.setItem(KEY, JSON.stringify({ not: 'an array' }));
+    expect(loadResolvedConflicts().size).toBe(0);
+
+    localStorage.setItem(KEY, JSON.stringify(['ok', 42, null, { x: 1 }]));
+    expect([...loadResolvedConflicts()]).toEqual(['ok']);
+
+    localStorage.setItem(KEY, '{ truncated');
+    expect(loadResolvedConflicts().size).toBe(0);
+  });
+
+  it('caps the stored set, keeping the most recently resolved ids', () => {
+    const ids = Array.from({ length: MAX_RESOLVED_CONFLICTS + 5 }, (_, i) => `pair_${i}`);
+    saveResolvedConflicts(new Set(ids));
+
+    const stored = loadResolvedConflicts();
+    expect(stored.size).toBe(MAX_RESOLVED_CONFLICTS);
+    // Insertion order is oldest-first, so the tail is what must survive.
+    expect(stored.has(`pair_${MAX_RESOLVED_CONFLICTS + 4}`)).toBe(true);
+    expect(stored.has('pair_0')).toBe(false);
   });
 });

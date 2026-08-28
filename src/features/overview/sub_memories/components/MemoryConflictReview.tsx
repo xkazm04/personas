@@ -5,7 +5,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
-import { detectConflicts, type MemoryConflict, type ConflictResolution } from '../libs/memoryConflicts';
+import {
+  detectConflicts,
+  loadResolvedConflicts,
+  saveResolvedConflicts,
+  type MemoryConflict,
+  type ConflictResolution,
+} from '../libs/memoryConflicts';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
 import { DebtText } from '@/i18n/DebtText';
@@ -27,7 +33,13 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
   const personas = useAgentStore((s) => s.personas);
 
   const [expanded, setExpanded] = useState(false);
-  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
+  // Seeded from the persisted verdict set, not `new Set()`. This component IS
+  // the Conflicts tab's body and unmounts on every switch back to Memories, so
+  // component state meant a user's decisions survived exactly until they looked
+  // at something else — and the pairs they had DISMISSED (the detector's own
+  // false positives) were the ones guaranteed to come back. Lazy initialiser so
+  // the read happens once per mount, not once per render.
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(loadResolvedConflicts);
   const [activeConflictId, setActiveConflictId] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -114,7 +126,12 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         case 'dismiss':
           break;
       }
-      setResolvedIds((prev) => new Set(prev).add(conflict.id));
+      // Computed outside the state updater on purpose: an updater must stay
+      // pure (StrictMode double-invokes it), so the write to storage happens
+      // here rather than inside it.
+      const nextResolved = new Set(resolvedIds).add(conflict.id);
+      setResolvedIds(nextResolved);
+      saveResolvedConflicts(nextResolved);
       if (activeConflictId === conflict.id) setActiveConflictId(null);
       if (resolution !== 'dismiss') await fetchMemories();
       useToastStore.getState().addToast(
@@ -133,7 +150,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
     } finally {
       setProcessing(null);
     }
-  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved]);
+  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, resolvedIds]);
 
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no
