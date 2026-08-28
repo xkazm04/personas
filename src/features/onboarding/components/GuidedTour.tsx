@@ -7,7 +7,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { getActiveTourSteps, getTourById, type TourId } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, getLocalizedTourById, type TourId } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors, getNextTourId, getTourSequence, TOUR_RAIL_WIDTH } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
@@ -83,8 +83,10 @@ export default function GuidedTour() {
   useEffect(() => { if (!tourActive) setShowCompletion(false); }, [tourActive]);
   useEffect(() => { setShowCompletion(false); }, [tourId]);
 
-  const tourDef = getTourById(tourId);
-  const visibleSteps = getActiveTourSteps(tourId);
+  // Localized: everything below renders this tour's copy. `getActiveTourSteps`
+  // stays raw inside `navigateToStep`, which only reads `step.nav`.
+  const tourDef = getLocalizedTourById(t, tourId);
+  const visibleSteps = tourDef?.steps ?? [];
   const currentStep = visibleSteps[currentIndex];
   const isStepCompleted = currentStep ? (completedSteps[currentStep.id] ?? false) : false;
   const allCompleted = visibleSteps.every((s) => completedSteps[s.id] ?? false);
@@ -262,12 +264,12 @@ export default function GuidedTour() {
   // panel cold. Offers to roll straight into the next suggested tour.
   if (showCompletion) {
     const nextTourId = getNextTourId(tourId, completionMap);
-    const nextTour = nextTourId ? getTourById(nextTourId) : null;
+    const nextTour = nextTourId ? getLocalizedTourById(t, nextTourId) : null;
     // Every other selectable tour (not the current one, not the primary "next"
     // suggestion) so the completion screen doubles as a jump-to-any-tour hub.
     const otherTours = getTourSequence()
       .filter((id) => id !== tourId && id !== nextTourId)
-      .map((id) => getTourById(id))
+      .map((id) => getLocalizedTourById(t, id))
       .filter((td): td is NonNullable<typeof td> => Boolean(td));
     return (
       <div

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GraduationCap, Compass, Check, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
-import { TOUR_REGISTRY, type TourDef } from '@/stores/slices/system/tourSlice';
+import { getLocalizedTourRegistry, type TourDef } from '@/stores/slices/system/tourSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
@@ -153,8 +153,13 @@ export default function HomeLearning() {
   // ids — hydrated at tourSlice.ts:1322 and written by `finishTour` for any
   // active tour — so counting every truthy value rendered "12 of 9" once a
   // user finished a composed tour.
-  const completedCount = TOUR_REGISTRY.filter((tour) => tourCompletionMap[tour.id]).length;
-  const lastIdx = TOUR_REGISTRY.length - 1;
+  // Read in render, not at module scope: the tour copy is translated
+  // (`onboarding.tours`) and the bundle can change under us — on a language
+  // switch, and again when the lazily-loaded `onboarding` section lands. This
+  // component already re-renders on both because it reads `t`.
+  const tours = getLocalizedTourRegistry(t);
+  const completedCount = tours.filter((tour) => tourCompletionMap[tour.id]).length;
+  const lastIdx = tours.length - 1;
 
   return (
     <ContentBox>
@@ -175,12 +180,12 @@ export default function HomeLearning() {
               <Compass className="w-4 h-4 text-indigo-400" />
               <h3 className="typo-heading text-foreground">{ht.guided_tours}</h3>
               <span className="text-[11px] text-foreground ml-auto">
-                {tx(ht.tours_completed, { completed: completedCount, total: TOUR_REGISTRY.length })}
+                {tx(ht.tours_completed, { completed: completedCount, total: tours.length })}
               </span>
             </div>
 
             <div className="flex flex-col">
-              {TOUR_REGISTRY.map((tour, idx) => {
+              {tours.map((tour, idx) => {
                 const isCompleted = tourCompletionMap[tour.id] ?? false;
                 return (
                   <div key={tour.id} className="flex items-stretch gap-3 py-1.5">
