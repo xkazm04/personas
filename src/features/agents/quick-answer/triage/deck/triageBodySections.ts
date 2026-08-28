@@ -10,8 +10,9 @@
  *
  * The heading text is CONTENT, not chrome: it is whatever the scanner wrote,
  * so it is shown verbatim and never translated. Only the ordering is ours —
- * the canonical sections sort first, in canonical order, and anything else
- * follows in the order written.
+ * the canonical sections sort first, in canonical order (Summary, Expected
+ * impact / behaviour, Description, Flow), and anything else follows in the
+ * order written.
  */
 
 export interface BodySection {
@@ -25,7 +26,12 @@ export interface BodySection {
 
 export type CanonicalSection = 'summary' | 'description' | 'flow' | 'impact';
 
-const CANONICAL_ORDER: CanonicalSection[] = ['summary', 'description', 'flow', 'impact'];
+/** Render order. The impact / expected-behaviour slot is deliberately promoted
+ *  ABOVE the description: the reviewer decides on what changes for whom and
+ *  reads the mechanics only when that is worth the time (operator call,
+ *  2026-08-28). Scanners still WRITE it last — this reorders at render time,
+ *  it never rewrites the stored body. */
+const CANONICAL_ORDER: CanonicalSection[] = ['summary', 'impact', 'description', 'flow'];
 
 /** Loose match on purpose: `## Expected impact`, `## Impact`, `## Flow (bullets)`. */
 function canonicalOf(heading: string): CanonicalSection | null {
@@ -33,7 +39,7 @@ function canonicalOf(heading: string): CanonicalSection | null {
   if (/^summary\b/.test(h)) return 'summary';
   if (/^description\b/.test(h)) return 'description';
   if (/^(flow|steps|bullet)/.test(h)) return 'flow';
-  if (/impact\b/.test(h)) return 'impact';
+  if (/impact\b/.test(h) || /^expected\b/.test(h)) return 'impact';
   return null;
 }
 

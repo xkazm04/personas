@@ -158,7 +158,11 @@ export function TriageCardBody({
         tabIndex={isTop ? 0 : -1}
         role="region"
         aria-label={t.monitor.triage_body_region}
-        className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"
+        // `outline-none`, not `focus-ring`: the deck moves focus here after every
+        // keyboard verdict, and a themed ring around the whole prose column on
+        // each →/← read as a selection change rather than as focus (operator
+        // call, 2026-08-28). The region stays focusable for the scroll keys.
+        className="outline-none mt-4 min-h-0 flex-1 overflow-y-auto"
       >
         <div className="w-full space-y-4">
           {deferBody ? null : (

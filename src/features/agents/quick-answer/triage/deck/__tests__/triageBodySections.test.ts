@@ -18,16 +18,16 @@ No more stale paints; one fewer hand-rolled guard.
 `;
 
 describe('splitBodySections', () => {
-  it('splits at ## headings and orders canonical sections Summary → Description → Flow → Impact', () => {
+  it('splits at ## headings and orders canonical sections Summary → Expected impact → Description → Flow', () => {
     const sections = splitBodySections(STRUCTURED);
     expect(sections.map((s) => s.heading)).toEqual([
       'Summary',
+      'Expected impact',
       'Description',
       'Flow',
-      'Expected impact',
     ]);
-    expect(sections.map((s) => s.canonical)).toEqual(['summary', 'description', 'flow', 'impact']);
-    expect(sections[2]!.content).toBe(
+    expect(sections.map((s) => s.canonical)).toEqual(['summary', 'impact', 'description', 'flow']);
+    expect(sections[3]!.content).toBe(
       '- press Enter twice quickly\n- the slower request resolves last\n- it paints over the newer results',
     );
   });
@@ -43,6 +43,12 @@ describe('splitBodySections', () => {
     const sections = splitBodySections(body);
     expect(sections).toHaveLength(2);
     expect(sections[1]!.content).toBe('```md\n## not a heading\n```\nafter');
+  });
+
+  it('treats an "Expected behavior" heading as the impact slot and promotes it above Description', () => {
+    const sections = splitBodySections('## Description\nd\n\n## Expected behavior\nb');
+    expect(sections.map((s) => s.heading)).toEqual(['Expected behavior', 'Description']);
+    expect(sections[0]!.canonical).toBe('impact');
   });
 
   it('returns one un-headed section for free prose, and reports it as unsectioned', () => {
