@@ -257,6 +257,7 @@
     "loading_trace": "Načítání trace",
     "failed_to_load_trace": "Nepodařilo se načíst trace: {error}",
     "payload_not_parseable": "Nelze načíst jako strukturovaná data: {reason}",
+    "error_cards_capped": "Zobrazeno prvních {shown} z {total} chybných spanů",
     "no_trace_data": "Žádná data trace nebyla zaznamenána",
     "trace_spans_appear": "Úseky trace se objevují během spuštění",
     "span": "Úsek",

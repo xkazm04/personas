@@ -257,6 +257,7 @@
     "loading_trace": "Memuat jejak",
     "failed_to_load_trace": "Gagal memuat jejak: {error}",
     "payload_not_parseable": "Tidak dapat diurai sebagai data terstruktur: {reason}",
+    "error_cards_capped": "Menampilkan {shown} pertama dari {total} span yang bermasalah",
     "no_trace_data": "Tidak ada data jejak yang dicatat",
     "trace_spans_appear": "Rentang jejak muncul selama eksekusi",
     "span": "Rentang",

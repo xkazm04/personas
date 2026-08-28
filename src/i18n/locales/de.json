@@ -1410,6 +1410,7 @@
       "loading_trace": "Trace wird geladen",
       "failed_to_load_trace": "Trace konnte nicht geladen werden: {error}",
       "payload_not_parseable": "Nicht als strukturierte Daten lesbar: {reason}",
+      "error_cards_capped": "Es werden die ersten {shown} von {total} fehlerhaften Spans gezeigt",
       "no_trace_data": "Keine Trace-Daten aufgezeichnet",
       "trace_spans_appear": "Trace-Spans erscheinen während der Ausführung",
       "span": "Span",

@@ -1532,6 +1532,7 @@ export type Translations = {
       loading_trace: string;
       failed_to_load_trace: string;
       payload_not_parseable: string;
+      error_cards_capped: string;
       no_trace_data: string;
       trace_spans_appear: string;
       span: string;

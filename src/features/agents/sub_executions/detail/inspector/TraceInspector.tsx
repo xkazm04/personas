@@ -15,6 +15,18 @@ interface TraceInspectorProps {
   execution: PersonaExecution;
 }
 
+/**
+ * Cards rendered for errored spans.
+ *
+ * A run that fails inside a retry loop can put thousands of errored spans in
+ * one trace (the tracer's ceiling is 10,000), and every card carries the full
+ * error text in a wrapping `<pre>`. Uncapped, this section grew without limit
+ * exactly when a run went pathological — below a waterfall that is itself
+ * capped at 500px. The budget and the cut are stated together: a truncated
+ * list that does not say it was truncated is the defect, not the cap.
+ */
+const MAX_ERROR_CARDS = 50;
+
 export function TraceInspector({ execution }: TraceInspectorProps) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
@@ -38,6 +50,9 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     () => (unifiedTrace?.spans ?? []).filter((s) => s.error),
     [unifiedTrace],
   );
+  const shownErrorSpans = errorSpans.length > MAX_ERROR_CARDS
+    ? errorSpans.slice(0, MAX_ERROR_CARDS)
+    : errorSpans;
 
   if (error) {
     return (
@@ -129,7 +144,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
             <AlertCircle className="w-2.5 h-2.5 text-red-400" />
             {e.errors}
           </div>
-          {errorSpans
+          {shownErrorSpans
             .map((span) => {
               const config = getSpanTypeConfig(span.span_type);
               return (
@@ -146,6 +161,11 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                 </div>
               );
             })}
+          {errorSpans.length > shownErrorSpans.length && (
+            <div className="typo-code text-foreground px-1" data-testid="trace-error-cards-capped">
+              {tx(e.error_cards_capped, { shown: shownErrorSpans.length, total: errorSpans.length })}
+            </div>
+          )}
         </div>
       )}
     </div>

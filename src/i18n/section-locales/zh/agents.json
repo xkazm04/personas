@@ -257,6 +257,7 @@
     "loading_trace": "加载追踪",
     "failed_to_load_trace": "加载追踪失败：{error}",
     "payload_not_parseable": "无法解析为结构化数据：{reason}",
+    "error_cards_capped": "已显示 {total} 个出错跨度中的前 {shown} 个",
     "no_trace_data": "未记录追踪数据",
     "trace_spans_appear": "追踪跨度在执行期间显示",
     "span": "跨度",

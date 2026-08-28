@@ -1526,6 +1526,7 @@
       "loading_trace": "Loading trace",
       "failed_to_load_trace": "Failed to load trace: {error}",
       "payload_not_parseable": "Not parseable as structured data: {reason}",
+      "error_cards_capped": "Showing the first {shown} of {total} errored spans",
       "no_trace_data": "No trace data recorded",
       "trace_spans_appear": "Trace spans appear during execution",
       "span": "Span",

@@ -1410,6 +1410,7 @@
       "loading_trace": "ট্রেস লোড হচ্ছে",
       "failed_to_load_trace": "ট্রেস লোড ব্যর্থ: {error}",
       "payload_not_parseable": "কাঠামোবদ্ধ ডেটা হিসেবে পার্স করা যায়নি: {reason}",
+      "error_cards_capped": "{total}টি ত্রুটিপূর্ণ স্প্যানের মধ্যে প্রথম {shown}টি দেখানো হচ্ছে",
       "no_trace_data": "কোনো ট্রেস ডেটা রেকর্ড নেই",
       "trace_spans_appear": "এক্সিকিউশনের সময় ট্রেস স্প্যান দেখা যায়",
       "span": "স্প্যান",

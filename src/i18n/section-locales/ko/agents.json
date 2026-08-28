@@ -257,6 +257,7 @@
     "loading_trace": "추적 로딩 중",
     "failed_to_load_trace": "추적 로드 실패: {error}",
     "payload_not_parseable": "구조화된 데이터로 해석할 수 없습니다: {reason}",
+    "error_cards_capped": "오류가 발생한 스팬 {total}개 중 처음 {shown}개를 표시합니다",
     "no_trace_data": "추적 데이터 없음",
     "trace_spans_appear": "실행 중 추적 스팬이 나타납니다",
     "span": "스팬",
