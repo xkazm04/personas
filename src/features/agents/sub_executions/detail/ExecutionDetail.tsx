@@ -5,7 +5,7 @@ import { ExecutionInspector } from '@/features/agents/sub_executions/detail/insp
 import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
-import { hasNonEmptyJson } from '@/lib/utils/parseJson';
+import { hasRenderableJsonBlob } from '@/lib/utils/parseJson';
 import { ExecutionDetailTabs, tabButtonId, tabPanelId, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { ChainTraceView } from './chain/ChainTraceView';
@@ -61,8 +61,12 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
   });
 
   const hasToolSteps = Array.isArray(execution.tool_steps) && execution.tool_steps.length > 0;
-  const hasInputData = hasNonEmptyJson(execution.input_data, 'object');
-  const hasOutputData = hasNonEmptyJson(execution.output_data, 'object');
+  // `hasRenderableJsonBlob`, not `hasNonEmptyJson`: these blobs come from four
+  // different CLI providers and are not guaranteed to be JSON. The JSON section
+  // below renders an unparseable blob verbatim, so the panel must stay open for
+  // one. `hasNonEmptyJson` answers the narrower question and says no.
+  const hasInputData = hasRenderableJsonBlob(execution.input_data);
+  const hasOutputData = hasRenderableJsonBlob(execution.output_data);
   const directorReviewMd = execution.director_review_md ?? null;
   // Pipeline waterfall builds from the run's timeline (synthetic trace) or a
   // live trace — both require the run to have started. Gate the tab so it never
