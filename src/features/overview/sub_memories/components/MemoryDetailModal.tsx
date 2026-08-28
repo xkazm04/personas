@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useEffect } from 'react';
 import { X, Tag, ExternalLink, Layers } from 'lucide-react';
-import { useAppKeyboard, OVERLAY_DISMISS_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -31,43 +31,35 @@ export default function MemoryDetailModal({
 }: MemoryDetailModalProps) {
   const { t } = useTranslation();
   const tags = parseTags(memory.tags);
-  // This overlay is hand-painted rather than mounted through BaseModal, so it
-  // inherits none of the modal host's arbitration. Escape did nothing: the only
-  // ways out were the X and a backdrop click, and a keyboard user who opened a
-  // memory row with Enter had no way to close it at all.
-  //
-  // Registered through the app keyboard ladder at OVERLAY_DISMISS_PRIORITY —
-  // BaseModal's own rung — rather than a bare document listener, so this
-  // dismiss outranks the route-level surfaces still mounted underneath instead
-  // of racing them (docs/concepts/golden-paths/focus-management.md).
-  const onKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key !== 'Escape') return;
-    onClose();
-    return true;
-  }, [onClose]);
-  useAppKeyboard(onKeyDown, { priority: OVERLAY_DISMISS_PRIORITY });
+
+  // Both call sites mount this conditionally (`{selected && <MemoryDetailModal/>}`),
+  // so BaseModal's own focus restore — which fires on the isOpen true→false
+  // transition — never runs: the component simply unmounts. Capture the opener
+  // on mount (before BaseModal's rAF moves focus into the panel) and hand focus
+  // back on unmount, so the row that opened the modal keeps the keyboard.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    return () => {
+      if (opener?.isConnected) opener.focus();
+    };
+  }, []);
 
   return (
-    <div
-      className="animate-fade-slide-in fixed inset-0 z-[60] flex items-center justify-center bg-black/50 surface-blur-modal"
-      onClick={onClose}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="memory-detail-title"
+      maxWidthClass="max-w-2xl"
+      staggerChildren={false}
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
     >
-      {/* Deliberately NOT role="dialog" + aria-modal here: this overlay has no
-          focus trap, and aria-modal tells assistive tech the rest of the page is
-          inert while Tab can still walk straight out of it — worse than silence.
-          The dialog semantics belong with the BaseModal conversion, which brings
-          the trap, the focus restore and the Escape arbitration together. */}
-      <div
-        className="animate-fade-slide-in bg-background border border-primary/15 rounded-2xl shadow-elevation-4 w-full max-w-2xl mx-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/20">
           <div className="flex items-center gap-3 min-w-0">
             <PersonaIcon icon={null} color={personaColor} display="framed" frameSize={"lg"}
               frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
             <div className="min-w-0">
-              <h3 className="typo-heading text-foreground/90 truncate">{personaName}</h3>
+              <h3 id="memory-detail-title" className="typo-heading text-foreground/90 truncate">{personaName}</h3>
               <span className="typo-caption text-foreground">{formatRelativeTime(memory.created_at)}</span>
             </div>
           </div>
@@ -184,7 +176,6 @@ export default function MemoryDetailModal({
             Close
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
