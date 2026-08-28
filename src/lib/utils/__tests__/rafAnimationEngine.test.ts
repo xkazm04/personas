@@ -119,6 +119,48 @@ describe('reduced motion', () => {
     unregisterAnimation(key);
   });
 
+  // Regression guard. The preference was sampled inside `setAnimationTarget`
+  // and nowhere else, so a user who enabled reduced motion mid-flight had to
+  // watch the travel already in the air run all the way to completion — the one
+  // moment the preference is being expressed is the moment it was not read.
+  it('resolves a travel already in flight on the next frame', () => {
+    setReducedMotion(false);
+    let latest = 0;
+    const key = registerAnimation(0, (v) => {
+      latest = v;
+    });
+
+    setAnimationTarget(key, 1000);
+    pump(); // first frame only seeds `lastTime`
+    pump();
+    expect(latest).toBeGreaterThan(0);
+    expect(latest).toBeLessThan(1000); // still travelling
+
+    // The user turns the preference on mid-flight.
+    setReducedMotion(true);
+    pump();
+
+    expect(latest).toBe(1000);
+    expect(rafQueue).toHaveLength(0); // and the loop stops, rather than idling
+    unregisterAnimation(key);
+  });
+
+  it('leaves a settled entry alone when the preference flips', () => {
+    setReducedMotion(false);
+    const writes: number[] = [];
+    const key = registerAnimation(7, (v) => writes.push(v));
+    const other = registerAnimation(0, () => {});
+
+    setAnimationTarget(other, 100);
+    setReducedMotion(true);
+    pump();
+
+    // `key` never moved, so the reduced-motion sweep must not re-write it.
+    expect(writes).toEqual([7]);
+    unregisterAnimation(key);
+    unregisterAnimation(other);
+  });
+
   it('falls back to full motion when matchMedia is unavailable', () => {
     vi.stubGlobal('matchMedia', undefined);
     const key = registerAnimation(0, () => {});
