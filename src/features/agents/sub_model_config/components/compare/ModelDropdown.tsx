@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { ALL_COMPARE_MODELS, type ModelOption } from '../../libs/compareHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
+import { ALL_COMPARE_MODELS, FREE_COST, type ModelOption } from '../../libs/compareHelpers';
 
 export function ModelDropdown({
   label,
@@ -14,6 +15,8 @@ export function ModelDropdown({
   disabled: boolean;
   accentColor: string;
 }) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   const groups = useMemo(() => {
     const map = new Map<string, ModelOption[]>();
     for (const m of ALL_COMPARE_MODELS) {
@@ -39,7 +42,10 @@ export function ModelDropdown({
           <optgroup key={group} label={group}>
             {models.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.label} ({m.cost})
+                {/* `cost` is an input/output pair per MILLION tokens; without
+                    the unit the figure is unreadable, and the priced/free
+                    split is why the suffix is conditional. */}
+                {m.label} ({m.cost === FREE_COST ? m.cost : `${m.cost} ${mc.price_unit_short}`})
               </option>
             ))}
           </optgroup>

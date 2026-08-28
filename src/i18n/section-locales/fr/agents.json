@@ -1149,6 +1149,8 @@
   "model_config": {
     "model_provider": "Modèle & Fournisseur",
     "unsaved_changes": "Modifications non enregistrées",
+    "price_unit_note": "Prix d'entrée / sortie en USD par million de tokens. Estimations uniquement — vérifiez les tarifs actuels chez votre fournisseur.",
+    "price_unit_short": "par million de tokens",
     "max_budget": "Budget max (USD)",
     "max_turns": "Tours max",
     "prompt_caching": "Mise en cache du prompt",

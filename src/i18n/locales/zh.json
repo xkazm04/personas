@@ -2302,6 +2302,8 @@
     "model_config": {
       "model_provider": "模型与提供商",
       "unsaved_changes": "有未保存的更改",
+      "price_unit_note": "每百万 token 的输入 / 输出价格（美元）。仅供参考，实际费率请以服务商为准。",
+      "price_unit_short": "每百万 token",
       "max_budget": "最大预算（USD）",
       "max_turns": "最大轮次",
       "prompt_caching": "提示词缓存",

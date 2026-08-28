@@ -1149,6 +1149,8 @@
   "model_config": {
     "model_provider": "モデル＆プロバイダー",
     "unsaved_changes": "未保存の変更",
+    "price_unit_note": "100万トークンあたりの入力 / 出力価格（USD）。目安です。最新の料金は提供元でご確認ください。",
+    "price_unit_short": "100万トークンあたり",
     "max_budget": "最大予算（USD）",
     "max_turns": "最大ターン数",
     "prompt_caching": "プロンプトキャッシング",

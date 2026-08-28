@@ -18,10 +18,20 @@ export interface ModelOption {
   cost: string;
 }
 
+/**
+ * `cost` is an input/output pair in USD per MILLION tokens, rendered by
+ * `ModelDropdown` with a translated "per 1M tokens" suffix. It is NOT per 1K —
+ * these read `~$0.25/1K` / `~$3/1K` / `~$15/1K` until 2026-08-28, a denominator
+ * that overstates by 1000x read literally and hides the 5x output rate read
+ * charitably. `FREE_COST` marks the models that carry no per-token charge, and
+ * suppresses the unit suffix at the render site.
+ */
+export const FREE_COST = 'Free';
+
 export const ALL_COMPARE_MODELS: ModelOption[] = [
-  { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku', group: 'Anthropic', cost: '~$0.25/1K' },
-  { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet', group: 'Anthropic', cost: '~$3/1K' },
-  { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus', group: 'Anthropic', cost: '~$15/1K' },
+  { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku', group: 'Anthropic', cost: '$1/$5' },
+  { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet', group: 'Anthropic', cost: '$3/$15' },
+  { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus', group: 'Anthropic', cost: '$5/$25' },
   ...OLLAMA_CLOUD_PRESETS.map((p) => ({
     id: p.value,
     label: p.label.split(' (')[0] ?? p.label,
@@ -29,7 +39,7 @@ export const ALL_COMPARE_MODELS: ModelOption[] = [
     model: p.modelId,
     base_url: OLLAMA_CLOUD_BASE_URL,
     group: 'Ollama',
-    cost: 'Free',
+    cost: FREE_COST,
   })),
 ];
 

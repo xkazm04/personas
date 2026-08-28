@@ -2389,6 +2389,8 @@ export type Translations = {
     model_config: {
       model_provider: string;
       unsaved_changes: string;
+      price_unit_note: string;
+      price_unit_short: string;
       max_budget: string;
       max_turns: string;
       prompt_caching: string;

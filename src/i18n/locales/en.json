@@ -2383,6 +2383,8 @@
     "model_config": {
       "model_provider": "Model & Provider",
       "unsaved_changes": "Unsaved changes",
+      "price_unit_note": "Input / output price in USD per million tokens. Estimates only — check your provider for current rates.",
+      "price_unit_short": "per 1M tokens",
       "max_budget": "Max Budget (USD)",
       "max_turns": "Max Turns",
       "prompt_caching": "Prompt Caching",

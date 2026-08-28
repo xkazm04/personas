@@ -2302,6 +2302,8 @@
     "model_config": {
       "model_provider": "Model a poskytovatel",
       "unsaved_changes": "Neuložené změny",
+      "price_unit_note": "Cena vstupu / výstupu v USD za milion tokenů. Jde jen o odhad — aktuální sazby najdete u svého poskytovatele.",
+      "price_unit_short": "za 1 mil. tokenů",
       "max_budget": "Max. rozpočet (USD)",
       "max_turns": "Max. počet kol",
       "prompt_caching": "Cachování promptů",

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import {
   ALL_COMPARE_MODELS,
+  FREE_COST,
   toTestConfig,
   aggregateResults,
   aggregateResultsDetailed,
@@ -87,6 +88,22 @@ describe('ALL_COMPARE_MODELS', () => {
       expect(opt, `missing compare option for preset ${preset.value}`).toBeDefined();
       expect(opt!.model).toBe(preset.modelId);
       expect(opt!.base_url).toBe(OLLAMA_CLOUD_BASE_URL);
+    }
+  });
+
+  // The priced options showed `~$0.25/1K` / `~$3/1K` / `~$15/1K` until
+  // 2026-08-28. Anthropic publishes per MILLION tokens, so a `/1K`
+  // denominator overstates by 1000x, and a single figure hides the output
+  // rate entirely. Both shapes are re-introducible by a one-word edit, so
+  // both are asserted against here rather than left to review.
+  it('quotes every priced model as an input/output pair, never per-1K', () => {
+    const priced = ALL_COMPARE_MODELS.filter((m) => m.cost !== FREE_COST);
+    expect(priced.length).toBeGreaterThan(0);
+    for (const m of priced) {
+      expect(m.cost, `${m.id} must not quote a per-1K price`).not.toMatch(/\/\s*1K/i);
+      expect(m.cost, `${m.id} must quote input/output as $in/$out`).toMatch(
+        /^\$\d+(\.\d+)?\/\$\d+(\.\d+)?$/,
+      );
     }
   });
 

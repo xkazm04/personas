@@ -1149,6 +1149,8 @@
   "model_config": {
     "model_provider": "Modell & Anbieter",
     "unsaved_changes": "Ungespeicherte Änderungen",
+    "price_unit_note": "Preis für Eingabe / Ausgabe in USD pro Million Token. Nur Richtwerte — aktuelle Tarife beim Anbieter prüfen.",
+    "price_unit_short": "pro 1 Mio. Token",
     "max_budget": "Max. Budget (USD)",
     "max_turns": "Max. Runden",
     "prompt_caching": "Prompt-Caching",
