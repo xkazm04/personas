@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, FileText, Clock, ArrowRight } from 'lucide-react';
+import { Search, FileText, Clock, ArrowRight, ChevronDown } from 'lucide-react';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
@@ -8,6 +9,58 @@ import { silentCatch } from '@/lib/silentCatch';
 import { trackInteraction } from '@/lib/analytics';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
+
+/** A compact dropdown over the shared `Listbox` (a raw native select element is a census
+ *  violation: raw-select). Trigger shows the current label; options are
+ *  `role="option"` buttons the Listbox drives from the keyboard. */
+function CompactListbox<T extends string | number>({ ariaLabel, value, options, onChange, className = '', testId }: {
+  ariaLabel: string;
+  testId?: string;
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (v: T) => void;
+  className?: string;
+}) {
+  const current = options.find((o) => o.value === value)?.label ?? String(value);
+  return (
+    <Listbox
+      ariaLabel={ariaLabel}
+      itemCount={options.length}
+      onSelectFocused={(i) => { const o = options[i]; if (o) onChange(o.value); }}
+      className={className}
+      renderTrigger={({ isOpen, toggle }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          data-testid={testId}
+          className="flex max-w-48 items-center gap-1 truncate bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground typo-caption"
+        >
+          <span className="truncate">{current}</span>
+          <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
+        </button>
+      )}
+    >
+      {({ close }) => (
+        <>
+          {options.map((o) => (
+            <button
+              type="button"
+              key={String(o.value)}
+              role="option"
+              aria-selected={o.value === value}
+              onClick={() => { onChange(o.value); close(); }}
+              className={`flex w-full items-center px-3 py-1.5 text-left typo-caption transition-colors hover:bg-secondary/50 ${o.value === value ? 'text-primary' : 'text-foreground'}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </>
+      )}
+    </Listbox>
+  );
+}
 
 interface SearchTabProps {
   kb: KnowledgeBase;
@@ -155,29 +208,24 @@ export function SearchTab({ kb }: SearchTabProps) {
         <div className="flex items-center gap-3 typo-caption text-foreground">
           <label className="flex items-center gap-1.5">
             {sh.results_label}
-            <select
+            <CompactListbox
+              ariaLabel={sh.results_label}
+              testId="kb-search-topk"
               value={topK}
-              onChange={(e) => setTopK(Number(e.target.value))}
-              className="bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground typo-caption"
-            >
-              {[5, 10, 20, 50].map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
+              options={[5, 10, 20, 50].map((n) => ({ value: n, label: String(n) }))}
+              onChange={setTopK}
+            />
           </label>
           {sources.length > 0 && (
             <label className="flex items-center gap-1.5 min-w-0">
               {sh.search_source_label}
-              <select
+              <CompactListbox
+                ariaLabel={sh.search_source_label}
+                testId="kb-search-source"
                 value={source}
-                onChange={(e) => setSource(e.target.value)}
-                className="max-w-48 truncate bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground typo-caption"
-              >
-                <option value="">{sh.search_source_all}</option>
-                {sources.map((s) => (
-                  <option key={s.path} value={s.path}>{s.title}</option>
-                ))}
-              </select>
+                options={[{ value: '', label: sh.search_source_all }, ...sources.map((s) => ({ value: s.path, label: s.title }))]}
+                onChange={setSource}
+              />
             </label>
           )}
           <span>{sh.press_enter}</span>

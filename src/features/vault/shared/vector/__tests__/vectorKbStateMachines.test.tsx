@@ -156,9 +156,9 @@ describe('SearchTab — search sequence guard', () => {
 
     // The user edits the box but does NOT search, then widens the result count.
     fireEvent.change(input, { target: { value: 'not searched yet' } });
-    await act(async () => {
-      fireEvent.change(screen.getByRole('combobox'), { target: { value: '50' } });
-    });
+    // Two acts: the listbox renders its options only once open.
+    await act(async () => { fireEvent.click(screen.getByTestId('kb-search-topk')); });
+    await act(async () => { fireEvent.click(screen.getByRole('option', { name: '50' })); });
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
     expect(mockSearch.mock.calls[1][0]).toMatchObject({ query: 'executed', topK: 50 });
@@ -236,18 +236,20 @@ describe('SearchTab — source scoping', () => {
     render(<SearchTab kb={KB} />);
     const input = screen.getByPlaceholderText(/Ask a question/i);
 
-    // "All documents" + the one document that actually has a path.
-    const sourceSelect = await screen.findByDisplayValue('All documents');
-    expect(screen.getByText('Q3 report')).toBeTruthy();
-    expect(screen.queryByText('Pasted note')).toBeNull();
+    // "All documents" + the one document that actually has a path. The options
+    // exist only while the listbox is open, so open it to read them.
+    await screen.findByTestId('kb-search-source');
+    await act(async () => { fireEvent.click(screen.getByTestId('kb-search-source')); });
+    expect(screen.getByRole('option', { name: 'Q3 report' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: 'Pasted note' })).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole('option', { name: 'All documents' })); });
 
     fireEvent.change(input, { target: { value: 'footings' } });
     await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }); });
     expect(mockSearch.mock.calls[0][0].filterSource).toBeUndefined();
 
-    await act(async () => {
-      fireEvent.change(sourceSelect, { target: { value: '/reports/q3.pdf' } });
-    });
+    await act(async () => { fireEvent.click(screen.getByTestId('kb-search-source')); });
+    await act(async () => { fireEvent.click(screen.getByRole('option', { name: 'Q3 report' })); });
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
     expect(mockSearch.mock.calls[1][0]).toMatchObject({

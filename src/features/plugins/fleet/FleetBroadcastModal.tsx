@@ -225,12 +225,12 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
 
         {/* Which sessions missed it. role="status" so the recovery path is
             announced, not just coloured. */}
+        {/* The live region is ALWAYS mounted and starts empty — a region that is
+            born with its message is not announced (census:
+            live-region-born-with-its-message). */}
+        <div role="status" data-testid={failedLabels.length > 0 ? 'fleet-broadcast-failed' : undefined} className={failedLabels.length > 0 ? 'mb-3 rounded-modal border border-amber-400/25 bg-amber-400/10 px-3 py-2' : ''}>
         {failedLabels.length > 0 ? (
-          <div
-            role="status"
-            data-testid="fleet-broadcast-failed"
-            className="mb-3 rounded-modal border border-amber-400/25 bg-amber-400/10 px-3 py-2"
-          >
+          <>
             <p className="typo-caption text-amber-200">{t.plugins.fleet.broadcast_retry_hint}</p>
             <ul className="mt-1 flex flex-wrap gap-1.5">
               {failedLabels.map((f) => (
@@ -242,8 +242,9 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
                 </li>
               ))}
             </ul>
-          </div>
+          </>
         ) : null}
+        </div>
 
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
