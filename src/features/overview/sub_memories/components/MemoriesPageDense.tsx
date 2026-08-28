@@ -21,6 +21,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
@@ -30,6 +31,7 @@ import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/forma
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
+import type { MemoryTierFilter } from '@/api/overview/memories';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -85,6 +87,14 @@ export default function MemoriesPageDense() {
   const [sortField, setSortField] = useState<SortField>('created');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [categoryFilters, setCategoryFilters] = useState<Set<string>>(new Set());
+  // Persona and tier are SERVER-side filters — memorySlice.fetchMemories has
+  // always accepted both, and this page never passed either. Tier especially:
+  // the slice defaults to `!archive`, so with no tier control an archived
+  // memory could not be reached from this surface at all, and a user with
+  // twenty agents had no way to narrow to one. `null` tier means the slice's
+  // default active set.
+  const [personaFilter, setPersonaFilter] = useState<string | null>(null);
+  const [tierFilter, setTierFilter] = useState<MemoryTierFilter | null>(null);
   const [selected, setSelected] = useState<PersonaMemory | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState<'memories' | 'conflicts'>('memories');
@@ -112,13 +122,19 @@ export default function MemoriesPageDense() {
     const timer = setTimeout(() => {
       if (!latest.isCurrent(requestId)) return;
       setDebouncePending(false);
-      fetchMemories({ search: search || undefined, sort_column: 'created_at', sort_direction: 'desc' });
+      fetchMemories({
+        search: search || undefined,
+        persona_id: personaFilter ?? undefined,
+        tier: tierFilter ?? undefined,
+        sort_column: 'created_at',
+        sort_direction: 'desc',
+      });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search, latest]);
+  }, [fetchMemories, search, personaFilter, tierFilter, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
-  const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0;
+  const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0 || personaFilter !== null || tierFilter !== null;
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -324,11 +340,13 @@ export default function MemoriesPageDense() {
               <KpiDivider />
               <KpiMetric label="Avg Importance" value={stats.avgImportance.toFixed(1)} tone="text-amber-300" />
               <KpiDivider />
-              {/* An "Archive" tile stood here and could only ever read 0: this
-                  list is fetched with the store's default `!archive` tier filter
-                  and carries no tier control, so an archived memory never enters
-                  `memories`. A tile that is structurally incapable of a non-zero
-                  value is not a measurement. */}
+              {/* An "Archive" tile stood here and could only ever read 0: the
+                  list was fetched with the store's default `!archive` tier
+                  filter and the page carried no tier control, so an archived
+                  memory never entered `memories`. A tile that is structurally
+                  incapable of a non-zero value is not a measurement. The tier
+                  select below now reaches the archive; the tile stays gone
+                  because these counts are page-scoped, not store-scoped. */}
               <KpiMetric label="Core" value={stats.complete ? stats.core : UNMEASURED} tone="text-amber-300" />
               <KpiDivider />
               <KpiMetric label="Active" value={stats.complete ? stats.active : UNMEASURED} tone="text-cyan-300" />
@@ -352,6 +370,27 @@ export default function MemoriesPageDense() {
 
         {/* Category pill bar — toggle filters */}
         <div className="flex items-center gap-1.5 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 flex-shrink-0">
+          <ThemedSelect
+            value={personaFilter ?? ''}
+            onChange={(e) => setPersonaFilter(e.target.value || null)}
+            wrapperClassName="min-w-[130px]"
+            aria-label={t.overview.memory_filter.all_agents}
+          >
+            <option value="">{t.overview.memory_filter.all_agents}</option>
+            {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </ThemedSelect>
+          <ThemedSelect
+            value={tierFilter ?? ''}
+            onChange={(e) => setTierFilter((e.target.value || null) as MemoryTierFilter | null)}
+            wrapperClassName="min-w-[120px]"
+            aria-label={t.overview.memory_filter.tier_all}
+          >
+            <option value="">{t.overview.memory_filter.tier_all}</option>
+            <option value="core">{t.overview.memory_filter.tier_core}</option>
+            <option value="active">{t.overview.memory_filter.tier_active}</option>
+            <option value="working">{t.overview.memory_filter.tier_working}</option>
+            <option value="archive">{t.overview.memory_filter.tier_archived}</option>
+          </ThemedSelect>
           <span className="typo-label text-foreground mr-1">Category</span>
           {ALL_MEMORY_CATEGORIES.map((cat) => {
             const colors = MEMORY_CATEGORY_COLORS[cat]!;
@@ -371,8 +410,12 @@ export default function MemoriesPageDense() {
               </button>
             );
           })}
-          {categoryFilters.size > 0 && (
-            <button type="button" onClick={() => setCategoryFilters(new Set())} className="typo-body text-foreground hover:text-foreground px-2 py-1">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={() => { setCategoryFilters(new Set()); setPersonaFilter(null); setTierFilter(null); setSearch(''); }}
+              className="typo-body text-foreground hover:text-foreground px-2 py-1"
+            >
               Clear
             </button>
           )}
