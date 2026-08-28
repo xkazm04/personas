@@ -21,6 +21,22 @@ import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types"
 /** The persona-core accent (also the model-tier accent). */
 export const ACCENT = "#60A5FA";
 
+/** The three control accents that are NOT axis colours.
+ *
+ *  They were raw hex literals at their call sites, and three of the four
+ *  re-used an axis colour for an unrelated concept: the disposition slider
+ *  wrote TRAIT_AXES.autonomy's `#fb7185`, the conflict tiles wrote
+ *  TRAIT_AXES.temperament's `#fbbf24`, and the effort meter declared a local
+ *  `purple` that appeared nowhere else. A colour edit therefore meant grepping
+ *  call sites and guessing which uses of a hex meant the same thing.
+ *
+ *  They are separate constants rather than aliases of the axis colours ON
+ *  PURPOSE: sharing a value is not sharing a meaning, and re-pointing the
+ *  autonomy axis must not silently repaint the disposition slider. */
+export const DISPOSITION_ACCENT = "#fb7185";
+export const CONFLICT_ACCENT = "#fbbf24";
+export const EFFORT_ACCENT = "#a78bfa";
+
 // -- Archetype icon resolver -------------------------------------------------
 /** The `icon` names the shipped archetype catalog actually uses
  *  (`scripts/templates/_archetypes.json`), and nothing else. Five further

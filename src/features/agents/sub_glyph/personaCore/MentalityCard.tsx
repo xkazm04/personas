@@ -8,11 +8,11 @@
 import { useEffect, useRef, useState } from "react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { MotionizedGlyph } from "@/features/shared/components/display/MotionizedGlyph";
-import { coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
+import { ACCENT, coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
 import { ARCHETYPE_GLYPHS } from "./archetypeGlyphData";
 import type { Archetype } from "./types";
 
-const axisColorOf = (axisId: string) => TRAIT_AXES.find((a) => a.id === axisId)?.color ?? "#60A5FA";
+const axisColorOf = (axisId: string) => TRAIT_AXES.find((a) => a.id === axisId)?.color ?? ACCENT;
 
 /** The Mentality column lists all nine archetypes inside a 64vh scroller, but
  *  only ~3 cards are on screen. Mounting every avatar eagerly paints ~330

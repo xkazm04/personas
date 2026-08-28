@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
-import { ACCENT, CONFLICT_STYLES, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
+import { ACCENT, CONFLICT_ACCENT, CONFLICT_STYLES, EFFORT_ACCENT, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
 import type { PersonaCore } from "./types";
 
 /** A single icon tile — the shared atom for the tile groups.
@@ -42,7 +42,7 @@ export function ConflictTiles({ core }: { core: PersonaCore }) {
   return (
     <div className="grid grid-cols-2 gap-1.5">
       {CONFLICT_STYLES.map((c) => (
-        <IconTile key={c.id} icon={c.icon} label={c.label} blurb={c.blurb} color="#fbbf24"
+        <IconTile key={c.id} icon={c.icon} label={c.label} blurb={c.blurb} color={CONFLICT_ACCENT}
           active={core.state.conflictStyle === c.id} onClick={() => core.setConflict(c.id)} testid={`core-conflict-${c.id}`} />
       ))}
     </div>
@@ -71,7 +71,6 @@ export function ModelTiles({ core }: { core: PersonaCore }) {
 export function EffortMeter({ core }: { core: PersonaCore }) {
   const { t } = useTranslation();
   const idx = EFFORT_TIERS.findIndex((e) => e.id === core.state.effort);
-  const purple = "#a78bfa";
   return (
     <div className="flex items-end gap-1.5">
       {EFFORT_TIERS.map((e, i) => {
@@ -88,7 +87,7 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
                   meter's own accent, which no class can express. */}
               <span
                 className={`w-full rounded-sm transition-colors ${on ? "" : "bg-secondary/60"}`}
-                style={{ height: h, background: on ? colorWithAlpha(purple, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
+                style={{ height: h, background: on ? colorWithAlpha(EFFORT_ACCENT, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
               />
               <span className={`typo-body leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{t.models[`effort_${e.id}`]}</span>
             </button>

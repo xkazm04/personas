@@ -12,7 +12,7 @@ import { SnapshotColumn } from "./SnapshotColumn";
 import { AxisTraitGrid } from "./TraitGrid";
 import { ConflictTiles, ModelTiles, EffortMeter } from "./ConfigTiles";
 import { PolaritySlider } from "./PolaritySlider";
-import { ACCENT } from "./catalog";
+import { ACCENT, DISPOSITION_ACCENT } from "./catalog";
 import type { PersonaCore } from "./types";
 
 export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
@@ -72,7 +72,7 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
             lowLabel={t.agents.core_disposition_low}
             highLabel={t.agents.core_disposition_high}
             value={state.disposition}
-            color="#fb7185"
+            color={DISPOSITION_ACCENT}
             onChange={core.setDisposition}
           />
         </div>

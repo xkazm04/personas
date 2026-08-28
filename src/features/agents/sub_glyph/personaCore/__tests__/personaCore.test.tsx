@@ -230,6 +230,24 @@ describe("persona-core theming", () => {
     expect(sources.length).toBeGreaterThan(5);
   });
 
+  it("keeps every colour literal in catalog.ts", () => {
+    // catalog.ts owns ACCENT, the five axis colours and the three control
+    // accents. Four call sites used to write raw hex instead, three of them
+    // re-using an axis colour for an unrelated concept and one spelling
+    // ACCENT a third way, so changing a colour meant grepping call sites and
+    // guessing which uses of a hex meant the same thing.
+    const offenders = sources.flatMap((f) => {
+      if (f === "catalog.ts" || f === "archetypeGlyphData.ts") return [];
+      const src = readFileSync(path.join(dir, f), "utf8");
+      return src.split("\n").flatMap((line, i) => {
+        const code = line.trimStart();
+        if (code.startsWith("*") || code.startsWith("//")) return [];
+        return /#[0-9a-fA-F]{3,8}\b/.test(line) ? [`${f}:${i + 1}`] : [];
+      });
+    });
+    expect(offenders).toEqual([]);
+  });
+
   it("paints no literal white through an inline style", () => {
     // `style={{ background: "rgba(255,255,255,…)" }}` wins the cascade outright,
     // so `[data-theme^="light"]` can never override it and the surface goes
