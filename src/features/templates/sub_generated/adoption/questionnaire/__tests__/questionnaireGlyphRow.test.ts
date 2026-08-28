@@ -8,6 +8,7 @@ import {
   countDimensionsByState,
   QUESTION_CATEGORY_TO_DIM,
 } from '../questionnaireGlyphRow';
+import { QUESTIONNAIRE_CATEGORY_ORDER } from '../../questionnaireCategoryOrder';
 
 /**
  * CONTRACT TEST — this file exists to pin FIELD NAMES, not just behaviour.
@@ -170,12 +171,20 @@ describe('applyAnswerOverlay', () => {
     expect(applyAnswerOverlay(base, [q('a', 'memory')], {})).toBe(base);
   });
 
-  it('leaves the row untouched for a category with no dimension mapping', () => {
-    // `boundaries` is a canonical question category that no glyph dimension
-    // claims, so answering one moves nothing. Pinned deliberately: if a
-    // mapping is added, this assertion is the place that says so.
-    expect(QUESTION_CATEGORY_TO_DIM.boundaries).toBeUndefined();
+  it('claims a dimension for every canonical category, boundaries included', () => {
+    // The map was an open `Record<string, …>` and `boundaries` was missing, so
+    // a boundaries question moved no petal and nothing could say so. This is
+    // the runtime half of the `satisfies` check: every canonical category has
+    // a dimension, and answering one moves it.
+    for (const cat of QUESTIONNAIRE_CATEGORY_ORDER) {
+      expect(QUESTION_CATEGORY_TO_DIM[cat]).toBeDefined();
+    }
     const next = applyAnswerOverlay(base, [q('a', 'boundaries')], { a: 'yes' });
+    expect(next.presence.review).toBe('shared');
+  });
+
+  it('leaves the row untouched for a category outside the vocabulary', () => {
+    const next = applyAnswerOverlay(base, [q('a', '__made_up__')], { a: 'yes' });
     expect(next.presence).toEqual(base.presence);
   });
 

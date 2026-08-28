@@ -18,7 +18,7 @@
  * Buckets with an unknown category sort after every listed category (index
  * 999) so authored order is preserved for untagged questions.
  */
-export const QUESTIONNAIRE_CATEGORY_ORDER: readonly string[] = [
+export const QUESTIONNAIRE_CATEGORY_ORDER = [
   'credentials',
   'configuration',
   'domain',
@@ -29,10 +29,24 @@ export const QUESTIONNAIRE_CATEGORY_ORDER: readonly string[] = [
   'boundaries',
 ] as const;
 
+/**
+ * The canonical question-category vocabulary, as a TYPE.
+ *
+ * This list used to be annotated `readonly string[]`, which erased the literals
+ * and left nothing downstream able to check itself against them — so the
+ * category→glyph-dimension maps were hand-maintained copies, and `boundaries`
+ * was silently absent from both. Any map keyed by category should now be
+ * declared `satisfies Record<QuestionnaireCategory, …>`, which turns a missing
+ * entry into a compile error instead of a dimension that quietly never moves.
+ */
+export type QuestionnaireCategory = (typeof QUESTIONNAIRE_CATEGORY_ORDER)[number];
+
 /** Returns a sort index for `category`, or 999 for unknown categories. */
 export function categoryOrderIndex(category: string | null | undefined): number {
   if (!category) return 999;
-  const idx = QUESTIONNAIRE_CATEGORY_ORDER.indexOf(category);
+  // Widened deliberately: callers pass `q.category`, a free-form string off the
+  // template payload, and an unlisted value is a legal input that sorts last.
+  const idx = (QUESTIONNAIRE_CATEGORY_ORDER as readonly string[]).indexOf(category);
   return idx === -1 ? 999 : idx;
 }
 
