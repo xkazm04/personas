@@ -61,6 +61,34 @@ function archetypeStance(a: Archetype): string | null {
   return coreString(a, "stance");
 }
 
+/** The persona core, flattened into one analytics label.
+ *
+ *  This surface is where a user states who their agent IS, and until now every
+ *  choice was thrown away at launch after being folded into a prompt string —
+ *  nothing recorded which archetype was picked, which traits were toggled,
+ *  whether the preset was accepted or edited, or whether the modal was opened
+ *  and abandoned. The trait grid meanwhile orders itself by a hand-derived
+ *  corpus frequency that real selection data could corroborate or replace.
+ *
+ *  Everything here is a CATALOG IDENTIFIER or a count — archetype ids, trait
+ *  ids, a conflict-style id, a model tier, an effort level. No persona name, no
+ *  intent text, no user-authored content, matching the privacy contract the
+ *  analytics module states for itself. Trait ids are sorted so the same
+ *  selection produces the same label regardless of click order.
+ *
+ *  Exported as a pure function so the contract is testable without a DOM.
+ */
+export function personaCoreSelectionLabel(s: PersonaCoreState): string {
+  return [
+    `archetype=${s.archetypeId ?? "none"}`,
+    `traits=${s.traits.length}`,
+    `trait_ids=${[...s.traits].sort().join("|") || "none"}`,
+    `conflict=${s.conflictStyle ?? "none"}`,
+    `model=${s.model}`,
+    `effort=${s.effort}`,
+  ].join(";");
+}
+
 export function usePersonaCore(resetKey: string | null): PersonaCore {
   const [loading, setLoading] = useState(true);
   const [archetypes, setArchetypes] = useState<Archetype[]>([]);

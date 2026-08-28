@@ -12,8 +12,8 @@
  */
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, renderHook, act, waitFor, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, renderHook, act, waitFor, screen, fireEvent } from "@testing-library/react";
 
 import {
   ARCHETYPE_TRAITS,
@@ -374,5 +374,94 @@ describe("AxisTraitGrid accessibility", () => {
   it("exposes every trait as a pressable toggle", () => {
     render(<AxisTraitGrid core={core} />);
     expect(screen.getAllByRole("button").length).toBe(TRAIT_CATALOG.length);
+  });
+});
+
+// --------------------------------------------------------------------------
+// What the surface reports about itself.
+// --------------------------------------------------------------------------
+import { personaCoreSelectionLabel } from "../usePersonaCore";
+import { PersonaCoreModal } from "../PersonaCoreModal";
+import { setAnalyticsSink, noopSink, type InteractionEvent } from "@/lib/analytics/sink";
+
+describe("persona-core selection label", () => {
+  const base = {
+    archetypeId: null, disposition: 0.4, conflictStyle: null,
+    traits: [] as string[], model: "sonnet", effort: "medium",
+  } as Parameters<typeof personaCoreSelectionLabel>[0];
+
+  it("reports an untouched core without inventing a selection", () => {
+    expect(personaCoreSelectionLabel(base)).toBe(
+      "archetype=none;traits=0;trait_ids=none;conflict=none;model=sonnet;effort=medium",
+    );
+  });
+
+  it("is stable under click order, so the same choice is one bucket", () => {
+    const a = personaCoreSelectionLabel({ ...base, traits: ["terse", "actionable"] });
+    const b = personaCoreSelectionLabel({ ...base, traits: ["actionable", "terse"] });
+    expect(a).toBe(b);
+  });
+
+  it("carries only catalog identifiers — no user-authored content", () => {
+    // The privacy contract the analytics module states for itself. Every token
+    // in the label must be an id this repo ships, a count, or "none".
+    const label = personaCoreSelectionLabel({
+      ...base, archetypeId: "guardian", conflictStyle: "analyst",
+      traits: ["terse", "quality-gate"], model: "opus", effort: "high",
+    });
+    const values = label.split(";").map((p) => p.split("=")[1]!);
+    const known = new Set<string>([
+      ...Object.keys(ARCHETYPE_TRAITS), ...TRAIT_CATALOG.map((t) => t.id),
+      ...CONFLICT_STYLES.map((c) => c.id), ...MODEL_TIERS.map((m) => m.id),
+      ...EFFORT_TIERS.map((e) => String(e.id)), "none",
+    ]);
+    const unknown = values.flatMap((v) =>
+      v.split("|").filter((tok) => !known.has(tok) && !/^\d+$/.test(tok)),
+    );
+    expect(unknown).toEqual([]);
+  });
+});
+
+describe("PersonaCoreModal analytics", () => {
+  const events: InteractionEvent[] = [];
+
+  beforeEach(() => {
+    events.length = 0;
+    listArchetypes.mockReset();
+    listArchetypes.mockResolvedValue(CATALOG);
+    setAnalyticsSink({ ...noopSink, interaction: (e) => { events.push(e); } });
+  });
+  afterEach(() => setAnalyticsSink(noopSink));
+
+  it("records the settled selection when the user closes the modal", async () => {
+    // Before this, every choice left the component tree only as prose folded
+    // into the build intent, so nothing downstream could answer which
+    // archetypes or traits people actually pick.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.toggleTrait("terse"));
+
+    const onClose = vi.fn();
+    render(<PersonaCoreModal core={result.current} isOpen onClose={onClose} />);
+    fireEvent.click(screen.getByTestId("persona-core-done"));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.category).toBe("persona_core");
+    expect(events[0]!.action).toBe("configured");
+    expect(events[0]!.label).toContain("trait_ids=terse");
+  });
+
+  it("distinguishes an ABANDONED open from a configured one", async () => {
+    // An open the user backed out of is the signal that says the surface is
+    // confusing; collapsing it into "configured" would hide exactly that.
+    const { result } = renderHook(() => usePersonaCore("build-1"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    render(<PersonaCoreModal core={result.current} isOpen onClose={() => {}} />);
+    fireEvent.click(screen.getByTestId("persona-core-done"));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]!.action).toBe("dismissed");
   });
 });
