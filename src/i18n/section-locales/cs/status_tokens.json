@@ -229,6 +229,20 @@
     "working": "Pracovní",
     "archive": "Archivovaná"
   },
+  "span_type": {
+    "execution": "Spuštění",
+    "prompt_assembly": "Příprava promptu",
+    "credential_resolution": "Přihlašovací údaje",
+    "cli_spawn": "Spuštění CLI",
+    "tool_call": "Volání nástroje",
+    "protocol_dispatch": "Protokol",
+    "chain_evaluation": "Vyhodnocení řetězce",
+    "stream_processing": "Streamování",
+    "outcome_assessment": "Výsledek",
+    "healing_analysis": "Náprava",
+    "pipeline_stage": "Fáze pipeline",
+    "unknown": "Neznámé"
+  },
   "memory_action": {
     "kept": "Ponecháno",
     "deleted": "Smazáno",

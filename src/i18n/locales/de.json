@@ -12942,6 +12942,20 @@
       "working": "In Arbeit",
       "archive": "Archiviert"
     },
+    "span_type": {
+      "execution": "Ausführung",
+      "prompt_assembly": "Prompt-Aufbau",
+      "credential_resolution": "Zugangsdaten",
+      "cli_spawn": "CLI-Start",
+      "tool_call": "Werkzeugaufruf",
+      "protocol_dispatch": "Protokoll",
+      "chain_evaluation": "Kettenauswertung",
+      "stream_processing": "Streaming",
+      "outcome_assessment": "Ergebnis",
+      "healing_analysis": "Selbstheilung",
+      "pipeline_stage": "Pipeline-Phase",
+      "unknown": "Unbekannt"
+    },
     "memory_action": {
       "kept": "Behalten",
       "deleted": "Gelöscht",

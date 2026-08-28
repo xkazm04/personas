@@ -13234,6 +13234,20 @@
       "working": "Working",
       "archive": "Archived"
     },
+    "span_type": {
+      "execution": "Execution",
+      "prompt_assembly": "Prompt",
+      "credential_resolution": "Credentials",
+      "cli_spawn": "CLI Spawn",
+      "tool_call": "Tool Call",
+      "protocol_dispatch": "Protocol",
+      "chain_evaluation": "Chain Eval",
+      "stream_processing": "Stream",
+      "outcome_assessment": "Outcome",
+      "healing_analysis": "Healing",
+      "pipeline_stage": "Pipeline Stage",
+      "unknown": "Unknown"
+    },
     "memory_action": {
       "kept": "Kept",
       "deleted": "Deleted",

@@ -13240,6 +13240,20 @@ export type Translations = {
       working: string;
       archive: string;
     };
+    span_type: {
+      execution: string;
+      prompt_assembly: string;
+      credential_resolution: string;
+      cli_spawn: string;
+      tool_call: string;
+      protocol_dispatch: string;
+      chain_evaluation: string;
+      stream_processing: string;
+      outcome_assessment: string;
+      healing_analysis: string;
+      pipeline_stage: string;
+      unknown: string;
+    };
     memory_action: {
       kept: string;
       deleted: string;

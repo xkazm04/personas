@@ -229,6 +229,20 @@
     "working": "कार्यशील",
     "archive": "संग्रहीत"
   },
+  "span_type": {
+    "execution": "निष्पादन",
+    "prompt_assembly": "प्रॉम्प्ट",
+    "credential_resolution": "क्रेडेंशियल",
+    "cli_spawn": "CLI आरंभ",
+    "tool_call": "टूल कॉल",
+    "protocol_dispatch": "प्रोटोकॉल",
+    "chain_evaluation": "चेन मूल्यांकन",
+    "stream_processing": "स्ट्रीम",
+    "outcome_assessment": "परिणाम",
+    "healing_analysis": "सुधार",
+    "pipeline_stage": "पाइपलाइन चरण",
+    "unknown": "अज्ञात"
+  },
   "memory_action": {
     "kept": "रखा गया",
     "deleted": "हटाया गया",

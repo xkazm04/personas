@@ -229,6 +229,20 @@
     "working": "Đang xử lý",
     "archive": "Đã lưu trữ"
   },
+  "span_type": {
+    "execution": "Thực thi",
+    "prompt_assembly": "Soạn prompt",
+    "credential_resolution": "Thông tin đăng nhập",
+    "cli_spawn": "Khởi chạy CLI",
+    "tool_call": "Gọi công cụ",
+    "protocol_dispatch": "Giao thức",
+    "chain_evaluation": "Đánh giá chuỗi",
+    "stream_processing": "Luồng",
+    "outcome_assessment": "Kết quả",
+    "healing_analysis": "Khắc phục",
+    "pipeline_stage": "Giai đoạn pipeline",
+    "unknown": "Không xác định"
+  },
   "memory_action": {
     "kept": "Đã giữ lại",
     "deleted": "Đã xoá",

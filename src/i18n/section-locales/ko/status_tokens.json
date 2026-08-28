@@ -229,6 +229,20 @@
     "working": "작업 중",
     "archive": "보관됨"
   },
+  "span_type": {
+    "execution": "실행",
+    "prompt_assembly": "프롬프트",
+    "credential_resolution": "자격 증명",
+    "cli_spawn": "CLI 시작",
+    "tool_call": "도구 호출",
+    "protocol_dispatch": "프로토콜",
+    "chain_evaluation": "체인 평가",
+    "stream_processing": "스트림",
+    "outcome_assessment": "결과",
+    "healing_analysis": "복구",
+    "pipeline_stage": "파이프라인 단계",
+    "unknown": "알 수 없음"
+  },
   "memory_action": {
     "kept": "유지됨",
     "deleted": "삭제됨",

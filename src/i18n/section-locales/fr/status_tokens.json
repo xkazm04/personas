@@ -229,6 +229,20 @@
     "working": "En cours",
     "archive": "Archivée"
   },
+  "span_type": {
+    "execution": "Exécution",
+    "prompt_assembly": "Préparer prompt",
+    "credential_resolution": "Identifiants",
+    "cli_spawn": "Lancement CLI",
+    "tool_call": "Appel d’outil",
+    "protocol_dispatch": "Protocole",
+    "chain_evaluation": "Évaluation de chaîne",
+    "stream_processing": "Flux",
+    "outcome_assessment": "Résultat",
+    "healing_analysis": "Réparation",
+    "pipeline_stage": "Étape du pipeline",
+    "unknown": "Inconnu"
+  },
   "memory_action": {
     "kept": "Conservée",
     "deleted": "Supprimée",

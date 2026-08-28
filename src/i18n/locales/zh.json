@@ -12942,6 +12942,20 @@
       "working": "工作中",
       "archive": "已归档"
     },
+    "span_type": {
+      "execution": "执行",
+      "prompt_assembly": "提示词",
+      "credential_resolution": "凭据",
+      "cli_spawn": "启动 CLI",
+      "tool_call": "工具调用",
+      "protocol_dispatch": "协议",
+      "chain_evaluation": "链路评估",
+      "stream_processing": "流式处理",
+      "outcome_assessment": "结果",
+      "healing_analysis": "自愈",
+      "pipeline_stage": "流水线阶段",
+      "unknown": "未知"
+    },
     "memory_action": {
       "kept": "保留",
       "deleted": "已删除",

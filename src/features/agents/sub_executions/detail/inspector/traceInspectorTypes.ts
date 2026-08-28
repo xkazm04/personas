@@ -1,6 +1,7 @@
 import type { SpanType } from '@/lib/bindings/SpanType';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { UnifiedSpan } from '@/lib/execution/pipeline';
+import type { Translations } from '@/i18n/en';
 import { SYSTEM_OPERATION_CONFIG } from '../../libs/traceHelpers';
 import type { SpanNode as SpanNodeType } from '../../libs/traceHelpers';
 
@@ -132,6 +133,16 @@ export function applySpanEvent(
 // Span type config
 // ============================================================================
 
+/**
+ * Colour + fallback-label table for the engine's span vocabulary.
+ *
+ * The `label` strings here are NOT what the UI renders — `status_tokens.span_type`
+ * in the translation catalog is the authority, and `spanTypeLabel()` below is the
+ * only sanctioned reader. They survive as the last-resort fallback for a span
+ * type the catalog has not caught up with, which is also why the merged
+ * `SPAN_TYPE_CONFIG` (which folds in the 18 system-operation entries, still
+ * English-only) keeps working unchanged.
+ */
 const ENGINE_SPAN_CONFIG: Record<SpanType, { label: string; color: string; bg: string; border: string }> = {
   execution:             { label: 'Execution',      color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
   prompt_assembly:       { label: 'Prompt',          color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
@@ -157,4 +168,23 @@ const FALLBACK_CONFIG = { label: 'Unknown', color: 'text-gray-400', bg: 'bg-gray
 /** Get config for any span type (engine, pipeline, or system operation). */
 export function getSpanTypeConfig(spanType: string): { label: string; color: string; bg: string; border: string } {
   return SPAN_TYPE_CONFIG[spanType] ?? FALLBACK_CONFIG;
+}
+
+/**
+ * The translated badge label for a span type.
+ *
+ * Every waterfall row and every error card leads with this badge, so authoring
+ * the names beside their colours meant twelve English words rendering
+ * identically in all 14 locales on the busiest surface in the app. The names now
+ * live in `status_tokens.span_type`; the config table's own `label` is the
+ * fallback for anything the catalog does not cover (the system-operation half of
+ * `SPAN_TYPE_CONFIG`), and the raw token is the last resort.
+ */
+export function spanTypeLabel(t: Translations, spanType: string): string {
+  const catalog = t.status_tokens.span_type as Record<string, string | undefined>;
+  const translated = catalog[spanType];
+  if (translated) return translated;
+  const cfg = SPAN_TYPE_CONFIG[spanType];
+  if (cfg) return cfg.label;
+  return catalog.unknown ?? FALLBACK_CONFIG.label;
 }

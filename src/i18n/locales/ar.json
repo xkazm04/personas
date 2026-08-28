@@ -12942,6 +12942,20 @@
       "working": "قيد العمل",
       "archive": "مؤرشفة"
     },
+    "span_type": {
+      "execution": "تنفيذ",
+      "prompt_assembly": "المُوجّه",
+      "credential_resolution": "بيانات الاعتماد",
+      "cli_spawn": "تشغيل CLI",
+      "tool_call": "استدعاء أداة",
+      "protocol_dispatch": "البروتوكول",
+      "chain_evaluation": "تقييم السلسلة",
+      "stream_processing": "البث",
+      "outcome_assessment": "النتيجة",
+      "healing_analysis": "المعالجة",
+      "pipeline_stage": "مرحلة المسار",
+      "unknown": "غير معروف"
+    },
     "memory_action": {
       "kept": "محفوظة",
       "deleted": "محذوفة",

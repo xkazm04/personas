@@ -229,6 +229,20 @@
     "working": "Рабочая",
     "archive": "В архиве"
   },
+  "span_type": {
+    "execution": "Выполнение",
+    "prompt_assembly": "Промпт",
+    "credential_resolution": "Учётные данные",
+    "cli_spawn": "Запуск CLI",
+    "tool_call": "Вызов инструмента",
+    "protocol_dispatch": "Протокол",
+    "chain_evaluation": "Оценка цепочки",
+    "stream_processing": "Поток",
+    "outcome_assessment": "Итог",
+    "healing_analysis": "Восстановление",
+    "pipeline_stage": "Этап конвейера",
+    "unknown": "Неизвестно"
+  },
   "memory_action": {
     "kept": "Сохранена",
     "deleted": "Удалена",
