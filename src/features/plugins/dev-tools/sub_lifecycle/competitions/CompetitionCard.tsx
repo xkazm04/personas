@@ -164,14 +164,21 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
         .filter((s) => s.slot.id !== winnerSlot.id && s.slot.strategy_prompt)
         .map((s) => ({ label: s.slot.strategy_label, prompt: s.slot.strategy_prompt! }));
       if (others.length > 0) {
+        // This text is PERSISTED as `winner_insight` once the user confirms, so
+        // it has to be written in the user's language — not English scaffold
+        // with their own words appended underneath.
         setWinnerInsightText(
-          summarizePromptDiff(winnerSlot.strategy_label, winnerSlot.strategy_prompt, others)
+          summarizePromptDiff(winnerSlot.strategy_label, winnerSlot.strategy_prompt, others, {
+            headline: (label) => tx(dl.prompt_diff_summary_headline, { label }),
+            variant: (label, added, removed) => tx(dl.prompt_diff_summary_variant, { label, added, removed }),
+            takeaway: dl.prompt_diff_summary_takeaway,
+          })
         );
         return;
       }
     }
     setWinnerInsightText('');
-  }, [detail]);
+  }, [detail, dl, tx]);
 
   const handleConfirmPickWinner = useCallback(async () => {
     if (!pendingWinnerTaskId) return;

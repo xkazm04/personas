@@ -42,30 +42,69 @@ const MILESTONE_TEXT: Record<string, string> = {
  * We check the task's last_event or progress_pct to derive the milestone.
  * Since we can't read raw output here, we use progress_pct as a proxy.
  */
-function deriveProgress(task: DevTask | null, t: Translations): { milestone: Milestone; detail: string } {
-  // Every caption below was a raw English literal. Three of the four had an
-  // exact equivalent in `status_tokens.execution` already, so they resolve
-  // through the shared vocabulary rather than adding a fourth copy of
-  // "Completed"/"Queued"/"Failed" to this file.
-  if (!task) return { milestone: MILESTONES[0]!, detail: t.plugins.dev_lifecycle.racing_waiting };
-
-  if (task.status === 'completed') {
-    return { milestone: MILESTONES[MILESTONES.length - 1]!, detail: tokenLabel(t, 'execution', 'completed') };
-  }
-  if (task.status === 'failed') {
-    return { milestone: MILESTONES[0]!, detail: task.error ?? tokenLabel(t, 'execution', 'failed') };
-  }
-  if (task.status === 'queued') {
-    return { milestone: MILESTONES[0]!, detail: tokenLabel(t, 'execution', 'queued') };
-  }
-
-  // Use progress_pct from task to find the closest milestone
-  const pct = task.progress_pct ?? 0;
+/** The milestone whose threshold the given percentage has last passed. */
+export function milestoneForPct(pct: number): Milestone {
   let current = MILESTONES[0]!;
   for (const m of MILESTONES) {
     if (pct >= m.progressPct) current = m;
   }
-  return { milestone: current, detail: tokenLabel(t, 'task_phase', current.labelToken) };
+  return current;
+}
+
+export function deriveProgress(
+  task: DevTask | null,
+  t: Translations,
+): { milestone: Milestone; detail: string; progressPct: number } {
+  // Every caption below was a raw English literal. Three of the four had an
+  // exact equivalent in `status_tokens.execution` already, so they resolve
+  // through the shared vocabulary rather than adding a fourth copy of
+  // "Completed"/"Queued"/"Failed" to this file.
+  if (!task) {
+    return {
+      milestone: MILESTONES[0]!,
+      detail: t.plugins.dev_lifecycle.racing_waiting,
+      progressPct: MILESTONES[0]!.progressPct,
+    };
+  }
+
+  if (task.status === 'completed') {
+    return {
+      milestone: MILESTONES[MILESTONES.length - 1]!,
+      detail: tokenLabel(t, 'execution', 'completed'),
+      progressPct: 100,
+    };
+  }
+  if (task.status === 'failed') {
+    // A competitor that died at 80% used to be drawn as a 10% bar labelled with
+    // the FIRST milestone, because this branch returned `MILESTONES[0]` and threw
+    // `progress_pct` away — three signals on one row (bar, phase label, error
+    // text) of which two were wrong. The caller's guard against that was dead
+    // code: its `failed ? milestone.progressPct : milestone.progressPct` ternary
+    // had two identical arms. How far it got before dying is the whole point of a
+    // race, so the bar and the phase label now report where it actually stopped;
+    // the error message stays as the detail line.
+    const pct = task.progress_pct ?? 0;
+    return {
+      milestone: milestoneForPct(pct),
+      detail: task.error ?? tokenLabel(t, 'execution', 'failed'),
+      progressPct: pct,
+    };
+  }
+  if (task.status === 'queued') {
+    return {
+      milestone: MILESTONES[0]!,
+      detail: tokenLabel(t, 'execution', 'queued'),
+      progressPct: MILESTONES[0]!.progressPct,
+    };
+  }
+
+  // Use progress_pct from task to find the closest milestone
+  const current = milestoneForPct(task.progress_pct ?? 0);
+  return {
+    milestone: current,
+    detail: tokenLabel(t, 'task_phase', current.labelToken),
+    progressPct: current.progressPct,
+  };
 }
 
 interface RacingProgressProps {
@@ -76,15 +115,8 @@ export function RacingProgress({ slots }: RacingProgressProps) {
   const { t } = useTranslation();
   const progresses: SlotProgress[] = useMemo(() =>
     slots.map(({ slot, task }) => {
-      const { milestone, detail } = deriveProgress(task, t);
-      return {
-        slot, task,
-        currentMilestone: milestone,
-        detail,
-        progressPct: task?.status === 'completed' ? 100
-          : task?.status === 'failed' ? milestone.progressPct
-          : milestone.progressPct,
-      };
+      const { milestone, detail, progressPct } = deriveProgress(task, t);
+      return { slot, task, currentMilestone: milestone, detail, progressPct };
     }),
   [slots, t]);
 
