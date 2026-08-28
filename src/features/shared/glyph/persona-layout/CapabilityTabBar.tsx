@@ -126,7 +126,6 @@ export function CapabilityTabBar({
                 uc={uc}
                 size={sigilSize}
                 isActive={isActive}
-                petalStyle="wedge"
               />
               <span
                 className={`typo-caption text-center leading-tight line-clamp-2 ${

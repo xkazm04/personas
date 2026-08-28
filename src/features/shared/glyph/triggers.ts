@@ -86,10 +86,14 @@ export function prettyTriggerType(t: Translations, type: string): string {
   }
 }
 
-export function triggerDetail(tr: GlyphTrigger): string {
+/** One-line detail under a trigger's type label. Takes `t` for the same
+ *  reason `prettyTriggerType` does: the schedule branch produces localized
+ *  prose via {@link humanizeCron}. The description branch is user-authored
+ *  content and passes through untouched. */
+export function triggerDetail(t: Translations, tr: GlyphTrigger): string {
   if (tr.trigger_type === 'schedule' && tr.config) {
     const cron = typeof tr.config.cron === 'string' ? tr.config.cron : '';
-    if (cron) return humanizeCron(cron);
+    if (cron) return humanizeCron(t, cron);
   }
   return tr.description ?? '';
 }

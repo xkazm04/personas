@@ -9599,7 +9599,14 @@
       "empty_generic": "لا يوجد محتوى",
       "empty_dim_refine_hint": "تريده؟ صفه أدناه — سيُضاف عند إعادة البناء التالية.",
       "show_n_more": "+{count} أخرى",
-      "show_less": "عرض أقل"
+      "show_less": "عرض أقل",
+      "model_tier_custom": "مخصّص",
+      "cron_every_minutes": "كل {n} دقيقة",
+      "cron_every_hours": "كل {n} ساعة",
+      "cron_daily": "يومياً",
+      "cron_weekdays": "أيام العمل",
+      "cron_weekends": "عطلة الأسبوع",
+      "cron_day_names": "أحد,إثنين,ثلاثاء,أربعاء,خميس,جمعة,سبت"
     },
     "diagrams": {
       "no_flow_data": "لا توجد بيانات تدفق",

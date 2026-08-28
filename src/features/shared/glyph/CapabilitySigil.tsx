@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
@@ -19,36 +19,39 @@ interface CapabilitySigilProps {
   isHovered?: boolean;
   /** Selected state — adds active ring + bright core. */
   isActive?: boolean;
-  /** Render petals as filled wedges instead of dots. Used by SigilGrid variant
-   *  for a more organic, sigil-like read. CapabilityCard uses dots (compact). */
-  petalStyle?: 'wedge' | 'dot';
 }
 
 /**
- * Shared mini-sigil rendering used by both grid variants.
+ * Capability Sigil — the small glyph representing a single use case /
+ * capability. One per row in a Persona Layout's grid, one per tab in the
+ * capability tab bar, one in the fleet monitor's capability list, and one
+ * blown up in the expanded detail view. Same 8-petal geometry as the Persona
+ * Sigil; petals lit dimly to show which of the persona's dimensions this
+ * capability touches.
  *
  * Visual contract:
- *   - 8 micro-petals at the canonical PETAL_ANGLES (0/45/.../315°)
+ *   - 8 micro-petals as filled wedges at the canonical PETAL_ANGLES
+ *     (0/45/.../315°)
  *   - Petals present in `uc.dimensions` glow in their dim colour; absent
- *     petals are reduced to a thin ghost outline at 18% opacity
- *   - Centre core is tinted by health: success-green (active), amber + faint
- *     pulse (needs-attention), muted slate (disabled)
+ *     petals are reduced to a thin ghost outline
+ *   - Centre core is tinted by health: success-green (active), warning-amber
+ *     (needs-attention), muted slate (disabled) — all static, no pulse
  *   - Outer health ring encodes state at a glance even before the eye reads
  *     individual petals
  *
- * Designed to be readable at 60-100px (grid tile) and 240-320px (level-2
- * detail). Pure visual — no interaction; the parent owns click handlers.
- */
-/**
- * Capability Sigil — the small glyph representing a single use case /
- * capability. One per row in a Persona Layout's grid. Same 8-petal
- * geometry as the Persona Sigil; petals lit dimly to show which of the
- * persona's dimensions this capability touches.
+ * Readable at 60-100px (grid tile) and 240-320px (level-2 detail). Pure
+ * visual — no interaction beyond per-petal hover naming; the parent owns
+ * click handlers.
  *
- * Pure visual — no interaction. Parent owns click handlers.
+ * There used to be a `petalStyle?: 'wedge' | 'dot'` prop with a ~20-line dot
+ * branch. All four call sites passed `"wedge"` explicitly, so the branch had
+ * never rendered, and the JSDoc justifying it named two components
+ * (`SigilGrid`, `CapabilityCard`) that do not exist. Both are gone; a
+ * compact variant, if one is ever wanted, should come back with a live call
+ * site attached.
  */
 export function CapabilitySigil({
-  uc, size = 84, isHovered = false, isActive = false, petalStyle = 'wedge',
+  uc, size = 84, isHovered = false, isActive = false,
 }: CapabilitySigilProps) {
   const { t } = useTranslation();
   const dimText = useGlyphDimText();
@@ -58,17 +61,23 @@ export function CapabilitySigil({
   const present = new Set(uc.dimensions);
   const isDisabled = uc.health === 'disabled';
   const isAttention = uc.health === 'needs-attention';
-  const health = getHealthMeta(t)[uc.health];
+  // `getHealthMeta` builds its full three-entry Record on every call, and this
+  // component renders on every hover / active / size change while reading
+  // exactly one field off it (the label, for the aria-label below). Keyed on
+  // the two things the label actually depends on so the interaction-driven
+  // renders — the frequent ones — cost nothing.
+  const healthLabel = useMemo(
+    () => getHealthMeta(t)[uc.health].label,
+    [t, uc.health],
+  );
 
   const corePct = 0.20;
   const innerPct = 0.30;
   const outerPct = 0.46;
-  const petalDotPct = 0.045;
 
   const coreR = size * corePct;
   const innerR = size * innerPct;
   const outerR = size * outerPct;
-  const petalDotR = size * petalDotPct;
 
   const ringR = outerR + size * 0.04;
 
@@ -88,8 +97,18 @@ export function CapabilitySigil({
     `;
   })();
 
-  const coreId = `mini-core-${uc.id}-${size}`;
-  const uid = `${uc.id}-${size}`;
+  // SVG ids must be unique per *element instance*, not per (use case, size).
+  // Two surfaces render the same capability at the same size on one page
+  // (UseCaseRow's SIGIL_SIZE is 72 and CapabilityTabBar's sigilSize defaults
+  // to 72), and `url(#id)` resolves to whichever duplicate comes first in
+  // document order. It happens to be harmless today only because both copies
+  // emit identical stops — but the gradient already varies with `isDisabled`
+  // while the id does not, so the id is one prop away from lying. `useId`
+  // makes it structurally impossible; the colons React puts in the value are
+  // stripped because these ids also travel inside `url(#…)` fragments.
+  const instanceId = useId().replace(/:/g, '');
+  const coreId = `mini-core-${instanceId}`;
+  const uid = instanceId;
   const dimOpacityActive = 0.85;
   const dimOpacityIdle = 0.62;
   const ghostOpacity = 0.16;
@@ -115,7 +134,7 @@ export function CapabilitySigil({
       viewBox={`0 0 ${size} ${size}`}
       className="block"
       style={{ opacity: isDisabled ? 0.65 : 1 }}
-      aria-label={`${uc.title} — ${health.label}`}
+      aria-label={`${uc.title} — ${healthLabel}`}
     >
       <defs>
         <radialGradient id={coreId} cx="50%" cy="50%" r="50%">
@@ -163,45 +182,24 @@ export function CapabilitySigil({
         // instant feedback before the OS tooltip appears.
         const isPetalHover = hoveredDim === dim;
 
-        if (petalStyle === 'wedge') {
-          return (
-            <g
-              key={dim}
-              transform={`translate(${center}, ${center}) rotate(${angle})`}
-              style={{ pointerEvents: 'all', cursor: 'default' }}
-              onMouseEnter={() => setHoveredDim(dim)}
-              onMouseLeave={() => setHoveredDim(null)}
-            >
-              <title>{dimText.label[dim]}</title>
-              <path
-                d={wedgePath}
-                fill={isPresent ? (cvdSafe ? petalPatternFill(dim, uid) : meta.color) : 'transparent'}
-                fillOpacity={isPresent ? (cvdSafe ? 1 : isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
-                stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
-                strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
-                strokeWidth={isPresent ? 0.8 : 0.6}
-              />
-            </g>
-          );
-        }
-        // Dot style — render petals as small circles at the canonical position
-        const rad = ((angle - 90) * Math.PI) / 180;
-        const x = center + (innerR + (outerR - innerR) * 0.55) * Math.cos(rad);
-        const y = center + (innerR + (outerR - innerR) * 0.55) * Math.sin(rad);
         return (
-          <circle
+          <g
             key={dim}
-            cx={x}
-            cy={y}
-            r={isPetalHover ? petalDotR * 1.35 : petalDotR}
-            fill={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
-            fillOpacity={isPresent ? (isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : isPetalHover ? 0.5 : ghostOpacity}
+            transform={`translate(${center}, ${center}) rotate(${angle})`}
             style={{ pointerEvents: 'all', cursor: 'default' }}
             onMouseEnter={() => setHoveredDim(dim)}
             onMouseLeave={() => setHoveredDim(null)}
           >
             <title>{dimText.label[dim]}</title>
-          </circle>
+            <path
+              d={wedgePath}
+              fill={isPresent ? (cvdSafe ? petalPatternFill(dim, uid) : meta.color) : 'transparent'}
+              fillOpacity={isPresent ? (cvdSafe ? 1 : isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
+              stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
+              strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
+              strokeWidth={isPresent ? 0.8 : 0.6}
+            />
+          </g>
         );
       })}
 
@@ -214,70 +212,6 @@ export function CapabilitySigil({
         style={{ stroke: healthColor }}
         strokeOpacity={isActive ? 0.95 : 0.55}
         strokeWidth={1.2}
-      />
-    </svg>
-  );
-}
-
-interface EmptyCapabilitySigilProps {
-  size?: number;
-  isHovered?: boolean;
-}
-
-/** Ghost-version of CapabilitySigil rendered in empty grid slots. Same
- *  canonical geometry, all petals at ghost opacity, dashed ring, faint
- *  plus glyph at centre. Used by both variants so empty cells feel like
- *  the same family. */
-export function EmptyCapabilitySigil({ size = 84, isHovered = false }: EmptyCapabilitySigilProps) {
-  const center = size / 2;
-  const innerR = size * 0.30;
-  const outerR = size * 0.46;
-  const ringR = outerR + size * 0.04;
-  const dotR = size * 0.045;
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={`block transition-colors ${isHovered ? 'text-primary' : 'text-foreground'}`}>
-      <circle
-        cx={center} cy={center} r={ringR}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity={isHovered ? 0.6 : 0.3}
-        strokeWidth={1}
-        strokeDasharray="3 4"
-      />
-      <circle cx={center} cy={center} r={innerR} fill="none" stroke="currentColor" strokeOpacity={0.06} strokeWidth={1} />
-      {/* Empty slots always read as dots — the wedge silhouette belongs to a
-          populated sigil, so there is deliberately no wedge branch here. */}
-      {GLYPH_DIMENSIONS.map((dim) => {
-        const angle = PETAL_ANGLES[dim];
-        const rad = ((angle - 90) * Math.PI) / 180;
-        const x = center + (innerR + (outerR - innerR) * 0.55) * Math.cos(rad);
-        const y = center + (innerR + (outerR - innerR) * 0.55) * Math.sin(rad);
-        return (
-          <circle
-            key={`d-${dim}`}
-            cx={x} cy={y} r={dotR}
-            fill="currentColor"
-            fillOpacity={isHovered ? 0.25 : 0.12}
-          />
-        );
-      })}
-      {/* Plus glyph at centre */}
-      <line
-        x1={center - size * 0.07} y1={center}
-        x2={center + size * 0.07} y2={center}
-        stroke="currentColor"
-        strokeOpacity={isHovered ? 0.9 : 0.45}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-      />
-      <line
-        x1={center} y1={center - size * 0.07}
-        x2={center} y2={center + size * 0.07}
-        stroke="currentColor"
-        strokeOpacity={isHovered ? 0.9 : 0.45}
-        strokeWidth={1.6}
-        strokeLinecap="round"
       />
     </svg>
   );

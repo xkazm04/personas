@@ -9892,6 +9892,13 @@ export type Translations = {
       empty_dim_refine_hint: string;
       show_n_more: string;
       show_less: string;
+      model_tier_custom: string;
+      cron_every_minutes: string;
+      cron_every_hours: string;
+      cron_daily: string;
+      cron_weekdays: string;
+      cron_weekends: string;
+      cron_day_names: string;
     };
     diagrams: {
       no_flow_data: string;

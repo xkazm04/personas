@@ -9599,7 +9599,14 @@
       "empty_generic": "Žádný obsah",
       "empty_dim_refine_hint": "Chcete to? Popište níže — přidá se při příštím sestavení.",
       "show_n_more": "+{count} dalších",
-      "show_less": "Zobrazit méně"
+      "show_less": "Zobrazit méně",
+      "model_tier_custom": "Vlastní",
+      "cron_every_minutes": "Každých {n} min",
+      "cron_every_hours": "Každých {n} h",
+      "cron_daily": "Denně",
+      "cron_weekdays": "Ve všední dny",
+      "cron_weekends": "O víkendech",
+      "cron_day_names": "Ne,Po,Út,St,Čt,Pá,So"
     },
     "diagrams": {
       "no_flow_data": "Žádná data toku nejsou k dispozici",

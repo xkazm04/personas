@@ -46,7 +46,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
           {row.triggers.map((tr, i) => (
             <div key={i} className="flex flex-col gap-0.5">
               <span className="typo-body font-semibold text-foreground">{prettyTriggerType(t, tr.trigger_type)}</span>
-              {triggerDetail(tr) && <span className="typo-label text-foreground">{triggerDetail(tr)}</span>}
+              {triggerDetail(t, tr) && <span className="typo-label text-foreground">{triggerDetail(t, tr)}</span>}
             </div>
           ))}
         </div>

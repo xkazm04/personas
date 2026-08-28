@@ -9599,7 +9599,14 @@
       "empty_generic": "Không có nội dung",
       "empty_dim_refine_hint": "Muốn có? Mô tả bên dưới — sẽ được thêm ở lần xây lại tiếp theo.",
       "show_n_more": "+{count} nữa",
-      "show_less": "Thu gọn"
+      "show_less": "Thu gọn",
+      "model_tier_custom": "Tùy chỉnh",
+      "cron_every_minutes": "Mỗi {n} phút",
+      "cron_every_hours": "Mỗi {n} giờ",
+      "cron_daily": "Hằng ngày",
+      "cron_weekdays": "Ngày trong tuần",
+      "cron_weekends": "Cuối tuần",
+      "cron_day_names": "CN,T2,T3,T4,T5,T6,T7"
     },
     "diagrams": {
       "no_flow_data": "Không có dữ liệu luồng",

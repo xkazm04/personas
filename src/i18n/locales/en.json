@@ -9885,7 +9885,14 @@
       "empty_generic": "No content",
       "empty_dim_refine_hint": "Want it? Describe it below — it's added on the next rebuild.",
       "show_n_more": "+{count} more",
-      "show_less": "Show less"
+      "show_less": "Show less",
+      "model_tier_custom": "Custom",
+      "cron_every_minutes": "Every {n} min",
+      "cron_every_hours": "Every {n}h",
+      "cron_daily": "Daily",
+      "cron_weekdays": "Weekdays",
+      "cron_weekends": "Weekends",
+      "cron_day_names": "Sun,Mon,Tue,Wed,Thu,Fri,Sat"
     },
     "diagrams": {
       "no_flow_data": "No flow data available",

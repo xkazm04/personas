@@ -304,28 +304,24 @@ export function InteractiveSigil({
         const iconBox = presence === 'linked' ? iconBoxLinked : iconBoxOther;
         const x = presence === 'linked' ? xLinked : presence === 'shared' ? xShared : xEmpty;
         const y = presence === 'linked' ? yLinked : presence === 'shared' ? yShared : yEmpty;
-        const label = dimText.label[dim];
-        // Localized state, never the raw `presence` token: 'linked' /
-        // 'shared' / 'none' are machine identifiers, and the petal's own
-        // aria-label and the legend already resolve them through
-        // `presence_*`. This overlay was the one surface still printing them.
-        const stateLabel =
-          presence === 'linked'
-            ? c.presence_linked
-            : presence === 'shared'
-              ? c.presence_shared
-              : c.presence_none;
-
+        // No `title=` here, deliberately. This overlay is `pointer-events-none`
+        // (it must be — it sits on top of the petals, which own the hover,
+        // click and keyboard interaction), and a user agent never surfaces a
+        // title on an element that receives no pointer events, so the tooltip
+        // that used to live here could not fire for anyone. The same
+        // localized "{label}: {state}" text now rides the petal itself, as an
+        // SVG `<title>` inside SigilPetal's group — the element hover
+        // actually lands on. Same migration ChannelTotem/ConnectorTotem made.
         return (
           <div
             key={`icon-${dim}`}
+            aria-hidden="true"
             className="absolute flex items-center justify-center pointer-events-none transition-opacity"
             style={{
               left: x - iconBox / 2, top: y - iconBox / 2,
               width: iconBox, height: iconBox,
               opacity: dimOther ? 0.2 : 1,
             }}
-            title={c.presence_tooltip.replace('{label}', label).replace('{state}', stateLabel)}
           >
             {presence === 'linked' ? (
               <>

@@ -90,7 +90,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
           >
             <div className="relative w-[68px] h-[68px] flex items-center justify-center">
               <div className={isExecuting ? 'opacity-40 transition-opacity' : 'transition-opacity'}>
-                <CapabilitySigil uc={uc} size={68} petalStyle="wedge" />
+                <CapabilitySigil uc={uc} size={68} />
               </div>
               {isExecuting ? (
                 <>

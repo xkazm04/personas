@@ -5,7 +5,7 @@ export { InteractiveSigil } from './InteractiveSigil';
 export { DimensionPanel } from './DimensionPanel';
 export { ConnectorTotem } from './ConnectorTotem';
 export { ChannelTotem } from './ChannelTotem';
-export { CapabilitySigil, EmptyCapabilitySigil } from './CapabilitySigil';
+export { CapabilitySigil } from './CapabilitySigil';
 export { SigilLegend } from './SigilLegend';
 export { SigilPatternDefs, petalPatternFill } from './dimPatterns';
 export { DIM_META, PETAL_ANGLES } from './dimMeta';

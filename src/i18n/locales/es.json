@@ -9599,7 +9599,14 @@
       "empty_generic": "Sin contenido",
       "empty_dim_refine_hint": "¿Lo quieres? Descríbelo abajo — se añadirá en la próxima reconstrucción.",
       "show_n_more": "+{count} más",
-      "show_less": "Mostrar menos"
+      "show_less": "Mostrar menos",
+      "model_tier_custom": "Personalizado",
+      "cron_every_minutes": "Cada {n} min",
+      "cron_every_hours": "Cada {n} h",
+      "cron_daily": "A diario",
+      "cron_weekdays": "Días laborables",
+      "cron_weekends": "Fines de semana",
+      "cron_day_names": "Dom,Lun,Mar,Mié,Jue,Vie,Sáb"
     },
     "diagrams": {
       "no_flow_data": "Sin datos de flujo disponibles",
