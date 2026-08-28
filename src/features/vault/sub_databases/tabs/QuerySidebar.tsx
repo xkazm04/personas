@@ -56,10 +56,12 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 placeholder={db.query_title_placeholder}
                 className="flex-1 px-2.5 py-1.5 rounded-modal typo-body bg-background/50 border border-primary/15 text-foreground focus-ring placeholder:text-foreground"
               />
-              <Button variant="ghost" size="icon-sm" onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+              {/* Same reason as the row controls below: icon-only, so the
+                  aria-label is the only accessible name these two have. */}
+              <Button variant="ghost" size="icon-sm" aria-label={t.common.confirm} onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
                 <Check className="w-3.5 h-3.5" />
               </Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => setIsCreating(false)}>
+              <Button variant="ghost" size="icon-sm" aria-label={t.common.cancel} onClick={() => setIsCreating(false)}>
                 <X className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -102,8 +104,15 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${q.last_run_ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
             )}
 
+            {/* Both controls are icon-only, so the aria-label IS the accessible
+                name — without it a screen reader announces two unlabelled
+                "button"s on every saved-query row, one of which deletes. The
+                star's label carries its state, since the glyph's fill is the
+                only thing that distinguishes on from off. */}
             <button
               type="button"
+              aria-label={q.is_favorite ? db.remove_favorite : db.add_favorite}
+              aria-pressed={q.is_favorite}
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(q.id, q.is_favorite); }}
               className={`p-0.5 transition-colors ${q.is_favorite ? 'text-amber-400' : 'text-foreground hover:text-amber-400/50'}`}
             >
@@ -112,6 +121,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
 
             <button
               type="button"
+              aria-label={t.common.delete}
               onClick={(e) => { e.stopPropagation(); deleteQuery(q.id); if (selectedId === q.id) onSelect(''); }}
               className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
             >

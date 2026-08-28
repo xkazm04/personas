@@ -4453,7 +4453,9 @@
       "capability_key_value_hint": "これはキー・バリュー ストアです。SQL ではなく、SCAN、GET、TYPE などのキー コマンドを使用してください。",
       "capability_select_subset": "SELECT のみ",
       "capability_select_subset_hint": "ここでは単一テーブルの単純な SELECT クエリのみ実行できます。WHERE で絞り込み、ORDER BY で並べ替え、LIMIT で件数を制限します。JOIN、集計、CTE、書き込みはサポートされていません。",
-      "query_timeout": "応答待ちがタイムアウトしました。もう一度お試しください。"
+      "query_timeout": "応答待ちがタイムアウトしました。もう一度お試しください。",
+      "add_favorite": "お気に入りに追加",
+      "remove_favorite": "お気に入りから削除"
     },
     "dependencies": {
       "simulate_revocation": "失効をシミュレート",

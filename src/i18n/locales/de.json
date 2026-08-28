@@ -4453,7 +4453,9 @@
       "capability_key_value_hint": "Dies ist ein Schlüssel-Wert-Speicher. Verwenden Sie Schlüsselbefehle wie SCAN, GET und TYPE — kein SQL.",
       "capability_select_subset": "Nur SELECT",
       "capability_select_subset_hint": "Hier laufen nur einfache SELECT-Abfragen auf einer einzelnen Tabelle — filtern mit WHERE, sortieren mit ORDER BY, begrenzen mit LIMIT. JOINs, Aggregationen, CTEs und Schreibvorgänge werden nicht unterstützt.",
-      "query_timeout": "Zeitüberschreitung beim Warten auf eine Antwort. Bitte versuchen Sie es erneut."
+      "query_timeout": "Zeitüberschreitung beim Warten auf eine Antwort. Bitte versuchen Sie es erneut.",
+      "add_favorite": "Zu Favoriten hinzufügen",
+      "remove_favorite": "Aus Favoriten entfernen"
     },
     "dependencies": {
       "simulate_revocation": "Widerruf simulieren",

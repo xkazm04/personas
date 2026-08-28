@@ -4729,6 +4729,8 @@ export type Translations = {
       capability_key_value_hint: string;
       capability_introspection_only: string;
       capability_introspection_only_hint: string;
+      add_favorite: string;
+      remove_favorite: string;
     };
     dependencies: {
       simulate_revocation: string;

@@ -4722,7 +4722,9 @@
       "capability_key_value": "Key-value",
       "capability_key_value_hint": "This is a key-value store. Use key commands like SCAN, GET, and TYPE — not SQL.",
       "capability_introspection_only": "Browse only",
-      "capability_introspection_only_hint": "This connector has no ad-hoc query lane here — browse tables and columns; run queries in the provider's own console."
+      "capability_introspection_only_hint": "This connector has no ad-hoc query lane here — browse tables and columns; run queries in the provider's own console.",
+      "add_favorite": "Add to favorites",
+      "remove_favorite": "Remove from favorites"
     },
     "dependencies": {
       "simulate_revocation": "Simulate Revocation",
