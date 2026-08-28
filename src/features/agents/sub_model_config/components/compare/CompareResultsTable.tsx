@@ -1,12 +1,46 @@
 import { useMemo } from 'react';
-import { Trophy, Target, FileText, Shield } from 'lucide-react';
+import { Trophy, Target, FileText, Shield, AlertCircle } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
-import type { ModelOption, ModelMetrics } from '../../libs/compareHelpers';
+import { rowFailure, type ModelOption, type ModelMetrics } from '../../libs/compareHelpers';
 import { MetricCard, CompareBar } from './CompareMetrics';
 import { OutputPreviews } from './CompareOutputPreviews';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+
+/**
+ * One model's cell for one scenario. A row that never ran says so — before
+ * this, an errored cell rendered a score dash and a 0.0s duration, which is
+ * exactly what an ungraded-but-successful cell renders.
+ */
+function ScenarioCell({ row, score }: { row: LabArenaResult | undefined; score: number | null }) {
+  const { t } = useTranslation();
+  const failure = rowFailure(row);
+
+  if (failure) {
+    return (
+      <Tooltip content={failure.message ?? t.common.unknown_error}>
+        <span tabIndex={0} className="inline-flex items-center gap-1 text-red-300/90">
+          <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+          <span className="typo-caption font-sans">{tokenLabel(t, 'execution', failure.status)}</span>
+        </span>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <>
+      <span className={scoreColor(score)}>{score ?? '-'}</span>
+      {row && (
+        <span className="text-foreground ml-1.5 typo-caption">
+          <Numeric value={row.durationMs / 1000} precision={1} />s
+        </span>
+      )}
+    </>
+  );
+}
 
 export function ComparisonResults({
   modelA,
@@ -101,12 +135,10 @@ export function ComparisonResults({
                   <tr key={scenario} className="border-b border-primary/10">
                     <td className="px-3 py-2 text-foreground max-w-[180px] truncate">{scenario}</td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'A' ? 'font-bold' : ''}`}>
-                      <span className={scoreColor(scoreA)}>{scoreA ?? '-'}</span>
-                      {rA && <span className="text-foreground ml-1.5 typo-caption"><Numeric value={rA.durationMs / 1000} precision={1} />s</span>}
+                      <ScenarioCell row={rA} score={scoreA} />
                     </td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'B' ? 'font-bold' : ''}`}>
-                      <span className={scoreColor(scoreB)}>{scoreB ?? '-'}</span>
-                      {rB && <span className="text-foreground ml-1.5 typo-caption"><Numeric value={rB.durationMs / 1000} precision={1} />s</span>}
+                      <ScenarioCell row={rB} score={scoreB} />
                     </td>
                   </tr>
                 );

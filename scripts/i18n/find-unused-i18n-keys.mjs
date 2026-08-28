@@ -19,16 +19,44 @@
  *       `status_tokens.<category>` as a used prefix.
  *    c. Read ERROR_KEY_MAP from useTranslatedError.ts and mark
  *       `error_registry.<keyPrefix>_message` + `<keyPrefix>_suggestion` used.
- * 3. A key in en.json is USED if itself or any ancestor prefix is referenced.
- * 4. Everything else is reported as unused.
+ * 3. A key in en.json is REFERENCED if itself or any ancestor prefix is
+ *    referenced.
+ * 4. A section named in routeSections.ts is preload-declared, which exempts its
+ *    unreferenced keys from the dead report (step 3b) — but the exemption is now
+ *    counted and attributed rather than being invisible (see below).
+ * 5. Everything else is reported as unused.
  *
  * Prefix-match is intentionally permissive — false negatives (claiming a key
  * is used when it isn't) are recoverable; false positives (claiming a live
  * key is dead) would be destructive. Start permissive, tighten if needed.
  *
+ * ## Preload-only sections — the retired-feature hole
+ *
+ * Step 3b used to fold section names straight into the used-prefix set, so a
+ * single quoted token in routeSections.ts marked the WHOLE section live and the
+ * exemption left no trace in the report. A retired feature whose section name
+ * survived as a preload hint therefore shed no keys: `foundry` sat at 40 keys
+ * with 3 call sites and this scanner reported zero dead keys for it, in all 14
+ * locales, for months (dd338ea25 removed 38 of them by hand).
+ *
+ * Removing the exemption outright is not the fix — measured 2026-08-29 it turns
+ * 118 reported dead keys into 1,786 across 20 sections that are plainly live
+ * (overview 618, vault 246, debt 199), i.e. exactly the destructive
+ * false-positive direction the permissive design exists to avoid.
+ *
+ * So the exemption stays, and the blindness is replaced by a signal that CAN
+ * go red: a preload-declared section in which **zero** keys carry any per-key
+ * reference is a retired feature's catalog surviving as a route hint. That is
+ * the same condition `check-route-sections.mjs` records in its
+ * UNREFERENCED_SECTIONS registry for undeclared sections — declaring the
+ * section in routeSections.ts must not buy an exemption from it. It fails the
+ * run (both modes). Fix by deleting the section's keys and its routeSections.ts
+ * entry, by giving it a real call site, or — for a genuinely dynamic subtree —
+ * by passing `--ignore-prefix=<section>.`.
+ *
  * ## Modes
  *
- *   default        warn-only; logs counts and a sample, exit 0.
+ *   default        warn-only for unused keys; logs counts and a sample.
  *   --strict       exit 1 if any unused keys (use once the backlog is
  *                  drained, then wire into CI).
  *   --json         machine-readable output.
@@ -39,8 +67,10 @@
  *                  scanner can't see through).
  *
  * Exit codes:
- *   0  default mode, OR strict mode with zero unused keys.
- *   1  strict mode with unused keys, OR config error.
+ *   0  default mode with no preload-only section, OR strict mode with zero
+ *      unused keys and no preload-only section.
+ *   1  a preload-only section (either mode), strict mode with unused keys,
+ *      OR config error.
  *
  * Wire into CI via `npm run check:i18n-dead`.
  */
@@ -269,12 +299,18 @@ for (const file of files) {
 // ---------------------------------------------------------------------------
 // `credentials: ['vault', 'connector_roles', 'auth']` — these sections are
 // preloaded by route and never written as `t.auth`. The `auth` section (1 key)
-// was purged because of this; restoring it cost a full revert. Any quoted token
-// in this file that matches a top-level section marks the whole section live.
+// was purged because of this; restoring it cost a full revert.
+//
+// These names go into their OWN set, not `usedPrefixes`: the exemption still
+// suppresses the dead report for the section's keys (removing it produces
+// ~1,668 false positives — see the header), but it is now attributable per
+// section, and a section where the exemption is doing ALL the work is reported
+// as preload-only and fails the run.
+const preloadSections = new Set();
 try {
   const routeSrc = readFileSync(resolve(ROOT, 'src/i18n/routeSections.ts'), 'utf8');
   for (const m of routeSrc.matchAll(/['"]([a-z_][a-zA-Z0-9_]*)['"]/g)) {
-    if (topLevelSections.has(m[1])) usedPrefixes.add(m[1]);
+    if (topLevelSections.has(m[1])) preloadSections.add(m[1]);
   }
 } catch {
   // routeSections.ts missing — section-preload hints unavailable; sections only
@@ -313,7 +349,7 @@ usedPrefixes.add('error_registry.severity_');
 // Step 5 — classify each en key
 // ---------------------------------------------------------------------------
 
-function isUsed(key) {
+function isReferenced(key) {
   // Ignore-prefix overrides (user-supplied via CLI flag).
   for (const p of ignorePrefixes) {
     if (key === p || key.startsWith(p)) return true;
@@ -333,9 +369,38 @@ function isUsed(key) {
   return false;
 }
 
-const unused = [];
+const sectionOf = (key) => key.split('.')[0];
+
+// Keys with no per-key reference of any kind. The preload exemption is applied
+// AFTER this, so it stays measurable instead of disappearing into the used set.
+const unreferenced = [];
 for (const key of enKeys) {
-  if (!isUsed(key)) unused.push(key);
+  if (!isReferenced(key)) unreferenced.push(key);
+}
+
+const sectionTotals = new Map();
+for (const key of enKeys) sectionTotals.set(sectionOf(key), (sectionTotals.get(sectionOf(key)) ?? 0) + 1);
+const sectionUnreferenced = new Map();
+for (const key of unreferenced) {
+  sectionUnreferenced.set(sectionOf(key), (sectionUnreferenced.get(sectionOf(key)) ?? 0) + 1);
+}
+
+// A preload-declared section in which NOTHING is referenced per key. Not a
+// heuristic per-key guess — the whole catalog has no call site, which is the
+// retired-feature shape. `--ignore-prefix=<section>.` opts a genuinely dynamic
+// subtree out.
+const preloadOnlySections = [...preloadSections]
+  .filter((s) => (sectionTotals.get(s) ?? 0) > 0)
+  .filter((s) => (sectionUnreferenced.get(s) ?? 0) === sectionTotals.get(s))
+  .sort();
+
+// Reported dead: unreferenced AND not covered by a preload declaration.
+const unused = unreferenced.filter((k) => !preloadSections.has(sectionOf(k)));
+// Suppressed only by the preload declaration — the previously invisible bucket.
+const sectionExempt = unreferenced.filter((k) => preloadSections.has(sectionOf(k)));
+const exemptBySection = new Map();
+for (const key of sectionExempt) {
+  exemptBySection.set(sectionOf(key), (exemptBySection.get(sectionOf(key)) ?? 0) + 1);
 }
 unused.sort();
 
@@ -358,6 +423,14 @@ if (asJson) {
     scannedFiles: files.length,
     sectionsScanned: [...topLevelSections].sort(),
     ignorePrefixes,
+    preloadSections: [...preloadSections].sort(),
+    preloadOnlySections,
+    sectionExemptCount: sectionExempt.length,
+    sectionExemptBySection: Object.fromEntries(
+      [...exemptBySection.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([s, n]) => [s, { exempt: n, total: sectionTotals.get(s) ?? 0 }]),
+    ),
     bySection: Object.fromEntries(
       [...bySection.entries()].map(([k, v]) => [k, { count: v.length, keys: v }]),
     ),
@@ -367,10 +440,27 @@ if (asJson) {
   const pct = enKeys.size ? ((unused.length / enKeys.size) * 100).toFixed(1) : '0.0';
   console.log(`i18n dead-key scan — ${enKeys.size} keys in en.json across ${files.length} source files`);
   console.log(`  unused: ${unused.length} (${pct}%)`);
+  console.log(
+    `  exempt via routeSections.ts preload declaration: ${sectionExempt.length} across ${exemptBySection.size} section(s)`,
+  );
   if (ignorePrefixes.length) {
     console.log(`  ignore-prefix: ${ignorePrefixes.join(', ')}`);
   }
   console.log('');
+
+  if (exemptBySection.size) {
+    const top = [...exemptBySection.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    console.log('Preload-exempt (unreferenced keys the section declaration hides)');
+    console.log('Section          | Exempt | Total');
+    console.log('-----------------|--------|------');
+    for (const [section, n] of top) {
+      console.log(`${section.padEnd(16)} | ${String(n).padStart(6)} | ${String(sectionTotals.get(section) ?? 0).padStart(5)}`);
+    }
+    if (exemptBySection.size > top.length) {
+      console.log(`  … and ${exemptBySection.size - top.length} more section(s)`);
+    }
+    console.log('');
+  }
 
   if (unused.length) {
     const sections = [...bySection.entries()].sort((a, b) => b[1].length - a[1].length);
@@ -397,6 +487,22 @@ if (asJson) {
   } else {
     console.log('No unused keys detected.');
   }
+}
+
+// A preload-declared section with zero referenced keys fails in BOTH modes: it
+// is a structural assertion, not a per-key heuristic, so the warn-only posture
+// that protects against false positives does not apply to it.
+if (preloadOnlySections.length) {
+  console.error(
+    `\nFAIL: ${preloadOnlySections.length} preload-only section(s) — declared in src/i18n/routeSections.ts, but NOT ONE of their keys has a call site anywhere in src/:`,
+  );
+  for (const s of preloadOnlySections) {
+    console.error(`  - ${s} (${sectionTotals.get(s)} key(s), 0 referenced) — dead weight in all 14 locales`);
+  }
+  console.error(
+    'A retired feature left its section name behind as a route preload hint, which exempts the whole catalog from the dead-key scan. Delete the keys and the routeSections.ts entry, give the section a real call site, or pass --ignore-prefix=<section>. if it is genuinely read dynamically.',
+  );
+  process.exit(1);
 }
 
 if (strictMode && unused.length) {

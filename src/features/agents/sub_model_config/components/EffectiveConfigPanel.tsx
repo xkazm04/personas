@@ -52,20 +52,38 @@ function FieldRow({ label, field, workspaceName, mask }: {
   );
 }
 
+/** Calm, geometry-matched ghost for the seven field rows. Delayed past 120ms so a
+    fast resolve never paints it (overview-loading.md law 3). Never `animate-pulse`. */
+function ConfigGhostRows() {
+  return (
+    <div aria-hidden className="px-2.5 pb-2 space-y-0.5 border-t border-primary/5">
+      {Array.from({ length: 7 }, (_, i) => (
+        <div key={i} className="flex items-center justify-between gap-2 py-1">
+          <div
+            className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${['w-20', 'w-16', 'w-24', 'w-14'][i % 4]}`}
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          />
+          <div
+            className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${['w-24', 'w-32', 'w-20', 'w-28'][i % 4]}`}
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelProps) {
   const { t, tx } = useTranslation();
   const mc = t.agents.model_config;
   const [expanded, setExpanded] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="bg-secondary/20 border border-primary/10 rounded-card p-2.5 animate-pulse">
-        <div className="h-4 bg-secondary/40 rounded w-32" />
-      </div>
-    );
-  }
+  // A refresh never hides config already on screen (law 1); the flag only decides
+  // what an EMPTY panel shows. The header/toggle is permanent chrome (law 5) and
+  // is never inside a loading branch.
+  const pending = !config && !!loading;
 
-  if (!config) return null;
+  if (!config && !pending) return null;
 
   // Count how many fields are inherited (not agent-level and not default).
   // EVERY row this panel renders is counted, `authToken` included. It was the
@@ -75,7 +93,8 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
   // "where did this come from" has a security answer. The counter states how
   // many values arrived from elsewhere; it never states any of them, and the
   // token's own value stays masked in `FieldRow` regardless.
-  const fields = [
+  // `config` is null while the panel ghosts (loading with nothing cached).
+  const fields = config ? [
     config.model,
     config.provider,
     config.baseUrl,
@@ -83,7 +102,7 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
     config.maxBudgetUsd,
     config.maxTurns,
     config.promptCachePolicy,
-  ];
+  ] : [];
   const inheritedCount = fields.filter(f => f.source === 'workspace' || f.source === 'global').length;
   const overriddenCount = fields.filter(f => f.isOverridden).length;
 
@@ -99,6 +118,13 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
         <span className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
           <Layers className="w-3 h-3 text-primary/60" />
           {mc.effective_config}
+          {pending && (
+            <span
+              aria-hidden
+              className="h-3 w-16 rounded bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: '120ms' }}
+            />
+          )}
           {hasInheritance && (
             <span className="text-[10px] text-foreground">
               {inheritedCount > 0 && tx(mc.inherited, { count: inheritedCount })}
@@ -114,7 +140,9 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
         )}
       </button>
 
-      {expanded && (
+      {expanded && pending && <ConfigGhostRows />}
+
+      {expanded && config && (
         <div className="px-2.5 pb-2 space-y-0.5 border-t border-primary/5">
           {config.workspaceName && (
             <div className="pt-1.5 pb-0.5">
