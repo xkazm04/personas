@@ -21248,6 +21248,7 @@
     "building_autonomously": "Athena تبني {name} بشكل مستقل…",
     "building_name_autonomously": "جارٍ بناء {name} بشكل مستقل",
     "bun_missing": "Bun غير مثبَّت — يحتاجه Studio لإنشاء المشاريع وتشغيلها. ثبّته من bun.sh (أو عيّن PERSONAS_BUN_BIN)، ثم أعد تشغيل التطبيق.",
+    "bun_unknown": "تعذّر التحقق مما إذا كان Bun مثبتًا — يحتاجه الاستوديو لإنشاء المشاريع وتشغيلها. أعد المحاولة، أو ثبّته من bun.sh ثم أعد تشغيل التطبيق.",
     "close_plan": "إغلاق الخطة",
     "close_tab": "إغلاق {name}",
     "collapse": "طي",

@@ -13,6 +13,7 @@
   "building_autonomously": "Athenaが{name}を自律的にビルド中…",
   "building_name_autonomously": "{name}を自律ビルド中",
   "bun_missing": "Bunがインストールされていません — Studioがプロジェクトを生成・実行するために必要です。bun.shからインストールするか、PERSONAS_BUN_BINを設定してアプリを再起動してください。",
+  "bun_unknown": "Bun がインストールされているか確認できませんでした。Studio はプロジェクトの作成と実行に Bun を必要とします。再試行するか、bun.sh からインストールしてアプリを再起動してください。",
   "close_plan": "プランを閉じる",
   "close_tab": "{name}を閉じる",
   "collapse": "折りたたむ",

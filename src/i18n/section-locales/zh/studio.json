@@ -13,6 +13,7 @@
   "building_autonomously": "Athena 正在自主构建 {name}…",
   "building_name_autonomously": "正在自主构建 {name}",
   "bun_missing": "未安装 Bun — Studio 需要它来搭建和运行项目。请从 bun.sh 安装（或设置 PERSONAS_BUN_BIN），然后重启应用。",
+  "bun_unknown": "无法确认是否已安装 Bun — Studio 需要它来创建和运行项目。请重试，或从 bun.sh 安装后重启应用。",
   "close_plan": "关闭计划",
   "close_tab": "关闭 {name}",
   "collapse": "折叠",

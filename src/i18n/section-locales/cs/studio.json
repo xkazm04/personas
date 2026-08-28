@@ -13,6 +13,7 @@
   "building_autonomously": "Athena autonomně sestavuje {name}…",
   "building_name_autonomously": "Autonomní sestavení {name}",
   "bun_missing": "Bun není nainstalován — Studio ho potřebuje k vytvoření a spuštění projektů. Nainstalujte ho z bun.sh (nebo nastavte PERSONAS_BUN_BIN) a poté restartujte aplikaci.",
+  "bun_unknown": "Nepodařilo se ověřit, zda je Bun nainstalovaný — Studio ho potřebuje k vytváření a spouštění projektů. Zkuste to znovu, nebo ho nainstalujte z bun.sh a restartujte aplikaci.",
   "close_plan": "Zavřít plán",
   "close_tab": "Zavřít {name}",
   "collapse": "Sbalit",

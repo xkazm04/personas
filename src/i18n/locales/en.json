@@ -21314,6 +21314,7 @@
     "project_name_placeholder": "my-project",
     "what_to_build": "What do you want to build?",
     "bun_missing": "Bun isn't installed — Studio needs it to scaffold and run projects. Install it from bun.sh (or set PERSONAS_BUN_BIN), then restart the app.",
+    "bun_unknown": "Couldn't check whether Bun is installed — Studio needs it to scaffold and run projects. Retry, or install it from bun.sh and restart the app.",
     "starter_portfolio": "Portfolio",
     "starter_landing": "Landing page",
     "starter_dashboard": "Dashboard",

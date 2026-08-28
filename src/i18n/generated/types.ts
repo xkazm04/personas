@@ -21320,6 +21320,7 @@ export type Translations = {
     project_name_placeholder: string;
     what_to_build: string;
     bun_missing: string;
+    bun_unknown: string;
     starter_portfolio: string;
     starter_landing: string;
     starter_dashboard: string;

@@ -21248,6 +21248,7 @@
     "building_autonomously": "Athena đang tự động xây dựng {name}…",
     "building_name_autonomously": "Đang tự động xây dựng {name}",
     "bun_missing": "Bun chưa được cài đặt — Studio cần Bun để khởi tạo và chạy dự án. Cài đặt từ bun.sh (hoặc thiết lập PERSONAS_BUN_BIN), sau đó khởi động lại ứng dụng.",
+    "bun_unknown": "Không kiểm tra được Bun đã được cài đặt hay chưa — Studio cần Bun để tạo và chạy dự án. Hãy thử lại, hoặc cài từ bun.sh rồi khởi động lại ứng dụng.",
     "close_plan": "Đóng kế hoạch",
     "close_tab": "Đóng {name}",
     "collapse": "Thu gọn",

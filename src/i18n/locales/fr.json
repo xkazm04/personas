@@ -21248,6 +21248,7 @@
     "building_autonomously": "Athena construit {name} en autonomie…",
     "building_name_autonomously": "Construction de {name} en autonomie",
     "bun_missing": "Bun n'est pas installé — Studio en a besoin pour créer et exécuter les projets. Installez-le depuis bun.sh (ou définissez PERSONAS_BUN_BIN), puis redémarrez l'application.",
+    "bun_unknown": "Impossible de vérifier si Bun est installé — Studio en a besoin pour créer et lancer des projets. Réessayez, ou installez-le depuis bun.sh puis redémarrez l'application.",
     "close_plan": "Fermer le plan",
     "close_tab": "Fermer {name}",
     "collapse": "Réduire",

@@ -44,19 +44,33 @@ export default function StudioVisionStart({
   const [vision, setVision] = useState('');
   // H8 preflight — Studio's scaffold + dev server require Bun. Check up front so
   // a missing runtime shows install guidance instead of a mid-scaffold failure.
-  const [bunMissing, setBunMissing] = useState(false);
+  //
+  // Three outcomes, three answers. The probe used to collapse into a boolean, so
+  // a rejected `webbuild_bun_status` was recorded as `bunMissing = false` — a
+  // check that could not RUN read exactly like one that passed, and the Build
+  // button went live on no evidence. studioStore's own `ensureNextReady` states
+  // the rule this now follows: an unknown is not a pass. It is not a hard fail
+  // either — the probe can reject for transient IPC reasons — so `unknown` says
+  // so and offers a retry rather than silently deciding either way.
+  const [bunState, setBunState] = useState<'checking' | 'present' | 'missing' | 'unknown'>(
+    'checking',
+  );
+  const [probe, setProbe] = useState(0);
   useEffect(() => {
     let alive = true;
+    setBunState('checking');
     webbuildBunStatus()
-      .then((path) => alive && setBunMissing(!path))
+      .then((path) => alive && setBunState(path ? 'present' : 'missing'))
       .catch((err) => {
         silentCatch('StudioVisionStart:bunStatus')(err);
-        if (alive) setBunMissing(false);
+        if (alive) setBunState('unknown');
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [probe]);
+  const bunMissing = bunState === 'missing';
+  const bunUnknown = bunState === 'unknown';
 
   if (busy) {
     return (
@@ -142,6 +156,24 @@ export default function StudioVisionStart({
           </div>
         )}
 
+        {bunUnknown && (
+          <div
+            data-testid="studio-vision-bun-unknown"
+            className="mb-4 flex items-start gap-2 rounded-input border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="flex-1 leading-relaxed">{t.studio.bun_unknown}</span>
+            <button
+              type="button"
+              data-testid="studio-vision-bun-retry"
+              onClick={() => setProbe((n) => n + 1)}
+              className="shrink-0 rounded-interactive border border-warning/40 px-2 py-0.5 text-xs font-medium text-warning transition-colors hover:bg-warning/20"
+            >
+              {t.common.retry}
+            </button>
+          </div>
+        )}
+
         {error && (
           <div
             data-testid="studio-vision-error"
@@ -157,7 +189,7 @@ export default function StudioVisionStart({
           variant="primary"
           className="w-full"
           icon={<Sparkles className="h-4 w-4" />}
-          disabled={!canSubmit || bunMissing}
+          disabled={!canSubmit || bunMissing || bunUnknown}
           onClick={() => onSubmit(name.trim(), vision.trim())}
         >
           {t.studio.build_with_athena}
