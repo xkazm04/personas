@@ -79,8 +79,12 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
   // `cockpit` — plugins/companion inbox helpers.
   plugins: ['plugins', 'media_studio', 'research_lab', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
-  // Studio uses a local COPY constant (i18n deferred); only BASE_SECTIONS needed.
-  studio: [],
+  // `studio` — the Athena web-build Studio surface. StudioAttention is mounted
+  // app-wide (DEV-only) and reads this section too, but it only renders once a
+  // Studio project is mid-build, i.e. after the Studio route has already
+  // resolved the section — so base coverage would buy nothing and cost every
+  // locale a cold-start chunk fetch for a surface production never mounts.
+  studio: ['studio'],
   schedules: ['schedules', 'triggers', 'event_types'],
   settings: ['settings', 'models', 'tiers', 'auth', 'sharing'],
 };

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 
 // C3 — one-click next steps. NOT hardcoded generic actions: these are derived
@@ -7,6 +8,10 @@ import { useStudioStore } from './studioStore';
 // stays in control of direction (addresses the "decisions were non-existent"
 // feedback at the chip level too).
 export default function StudioQuickActions({ id }: { id: string }) {
+  // The chip LABEL is UI the user reads and is translated; the `prompt` is the
+  // instruction sent to the build CLI and deliberately stays English (see
+  // .claude/rules/i18n.md → "What NOT to Translate").
+  const { t, tx } = useTranslation();
   const sendTurn = useStudioStore((s) => s.sendTurn);
   const phases = useStudioStore((s) => s.runtimes[id]?.phases);
 
@@ -20,12 +25,12 @@ export default function StudioQuickActions({ id }: { id: string }) {
     // Pre-plan: help the user get a plan + a starting decision on the table.
     chips.push(
       {
-        label: 'Plan it out',
+        label: t.studio.qa_plan_it_out,
         prompt:
           'Lay out your build plan (emit BUILD_PLAN) and propose where to start — then ask me to confirm the direction before you build anything.',
       },
       {
-        label: 'What should we build?',
+        label: t.studio.qa_what_should_we_build,
         prompt:
           'Give me 2-3 concrete options for what to build first, with a recommendation, and ask me to pick.',
       },
@@ -33,18 +38,18 @@ export default function StudioQuickActions({ id }: { id: string }) {
   } else {
     if (active) {
       chips.push({
-        label: `Refine "${active.title}"`,
+        label: tx(t.studio.qa_refine, { title: active.title }),
         prompt: `Refine the current phase ("${active.title}") — review it as a demanding design lead and fix the weakest spots (empty/loading/error states, edge cases, polish). Keep it honest.`,
       });
     }
     for (const p of pending) {
       chips.push({
-        label: `Build "${p.title}"`,
+        label: tx(t.studio.qa_build_phase, { title: p.title }),
         prompt: `Build the "${p.title}" phase next. Before writing any code, briefly propose your approach (2-3 sentences, and any real fork as options) and confirm the direction with me — then build it to a solid, honest state.`,
       });
     }
     chips.push({
-      label: "What's next?",
+      label: t.studio.qa_whats_next,
       prompt:
         "What's the highest-value next step? Recommend one, lay out 2-3 concrete options, and ask me to pick before building — I want to steer direction.",
     });

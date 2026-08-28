@@ -11,6 +11,7 @@ import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
+import { useStudioHistory } from './studioHistory';
 import { previewTargetOrigin } from './studioBuildModel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
@@ -19,13 +20,6 @@ import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 // building while you're on another tab or another app module. Previews are kept
 // "warm" (every live tab mounted, only the active visible) so switching tabs is
 // instant + lossless instead of reloading the dev server each time (B1).
-const COPY = {
-  scaffolding: 'Scaffolding with Bun — this can take a minute…',
-  starting: 'Starting the dev server…',
-  error: 'Something went wrong starting this project.',
-  empty: 'No project open — use + to open an existing project or start a new one.',
-};
-
 export default function StudioPage() {
   const { t } = useTranslation();
   const [projects, setProjects] = useState<DevProject[]>([]);
@@ -97,7 +91,14 @@ export default function StudioPage() {
 
   const refreshProjects = useCallback(async () => {
     try {
-      setProjects(await webbuildListProjects());
+      const list = await webbuildListProjects();
+      setProjects(list);
+      // The one place in Studio holding the authoritative project list, so the
+      // one place that can reap persisted history for projects that are gone.
+      // Without it `byProject` and `openTabIds` only ever grew: a deleted
+      // project kept its saved log forever, and its stale tab id was re-walked
+      // by `rehydrate` on every launch. A prune with nothing stale is a no-op.
+      useStudioHistory.getState().prune(list.map((p) => p.id));
     } catch (e) {
       toastCatch('load projects')(e);
     }
@@ -267,6 +268,17 @@ export default function StudioPage() {
                   src={`${previewUrls[id]}${route === '/' ? '' : route}`}
                   title={isActive ? 'preview' : `preview-${id}`}
                   aria-hidden={!isActive}
+                  // `opacity-0` + `pointer-events-none` hides a warm preview
+                  // from the mouse and from sight, and from neither the Tab key
+                  // nor the accessibility tree's focus order: an iframe stays
+                  // focusable, and so does every control inside its document.
+                  // Tabbing out of the dock therefore walked into an invisible
+                  // copy of another project's site — and `aria-hidden` over
+                  // focusable content is itself the ARIA violation. `inert`
+                  // (Chromium 102+, so every WebView2 this ships on) is the one
+                  // attribute that removes a subtree from focus AND from the
+                  // a11y tree; `tabIndex={-1}` alone would not reach inside.
+                  {...(isActive ? {} : { inert: true, tabIndex: -1 })}
                   className={`absolute inset-0 h-full w-full border-0 bg-white transition-opacity duration-200 ${
                     isActive ? 'opacity-100' : 'pointer-events-none opacity-0'
                   }`}
@@ -282,7 +294,7 @@ export default function StudioPage() {
                   <button
                     type="button"
                     onClick={reloadActive}
-                    aria-label="Reload preview"
+                    aria-label={t.studio.reload_preview}
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
                   >
                     <RotateCcw className="h-4 w-4" />
@@ -312,7 +324,7 @@ export default function StudioPage() {
                         }
                       }}
                       spellCheck={false}
-                      aria-label="Preview path"
+                      aria-label={t.studio.preview_path}
                       placeholder="/"
                       className="min-w-0 flex-1 bg-transparent px-2 font-mono text-xs text-foreground/85 outline-none placeholder:text-foreground/40"
                     />
@@ -373,11 +385,11 @@ export default function StudioPage() {
                   <Bot className="h-5 w-5 text-primary" />
                   <span className="text-md text-foreground/80">
                     {active.phase === 'scaffolding'
-                      ? COPY.scaffolding
+                      ? t.studio.scaffolding
                       : active.phase === 'starting'
-                        ? COPY.starting
+                        ? t.studio.starting
                         : active.phase === 'error'
-                          ? COPY.error
+                          ? t.studio.start_error
                           : active.name}
                   </span>
                   {/* A boot that gave up now says so, and a dead end needs a way
@@ -398,7 +410,7 @@ export default function StudioPage() {
               </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                <p className="typo-caption max-w-sm">{COPY.empty}</p>
+                <p className="typo-caption max-w-sm">{t.studio.no_project_open}</p>
               </div>
             )}
           </>

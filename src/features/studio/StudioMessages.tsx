@@ -5,6 +5,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import StudioDecision from './StudioDecision';
 
@@ -81,11 +82,14 @@ const HISTORY_BUBBLE =
 // blinking in place) over shimmer skeleton lines standing in for the reply that's
 // about to land — so the bubble never sits empty, and its final size doesn't jump.
 const Working = ({ autonomous, name }: { autonomous: boolean; name: string }) => {
+  const { t, tx } = useTranslation();
   const { shouldAnimate } = useMotion();
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
       <span className="flex items-center gap-1.5 text-md text-foreground/80">
-        {autonomous ? `Building ${name} autonomously` : 'Athena is working'}
+        {autonomous
+          ? tx(t.studio.building_name_autonomously, { name })
+          : t.studio.athena_is_working}
         <span className="flex gap-0.5">
           {[0, 1, 2].map((i) => (
             <motion.span
@@ -113,6 +117,7 @@ const Working = ({ autonomous, name }: { autonomous: boolean; name: string }) =>
 // - expanded: a full, readable conversation column (all turns + live stream +
 //   decision), meant to fill the dock's scrollable panel body.
 export default function StudioMessages({ expanded = false }: { expanded?: boolean }) {
+  const { t, tx } = useTranslation();
   const activeId = useStudioStore((s) => s.activeId);
   const rt = useStudioStore((s) => (s.activeId ? s.runtimes[s.activeId] : undefined));
   const sendTurn = useStudioStore((s) => s.sendTurn);
@@ -192,7 +197,18 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
           className="pointer-events-auto inline-flex items-center gap-1 self-start rounded-full border border-border bg-background/85 px-2 py-0.5 typo-caption text-foreground/60 shadow-elevation-2 backdrop-blur transition-colors hover:text-foreground"
         >
           <History className="h-3 w-3" />
-          {showAll ? 'Hide earlier' : `${history.length} earlier ${history.length === 1 ? 'message' : 'messages'}`}
+          {/* The count/plural pair is selected at the CALL SITE, per the repo's
+              _one/_other convention — the previous form hard-coded English
+              grammar (`message`/`messages`) inside the component, where no
+              locale file could reach it. */}
+          {showAll
+            ? t.studio.hide_earlier
+            : tx(
+                history.length === 1
+                  ? t.studio.earlier_messages_one
+                  : t.studio.earlier_messages_other,
+                { count: history.length },
+              )}
         </button>
       )}
 

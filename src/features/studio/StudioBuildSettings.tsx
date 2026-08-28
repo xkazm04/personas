@@ -1,5 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Settings2 } from 'lucide-react';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import StudioDesignKnobs from './StudioDesignKnobs';
 import type { BuildEffort, BuildStyle } from '@/api/webbuild';
@@ -8,24 +10,36 @@ import type { BuildEffort, BuildStyle } from '@/api/webbuild';
 // popover off the chat input. Writes to the active runtime so every turn (manual,
 // seed, or autonomous) picks them up. Effort trades speed for quality; voice sets
 // how much Athena explains as she works.
-const EFFORTS: { value: BuildEffort; label: string }[] = [
-  { value: 'low', label: 'Fast' },
-  { value: 'medium', label: 'Balanced' },
-  { value: 'high', label: 'Deep' },
-  { value: 'xhigh', label: 'Max' },
+//
+// The option tables carry i18n KEY NAMES, not English labels: `value` is a
+// backend enum token and must stay stable, while what the user reads is looked
+// up per render from the active locale (.claude/rules/i18n.md → "Constants with
+// Labels").
+const EFFORTS: {
+  value: BuildEffort;
+  labelKey: 'effort_fast' | 'effort_balanced' | 'effort_deep' | 'effort_max';
+}[] = [
+  { value: 'low', labelKey: 'effort_fast' },
+  { value: 'medium', labelKey: 'effort_balanced' },
+  { value: 'high', labelKey: 'effort_deep' },
+  { value: 'xhigh', labelKey: 'effort_max' },
 ];
-const STYLES: { value: BuildStyle; label: string }[] = [
-  { value: 'concise', label: 'Concise' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'teaching', label: 'Teaching' },
+const STYLES: {
+  value: BuildStyle;
+  labelKey: 'voice_concise' | 'voice_balanced' | 'voice_teaching';
+}[] = [
+  { value: 'concise', labelKey: 'voice_concise' },
+  { value: 'balanced', labelKey: 'voice_balanced' },
+  { value: 'teaching', labelKey: 'voice_teaching' },
 ];
 // C8 — curated MCP connectors (ids must match the Rust registry in webbuild::mcp).
-const MCP_CONNECTORS: { id: string; label: string }[] = [
-  { id: 'context7', label: 'Docs' },
-  { id: 'playwright', label: 'Browser' },
+const MCP_CONNECTORS: { id: string; labelKey: 'connector_docs' | 'connector_browser' }[] = [
+  { id: 'context7', labelKey: 'connector_docs' },
+  { id: 'playwright', labelKey: 'connector_browser' },
 ];
 
 export default function StudioBuildSettings({ id }: { id: string }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const effort = useStudioStore((s) => s.runtimes[id]?.effort ?? 'xhigh');
   const style = useStudioStore((s) => s.runtimes[id]?.style ?? 'balanced');
@@ -33,13 +47,21 @@ export default function StudioBuildSettings({ id }: { id: string }) {
   const mcp = useStudioStore((s) => s.runtimes[id]?.mcp ?? []);
   const setBuildSettings = useStudioStore((s) => s.setBuildSettings);
 
+  // Escape closes it, like every other dismissible surface in the app. The
+  // click-away layer below stays: a cross-origin iframe swallows its own clicks,
+  // so a mousedown on the live preview never reaches this document and the
+  // hook's outside-click half cannot see it.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(wrapRef, open, close);
+
   return (
-    <div className="relative shrink-0">
+    <div ref={wrapRef} className="relative shrink-0">
       <button
         type="button"
         data-testid="studio-settings"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Build settings"
+        aria-label={t.studio.build_settings}
         aria-haspopup="dialog"
         aria-expanded={open}
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
@@ -59,44 +81,44 @@ export default function StudioBuildSettings({ id }: { id: string }) {
           data-testid="studio-settings-panel"
           className="absolute bottom-11 right-0 z-30 w-60 rounded-modal border border-border bg-background/95 p-3 shadow-elevation-4 backdrop-blur"
         >
-          <Row label="Effort" hint="speed ↔ quality">
+          <Row label={t.studio.effort} hint={t.studio.effort_hint}>
             {EFFORTS.map((o) => (
               <Seg
                 key={o.value}
                 active={effort === o.value}
                 onClick={() => setBuildSettings(id, { effort: o.value })}
               >
-                {o.label}
+                {t.studio[o.labelKey]}
               </Seg>
             ))}
           </Row>
-          <Row label="Voice" hint="how much Athena explains">
+          <Row label={t.studio.voice} hint={t.studio.voice_hint}>
             {STYLES.map((o) => (
               <Seg
                 key={o.value}
                 active={style === o.value}
                 onClick={() => setBuildSettings(id, { style: o.value })}
               >
-                {o.label}
+                {t.studio[o.labelKey]}
               </Seg>
             ))}
           </Row>
-          <Row label="Plan first" hint="approve before building">
+          <Row label={t.studio.plan_first} hint={t.studio.plan_first_hint}>
             <Seg active={!gatePlan} onClick={() => setBuildSettings(id, { gatePlan: false })}>
-              Off
+              {t.studio.plan_first_off}
             </Seg>
             <Seg active={gatePlan} onClick={() => setBuildSettings(id, { gatePlan: true })}>
-              On
+              {t.studio.plan_first_on}
             </Seg>
           </Row>
           <div className="my-2 border-t border-border/60" />
           <div className="mb-1.5 flex items-baseline justify-between">
-            <span className="typo-caption text-foreground/70">Nudge the design</span>
-            <span className="text-[10px] text-foreground/40">applies now</span>
+            <span className="typo-caption text-foreground/70">{t.studio.nudge_the_design}</span>
+            <span className="text-[10px] text-foreground/40">{t.studio.applies_now}</span>
           </div>
           <StudioDesignKnobs id={id} onApply={() => setOpen(false)} />
           <div className="my-2 border-t border-border/60" />
-          <Row label="Connectors" hint="extra tools">
+          <Row label={t.studio.connectors} hint={t.studio.connectors_hint}>
             {MCP_CONNECTORS.map((c) => {
               const on = mcp.includes(c.id);
               return (
@@ -109,7 +131,7 @@ export default function StudioBuildSettings({ id }: { id: string }) {
                     })
                   }
                 >
-                  {c.label}
+                  {t.studio[c.labelKey]}
                 </Seg>
               );
             })}
