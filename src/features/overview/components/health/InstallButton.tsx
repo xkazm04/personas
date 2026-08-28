@@ -1,5 +1,4 @@
 import { CheckCircle2, XCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import type { HealthCheckStatus } from '@/lib/bindings/HealthCheckStatus';
 import { Button } from '@/features/shared/components/buttons';
@@ -26,12 +25,21 @@ export function InstallButton({
   if (installState.phase === 'downloading' || installState.phase === 'installing') {
     return (
       <div className="mt-2 space-y-1.5">
-        <div className="flex items-center gap-2">
-          <LoadingSpinner size="xs" className="text-violet-400" />
-          <span className="typo-body text-violet-300">
-            {installState.phase === 'downloading' ? t.overview.install_button.downloading : t.overview.install_button.installing}
-          </span>
-        </div>
+        {/*
+          Action-side busy state: this row reports an install the user just
+          started, so doctrine requires a REAL spinner (inline-busy-state.md).
+          feedback/LoadingSpinner renders null, which left a blank hole here.
+          Button owns the only sanctioned action spinner in the app, and
+          `loading` already makes it inert — no onClick is wired.
+        */}
+        <Button
+          variant="ghost"
+          size="xs"
+          loading
+          className="px-0 text-violet-300 hover:bg-transparent"
+        >
+          {installState.phase === 'downloading' ? t.overview.install_button.downloading : t.overview.install_button.installing}
+        </Button>
         <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
           <div
             className="h-full bg-violet-500 rounded-full transition-all duration-300"
