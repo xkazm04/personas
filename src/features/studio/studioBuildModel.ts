@@ -34,3 +34,35 @@ export function phaseProgress(phases: BuildPhase[]): {
     active: phases.find((p) => p.status === 'active'),
   };
 }
+
+/** The minimum a tab's status dot needs to know — kept structural so the mapping
+ *  is testable without constructing a whole `ProjectRuntime`. */
+export interface TabDotState {
+  question: string | null;
+  autonomous: boolean;
+  busy: boolean;
+  phase: string;
+}
+
+/**
+ * Tailwind classes for a project tab's status dot.
+ *
+ * The tab strip is peripheral vision: it is visible from every Studio screen and
+ * the eye is pulled to whatever moves in it. The earlier mapping animated for the
+ * whole of `busy || autonomous` — and an autonomous run is up to AUTO_MAX_TURNS
+ * chained turns, so the dot pulsed continuously for many minutes at a stretch. A
+ * state CHANGE may announce itself; a steady state never animates, or the strip
+ * becomes peripheral vision with a flashlight in it.
+ *
+ * So exactly one state animates, and it is the only one that is actionable: the
+ * build has halted on a question and is waiting on the user. Building, live,
+ * error and idle are all steady and are told apart by hue — which they already
+ * were, which is what made the pulse redundant even while it was firing.
+ */
+export function tabDotClass(rt: TabDotState): string {
+  if (rt.question) return 'bg-status-warning animate-pulse';
+  if (rt.autonomous || rt.busy) return 'bg-primary';
+  if (rt.phase === 'live') return 'bg-status-success';
+  if (rt.phase === 'error') return 'bg-status-error';
+  return 'bg-foreground/30';
+}

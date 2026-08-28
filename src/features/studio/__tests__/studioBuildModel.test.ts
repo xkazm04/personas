@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MOCK_PHASES, phaseProgress } from '../studioBuildModel';
+import { MOCK_PHASES, phaseProgress, tabDotClass } from '../studioBuildModel';
+import type { TabDotState } from '../studioBuildModel';
 
 // The Studio context shipped with zero tests. These pin the two properties the
 // build plan's honesty rests on: the placeholder plan claims no completed work,
@@ -47,5 +48,47 @@ describe('phaseProgress', () => {
     ]);
     expect(all.done).toBe(all.total);
     expect(all.active).toBeUndefined();
+  });
+});
+
+describe('tabDotClass (the tab strip is peripheral vision)', () => {
+  const dot = (over: Partial<TabDotState> = {}): string =>
+    tabDotClass({ question: null, autonomous: false, busy: false, phase: 'idle', ...over });
+
+  it('never animates a steady state — including a whole autonomous run', () => {
+    // Regression guard: the dot used to carry `animate-pulse` for the entire
+    // `busy || autonomous` state, and an autonomous run is up to AUTO_MAX_TURNS
+    // chained turns — many minutes of continuous motion in the one region
+    // visible from every Studio screen.
+    for (const steady of [
+      dot({ autonomous: true }),
+      dot({ busy: true }),
+      dot({ autonomous: true, busy: true, phase: 'live' }),
+      dot({ phase: 'live' }),
+      dot({ phase: 'error' }),
+      dot(),
+    ]) {
+      expect(steady).not.toContain('animate-');
+    }
+  });
+
+  it('animates only the one actionable state — a build halted on a question', () => {
+    expect(dot({ question: 'Which brand colour?' })).toContain('animate-pulse');
+  });
+
+  it('lets a pending question outrank the building hue, since it is what stopped it', () => {
+    expect(dot({ question: 'pick one', autonomous: true, busy: true })).toBe(
+      dot({ question: 'pick one' }),
+    );
+  });
+
+  it('tells every steady state apart by hue alone — animation carries no state', () => {
+    const steady = [
+      dot({ autonomous: true }),
+      dot({ phase: 'live' }),
+      dot({ phase: 'error' }),
+      dot(),
+    ];
+    expect(new Set(steady).size).toBe(steady.length);
   });
 });

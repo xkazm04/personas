@@ -7,7 +7,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { webbuildNextReady } from '@/api/webbuild';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
-import { phaseProgress } from './studioBuildModel';
+import { phaseProgress, tabDotClass } from './studioBuildModel';
 import { silentCatch } from '@/lib/silentCatch';
 
 // Browser-style tab strip. Each open project is a tab carrying its own live
@@ -43,14 +43,7 @@ export default function StudioTabBar({
       for (const id of s.tabOrder) {
         const rt = s.runtimes[id];
         if (!rt) continue;
-        out[id] =
-          rt.autonomous || rt.busy
-            ? 'bg-primary animate-pulse'
-            : rt.phase === 'live'
-              ? 'bg-status-success'
-              : rt.phase === 'error'
-                ? 'bg-status-error'
-                : 'bg-foreground/30';
+        out[id] = tabDotClass(rt);
       }
       return out;
     }),
