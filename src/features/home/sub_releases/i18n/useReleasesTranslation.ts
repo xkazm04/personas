@@ -39,7 +39,14 @@ type ReleaseI18n = {
 export interface ReleasesTranslation {
   title: string;
   subtitle: { roadmap: string };
-  /** Header label for the in-content `ReleaseNavRail`. */
+  /**
+   * Section heading over the shipped-release cards (`HomeReleases.tsx:226`).
+   * The name is a fossil: the `ReleaseNavRail` it was written for was retired
+   * when `HomeReleases` collapsed into one view, and this key is the only
+   * surviving trace of it. Renaming the flat `nav_rail_label` key would touch
+   * all 14 locale catalogs for no behaviour change, so the name stays and the
+   * meaning is recorded here instead.
+   */
   navRailLabel: string;
   status: { released: string; active: string; planned: string; roadmap: string };
   type: { feature: string; fix: string; security: string; docs: string; chore: string; breaking: string };

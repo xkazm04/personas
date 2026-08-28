@@ -101,16 +101,6 @@ export interface UiSlice {
    */
   teamsTab: TeamsTab;
   /**
-   * Selected release version on the Home → "What's New" surface. Driven by
-   * the in-content `ReleaseNavRail` (the left rail inside `HomeReleases`).
-   * The earlier sidebar Level 3 push pane and the still-earlier page-body
-   * `<ReleasesNavBar>` were both retired — selection now lives next to the
-   * content it scopes. Defaults to `'roadmap'` so first-launch lands on the
-   * roadmap timeline view. Persisted to `sessionStorage`
-   * (`home-releases-selected-version`) for in-session continuity.
-   */
-  homeReleaseVersion: string;
-  /**
    * The app version (from `getVersion()`) the user last acknowledged on the
    * "What's New" surface. `null` until the first launch records a baseline.
    * When this differs from the running version the "What's New" dot lights
@@ -251,7 +241,6 @@ export interface UiSlice {
   setGoalsTab: (tab: GoalsTab) => void;
   setKpisTab: (tab: KpisTab) => void;
   setTeamsTab: (tab: TeamsTab) => void;
-  setHomeReleaseVersion: (version: string) => void;
   /** Record `version` as the acknowledged "What's New" version (clears the dot). */
   markWhatsNewSeen: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
@@ -398,7 +387,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   // The section lands on Manage (the project table). 'workspace' is now
   // exclusively the selected-team detail, so it is never a default.
   teamsTab: "projects" as TeamsTab,
-  homeReleaseVersion: "roadmap",
   whatsNewSeenVersion: null,
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
@@ -503,7 +491,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
   setKpisTab: (tab) => startTransition(() => set({ kpisTab: tab })),
   setTeamsTab: (tab) => startTransition(() => set({ teamsTab: tab })),
-  setHomeReleaseVersion: (version) => startTransition(() => set({ homeReleaseVersion: version })),
   markWhatsNewSeen: (version) => set((state) =>
     state.whatsNewSeenVersion === version ? state : { whatsNewSeenVersion: version }
   ),
