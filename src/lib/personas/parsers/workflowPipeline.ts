@@ -10,7 +10,7 @@
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { PlatformDefinition, ProtocolMapRule } from '../platformDefinitions';
 import { extractProtocolsFromNodes } from '../platformDefinitions';
-import { sanitizeTextField } from '@/lib/utils/sanitizers/workflowSanitizer';
+import { sanitizeTextField, sanitizeParamValue } from '@/lib/utils/sanitizers/workflowSanitizer';
 import { createLogger } from '@/lib/log';
 import { trackInteraction } from '@/lib/sentry';
 
@@ -120,12 +120,22 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
   // while leaving ordinary text in any script alone, so a Japanese or Russian
   // workflow name survives rather than being emptied by an ASCII allowlist.
   const workflowName = sanitizeTextField(adapter.workflowName, MAX_NAME_LEN);
+  // `config` is the one field that arrives as a whole foreign object rather
+  // than a string: n8n `node.parameters`, Zapier `step.params`, Make
+  // `mod.mapper`, GitHub Actions `step.with`. It was copied through untouched
+  // into `suggested_triggers[].config`, where it is persisted and later
+  // rendered — the only value in the IR that never met the sanitizer.
+  // `sanitizeParamValue` is the recursive form of the same door: it caps depth,
+  // breadth and value length and runs every key through `sanitizeParamKey`.
   const nodes: NormalizedNode[] = adapter.nodes.map((node) => ({
     ...node,
     label: sanitizeTextField(node.label, MAX_LABEL_LEN) || node.service || 'step',
     sourceDescription: node.sourceDescription
       ? sanitizeTextField(node.sourceDescription, MAX_LABEL_LEN)
       : node.sourceDescription,
+    config: node.config
+      ? (sanitizeParamValue(node.config) as Record<string, unknown>)
+      : node.config,
   }));
 
   reportUnmappedTypes(adapter.platformDef, nodes);
@@ -158,7 +168,12 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
   // Add fallback triggers if none detected. Synthetic triggers belong to no
   // service, so they stay unclaimed by every connector.
   if (triggers.length === 0 && adapter.fallbackTriggers) {
-    triggers.push(...adapter.fallbackTriggers);
+    // Make's fallback carries the scenario's raw `scheduling` object, so this
+    // path is foreign data too — it goes through the same door.
+    triggers.push(...adapter.fallbackTriggers.map((t) => ({
+      ...t,
+      config: sanitizeParamValue(t.config ?? {}) as Record<string, unknown>,
+    })));
     for (const _ of adapter.fallbackTriggers) triggerServices.push('');
   }
 
