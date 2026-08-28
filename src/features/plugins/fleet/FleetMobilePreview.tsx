@@ -63,8 +63,16 @@ export function FleetMobilePreview() {
         {/* Phone frame */}
         <div className="relative w-[260px] rounded-[2.25rem] border-4 border-primary/20 bg-[#0a0a0c] p-2 shadow-elevation-2">
           <div className="absolute left-1/2 top-2 h-1.5 w-16 -translate-x-1/2 rounded-full bg-primary/25" aria-hidden="true" />
-          {/* Screen */}
-          <div className="mt-5 rounded-[1.6rem] bg-background/90 px-4 py-4 min-h-[300px]" aria-hidden="true">
+          {/* Screen. NOT aria-hidden: the phone FRAME is decorative, but what
+              is on the screen is the operator's real, live fleet — session
+              totals, per-state counts, and which sessions are waiting on them.
+              Hiding the whole subtree left a screen-reader user with the
+              heading, the description, and then silence. Only the frame
+              chrome (notch above) carries aria-hidden. */}
+          <div
+            className="mt-5 rounded-[1.6rem] bg-background/90 px-4 py-4 min-h-[300px]"
+            data-testid="fleet-mobile-preview-screen"
+          >
             <p className="typo-label text-foreground mb-0.5">Personas</p>
             <p className="text-[17px] font-semibold text-foreground">Fleet</p>
             <p className="text-[13px] text-foreground mb-3">{sessionCount}</p>
@@ -79,7 +87,7 @@ export function FleetMobilePreview() {
                       key={m.id}
                       className="flex items-center gap-1.5 rounded-interactive border border-primary/10 bg-secondary/40 px-2 py-0.5 text-[13px] text-foreground"
                     >
-                      <span className={`h-2 w-2 rounded-full ${m.dot}`} />
+                      <span className={`h-2 w-2 rounded-full ${m.dot}`} aria-hidden="true" />
                       <span>{t.plugins.fleet[m.labelKey]}</span>
                       <span className="font-semibold tabular-nums">{counts[m.id]}</span>
                     </span>
@@ -87,7 +95,7 @@ export function FleetMobilePreview() {
                 </div>
 
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <Hourglass className="w-3 h-3 text-violet-400" />
+                  <Hourglass className="w-3 h-3 text-violet-400" aria-hidden="true" />
                   <span className="typo-label text-foreground">
                     {waitingItems.length === 1
                       ? tx(t.plugins.fleet.needs_input_one, { count: waitingItems.length })
