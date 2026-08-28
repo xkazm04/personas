@@ -1253,6 +1253,21 @@ export type Translations = {
     glyph_cap_trigger_manual: string;
     glyph_cap_trigger_polling: string;
     glyph_launch: string;
+    core_title: string;
+    core_subtitle: string;
+    core_custom: string;
+    core_reset: string;
+    core_col_character: string;
+    core_col_configuration: string;
+    core_col_mentality: string;
+    core_traits_one: string;
+    core_traits_other: string;
+    core_disposition: string;
+    core_disposition_low: string;
+    core_disposition_high: string;
+    core_conflict_label: string;
+    core_model_label: string;
+    core_effort_label: string;
     glyph_intent_placeholder: string;
     glyph_dim_label: {
       trigger: string;

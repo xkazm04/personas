@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import { BaseModal } from "@/features/shared/components/modals";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import Button from "@/features/shared/components/buttons/Button";
+import { useTranslation } from "@/i18n/useTranslation";
 import { RotateCcw } from "lucide-react";
 import type { PersonaCore } from "./types";
 import { lazyRetry } from "@/lib/lazyRetry";
@@ -51,12 +52,13 @@ function CodexGhost() {
 }
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="persona-core-modal" size="6xl" maxWidthClass="max-w-[86rem]">
       <div className="flex flex-col gap-4 p-5" data-testid="persona-core-modal">
         <div className="flex flex-col gap-0.5">
-          <h2 id="persona-core-modal" className="typo-heading-lg text-foreground">Persona core</h2>
-          <span className="typo-caption">Who this agent is under the task — its disposition, character, and the model that runs it.</span>
+          <h2 id="persona-core-modal" className="typo-heading-lg text-foreground">{t.agents.core_title}</h2>
+          <span className="typo-caption">{t.agents.core_subtitle}</span>
         </div>
 
         {core.loading ? (
@@ -82,9 +84,9 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
             disabled={!core.configured}
             className="inline-flex items-center gap-1.5 typo-caption text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:text-foreground/80"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Reset to defaults
+            <RotateCcw className="w-3.5 h-3.5" /> {t.agents.core_reset}
           </button>
-          <Button variant="primary" size="sm" onClick={onClose} data-testid="persona-core-done">Done</Button>
+          <Button variant="primary" size="sm" onClick={onClose} data-testid="persona-core-done">{t.common.done}</Button>
         </div>
       </div>
     </BaseModal>

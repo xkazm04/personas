@@ -8,16 +8,20 @@
 import { motion } from "framer-motion";
 import { Atom } from "lucide-react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
+import { useTranslation } from "@/i18n/useTranslation";
 import { ACCENT, coreIcon } from "./catalog";
 import type { PersonaCore } from "./types";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: () => void; locked?: boolean; index?: number }) {
+  const { t } = useTranslation();
   const { configured, preset } = core;
   const PresetIcon = preset ? coreIcon(preset.icon) : Atom;
   const accent = preset?.color ?? ACCENT;
-  const label = configured ? (preset ? preset.name : "Custom core") : "Persona core";
+  // `preset.name` is the archetype's own name, which comes from the catalog the
+  // backend serves and is deliberately NOT translated here.
+  const label = configured ? (preset ? preset.name : t.agents.core_custom) : t.agents.core_title;
 
   return (
     <motion.button
