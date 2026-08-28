@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration, formatCount } from '@/lib/utils/formatters';
 import { AlertCircle, Activity, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -26,6 +27,25 @@ interface TraceInspectorProps {
  * list that does not say it was truncated is the defect, not the cap.
  */
 const MAX_ERROR_CARDS = 50;
+
+/**
+ * Fixed row geometry for the waterfall. Every row is a single line — the name
+ * is `truncate`d and the badges are inline — so one constant describes the
+ * whole list and the virtualizer needs no per-row measurement. It is also the
+ * height `TraceGhostRows` already used, so the cold state and the settled list
+ * occupy identical space.
+ */
+const SPAN_ROW_HEIGHT = 32;
+
+/**
+ * Below this many visible rows the plain map is cheaper than a virtualizer
+ * (and keeps the per-row entrance animation, which reads as noise once rows
+ * are recycled on scroll). Mirrors `VirtualizedTableBody`'s own threshold.
+ */
+const VIRTUALIZE_THRESHOLD = 50;
+
+/** Rows kept outside the viewport on each side so a fast scroll never tears. */
+const SPAN_ROW_OVERSCAN = 12;
 
 export function TraceInspector({ execution }: TraceInspectorProps) {
   const { t, tx, language } = useTranslation();
@@ -55,6 +75,24 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   const shownErrorSpans = errorSpans.length > MAX_ERROR_CARDS
     ? errorSpans.slice(0, MAX_ERROR_CARDS)
     : errorSpans;
+
+  // `contentVisibility: 'auto'` skips layout and paint for offscreen rows but
+  // never skips element creation, React reconcile, or SpanRow's propsEqual —
+  // and every live span event rebuilds the unified trace, so that O(N) cost
+  // was paid per event against a 10,000-span ceiling, on a RUNNING execution.
+  // Virtualizing bounds the created set to the window regardless of N.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualize = visibleNodes.length > VIRTUALIZE_THRESHOLD;
+  const virtualizer = useVirtualizer({
+    count: visibleNodes.length,
+    // The scroll element is ScrollShadowContainer's INNER div (the one that
+    // carries overflow-y-auto), reached through its `scrollRef` prop — the
+    // outer wrapper only positions the gradients and never scrolls.
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => SPAN_ROW_HEIGHT,
+    overscan: SPAN_ROW_OVERSCAN,
+    enabled: shouldVirtualize,
+  });
 
   if (error) {
     return (
@@ -136,13 +174,39 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
             </div>
 
             {/* Span rows — ghosts render UNDER the axis chrome above, never instead of it */}
-            <ScrollShadowContainer className="max-h-[500px] overflow-y-auto" wrapperClassName="relative">
+            <ScrollShadowContainer className="max-h-[500px] overflow-y-auto" wrapperClassName="relative" scrollRef={scrollRef}>
               {showGhost ? (
                 <TraceGhostRows label={e.loading_trace} />
+              ) : shouldVirtualize ? (
+                /* Spacer of the full list height so the scrollbar describes the
+                   whole trace; only the windowed rows exist as elements. */
+                <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+                  {virtualizer.getVirtualItems().map((virtualRow) => {
+                    const node = visibleNodes[virtualRow.index]!;
+                    return (
+                      <div
+                        key={node.span.span_id}
+                        data-testid="trace-span-row"
+                        data-index={virtualRow.index}
+                        className="absolute inset-x-0 top-0"
+                        style={{ height: SPAN_ROW_HEIGHT, transform: `translateY(${virtualRow.start}px)` }}
+                      >
+                        <SpanRow
+                          node={node}
+                          totalMs={totalMs}
+                          expanded={!collapsedSpans.has(node.span.span_id)}
+                          onToggle={toggleSpan}
+                          hasChildren={childrenMap.has(node.span.span_id)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               ) : visibleNodes.map((node) => (
                   <div className="animate-fade-slide-in"
                     key={node.span.span_id}
-                    style={{ contentVisibility: 'auto', containIntrinsicSize: '0 32px' }}
+                    data-testid="trace-span-row"
+                    style={{ height: SPAN_ROW_HEIGHT }}
                   >
                     <SpanRow
                       node={node}
