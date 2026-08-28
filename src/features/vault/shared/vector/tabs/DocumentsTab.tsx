@@ -16,6 +16,7 @@ import { IngestProgressBar } from '../ingest/IngestProgressBar';
 import { StatusBadge } from './StatusBadge';
 import { truncatePath, formatBytes } from './documentTabHelpers';
 import { DocToolbar } from './DocUploadArea';
+import { DocGhostRows } from './DocGhostRows';
 
 interface DocumentsTabProps {
   kb: KnowledgeBase;
@@ -96,11 +97,10 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {loading && documents.length === 0 && (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-          </div>
-        )}
+        {/* Surface loading state: a calm ghost under the permanent DocToolbar,
+            never a spinner (docs/design/overview-loading.md). A refetch with
+            rows already on screen paints nothing — law 1. */}
+        {loading && documents.length === 0 && <DocGhostRows />}
 
         {error && (
           <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-center gap-2">
