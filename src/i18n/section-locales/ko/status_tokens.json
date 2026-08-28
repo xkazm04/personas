@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "대기 중",
     "indexing": "색인 중"
+  },
+  "memory_tier": {
+    "core": "핵심",
+    "active": "활성",
+    "working": "작업 중",
+    "archive": "보관됨"
+  },
+  "memory_action": {
+    "kept": "유지됨",
+    "deleted": "삭제됨",
+    "error": "오류",
+    "proposed_delete": "삭제 제안",
+    "proposed_update_importance": "중요도 재평가 제안",
+    "proposed_synthesize": "병합 제안",
+    "proposed_archive": "보관 제안"
   }
 }

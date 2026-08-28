@@ -7734,6 +7734,22 @@ export type Translations = {
       merge: string;
       keep: string;
       vs: string;
+      processing: string;
+      merge_blocked_core: string;
+      merge_blocked_cross_persona: string;
+      retire_blocked_core_toast: string;
+      merge_blocked_core_toast: string;
+      merge_blocked_cross_persona_toast: string;
+      dismissed_toast: string;
+      resolved_toast: string;
+      resolve_failed_toast: string;
+      detected: string;
+      detected_one: string;
+      count_contradiction: string;
+      count_contradiction_one: string;
+      count_duplicate: string;
+      count_duplicate_one: string;
+      count_superseded: string;
     };
     observability_charts: {
       cost_over_time: string;
@@ -8044,6 +8060,10 @@ export type Translations = {
     review_results: {
       title: string;
       review_failed: string;
+      reviewed_count: string;
+      reviewed_count_one: string;
+      kept_count: string;
+      pruned_count: string;
     };
     anomaly_drilldown_extra: {
       title: string;
@@ -8759,6 +8779,30 @@ export type Translations = {
         decrypt: string;
         healthcheck: string;
       };
+    };
+    memories_ui: {
+      stored_subtitle: string;
+      stored_subtitle_one: string;
+      tab_memories: string;
+      tab_conflicts: string;
+      review: string;
+      reviewing: string;
+      kpi_total: string;
+      kpi_avg_importance: string;
+      kpi_total_access: string;
+      kpi_nodes: string;
+      kpi_personas: string;
+      kpi_clusters: string;
+      category_label: string;
+      col_type: string;
+      col_tier: string;
+      col_hits: string;
+      col_last_seen: string;
+      unknown_persona: string;
+      delete_all_error: string;
+      legend_size: string;
+      legend_low: string;
+      legend_high: string;
     };
   };
   matrix_v3: {
@@ -13188,6 +13232,21 @@ export type Translations = {
     kb_document: {
       pending: string;
       indexing: string;
+    };
+    memory_tier: {
+      core: string;
+      active: string;
+      working: string;
+      archive: string;
+    };
+    memory_action: {
+      kept: string;
+      deleted: string;
+      error: string;
+      proposed_delete: string;
+      proposed_update_importance: string;
+      proposed_synthesize: string;
+      proposed_archive: string;
     };
   };
   project_overview: {

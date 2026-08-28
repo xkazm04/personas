@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "待处理",
     "indexing": "索引中"
+  },
+  "memory_tier": {
+    "core": "核心",
+    "active": "活跃",
+    "working": "工作中",
+    "archive": "已归档"
+  },
+  "memory_action": {
+    "kept": "保留",
+    "deleted": "已删除",
+    "error": "错误",
+    "proposed_delete": "建议删除",
+    "proposed_update_importance": "建议重新评分",
+    "proposed_synthesize": "建议合并",
+    "proposed_archive": "建议归档"
   }
 }

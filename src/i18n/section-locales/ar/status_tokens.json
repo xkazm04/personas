@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "في الانتظار",
     "indexing": "جارٍ الفهرسة"
+  },
+  "memory_tier": {
+    "core": "أساسية",
+    "active": "نشطة",
+    "working": "قيد العمل",
+    "archive": "مؤرشفة"
+  },
+  "memory_action": {
+    "kept": "محفوظة",
+    "deleted": "محذوفة",
+    "error": "خطأ",
+    "proposed_delete": "اقتراح بالحذف",
+    "proposed_update_importance": "اقتراح بإعادة التقييم",
+    "proposed_synthesize": "اقتراح بالدمج",
+    "proposed_archive": "اقتراح بالأرشفة"
   }
 }

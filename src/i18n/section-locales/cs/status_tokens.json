@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "čeká",
     "indexing": "indexuje se"
+  },
+  "memory_tier": {
+    "core": "Základní",
+    "active": "Aktivní",
+    "working": "Pracovní",
+    "archive": "Archivovaná"
+  },
+  "memory_action": {
+    "kept": "Ponecháno",
+    "deleted": "Smazáno",
+    "error": "Chyba",
+    "proposed_delete": "Návrh na smazání",
+    "proposed_update_importance": "Návrh na přehodnocení",
+    "proposed_synthesize": "Návrh na sloučení",
+    "proposed_archive": "Návrh na archivaci"
   }
 }

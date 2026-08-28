@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "menunggu",
     "indexing": "mengindeks"
+  },
+  "memory_tier": {
+    "core": "Inti",
+    "active": "Aktif",
+    "working": "Sementara",
+    "archive": "Diarsipkan"
+  },
+  "memory_action": {
+    "kept": "Dipertahankan",
+    "deleted": "Dihapus",
+    "error": "Kesalahan",
+    "proposed_delete": "Usulan penghapusan",
+    "proposed_update_importance": "Usulan penilaian ulang",
+    "proposed_synthesize": "Usulan penggabungan",
+    "proposed_archive": "Usulan pengarsipan"
   }
 }

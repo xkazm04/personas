@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "保留中",
     "indexing": "インデックス作成中"
+  },
+  "memory_tier": {
+    "core": "コア",
+    "active": "アクティブ",
+    "working": "作業中",
+    "archive": "アーカイブ済み"
+  },
+  "memory_action": {
+    "kept": "保持",
+    "deleted": "削除済み",
+    "error": "エラー",
+    "proposed_delete": "削除の提案",
+    "proposed_update_importance": "重要度見直しの提案",
+    "proposed_synthesize": "統合の提案",
+    "proposed_archive": "アーカイブの提案"
   }
 }

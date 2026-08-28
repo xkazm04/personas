@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "pendiente",
     "indexing": "indexando"
+  },
+  "memory_tier": {
+    "core": "Esencial",
+    "active": "Activa",
+    "working": "En curso",
+    "archive": "Archivada"
+  },
+  "memory_action": {
+    "kept": "Conservada",
+    "deleted": "Eliminada",
+    "error": "Error",
+    "proposed_delete": "Eliminación propuesta",
+    "proposed_update_importance": "Reevaluación propuesta",
+    "proposed_synthesize": "Fusión propuesta",
+    "proposed_archive": "Archivado propuesto"
   }
 }

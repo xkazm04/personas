@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "đang chờ",
     "indexing": "đang lập chỉ mục"
+  },
+  "memory_tier": {
+    "core": "Cốt lõi",
+    "active": "Đang hoạt động",
+    "working": "Đang xử lý",
+    "archive": "Đã lưu trữ"
+  },
+  "memory_action": {
+    "kept": "Đã giữ lại",
+    "deleted": "Đã xoá",
+    "error": "Lỗi",
+    "proposed_delete": "Đề xuất xoá",
+    "proposed_update_importance": "Đề xuất đánh giá lại",
+    "proposed_synthesize": "Đề xuất hợp nhất",
+    "proposed_archive": "Đề xuất lưu trữ"
   }
 }

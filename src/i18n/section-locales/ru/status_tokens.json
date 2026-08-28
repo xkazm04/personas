@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "в очереди",
     "indexing": "индексация"
+  },
+  "memory_tier": {
+    "core": "Основная",
+    "active": "Активная",
+    "working": "Рабочая",
+    "archive": "В архиве"
+  },
+  "memory_action": {
+    "kept": "Сохранена",
+    "deleted": "Удалена",
+    "error": "Ошибка",
+    "proposed_delete": "Предложено удалить",
+    "proposed_update_importance": "Предложено переоценить",
+    "proposed_synthesize": "Предложено объединить",
+    "proposed_archive": "Предложено архивировать"
   }
 }

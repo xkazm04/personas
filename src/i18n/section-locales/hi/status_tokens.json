@@ -222,5 +222,20 @@
   "kb_document": {
     "pending": "लंबित",
     "indexing": "इंडेक्स हो रहा है"
+  },
+  "memory_tier": {
+    "core": "मुख्य",
+    "active": "सक्रिय",
+    "working": "कार्यशील",
+    "archive": "संग्रहीत"
+  },
+  "memory_action": {
+    "kept": "रखा गया",
+    "deleted": "हटाया गया",
+    "error": "त्रुटि",
+    "proposed_delete": "हटाने का प्रस्ताव",
+    "proposed_update_importance": "पुनर्मूल्यांकन का प्रस्ताव",
+    "proposed_synthesize": "विलय का प्रस्ताव",
+    "proposed_archive": "संग्रह का प्रस्ताव"
   }
 }
