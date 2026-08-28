@@ -4460,7 +4460,8 @@
       "add_favorite": "添加到收藏夹",
       "remove_favorite": "从收藏夹中移除",
       "delete_query_title": "删除已保存的查询？",
-      "delete_query_body": "“{title}”及其查询语句将一并删除。此操作无法撤销。"
+      "delete_query_body": "“{title}”及其查询语句将一并删除。此操作无法撤销。",
+      "filtered_count": "{total} 中的 {matched} 个"
     },
     "dependencies": {
       "simulate_revocation": "模拟撤销",

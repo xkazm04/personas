@@ -435,7 +435,8 @@
     "add_favorite": "Добавить в избранное",
     "remove_favorite": "Удалить из избранного",
     "delete_query_title": "Удалить сохранённый запрос?",
-    "delete_query_body": "«{title}» и текст запроса будут удалены. Это действие нельзя отменить."
+    "delete_query_body": "«{title}» и текст запроса будут удалены. Это действие нельзя отменить.",
+    "filtered_count": "{matched} из {total}"
   },
   "dependencies": {
     "simulate_revocation": "Симулировать отзыв",

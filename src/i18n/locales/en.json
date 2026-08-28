@@ -4729,7 +4729,8 @@
       "add_favorite": "Add to favorites",
       "remove_favorite": "Remove from favorites",
       "delete_query_title": "Delete saved query?",
-      "delete_query_body": "\"{title}\" and its query text will be removed. This action cannot be undone."
+      "delete_query_body": "\"{title}\" and its query text will be removed. This action cannot be undone.",
+      "filtered_count": "{matched} of {total}"
     },
     "dependencies": {
       "simulate_revocation": "Simulate Revocation",

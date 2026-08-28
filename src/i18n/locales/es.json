@@ -4460,7 +4460,8 @@
       "add_favorite": "Añadir a favoritos",
       "remove_favorite": "Quitar de favoritos",
       "delete_query_title": "¿Eliminar la consulta guardada?",
-      "delete_query_body": "Se eliminará «{title}» junto con su texto de consulta. Esta acción no se puede deshacer."
+      "delete_query_body": "Se eliminará «{title}» junto con su texto de consulta. Esta acción no se puede deshacer.",
+      "filtered_count": "{matched} de {total}"
     },
     "dependencies": {
       "simulate_revocation": "Simular revocación",

@@ -435,7 +435,8 @@
     "add_favorite": "Přidat do oblíbených",
     "remove_favorite": "Odebrat z oblíbených",
     "delete_query_title": "Smazat uložený dotaz?",
-    "delete_query_body": "„{title}“ a jeho text dotazu budou odstraněny. Tuto akci nelze vzít zpět."
+    "delete_query_body": "„{title}“ a jeho text dotazu budou odstraněny. Tuto akci nelze vzít zpět.",
+    "filtered_count": "{matched} z {total}"
   },
   "dependencies": {
     "simulate_revocation": "Simulovat zneplatnění",

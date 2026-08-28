@@ -435,7 +435,8 @@
     "add_favorite": "पसंदीदा में जोड़ें",
     "remove_favorite": "पसंदीदा से हटाएं",
     "delete_query_title": "सहेजी गई क्वेरी हटाएँ?",
-    "delete_query_body": "\"{title}\" और उसका क्वेरी टेक्स्ट हटा दिया जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।"
+    "delete_query_body": "\"{title}\" और उसका क्वेरी टेक्स्ट हटा दिया जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।",
+    "filtered_count": "{total} में से {matched}"
   },
   "dependencies": {
     "simulate_revocation": "रद्दीकरण अनुकरण करें",

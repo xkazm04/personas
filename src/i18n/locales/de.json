@@ -4460,7 +4460,8 @@
       "add_favorite": "Zu Favoriten hinzufügen",
       "remove_favorite": "Aus Favoriten entfernen",
       "delete_query_title": "Gespeicherte Abfrage löschen?",
-      "delete_query_body": "„{title}“ und der zugehörige Abfragetext werden entfernt. Diese Aktion kann nicht rückgängig gemacht werden."
+      "delete_query_body": "„{title}“ und der zugehörige Abfragetext werden entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "filtered_count": "{matched} von {total}"
     },
     "dependencies": {
       "simulate_revocation": "Widerruf simulieren",

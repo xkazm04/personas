@@ -435,7 +435,8 @@
     "add_favorite": "Thêm vào yêu thích",
     "remove_favorite": "Xóa khỏi yêu thích",
     "delete_query_title": "Xóa truy vấn đã lưu?",
-    "delete_query_body": "\"{title}\" và nội dung truy vấn sẽ bị xóa. Hành động này không thể hoàn tác."
+    "delete_query_body": "\"{title}\" và nội dung truy vấn sẽ bị xóa. Hành động này không thể hoàn tác.",
+    "filtered_count": "{matched} trên {total}"
   },
   "dependencies": {
     "simulate_revocation": "Mô phỏng thu hồi",

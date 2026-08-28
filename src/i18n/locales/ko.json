@@ -4460,7 +4460,8 @@
       "add_favorite": "즐겨찾기에 추가",
       "remove_favorite": "즐겨찾기에서 제거",
       "delete_query_title": "저장된 쿼리를 삭제할까요?",
-      "delete_query_body": "\"{title}\" 및 해당 쿼리문이 삭제됩니다. 이 작업은 취소할 수 없습니다."
+      "delete_query_body": "\"{title}\" 및 해당 쿼리문이 삭제됩니다. 이 작업은 취소할 수 없습니다.",
+      "filtered_count": "{total} 중 {matched}개"
     },
     "dependencies": {
       "simulate_revocation": "취소 시뮬레이션",

@@ -4460,7 +4460,8 @@
       "add_favorite": "إضافة إلى المفضلة",
       "remove_favorite": "إزالة من المفضلة",
       "delete_query_title": "هل تريد حذف الاستعلام المحفوظ؟",
-      "delete_query_body": "سيتم حذف «{title}» ونص الاستعلام الخاص به. لا يمكن التراجع عن هذا الإجراء."
+      "delete_query_body": "سيتم حذف «{title}» ونص الاستعلام الخاص به. لا يمكن التراجع عن هذا الإجراء.",
+      "filtered_count": "{matched} من {total}"
     },
     "dependencies": {
       "simulate_revocation": "محاكاة الإبطال",

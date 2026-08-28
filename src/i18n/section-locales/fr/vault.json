@@ -435,7 +435,8 @@
     "add_favorite": "Ajouter aux favoris",
     "remove_favorite": "Retirer des favoris",
     "delete_query_title": "Supprimer la requête enregistrée ?",
-    "delete_query_body": "« {title} » et son texte de requête seront supprimés. Cette action est irréversible."
+    "delete_query_body": "« {title} » et son texte de requête seront supprimés. Cette action est irréversible.",
+    "filtered_count": "{matched} sur {total}"
   },
   "dependencies": {
     "simulate_revocation": "Simuler la révocation",

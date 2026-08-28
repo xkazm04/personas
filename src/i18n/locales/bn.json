@@ -4460,7 +4460,8 @@
       "add_favorite": "প্রিয়তে যোগ করুন",
       "remove_favorite": "প্রিয় থেকে সরান",
       "delete_query_title": "সংরক্ষিত কোয়েরি মুছে ফেলবেন?",
-      "delete_query_body": "\"{title}\" এবং এর কোয়েরি টেক্সট সরিয়ে ফেলা হবে। এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না।"
+      "delete_query_body": "\"{title}\" এবং এর কোয়েরি টেক্সট সরিয়ে ফেলা হবে। এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না।",
+      "filtered_count": "{total}-এর মধ্যে {matched}"
     },
     "dependencies": {
       "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",

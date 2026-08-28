@@ -435,7 +435,8 @@
     "add_favorite": "お気に入りに追加",
     "remove_favorite": "お気に入りから削除",
     "delete_query_title": "保存済みクエリを削除しますか？",
-    "delete_query_body": "「{title}」とそのクエリ文が削除されます。この操作は元に戻せません。"
+    "delete_query_body": "「{title}」とそのクエリ文が削除されます。この操作は元に戻せません。",
+    "filtered_count": "{total} 中 {matched} 件"
   },
   "dependencies": {
     "simulate_revocation": "失効をシミュレート",

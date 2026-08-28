@@ -4736,6 +4736,7 @@ export type Translations = {
       remove_favorite: string;
       delete_query_title: string;
       delete_query_body: string;
+      filtered_count: string;
     };
     dependencies: {
       simulate_revocation: string;

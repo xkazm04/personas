@@ -435,7 +435,8 @@
     "add_favorite": "Tambahkan ke favorit",
     "remove_favorite": "Hapus dari favorit",
     "delete_query_title": "Hapus kueri tersimpan?",
-    "delete_query_body": "\"{title}\" beserta teks kuerinya akan dihapus. Tindakan ini tidak dapat dibatalkan."
+    "delete_query_body": "\"{title}\" beserta teks kuerinya akan dihapus. Tindakan ini tidak dapat dibatalkan.",
+    "filtered_count": "{matched} dari {total}"
   },
   "dependencies": {
     "simulate_revocation": "Simulasi pencabutan",
