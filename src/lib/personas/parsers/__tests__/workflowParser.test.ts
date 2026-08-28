@@ -73,6 +73,25 @@ describe('detector helpers', () => {
     expect(detectPlatformLabel(n8nExport)).toBe('n8n');
     expect(detectPlatformLabel({ hello: 'world' })).toBe('Workflow');
   });
+
+  // The preview card and the parser used to run two different detections: the
+  // card's could never reach the GitHub Actions rule (it lived in the YAML
+  // branch only), so a jobs-shaped document was counted in jobs by
+  // `countElements` and simultaneously labelled a generic "Workflow".
+  it('agrees with the parser on a GitHub Actions document', () => {
+    const gha = { on: 'push', jobs: { build: { 'runs-on': 'ubuntu-latest' } } };
+    expect(countElements(gha)).toEqual({ count: 1, label: 'job' });
+    expect(detectPlatformLabel(gha)).toBe(PLATFORM_LABELS['github-actions']);
+    expect(detectPlatformLabel(gha, '.yml')).toBe(PLATFORM_LABELS['github-actions']);
+    expect(detectWorkflowPlatform(gha, '.json')).toMatchObject({
+      platform: 'github-actions',
+      confidence: 'medium',
+    });
+  });
+
+  it('does not claim GitHub Actions for a bare jobs key with no signature', () => {
+    expect(detectPlatformLabel({ jobs: { a: { note: 'not a workflow' } } })).toBe('Workflow');
+  });
 });
 
 // Three hand-written enumerations of the same set, with nothing comparing them,
