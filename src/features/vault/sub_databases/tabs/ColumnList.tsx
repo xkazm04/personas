@@ -1,6 +1,8 @@
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
+
+/** Deterministic width variety so the ghosts read as rows, not a barcode. */
+const GHOST_BAR_WIDTHS = ['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'];
 
 interface ColumnListProps {
   columns: IntrospectedColumn[];
@@ -22,11 +24,53 @@ export function ColumnList({
   const { t, tx } = useTranslation();
   const db = t.vault.databases;
 
+  // Loading pattern v2, law 3: the permanent chrome (the column table's own
+  // header) renders, and the ghost goes UNDER it — so selecting a table paints
+  // the shape of the answer immediately instead of the `null` that
+  // `feedback/LoadingSpinner` used to render beside the "Loading columns..."
+  // label. Geometry-matched to the real `px-3 py-1.5` rows below.
   if (columnsLoading) {
     return (
-      <div className="flex items-center gap-2 py-8 justify-center">
-        <LoadingSpinner className="text-foreground" />
-        <span className="typo-body text-foreground">{db.loading_columns}</span>
+      <div role="status" aria-live="polite">
+        <span className="sr-only">{db.loading_columns}</span>
+        <div className="rounded-card border border-primary/10 overflow-hidden" aria-hidden="true">
+          <table className="w-full typo-body">
+            <thead>
+              <tr className="bg-secondary/40 border-b border-primary/10">
+                <th className="px-3 py-2 text-left font-semibold text-foreground w-1/3">{columnLabel}</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground w-1/4">{typeLabel}</th>
+                {!isApi && <th className="px-3 py-2 text-center font-semibold text-foreground w-20">{db.nullable}</th>}
+                {!isApi && <th className="px-3 py-2 text-left font-semibold text-foreground">{db.default_val}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {GHOST_BAR_WIDTHS.concat(GHOST_BAR_WIDTHS).map((w, r) => (
+                <tr
+                  key={r}
+                  className={`border-b border-primary/5 animate-fade-in ${r % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10'}`}
+                  style={{ animationDelay: `${120 + r * 35}ms` }}
+                >
+                  <td className="px-3 py-1.5">
+                    <span className={`inline-block h-3 rounded bg-primary/[0.06] ${w}`} />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <span className="inline-block h-3 w-2/5 rounded bg-primary/[0.06]" />
+                  </td>
+                  {!isApi && (
+                    <td className="px-3 py-1.5 text-center">
+                      <span className="inline-block h-3 w-6 rounded bg-primary/[0.06]" />
+                    </td>
+                  )}
+                  {!isApi && (
+                    <td className="px-3 py-1.5">
+                      <span className="inline-block h-3 w-1/3 rounded bg-primary/[0.06]" />
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }

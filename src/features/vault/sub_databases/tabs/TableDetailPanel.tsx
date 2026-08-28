@@ -1,9 +1,38 @@
 import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 import type { ConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
+
+/**
+ * Cold-load ghost for the Redis key-detail pane.
+ *
+ * `feedback/LoadingSpinner` renders `null`, so selecting a key used to paint a
+ * bare "Loading key info..." label with an empty gap beside it and then jump to
+ * a two-row layout. The permanent chrome — the "Type" label — stays put and the
+ * ghost only stands in for the value badge and the hint line, so the settled
+ * state lands in exactly the same place.
+ */
+function KeyInfoGhost({ label, typeLabel }: { label: string; typeLabel: string }) {
+  return (
+    <div role="status" aria-live="polite" className="space-y-3">
+      <span className="sr-only">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className="typo-body text-foreground">{typeLabel}</span>
+        <span
+          aria-hidden="true"
+          className="inline-block h-4 w-16 rounded bg-primary/[0.06] animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+        />
+      </div>
+      <span
+        aria-hidden="true"
+        className="inline-block h-3 w-2/3 rounded bg-primary/[0.06] animate-fade-in"
+        style={{ animationDelay: '155ms' }}
+      />
+    </div>
+  );
+}
 
 interface TableDetailPanelProps {
   isRedis: boolean;
@@ -100,10 +129,7 @@ export function TableDetailPanel({
           </div>
           <div className="p-4">
             {keyTypeResult === null ? (
-              <div className="flex items-center gap-2 py-4">
-                <LoadingSpinner className="text-foreground" />
-                <span className="typo-body text-foreground">{dbt.loading_key_info}</span>
-              </div>
+              <KeyInfoGhost label={dbt.loading_key_info} typeLabel={dbt.type_label} />
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
