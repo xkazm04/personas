@@ -25,7 +25,8 @@ import MemoryDetailModal from './MemoryDetailModal';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
-import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
+import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -41,8 +42,10 @@ const COL_WIDTHS = {
   importance: 'w-28',
   tier: 'w-20',
   access: 'w-16',
-  lastSeen: 'w-20',
-  created: 'w-20',
+  // Widened from w-20 when the columns stopped hand-trimming " ago" off the
+  // rendered label (see DenseRow) — the untrimmed form needs the extra track.
+  lastSeen: 'w-24',
+  created: 'w-24',
 } as const;
 
 /** Rendered where a metric exists but this surface cannot measure it — never a
@@ -573,11 +576,19 @@ function DenseRow({
       <div className={`${COL_WIDTHS.access} px-2 py-2 text-right`}>
         <span className="typo-code font-mono tabular-nums text-emerald-300">{memory.access_count}</span>
       </div>
+      {/* A hand-rolled " ago" strip stood here to squeeze the label into a
+          w-20 track, and it trimmed inconsistently: "5m ago" became "5m" but
+          "just now" carries no such suffix and survived at full width, so the
+          column mixed trimmed and untrimmed forms. The shared
+          display/RelativeTime is the primitive for this (sibling code in
+          MemoryCard and MemoryClaimsSection already uses it); it also
+          live-updates on the shared ticker and puts the absolute timestamp in
+          a tooltip, neither of which the raw call did. */}
       <div className={`${COL_WIDTHS.lastSeen} px-2 py-2 text-right`}>
-        <span className="typo-code font-mono tabular-nums text-foreground">{formatRelativeTime(lastSeen).replace(/ ago$/, '')}</span>
+        <RelativeTime timestamp={lastSeen} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
       </div>
       <div className={`${COL_WIDTHS.created} px-2 py-2 text-right`}>
-        <span className="typo-code font-mono tabular-nums text-foreground">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
+        <RelativeTime timestamp={memory.created_at} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
       </div>
     </motion.button>
   );
