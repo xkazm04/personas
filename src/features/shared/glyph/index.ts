@@ -24,5 +24,7 @@ export type {
   ParsedChannel,
   DimMeta,
   DimMetaMap,
+  SigilHealth,
+  SigilUseCase,
 } from './types';
 export { GLYPH_DIMENSIONS } from './types';

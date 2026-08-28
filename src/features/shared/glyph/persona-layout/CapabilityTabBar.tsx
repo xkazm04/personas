@@ -2,7 +2,11 @@ import { useRef } from 'react';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import { useThemeStore } from '@/stores/themeStore';
+import {
+  getHealthMeta,
+  type DisplayUseCase,
+} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 
 interface CapabilityTabBarProps {
   /** Capabilities to render as tabs. One per capability. Order matches
@@ -58,6 +62,10 @@ export function CapabilityTabBar({
   sigilSize = 72,
 }: CapabilityTabBarProps) {
   const { t } = useTranslation();
+  // The sigil is a pure primitive — this connected strip owns the store read
+  // and the health-label lookup.
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
+  const healthMeta = getHealthMeta(t);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   if (items.length === 0) return null;
@@ -124,6 +132,8 @@ export function CapabilityTabBar({
             >
               <CapabilitySigil
                 uc={uc}
+                healthLabel={healthMeta[uc.health].label}
+                cvdSafe={cvdSafe}
                 size={sigilSize}
                 isActive={isActive}
               />

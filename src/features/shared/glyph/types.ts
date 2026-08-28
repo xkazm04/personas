@@ -89,3 +89,18 @@ export interface ParsedChannel {
   type: string;
   description: string;
 }
+
+/** Health states a capability sigil can render. Structurally identical to the
+ *  agents feature's `UseCaseHealth` — declared here so the shared primitive
+ *  does not have to import a feature's view model to know its own vocabulary. */
+export type SigilHealth = 'active' | 'disabled' | 'needs-attention';
+
+/** The only three fields `CapabilitySigil` reads off a use case. Any richer
+ *  view model (the agents feature's `DisplayUseCase`, a fleet-built row, a
+ *  test fixture) is structurally assignable, so callers keep passing whatever
+ *  they already hold — but the primitive itself stays feature-agnostic. */
+export interface SigilUseCase {
+  title: string;
+  health: SigilHealth;
+  dimensions: GlyphDimension[];
+}

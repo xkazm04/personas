@@ -45,8 +45,8 @@ describe('CapabilitySigil SVG ids', () => {
   it('gives two instances of the same capability at the same size distinct ids', () => {
     const { container } = render(
       <>
-        <CapabilitySigil uc={uc()} size={72} />
-        <CapabilitySigil uc={uc()} size={72} />
+        <CapabilitySigil uc={uc()} healthLabel="Active" cvdSafe={false} size={72} />
+        <CapabilitySigil uc={uc()} healthLabel="Active" cvdSafe={false} size={72} />
       </>,
     );
     const ids = gradientIds(container);
@@ -57,7 +57,7 @@ describe('CapabilitySigil SVG ids', () => {
   it('keeps every id free of the colons React puts in useId values', () => {
     // These ids travel inside `url(#…)` fragments; a stray colon is the kind
     // of thing that works in one engine and not the next.
-    const { container } = render(<CapabilitySigil uc={uc()} size={68} />);
+    const { container } = render(<CapabilitySigil uc={uc()} healthLabel="Active" cvdSafe={false} size={68} />);
     for (const id of gradientIds(container)) {
       expect(id).not.toContain(':');
       expect(id.length).toBeGreaterThan('mini-core-'.length);
@@ -65,7 +65,7 @@ describe('CapabilitySigil SVG ids', () => {
   });
 
   it('points the core fill at its own gradient', () => {
-    const { container } = render(<CapabilitySigil uc={uc()} size={84} />);
+    const { container } = render(<CapabilitySigil uc={uc()} healthLabel="Active" cvdSafe={false} size={84} />);
     const [id] = gradientIds(container);
     const referencing = Array.from(container.querySelectorAll('circle'))
       .map((c) => c.getAttribute('fill'))

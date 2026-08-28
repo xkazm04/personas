@@ -1,18 +1,20 @@
-import { useId, useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
-import type { GlyphDimension } from '@/features/shared/glyph';
+import type { GlyphDimension, SigilUseCase } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
 import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
 import { SigilPatternDefs, petalPatternFill } from '@/features/shared/glyph/dimPatterns';
-import { useThemeStore } from '@/stores/themeStore';
-import { useTranslation } from '@/i18n/useTranslation';
-import {
-  getHealthMeta,
-  type DisplayUseCase,
-} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 
 interface CapabilitySigilProps {
-  uc: DisplayUseCase;
+  /** Structural: only `title`, `health` and `dimensions` are read. */
+  uc: SigilUseCase;
+  /** Translated health label for the SVG's aria-label. Caller-computed so the
+   *  primitive owns no i18n namespace and no feature view model. */
+  healthLabel: string;
+  /** CVD-safe appearance — present petals read by texture, not hue alone.
+   *  Caller-owned (from `useThemeStore`), mirroring `SigilPetal`'s contract
+   *  so this primitive never touches app state. */
+  cvdSafe: boolean;
   /** Outer SVG canvas size in px (square). Default 84. */
   size?: number;
   /** Hover state — slightly inflates petal opacity + adds hover ring. */
@@ -49,27 +51,24 @@ interface CapabilitySigilProps {
  * (`SigilGrid`, `CapabilityCard`) that do not exist. Both are gone; a
  * compact variant, if one is ever wanted, should come back with a live call
  * site attached.
+ *
+ * This file used to read `useThemeStore` and import the agents feature's
+ * `DisplayUseCase` / `getHealthMeta` — a nominally shared primitive depending
+ * on app state and on one feature's view model, and invisible to every
+ * boundary gate (census `catalog-boundary-escape` and the ESLint rule are both
+ * scoped to `shared/components/`, not `shared/glyph/`). Both are now props,
+ * matching the contract `SigilPetal` already used for `cvdSafe`: connected
+ * wrappers read, the primitive renders.
  */
 export function CapabilitySigil({
-  uc, size = 84, isHovered = false, isActive = false,
+  uc, healthLabel, cvdSafe, size = 84, isHovered = false, isActive = false,
 }: CapabilitySigilProps) {
-  const { t } = useTranslation();
   const dimText = useGlyphDimText();
-  const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const center = size / 2;
   const present = new Set(uc.dimensions);
   const isDisabled = uc.health === 'disabled';
   const isAttention = uc.health === 'needs-attention';
-  // `getHealthMeta` builds its full three-entry Record on every call, and this
-  // component renders on every hover / active / size change while reading
-  // exactly one field off it (the label, for the aria-label below). Keyed on
-  // the two things the label actually depends on so the interaction-driven
-  // renders — the frequent ones — cost nothing.
-  const healthLabel = useMemo(
-    () => getHealthMeta(t)[uc.health].label,
-    [t, uc.health],
-  );
 
   const corePct = 0.20;
   const innerPct = 0.30;
