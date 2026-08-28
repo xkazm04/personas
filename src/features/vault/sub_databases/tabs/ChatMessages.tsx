@@ -1,5 +1,6 @@
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { AssistantSqlBlock } from './AssistantSqlBlock';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
@@ -68,15 +69,16 @@ export function ChatMessages({
               <div className="flex items-center gap-2 typo-body text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
-                  title={t.common.cancel}
-                  aria-label={t.common.cancel}
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                <Tooltip content={t.common.cancel}>
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
+                    aria-label={t.common.cancel}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Tooltip>
               </div>
             )}
 

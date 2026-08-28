@@ -1,5 +1,6 @@
 import { RefreshCw, Search, Zap, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface TableSearchProps {
@@ -35,15 +36,17 @@ export function TableSearch({
             className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-secondary/30 border border-primary/10 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
           />
         </div>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          className="p-1.5 rounded-card text-foreground hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
-          title={db.refresh}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <Tooltip content={db.refresh}>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading}
+            className="p-1.5 rounded-card text-foreground hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
+            aria-label={db.refresh}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );
