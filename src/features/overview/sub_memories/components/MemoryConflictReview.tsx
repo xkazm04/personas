@@ -8,8 +8,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import {
   conflictVerdictLabel,
   detectConflicts,
-  loadResolvedConflicts,
-  saveResolvedConflicts,
+  markConflictResolved,
+  resolvedConflictIds,
   type MemoryConflict,
   type ConflictResolution,
 } from '../libs/memoryConflicts';
@@ -38,13 +38,16 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
   const personas = useAgentStore((s) => s.personas);
 
   const [expanded, setExpanded] = useState(false);
-  // Seeded from the persisted verdict set, not `new Set()`. This component IS
-  // the Conflicts tab's body and unmounts on every switch back to Memories, so
-  // component state meant a user's decisions survived exactly until they looked
-  // at something else — and the pairs they had DISMISSED (the detector's own
-  // false positives) were the ones guaranteed to come back. Lazy initialiser so
-  // the read happens once per mount, not once per render.
-  const [resolvedIds, setResolvedIds] = useState<Set<string>>(loadResolvedConflicts);
+  // Seeded from the module-scoped verdict set, not `new Set()`. This component
+  // IS the Conflicts tab's body and unmounts on every switch back to Memories,
+  // so plain component state meant a user's decisions survived exactly until
+  // they looked at something else — and the pairs they had DISMISSED (the
+  // detector's own false positives) were the ones guaranteed to come back.
+  //
+  // The module set is the source of truth; this state holds a copy purely to
+  // trigger a re-render, and is replaced from the module set on every write, so
+  // the two cannot drift.
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => new Set(resolvedConflictIds()));
   const [activeConflictId, setActiveConflictId] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -144,12 +147,11 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         conflictVerdictLabel(conflict.kind, conflict.similarity),
       );
 
-      // Computed outside the state updater on purpose: an updater must stay
-      // pure (StrictMode double-invokes it), so the write to storage happens
-      // here rather than inside it.
-      const nextResolved = new Set(resolvedIds).add(conflict.id);
-      setResolvedIds(nextResolved);
-      saveResolvedConflicts(nextResolved);
+      // Written to the module set first, then mirrored into render state. Done
+      // outside the state updater on purpose: an updater must stay pure
+      // (StrictMode double-invokes it), and this write is not.
+      markConflictResolved(conflict.id);
+      setResolvedIds(new Set(resolvedConflictIds()));
       if (activeConflictId === conflict.id) setActiveConflictId(null);
       if (resolution !== 'dismiss') await fetchMemories();
       useToastStore.getState().addToast(
@@ -168,7 +170,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
     } finally {
       setProcessing(null);
     }
-  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, resolvedIds, mc]);
+  }, [setMemoryTier, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved, mc]);
 
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no

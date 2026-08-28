@@ -25,10 +25,11 @@ import {
 import {
   conflictVerdictLabel,
   detectConflicts,
-  loadResolvedConflicts,
-  saveResolvedConflicts,
+  markConflictResolved,
+  resolvedConflictIds,
   textSimilarity,
   MAX_RESOLVED_CONFLICTS,
+  __resetResolvedConflicts,
 } from '../memoryConflicts';
 import { mergeMemories } from '../conflictHelpers';
 
@@ -257,56 +258,44 @@ describe('mergeMemories', () => {
  * Recall of the user's verdicts. Component state used to hold these, and the
  * Conflicts tab unmounts on every switch back to Memories — so a dismissed
  * pair (which, detection being heuristic, is by definition one of the
- * detector's false positives) came back on the next visit, forever.
+ * detector's false positives) came back on the next visit.
  */
 describe('resolved-conflict recall', () => {
-  const KEY = 'dolla:memory-conflicts-resolved';
-
   beforeEach(() => {
-    localStorage.clear();
+    __resetResolvedConflicts();
   });
 
-  it('reads back the verdicts a previous mount wrote', () => {
-    saveResolvedConflicts(new Set(['a:b', 'c:d']));
-    expect([...loadResolvedConflicts()].sort()).toEqual(['a:b', 'c:d']);
+  it('starts empty and remembers what was marked', () => {
+    expect(resolvedConflictIds().size).toBe(0);
+    markConflictResolved('a:b');
+    markConflictResolved('c:d');
+    expect([...resolvedConflictIds()].sort()).toEqual(['a:b', 'c:d']);
   });
 
-  it('returns an empty set when nothing has been stored', () => {
-    expect(loadResolvedConflicts().size).toBe(0);
+  it('survives the component that recorded it', () => {
+    // The set lives in module scope precisely so a remount of the Conflicts
+    // tab reads back the same verdicts rather than a fresh empty Set.
+    markConflictResolved('pair');
+    const asSeenByARemount = new Set(resolvedConflictIds());
+    expect(asSeenByARemount.has('pair')).toBe(true);
   });
 
-  it('survives a blob that is not an array of strings', () => {
-    // Whatever a previous build or a hand edit left behind must degrade to
-    // "show the conflicts again", never to a poisoned id set.
-    localStorage.setItem(KEY, JSON.stringify({ not: 'an array' }));
-    expect(loadResolvedConflicts().size).toBe(0);
-
-    localStorage.setItem(KEY, JSON.stringify(['ok', 42, null, { x: 1 }]));
-    expect([...loadResolvedConflicts()]).toEqual(['ok']);
-
-    localStorage.setItem(KEY, '{ truncated');
-    expect(loadResolvedConflicts().size).toBe(0);
+  it('is idempotent for a pair judged twice', () => {
+    markConflictResolved('same');
+    markConflictResolved('same');
+    expect(resolvedConflictIds().size).toBe(1);
   });
 
-  it('caps the stored set, keeping the most recently resolved ids', () => {
-    const ids = Array.from({ length: MAX_RESOLVED_CONFLICTS + 5 }, (_, i) => `pair_${i}`);
-    saveResolvedConflicts(new Set(ids));
+  it('caps the set, evicting the oldest verdicts', () => {
+    for (let i = 0; i < MAX_RESOLVED_CONFLICTS + 5; i++) markConflictResolved(`pair_${i}`);
 
-    const stored = loadResolvedConflicts();
+    const stored = resolvedConflictIds();
     expect(stored.size).toBe(MAX_RESOLVED_CONFLICTS);
-    // Insertion order is oldest-first, so the tail is what must survive.
     expect(stored.has(`pair_${MAX_RESOLVED_CONFLICTS + 4}`)).toBe(true);
     expect(stored.has('pair_0')).toBe(false);
   });
 });
 
-/**
- * The verdict label is what makes the detector's precision measurable at all,
- * so its two properties are pinned: it carries the kind AND the score band
- * (otherwise "dismissals cluster just above the threshold" is unanswerable),
- * and it is LOW-CARDINALITY (otherwise every event is a unique tag value and
- * nothing aggregates).
- */
 describe('conflictVerdictLabel', () => {
   it('pairs the kind with a 0.05 score bucket', () => {
     expect(conflictVerdictLabel('duplicate', 0.72)).toBe('duplicate:0.70');

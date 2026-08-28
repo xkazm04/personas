@@ -1,5 +1,4 @@
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
-import { silentCatch } from '@/lib/silentCatch';
 import {
   TEXT_SIM_WORD_WEIGHT,
   TEXT_SIM_BIGRAM_WEIGHT,
@@ -218,56 +217,48 @@ export function conflictVerdictLabel(kind: ConflictKind, similarity: number): st
  *
  * That is worst exactly where it matters most. Detection is heuristic, so the
  * pairs a user DISMISSES are its false positives: the surface was guaranteed to
- * re-present its own worst output, forever, and a user who cleared ten of them
- * had to clear them again every time they came back.
+ * re-present its own worst output, and a user who cleared ten of them had to
+ * clear them again every time they came back.
  *
- * The ids are pair keys (`sorted(idA):sorted(idB)`), so they are stable across
- * sessions and cheap to store. They are capped for the same reason the
- * memory-action store now is: a key whose memories are long gone can never be
- * matched again and must not accumulate without limit.
+ * The store is module-scoped and session-scoped, deliberately. Persisting the
+ * ids to localStorage was tried and reverted: it bought recall across a restart
+ * at the cost of three separate golden-path violations (a raw web-storage
+ * access, a one-way module latch guarding the storage-failure report, and a
+ * durable read snapshotted into a component's `useState`), which is a bad trade
+ * for a surface a user visits a handful of times per session. Recall across the
+ * whole session is what the defect was about.
+ *
+ * Ids are pair keys (`sorted(idA):sorted(idB)`). The set is capped oldest-first
+ * because a key whose memories are long gone can never be matched again and
+ * must not grow without limit.
  */
-const RESOLVED_KEY = 'dolla:memory-conflicts-resolved';
 
-/** Newest-kept cap on the persisted verdict set. */
+/** Oldest-dropped cap on the verdict set. */
 export const MAX_RESOLVED_CONFLICTS = 200;
 
-/** Reported once per session — this runs on every mount of the Conflicts tab,
- *  and a private-mode / storage-disabled profile would otherwise emit the same
- *  event on every visit for a condition whose only impact is re-showing pairs. */
-let _resolvedStorageReported = false;
+const _resolvedConflicts = new Set<string>();
 
-function reportStorageFailure(where: string, err: unknown): void {
-  if (_resolvedStorageReported) return;
-  _resolvedStorageReported = true;
-  silentCatch(`memoryConflicts:${where}`)(err);
+/** The live verdict set. Read-only to callers — write through
+ *  {@link markConflictResolved} so the cap is always applied. */
+export function resolvedConflictIds(): ReadonlySet<string> {
+  return _resolvedConflicts;
 }
 
-/** Read the persisted verdicts. Never throws: an unreadable store degrades to
- *  "the user is shown these conflicts again", which is wrong but not harmful. */
-export function loadResolvedConflicts(): Set<string> {
-  try {
-    const raw = localStorage.getItem(RESOLVED_KEY);
-    if (!raw) return new Set();
-    const parsed: unknown = JSON.parse(raw);
-    // The blob is whatever a previous build or a hand edit left behind, so the
-    // shape is checked rather than asserted — a non-array, or a non-string
-    // entry inside one, is dropped instead of poisoning the id set.
-    if (!Array.isArray(parsed)) return new Set();
-    return new Set(parsed.filter((x): x is string => typeof x === 'string'));
-  } catch (err) {
-    reportStorageFailure('loadResolvedConflicts', err);
-    return new Set();
+/** Record a verdict, evicting the oldest ids once the cap is exceeded. */
+export function markConflictResolved(id: string): void {
+  _resolvedConflicts.add(id);
+  // Set iteration is insertion-ordered, so the head is the oldest.
+  let excess = _resolvedConflicts.size - MAX_RESOLVED_CONFLICTS;
+  if (excess <= 0) return;
+  for (const key of _resolvedConflicts) {
+    if (excess-- <= 0) break;
+    _resolvedConflicts.delete(key);
   }
 }
 
-/** Persist the verdict set, keeping the most recently added ids. */
-export function saveResolvedConflicts(ids: Iterable<string>): void {
-  try {
-    // Set iteration is insertion-ordered, so the tail is the newest.
-    localStorage.setItem(RESOLVED_KEY, JSON.stringify([...ids].slice(-MAX_RESOLVED_CONFLICTS)));
-  } catch (err) {
-    // The in-session Set still holds the verdicts, so the only loss is recall
-    // after a restart.
-    reportStorageFailure('saveResolvedConflicts', err);
-  }
+/** Test hatch — module state with no reset door is state a suite cannot
+ *  isolate, and every test after the first would inherit the last one's
+ *  verdicts. */
+export function __resetResolvedConflicts(): void {
+  _resolvedConflicts.clear();
 }
