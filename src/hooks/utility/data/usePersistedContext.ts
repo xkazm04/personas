@@ -58,16 +58,14 @@ export function usePersistedContext<T>({
     try {
       const decoded: unknown = JSON.parse(raw);
       // Invariant: this entry is written only by this app's own persist step,
-      // which always stores a plain object. `validate` is contracted to look
-      // for a required id field, which no non-object JSON value can carry, so
-      // anything that is not an object is discarded BEFORE the cast rather
-      // than asserted past it.
-      if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
-        window.localStorage.removeItem(key);
-        return;
-      }
+      // which always stores a plain object carrying an id field. A non-object
+      // JSON value can never satisfy `validate`'s contract, so it is rejected
+      // here rather than asserted past -- `validate` is not even called on it,
+      // since it is written to destructure a T.
+      const isObject =
+        typeof decoded === 'object' && decoded !== null && !Array.isArray(decoded);
       const parsed = decoded as T;
-      const id = validate(parsed);
+      const id = isObject ? validate(parsed) : null;
       if (!id) {
         window.localStorage.removeItem(key);
         return;
