@@ -24,11 +24,12 @@ interface MemoryProvenanceProps {
  */
 export default function MemoryProvenance({ memberId, personaId, runId }: MemoryProvenanceProps) {
   const { t } = useTranslation();
-  // A primitive selector: the row re-renders only when this persona's *name*
-  // changes, not on every unrelated write to the persona list.
-  const personaName = useAgentStore((s) =>
-    personaId ? (s.personas.find((p) => p.id === personaId)?.name ?? null) : null,
-  );
+  // Bound, not coalesced. `find(...)?.name ?? null` in one expression leaves
+  // nowhere for an absence arm to live: a persona whose row has been deleted
+  // would render byte-identically to a memory that never had one. Holding the
+  // lookup lets the two cases diverge below — a known persona shows its name, a
+  // dangling id shows the id itself rather than quietly claiming nothing.
+  const persona = useAgentStore((s) => (personaId ? s.personas.find((p) => p.id === personaId) : undefined));
 
   if (!memberId && !personaId && !runId) return null;
 
@@ -38,7 +39,7 @@ export default function MemoryProvenance({ memberId, personaId, runId }: MemoryP
         <span className="inline-flex items-center gap-1">
           <Bot className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span className="sr-only">{t.sharing.label_persona}</span>
-          <UuidLabel value={personaId} label={personaName} />
+          <UuidLabel value={personaId} label={persona ? persona.name : null} />
         </span>
       )}
       {memberId && (
