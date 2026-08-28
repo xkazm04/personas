@@ -41,7 +41,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
   );
 
   return (
-    <div className="w-64 border-r border-primary/10 flex flex-col shrink-0 bg-secondary/5">
+    <div className="w-48 xl:w-64 border-r border-primary/10 flex flex-col shrink-0 bg-secondary/5">
       <div className="p-3 border-b border-primary/8">
         {isCreating ? (
             <div

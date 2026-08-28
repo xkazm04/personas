@@ -69,7 +69,11 @@ export function TableListSidebar({
     : redisKeys;
 
   return (
-    <div className="w-72 border-r border-primary/10 flex flex-col shrink-0">
+    // Was a flat `w-72`. In a split-screen or small-laptop window that fixed
+    // 288px left the detail panel and results grid squeezed to nothing while
+    // the sidebar kept every pixel; the list is legible at 224px, so it gives
+    // ground first and only takes the full width once there is room for both.
+    <div className="w-56 xl:w-72 border-r border-primary/10 flex flex-col shrink-0">
       <TableSearch
         filter={filter}
         onFilterChange={onFilterChange}
