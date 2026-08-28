@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
@@ -47,13 +48,27 @@ function KeyInfoGhost({ typeLabel }: { typeLabel: string }) {
   );
 }
 
+/**
+ * A Redis `TYPE <key>` lookup is three states, not one nullable string. It used
+ * to be modelled as `string | null`, so the failure path wrote the translated
+ * word "Error" into the same slot a real type goes in — and the amber badge
+ * rendered it as though `Error` were a Redis type, with the "use the console on
+ * this key" hint underneath still assuming the lookup had succeeded.
+ */
+export type KeyTypeState =
+  | { status: 'loading' }
+  | { status: 'ok'; type: string }
+  | { status: 'error'; message: string };
+
 interface TableDetailPanelProps {
   isRedis: boolean;
   /** Notion/Airtable API-based connector. */
   isApi?: boolean;
   selectedTable: string | null;
   selectedKey: string | null;
-  keyTypeResult: string | null;
+  keyType: KeyTypeState;
+  /** Re-runs `TYPE` for the selected key; wired to the error branch's retry. */
+  onRetryKeyType?: () => void;
   tables: IntrospectedTable[];
   columns: IntrospectedColumn[];
   columnsLoading: boolean;
@@ -68,7 +83,8 @@ export function TableDetailPanel({
   isApi = false,
   selectedTable,
   selectedKey,
-  keyTypeResult,
+  keyType,
+  onRetryKeyType,
   tables,
   columns,
   columnsLoading,
@@ -86,7 +102,7 @@ export function TableDetailPanel({
   // The key-info ghost is aria-hidden, so its state is announced through the
   // app-wide live region instead of a local one born together with its own text
   // (census `live-region-born-with-its-message`).
-  const keyInfoLoading = isRedis && selectedKey !== null && keyTypeResult === null;
+  const keyInfoLoading = isRedis && selectedKey !== null && keyType.status === 'loading';
   useEffect(() => {
     if (keyInfoLoading) announceImperative(dbt.loading_key_info);
   }, [keyInfoLoading, dbt.loading_key_info]);
@@ -149,14 +165,23 @@ export function TableDetailPanel({
             <span className="typo-code font-mono font-medium text-foreground flex-1 truncate">{selectedKey}</span>
           </div>
           <div className="p-4">
-            {keyTypeResult === null ? (
+            {keyType.status === 'loading' ? (
               <KeyInfoGhost typeLabel={dbt.type_label} />
+            ) : keyType.status === 'error' ? (
+              // A failed lookup reads as a failure — not as an amber badge whose
+              // contents happen to be the word "Error" — and carries the retry
+              // the user actually needs. No new copy: the banner's retry label
+              // is t.common.retry and the message is the real backend cause.
+              <InlineErrorBanner message={keyType.message} onRetry={onRetryKeyType} />
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <span className="typo-body text-foreground">{dbt.type_label}</span>
-                  <span className="px-2 py-0.5 rounded typo-code font-mono font-medium bg-amber-500/10 text-amber-400/70">
-                    {keyTypeResult}
+                  <span
+                    data-testid="db-redis-key-type"
+                    className="px-2 py-0.5 rounded typo-code font-mono font-medium bg-amber-500/10 text-amber-400/70"
+                  >
+                    {keyType.type}
                   </span>
                 </div>
                 <p className="typo-body text-foreground">
