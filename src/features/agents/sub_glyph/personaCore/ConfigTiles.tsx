@@ -62,7 +62,15 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
           <Tooltip key={e.id} content={e.blurb}>
             <button type="button" onClick={() => core.setEffort(e.id as EffortLevel)} data-testid={`core-effort-${e.id}`} aria-pressed={core.state.effort === e.id}
               className="flex-1 flex flex-col items-center gap-1 cursor-pointer group">
-              <span className="w-full rounded-sm transition-colors" style={{ height: h, background: on ? colorWithAlpha(purple, core.state.effort === e.id ? 0.9 : 0.5) : "rgba(255,255,255,0.08)" }} />
+              {/* The OFF bar is a semantic class, not an inline literal-white
+                  fill: an inline style outranks the app's [data-theme^="light"]
+                  overrides, so the unlit steps painted white-on-white in light
+                  themes. The lit bars stay inline — they are tinted from the
+                  meter's own accent, which no class can express. */}
+              <span
+                className={`w-full rounded-sm transition-colors ${on ? "" : "bg-secondary/60"}`}
+                style={{ height: h, background: on ? colorWithAlpha(purple, core.state.effort === e.id ? 0.9 : 0.5) : undefined }}
+              />
               <span className={`typo-body leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{e.label}</span>
             </button>
           </Tooltip>

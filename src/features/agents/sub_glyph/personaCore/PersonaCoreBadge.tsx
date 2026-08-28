@@ -29,13 +29,23 @@ export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { 
       transition={{ duration: 0.22, ease: EASE, delay: 0.18 + index * 0.03 }}
       data-testid="persona-core-badge"
       aria-pressed={configured}
-      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"}`}
-      style={{
-        borderColor: configured ? colorWithAlpha(accent, 0.5) : "rgba(255,255,255,0.12)",
-        background: configured ? colorWithAlpha(accent, 0.14) : "rgba(255,255,255,0.03)",
-      }}
+      // The UNCONFIGURED skin is carried by semantic classes, not an inline
+      // literal-white fill. An inline style wins the cascade outright, so the
+      // app's [data-theme^="light"] overrides could never reach it and the chip
+      // painted white-on-white in every light theme — with nothing to catch it,
+      // since the lint colour rules only inspect Tailwind class names.
+      // Only the CONFIGURED skin stays inline: it is tinted from the
+      // archetype's own runtime colour, which no class can express.
+      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"} ${configured ? "" : "border-card-border bg-secondary/20"}`}
+      style={configured ? {
+        borderColor: colorWithAlpha(accent, 0.5),
+        background: colorWithAlpha(accent, 0.14),
+      } : undefined}
     >
-      <span className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: configured ? colorWithAlpha(accent, 0.22) : "rgba(255,255,255,0.05)" }}>
+      <span
+        className={`w-5 h-5 rounded-input flex items-center justify-center shrink-0 ${configured ? "" : "bg-secondary/50"}`}
+        style={configured ? { background: colorWithAlpha(accent, 0.22) } : undefined}
+      >
         <PresetIcon className="w-3.5 h-3.5" style={{ color: configured ? accent : undefined }} />
       </span>
       <span className="typo-caption text-foreground">{label}</span>

@@ -10,7 +10,7 @@
  *  and its avatar (MentalityCard falls back to a lucide glyph), with no error
  *  anywhere.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, renderHook, act, waitFor, screen } from "@testing-library/react";
@@ -107,6 +107,36 @@ describe("persona-core catalog integrity", () => {
   it("offers each model tier exactly once", () => {
     const ids = MODEL_TIERS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+// --------------------------------------------------------------------------
+// Theming: an inline fill is unreachable by the light-theme overrides.
+// --------------------------------------------------------------------------
+describe("persona-core theming", () => {
+  const dir = path.resolve(process.cwd(), "src/features/agents/sub_glyph/personaCore");
+  const sources = readdirSync(dir).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"));
+
+  it("reads the persona-core sources (instrument check)", () => {
+    // A file walk that visits nothing passes every assertion below by default,
+    // which is the exact way this kind of gate rots into decoration.
+    expect(sources.length).toBeGreaterThan(5);
+  });
+
+  it("paints no literal white through an inline style", () => {
+    // `style={{ background: "rgba(255,255,255,…)" }}` wins the cascade outright,
+    // so `[data-theme^="light"]` can never override it and the surface goes
+    // white-on-white in light themes. ESLint's colour rules only read Tailwind
+    // class names, so nothing else in the toolchain sees this.
+    const offenders = sources.flatMap((f) => {
+      const src = readFileSync(path.join(dir, f), "utf8");
+      return src.split("\n").flatMap((line, i) =>
+        /rgba?\(\s*255\s*,\s*255\s*,\s*255/.test(line) && !line.trimStart().startsWith("*")
+          ? [`${f}:${i + 1}`]
+          : [],
+      );
+    });
+    expect(offenders).toEqual([]);
   });
 });
 
