@@ -5,7 +5,9 @@ import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { IMPORTANCE_DOTS, importanceToDots, dotsToImportance } from '../../libs/memoryConstants';
 import MemoryRowDetail from './MemoryRowDetail';
 import MemoryRowActions from './MemoryRowActions';
+import MemoryProvenance from './MemoryProvenance';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -99,7 +101,14 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                   type="button"
                   key={i}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${i < dots ? 'bg-amber-400' : 'bg-primary/10'} hover:bg-amber-300`}
-                  onClick={() => onImportanceChange(memory.id, dotsToImportance(i))}
+                  // Re-clicking the rung a memory already sits on writes nothing:
+                  // the dot row is coarser than the 1-10 field behind it, so an
+                  // unguarded click could round-trip the value into a different
+                  // number with no visible change to the dots.
+                  onClick={() => {
+                    const next = dotsToImportance(i);
+                    if (next !== memory.importance) onImportanceChange(memory.id, next);
+                  }}
                   aria-label={`${pt.importance_label} ${dotsToImportance(i)}`}
                 />
               ))}
@@ -117,6 +126,11 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             )}
           </div>
 
+          {/* The row carried member_id / persona_id / run_id all along and
+              showed none of them, so a belief a team acts on arrived with no
+              author. */}
+          <MemoryProvenance memberId={memory.member_id} personaId={memory.persona_id} runId={memory.run_id} />
+
           {showHistory && revisions.length > 0 && (
             <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">
               <div className="flex items-center justify-between">
@@ -132,9 +146,15 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                     <span className="typo-body text-foreground capitalize">{rev.category}</span>
                   </div>
                   <p className="typo-body text-foreground line-clamp-1">{rev.content}</p>
-                  <span className="typo-body text-foreground">
-                    {new Date(rev.edited_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  {/* Was a raw `new Date(...).toLocaleDateString(undefined, …)`:
+                      it formatted against whatever locale the host OS happens
+                      to be in, and it parsed `edited_at` without
+                      `normalizeTimestamp`, so a SQLite-authored
+                      "YYYY-MM-DD HH:MM:SS" (UTC, no designator) read as local
+                      time and every revision displayed offset by the viewer's
+                      UTC offset. AbsoluteTime is the repo's one door for a
+                      fixed timestamp and handles both. */}
+                  <AbsoluteTime timestamp={rev.edited_at} variant="compact" className="typo-body text-foreground" />
                 </div>
               ))}
             </div>

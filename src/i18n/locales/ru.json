@@ -17549,6 +17549,7 @@
     "edit_memory_title": "Редактировать запись памяти",
     "auto_label": "авто",
     "manual_label": "вручную",
+    "memory_member_label": "Участник",
     "version_history": "История версий",
     "no_agents_in_team": "Агентов в команде нет",
     "drag_agents_hint": "Перетащите агентов из боковой панели на холст",

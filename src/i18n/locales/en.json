@@ -18108,6 +18108,7 @@
     "memory_deleted": "Memory deleted",
     "auto_label": "auto",
     "manual_label": "manual",
+    "memory_member_label": "Member",
     "version_history": "Version history",
     "no_agents_in_team": "No agents in this team",
     "drag_agents_hint": "Drag agents from the sidebar onto the canvas",

@@ -18,6 +18,7 @@
   "edit_memory_title": "تعديل إدخال الذاكرة",
   "auto_label": "تلقائي",
   "manual_label": "يدوي",
+  "memory_member_label": "عضو",
   "version_history": "سجل الإصدارات",
   "no_agents_in_team": "لا يوجد وكلاء في هذا الفريق",
   "drag_agents_hint": "اسحب الوكلاء من الشريط الجانبي إلى اللوحة",

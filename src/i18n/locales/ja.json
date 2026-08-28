@@ -17549,6 +17549,7 @@
     "edit_memory_title": "メモリエントリを編集",
     "auto_label": "自動",
     "manual_label": "手動",
+    "memory_member_label": "メンバー",
     "version_history": "バージョン履歴",
     "no_agents_in_team": "チームにエージェントがありません",
     "drag_agents_hint": "サイドバーからキャンバスにエージェントをドラッグしてください",
