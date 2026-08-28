@@ -62,25 +62,36 @@ export function QueryToolbar({
         {saveState === 'saved' ? db.saved : db.save}
       </Button>
 
-      {executing ? (
-        <button
-          type="button"
+      {/* Run/Cancel were the last hand-rolled pair in a toolbar whose other two
+          controls are already the shared primitive. The swap was total — the
+          pressed control VANISHED and a Cancel button took its place, so Run
+          never carried a spinner and never set aria-busy. This is the shape
+          ConsoleTab already proved: Run stays mounted and shows its own busy
+          state, and Cancel joins it as a separate affordance while in flight. */}
+      <Button
+        variant="accent"
+        accentColor="emerald"
+        size="md"
+        onClick={onExecute}
+        disabled={!editorValue.trim()}
+        loading={executing}
+        loadingLabel={db.running}
+        icon={<Play className="w-3 h-3" />}
+        className="rounded-modal typo-body"
+      >
+        {db.run}
+      </Button>
+      {executing && (
+        <Button
+          variant="accent"
+          accentColor="rose"
+          size="md"
           onClick={onCancel}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 transition-all"
+          icon={<X className="w-3 h-3" />}
+          className="rounded-modal typo-body"
         >
-          <X className="w-3 h-3" />
           {t.common.cancel}
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onExecute}
-          disabled={!editorValue.trim()}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          <Play className="w-3 h-3" />
-          {db.run}
-        </button>
+        </Button>
       )}
 
       {/* Same reason as Save above: the AI-run icon used to vanish for the whole

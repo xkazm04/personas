@@ -433,7 +433,10 @@
     "capability_select_subset_hint": "Ở đây chỉ chạy các truy vấn SELECT đơn giản trên một bảng — lọc bằng WHERE, sắp xếp bằng ORDER BY, giới hạn bằng LIMIT. JOIN, tổng hợp, CTE và ghi không được hỗ trợ.",
     "query_timeout": "Hết thời gian chờ phản hồi. Vui lòng thử lại.",
     "add_favorite": "Thêm vào yêu thích",
-    "remove_favorite": "Xóa khỏi yêu thích"
+    "remove_favorite": "Xóa khỏi yêu thích",
+    "delete_query_title": "Xóa truy vấn đã lưu?",
+    "delete_query_body": "\"{title}\" và nội dung truy vấn sẽ bị xóa. Hành động này không thể hoàn tác.",
+    "filtered_count": "{matched} trên {total}"
   },
   "dependencies": {
     "simulate_revocation": "Mô phỏng thu hồi",

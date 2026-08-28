@@ -4,10 +4,11 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
+import { extractErrorMessage } from '../safeModeUtils';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
 import { useTableIntrospection, getCachedColumns } from '@/hooks/database/useTableIntrospection';
 import { TableListSidebar } from './TableListSidebar';
-import { TableDetailPanel } from './TableDetailPanel';
+import { TableDetailPanel, type KeyTypeState } from './TableDetailPanel';
 import { TestConnectionButton } from './TableActions';
 
 interface TablesTabProps {
@@ -30,7 +31,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [keyTypeResult, setKeyTypeResult] = useState<string | null>(null);
+  const [keyType, setKeyType] = useState<KeyTypeState>({ status: 'loading' });
   const [contextMenu, setContextMenu] = useState<TableContextMenuState | null>(null);
   const [filter, setFilter] = useState('');
 
@@ -41,14 +42,17 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
       const escapedKey = key.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
       const result = await executeDbQuery(credentialId, `TYPE "${escapedKey}"`);
       const val = result.rows[0]?.[0];
-      setKeyTypeResult(val != null ? String(val) : 'unknown');
+      setKeyType({ status: 'ok', type: val != null ? String(val) : 'unknown' });
     } catch (err) {
       // The badge used to read a bare untranslated 'error' and the cause went
       // nowhere — the catch body is non-empty, so no-silent-catch never saw it.
+      // It then read the translated word "Error" WRITTEN INTO THE TYPE SLOT,
+      // which the renderer had no way to tell apart from a real Redis type.
+      // The failure is now its own state and carries the real cause.
       silentCatch('features/vault/sub_databases/tabs/TablesTab:fetchKeyType')(err);
-      setKeyTypeResult(t.common.error);
+      setKeyType({ status: 'error', message: extractErrorMessage(err) });
     }
-  }, [credentialId, executeDbQuery, t]);
+  }, [credentialId, executeDbQuery]);
 
   const handleSelectTable = useCallback((tableName: string) => {
     setSelectedTable(tableName);
@@ -57,15 +61,21 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
   const handleSelectKey = useCallback((key: string) => {
     setSelectedKey(key);
-    setKeyTypeResult(null);
+    setKeyType({ status: 'loading' });
     fetchKeyType(key);
   }, [fetchKeyType]);
+
+  const handleRetryKeyType = useCallback(() => {
+    if (!selectedKey) return;
+    setKeyType({ status: 'loading' });
+    fetchKeyType(selectedKey);
+  }, [selectedKey, fetchKeyType]);
 
   const handleRefresh = useCallback(() => {
     clearCache();
     setSelectedTable(null);
     setSelectedKey(null);
-    setKeyTypeResult(null);
+    setKeyType({ status: 'loading' });
     fetchTables(true);
   }, [clearCache, fetchTables]);
 
@@ -121,7 +131,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
       <TableDetailPanel
         isRedis={isRedis} isApi={isApi}
         selectedTable={selectedTable} selectedKey={selectedKey}
-        keyTypeResult={keyTypeResult} tables={tables}
+        keyType={keyType} onRetryKeyType={handleRetryKeyType} tables={tables}
         columns={columns} columnsLoading={columnsLoading} columnsError={columnsError}
         isPinned={selectedTable ? pinnedTableNames.has(selectedTable) : false}
         onPinTable={handlePinTable} family={family}

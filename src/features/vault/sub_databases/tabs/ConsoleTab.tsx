@@ -140,14 +140,16 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
               query run one tab over was uncancellable and the user's only exit
               was to sit out the backend's QUERY_TIMEOUT. */}
           {executing && (
-            <button
-              type="button"
+            <Button
+              variant="accent"
+              accentColor="rose"
+              size="md"
               onClick={cancelQuery}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 transition-all"
+              icon={<X className="w-3 h-3" />}
+              className="rounded-modal typo-body"
             >
-              <X className="w-3 h-3" />
               {t.common.cancel}
-            </button>
+            </Button>
           )}
           <span className="typo-body text-foreground">{db.ctrl_enter}</span>
           <div className="ml-auto flex items-center gap-2">

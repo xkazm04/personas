@@ -224,6 +224,26 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     await guardedExecute(sql);
   }, [guardedExecute, cancelMutation]);
 
+  // Safe mode intercepts an AI-written mutation BEFORE it reaches runQuery, so
+  // the two events runQuery emits (executed / execute_failed) cannot see the
+  // confirm step at all: a generated `DELETE FROM users` the user refused at
+  // the banner emitted nothing, and was indistinguishable from never pressing
+  // Run — the single most valuable signal this lane has. These two close that
+  // gap. Fixed labels only; the statement itself never leaves the app.
+  //
+  // Deliberately NOT wired into the bare `cancelMutation` call in
+  // handleExecuteSql: dropping a stale banner because the user ran a different
+  // message is not a refusal, and counting it as one would poison the ratio.
+  const handleConfirmMutation = useCallback(async () => {
+    trackInteraction(NL_TELEMETRY, 'mutation_confirmed');
+    await confirmMutation();
+  }, [confirmMutation]);
+
+  const handleCancelMutation = useCallback(() => {
+    trackInteraction(NL_TELEMETRY, 'mutation_cancelled');
+    cancelMutation();
+  }, [cancelMutation]);
+
   const handleCopySql = useCallback((sql: string, msgId: string) => {
     copySqlText(msgId, sql);
   }, [copySqlText]);
@@ -280,8 +300,8 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         <MutationConfirmBanner
           pendingMutation={pendingMutation}
           hint={t.vault.databases.modifies_data_hint_short}
-          onConfirm={confirmMutation}
-          onCancel={cancelMutation}
+          onConfirm={handleConfirmMutation}
+          onCancel={handleCancelMutation}
           className="mx-4 mb-2"
         />
       )}

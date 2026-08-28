@@ -1,4 +1,5 @@
 import { Loader2, Play, Copy, Check } from 'lucide-react';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -83,9 +84,10 @@ export function AssistantSqlBlock({
       )}
 
       {msg.error && msg.status === 'done' && (
-        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap font-mono">
-          {msg.error}
-        </div>
+        // `white-space` and `font-family` both inherit, so putting them on the
+        // banner keeps a multi-line engine error readable — the one property
+        // the hand-painted div had that the shared banner does not paint itself.
+        <InlineErrorBanner message={msg.error} className="whitespace-pre-wrap font-mono" />
       )}
 
       {msg.result && (

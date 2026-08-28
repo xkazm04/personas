@@ -126,6 +126,53 @@ describe("ChatTab — NL-query outcome telemetry", () => {
     expect(mockedTrack).toHaveBeenCalledWith("db_nl_query", "executed", "read");
   });
 
+  /**
+   * The confirm banner sits BETWEEN "generated" and "executed", and used to be
+   * the one step in the funnel that emitted nothing: a model-written DELETE the
+   * user refused looked exactly like a question they never ran.
+   */
+  async function askForADelete() {
+    mockSnapshot(
+      {
+        job_id: "job-1", status: "completed", error: null, lines: [],
+        generated_sql: "DELETE FROM users", explanation: "This removes them.",
+      },
+      () => ({ columns: ["ok"], rows: [[1]], row_count: 1, duration_ms: 1 }),
+    );
+    render(<ChatTab credentialId="cred-1" language="sql" serviceType="supabase" />);
+    await ask();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("chat-run-sql"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+  }
+
+  it("records that the user REFUSED a generated mutation at the confirm banner", async () => {
+    await askForADelete();
+    expect(screen.getByTestId("db-mutation-confirm")).toBeTruthy();
+    expect(actionsFor()).not.toContain("mutation_cancelled");
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("db-mutation-confirm-cancel"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(actionsFor()).toContain("mutation_cancelled");
+    // The refusal must stay distinguishable from a run that happened.
+    expect(actionsFor()).not.toContain("executed");
+  });
+
+  it("records that the user AUTHORISED a generated mutation", async () => {
+    await askForADelete();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("db-mutation-confirm-run"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(actionsFor()).toContain("mutation_confirmed");
+    expect(mockedTrack).toHaveBeenCalledWith("db_nl_query", "executed", "mutation");
+  });
+
   it("never puts the question or the generated SQL into a telemetry label", async () => {
     mockSnapshot({
       job_id: "job-1", status: "completed", error: null, lines: [],

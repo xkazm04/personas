@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Table2, Pin, Key, ChevronRight, Database } from 'lucide-react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TableSearch, SidebarTestConnection } from './TableSearch';
 import type { IntrospectedTable, RedisKeyInfo } from '@/hooks/database/useTableIntrospection';
@@ -118,6 +119,18 @@ export function TableListSidebar({
     ? redisKeys.filter((k) => k.key.toLowerCase().includes(q))
     : redisKeys;
 
+  // The footer used to report `tables.length` / `redisKeys.length` — the
+  // UNFILTERED totals — while the list right above it rendered the filtered
+  // arrays, so narrowing 50 tables to 3 still read "50 tables". Only the
+  // zero-match case was handled; every non-empty filter lied.
+  const shownCount = isRedis ? filteredKeys.length : filteredTables.length;
+  const totalCount = isRedis ? redisKeys.length : tables.length;
+  const totalLabel = isRedis
+    ? tx(totalCount !== 1 ? dbt.key_count_other : dbt.key_count_one, { count: totalCount })
+    : isApi
+      ? tx(totalCount !== 1 ? dbt.database_count_other : dbt.database_count_one, { count: totalCount })
+      : tx(totalCount !== 1 ? dbt.table_count_other : dbt.table_count_one, { count: totalCount });
+
   return (
     // Was a flat `w-72`. In a split-screen or small-laptop window that fixed
     // 288px left the detail panel and results grid squeezed to nothing while
@@ -138,10 +151,13 @@ export function TableListSidebar({
         {isColdLoad && <TableListGhost />}
 
         {error && (
+          // Was a hand-painted `bg-red-500/10` div — no icon, no role="alert",
+          // while the query panes two surfaces over already used the shared
+          // banner. SidebarTestConnection stays a sibling rather than becoming
+          // `onRetry`: it carries its own testing/ok/failed state that a bare
+          // callback would throw away.
           <div className="space-y-2">
-            <div className="p-2.5 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 break-words">
-              {error}
-            </div>
+            <InlineErrorBanner compact message={error} className="break-words" />
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
           </div>
         )}
@@ -230,12 +246,10 @@ export function TableListSidebar({
 
       {/* Footer: count */}
       {!loading && !error && (
-        <div className="px-3 py-2 border-t border-primary/5 typo-body text-foreground">
-          {isRedis
-            ? tx(redisKeys.length !== 1 ? dbt.key_count_other : dbt.key_count_one, { count: redisKeys.length })
-            : isApi
-              ? tx(tables.length !== 1 ? dbt.database_count_other : dbt.database_count_one, { count: tables.length })
-              : tx(tables.length !== 1 ? dbt.table_count_other : dbt.table_count_one, { count: tables.length })}
+        <div data-testid="db-table-list-count" className="px-3 py-2 border-t border-primary/5 typo-body text-foreground">
+          {shownCount === totalCount
+            ? totalLabel
+            : tx(dbt.filtered_count, { matched: shownCount, total: totalLabel })}
         </div>
       )}
     </div>

@@ -40,9 +40,16 @@ export function ChatInput({
                 ? db.placeholder_initial
                 : db.placeholder_followup
             }
-            disabled={generating}
+            // Deliberately NOT disabled while generating. A generation runs for
+            // up to NL_QUERY_POLL_TIMEOUT_MS (60s), and disabling the textarea
+            // dropped focus to <body> and threw away every keystroke of the
+            // follow-up the user was drafting. The double-submit guard lives in
+            // ChatTab's handleSubmit (`if (!question || generating) return`), so
+            // Enter during generation is simply ignored — the draft survives and
+            // sends once the answer lands. The button beside it already renders
+            // Cancel rather than Send for the whole window.
             rows={1}
-            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 typo-body text-foreground/85 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
+            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 typo-body text-foreground/85 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 transition-colors"
             style={{ minHeight: '42px', maxHeight: '120px' }}
             onInput={(e) => {
               const ta = e.currentTarget;
