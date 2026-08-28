@@ -138,6 +138,41 @@ describe('formatTimestamp', () => {
   });
 });
 
+/**
+ * The shared elapsed ladder returned hardcoded English ('just now', '5m ago')
+ * behind ~100 <RelativeTime> tags and 69 direct callers, so the i18n-aware
+ * component rendered English in all 14 locales. It now goes through
+ * Intl.RelativeTimeFormat, which needs no catalog keys.
+ */
+describe('formatRelativeTime', () => {
+  const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+
+  it('walks the same rungs it always did', () => {
+    expect(formatRelativeTime(ago(45_000), '-', { language: 'en' })).toBe('45 sec. ago');
+    expect(formatRelativeTime(ago(5 * 60_000), '-', { language: 'en' })).toBe('5 min. ago');
+    expect(formatRelativeTime(ago(2 * 3_600_000), '-', { language: 'en' })).toBe('2 hr. ago');
+    expect(formatRelativeTime(ago(3 * 86_400_000), '-', { language: 'en' })).toBe('3 days ago');
+  });
+
+  it('speaks the requested language instead of English', () => {
+    expect(formatRelativeTime(ago(5 * 60_000), '-', { language: 'de' })).toBe('vor 5 Min.');
+    // `narrow` renders this locale as "-5 min", which is why the style is
+    // `short`. Pinned so a future tightening of the style cannot regress it.
+    expect(formatRelativeTime(ago(5 * 60_000), '-', { language: 'fr' })).toBe('il y a 5\u00a0min');
+    expect(formatRelativeTime(ago(3 * 86_400_000), '-', { language: 'ja' })).toBe('3 日前');
+  });
+
+  it('clamps a future timestamp instead of rendering a negative count', () => {
+    const future = new Date(Date.now() + 45_000).toISOString();
+    expect(formatRelativeTime(future, '-', { language: 'en' })).toBe('now');
+  });
+
+  it('still returns the fallback for a missing or unparseable timestamp', () => {
+    expect(formatRelativeTime(null)).toBe('-');
+    expect(formatRelativeTime('not a date', 'n/a')).toBe('n/a');
+  });
+});
+
 describe('formatRelativeTime date fallback', () => {
   it('renders the date fallback in the requested locale', () => {
     const then = new Date(Date.now() - 10 * 24 * 3600 * 1000);
