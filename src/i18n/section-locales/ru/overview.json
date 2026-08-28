@@ -973,6 +973,8 @@
     "resolve_failed_toast": "Не удалось снять противоречие",
     "detected": "Найдено противоречий: {count}",
     "detected_one": "Найдено противоречий: {count}",
+    "scanned_scope": "среди {count} последних воспоминаний",
+    "none_in_scanned": "Среди {count} последних воспоминаний противоречий нет",
     "count_contradiction": "взаимоисключений: {count}",
     "count_contradiction_one": "взаимоисключение: {count}",
     "count_duplicate": "дубликатов: {count}",

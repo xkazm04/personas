@@ -28,9 +28,10 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
   const { t, tx } = useTranslation();
   const mc = t.overview.memory_conflict;
   const {
-    memories, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
+    memories, memoriesTotal, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
+    memoriesTotal: s.memoriesTotal,
     setMemoryTier: s.setMemoryTier,
     mergeMemories: s.mergeMemories,
     fetchMemories: s.fetchMemories,
@@ -58,6 +59,17 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
   }, [personas]);
 
   const conflicts = useMemo(() => detectConflicts(memories), [memories]);
+
+  // `detectConflicts` only ever sees the last fetched PAGE — `memorySlice`
+  // caps the list at 100 rows (500 while searching), newest first — but this
+  // banner announced its result as a store-wide verdict. On a store past that
+  // cap the surface audits the newest page and silently certifies everything
+  // older as clean, and duplicates skew OLD: a memory duplicated last year
+  // sits far outside the window that was actually checked. Say what was
+  // checked rather than widening the claim; the O(n²) pair loop is why the cap
+  // cannot simply be raised.
+  const auditedCount = memories.length;
+  const isPartialAudit = memoriesTotal > auditedCount;
   const unresolvedConflicts = useMemo(
     () => conflicts.filter((c) => !resolvedIds.has(c.id)),
     [conflicts, resolvedIds],
@@ -180,7 +192,9 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
     return (
       <div className="mx-4 md:mx-6 text-center py-6 typo-body text-foreground">
         <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
-        <DebtText k="auto_all_conflicts_resolved_b848395b" />
+        {isPartialAudit
+          ? tx(mc.none_in_scanned, { count: auditedCount })
+          : <DebtText k="auto_all_conflicts_resolved_b848395b" />}
       </div>
     );
   }
@@ -203,6 +217,11 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
         <span className="typo-heading text-foreground/85 flex-1">
           {tx(unresolvedConflicts.length === 1 ? mc.detected_one : mc.detected, { count: unresolvedConflicts.length })}
+          {isPartialAudit && (
+            <span className="ml-1.5 typo-caption text-foreground">
+              {tx(mc.scanned_scope, { count: auditedCount })}
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-1.5">
           {countByKind.contradiction > 0 && (

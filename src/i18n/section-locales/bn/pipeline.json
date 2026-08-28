@@ -136,6 +136,7 @@
   "timeline_view": "টাইমলাইন দৃশ্য",
   "compare_runs": "রান তুলনা করুন",
   "avg_importance": "গড় গুরুত্ব: {value} | {count}টি শ্রেণি",
+  "stats_team_wide": "পুরো দলের",
   "add_memory": "মেমোরি যোগ করুন",
   "new_memory": "নতুন মেমোরি",
   "title_placeholder": "শিরোনাম…",

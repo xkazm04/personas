@@ -136,6 +136,7 @@
   "timeline_view": "टाइमलाइन दृश्य",
   "compare_runs": "रन की तुलना करें",
   "avg_importance": "औसत महत्व: {value} | {count} श्रेणियां",
+  "stats_team_wide": "पूरी टीम के लिए",
   "add_memory": "याद जोड़ें",
   "new_memory": "नई याद",
   "title_placeholder": "शीर्षक…",

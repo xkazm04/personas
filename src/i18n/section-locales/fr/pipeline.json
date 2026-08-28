@@ -136,6 +136,7 @@
   "timeline_view": "Vue chronologique",
   "compare_runs": "Comparer les exécutions",
   "avg_importance": "Importance moy. : {value} | {count} catégories",
+  "stats_team_wide": "toute l’équipe",
   "add_memory": "Ajouter une mémoire",
   "new_memory": "Nouvelle mémoire",
   "title_placeholder": "Titre…",

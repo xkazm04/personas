@@ -7745,6 +7745,8 @@ export type Translations = {
       resolve_failed_toast: string;
       detected: string;
       detected_one: string;
+      scanned_scope: string;
+      none_in_scanned: string;
       count_contradiction: string;
       count_contradiction_one: string;
       count_duplicate: string;
@@ -18341,6 +18343,7 @@ export type Translations = {
     timeline_view: string;
     compare_runs: string;
     avg_importance: string;
+    stats_team_wide: string;
     add_memory: string;
     new_memory: string;
     title_placeholder: string;

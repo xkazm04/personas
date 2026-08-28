@@ -973,6 +973,8 @@
     "resolve_failed_toast": "দ্বন্দ্ব মেটানো যায়নি",
     "detected": "{count}টি দ্বন্দ্ব শনাক্ত হয়েছে",
     "detected_one": "{count}টি দ্বন্দ্ব শনাক্ত হয়েছে",
+    "scanned_scope": "সাম্প্রতিকতম {count}টি স্মৃতির মধ্যে",
+    "none_in_scanned": "সাম্প্রতিকতম {count}টি স্মৃতিতে কোনো দ্বন্দ্ব নেই",
     "count_contradiction": "{count}টি বিরোধ",
     "count_contradiction_one": "{count}টি বিরোধ",
     "count_duplicate": "{count}টি নকল",

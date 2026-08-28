@@ -136,6 +136,7 @@
   "timeline_view": "Tampilan garis waktu",
   "compare_runs": "Bandingkan jalankan",
   "avg_importance": "Rata-rata kepentingan: {value} | {count} kategori",
+  "stats_team_wide": "seluruh tim",
   "add_memory": "Tambah memori",
   "new_memory": "Memori baru",
   "title_placeholder": "Judul…",

@@ -249,7 +249,16 @@ export default function TeamMemoryPanel({
             className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >
-            <span>{tx(pt.avg_importance, { value: stats.avg_importance.toFixed(1), count: stats.category_counts.length })}</span>
+            {/* `getTeamMemoryStats(teamId, category, search)` takes no runId --
+                these stats, and the per-category counts under them, always
+                describe the WHOLE team. With a run filter active the list above
+                shows one run, so an unqualified "Avg importance: 4.2 | 8
+                categories" read as that run's numbers and silently contradicted
+                the list it sat beneath. Say whose numbers they are. */}
+            <span className="flex items-center gap-1.5 min-w-0">
+              <span className="truncate">{tx(pt.avg_importance, { value: stats.avg_importance.toFixed(1), count: stats.category_counts.length })}</span>
+              {activeRunFilter && <span className="typo-caption text-foreground flex-shrink-0">{pt.stats_team_wide}</span>}
+            </span>
             {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
           {statsExpanded && (

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Play, Shield, ShieldOff } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -18,19 +18,72 @@ interface HistoryEntry {
   timestamp: number;
 }
 
+const MAX_HISTORY = 10;
+/** How many databases' histories are kept before the least-recently-used one is dropped. */
+const MAX_TRACKED_CREDENTIALS = 20;
+
+/**
+ * Query history outlives the component, because the component does not outlive
+ * a tab switch. ConsoleTab unmounts the moment the user opens Tables, so the
+ * `useState` this replaces took the last ten queries with it and the user came
+ * back to an empty strip.
+ *
+ * The sql-console golden path treats that as a security cost rather than a
+ * nuisance: the built-in console is a CONTAINMENT feature, and every
+ * convenience it lacks is a reason to paste the connection credential into an
+ * external client, where the vault stops having custody of it.
+ *
+ * Same shape as the repo's other remount caches (`LifecyclePage`,
+ * `CompetitionList`): module-scoped, keyed by entity, capped in both
+ * directions. Deliberately memory-only and never localStorage — a query text
+ * can carry the very data the vault is responsible for, and it must not
+ * survive the process or reach disk.
+ */
+const historyByCredential = new Map<string, HistoryEntry[]>();
+
+function readHistory(credentialId: string): HistoryEntry[] {
+  return historyByCredential.get(credentialId) ?? [];
+}
+
+function writeHistory(credentialId: string, entries: HistoryEntry[]): void {
+  // Delete-then-set moves this key to the end, making Map insertion order an
+  // LRU queue; the oldest database's history is what gets dropped.
+  historyByCredential.delete(credentialId);
+  historyByCredential.set(credentialId, entries);
+  while (historyByCredential.size > MAX_TRACKED_CREDENTIALS) {
+    const oldest = historyByCredential.keys().next().value;
+    if (oldest === undefined) break;
+    historyByCredential.delete(oldest);
+  }
+}
+
+/** Drop every database's history. Tests only — this cache is process-scoped. */
+export function __resetConsoleHistoryForTests(): void {
+  historyByCredential.clear();
+}
+
 export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
   const { t } = useTranslation();
   const db = t.vault.databases;
 
   const [query, setQuery] = useState('');
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  // Seeded from the module cache, so a remount paints the strip warm.
+  const [history, setHistory] = useState<HistoryEntry[]>(() => readHistory(credentialId));
+
+  // The tab can also be re-pointed at another database without unmounting.
+  useEffect(() => {
+    setHistory(readHistory(credentialId));
+  }, [credentialId]);
 
   const recordHistory = useCallback((_result: unknown, text: string) => {
-    setHistory((prev) => {
-      const filtered = prev.filter((h) => h.query !== text);
-      return [{ query: text, timestamp: Date.now() }, ...filtered].slice(0, 10);
-    });
-  }, []);
+    // Read from the module cache, not from `prev`: it is the source of truth,
+    // and a state updater must stay pure (StrictMode double-invokes it) while
+    // this write is not.
+    const filtered = readHistory(credentialId).filter((h) => h.query !== text);
+    const next = [{ query: text, timestamp: Date.now() }, ...filtered].slice(0, MAX_HISTORY);
+    writeHistory(credentialId, next);
+    setHistory(next);
+  }, [credentialId]);
 
   const { executing, result, error, runQuery } = useDbQueryRunner(credentialId, undefined, recordHistory);
 
