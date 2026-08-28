@@ -44,6 +44,33 @@ export const MOTION = {
     normal: 250,
     slow: 400,
   },
+  /**
+   * Spring physics, one entry per intended GESTURE — not per call site.
+   *
+   * There were three declarations of a spring in this app and no statement of
+   * which were meant to be the same: `MOTION_SPRING` and `useMotion`'s
+   * `FULL_MOTION.spring` were byte-identical copies of 300/25, while the rAF
+   * engine ran 50/15 — six times softer — under a comment claiming it matched
+   * "the previous framer-motion config", which by then declared neither number.
+   *
+   * Two springs, decided and named. A spring has no duration, so neither is a
+   * rung of the `duration` ladder above and neither can be audited against a
+   * millisecond cap.
+   */
+  spring: {
+    /**
+     * Snappy interaction spring — a control answering a press or a hover.
+     * Arrives quickly and barely overshoots. This is the app's default spring.
+     */
+    snappy: { stiffness: 300, damping: 25, mass: 1 },
+    /**
+     * Soft readout spring — a value gliding to a new number (the shared rAF
+     * engine's counters, gauges and meters). Deliberately slower and heavier
+     * than `snappy`: the travel IS the information, so it has to be readable
+     * rather than instant.
+     */
+    soft: { stiffness: 50, damping: 15, mass: 1 },
+  },
   /** Deliberate delays before a UI element appears. */
   delay: {
     /**
@@ -60,6 +87,7 @@ export const MOTION = {
 } as const;
 
 export type MotionDurationToken = keyof typeof MOTION.duration;
+export type MotionSpringToken = keyof typeof MOTION.spring;
 export type MotionDelayToken = keyof typeof MOTION.delay;
 
 // -- Semantic spacing tokens ------------------------------------------------

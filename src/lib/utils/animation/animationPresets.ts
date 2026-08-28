@@ -80,8 +80,12 @@ export const MOTION_TIMING = {
 /**
  * Physics-driven alternative to the timed ladder — deliberately NOT a member of
  * `MOTION_TIMING`, because it has no duration and so belongs to no rung.
+ *
+ * The numbers live in `MOTION.spring.snappy`, not here: this was one of two
+ * byte-identical declarations of 300/25 (the other in `useMotion`), with
+ * nothing saying they were meant to be the same spring.
  */
-export const MOTION_SPRING = { type: 'spring' as const, stiffness: 300, damping: 25 };
+export const MOTION_SPRING = { type: 'spring' as const, ...MOTION.spring.snappy };
 
 /** Stagger container -- wrap the list/grid parent with this variant. */
 export const staggerContainer: Variants = {

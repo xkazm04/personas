@@ -28,9 +28,16 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { MOTION } from '../designTokens';
-import { MOTION_PRESETS, MOTION_TIMING, CSS_DURATION_CLASS } from '../animation/animationPresets';
+import {
+  MOTION_PRESETS,
+  MOTION_TIMING,
+  MOTION_SPRING,
+  CSS_DURATION_CLASS,
+} from '../animation/animationPresets';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 
 // Resolved from the vitest root rather than `import.meta.url`, which is not a
 // file: URL under this repo's vite transform.
@@ -95,5 +102,52 @@ describe('motion token parity', () => {
       }
     }
     expect(mismatched).toEqual([]);
+  });
+});
+
+/**
+ * The spring ladder, which had the same problem as the timed one and none of
+ * the same guards.
+ *
+ * `MOTION_SPRING` and `useMotion`'s `FULL_MOTION.spring` were byte-identical
+ * declarations of `{ stiffness: 300, damping: 25 }` in two files that cannot
+ * import each other (animationPresets imports useMotion), and the rAF engine
+ * ran 50/15 under a comment claiming it matched "the previous framer-motion
+ * config" — six times stiffer than what that comment pointed at. Three
+ * declarations, one of them a duplicate and one of them a divergence with a
+ * false justification, and nothing said which pairs were meant to agree.
+ *
+ * Both now read `MOTION.spring`, so the question "are these the same spring?"
+ * has an answer in the source. These cases are what keeps it answered.
+ */
+describe('spring token parity', () => {
+  it('gives the Framer spring preset and the useMotion spring one set of numbers', () => {
+    const { result } = renderHook(() => useMotion());
+    expect(result.current.spring).toEqual(MOTION_SPRING);
+  });
+
+  it('keeps the default spring on the snappy token', () => {
+    expect(MOTION_SPRING).toEqual({ type: 'spring', ...MOTION.spring.snappy });
+  });
+
+  it('keeps the rAF engine on the soft readout spring, not a fourth set of numbers', () => {
+    // The engine's constants are module-private by design, so this reads the
+    // source: the assertion is that the numbers are DERIVED, which is the whole
+    // property at issue — a re-typed `const STIFFNESS = 50` would satisfy any
+    // value-level check while re-opening the drift.
+    const engine = readFileSync(
+      resolve(process.cwd(), 'src/lib/utils/rafAnimationEngine.ts'),
+      'utf-8',
+    );
+    expect(engine.length, 'rafAnimationEngine.ts is empty or missing').toBeGreaterThan(200);
+    expect(engine).toContain('MOTION.spring.soft');
+    expect(engine, 'the spring constants are re-typed rather than derived')
+      .not.toMatch(/const (STIFFNESS|DAMPING|MASS) = \d/);
+  });
+
+  it('keeps the two springs genuinely distinct, so naming them was worth it', () => {
+    // If these ever converge, the two names are a lie and one of them should go.
+    expect(MOTION.spring.soft.stiffness).toBeLessThan(MOTION.spring.snappy.stiffness);
+    expect(MOTION.spring.soft.damping).toBeLessThan(MOTION.spring.snappy.damping);
   });
 });

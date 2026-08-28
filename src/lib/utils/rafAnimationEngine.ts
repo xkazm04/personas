@@ -5,11 +5,20 @@
  * a single rAF callback interpolates all registered targets and writes directly
  * to the DOM via refs — zero React reconciliation during animation.
  *
- * Spring physics: critically-damped spring with stiffness=50, damping=15
- * (matches the previous framer-motion config).
+ * Spring physics: `MOTION.spring.soft` — the readout spring (stiffness 50,
+ * damping 15), deliberately six times softer than the app's default
+ * `MOTION.spring.snappy`. A gliding counter has to be readable; a control
+ * answering a press does not.
+ *
+ * That distinction was previously undeclared: these numbers sat inline under a
+ * comment claiming they matched "the previous framer-motion config", which had
+ * by then been 300/25 for long enough that the claim was simply false, and a
+ * component animating one property here and another through Framer got two
+ * unrelated motion characters with nothing saying that was intended.
  */
 
 import { silentCatch } from '@/lib/silentCatch';
+import { MOTION } from '@/lib/utils/designTokens';
 
 interface AnimationEntry {
   /** Current interpolated value */
@@ -26,10 +35,8 @@ const entries = new Map<symbol, AnimationEntry>();
 let rafId: number | null = null;
 let lastTime: number | null = null;
 
-// Spring constants — match the previous framer-motion config
-const STIFFNESS = 50;
-const DAMPING = 15;
-const MASS = 1;
+// Spring constants — the named readout spring, not a fourth set of numbers.
+const { stiffness: STIFFNESS, damping: DAMPING, mass: MASS } = MOTION.spring.soft;
 const REST_THRESHOLD = 0.01; // value + velocity both below this → settled
 
 /**
