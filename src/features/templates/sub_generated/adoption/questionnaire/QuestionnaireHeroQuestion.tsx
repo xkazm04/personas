@@ -9,6 +9,7 @@ import { QuestionCard } from '../QuestionnaireFormGridParts';
 import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 import { QuestionnaireBlockedCredentialCta } from './QuestionnaireBlockedCredentialCta';
 import { QuestionnaireKeyboardHint } from './QuestionnaireKeyboardHint';
+import { resolveBlockedCredentialCategory } from './questionnaireHelpers';
 import { QuestionnaireStackedOptions } from './QuestionnaireStackedOptions';
 import type { QuestionnaireNormalizedOption } from './types';
 import { DebtText } from '@/i18n/DebtText';
@@ -75,6 +76,11 @@ export function QuestionnaireHeroQuestion({
   const meta = CATEGORY_META[question.category ?? ''] ?? FALLBACK_CATEGORY;
   const { Icon } = meta;
   const hasTip = !!question.context && !isBlocked;
+  // Resolved rather than read straight off `vault_category`: a blocked
+  // dynamic-source question never carries that field, so gating on it left the
+  // question rendering as an ordinary picker that could not load and offered
+  // no way to fix the block.
+  const blockedCategory = isBlocked ? resolveBlockedCredentialCategory(question) : null;
   const appliesToIds =
     question.use_case_ids ?? (question.use_case_id ? [question.use_case_id] : []);
 
@@ -141,9 +147,9 @@ export function QuestionnaireHeroQuestion({
         <div className="h-8" />
 
         {/* Input surface */}
-        {isBlocked && question.vault_category && onAddCredential ? (
+        {blockedCategory && onAddCredential ? (
           <QuestionnaireBlockedCredentialCta
-            category={question.vault_category}
+            category={blockedCategory}
             onAddCredential={onAddCredential}
           />
         ) : isStackable ? (

@@ -18,6 +18,7 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SelectPills } from './SelectPills';
+import { resolveBlockedCredentialCategory } from './questionnaire/questionnaireHelpers';
 import { CredentialPickerCards } from '@/features/vault/components/CredentialPickerCards';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -323,6 +324,10 @@ export function QuestionCard({
 
   const isAnswered = !!answer;
   const hasTip = !!question.context && !isBlocked;
+  // A blocked dynamic-source question carries no `vault_category` (the matcher
+  // blocks it on `dynamic_source.service_type` instead), so reading that field
+  // directly skipped the remedy and rendered a picker that could never load.
+  const blockedCategory = isBlocked ? resolveBlockedCredentialCategory(question) : null;
 
   return (
     <div
@@ -393,14 +398,14 @@ export function QuestionCard({
       )}
 
       {/* Blocked state: show the "Add credential" call-to-action */}
-      {isBlocked && question.vault_category ? (
+      {blockedCategory ? (
         <div className="ml-5.5 space-y-2">
           <p className="typo-caption text-status-error/80 leading-relaxed">
-            {t.templates.adopt_modal.credential_required.replace('{category}', question.vault_category)}
+            {t.templates.adopt_modal.credential_required.replace('{category}', blockedCategory)}
           </p>
           <button
             type="button"
-            onClick={() => onAddCredential?.(question.vault_category!)}
+            onClick={() => onAddCredential?.(blockedCategory)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/25 transition-colors"
           >
             <Plus className="w-3 h-3" />
