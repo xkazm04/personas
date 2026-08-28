@@ -4943,7 +4943,8 @@
       "drop_no_paths": "No valid file paths found. Try dropping individual files.",
       "chars_unit": "{count} chars",
       "search_source_label": "Source",
-      "search_source_all": "All documents"
+      "search_source_all": "All documents",
+      "search_results_capped": "Top {count} for \"{query}\""
     },
     "manager": {
       "title": "Credentials",

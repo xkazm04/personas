@@ -161,6 +161,33 @@ describe('SearchTab — search sequence guard', () => {
   });
 });
 
+describe('SearchTab — the count carries its predicate', () => {
+  it('says "Top n" when the page is full and "n results" when it is not', async () => {
+    // topK defaults to 10: a full page is a cut, a short page is everything.
+    mockSearch.mockResolvedValue({
+      results: Array.from({ length: 10 }, (_, i) => hit(`h${i}`)),
+      floorFiltered: 0,
+    });
+
+    const view = render(<SearchTab kb={KB} />);
+    const input = screen.getByPlaceholderText(/Ask a question/i);
+    fireEvent.change(input, { target: { value: 'wide' } });
+    await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }); });
+
+    expect(await screen.findByText(/Top 10 for/)).toBeTruthy();
+    view.unmount();
+
+    mockSearch.mockResolvedValue({ results: [hit('a'), hit('b')], floorFiltered: 0 });
+    render(<SearchTab kb={KB} />);
+    const narrow = screen.getByPlaceholderText(/Ask a question/i);
+    fireEvent.change(narrow, { target: { value: 'narrow' } });
+    await act(async () => { fireEvent.keyDown(narrow, { key: 'Enter' }); });
+
+    expect(await screen.findByText(/2 results for/)).toBeTruthy();
+    expect(screen.queryByText(/Top 2 for/)).toBeNull();
+  });
+});
+
 describe('SearchTab — source scoping', () => {
   it('offers only path-backed documents and passes the choice as filterSource', async () => {
     mockListDocuments.mockResolvedValue([

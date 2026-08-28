@@ -676,7 +676,8 @@
     "drop_no_paths": "কোনও বৈধ ফাইল পাথ পাওয়া যায়নি। আলাদাভাবে ফাইল ছেড়ে দেখুন।",
     "chars_unit": "{count} অক্ষর",
     "search_source_label": "উৎস",
-    "search_source_all": "সব নথি"
+    "search_source_all": "সব নথি",
+    "search_results_capped": "\"{query}\"-এর জন্য সেরা {count}টি"
   },
   "manager": {
     "title": "ক্রেডেনশিয়াল",

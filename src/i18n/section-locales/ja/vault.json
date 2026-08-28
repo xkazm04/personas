@@ -676,7 +676,8 @@
     "drop_no_paths": "有効なファイルパスが見つかりませんでした。ファイルを個別にドロップしてみてください。",
     "chars_unit": "{count} 文字",
     "search_source_label": "対象ファイル",
-    "search_source_all": "すべてのドキュメント"
+    "search_source_all": "すべてのドキュメント",
+    "search_results_capped": "「{query}」の上位 {count} 件"
   },
   "manager": {
     "title": "認証情報",

@@ -4950,6 +4950,7 @@ export type Translations = {
       chars_unit: string;
       search_source_label: string;
       search_source_all: string;
+      search_results_capped: string;
     };
     manager: {
       title: string;

@@ -676,7 +676,8 @@
     "drop_no_paths": "Nebyly nalezeny žádné platné cesty k souborům. Zkuste přetáhnout jednotlivé soubory.",
     "chars_unit": "{count} znaků",
     "search_source_label": "Zdroj",
-    "search_source_all": "Všechny dokumenty"
+    "search_source_all": "Všechny dokumenty",
+    "search_results_capped": "Nejlepších {count} pro „{query}“"
   },
   "manager": {
     "title": "Přihlašovací údaje",

@@ -4674,7 +4674,8 @@
       "drop_no_paths": "Не найдено ни одного корректного пути к файлу. Попробуйте перетащить файлы по одному.",
       "chars_unit": "{count} симв.",
       "search_source_label": "Источник",
-      "search_source_all": "Все документы"
+      "search_source_all": "Все документы",
+      "search_results_capped": "Топ-{count} по запросу «{query}»"
     },
     "manager": {
       "title": "Учётные данные",

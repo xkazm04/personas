@@ -676,7 +676,8 @@
     "drop_no_paths": "유효한 파일 경로를 찾을 수 없습니다. 파일을 하나씩 끌어다 놓아 보세요.",
     "chars_unit": "{count}자",
     "search_source_label": "출처",
-    "search_source_all": "모든 문서"
+    "search_source_all": "모든 문서",
+    "search_results_capped": "\"{query}\"의 상위 {count}개"
   },
   "manager": {
     "title": "자격 증명",

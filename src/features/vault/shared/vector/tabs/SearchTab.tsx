@@ -210,7 +210,20 @@ export function SearchTab({ kb }: SearchTabProps) {
                 <Clock className="w-3 h-3" />
                 {durationMs}ms
               </span>
-              <span>{tx(results.length === 1 ? sh.search_results_one : sh.search_results_other, { count: results.length, query: lastQuery ?? '' })}</span>
+              {/*
+                The count carries a predicate. A full page is the TOP n of an
+                unknown-sized match set, not the whole of it — "10 results"
+                taught the user that ten is all there is. A short page is the
+                honest "all n". (The candidate total the backend actually knows
+                is not on KbSearchResponse; saying "top" claims only what the
+                surface can see.)
+              */}
+              <span>{tx(
+                results.length >= topK
+                  ? sh.search_results_capped
+                  : results.length === 1 ? sh.search_results_one : sh.search_results_other,
+                { count: results.length, query: lastQuery ?? '' },
+              )}</span>
               {floorFiltered > 0 && (
                 <span>{tx(sh.search_floor_filtered, { count: floorFiltered })}</span>
               )}

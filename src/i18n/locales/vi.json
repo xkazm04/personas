@@ -4674,7 +4674,8 @@
       "drop_no_paths": "Không tìm thấy đường dẫn tệp hợp lệ. Hãy thử thả từng tệp một.",
       "chars_unit": "{count} ký tự",
       "search_source_label": "Nguồn",
-      "search_source_all": "Tất cả tài liệu"
+      "search_source_all": "Tất cả tài liệu",
+      "search_results_capped": "{count} kết quả hàng đầu cho \"{query}\""
     },
     "manager": {
       "title": "Thông tin xác thực",

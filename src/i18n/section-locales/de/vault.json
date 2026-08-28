@@ -676,7 +676,8 @@
     "drop_no_paths": "Keine gültigen Dateipfade gefunden. Ziehen Sie einzelne Dateien hierher.",
     "chars_unit": "{count} Zeichen",
     "search_source_label": "Quelle",
-    "search_source_all": "Alle Dokumente"
+    "search_source_all": "Alle Dokumente",
+    "search_results_capped": "Top {count} für „{query}“"
   },
   "manager": {
     "title": "Zugangsdaten",
