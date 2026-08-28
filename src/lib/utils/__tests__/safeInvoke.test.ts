@@ -8,8 +8,21 @@ describe("isCommandNotFound", () => {
     expect(isCommandNotFound(new Error('Command "foo_bar" not found'))).toBe(true);
   });
 
-  it("matches AppError-shaped objects with kind === 'not_found'", () => {
-    expect(isCommandNotFound({ kind: "not_found" })).toBe(true);
+  it("does NOT match AppError-shaped objects with kind === 'not_found'", () => {
+    // `kind: 'not_found'` is AppError::NotFound — a real backend
+    // resource-not-found, never Tauri's unregistered-command failure (which is
+    // a plain string). Treating it as command-not-found swallowed genuine
+    // errors into an empty fallback.
+    expect(isCommandNotFound({ kind: "not_found" })).toBe(false);
+    expect(
+      isCommandNotFound({ kind: "not_found", error: "Platform definition 'n8n'" }),
+    ).toBe(false);
+  });
+
+  it("still matches an AppError-shaped object whose `error` carries the Tauri string", () => {
+    expect(
+      isCommandNotFound({ kind: "internal", error: 'Command "list_projects" not found' }),
+    ).toBe(true);
   });
 
   it("does NOT match arbitrary errors that just contain the substring 'not found'", () => {

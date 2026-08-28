@@ -35,17 +35,24 @@ const TAURI_COMMAND_NOT_FOUND_RE =
  * erroring. This shared file fixes the dev-tools surface to use the same
  * strict-regex check.
  *
- * We now only match on:
- *   1. An AppError-shaped object with `kind === 'not_found'`, or
- *   2. Tauri's canonical `Command "<name>" not found` shape (anchored regex).
+ * ## Second bug, same shape (fixed 2026-08-28)
  *
- * Substring checks on "not found" are never safe — real resource-not-found
- * errors must propagate, not be coerced into an empty fallback.
+ * The fix above then re-introduced the exact condition it removed, one layer
+ * up: an `err.kind === 'not_found'` branch ran BEFORE the regex and returned
+ * `true`. `kind: 'not_found'` is `AppError::NotFound` (`src-tauri/core/src/error.rs`
+ * — the `Serialize` impl maps `AppError::NotFound(_) => "not_found"`), i.e. the
+ * backend's structured *resource*-not-found — "project not found", "context
+ * not found", "Platform definition 'x'". It is never Tauri's unregistered-command
+ * failure, which arrives as a plain string and is caught by the regex below.
+ * So that branch could only ever fire on the app's own real errors, swallowing
+ * them into an empty fallback — the same defect in typed clothing.
+ *
+ * We now match on exactly one thing: Tauri's canonical
+ * `Command "<name>" not found` shape (anchored regex). Neither a substring
+ * check nor a structured `kind` check on "not found" is safe — real
+ * resource-not-found errors must propagate, not be coerced into a fallback.
  */
 export function isCommandNotFound(err: unknown): boolean {
-  if (typeof err === 'object' && err !== null && 'kind' in err) {
-    return (err as { kind: string }).kind === 'not_found';
-  }
   const msg = typeof err === "string" ? err : err instanceof Error ? err.message
     : typeof err === "object" && err !== null && "error" in err ? String((err as { error: string }).error)
     : String(err);
