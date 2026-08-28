@@ -1,6 +1,7 @@
 import { Brain, ChevronDown, List, GitCommitVertical, GitCompareArrows } from 'lucide-react';
 import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface MemoryPanelHeaderProps {
   total: number;
@@ -35,46 +36,52 @@ export default function MemoryPanelHeader({
         {/* View mode toggle */}
         {hasRunData && (
           <div className="flex items-center rounded-card border border-primary/10 overflow-hidden mr-1">
-            <button
-              type="button"
-              onClick={() => { onViewModeChange('list'); onClearRunFilter(); }}
-              className={`p-1 transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-violet-500/20 text-violet-400'
-                  : 'text-foreground hover:text-muted-foreground/60'
-              }`}
-              aria-pressed={viewMode === 'list'}
-              title={t.pipeline.list_view}
-            >
-              <List className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onViewModeChange('timeline')}
-              className={`p-1 transition-colors ${
-                viewMode === 'timeline'
-                  ? 'bg-violet-500/20 text-violet-400'
-                  : 'text-foreground hover:text-muted-foreground/60'
-              }`}
-              aria-pressed={viewMode === 'timeline'}
-              title={t.pipeline.timeline_view}
-            >
-              <GitCommitVertical className="w-3 h-3" />
-            </button>
-            {hasDiffData && (
+            <Tooltip content={t.pipeline.list_view}>
               <button
                 type="button"
-                onClick={() => onViewModeChange('diff')}
+                onClick={() => { onViewModeChange('list'); onClearRunFilter(); }}
                 className={`p-1 transition-colors ${
-                  viewMode === 'diff'
+                  viewMode === 'list'
                     ? 'bg-violet-500/20 text-violet-400'
                     : 'text-foreground hover:text-muted-foreground/60'
                 }`}
-                aria-pressed={viewMode === 'diff'}
-                title={t.pipeline.compare_runs}
+                aria-pressed={viewMode === 'list'}
+                aria-label={t.pipeline.list_view}
               >
-                <GitCompareArrows className="w-3 h-3" />
+                <List className="w-3 h-3" />
               </button>
+            </Tooltip>
+            <Tooltip content={t.pipeline.timeline_view}>
+              <button
+                type="button"
+                onClick={() => onViewModeChange('timeline')}
+                className={`p-1 transition-colors ${
+                  viewMode === 'timeline'
+                    ? 'bg-violet-500/20 text-violet-400'
+                    : 'text-foreground hover:text-muted-foreground/60'
+                }`}
+                aria-pressed={viewMode === 'timeline'}
+                aria-label={t.pipeline.timeline_view}
+              >
+                <GitCommitVertical className="w-3 h-3" />
+              </button>
+            </Tooltip>
+            {hasDiffData && (
+              <Tooltip content={t.pipeline.compare_runs}>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange('diff')}
+                  className={`p-1 transition-colors ${
+                    viewMode === 'diff'
+                      ? 'bg-violet-500/20 text-violet-400'
+                      : 'text-foreground hover:text-muted-foreground/60'
+                  }`}
+                  aria-pressed={viewMode === 'diff'}
+                  aria-label={t.pipeline.compare_runs}
+                >
+                  <GitCompareArrows className="w-3 h-3" />
+                </button>
+              </Tooltip>
             )}
           </div>
         )}
