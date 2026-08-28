@@ -13,18 +13,24 @@ import {
   VolumeX, ListTree, Zap, Repeat, Flag, Database, BellOff, GraduationCap,
   ShieldCheck, Swords, Rocket, Flame, Scale, Wrench, Handshake, ScanSearch,
   ShieldHalf, MessagesSquare, Sparkles, LineChart, Radar, Workflow, Activity,
-  LibraryBig, Palette, ConciergeBell, Target, Brain, Users, BookOpenCheck,
-  NotebookPen, type LucideIcon,
+  LibraryBig, Palette, ConciergeBell, type LucideIcon,
 } from "lucide-react";
 import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types";
 
 /** The persona-core accent (also the model-tier accent). */
 export const ACCENT = "#60A5FA";
 
-// -- Archetype icon resolver (carried over from the retired Foundry) ---------
-const CORE_ICONS: Record<string, LucideIcon> = {
+// -- Archetype icon resolver -------------------------------------------------
+/** The `icon` names the shipped archetype catalog actually uses
+ *  (`scripts/templates/_archetypes.json`), and nothing else. Five further
+ *  entries (Target, Brain, Users, BookOpenCheck, NotebookPen) were residue of
+ *  the retired Foundry: no archetype referenced them, so they only pulled dead
+ *  lucide imports into the chunk. `personaCore.test.tsx` pins the map to the
+ *  shipped catalog in BOTH directions, so a new archetype icon fails loudly
+ *  here instead of silently falling back to Sparkles. */
+export const CORE_ICONS: Record<string, LucideIcon> = {
   ShieldCheck, LineChart, Radar, Workflow, Activity, LibraryBig, Palette,
-  Rocket, ConciergeBell, Target, Brain, Users, BookOpenCheck, NotebookPen,
+  Rocket, ConciergeBell,
 };
 export function coreIcon(name: string): LucideIcon {
   return CORE_ICONS[name] ?? Sparkles;

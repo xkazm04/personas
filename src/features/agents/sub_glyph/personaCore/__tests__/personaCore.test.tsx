@@ -17,6 +17,7 @@ import { render, renderHook, act, waitFor, screen } from "@testing-library/react
 
 import {
   ARCHETYPE_TRAITS,
+  CORE_ICONS,
   CONFLICT_STYLES,
   CONFLICT_DIRECTIVE,
   EFFORT_TIERS,
@@ -92,6 +93,15 @@ describe("persona-core catalog integrity", () => {
     // owns the vocabulary the backend is wired to. Drift here means the modal
     // offers a level the engine cannot receive (or hides one it can).
     expect(EFFORT_TIERS.map((e) => e.id)).toEqual([...EFFORT_LEVELS]);
+  });
+
+  it("maps exactly the archetype icons the shipped catalog uses", () => {
+    // Two-sided on purpose. A missing entry is invisible at runtime (coreIcon
+    // falls back to Sparkles, so a new archetype silently wears the wrong
+    // glyph); a surplus entry is dead weight that drags an unused lucide icon
+    // into the chunk — which is how five Foundry-era entries survived here.
+    const used = [...new Set(shipped.map((a) => a.icon))].sort();
+    expect(Object.keys(CORE_ICONS).sort()).toEqual(used);
   });
 
   it("offers each model tier exactly once", () => {
