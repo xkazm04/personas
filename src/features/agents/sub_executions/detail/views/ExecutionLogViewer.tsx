@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { ChevronDown, ChevronRight, FileText, Loader2, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, AlertTriangle } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionLog } from '@/api/agents/executions';
@@ -112,12 +112,7 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
                 {t.agents.executions.log_truncated_banner}
               </div>
             )}
-            {logLoading && (
-              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {t.agents.executions.loading_log}
-              </div>
-            )}
+            {logLoading && <LogGhostLines label={t.agents.executions.loading_log} />}
             {logContent === '' && !logLoading && !logError && (
               <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
                 {t.agents.executions.log_empty}
@@ -134,6 +129,44 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
             )}
           </div>
         )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LogGhostLines — the cold state for the log region, per
+// docs/design/overview-loading.md. It replaces a `Loader2 animate-spin` row,
+// which is the shape the repo's spinner boundary reserves for a CONTROL the
+// user just pressed, never for a surface fetching its data. Sibling surfaces in
+// this same context (TraceInspector, ExecutionMemories, ChainTraceView) were
+// converted first; this one was missed.
+//
+// The ghost paints the real log container — same padding, border, radius and
+// monospace line rhythm — with bars where the lines will be, so nothing shifts
+// when the content lands. Entrance is `animate-fade-in` (fill-mode: both)
+// behind a stagger starting at 120ms: opacity is held at 0 through the delay,
+// so a log that arrives quickly paints no ghost at all. That delay IS the
+// anti-flash — no timers, no minimum display, no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+/** Deterministic width variation so the bars read as log lines, not a barcode. */
+const LOG_GHOST_WIDTHS = ['w-[78%]', 'w-[52%]', 'w-[91%]', 'w-[41%]', 'w-[67%]', 'w-[85%]'];
+
+function LogGhostLines({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      aria-label={label}
+      className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code space-y-2"
+    >
+      {LOG_GHOST_WIDTHS.map((width, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${width}`}
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        />
+      ))}
     </div>
   );
 }
