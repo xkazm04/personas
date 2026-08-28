@@ -36,8 +36,9 @@ const DEFAULT_TTL_MS = 30_000;
  * retention -- without a size cap, a long-lived desktop session accumulates
  * one entry per distinct key forever when keys are derived from anything
  * variadic (per-persona/per-execution ids). Evicted in insertion order
- * (`Map` preserves insertion order; re-`set`ting a key on cache hit refreshes
- * its position), which approximates LRU well enough for a soft memory cap.
+ * (`Map` preserves insertion order; both a cache HIT and a cache WRITE
+ * re-`set` the key to refresh its position), which approximates LRU well
+ * enough for a soft memory cap.
  */
 const MAX_CACHE_ENTRIES = 500;
 
@@ -74,8 +75,17 @@ export function createSWRFetcher<T>(
     const cached = _cache.get(key) as CacheEntry<T> | undefined;
     const now = Date.now();
 
-    // Fresh cache hit — return immediately, no fetch
+    // Fresh cache hit — return immediately, no fetch.
+    //
+    // The re-`set` is what makes the eviction policy above actually recency-
+    // ordered. Without it a key that is READ constantly but never goes stale
+    // keeps its original insertion position and is evicted strictly by age of
+    // first insertion — FIFO, while the comment on `MAX_CACHE_ENTRIES` promised
+    // approximate LRU. Only a write (a revalidation) used to refresh position,
+    // so the hottest keys in the cache were the ones eviction reached first.
     if (cached && now - cached.fetchedAt < ttlMs) {
+      _cache.delete(key);
+      _cache.set(key, cached);
       return { data: cached.data, fromCache: true };
     }
 
