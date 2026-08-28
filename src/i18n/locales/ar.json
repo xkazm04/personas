@@ -12928,6 +12928,7 @@
       "broadcast_sent_other": "تم الإرسال إلى {count} جلسات",
       "broadcast_sent_partial": "تم الإرسال إلى {sent} من {total} جلسات — فشل {failed}",
       "broadcast_failed_all": "فشل البث — تم تسليم 0 من {total}",
+      "broadcast_retry_hint": "لم تستلم هذه الجلسات الرسالة. أصبح التحديد مقتصراً عليها — اضغط إرسال لإعادة المحاولة.",
       "terminal_session_gone": "لم تعد هذه الجلسة متاحة — ربما انتهت أو تمت إزالتها. أغلق هذه اللوحة وأعد فتحها للمحاولة مرة أخرى.",
       "pair_generate": "اقتران هذا الهاتف",
       "pair_generating": "جارٍ إنشاء رمز الجهاز…",

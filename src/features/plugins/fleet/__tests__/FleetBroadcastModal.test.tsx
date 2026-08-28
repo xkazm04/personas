@@ -199,3 +199,71 @@ describe('FleetBroadcastModal — localized chrome and result toasts', () => {
     expect(addToast.mock.calls[0]![1]).toBe('error');
   });
 });
+
+/**
+ * Naming the failures. An aggregate count ("3 of 7 — 4 failed") tells the
+ * operator that something went wrong and nothing about where; with a fleet of
+ * interactive agents that is the difference between a one-click retry and four
+ * sessions silently sitting on the old instruction.
+ */
+describe('FleetBroadcastModal — which sessions missed it', () => {
+  beforeEach(() => {
+    addToast.mockClear();
+    vi.mocked(fleetApi.writeInput).mockClear();
+  });
+
+  it('names the sessions that failed and narrows the selection to just them', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    // repo-a fails; the modal must say SO, by name.
+    vi.mocked(fleetApi.writeInput).mockRejectedValue(new Error('session writer dropped'));
+
+    render(<FleetBroadcastModal open onClose={onClose} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'ship it');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    const panel = await screen.findByTestId('fleet-broadcast-failed');
+    expect(panel.textContent ?? '').toContain('repo-a');
+    // Announced, not merely coloured.
+    expect(panel).toHaveAttribute('role', 'status');
+
+    // Still open, text intact, and the retry is armed on exactly the failures —
+    // which is what makes pressing Send again safe rather than a double-submit.
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId('fleet-broadcast-text')).toHaveValue('ship it');
+    expect(screen.getByTestId('fleet-broadcast-send')).not.toBeDisabled();
+  });
+
+  it('retries only the failed session and closes once it lands', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    vi.mocked(fleetApi.writeInput).mockRejectedValueOnce(new Error('session writer dropped'));
+
+    render(<FleetBroadcastModal open onClose={onClose} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'ship it');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+    await screen.findByTestId('fleet-broadcast-failed');
+
+    vi.mocked(fleetApi.writeInput).mockResolvedValue(undefined as never);
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    // Two attempts total, both to the one session that needed it.
+    expect(vi.mocked(fleetApi.writeInput).mock.calls.map((c) => c[0])).toEqual(['s1', 's1']);
+  });
+
+  it('shows no failure panel when everything landed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fleetApi.writeInput).mockResolvedValue(undefined as never);
+
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'ship it');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    expect(screen.queryByTestId('fleet-broadcast-failed')).not.toBeInTheDocument();
+  });
+});

@@ -12928,6 +12928,7 @@
       "broadcast_sent_other": "Đã gửi đến {count} phiên",
       "broadcast_sent_partial": "Đã gửi đến {sent} trên {total} phiên — {failed} thất bại",
       "broadcast_failed_all": "Phát sóng thất bại — 0 trên {total} được gửi",
+      "broadcast_retry_hint": "Các phiên này chưa nhận được. Lựa chọn hiện chỉ nhắm đến chúng — nhấn Gửi để thử lại.",
       "terminal_session_gone": "Phiên này không còn khả dụng — có thể nó đã thoát hoặc bị xóa. Đóng rồi mở lại khung này để thử lại.",
       "pair_generate": "Ghép nối điện thoại này",
       "pair_generating": "Đang tạo mã thông báo thiết bị…",

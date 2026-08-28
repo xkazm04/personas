@@ -12928,6 +12928,7 @@
       "broadcast_sent_other": "Envoyé à {count} sessions",
       "broadcast_sent_partial": "Envoyé à {sent} sessions sur {total} — {failed} en échec",
       "broadcast_failed_all": "Échec de la diffusion — 0 sur {total} distribuée",
+      "broadcast_retry_hint": "Ces sessions ne l'ont pas reçu. La sélection ne vise plus qu'elles — appuyez sur Envoyer pour réessayer.",
       "terminal_session_gone": "Cette session n'est plus disponible : elle a peut-être été fermée ou supprimée. Fermez puis rouvrez ce volet pour réessayer.",
       "pair_generate": "Associer ce téléphone",
       "pair_generating": "Création du jeton d’appareil…",

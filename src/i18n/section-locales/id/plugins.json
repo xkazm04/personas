@@ -46,6 +46,7 @@
     "broadcast_sent_other": "Terkirim ke {count} sesi",
     "broadcast_sent_partial": "Terkirim ke {sent} dari {total} sesi — {failed} gagal",
     "broadcast_failed_all": "Siaran gagal — 0 dari {total} terkirim",
+    "broadcast_retry_hint": "Sesi berikut tidak menerimanya. Pilihan kini hanya menyasar mereka — tekan Kirim untuk mencoba lagi.",
     "terminal_session_gone": "Sesi ini tidak lagi tersedia — mungkin sudah berhenti atau dihapus. Tutup lalu buka kembali panel ini untuk mencoba lagi.",
     "pair_generate": "Tautkan ponsel ini",
     "pair_generating": "Membuat token perangkat…",

@@ -46,6 +46,7 @@
     "broadcast_sent_other": "An {count} Sitzungen gesendet",
     "broadcast_sent_partial": "An {sent} von {total} Sitzungen gesendet – {failed} fehlgeschlagen",
     "broadcast_failed_all": "Übertragung fehlgeschlagen – 0 von {total} zugestellt",
+    "broadcast_retry_hint": "Diese Sitzungen haben es nicht erhalten. Die Auswahl umfasst jetzt nur noch sie – zum Wiederholen auf Senden klicken.",
     "terminal_session_gone": "Diese Sitzung ist nicht mehr verfügbar – sie wurde möglicherweise beendet oder entfernt. Schließen und öffnen Sie diesen Bereich erneut, um es noch einmal zu versuchen.",
     "pair_generate": "Dieses Telefon koppeln",
     "pair_generating": "Geräte-Token wird erstellt…",

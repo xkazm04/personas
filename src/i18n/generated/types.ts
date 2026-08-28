@@ -13226,6 +13226,7 @@ export type Translations = {
       broadcast_sent_other: string;
       broadcast_sent_partial: string;
       broadcast_failed_all: string;
+      broadcast_retry_hint: string;
       terminal_session_gone: string;
       pair_generate: string;
       pair_generating: string;

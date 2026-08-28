@@ -12928,6 +12928,7 @@
       "broadcast_sent_other": "Odesláno do {count} relací",
       "broadcast_sent_partial": "Odesláno do {sent} z {total} relací – {failed} selhalo",
       "broadcast_failed_all": "Vysílání selhalo – doručeno 0 z {total}",
+      "broadcast_retry_hint": "Tyto relace zprávu neobdržly. Výběr nyní zahrnuje pouze je – opakujte stiskem tlačítka Odeslat.",
       "terminal_session_gone": "Tato relace již není dostupná – mohla skončit nebo být odebrána. Zavřete a znovu otevřete tento panel a zkuste to znovu.",
       "pair_generate": "Spárovat tento telefon",
       "pair_generating": "Vytvářím token zařízení…",

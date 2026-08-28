@@ -13220,6 +13220,7 @@
       "broadcast_sent_other": "Sent to {count} sessions",
       "broadcast_sent_partial": "Sent to {sent} of {total} sessions — {failed} failed",
       "broadcast_failed_all": "Broadcast failed — 0 of {total} delivered",
+      "broadcast_retry_hint": "These sessions did not receive it. The selection now targets only them — press Send to retry.",
       "terminal_session_gone": "This session is no longer available - it may have exited or been removed. Close and reopen this pane to try again.",
       "pair_generate": "Pair this phone",
       "pair_generating": "Minting device token…",

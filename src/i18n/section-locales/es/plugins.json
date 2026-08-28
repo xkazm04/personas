@@ -46,6 +46,7 @@
     "broadcast_sent_other": "Enviado a {count} sesiones",
     "broadcast_sent_partial": "Enviado a {sent} de {total} sesiones: {failed} con error",
     "broadcast_failed_all": "La difusión falló: 0 de {total} entregados",
+    "broadcast_retry_hint": "Estas sesiones no lo recibieron. La selección ahora apunta solo a ellas: pulsa Enviar para reintentar.",
     "terminal_session_gone": "Esta sesión ya no está disponible: puede haber terminado o haber sido eliminada. Cierra y vuelve a abrir este panel para reintentarlo.",
     "pair_generate": "Vincular este teléfono",
     "pair_generating": "Generando token del dispositivo…",

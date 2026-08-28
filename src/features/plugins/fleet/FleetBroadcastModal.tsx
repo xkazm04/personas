@@ -43,6 +43,11 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pressEnter, setPressEnter] = useState(true);
   const [sending, setSending] = useState(false);
+  // Ids of the sessions the LAST send could not reach. "Sent to 3 of 7 — 4
+  // failed" told the operator that something went wrong and nothing about
+  // where; with a fleet of interactive agents that is the difference between a
+  // one-click retry and four sessions silently sitting on the old instruction.
+  const [failedIds, setFailedIds] = useState<string[]>([]);
 
   // Seed the composer + reset targets whenever the modal opens in seeded
   // mode. Scoped to `initialText !== undefined` so the broadcast call site
@@ -51,6 +56,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     if (open && initialText !== undefined) {
       setText(initialText);
       setSelected(new Set());
+      setFailedIds([]);
     }
   }, [open, initialText]);
 
@@ -114,14 +120,16 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     if (!text.trim() || selected.size === 0 || sending) return;
     setSending(true);
     const payload = pressEnter ? `${text}\r` : text;
-    let failed = 0;
+    // Keep the id, not just a tally — the catch already has it in hand.
+    const failedSids: string[] = [];
     for (const sid of selected) {
       try {
         await writeInput(sid, payload);
       } catch {
-        failed += 1;
+        failedSids.push(sid);
       }
     }
+    const failed = failedSids.length;
     // Always surface the real outcome — the single most important feedback in
     // the feature is "did my fleet-wide command land?". Previously a full
     // success showed NO toast at all, and a total failure rendered "delivered to
@@ -140,16 +148,35 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       addToast(tx(t.plugins.fleet.broadcast_failed_all, { total }), 'error');
     }
     setSending(false);
-    // A broadcast that reached NOBODY must not destroy what the operator
-    // typed. Clearing + closing on a total failure discards a message they
-    // may have spent minutes composing and leaves them with a red toast and
-    // an empty composer — the one case where retrying is exactly what they
-    // want. Partial success still closes: those sessions did receive it, and
-    // re-sending the same text would double-submit to them.
-    if (sent === 0 && total > 0) return;
+    // ANY failure keeps the composer open and retargets the selection to
+    // exactly the sessions that missed it. A broadcast that reached nobody must
+    // not destroy a message the operator may have spent minutes composing; and
+    // a PARTIAL failure used to close, which was the worse case — the operator
+    // was told four sessions failed and given no way to learn which, so the
+    // only recovery was to re-broadcast to everyone and double-submit to the
+    // three that had already received it. Narrowing the selection is what makes
+    // pressing Send again safe.
+    if (failed > 0) {
+      setFailedIds(failedSids);
+      setSelected(new Set(failedSids));
+      return;
+    }
+    setFailedIds([]);
     setText('');
     onClose();
   }, [text, selected, sending, pressEnter, onClose, t, tx]);
+
+  // Label the failures for display. A session that vanished from the roster
+  // between the send and the render falls back to its id — an opaque id the
+  // operator can still match against a tile beats silently dropping the row.
+  const failedLabels = useMemo(
+    () =>
+      failedIds.map((id) => ({
+        id,
+        label: sessions.find((s) => s.id === id)?.projectLabel ?? id,
+      })),
+    [failedIds, sessions],
+  );
 
   return (
     <BaseModal
@@ -195,6 +222,28 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
           <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code>{' '}
           <DebtText k="auto_so_claude_submits_immediately_14f3a1f0" />
         </label>
+
+        {/* Which sessions missed it. role="status" so the recovery path is
+            announced, not just coloured. */}
+        {failedLabels.length > 0 ? (
+          <div
+            role="status"
+            data-testid="fleet-broadcast-failed"
+            className="mb-3 rounded-modal border border-amber-400/25 bg-amber-400/10 px-3 py-2"
+          >
+            <p className="typo-caption text-amber-200">{t.plugins.fleet.broadcast_retry_hint}</p>
+            <ul className="mt-1 flex flex-wrap gap-1.5">
+              {failedLabels.map((f) => (
+                <li
+                  key={f.id}
+                  className="rounded-interactive border border-amber-400/25 px-1.5 py-0.5 text-[12px] text-amber-100"
+                >
+                  {f.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
