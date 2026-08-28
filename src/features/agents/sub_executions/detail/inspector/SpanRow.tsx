@@ -1,6 +1,6 @@
 import { memo, useCallback } from 'react';
-import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
-import { getSpanTypeConfig, spanTypeLabel } from './traceInspectorTypes';
+import { ChevronDown, ChevronRight, AlertCircle, CircleDashed } from 'lucide-react';
+import { getSpanTypeConfig, isSpanFailure, isSpanUnclosed, spanTypeLabel } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
 import { WaterfallBar } from './WaterfallBar';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -22,12 +22,17 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
   // is not span data, so a prop would never have reached it.
   const { t } = useTranslation();
   const config = getSpanTypeConfig(span.span_type);
+  // A span the tracer force-closed at finalize is not a failed span. Both get
+  // a marker, but only a real failure gets the red one -- see
+  // UNCLOSED_SPAN_SENTINEL in ./traceInspectorTypes.
+  const failed = isSpanFailure(span);
+  const unclosed = isSpanUnclosed(span);
   const handleToggle = useCallback(() => onToggle(span.span_id), [onToggle, span.span_id]);
 
   return (
     <div
       className={`group grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 items-center px-2 py-1 hover:bg-secondary/30 rounded transition-colors ${
-        span.error ? 'bg-red-500/5' : ''
+        failed ? 'bg-red-500/5' : unclosed ? 'bg-primary/[0.04]' : ''
       }`}
     >
       {/* Left: name + type badge */}
@@ -61,8 +66,12 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
           {span.name}
         </span>
 
-        {span.error && (
+        {failed && (
           <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+        )}
+
+        {unclosed && (
+          <CircleDashed className="w-3 h-3 text-foreground/85 flex-shrink-0" />
         )}
 
         {/* A missing cost and a free step are different facts. `cost_usd > 0`

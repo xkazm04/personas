@@ -7,6 +7,7 @@ vi.mock('../useTraceData', () => ({ useTraceData: vi.fn() }));
 
 import { useTraceData } from '../useTraceData';
 import { TraceInspector } from '../TraceInspector';
+import { UNCLOSED_SPAN_SENTINEL } from '../traceInspectorTypes';
 
 const mockedUseTraceData = vi.mocked(useTraceData);
 
@@ -26,7 +27,10 @@ function erroredSpan(i: number): UnifiedSpan {
 }
 
 function arrange(errorCount: number, droppedSpanEvents = 0) {
-  const spans = Array.from({ length: errorCount }, (_, i) => erroredSpan(i));
+  arrangeSpans(Array.from({ length: errorCount }, (_, i) => erroredSpan(i)), droppedSpanEvents);
+}
+
+function arrangeSpans(spans: UnifiedSpan[], droppedSpanEvents = 0) {
   mockedUseTraceData.mockReturnValue({
     droppedSpanEvents,
     spanEventBufferCap: 10_000,
@@ -79,5 +83,29 @@ describe('TraceInspector live-buffer truncation signal', () => {
     const banner = screen.getByTestId('trace-live-events-dropped');
     expect(banner).toHaveTextContent('7');
     expect(banner).toHaveTextContent('10,000');
+  });
+});
+
+describe('TraceInspector force-closed spans', () => {
+  beforeEach(() => mockedUseTraceData.mockReset());
+
+  // `TraceCollector::finalize` stamps 'span not properly closed' on every span
+  // still open when a run ends -- the ordinary outcome of cancelling mid-tool-
+  // call. Counting it made the Errors tile read 2-3 on a clean cancellation and
+  // painted red cards describing the tracer's own housekeeping.
+  it('does not render an error card for the tracer force-close sentinel', () => {
+    arrangeSpans([{ ...erroredSpan(0), error: UNCLOSED_SPAN_SENTINEL }]);
+    expect(screen.queryByText(UNCLOSED_SPAN_SENTINEL)).toBeNull();
+    expect(screen.queryByTestId('trace-error-cards-capped')).toBeNull();
+  });
+
+  it('still renders the real failures in a trace that also has force-closed spans', () => {
+    arrangeSpans([
+      { ...erroredSpan(0), error: UNCLOSED_SPAN_SENTINEL },
+      erroredSpan(1),
+      { ...erroredSpan(2), error: UNCLOSED_SPAN_SENTINEL },
+    ]);
+    expect(screen.getAllByText(/^boom-\d+$/)).toHaveLength(1);
+    expect(screen.queryByText(UNCLOSED_SPAN_SENTINEL)).toBeNull();
   });
 });
