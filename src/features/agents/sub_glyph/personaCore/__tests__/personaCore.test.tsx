@@ -133,6 +133,17 @@ describe("persona-core catalog integrity", () => {
     expect(incomplete).toEqual([]);
   });
 
+  it("carries a relative-cost signal on every model tier, ascending with capability", () => {
+    // Picking a model is the biggest spend lever on this screen, and the tiles
+    // used to describe capability only ("Deepest reasoning...") with no number
+    // to trade it against. A tier added without a multiple would ship a blank
+    // chip; one added out of order would tell the user the wrong thing.
+    const costs = MODEL_TIERS.map((m) => m.relativeCost);
+    expect(costs.every((c) => Number.isFinite(c) && c >= 1)).toBe(true);
+    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+    expect(costs[0]).toBe(1);
+  });
+
   it("resolves an unknown model tier to a real tier rather than undefined", () => {
     expect(modelTier("sonnet").id).toBe("sonnet");
     expect(modelTier("nope" as never).promptWord).toBeTruthy();

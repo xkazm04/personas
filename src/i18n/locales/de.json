@@ -1215,6 +1215,7 @@
     "core_disposition_high": "Mutig",
     "core_conflict_label": "Bei Uneinigkeit",
     "core_model_label": "Modell",
+    "core_model_cost": "Relative Kosten: {multiple}× so teuer wie die günstigste Modellstufe",
     "core_effort_label": "Denktiefe",
     "glyph_intent_placeholder": "z. B. Fasse jeden Morgen meine ungelesenen E-Mails zusammen",
     "glyph_dim_label": {

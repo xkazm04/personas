@@ -1215,6 +1215,7 @@
     "core_disposition_high": "Odvážné",
     "core_conflict_label": "Při neshodě",
     "core_model_label": "Jazykový model",
+    "core_model_cost": "Relativní cena: {multiple}× oproti nejlevnější úrovni modelu",
     "core_effort_label": "Hloubka uvažování",
     "glyph_intent_placeholder": "např. Shrň mé nepřečtené e-maily každé ráno",
     "glyph_dim_label": {

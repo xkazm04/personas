@@ -107,14 +107,25 @@ export const ARCHETYPE_TRAITS: Record<string, string[]> = {
 };
 
 // -- Engine tiers ------------------------------------------------------------
-/** A model tier, enumerated ONCE. The icon used to live in ConfigTiles' own
+/** `relativeCost` is the tier's Anthropic list price per million tokens expressed
+ *  as a multiple of the cheapest tier, so the screen where a user picks a model
+ *  carries a spend signal instead of capability prose alone. Sourced from the
+ *  published API price list (Haiku $1 / Sonnet $3 / Opus $5 per M input tokens,
+ *  read 2026-08-28); the ratio holds for output tokens too ($5 / $15 / $25).
+ *  It is a RATIO, deliberately — an absolute figure would go stale silently
+ *  and this surface has no per-run token estimate to multiply it by. Effort
+ *  tiers carry no such number: raising effort raises token spend, but Anthropic
+ *  publishes no multiplier for it, and inventing one would be worse than the
+ *  ascending meter already communicating relative depth.
+ *
+ *  A model tier, enumerated ONCE. The icon used to live in ConfigTiles' own
  *  `MODEL_ICON` map and the prompt word in a ternary inside usePersonaCore, so
  *  the same three tiers were written out in three files and a fourth tier would
  *  have had to be added to all three (with only this one failing a test). */
-export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string; icon: LucideIcon; promptWord: string }[] = [
-  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
-  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", blurb: "The everyday default — strong reasoning at moderate cost" },
-  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", blurb: "Deepest reasoning for hard, high-stakes work" },
+export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string; icon: LucideIcon; promptWord: string; relativeCost: number }[] = [
+  { id: "haiku", label: "Haiku", icon: Feather, promptWord: "Haiku (fast)", relativeCost: 1, blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
+  { id: "sonnet", label: "Sonnet", icon: Sparkles, promptWord: "Sonnet (balanced)", relativeCost: 3, blurb: "The everyday default — strong reasoning at moderate cost" },
+  { id: "opus", label: "Opus", icon: Brain, promptWord: "Opus (max reasoning)", relativeCost: 5, blurb: "Deepest reasoning for hard, high-stakes work" },
 ];
 
 export function modelTier(id: ModelTier) {

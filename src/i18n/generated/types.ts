@@ -1269,6 +1269,7 @@ export type Translations = {
     core_disposition_high: string;
     core_conflict_label: string;
     core_model_label: string;
+    core_model_cost: string;
     core_effort_label: string;
     glyph_intent_placeholder: string;
     glyph_dim_label: {

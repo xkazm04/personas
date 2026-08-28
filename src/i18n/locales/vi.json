@@ -1215,6 +1215,7 @@
     "core_disposition_high": "Táo bạo",
     "core_conflict_label": "Khi bất đồng",
     "core_model_label": "Mô hình",
+    "core_model_cost": "Chi phí tương đối: gấp {multiple}× bậc mô hình rẻ nhất",
     "core_effort_label": "Độ sâu suy luận",
     "glyph_intent_placeholder": "vd. Tóm tắt email chưa đọc của tôi mỗi sáng",
     "glyph_dim_label": {

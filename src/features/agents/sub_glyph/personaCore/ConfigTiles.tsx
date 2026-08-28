@@ -9,9 +9,13 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { ACCENT, CONFLICT_STYLES, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
 import type { PersonaCore } from "./types";
 
-/** A single icon tile — the shared atom for the tile groups. */
-function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb }: {
+/** A single icon tile — the shared atom for the tile groups.
+ *  `costLabel` is an optional relative-spend chip (e.g. "×3"); `costAria` is the
+ *  sentence a screen reader gets in its place, since a bare multiplication sign
+ *  reads as nothing useful. */
+function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb, costLabel, costAria }: {
   icon: LucideIcon; label: string; active: boolean; color: string; onClick: () => void; testid?: string; blurb?: string;
+  costLabel?: string; costAria?: string;
 }) {
   const tile = (
     <motion.button
@@ -21,6 +25,14 @@ function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb }: 
     >
       <Icon className="w-4 h-4" style={{ color: active ? color : undefined }} />
       <span className="typo-body text-foreground leading-none">{label}</span>
+      {costLabel && (
+        <>
+          <span aria-hidden className="typo-caption tabular-nums text-foreground/85 leading-none" data-testid={testid ? `${testid}-cost` : undefined}>
+            {costLabel}
+          </span>
+          <span className="sr-only">{costAria}</span>
+        </>
+      )}
     </motion.button>
   );
   return blurb ? <Tooltip content={blurb}>{tile}</Tooltip> : tile;
@@ -37,11 +49,18 @@ export function ConflictTiles({ core }: { core: PersonaCore }) {
   );
 }
 
+/** Model tiles carry a relative-cost chip: picking a model is the biggest spend
+ *  lever on this screen, and the blurbs alone ("Deepest reasoning...") gave the
+ *  user nothing to trade capability against. The multiple lives in the catalog
+ *  next to the tier it describes — see MODEL_TIERS' provenance note. */
 export function ModelTiles({ core }: { core: PersonaCore }) {
+  const { t, tx } = useTranslation();
   return (
     <div className="flex gap-1.5">
       {MODEL_TIERS.map((m) => (
         <IconTile key={m.id} icon={m.icon} label={m.label} blurb={m.blurb} color={ACCENT}
+          costLabel={`×${m.relativeCost}`}
+          costAria={tx(t.agents.core_model_cost, { multiple: String(m.relativeCost) })}
           active={core.state.model === m.id} onClick={() => core.setModel(m.id)} testid={`core-model-${m.id}`} />
       ))}
     </div>
