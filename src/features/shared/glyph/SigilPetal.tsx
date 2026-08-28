@@ -126,8 +126,13 @@ function SigilPetalImpl({
         pointerEvents: 'auto',
         outline: 'none',
       }}
-      onMouseEnter={() => onHover(dim)}
-      onMouseLeave={() => onHover(null)}
+      // Pointer events, not mouse events: the label preview was mouse-only, so
+      // on a touch screen a tap went straight to the panel and the dimension
+      // was never named. `pointerenter`/`pointerleave` fire identically for a
+      // mouse and additionally bracket a touch, which shows the label for the
+      // duration of the press. Pen input gets it for free.
+      onPointerEnter={() => onHover(dim)}
+      onPointerLeave={() => onHover(null)}
       onFocus={disabled ? undefined : () => onFocusDim(dim)}
       onKeyDown={disabled ? undefined : (e) => onKeyDown(e, dim)}
       onClick={disabled ? undefined : (e) => {
