@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.1.0",
+  "modules": [
+    {
+      "id": "root",
+      "path": ".",
+      "context": "CONTEXT.md",
+      "owns": "Local-first desktop app for orchestrating AI agent personas",
+      "reconciledToSha": "e8ee175"
+    }
+  ]
+}

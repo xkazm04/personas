@@ -22,6 +22,8 @@ src-tauri/src-tauri/
 # dir itself IS committed (it marks the repo as Personas-managed).
 .personas/memory-outbox.jsonl
 .personas/memory-outbox.full-*.jsonl
+# Spillover written when the outbox exceeds its cap — same class, same rule.
+.personas/memory-outbox.*-overflow.jsonl
 .personas/backlog-digest.json
 
 # Local SQLite databases (per-machine app state — never committed)
@@ -150,14 +152,14 @@ practice-harvest/
 # drops a duplicate tree here. Ignored so it never dirties the tree or drifts.
 /bindings/
 
-# /consult skill log (counts reach the ai-registry signals lane; the log itself stays local)
-.ai/consults.jsonl
-# .ai/ generated artifacts: the registry-map is a 460 KB join rewritten by
-# /conform and churns every run; the scripts, manifest and memory lane stay
-# tracked because lefthook pre-push and .github/workflows/ai-conformance.yml
-# run node .ai/doctor.mjs from a clean clone.
-.ai/registry-map.json
-.ai/context-index.json
+# .ai/ is tracked in full, data included (operator decision, 2026-08-28).
+# The registry map, context index, consult log and lead outbox are all useful
+# ACROSS DEVICES — the registry is consulted from more than one machine, and a
+# lane that only exists on the box that generated it cannot be read by the next
+# one. The known cost is accepted: registry-map.json is ~460 KB and is rewritten
+# by /conform on every run, so it will churn in diffs. Verified before tracking:
+# no absolute paths, usernames, emails or credentials in any of them (this
+# repository is public).
 
 # BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-skills.mjs)
 # The links are machine state; the declaration lives in .ai/manifest.yaml `skills:`.
