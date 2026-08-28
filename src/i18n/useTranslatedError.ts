@@ -91,6 +91,24 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'CLI produced no output', keyPrefix: 'cli_no_output', category: 'recoverable' },
   { match: 'Failed to extract connector design', keyPrefix: 'connector_design', category: 'user_action' },
   { match: 'Failed to generate', keyPrefix: 'generation_failed', category: 'recoverable' },
+  // -- Workflow import refusals (src/lib/personas/parsers/**) --------------
+  //    Every one of these is thrown as an English sentence from a .ts module
+  //    and rendered verbatim to the user by the import wizard — in a 14-locale
+  //    app they were the ONLY thing a failed import said, and they said it in
+  //    English. The parsers keep throwing their stable strings; this map is
+  //    what turns them into product copy. `workflow_platform_unknown` must
+  //    precede `workflow_shape_rejected`: the "could not identify" refusal
+  //    embeds every adapter's own message in its Parser errors block.
+  { match: /(?:File|Content) is empty\./, keyPrefix: 'workflow_file_empty', category: 'user_action' },
+  { match: 'Unsupported file type', keyPrefix: 'workflow_unsupported_type', category: 'user_action' },
+  { match: 'Failed to read the file', keyPrefix: 'workflow_read_failed', category: 'recoverable' },
+  { match: /(?:[Ww]orkflow file|File) is too large/, keyPrefix: 'workflow_file_too_large', category: 'user_action' },
+  { match: 'has too many entries to import', keyPrefix: 'workflow_too_many_entries', category: 'user_action' },
+  { match: 'is nested too deeply', keyPrefix: 'workflow_too_deep', category: 'user_action' },
+  { match: 'Invalid YAML', keyPrefix: 'workflow_invalid_yaml', category: 'user_action' },
+  { match: 'does not contain a valid object', keyPrefix: 'workflow_not_an_object', category: 'user_action' },
+  { match: 'Could not identify the workflow platform', keyPrefix: 'workflow_platform_unknown', category: 'user_action' },
+  { match: /Invalid (?:n8n workflow|Zapier export|Make blueprint|GitHub Actions workflow):/, keyPrefix: 'workflow_shape_rejected', category: 'user_action' },
   { match: 'Invalid JSON', keyPrefix: 'invalid_json', category: 'user_action' },
   // Must come before the generic 'Validation' rule — n8n shape errors are
   // emitted from create_n8n_session (commands/design/n8n_sessions.rs) and need

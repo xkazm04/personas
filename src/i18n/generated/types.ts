@@ -12317,6 +12317,26 @@ export type Translations = {
     trigger_unschedulable_suggestion: string;
     trigger_type_not_storable_message: string;
     trigger_type_not_storable_suggestion: string;
+    workflow_file_empty_message: string;
+    workflow_file_empty_suggestion: string;
+    workflow_unsupported_type_message: string;
+    workflow_unsupported_type_suggestion: string;
+    workflow_read_failed_message: string;
+    workflow_read_failed_suggestion: string;
+    workflow_file_too_large_message: string;
+    workflow_file_too_large_suggestion: string;
+    workflow_too_many_entries_message: string;
+    workflow_too_many_entries_suggestion: string;
+    workflow_too_deep_message: string;
+    workflow_too_deep_suggestion: string;
+    workflow_invalid_yaml_message: string;
+    workflow_invalid_yaml_suggestion: string;
+    workflow_not_an_object_message: string;
+    workflow_not_an_object_suggestion: string;
+    workflow_platform_unknown_message: string;
+    workflow_platform_unknown_suggestion: string;
+    workflow_shape_rejected_message: string;
+    workflow_shape_rejected_suggestion: string;
   };
   empty_states: {
     credentials_title: string;
