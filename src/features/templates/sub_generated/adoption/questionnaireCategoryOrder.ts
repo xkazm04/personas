@@ -1,11 +1,19 @@
 /**
  * Canonical questionnaire category order.
  *
- * Shared by the adoption flow's sort (ChronologyAdoptionView → filteredAdoptionQuestions)
- * and the Live Preview sidebar bucket walk (QuestionnaireFormFocus). Keeping
- * both surfaces on this one constant prevents the "questionnaire says step 1/6
- * Configuration but the preview sidebar's first bucket is Domain" drift that
- * surfaced during the Visual Brand Asset Factory live test.
+ * ONE consumer today: `ChronologyAdoptionView` (`:37` imports
+ * `categoryOrderIndex`; `:829` sorts `filteredAdoptionQuestions` with it).
+ * That one sorted array is then handed to `PersonaLayoutAdoption` (`:1456`),
+ * which is what renders BOTH surfaces the drift was about — the questionnaire's
+ * stepper/story thread and the preview sidebar's buckets. Sorting once, here,
+ * is therefore what prevents the "questionnaire says step 1/6 Configuration but
+ * the preview sidebar's first bucket is Domain" drift found during the Visual
+ * Brand Asset Factory live test.
+ *
+ * (This comment previously named a second consumer, `QuestionnaireFormFocus`,
+ * that has never existed anywhere in the tree. Any new surface that buckets or
+ * orders adoption questions must sort through this constant rather than
+ * re-listing the categories.)
  *
  * Buckets with an unknown category sort after every listed category (index
  * 999) so authored order is preserved for untagged questions.
