@@ -989,7 +989,8 @@
     "empty_generic": "কোনো বিষয়বস্তু নেই",
     "empty_dim_refine_hint": "চান? নিচে বর্ণনা করুন — পরের পুনর্নির্মাণে যুক্ত হবে।",
     "show_n_more": "আরও {count}টি",
-    "show_less": "কম দেখান"
+    "show_less": "কম দেখান",
+    "model_tier_custom": "কাস্টম"
   },
   "diagrams": {
     "no_flow_data": "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",

@@ -9576,7 +9576,8 @@
       "empty_generic": "コンテンツなし",
       "empty_dim_refine_hint": "必要なら下に記入 — 次回の再ビルドで追加されます。",
       "show_n_more": "他 {count} 件",
-      "show_less": "折りたたむ"
+      "show_less": "折りたたむ",
+      "model_tier_custom": "カスタム"
     },
     "diagrams": {
       "no_flow_data": "フローデータがありません",

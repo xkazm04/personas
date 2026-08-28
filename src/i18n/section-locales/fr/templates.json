@@ -989,7 +989,8 @@
     "empty_generic": "Aucun contenu",
     "empty_dim_refine_hint": "Vous le voulez ? Décrivez-le ci-dessous — ajouté à la prochaine reconstruction.",
     "show_n_more": "+{count} de plus",
-    "show_less": "Afficher moins"
+    "show_less": "Afficher moins",
+    "model_tier_custom": "Personnalisé"
   },
   "diagrams": {
     "no_flow_data": "Aucune donnée de flux disponible",

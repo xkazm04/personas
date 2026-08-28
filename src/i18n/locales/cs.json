@@ -9576,7 +9576,8 @@
       "empty_generic": "Žádný obsah",
       "empty_dim_refine_hint": "Chcete to? Popište níže — přidá se při příštím sestavení.",
       "show_n_more": "+{count} dalších",
-      "show_less": "Zobrazit méně"
+      "show_less": "Zobrazit méně",
+      "model_tier_custom": "Vlastní"
     },
     "diagrams": {
       "no_flow_data": "Žádná data toku nejsou k dispozici",

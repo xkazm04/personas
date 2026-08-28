@@ -9576,7 +9576,8 @@
       "empty_generic": "कोई सामग्री नहीं",
       "empty_dim_refine_hint": "चाहिए? नीचे बताएं — अगले पुनर्निर्माण में जुड़ जाएगा।",
       "show_n_more": "+{count} और",
-      "show_less": "कम दिखाएँ"
+      "show_less": "कम दिखाएँ",
+      "model_tier_custom": "कस्टम"
     },
     "diagrams": {
       "no_flow_data": "कोई फ्लो डेटा उपलब्ध नहीं",

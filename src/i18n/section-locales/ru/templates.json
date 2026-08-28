@@ -989,7 +989,8 @@
     "empty_generic": "Нет содержимого",
     "empty_dim_refine_hint": "Нужно? Опишите ниже — добавится при следующей пересборке.",
     "show_n_more": "ещё {count}",
-    "show_less": "Свернуть"
+    "show_less": "Свернуть",
+    "model_tier_custom": "Своя"
   },
   "diagrams": {
     "no_flow_data": "Нет данных потока",

@@ -989,7 +989,8 @@
     "empty_generic": "Kein Inhalt",
     "empty_dim_refine_hint": "Gewünscht? Unten beschreiben — wird beim nächsten Neuaufbau ergänzt.",
     "show_n_more": "+{count} weitere",
-    "show_less": "Weniger anzeigen"
+    "show_less": "Weniger anzeigen",
+    "model_tier_custom": "Eigenes"
   },
   "diagrams": {
     "no_flow_data": "Keine Flow-Daten verfügbar",

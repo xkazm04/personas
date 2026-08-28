@@ -9862,7 +9862,8 @@
       "empty_generic": "No content",
       "empty_dim_refine_hint": "Want it? Describe it below — it's added on the next rebuild.",
       "show_n_more": "+{count} more",
-      "show_less": "Show less"
+      "show_less": "Show less",
+      "model_tier_custom": "Custom"
     },
     "diagrams": {
       "no_flow_data": "No flow data available",

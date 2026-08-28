@@ -9869,6 +9869,7 @@ export type Translations = {
       empty_dim_refine_hint: string;
       show_n_more: string;
       show_less: string;
+      model_tier_custom: string;
     };
     diagrams: {
       no_flow_data: string;

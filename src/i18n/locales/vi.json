@@ -9576,7 +9576,8 @@
       "empty_generic": "Không có nội dung",
       "empty_dim_refine_hint": "Muốn có? Mô tả bên dưới — sẽ được thêm ở lần xây lại tiếp theo.",
       "show_n_more": "+{count} nữa",
-      "show_less": "Thu gọn"
+      "show_less": "Thu gọn",
+      "model_tier_custom": "Tùy chỉnh"
     },
     "diagrams": {
       "no_flow_data": "Không có dữ liệu luồng",
