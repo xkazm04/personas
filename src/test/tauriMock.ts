@@ -15,6 +15,15 @@ import { _clearAutoDedupForTests } from "@/lib/tauriInvoke";
 const mockedInvoke = vi.mocked(invoke);
 
 /**
+ * The vitest mock every helper below drives, for the tests whose subject is
+ * HOW MANY round-trips happened (caching, dedup, retry) rather than what came
+ * back. Exported so those tests don't have to import the raw
+ * `@tauri-apps/api/core` `invoke`, which `no-restricted-imports` forbids
+ * everywhere else in the tree.
+ */
+export const mockedTauriInvoke = mockedInvoke;
+
+/**
  * Mock a specific Tauri command to always return the given value.
  * Adds a new implementation that checks the command name.
  */
