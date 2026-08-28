@@ -5,7 +5,7 @@ import { formatDuration, formatCount } from '@/lib/utils/formatters';
 import { AlertCircle, Activity, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
-import { getSpanTypeConfig, spanTypeLabel } from './traceInspectorTypes';
+import { getSpanTypeConfig, isSpanFailure, spanTypeLabel } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
@@ -69,8 +69,12 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   // The one definition of "which spans failed" for this view: the summary tile
   // counts exactly the spans listed below it. Folding the tile's number from a
   // different span set is how the two disagreed.
+  //
+  // `isSpanFailure` -- not `s.error` truthiness -- is what keeps the tracer's
+  // force-close marker out of both. A cancelled run leaves open spans stamped
+  // with UNCLOSED_SPAN_SENTINEL, which is bookkeeping, not a run error.
   const errorSpans = useMemo(
-    () => (unifiedTrace?.spans ?? []).filter((s) => s.error),
+    () => (unifiedTrace?.spans ?? []).filter(isSpanFailure),
     [unifiedTrace],
   );
   const shownErrorSpans = errorSpans.length > MAX_ERROR_CARDS

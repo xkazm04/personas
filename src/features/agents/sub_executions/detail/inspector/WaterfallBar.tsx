@@ -1,6 +1,6 @@
 import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
-import { getSpanTypeConfig } from './traceInspectorTypes';
+import { getSpanTypeConfig, isSpanFailure } from './traceInspectorTypes';
 
 /** Minimum visible bar width, in percent of the track. */
 const MIN_WIDTH_PCT = 0.5;
@@ -58,7 +58,7 @@ export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: nu
         data-span-open={open ? 'true' : undefined}
         className={`absolute top-0.5 bottom-0.5 ${
           open ? 'rounded-l border-r-2 border-dashed border-primary/50' : 'rounded'
-        } ${span.error ? 'bg-red-500/40' : config.bg} transition-all`}
+        } ${isSpanFailure(span) ? 'bg-red-500/40' : config.bg} transition-all`}
         style={{
           left: `${leftPct}%`,
           width: `${widthPct}%`,

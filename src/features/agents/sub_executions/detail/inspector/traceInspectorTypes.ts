@@ -188,3 +188,33 @@ export function spanTypeLabel(t: Translations, spanType: string): string {
   if (cfg) return cfg.label;
   return catalog.unknown ?? FALLBACK_CONFIG.label;
 }
+
+// ============================================================================
+// Failure vs. the tracer's own bookkeeping
+// ============================================================================
+
+/**
+ * The tracer's force-close marker — NOT an engine failure.
+ *
+ * `TraceCollector::finalize` (`src-tauri/core/src/trace.rs`) stamps this exact
+ * string into `span.error` for every span still open when the run ended, which
+ * is the ordinary outcome of cancelling a run mid-tool-call. Treating `error`
+ * truthiness as "this span failed" therefore inflated the Errors tile and
+ * painted red cards reading "span not properly closed" — the tracer's own
+ * housekeeping rendered to the user as run errors on the most-consulted
+ * diagnostic surface.
+ *
+ * The string is the contract until the backend carries a typed field (which
+ * would need a ts-rs binding regen); keep it byte-identical to the Rust literal.
+ */
+export const UNCLOSED_SPAN_SENTINEL = 'span not properly closed';
+
+/** True only for a real failure; the force-close sentinel is excluded. */
+export function isSpanFailure(span: { error?: string | null }): boolean {
+  return !!span.error && span.error !== UNCLOSED_SPAN_SENTINEL;
+}
+
+/** True when the tracer force-closed this span at finalize (e.g. a cancelled run). */
+export function isSpanUnclosed(span: { error?: string | null }): boolean {
+  return span.error === UNCLOSED_SPAN_SENTINEL;
+}
