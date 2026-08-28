@@ -4672,7 +4672,9 @@
       "documents_count_one": "{count} दस्तावेज़",
       "documents_count_other": "{count} दस्तावेज़",
       "drop_no_paths": "कोई मान्य फ़ाइल पथ नहीं मिला। अलग-अलग फ़ाइलें छोड़कर देखें।",
-      "chars_unit": "{count} वर्ण"
+      "chars_unit": "{count} वर्ण",
+      "search_source_label": "स्रोत",
+      "search_source_all": "सभी दस्तावेज़"
     },
     "manager": {
       "title": "क्रेडेंशियल",

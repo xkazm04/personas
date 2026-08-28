@@ -674,7 +674,9 @@
     "documents_count_one": "{count} dokument",
     "documents_count_other": "{count} dokumentů",
     "drop_no_paths": "Nebyly nalezeny žádné platné cesty k souborům. Zkuste přetáhnout jednotlivé soubory.",
-    "chars_unit": "{count} znaků"
+    "chars_unit": "{count} znaků",
+    "search_source_label": "Zdroj",
+    "search_source_all": "Všechny dokumenty"
   },
   "manager": {
     "title": "Přihlašovací údaje",

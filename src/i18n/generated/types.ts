@@ -4948,6 +4948,8 @@ export type Translations = {
       documents_count_other: string;
       drop_no_paths: string;
       chars_unit: string;
+      search_source_label: string;
+      search_source_all: string;
     };
     manager: {
       title: string;

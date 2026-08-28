@@ -4672,7 +4672,9 @@
       "documents_count_one": "{count} tài liệu",
       "documents_count_other": "{count} tài liệu",
       "drop_no_paths": "Không tìm thấy đường dẫn tệp hợp lệ. Hãy thử thả từng tệp một.",
-      "chars_unit": "{count} ký tự"
+      "chars_unit": "{count} ký tự",
+      "search_source_label": "Nguồn",
+      "search_source_all": "Tất cả tài liệu"
     },
     "manager": {
       "title": "Thông tin xác thực",

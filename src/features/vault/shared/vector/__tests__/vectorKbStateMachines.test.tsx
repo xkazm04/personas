@@ -112,6 +112,9 @@ const SCHEMA: KbExtractionSchema = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockListEntities.mockResolvedValue([]);
+  // SearchTab builds its source filter from the document list; every suite that
+  // does not care about documents still needs the call to resolve.
+  mockListDocuments.mockResolvedValue([]);
 });
 
 describe('SearchTab — search sequence guard', () => {
@@ -155,6 +158,38 @@ describe('SearchTab — search sequence guard', () => {
 
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
     expect(mockSearch.mock.calls[1][0]).toMatchObject({ query: 'executed', topK: 50 });
+  });
+});
+
+describe('SearchTab — source scoping', () => {
+  it('offers only path-backed documents and passes the choice as filterSource', async () => {
+    mockListDocuments.mockResolvedValue([
+      doc({ id: 'd1', title: 'Q3 report', sourcePath: '/reports/q3.pdf' }),
+      doc({ id: 'd2', title: 'Pasted note', sourcePath: null }),
+    ]);
+    mockSearch.mockResolvedValue(response('ONLY'));
+
+    render(<SearchTab kb={KB} />);
+    const input = screen.getByPlaceholderText(/Ask a question/i);
+
+    // "All documents" + the one document that actually has a path.
+    const sourceSelect = await screen.findByDisplayValue('All documents');
+    expect(screen.getByText('Q3 report')).toBeTruthy();
+    expect(screen.queryByText('Pasted note')).toBeNull();
+
+    fireEvent.change(input, { target: { value: 'footings' } });
+    await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }); });
+    expect(mockSearch.mock.calls[0][0].filterSource).toBeUndefined();
+
+    await act(async () => {
+      fireEvent.change(sourceSelect, { target: { value: '/reports/q3.pdf' } });
+    });
+
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+    expect(mockSearch.mock.calls[1][0]).toMatchObject({
+      query: 'footings',
+      filterSource: '/reports/q3.pdf',
+    });
   });
 });
 

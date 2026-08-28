@@ -3,7 +3,8 @@ import { Search, FileText, Clock, ArrowRight } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
-import { kbSearch } from '@/api/vault/database/vectorKb';
+import { kbSearch, kbListDocuments } from '@/api/vault/database/vectorKb';
+import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
 
@@ -22,6 +23,12 @@ export function SearchTab({ kb }: SearchTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState<string | null>(null);
   const [durationMs, setDurationMs] = useState<number | null>(null);
+  // `kb_search` has always accepted `filterSource` (a prefix match on the
+  // chunk's source path) and the UI passed three of five parameters, so the
+  // most common follow-up on a corpus past a few dozen files — "search only
+  // this document" — was built, typed, shipped and unreachable.
+  const [sources, setSources] = useState<Array<{ path: string; title: string }>>([]);
+  const [source, setSource] = useState('');
   const mountedRef = useRef(true);
   // Only the most recently issued query may paint. Enter-to-search is not gated
   // on `searching`, so two requests can be in flight and the slower one would
@@ -31,6 +38,21 @@ export function SearchTab({ kb }: SearchTabProps) {
   useEffect(() => {
     return () => { mountedRef.current = false; };
   }, []);
+
+  // Only documents with a source path can be scoped: the backend matches on
+  // that prefix, so pasted text (no path) is deliberately not offered.
+  useEffect(() => {
+    kbListDocuments(kb.id)
+      .then((docs) => {
+        if (!mountedRef.current) return;
+        const byPath = new Map<string, string>();
+        for (const d of docs) {
+          if (d.sourcePath && !byPath.has(d.sourcePath)) byPath.set(d.sourcePath, d.title);
+        }
+        setSources([...byPath].map(([path, title]) => ({ path, title })));
+      })
+      .catch(silentCatch('kb search source list'));
+  }, [kb.id]);
 
   const runSearch = useCallback(async (term: string) => {
     const trimmed = term.trim();
@@ -46,6 +68,7 @@ export function SearchTab({ kb }: SearchTabProps) {
         kbId: kb.id,
         query: trimmed,
         topK: topK,
+        filterSource: source || undefined,
       });
       if (!mountedRef.current || !latestWins.isCurrent(seq)) return;
       setResults(res.results);
@@ -59,7 +82,7 @@ export function SearchTab({ kb }: SearchTabProps) {
     } finally {
       if (mountedRef.current && latestWins.isCurrent(seq)) setSearching(false);
     }
-  }, [kb.id, topK, latestWins]);
+  }, [kb.id, topK, source, latestWins]);
 
   const handleSearch = useCallback(() => runSearch(query), [runSearch, query]);
 
@@ -73,12 +96,12 @@ export function SearchTab({ kb }: SearchTabProps) {
   runSearchRef.current = runSearch;
   const lastQueryRef = useRef<string | null>(null);
   lastQueryRef.current = lastQuery;
-  const topKSettledRef = useRef(false);
+  const filtersSettledRef = useRef(false);
   useEffect(() => {
-    if (!topKSettledRef.current) { topKSettledRef.current = true; return; }
+    if (!filtersSettledRef.current) { filtersSettledRef.current = true; return; }
     const previous = lastQueryRef.current;
     if (previous) void runSearchRef.current(previous);
-  }, [topK]);
+  }, [topK, source]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -132,6 +155,21 @@ export function SearchTab({ kb }: SearchTabProps) {
               ))}
             </select>
           </label>
+          {sources.length > 0 && (
+            <label className="flex items-center gap-1.5 min-w-0">
+              {sh.search_source_label}
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="max-w-48 truncate bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground typo-caption"
+              >
+                <option value="">{sh.search_source_all}</option>
+                {sources.map((s) => (
+                  <option key={s.path} value={s.path}>{s.title}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <span>{sh.press_enter}</span>
         </div>
       </div>

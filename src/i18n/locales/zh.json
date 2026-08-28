@@ -4672,7 +4672,9 @@
       "documents_count_one": "{count} 个文档",
       "documents_count_other": "{count} 个文档",
       "drop_no_paths": "未找到有效的文件路径。请尝试逐个拖放文件。",
-      "chars_unit": "{count} 个字符"
+      "chars_unit": "{count} 个字符",
+      "search_source_label": "来源",
+      "search_source_all": "全部文档"
     },
     "manager": {
       "title": "凭据",

@@ -674,7 +674,9 @@
     "documents_count_one": "{count} documento",
     "documents_count_other": "{count} documentos",
     "drop_no_paths": "No se encontraron rutas de archivo válidas. Prueba a soltar los archivos de uno en uno.",
-    "chars_unit": "{count} caracteres"
+    "chars_unit": "{count} caracteres",
+    "search_source_label": "Fuente",
+    "search_source_all": "Todos los documentos"
   },
   "manager": {
     "title": "Credenciales",
