@@ -14,6 +14,7 @@ import {
   kbRunExtraction,
   kbListEntities,
 } from '@/api/vault/database/vectorKb';
+import { trackInteraction } from '@/lib/analytics';
 import { SearchTab } from '../tabs/SearchTab';
 import { ExtractTab } from '../tabs/ExtractTab';
 import { DocumentsTab } from '../tabs/DocumentsTab';
@@ -45,6 +46,9 @@ vi.mock('@/api/vault/database/vectorKb', async (importOriginal) => {
   };
 });
 
+vi.mock('@/lib/analytics', () => ({ trackInteraction: vi.fn() }));
+
+const mockTrack = vi.mocked(trackInteraction);
 const mockSearch = vi.mocked(kbSearch);
 const mockListDocuments = vi.mocked(kbListDocuments);
 const mockInferSchema = vi.mocked(kbInferSchema);
@@ -185,6 +189,39 @@ describe('SearchTab — the count carries its predicate', () => {
 
     expect(await screen.findByText(/2 results for/)).toBeTruthy();
     expect(screen.queryByText(/Top 2 for/)).toBeNull();
+  });
+});
+
+describe('KB telemetry — the expensive operations are now measurable', () => {
+  it('a search reports its retrieval shape, and never the query text', async () => {
+    mockSearch.mockResolvedValue({ results: [hit('a')], floorFiltered: 7 });
+
+    render(<SearchTab kb={KB} />);
+    const input = screen.getByPlaceholderText(/Ask a question/i);
+    fireEvent.change(input, { target: { value: 'secret client name' } });
+    await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }); });
+
+    await waitFor(() => expect(mockTrack).toHaveBeenCalled());
+    const [category, action, label] = mockTrack.mock.calls[0];
+    expect(category).toBe('vector_kb');
+    expect(action).toBe('search');
+    expect(label).toContain('results=1');
+    expect(label).toContain('floor=7');
+    expect(label).toContain('topK=10');
+    expect(label).not.toContain('secret');
+  });
+
+  it('a zero-result search is reported too — that is the interesting one', async () => {
+    mockSearch.mockResolvedValue({ results: [], floorFiltered: 120 });
+
+    render(<SearchTab kb={KB} />);
+    const input = screen.getByPlaceholderText(/Ask a question/i);
+    fireEvent.change(input, { target: { value: 'nothing matches' } });
+    await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }); });
+
+    await waitFor(() => expect(mockTrack).toHaveBeenCalled());
+    expect(mockTrack.mock.calls[0][2]).toContain('results=0');
+    expect(mockTrack.mock.calls[0][2]).toContain('floor=120');
   });
 });
 

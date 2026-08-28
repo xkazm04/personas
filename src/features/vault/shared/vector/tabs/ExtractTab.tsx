@@ -4,6 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { trackInteraction } from '@/lib/analytics';
 import type { KnowledgeBase, KbExtractionSchema, KbEntity } from '@/api/vault/database/vectorKb';
 // The payload of `kb-extraction-progress` is a generated contract; this file
 // used to re-declare it by hand, so a Rust-side field change would have drifted
@@ -91,6 +92,9 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
     setError(null);
     try {
       await kbRunExtraction(kb.id, schema);
+      // Extraction is the most expensive operation in this feature and nothing
+      // recorded that it ever ran. Shape counts only, no corpus content.
+      trackInteraction('vector_kb', 'extraction_run', `entityTypes=${schema.entities.length}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

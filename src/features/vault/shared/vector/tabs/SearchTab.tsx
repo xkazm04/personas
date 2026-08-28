@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
 import { kbSearch, kbListDocuments } from '@/api/vault/database/vectorKb';
 import { silentCatch } from '@/lib/silentCatch';
+import { trackInteraction } from '@/lib/analytics';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
 
@@ -71,10 +72,19 @@ export function SearchTab({ kb }: SearchTabProps) {
         filterSource: source || undefined,
       });
       if (!mountedRef.current || !latestWins.isCurrent(seq)) return;
+      const elapsed = Math.round(performance.now() - t0);
       setResults(res.results);
       setFloorFiltered(res.floorFiltered);
       setLastQuery(trimmed);
-      setDurationMs(Math.round(performance.now() - t0));
+      setDurationMs(elapsed);
+      // The surface already computes the two numbers that answer "is retrieval
+      // any good here?" and used to throw both away on the next query. Counts
+      // only — never the query text, which is user content.
+      trackInteraction(
+        'vector_kb',
+        'search',
+        `results=${res.results.length};floor=${res.floorFiltered};ms=${elapsed};topK=${topK}`,
+      );
     } catch (err) {
       if (!mountedRef.current || !latestWins.isCurrent(seq)) return;
       setError(err instanceof Error ? err.message : String(err));
