@@ -70,6 +70,20 @@ export interface ProjectRuntime {
 
 const AUTO_MAX_TURNS = 12;
 
+// Boot poll bounds. A poll whose ONLY exit is success is not a poll, it is a
+// hang: a dev server that never binds — a port already in use, Turbopack dying
+// on the very first compile, a broken package.json — was polled every 1.5s for
+// the entire life of the tab while the UI read "Starting the dev server…"
+// forever. The failure was never classified AS one, so nothing could react to
+// it and nothing could offer a way out.
+//
+// The ceiling is generous on purpose: a cold first Next compile on a freshly
+// scaffolded project is genuinely slow, and calling a healthy-but-slow boot a
+// failure would be the worse error of the two. Four minutes fits it with room
+// to spare, and is still finite.
+export const POLL_INTERVAL_MS = 1500;
+export const POLL_MAX_ATTEMPTS = 160;
+
 // C2 — plan-first gate: wrap the seed vision so Athena plans + asks approval
 // before editing any files. "Build it" (an A1 decision option) resumes the build.
 const planFirstSeed = (vision: string) =>
@@ -306,7 +320,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
   const beginPoll = (id: string) => {
     stopPoll(id);
+    let attempts = 0;
+    // Exhaustion is a RESULT, not a timeout to swallow: give up polling and put
+    // the tab in `error`, which the page already renders and can now retry from.
+    const giveUp = () => {
+      stopPoll(id);
+      patch(id, { phase: 'error' });
+    };
     const timer = window.setInterval(() => {
+      attempts += 1;
+      const exhausted = attempts >= POLL_MAX_ATTEMPTS;
       webbuildStatus(id)
         .then((status) => {
           patch(id, { status });
@@ -321,10 +344,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
               patch(id, { seedPending: null });
               void get().sendTurn(id, seed);
             }
+            return;
           }
+          if (exhausted) giveUp();
         })
-        .catch(silentCatch('studioStore:beginPoll'));
-    }, 1500);
+        .catch((e) => {
+          if (exhausted) giveUp();
+          silentCatch('studioStore:beginPoll')(e);
+        });
+    }, POLL_INTERVAL_MS);
     pollTimers.set(id, timer);
   };
 

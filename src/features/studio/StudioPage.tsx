@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Bot, RotateCcw } from 'lucide-react';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { useTranslation } from '@/i18n/useTranslation';
 import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import StudioTabBar from './StudioTabBar';
@@ -25,6 +27,7 @@ const COPY = {
 };
 
 export default function StudioPage() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [creating, setCreating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +56,7 @@ export default function StudioPage() {
   const activeId = useStudioStore((s) => s.activeId);
   const tabCount = useStudioStore((s) => s.tabOrder.length);
   const lastCreateError = useStudioStore((s) => s.lastCreateError);
+  const startExisting = useStudioStore((s) => s.startExisting);
   // Narrow subscriptions (perf) — StudioPage never reads `stream`, but the CLI
   // emits many stream deltas per second during a build turn, each replacing the
   // runtime object. Subscribing to the whole `runtimes` map re-rendered this
@@ -376,6 +380,20 @@ export default function StudioPage() {
                           ? COPY.error
                           : active.name}
                   </span>
+                  {/* A boot that gave up now says so, and a dead end needs a way
+                      out of it — the previous error state was copy with nothing
+                      to do about it. `startExisting` is idempotent for a project
+                      already open, so it is a plain cold restart. */}
+                  {active.phase === 'error' && activeId && (
+                    <AsyncButton
+                      size="sm"
+                      variant="secondary"
+                      icon={<RotateCcw className="h-3.5 w-3.5" />}
+                      onClick={() => startExisting(activeId, active.name)}
+                    >
+                      {t.common.retry}
+                    </AsyncButton>
+                  )}
                 </div>
               </div>
             ) : (
