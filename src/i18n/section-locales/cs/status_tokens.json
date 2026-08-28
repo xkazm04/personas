@@ -218,5 +218,9 @@
     "awaiting_review": "Čeká na kontrolu",
     "resolved": "Vyřešeno",
     "cancelled": "Zrušeno"
+  },
+  "kb_document": {
+    "pending": "čeká",
+    "indexing": "indexuje se"
   }
 }

@@ -218,5 +218,9 @@
     "awaiting_review": "समीक्षा की प्रतीक्षा",
     "resolved": "हल",
     "cancelled": "रद्द"
+  },
+  "kb_document": {
+    "pending": "लंबित",
+    "indexing": "इंडेक्स हो रहा है"
   }
 }

@@ -218,5 +218,9 @@
     "awaiting_review": "Menunggu tinjauan",
     "resolved": "Terselesaikan",
     "cancelled": "Dibatalkan"
+  },
+  "kb_document": {
+    "pending": "menunggu",
+    "indexing": "mengindeks"
   }
 }

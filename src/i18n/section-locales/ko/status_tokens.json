@@ -218,5 +218,9 @@
     "awaiting_review": "검토 대기 중",
     "resolved": "해결됨",
     "cancelled": "취소됨"
+  },
+  "kb_document": {
+    "pending": "대기 중",
+    "indexing": "색인 중"
   }
 }

@@ -218,5 +218,9 @@
     "awaiting_review": "Wartet auf Prüfung",
     "resolved": "Gelöst",
     "cancelled": "Abgebrochen"
+  },
+  "kb_document": {
+    "pending": "ausstehend",
+    "indexing": "wird indiziert"
   }
 }

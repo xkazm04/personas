@@ -218,5 +218,9 @@
     "awaiting_review": "পর্যালোচনার অপেক্ষায়",
     "resolved": "সমাধান হয়েছে",
     "cancelled": "বাতিল"
+  },
+  "kb_document": {
+    "pending": "অপেক্ষমাণ",
+    "indexing": "ইনডেক্স হচ্ছে"
   }
 }

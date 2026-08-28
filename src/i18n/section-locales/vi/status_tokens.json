@@ -218,5 +218,9 @@
     "awaiting_review": "Chờ đánh giá",
     "resolved": "Đã giải quyết",
     "cancelled": "Đã hủy"
+  },
+  "kb_document": {
+    "pending": "đang chờ",
+    "indexing": "đang lập chỉ mục"
   }
 }

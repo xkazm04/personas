@@ -218,5 +218,9 @@
     "awaiting_review": "レビュー待ち",
     "resolved": "解決済み",
     "cancelled": "キャンセル済み"
+  },
+  "kb_document": {
+    "pending": "保留中",
+    "indexing": "インデックス作成中"
   }
 }

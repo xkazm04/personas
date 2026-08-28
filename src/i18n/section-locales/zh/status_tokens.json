@@ -218,5 +218,9 @@
     "awaiting_review": "待审核",
     "resolved": "已解决",
     "cancelled": "已取消"
+  },
+  "kb_document": {
+    "pending": "待处理",
+    "indexing": "索引中"
   }
 }

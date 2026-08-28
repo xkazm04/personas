@@ -4974,6 +4974,13 @@ export type Translations = {
       search_results_other: string;
       search_floor_filtered: string;
       no_results_floor_hint: string;
+      documents_count_one: string;
+      documents_count_other: string;
+      drop_no_paths: string;
+      chars_unit: string;
+      search_source_label: string;
+      search_source_all: string;
+      search_results_capped: string;
     };
     manager: {
       title: string;
@@ -13176,6 +13183,10 @@ export type Translations = {
       awaiting_review: string;
       resolved: string;
       cancelled: string;
+    };
+    kb_document: {
+      pending: string;
+      indexing: string;
     };
   };
   project_overview: {

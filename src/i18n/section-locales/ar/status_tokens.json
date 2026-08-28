@@ -218,5 +218,9 @@
     "awaiting_review": "بانتظار المراجعة",
     "resolved": "محلول",
     "cancelled": "ملغى"
+  },
+  "kb_document": {
+    "pending": "في الانتظار",
+    "indexing": "جارٍ الفهرسة"
   }
 }
