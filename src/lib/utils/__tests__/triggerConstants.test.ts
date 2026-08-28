@@ -9,6 +9,7 @@ import {
   TRIGGER_CATEGORIES,
   TRIGGER_KINDS,
   isLoopbackUrl,
+  getTriggerTypeLabel,
 } from '../platform/triggerConstants';
 import { en } from '@/i18n/en';
 
@@ -110,6 +111,36 @@ describe('trigger i18n key tables', () => {
       expect(category.label.length).toBeGreaterThan(0);
       expect(category.description.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('getTriggerTypeLabel — one vocabulary, one language', () => {
+  // Regression guard. The label map was built from `TRIGGER_TYPE_OPTIONS`, the
+  // English fallback copy, so a non-English user got translated trigger names in
+  // the add-trigger menu (`getTriggerTypeOptions`) and English ones in the status
+  // summary. Both must now read the same `triggers.type_*` keys.
+  it('reads the supplied catalog, not the English fallback copy', () => {
+    const translated = {
+      ...en,
+      triggers: Object.fromEntries(
+        TRIGGER_KINDS.map((kind) => [`type_${kind}`, `xx-${kind}`]),
+      ),
+    } as unknown as typeof en; // invariant: only `triggers.type_*` is read below.
+
+    for (const kind of TRIGGER_KINDS) {
+      expect(getTriggerTypeLabel(kind, translated)).toBe(`xx-${kind}`);
+    }
+  });
+
+  it('agrees with getTriggerTypeOptions for every kind', () => {
+    const byType = new Map(getTriggerTypeOptions(en).map((o) => [o.type, o.label]));
+    for (const kind of TRIGGER_KINDS) {
+      expect(getTriggerTypeLabel(kind, en)).toBe(byType.get(kind));
+    }
+  });
+
+  it('still Title-Cases an unrecognised stored trigger type', () => {
+    expect(getTriggerTypeLabel('not_a_kind', en)).toBe('Not a kind');
   });
 });
 

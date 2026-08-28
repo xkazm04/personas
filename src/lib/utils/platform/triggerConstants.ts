@@ -481,8 +481,19 @@ export const RATE_LIMIT_WINDOW_OPTIONS = [
   { label: 'Per hour', value: 3600 },       // i18n: triggers.rate_per_hour
 ] as const;
 
-/** Look up the human-readable label for a trigger type. Falls back to Title Case. */
-export function getTriggerTypeLabel(triggerType: string): string {
+/**
+ * Look up the human-readable label for a trigger type. Falls back to Title Case.
+ *
+ * Resolves through the SAME `triggers.type_*` keys `getTriggerTypeOptions` reads.
+ * It used to build from `TRIGGER_TYPE_OPTIONS` — the English fallback copy — so a
+ * non-English user saw a translated trigger name in the add-trigger menu and an
+ * English one in the status summary, two renderings of one vocabulary. An
+ * unrecognised stored `trigger_type` still Title-Cases the raw token, because
+ * there is no key to translate a value the catalog has never heard of.
+ */
+export function getTriggerTypeLabel(triggerType: string, t: Translations = en): string {
+  const translated = t.triggers[`type_${triggerType}` as keyof Translations['triggers']];
+  if (typeof translated === 'string' && translated.length > 0) return translated;
   return _labelByType.get(triggerType) ?? triggerType.charAt(0).toUpperCase() + triggerType.slice(1).replace(/_/g, ' ');
 }
 
