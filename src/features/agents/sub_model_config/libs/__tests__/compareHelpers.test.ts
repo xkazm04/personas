@@ -49,6 +49,21 @@ function row(over: Partial<LabArenaResult> = {}): LabArenaResult {
 }
 
 describe('model-config telemetry events', () => {
+  const metrics = (modelId: string, composite: number | null, totalCost: number) => ({
+    modelId,
+    provider: 'anthropic',
+    avgToolAccuracy: 0,
+    avgOutputQuality: 0,
+    avgProtocolCompliance: 0,
+    composite,
+    scored: { toolAccuracy: 1, outputQuality: 1, protocolCompliance: 1 },
+    totalCost,
+    avgDuration: 0,
+    totalInputTokens: 0,
+    totalOutputTokens: 0,
+    count: 1,
+  });
+
   it('buckets spend into ordered bands and never leaves a finite figure unbucketed', () => {
     expect(costBucket(0)).toBe('zero');
     expect(costBucket(-1)).toBe('zero');
@@ -69,34 +84,42 @@ describe('model-config telemetry events', () => {
   });
 
   it('carries the outcome the panel used to discard — winner and a spend band, never a raw figure', () => {
-    const metrics = (modelId: string, composite: number | null, totalCost: number) => ({
-      modelId,
-      provider: 'anthropic',
-      avgToolAccuracy: 0,
-      avgOutputQuality: 0,
-      avgProtocolCompliance: 0,
-      composite,
-      scored: { toolAccuracy: 1, outputQuality: 1, protocolCompliance: 1 },
-      totalCost,
-      avgDuration: 0,
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-      count: 1,
-    });
-
-    const won = buildCompareOutcomeEvent(metrics('haiku', 40, 0.02), metrics('sonnet', 80, 0.03));
+    const won = buildCompareOutcomeEvent(metrics('haiku', 40, 0.02), metrics('sonnet', 80, 0.03), 'haiku', 'sonnet');
     expect(won.action).toBe('compare_complete');
     expect(won.label).toBe('haiku_vs_sonnet|winner=sonnet|cost=lt_0_10');
     // The exact dollar figure must not survive into the event.
     expect(won.label).not.toContain('0.05');
 
-    const tied = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', 70, 0));
+    const tied = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', 70, 0), 'haiku', 'opus');
     expect(tied.label).toBe('haiku_vs_opus|winner=tie|cost=zero');
 
     // An unscored model must never be reported as the loser — that is a
     // verdict on evidence that does not exist.
-    const unscored = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', null, 0));
+    const unscored = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', null, 0), 'haiku', 'opus');
     expect(unscored.label).toBe('haiku_vs_opus|winner=unscored|cost=zero');
+  });
+
+  it('reports a run where a model produced nothing, instead of emitting no outcome at all', () => {
+    const ok = metrics('haiku', 70, 0.5);
+
+    // Model B never came back. Before, this emitted NOTHING — a compare_start
+    // with no completion, indistinguishable from the user closing the panel.
+    const oneSide = buildCompareOutcomeEvent(ok, null, 'haiku', 'sonnet');
+    expect(oneSide.action).toBe('compare_complete');
+    expect(oneSide.label).toBe('haiku_vs_sonnet|winner=failed|cost=lt_1|missing=sonnet');
+
+    // Neither side reported: still exactly one outcome, and it names both.
+    const neither = buildCompareOutcomeEvent(null, null, 'haiku', 'opus');
+    expect(neither.label).toBe('haiku_vs_opus|winner=failed|cost=zero|missing=haiku,opus');
+
+    // `failed` outranks `unscored`: with no rows there is no composite to
+    // have an opinion about, so the absence is reported as the absence.
+    expect(buildCompareOutcomeEvent(null, metrics('opus', null, 0), 'haiku', 'opus').label)
+      .toContain('winner=failed');
+
+    // A complete run must not pick up the failure suffix.
+    expect(buildCompareOutcomeEvent(ok, metrics('opus', 90, 0), 'haiku', 'opus').label)
+      .not.toContain('missing=');
   });
 });
 

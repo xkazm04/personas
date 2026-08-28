@@ -236,26 +236,57 @@ export function buildCompareStartEvent(modelA: string, modelB: string): Interact
 }
 
 /**
- * An A/B comparison produced results for both models — the event carrying the
- * outcome the panel used to throw away. `winner` is decided on composite
- * score, the same number the results table ranks on.
+ * The outcome of a dispatched A/B comparison — the event carrying what the
+ * panel used to throw away.
  *
- * A model with no scored dimension has a `null` composite: it is reported as
- * `unscored`, never as a loss. Declaring a winner over an absent score is the
- * exact fold this event is meant to observe, not commit.
+ * **One of these for every `compare_start`, without exception.** Until
+ * 2026-08-29 a `null` aggregate meant no event at all, so a model whose
+ * dispatch failed and a user who walked away from the panel were the same
+ * shape in the data: a start with nothing after it. A run that produced
+ * nothing is a *result* about the compare panel, and the one most worth
+ * counting.
+ *
+ * `winner` vocabulary, decided in this order:
+ *  - `failed`    — one or both models produced no rows at all. `missing=`
+ *                  names the side(s), because "which model never came back"
+ *                  is the actionable half of the finding.
+ *  - `unscored`  — rows exist but at least one composite is `null`: no
+ *                  dimension was graded. Never reported as a loss — declaring
+ *                  a winner over an absent score is the fold this event
+ *                  observes rather than commits.
+ *  - `tie`       — equal composites.
+ *  - `<modelId>` — the higher composite, the same number the results table
+ *                  ranks on.
+ *
+ * The model ids are passed separately from the metrics because a failed side
+ * has no `ModelMetrics` to read its own id off.
  */
-export function buildCompareOutcomeEvent(a: ModelMetrics, b: ModelMetrics): InteractionEvent {
+export function buildCompareOutcomeEvent(
+  a: ModelMetrics | null,
+  b: ModelMetrics | null,
+  modelAId: string,
+  modelBId: string,
+): InteractionEvent {
+  const missing: string[] = [];
+  if (a == null) missing.push(modelAId);
+  if (b == null) missing.push(modelBId);
+
   const winner =
-    a.composite == null || b.composite == null
-      ? 'unscored'
-      : a.composite === b.composite
-        ? 'tie'
-        : a.composite > b.composite
-          ? a.modelId
-          : b.modelId;
+    a == null || b == null
+      ? 'failed'
+      : a.composite == null || b.composite == null
+        ? 'unscored'
+        : a.composite === b.composite
+          ? 'tie'
+          : a.composite > b.composite
+            ? a.modelId
+            : b.modelId;
+
+  const cost = costBucket((a?.totalCost ?? 0) + (b?.totalCost ?? 0));
+  const suffix = missing.length > 0 ? `|missing=${missing.join(',')}` : '';
   return {
     category: MODEL_CONFIG_TELEMETRY_CATEGORY,
     action: 'compare_complete',
-    label: `${a.modelId}_vs_${b.modelId}|winner=${winner}|cost=${costBucket(a.totalCost + b.totalCost)}`,
+    label: `${modelAId}_vs_${modelBId}|winner=${winner}|cost=${cost}${suffix}`,
   };
 }
