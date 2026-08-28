@@ -80,12 +80,21 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
         {queries.map((q) => (
           <div
             key={q.id}
-            className={`group flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-all duration-150 ${
+            role="button"
+            tabIndex={0}
+            aria-current={selectedId === q.id || undefined}
+            className={`focus-ring group flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-all duration-150 ${
               selectedId === q.id
                 ? 'bg-primary/10 border border-primary/20 shadow-elevation-1 shadow-primary/5'
                 : 'hover:bg-secondary/40 border border-transparent'
             }`}
             onClick={() => onSelect(q.id)}
+            onKeyDown={(e) => {
+              // The row is the only way to open a saved query. Without a key
+              // handler the keyboard could reach the star/trash affordances
+              // inside it but never select the query itself.
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(q.id); }
+            }}
           >
             <span className="flex-1 typo-body text-foreground truncate">{q.title}</span>
 

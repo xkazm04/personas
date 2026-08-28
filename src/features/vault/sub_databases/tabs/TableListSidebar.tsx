@@ -24,6 +24,19 @@ interface TableListSidebarProps {
   credentialId?: string;
 }
 
+/**
+ * Rows in this sidebar ARE the primary navigation of the schema browser, so they
+ * carry role="button" + tabIndex and must answer the two keys a native button
+ * answers. Without this a keyboard user could reach the filter box and the
+ * refresh control but never open a table's detail panel.
+ */
+function activateOnKey(e: React.KeyboardEvent, activate: () => void) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    activate();
+  }
+}
+
 export function TableListSidebar({
   tables,
   redisKeys,
@@ -106,12 +119,16 @@ export function TableListSidebar({
           return (
             <div
               key={table.table_name}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
+              role="button"
+              tabIndex={0}
+              aria-current={isSelected || undefined}
+              className={`focus-ring flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
                 isSelected
                   ? 'bg-primary/10 border border-primary/20'
                   : 'hover:bg-secondary/40 border border-transparent'
               }`}
               onClick={() => onSelectTable(table.table_name)}
+              onKeyDown={(e) => activateOnKey(e, () => onSelectTable(table.table_name))}
               onContextMenu={(e) => onContextMenu(e, table.table_name)}
             >
               <Icon className="w-3 h-3 text-foreground shrink-0" />
@@ -143,12 +160,16 @@ export function TableListSidebar({
           return (
             <div
               key={keyInfo.key}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
+              role="button"
+              tabIndex={0}
+              aria-current={isSelected || undefined}
+              className={`focus-ring flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
                 isSelected
                   ? 'bg-primary/10 border border-primary/20'
                   : 'hover:bg-secondary/40 border border-transparent'
               }`}
               onClick={() => onSelectKey(keyInfo.key)}
+              onKeyDown={(e) => activateOnKey(e, () => onSelectKey(keyInfo.key))}
             >
               <Key className="w-3 h-3 text-foreground shrink-0" />
               <span className="flex-1 typo-code font-mono text-foreground truncate">{keyInfo.key}</span>
