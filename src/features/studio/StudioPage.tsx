@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Bot, RotateCcw } from 'lucide-react';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { useTranslation } from '@/i18n/useTranslation';
 import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import StudioTabBar from './StudioTabBar';
@@ -9,6 +11,7 @@ import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
+import { previewTargetOrigin } from './studioBuildModel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
@@ -24,6 +27,7 @@ const COPY = {
 };
 
 export default function StudioPage() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [creating, setCreating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -52,6 +56,7 @@ export default function StudioPage() {
   const activeId = useStudioStore((s) => s.activeId);
   const tabCount = useStudioStore((s) => s.tabOrder.length);
   const lastCreateError = useStudioStore((s) => s.lastCreateError);
+  const startExisting = useStudioStore((s) => s.startExisting);
   // Narrow subscriptions (perf) — StudioPage never reads `stream`, but the CLI
   // emits many stream deltas per second during a build turn, each replacing the
   // runtime object. Subscribing to the whole `runtimes` map re-rendered this
@@ -160,6 +165,13 @@ export default function StudioPage() {
   useEffect(() => {
     setPointerRect(null);
     if (!active?.question || !active?.decisionSelector) return;
+    // The dev server's own origin, so the ping is addressed rather than
+    // broadcast. No origin (no URL yet, or it won't parse) means we send
+    // NOTHING — falling back to '*' would restore the very behaviour the named
+    // origin exists to remove, and the preview is a user-authored dev site that
+    // can navigate itself somewhere else at any moment.
+    const targetOrigin = previewTargetOrigin(activeId ? previewUrls[activeId] : null);
+    if (!targetOrigin) return;
     const selector = active.decisionSelector;
     let tries = 0;
     const interval = window.setInterval(() => {
@@ -171,12 +183,12 @@ export default function StudioPage() {
       );
       iframe?.contentWindow?.postMessage(
         { source: 'athena', type: 'locate', selector, reqId: `${activeId}` },
-        '*',
+        targetOrigin,
       );
       if (++tries >= 8) window.clearInterval(interval);
     }, 700);
     return () => window.clearInterval(interval);
-  }, [activeId, active?.question, active?.decisionSelector]);
+  }, [activeId, active?.question, active?.decisionSelector, previewUrls]);
 
   // Fly Athena's global orb to the element a precise decision is about — reusing
   // the companion walkthrough's orb-target glide. The element's rect is in the
@@ -368,6 +380,20 @@ export default function StudioPage() {
                           ? COPY.error
                           : active.name}
                   </span>
+                  {/* A boot that gave up now says so, and a dead end needs a way
+                      out of it — the previous error state was copy with nothing
+                      to do about it. `startExisting` is idempotent for a project
+                      already open, so it is a plain cold restart. */}
+                  {active.phase === 'error' && activeId && (
+                    <AsyncButton
+                      size="sm"
+                      variant="secondary"
+                      icon={<RotateCcw className="h-3.5 w-3.5" />}
+                      onClick={() => startExisting(activeId, active.name)}
+                    >
+                      {t.common.retry}
+                    </AsyncButton>
+                  )}
                 </div>
               </div>
             ) : (

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MOCK_PHASES, phaseProgress } from '../studioBuildModel';
+import {
+  MOCK_PHASES,
+  phaseProgress,
+  previewTargetOrigin,
+  tabDotClass,
+} from '../studioBuildModel';
+import type { TabDotState } from '../studioBuildModel';
 
 // The Studio context shipped with zero tests. These pin the two properties the
 // build plan's honesty rests on: the placeholder plan claims no completed work,
@@ -47,5 +53,70 @@ describe('phaseProgress', () => {
     ]);
     expect(all.done).toBe(all.total);
     expect(all.active).toBeUndefined();
+  });
+});
+
+describe('previewTargetOrigin (never post into the preview with "*")', () => {
+  it('reduces the dev server URL to its origin', () => {
+    expect(previewTargetOrigin('http://localhost:3000/dashboard?x=1#y')).toBe(
+      'http://localhost:3000',
+    );
+    expect(previewTargetOrigin('http://127.0.0.1:4310')).toBe('http://127.0.0.1:4310');
+  });
+
+  it('returns null rather than a wildcard when there is nothing to address', () => {
+    // The caller must send NOTHING on null. A '*' fallback here would restore
+    // exactly the broadcast this helper exists to remove — the preview is a
+    // user-authored dev site that can navigate itself to another origin.
+    for (const bad of [undefined, null, '', 'not a url', '/relative/path']) {
+      expect(previewTargetOrigin(bad)).toBeNull();
+    }
+  });
+
+  it('never returns "*" for any input', () => {
+    const inputs = ['http://localhost:3000', '*', 'null', 'about:blank', ''];
+    expect(inputs.map(previewTargetOrigin)).not.toContain('*');
+  });
+});
+
+describe('tabDotClass (the tab strip is peripheral vision)', () => {
+  const dot = (over: Partial<TabDotState> = {}): string =>
+    tabDotClass({ question: null, autonomous: false, busy: false, phase: 'idle', ...over });
+
+  it('never animates a steady state — including a whole autonomous run', () => {
+    // Regression guard: the dot used to carry `animate-pulse` for the entire
+    // `busy || autonomous` state, and an autonomous run is up to AUTO_MAX_TURNS
+    // chained turns — many minutes of continuous motion in the one region
+    // visible from every Studio screen.
+    for (const steady of [
+      dot({ autonomous: true }),
+      dot({ busy: true }),
+      dot({ autonomous: true, busy: true, phase: 'live' }),
+      dot({ phase: 'live' }),
+      dot({ phase: 'error' }),
+      dot(),
+    ]) {
+      expect(steady).not.toContain('animate-');
+    }
+  });
+
+  it('animates only the one actionable state — a build halted on a question', () => {
+    expect(dot({ question: 'Which brand colour?' })).toContain('animate-pulse');
+  });
+
+  it('lets a pending question outrank the building hue, since it is what stopped it', () => {
+    expect(dot({ question: 'pick one', autonomous: true, busy: true })).toBe(
+      dot({ question: 'pick one' }),
+    );
+  });
+
+  it('tells every steady state apart by hue alone — animation carries no state', () => {
+    const steady = [
+      dot({ autonomous: true }),
+      dot({ phase: 'live' }),
+      dot({ phase: 'error' }),
+      dot(),
+    ];
+    expect(new Set(steady).size).toBe(steady.length);
   });
 });

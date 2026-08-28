@@ -70,6 +70,20 @@ export interface ProjectRuntime {
 
 const AUTO_MAX_TURNS = 12;
 
+// Boot poll bounds. A poll whose ONLY exit is success is not a poll, it is a
+// hang: a dev server that never binds — a port already in use, Turbopack dying
+// on the very first compile, a broken package.json — was polled every 1.5s for
+// the entire life of the tab while the UI read "Starting the dev server…"
+// forever. The failure was never classified AS one, so nothing could react to
+// it and nothing could offer a way out.
+//
+// The ceiling is generous on purpose: a cold first Next compile on a freshly
+// scaffolded project is genuinely slow, and calling a healthy-but-slow boot a
+// failure would be the worse error of the two. Four minutes fits it with room
+// to spare, and is still finite.
+export const POLL_INTERVAL_MS = 1500;
+export const POLL_MAX_ATTEMPTS = 160;
+
 // C2 — plan-first gate: wrap the seed vision so Athena plans + asks approval
 // before editing any files. "Build it" (an A1 decision option) resumes the build.
 const planFirstSeed = (vision: string) =>
@@ -129,6 +143,10 @@ interface StudioStore {
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
+  /** Open a Dev Tools project from the picker — guarded by the same Next.js
+   *  check as `importExisting`, so an unverifiable project is refused up front
+   *  instead of failing deeper with an unrelated error. */
+  openImportable: (id: string, name: string) => Promise<void>;
   importExisting: (path: string) => Promise<void>;
   createWithVision: (name: string, vision: string) => Promise<void>;
   sendTurn: (id: string, text: string) => Promise<void>;
@@ -268,6 +286,30 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     });
   };
 
+  // Studio's preview runs `next dev`, so a project that isn't a Next.js app
+  // cannot be opened. BOTH doors need that guard, and only one of them had it:
+  // the browse-a-folder path re-checked and refused with an explanation, while
+  // the picker leaned on an advisory probe done in the tab strip — a probe whose
+  // FAILURE silently left every row looking openable, so the click failed later,
+  // deeper, and with an unrelated error. This is the single refusal both use.
+  //
+  // Note which way it fails: a check we could not run is not a project we may
+  // open. Treating "unknown" as "fine" is the entire defect.
+  const ensureNextReady = async (projectId: string): Promise<boolean> => {
+    let ready: string[];
+    try {
+      ready = await webbuildNextReady([projectId]);
+    } catch (e) {
+      toastCatch('check project')(e);
+      return false;
+    }
+    if (ready.includes(projectId)) return true;
+    toastCatch('open project')(
+      new Error("This folder isn't a Next.js app — Studio builds Next.js + Tailwind projects."),
+    );
+    return false;
+  };
+
   const stopPoll = (id: string) => {
     const t = pollTimers.get(id);
     if (t) {
@@ -278,7 +320,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
   const beginPoll = (id: string) => {
     stopPoll(id);
+    let attempts = 0;
+    // Exhaustion is a RESULT, not a timeout to swallow: give up polling and put
+    // the tab in `error`, which the page already renders and can now retry from.
+    const giveUp = () => {
+      stopPoll(id);
+      patch(id, { phase: 'error' });
+    };
     const timer = window.setInterval(() => {
+      attempts += 1;
+      const exhausted = attempts >= POLL_MAX_ATTEMPTS;
       webbuildStatus(id)
         .then((status) => {
           patch(id, { status });
@@ -293,10 +344,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
               patch(id, { seedPending: null });
               void get().sendTurn(id, seed);
             }
+            return;
           }
+          if (exhausted) giveUp();
         })
-        .catch(silentCatch('studioStore:beginPoll'));
-    }, 1500);
+        .catch((e) => {
+          if (exhausted) giveUp();
+          silentCatch('studioStore:beginPoll')(e);
+        });
+    }, POLL_INTERVAL_MS);
     pollTimers.set(id, timer);
   };
 
@@ -538,21 +594,18 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       await start(id);
     },
 
+
+    openImportable: async (id, name) => {
+      if (await ensureNextReady(id)) await get().startExisting(id, name);
+    },
+
     importExisting: async (path) => {
       try {
-        const name = path.split(/[\\/]/).filter(Boolean).pop() ?? 'project';
-        const project = await webbuildRegisterExisting(name, path);
-        // Same Next-only guard as the picker: register it (so it shows in the
-        // Dev Tools list), but only open + start a preview for a Next.js app.
-        const ready = await webbuildNextReady([project.id]);
-        if (!ready.includes(project.id)) {
-          toastCatch('add existing project')(
-            new Error(
-              "This folder isn't a Next.js app — Studio builds Next.js + Tailwind projects.",
-            ),
-          );
-          return;
-        }
+        const projectName = path.split(/[\\/]/).filter(Boolean).pop() ?? 'project';
+        const project = await webbuildRegisterExisting(projectName, path);
+        // Register it (so it shows in the Dev Tools list), but only open + start
+        // a preview for a Next.js app — the same guard the picker now uses.
+        if (!(await ensureNextReady(project.id))) return;
         await get().startExisting(project.id, project.name);
       } catch (e) {
         toastCatch('add existing project')(e);

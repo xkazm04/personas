@@ -7,7 +7,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { webbuildNextReady } from '@/api/webbuild';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
-import { phaseProgress } from './studioBuildModel';
+import { phaseProgress, tabDotClass } from './studioBuildModel';
 import { silentCatch } from '@/lib/silentCatch';
 
 // Browser-style tab strip. Each open project is a tab carrying its own live
@@ -43,14 +43,7 @@ export default function StudioTabBar({
       for (const id of s.tabOrder) {
         const rt = s.runtimes[id];
         if (!rt) continue;
-        out[id] =
-          rt.autonomous || rt.busy
-            ? 'bg-primary animate-pulse'
-            : rt.phase === 'live'
-              ? 'bg-status-success'
-              : rt.phase === 'error'
-                ? 'bg-status-error'
-                : 'bg-foreground/30';
+        out[id] = tabDotClass(rt);
       }
       return out;
     }),
@@ -59,6 +52,7 @@ export default function StudioTabBar({
   const setActive = useStudioStore((s) => s.setActive);
   const closeTab = useStudioStore((s) => s.closeTab);
   const startExisting = useStudioStore((s) => s.startExisting);
+  const openImportable = useStudioStore((s) => s.openImportable);
   const importExisting = useStudioStore((s) => s.importExisting);
 
   const history = useStudioHistory((s) => s.byProject);
@@ -245,10 +239,15 @@ export default function StudioTabBar({
                             key={p.id}
                             type="button"
                             disabled={blocked}
+                            // `blocked` is the ADVISORY hint from the probe
+                            // above, and the probe can fail — in which case
+                            // every row here reads as openable. The authority is
+                            // the store's own guard, which re-checks and refuses
+                            // with an explanation exactly like the browse path.
                             onClick={() => {
                               if (blocked) return;
                               setPickerOpen(false);
-                              void startExisting(p.id, p.name);
+                              void openImportable(p.id, p.name);
                             }}
                             title={
                               blocked

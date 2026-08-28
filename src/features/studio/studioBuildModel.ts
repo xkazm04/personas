@@ -34,3 +34,58 @@ export function phaseProgress(phases: BuildPhase[]): {
     active: phases.find((p) => p.status === 'active'),
   };
 }
+
+/**
+ * The `targetOrigin` for a message posted INTO a project's preview frame —
+ * derived from the dev server's own URL, never `'*'`.
+ *
+ * `postMessage(payload, '*')` delivers to whatever origin the frame happens to
+ * hold at that moment, and the preview is a user-authored dev site that can
+ * navigate itself anywhere. Naming the origin is what makes that not matter:
+ * the browser drops the message rather than handing our payload to whatever
+ * loaded itself into the frame.
+ *
+ * Returns null when there is no URL yet or it will not parse — and the caller
+ * must then send nothing at all, because falling back to `'*'` would restore
+ * exactly the behaviour this exists to remove.
+ */
+export function previewTargetOrigin(url: string | undefined | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/** The minimum a tab's status dot needs to know — kept structural so the mapping
+ *  is testable without constructing a whole `ProjectRuntime`. */
+export interface TabDotState {
+  question: string | null;
+  autonomous: boolean;
+  busy: boolean;
+  phase: string;
+}
+
+/**
+ * Tailwind classes for a project tab's status dot.
+ *
+ * The tab strip is peripheral vision: it is visible from every Studio screen and
+ * the eye is pulled to whatever moves in it. The earlier mapping animated for the
+ * whole of `busy || autonomous` — and an autonomous run is up to AUTO_MAX_TURNS
+ * chained turns, so the dot pulsed continuously for many minutes at a stretch. A
+ * state CHANGE may announce itself; a steady state never animates, or the strip
+ * becomes peripheral vision with a flashlight in it.
+ *
+ * So exactly one state animates, and it is the only one that is actionable: the
+ * build has halted on a question and is waiting on the user. Building, live,
+ * error and idle are all steady and are told apart by hue — which they already
+ * were, which is what made the pulse redundant even while it was firing.
+ */
+export function tabDotClass(rt: TabDotState): string {
+  if (rt.question) return 'bg-status-warning animate-pulse';
+  if (rt.autonomous || rt.busy) return 'bg-primary';
+  if (rt.phase === 'live') return 'bg-status-success';
+  if (rt.phase === 'error') return 'bg-status-error';
+  return 'bg-foreground/30';
+}
