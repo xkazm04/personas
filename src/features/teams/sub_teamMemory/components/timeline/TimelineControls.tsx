@@ -1,6 +1,7 @@
 import { GitCommitVertical, ChevronRight } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
-import { MemoryEntry, formatTime } from './TimelineItem';
+import { MemoryEntry } from './TimelineItem';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { RunDiffSummary } from '../../libs/useRunDiffSummaries';
 
@@ -63,7 +64,7 @@ export function RunMarker({
               </span>
             )}
           </div>
-          <span className="typo-body text-foreground">{formatTime(group.firstCreatedAt)}</span>
+          <RelativeTime timestamp={group.firstCreatedAt} className="typo-body text-foreground" />
         </div>
         <ChevronRight className={`w-3 h-3 text-foreground transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
       </button>
