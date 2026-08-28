@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, FolderOpen, Plus, Minus } from 'lucide-react';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { kbIngestDirectory, kbPickDirectory } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -50,14 +51,10 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
     }
   };
 
-  // Stop Escape from propagating to parent VectorKbModal
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-    };
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
-  }, [onClose]);
+  // Escape no longer needs a hand-written window-capture listener here: nesting
+  // inside BaseModal registers this picker in the modal stack, and BaseModal
+  // only honours Escape for the topmost entry — so the parent VectorKbModal
+  // stays open by construction rather than by a stopPropagation race.
 
   const canSubmit = dirPath.trim().length > 0 && !ingesting;
 
@@ -89,21 +86,20 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
   };
 
   return (
-    <div
-      className="animate-fade-slide-in fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="ingest-directory-title"
+      size="md"
+      containerClassName="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-
-      <div
-        className="animate-fade-slide-in relative w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
-      >
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
           <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
             <FolderOpen className="w-3.5 h-3.5 text-violet-400" />
           </div>
-          <h2 className="typo-heading font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
+          <h2 id="ingest-directory-title" className="typo-heading font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -224,7 +220,6 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             )}
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
