@@ -4,7 +4,7 @@
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
-import { sanitizeTextField } from '@/lib/utils/sanitizers/workflowSanitizer';
+import { sanitizeTextField, sanitizeParamValue } from '@/lib/utils/sanitizers/workflowSanitizer';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface GHAStep {
@@ -149,7 +149,17 @@ function parseTriggers(onConfig: unknown): Array<{
         break;
     }
 
-    triggers.push({ trigger_type: triggerType, config, description });
+    // These triggers REPLACE the pipeline's (see the assignment at the end of
+    // parseGithubActionsWorkflow), so they never pass the waist that sanitizes
+    // every other adapter's config and text. Both halves are attacker-shaped:
+    // `config` is the raw `on.<event>` mapping from a downloaded YAML, and the
+    // description interpolates `type` — a key the file's author chose — plus
+    // JSON-stringified branch/type lists. Same door as the waist, applied here.
+    triggers.push({
+      trigger_type: triggerType,
+      config: sanitizeParamValue(config) as Record<string, unknown>,
+      description: sanitizeTextField(description, 200),
+    });
   }
 
   return triggers;
