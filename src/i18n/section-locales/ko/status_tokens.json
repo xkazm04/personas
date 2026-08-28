@@ -58,6 +58,7 @@
     "analyzing": "분석 중",
     "planning": "계획 중",
     "implementing": "구현 중",
+    "committing": "커밋 중",
     "validating": "검증 중",
     "complete": "완료"
   },

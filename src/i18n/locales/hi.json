@@ -12677,6 +12677,7 @@
       "analyzing": "विश्लेषण हो रहा है",
       "planning": "योजना बन रही है",
       "implementing": "कार्यान्वयन हो रहा है",
+      "committing": "कमिट हो रहा है",
       "validating": "सत्यापन हो रहा है",
       "complete": "पूर्ण"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "यहाँ अभी कोई लक्ष्य नहीं",
       "triage_resolving": "निपटाया जा रहा है…",
       "triage_strip_waiting": "शुरू होने की प्रतीक्षा",
-      "triage_title": "लक्ष्य"
+      "triage_title": "लक्ष्य",
+      "racing_waiting": "प्रतीक्षा में…"
     },
     "dev_projects": {
       "active_goals": "सक्रिय goals",

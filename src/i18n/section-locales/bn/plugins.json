@@ -3409,7 +3409,8 @@
     "triage_no_goals_title": "এখানে এখনও কোনো লক্ষ্য নেই",
     "triage_resolving": "নিষ্পত্তি হচ্ছে…",
     "triage_strip_waiting": "শুরুর অপেক্ষায়",
-    "triage_title": "লক্ষ্য"
+    "triage_title": "লক্ষ্য",
+    "racing_waiting": "অপেক্ষা করছে…"
   },
   "dev_projects": {
     "active_goals": "সক্রিয় লক্ষ্য",

@@ -3409,7 +3409,8 @@
     "triage_no_goals_title": "Belum ada sasaran di sini",
     "triage_resolving": "Menyelesaikan…",
     "triage_strip_waiting": "Menunggu dimulai",
-    "triage_title": "Sasaran"
+    "triage_title": "Sasaran",
+    "racing_waiting": "Menunggu…"
   },
   "dev_projects": {
     "active_goals": "tujuan aktif",

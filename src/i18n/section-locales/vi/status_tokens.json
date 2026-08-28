@@ -58,6 +58,7 @@
     "analyzing": "Đang phân tích",
     "planning": "Đang lập kế hoạch",
     "implementing": "Đang thực hiện",
+    "committing": "Đang commit",
     "validating": "Đang kiểm tra",
     "complete": "Hoàn tất"
   },

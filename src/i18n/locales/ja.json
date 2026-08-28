@@ -12677,6 +12677,7 @@
       "analyzing": "分析中",
       "planning": "計画中",
       "implementing": "実装中",
+      "committing": "コミット中",
       "validating": "検証中",
       "complete": "完了"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "ゴールはまだありません",
       "triage_resolving": "処理中…",
       "triage_strip_waiting": "開始待ち",
-      "triage_title": "ゴール"
+      "triage_title": "ゴール",
+      "racing_waiting": "待機中…"
     },
     "dev_projects": {
       "active_goals": "アクティブなゴール",

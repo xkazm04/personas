@@ -58,6 +58,7 @@
     "analyzing": "分析中",
     "planning": "計画中",
     "implementing": "実装中",
+    "committing": "コミット中",
     "validating": "検証中",
     "complete": "完了"
   },

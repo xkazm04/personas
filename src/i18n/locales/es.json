@@ -12677,6 +12677,7 @@
       "analyzing": "Analizando",
       "planning": "Planificando",
       "implementing": "Implementando",
+      "committing": "Confirmando cambios",
       "validating": "Validando",
       "complete": "Completo"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "Aún no hay objetivos",
       "triage_resolving": "Resolviendo…",
       "triage_strip_waiting": "Pendiente de iniciar",
-      "triage_title": "Objetivos"
+      "triage_title": "Objetivos",
+      "racing_waiting": "Esperando…"
     },
     "dev_projects": {
       "active_goals": "objetivos activos",

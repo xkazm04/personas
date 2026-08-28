@@ -12677,6 +12677,7 @@
       "analyzing": "분석 중",
       "planning": "계획 중",
       "implementing": "구현 중",
+      "committing": "커밋 중",
       "validating": "검증 중",
       "complete": "완료"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "아직 목표가 없습니다",
       "triage_resolving": "처리 중…",
       "triage_strip_waiting": "시작 대기",
-      "triage_title": "목표"
+      "triage_title": "목표",
+      "racing_waiting": "대기 중…"
     },
     "dev_projects": {
       "active_goals": "활성 목표",

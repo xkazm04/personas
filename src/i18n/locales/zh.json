@@ -12677,6 +12677,7 @@
       "analyzing": "分析中",
       "planning": "规划中",
       "implementing": "实现中",
+      "committing": "提交中",
       "validating": "验证中",
       "complete": "已完成"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "这里还没有目标",
       "triage_resolving": "处理中…",
       "triage_strip_waiting": "等待开始",
-      "triage_title": "目标"
+      "triage_title": "目标",
+      "racing_waiting": "等待中…"
     },
     "dev_projects": {
       "active_goals": "活跃目标",

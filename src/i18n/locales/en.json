@@ -13014,6 +13014,7 @@
       "analyzing": "Analyzing",
       "planning": "Planning",
       "implementing": "Implementing",
+      "committing": "Committing",
       "validating": "Validating",
       "complete": "Complete"
     },
@@ -16591,7 +16592,8 @@
       "triage_no_goals_title": "No goals here yet",
       "triage_no_goals_body": "Goals appear once a team or Athena writes them.",
       "triage_resolving": "Resolving…",
-      "triage_ago": "{time} ago"
+      "triage_ago": "{time} ago",
+      "racing_waiting": "Waiting…"
     },
     "dev_projects": {
       "bulk_selected_one": "project selected",

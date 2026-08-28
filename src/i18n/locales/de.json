@@ -12677,6 +12677,7 @@
       "analyzing": "Analyse",
       "planning": "Planung",
       "implementing": "Umsetzung",
+      "committing": "Commit läuft",
       "validating": "Validierung",
       "complete": "Abgeschlossen"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "Noch keine Ziele",
       "triage_resolving": "Wird abgeschlossen…",
       "triage_strip_waiting": "Wartet auf Start",
-      "triage_title": "Ziele"
+      "triage_title": "Ziele",
+      "racing_waiting": "Wartet…"
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",

@@ -3409,7 +3409,8 @@
     "triage_no_goals_title": "لا توجد أهداف هنا بعد",
     "triage_resolving": "جارٍ الحسم…",
     "triage_strip_waiting": "في انتظار البدء",
-    "triage_title": "الأهداف"
+    "triage_title": "الأهداف",
+    "racing_waiting": "في الانتظار…"
   },
   "dev_projects": {
     "active_goals": "الأهداف النشطة",

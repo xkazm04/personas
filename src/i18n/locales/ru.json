@@ -12677,6 +12677,7 @@
       "analyzing": "Анализ",
       "planning": "Планирование",
       "implementing": "Реализация",
+      "committing": "Коммит",
       "validating": "Проверка",
       "complete": "Завершено"
     },
@@ -16297,7 +16298,8 @@
       "triage_no_goals_title": "Целей пока нет",
       "triage_resolving": "Обработка…",
       "triage_strip_waiting": "Ожидают старта",
-      "triage_title": "Цели"
+      "triage_title": "Цели",
+      "racing_waiting": "Ожидание…"
     },
     "dev_projects": {
       "active_goals": "активных целей",

@@ -58,6 +58,7 @@
     "analyzing": "分析中",
     "planning": "规划中",
     "implementing": "实现中",
+    "committing": "提交中",
     "validating": "验证中",
     "complete": "已完成"
   },

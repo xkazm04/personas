@@ -3409,7 +3409,8 @@
     "triage_no_goals_title": "Chưa có mục tiêu nào ở đây",
     "triage_resolving": "Đang xử lý…",
     "triage_strip_waiting": "Chờ bắt đầu",
-    "triage_title": "Mục tiêu"
+    "triage_title": "Mục tiêu",
+    "racing_waiting": "Đang chờ…"
   },
   "dev_projects": {
     "active_goals": "mục tiêu đang hoạt động",

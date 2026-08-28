@@ -13020,6 +13020,7 @@ export type Translations = {
       analyzing: string;
       planning: string;
       implementing: string;
+      committing: string;
       validating: string;
       complete: string;
     };
@@ -16598,6 +16599,7 @@ export type Translations = {
       triage_no_goals_body: string;
       triage_resolving: string;
       triage_ago: string;
+      racing_waiting: string;
     };
     dev_projects: {
       bulk_selected_one: string;
