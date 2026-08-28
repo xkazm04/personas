@@ -61,6 +61,17 @@ export function useTraceData(executionId: string, personaId: string) {
   // Same shape of fix as the early-buffer in `hooks/realtime/createSingletonListener`.
   const pendingSpanEventsRef = useRef<BufferedSpanEvent[] | null>([]);
 
+  // A cap without a truncation signal is a lie the UI cannot see: past the
+  // ceiling the event was discarded and nothing recorded that it happened, so
+  // every number derived from this trace afterwards (duration, cost, span
+  // count, error count) described a clipped set while reading as the whole.
+  // The backend ceiling IS signalled — `ExecutionTrace.evicted_span_count`
+  // drives TraceSummary's banner — this is the frontend half of that pair.
+  // Counted in a ref and published once, when the buffer drains: an event
+  // dropped past the ceiling must not itself cause a render.
+  const droppedSpanEventsRef = useRef(0);
+  const [droppedSpanEvents, setDroppedSpanEvents] = useState(0);
+
   // Fetch trace data
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +79,8 @@ export function useTraceData(executionId: string, personaId: string) {
     setError(null);
     // Re-arm the buffer for this execution before the fetch starts.
     pendingSpanEventsRef.current = [];
+    droppedSpanEventsRef.current = 0;
+    setDroppedSpanEvents(0);
 
     getExecutionTrace(executionId, personaId)
       .then((t) => {
@@ -76,6 +89,9 @@ export function useTraceData(executionId: string, personaId: string) {
         // event arriving from here on takes the direct path.
         const buffered = pendingSpanEventsRef.current ?? [];
         pendingSpanEventsRef.current = null;
+        // Publish the overflow count with the buffer it belongs to, whether or
+        // not a trace came back to replay onto.
+        setDroppedSpanEvents(droppedSpanEventsRef.current);
 
         if (!t) {
           // No trace persisted for this execution — there is no object to
@@ -125,6 +141,8 @@ export function useTraceData(executionId: string, personaId: string) {
       if (pending) {
         if (pending.length < MAX_BUFFERED_SPAN_EVENTS) {
           pending.push({ span, event_type });
+        } else {
+          droppedSpanEventsRef.current += 1;
         }
         return;
       }
@@ -231,5 +249,20 @@ export function useTraceData(executionId: string, personaId: string) {
     return map;
   }, [unifiedTrace]);
 
-  return { trace, unifiedTrace, loading, error, retry, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap };
+  return {
+    trace,
+    unifiedTrace,
+    loading,
+    error,
+    retry,
+    collapsedSpans,
+    toggleSpan,
+    visibleNodes,
+    totalMs,
+    childrenMap,
+    // The count and the cap that produced it travel together — a truncation
+    // signal that does not carry its own predicate is not readable.
+    droppedSpanEvents,
+    spanEventBufferCap: MAX_BUFFERED_SPAN_EVENTS,
+  };
 }

@@ -299,6 +299,58 @@ describe('useTraceData — span events during the initial fetch window', () => {
 });
 
 // ---------------------------------------------------------------------------
+// The fetch-window buffer's ceiling — the cap and its truncation signal
+// ---------------------------------------------------------------------------
+
+describe('useTraceData — buffer overflow is counted, not silent', () => {
+  it('reports zero drops for a buffer that never reached its ceiling', async () => {
+    const fetchDeferred = deferred<ExecutionTrace>();
+    getExecutionTraceMock.mockReturnValue(fetchDeferred.promise);
+
+    const { result } = await mountHook();
+    act(() => {
+      emitSpanEvent({ execution_id: EXEC_ID, span: span('a'), event_type: 'start' });
+    });
+    await act(async () => {
+      fetchDeferred.resolve(trace([]));
+      await fetchDeferred.promise;
+    });
+
+    expect(result.current.droppedSpanEvents).toBe(0);
+  });
+
+  it('counts every event dropped past the ceiling and hands out the cap with it', async () => {
+    // The regression this pins: past MAX_BUFFERED_SPAN_EVENTS the event was
+    // discarded and nothing recorded that it happened, so cost/duration/span
+    // and error counts described a clipped set while reading as the whole.
+    const fetchDeferred = deferred<ExecutionTrace>();
+    getExecutionTraceMock.mockReturnValue(fetchDeferred.promise);
+
+    const { result } = await mountHook();
+    const cap = result.current.spanEventBufferCap;
+    const overflow = 3;
+
+    act(() => {
+      // Same span_id throughout: the replay then dedupes in O(1) instead of
+      // turning the flush into a 10,000² scan.
+      for (let i = 0; i < cap + overflow; i++) {
+        emitSpanEvent({ execution_id: EXEC_ID, span: span('a'), event_type: 'start' });
+      }
+    });
+
+    await act(async () => {
+      fetchDeferred.resolve(trace([]));
+      await fetchDeferred.promise;
+    });
+
+    expect(result.current.droppedSpanEvents).toBe(overflow);
+    expect(result.current.spanEventBufferCap).toBe(10_000);
+    // The buffer kept everything it could: the span still lands.
+    expect(result.current.trace!.spans.map((s) => s.span_id)).toEqual(['a']);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Collapse derivation — O(1) parent lookup, no tree rebuild on toggle
 // ---------------------------------------------------------------------------
 

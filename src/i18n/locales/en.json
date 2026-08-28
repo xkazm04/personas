@@ -1527,6 +1527,8 @@
       "failed_to_load_trace": "Failed to load trace: {error}",
       "payload_not_parseable": "Not parseable as structured data: {reason}",
       "error_cards_capped": "Showing the first {shown} of {total} errored spans",
+      "live_events_dropped": "Live view incomplete: {count} span update dropped while the trace loaded (buffer limit: {limit})",
+      "live_events_dropped_other": "Live view incomplete: {count} span updates dropped while the trace loaded (buffer limit: {limit})",
       "no_trace_data": "No trace data recorded",
       "trace_spans_appear": "Trace spans appear during execution",
       "span": "Span",

@@ -258,6 +258,8 @@
     "failed_to_load_trace": "ट्रेस लोड करने में विफल: {error}",
     "payload_not_parseable": "संरचित डेटा के रूप में पार्स नहीं किया जा सका: {reason}",
     "error_cards_capped": "{total} त्रुटिपूर्ण स्पैन में से पहले {shown} दिखाए जा रहे हैं",
+    "live_events_dropped": "लाइव दृश्य अधूरा: ट्रेस लोड होते समय {count} स्पैन अपडेट छोड़ा गया (बफ़र सीमा: {limit})",
+    "live_events_dropped_other": "लाइव दृश्य अधूरा: ट्रेस लोड होते समय {count} स्पैन अपडेट छोड़े गए (बफ़र सीमा: {limit})",
     "no_trace_data": "कोई ट्रेस डेटा रिकॉर्ड नहीं",
     "trace_spans_appear": "निष्पादन के दौरान ट्रेस स्पैन दिखाई देते हैं",
     "span": "स्पैन",

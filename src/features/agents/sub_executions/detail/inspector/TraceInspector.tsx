@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
-import { formatDuration } from '@/lib/utils/formatters';
-import { AlertCircle, Activity, RefreshCw } from 'lucide-react';
+import { formatDuration, formatCount } from '@/lib/utils/formatters';
+import { AlertCircle, Activity, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
 import { getSpanTypeConfig } from './traceInspectorTypes';
@@ -28,7 +28,7 @@ interface TraceInspectorProps {
 const MAX_ERROR_CARDS = 50;
 
 export function TraceInspector({ execution }: TraceInspectorProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const {
     trace,
@@ -41,6 +41,8 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     visibleNodes,
     totalMs,
     childrenMap,
+    droppedSpanEvents,
+    spanEventBufferCap,
   } = useTraceData(execution.id, execution.persona_id);
 
   // The one definition of "which spans failed" for this view: the summary tile
@@ -93,6 +95,25 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     <div className="space-y-4">
       {showSummary && trace && (
         <TraceSummary trace={trace} model={execution.model_used} errorCount={errorSpans.length} />
+      )}
+
+      {/* The frontend half of the truncation pair. TraceSummary warns on the
+          BACKEND ceiling (`evicted_span_count`); this warns when the live
+          fetch-window buffer overflowed, which clips exactly the same derived
+          numbers with none of the same visibility. */}
+      {droppedSpanEvents > 0 && (
+        <div
+          className="rounded-card border border-yellow-500/40 bg-yellow-500/10 p-3 flex items-center gap-2"
+          data-testid="trace-live-events-dropped"
+        >
+          <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+          <span className="typo-body text-yellow-200/90">
+            {tx(droppedSpanEvents === 1 ? e.live_events_dropped : e.live_events_dropped_other, {
+              count: formatCount(droppedSpanEvents, { language, precision: 0 }),
+              limit: formatCount(spanEventBufferCap, { language, precision: 0 }),
+            })}
+          </span>
+        </div>
       )}
 
       {/* Time axis header */}

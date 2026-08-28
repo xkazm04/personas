@@ -1411,6 +1411,8 @@
       "failed_to_load_trace": "Không thể tải theo dõi: {error}",
       "payload_not_parseable": "Không phân tích được dưới dạng dữ liệu có cấu trúc: {reason}",
       "error_cards_capped": "Đang hiển thị {shown} span lỗi đầu tiên trong tổng số {total}",
+      "live_events_dropped": "Xem trực tiếp không đầy đủ: đã bỏ {count} cập nhật span khi tải theo dõi (giới hạn bộ đệm: {limit})",
+      "live_events_dropped_other": "Xem trực tiếp không đầy đủ: đã bỏ {count} cập nhật span khi tải theo dõi (giới hạn bộ đệm: {limit})",
       "no_trace_data": "Không có dữ liệu theo dõi",
       "trace_spans_appear": "Các span theo dõi xuất hiện trong quá trình thực thi",
       "span": "Span",

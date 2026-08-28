@@ -25,9 +25,11 @@ function erroredSpan(i: number): UnifiedSpan {
   } as UnifiedSpan;
 }
 
-function arrange(errorCount: number) {
+function arrange(errorCount: number, droppedSpanEvents = 0) {
   const spans = Array.from({ length: errorCount }, (_, i) => erroredSpan(i));
   mockedUseTraceData.mockReturnValue({
+    droppedSpanEvents,
+    spanEventBufferCap: 10_000,
     trace: null,
     unifiedTrace: { executionId: 'e1', spans, startedAt: 0, completedAt: 1 },
     loading: false,
@@ -59,5 +61,23 @@ describe('TraceInspector error cards', () => {
     expect(screen.getAllByText(/^boom-\d+$/)).toHaveLength(50);
     expect(screen.getByTestId('trace-error-cards-capped')).toHaveTextContent('50');
     expect(screen.getByTestId('trace-error-cards-capped')).toHaveTextContent('500');
+  });
+});
+
+describe('TraceInspector live-buffer truncation signal', () => {
+  beforeEach(() => mockedUseTraceData.mockReset());
+
+  it('stays silent when the fetch-window buffer never overflowed', () => {
+    arrange(1, 0);
+    expect(screen.queryByTestId('trace-live-events-dropped')).toBeNull();
+  });
+
+  it('states the drop count and the cap that produced it', () => {
+    // The backend ceiling is signalled through evicted_span_count; this is the
+    // frontend half, which clipped the same derived numbers with no signal.
+    arrange(1, 7);
+    const banner = screen.getByTestId('trace-live-events-dropped');
+    expect(banner).toHaveTextContent('7');
+    expect(banner).toHaveTextContent('10,000');
   });
 });

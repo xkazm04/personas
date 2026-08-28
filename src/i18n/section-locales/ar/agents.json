@@ -258,6 +258,8 @@
     "failed_to_load_trace": "فشل تحميل التتبع: {error}",
     "payload_not_parseable": "تعذر تحليله كبيانات منظمة: {reason}",
     "error_cards_capped": "عرض أول {shown} من أصل {total} مقطع به أخطاء",
+    "live_events_dropped": "العرض المباشر غير مكتمل: تم إسقاط {count} تحديث فترة أثناء تحميل التتبع (حد المخزن المؤقت: {limit})",
+    "live_events_dropped_other": "العرض المباشر غير مكتمل: تم إسقاط {count} تحديثات فترات أثناء تحميل التتبع (حد المخزن المؤقت: {limit})",
     "no_trace_data": "لا بيانات تتبع مسجلة",
     "trace_spans_appear": "فترات التتبع تظهر أثناء التنفيذ",
     "span": "فترة",

@@ -1411,6 +1411,8 @@
       "failed_to_load_trace": "Échec du chargement de la trace : {error}",
       "payload_not_parseable": "Illisible en tant que données structurées : {reason}",
       "error_cards_capped": "Affichage des {shown} premiers segments en erreur sur {total}",
+      "live_events_dropped": "Vue en direct incomplète : {count} mise à jour de segment abandonnée pendant le chargement de la trace (limite du tampon : {limit})",
+      "live_events_dropped_other": "Vue en direct incomplète : {count} mises à jour de segment abandonnées pendant le chargement de la trace (limite du tampon : {limit})",
       "no_trace_data": "Aucune donnée de trace enregistrée",
       "trace_spans_appear": "Les plages de trace apparaissent pendant l’exécution",
       "span": "Plage",

@@ -258,6 +258,8 @@
     "failed_to_load_trace": "Gagal memuat jejak: {error}",
     "payload_not_parseable": "Tidak dapat diurai sebagai data terstruktur: {reason}",
     "error_cards_capped": "Menampilkan {shown} pertama dari {total} span yang bermasalah",
+    "live_events_dropped": "Tampilan langsung tidak lengkap: {count} pembaruan rentang dibuang saat jejak dimuat (batas buffer: {limit})",
+    "live_events_dropped_other": "Tampilan langsung tidak lengkap: {count} pembaruan rentang dibuang saat jejak dimuat (batas buffer: {limit})",
     "no_trace_data": "Tidak ada data jejak yang dicatat",
     "trace_spans_appear": "Rentang jejak muncul selama eksekusi",
     "span": "Rentang",
