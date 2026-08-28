@@ -113,6 +113,13 @@ pub fn management_router(state: ManagementState) -> Router {
         // credential (never the secret). Gated on the broad `proxy` scope in
         // `authorize`, so only trusted keys (system key) can mint consumers.
         .route("/api/broker/mint/{credential_id}", post(mint_broker_handle))
+        // App master gate ledger -- the write door for a gate sweep that ran
+        // OUTSIDE this process (a gate-monitor persona, a scheduled audit).
+        // `app_master_reconcile` only gates `autopilot/*` branches it discovers
+        // itself, so an external audit had nowhere to record what it saw and
+        // `gatePassRate` read `null` for windows in which gates demonstrably
+        // ran. Typed on gate outcomes, never on SQL -- see `record_gate_audit`.
+        .route("/api/app-master/gate-runs", post(record_gate_runs))
         // Local scraper (embedded Pumper) -- the personas-mcp `fetch_readable`
         // tool forwards here so the SSRF-safe fetch runs in the main app where
         // the engine lives (the mcp binary has no engine module).
@@ -388,6 +395,60 @@ async fn scrape_query(
             "scraper feature not enabled in this build",
         )
             .into_response()
+    }
+}
+
+// =============================================================================
+// App master gate ledger
+// =============================================================================
+
+/// Wire shape of `POST /api/app-master/gate-runs`.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GateRunsBody {
+    project_id: String,
+    /// The App master these gates were run on behalf of. Omit it and the
+    /// project's mandate holder is used.
+    #[serde(default)]
+    persona_id: Option<String>,
+    /// The proposal branch the sweep ran against. Omit it for an audit of the
+    /// checkout as it stands and the rows file under
+    /// `app_master_gates::UNBRANCHED_AUDIT_LABEL`.
+    #[serde(default)]
+    branch: Option<String>,
+    runs: Vec<personas_engine::app_master_gates::GateRunReport>,
+}
+
+/// `POST /api/app-master/gate-runs` — record a gate sweep run outside this
+/// process into `app_master_gate_runs`.
+///
+/// This is deliberately a **typed** door, not a SQL one. A gate monitor that
+/// finished its audit needs to persist gate outcomes; giving it a statement to
+/// write instead would put arbitrary SQL against the app's own database behind
+/// a `personas:execute` key, which is a far larger surface than the reading it
+/// came to record. The caller names commands and outcomes; the pass rate is
+/// derived here, by the same function the reporter's rollup uses.
+async fn record_gate_runs(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Json(body): Json<GateRunsBody>,
+) -> Response {
+    match personas_engine::app_master_gates::record_gate_audit(
+        &state.pool,
+        &body.project_id,
+        body.persona_id.as_deref(),
+        body.branch.as_deref(),
+        &body.runs,
+    ) {
+        Ok(receipt) => ok_json(receipt).into_response(),
+        // A caller that named a project nobody knows, or an outcome outside the
+        // three-valued vocabulary, made a mistake it can fix — say which.
+        Err(e @ AppError::Validation(_)) => {
+            err_json(StatusCode::BAD_REQUEST, &e.to_string()).into_response()
+        }
+        Err(e @ AppError::NotFound(_)) => {
+            err_json(StatusCode::NOT_FOUND, &e.to_string()).into_response()
+        }
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
 }
 
@@ -4284,6 +4345,58 @@ mod tests {
         // Reads follow the any-valid-key GET rule.
         assert!(authorize(&Method::GET, "/api/kp/persona-requests/appr_x", &[]).is_ok());
         assert!(authorize(&Method::GET, "/api/kp/connector-catalog", &[]).is_ok());
+    }
+
+    #[test]
+    fn authorize_gate_runs_is_a_mutating_api_route() {
+        // Falls through to the generic /api/* rule: a write needs broad
+        // execute, which the system key (the one a persona run carries) holds.
+        assert!(authorize(&Method::POST, "/api/app-master/gate-runs", &[]).is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/app-master/gate-runs",
+            &scopes(&["personas:read"])
+        )
+        .is_err());
+        assert!(authorize(
+            &Method::POST,
+            "/api/app-master/gate-runs",
+            &scopes(&["personas:execute"])
+        )
+        .is_ok());
+    }
+
+    /// The body a gate monitor posts has to deserialize as written — the
+    /// endpoint is reached by a persona composing JSON, not by typed callers.
+    #[test]
+    fn gate_runs_body_parses_the_documented_wire_shape() {
+        let body: GateRunsBody = serde_json::from_value(serde_json::json!({
+            "projectId": "proj-1",
+            "branch": "autopilot/gate-monitor",
+            "runs": [
+                { "command": "npm run check", "outcome": "passed", "exitCode": 0, "durationMs": 91_000 },
+                { "command": "npm run test", "outcome": "failed", "exitCode": 1,
+                  "firstError": "error: 2 tests failed" }
+            ]
+        }))
+        .expect("documented wire shape must parse");
+        assert_eq!(body.project_id, "proj-1");
+        // Optional everywhere it is documented as optional.
+        assert!(body.persona_id.is_none());
+        assert_eq!(body.branch.as_deref(), Some("autopilot/gate-monitor"));
+        assert_eq!(body.runs.len(), 2);
+        assert_eq!(body.runs[0].outcome, "passed");
+        assert_eq!(body.runs[1].exit_code, Some(1));
+        assert!(body.runs[0].first_error.is_none());
+
+        // branch + personaId omitted entirely is the unbranched-audit shape.
+        let minimal: GateRunsBody = serde_json::from_value(serde_json::json!({
+            "projectId": "proj-1",
+            "runs": [{ "command": "npm run check", "outcome": "did_not_run" }]
+        }))
+        .expect("the minimal shape must parse");
+        assert!(minimal.branch.is_none());
+        assert!(minimal.runs[0].duration_ms.is_none());
     }
 
     // ---- KP bridge: validation + approval-row insertion ---------------------
