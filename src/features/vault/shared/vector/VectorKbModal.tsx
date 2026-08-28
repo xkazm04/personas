@@ -129,6 +129,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
                   className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
                   title={sh.save_name}
+                  aria-label={sh.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
@@ -141,8 +142,13 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                 <button
                   type="button"
                   onClick={startEditing}
-                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                  /* focus-visible:opacity-100 is not decoration: without it the
+                     rename control is in the tab order while painted at zero
+                     opacity, so a keyboard user focuses a button they cannot
+                     see. Hover alone cannot reveal it for them. */
+                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 focus-visible:opacity-100 transition-all shrink-0"
                   title={sh.rename_credential}
+                  aria-label={sh.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
