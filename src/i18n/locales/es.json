@@ -4668,7 +4668,9 @@
       "corpus_overview_hide": "Ocultar resumen del corpus",
       "corpus_overview_show": "Mostrar resumen del corpus",
       "corpus_overview_subtitle": "Qué contiene esta base de conocimiento y qué partes son ilegibles.",
-      "corpus_overview_title": "Resumen del corpus"
+      "corpus_overview_title": "Resumen del corpus",
+      "documents_count_one": "{count} documento",
+      "documents_count_other": "{count} documentos"
     },
     "manager": {
       "title": "Credenciales",

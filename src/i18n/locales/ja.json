@@ -4668,7 +4668,9 @@
       "corpus_overview_hide": "コーパスの概要を非表示",
       "corpus_overview_show": "コーパスの概要を表示",
       "corpus_overview_subtitle": "このナレッジベースに含まれる内容と、読み取れない部分。",
-      "corpus_overview_title": "コーパスの概要"
+      "corpus_overview_title": "コーパスの概要",
+      "documents_count_one": "{count} 件のドキュメント",
+      "documents_count_other": "{count} 件のドキュメント"
     },
     "manager": {
       "title": "認証情報",

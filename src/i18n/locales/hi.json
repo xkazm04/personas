@@ -4668,7 +4668,9 @@
       "corpus_overview_hide": "कॉर्पस अवलोकन छिपाएँ",
       "corpus_overview_show": "कॉर्पस अवलोकन दिखाएँ",
       "corpus_overview_subtitle": "इस नॉलेज बेस में क्या है और कौन-से हिस्से पढ़े नहीं जा सकते।",
-      "corpus_overview_title": "कॉर्पस अवलोकन"
+      "corpus_overview_title": "कॉर्पस अवलोकन",
+      "documents_count_one": "{count} दस्तावेज़",
+      "documents_count_other": "{count} दस्तावेज़"
     },
     "manager": {
       "title": "क्रेडेंशियल",

@@ -670,7 +670,9 @@
     "corpus_overview_hide": "코퍼스 개요 숨기기",
     "corpus_overview_show": "코퍼스 개요 표시",
     "corpus_overview_subtitle": "이 지식 베이스에 담긴 내용과 읽을 수 없는 부분.",
-    "corpus_overview_title": "코퍼스 개요"
+    "corpus_overview_title": "코퍼스 개요",
+    "documents_count_one": "문서 {count}개",
+    "documents_count_other": "문서 {count}개"
   },
   "manager": {
     "title": "자격 증명",

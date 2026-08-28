@@ -670,7 +670,9 @@
     "corpus_overview_hide": "إخفاء نظرة عامة على المجموعة",
     "corpus_overview_show": "إظهار نظرة عامة على المجموعة",
     "corpus_overview_subtitle": "ما تحتويه قاعدة المعرفة هذه، والأجزاء غير القابلة للقراءة.",
-    "corpus_overview_title": "نظرة عامة على المجموعة"
+    "corpus_overview_title": "نظرة عامة على المجموعة",
+    "documents_count_one": "{count} مستند",
+    "documents_count_other": "{count} مستندات"
   },
   "manager": {
     "title": "بيانات الاعتماد",

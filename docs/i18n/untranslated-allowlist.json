@@ -2272,6 +2272,8 @@
   "fr:vault.schema_configs.database.subtype_postgresql_label",
   "fr:vault.shared.api_path_placeholder",
   "fr:vault.shared.description_label",
+  "fr:vault.shared.documents_count_one",
+  "fr:vault.shared.documents_count_other",
   "fr:vault.shared.extract_col_source",
   "fr:vault.shared.extract_col_type",
   "fr:vault.shared.pages_label",

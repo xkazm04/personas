@@ -670,7 +670,9 @@
     "corpus_overview_hide": "Masquer l’aperçu du corpus",
     "corpus_overview_show": "Afficher l’aperçu du corpus",
     "corpus_overview_subtitle": "Ce que contient cette base de connaissances et quelles parties sont illisibles.",
-    "corpus_overview_title": "Aperçu du corpus"
+    "corpus_overview_title": "Aperçu du corpus",
+    "documents_count_one": "{count} document",
+    "documents_count_other": "{count} documents"
   },
   "manager": {
     "title": "Coffre-fort",

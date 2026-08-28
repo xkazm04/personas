@@ -4937,7 +4937,9 @@
       "search_results_one": "{count} result for \"{query}\"",
       "search_results_other": "{count} results for \"{query}\"",
       "search_floor_filtered": "{count} low-relevance passage(s) hidden",
-      "no_results_floor_hint": "{count} passage(s) were found but none were relevant enough to show. Try different wording, or check the Documents tab to see what this knowledge base actually contains."
+      "no_results_floor_hint": "{count} passage(s) were found but none were relevant enough to show. Try different wording, or check the Documents tab to see what this knowledge base actually contains.",
+      "documents_count_one": "{count} document",
+      "documents_count_other": "{count} documents"
     },
     "manager": {
       "title": "Credentials",

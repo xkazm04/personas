@@ -4668,7 +4668,9 @@
       "corpus_overview_hide": "Скрыть обзор корпуса",
       "corpus_overview_show": "Показать обзор корпуса",
       "corpus_overview_subtitle": "Что содержит эта база знаний и какие части нечитаемы.",
-      "corpus_overview_title": "Обзор корпуса"
+      "corpus_overview_title": "Обзор корпуса",
+      "documents_count_one": "{count} документ",
+      "documents_count_other": "{count} документов"
     },
     "manager": {
       "title": "Учётные данные",

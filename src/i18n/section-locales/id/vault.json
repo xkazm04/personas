@@ -670,7 +670,9 @@
     "corpus_overview_hide": "Sembunyikan ikhtisar korpus",
     "corpus_overview_show": "Tampilkan ikhtisar korpus",
     "corpus_overview_subtitle": "Apa isi basis pengetahuan ini, dan bagian mana yang tidak terbaca.",
-    "corpus_overview_title": "Ikhtisar korpus"
+    "corpus_overview_title": "Ikhtisar korpus",
+    "documents_count_one": "{count} dokumen",
+    "documents_count_other": "{count} dokumen"
   },
   "manager": {
     "title": "Kredensial",

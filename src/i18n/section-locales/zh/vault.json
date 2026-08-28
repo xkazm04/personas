@@ -670,7 +670,9 @@
     "corpus_overview_hide": "隐藏语料库概览",
     "corpus_overview_show": "显示语料库概览",
     "corpus_overview_subtitle": "此知识库包含哪些内容，以及哪些部分无法读取。",
-    "corpus_overview_title": "语料库概览"
+    "corpus_overview_title": "语料库概览",
+    "documents_count_one": "{count} 个文档",
+    "documents_count_other": "{count} 个文档"
   },
   "manager": {
     "title": "凭据",

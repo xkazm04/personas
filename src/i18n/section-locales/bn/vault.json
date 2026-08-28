@@ -670,7 +670,9 @@
     "corpus_overview_hide": "কর্পাস ওভারভিউ লুকান",
     "corpus_overview_show": "কর্পাস ওভারভিউ দেখান",
     "corpus_overview_subtitle": "এই নলেজ বেসে কী আছে এবং কোন অংশগুলো পাঠযোগ্য নয়।",
-    "corpus_overview_title": "কর্পাস ওভারভিউ"
+    "corpus_overview_title": "কর্পাস ওভারভিউ",
+    "documents_count_one": "{count}টি নথি",
+    "documents_count_other": "{count}টি নথি"
   },
   "manager": {
     "title": "ক্রেডেনশিয়াল",

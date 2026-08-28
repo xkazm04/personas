@@ -4668,7 +4668,9 @@
       "corpus_overview_hide": "Korpus-Übersicht ausblenden",
       "corpus_overview_show": "Korpus-Übersicht anzeigen",
       "corpus_overview_subtitle": "Was diese Wissensdatenbank enthält und welche Teile unlesbar sind.",
-      "corpus_overview_title": "Korpus-Übersicht"
+      "corpus_overview_title": "Korpus-Übersicht",
+      "documents_count_one": "{count} Dokument",
+      "documents_count_other": "{count} Dokumente"
     },
     "manager": {
       "title": "Zugangsdaten",
