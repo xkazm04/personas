@@ -20,7 +20,11 @@ interface SigilPetalProps {
   onClick: (dim: GlyphDimension) => void;
   /** Roving-tabindex value — 0 for the current tab stop, -1 otherwise. */
   tabIndex: number;
-  /** Localized "{label}: {state}" announced to screen readers. */
+  /** Localized "{label}: {state}" — announced to screen readers AND rendered
+   *  as the petal's `<title>` hover tip. The petal group is the only element
+   *  in the sigil stack that actually receives pointer events (the HTML icon
+   *  overlay above it is `pointer-events-none`), so this is the one place a
+   *  hover tip can fire from. */
   ariaLabel: string;
   /** Render the keyboard focus ring (the petal is the focused tab stop). */
   isFocused: boolean;
@@ -125,6 +129,12 @@ function SigilPetalImpl({
         onClick(dim);
       }}
     >
+      {/* Hover tip. `<title>` is the SVG-native mechanism and the only one
+          that fires here: the HTML icon overlay layered on top of this petal
+          is `pointer-events-none`, so a `title=` attribute up there never
+          reaches a hover. `aria-label` on the group still wins the accessible
+          name, so this adds no duplicate announcement. */}
+      <title>{ariaLabel}</title>
       {body}
       {/* Keyboard focus ring — a bright white halo distinct from the
           colored hover treatment, so keyboard focus reads clearly even
