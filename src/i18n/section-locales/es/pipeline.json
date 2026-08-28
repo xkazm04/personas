@@ -142,6 +142,7 @@
   "title_placeholder": "Título…",
   "content_placeholder": "Contenido…",
   "importance_label": "Imp:",
+  "category_label": "Categoría",
   "save_memory": "Guardar Memoria",
   "search_memories": "Buscar memorias…",
   "clear_run_filter": "Limpiar filtro de ejecución",

@@ -239,5 +239,11 @@
     "proposed_update_importance": "중요도 재평가 제안",
     "proposed_synthesize": "병합 제안",
     "proposed_archive": "보관 제안"
+  },
+  "memory_category": {
+    "observation": "관찰",
+    "decision": "결정",
+    "context": "맥락",
+    "learning": "학습"
   }
 }

@@ -61,6 +61,7 @@
   "core_disposition_high": "साहसी",
   "core_conflict_label": "असहमति में",
   "core_model_label": "मॉडल",
+  "core_model_cost": "सापेक्ष लागत: सबसे सस्ते मॉडल स्तर का {multiple} गुना",
   "core_effort_label": "तर्क की गहराई",
   "glyph_intent_placeholder": "उदा. हर सुबह मेरे अपठित ईमेल सारांशित करें",
   "glyph_dim_label": {

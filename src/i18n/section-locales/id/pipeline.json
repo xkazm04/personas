@@ -142,6 +142,7 @@
   "title_placeholder": "Judul…",
   "content_placeholder": "Konten…",
   "importance_label": "Kep:",
+  "category_label": "Kategori",
   "save_memory": "Simpan memori",
   "search_memories": "Cari memori…",
   "clear_run_filter": "Hapus filter jalankan",

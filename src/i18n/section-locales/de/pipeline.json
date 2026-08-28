@@ -142,6 +142,7 @@
   "title_placeholder": "Titel…",
   "content_placeholder": "Inhalt…",
   "importance_label": "Wichtigkeit:",
+  "category_label": "Kategorie",
   "save_memory": "Erinnerung speichern",
   "search_memories": "Erinnerungen suchen…",
   "clear_run_filter": "Ausführungsfilter löschen",

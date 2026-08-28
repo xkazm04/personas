@@ -61,6 +61,7 @@
   "core_disposition_high": "果敢",
   "core_conflict_label": "意见相左时",
   "core_model_label": "模型",
+  "core_model_cost": "相对成本：最便宜模型档位的 {multiple} 倍",
   "core_effort_label": "推理深度",
   "glyph_intent_placeholder": "例如：每天早上汇总我的未读邮件",
   "glyph_dim_label": {

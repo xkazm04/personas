@@ -21322,7 +21322,6 @@ export type Translations = {
     earlier_messages_other: string;
     building_name_autonomously: string;
     athena_is_working: string;
-    decisions_waiting_one: string;
     decisions_waiting_other: string;
     athena_needs_you: string;
     qa_plan_it_out: string;

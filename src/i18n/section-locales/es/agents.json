@@ -61,6 +61,7 @@
   "core_disposition_high": "Audaz",
   "core_conflict_label": "Ante el desacuerdo",
   "core_model_label": "Modelo",
+  "core_model_cost": "Coste relativo: {multiple}× el nivel de modelo más económico",
   "core_effort_label": "Profundidad de razonamiento",
   "glyph_intent_placeholder": "p. ej. Resume mis correos sin leer cada mañana",
   "glyph_dim_label": {

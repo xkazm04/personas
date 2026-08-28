@@ -61,6 +61,7 @@
   "core_disposition_high": "Berani",
   "core_conflict_label": "Saat berbeda pendapat",
   "core_model_label": "Model bahasa",
+  "core_model_cost": "Biaya relatif: {multiple}× dari tingkat model termurah",
   "core_effort_label": "Kedalaman penalaran",
   "glyph_intent_placeholder": "mis. Rangkum email saya yang belum dibaca tiap pagi",
   "glyph_dim_label": {

@@ -142,6 +142,7 @@
   "title_placeholder": "Název…",
   "content_placeholder": "Obsah…",
   "importance_label": "Důl:",
+  "category_label": "Kategorie",
   "save_memory": "Uložit vzpomínku",
   "search_memories": "Hledat vzpomínky…",
   "clear_run_filter": "Vymazat filtr běhu",

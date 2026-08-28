@@ -142,6 +142,7 @@
   "title_placeholder": "Tiêu đề…",
   "content_placeholder": "Nội dung…",
   "importance_label": "QT:",
+  "category_label": "Danh mục",
   "save_memory": "Lưu ký ức",
   "search_memories": "Tìm kiếm ký ức…",
   "clear_run_filter": "Xóa bộ lọc lần chạy",

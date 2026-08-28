@@ -142,6 +142,7 @@
   "title_placeholder": "Заголовок…",
   "content_placeholder": "Содержимое…",
   "importance_label": "Важн.:",
+  "category_label": "Категория",
   "save_memory": "Сохранить",
   "search_memories": "Поиск в памяти…",
   "clear_run_filter": "Очистить фильтр запуска",

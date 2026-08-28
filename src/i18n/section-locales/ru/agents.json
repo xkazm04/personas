@@ -61,6 +61,7 @@
   "core_disposition_high": "Смелый",
   "core_conflict_label": "При разногласии",
   "core_model_label": "Модель",
+  "core_model_cost": "Относительная стоимость: в {multiple}× дороже самого дешёвого уровня модели",
   "core_effort_label": "Глубина рассуждений",
   "glyph_intent_placeholder": "напр. Суммируй мои непрочитанные письма каждое утро",
   "glyph_dim_label": {

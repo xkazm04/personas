@@ -239,5 +239,11 @@
     "proposed_update_importance": "اقتراح بإعادة التقييم",
     "proposed_synthesize": "اقتراح بالدمج",
     "proposed_archive": "اقتراح بالأرشفة"
+  },
+  "memory_category": {
+    "observation": "ملاحظة",
+    "decision": "قرار",
+    "context": "سياق",
+    "learning": "درس مستفاد"
   }
 }

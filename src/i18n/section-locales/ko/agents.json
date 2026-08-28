@@ -61,6 +61,7 @@
   "core_disposition_high": "과감",
   "core_conflict_label": "의견이 갈릴 때",
   "core_model_label": "모델",
+  "core_model_cost": "상대 비용: 가장 저렴한 모델 등급의 {multiple}배",
   "core_effort_label": "추론 깊이",
   "glyph_intent_placeholder": "예: 매일 아침 읽지 않은 이메일 요약하기",
   "glyph_dim_label": {

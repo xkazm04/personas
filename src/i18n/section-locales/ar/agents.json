@@ -61,6 +61,7 @@
   "core_disposition_high": "جريء",
   "core_conflict_label": "عند الخلاف",
   "core_model_label": "النموذج",
+  "core_model_cost": "التكلفة النسبية: {multiple}× مقارنةً بأرخص فئة نموذج",
   "core_effort_label": "عمق التفكير",
   "glyph_intent_placeholder": "مثال: لخّص رسائلي غير المقروءة كل صباح",
   "glyph_dim_label": {

@@ -142,6 +142,7 @@
   "title_placeholder": "শিরোনাম…",
   "content_placeholder": "বিষয়বস্তু…",
   "importance_label": "Imp:",
+  "category_label": "বিভাগ",
   "save_memory": "মেমোরি সংরক্ষণ করুন",
   "search_memories": "মেমোরি খুঁজুন…",
   "clear_run_filter": "রান ফিল্টার সাফ করুন",

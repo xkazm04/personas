@@ -239,5 +239,11 @@
     "proposed_update_importance": "Neubewertung vorgeschlagen",
     "proposed_synthesize": "Zusammenführen vorgeschlagen",
     "proposed_archive": "Archivieren vorgeschlagen"
+  },
+  "memory_category": {
+    "observation": "Beobachtung",
+    "decision": "Entscheidung",
+    "context": "Kontext",
+    "learning": "Erkenntnis"
   }
 }
