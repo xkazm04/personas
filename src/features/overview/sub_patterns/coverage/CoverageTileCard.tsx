@@ -24,7 +24,7 @@ const CHIP_CLASSES: Record<ChipTone, string> = {
 export function CoverageStateChip({ tone, label }: { tone: ChipTone; label: string }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-interactive border px-1.5 py-0.5 typo-caption font-medium ${CHIP_CLASSES[tone]}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-interactive border px-1.5 py-0.5 typo-caption ${CHIP_CLASSES[tone]}`}
     >
       {label}
     </span>
@@ -49,7 +49,7 @@ function DimensionRow({
       </span>
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="typo-caption font-medium text-foreground">{label}</span>
+          <span className="typo-caption text-foreground">{label}</span>
           {chip}
         </div>
         <div className="typo-caption text-foreground min-w-0">{detail}</div>
@@ -181,7 +181,7 @@ export function CoverageTileCard({ view, onOpen }: { view: TileView; onOpen: () 
       className="text-left rounded-card border border-primary/15 bg-secondary/20 p-3 flex flex-col gap-2.5 hover:border-primary/30 focus-visible:outline-2 focus-visible:outline-primary transition-colors"
     >
       <div className="flex items-center gap-2">
-        <span className="typo-body font-medium text-foreground truncate flex-1 min-w-0">
+        <span className="typo-body text-foreground truncate flex-1 min-w-0">
           {tile.projectName}
         </span>
         {tile.debts.length > 0 ? (
@@ -194,7 +194,7 @@ export function CoverageTileCard({ view, onOpen }: { view: TileView; onOpen: () 
             }
           />
         ) : view.inSync ? (
-          <span className="inline-flex items-center gap-1 text-status-success typo-caption font-medium">
+          <span className="inline-flex items-center gap-1 text-status-success typo-caption">
             <CircleCheck className="w-3.5 h-3.5" aria-hidden />
             {tc.in_sync}
           </span>

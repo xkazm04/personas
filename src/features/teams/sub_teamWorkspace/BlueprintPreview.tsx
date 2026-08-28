@@ -36,7 +36,7 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
       {pattern && (
         <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card bg-indigo-500/10 border border-indigo-500/20">
           <GitBranch className="w-3 h-3 text-indigo-400" />
-          <span className="typo-caption font-medium text-indigo-400 capitalize">{pattern}</span>
+          <span className="typo-caption text-indigo-400 capitalize">{pattern}</span>
         </div>
       )}
 
@@ -50,7 +50,7 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
               <Users className="w-3 h-3 text-indigo-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="typo-caption font-medium text-foreground/90 truncate block">
+              <span className="typo-caption text-foreground/90 truncate block">
                 {member.persona_name}
               </span>
             </div>

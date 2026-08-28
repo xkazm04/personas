@@ -227,7 +227,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
             {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {<AbsoluteTime timestamp={competition.created_at} />}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-0.5 typo-caption font-medium border shrink-0 ${badge.color}`}>
+        <span className={`rounded-full px-2.5 py-0.5 typo-caption border shrink-0 ${badge.color}`}>
           {badge.label}
         </span>
       </button>

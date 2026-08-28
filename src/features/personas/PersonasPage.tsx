@@ -136,7 +136,8 @@ export default function PersonasPage() {
     markStartupPhase('data:personas');
     try {
       await fetchPersonas();
-    } catch {
+    } catch (err) {
+      silentCatch('PersonasPage:fetchPersonas')(err);
       failed.push('personas');
     }
     setPersonasFetched(true);

@@ -36,7 +36,7 @@ function SectionRule({ index, label, count }: { index: number; label: string; co
       <h2 className="typo-label uppercase tracking-widest text-foreground/70 whitespace-nowrap">
         {label}
         {typeof count === 'number' && (
-          <span className="text-foreground/40 ml-1.5 tabular-nums normal-case tracking-normal">{count}</span>
+          <span className="text-muted-foreground ml-1.5 tabular-nums normal-case tracking-normal">{count}</span>
         )}
       </h2>
       <div className="h-px flex-1 bg-border/50" aria-hidden />
@@ -104,7 +104,12 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
   }, [graph.techniques, subject]);
 
   const score = subject ? adherence?.get(subject.slug) ?? null : null;
-  const categoryTitle = graph.categories.find((c) => c.id === subject?.category)?.title ?? '—';
+  const selectedCategory = subject
+    ? graph.categories.find((c) => c.id === subject.category)
+    : undefined;
+  // Bound so 'no subject selected' and 'the selected subject's category is gone'
+  // stay distinguishable instead of both rendering the em dash.
+  const categoryTitle = selectedCategory ? selectedCategory.title : '—';
 
   return (
     <div className="flex-1 min-h-0 flex rounded-card border border-border/40 bg-background/40 overflow-hidden animate-fade-in">
@@ -126,12 +131,12 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
                     : 'border-transparent text-foreground/65 hover:text-foreground hover:bg-secondary/40'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-primary' : 'text-foreground/45'}`} aria-hidden />
-                <span className="typo-caption font-medium flex-1 truncate leading-tight">
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden />
+                <span className="typo-caption flex-1 truncate leading-tight">
                   {g.id === null ? p.category_unassigned : g.title}
                 </span>
                 {/* muted-ok: strip count micro-label */}
-                <span className="typo-caption text-foreground/35 tabular-nums">{g.subjects.length}</span>
+                <span className="typo-caption text-muted-foreground tabular-nums">{g.subjects.length}</span>
               </button>
             );
           })}
@@ -161,14 +166,14 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
                   className={`w-3 h-3 flex-shrink-0 transition-opacity ${active ? 'text-primary opacity-100' : 'opacity-0 group-hover/row:opacity-40'}`}
                   aria-hidden
                 />
-                <span className={`typo-body font-mono truncate flex-1 ${active ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                <span className={`typo-body font-mono truncate flex-1 ${active ? 'text-foreground' : 'text-foreground/80'}`}>
                   {s.slug}
                 </span>
                 {s.deviations.length > 0 && (
                   <AlertTriangle className="w-3 h-3 text-status-warning flex-shrink-0" aria-hidden />
                 )}
                 {/* muted-ok: T/A counts, structural micro-label */}
-                <span className="typo-caption text-foreground/40 tabular-nums font-mono flex-shrink-0">
+                <span className="typo-caption text-muted-foreground tabular-nums font-mono flex-shrink-0">
                   {s.techniques.length + s.sharedTechniques.length}·{s.applications.length}
                   {rowScore && rowScore.sites > 0 ? `·${rowScore.sites}` : ''}
                 </span>
@@ -186,7 +191,7 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
             <div className="mb-2 flex items-center gap-2.5">
               <h1 className="typo-section-title text-foreground">{subject.title}</h1>
               {/* muted-ok: slug echo, structural chrome */}
-              <code className="typo-caption font-mono text-foreground/40">{subject.slug}</code>
+              <code className="typo-caption font-mono text-muted-foreground">{subject.slug}</code>
             </div>
             {subject.summary && (
               <p className="text-base text-foreground leading-relaxed max-w-[72ch] mb-4">{subject.summary}</p>
@@ -209,7 +214,7 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
               ].map((cell) => (
                 <div key={cell.label} className="px-3 py-2 border-r border-b sm:border-b-0 border-border/40 last:border-r-0">
                   {/* muted-ok: spec-grid key, structural chrome */}
-                  <span className="block typo-caption uppercase tracking-wide text-foreground/45 mb-0.5">{cell.label}</span>
+                  <span className="block typo-caption uppercase tracking-wide text-muted-foreground mb-0.5">{cell.label}</span>
                   {cell.node}
                 </div>
               ))}
@@ -247,10 +252,10 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
                     >
                       <span className="flex items-center gap-2.5 flex-wrap">
                         {/* muted-ok: row numeral, structural ornament */}
-                        <span className="typo-caption font-mono text-foreground/35 tabular-nums w-5">
+                        <span className="typo-caption font-mono text-muted-foreground tabular-nums w-5">
                           {String(i + 1).padStart(2, '0')}
                         </span>
-                        <span className="typo-body font-medium text-foreground">{tech.title}</span>
+                        <span className="typo-body text-foreground">{tech.title}</span>
                         {owner && (
                           <span
                             role="link"
@@ -306,7 +311,7 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
                       </span>
                       <span className="typo-body font-mono text-foreground truncate flex-1">{name}</span>
                       {/* muted-ok: technique slug micro-label */}
-                      <span className="typo-caption text-foreground/45 font-mono truncate">{app.technique}</span>
+                      <span className="typo-caption text-muted-foreground font-mono truncate">{app.technique}</span>
                     </button>
                     {expanded && (
                       <div className="mb-3 pl-3 border-l-2 border-primary/25 max-w-[70ch]">

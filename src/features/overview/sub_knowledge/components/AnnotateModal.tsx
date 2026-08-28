@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { silentCatch } from '@/lib/silentCatch';
 import { MessageSquare } from 'lucide-react';
 import { upsertKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -32,14 +33,15 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
         'user',
       );
       onCreated();
-    } catch {
+    } catch (err) {
+      silentCatch('AnnotateModal:upsertAnnotation')(err);
       setSaving(false);
     }
   };
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="md" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-elevation-4 overflow-hidden p-6 space-y-4">
-      <h3 id="annotate-modal-title" className="typo-body-lg font-semibold text-foreground/90 flex items-center gap-2">
+      <h3 id="annotate-modal-title" className="typo-body-lg text-foreground/90 flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-cyan-400" /> {t.overview.annotate_modal.title}
       </h3>
 
@@ -103,7 +105,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
           type="button"
           onClick={() => { void handleSave(); }}
           disabled={saving || !text.trim()}
-          className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 typo-body font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 typo-body text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
         >
           {saving ? t.overview.annotate_modal.saving : t.overview.annotate_modal.save_annotation}
         </button>

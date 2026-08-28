@@ -75,7 +75,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
               <Zap className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
-              <h2 id="auto-team-title" className="typo-heading font-semibold text-foreground">{t.pipeline.auto_team}</h2>
+              <h2 id="auto-team-title" className="typo-heading text-foreground">{t.pipeline.auto_team}</h2>
               <p className="typo-caption text-foreground">{t.pipeline.auto_team_subtitle}</p>
             </div>
           </div>
@@ -216,7 +216,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 <div className="p-4 rounded-modal border border-emerald-500/20 bg-emerald-500/5 space-y-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="typo-body font-medium text-emerald-400">{t.pipeline.team_created}</span>
+                    <span className="typo-body text-emerald-400">{t.pipeline.team_created}</span>
                   </div>
                   <div className="flex items-center gap-4 typo-caption text-foreground">
                     <span className="flex items-center gap-1">

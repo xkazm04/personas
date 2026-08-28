@@ -112,7 +112,7 @@ export function GlyphCard({
                 own 50% opacity — the title itself stays at full contrast. The
                 branch that used to dim it here collapsed to two identical
                 classes during the contrast migration and said nothing. */}
-            <span className="typo-heading font-bold uppercase tracking-[0.12em] truncate flex-1 text-foreground">
+            <span className="typo-heading uppercase tracking-[0.12em] truncate flex-1 text-foreground">
               {row.title}
             </span>
 
@@ -124,7 +124,7 @@ export function GlyphCard({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={motion_.shouldAnimate ? { opacity: 0, y: -4, scale: 0.94 } : { opacity: 0 }}
                   transition={motion_.shouldAnimate ? { duration: 0.18 } : { duration: 0 }}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full typo-label font-bold pointer-events-none"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full typo-label pointer-events-none"
                   style={{
                     background: `${hoveredColor}1f`,
                     border: `1px solid ${hoveredColor}55`,
@@ -176,7 +176,7 @@ export function GlyphCard({
               size="sm"
             />
             {row.summary && (
-              <p className="typo-body-lg text-foreground leading-snug font-medium line-clamp-3">{row.summary}</p>
+              <p className="typo-body-lg text-foreground leading-snug line-clamp-3">{row.summary}</p>
             )}
             {footerSlot}
           </div>

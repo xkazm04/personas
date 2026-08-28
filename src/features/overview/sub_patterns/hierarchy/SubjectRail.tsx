@@ -96,7 +96,7 @@ export function SubjectRail({
               {group.id === null ? p.category_unassigned : group.title}
             </h3>
             {/* muted-ok: group-band count, structural micro-label */}
-            <span className="typo-caption text-foreground/40">{group.subjects.length}</span>
+            <span className="typo-caption text-muted-foreground">{group.subjects.length}</span>
           </div>
           <ul className="space-y-0.5 px-1.5">
             {group.subjects.map((subject) => {
@@ -118,12 +118,12 @@ export function SubjectRail({
                     }`}
                   >
                     <span className="flex items-center gap-2 min-w-0">
-                      <span className="typo-body font-medium truncate flex-1">{subject.title}</span>
+                      <span className="typo-body truncate flex-1">{subject.title}</span>
                       <HierarchyStatusChip status={subject.status} />
                     </span>
                     <span className="flex items-center gap-2 mt-0.5">
                       {/* muted-ok: per-row counts micro-label, structural chrome */}
-                      <span className="typo-caption text-foreground/45">
+                      <span className="typo-caption text-muted-foreground">
                         {tx(p.rail_counts, {
                           techniques: techniqueCount,
                           applications: subject.applications.length,
@@ -150,7 +150,7 @@ export function SubjectRail({
                             })}
                           >
                             {/* muted-ok: census-count micro-badge, structural chrome */}
-                            <span className="ml-auto typo-caption text-foreground/40 tabular-nums flex-shrink-0">
+                            <span className="ml-auto typo-caption text-muted-foreground tabular-nums flex-shrink-0">
                               {score.sites}
                             </span>
                           </Tooltip>

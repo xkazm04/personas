@@ -93,10 +93,14 @@ export function SubjectDetail({
     }
   }, [focus]);
 
-  const categoryTitle = useMemo(
-    () => graph.categories.find((c) => c.id === subject.category)?.title ?? null,
-    [graph.categories, subject.category],
-  );
+  const categoryTitle = useMemo(() => {
+    // Bound, not chained: a category row that has GONE is not the same fact as a
+    // subject that never had one, and an inline `?.title ?? null` leaves nowhere
+    // for the difference to live.
+    const category = graph.categories.find((c) => c.id === subject.category);
+    if (!category) return null;
+    return category.title;
+  }, [graph.categories, subject.category]);
 
   // Local techniques + shared ones resolved to their owner's canonical row.
   const techniques = useMemo(() => {
@@ -194,7 +198,7 @@ export function SubjectDetail({
                     className="w-full text-left px-3.5 py-2.5 hover:bg-secondary/40 transition-colors"
                   >
                     <span className="flex items-center gap-2 flex-wrap">
-                      <span className="typo-body font-medium text-foreground">{tech.title}</span>
+                      <span className="typo-body text-foreground">{tech.title}</span>
                       {owner && (
                         <Tooltip content={tx(p.shared_from_tooltip, { owner })}>
                           <span
@@ -353,15 +357,15 @@ export function SubjectDetail({
                         <thead>
                           <tr className="border-b border-border/40 bg-secondary/30">
                             {/* muted-ok: table column headers, structural chrome */}
-                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-left font-medium px-2.5 py-1.5">
+                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-left px-2.5 py-1.5">
                               {p.adherence_col_context}
                             </th>
                             {/* muted-ok: table column header, structural chrome */}
-                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-right font-medium px-2.5 py-1.5">
+                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-right px-2.5 py-1.5">
                               {p.adherence_col_sites}
                             </th>
                             {/* muted-ok: table column header, structural chrome */}
-                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-left font-medium px-2.5 py-1.5">
+                            <th className="typo-caption uppercase tracking-wide text-foreground/50 text-left px-2.5 py-1.5">
                               {p.adherence_col_rules}
                             </th>
                           </tr>
@@ -475,7 +479,7 @@ export function SubjectDetail({
                 className="w-full flex items-center gap-2 text-left rounded-interactive bg-secondary/20 px-2.5 py-2 hover:bg-secondary/40 transition-colors"
               >
                 {/* muted-ok: decorative row glyph, not text */}
-                <ExternalLink className="w-3.5 h-3.5 text-foreground/40 flex-shrink-0" aria-hidden />
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" aria-hidden />
                 <code className="typo-code text-foreground truncate">{entry.legacyFile}</code>
               </button>
             ))}

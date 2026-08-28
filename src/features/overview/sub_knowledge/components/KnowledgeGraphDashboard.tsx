@@ -24,6 +24,12 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 import { AnnotateModal } from './AnnotateModal';
+import { matchesQuery } from '@/lib/text/search';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+
+/** Dev-only knowledge seeding. Declared here rather than gated inside JSX so the
+ *  set of things a production build hides is enumerable from the module. */
+const SHOW_DEV_SEED = import.meta.env.DEV;
 import { createLogger } from "@/lib/log";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -127,8 +133,8 @@ export default function KnowledgeGraphDashboard() {
       search.trim()
         ? (entry) => {
             const q = search.trim().toLowerCase();
-            return entry.pattern_key.toLowerCase().includes(q)
-              || (entry.annotation_text?.toLowerCase().includes(q) ?? false);
+            return matchesQuery(entry.pattern_key, q, language)
+              || matchesQuery(entry.annotation_text ?? '', q, language);
           }
         : null,
       pendingOnly
@@ -190,17 +196,19 @@ export default function KnowledgeGraphDashboard() {
                 <Numeric>{allEntries.length}</Numeric>
               </span>
             )}
-            {import.meta.env.DEV && (
-              <button type="button" onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.knowledge_graph.seed_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
-              </button>
+            {SHOW_DEV_SEED && (
+              <Tooltip content={t.overview.knowledge_graph.seed_tooltip}>
+                <button type="button" onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
+                </button>
+              </Tooltip>
             )}
             {summary && summary.unverified_annotation_count > 0 && (
               <button
                 type="button"
                 aria-pressed={pendingOnly}
                 onClick={() => { setPendingOnly((v) => !v); if (!pendingOnly) chooseType(null); }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-colors ${pendingOnly ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-500/10 text-amber-400 border-amber-500/25 hover:bg-amber-500/20'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body border transition-colors ${pendingOnly ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-500/10 text-amber-400 border-amber-500/25 hover:bg-amber-500/20'}`}
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
                 {t.overview.knowledge.needs_review}
@@ -221,7 +229,8 @@ export default function KnowledgeGraphDashboard() {
             <Button
               variant="secondary"
               size="sm"
-              icon={<RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />}
+              loading={isFetching}
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
               onClick={() => { void fetchData(); }}
             >
               Refresh
@@ -278,7 +287,7 @@ export default function KnowledgeGraphDashboard() {
             <button
               type="button"
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              className={`relative flex items-center gap-1.5 typo-body font-medium transition-colors ${selectedType ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+              className={`relative flex items-center gap-1.5 typo-body transition-colors ${selectedType ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
               {selectedType ? (KNOWLEDGE_TYPES[selectedType as keyof typeof KNOWLEDGE_TYPES]?.label ?? selectedType) : 'Type'}
               {selectedType && (
@@ -301,7 +310,7 @@ export default function KnowledgeGraphDashboard() {
             <button
               type="button"
               onClick={() => setShowScopeDropdown(!showScopeDropdown)}
-              className={`relative flex items-center gap-1.5 typo-body font-medium transition-colors ${selectedScope ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+              className={`relative flex items-center gap-1.5 typo-body transition-colors ${selectedScope ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
               {selectedScope ? (SCOPE_TYPES[selectedScope as keyof typeof SCOPE_TYPES]?.label ?? selectedScope) : 'Scope'}
               {selectedScope && (
@@ -343,8 +352,8 @@ export default function KnowledgeGraphDashboard() {
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="typo-body font-medium text-red-300">
-                    <DebtText k="auto_failure_drill_down_a3e4b117" /> {new Date(failureDrilldownDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                  <p className="typo-body text-red-300">
+                    <DebtText k="auto_failure_drill_down_a3e4b117" /> {new Date(failureDrilldownDate + 'T00:00:00').toLocaleDateString(language, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                   <p className="typo-body text-red-400/70 mt-0.5">
                     <DebtText k="auto_showing_failure_patterns_active_on_or_afte_4e0b968a" />
@@ -369,7 +378,7 @@ export default function KnowledgeGraphDashboard() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="typo-body font-medium text-red-300"><DebtText k="auto_knowledge_data_unavailable_273390d7" /></p>
+                  <p className="typo-body text-red-300"><DebtText k="auto_knowledge_data_unavailable_273390d7" /></p>
                   <p className="typo-body text-red-400/70 mt-0.5">{fetchError}</p>
                 </div>
                 <Button
@@ -443,7 +452,7 @@ export default function KnowledgeGraphDashboard() {
 
           {!selectedPersonaId && summary && summary.recent_learnings.length > 0 && (
             <div className="space-y-3">
-              <h3 className="flex items-center gap-2 typo-heading font-semibold text-foreground">
+              <h3 className="flex items-center gap-2 typo-heading text-foreground">
                 <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> <DebtText k="auto_recent_learnings_1994aa0a" />
               </h3>
               <ScrollShadowContainer

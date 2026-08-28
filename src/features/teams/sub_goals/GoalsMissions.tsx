@@ -9,6 +9,7 @@ import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { setTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { silentCatch } from '@/lib/silentCatch';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { AssignmentReplay } from '@/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay';
 import { MissionLearning } from '@/features/teams/sub_assignments/MissionLearning';
 import {
@@ -96,7 +97,15 @@ export function GoalsMissions() {
     if (teams.length === 0) return;
     let cancelled = false;
     setIsFetching(true);
-    Promise.allSettled(teams.map((tm) => fetchTeamAssignments(tm.id))).finally(() => {
+    // Width is chosen, not inherited from however many teams exist. Rejections are
+    // caught per item so one failed team cannot abort the pool.
+    void mapWithConcurrency(teams, 6, async (tm) => {
+      try {
+        await fetchTeamAssignments(tm.id);
+      } catch (err) {
+        silentCatch('GoalsMissions:fetchTeamAssignments')(err);
+      }
+    }).finally(() => {
       if (!cancelled) setIsFetching(false);
     });
     return () => { cancelled = true; };

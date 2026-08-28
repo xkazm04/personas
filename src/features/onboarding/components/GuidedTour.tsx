@@ -433,7 +433,7 @@ export default function GuidedTour() {
         <span className={colors.text}>
           <TourProgressArc completed={completedCount} total={visibleSteps.length} />
         </span>
-        <span className="typo-caption font-medium text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
+        <span className="typo-caption text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
       </button>
     );
   }

@@ -226,7 +226,7 @@ export default function CockpitPanel() {
     <button
       type="button"
       onClick={() => setCompanionState('open')}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-colors"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-colors"
       data-testid="cockpit-talk-to-athena"
     >
       <MessageCircle className="w-3.5 h-3.5" />
@@ -310,7 +310,7 @@ export default function CockpitPanel() {
           <CockpitGhostGrid />
         ) : !contextualCockpit && specParseFailed ? (
           <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-6 flex flex-col items-center gap-3 text-center">
-            <p className="typo-body text-status-error font-medium">{cockpit.error_title}</p>
+            <p className="typo-body text-status-error">{cockpit.error_title}</p>
             <button
               type="button"
               onClick={load}
@@ -321,7 +321,7 @@ export default function CockpitPanel() {
           </div>
         ) : !contextualCockpit && error && !spec ? (
           <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-6 flex flex-col items-center gap-3 text-center">
-            <p className="typo-body text-status-error font-medium">{cockpit.error_title}</p>
+            <p className="typo-body text-status-error">{cockpit.error_title}</p>
             <button
               type="button"
               onClick={load}
@@ -411,7 +411,7 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
       </div>
 
       <div className="relative z-10 flex flex-col items-center gap-4 px-6 pb-10 max-w-md">
-        <div className="typo-body font-medium text-foreground/90">{cockpit.empty_title}</div>
+        <div className="typo-body text-foreground/90">{cockpit.empty_title}</div>
         <div className="typo-caption text-foreground">
           {tx(cockpit.empty_hint, {
             personas: cockpit.empty_example_personas,
@@ -422,7 +422,7 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
           type="button"
           onClick={onTalk}
           data-testid="cockpit-empty-talk-to-athena"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption font-medium bg-primary/15 hover:bg-primary/25 text-primary border border-primary/25 hover:border-primary/40 shadow-elevation-2 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption bg-primary/15 hover:bg-primary/25 text-primary border border-primary/25 hover:border-primary/40 shadow-elevation-2 transition-colors"
         >
           <MessageCircle className="w-3.5 h-3.5" />
           {cockpit.talk_to_athena}

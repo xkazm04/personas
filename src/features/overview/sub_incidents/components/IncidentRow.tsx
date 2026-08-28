@@ -96,7 +96,7 @@ export const IncidentRow = memo(function IncidentRow({
         >
           <SourceIcon className="h-3.5 w-3.5" />
         </span>
-        <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
+        <span className="typo-body text-foreground truncate">{incident.title}</span>
         {stale && (
           <span className="shrink-0 typo-caption px-1.5 py-0.5 rounded-card border border-amber-500/30 text-amber-400">
             {t.overview.incidents.stale_label}

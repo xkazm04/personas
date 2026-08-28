@@ -341,7 +341,7 @@ function TeamRow({
         </span>
         <span className="min-w-0">
           <span className="flex items-center gap-1.5 min-w-0">
-            <span className="typo-body font-medium text-foreground truncate group-hover/row:text-primary transition-colors">
+            <span className="typo-body text-foreground truncate group-hover/row:text-primary transition-colors">
               {team.name}
             </span>
             {hasDraft && (
@@ -373,7 +373,7 @@ function TeamRow({
             <button
               type="button"
               onClick={onConfirmDisband}
-              className="px-2 py-1 rounded-interactive border border-red-500/40 bg-red-500/15 text-red-300 typo-caption font-medium hover:bg-red-500/25 transition-colors"
+              className="px-2 py-1 rounded-interactive border border-red-500/40 bg-red-500/15 text-red-300 typo-caption hover:bg-red-500/25 transition-colors"
             >
               {ts.disband}
             </button>
@@ -390,7 +390,7 @@ function TeamRow({
             <button
               type="button"
               onClick={onOpen}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/20 bg-secondary/30 text-foreground typo-caption font-medium hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/20 bg-secondary/30 text-foreground typo-caption hover:bg-secondary/50 transition-colors"
             >
               {ts.open} <ArrowRight className="w-3 h-3" />
             </button>
@@ -481,7 +481,7 @@ function EmptyState({
   return (
     <div className="animate-fade-slide-in text-center py-12">
       <MotionizedGlyph data={NETWORK_GLYPH} viewBox={NETWORK_GLYPH_VIEWBOX} spread={1.1} className="w-44 h-44 mx-auto mb-4" />
-      <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
+      <h2 className="typo-heading-lg text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
       <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button variant="primary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={onPreset}>

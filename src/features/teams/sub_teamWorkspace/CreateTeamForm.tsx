@@ -124,7 +124,7 @@ export function CreateTeamForm({
           )}
         </FormField>
         <div>
-          <label className="typo-body font-medium text-foreground mb-1.5 block">{t.pipeline.color}</label>
+          <label className="typo-body text-foreground mb-1.5 block">{t.pipeline.color}</label>
           <TeamColorPicker value={newColor} onChange={onColorChange} size="md" />
         </div>
         {/* Codebase repository — wires the team to a GitHub repo via a
@@ -138,7 +138,7 @@ export function CreateTeamForm({
 
           <div className="space-y-3">
             <div>
-              <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.pipeline.team_connector_label}</label>
+              <label className="typo-caption text-foreground mb-1.5 block">{t.pipeline.team_connector_label}</label>
               <ThemedSelect
                 filterable
                 value={prCredentialId ?? ''}
@@ -154,10 +154,10 @@ export function CreateTeamForm({
             <GitHubRepoSelector value={githubUrl} onChange={onGithubUrlChange} credentialId={prCredentialId} />
 
             <div>
-              <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+              <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
                 <GitFork className="w-3 h-3 text-indigo-300/70" />
                 {dp.main_branch_label}
-                <span className="typo-caption text-foreground font-normal">({dp.team_binding_optional})</span>
+                <span className="typo-caption text-foreground">({dp.team_binding_optional})</span>
               </label>
               <input
                 type="text"
@@ -187,7 +187,7 @@ export function CreateTeamForm({
             type="button"
             onClick={onSubmit}
             disabled={!newName.trim() || !repoUrlValid}
-            className="px-4 py-1.5 typo-body font-medium rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-1.5 typo-body rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {t.pipeline.create_team}
           </button>

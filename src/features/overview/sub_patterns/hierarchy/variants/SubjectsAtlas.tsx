@@ -51,6 +51,14 @@ export function SubjectsAtlas(props: SubjectsVariantProps) {
     [graph.subjects, selectedSlug],
   );
 
+  const categoryTitle = useMemo(() => {
+    // Bound rather than chained: a subject whose category row is gone must not
+    // render identically to a subject that has no category at all.
+    if (!subject) return null;
+    const category = graph.categories.find((c) => c.id === subject.category);
+    return category ? category.title : null;
+  }, [graph.categories, subject]);
+
   // Reading a subject from another category re-anchors the plate band.
   useEffect(() => {
     if (mode === 'read' && subject && subject.category !== categoryId) {
@@ -96,11 +104,11 @@ export function SubjectsAtlas(props: SubjectsVariantProps) {
                   >
                     <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-primary' : 'text-foreground/50'}`} aria-hidden />
                     <span>
-                      <span className={`block typo-body font-medium ${active ? 'text-foreground' : 'text-foreground/80'}`}>
+                      <span className={`block typo-body ${active ? 'text-foreground' : 'text-foreground/80'}`}>
                         {g.id === null ? p.category_unassigned : g.title}
                       </span>
                       {/* muted-ok: plate count micro-label */}
-                      <span className="block typo-caption text-foreground/45 tabular-nums">{g.subjects.length}</span>
+                      <span className="block typo-caption text-muted-foreground tabular-nums">{g.subjects.length}</span>
                     </span>
                   </button>
                 );
@@ -133,7 +141,7 @@ export function SubjectsAtlas(props: SubjectsVariantProps) {
               className="inline-flex items-center gap-1.5 typo-body text-foreground/70 hover:text-foreground rounded-interactive px-2 py-1 -ml-2 hover:bg-secondary/40 transition-colors mb-4"
             >
               <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
-              {graph.categories.find((c) => c.id === subject.category)?.title ?? p.lane_subjects}
+              {categoryTitle ?? p.lane_subjects}
             </button>
 
             <AtlasDossier
@@ -186,7 +194,7 @@ function AtlasGrid({
               className="w-full h-full text-left rounded-card border border-border/50 bg-secondary/20 px-4 py-3.5 hover:border-primary/40 hover:bg-secondary/35 hover:shadow-elevation-1 transition-all flex flex-col"
             >
               <span className="flex items-center gap-2 mb-1">
-                <span className="typo-body font-semibold text-foreground flex-1 truncate">{s.title}</span>
+                <span className="typo-body text-foreground flex-1 truncate">{s.title}</span>
                 <HierarchyStatusChip status={s.status} />
               </span>
               {s.summary && (
@@ -212,7 +220,7 @@ function AtlasGrid({
                 )}
                 {score && score.sites > 0 && (
                   // muted-ok: census micro-badge
-                  <span className={`typo-caption tabular-nums ${s.deviations.length > 0 ? '' : 'ml-auto'} text-foreground/45`}>
+                  <span className={`typo-caption tabular-nums ${s.deviations.length > 0 ? '' : 'ml-auto'} text-muted-foreground`}>
                     {score.sites}
                   </span>
                 )}
@@ -278,7 +286,10 @@ function AtlasDossier({
     return [...local, ...shared];
   }, [graph.techniques, subject]);
 
-  const stats: { label: string; value: number; pane: Pane | null }[] = [
+  // `value` is nullable so an UNMEASURED count is representable. A tile that can
+  // only take a number forces absence to be destroyed as a 0 at the call site,
+  // and a measured zero then reads identically to 'we never counted'.
+  const stats: { label: string; value: number | null; pane: Pane | null }[] = [
     { label: p.tab_techniques, value: techniques.length, pane: 'techniques' },
     { label: p.tab_applications, value: subject.applications.length, pane: 'applications' },
     { label: p.evidence_heading, value: subject.evidence.length, pane: 'evidence' },
@@ -304,8 +315,8 @@ function AtlasDossier({
               onClick={() => stat.pane && setPane(stat.pane)}
               className="text-left group/stat"
             >
-              <span className={`block typo-data-lg tabular-nums ${stat.label === p.deviations_heading && stat.value > 0 ? 'text-status-warning' : 'text-foreground'}`}>
-                {stat.value}
+              <span className={`block typo-data-lg tabular-nums ${stat.label === p.deviations_heading && (stat.value ?? 0) > 0 ? 'text-status-warning' : 'text-foreground'}`}>
+                {stat.value ?? '—'}
               </span>
               {/* muted-ok: stat figure label, structural chrome */}
               <span className="block typo-caption uppercase tracking-wide text-foreground/50 group-hover/stat:text-foreground/80 transition-colors">
@@ -362,7 +373,7 @@ function AtlasDossier({
                     className="w-full text-left px-4 py-3 hover:bg-secondary/40 transition-colors"
                   >
                     <span className="flex items-center gap-2 flex-wrap">
-                      <span className="typo-body font-semibold text-foreground">{tech.title}</span>
+                      <span className="typo-body text-foreground">{tech.title}</span>
                       {owner && (
                         <span
                           role="link"
@@ -410,7 +421,7 @@ function AtlasDossier({
                     <span className={`typo-caption font-mono rounded-interactive border px-1.5 py-0.5 flex-shrink-0 ${STACK_CLASSES[app.stack] ?? STACK_FALLBACK}`}>
                       {app.stack}
                     </span>
-                    <span className="typo-body font-medium text-foreground truncate flex-1">{name}</span>
+                    <span className="typo-body text-foreground truncate flex-1">{name}</span>
                     {/* muted-ok: technique slug micro-label */}
                     <span className="typo-caption text-foreground/50 font-mono truncate">{app.technique}</span>
                   </button>

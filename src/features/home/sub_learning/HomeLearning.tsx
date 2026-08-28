@@ -55,7 +55,7 @@ function TourCard({ tour, isCompleted, onClick }: { tour: TourDef; isCompleted: 
         <Icon className={`w-4 h-4 ${colors.text}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="typo-body font-medium text-foreground truncate">{tour.title}</h4>
+        <h4 className="typo-body text-foreground truncate">{tour.title}</h4>
         <span className="text-[11px] text-foreground">{tx(ht.steps_count, { count: tour.steps.length })}</span>
       </div>
       {isCompleted && (
@@ -92,7 +92,7 @@ function ComposedTourCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <h4 className="typo-body font-medium text-foreground truncate">{entry.record.title}</h4>
+          <h4 className="typo-body text-foreground truncate">{entry.record.title}</h4>
           <AthenaComposedBadge variant="composed" label={ht.composed_badge} title={entry.record.topic} />
         </div>
         <span className="text-[11px] text-foreground">

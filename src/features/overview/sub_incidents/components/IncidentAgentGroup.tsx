@@ -62,7 +62,7 @@ export function IncidentAgentGroup({ group, collapsed, onToggle, focusedId, rend
           title={urgency}
           aria-label={urgency}
         />
-        <span className="typo-body font-medium text-foreground truncate">{name}</span>
+        <span className="typo-body text-foreground truncate">{name}</span>
         <span className="ml-auto typo-caption text-foreground rounded-card border border-primary/15 px-1.5 py-0.5">
           {group.count}
         </span>
