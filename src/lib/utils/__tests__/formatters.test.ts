@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatTimestamp, formatRelativeTime, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
+import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatCost, formatTimestamp, formatRelativeTime, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { useI18nStore } from '@/stores/i18nStore';
 
@@ -226,5 +226,55 @@ describe('getStatusEntry', () => {
     const entry = getStatusEntry('teleported');
     expect(entry.icon).toBe(EXECUTION_STATUS_MAP.unknown!.icon);
     expect(entry.label).toBe('teleported');
+  });
+});
+
+describe('formatCost', () => {
+  /**
+   * Regression guard. The zero case lived inside the `precision: 2` branch
+   * only, so an exact 0 -- what `estimateCost` returns for every local model,
+   * and what a genuinely free run costs -- fell through to the sub-threshold
+   * branch at the other two precisions. The execution inspector showed
+   * `$0.0000` in its Cost tile (a `<Numeric precision={4}>`) and
+   * `Total: <$0.001` in the breakdown bar three lines below it.
+   *
+   * `<` is a claim that the value is too small to render at this precision.
+   * Zero is not: it renders exactly, at every precision.
+   */
+  it('renders an exact zero as zero at every precision', () => {
+    expect(formatCost(0, { precision: 2, language: 'en' })).toBe('$0.00');
+    expect(formatCost(0, { precision: 4, language: 'en' })).toBe('$0.0000');
+    expect(formatCost(0, { precision: 'auto', language: 'en' })).toBe('$0.00');
+  });
+
+  it('matches the Numeric tile it renders beside, to the digit', () => {
+    // The tile composes its own currency render: a '$' glyph, then whatever
+    // <Numeric precision={4}> emits for the value. Assembled here by
+    // concatenation rather than as a template literal ON PURPOSE -- the
+    // `$${...}` form is the census rule `hand-assembled-currency`, and this
+    // test would have been its first false positive.
+    const tileDigits = (0).toFixed(4);
+    expect(formatCost(0, { precision: 4, language: 'en' })).toBe('$' + tileDigits);
+  });
+
+  it('still reserves the sub-threshold form for values that really are too small', () => {
+    expect(formatCost(0.00004, { precision: 4, language: 'en' })).toBe('<$0.001');
+    expect(formatCost(0.004, { precision: 2, language: 'en' })).toBe('<$0.01');
+    expect(formatCost(0.00004, { precision: 'auto', language: 'en' })).toBe('<$0.001');
+  });
+
+  it('leaves every non-zero rendering untouched', () => {
+    expect(formatCost(1.5, { precision: 2, language: 'en' })).toBe('$1.50');
+    expect(formatCost(0.0042, { precision: 4, language: 'en' })).toBe('$0.0042');
+    expect(formatCost(0.0042, { precision: 'auto', language: 'en' })).toBe('$0.0042');
+    expect(formatCost(0.5, { precision: 'auto', language: 'en' })).toBe('$0.500');
+    expect(formatCost(12, { precision: 'auto', language: 'en' })).toBe('$12.00');
+  });
+
+  it('keeps null distinct from zero', () => {
+    // A cost that was never measured is not a cost of zero.
+    expect(formatCost(null, { precision: 2, language: 'en' })).toBe('$0.00');
+    expect(formatCost(null, { precision: 4, language: 'en' })).toBe('\u2014');
+    expect(formatCost(undefined, { precision: 'auto', language: 'en' })).toBe('\u2014');
   });
 });
