@@ -24,7 +24,22 @@ class FakeTerminal {
   hasSelection = vi.fn(() => false);
   getSelection = vi.fn(() => '');
   attachCustomKeyEventHandler = vi.fn();
-  onData = vi.fn(() => ({ dispose: vi.fn() }));
+  /** The child's DECSET 2004 state — what decides whether a paste is framed. */
+  modes = { bracketedPasteMode: false };
+  dataHandler: ((data: string) => void) | null = null;
+  onData = vi.fn((handler: (data: string) => void) => {
+    this.dataHandler = handler;
+    return { dispose: vi.fn() };
+  });
+  /** Mirrors xterm's own `paste()` — normalize CRLF/LF to CR, bracket when the
+   *  child enabled the mode, emit through onData — so a test can prove the
+   *  manager routes through it rather than writing raw bytes to the PTY. */
+  paste(data: string) {
+    const normalized = data.replace(/\r?\n/g, '\r');
+    this.dataHandler?.(
+      this.modes.bracketedPasteMode ? `\x1b[200~${normalized}\x1b[201~` : normalized,
+    );
+  }
   write(chunk: string) {
     this.written.push(chunk);
   }
@@ -108,7 +123,13 @@ const parkedList = () => (globalThis as Record<string, unknown>).__fleetTerminal
 const registryMap = () =>
   (globalThis as Record<string, unknown>).__fleetTerminalRegistry__ as Map<
     string,
-    { attached: boolean; deadNoticeShown: boolean; term: FakeTerminal; webgl: { dispose: () => void } | null }
+    {
+      attached: boolean;
+      deadNoticeShown: boolean;
+      term: FakeTerminal;
+      webgl: { dispose: () => void } | null;
+      holder: HTMLDivElement;
+    }
   >;
 
 function attach(id: string): HTMLDivElement {
@@ -513,5 +534,81 @@ describe('accelerated-renderer budget', () => {
     expect(getFleetTerminalStats().webgl).toBe(1);
     expect(glLru()).toEqual(['p2']);
     hosts.forEach((h) => h.remove());
+  });
+});
+
+describe('clipboard paste framing', () => {
+  const readText = vi.fn<() => Promise<string>>();
+
+  beforeEach(() => {
+    readText.mockReset();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { readText, writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+    vi.mocked(fleetApi.writeInput).mockClear();
+  });
+
+  /** Right-click is one of the two paste doors (Ctrl+Shift+V / Cmd+V is the
+   *  other, and both land in the same function). */
+  function rightClickPaste(id: string): void {
+    registryMap().get(id)!.holder.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
+  }
+
+  /** Let the clipboard promise chain settle. */
+  const flushMicrotasks = () => new Promise<void>((r) => setTimeout(r, 0));
+
+  it('frames a multi-line paste so the shell inserts the lines instead of running them', async () => {
+    const host = attach('paste-bracketed');
+    registryMap().get('paste-bracketed')!.term.modes.bracketedPasteMode = true;
+    readText.mockResolvedValue('foo\nbar\nbaz');
+
+    rightClickPaste('paste-bracketed');
+    await flushMicrotasks();
+
+    // Every line after the first used to EXECUTE, because a bare newline at a
+    // shell prompt is a submit. The brackets are what make it an insert.
+    expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalledWith(
+      'paste-bracketed',
+      '\x1b[200~foo\rbar\rbaz\x1b[201~',
+    );
+    host.remove();
+  });
+
+  it('keeps the trailing newline the operator copied when the child brackets pastes', async () => {
+    const host = attach('paste-trailing');
+    registryMap().get('paste-trailing')!.term.modes.bracketedPasteMode = true;
+    readText.mockResolvedValue('deploy --prod\n');
+
+    rightClickPaste('paste-trailing');
+    await flushMicrotasks();
+
+    expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalledWith(
+      'paste-trailing',
+      '\x1b[200~deploy --prod\r\x1b[201~',
+    );
+    host.remove();
+  });
+
+  it('still strips the trailing newline for a child that has NOT enabled bracketed paste', async () => {
+    const host = attach('paste-plain');
+    readText.mockResolvedValue('echo hi\n');
+
+    rightClickPaste('paste-plain');
+    await flushMicrotasks();
+
+    expect(vi.mocked(fleetApi.writeInput)).toHaveBeenCalledWith('paste-plain', 'echo hi');
+    host.remove();
+  });
+
+  it('does nothing for an empty clipboard', async () => {
+    const host = attach('paste-empty');
+    readText.mockResolvedValue('');
+
+    rightClickPaste('paste-empty');
+    await flushMicrotasks();
+
+    expect(vi.mocked(fleetApi.writeInput)).not.toHaveBeenCalled();
+    host.remove();
   });
 });

@@ -371,16 +371,42 @@ function handleLink(_event: MouseEvent, uri: string): void {
   openExternalUrl(safe).catch(silentCatch('fleetTerminal:openLink'));
 }
 
-/** Read the WebView clipboard and write it straight to the session's PTY. */
+/**
+ * Read the WebView clipboard and deliver it to the session's PTY *as a paste*.
+ *
+ * Writing the text straight to the PTY was wrong in the one way that matters: a
+ * terminal's input is keystrokes, not text, and the typed-versus-pasted
+ * distinction is what decides whether a newline inserts a line or SUBMITS one.
+ * The framing that carries that distinction is bracketed paste
+ * (`ESC[200~ … ESC[201~`, DECSET 2004) and this path never emitted it — so a
+ * multi-line clipboard payload arrived as a sequence of submitted lines, and in
+ * a shell that means every line after the first EXECUTES. The old comment here
+ * ("terminals handle that") named the mechanism that was missing.
+ *
+ * `term.paste()` is that mechanism: it normalizes CRLF/LF to CR, wraps the
+ * payload in the brackets whenever the child has actually enabled the mode, and
+ * emits through `onData` — the same door a keystroke takes, so it still lands
+ * in `writeInput`.
+ *
+ * The trailing-newline strip stays, but ONLY for a child that has not enabled
+ * bracketed paste: there it is the sole thing between a copied line (which
+ * almost always ends in a newline) and an unintended submit. Under bracketed
+ * paste the child decides what to do with that newline, and swallowing it would
+ * corrupt the payload the operator actually copied.
+ */
 function pasteFromClipboard(sessionId: string): void {
   navigator.clipboard
     .readText()
     .then((textRaw) => {
       if (!textRaw) return;
-      // Strip a trailing newline so pasting a single line doesn't auto-submit;
-      // multi-line pastes keep their internal newlines (terminals handle that).
-      const cleaned = textRaw.replace(/\r?\n$/, '');
-      return writeInput(sessionId, cleaned);
+      const m = registry.get(sessionId);
+      if (!m || !m.opened) {
+        // No live emulator to frame the paste through — fall back to the raw
+        // write, trailing newline stripped, exactly as before.
+        return writeInput(sessionId, textRaw.replace(/\r?\n$/, ''));
+      }
+      m.term.paste(m.term.modes.bracketedPasteMode ? textRaw : textRaw.replace(/\r?\n$/, ''));
+      return undefined;
     })
     .catch(silentCatch('fleetTerminal:paste'));
 }
