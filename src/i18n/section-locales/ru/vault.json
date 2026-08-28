@@ -565,6 +565,7 @@
     "drop_to_ingest": "Перетащите файлы для загрузки",
     "drop_supported": "Поддерживаются: txt, md, html, csv, json, yaml, файлы кода",
     "starting_ingestion": "Запуск загрузки…",
+    "ingest_in_progress": "Загрузка уже выполняется. Дождитесь её завершения.",
     "preparing_ingestion": "Подготовка загрузки…",
     "ingestion_failed": "Загрузка не удалась",
     "ingestion_done": "Готово! {chunks} фрагментов из {docs} файлов",

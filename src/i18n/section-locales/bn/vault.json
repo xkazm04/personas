@@ -565,6 +565,7 @@
     "drop_to_ingest": "ইনজেস্ট করতে ফাইল ড্রপ করুন",
     "drop_supported": "সমর্থিত: txt, md, html, csv, json, yaml, কোড ফাইল",
     "starting_ingestion": "ইনজেস্ট শুরু হচ্ছে…",
+    "ingest_in_progress": "একটি ইনজেশন ইতিমধ্যে চলছে। শেষ হওয়ার জন্য অপেক্ষা করুন।",
     "preparing_ingestion": "ইনজেস্ট প্রস্তুত হচ্ছে…",
     "ingestion_failed": "ইনজেস্ট ব্যর্থ হয়েছে",
     "ingestion_done": "সম্পন্ন! {docs}টি ফাইল থেকে {chunks}টি চাংক",

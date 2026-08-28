@@ -565,6 +565,7 @@
     "drop_to_ingest": "Jatuhkan file untuk diserap",
     "drop_supported": "Didukung: txt, md, html, csv, json, yaml, file kode",
     "starting_ingestion": "Memulai penyerapan…",
+    "ingest_in_progress": "Proses ingest sedang berjalan. Tunggu hingga selesai.",
     "preparing_ingestion": "Mempersiapkan penyerapan…",
     "ingestion_failed": "Penyerapan gagal",
     "ingestion_done": "Selesai! {chunks} potongan dari {docs} file",

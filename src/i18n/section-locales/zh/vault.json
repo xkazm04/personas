@@ -565,6 +565,7 @@
     "drop_to_ingest": "拖放文件以摄入",
     "drop_supported": "支持：txt、md、html、csv、json、yaml、代码文件",
     "starting_ingestion": "正在启动摄入…",
+    "ingest_in_progress": "已有导入任务正在进行，请等待其完成。",
     "preparing_ingestion": "正在准备摄入…",
     "ingestion_failed": "摄入失败",
     "ingestion_done": "完成！来自 {docs} 个文件的 {chunks} 个片段",

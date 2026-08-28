@@ -565,6 +565,7 @@
     "drop_to_ingest": "Přetáhněte soubory pro vložení",
     "drop_supported": "Podporováno: txt, md, html, csv, json, yaml, kód",
     "starting_ingestion": "Zahajování vkládání…",
+    "ingest_in_progress": "Zpracování už probíhá. Počkejte, až skončí.",
     "preparing_ingestion": "Příprava vkládání…",
     "ingestion_failed": "Vkládání selhalo",
     "ingestion_done": "Hotovo! {chunks} sekcí z {docs} souborů",

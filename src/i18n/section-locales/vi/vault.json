@@ -565,6 +565,7 @@
     "drop_to_ingest": "Thả tệp để nhập",
     "drop_supported": "Hỗ trợ: txt, md, html, csv, json, yaml, tệp mã",
     "starting_ingestion": "Bắt đầu nhập…",
+    "ingest_in_progress": "Đang có một tiến trình nạp dữ liệu. Vui lòng đợi hoàn tất.",
     "preparing_ingestion": "Đang chuẩn bị nhập…",
     "ingestion_failed": "Nhập thất bại",
     "ingestion_done": "Xong! {chunks} đoạn từ {docs} tệp",
