@@ -234,6 +234,13 @@ export default function HomeLearning() {
                   <ComposedTourCard
                     key={entry.record.id}
                     entry={entry}
+                    // Invariant behind the cast: `tourCompletionMap` is keyed by
+                    // `TourDef['id']`, whose dynamic arm is `athena-${string}`, and
+                    // `validateDynamicTour` (dynamicTours.ts:172, via `isDynamicTourId`)
+                    // rejects any record whose id is not one BEFORE it can be
+                    // registered, completed, or written into that map. So a record id
+                    // that ever appears as a key is in the key space by construction;
+                    // any other record id simply misses and falls through to `false`.
                     isCompleted={tourCompletionMap[entry.record.id as TourDef['id']] ?? false}
                     onClick={() => entry.def && setActiveTour(entry.def)}
                   />
