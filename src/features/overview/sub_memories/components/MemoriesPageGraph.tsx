@@ -12,7 +12,7 @@ import { Brain, Sparkles, Plus, X, GitFork } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
@@ -120,10 +120,21 @@ export default function MemoriesPageGraph() {
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
-              {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {memoryReviewRunning ? 'Reviewing...' : 'Review'}
-            </button>
+            {/* Real spinner + aria-busy on the pressed control. The previous
+                busy branch swapped the icon for the null-returning feedback
+                spinner, so the icon vanished and nothing replaced it. */}
+            <Button
+              variant="accent"
+              accentColor="cyan"
+              size="sm"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              loading={memoryReviewRunning}
+              loadingLabel="Reviewing..."
+              disabled={memoryReviewRunning || memoriesTotal === 0}
+              onClick={handleReview}
+            >
+              Review
+            </Button>
             <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add

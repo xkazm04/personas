@@ -17,7 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { deleteAllMemories } from '@/api/overview/memories';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { importanceColor } from '../libs/memoryVisualTokens';
@@ -237,23 +237,41 @@ export default function MemoriesPageDense() {
               <span className="typo-body font-medium">Conflicts</span>
             </button>
             <div className="w-px h-6 bg-primary/10" />
-            <button type="button" onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
-              {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {memoryReviewRunning ? 'Reviewing...' : 'Review'}
-            </button>
+            {/* `Button loading` renders a REAL spinner and sets aria-busy.
+                What stood here rendered the null-returning feedback spinner in
+                place of the icon, so pressing Review deleted the icon and put
+                nothing where it had been (CLAUDE.md, the spinner boundary: a
+                spinner is REQUIRED on a control the user just pressed). The
+                flag is store-owned, so `loading={flag}` is the right shape
+                here rather than AsyncButton. */}
+            <Button
+              variant="accent"
+              accentColor="cyan"
+              size="sm"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              loading={memoryReviewRunning}
+              loadingLabel="Reviewing..."
+              disabled={memoryReviewRunning || memoriesTotal === 0}
+              onClick={handleReview}
+            >
+              Review
+            </Button>
             <div className="relative" ref={reflectMenuRef}>
-              <button
-                type="button"
-                onClick={() => setReflectMenuOpen((v) => !v)}
+              <Button
+                variant="accent"
+                accentColor="amber"
+                size="sm"
+                icon={<Lightbulb className="w-3.5 h-3.5" />}
+                loading={memoryReviewRunning}
+                loadingLabel={t.overview.memories.reflecting}
                 disabled={memoryReviewRunning || reflectablePersonas.length === 0}
+                onClick={() => setReflectMenuOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={reflectMenuOpen}
                 title={t.overview.memories.reflect_hint}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-amber-500/15 text-amber-300 border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40"
               >
-                {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Lightbulb className="w-3.5 h-3.5" />}
-                {memoryReviewRunning ? t.overview.memories.reflecting : t.overview.memories.reflect}
-              </button>
+                {t.overview.memories.reflect}
+              </Button>
               {reflectMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-primary/20 bg-background shadow-elevation-3 p-1">
                   <p className="px-2 py-1.5 typo-caption text-foreground">{t.overview.memories.reflect_pick_persona}</p>
