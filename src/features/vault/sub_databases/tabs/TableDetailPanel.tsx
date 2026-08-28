@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
@@ -40,6 +41,14 @@ export function TableDetailPanel({
   const tableEntry = selectedTable ? tables.find((t) => t.table_name === selectedTable) : null;
   const displayName = tableEntry?.display_label || selectedTable;
   const HeaderIcon = isApi ? Database : Table2;
+
+  // The key-info ghost is aria-hidden, so its state is announced through the
+  // app-wide live region instead of a local one born together with its own text
+  // (census `live-region-born-with-its-message`).
+  const keyInfoLoading = isRedis && selectedKey !== null && keyTypeResult === null;
+  useEffect(() => {
+    if (keyInfoLoading) announceImperative(dbt.loading_key_info);
+  }, [keyInfoLoading, dbt.loading_key_info]);
 
   const columnLabel = isApi ? dbt.col_property : dbt.col_column;
   const typeLabel = isApi
@@ -100,9 +109,21 @@ export function TableDetailPanel({
           </div>
           <div className="p-4">
             {keyTypeResult === null ? (
-              <div className="flex items-center gap-2 py-4">
-                <LoadingSpinner className="text-foreground" />
-                <span className="typo-body text-foreground">{dbt.loading_key_info}</span>
+              /* Cold load for the key detail — a ghost matched to the settled block
+                 below it (label + type pill on one row, hint line under), not the
+                 old `<LoadingSpinner/>` beside "Loading key info…", which rendered
+                 `null` and left a bare sentence where a shape belonged.
+                 `animate-fade-in` is fill-mode `both`, so the ≥120ms stagger means a
+                 fast TYPE lookup never paints a ghost. No `animate-pulse`.
+                 Silent to assistive tech on purpose — the announcement goes through
+                 the app-wide AriaLiveProvider above, because a local `role="status"`
+                 mounted together with its own text is never announced at all. */
+              <div aria-hidden="true" className="space-y-3">
+                <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '120ms' }}>
+                  <span className="h-3.5 w-16 rounded bg-primary/[0.06]" />
+                  <span className="h-5 w-20 rounded bg-primary/[0.06]" />
+                </div>
+                <span className="block h-3.5 w-3/5 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '155ms' }} />
               </div>
             ) : (
               <div className="space-y-3">

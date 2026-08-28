@@ -891,10 +891,35 @@ diffing against the committed bytes, 2026-08-17 @ `f432a4ef3`.
 | **`docs/refactor/catalog-curation.md`** | `refactor/classify-shared.mjs` | `package.json` only | **STALE — 13,006 vs 1,972 bytes** |
 | `.claude/skills/scan-sweep/{SKILL.md, references/lenses.md, scripts/coverage.mjs}` | `skills/scan-agents-to-skills.mjs` | **nothing** | **UNMEASURABLE — generator skips existing outputs unless `--force`** |
 | `src/lib/bindings/**` — **1,032 files** | ts-rs via `cargo test --workspace --features desktop export_bindings` | `ci.yml:419` (5/20 green) · `check-unused-bindings.sh` (exit **1**, 98 findings) | **UNMEASURABLE without cargo.** Measured statically: **29 orphans** (source gone; 26 still imported, 22 live IPC return types) · **5** formatter-stripped and guaranteed to re-drift · 1 live working-tree drift |
-| 13 glyph modules (`archetypeGlyphData.ts`, `pulseGlyphData.ts`, `*Glyph.ts`, …) | `.claude/skills/motionize/tools/{trace-set,emit-glyph}.mjs` | **nothing** (a skill, run by hand) | **UNMEASURABLE — source art is not in the repo** |
+| 13 glyph modules (`archetypeGlyphData.ts`, `pulseGlyphData.ts`, `*Glyph.ts`, …) | `.claude/skills/motionize/tools/{trace-set,emit-glyph}.mjs` — a shared ai-registry skill, absent from `git ls-files` | `check:glyphs` (in `npm run check`) | **STILL UNMEASURABLE against source — but no longer unpinned.** Fixed 2026-08-28 |
 
 **Totals: 1,829 measurable · 1,823 FRESH · 6 STALE · 32 unmeasurable (of which 1,032 have a CI-only
 check that is 5/20 green).**
+
+> **The glyph row, resolved 2026-08-28 — and it is the one case where none of this
+> leaf's three legal fixes applies.** `--check` mode, compare-before-write, and
+> generate-somewhere-git-does-not-track all assume the generator is reachable from the
+> repo that ships the artifact. `motionize` is a *linked* registry skill: there is no
+> `.claude/skills/motionize` in `git ls-files`, and the traced source art was never
+> committed either, so no incantation in this checkout can re-derive a single one of
+> the 13. The banner nevertheless said `AUTO-GENERATED … do not edit by hand`, which
+> reads as a promise that `npm run build` maintains them — and 318KB of it sat on 12
+> lines of `archetypeGlyphData.ts`, the exact geometry a reviewer's eye slides off.
+>
+> What was left to preserve is not freshness but *integrity*: a hand edit, a truncated
+> write, or a half-finished re-trace must not be silently absorbed. `scripts/check-vendored-glyphs.mjs`
+> pins a `sha256` per artifact in `scripts/vendored-glyph-manifest.json` and fails on a
+> changed hash, an unpinned artifact, or a pinned artifact that has vanished. All three
+> directions were fault-injected before adoption (exit 1 each); a walk that visits fewer
+> than 500 `.ts` files, or that matches zero artifacts, exits **2** as a broken matcher
+> rather than 0 as a clean repo — the fail-loud contract this leaf shares with
+> `check-corpus-integrity.mjs`. The 13 banners were rewritten to say what is true:
+> vendored, un-re-derivable, committed bytes ARE the source.
+>
+> Note what this does NOT buy, stated rather than papered over: the manifest can only
+> tell you the bytes have not moved since someone said they were right. It cannot tell
+> you they ever matched the art. That question is unanswerable from this repo and
+> stays open.
 
 ---
 
