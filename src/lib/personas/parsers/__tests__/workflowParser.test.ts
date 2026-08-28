@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseWorkflowFile, ROUTABLE_PLATFORMS, supportedFormatsSentence } from '../workflowParser';
+import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
 import {
   detectWorkflowPlatform,
   countElements,
@@ -103,6 +104,34 @@ describe('parser coverage is derived from the platform union', () => {
       message = err instanceof Error ? err.message : '';
     }
     expect(message).toContain(supportedFormatsSentence());
+  });
+});
+
+// The YAML branch has been bounded since its loader options were added; the
+// JSON branch — the one three of the four adapters use — called bare
+// JSON.parse with no byte, depth or entity cap, and none of the three upload
+// hooks imposed one before handing over the whole file.
+describe('bounded parsing on the JSON path', () => {
+  it('refuses a file past the byte ceiling before parsing it', () => {
+    const huge = '{"nodes":"' + 'a'.repeat(MAX_WORKFLOW_JSON_BYTES) + '"}';
+    expect(() => parseWorkflowFile(huge, 'huge.json')).toThrow(/too large/i);
+  });
+
+  it('refuses a deeply nested JSON payload', () => {
+    const deep = '{"a":'.repeat(200) + '1' + '}'.repeat(200);
+    expect(() => parseWorkflowFile(deep, 'deep.json')).toThrow(/nested too deeply/i);
+  });
+
+  it('accepts a workflow nested within the bound', () => {
+    const shallow = { nodes: [{ type: 'n8n-nodes-base.slack', name: 'Post', parameters: { a: { b: { c: 1 } } } }] };
+    expect(() => parseWorkflowFile(JSON.stringify(shallow), 'ok.json')).not.toThrow();
+  });
+
+  it('bounds the walk itself so a wide payload cannot hang it', () => {
+    // A flat array is depth 2 but unbounded in count; the entity ceiling is
+    // the only thing standing between it and every downstream adapter.
+    const wide = JSON.stringify({ nodes: new Array(300_000).fill(0) });
+    expect(() => parseWorkflowFile(wide, 'wide.json')).toThrow(/too many entries/i);
   });
 });
 

@@ -20,6 +20,7 @@ import { parseN8nWorkflow } from './n8nParser';
 import { parseZapierWorkflow } from './zapierParser';
 import { parseMakeWorkflow } from './makeParser';
 import { parseGithubActionsWorkflow } from './githubActionsParser';
+import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
 
 /**
  * js-yaml 4.2 added `maxDepth` (default 100) and `maxMergeSeqLength` (default 20)
@@ -35,10 +36,72 @@ type BoundedLoadOptions = LoadOptions & {
   maxMergeSeqLength?: number;
 };
 
+const WORKFLOW_MAX_DEPTH = 50;
+
 const WORKFLOW_YAML_LOAD_LIMITS: BoundedLoadOptions = {
-  maxDepth: 50,
+  maxDepth: WORKFLOW_MAX_DEPTH,
   maxMergeSeqLength: 20,
 };
+
+/**
+ * Ceiling on the number of values (objects, arrays, scalars) a workflow may
+ * contain. Well above any real export — the largest template in this repo is
+ * three orders of magnitude below it — and low enough that a hostile file
+ * cannot make the downstream adapters and the prompt assembler walk forever.
+ */
+const WORKFLOW_MAX_VALUES = 250_000;
+
+/**
+ * The bounds `JSON.parse` never had.
+ *
+ * The YAML branch has been bounded since the loader options above were added,
+ * with a comment naming the DoS class it closes. The JSON branch — which is the
+ * COMMON one, three of the four adapters being JSON — then called bare
+ * `JSON.parse(content)` with no byte, depth or entity cap, and no caller
+ * imposed one either: the upload, paste and URL hooks all read the whole
+ * content before handing it over. The size cap runs BEFORE the parse, because
+ * after it the work is already done.
+ */
+function assertBoundedSize(content: string): void {
+  // `length` is UTF-16 code units, which is <= the byte count for any input, so
+  // this never rejects a file the byte-based cap would accept.
+  if (content.length > MAX_WORKFLOW_JSON_BYTES) {
+    throw new Error(
+      `Workflow file is too large (limit ${Math.floor(MAX_WORKFLOW_JSON_BYTES / (1024 * 1024))} MB).`,
+    );
+  }
+}
+
+/**
+ * Walk the parsed structure iteratively — never recursively, which would trade
+ * one denial of service for another — and refuse anything nested deeper or
+ * wider than the bounds above. Applied to the YAML result too: the loader
+ * bounds depth but not total size.
+ */
+function assertBoundedStructure(root: unknown): void {
+  const stack: Array<{ value: unknown; depth: number }> = [{ value: root, depth: 0 }];
+  let seen = 0;
+
+  while (stack.length > 0) {
+    const { value, depth } = stack.pop()!;
+    seen += 1;
+    if (seen > WORKFLOW_MAX_VALUES) {
+      throw new Error('Workflow file has too many entries to import.');
+    }
+    if (depth > WORKFLOW_MAX_DEPTH) {
+      throw new Error(`Workflow file is nested too deeply (limit ${WORKFLOW_MAX_DEPTH}).`);
+    }
+    if (!value || typeof value !== 'object') continue;
+
+    if (Array.isArray(value)) {
+      for (const item of value) stack.push({ value: item, depth: depth + 1 });
+    } else {
+      for (const item of Object.values(value as Record<string, unknown>)) {
+        stack.push({ value: item, depth: depth + 1 });
+      }
+    }
+  }
+}
 
 type KnownPlatform = Exclude<WorkflowPlatform, 'unknown'>;
 
@@ -112,6 +175,8 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
     throw new Error('File is empty.');
   }
 
+  assertBoundedSize(content);
+
   const ext = getExtension(fileName);
   let parsed: Record<string, unknown>;
 
@@ -143,6 +208,8 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
       throw err;
     }
   }
+
+  assertBoundedStructure(parsed);
 
   // Detect the platform
   const detection = detectWorkflowPlatform(parsed, ext);
