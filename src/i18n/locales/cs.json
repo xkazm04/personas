@@ -9314,6 +9314,8 @@
       "show_explanation": "Zobrazit vysvětlení",
       "all_option": "Vše",
       "thread_current": "aktuální",
+      "answer_list_pair": "{first} a {second}",
+      "answer_list_overflow": "{first}, {second} a {count} dalších",
       "add_custom": "Přidat",
       "custom_prefix": "+ Vlastní…",
       "custom_plain": "Vlastní…",

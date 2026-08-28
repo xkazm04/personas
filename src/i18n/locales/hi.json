@@ -9314,6 +9314,8 @@
       "show_explanation": "व्याख्या दिखाएँ",
       "all_option": "सभी",
       "thread_current": "वर्तमान",
+      "answer_list_pair": "{first} और {second}",
+      "answer_list_overflow": "{first}, {second} और {count} अन्य",
       "add_custom": "जोड़ें",
       "custom_prefix": "+ कस्टम…",
       "custom_plain": "कस्टम…",

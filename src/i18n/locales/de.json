@@ -9314,6 +9314,8 @@
       "show_explanation": "Erklärung anzeigen",
       "all_option": "Alle",
       "thread_current": "aktuell",
+      "answer_list_pair": "{first} und {second}",
+      "answer_list_overflow": "{first}, {second} und {count} weitere",
       "add_custom": "Hinzufügen",
       "custom_prefix": "+ Benutzerdefiniert…",
       "custom_plain": "Benutzerdefiniert…",

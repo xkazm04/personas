@@ -9691,6 +9691,8 @@ export type Translations = {
       show_explanation: string;
       all_option: string;
       thread_current: string;
+      answer_list_pair: string;
+      answer_list_overflow: string;
       add_custom: string;
       custom_prefix: string;
       custom_plain: string;

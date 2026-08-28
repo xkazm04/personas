@@ -9314,6 +9314,8 @@
       "show_explanation": "説明を表示",
       "all_option": "すべて",
       "thread_current": "現在",
+      "answer_list_pair": "{first}と{second}",
+      "answer_list_overflow": "{first}、{second} ほか{count}件",
       "add_custom": "追加",
       "custom_prefix": "+ カスタム…",
       "custom_plain": "カスタム…",

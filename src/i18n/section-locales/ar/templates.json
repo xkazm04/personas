@@ -727,6 +727,8 @@
     "show_explanation": "إظهار الشرح",
     "all_option": "الكل",
     "thread_current": "الحالي",
+    "answer_list_pair": "{first} و{second}",
+    "answer_list_overflow": "{first}، {second} و{count} أخرى",
     "add_custom": "إضافة",
     "custom_prefix": "+ مخصص…",
     "custom_plain": "مخصص…",

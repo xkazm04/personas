@@ -101,4 +101,24 @@ describe('summarizeAnswer', () => {
   it('drops blank segments rather than rendering a dangling separator', () => {
     expect(summarizeAnswer('a, , b')).toBe('a and b');
   });
+
+  it('builds the list through the catalog when translations are threaded', () => {
+    // The conjunction and the "+N more" suffix are grammar. If they were
+    // assembled in code, a non-English rail would read English punctuation
+    // on an otherwise translated surface; these assertions fail the moment
+    // the sentence shape moves back out of the catalog.
+    const t = {
+      templates: {
+        adopt_modal: {
+          answer_list_pair: '{first} y {second}',
+          answer_list_overflow: '{first}, {second} y {count} más',
+        },
+      },
+      // Invariant: `summarizeAnswer` reads exactly these two leaves off the
+      // catalog, so a two-leaf stub is a complete stand-in for the full tree.
+      // Narrowing is safe because the cast is confined to this test.
+    } as unknown as Parameters<typeof summarizeAnswer>[2];
+    expect(summarizeAnswer('a, b', 'select', t)).toBe('a y b');
+    expect(summarizeAnswer('a, b, c, d', 'select', t)).toBe('a, b y 2 más');
+  });
 });

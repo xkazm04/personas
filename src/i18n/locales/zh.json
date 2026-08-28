@@ -9314,6 +9314,8 @@
       "show_explanation": "显示说明",
       "all_option": "全部",
       "thread_current": "当前",
+      "answer_list_pair": "{first}和{second}",
+      "answer_list_overflow": "{first}、{second} 等 {count} 项",
       "add_custom": "添加",
       "custom_prefix": "+ 自定义…",
       "custom_plain": "自定义…",

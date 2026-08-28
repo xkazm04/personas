@@ -9314,6 +9314,8 @@
       "show_explanation": "Hiện giải thích",
       "all_option": "Tất cả",
       "thread_current": "hiện tại",
+      "answer_list_pair": "{first} và {second}",
+      "answer_list_overflow": "{first}, {second} và {count} mục nữa",
       "add_custom": "Thêm",
       "custom_prefix": "+ Tùy chỉnh…",
       "custom_plain": "Tùy chỉnh…",

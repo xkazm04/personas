@@ -1,6 +1,6 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { summarizeSourceDefinition } from '@/features/templates/components/SourceDefinitionInput';
-import { getActiveTranslations, type useTranslation } from '@/i18n/useTranslation';
+import { getActiveTranslations, interpolate, type useTranslation } from '@/i18n/useTranslation';
 import type { QuestionnaireNormalizedOption } from './types';
 
 // ---------------------------------------------------------------------------
@@ -17,8 +17,22 @@ export function summarizeAnswer(
   if (raw === 'all') return t?.templates.adopt_modal.all_option ?? 'All';
   const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
   if (parts.length <= 1) return parts[0] ?? raw;
-  if (parts.length === 2) return parts.join(' and ');
-  return `${parts[0]}, ${parts[1]} +${parts.length - 2} more`;
+  // The conjunction and the overflow suffix are grammar, not punctuation —
+  // locales order and word them differently — so the whole sentence shape
+  // lives in the catalog rather than being assembled here. The English
+  // literals are the no-`t` fallback only (same shape as `all_option`
+  // above); the single live call site always threads `t` through.
+  const first = parts[0]!;
+  const second = parts[1]!;
+  if (parts.length === 2) {
+    const tpl = t?.templates.adopt_modal.answer_list_pair;
+    return tpl ? interpolate(tpl, { first, second }) : `${first} and ${second}`;
+  }
+  const count = parts.length - 2;
+  const tpl = t?.templates.adopt_modal.answer_list_overflow;
+  return tpl
+    ? interpolate(tpl, { first, second, count })
+    : `${first}, ${second} +${count} more`;
 }
 
 // ---------------------------------------------------------------------------
