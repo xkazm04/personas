@@ -8,9 +8,11 @@
  * two sources themselves from drifting apart in either direction.
  */
 import { describe, it, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
 
 import { releasesConfig } from '@/data/releases';
 import en from '@/i18n/locales/en.json';
+import { useReleasesTranslation } from './useReleasesTranslation';
 
 const whatsNew = en.releases.whats_new as unknown as Record<string, string>;
 
@@ -64,4 +66,19 @@ describe('what\'s-new content parity', () => {
       expect(missing).toEqual([]);
     },
   );
+});
+
+describe('useReleasesTranslation identity', () => {
+  it('returns the same `t` across renders when nothing changed', () => {
+    // Every consumer takes `t` as a prop — the pill, the hero, each lane, each
+    // release card. A fresh object literal per render invalidated all of them
+    // on any parent render, which is exactly the work the file's own memo on
+    // the release map was written to avoid.
+    const { result, rerender } = renderHook(() => useReleasesTranslation());
+    const first = result.current.t;
+    rerender();
+    rerender();
+    expect(result.current.t).toBe(first);
+    expect(result.current.t.releases).toBe(first.releases);
+  });
 });

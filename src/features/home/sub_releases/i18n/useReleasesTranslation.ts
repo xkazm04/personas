@@ -90,8 +90,15 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
   const flat = r as unknown as Record<string, string>;
 
   // Rebuilding the nested release map means a regex sweep over every
-  // `whats_new` key once per release; keep it off the render path — it only
-  // changes when the language does.
+  // `whats_new` key once per release; keep it off the render path.
+  //
+  // `flat` IS the dependency, and it is a stable identity, not a per-render
+  // one: `useTranslation`'s bundle proxy resolves each section through a cache
+  // (`getResolvedSection`), so `releases.whats_new` returns the same object
+  // every render and flips exactly once — when the locale's section chunk
+  // finishes loading and the merged bundle replaces the English fallback.
+  // Keying on `language` alone (as this did) both re-ran on nothing and missed
+  // that flip, leaving a non-English reader on English release copy.
   const releases = useMemo(
     () =>
       Object.fromEntries(
@@ -99,12 +106,14 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
           .map((release) => [release.version, buildRelease(flat, release.version)] as const)
           .filter((entry): entry is readonly [string, ReleaseI18n] => entry[1] !== undefined),
       ),
-    // `flat` is a fresh reference every render; language is what changes it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [language],
+    [flat],
   );
 
-  const t: ReleasesTranslation = {
+  // The object around the memo used to be a fresh literal every render, so its
+  // identity changed even when nothing in it did and every consumer taking it
+  // as a prop — the pill, the hero, each lane, each release card — re-rendered
+  // with it. Same two inputs as the map above.
+  const t: ReleasesTranslation = useMemo(() => ({
     title: r.title,
     subtitle: {
       roadmap: r.subtitle_roadmap,
@@ -143,7 +152,7 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
     empty: r.empty,
     laneEmpty: r.lane_empty,
     releases,
-  };
+  }), [r, releases]);
 
   return { t, language };
 }
