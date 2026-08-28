@@ -9,7 +9,7 @@
  * paired. `useTranslation` is the real proxy, so the copy asserted here is the
  * shipped English bundle, not a fixture.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -84,5 +84,49 @@ describe('FleetPairDevice — pairing failure is announced', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent ?? '').toMatch(/pairing failed/i);
+  });
+});
+
+describe('FleetPairDevice — copy confirmation timer', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('clears the copied-reset timer on unmount instead of leaving it pending', async () => {
+    vi.mocked(fleetApi.pairDevice).mockResolvedValue({
+      url: 'http://192.168.1.5:8765/#tok',
+      qrSvg: '<svg/>',
+    } as never);
+    const user = userEvent.setup();
+
+    // Watch the real timer functions rather than swapping in fake ones:
+    // userEvent needs real timers, and a timer armed under real timers is
+    // invisible to vi.getTimerCount() anyway.
+    const armed: unknown[] = [];
+    const realSetTimeout = globalThis.setTimeout;
+    const setSpy = vi
+      .spyOn(globalThis, 'setTimeout')
+      .mockImplementation(((fn: () => void, ms?: number, ...rest: unknown[]) => {
+        const id = (realSetTimeout as (...a: unknown[]) => unknown)(fn, ms, ...rest);
+        if (ms === 1500) armed.push(id);
+        return id;
+      }) as unknown as typeof globalThis.setTimeout);
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    const { unmount } = render(<FleetPairDevice />);
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    await user.click(await screen.findByTestId('fleet-pair-copy'));
+    await screen.findByLabelText(/copied/i);
+
+    // The 1.5s confirmation window is in flight at this point.
+    expect(armed).toHaveLength(1);
+
+    unmount();
+
+    // Without a cleanup effect the callback survives the component and fires
+    // setCopied on a torn-down tree, holding a closure over a view that
+    // displayed a one-time-use pairing token.
+    expect(clearSpy.mock.calls.some((c) => c[0] === armed[0])).toBe(true);
+    setSpy.mockRestore();
   });
 });

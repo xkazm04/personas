@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Smartphone, QrCode, Copy, Check, Lock, ShieldOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -60,15 +60,34 @@ export function FleetPairDevice() {
       .finally(() => setBusy(false));
   }, [refreshDevices]);
 
+  // The 1.5s copy confirmation outlives the component if the operator navigates
+  // away right after copying. Holding the handle in a ref lets the unmount
+  // effect below clear it — this component displays a one-time-use pairing
+  // token, so it is exactly the wrong place to leave a callback holding a
+  // closure over its state after it is gone. Re-copying also cancels the
+  // previous window rather than stacking a second one.
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const copy = useCallback(() => {
     if (!pair) return;
     copyText(pair.url)
       .then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+        if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
+        copiedTimer.current = setTimeout(() => {
+          copiedTimer.current = null;
+          setCopied(false);
+        }, 1500);
       })
       .catch(silentCatch('FleetPairDevice:copy'));
   }, [pair]);
+
+  useEffect(
+    () => () => {
+      if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
+    },
+    [],
+  );
 
   // Revocation is a SECURITY action: the operator clicks Revoke to cut a
   // phone's access and then walks away. Swallowing the failure silently is the
