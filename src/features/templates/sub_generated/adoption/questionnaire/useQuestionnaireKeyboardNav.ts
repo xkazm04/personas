@@ -44,6 +44,14 @@ export function useQuestionnaireKeyboardNav({
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
+      // A nearer handler already claimed this key — SelectPills' roving-focus
+      // arrows are the live case. Without this the window listener would fire
+      // a second time and advance the question under the user's arrow key.
+      if (e.defaultPrevented) return;
+      // Chorded keys belong to the app (or the OS), never to this hook.
+      // Ctrl+3 / Cmd+2 must not pick the third/second stacked option, and
+      // Cmd+Enter is the refine composer's send.
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const tag = target.tagName;
       const isInput = tag === 'INPUT';
       const isTextarea = tag === 'TEXTAREA';
