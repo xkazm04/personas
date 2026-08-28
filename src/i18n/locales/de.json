@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "Dateien zum Importieren ablegen",
       "drop_supported": "Unterstützt: txt, md, html, csv, json, yaml, Codedateien",
       "starting_ingestion": "Import wird gestartet…",
+      "ingest_in_progress": "Ein Import läuft bereits. Warte, bis er abgeschlossen ist.",
       "preparing_ingestion": "Import wird vorbereitet…",
       "ingestion_failed": "Import fehlgeschlagen",
       "ingestion_done": "Fertig! {chunks} Abschnitte aus {docs} Dateien",

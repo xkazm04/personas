@@ -4899,6 +4899,7 @@ export type Translations = {
       drop_to_ingest: string;
       drop_supported: string;
       starting_ingestion: string;
+      ingest_in_progress: string;
       preparing_ingestion: string;
       ingestion_failed: string;
       ingestion_done: string;

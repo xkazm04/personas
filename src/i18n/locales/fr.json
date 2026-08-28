@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "Déposez pour indexer",
       "drop_supported": "Pris en charge : txt, md, html, csv, json, yaml, fichiers de code",
       "starting_ingestion": "Démarrage de l’indexation…",
+      "ingest_in_progress": "Une indexation est déjà en cours. Attendez qu'elle se termine.",
       "preparing_ingestion": "Préparation de l’indexation…",
       "ingestion_failed": "Échec de l’indexation",
       "ingestion_done": "Terminé ! {chunks} blocs issus de {docs} fichiers",

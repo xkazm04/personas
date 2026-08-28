@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "Suelta archivos para ingerir",
       "drop_supported": "Compatible: txt, md, html, csv, json, yaml, archivos de código",
       "starting_ingestion": "Iniciando ingesta…",
+      "ingest_in_progress": "Ya hay una ingesta en curso. Espera a que termine.",
       "preparing_ingestion": "Preparando ingesta…",
       "ingestion_failed": "Ingesta fallida",
       "ingestion_done": "¡Listo! {chunks} fragmentos de {docs} archivos",

@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "इनजेस्ट करने के लिए फ़ाइलें ड्रॉप करें",
       "drop_supported": "समर्थित: txt, md, html, csv, json, yaml, कोड फ़ाइलें",
       "starting_ingestion": "इनजेशन शुरू हो रहा है…",
+      "ingest_in_progress": "एक इंजेशन पहले से चल रहा है। समाप्त होने की प्रतीक्षा करें।",
       "preparing_ingestion": "इनजेशन की तैयारी…",
       "ingestion_failed": "इनजेशन विफल",
       "ingestion_done": "पूर्ण! {docs} फ़ाइलों से {chunks} चंक",

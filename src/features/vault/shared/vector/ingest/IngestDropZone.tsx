@@ -3,19 +3,28 @@ import { Upload } from 'lucide-react';
 import { kbIngestFiles } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 interface IngestDropZoneProps {
   kbId: string;
   onIngestStarted: (jobId: string) => void;
+  /**
+   * True while an ingestion already owns the parent's single job slot. A drop
+   * accepted now would overwrite that job's id, orphaning its progress and its
+   * completion event — so the zone stops inviting the drop and refuses it.
+   */
+  disabled?: boolean;
   children: ReactNode;
 }
 
-export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZoneProps) {
+export function IngestDropZone({ kbId, onIngestStarted, disabled = false, children }: IngestDropZoneProps) {
   const { t } = useTranslation();
   const sh = t.vault.shared;
   const [isDragOver, setIsDragOver] = useState(false);
   const [ingesting, setIngesting] = useState(false);
-  const [dropError, setDropError] = useState<string | null>(null);
+  // `localized` distinguishes a message this component wrote (already in the
+  // user's language) from a raw backend string the error registry must resolve.
+  const [dropError, setDropError] = useState<{ text: string; localized: boolean } | null>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -34,6 +43,12 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
     e.stopPropagation();
     setIsDragOver(false);
 
+    // Say why nothing happened rather than swallowing the drop.
+    if (disabled) {
+      setDropError({ text: sh.ingest_in_progress, localized: true });
+      return;
+    }
+
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
 
@@ -48,7 +63,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
     }
 
     if (paths.length === 0) {
-      setDropError(sh.drop_no_paths);
+      setDropError({ text: sh.drop_no_paths, localized: true });
       return;
     }
 
@@ -58,11 +73,11 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
       const jobId = await kbIngestFiles(kbId, paths);
       onIngestStarted(jobId);
     } catch (err) {
-      setDropError(err instanceof Error ? err.message : String(err));
+      setDropError({ text: err instanceof Error ? err.message : String(err), localized: false });
     } finally {
       setIngesting(false);
     }
-  }, [kbId, onIngestStarted, sh]);
+  }, [kbId, onIngestStarted, disabled, sh]);
 
   return (
     <div
@@ -75,10 +90,13 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
 
       {/* Drop error banner */}
       {dropError && (
-        <div className="absolute top-2 left-2 right-2 z-10 p-2 rounded-card bg-red-500/10 border border-red-500/20 typo-caption text-red-400 flex items-center gap-2">
-          <span className="flex-1">{dropError}</span>
-          <button type="button" onClick={() => setDropError(null)} className="text-red-400/60 hover:text-red-400 shrink-0">&times;</button>
-        </div>
+        <KbErrorNotice
+          raw={dropError.text}
+          localized={dropError.localized}
+          compact
+          onDismiss={() => setDropError(null)}
+          className="absolute top-2 left-2 right-2 z-10"
+        />
       )}
 
       {/* Drop overlay */}
@@ -89,13 +107,18 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
             <div className="w-12 h-12 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Upload className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="typo-body font-medium text-violet-300">{sh.drop_to_ingest}</p>
-            <p className="typo-caption text-foreground">{sh.drop_supported}</p>
+            <p className="typo-body font-medium text-violet-300">{disabled ? sh.ingest_in_progress : sh.drop_to_ingest}</p>
+            {!disabled && <p className="typo-caption text-foreground">{sh.drop_supported}</p>}
           </div>
         </div>
       )}
 
-      {/* Ingesting overlay */}
+      {/*
+        Ingesting overlay. This one KEEPS its ring: a drop is an ACTION, and
+        the golden path requires a real spinner for an action in flight — but
+        the "control" here is the whole zone, so there is no Button to hang it
+        on. It paints violet-500, not the banned border-white/*.
+      */}
       {ingesting && (
         <div className="absolute inset-0 z-10 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
           <div className="flex items-center gap-2">

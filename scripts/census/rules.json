@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 176,
-        "matches": 243
+        "files": 173,
+        "matches": 240
       },
       "floor": 2500
     },
@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 792,
-        "matches": 1923
+        "files": 791,
+        "matches": 1918
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 345,
-        "matches": 783
+        "files": 344,
+        "matches": 779
       },
       "floor": 4000
     },
@@ -1836,8 +1836,8 @@
         }
       ],
       "baseline": {
-        "files": 85,
-        "matches": 120
+        "files": 84,
+        "matches": 119
       },
       "floor": 4000
     },

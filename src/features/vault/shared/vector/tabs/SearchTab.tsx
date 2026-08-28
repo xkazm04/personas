@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, FileText, Clock, ArrowRight, ChevronDown } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import Button from '@/features/shared/components/buttons/Button';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
@@ -9,6 +10,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { trackInteraction } from '@/lib/analytics';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
+import { KbErrorNotice } from '../KbErrorNotice';
 
 /** A compact dropdown over the shared `Listbox` (a raw native select element is a census
  *  violation: raw-select). Trigger shows the current label; options are
@@ -190,19 +192,20 @@ export function SearchTab({ kb }: SearchTabProps) {
               autoFocus
             />
           </div>
-          <button
-            type="button"
+          {/*
+            ACTION control. The hand-rolled ring it replaced also painted
+            `border-white/*`, which the design system bans outright.
+          */}
+          <Button
+            variant="accent"
+            accentColor="violet"
+            icon={<ArrowRight className="w-3.5 h-3.5" />}
+            loading={searching}
+            disabled={!query.trim()}
             onClick={() => void handleSearch()}
-            disabled={!query.trim() || searching}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium rounded-modal bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {searching ? (
-              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <ArrowRight className="w-3.5 h-3.5" />
-            )}
             {sh.search}
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3 typo-caption text-foreground">
@@ -234,11 +237,7 @@ export function SearchTab({ kb }: SearchTabProps) {
 
       {/* Results */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {error && (
-          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400">
-            {error}
-          </div>
-        )}
+        {error && <KbErrorNotice raw={error} className="mx-6 mt-4" />}
 
         {results === null && !error && (
           <EmptyIllustration
