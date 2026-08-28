@@ -115,7 +115,7 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
 
         <div className="h-[420px] bg-background/80 mt-2 rounded-card overflow-hidden">
           {live ? (
-            <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus />
+            <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus live={session?.state !== 'hibernated'} />
           ) : (
             <p className="typo-caption text-foreground/50 px-3 py-4">
               {session ? (session.mode === 'headless' ? COPY.headless : COPY.gone) : COPY.gone}

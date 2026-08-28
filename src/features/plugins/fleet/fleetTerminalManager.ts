@@ -693,6 +693,22 @@ export function focusTerminal(sessionId: string): void {
   registry.get(sessionId)?.term.focus();
 }
 
+/**
+ * Mark a session's terminal live or dead.
+ *
+ * A terminal over a process the doze ticker already killed used to keep
+ * blinking its cursor and accepting keystrokes that went nowhere — the grid
+ * tile knew the session was a tombstone, the pane did not. A dead terminal
+ * stops blinking and refuses stdin, so the scrollback stays readable and
+ * selectable while typing into a corpse is no longer silently swallowed.
+ */
+export function setTerminalLiveness(sessionId: string, live: boolean): void {
+  const m = registry.get(sessionId);
+  if (!m) return;
+  m.term.options.cursorBlink = live;
+  m.term.options.disableStdin = !live;
+}
+
 /** True when the app is currently in a light theme (data-theme="light*"). */
 export function appIsLightTheme(): boolean {
   const t = document.documentElement.getAttribute('data-theme');
