@@ -13,6 +13,8 @@ import {
   kbInferSchema,
   kbRunExtraction,
   kbListEntities,
+  kbPickFiles,
+  kbIngestFiles,
 } from '@/api/vault/database/vectorKb';
 import { trackInteraction } from '@/lib/analytics';
 import { SearchTab } from '../tabs/SearchTab';
@@ -54,6 +56,8 @@ const mockListDocuments = vi.mocked(kbListDocuments);
 const mockInferSchema = vi.mocked(kbInferSchema);
 const mockRunExtraction = vi.mocked(kbRunExtraction);
 const mockListEntities = vi.mocked(kbListEntities);
+const mockPickFiles = vi.mocked(kbPickFiles);
+const mockIngestFiles = vi.mocked(kbIngestFiles);
 
 const KB: KnowledgeBase = {
   id: 'kb-1',
@@ -295,6 +299,31 @@ describe('DocumentsTab — load failure is not "no documents"', () => {
 
     expect(await screen.findByText('No documents yet')).toBeTruthy();
     expect(screen.queryByText('kb offline')).toBeNull();
+  });
+});
+
+describe('DocumentsTab — one job slot, so one start at a time', () => {
+  it('the start controls go inert while an ingestion owns the slot', async () => {
+    mockListDocuments.mockResolvedValue([doc()]);
+    mockPickFiles.mockResolvedValue(['/tmp/a.txt']);
+    mockIngestFiles.mockResolvedValue('job-1');
+
+    render(<DocumentsTab kb={KB} onRefresh={() => {}} />);
+
+    const browse = await screen.findByRole('button', { name: /Browse Files/i });
+    expect(browse.hasAttribute('disabled')).toBe(false);
+
+    await act(async () => {
+      fireEvent.click(browse);
+    });
+
+    // Every control that would claim the single activeJobId slot is now inert;
+    // a second start would overwrite job-1 and orphan its completion event.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Browse Files/i }).hasAttribute('disabled')).toBe(true);
+    });
+    expect(screen.getByRole('button', { name: /Paste Text/i }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: /Directory/i }).hasAttribute('disabled')).toBe(true);
   });
 });
 

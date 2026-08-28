@@ -4893,6 +4893,7 @@
       "drop_to_ingest": "Drop files to ingest",
       "drop_supported": "Supported: txt, md, html, csv, json, yaml, code files",
       "starting_ingestion": "Starting ingestion...",
+      "ingest_in_progress": "An ingestion is already running. Wait for it to finish.",
       "preparing_ingestion": "Preparing ingestion...",
       "ingestion_failed": "Ingestion failed",
       "ingestion_done": "Done! {chunks} chunks from {docs} files",

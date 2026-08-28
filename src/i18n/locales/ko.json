@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "파일을 드롭해 수집",
       "drop_supported": "지원: txt, md, html, csv, json, yaml, 코드 파일",
       "starting_ingestion": "수집 시작 중…",
+      "ingest_in_progress": "이미 수집이 진행 중입니다. 완료될 때까지 기다려 주세요.",
       "preparing_ingestion": "수집 준비 중…",
       "ingestion_failed": "수집 실패",
       "ingestion_done": "완료! {docs}개 파일에서 {chunks}개 청크",

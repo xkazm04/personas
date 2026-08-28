@@ -84,6 +84,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
     <div className="flex flex-col h-full">
       <DocToolbar
         documentCount={documents.length}
+        ingestBusy={activeJobId !== null}
         onRefresh={() => void fetchDocuments()}
         onShowTextModal={() => setShowTextModal(true)}
         onBrowseFiles={() => void handleBrowseFiles()}
@@ -110,7 +111,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         )}
 
         {!loading && documents.length === 0 && !error && (
-          <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted}>
+          <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted} disabled={activeJobId !== null}>
             <EmptyIllustration
               icon={Upload}
               heading={t.vault.shared.no_documents_heading}
@@ -123,7 +124,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         {documents.length > 0 && <CorpusOverview kbId={kb.id} />}
 
         {documents.length > 0 && (
-          <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted}>
+          <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted} disabled={activeJobId !== null}>
             <div className="p-4 space-y-1">
               {documents.map((doc) => (
                 <div

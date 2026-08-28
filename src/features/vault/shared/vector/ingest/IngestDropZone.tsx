@@ -7,10 +7,16 @@ import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow
 interface IngestDropZoneProps {
   kbId: string;
   onIngestStarted: (jobId: string) => void;
+  /**
+   * True while an ingestion already owns the parent's single job slot. A drop
+   * accepted now would overwrite that job's id, orphaning its progress and its
+   * completion event — so the zone stops inviting the drop and refuses it.
+   */
+  disabled?: boolean;
   children: ReactNode;
 }
 
-export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZoneProps) {
+export function IngestDropZone({ kbId, onIngestStarted, disabled = false, children }: IngestDropZoneProps) {
   const { t } = useTranslation();
   const sh = t.vault.shared;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -33,6 +39,12 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
+
+    // Say why nothing happened rather than swallowing the drop.
+    if (disabled) {
+      setDropError(sh.ingest_in_progress);
+      return;
+    }
 
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
@@ -62,7 +74,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
     } finally {
       setIngesting(false);
     }
-  }, [kbId, onIngestStarted, sh]);
+  }, [kbId, onIngestStarted, disabled, sh]);
 
   return (
     <div
@@ -89,8 +101,8 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
             <div className="w-12 h-12 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Upload className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="typo-body font-medium text-violet-300">{sh.drop_to_ingest}</p>
-            <p className="typo-caption text-foreground">{sh.drop_supported}</p>
+            <p className="typo-body font-medium text-violet-300">{disabled ? sh.ingest_in_progress : sh.drop_to_ingest}</p>
+            {!disabled && <p className="typo-caption text-foreground">{sh.drop_supported}</p>}
           </div>
         </div>
       )}

@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "أسقط الملفات للاستيعاب",
       "drop_supported": "المدعوم: txt، md، html، csv، json، yaml، ملفات الكود",
       "starting_ingestion": "جارٍ بدء الاستيعاب…",
+      "ingest_in_progress": "هناك عملية استيعاب جارية بالفعل. انتظر حتى تنتهي.",
       "preparing_ingestion": "جارٍ الإعداد للاستيعاب…",
       "ingestion_failed": "فشل الاستيعاب",
       "ingestion_done": "تم! {chunks} قسم من {docs} ملف",

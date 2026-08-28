@@ -4590,6 +4590,7 @@
       "drop_to_ingest": "ファイルをドロップして取り込む",
       "drop_supported": "対応形式: txt、md、html、csv、json、yaml、コードファイル",
       "starting_ingestion": "取り込み開始中…",
+      "ingest_in_progress": "取り込みはすでに実行中です。完了までお待ちください。",
       "preparing_ingestion": "取り込みを準備中…",
       "ingestion_failed": "取り込みに失敗しました",
       "ingestion_done": "完了！{docs}ファイルから{chunks}チャンク",
