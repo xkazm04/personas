@@ -326,8 +326,32 @@ export function getTriggerTemplates(t: Translations = en): TriggerTemplate[] {
 export const WEBHOOK_BASE_URL: string =
   (import.meta.env.VITE_WEBHOOK_BASE_URL as string | undefined) || 'http://localhost:9420';
 
+/**
+ * Whether a webhook base URL points at the loopback interface (dev mode).
+ *
+ * Structural, not a substring test. `WEBHOOK_BASE_URL` is operator-configurable
+ * (`VITE_WEBHOOK_BASE_URL`), and `.includes('localhost')` — what this used to be
+ * — answers yes for `https://localhost.example.com/hooks` and for any URL with
+ * the word anywhere in its path or query. The dev-only affordance gated on the
+ * flag then renders in production. Compare the parsed `hostname` against the
+ * loopback names exactly instead; an unparseable URL is treated as non-local,
+ * because the safe default for a dev affordance is "off".
+ */
+export function isLoopbackUrl(url: string): boolean {
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    // intentional: a malformed base URL is not evidence of a dev environment.
+    return false;
+  }
+  // `new URL` keeps IPv6 hosts in brackets: `http://[::1]:9420` → `[::1]`.
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 /** Whether the webhook URL is pointing at the default localhost (dev mode). */
-export const IS_WEBHOOK_LOCALHOST: boolean = WEBHOOK_BASE_URL.includes('localhost');
+export const IS_WEBHOOK_LOCALHOST: boolean = isLoopbackUrl(WEBHOOK_BASE_URL);
 
 /** Build the full webhook URL for a given trigger ID. */
 export function getWebhookUrl(triggerId: string): string {
