@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseWorkflowFile, ROUTABLE_PLATFORMS, supportedFormatsSentence } from '../workflowParser';
+import { parseWorkflowFile, loadWorkflowYaml, ROUTABLE_PLATFORMS, supportedFormatsSentence } from '../workflowParser';
 import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
 import {
   detectWorkflowPlatform,
@@ -345,5 +345,51 @@ describe('parseWorkflowFile', () => {
   it('normalizes YAML to JSON in rawJson so storage is format-agnostic', () => {
     const parsed = parseWorkflowFile('name: CI\njobs:\n  build:\n    runs-on: ubuntu-latest\n', 'ci.yml');
     expect(JSON.parse(parsed.rawJson)).toEqual({ name: 'CI', jobs: { build: { 'runs-on': 'ubuntu-latest' } } });
+  });
+});
+
+/**
+ * The upload preview used to decide a `.yml` drop was GitHub Actions by
+ * scanning the raw text for `jobs:` and then reported `nodeCount: 0` — it never
+ * parsed the YAML, so the card promised a workflow with no steps while the
+ * parser went on to find every job. These assert the pair the preview now
+ * routes through instead.
+ */
+describe('YAML preview: one parse, one detection, one count', () => {
+  const ghaYaml = [
+    'name: CI',
+    'on: [push]',
+    'jobs:',
+    '  build:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - run: npm ci',
+    '  test:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - run: npm test',
+    '',
+  ].join('\n');
+
+  it('counts the real jobs a GitHub Actions workflow declares', () => {
+    const doc = loadWorkflowYaml(ghaYaml);
+    expect(detectWorkflowPlatform(doc, '.yml').platform).toBe('github-actions');
+    // The substring scan hardcoded 0 here.
+    expect(countElements(doc)).toEqual({ count: 2, label: 'job' });
+    // ...and the parser agrees, which is the whole point.
+    const stored = JSON.parse(parseWorkflowFile(ghaYaml, 'ci.yml').rawJson) as { jobs: object };
+    expect(Object.keys(stored.jobs)).toHaveLength(2);
+  });
+
+  it('is not fooled by the text "jobs:" inside a comment', () => {
+    const decoy = ['name: notes', '# jobs: none of these are real', 'value: 1', ''].join('\n');
+    expect(decoy.includes('jobs:')).toBe(true); // the old substring check passed on this
+    const doc = loadWorkflowYaml(decoy);
+    expect(detectWorkflowPlatform(doc, '.yml').platform).toBe('unknown');
+  });
+
+  it('surfaces malformed YAML as a parse failure rather than a valid preview', () => {
+    expect(() => loadWorkflowYaml('jobs:\n  build:\n   - [1,')).toThrow();
+    expect(() => loadWorkflowYaml('just a scalar')).toThrow(/valid object/);
   });
 });
