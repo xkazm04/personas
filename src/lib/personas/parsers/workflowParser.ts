@@ -40,6 +40,48 @@ const WORKFLOW_YAML_LOAD_LIMITS: BoundedLoadOptions = {
   maxMergeSeqLength: 20,
 };
 
+type KnownPlatform = Exclude<WorkflowPlatform, 'unknown'>;
+
+interface PlatformAdapter {
+  parse: (data: Record<string, unknown>) => AgentIR;
+  /** The file extensions this platform exports as, as shown to the user. */
+  extensions: string;
+}
+
+/**
+ * The single enumeration of routable platforms.
+ *
+ * Declared as a TOTAL `Record<KnownPlatform, ...>` on purpose: adding a member
+ * to `WorkflowPlatform` now fails `tsc` here until it is routed. There used to
+ * be three hand-written enumerations of the same set — the detector's labels,
+ * the router's `switch`, and the speculative-parse array — and nothing compared
+ * them, so `github-actions` went missing from the third while the refusal
+ * message printed by that very function went on listing GitHub Actions as
+ * supported: a list disagreeing with its own advertisement, under a green test
+ * suite. The switch and the array are both derived from this table now, and so
+ * is the advertisement.
+ *
+ * Declaration order IS the speculative-parse order and is load-bearing: the
+ * three JSON-family adapters are tried before GitHub Actions so they win the
+ * stable-sort tie-break on equal output.
+ */
+const PLATFORM_ADAPTERS: Record<KnownPlatform, PlatformAdapter> = {
+  'n8n': { parse: parseN8nWorkflow, extensions: '.json' },
+  'zapier': { parse: parseZapierWorkflow, extensions: '.json' },
+  'make': { parse: parseMakeWorkflow, extensions: '.json' },
+  'github-actions': { parse: parseGithubActionsWorkflow, extensions: '.yml/.yaml' },
+};
+
+/** Every platform the parser can route to, in speculative-parse order. */
+export const ROUTABLE_PLATFORMS = Object.keys(PLATFORM_ADAPTERS) as readonly KnownPlatform[];
+
+/** The refusal message's supported-format list, derived from the routing table. */
+export function supportedFormatsSentence(): string {
+  return ROUTABLE_PLATFORMS.map(
+    (platform) => `${PLATFORM_LABELS[platform]} (${PLATFORM_ADAPTERS[platform].extensions})`,
+  ).join(', ');
+}
+
 export interface WorkflowParseResult {
   /** The detected platform */
   detection: DetectionResult;
@@ -109,31 +151,18 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   let result: AgentIR;
   let finalDetection = detection;
 
-  switch (detection.platform) {
-    case 'n8n':
-      result = parseN8nWorkflow(parsed);
-      break;
-    case 'zapier':
-      result = parseZapierWorkflow(parsed);
-      break;
-    case 'make':
-      result = parseMakeWorkflow(parsed);
-      break;
-    case 'github-actions':
-      result = parseGithubActionsWorkflow(parsed);
-      break;
-    case 'unknown': {
-      // Attempt all parsers and pick the best candidate
-      const fallback = tryParsers(parsed);
-      result = fallback.result;
-      finalDetection = {
-        platform: fallback.platform,
-        confidence: fallback.confidence,
-        label: PLATFORM_LABELS[fallback.platform],
-        format: detection.format,
-      };
-      break;
-    }
+  if (detection.platform === 'unknown') {
+    // Attempt every routable parser and pick the best candidate
+    const fallback = tryParsers(parsed);
+    result = fallback.result;
+    finalDetection = {
+      platform: fallback.platform,
+      confidence: fallback.confidence,
+      label: PLATFORM_LABELS[fallback.platform],
+      format: detection.format,
+    };
+  } else {
+    result = PLATFORM_ADAPTERS[detection.platform].parse(parsed);
   }
 
   // Confidence is not decoration: it is the bit that decides whether the review
@@ -154,7 +183,7 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
 
 interface TryParsersResult {
   result: AgentIR;
-  platform: Exclude<WorkflowPlatform, 'unknown'>;
+  platform: KnownPlatform;
   confidence: DetectionResult['confidence'];
 }
 
@@ -164,24 +193,12 @@ interface TryParsersResult {
  * Confidence is 'medium' when exactly one parser succeeds, 'low' when multiple do.
  */
 function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
-  const candidates: Array<{ platform: Exclude<WorkflowPlatform, 'unknown'>; result: AgentIR; nodeCount: number }> = [];
+  const candidates: Array<{ platform: KnownPlatform; result: AgentIR; nodeCount: number }> = [];
   const errors: string[] = [];
 
-  const parsers: Array<{ platform: Exclude<WorkflowPlatform, 'unknown'>; parse: (d: Record<string, unknown>) => AgentIR }> = [
-    { platform: 'n8n', parse: parseN8nWorkflow },
-    { platform: 'zapier', parse: parseZapierWorkflow },
-    { platform: 'make', parse: parseMakeWorkflow },
-    // Last on purpose: the three above are the JSON-family adapters and win the
-    // stable-sort tie-break. GHA was omitted entirely, so a YAML file whose
-    // fingerprint missed (jobs nested unexpectedly, `on:` absent) fell through
-    // to a refusal that LISTED GitHub Actions as supported without ever having
-    // run its adapter, and reported no error for it.
-    { platform: 'github-actions', parse: parseGithubActionsWorkflow },
-  ];
-
-  for (const { platform, parse } of parsers) {
+  for (const platform of ROUTABLE_PLATFORMS) {
     try {
-      const result = parse(parsed);
+      const result = PLATFORM_ADAPTERS[platform].parse(parsed);
       // Count meaningful output as a quality signal
       const nodeCount = (result.suggested_tools?.length ?? 0) + (result.suggested_triggers?.length ?? 0) + (result.suggested_connectors?.length ?? 0);
       candidates.push({ platform, result, nodeCount });
@@ -192,7 +209,7 @@ function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
 
   if (candidates.length === 0) {
     throw new Error(
-      `Could not identify the workflow platform. Supported formats: n8n (.json), Zapier (.json), Make (.json), GitHub Actions (.yml/.yaml).\n\nParser errors:\n${errors.join('\n')}`,
+      `Could not identify the workflow platform. Supported formats: ${supportedFormatsSentence()}.\n\nParser errors:\n${errors.join('\n')}`,
     );
   }
 

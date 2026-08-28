@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseWorkflowFile } from '../workflowParser';
+import { parseWorkflowFile, ROUTABLE_PLATFORMS, supportedFormatsSentence } from '../workflowParser';
 import {
   detectWorkflowPlatform,
   countElements,
   isSupportedFile,
   detectPlatformLabel,
+  PLATFORM_LABELS,
 } from '../workflowDetector';
 
 const n8nExport = {
@@ -70,6 +71,38 @@ describe('detector helpers', () => {
   it('falls back to a generic label for unrecognized content', () => {
     expect(detectPlatformLabel(n8nExport)).toBe('n8n');
     expect(detectPlatformLabel({ hello: 'world' })).toBe('Workflow');
+  });
+});
+
+// Three hand-written enumerations of the same set, with nothing comparing them,
+// is how `github-actions` went missing from the speculative-parse array while
+// the refusal message that array prints went on advertising it as supported.
+// The routing table is now the single enumeration; these assert nothing has
+// drifted away from it again.
+describe('parser coverage is derived from the platform union', () => {
+  it('routes every platform the detector can name', () => {
+    const named = (Object.keys(PLATFORM_LABELS) as Array<keyof typeof PLATFORM_LABELS>).filter(
+      (platform) => platform !== 'unknown',
+    );
+    expect([...ROUTABLE_PLATFORMS].sort()).toEqual([...named].sort());
+  });
+
+  it('advertises exactly the platforms it routes', () => {
+    const advertised = supportedFormatsSentence();
+    for (const platform of ROUTABLE_PLATFORMS) {
+      expect(advertised).toContain(PLATFORM_LABELS[platform]);
+    }
+    expect(advertised.split(',').length).toBe(ROUTABLE_PLATFORMS.length);
+  });
+
+  it('prints that same list in the refusal a user actually sees', () => {
+    let message = '';
+    try {
+      parseWorkflowFile(JSON.stringify({ hello: 'world' }), 'nope.json');
+    } catch (err) {
+      message = err instanceof Error ? err.message : '';
+    }
+    expect(message).toContain(supportedFormatsSentence());
   });
 });
 
