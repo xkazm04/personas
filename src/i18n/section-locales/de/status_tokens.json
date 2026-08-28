@@ -206,5 +206,20 @@
     "stuck_reclaimed": "Zurückgeholt und neu eingereiht",
     "stuck_retry_exhausted": "Zurückgeholt, Versuche erschöpft",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "memory_tier": {
+    "core": "Kern",
+    "active": "Aktiv",
+    "working": "In Arbeit",
+    "archive": "Archiviert"
+  },
+  "memory_action": {
+    "kept": "Behalten",
+    "deleted": "Gelöscht",
+    "error": "Fehler",
+    "proposed_delete": "Löschen vorgeschlagen",
+    "proposed_update_importance": "Neubewertung vorgeschlagen",
+    "proposed_synthesize": "Zusammenführen vorgeschlagen",
+    "proposed_archive": "Archivieren vorgeschlagen"
   }
 }

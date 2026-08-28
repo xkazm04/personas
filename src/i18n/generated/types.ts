@@ -13124,6 +13124,21 @@ export type Translations = {
       stuck_reclaimed: string;
       stuck_retry_exhausted: string;
     };
+    memory_tier: {
+      core: string;
+      active: string;
+      working: string;
+      archive: string;
+    };
+    memory_action: {
+      kept: string;
+      deleted: string;
+      error: string;
+      proposed_delete: string;
+      proposed_update_importance: string;
+      proposed_synthesize: string;
+      proposed_archive: string;
+    };
   };
   project_overview: {
     today_activity_heading: string;

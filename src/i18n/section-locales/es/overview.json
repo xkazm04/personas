@@ -1158,7 +1158,14 @@
     "no_patterns_match": "Ningún patrón coincide con los filtros actuales",
     "recent_learnings": "Aprendizajes recientes",
     "curating_manually": "¿Cura documentos manualmente?",
-    "obsidian_tip": "Para menos de ~1000 notas, un conector de Obsidian puede sincronizar su bóveda directamente."
+    "obsidian_tip": "Para menos de ~1000 notas, un conector de Obsidian puede sincronizar su bóveda directamente.",
+    "type_tool_sequence": "Secuencias de herramientas",
+    "type_failure_pattern": "Patrones de fallo",
+    "type_cost_quality": "Coste / calidad",
+    "type_model_performance": "Rendimiento del modelo",
+    "type_data_flow": "Flujos de datos",
+    "type_agent_annotation": "Anotación del agente",
+    "type_user_annotation": "Anotación del usuario"
   },
   "focused_decision": {
     "accept": "Aceptar",

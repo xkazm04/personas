@@ -1158,7 +1158,14 @@
     "no_patterns_match": "没有模式匹配当前过滤器",
     "recent_learnings": "近期学习内容",
     "curating_manually": "手动整理文档？",
-    "obsidian_tip": "对于少于约 1000 条的笔记，Obsidian 连接器可直接同步您的保险库。"
+    "obsidian_tip": "对于少于约 1000 条的笔记，Obsidian 连接器可直接同步您的保险库。",
+    "type_tool_sequence": "工具序列",
+    "type_failure_pattern": "失败模式",
+    "type_cost_quality": "成本 / 质量",
+    "type_model_performance": "模型性能",
+    "type_data_flow": "数据流",
+    "type_agent_annotation": "代理注释",
+    "type_user_annotation": "用户注释"
   },
   "focused_decision": {
     "accept": "接受",

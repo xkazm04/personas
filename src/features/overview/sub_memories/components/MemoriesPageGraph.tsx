@@ -21,6 +21,8 @@ import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import { DebtText } from '@/i18n/DebtText';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface NodePosition { x: number; y: number; }
 
@@ -471,6 +473,7 @@ function DetailPanel({
 }: {
   memory: PersonaMemory; personaName: string; onClose: () => void; onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const color = categoryColor(memory.category).hex;
   const lastSeen = memory.last_accessed_at ?? memory.updated_at;
   const colors = MEMORY_CATEGORY_COLORS[memory.category];
@@ -500,7 +503,9 @@ function DetailPanel({
 
       <div className="grid grid-cols-3 gap-2 mb-3">
         <DetailStat label="Importance" value={`${memory.importance}/5`} tone="text-amber-300" />
-        <DetailStat label="Tier" value={memory.tier} tone="text-foreground" />
+        {/* Machine token from the backend — resolved through the token map, not
+            printed raw (see the same fix on the dense table's Tier column). */}
+        <DetailStat label="Tier" value={tokenLabel(t, 'memory_tier', memory.tier)} tone="text-foreground" />
         <DetailStat label="Hits" value={memory.access_count} tone="text-emerald-300" />
       </div>
 

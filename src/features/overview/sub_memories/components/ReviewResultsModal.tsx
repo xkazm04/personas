@@ -2,6 +2,7 @@ import { Sparkles, X, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { MemoryReviewResult } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface ReviewResultsModalProps {
   reviewResult: MemoryReviewResult | null;
@@ -93,8 +94,12 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                             </p>
                           )}
                         </div>
+                        {/* `action` is a raw Rust token ("kept"/"deleted"/
+                            "error"/"proposed_*"). It rendered verbatim as the
+                            row's right-hand label in every locale; the token
+                            map is the sanctioned resolver. */}
                         <span className={`typo-heading flex-shrink-0 ${actionCls}`}>
-                          {d.action}
+                          {tokenLabel(t, 'memory_action', d.action)}
                         </span>
                       </div>
                     );

@@ -1158,7 +1158,14 @@
     "no_patterns_match": "현재 필터와 일치하는 패턴이 없습니다",
     "recent_learnings": "최근 학습",
     "curating_manually": "문서를 수동으로 큐레이팅하고 있나요?",
-    "obsidian_tip": "노트가 ~1000개 미만인 경우 Obsidian 커넥터가 볼트를 직접 동기화할 수 있습니다."
+    "obsidian_tip": "노트가 ~1000개 미만인 경우 Obsidian 커넥터가 볼트를 직접 동기화할 수 있습니다.",
+    "type_tool_sequence": "도구 시퀀스",
+    "type_failure_pattern": "실패 패턴",
+    "type_cost_quality": "비용 / 품질",
+    "type_model_performance": "모델 성능",
+    "type_data_flow": "데이터 흐름",
+    "type_agent_annotation": "에이전트 주석",
+    "type_user_annotation": "사용자 주석"
   },
   "focused_decision": {
     "accept": "수락",

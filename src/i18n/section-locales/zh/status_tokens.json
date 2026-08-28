@@ -206,5 +206,20 @@
     "stuck_reclaimed": "已回收并重新排队",
     "stuck_retry_exhausted": "已回收，重试次数用尽",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "memory_tier": {
+    "core": "核心",
+    "active": "活跃",
+    "working": "工作中",
+    "archive": "已归档"
+  },
+  "memory_action": {
+    "kept": "保留",
+    "deleted": "已删除",
+    "error": "错误",
+    "proposed_delete": "建议删除",
+    "proposed_update_importance": "建议重新评分",
+    "proposed_synthesize": "建议合并",
+    "proposed_archive": "建议归档"
   }
 }

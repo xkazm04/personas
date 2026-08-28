@@ -12825,6 +12825,21 @@
       "stuck_reclaimed": "Đã thu hồi và xếp lại hàng đợi",
       "stuck_retry_exhausted": "Đã thu hồi, hết lượt thử lại",
       "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+    },
+    "memory_tier": {
+      "core": "Cốt lõi",
+      "active": "Đang hoạt động",
+      "working": "Đang xử lý",
+      "archive": "Đã lưu trữ"
+    },
+    "memory_action": {
+      "kept": "Đã giữ lại",
+      "deleted": "Đã xoá",
+      "error": "Lỗi",
+      "proposed_delete": "Đề xuất xoá",
+      "proposed_update_importance": "Đề xuất đánh giá lại",
+      "proposed_synthesize": "Đề xuất hợp nhất",
+      "proposed_archive": "Đề xuất lưu trữ"
     }
   },
   "project_overview": {

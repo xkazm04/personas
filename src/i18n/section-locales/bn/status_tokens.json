@@ -206,5 +206,20 @@
     "stuck_reclaimed": "পুনরুদ্ধার করে আবার সারিতে রাখা হয়েছে",
     "stuck_retry_exhausted": "পুনরুদ্ধার করা হয়েছে, পুনঃচেষ্টা শেষ",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "memory_tier": {
+    "core": "মূল",
+    "active": "সক্রিয়",
+    "working": "কার্যকরী",
+    "archive": "সংরক্ষিত"
+  },
+  "memory_action": {
+    "kept": "রাখা হয়েছে",
+    "deleted": "মুছে ফেলা হয়েছে",
+    "error": "ত্রুটি",
+    "proposed_delete": "মুছে ফেলার প্রস্তাব",
+    "proposed_update_importance": "গুরুত্ব পুনর্নির্ধারণের প্রস্তাব",
+    "proposed_synthesize": "একত্র করার প্রস্তাব",
+    "proposed_archive": "সংরক্ষণের প্রস্তাব"
   }
 }

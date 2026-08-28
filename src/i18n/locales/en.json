@@ -13117,6 +13117,21 @@
       "dry_run": "Dry run (simulated)",
       "stuck_reclaimed": "Reclaimed and requeued",
       "stuck_retry_exhausted": "Reclaimed, retries exhausted"
+    },
+    "memory_tier": {
+      "core": "Core",
+      "active": "Active",
+      "working": "Working",
+      "archive": "Archived"
+    },
+    "memory_action": {
+      "kept": "Kept",
+      "deleted": "Deleted",
+      "error": "Error",
+      "proposed_delete": "Delete proposed",
+      "proposed_update_importance": "Re-score proposed",
+      "proposed_synthesize": "Merge proposed",
+      "proposed_archive": "Archive proposed"
     }
   },
   "project_overview": {

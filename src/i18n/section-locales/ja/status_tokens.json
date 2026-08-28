@@ -206,5 +206,20 @@
     "stuck_reclaimed": "再取得してキューに戻しました",
     "stuck_retry_exhausted": "再取得しましたが、再試行の上限に達しました",
     "_comment_section": "Why an event on the bus ended WITHOUT starting a run. Short table-cell labels, 2-4 words. 'Agent is off' / 'Handoff target is off' refer to a persona's Active/Off switch, NOT deletion."
+  },
+  "memory_tier": {
+    "core": "コア",
+    "active": "アクティブ",
+    "working": "作業中",
+    "archive": "アーカイブ済み"
+  },
+  "memory_action": {
+    "kept": "保持",
+    "deleted": "削除済み",
+    "error": "エラー",
+    "proposed_delete": "削除の提案",
+    "proposed_update_importance": "重要度見直しの提案",
+    "proposed_synthesize": "統合の提案",
+    "proposed_archive": "アーカイブの提案"
   }
 }

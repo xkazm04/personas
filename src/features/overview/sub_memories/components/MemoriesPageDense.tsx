@@ -14,6 +14,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { deleteAllMemories } from '@/api/overview/memories';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -533,6 +534,7 @@ function DenseRow({
 }: {
   memory: PersonaMemory; index: number; personaName: string; personaColor: string; isSelected: boolean; onSelect: () => void;
 }) {
+  const { t } = useTranslation();
   const lastSeen = memory.last_accessed_at ?? memory.updated_at;
   const importancePct = (memory.importance / 5) * 100;
   const importanceHex = importanceColor(memory.importance);
@@ -569,8 +571,12 @@ function DenseRow({
         </div>
       </div>
       <div className={`${COL_WIDTHS.tier} px-2 py-2`}>
+        {/* `tier` is a language-agnostic machine token from the Rust side
+            ("core"/"active"/"working"/"archive"); rendering it raw showed
+            English in all 14 locales and gave a backend rename no compile-time
+            link to this cell. tokenLabel is the contract's resolver. */}
         <span className={`inline-flex items-center px-1.5 py-0.5 typo-caption font-medium rounded-input border ${tierClass}`}>
-          {memory.tier}
+          {tokenLabel(t, 'memory_tier', memory.tier)}
         </span>
       </div>
       <div className={`${COL_WIDTHS.access} px-2 py-2 text-right`}>

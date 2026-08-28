@@ -1158,7 +1158,14 @@
     "no_patterns_match": "لا توجد أنماط تطابق عوامل التصفية الحالية",
     "recent_learnings": "الدروس الأخيرة",
     "curating_manually": "تنسيق المستندات يدوياً؟",
-    "obsidian_tip": "لأقل من ~1000 ملاحظة، يمكن لموصّل Obsidian مزامنة خزنتك مباشرة."
+    "obsidian_tip": "لأقل من ~1000 ملاحظة، يمكن لموصّل Obsidian مزامنة خزنتك مباشرة.",
+    "type_tool_sequence": "تسلسلات الأدوات",
+    "type_failure_pattern": "أنماط الفشل",
+    "type_cost_quality": "التكلفة / الجودة",
+    "type_model_performance": "أداء النموذج",
+    "type_data_flow": "تدفقات البيانات",
+    "type_agent_annotation": "تعليق الوكيل",
+    "type_user_annotation": "تعليق المستخدم"
   },
   "focused_decision": {
     "accept": "قبول",

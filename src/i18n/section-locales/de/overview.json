@@ -1158,7 +1158,14 @@
     "no_patterns_match": "Keine Muster entsprechen den aktuellen Filtern",
     "recent_learnings": "Kürzlich gelernt",
     "curating_manually": "Dokumente manuell kuratieren?",
-    "obsidian_tip": "Für weniger als ~1000 Notizen kann ein Obsidian-Konnektor Ihren Vault direkt synchronisieren."
+    "obsidian_tip": "Für weniger als ~1000 Notizen kann ein Obsidian-Konnektor Ihren Vault direkt synchronisieren.",
+    "type_tool_sequence": "Werkzeugsequenzen",
+    "type_failure_pattern": "Fehlermuster",
+    "type_cost_quality": "Kosten / Qualität",
+    "type_model_performance": "Modellleistung",
+    "type_data_flow": "Datenflüsse",
+    "type_agent_annotation": "Agent-Anmerkung",
+    "type_user_annotation": "Benutzer-Anmerkung"
   },
   "focused_decision": {
     "accept": "Akzeptieren",
