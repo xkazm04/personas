@@ -13557,6 +13557,7 @@
       "broadcast_failed_all": "La difusión falló: 0 de {total} entregados",
       "broadcast_retry_hint": "Estas sesiones no lo recibieron. La selección ahora apunta solo a ellas: pulsa Enviar para reintentar.",
       "terminal_session_gone": "Esta sesión ya no está disponible: puede haber terminado o haber sido eliminada. Cierra y vuelve a abrir este panel para reintentarlo.",
+      "terminal_output_stalled": "La salida en vivo dejó de llegar en todas las sesiones: reconectando. Lo que escribas sigue llegando a esta terminal.",
       "pair_generate": "Vincular este teléfono",
       "pair_generating": "Generando token del dispositivo…",
       "pair_scan_hint": "Escanee con la cámara de su teléfono en la misma Wi-Fi y luego añada la página a su pantalla de inicio.",

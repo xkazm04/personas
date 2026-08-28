@@ -13557,6 +13557,7 @@
       "broadcast_failed_all": "Phát sóng thất bại — 0 trên {total} được gửi",
       "broadcast_retry_hint": "Các phiên này chưa nhận được. Lựa chọn hiện chỉ nhắm đến chúng — nhấn Gửi để thử lại.",
       "terminal_session_gone": "Phiên này không còn khả dụng — có thể nó đã thoát hoặc bị xóa. Đóng rồi mở lại khung này để thử lại.",
+      "terminal_output_stalled": "Đầu ra trực tiếp đã ngừng đến với mọi phiên — đang kết nối lại. Những gì bạn gõ vẫn tới được terminal này.",
       "pair_generate": "Ghép nối điện thoại này",
       "pair_generating": "Đang tạo mã thông báo thiết bị…",
       "pair_scan_hint": "Quét bằng camera điện thoại trên cùng mạng Wi-Fi, sau đó thêm trang vào màn hình chính.",

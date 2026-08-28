@@ -49,6 +49,7 @@
     "broadcast_failed_all": "Vysílání selhalo – doručeno 0 z {total}",
     "broadcast_retry_hint": "Tyto relace zprávu neobdržly. Výběr nyní zahrnuje pouze je – opakujte stiskem tlačítka Odeslat.",
     "terminal_session_gone": "Tato relace již není dostupná – mohla skončit nebo být odebrána. Zavřete a znovu otevřete tento panel a zkuste to znovu.",
+    "terminal_output_stalled": "Živý výstup přestal přicházet u všech relací – probíhá opětovné připojení. Váš vstup se do tohoto terminálu stále dostává.",
     "pair_generate": "Spárovat tento telefon",
     "pair_generating": "Vytvářím token zařízení…",
     "pair_scan_hint": "Naskenujte fotoaparátem telefonu na stejné Wi-Fi a poté si stránku přidejte na plochu telefonu.",

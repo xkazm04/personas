@@ -13557,6 +13557,7 @@
       "broadcast_failed_all": "Siaran gagal — 0 dari {total} terkirim",
       "broadcast_retry_hint": "Sesi berikut tidak menerimanya. Pilihan kini hanya menyasar mereka — tekan Kirim untuk mencoba lagi.",
       "terminal_session_gone": "Sesi ini tidak lagi tersedia — mungkin sudah berhenti atau dihapus. Tutup lalu buka kembali panel ini untuk mencoba lagi.",
+      "terminal_output_stalled": "Keluaran langsung berhenti masuk untuk semua sesi — sedang menyambungkan ulang. Masukan Anda tetap sampai ke terminal ini.",
       "pair_generate": "Tautkan ponsel ini",
       "pair_generating": "Membuat token perangkat…",
       "pair_scan_hint": "Pindai dengan kamera ponsel di Wi-Fi yang sama, lalu tambahkan halaman ke layar utama.",

@@ -8,7 +8,7 @@
  * `parked`, `attached`, the cols/rows the child was last told about), which is
  * where every defect this file pins actually lived.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 class FakeTerminal {
   cols = 80;
@@ -94,6 +94,7 @@ vi.mock('@/api/fleet/fleet', () => ({
 vi.mock('@/api/system/system', () => ({ openExternalUrl: vi.fn().mockResolvedValue(null) }));
 
 import * as fleetApi from '@/api/fleet/fleet';
+import { listen } from '@tauri-apps/api/event';
 import {
   attachTerminal,
   configureFleetTerminals,
@@ -102,6 +103,7 @@ import {
   gcTerminals,
   getFleetTerminalStats,
   setFleetTerminalDeadNotice,
+  setFleetTerminalListenerNotice,
   setTerminalLiveness,
 } from '../fleetTerminalManager';
 
@@ -799,6 +801,80 @@ describe('shared output listener containment', () => {
     }
 
     detachTerminal('always-sick');
+    host.remove();
+  });
+});
+
+/**
+ * The OTHER failure door. `subscribeTerminal` and `listen()` are independent
+ * IPC surfaces, and only the first was instrumented: a `listen()` rejection
+ * reset a globalThis key and silentCatch'd, while `attachTerminal` called
+ * `hydrate` regardless. Hydration then SUCCEEDED, painted the ring snapshot,
+ * and the pane froze forever — keystrokes reaching the PTY, the child
+ * answering, nothing rendering. Indistinguishable from a hung agent, and the
+ * only retry was a future attach the operator has no reason to perform.
+ */
+describe('shared output listener failure is visible and retried', () => {
+  const settle = () => vi.advanceTimersByTimeAsync(1);
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // The listener latch is HMR-safe (survives on globalThis), so it must be
+    // cleared here or the manager considers itself already registered.
+    delete (globalThis as Record<string, unknown>).__fleetTerminalOutputListener__;
+    vi.mocked(listen).mockClear();
+    setFleetTerminalListenerNotice('OUTPUT-STALLED');
+  });
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
+  it('paints an in-terminal notice when the listener never registers', async () => {
+    vi.mocked(listen).mockRejectedValueOnce(new Error('ipc unavailable'));
+
+    const host = attach('blind');
+    await settle();
+
+    const written = registryMap().get('blind')!.term.written.join('');
+    // The pane used to look perfect: snapshot painted, no error, no output ever.
+    expect(written).toContain('OUTPUT-STALLED');
+
+    detachTerminal('blind');
+    host.remove();
+  });
+
+  it('re-registers on a backoff instead of waiting for an attach that never comes', async () => {
+    vi.mocked(listen).mockRejectedValueOnce(new Error('ipc unavailable'));
+
+    const host = attach('retry-me');
+    await settle();
+    const afterFirst = vi.mocked(listen).mock.calls.length;
+    expect(afterFirst).toBe(1);
+
+    // Nobody touches the app. The retry has to come from the manager.
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    expect(vi.mocked(listen).mock.calls.length).toBeGreaterThan(afterFirst);
+
+    detachTerminal('retry-me');
+    host.remove();
+  });
+
+  it('does not stack the same notice on a second attach of the same session', async () => {
+    vi.mocked(listen).mockRejectedValueOnce(new Error('ipc unavailable'));
+
+    const host = attach('once-only');
+    await settle();
+    attachTerminal('once-only', host);
+    await settle();
+
+    const hits = registryMap()
+      .get('once-only')!
+      .term.written.filter((c) => c.includes('OUTPUT-STALLED')).length;
+    expect(hits).toBe(1);
+
+    detachTerminal('once-only');
     host.remove();
   });
 });

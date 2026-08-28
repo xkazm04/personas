@@ -49,6 +49,7 @@
     "broadcast_failed_all": "Übertragung fehlgeschlagen – 0 von {total} zugestellt",
     "broadcast_retry_hint": "Diese Sitzungen haben es nicht erhalten. Die Auswahl umfasst jetzt nur noch sie – zum Wiederholen auf Senden klicken.",
     "terminal_session_gone": "Diese Sitzung ist nicht mehr verfügbar – sie wurde möglicherweise beendet oder entfernt. Schließen und öffnen Sie diesen Bereich erneut, um es noch einmal zu versuchen.",
+    "terminal_output_stalled": "Die Live-Ausgabe kommt für keine Sitzung mehr an – es wird neu verbunden. Ihre Eingaben erreichen dieses Terminal weiterhin.",
     "pair_generate": "Dieses Telefon koppeln",
     "pair_generating": "Geräte-Token wird erstellt…",
     "pair_scan_hint": "Mit der Handykamera im selben WLAN scannen und die Seite dann zum Startbildschirm hinzufügen.",

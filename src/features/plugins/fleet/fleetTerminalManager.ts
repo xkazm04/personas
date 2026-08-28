@@ -211,6 +211,10 @@ interface ManagedTerminal {
    * next successful hydrate, so a session that recovers can report again.
    */
   writeFailed: boolean;
+  /** True once the listener-failure notice has been painted into this terminal;
+   *  cleared by the next successful hydrate so a pane that recovers does not
+   *  keep a stale warning, and a repeated failure does not stack the same line. */
+  listenerNoticeShown: boolean;
 }
 
 /**
@@ -230,6 +234,26 @@ let deadNotice = '';
 /** Set the translated dead-session notice (called from FleetTerminalPane). */
 export function setFleetTerminalDeadNotice(text: string): void {
   deadNotice = text;
+}
+
+/**
+ * Localized notice for the OTHER failure door — the shared output listener.
+ *
+ * There are two independent ways a pane can end up showing a snapshot that
+ * never updates, and only one of them used to say so. `subscribeTerminal` is a
+ * per-session IPC command; `listen('fleet-session-output')` is a separate,
+ * app-wide registration. A pane whose subscribe SUCCEEDS and whose listener
+ * registration FAILED paints its ring snapshot perfectly and then freezes —
+ * keystrokes still reach the PTY, the child still answers, and nothing renders.
+ * That is indistinguishable from a hung agent, which is the wrong thing for the
+ * operator to conclude. Pushed in from `FleetTerminalPane` for the same reason
+ * as `deadNotice`: this module has no `t`.
+ */
+let listenerNotice = '';
+
+/** Set the translated listener-failure notice (called from FleetTerminalPane). */
+export function setFleetTerminalListenerNotice(text: string): void {
+  listenerNotice = text;
 }
 
 // HMR-safe registry. Reusing the existing map across hot reloads keeps live
@@ -415,11 +439,21 @@ function writeChunk(m: ManagedTerminal, chunk: string): void {
   }
 }
 
-function ensureSharedOutputListener(): void {
+/**
+ * Register the listener, reporting the outcome to the CALLER.
+ *
+ * It used to return `void` and swallow its own rejection, which is why the
+ * blackout was silent: `attachTerminal` called it and then called `hydrate`
+ * regardless, `hydrate` succeeded (a different IPC command), the snapshot
+ * painted, and the pane looked healthy forever. Handing the promise back is what
+ * lets the attach path tell the operator, and what lets the retry below know it
+ * has something to retry.
+ */
+function ensureSharedOutputListener(): Promise<void> {
   const g = globalThis as Record<string, unknown>;
-  if (g[OUTPUT_LISTENER_KEY]) return;
+  if (g[OUTPUT_LISTENER_KEY]) return Promise.resolve();
   g[OUTPUT_LISTENER_KEY] = true; // set eagerly so a re-entrant call can't double-listen
-  listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
+  return listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
     const m = registry.get(event.payload.session_id);
     if (!m) return;
     if (m.hydrating) {
@@ -430,11 +464,54 @@ function ensureSharedOutputListener(): void {
   })
     .then((fn) => {
       g[OUTPUT_LISTENER_KEY] = fn;
+      listenerBackoffMs = LISTENER_RETRY_MIN_MS;
     })
     .catch((e) => {
       g[OUTPUT_LISTENER_KEY] = undefined; // allow a retry on the next attach
       silentCatch('fleetTerminal:listen')(e);
+      // Re-thrown, not swallowed: the caller decides what the operator is told.
+      throw e;
     });
+}
+
+/**
+ * Retry the registration on a bounded exponential backoff.
+ *
+ * Retry used to be deferred to the next `attachTerminal` — a call the operator
+ * has no reason to make, because the pane in front of them looks fine. So the
+ * one event that could recover the fleet was gated on the one thing a
+ * successfully-lying UI guarantees will not happen.
+ */
+const LISTENER_RETRY_MIN_MS = 1_000;
+const LISTENER_RETRY_MAX_MS = 30_000;
+let listenerBackoffMs = LISTENER_RETRY_MIN_MS;
+let listenerRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleListenerRetry(): void {
+  if (listenerRetryTimer !== null) return; // one retry in flight is enough
+  const delay = listenerBackoffMs;
+  listenerBackoffMs = Math.min(listenerBackoffMs * 2, LISTENER_RETRY_MAX_MS);
+  listenerRetryTimer = setTimeout(() => {
+    listenerRetryTimer = null;
+    // eslint-disable-next-line custom/async-catch-requires-helper -- ensureSharedOutputListener already ran silentCatch('fleetTerminal:listen') on this exact error before re-throwing it; a second report per retry would turn one outage into a Sentry flood measured in attempts.
+    ensureSharedOutputListener().catch(() => scheduleListenerRetry());
+  }, delay);
+}
+
+/**
+ * Paint the listener-failure notice into one attached terminal, once.
+ *
+ * Queued behind an in-flight hydration rather than written straight away: the
+ * snapshot resolution calls `term.reset()`, so a notice written first would be
+ * erased by the very handshake that makes the pane look healthy. `pendingLive`
+ * is exactly the queue that already exists for "must land after the snapshot".
+ */
+function paintListenerNotice(m: ManagedTerminal): void {
+  if (!m.attached || !listenerNotice || m.listenerNoticeShown) return;
+  m.listenerNoticeShown = true;
+  const line = `\r\n\x1b[33m${listenerNotice}\x1b[0m\r\n`;
+  if (m.hydrating) m.pendingLive.push(line);
+  else writeChunk(m, line);
 }
 
 /** Open a web link from terminal output via the OS browser (sanitized). */
@@ -638,6 +715,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     lastRows: 0,
     deadNoticeShown: false,
     writeFailed: false,
+    listenerNoticeShown: false,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -699,9 +777,16 @@ function getOrCreate(sessionId: string): ManagedTerminal {
  * make `container` the owner — the only pane whose detach may tear it down.
  */
 export function attachTerminal(sessionId: string, container: HTMLElement): void {
-  ensureSharedOutputListener();
   unpark(sessionId);
   const m = getOrCreate(sessionId);
+  // The listener is the OTHER door to live output, and its failure used to be
+  // invisible because `hydrate` below succeeds independently of it. Chain the
+  // outcome instead of dropping it: say so in the terminal, and keep retrying.
+  // eslint-disable-next-line custom/async-catch-requires-helper -- ensureSharedOutputListener already ran silentCatch('fleetTerminal:listen') on this error before re-throwing; this handler exists to TELL THE OPERATOR and re-arm, not to report a second time.
+  ensureSharedOutputListener().catch(() => {
+    paintListenerNotice(m);
+    scheduleListenerRetry();
+  });
   m.owner = container;
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);
@@ -741,6 +826,8 @@ function hydrate(m: ManagedTerminal): void {
       // A terminal that survived a reset is a terminal that may write again, so
       // the once-per-session write report re-arms with it.
       m.writeFailed = false;
+      // The reset also wiped any listener warning, so allow a fresh one.
+      m.listenerNoticeShown = false;
       if (snapshot) writeChunk(m, snapshot);
       const queued = m.pendingLive;
       m.pendingLive = [];

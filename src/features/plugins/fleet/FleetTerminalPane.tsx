@@ -5,6 +5,7 @@ import {
   detachTerminal,
   focusTerminal,
   setFleetTerminalDeadNotice,
+  setFleetTerminalListenerNotice,
   setTerminalLiveness,
 } from './fleetTerminalManager';
 
@@ -49,8 +50,15 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
   // it runs before the attach effect below on the same mount. Every terminal in
   // the app goes through this pane, which is why the string is pushed from here
   // rather than from the grid-only settings hook.
+  // The manager has TWO failure doors and both need a translated line pushed in
+  // before an attach: the per-session subscribe (`terminal_session_gone`) and
+  // the app-wide output listener (`terminal_output_stalled`). A pane whose
+  // subscribe succeeded and whose listener never registered paints its snapshot
+  // and then freezes — the second string is what stops that reading as a hung
+  // agent.
   useEffect(() => {
     setFleetTerminalDeadNotice(t.plugins.fleet.terminal_session_gone);
+    setFleetTerminalListenerNotice(t.plugins.fleet.terminal_output_stalled);
   }, [t]);
 
   // Attach the managed terminal on mount / session change; detach (NOT

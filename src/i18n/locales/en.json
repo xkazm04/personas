@@ -13812,6 +13812,7 @@
       "broadcast_failed_all": "Broadcast failed — 0 of {total} delivered",
       "broadcast_retry_hint": "These sessions did not receive it. The selection now targets only them — press Send to retry.",
       "terminal_session_gone": "This session is no longer available - it may have exited or been removed. Close and reopen this pane to try again.",
+      "terminal_output_stalled": "Live output stopped arriving for every session - reconnecting. Your input is still reaching this terminal.",
       "pair_generate": "Pair this phone",
       "pair_generating": "Minting device token…",
       "pair_scan_hint": "Scan with your phone's camera on the same Wi-Fi, then add the page to your home screen.",
