@@ -608,7 +608,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       // tab left to show it, and nothing would ever reap it (the turn's own
       // timeout is 25 minutes). Interrupt the session first, then the server.
       void webbuildSessionStop(id).catch(silentCatch('studioStore:closeTab:session'));
-      void webbuildDevStop(id).catch(silentCatch('studioStore:closeTab'));
+      // A REJECTED dev-server stop is not the same kind of failure as a failed
+      // interrupt, and it was getting the same silent treatment. The runtime and
+      // the tab are deleted unconditionally below, so a Bun process that refused
+      // to die keeps its port with nothing left in Studio pointing at it — and
+      // freeing that port is a manual act the user can only perform if they know
+      // it is needed. It is the one outcome here they have to be told about.
+      // The tab still closes either way: trapping the user behind a stop that
+      // cannot succeed would be the worse of the two failures.
+      void webbuildDevStop(id).catch(toastCatch('studioStore:closeTab'));
       set((s) => {
         const { [id]: _gone, ...rest } = s.runtimes;
         const order = s.tabOrder.filter((t) => t !== id);
