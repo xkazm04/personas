@@ -23,6 +23,7 @@ import {
   SUPERSEDED_MIN_TIME_DIFF_MS,
 } from '@/lib/memoryLimits';
 import {
+  conflictVerdictLabel,
   detectConflicts,
   loadResolvedConflicts,
   saveResolvedConflicts,
@@ -296,5 +297,31 @@ describe('resolved-conflict recall', () => {
     // Insertion order is oldest-first, so the tail is what must survive.
     expect(stored.has(`pair_${MAX_RESOLVED_CONFLICTS + 4}`)).toBe(true);
     expect(stored.has('pair_0')).toBe(false);
+  });
+});
+
+/**
+ * The verdict label is what makes the detector's precision measurable at all,
+ * so its two properties are pinned: it carries the kind AND the score band
+ * (otherwise "dismissals cluster just above the threshold" is unanswerable),
+ * and it is LOW-CARDINALITY (otherwise every event is a unique tag value and
+ * nothing aggregates).
+ */
+describe('conflictVerdictLabel', () => {
+  it('pairs the kind with a 0.05 score bucket', () => {
+    expect(conflictVerdictLabel('duplicate', 0.72)).toBe('duplicate:0.70');
+    expect(conflictVerdictLabel('contradiction', 0.851)).toBe('contradiction:0.85');
+    expect(conflictVerdictLabel('superseded', 0.5)).toBe('superseded:0.50');
+  });
+
+  it('emits at most 21 distinct buckets per kind, so the tag stays countable', () => {
+    const labels = new Set<string>();
+    for (let i = 0; i <= 1000; i++) labels.add(conflictVerdictLabel('duplicate', i / 1000));
+    expect(labels.size).toBeLessThanOrEqual(21);
+  });
+
+  it('clamps a score outside [0,1] rather than inventing a bucket', () => {
+    expect(conflictVerdictLabel('duplicate', 1.4)).toBe('duplicate:1.00');
+    expect(conflictVerdictLabel('duplicate', -0.2)).toBe('duplicate:0.00');
   });
 });

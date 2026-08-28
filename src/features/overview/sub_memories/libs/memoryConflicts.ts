@@ -178,6 +178,35 @@ export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
 }
 
 // ---------------------------------------------------------------------------
+// Verdict telemetry
+// ---------------------------------------------------------------------------
+
+/**
+ * The label a resolved conflict is reported under.
+ *
+ * merge / keep_a / keep_b / dismiss are the ONLY ground truth that exists about
+ * whether this detector is any good, and none of it was recorded anywhere — a
+ * dismissal in particular is a labelled false positive handed to us for free,
+ * and it was discarded. So the three thresholds in `@/lib/memoryLimits`, whose
+ * own comments describe them as "chosen empirically", could never be re-tuned
+ * against evidence, and nobody could say whether this surface helps or annoys.
+ *
+ * The label pairs the conflict KIND with the score that produced it, because
+ * "dismissals cluster just above DUPLICATE_THRESHOLD" is the shape of the
+ * answer that would actually move a threshold. The score is bucketed to 0.05
+ * deliberately: a raw float would make every event a unique tag value and the
+ * aggregate uncountable.
+ *
+ * Carries no memory content, no ids and no persona — only the kind and a
+ * bucket, which is what makes it safe to send.
+ */
+export function conflictVerdictLabel(kind: ConflictKind, similarity: number): string {
+  const clamped = Math.min(1, Math.max(0, similarity));
+  const bucket = (Math.floor(clamped / 0.05) * 0.05).toFixed(2);
+  return `${kind}:${bucket}`;
+}
+
+// ---------------------------------------------------------------------------
 // Resolved-verdict recall
 // ---------------------------------------------------------------------------
 

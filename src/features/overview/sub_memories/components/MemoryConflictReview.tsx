@@ -6,12 +6,14 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
+  conflictVerdictLabel,
   detectConflicts,
   loadResolvedConflicts,
   saveResolvedConflicts,
   type MemoryConflict,
   type ConflictResolution,
 } from '../libs/memoryConflicts';
+import { trackInteraction } from '@/lib/sentry';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
 import { DebtText } from '@/i18n/DebtText';
@@ -126,6 +128,19 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         case 'dismiss':
           break;
       }
+      // The user's verdict is the only ground truth about whether the detector
+      // is any good, and a DISMISS is a labelled false positive handed to us
+      // for free. Both were previously thrown away, which is why the thresholds
+      // in memoryLimits.ts ("chosen empirically") could never be re-tuned
+      // against evidence. Reported through the existing interaction door, and
+      // only once a verdict has actually been applied — the guard branches
+      // above return before this point because they applied nothing.
+      trackInteraction(
+        'memory_conflict_resolution',
+        resolution,
+        conflictVerdictLabel(conflict.kind, conflict.similarity),
+      );
+
       // Computed outside the state updater on purpose: an updater must stay
       // pure (StrictMode double-invokes it), so the write to storage happens
       // here rather than inside it.
