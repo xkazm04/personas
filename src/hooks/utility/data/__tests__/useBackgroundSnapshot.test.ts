@@ -119,3 +119,39 @@ describe('useBackgroundSnapshot', () => {
     expect(getSnapshot).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('useBackgroundSnapshot -- maxFailures is clamped', () => {
+  it('clamps maxFailures 0 to 1 rather than comparing against 0', async () => {
+    const getSnapshot = vi.fn().mockRejectedValue(new Error('transient'));
+    const onSessionLost = vi.fn();
+
+    renderHook(() =>
+      useBackgroundSnapshot(
+        freshOptions('job-1', getSnapshot, { maxFailures: 0, onSessionLost, interval: 5000 }),
+      ),
+    );
+
+    await waitFor(() => expect(onSessionLost).toHaveBeenCalledTimes(1));
+    // One failure, one session-loss: the limit is 1, never 0.
+    expect(getSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('still reports session loss when maxFailures is NaN', async () => {
+    const getSnapshot = vi.fn().mockRejectedValue(new Error('transient'));
+    const onSessionLost = vi.fn();
+
+    renderHook(() =>
+      useBackgroundSnapshot(
+        freshOptions('job-1', getSnapshot, {
+          maxFailures: Number.NaN,
+          onSessionLost,
+          interval: 1,
+        }),
+      ),
+    );
+
+    // Unclamped, `n >= NaN` is never true and the poller retries forever.
+    await waitFor(() => expect(onSessionLost).toHaveBeenCalledTimes(1), { timeout: 4000 });
+    expect(getSnapshot).toHaveBeenCalledTimes(3);
+  });
+});

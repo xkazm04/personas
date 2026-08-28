@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { listen } from "@tauri-apps/api/event";
 import { useSettings } from "../useSettings";
-import { mockInvokeMap, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvokeMap, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import { _clearAutoDedupForTests } from "@/lib/tauriInvoke";
 
 // Set IPC token so invokeWithTimeout doesn't enter the token-wait loop.
@@ -71,5 +71,30 @@ describe("useSettings — Direction 3 live refresh", () => {
     // The value stays v1 — proving the unsubscribed key did not trigger a refetch.
     await new Promise((r) => setTimeout(r, 20));
     expect(result.current.values.cli_engine).toBe("v1");
+  });
+});
+
+describe('useSettings -- the key list is not a delimiter round-trip', () => {
+  beforeEach(() => {
+    resetInvokeMocks();
+    vi.mocked(listen).mockReset();
+    vi.mocked(listen).mockResolvedValue(() => {});
+  });
+
+  it('sends a key containing the internal separator as ONE key', async () => {
+    // Callers already build dynamic keys; a fragment carrying U+001F used to
+    // be split back into two keys that do not exist.
+    const weird = `execution_retention_months:p-1\x1fsuffix`;
+    mockInvokeMap({ get_app_settings_bulk: { [weird]: '12' } });
+
+    const { result } = renderHook(() => useSettings([weird]));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    const call = vi.mocked(mockedTauriInvoke).mock.calls.find(
+      (c) => c[0] === 'get_app_settings_bulk',
+    );
+    expect(call).toBeDefined();
+    expect((call![1] as { keys: string[] }).keys).toEqual([weird]);
+    expect(result.current.values[weird]).toBe('12');
   });
 });

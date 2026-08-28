@@ -56,7 +56,11 @@ type CredentialHealthTarget = string | CredentialHealthPreviewTarget;
 
 // -- Shared module-level caches ---------------------------------------
 
-const resultCache = createModuleCache<string, HealthResult>();
+// Keyed by credential id (plus preview pseudo-keys), so its key space grows
+// with the vault and has no ceiling of its own -- it must carry one. 256 is
+// far above any realistic on-screen working set, so the bound is invisible in
+// practice and only stops unbounded process-lifetime growth.
+const resultCache = createModuleCache<string, HealthResult>({ maxSize: 256 });
 const loadingRefCounts = new Map<string, number>();
 
 function beginLoading(key: string) {
