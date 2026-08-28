@@ -31,10 +31,18 @@ export interface DatabaseSlice {
     queryText: string,
     language?: string,
   ) => Promise<DbSavedQuery | undefined>;
+  /**
+   * Resolves `true` when the update reached the backend, `false` when it did
+   * not. It never REJECTS — the failure is already reported (toast + store
+   * error) by `reportError`, so a fire-and-forget caller stays safe. Callers
+   * that paint a success affordance (the editor's green "Saved" badge) must
+   * check the boolean; before it existed they painted success unconditionally
+   * while a red error toast for the same save sat next to it.
+   */
   updateDbSavedQuery: (
     id: string,
     updates: Parameters<typeof dbApi.updateDbSavedQuery>[1],
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   deleteDbSavedQuery: (id: string) => Promise<void>;
 
   // Actions -- Query Execution
@@ -124,8 +132,10 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
       set((state) => ({
         dbSavedQueries: state.dbSavedQueries.map((q) => (q.id === id ? updated : q)),
       }));
+      return true;
     } catch (err) {
       reportError(err, "Failed to update saved query", set);
+      return false;
     }
   },
 

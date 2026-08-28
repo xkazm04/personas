@@ -61,14 +61,20 @@ export function QueryEditorPane({
     if (!selectedId || saveState === 'saving') return;
     setSaveState('saving');
     try {
-      await updateQuery(selectedId, { queryText: editorValue });
+      // The store reports its own failures (toast + store error) and therefore
+      // never rejects, so the catch below could not see a failed save: the green
+      // "Saved" tick was painted next to the red toast for the same save. The
+      // boolean is the only signal that the write actually landed.
+      const ok = await updateQuery(selectedId, { queryText: editorValue });
+      if (!ok) {
+        setSaveState('idle');
+        return;
+      }
       setSaveState('saved');
       clearTimeout(savedResetRef.current);
       savedResetRef.current = setTimeout(() => setSaveState('idle'), 1500);
     } catch (err) {
-      // Surface the failure — previously this silently reset the button to
-      // idle, which reads identically to a successful save and led users to
-      // believe an edit persisted when it didn't.
+      // Belt-and-braces for a throw the store does not currently produce.
       setSaveState('idle');
       toastCatch('QueryEditorPane:handleSave')(err);
     }

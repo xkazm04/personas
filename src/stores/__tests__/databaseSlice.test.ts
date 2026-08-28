@@ -142,9 +142,24 @@ describe("databaseSlice", () => {
       const updated = makeQuery({ title: "Updated Title" });
       mockInvokeMap({ update_db_saved_query: updated });
 
-      await useVaultStore.getState().updateDbSavedQuery("q-1", { title: "Updated Title" });
+      const ok = await useVaultStore.getState().updateDbSavedQuery("q-1", { title: "Updated Title" });
 
+      expect(ok).toBe(true);
       expect(useVaultStore.getState().dbSavedQueries[0]?.title).toBe("Updated Title");
+    });
+
+    it("updateDbSavedQuery reports false when the write fails", async () => {
+      // The slice reports its own failure (toast + store error) and never
+      // rejects, so the boolean is the ONLY signal a caller has. The saved-query
+      // editor paints its green "Saved" tick off this value; before it existed
+      // the tick appeared beside the red toast for the very same save.
+      useVaultStore.setState({ dbSavedQueries: [makeQuery()] });
+      mockInvokeError("update_db_saved_query", "connection lost");
+
+      const ok = await useVaultStore.getState().updateDbSavedQuery("q-1", { title: "Nope" });
+
+      expect(ok).toBe(false);
+      expect(useVaultStore.getState().dbSavedQueries[0]?.title).toBe("List users");
     });
 
     it("deleteDbSavedQuery removes from store", async () => {
