@@ -533,6 +533,7 @@
     "verdict_field": "判定",
     "chain_ended_because": "チェーン終了の理由",
     "chain_total_cost": "チェーンのコスト",
+    "chain_cost_partial": "{total} 件中 {priced} 件のコストを計測",
     "active_chains_agents_one": "{count} エージェント",
     "active_chains_agents_other": "{count} エージェント",
     "active_chains_depth": "深さ {count}",

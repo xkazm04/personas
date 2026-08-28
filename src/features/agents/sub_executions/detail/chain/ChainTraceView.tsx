@@ -13,6 +13,8 @@ interface ChainTraceViewProps {
   partial: boolean;
   stopReasons: ChainStopReason[];
   chainCostUsd: number;
+  /** How many traces contributed a priced span; see `useChainTrace`. */
+  chainPricedTraces: number;
   currentExecutionId: string;
   onOpenExecution: (executionId: string) => void;
 }
@@ -25,7 +27,7 @@ interface ChainTraceViewProps {
  * depth/budget ceiling, unmet predicate, quarantine). Handles loading, broken
  * (error), empty, and partial-chain states.
  */
-export function ChainTraceView({ traces, loading, error, partial, stopReasons, chainCostUsd, currentExecutionId, onOpenExecution }: ChainTraceViewProps) {
+export function ChainTraceView({ traces, loading, error, partial, stopReasons, chainCostUsd, chainPricedTraces, currentExecutionId, onOpenExecution }: ChainTraceViewProps) {
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
 
@@ -84,12 +86,22 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, c
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <ChainHeader title={e.chain_title} subtitle={e.chain_subtitle} />
-        {chainCostUsd > 0 && (
-          <div className="text-right flex-shrink-0">
-            <p className="typo-caption text-foreground">{e.chain_total_cost}</p>
-            <p className="typo-code text-foreground tabular-nums">{formatCost(chainCostUsd, { precision: 4, language })}</p>
-          </div>
-        )}
+        {/* Mirrors ChainSpanRow's rule: an unpriced run reads as a dash, never
+            as $0.0000. The block used to be hidden entirely when the total was
+            0, which is how a chain with nothing measured looked identical to a
+            chain that genuinely cost nothing. When only some runs are priced
+            the figure is labelled as covering part of the chain. */}
+        <div className="text-right flex-shrink-0">
+          <p className="typo-caption text-foreground">{e.chain_total_cost}</p>
+          <p data-testid="chain-total-cost" className="typo-code text-foreground tabular-nums">
+            {chainPricedTraces > 0 ? formatCost(chainCostUsd, { precision: 4, language }) : '-'}
+          </p>
+          {chainPricedTraces > 0 && chainPricedTraces < traces.length && (
+            <p data-testid="chain-cost-partial" className="typo-caption text-foreground">
+              {tx(e.chain_cost_partial, { priced: chainPricedTraces, total: traces.length })}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="rounded-modal border border-primary/20 bg-secondary/30 divide-y divide-primary/10 overflow-hidden">

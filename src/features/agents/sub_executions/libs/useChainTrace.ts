@@ -17,8 +17,14 @@ export interface ChainTraceState {
   /** Ordered (oldest-first) reasons the chain relay did NOT continue at each
    *  non-continuation link — the "why did it end here" audit. */
   stopReasons: ChainStopReason[];
-  /** Summed cost (USD) of every accessible trace in the chain. */
+  /** Summed cost (USD) of the PRICED spans across every accessible trace in
+   *  the chain. Read it together with `chainPricedTraces` — on its own it is
+   *  not a chain total. */
   chainCostUsd: number;
+  /** How many of `traces` contributed at least one priced span. `0` means the
+   *  chain has no measured cost at all (render unknown, not $0.0000); a value
+   *  below `traces.length` means the figure covers only part of the chain. */
+  chainPricedTraces: number;
 }
 
 const EMPTY: ChainTraceState = {
@@ -29,14 +35,35 @@ const EMPTY: ChainTraceState = {
   partial: false,
   stopReasons: [],
   chainCostUsd: 0,
+  chainPricedTraces: 0,
 };
 
-/** Sum every span's cost across every accessible trace in the chain. */
-function sumChainCost(traces: ExecutionTrace[]): number {
+/**
+ * Sum the chain's cost under the SAME rule its own rows use.
+ *
+ * `null` is "we could not price this span"; `0` is "this span was free".
+ * `ChainSpanRow` has drawn that distinction since it started printing a dash
+ * for an unpriced run, but this accumulator kept folding with `?? 0` — so a
+ * chain where only the first step was priced printed a confident, complete
+ * -looking total above rows that openly said they did not know. Today the
+ * tracer prices the root span alone, which made that the common case rather
+ * than the corner one.
+ *
+ * `pricedTraces` travels with the sum so the header can say "unknown" (nothing
+ * priced) or "partial" (some priced) instead of implying a measured total.
+ */
+function sumChainCost(traces: ExecutionTrace[]): { cost: number; pricedTraces: number } {
   return traces.reduce(
-    (chainSum, trace) =>
-      chainSum + trace.spans.reduce((s, span) => s + (span.cost_usd ?? 0), 0),
-    0,
+    (acc, trace) => {
+      const traceCost = trace.spans.reduce(
+        (s, span) => (span.cost_usd == null ? s : { cost: s.cost + span.cost_usd, priced: s.priced + 1 }),
+        { cost: 0, priced: 0 },
+      );
+      return traceCost.priced === 0
+        ? acc
+        : { cost: acc.cost + traceCost.cost, pricedTraces: acc.pricedTraces + 1 };
+    },
+    { cost: 0, pricedTraces: 0 },
   );
 }
 
@@ -64,10 +91,12 @@ export function useChainTrace(executionId: string, personaId: string, skip = fal
         const chainId = trace?.chain_trace_id ?? null;
         if (!chainId) {
           if (!cancelled) {
+            const solo = sumChainCost(trace ? [trace] : []);
             setState({
               ...EMPTY,
               traces: trace ? [trace] : [],
-              chainCostUsd: trace ? sumChainCost([trace]) : 0,
+              chainCostUsd: solo.cost,
+              chainPricedTraces: solo.pricedTraces,
             });
           }
           return;
@@ -80,6 +109,7 @@ export function useChainTrace(executionId: string, personaId: string, skip = fal
           return [] as ChainStopReason[];
         });
         if (!cancelled) {
+          const totals = sumChainCost(ordered);
           setState({
             traces: ordered,
             loading: false,
@@ -87,7 +117,8 @@ export function useChainTrace(executionId: string, personaId: string, skip = fal
             hasChain: true,
             partial: ordered.length <= 1,
             stopReasons,
-            chainCostUsd: sumChainCost(ordered),
+            chainCostUsd: totals.cost,
+            chainPricedTraces: totals.pricedTraces,
           });
         }
       } catch (err) {

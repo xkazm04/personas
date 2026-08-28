@@ -1689,6 +1689,7 @@
       "verdict_field": "判定结果",
       "chain_ended_because": "链结束原因",
       "chain_total_cost": "链成本",
+      "chain_cost_partial": "{total} 次运行中已计价 {priced} 次",
       "active_chains_agents_one": "{count} 个智能体",
       "active_chains_agents_other": "{count} 个智能体",
       "active_chains_depth": "深度 {count}",

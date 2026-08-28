@@ -132,6 +132,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
               partial={chain.partial}
               stopReasons={chain.stopReasons}
               chainCostUsd={chain.chainCostUsd}
+              chainPricedTraces={chain.chainPricedTraces}
               currentExecutionId={execution.id}
               onOpenExecution={openChainExecution}
             />

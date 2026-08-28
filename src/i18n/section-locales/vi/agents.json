@@ -533,6 +533,7 @@
     "verdict_field": "Kết luận",
     "chain_ended_because": "Lý do chuỗi kết thúc",
     "chain_total_cost": "Chi phí chuỗi",
+    "chain_cost_partial": "{priced} trên {total} lượt chạy có chi phí",
     "active_chains_agents_one": "{count} tác nhân",
     "active_chains_agents_other": "{count} agent",
     "active_chains_depth": "độ sâu {count}",

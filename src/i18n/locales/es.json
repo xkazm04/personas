@@ -1689,6 +1689,7 @@
       "verdict_field": "Veredicto",
       "chain_ended_because": "Por qué terminó la cadena",
       "chain_total_cost": "Costo de la cadena",
+      "chain_cost_partial": "{priced} de {total} ejecuciones con coste conocido",
       "active_chains_agents_one": "{count} agente",
       "active_chains_agents_other": "{count} agentes",
       "active_chains_depth": "profundidad {count}",

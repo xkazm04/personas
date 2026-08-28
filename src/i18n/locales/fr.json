@@ -1689,6 +1689,7 @@
       "verdict_field": "Verdict",
       "chain_ended_because": "Motif de fin de la chaîne",
       "chain_total_cost": "Coût de la chaîne",
+      "chain_cost_partial": "{priced} exécution(s) sur {total} chiffrée(s)",
       "active_chains_agents_one": "{count} agent",
       "active_chains_agents_other": "{count} agents",
       "active_chains_depth": "profondeur {count}",

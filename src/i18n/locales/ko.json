@@ -1689,6 +1689,7 @@
       "verdict_field": "판정",
       "chain_ended_because": "체인 종료 원인",
       "chain_total_cost": "체인 비용",
+      "chain_cost_partial": "{total}회 중 {priced}회 비용 측정됨",
       "active_chains_agents_one": "에이전트 {count}개",
       "active_chains_agents_other": "에이전트 {count}개",
       "active_chains_depth": "깊이 {count}",

@@ -1689,6 +1689,7 @@
       "verdict_field": "Putusan",
       "chain_ended_because": "Alasan rantai berhenti",
       "chain_total_cost": "Biaya rantai",
+      "chain_cost_partial": "{priced} dari {total} proses diketahui biayanya",
       "active_chains_agents_one": "{count} agen",
       "active_chains_agents_other": "{count} agen",
       "active_chains_depth": "kedalaman {count}",

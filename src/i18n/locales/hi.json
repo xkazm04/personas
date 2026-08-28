@@ -1689,6 +1689,7 @@
       "verdict_field": "निर्णय",
       "chain_ended_because": "श्रृंखला क्यों समाप्त हुई",
       "chain_total_cost": "श्रृंखला लागत",
+      "chain_cost_partial": "{total} में से {priced} रन की लागत ज्ञात",
       "active_chains_agents_one": "{count} एजेंट",
       "active_chains_agents_other": "{count} एजेंट",
       "active_chains_depth": "गहराई {count}",

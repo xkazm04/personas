@@ -1689,6 +1689,7 @@
       "verdict_field": "Verdikt",
       "chain_ended_because": "Proč řetězec skončil",
       "chain_total_cost": "Náklady řetězce",
+      "chain_cost_partial": "Cena známa u {priced} z {total} běhů",
       "active_chains_agents_one": "{count} agent",
       "active_chains_agents_other": "{count} agentů",
       "active_chains_depth": "hloubka {count}",

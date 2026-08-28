@@ -1689,6 +1689,7 @@
       "verdict_field": "Вердикт",
       "chain_ended_because": "Почему цепочка завершилась",
       "chain_total_cost": "Стоимость цепочки",
+      "chain_cost_partial": "Оценено {priced} из {total} запусков",
       "active_chains_agents_one": "{count} агент",
       "active_chains_agents_other": "{count} агентов",
       "active_chains_depth": "глубина {count}",

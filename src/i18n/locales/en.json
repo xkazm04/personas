@@ -1778,6 +1778,7 @@
       "chain_loading": "Loading chain…",
       "chain_badge_tooltip": "Part of a multi-step chain — view the full chain",
       "chain_total_cost": "Chain cost",
+      "chain_cost_partial": "{priced} of {total} runs priced",
       "chain_ended_because": "Why the chain ended",
       "lines_counter": "{visible}/{total} lines",
       "timeline_scrubber_label": "Execution timeline",
