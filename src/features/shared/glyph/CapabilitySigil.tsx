@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
@@ -97,8 +97,18 @@ export function CapabilitySigil({
     `;
   })();
 
-  const coreId = `mini-core-${uc.id}-${size}`;
-  const uid = `${uc.id}-${size}`;
+  // SVG ids must be unique per *element instance*, not per (use case, size).
+  // Two surfaces render the same capability at the same size on one page
+  // (UseCaseRow's SIGIL_SIZE is 72 and CapabilityTabBar's sigilSize defaults
+  // to 72), and `url(#id)` resolves to whichever duplicate comes first in
+  // document order. It happens to be harmless today only because both copies
+  // emit identical stops — but the gradient already varies with `isDisabled`
+  // while the id does not, so the id is one prop away from lying. `useId`
+  // makes it structurally impossible; the colons React puts in the value are
+  // stripped because these ids also travel inside `url(#…)` fragments.
+  const instanceId = useId().replace(/:/g, '');
+  const coreId = `mini-core-${instanceId}`;
+  const uid = instanceId;
   const dimOpacityActive = 0.85;
   const dimOpacityIdle = 0.62;
   const ghostOpacity = 0.16;
