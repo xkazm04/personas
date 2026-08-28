@@ -1,5 +1,5 @@
 import { Compass } from 'lucide-react';
-import { getTourById, type TourId } from '@/stores/slices/system/tourSlice';
+import { getLocalizedTourById, type TourId } from '@/stores/slices/system/tourSlice';
 import { getStepColors } from './tourConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -17,7 +17,7 @@ interface TourIntroCardProps {
  */
 export function TourIntroCard({ tourId, stepCount }: TourIntroCardProps) {
   const { t, tx } = useTranslation();
-  const tourDef = getTourById(tourId);
+  const tourDef = getLocalizedTourById(t, tourId);
   if (!tourDef) return null;
   const colors = getStepColors(tourDef.color);
 

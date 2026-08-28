@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
-import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
+import { getLocalizedTourById, getLocalizedTourSteps } from '@/stores/slices/system/tourSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -105,6 +106,9 @@ export function clearLastEdited(): void {
 }
 
 export function useResumeContext(): ResumeContext | null {
+  // The tour title / step title surfaced below are translated copy resolved
+  // from `onboarding.tours`, so this hook needs the live bundle.
+  const { t } = useTranslation();
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourActiveTourId = useSystemStore((s) => s.tourActiveTourId);
   const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
@@ -157,8 +161,8 @@ export function useResumeContext(): ResumeContext | null {
   //    duplicate the GuidedTour panel that's already on screen.
   const tourCompleted = tourCompletionMap[tourActiveTourId] ?? false;
   if (!tourActive && !tourCompleted && !tourDismissed) {
-    const steps = getActiveTourSteps(tourActiveTourId);
-    const tourDef = getTourById(tourActiveTourId);
+    const steps = getLocalizedTourSteps(t, tourActiveTourId);
+    const tourDef = getLocalizedTourById(t, tourActiveTourId);
     const completedCount = steps.filter((s) => tourStepCompleted[s.id]).length;
     if (steps.length > 0 && completedCount > 0 && completedCount < steps.length) {
       const currentStep = steps[tourCurrentStepIndex] ?? steps[completedCount];

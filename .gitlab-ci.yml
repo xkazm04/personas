@@ -1,5 +1,16 @@
 # GitLab CI/CD Pipeline for Personas Desktop
 # Parallel CI option alongside GitHub Actions (.github/workflows/ci.yml)
+#
+# THIS FILE IS A MIRROR, NOT A SOURCE OF TRUTH. `.github/workflows/ci.yml` is
+# the primary pipeline; every flag and failure mode below is copied from it.
+# An unchecked mirror rots into contradicting its primary — this one did: it
+# carried `2>/dev/null || true` on the binding export (the exact silent mask
+# the GitHub job removed, with a comment saying why) and ran cargo without
+# `--workspace --features desktop`, so its Rust jobs compiled and checked far
+# less than they appeared to. Re-aligned 2026-08-28.
+#
+# When you change a cargo/npm invocation in `.github/workflows/ci.yml`, change
+# it here in the same commit, or delete this file.
 
 stages:
   - lint
@@ -73,7 +84,11 @@ rust-lint:
     <<: *rust-cache
     policy: pull-push
   script:
-    - cargo clippy --manifest-path $CARGO_MANIFEST -- -D warnings
+    # --workspace + --features desktop mirror .github/workflows/ci.yml:339.
+    # Without --workspace only the root crate is linted (the crate split moved
+    # most code into personas-core/db/engine); without --features desktop the
+    # tauri build script aborts and nothing is linted at all.
+    - cargo clippy --workspace --manifest-path $CARGO_MANIFEST --features desktop -- -D warnings
 
 # ═══════════════════════════════════════════════════════════════════════
 # Stage 2: Test
@@ -93,7 +108,9 @@ rust-test:
   cache:
     <<: *rust-cache
   script:
-    - cargo test --manifest-path $CARGO_MANIFEST
+    # Mirrors .github/workflows/ci.yml:331 — see the clippy note above for why
+    # --workspace and --features desktop are load-bearing rather than tidiness.
+    - cargo test --workspace --manifest-path $CARGO_MANIFEST --features desktop --no-fail-fast
 
 # ═══════════════════════════════════════════════════════════════════════
 # Stage 3: Security
@@ -162,15 +179,36 @@ check-bindings:
   cache:
     <<: *rust-cache
   script:
-    - cargo test --manifest-path $CARGO_MANIFEST export_bindings 2>/dev/null || true
+    # Mirrors .github/workflows/ci.yml:548-587 exactly.
+    #
+    # Fail loudly. This line used to end in `2>/dev/null || true`, which meant a
+    # Rust compile error produced no bindings, no diff, and a green gate — the
+    # GitHub job removed that mask for exactly this reason.
+    #
+    # --workspace --features desktop are REQUIRED: --manifest-path alone selects
+    # only personas-desktop (the ~200 #[ts(export)] types in personas-core are
+    # never regenerated), and without the feature the tauri build script aborts
+    # on "Permission updater:default not found" so zero bindings are written.
+    - cargo test --workspace --manifest-path $CARGO_MANIFEST --features desktop export_bindings
     - |
+      # `git diff` sees TRACKED files only, so it exits 0 for a brand-new
+      # binding — which is precisely the case this gate exists for, since a NEW
+      # type is what appears when a command is added. Check untracked output
+      # separately or the gate is green exactly when it matters.
+      NEW=$(git ls-files --others --exclude-standard src/lib/bindings/)
+      if [ -n "$NEW" ]; then
+        echo "New TypeScript bindings were generated but not committed. Add them:"
+        echo "$NEW"
+        exit 1
+      fi
       if ! git diff --quiet src/lib/bindings/; then
         echo "TypeScript bindings are out of date."
-        echo "Run 'cargo test export_bindings' locally and commit the changes."
+        echo "Run 'cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings' locally and commit the changes."
+        echo "(Without --workspace --features desktop, zero bindings regenerate.)"
         git diff src/lib/bindings/
         exit 1
       fi
-      echo "Bindings are up to date."
+      echo "Bindings are up to date (no drift, no uncommitted new types)."
 
 # ═══════════════════════════════════════════════════════════════════════
 # Stage 6: Report

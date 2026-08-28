@@ -138,9 +138,11 @@ return <h1>{t.common.save}</h1>;
 
 When you add a new UI string:
 
-1. Add the key to `src/i18n/en.ts` in the appropriate section with a short translator comment above it.
+1. Add the key to **`src/i18n/locales/en.json`** in the appropriate top-level section. (`src/i18n/en.ts` is a back-compat shim, not the source — editing it does nothing.)
 2. Use `t.section.key` in your component.
-3. **Do not** add to non-English locale files — they fall back to English automatically and translation teams handle localization separately.
+3. **Translate it into all 13 other locale files in the same commit.** English fallback is not an acceptable resting state: two `pre-commit` hooks in `lefthook.yml` block the commit otherwise — `i18n-no-gaps` (`scripts/i18n/check-coverage.mjs --strict`) fails on a key missing from any locale, and `i18n-no-untranslated` (`scripts/i18n/check-untranslated.mjs --strict`) fails on a live value still byte-identical to English.
+4. Don't hand-edit 13 files. Run `node scripts/i18n/translate-extract.mjs`, fill each `.i18n-work/missing-<code>.json`, then `node scripts/i18n/translate-merge.mjs`.
+5. Put translator context (what the string labels, space constraints) in the commit message — JSON carries no comments.
 
 See the [i18n section in the README](./README.md#internationalization-i18n) for the full translator pipeline.
 

@@ -115,7 +115,7 @@ When you add a new step, add an entry to both maps. Missing entries fall back si
 6. **If `nav.subTabSetter` is a new setter**, extend the setter ladder in `GuidedTour.tsx`.
 7. **Add `data-testid`s** to the UI you want highlighted, matching `highlightTestId` in your step / sub-steps.
 8. **Bump `TOUR_STATE_VERSION`** in `tourSlice.ts` if the new step changes completion semantics for an existing tour — otherwise returning users may skip past it with stale persisted state.
-9. **Add i18n keys** for any new panel copy (titles/descriptions/hints currently live inline in `tourSlice.ts` but future extraction will move them to `en.ts`; don't block on this for now).
+9. **Add i18n keys — this is now REQUIRED, not deferred.** The English literals in `tourSlice.ts` are the source, but they are only the fallback at runtime: `localizeTour` overlays `onboarding.tours` from `src/i18n/locales/*.json`, keyed `<tour>__<step>__<field>` with `-` mapped to `_` (`getting_started__appearance_setup__title`; sub-steps add their own id segment; fields are `title`, `description`, `hint`, `narration`, and `label`/`hint` for sub-steps). Add every one of your new strings to `en.json` under `onboarding.tours` AND translate them into the other 13 locales in the same commit — the `i18n-no-gaps` / `i18n-no-untranslated` pre-commit hooks block the commit otherwise. Miss a key and that string silently renders English in all 14 locales, which is exactly the defect this replaced.
 
 ## Checklist — adding a whole new tour
 
@@ -126,6 +126,8 @@ When you add a new step, add an entry to both maps. Missing entries fall back si
 5. Add the icon name to the `TOUR_ICONS` map in `src/features/home/components/HomeLearning.tsx` so the tour card renders properly in Home > Learning.
 6. Add a per-tour `COLORS` entry in the same file (matching the color key from step 4).
 7. Follow the per-step checklist above for each step.
+8. Add the tour's own `<tour>__title` / `<tour>__description` keys, plus every step key, to `onboarding.tours` in all 14 locales (per-step checklist item 9).
+9. Render tour TEXT only through the localized accessors — `getLocalizedTourById`, `getLocalizedTourSteps`, `getLocalizedTourRegistry`. The raw `getTourById` / `getActiveTourSteps` remain for machinery that reads ids, `nav` targets and step counts; using them for copy re-introduces the hardcoded-English bug.
 
 ## State persistence
 

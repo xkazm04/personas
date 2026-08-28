@@ -1,6 +1,6 @@
 import { ChevronRight, ChevronLeft, Check, Crosshair } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import { getActiveTourSteps, isSafeTourTestId } from '@/stores/slices/system/tourSlice';
+import { getLocalizedTourSteps, isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 import type { TourId, TourStepId } from '@/stores/slices/system/tourSlice';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getStepColors } from './tourConstants';
@@ -46,7 +46,7 @@ export function TourPanelBody({
   onComplete,
 }: TourPanelBodyProps) {
   const { t } = useTranslation();
-  const steps = getActiveTourSteps(tourId);
+  const steps = getLocalizedTourSteps(t, tourId);
   const currentStep = steps[currentIndex];
   if (!currentStep) return null;
 

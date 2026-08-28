@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/react";
 import type { SystemStore } from "../../storeTypes";
 import { useToastStore } from "@/stores/toastStore";
 import { en } from "@/i18n/en";
+import type { Translations } from "@/i18n/useTranslation";
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -224,11 +225,11 @@ export interface TourStepDef {
    * step activates. Absent / undefined → the step is silent (the tour is
    * a normal text coach-mark, exactly as before voice was added).
    *
-   * NOTE: like `title`/`description`, narration text currently lives
-   * inline in English here pending the tracked tour-string i18n
-   * extraction (see `src/features/onboarding/README.md`). Athena's TTS
-   * engines are multilingual, so once these move to `en.json` the spoken
-   * text localizes with the rest of the tour for free.
+   * Like `title`/`description`, the English written here is the SOURCE and
+   * the fallback, not what is spoken: `localizeTour` overlays the
+   * `onboarding.tours.<tour>__<step>__narration` key, so Athena's
+   * multilingual TTS speaks the user's own language. A step whose narration
+   * key is missing falls back to this literal and is narrated in English.
    */
   narration?: string;
 }
@@ -1014,12 +1015,113 @@ export function getDynamicTours(): TourDef[] {
   return [...dynamicTourRegistry().values()];
 }
 
+// -- Localisation --------------------------------------------------------
+
+/**
+ * The English copy above is the SOURCE of the tour text, but it is not what
+ * the user reads: every string is mirrored into `onboarding.tours` in
+ * `src/i18n/locales/*.json` and overlaid by `localizeTour` below. Until
+ * 2026-08-28 the literals rendered raw in all 14 locales —
+ * `custom/no-hardcoded-jsx-text` cannot see them (they reach the JSX through a
+ * variable) and the i18n coverage gate cannot see them (they were never keys),
+ * so a non-English user met the Learning hub and the whole guided tour in
+ * English.
+ *
+ * Keys are derived from ids, never hand-written: `<tour>__<step>__<field>`
+ * with `-` mapped to `_` (`getting_started__appearance_setup__title`);
+ * sub-steps add their own id segment.
+ *
+ * The bundle is a PARAMETER rather than a `getActiveTranslations()` call
+ * inside this module. systemStore imports this file, and `useTranslation`
+ * reaches systemStore again through `routeSections`, so a value import of the
+ * i18n module here closes an import cycle — measured, it left
+ * `createTourSlice` undefined at store construction. Callers already hold
+ * `t` from `useTranslation()`, which also means the copy repaints on a
+ * language switch and again when the lazily-loaded `onboarding` section lands.
+ */
+function tourTextKey(...parts: string[]): string {
+  return parts.map((part) => part.replace(/-/g, "_")).join("__");
+}
+
+/**
+ * Overlay the localized copy onto one tour definition.
+ *
+ * The cast is a data-boundary cast: `onboarding.tours` is a generated type
+ * with one literal key per string, and the key looked up here is assembled
+ * from tour/step ids at runtime, so the compiler cannot connect the two. The
+ * invariant that makes it safe is that a miss is indistinguishable from a hit
+ * on a non-string — both fall back to the English literal. That fallback is
+ * also what keeps Athena-composed (`athena-*`) tours working: their text is
+ * generated at runtime and has no key by construction.
+ */
+export function localizeTour(t: Translations, def: TourDef): TourDef {
+  const tours = t.onboarding.tours as unknown as Record<string, string | undefined>;
+  const pick = (key: string, fallback: string): string => {
+    const value = tours?.[key];
+    return typeof value === "string" && value.length > 0 ? value : fallback;
+  };
+
+  const tourKey = tourTextKey(def.id);
+  return {
+    ...def,
+    title: pick(tourTextKey(tourKey, "title"), def.title),
+    description: pick(tourTextKey(tourKey, "description"), def.description),
+    steps: def.steps.map((step) => {
+      const stepKey = tourTextKey(tourKey, step.id);
+      const localized: TourStepDef = {
+        ...step,
+        title: pick(tourTextKey(stepKey, "title"), step.title),
+        description: pick(tourTextKey(stepKey, "description"), step.description),
+        hint: pick(tourTextKey(stepKey, "hint"), step.hint),
+        subSteps: (step.subSteps ?? []).map((sub) => {
+          const subKey = tourTextKey(stepKey, sub.id);
+          return {
+            ...sub,
+            label: pick(tourTextKey(subKey, "label"), sub.label),
+            hint: pick(tourTextKey(subKey, "hint"), sub.hint),
+          };
+        }),
+      };
+      // An absent narration means "this step is silent". Resolving a key here
+      // would hand the TTS engine a string for a step that must stay quiet.
+      if (typeof step.narration === "string" && step.narration.length > 0) {
+        localized.narration = pick(tourTextKey(stepKey, "narration"), step.narration);
+      }
+      return localized;
+    }),
+  };
+}
+
+/** The shipped tours, in the caller's active language. Call from render. */
+export function getLocalizedTourRegistry(t: Translations): TourDef[] {
+  return TOUR_REGISTRY.map((def) => localizeTour(t, def));
+}
+
+/**
+ * `getTourById` in the caller's active language. Use this everywhere a tour's
+ * TEXT is rendered; the raw `getTourById` stays for the machinery that only
+ * needs ids, nav targets and step counts.
+ */
+export function getLocalizedTourById(t: Translations, id: TourId): TourDef | undefined {
+  const def = getTourById(id);
+  return def ? localizeTour(t, def) : undefined;
+}
+
 export function getTourById(id: TourId): TourDef | undefined {
   return TOUR_REGISTRY.find((t) => t.id === id) ?? dynamicTourRegistry().get(id);
 }
 
 export function getActiveTourSteps(tourId: TourId): TourStepDef[] {
   return getTourById(tourId)?.steps ?? [];
+}
+
+/**
+ * `getActiveTourSteps` in the caller's active language. Use this wherever step
+ * TEXT is rendered; the raw twin above stays for the machinery that reads only
+ * ids, `nav` targets and step counts.
+ */
+export function getLocalizedTourSteps(t: Translations, tourId: TourId): TourStepDef[] {
+  return getLocalizedTourById(t, tourId)?.steps ?? [];
 }
 
 // -- Persistence --------------------------------------------------------

@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { ArrowRight, Check, ChevronDown, ChevronUp, Crosshair, Eye, EyeOff, Volume2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import {
-  getActiveTourSteps,
+  getLocalizedTourSteps,
   isExplorationTourEvent,
   isSafeTourTestId,
   type TourId,
@@ -59,7 +59,7 @@ export function TourNarrativeDeck({
   const [collapsed, setCollapsed] = useState(false);
   const highlightMissing = useSystemStore((s) => s.tourHighlightMissing);
 
-  const steps = getActiveTourSteps(tourId);
+  const steps = getLocalizedTourSteps(t, tourId);
   const currentStep = steps[currentIndex];
   if (!currentStep) return null;
 
