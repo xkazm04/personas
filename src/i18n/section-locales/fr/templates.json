@@ -990,7 +990,13 @@
     "empty_dim_refine_hint": "Vous le voulez ? Décrivez-le ci-dessous — ajouté à la prochaine reconstruction.",
     "show_n_more": "+{count} de plus",
     "show_less": "Afficher moins",
-    "model_tier_custom": "Personnalisé"
+    "model_tier_custom": "Personnalisé",
+    "cron_every_minutes": "Toutes les {n} min",
+    "cron_every_hours": "Toutes les {n} h",
+    "cron_daily": "Chaque jour",
+    "cron_weekdays": "En semaine",
+    "cron_weekends": "Le week-end",
+    "cron_day_names": "Dim,Lun,Mar,Mer,Jeu,Ven,Sam"
   },
   "diagrams": {
     "no_flow_data": "Aucune donnée de flux disponible",

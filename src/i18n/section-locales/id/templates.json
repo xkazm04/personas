@@ -990,7 +990,13 @@
     "empty_dim_refine_hint": "Mau? Jelaskan di bawah — ditambahkan saat pembangunan ulang berikutnya.",
     "show_n_more": "+{count} lagi",
     "show_less": "Tampilkan lebih sedikit",
-    "model_tier_custom": "Kustom"
+    "model_tier_custom": "Kustom",
+    "cron_every_minutes": "Setiap {n} mnt",
+    "cron_every_hours": "Setiap {n} jam",
+    "cron_daily": "Setiap hari",
+    "cron_weekdays": "Hari kerja",
+    "cron_weekends": "Akhir pekan",
+    "cron_day_names": "Min,Sen,Sel,Rab,Kam,Jum,Sab"
   },
   "diagrams": {
     "no_flow_data": "Tidak ada data aliran yang tersedia",

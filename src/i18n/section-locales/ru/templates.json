@@ -990,7 +990,13 @@
     "empty_dim_refine_hint": "Нужно? Опишите ниже — добавится при следующей пересборке.",
     "show_n_more": "ещё {count}",
     "show_less": "Свернуть",
-    "model_tier_custom": "Своя"
+    "model_tier_custom": "Своя",
+    "cron_every_minutes": "Каждые {n} мин",
+    "cron_every_hours": "Каждые {n} ч",
+    "cron_daily": "Ежедневно",
+    "cron_weekdays": "По будням",
+    "cron_weekends": "По выходным",
+    "cron_day_names": "Вс,Пн,Вт,Ср,Чт,Пт,Сб"
   },
   "diagrams": {
     "no_flow_data": "Нет данных потока",

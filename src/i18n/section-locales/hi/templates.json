@@ -990,7 +990,13 @@
     "empty_dim_refine_hint": "चाहिए? नीचे बताएं — अगले पुनर्निर्माण में जुड़ जाएगा।",
     "show_n_more": "+{count} और",
     "show_less": "कम दिखाएँ",
-    "model_tier_custom": "कस्टम"
+    "model_tier_custom": "कस्टम",
+    "cron_every_minutes": "हर {n} मिनट",
+    "cron_every_hours": "हर {n} घंटे",
+    "cron_daily": "रोज़ाना",
+    "cron_weekdays": "कार्यदिवस",
+    "cron_weekends": "सप्ताहांत",
+    "cron_day_names": "रवि,सोम,मंगल,बुध,गुरु,शुक्र,शनि"
   },
   "diagrams": {
     "no_flow_data": "कोई फ्लो डेटा उपलब्ध नहीं",

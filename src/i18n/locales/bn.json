@@ -9577,7 +9577,13 @@
       "empty_dim_refine_hint": "চান? নিচে বর্ণনা করুন — পরের পুনর্নির্মাণে যুক্ত হবে।",
       "show_n_more": "আরও {count}টি",
       "show_less": "কম দেখান",
-      "model_tier_custom": "কাস্টম"
+      "model_tier_custom": "কাস্টম",
+      "cron_every_minutes": "প্রতি {n} মিনিটে",
+      "cron_every_hours": "প্রতি {n} ঘণ্টায়",
+      "cron_daily": "প্রতিদিন",
+      "cron_weekdays": "কর্মদিবস",
+      "cron_weekends": "সপ্তাহান্তে",
+      "cron_day_names": "রবি,সোম,মঙ্গল,বুধ,বৃহঃ,শুক্র,শনি"
     },
     "diagrams": {
       "no_flow_data": "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",

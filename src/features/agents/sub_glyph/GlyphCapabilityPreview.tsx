@@ -104,14 +104,15 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
   };
 
   // Localized one-line trigger summary. Schedule rows defer to humanizeCron
-  // (locale-agnostic), polling interpolates the interval, and everything
-  // else falls back to the capitalised type + its (user-authored) blurb.
+  // (which takes `t` and localizes its own prose), polling interpolates the
+  // interval, and everything else falls back to the capitalised type + its
+  // (user-authored) blurb.
   const triggerSummary = (trig: TriggerLike): string => {
     const triggerType = trig?.trigger_type;
     if (!triggerType) return t.agents.glyph_cap_trigger_manual;
     const cron = (trig?.config?.cron as string | undefined) || undefined;
     const interval = (trig?.config?.interval_seconds as number | undefined) || undefined;
-    if (triggerType === "schedule" && cron) return humanizeCron(cron);
+    if (triggerType === "schedule" && cron) return humanizeCron(t, cron);
     if (triggerType === "polling" && interval) return tx(t.agents.glyph_cap_trigger_polling, { seconds: interval });
     const capitalised = `${triggerType.charAt(0).toUpperCase()}${triggerType.slice(1)}`;
     if (trig?.description && trig.description.length < 60) return `${capitalised} — ${trig.description}`;

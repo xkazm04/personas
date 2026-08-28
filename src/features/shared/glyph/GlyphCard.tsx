@@ -58,7 +58,7 @@ export function GlyphCard({
 
   const TrigIcon = row.triggers[0] ? triggerIcon(row.triggers[0].trigger_type) : null;
   const trigText = row.triggers[0]
-    ? triggerDetail(row.triggers[0]) || prettyTriggerType(t, row.triggers[0].trigger_type)
+    ? triggerDetail(t, row.triggers[0]) || prettyTriggerType(t, row.triggers[0].trigger_type)
     : c.manual_only;
 
   const channels = parseChannels(row.messageSummary);

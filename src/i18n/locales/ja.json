@@ -9577,7 +9577,13 @@
       "empty_dim_refine_hint": "必要なら下に記入 — 次回の再ビルドで追加されます。",
       "show_n_more": "他 {count} 件",
       "show_less": "折りたたむ",
-      "model_tier_custom": "カスタム"
+      "model_tier_custom": "カスタム",
+      "cron_every_minutes": "{n}分ごと",
+      "cron_every_hours": "{n}時間ごと",
+      "cron_daily": "毎日",
+      "cron_weekdays": "平日",
+      "cron_weekends": "週末",
+      "cron_day_names": "日,月,火,水,木,金,土"
     },
     "diagrams": {
       "no_flow_data": "フローデータがありません",

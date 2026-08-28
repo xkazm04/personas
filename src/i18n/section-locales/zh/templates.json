@@ -990,7 +990,13 @@
     "empty_dim_refine_hint": "需要它？在下方描述 — 将在下次重建时添加。",
     "show_n_more": "+{count} 更多",
     "show_less": "收起",
-    "model_tier_custom": "自定义"
+    "model_tier_custom": "自定义",
+    "cron_every_minutes": "每 {n} 分钟",
+    "cron_every_hours": "每 {n} 小时",
+    "cron_daily": "每天",
+    "cron_weekdays": "工作日",
+    "cron_weekends": "周末",
+    "cron_day_names": "周日,周一,周二,周三,周四,周五,周六"
   },
   "diagrams": {
     "no_flow_data": "没有可用的流程数据",
