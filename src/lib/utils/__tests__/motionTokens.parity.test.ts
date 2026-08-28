@@ -7,14 +7,20 @@
  *      comment as "the JS counterpart of the CSS custom properties", four
  *      numbers re-typed by hand.
  *   3. `src/lib/utils/animation/animationPresets.ts` — `MOTION_PRESETS`, the
- *      Framer twins, four more numbers re-typed by hand in SECONDS.
+ *      Framer twins, which USED to be four more numbers re-typed by hand in
+ *      SECONDS and now read `MOTION.duration` through a `/1000` conversion.
  *
  * Three copies, three naming systems (instant/fast/normal/slow ·
  * snap/flow/ease · snappy/smooth/gentle), and no parity check: editing the CSS
- * token silently desynchronises the two JS copies, and the failure mode is not
+ * token silently desynchronised the two JS copies, and the failure mode is not
  * a crash but a UI where a CSS transition and its Framer sibling animate the
  * same gesture at two different speeds. `animationPresets.ts` records that this
  * has already happened once, on the `EASE` rung.
+ *
+ * Copy 3 is now derived rather than re-typed, so the Framer assertion below can
+ * only fail through copy 2 — but it is kept, not deleted: it is what would
+ * catch a future hand-typed rung sneaking back in, and it is the only thing
+ * asserting the seconds/milliseconds conversion is the ONLY difference.
  *
  * This test is the missing comparison. It also caught the drift that was live
  * when it was written: `globals.css` wrote `var(--duration-normal, 200ms)`

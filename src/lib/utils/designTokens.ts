@@ -22,9 +22,19 @@ export type SpacingToken = keyof typeof SPACING;
 
 // -- Motion tokens ---------------------------------------------------------
 // Unified animation timing registry — the JS counterpart of the CSS
-// custom properties --duration-{instant,fast,normal,slow} in globals.css.
-// Every setTimeout/transition that drives UI motion should derive from this
-// registry so global tuning is a single edit.
+// custom properties --duration-{instant,fast,normal,slow} in globals.css,
+// held equal to them by `__tests__/motionTokens.parity.test.ts`.
+//
+// Reach for this registry only when a timing must exist as a NUMBER in JS: a
+// setTimeout, a Framer transition, a delay prop. Anything expressible in CSS
+// belongs in CSS — use the `duration-{snap,flow,ease}` utility classes, which
+// read the custom properties directly and need no JS at all. That is why this
+// registry has few consumers by design and not by neglect; the comment here
+// used to claim universal adoption while `MOTION.duration` had none.
+//
+// Current JS-side consumers: `animation/animationPresets.ts` (every Framer
+// rung, converted to seconds) and `MOTION.delay.tooltip` in Tooltip.tsx /
+// TruncateWithTooltip.tsx.
 
 export const MOTION = {
   /** Transition / animation durations in milliseconds. */
