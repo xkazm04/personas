@@ -673,7 +673,8 @@
     "corpus_overview_title": "कॉर्पस अवलोकन",
     "documents_count_one": "{count} दस्तावेज़",
     "documents_count_other": "{count} दस्तावेज़",
-    "drop_no_paths": "कोई मान्य फ़ाइल पथ नहीं मिला। अलग-अलग फ़ाइलें छोड़कर देखें।"
+    "drop_no_paths": "कोई मान्य फ़ाइल पथ नहीं मिला। अलग-अलग फ़ाइलें छोड़कर देखें।",
+    "chars_unit": "{count} वर्ण"
   },
   "manager": {
     "title": "क्रेडेंशियल",

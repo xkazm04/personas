@@ -4947,6 +4947,7 @@ export type Translations = {
       documents_count_one: string;
       documents_count_other: string;
       drop_no_paths: string;
+      chars_unit: string;
     };
     manager: {
       title: string;

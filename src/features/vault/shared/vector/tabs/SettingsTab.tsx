@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import Button from '@/features/shared/components/buttons/Button';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { formatCount } from '@/lib/utils/formatters';
 import { createLogger } from '@/lib/log';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
 import { kbReindex } from '@/api/vault/database/vectorKb';
@@ -51,8 +52,10 @@ export function SettingsTab({ kb, onRefresh }: SettingsTabProps) {
           <InfoRow icon={Layers} label={sh.label_status} value={kb.status} />
           <InfoRow icon={Cpu} label={sh.label_embedding_model} value={kb.embeddingModel} mono />
           <InfoRow icon={Hash} label={sh.label_dimensions} value={String(kb.embeddingDims)} />
-          <InfoRow icon={Layers} label={sh.label_chunk_size} value={`${kb.chunkSize} chars`} />
-          <InfoRow icon={Layers} label={sh.label_chunk_overlap} value={`${kb.chunkOverlap} chars`} />
+          {/* The unit is part of the translated string: some locales place it
+              before the number, and 'chars' was English in all 14. */}
+          <InfoRow icon={Layers} label={sh.label_chunk_size} value={tx(sh.chars_unit, { count: formatCount(kb.chunkSize, { precision: 0 }) })} />
+          <InfoRow icon={Layers} label={sh.label_chunk_overlap} value={tx(sh.chars_unit, { count: formatCount(kb.chunkOverlap, { precision: 0 }) })} />
           <InfoRow icon={Calendar} label={sh.label_created} value={formatDate(kb.createdAt)} />
           <InfoRow icon={Calendar} label={sh.label_updated} value={formatDate(kb.updatedAt)} />
         </div>

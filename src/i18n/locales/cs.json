@@ -4671,7 +4671,8 @@
       "corpus_overview_title": "Přehled korpusu",
       "documents_count_one": "{count} dokument",
       "documents_count_other": "{count} dokumentů",
-      "drop_no_paths": "Nebyly nalezeny žádné platné cesty k souborům. Zkuste přetáhnout jednotlivé soubory."
+      "drop_no_paths": "Nebyly nalezeny žádné platné cesty k souborům. Zkuste přetáhnout jednotlivé soubory.",
+      "chars_unit": "{count} znaků"
     },
     "manager": {
       "title": "Přihlašovací údaje",

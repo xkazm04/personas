@@ -673,7 +673,8 @@
     "corpus_overview_title": "Ikhtisar korpus",
     "documents_count_one": "{count} dokumen",
     "documents_count_other": "{count} dokumen",
-    "drop_no_paths": "Tidak ada jalur berkas yang valid. Coba jatuhkan berkas satu per satu."
+    "drop_no_paths": "Tidak ada jalur berkas yang valid. Coba jatuhkan berkas satu per satu.",
+    "chars_unit": "{count} karakter"
   },
   "manager": {
     "title": "Kredensial",

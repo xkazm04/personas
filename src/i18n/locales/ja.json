@@ -4671,7 +4671,8 @@
       "corpus_overview_title": "コーパスの概要",
       "documents_count_one": "{count} 件のドキュメント",
       "documents_count_other": "{count} 件のドキュメント",
-      "drop_no_paths": "有効なファイルパスが見つかりませんでした。ファイルを個別にドロップしてみてください。"
+      "drop_no_paths": "有効なファイルパスが見つかりませんでした。ファイルを個別にドロップしてみてください。",
+      "chars_unit": "{count} 文字"
     },
     "manager": {
       "title": "認証情報",
