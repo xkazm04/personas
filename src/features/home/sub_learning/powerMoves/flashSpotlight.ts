@@ -68,8 +68,18 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/** Poll for `[data-testid="${testId}"]` until present or timed out. */
-function waitForTestId(testId: string): Promise<Element | null> {
+/**
+ * Poll for `[data-testid="${testId}"]` until present or timed out.
+ *
+ * `generation` is the caller's `flashes` token. The poll runs for up to 4s, so
+ * a superseded call used to keep querying the document every 80ms (~50 wasted
+ * queries) for a result nobody would read, and then fired an
+ * `anchor-never-mounted` breadcrumb for an anchor it had already abandoned —
+ * a degradation signal that says nothing about the app's health. Checking the
+ * token inside the tick ends the loop at the first beat after it is superseded
+ * and resolves `null` WITHOUT a breadcrumb: being replaced is not a failure.
+ */
+function waitForTestId(testId: string, generation: number): Promise<Element | null> {
   if (!isSafeTestId(testId)) {
     if (typeof console !== 'undefined') {
       console.warn(
@@ -83,6 +93,8 @@ function waitForTestId(testId: string): Promise<Element | null> {
   return new Promise((resolve) => {
     const deadline = Date.now() + WAIT_MS;
     const tick = () => {
+      // Superseded: stop polling, and stay silent — no one is waiting.
+      if (!flashes.isCurrent(generation)) return resolve(null);
       const el = document.querySelector(`[data-testid="${testId}"]`);
       if (el) return resolve(el);
       if (Date.now() > deadline) {
@@ -117,7 +129,7 @@ function waitForTestId(testId: string): Promise<Element | null> {
 export async function flashSpotlight(testId: string): Promise<void> {
   const mine = flashes.next();
   removeActiveFlash();
-  const el = await waitForTestId(testId);
+  const el = await waitForTestId(testId, mine);
   if (!el || !flashes.isCurrent(mine)) return;
 
   const reduceMotion = prefersReducedMotion();
