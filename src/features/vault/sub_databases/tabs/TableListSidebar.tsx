@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Table2, Pin, Key, ChevronRight, Database } from 'lucide-react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TableSearch, SidebarTestConnection } from './TableSearch';
 import type { IntrospectedTable, RedisKeyInfo } from '@/hooks/database/useTableIntrospection';
@@ -150,10 +151,13 @@ export function TableListSidebar({
         {isColdLoad && <TableListGhost />}
 
         {error && (
+          // Was a hand-painted `bg-red-500/10` div — no icon, no role="alert",
+          // while the query panes two surfaces over already used the shared
+          // banner. SidebarTestConnection stays a sibling rather than becoming
+          // `onRetry`: it carries its own testing/ok/failed state that a bare
+          // callback would throw away.
           <div className="space-y-2">
-            <div className="p-2.5 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 break-words">
-              {error}
-            </div>
+            <InlineErrorBanner compact message={error} className="break-words" />
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
           </div>
         )}

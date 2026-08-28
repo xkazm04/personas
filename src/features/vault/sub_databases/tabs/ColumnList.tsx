@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 
@@ -55,11 +56,10 @@ export function ColumnList({
   }, [isColdLoad, db.loading_columns]);
 
   if (columnsError) {
-    return (
-      <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 break-words">
-        {columnsError}
-      </div>
-    );
+    // Shared banner rather than the hand-painted red div this used to be: an
+    // introspection failure now announces as role="alert" and reads in the same
+    // visual language as the query panes' errors.
+    return <InlineErrorBanner message={columnsError} className="break-words" />;
   }
 
   const showGhost = isColdLoad;
