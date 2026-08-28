@@ -160,6 +160,13 @@ practice-harvest/
 # by /conform on every run, so it will churn in diffs. Verified before tracking:
 # no absolute paths, usernames, emails or credentials in any of them (this
 # repository is public).
+#
+# MEASURED 2026-08-28, because the rule this replaced asserted the opposite:
+# the map does NOT churn every run. build-registry-map.mjs is deterministic —
+# two consecutive runs with no code change differ by exactly one line, the
+# `generatedAt` stamp. It moves when the repo or the registry actually moves
+# (a 5-day-stale rebuild rewrote ~3k of 14.6k lines, all of it re-scored
+# matches and newly governing subjects). That is signal, not noise.
 
 # BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-skills.mjs)
 # The links are machine state; the declaration lives in .ai/manifest.yaml `skills:`.
