@@ -1,5 +1,8 @@
 import { Trophy, Clock, DollarSign, Target, FileText } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { scoreColor } from '@/lib/eval/evalFramework';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import { formatCost } from '@/lib/utils/formatters';
 import type { ModelOption, ModelMetrics } from '../../libs/compareHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -46,11 +49,38 @@ function MetricRows({ metrics }: { metrics: ModelMetrics }) {
   const { t } = useTranslation();
   const mc = t.agents.model_config;
   return (
+    // All four figures go through `<Numeric>`, which defaults to the active UI
+    // language. They read `.toFixed()` / `.toLocaleString()` until 2026-08-29 —
+    // en-US separators in a 14-locale app, seven of whose locales use a decimal
+    // comma. The precision of each is a deliberate choice, not the primitive's
+    // default:
+    //  - latency keeps one decimal on seconds, matching CompareResultsTable's
+    //    per-row cell exactly (`unit="s"` would round 4.2s to "4s");
+    //  - cost keeps FOUR decimals via pre-formatted `formatCost`, because this
+    //    panel exists to tell two models' spend apart and `unit="usd"` drops to
+    //    three below a dollar, collapsing $0.0523 and $0.0518 onto one figure;
+    //  - token counts are integers — grouped, never fractional.
     <div className="grid grid-cols-2 gap-x-3 gap-y-1 typo-caption">
-      <MetricRow icon={Clock} label={mc.latency} value={`${(metrics.avgDuration / 1000).toFixed(1)}s`} />
-      <MetricRow icon={DollarSign} label={mc.cost} value={`$${metrics.totalCost.toFixed(4)}`} />
-      <MetricRow icon={Target} label={mc.tokens_in} value={metrics.totalInputTokens.toLocaleString()} />
-      <MetricRow icon={FileText} label={mc.tokens_out} value={metrics.totalOutputTokens.toLocaleString()} />
+      <MetricRow
+        icon={Clock}
+        label={mc.latency}
+        value={<><Numeric value={metrics.avgDuration / 1000} precision={1} />s</>}
+      />
+      <MetricRow
+        icon={DollarSign}
+        label={mc.cost}
+        value={<Numeric>{formatCost(metrics.totalCost, { precision: 4 })}</Numeric>}
+      />
+      <MetricRow
+        icon={Target}
+        label={mc.tokens_in}
+        value={<Numeric value={metrics.totalInputTokens} unit="count" precision={0} />}
+      />
+      <MetricRow
+        icon={FileText}
+        label={mc.tokens_out}
+        value={<Numeric value={metrics.totalOutputTokens} unit="count" precision={0} />}
+      />
     </div>
   );
 }
@@ -62,7 +92,8 @@ function MetricRow({
 }: {
   icon: typeof Clock;
   label: string;
-  value: string;
+  /** A rendered figure — `<Numeric>`, not a pre-joined string. */
+  value: ReactNode;
 }) {
   return (
     <div className="flex items-center gap-1 text-foreground">
