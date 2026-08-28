@@ -225,7 +225,7 @@ async function loadAndVerify(): Promise<CatalogLoad> {
   // `skipped` rides back with `verified` rather than being written straight to
   // `_cachedSkipped` here: a load that resolves AFTER an invalidation must not
   // leave its own view of the world behind. The single generation-guarded
-  // assignment in `loadVerified` decides whether either half is published.
+  // assignment in `loadCatalog` decides whether either half is published.
   return { verified, skipped };
 }
 
@@ -255,17 +255,29 @@ async function loadAndVerifyResettable(): Promise<CatalogLoad> {
  * All consumers should use this instead of the sync TEMPLATE_CATALOG export.
  */
 export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
-  return (await loadVerified()).map((v) => v.template);
+  return (await loadCatalog()).verified.map((v) => v.template);
 }
 
 /**
- * The load path every public reader goes through. Returns the verified entries
- * directly so a caller never has to reach back into `_cached` — which may
- * legitimately be `null` on return now that a stale resolve declines to
- * populate it.
+ * The load path every public reader goes through. Returns BOTH halves of the
+ * load — the verified entries and the skip list — so a caller never has to
+ * reach back into module state for the other half.
+ *
+ * That reach-back was a real bug, not a tidiness point. `getTemplateCatalogStatus`
+ * used to await the templates here and then read `_cachedSkipped` separately.
+ * The generation guard below deliberately declines to publish a load that
+ * resolved after an invalidation, and `invalidateTemplateCatalog` resets
+ * `_cachedSkipped` to `[]` — so the status wrapper could pair one load's
+ * templates with an invalidation's empty skip list and report a partial load as
+ * fully healthy, hiding the Retry affordance the user needed. Returning the
+ * pair makes the mismatch unexpressible.
+ *
+ * `_cached` and `_cachedSkipped` are only ever written together, under the
+ * guard, and cleared together, so reading them as a pair on the cache-hit path
+ * is safe.
  */
-async function loadVerified(): Promise<VerifiedEntry[]> {
-  if (_cached) return _cached;
+async function loadCatalog(): Promise<CatalogLoad> {
+  if (_cached) return { verified: _cached, skipped: _cachedSkipped };
   if (!_loading) _loading = loadAndVerifyResettable();
   // Read both BEFORE the await: `_loading` can be nulled and `_generation`
   // bumped while we are suspended here.
@@ -276,7 +288,7 @@ async function loadVerified(): Promise<VerifiedEntry[]> {
     _cached = loaded.verified;
     _cachedSkipped = loaded.skipped;
   }
-  return loaded.verified;
+  return loaded;
 }
 
 /**
@@ -284,8 +296,9 @@ async function loadVerified(): Promise<VerifiedEntry[]> {
  * empty-but-healthy from everything-failed.
  */
 export async function getTemplateCatalogStatus(): Promise<CatalogLoadResult> {
-  const templates = await getTemplateCatalog();
-  const skipped = _cachedSkipped;
+  // Both halves come from ONE load — see the note on `loadCatalog`.
+  const { verified, skipped } = await loadCatalog();
+  const templates = verified.map((v) => v.template);
   const errorSkips = skipped.filter((s) => s.reason !== 'unpublished');
   let status: CatalogLoadStatus;
   if (templates.length === 0) {
@@ -398,7 +411,7 @@ export async function getLocalizedTemplateCatalogStatus(
  */
 export async function verifyTemplatesWithBackend(): Promise<BatchIntegrityResult | null> {
   try {
-    const verified = await loadVerified();
+    const { verified } = await loadCatalog();
 
     const entries = verified.map((v) => ({
       path: v.relPath,

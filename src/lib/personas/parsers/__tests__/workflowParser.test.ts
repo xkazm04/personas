@@ -92,6 +92,27 @@ describe('detector helpers', () => {
   it('does not claim GitHub Actions for a bare jobs key with no signature', () => {
     expect(detectPlatformLabel({ jobs: { a: { note: 'not a workflow' } } })).toBe('Workflow');
   });
+
+  // The count and the platform name print side by side on the same preview
+  // card. They used to come from two rule tables with two precedence orders:
+  // the count only required the array to exist, detection required evidence
+  // inside it. This document made them disagree — 0 "nodes" under the heading
+  // "Make (Integromat)". One walk now returns both, so it is not expressible.
+  it('never pairs one collection count with another collection platform', () => {
+    const mixed = { nodes: [], flow: [{ module: 'google-sheets:addRow' }] };
+    const detection = detectWorkflowPlatform(mixed, '.json');
+    expect(detection.platform).toBe('make');
+    expect(detection.count).toBe(1);
+    expect(detection.noun).toBe('module');
+    expect(countElements(mixed)).toEqual({ count: 1, label: 'module' });
+  });
+
+  // The count is still useful for a structured document no platform rule
+  // claims — the upload/paste/URL previews reject on `count === 0`.
+  it('counts the first structural collection when no platform matches', () => {
+    expect(countElements({ nodes: [{ type: 'custom.thing' }] })).toEqual({ count: 1, label: 'node' });
+    expect(countElements({ jobs: { a: { note: 'x' } } })).toEqual({ count: 1, label: 'job' });
+  });
 });
 
 // Three hand-written enumerations of the same set, with nothing comparing them,

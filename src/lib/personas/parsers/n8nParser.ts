@@ -1,6 +1,6 @@
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { N8nNode } from '@/lib/types/templateTypes';
-import { N8N_DEFINITION, resolveNodeType, classifyNodeRole } from '../platformDefinitions';
+import { N8N_DEFINITION, resolveService, classifyNodeRole } from '../platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 function isValidNode(value: unknown): value is N8nNode {
@@ -26,7 +26,7 @@ export function parseN8nWorkflow(json: unknown): AgentIR {
   }
 
   const nodes: NormalizedNode[] = validNodes.map((node) => {
-    const service = resolveNodeType(N8N_DEFINITION, node.type);
+    const service = resolveService(N8N_DEFINITION, node.type);
     const isTrigger = classifyNodeRole(N8N_DEFINITION, node.type) === 'trigger';
     return {
       // Raw on purpose. `runExtractionPipeline` is the single sanitization

@@ -231,6 +231,10 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
       confidence: fallback.confidence,
       label: PLATFORM_LABELS[fallback.platform],
       format: detection.format,
+      // The speculative reparse renames the platform; it does not re-walk the
+      // document, so the element count stays the one the detection walk produced.
+      count: detection.count,
+      noun: detection.noun,
     };
   } else {
     result = PLATFORM_ADAPTERS[detection.platform].parse(parsed);

@@ -115,37 +115,103 @@ function mappingsBySpecificity(def: PlatformDefinition): NodeTypeMapping[] {
   return sorted;
 }
 
+// -- Service resolution: ONE entry point ------------------------
+
 /**
- * Resolve an already-normalized identifier (lowercased, punctuation-stripped)
- * to its target service by substring match, most specific mapping first.
- * Returns undefined when no mapping applies so the caller can pick its own
- * fallback.
+ * How one platform's raw identifier becomes the string its `nodeTypeMap` is
+ * written against, and how a mapping pattern is compared to it.
+ *
+ * The service name this produces is the identity the whole import IR is keyed
+ * on — it becomes the connector name, the tool-name prefix, and the key
+ * connectors claim their triggers by. Four adapters used to derive it four
+ * different ways: n8n through {@link resolveNodeType} (prefix match on a
+ * dot-stripped, `trigger`/`node`-suffix-stripped tail), Zapier and Make through
+ * {@link resolveServiceByInclusion} with two different pre-cleanups, and GitHub
+ * Actions through a private map inside its parser that `includes()`-matched raw
+ * `uses` strings — so `someorg/my-aws-actions-helper@v1` resolved to the `aws`
+ * service because `aws-actions` appears somewhere inside it. The same vendor
+ * could therefore arrive under different names depending on which platform the
+ * workflow was exported from.
+ *
+ * Now there is one entry point, {@link resolveService}, and the per-platform
+ * difference is declared here as data.
  */
-export function resolveServiceByInclusion(
-  def: PlatformDefinition,
-  candidate: string,
-): string | undefined {
-  for (const mapping of mappingsBySpecificity(def)) {
-    if (candidate.includes(mapping.sourcePattern)) return mapping.targetService;
-  }
-  return undefined;
+interface ServiceResolution {
+  /** Raw identifier -> the form the platform's `nodeTypeMap` patterns are written in. */
+  normalize: (raw: string) => string;
+  /**
+   * `prefix` anchors a pattern to the START of the normalized identifier;
+   * `substring` matches it anywhere. Prefer `prefix` — `substring` is what let
+   * a pattern match the middle of an unrelated third-party name.
+   */
+  match: 'prefix' | 'substring';
+  /** Service name when no mapping applies. */
+  fallback: (normalized: string) => string;
 }
 
-/** Resolve a node type string to its target service using a PlatformDefinition. */
-export function resolveNodeType(def: PlatformDefinition, nodeType: string): string {
-  const lower = nodeType.toLowerCase();
-  // Strip platform prefix (e.g., "n8n-nodes-base.gmailTrigger" -> "gmailtrigger")
-  const parts = lower.split('.');
-  const name = parts[parts.length - 1] || lower;
-  // Remove common suffixes
-  const cleaned = name.replace(/trigger$/, '').replace(/node$/, '');
+const DEFAULT_RESOLUTION: ServiceResolution = {
+  normalize: (raw) => raw.toLowerCase(),
+  match: 'substring',
+  fallback: (normalized) => normalized || 'unknown',
+};
 
+const SERVICE_RESOLUTION: Record<string, ServiceResolution> = {
+  // "n8n-nodes-base.gmailTrigger" -> "gmail"
+  n8n: {
+    normalize: (raw) => {
+      const lower = raw.toLowerCase();
+      const parts = lower.split('.');
+      const name = parts[parts.length - 1] || lower;
+      return name.replace(/trigger$/, '').replace(/node$/, '');
+    },
+    match: 'prefix',
+    fallback: (normalized) => normalized,
+  },
+  // A Zapier step's `app` slug, e.g. "google-sheets".
+  zapier: {
+    normalize: (raw) => raw.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    match: 'substring',
+    fallback: (normalized) => normalized || 'unknown',
+  },
+  // A Make module id, e.g. "google-sheets:addRow" -> "google-sheets".
+  make: {
+    normalize: (raw) => {
+      const lower = raw.toLowerCase();
+      const colonPart = lower.split(':')[0] || lower;
+      return colonPart.replace(/[^a-z0-9-]/g, '');
+    },
+    match: 'substring',
+    fallback: (normalized) => normalized || 'unknown',
+  },
+  // A GitHub Actions step's `uses`, e.g. "actions/checkout@v4" -> "actions/checkout".
+  // Matched by PREFIX so an org/repo pattern cannot match the middle of an
+  // unrelated repository name; the fallback is the repo half of `owner/repo`.
+  'github-actions': {
+    normalize: (raw) => raw.toLowerCase().split('@')[0] ?? '',
+    match: 'prefix',
+    fallback: (normalized) => {
+      const repo = normalized.split('/')[1];
+      return repo ? repo.replace(/[^a-z0-9-]/g, '') || 'action' : 'action';
+    },
+  },
+};
+
+/**
+ * Resolve a platform's raw node/step/module identifier to its target service.
+ *
+ * The single entry point every workflow adapter goes through — see
+ * {@link ServiceResolution} for why.
+ */
+export function resolveService(def: PlatformDefinition, rawType: string | undefined): string {
+  const rule = SERVICE_RESOLUTION[def.id] ?? DEFAULT_RESOLUTION;
+  const normalized = rule.normalize(rawType ?? '');
   for (const mapping of mappingsBySpecificity(def)) {
-    if (cleaned.startsWith(mapping.sourcePattern) || cleaned === mapping.sourcePattern) {
-      return mapping.targetService;
-    }
+    const hit = rule.match === 'prefix'
+      ? normalized.startsWith(mapping.sourcePattern)
+      : normalized.includes(mapping.sourcePattern);
+    if (hit) return mapping.targetService;
   }
-  return cleaned;
+  return rule.fallback(normalized);
 }
 
 /**
@@ -447,6 +513,50 @@ export const MAKE_DEFINITION: PlatformDefinition = {
     { platformPattern: 'Webhook output, trigger scenario', targetProtocol: 'emit_event', condition: 'Module triggers downstream scenarios', nodePatterns: ['webhook', 'http'] },
     { platformPattern: 'Email, Slack, notification modules', targetProtocol: 'user_message', condition: 'Module sends notifications', nodePatterns: ['email', 'slack', 'telegram', 'sms'] },
   ],
+  isBuiltin: true,
+};
+
+/**
+ * GitHub Actions.
+ *
+ * The map below lived as a private `GHA_SERVICE_MAP` inside
+ * `githubActionsParser.ts` — the fourth of four independent ways this codebase
+ * derived a service name. Declared here it goes through {@link resolveService}
+ * like every other platform, which also fixes the substring matching it used:
+ * org-level patterns now carry a trailing `/` and are anchored to the start of
+ * `owner/repo`, so `someorg/my-aws-actions-helper@v1` no longer resolves to
+ * `aws`.
+ *
+ * Only `nodeTypeMap` is populated. GitHub Actions steps are never triggers (its
+ * triggers come from the `on:` block, parsed separately) and it has no
+ * credential or protocol rules of its own, so those tables are deliberately
+ * empty rather than invented.
+ */
+export const GITHUB_ACTIONS_DEFINITION: PlatformDefinition = {
+  id: 'github-actions',
+  label: 'GitHub Actions',
+  format: 'yaml',
+  nodeTypeMap: [
+    { sourcePattern: 'actions/checkout', targetService: 'git' },
+    { sourcePattern: 'actions/setup-node', targetService: 'nodejs' },
+    { sourcePattern: 'actions/setup-python', targetService: 'python' },
+    { sourcePattern: 'actions/setup-java', targetService: 'java' },
+    { sourcePattern: 'actions/setup-go', targetService: 'golang' },
+    { sourcePattern: 'actions/upload-artifact', targetService: 'artifacts' },
+    { sourcePattern: 'actions/download-artifact', targetService: 'artifacts' },
+    { sourcePattern: 'actions/cache', targetService: 'cache' },
+    { sourcePattern: 'docker/build-push-action', targetService: 'docker' },
+    { sourcePattern: 'docker/login-action', targetService: 'docker' },
+    { sourcePattern: 'aws-actions/', targetService: 'aws' },
+    { sourcePattern: 'azure/', targetService: 'azure' },
+    { sourcePattern: 'google-github-actions/', targetService: 'gcp' },
+    { sourcePattern: 'slackapi/slack-github-action', targetService: 'slack' },
+    { sourcePattern: 'peter-evans/create-pull-request', targetService: 'github' },
+  ],
+  credentialConsolidation: [],
+  nodeRoleClassification: [],
+  excludedCredentialTypes: [],
+  protocolMapRules: [],
   isBuiltin: true,
 };
 
