@@ -129,6 +129,10 @@ interface StudioStore {
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
+  /** Open a Dev Tools project from the picker — guarded by the same Next.js
+   *  check as `importExisting`, so an unverifiable project is refused up front
+   *  instead of failing deeper with an unrelated error. */
+  openImportable: (id: string, name: string) => Promise<void>;
   importExisting: (path: string) => Promise<void>;
   createWithVision: (name: string, vision: string) => Promise<void>;
   sendTurn: (id: string, text: string) => Promise<void>;
@@ -266,6 +270,30 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       options: rt.options,
       updatedAt: Date.now(),
     });
+  };
+
+  // Studio's preview runs `next dev`, so a project that isn't a Next.js app
+  // cannot be opened. BOTH doors need that guard, and only one of them had it:
+  // the browse-a-folder path re-checked and refused with an explanation, while
+  // the picker leaned on an advisory probe done in the tab strip — a probe whose
+  // FAILURE silently left every row looking openable, so the click failed later,
+  // deeper, and with an unrelated error. This is the single refusal both use.
+  //
+  // Note which way it fails: a check we could not run is not a project we may
+  // open. Treating "unknown" as "fine" is the entire defect.
+  const ensureNextReady = async (projectId: string): Promise<boolean> => {
+    let ready: string[];
+    try {
+      ready = await webbuildNextReady([projectId]);
+    } catch (e) {
+      toastCatch('check project')(e);
+      return false;
+    }
+    if (ready.includes(projectId)) return true;
+    toastCatch('open project')(
+      new Error("This folder isn't a Next.js app — Studio builds Next.js + Tailwind projects."),
+    );
+    return false;
   };
 
   const stopPoll = (id: string) => {
@@ -538,21 +566,18 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       await start(id);
     },
 
+
+    openImportable: async (id, name) => {
+      if (await ensureNextReady(id)) await get().startExisting(id, name);
+    },
+
     importExisting: async (path) => {
       try {
-        const name = path.split(/[\\/]/).filter(Boolean).pop() ?? 'project';
-        const project = await webbuildRegisterExisting(name, path);
-        // Same Next-only guard as the picker: register it (so it shows in the
-        // Dev Tools list), but only open + start a preview for a Next.js app.
-        const ready = await webbuildNextReady([project.id]);
-        if (!ready.includes(project.id)) {
-          toastCatch('add existing project')(
-            new Error(
-              "This folder isn't a Next.js app — Studio builds Next.js + Tailwind projects.",
-            ),
-          );
-          return;
-        }
+        const projectName = path.split(/[\\/]/).filter(Boolean).pop() ?? 'project';
+        const project = await webbuildRegisterExisting(projectName, path);
+        // Register it (so it shows in the Dev Tools list), but only open + start
+        // a preview for a Next.js app — the same guard the picker now uses.
+        if (!(await ensureNextReady(project.id))) return;
         await get().startExisting(project.id, project.name);
       } catch (e) {
         toastCatch('add existing project')(e);
