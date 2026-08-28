@@ -4,6 +4,10 @@ import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
 import { SigilPetal } from './SigilPetal';
+// Same store read the sibling `CapabilitySigil` already makes for this exact
+// setting — the hero sigil is the surface that was missing it.
+import { useThemeStore } from '@/stores/themeStore';
+import { SigilPatternDefs } from './dimPatterns';
 import { useGlyphDimText } from './persona-sigil';
 import { PETAL_INNER_RATIO, PETAL_OUTER_RATIO } from './helpers';
 
@@ -196,11 +200,13 @@ export function InteractiveSigil({
     }
   }, [activeDim]);
 
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const geom = getGeometry(size);
   const { center, petalOuter, coreR, guideInner, petalPath, petalPathDashed, iconLayouts } = geom;
 
   const coreId = `sigil-core-${row.id}-${rowIndex}`;
   const glowId = `sigil-glow-${row.id}-${rowIndex}`;
+  const patternUid = `${row.id}-${rowIndex}`;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -236,6 +242,7 @@ export function InteractiveSigil({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          {cvdSafe && <SigilPatternDefs uid={patternUid} />}
         </defs>
 
         <circle cx={center} cy={center} r={petalOuter} fill="none" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
@@ -275,6 +282,8 @@ export function InteractiveSigil({
               onKeyDown={handlePetalKeyDown}
               onFocusDim={handlePetalFocus}
               registerRef={registerPetalRef}
+              cvdSafe={cvdSafe}
+              patternUid={patternUid}
             />
           );
         })}

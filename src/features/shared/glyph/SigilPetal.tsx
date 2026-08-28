@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { GlyphDimension, GlyphPresence } from './types';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
 import { PETAL_INNER_RATIO, PETAL_OUTER_RATIO } from './helpers';
+import { petalPatternFill } from './dimPatterns';
 
 interface SigilPetalProps {
   dim: GlyphDimension;
@@ -33,6 +34,19 @@ interface SigilPetalProps {
   onKeyDown: (e: React.KeyboardEvent, dim: GlyphDimension) => void;
   onFocusDim: (dim: GlyphDimension) => void;
   registerRef: (dim: GlyphDimension, el: SVGGElement | null) => void;
+  /**
+   * CVD-safe appearance: fill present petals with their dimension's texture
+   * instead of hue alone. The mini `CapabilitySigil` has honoured this since it
+   * shipped; the 440px hero — the card's PRIMARY navigation — did not, so a
+   * user who enabled the setting got pattern-differentiated petals on the small
+   * glyph and hue-only petals on the big one, out of the same eight-colour
+   * vocabulary that contains several deuteranopia/protanopia-confusable pairs.
+   */
+  cvdSafe?: boolean;
+  /** Per-sigil id suffix for the `<pattern>` defs the parent renders. Required
+   *  whenever `cvdSafe` is set — pattern ids must not collide across the many
+   *  sigils that can share one page. */
+  patternUid?: string;
 }
 
 /** Renders a single petal group — body varies by presence state.
@@ -46,7 +60,7 @@ function SigilPetalImpl({
   dim, presence, index, size, rowId, rowIndex, glowId,
   petalPath, petalPathDashed, isHovered, isActive, dimOther,
   onHover, onClick, tabIndex, ariaLabel, isFocused,
-  onKeyDown, onFocusDim, registerRef,
+  onKeyDown, onFocusDim, registerRef, cvdSafe = false, patternUid,
 }: SigilPetalProps) {
   const meta = DIM_META[dim];
   const angle = PETAL_ANGLES[dim];
@@ -56,6 +70,10 @@ function SigilPetalImpl({
   const petalOuter = size * PETAL_OUTER_RATIO;
   const petalInner = size * PETAL_INNER_RATIO;
   const petalGrad = `sigil-petal-${rowId}-${rowIndex}-${index}`;
+  // Texture only replaces the hue wash when the parent actually rendered the
+  // pattern defs; a fill pointing at a missing id paints nothing at all.
+  const textured = cvdSafe && !!patternUid;
+  const patternFill = textured ? petalPatternFill(dim, patternUid) : null;
 
   let body: React.ReactNode;
   if (presence === 'none') {
@@ -74,8 +92,8 @@ function SigilPetalImpl({
     body = (
       <path
         d={petalPathDashed}
-        fill={meta.color}
-        fillOpacity={isHovered ? 0.18 : 0.08}
+        fill={patternFill ?? meta.color}
+        fillOpacity={textured ? 1 : isHovered ? 0.18 : 0.08}
         stroke={meta.color}
         strokeWidth="1.5"
         strokeOpacity={isHovered ? 1 : 0.8}
@@ -85,16 +103,20 @@ function SigilPetalImpl({
   } else {
     body = (
       <>
-        <defs>
-          <linearGradient id={petalGrad} x1="0" y1={-petalOuter} x2="0" y2={-petalInner} gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={meta.color} stopOpacity={isHovered ? 1 : 0.95} />
-            <stop offset="55%" stopColor={meta.color} stopOpacity={isHovered ? 0.75 : 0.6} />
-            <stop offset="100%" stopColor={meta.color} stopOpacity={isHovered ? 0.2 : 0.12} />
-          </linearGradient>
-        </defs>
+        {/* The gradient is the hue treatment; under CVD-safe the texture
+            carries the identity instead, so the defs are not emitted at all. */}
+        {!textured && (
+          <defs>
+            <linearGradient id={petalGrad} x1="0" y1={-petalOuter} x2="0" y2={-petalInner} gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor={meta.color} stopOpacity={isHovered ? 1 : 0.95} />
+              <stop offset="55%" stopColor={meta.color} stopOpacity={isHovered ? 0.75 : 0.6} />
+              <stop offset="100%" stopColor={meta.color} stopOpacity={isHovered ? 0.2 : 0.12} />
+            </linearGradient>
+          </defs>
+        )}
         <path
           d={petalPath}
-          fill={`url(#${petalGrad})`}
+          fill={patternFill ?? `url(#${petalGrad})`}
           stroke={meta.color}
           strokeWidth={isHovered ? 1.8 : 1.3}
           strokeOpacity="0.95"
