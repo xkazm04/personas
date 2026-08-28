@@ -36,10 +36,18 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
     // testing `> 0` collapsed both into one dash, so a genuinely free run was
     // reported as unpriced. The nullable measure stays nullable to the tile.
     const totalCost = rootSpan?.cost_usd ?? null;
-    const totalInput = rootSpan?.input_tokens ?? 0;
-    const totalOutput = rootSpan?.output_tokens ?? 0;
+    // The tokens obeyed the OPPOSITE rule to the cost three lines above, on the
+    // same object, for the same reason. Every abort path calls
+    // `trace.finalize(None, None, None, Some(err))`, which leaves input_tokens
+    // and output_tokens null — so an aborted run read "Cost -" beside
+    // "Tokens 0": one honest dash and one fabricated measurement describing the
+    // same missing number. Nullable in, nullable out.
+    const totalInput = rootSpan?.input_tokens ?? null;
+    const totalOutput = rootSpan?.output_tokens ?? null;
+    const totalTokens =
+      totalInput == null && totalOutput == null ? null : (totalInput ?? 0) + (totalOutput ?? 0);
 
-    return { totalCost, totalInput, totalOutput, toolCallCount: toolCalls.length };
+    return { totalCost, totalInput, totalOutput, totalTokens, toolCallCount: toolCalls.length };
   }, [trace.spans]);
 
   const evicted = trace.evicted_span_count ?? 0;
@@ -71,8 +79,8 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
           <Zap className="w-2.5 h-2.5" />
           {e.tokens}
         </div>
-        <div className="typo-code text-foreground/90">
-          <Numeric value={stats.totalInput + stats.totalOutput} />
+        <div className="typo-code text-foreground/90" data-testid="trace-tokens">
+          {stats.totalTokens != null ? <Numeric value={stats.totalTokens} /> : '-'}
         </div>
       </div>
 
@@ -106,12 +114,12 @@ export function TraceSummary({ trace, model, errorCount }: { trace: ExecutionTra
           when there isn't one. A measured $0 is not an anchor it can scale,
           so it still falls through to the estimate — behaviour unchanged by
           the null/zero split above. */}
-      {model && stats.totalInput + stats.totalOutput > 0 && (
+      {model && stats.totalTokens != null && stats.totalTokens > 0 && (
         <div className="col-span-2 md:col-span-5 rounded-card border border-primary/20 bg-secondary/40 p-3">
           <CostBreakdownBar
             model={model}
-            inputTokens={stats.totalInput}
-            outputTokens={stats.totalOutput}
+            inputTokens={stats.totalInput ?? 0}
+            outputTokens={stats.totalOutput ?? 0}
             actualCostUsd={stats.totalCost ? stats.totalCost : null}
           />
         </div>

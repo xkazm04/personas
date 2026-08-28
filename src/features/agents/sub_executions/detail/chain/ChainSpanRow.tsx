@@ -1,5 +1,5 @@
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
-import { ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
+import { ChevronRight, CheckCircle2, CircleDashed, XCircle } from 'lucide-react';
 import { formatDuration, formatCost } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -30,8 +30,22 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
       : { cost: acc.cost + s.cost_usd, pricedSpans: acc.pricedSpans + 1 }),
     { cost: 0, pricedSpans: 0 },
   );
-  const StatusIcon = hasError ? XCircle : CheckCircle2;
-  const statusClass = hasError ? 'text-status-error' : 'text-status-success';
+  // Same rule as the cost column, applied to the status icon it sits next to.
+  // `hasError` is the only evidence this row had, so ExecutionTrace carrying no
+  // status field meant "still running", "cancelled", "failed without writing a
+  // span error" and "no spans at all" ALL fell through to a definitive green
+  // tick. Only `finalize()` stamps the root span's `end_ms`
+  // (`src-tauri/core/src/trace.rs`), so a closed root is the one positive piece
+  // of evidence available that the run actually finished — anything else is
+  // unknown, and unknown is not success.
+  const rootSpan = trace.spans.find((s) => s.parent_span_id === null);
+  const settled = !!rootSpan && rootSpan.end_ms != null;
+  const StatusIcon = hasError ? XCircle : settled ? CheckCircle2 : CircleDashed;
+  const statusClass = hasError
+    ? 'text-status-error'
+    : settled
+      ? 'text-status-success'
+      : 'text-foreground';
 
   // Six fixed-width slots on one non-wrapping line clipped this row below
   // ~420px, against a parent that hides its overflow. The rest of the detail
@@ -49,7 +63,7 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
       data-testid="chain-span-row"
     >
       <span className="typo-code text-foreground tabular-nums w-5 text-right flex-shrink-0">{index + 1}</span>
-      <StatusIcon className={`w-4 h-4 flex-shrink-0 ${statusClass}`} />
+      <StatusIcon className={`w-4 h-4 flex-shrink-0 ${statusClass}`} data-testid="chain-span-status" />
       <span className="typo-code text-foreground flex-shrink-0">#{trace.execution_id.slice(0, 8)}</span>
       {isCurrent && (
         <span className="typo-code px-1.5 py-0.5 rounded-card bg-primary/15 text-primary/80 border border-primary/20 flex-shrink-0">

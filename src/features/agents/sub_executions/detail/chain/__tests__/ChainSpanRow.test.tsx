@@ -74,3 +74,31 @@ describe('ChainSpanRow cost fold', () => {
     expect(text).toContain('0.05');
   });
 });
+
+describe('ChainSpanRow status icon', () => {
+  function renderStatus(spans: TraceSpan[]) {
+    render(<ChainSpanRow trace={trace(spans)} index={0} isCurrent={false} onOpen={vi.fn()} />);
+    return screen.getByTestId('chain-span-status').getAttribute('class') ?? '';
+  }
+
+  it('claims success only for a run whose root span was closed', () => {
+    expect(renderStatus([span({ end_ms: 100 })])).toContain('text-status-success');
+  });
+
+  it('does not claim success while the root span is still open', () => {
+    // The regression this pins: the row's only evidence was "does any span
+    // carry an error", so a run still in flight — whose root end_ms is stamped
+    // by finalize() and nothing else — got a definitive green tick.
+    const cls = renderStatus([span({ end_ms: null })]);
+    expect(cls).not.toContain('text-status-success');
+    expect(cls).not.toContain('text-status-error');
+  });
+
+  it('does not claim success for a trace with no spans at all', () => {
+    expect(renderStatus([])).not.toContain('text-status-success');
+  });
+
+  it('still reports a failure over an unfinished root', () => {
+    expect(renderStatus([span({ end_ms: null, error: 'boom' })])).toContain('text-status-error');
+  });
+});
