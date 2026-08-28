@@ -7422,7 +7422,14 @@
       "no_patterns_match": "कोई पैटर्न वर्तमान फ़िल्टर से मेल नहीं खाता",
       "recent_learnings": "हाल की सीख",
       "curating_manually": "दस्तावेज़ मैन्युअल रूप से curate कर रहे हैं?",
-      "obsidian_tip": "~1000 से कम नोट्स के लिए, एक Obsidian कनेक्टर आपके vault को सीधे sync कर सकता है।"
+      "obsidian_tip": "~1000 से कम नोट्स के लिए, एक Obsidian कनेक्टर आपके vault को सीधे sync कर सकता है।",
+      "type_tool_sequence": "टूल अनुक्रम",
+      "type_failure_pattern": "विफलता पैटर्न",
+      "type_cost_quality": "लागत / गुणवत्ता",
+      "type_model_performance": "मॉडल प्रदर्शन",
+      "type_data_flow": "डेटा प्रवाह",
+      "type_agent_annotation": "एजेंट एनोटेशन",
+      "type_user_annotation": "उपयोगकर्ता एनोटेशन"
     },
     "focused_decision": {
       "accept": "स्वीकार करें",

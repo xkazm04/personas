@@ -7422,7 +7422,14 @@
       "no_patterns_match": "現在のフィルターに一致するパターンはありません",
       "recent_learnings": "最近の学習内容",
       "curating_manually": "手動でドキュメントをキュレーションしていますか？",
-      "obsidian_tip": "約1000ノート未満であれば、Obsidianコネクタでvaultを直接同期できます。"
+      "obsidian_tip": "約1000ノート未満であれば、Obsidianコネクタでvaultを直接同期できます。",
+      "type_tool_sequence": "ツールシーケンス",
+      "type_failure_pattern": "失敗パターン",
+      "type_cost_quality": "コスト / 品質",
+      "type_model_performance": "モデルパフォーマンス",
+      "type_data_flow": "データフロー",
+      "type_agent_annotation": "エージェント注釈",
+      "type_user_annotation": "ユーザー注釈"
     },
     "focused_decision": {
       "accept": "受諾",

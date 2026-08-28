@@ -12,14 +12,30 @@ import {
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
-export const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: IconComponent }> = {
-  tool_sequence: { label: 'Tool Sequences', color: 'emerald', icon: ToolSequenceIcon },
-  failure_pattern: { label: 'Failure Patterns', color: 'red', icon: FailurePatternIcon },
-  cost_quality: { label: 'Cost / Quality', color: 'blue', icon: CostQualityIcon },
-  model_performance: { label: 'Model Performance', color: 'violet', icon: ModelPerformanceIcon },
-  data_flow: { label: 'Data Flows', color: 'amber', icon: DataFlowIcon },
-  agent_annotation: { label: 'Agent Annotation', color: 'cyan', icon: AgentAnnotationIcon },
-  user_annotation: { label: 'User Annotation', color: 'sky', icon: UserAnnotationIcon },
+/**
+ * Knowledge-type presentation, keyed by the backend's discriminator.
+ *
+ * `labelKey` rather than a label: display copy in a .ts module is copy that
+ * cannot be translated, and this app ships 14 locales. The key is resolved
+ * against `t.overview.knowledge_graph` at the render site.
+ */
+export type KnowledgeTypeLabelKey =
+  | 'type_tool_sequence'
+  | 'type_failure_pattern'
+  | 'type_cost_quality'
+  | 'type_model_performance'
+  | 'type_data_flow'
+  | 'type_agent_annotation'
+  | 'type_user_annotation';
+
+export const KNOWLEDGE_TYPES: Record<string, { labelKey: KnowledgeTypeLabelKey; color: string; icon: IconComponent }> = {
+  tool_sequence: { labelKey: 'type_tool_sequence', color: 'emerald', icon: ToolSequenceIcon },
+  failure_pattern: { labelKey: 'type_failure_pattern', color: 'red', icon: FailurePatternIcon },
+  cost_quality: { labelKey: 'type_cost_quality', color: 'blue', icon: CostQualityIcon },
+  model_performance: { labelKey: 'type_model_performance', color: 'violet', icon: ModelPerformanceIcon },
+  data_flow: { labelKey: 'type_data_flow', color: 'amber', icon: DataFlowIcon },
+  agent_annotation: { labelKey: 'type_agent_annotation', color: 'cyan', icon: AgentAnnotationIcon },
+  user_annotation: { labelKey: 'type_user_annotation', color: 'sky', icon: UserAnnotationIcon },
 };
 
 export const SCOPE_TYPES: Record<string, { label: string; icon: IconComponent; color: string }> = {

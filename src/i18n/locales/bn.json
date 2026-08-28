@@ -7422,7 +7422,14 @@
       "no_patterns_match": "কোনো প্যাটার্ন বর্তমান ফিল্টারের সাথে মেলে না",
       "recent_learnings": "সাম্প্রতিক শিক্ষা",
       "curating_manually": "ম্যানুয়ালি ডকুমেন্ট কিউরেট করছেন?",
-      "obsidian_tip": "~1000 নোটের কম হলে, একটি Obsidian কানেক্টর আপনার ভল্ট সরাসরি সিঙ্ক করতে পারে।"
+      "obsidian_tip": "~1000 নোটের কম হলে, একটি Obsidian কানেক্টর আপনার ভল্ট সরাসরি সিঙ্ক করতে পারে।",
+      "type_tool_sequence": "টুল সিকোয়েন্স",
+      "type_failure_pattern": "ব্যর্থতার প্যাটার্ন",
+      "type_cost_quality": "খরচ / গুণমান",
+      "type_model_performance": "মডেলের পারফরম্যান্স",
+      "type_data_flow": "ডেটা ফ্লো",
+      "type_agent_annotation": "এজেন্ট অ্যানোটেশন",
+      "type_user_annotation": "ব্যবহারকারীর অ্যানোটেশন"
     },
     "focused_decision": {
       "accept": "গ্রহণ করুন",

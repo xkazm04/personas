@@ -25,8 +25,12 @@ import {
 } from './variants/shared';
 
 /** The command that recomputes the scorecard — derivation names recomputation.
- *  Mirrors `SCORECARD_GENERATOR` in the Rust reader. */
-const SCORECARD_COMMAND = 'node scripts/census/build-context-scorecard.mjs';
+ *
+ *  The Rust reader embeds the same string in the errors it returns. That
+ *  agreement is asserted by `__tests__/scorecardCommand.test.ts`, which reads
+ *  the Rust source and compares — a comment asking the next reader to keep two
+ *  languages aligned cannot fail a build, so it was not a mechanism. */
+export const SCORECARD_COMMAND = 'node scripts/census/build-context-scorecard.mjs';
 
 export type DetailTab = 'golden_path' | 'techniques' | 'applications' | 'evidence' | 'legacy';
 

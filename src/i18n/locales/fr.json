@@ -7422,7 +7422,14 @@
       "no_patterns_match": "Aucun schéma ne correspond aux filtres actuels",
       "recent_learnings": "Apprentissages récents",
       "curating_manually": "Vous organisez des documents manuellement ?",
-      "obsidian_tip": "Pour moins de ~1000 notes, un connecteur Obsidian peut synchroniser votre coffre directement."
+      "obsidian_tip": "Pour moins de ~1000 notes, un connecteur Obsidian peut synchroniser votre coffre directement.",
+      "type_tool_sequence": "Séquences d'outils",
+      "type_failure_pattern": "Motifs d'échec",
+      "type_cost_quality": "Coût / qualité",
+      "type_model_performance": "Performance des modèles",
+      "type_data_flow": "Flux de données",
+      "type_agent_annotation": "Annotation de l'agent",
+      "type_user_annotation": "Annotation de l'utilisateur"
     },
     "focused_decision": {
       "accept": "Accepter",

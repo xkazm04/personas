@@ -7422,7 +7422,14 @@
       "no_patterns_match": "Tidak ada pola yang cocok dengan filter saat ini",
       "recent_learnings": "Pembelajaran terbaru",
       "curating_manually": "Mengelola dokumen secara manual?",
-      "obsidian_tip": "Untuk kurang dari ~1000 catatan, konektor Obsidian dapat menyinkronkan brankas Anda secara langsung."
+      "obsidian_tip": "Untuk kurang dari ~1000 catatan, konektor Obsidian dapat menyinkronkan brankas Anda secara langsung.",
+      "type_tool_sequence": "Urutan alat",
+      "type_failure_pattern": "Pola kegagalan",
+      "type_cost_quality": "Biaya / kualitas",
+      "type_model_performance": "Performa model",
+      "type_data_flow": "Alur data",
+      "type_agent_annotation": "Anotasi agen",
+      "type_user_annotation": "Anotasi pengguna"
     },
     "focused_decision": {
       "accept": "Terima",

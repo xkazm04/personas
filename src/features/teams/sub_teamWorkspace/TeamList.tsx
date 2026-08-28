@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine, Workflow, type LucideIcon } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { MotionizedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { NETWORK_GLYPH, NETWORK_GLYPH_VIEWBOX } from './networkGlyphData';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -239,7 +239,7 @@ export default function TeamList() {
             <TeamGhostRows />
           </div>
         ) : sortedTeams.length === 0 && !showCreate ? (
-          <EmptyState
+          <TeamsFirstRun
             onCreate={() => setShowCreate(true)}
             onAuto={() => setShowAutoTeam(true)}
             onPreset={() => setPresetFlowOpen(true)}
@@ -394,15 +394,16 @@ function TeamRow({
             >
               {ts.open} <ArrowRight className="w-3 h-3" />
             </button>
-            <button
-              type="button"
-              onClick={onRequestDisband}
-              aria-label={ts.disband}
-              title={ts.disband_title}
-              className="p-1 rounded-interactive text-foreground hover:bg-red-500/15 hover:text-red-300 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip content={ts.disband_title}>
+              <button
+                type="button"
+                onClick={onRequestDisband}
+                aria-label={ts.disband}
+                className="p-1 rounded-interactive text-foreground hover:bg-red-500/15 hover:text-red-300 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
           </>
         )}
       </span>
@@ -467,7 +468,12 @@ function MembersHoverPreview({ teamId, memberCount, personaIndex }: {
   );
 }
 
-function EmptyState({
+// The first-use empty state SELECTS the shared surface rather than authoring a
+// local one. A hand-rolled component cannot be reached by the condition taxonomy
+// (first-use / filtered-to-zero / prerequisite-not-met / errored) the shared
+// component exists to express, so "no teams yet" and "your filter matched
+// nothing" would drift apart in look and in wording with nothing to stop them.
+function TeamsFirstRun({
   onCreate,
   onAuto,
   onPreset,
@@ -479,22 +485,17 @@ function EmptyState({
   t: ReturnType<typeof useTranslation>['t'];
 }) {
   return (
-    <div className="animate-fade-slide-in text-center py-12">
-      <MotionizedGlyph data={NETWORK_GLYPH} viewBox={NETWORK_GLYPH_VIEWBOX} spread={1.1} className="w-44 h-44 mx-auto mb-4" />
-      <h2 className="typo-heading-lg text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
-      <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button variant="primary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={onPreset}>
-          {t.pipeline.preset_team}
-        </Button>
-        <Button variant="accent" accentColor="indigo" size="sm" icon={<Zap className="w-4 h-4" />} onClick={onAuto}>
-          {t.pipeline.auto_team}
-        </Button>
-        <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>
-          {t.pipeline.create_blank_team}
-        </Button>
-      </div>
-    </div>
+    <ScenarioEmptyState
+      glyph={{ data: NETWORK_GLYPH, viewBox: NETWORK_GLYPH_VIEWBOX }}
+      title={t.pipeline.no_teams_yet}
+      subtitle={t.pipeline.no_teams_hint}
+      action={{ label: t.pipeline.preset_team, onClick: onPreset, icon: Layers }}
+      secondaryAction={{ label: t.pipeline.auto_team, onClick: onAuto, icon: Zap }}
+    >
+      <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>
+        {t.pipeline.create_blank_team}
+      </Button>
+    </ScenarioEmptyState>
   );
 }
 

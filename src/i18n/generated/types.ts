@@ -7932,6 +7932,13 @@ export type Translations = {
       recent_learnings: string;
       curating_manually: string;
       obsidian_tip: string;
+      type_tool_sequence: string;
+      type_failure_pattern: string;
+      type_cost_quality: string;
+      type_model_performance: string;
+      type_data_flow: string;
+      type_agent_annotation: string;
+      type_user_annotation: string;
     };
     focused_decision: {
       accept: string;

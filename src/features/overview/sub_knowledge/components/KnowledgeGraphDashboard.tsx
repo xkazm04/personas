@@ -296,7 +296,11 @@ export default function KnowledgeGraphDashboard() {
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
               className={`flex items-center gap-1.5 typo-body transition-colors ${selectedType ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
-              {selectedType ? (KNOWLEDGE_TYPES[selectedType as keyof typeof KNOWLEDGE_TYPES]?.label ?? selectedType) : 'Type'}
+              {(() => {
+                const cfg = KNOWLEDGE_TYPES[selectedType as keyof typeof KNOWLEDGE_TYPES];
+                if (!selectedType) return t.overview.knowledge_graph.all_types;
+                return cfg ? t.overview.knowledge_graph[cfg.labelKey] : selectedType;
+              })()}
             </button>
               {selectedType && (
                 <button type="button" aria-label={t.common.clear} onClick={() => { setSelectedType(null); setShowTypeDropdown(false); if (failureDrilldownDate) setFailureDrilldownDate(null); }} className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
@@ -310,7 +314,7 @@ export default function KnowledgeGraphDashboard() {
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
                   <button type="button" key={key} onClick={() => chooseType(key)}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
-                  >{val.label}</button>
+                  >{t.overview.knowledge_graph[val.labelKey]}</button>
                 ))}
               </div>
             )}

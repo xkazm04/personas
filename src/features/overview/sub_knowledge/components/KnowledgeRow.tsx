@@ -10,6 +10,7 @@ import { StatusBadge, type BadgeAccent } from '@/features/shared/components/disp
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 const cardVariants = { hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } };
@@ -206,7 +207,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
               {isAnnotation && entry.annotation_text ? entry.annotation_text : entry.pattern_key}
             </span>
             <StatusBadge accent={typeAccent} size="sm" pill>
-              {config?.label ?? entry.knowledge_type}
+              {config ? t.overview.knowledge_graph[config.labelKey] : entry.knowledge_type}
             </StatusBadge>
             {entry.scope_type !== 'persona' && (
               <StatusBadge accent={scopeAccent} size="sm" pill icon={<ScopeIcon className="w-2.5 h-2.5" />}>
@@ -229,24 +230,26 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
         <div className="flex items-center gap-2 flex-shrink-0">
           {isAnnotation && !entry.is_verified && (
             <>
-              <button
-                type="button"
-                onClick={handleVerify}
-                aria-label={t.overview.knowledge_row.verify_annotation}
-                className="p-1 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                title={t.overview.knowledge_row.verify_annotation}
-              >
-                <CheckCircle className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                aria-label={t.overview.knowledge_row.dismiss_annotation}
-                className="p-1 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
-                title={t.overview.knowledge_row.dismiss_annotation}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip content={t.overview.knowledge_row.verify_annotation}>
+                <button
+                  type="button"
+                  onClick={handleVerify}
+                  aria-label={t.overview.knowledge_row.verify_annotation}
+                  className="p-1 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
+              <Tooltip content={t.overview.knowledge_row.dismiss_annotation}>
+                <button
+                  type="button"
+                  onClick={handleDismiss}
+                  aria-label={t.overview.knowledge_row.dismiss_annotation}
+                  className="p-1 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             </>
           )}
           <ConfidenceArc value={confidencePct} />

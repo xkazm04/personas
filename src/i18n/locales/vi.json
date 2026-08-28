@@ -7422,7 +7422,14 @@
       "no_patterns_match": "Không có mẫu nào khớp với bộ lọc hiện tại",
       "recent_learnings": "Bài học gần đây",
       "curating_manually": "Tuyển chọn tài liệu thủ công?",
-      "obsidian_tip": "Với ít hơn ~1000 ghi chú, trình kết nối Obsidian có thể đồng bộ trực tiếp vault của bạn."
+      "obsidian_tip": "Với ít hơn ~1000 ghi chú, trình kết nối Obsidian có thể đồng bộ trực tiếp vault của bạn.",
+      "type_tool_sequence": "Chuỗi công cụ",
+      "type_failure_pattern": "Mẫu lỗi",
+      "type_cost_quality": "Chi phí / chất lượng",
+      "type_model_performance": "Hiệu suất mô hình",
+      "type_data_flow": "Luồng dữ liệu",
+      "type_agent_annotation": "Chú thích tác nhân",
+      "type_user_annotation": "Chú thích người dùng"
     },
     "focused_decision": {
       "accept": "Chấp nhận",

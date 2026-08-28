@@ -7422,7 +7422,14 @@
       "no_patterns_match": "Žádné vzory neodpovídají aktuálním filtrům",
       "recent_learnings": "Nedávné poznatky",
       "curating_manually": "Kurátorská správa dokumentů ručně?",
-      "obsidian_tip": "Pro méně než ~1000 poznámek může Obsidian konektor synchronizovat váš vault přímo."
+      "obsidian_tip": "Pro méně než ~1000 poznámek může Obsidian konektor synchronizovat váš vault přímo.",
+      "type_tool_sequence": "Sekvence nástrojů",
+      "type_failure_pattern": "Vzory selhání",
+      "type_cost_quality": "Náklady / kvalita",
+      "type_model_performance": "Výkon modelu",
+      "type_data_flow": "Toky dat",
+      "type_agent_annotation": "Anotace agenta",
+      "type_user_annotation": "Anotace uživatele"
     },
     "focused_decision": {
       "accept": "Přijmout",

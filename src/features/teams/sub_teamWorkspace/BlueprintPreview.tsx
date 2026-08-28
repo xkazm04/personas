@@ -1,6 +1,7 @@
 import { Users, GitBranch, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export const EXAMPLE_PROMPTS = [
   'Review this PR and run tests',
@@ -70,15 +71,16 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
               </span>
             )}
             {canRemove && (
-              <button
-                type="button"
-                onClick={() => onRemoveMember(i)}
-                title={t.pipeline.blueprint_remove_member}
-                aria-label={t.pipeline.blueprint_remove_member}
-                className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all flex-shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip content={t.pipeline.blueprint_remove_member}>
+                <button
+                  type="button"
+                  onClick={() => onRemoveMember(i)}
+                  aria-label={t.pipeline.blueprint_remove_member}
+                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all flex-shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             )}
           </div>
         ))}

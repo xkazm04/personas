@@ -7925,7 +7925,14 @@
       "no_patterns_match": "No patterns match current filters",
       "recent_learnings": "Recent Learnings",
       "curating_manually": "Curating documents manually?",
-      "obsidian_tip": "For fewer than ~1000 notes, an Obsidian connector can sync your vault directly."
+      "obsidian_tip": "For fewer than ~1000 notes, an Obsidian connector can sync your vault directly.",
+      "type_tool_sequence": "Tool Sequences",
+      "type_failure_pattern": "Failure Patterns",
+      "type_cost_quality": "Cost / Quality",
+      "type_model_performance": "Model Performance",
+      "type_data_flow": "Data Flows",
+      "type_agent_annotation": "Agent Annotation",
+      "type_user_annotation": "User Annotation"
     },
     "focused_decision": {
       "accept": "Accept",
