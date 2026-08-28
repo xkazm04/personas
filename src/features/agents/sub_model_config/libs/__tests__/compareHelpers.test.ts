@@ -18,6 +18,7 @@ import {
   profileToDropdownValue,
   isOllamaCloudValue,
   getOllamaPreset,
+  UNSET_MODEL_VALUE,
 } from '../OllamaCloudPresets';
 
 function row(over: Partial<LabArenaResult> = {}): LabArenaResult {
@@ -257,5 +258,20 @@ describe('OllamaCloudPresets', () => {
     expect(
       profileToDropdownValue({ provider: 'ollama', model: 'llama3.1:8b', base_url: 'http://localhost:11434' }),
     ).toBe('custom');
+  });
+
+  // This returned 'opus' for a persona with no model profile until
+  // 2026-08-28, painting the priciest tier as an explicit choice the user
+  // never made.
+  it('reports a persona with no model as unset, not as a choice of the priciest tier', () => {
+    expect(profileToDropdownValue({})).toBe(UNSET_MODEL_VALUE);
+    expect(profileToDropdownValue({ provider: 'anthropic' })).toBe(UNSET_MODEL_VALUE);
+    expect(UNSET_MODEL_VALUE).toBe('');
+    // No selector row can match the unset value — nothing paints as selected.
+    expect(ALL_COMPARE_MODELS.some((m) => m.id === UNSET_MODEL_VALUE)).toBe(false);
+    // An explicit Opus choice is still Opus, and is distinguishable from it.
+    expect(profileToDropdownValue({ provider: 'anthropic', model: 'opus' })).not.toBe(
+      UNSET_MODEL_VALUE,
+    );
   });
 });
