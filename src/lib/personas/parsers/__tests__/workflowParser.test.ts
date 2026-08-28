@@ -241,6 +241,17 @@ describe('parseWorkflowFile', () => {
     expect(JSON.stringify(parsed.result)).not.toMatch(/ignore all previous instructions/i);
   });
 
+  // The maxDepth bound this parser passes to js-yaml only EXISTS from 4.2. Older
+  // 4.1.x silently ignores unknown loader options, so an install resolving
+  // anywhere in the previously-declared `^4.1.1` range removed the DoS bound
+  // with no error and no type change. package.json now demands `^4.2.0`; this
+  // asserts the bound is actually live rather than merely requested.
+  it('enforces the YAML nesting bound the loader options ask for', () => {
+    const tooDeep = ['root: ' + '['.repeat(60) + ']'.repeat(60), ''].join('\n');
+    expect(() => parseWorkflowFile(tooDeep, 'deep.yml')).toThrow(/Invalid YAML/);
+    expect(() => parseWorkflowFile(tooDeep, 'deep.yml')).toThrow(/maxDepth/);
+  });
+
   it('rejects empty, malformed and unparseable input', () => {
     expect(() => parseWorkflowFile('   ', 'empty.json')).toThrow(/File is empty/);
     expect(() => parseWorkflowFile('{ not json', 'bad.json')).toThrow(/Invalid JSON/);
