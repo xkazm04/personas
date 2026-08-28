@@ -21,7 +21,15 @@ const READ_ONLY_KEYWORDS = new Set([
 // look read-only by leading keyword but actually mutate data. After stripping
 // string/identifier literals to avoid matching inside text values, scan the body
 // for mutation verbs.
-const MUTATION_VERBS_RE = /\b(DELETE|UPDATE|INSERT|MERGE|REPLACE|TRUNCATE|UPSERT)\b/i;
+//
+// This list is the mirror of the backend's CTE_MUTATION_VERBS
+// (src-tauri/src/engine/db_query.rs). DROP and ALTER were missing from this
+// copy, so a `WITH`-led statement carrying either was classified a read here,
+// raised no confirm banner, and was dispatched with allowMutation:false — where
+// the backend, whose list DOES carry them, rejected it as a mutation. The user
+// got a raw validation error instead of the authorisation prompt this guard
+// exists to offer. Keep the two lists in step.
+const MUTATION_VERBS_RE = /\b(DELETE|UPDATE|INSERT|MERGE|REPLACE|TRUNCATE|UPSERT|DROP|ALTER)\b/i;
 
 function stripSqlLiterals(s: string): string {
   // Strip single-quoted literals (with '' escapes), double-quoted identifiers,

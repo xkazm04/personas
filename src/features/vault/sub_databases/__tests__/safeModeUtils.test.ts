@@ -24,6 +24,15 @@ describe('isMutationQuery', () => {
     expect(isMutationQuery('WITH d AS (DELETE FROM users RETURNING *) SELECT * FROM d')).toBe(true);
   });
 
+  it('carries the same CTE verb list as the backend guard', () => {
+    // Parity with CTE_MUTATION_VERBS in src-tauri/src/engine/db_query.rs.
+    // DROP and ALTER were absent here, so these two shapes raised no confirm
+    // banner and reached the user as a backend validation error instead.
+    expect(isMutationQuery('WITH d AS (SELECT 1) DROP TABLE users')).toBe(true);
+    expect(isMutationQuery('WITH d AS (SELECT 1) ALTER TABLE users ADD c INT')).toBe(true);
+    expect(isMutationQuery('WITH d AS (SELECT 1) SELECT * FROM d')).toBe(false);
+  });
+
   it('does not fire on a mutation verb that only appears inside a string literal', () => {
     expect(isMutationQuery("WITH c AS (SELECT 1) SELECT * FROM t WHERE msg = 'please delete this'")).toBe(false);
   });
