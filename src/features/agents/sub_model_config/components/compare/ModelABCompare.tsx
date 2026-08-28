@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ArrowLeftRight, Play, Square, ChevronDown, AlertCircle,
 } from 'lucide-react';
@@ -6,7 +6,15 @@ import { useAgentStore } from "@/stores/agentStore";
 import { capturePersonaToken } from '@/lib/personas/personaToken';
 import type { ModelTestConfig } from '@/api/agents/tests';
 import { silentCatch } from "@/lib/silentCatch";
-import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults, aggregateResultsDetailed } from '../../libs/compareHelpers';
+import { getAnalyticsSink } from '@/lib/analytics/sink';
+import {
+  ALL_COMPARE_MODELS,
+  toTestConfig,
+  aggregateResults,
+  aggregateResultsDetailed,
+  buildCompareStartEvent,
+  buildCompareOutcomeEvent,
+} from '../../libs/compareHelpers';
 import { ModelDropdown } from './ModelDropdown';
 import { ComparisonResults } from './CompareResultsTable';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -65,6 +73,7 @@ export function ModelABCompare() {
       return;
     }
     setActiveRunId(runId);
+    getAnalyticsSink().interaction(buildCompareStartEvent(modelA, modelB));
   }, [selectedPersona, optA, optB, modelA, modelB, startArena, cancelArena]);
 
   const handleCancel = useCallback(async () => {
@@ -109,6 +118,17 @@ export function ModelABCompare() {
     if (mB.status === 'missing') out.push(modelB);
     return out;
   }, [lastResults, modelA, modelB]);
+
+  // Report the outcome ONCE per run. The metrics are recomputed on every
+  // render of a settled run, so an unguarded emit here would bill the sink for
+  // a re-render — the run id, not the metrics, is the identity of the event.
+  const reportedRunId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeRunId || activeRunId === reportedRunId.current) return;
+    if (!metricsA || !metricsB) return;
+    reportedRunId.current = activeRunId;
+    getAnalyticsSink().interaction(buildCompareOutcomeEvent(metricsA, metricsB));
+  }, [activeRunId, metricsA, metricsB]);
 
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
   const canRun = hasPrompt && modelA !== modelB && !isLabRunning;
@@ -167,7 +187,7 @@ export function ModelABCompare() {
                 <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
                   <span className="typo-body text-red-300/90">
-                    {`Model ${missingModels.join(', ')} produced no results — run may have failed.`}
+                    {mc.no_results_produced.replace('{models}', missingModels.join(', '))}
                   </span>
                 </div>
               )}

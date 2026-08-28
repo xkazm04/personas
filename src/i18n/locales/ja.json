@@ -2306,6 +2306,8 @@
     "model_config": {
       "model_provider": "モデル＆プロバイダー",
       "unsaved_changes": "未保存の変更",
+      "price_unit_note": "100万トークンあたりの入力 / 出力価格（USD）。目安です。最新の料金は提供元でご確認ください。",
+      "price_unit_short": "100万トークンあたり",
       "max_budget": "最大予算（USD）",
       "max_turns": "最大ターン数",
       "prompt_caching": "プロンプトキャッシング",
@@ -2390,6 +2392,7 @@
       "model_b": "モデルB",
       "add_prompt_first": "比較を実行するにはプロンプトを先に追加してください。",
       "select_different_models": "比較するには2つの異なるモデルを選択してください。",
+      "no_results_produced": "モデル {models} は結果を返しませんでした。実行に失敗した可能性があります。",
       "run_comparison": "比較を実行",
       "generating_scenarios": "シナリオを生成中…",
       "testing_model": "{modelId} をテスト中",

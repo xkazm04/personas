@@ -1153,6 +1153,8 @@
   "model_config": {
     "model_provider": "Mô hình & Nhà cung cấp",
     "unsaved_changes": "Thay đổi chưa lưu",
+    "price_unit_note": "Giá đầu vào / đầu ra tính bằng USD cho mỗi triệu token. Chỉ là ước tính — hãy kiểm tra biểu giá hiện hành của nhà cung cấp.",
+    "price_unit_short": "mỗi 1 triệu token",
     "max_budget": "Ngân sách tối đa (USD)",
     "max_turns": "Số vòng tối đa",
     "prompt_caching": "Lưu bộ nhớ đệm lời nhắc",
@@ -1237,6 +1239,7 @@
     "model_b": "Mô hình B",
     "add_prompt_first": "Thêm lời nhắc trước khi chạy so sánh.",
     "select_different_models": "Chọn hai mô hình khác nhau để so sánh.",
+    "no_results_produced": "Mô hình {models} không tạo ra kết quả nào — lần chạy có thể đã thất bại.",
     "run_comparison": "Chạy so sánh",
     "generating_scenarios": "Đang tạo tình huống…",
     "testing_model": "Đang kiểm tra {modelId}",

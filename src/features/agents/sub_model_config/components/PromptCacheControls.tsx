@@ -1,5 +1,6 @@
 import { Database } from 'lucide-react';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { PromptCachePolicy } from '@/lib/types/frontendTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -32,20 +33,24 @@ export function PromptCacheControls({ value, onChange }: PromptCacheControlsProp
         {POLICIES.map((p) => {
           const selected = value === p.value;
           return (
-            <button
-              key={p.value}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onChange(p.value)}
-              className={`flex-1 py-1.5 px-2 rounded-card border typo-body font-medium transition-all ${
-                selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground/90'
-                  : 'border-primary/10 bg-secondary/30 text-foreground hover:border-primary/20 hover:bg-secondary/40'
-              }`}
-              title={p.desc}
-            >
-              {p.label}
-            </button>
+            // The desc is the ONLY place the three retention policies are
+            // explained — a native `title` delivered it on mouse hover alone,
+            // so a keyboard user choosing between "Off" / "5 min" / "1 hr" had
+            // nothing to choose on. The shared Tooltip surfaces on focus too.
+            <Tooltip key={p.value} content={p.desc}>
+              <button
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onChange(p.value)}
+                className={`flex-1 py-1.5 px-2 rounded-card border typo-body font-medium transition-all ${
+                  selected
+                    ? 'border-primary/40 bg-primary/10 text-foreground/90'
+                    : 'border-primary/10 bg-secondary/30 text-foreground hover:border-primary/20 hover:bg-secondary/40'
+                }`}
+              >
+                {p.label}
+              </button>
+            </Tooltip>
           );
         })}
       </div>

@@ -1153,6 +1153,8 @@
   "model_config": {
     "model_provider": "Modell & Anbieter",
     "unsaved_changes": "Ungespeicherte Änderungen",
+    "price_unit_note": "Preis für Eingabe / Ausgabe in USD pro Million Token. Nur Richtwerte — aktuelle Tarife beim Anbieter prüfen.",
+    "price_unit_short": "pro 1 Mio. Token",
     "max_budget": "Max. Budget (USD)",
     "max_turns": "Max. Runden",
     "prompt_caching": "Prompt-Caching",
@@ -1237,6 +1239,7 @@
     "model_b": "Modell B",
     "add_prompt_first": "Zuerst einen Prompt hinzufügen, um Vergleiche auszuführen.",
     "select_different_models": "Zwei verschiedene Modelle zum Vergleich auswählen.",
+    "no_results_produced": "Modell {models} hat keine Ergebnisse geliefert — der Lauf ist möglicherweise fehlgeschlagen.",
     "run_comparison": "Vergleich ausführen",
     "generating_scenarios": "Szenarien werden generiert…",
     "testing_model": "{modelId} wird getestet",

@@ -1,5 +1,7 @@
 import { Cpu, Check, Settings2 } from 'lucide-react';
+import { getAnalyticsSink } from '@/lib/analytics/sink';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { buildModelSelectEvent } from '../libs/compareHelpers';
 import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '../libs/OllamaCloudPresets';
@@ -63,10 +65,16 @@ interface ModelDef {
   cost: string;
 }
 
+// Input/output USD per MILLION tokens — the denominator Anthropic actually
+// publishes. These read `~$0.25/1K`, `~$3/1K`, `~$15/1K` until 2026-08-28: a
+// `/1K` denominator overstates by 1000x read literally, and read charitably as
+// `/1M` it still showed only the input half while hiding the 5x output rate.
+// The unit is spelled out once under the grid (`price_unit_note`) rather than
+// repeated in every cell.
 const ANTHROPIC_MODELS: ModelDef[] = [
-  { value: 'haiku', name: 'Haiku', cost: '~$0.25/1K' },
-  { value: 'sonnet', name: 'Sonnet', cost: '~$3/1K' },
-  { value: 'opus', name: 'Opus', cost: '~$15/1K' },
+  { value: 'haiku', name: 'Haiku', cost: '$1/$5' },
+  { value: 'sonnet', name: 'Sonnet', cost: '$3/$15' },
+  { value: 'opus', name: 'Opus', cost: '$5/$25' },
 ];
 
 const OLLAMA_MODELS: ModelDef[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
@@ -178,7 +186,12 @@ export function ModelSelector({
                     key={model.value}
                     type="button"
                     aria-pressed={isSelected}
-                    onClick={() => onSelectModel(model.value)}
+                    onClick={() => {
+                      // Which model a persona runs on is the app's single
+                      // biggest spend lever and went unrecorded entirely.
+                      getAnalyticsSink().interaction(buildModelSelectEvent(model.value));
+                      onSelectModel(model.value);
+                    }}
                     className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-card border transition-all transition-shadow duration-300 text-left ${
                       isSelected
                         ? 'pl-2.5 border-primary/30 bg-primary/8'
@@ -215,6 +228,11 @@ export function ModelSelector({
           );
           })}
         </div>
+
+        {/* The cost cells carry bare figures; this is the only place their
+            denominator is stated, and getting it wrong is a 1000x error in the
+            one quantitative input the chooser offers. */}
+        <p className="typo-caption text-foreground">{mc.price_unit_note}</p>
 
         {/* Provider credential fields */}
         {isOllamaCloudValue(selectedModel) && <OllamaApiKeyField />}

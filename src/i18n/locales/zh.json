@@ -2306,6 +2306,8 @@
     "model_config": {
       "model_provider": "模型与提供商",
       "unsaved_changes": "有未保存的更改",
+      "price_unit_note": "每百万 token 的输入 / 输出价格（美元）。仅供参考，实际费率请以服务商为准。",
+      "price_unit_short": "每百万 token",
       "max_budget": "最大预算（USD）",
       "max_turns": "最大轮次",
       "prompt_caching": "提示词缓存",
@@ -2390,6 +2392,7 @@
       "model_b": "模型 B",
       "add_prompt_first": "请先添加提示词以运行比较。",
       "select_different_models": "请选择两个不同的模型进行比较。",
+      "no_results_produced": "模型 {models} 未产生任何结果 — 运行可能已失败。",
       "run_comparison": "运行比较",
       "generating_scenarios": "正在生成场景…",
       "testing_model": "正在测试 {modelId}",

@@ -1153,6 +1153,8 @@
   "model_config": {
     "model_provider": "النموذج والمزوّد",
     "unsaved_changes": "تغييرات غير محفوظة",
+    "price_unit_note": "سعر الإدخال / الإخراج بالدولار لكل مليون رمز. تقديرات فقط — راجع مزوّدك لمعرفة الأسعار الحالية.",
+    "price_unit_short": "لكل مليون رمز",
     "max_budget": "الميزانية القصوى (USD)",
     "max_turns": "الجولات القصوى",
     "prompt_caching": "تخزين التعليمات مؤقتاً",
@@ -1237,6 +1239,7 @@
     "model_b": "النموذج B",
     "add_prompt_first": "أضف تعليمات أولاً لتشغيل المقارنات.",
     "select_different_models": "اختر نموذجين مختلفين للمقارنة.",
+    "no_results_produced": "لم ينتج النموذج {models} أي نتائج — قد يكون التشغيل قد فشل.",
     "run_comparison": "تشغيل المقارنة",
     "generating_scenarios": "جارٍ توليد السيناريوهات…",
     "testing_model": "اختبار {modelId}",

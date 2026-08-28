@@ -1153,6 +1153,8 @@
   "model_config": {
     "model_provider": "Modèle & Fournisseur",
     "unsaved_changes": "Modifications non enregistrées",
+    "price_unit_note": "Prix d'entrée / sortie en USD par million de tokens. Estimations uniquement — vérifiez les tarifs actuels chez votre fournisseur.",
+    "price_unit_short": "par million de tokens",
     "max_budget": "Budget max (USD)",
     "max_turns": "Tours max",
     "prompt_caching": "Mise en cache du prompt",
@@ -1237,6 +1239,7 @@
     "model_b": "Modèle B",
     "add_prompt_first": "Ajoutez d’abord un prompt pour lancer des comparaisons.",
     "select_different_models": "Sélectionnez deux modèles différents à comparer.",
+    "no_results_produced": "Le modèle {models} n'a produit aucun résultat — l'exécution a peut-être échoué.",
     "run_comparison": "Lancer la comparaison",
     "generating_scenarios": "Génération des scénarios…",
     "testing_model": "Test de {modelId}",

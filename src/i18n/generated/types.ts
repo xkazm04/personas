@@ -2393,6 +2393,8 @@ export type Translations = {
     model_config: {
       model_provider: string;
       unsaved_changes: string;
+      price_unit_note: string;
+      price_unit_short: string;
       max_budget: string;
       max_turns: string;
       prompt_caching: string;
@@ -2477,6 +2479,7 @@ export type Translations = {
       model_b: string;
       add_prompt_first: string;
       select_different_models: string;
+      no_results_produced: string;
       run_comparison: string;
       generating_scenarios: string;
       testing_model: string;

@@ -2306,6 +2306,8 @@
     "model_config": {
       "model_provider": "모델 & 공급자",
       "unsaved_changes": "저장되지 않은 변경 사항",
+      "price_unit_note": "100만 토큰당 입력 / 출력 가격(USD)입니다. 참고용 추정치이며 최신 요금은 제공업체에서 확인하세요.",
+      "price_unit_short": "100만 토큰당",
       "max_budget": "최대 예산 (USD)",
       "max_turns": "최대 턴",
       "prompt_caching": "프롬프트 캐싱",
@@ -2390,6 +2392,7 @@
       "model_b": "모델 B",
       "add_prompt_first": "비교를 실행하려면 먼저 프롬프트를 추가하세요.",
       "select_different_models": "비교할 두 가지 다른 모델을 선택하세요.",
+      "no_results_produced": "모델 {models}에서 결과가 나오지 않았습니다 — 실행이 실패했을 수 있습니다.",
       "run_comparison": "비교 실행",
       "generating_scenarios": "시나리오 생성 중…",
       "testing_model": "{modelId} 테스트 중",

@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import {
   ALL_COMPARE_MODELS,
+  FREE_COST,
+  costBucket,
+  buildModelSelectEvent,
+  buildCompareStartEvent,
+  buildCompareOutcomeEvent,
   toTestConfig,
   aggregateResults,
   aggregateResultsDetailed,
@@ -40,6 +45,52 @@ function row(over: Partial<LabArenaResult> = {}): LabArenaResult {
     ...over,
   };
 }
+
+describe('model-config telemetry events', () => {
+  it('buckets spend into ordered bands and never leaves a finite figure unbucketed', () => {
+    expect(costBucket(0)).toBe('zero');
+    expect(costBucket(-1)).toBe('zero');
+    expect(costBucket(Number.NaN)).toBe('zero');
+    expect(costBucket(0.005)).toBe('lt_0_01');
+    expect(costBucket(0.05)).toBe('lt_0_10');
+    expect(costBucket(0.5)).toBe('lt_1');
+    expect(costBucket(12)).toBe('gte_1');
+  });
+
+  it('names the model choice and the compared pair', () => {
+    expect(buildModelSelectEvent('opus')).toEqual({
+      category: 'model_config',
+      action: 'model_select',
+      label: 'opus',
+    });
+    expect(buildCompareStartEvent('haiku', 'sonnet').label).toBe('haiku_vs_sonnet');
+  });
+
+  it('carries the outcome the panel used to discard — winner and a spend band, never a raw figure', () => {
+    const metrics = (modelId: string, composite: number, totalCost: number) => ({
+      modelId,
+      provider: 'anthropic',
+      avgToolAccuracy: 0,
+      avgOutputQuality: 0,
+      avgProtocolCompliance: 0,
+      composite,
+      totalCost,
+      avgDuration: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      count: 1,
+    });
+
+    const won = buildCompareOutcomeEvent(metrics('haiku', 40, 0.02), metrics('sonnet', 80, 0.03));
+    expect(won.action).toBe('compare_complete');
+    expect(won.label).toBe('haiku_vs_sonnet|winner=sonnet|cost=lt_0_10');
+    // The exact dollar figure must not survive into the event.
+    expect(won.label).not.toContain('0.05');
+
+    const tied = buildCompareOutcomeEvent(metrics('haiku', 70, 0), metrics('opus', 70, 0));
+    expect(tied.label).toBe('haiku_vs_opus|winner=tie|cost=zero');
+  });
+});
 
 describe('aggregateResultsDetailed', () => {
   it('distinguishes an unstarted run from a model that produced nothing', () => {
@@ -87,6 +138,22 @@ describe('ALL_COMPARE_MODELS', () => {
       expect(opt, `missing compare option for preset ${preset.value}`).toBeDefined();
       expect(opt!.model).toBe(preset.modelId);
       expect(opt!.base_url).toBe(OLLAMA_CLOUD_BASE_URL);
+    }
+  });
+
+  // The priced options showed `~$0.25/1K` / `~$3/1K` / `~$15/1K` until
+  // 2026-08-28. Anthropic publishes per MILLION tokens, so a `/1K`
+  // denominator overstates by 1000x, and a single figure hides the output
+  // rate entirely. Both shapes are re-introducible by a one-word edit, so
+  // both are asserted against here rather than left to review.
+  it('quotes every priced model as an input/output pair, never per-1K', () => {
+    const priced = ALL_COMPARE_MODELS.filter((m) => m.cost !== FREE_COST);
+    expect(priced.length).toBeGreaterThan(0);
+    for (const m of priced) {
+      expect(m.cost, `${m.id} must not quote a per-1K price`).not.toMatch(/\/\s*1K/i);
+      expect(m.cost, `${m.id} must quote input/output as $in/$out`).toMatch(
+        /^\$\d+(\.\d+)?\/\$\d+(\.\d+)?$/,
+      );
     }
   });
 

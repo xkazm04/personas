@@ -1153,6 +1153,8 @@
   "model_config": {
     "model_provider": "Model & Penyedia",
     "unsaved_changes": "Perubahan belum disimpan",
+    "price_unit_note": "Harga input / output dalam USD per satu juta token. Hanya perkiraan — cek tarif terkini di penyedia Anda.",
+    "price_unit_short": "per 1 juta token",
     "max_budget": "Anggaran Maks (USD)",
     "max_turns": "Putaran maks",
     "prompt_caching": "Caching prompt",
@@ -1237,6 +1239,7 @@
     "model_b": "Model B",
     "add_prompt_first": "Tambahkan prompt terlebih dahulu untuk menjalankan perbandingan.",
     "select_different_models": "Pilih dua model berbeda untuk dibandingkan.",
+    "no_results_produced": "Model {models} tidak menghasilkan hasil apa pun — proses mungkin gagal.",
     "run_comparison": "Jalankan perbandingan",
     "generating_scenarios": "Menghasilkan skenario…",
     "testing_model": "Menguji {modelId}",

@@ -1153,6 +1153,8 @@
   "model_config": {
     "model_provider": "मॉडल और प्रदाता",
     "unsaved_changes": "असहेजे परिवर्तन",
+    "price_unit_note": "प्रति दस लाख टोकन इनपुट / आउटपुट कीमत (USD में)। ये केवल अनुमान हैं — मौजूदा दरें अपने प्रोवाइडर से देखें।",
+    "price_unit_short": "प्रति 10 लाख टोकन",
     "max_budget": "अधिकतम बजट (USD)",
     "max_turns": "अधिकतम टर्न",
     "prompt_caching": "प्रॉम्प्ट कैशिंग",
@@ -1237,6 +1239,7 @@
     "model_b": "मॉडल B",
     "add_prompt_first": "तुलना चलाने के लिए पहले एक प्रॉम्प्ट जोड़ें।",
     "select_different_models": "तुलना करने के लिए दो अलग-अलग मॉडल चुनें।",
+    "no_results_produced": "मॉडल {models} ने कोई परिणाम नहीं दिया — हो सकता है कि रन विफल हो गया हो।",
     "run_comparison": "तुलना चलाएं",
     "generating_scenarios": "परिदृश्य जनरेट हो रहे हैं…",
     "testing_model": "{modelId} का परीक्षण",

@@ -2,6 +2,7 @@ import { Layers, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ConfigInheritanceBadge } from './ConfigInheritanceBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
@@ -28,14 +29,19 @@ function FieldRow({ label, field, workspaceName, mask }: {
     <div className="flex items-center justify-between gap-2 py-1">
       <span className="typo-caption text-foreground flex-shrink-0">{label}</span>
       <div className="flex items-center gap-1.5 min-w-0">
-        <span
-          className={`typo-code font-mono truncate max-w-[140px] ${
-            field.source === 'default' ? 'text-foreground italic' : 'text-foreground'
-          }`}
-          title={field.value != null && !mask ? String(field.value) : undefined}
-        >
-          {displayValue}
-        </span>
+        {/* The full value is reachable only through this tip when the cell
+            truncates. Tooltip renders the child untouched when `content` is
+            empty, so masked and unset rows stay plain. */}
+        <Tooltip content={field.value != null && !mask ? String(field.value) : ''}>
+          <span
+            tabIndex={field.value != null && !mask ? 0 : undefined}
+            className={`typo-code font-mono truncate max-w-[140px] ${
+              field.source === 'default' ? 'text-foreground italic' : 'text-foreground'
+            }`}
+          >
+            {displayValue}
+          </span>
+        </Tooltip>
         <ConfigInheritanceBadge
           source={field.source}
           isOverridden={field.isOverridden}
