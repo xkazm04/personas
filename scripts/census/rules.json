@@ -287,8 +287,8 @@
         "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
       },
       "baseline": {
-        "files": 37,
-        "matches": 237
+        "files": 36,
+        "matches": 233
       },
       "floor": 4000
     },
@@ -1411,8 +1411,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 553,
-        "matches": 1066
+        "files": 552,
+        "matches": 1065
       },
       "floor": 2000
     },
