@@ -84,7 +84,13 @@ export const staggerItem: Variants = {
 
 // ---------------------------------------------------------------------------
 // Dashboard stagger variants
-// 50ms stagger, 300ms ease-out entrance, translate-y-2 (8px) slide-up
+// 50ms stagger, `smooth` (250ms) ease-out entrance, translate-y-2 (8px) slide-up
+//
+// The entrance used to inline `duration: 0.3`, which is not on the repo's
+// ladder (150 / 250 / 400ms) — a fourth duration invented at the call site,
+// and the literal preset-vocabulary violation these presets exist to prevent.
+// Both transitions now read from MOTION_PRESETS, so the ladder is the only
+// place a dashboard duration can change.
 // ---------------------------------------------------------------------------
 
 /** Dashboard stagger container -- 50ms delay between children. */
@@ -95,18 +101,18 @@ export const dashboardContainer: Variants = {
   },
 };
 
-/** Dashboard stagger item -- fade+slide entrance (300ms ease-out). */
+/** Dashboard stagger item -- fade+slide entrance on the `smooth` rung. */
 export const dashboardItem: Variants = {
   hidden: { opacity: 0, y: 8 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: 'easeOut' },
+    transition: MOTION_PRESETS.smooth.framer,
   },
   exit: {
     opacity: 0,
     y: -6,
-    transition: { duration: 0.15, ease: 'easeOut' },
+    transition: MOTION_PRESETS.snappy.framer,
   },
 };
 
