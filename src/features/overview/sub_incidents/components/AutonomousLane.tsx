@@ -26,6 +26,7 @@ export function AutonomousLane({
 }) {
   const { t } = useTranslation();
   const [incidents, setIncidents] = useState<AuditIncident[] | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,7 +36,10 @@ export function AutonomousLane({
         if (!cancelled) setIncidents(rows);
       } catch (err) {
         silentCatch('AutonomousLane:list')(err);
-        if (!cancelled) setIncidents([]);
+        // A rejected fetch is NOT "nothing was handled autonomously". Writing []
+        // here would render the honest-empty copy over a failure and claim the
+        // system did nothing all day, so the failure carries its own identity.
+        if (!cancelled) setFailed(true);
       }
     })();
     return () => {
@@ -43,6 +47,9 @@ export function AutonomousLane({
     };
   }, []);
 
+  // Failed: render nothing. The lane is secondary chrome, so a fetch failure
+  // withdraws it rather than asserting an empty result it cannot vouch for.
+  if (failed) return null;
   // Still loading: render nothing — the lane is secondary chrome and must
   // never hold the inbox hostage with a spinner.
   if (incidents === null) return null;
