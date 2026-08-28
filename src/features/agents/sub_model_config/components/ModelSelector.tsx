@@ -1,5 +1,7 @@
 import { Cpu, Check, Settings2 } from 'lucide-react';
+import { getAnalyticsSink } from '@/lib/analytics/sink';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { buildModelSelectEvent } from '../libs/compareHelpers';
 import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '../libs/OllamaCloudPresets';
@@ -184,7 +186,12 @@ export function ModelSelector({
                     key={model.value}
                     type="button"
                     aria-pressed={isSelected}
-                    onClick={() => onSelectModel(model.value)}
+                    onClick={() => {
+                      // Which model a persona runs on is the app's single
+                      // biggest spend lever and went unrecorded entirely.
+                      getAnalyticsSink().interaction(buildModelSelectEvent(model.value));
+                      onSelectModel(model.value);
+                    }}
                     className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-card border transition-all transition-shadow duration-300 text-left ${
                       isSelected
                         ? 'pl-2.5 border-primary/30 bg-primary/8'
