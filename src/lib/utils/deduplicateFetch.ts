@@ -13,7 +13,10 @@ const _inflight = new Map<string, Promise<unknown>>();
 
 /**
  * Identity of the request currently owning each key — the same mechanism
- * `staleWhileRevalidate` uses, and for the same reason.
+ * `staleWhileRevalidate` uses, and for the same reason. That cross-reference is
+ * no longer only prose: `__tests__/inflightCoalescing.parity.test.ts` drives
+ * both modules through one lifecycle script, so a rule fixed here and not there
+ * fails a test instead of waiting to be re-found by hand.
  *
  * Without it, `invalidateDeduplicatedFetch` could only drop the in-flight entry,
  * and the disowned request's `finally` would then delete the entry belonging to
@@ -63,7 +66,8 @@ export function deduplicateFetch<T>(
  * bypass a request already in the air could not, and every concurrent caller of
  * a rejected in-flight promise shared that rejection with no way to reset. The
  * sibling `staleWhileRevalidate` grew exactly this door; the two implement the
- * same coalescing concept and had drifted to different lifecycle rules.
+ * same coalescing concept and had drifted to different lifecycle rules — which
+ * is what `__tests__/inflightCoalescing.parity.test.ts` now watches for.
  *
  * The key is used verbatim — for `deduplicateKeyedFetch`, build it with
  * {@link deduplicatedFetchKey}.
