@@ -148,6 +148,21 @@ interface ManagedTerminal {
   /** Detached-by-default element the terminal is `open()`'d into; moved
    *  between pane containers on attach/detach. */
   holder: HTMLDivElement;
+  /**
+   * The pane container the holder currently lives in — the OWNER token.
+   *
+   * There is one holder per session, so a second pane attaching the same
+   * session re-parents it and the first pane goes blank. That much is inherent
+   * to a single DOM node. What was not inherent is the teardown: whichever pane
+   * unmounted FIRST ran the full detach — unsubscribe, dispose the renderer,
+   * remove the holder — on the terminal the OTHER pane was still showing.
+   *
+   * The last attacher wins the token, and a detach from anyone else is a no-op.
+   * Today's surfaces are mutually exclusive (FleetGridPage renders the overlay
+   * or a single pane, never both), so this fires on no current path — it is the
+   * invariant the multiplexer needs before a surface makes it reachable.
+   */
+  owner: HTMLElement | null;
   resizeObs: ResizeObserver;
   disposables: IDisposable[];
   onMouseUp: () => void;
@@ -540,6 +555,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     term,
     fit,
     holder,
+    owner: null,
     resizeObs: undefined as unknown as ResizeObserver, // set below
     disposables,
     onMouseUp: () => {},
@@ -610,11 +626,15 @@ function getOrCreate(sessionId: string): ManagedTerminal {
   return managed;
 }
 
-/** Mount `sessionId`'s terminal into `container` (creating it if needed). */
+/**
+ * Mount `sessionId`'s terminal into `container` (creating it if needed) and
+ * make `container` the owner — the only pane whose detach may tear it down.
+ */
 export function attachTerminal(sessionId: string, container: HTMLElement): void {
   ensureSharedOutputListener();
   unpark(sessionId);
   const m = getOrCreate(sessionId);
+  m.owner = container;
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);
   }
@@ -674,12 +694,23 @@ function hydrate(m: ManagedTerminal): void {
     });
 }
 
-/** Unmount `sessionId`'s terminal from the DOM but keep it (and its buffer)
- *  alive. Disposes the attach-scoped WebGL context and unsubscribes from live
- *  output (the backend keeps buffering into its ring for a later re-attach). */
-export function detachTerminal(sessionId: string): void {
+/**
+ * Unmount `sessionId`'s terminal from the DOM but keep it (and its buffer)
+ * alive. Disposes the attach-scoped WebGL context and unsubscribes from live
+ * output (the backend keeps buffering into its ring for a later re-attach).
+ *
+ * `owner` is the container the caller attached with. Pass it and the detach is
+ * a NO-OP unless the caller still owns the terminal — a pane that has already
+ * lost the holder to another pane must not tear down what that pane is
+ * showing. Omitting it detaches unconditionally, which is what a caller
+ * tearing the session down wholesale (not a pane) wants.
+ */
+export function detachTerminal(sessionId: string, owner?: HTMLElement): void {
   const m = registry.get(sessionId);
   if (!m) return;
+  // Someone else took the holder — theirs to detach, not ours.
+  if (owner && m.owner !== owner) return;
+  m.owner = null;
   if (m.rafId !== null) {
     cancelAnimationFrame(m.rafId);
     m.rafId = null;
@@ -730,6 +761,7 @@ export function disposeTerminal(sessionId: string): void {
   if (!m) return;
   registry.delete(sessionId);
   unpark(sessionId);
+  m.owner = null;
   // Disposing an ATTACHED terminal (gcTerminals on a session the roster
   // dropped while a pane still showed it) otherwise leaves the backend
   // streaming this session over IPC forever: the map entry is gone, so the

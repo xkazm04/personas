@@ -537,6 +537,58 @@ describe('accelerated-renderer budget', () => {
   });
 });
 
+describe('attach ownership', () => {
+  it('ignores a detach from a pane that no longer holds the terminal', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    attachTerminal('owned', paneA);
+    attachTerminal('owned', paneB); // B takes the holder
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    // A unmounts first. Without an owner token this ran the FULL teardown on
+    // the terminal B is still showing: unsubscribe, drop the renderer, unparent.
+    detachTerminal('owned', paneA);
+
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).not.toHaveBeenCalled();
+    expect(registryMap().get('owned')?.attached).toBe(true);
+    expect(registryMap().get('owned')?.holder.parentElement).toBe(paneB);
+    expect(parkedList()).not.toContain('owned');
+
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('still tears down when the owning pane detaches', () => {
+    const paneA = document.createElement('div');
+    const paneB = document.createElement('div');
+    document.body.append(paneA, paneB);
+    attachTerminal('owned2', paneA);
+    attachTerminal('owned2', paneB);
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    detachTerminal('owned2', paneB);
+
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('owned2');
+    expect(registryMap().get('owned2')?.attached).toBe(false);
+    expect(parkedList()).toContain('owned2');
+
+    paneA.remove();
+    paneB.remove();
+  });
+
+  it('detaches unconditionally when no owner token is passed', () => {
+    const host = attach('unowned');
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    detachTerminal('unowned');
+
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('unowned');
+    expect(registryMap().get('unowned')?.attached).toBe(false);
+    host.remove();
+  });
+});
+
 describe('clipboard paste framing', () => {
   const readText = vi.fn<() => Promise<string>>();
 

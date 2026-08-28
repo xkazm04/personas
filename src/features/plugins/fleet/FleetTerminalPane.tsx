@@ -52,7 +52,10 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true }: Fl
     if (!container) return;
     attachTerminal(sessionId, container);
     if (autoFocus) focusTerminal(sessionId);
-    return () => detachTerminal(sessionId);
+    // Detach with our own container as the owner token: if another pane has
+    // since attached the same session, the holder is THEIRS and our unmount
+    // must not unsubscribe, drop the renderer and unparent what they display.
+    return () => detachTerminal(sessionId, container);
   }, [sessionId, autoFocus]);
 
   return (
