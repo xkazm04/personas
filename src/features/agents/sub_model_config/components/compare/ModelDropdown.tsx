@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { ALL_COMPARE_MODELS, FREE_COST, type ModelOption } from '../../libs/compareHelpers';
 
 export function ModelDropdown({
@@ -30,13 +31,15 @@ export function ModelDropdown({
   return (
     <div className="space-y-1">
       <label className={`typo-label font-medium ${accentColor} `}>{label}</label>
-      <select
+      {/* ThemedSelect, not a hand-classed native select: the provider picker
+          forty lines away (CustomModelConfigForm) already uses it, and two
+          treatments on one screen focus, disable and open differently. */}
+      <ThemedSelect
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={onChange}
         disabled={disabled}
-        className="w-full px-2.5 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/20
-                   text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40
-                   disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        aria-label={label}
+        className="py-1.5"
       >
         {groups.map(([group, models]) => (
           <optgroup key={group} label={group}>
@@ -50,7 +53,7 @@ export function ModelDropdown({
             ))}
           </optgroup>
         ))}
-      </select>
+      </ThemedSelect>
     </div>
   );
 }
