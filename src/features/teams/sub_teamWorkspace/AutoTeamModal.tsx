@@ -102,7 +102,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 onChange={(e) => at.setQuery(e.target.value)}
                 disabled={isWorking || at.phase === 'done'}
                 placeholder={t.pipeline.auto_team_placeholder}
-                className="w-full px-4 py-3 rounded-modal bg-secondary/30 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
+                className="w-full px-4 py-3 rounded-modal bg-secondary/30 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:is-disabled pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
                 <Button

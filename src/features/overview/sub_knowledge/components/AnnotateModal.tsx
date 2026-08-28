@@ -105,7 +105,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
           type="button"
           onClick={() => { void handleSave(); }}
           disabled={saving || !text.trim()}
-          className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 typo-body text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 typo-body text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:is-disabled"
         >
           {saving ? t.overview.annotate_modal.saving : t.overview.annotate_modal.save_annotation}
         </button>

@@ -187,7 +187,7 @@ export function CreateTeamForm({
             type="button"
             onClick={onSubmit}
             disabled={!newName.trim() || !repoUrlValid}
-            className="px-4 py-1.5 typo-body rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-1.5 typo-body rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:is-disabled transition-all"
           >
             {t.pipeline.create_team}
           </button>

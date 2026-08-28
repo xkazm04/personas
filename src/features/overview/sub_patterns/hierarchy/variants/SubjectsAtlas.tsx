@@ -301,7 +301,9 @@ function AtlasDossier({
       {/* Header band with the stat figures */}
       <div className="rounded-card border border-border/50 bg-secondary/15 px-5 py-4 mb-5">
         <div className="flex items-center gap-2.5 flex-wrap mb-1">
-          <h1 className="typo-section-title text-foreground">{subject.title}</h1>
+          {/* h2, not h1: ContentHeader owns this page's single h1 and the parent
+              panel already renders it. Two h1s made the plate a second page title. */}
+          <h2 className="typo-section-title text-foreground">{subject.title}</h2>
           <HierarchyStatusChip status={subject.status} />
         </div>
         {subject.summary && (
@@ -352,7 +354,10 @@ function AtlasDossier({
         ))}
       </div>
 
-      <div className="pb-10">
+      {/* The region the tablist above selects among. Declared as a tabpanel so the
+          relationship the control advertises exists in the accessibility tree and
+          not only in the visual layout. */}
+      <div className="pb-10" role="tabpanel" tabIndex={0} aria-label={p.detail_tabs_aria}>
         {pane === 'golden_path' && (
           <div className="max-w-[72ch]">
             <InlineDocBody projectId={projectId} relPath={subject.file} onLinkClick={(href) => onLinkHref(subject.file, href)} />

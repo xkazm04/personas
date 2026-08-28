@@ -25,6 +25,8 @@ import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 import { AnnotateModal } from './AnnotateModal';
 import { matchesQuery } from '@/lib/text/search';
+import { silentCatch } from '@/lib/silentCatch';
+import { classifyUnknownErrorFull } from '@/lib/errors/errorPipeline';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /** Dev-only knowledge seeding. Declared here rather than gated inside JSX so the
@@ -87,7 +89,8 @@ export default function KnowledgeGraphDashboard() {
       setEntries(e);
     } catch (err) {
       if (!isActive()) return;
-      setFetchError(err instanceof Error ? err.message : 'Failed to load knowledge graph data');
+      silentCatch('KnowledgeGraphDashboard:fetch')(err);
+      setFetchError(classifyUnknownErrorFull(err).friendly.message);
       setSummary(null);
       setEntries([]);
     } finally {
@@ -284,18 +287,23 @@ export default function KnowledgeGraphDashboard() {
 
             <PersonaColumnFilter value={selectedPersonaId ?? ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
 
+            {/* Two SIBLING controls, not a button inside a button: the clear affordance
+                used to be nested, which is invalid HTML and left it unreachable by
+                keyboard in several AT/browser pairs, surviving only on stopPropagation. */}
+            <span className="relative inline-flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              className={`relative flex items-center gap-1.5 typo-body transition-colors ${selectedType ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+              className={`flex items-center gap-1.5 typo-body transition-colors ${selectedType ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
               {selectedType ? (KNOWLEDGE_TYPES[selectedType as keyof typeof KNOWLEDGE_TYPES]?.label ?? selectedType) : 'Type'}
+            </button>
               {selectedType && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedType(null); setShowTypeDropdown(false); if (failureDrilldownDate) setFailureDrilldownDate(null); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
+                <button type="button" aria-label={t.common.clear} onClick={() => { setSelectedType(null); setShowTypeDropdown(false); if (failureDrilldownDate) setFailureDrilldownDate(null); }} className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
                   <X className="w-3 h-3" />
                 </button>
               )}
-            </button>
+            </span>
             {showTypeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
                 <button type="button" onClick={() => chooseType(null)} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
@@ -307,18 +315,23 @@ export default function KnowledgeGraphDashboard() {
               </div>
             )}
 
+            {/* Two SIBLING controls, not a button inside a button: the clear affordance
+                used to be nested, which is invalid HTML and left it unreachable by
+                keyboard in several AT/browser pairs, surviving only on stopPropagation. */}
+            <span className="relative inline-flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setShowScopeDropdown(!showScopeDropdown)}
-              className={`relative flex items-center gap-1.5 typo-body transition-colors ${selectedScope ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
+              className={`flex items-center gap-1.5 typo-body transition-colors ${selectedScope ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
               {selectedScope ? (SCOPE_TYPES[selectedScope as keyof typeof SCOPE_TYPES]?.label ?? selectedScope) : 'Scope'}
+            </button>
               {selectedScope && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedScope(null); setShowScopeDropdown(false); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
+                <button type="button" aria-label={t.common.clear} onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
                   <X className="w-3 h-3" />
                 </button>
               )}
-            </button>
+            </span>
             {showScopeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[140px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
                 <button type="button" onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_scopes_b64efd49" /></button>

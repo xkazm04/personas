@@ -189,7 +189,9 @@ export function SubjectsConsole(props: SubjectsVariantProps) {
           <div className="max-w-[860px] px-7 py-6">
             {/* Spec-grid header */}
             <div className="mb-2 flex items-center gap-2.5">
-              <h1 className="typo-section-title text-foreground">{subject.title}</h1>
+              {/* h2, not h1: ContentHeader owns this page's single h1 and the parent
+                  panel already renders it. Two h1s made the plate a second page title. */}
+              <h2 className="typo-section-title text-foreground">{subject.title}</h2>
               {/* muted-ok: slug echo, structural chrome */}
               <code className="typo-caption font-mono text-muted-foreground">{subject.slug}</code>
             </div>

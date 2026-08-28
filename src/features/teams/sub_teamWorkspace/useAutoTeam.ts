@@ -6,6 +6,7 @@ import { addTeamMember, createTeamConnection, deleteTeam, listTeamMembers, sugge
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { silentCatch } from '@/lib/silentCatch';
+import { classifyUnknownErrorFull } from '@/lib/errors/errorPipeline';
 
 
 export type AutoTeamPhase =
@@ -86,7 +87,8 @@ export function useAutoTeam(): AutoTeamState {
       setPhase('previewing');
     } catch (err) {
       if (cancelledRef.current) return;
-      setError(err instanceof Error ? err.message : 'Failed to generate team suggestion');
+      silentCatch('useAutoTeam:preview')(err);
+      setError(classifyUnknownErrorFull(err).friendly.message);
       setPhase('error');
     }
   }, [query]);
@@ -230,7 +232,8 @@ export function useAutoTeam(): AutoTeamState {
       setTimeout(() => selectTeam(team.id), 600);
     } catch (err) {
       if (cancelledRef.current) return;
-      setError(err instanceof Error ? err.message : 'Failed to create team');
+      silentCatch('useAutoTeam:apply')(err);
+      setError(classifyUnknownErrorFull(err).friendly.message);
       setPhase('error');
     } finally {
       applyingRef.current = false;

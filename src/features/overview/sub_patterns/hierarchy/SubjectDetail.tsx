@@ -169,7 +169,9 @@ export function SubjectDetail({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
+      {/* The region SegmentedTabs above selects among. Declared as a tabpanel so the
+          relationship is real in the accessibility tree, not just in the layout. */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4" role="tabpanel" tabIndex={0} aria-label={p.detail_tabs_aria}>
         {effectiveTab === 'golden_path' && (
           <InlineDocBody
             projectId={projectId}
